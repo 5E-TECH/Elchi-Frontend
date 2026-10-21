@@ -15,7 +15,8 @@
  *  - `beforeinstallprompt` kelgan (Chrome, Edge, Android) → `installable`; foydalanuvchi brauzer oynasini yopsa
  *    hodisa ishlatilgan bo'ladi, lekin holat `installable` qoladi (`offered`) — keyingi bosish brauzer menyusiga
  *    yo'naltiradi (`promptInstall` → `"unavailable"`);
- *  - qolgani (Firefox, eski brauzerlar) → `unsupported`.
+ *  - qolgani (Firefox, eski brauzerlar) → `unsupported`;
+ *  - boshqa tabda o'rnatilsa (yoki belgi tozalansa) — `storage` hodisasi: ochiq tab ham qayta yuklashsiz yangilanadi.
  */
 
 export type AppInstallStatus = "installed" | "installable" | "ios" | "unsupported";
@@ -102,6 +103,18 @@ const onAppInstalled = () => {
   emit();
 };
 
+/** Boshqa tab `INSTALLED_STORAGE_KEY` ni o'zgartirdi (o'rnatdi / belgini tozaladi). */
+const onStorage = (event: StorageEvent) => {
+  if (event.key !== INSTALLED_STORAGE_KEY && event.key !== null) return;
+  if (readFlag()) {
+    deferredPrompt = null;
+    installedNow = true;
+  } else {
+    installedNow = false;
+  }
+  emit();
+};
+
 /**
  * Brauzer hodisalarini ushlash — `main.tsx` da birinchi chizishdan OLDIN, bir marta (takror chaqiruv xavfsiz).
  */
@@ -110,6 +123,7 @@ export const captureInstallPrompt = () => {
   captured = true;
   window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   window.addEventListener("appinstalled", onAppInstalled);
+  window.addEventListener("storage", onStorage);
   if (typeof window.matchMedia === "function") {
     const media = window.matchMedia(STANDALONE_QUERY);
     media.addEventListener?.("change", emit);
@@ -156,6 +170,7 @@ export const resetInstallStateForTests = () => {
   if (typeof window !== "undefined") {
     window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.removeEventListener("appinstalled", onAppInstalled);
+    window.removeEventListener("storage", onStorage);
   }
   deferredPrompt = null;
   offered = false;

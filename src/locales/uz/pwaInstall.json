@@ -23,6 +23,7 @@
     "unsupported": "Qo'llab-quvvatlanmaydi",
     "hint": {
       "installed": "Shu qurilmada ilova sifatida ochilgan",
+      "installedHere": "Shu qurilmada o'rnatilgan — ilovani bosh ekrandan yoki ish stolidan oching",
       "installable": "Hozir brauzer orqali ochilgan",
       "ios": "iPhone va iPad'da Safari orqali bosh ekranga qo'shiladi",
       "unsupported": "Bu brauzerda o'rnatib bo'lmaydi — Chrome, Edge yoki Safari'da oching"

@@ -3,7 +3,7 @@ import { useEffect, useId, useRef } from "react";
 import { Download, SquarePlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button } from "../../../shared/ui/primitives";
-import type { AppInstallStatus } from "../lib/installPrompt";
+import { isStandaloneDisplay, type AppInstallStatus } from "../lib/installPrompt";
 import { useAppInstall } from "../model/useAppInstall";
 import { AppMark } from "./AppMark";
 import { IosInstallDialog } from "./IosInstallDialog";
@@ -29,6 +29,9 @@ export const AppInstallStatusBlock = () => {
   const titleId = useId();
   const { status, busy, install, iosOpen, openIos, closeIos } = useAppInstall();
   const badge = BADGE[status];
+  // «Ilova sifatida ochilgan» faqat haqiqatan standalone oynada; oddiy tabda (o'rnatilgan belgisi bo'yicha) — boshqa izoh.
+  const hintKey =
+    status === "installed" && !isStandaloneDisplay() ? "status.hint.installedHere" : `status.hint.${status}`;
   const blockRef = useRef<HTMLDivElement>(null);
   const prevStatus = useRef(status);
 
@@ -61,7 +64,7 @@ export const AppInstallStatusBlock = () => {
             {t(badge.key)}
           </Badge>
         </span>
-        <span className="text-[13px] text-text-muted">{t(`status.hint.${status}`)}</span>
+        <span className="text-[13px] text-text-muted">{t(hintKey)}</span>
       </span>
       {status === "installable" ? (
         <Button

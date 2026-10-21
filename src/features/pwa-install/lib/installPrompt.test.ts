@@ -84,6 +84,28 @@ describe("pwa-install: holat (installed | installable | ios | unsupported)", () 
     expect(window.localStorage.getItem(INSTALLED_STORAGE_KEY)).toBeNull();
   });
 
+  it("boshqa tabda o'rnatildi (storage hodisasi) — ochiq tab qayta yuklashsiz installed; belgi tozalansa — qaytadi", () => {
+    fireBeforeInstallPrompt();
+    const listener = vi.fn();
+    const unsubscribe = subscribeInstall(listener);
+    expect(getInstallSnapshot()).toBe("installable");
+
+    window.localStorage.setItem(INSTALLED_STORAGE_KEY, "1");
+    window.dispatchEvent(new StorageEvent("storage", { key: INSTALLED_STORAGE_KEY, newValue: "1" }));
+    expect(getInstallSnapshot()).toBe("installed");
+    expect(listener).toHaveBeenCalled();
+
+    window.localStorage.removeItem(INSTALLED_STORAGE_KEY);
+    window.dispatchEvent(new StorageEvent("storage", { key: INSTALLED_STORAGE_KEY, newValue: null }));
+    expect(getInstallSnapshot()).toBe("installable");
+
+    // Boshqa kalit — holatga ta'sir qilmaydi.
+    window.localStorage.setItem(INSTALLED_STORAGE_KEY, "1");
+    window.dispatchEvent(new StorageEvent("storage", { key: "other", newValue: "x" }));
+    expect(getInstallSnapshot()).toBe("installable");
+    unsubscribe();
+  });
+
   it("localStorage bloklangan (xususiy rejim) — xato yutiladi, holat ishlaydi", async () => {
     const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("SecurityError");

@@ -23,6 +23,7 @@
     "unsupported": "Not supported",
     "hint": {
       "installed": "Opened as an app on this device",
+      "installedHere": "Installed on this device — open the app from the home screen or desktop",
       "installable": "Currently opened in the browser",
       "ios": "On iPhone and iPad it is added to the Home Screen via Safari",
       "unsupported": "This browser can't install it — open it in Chrome, Edge or Safari"

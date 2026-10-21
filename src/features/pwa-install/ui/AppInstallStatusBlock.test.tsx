@@ -10,6 +10,7 @@ import {
   setDevice,
   setStandalone,
 } from "../test/installEnv";
+import { INSTALLED_STORAGE_KEY } from "../lib/installPrompt";
 import { AppInstallStatusBlock } from "./AppInstallStatusBlock";
 
 /** Sozlamalar → Bildirishnomalar → «Ilova» (maket common-settings-notifications-pwa): 4 holat, doim ko'rinadi. */
@@ -25,6 +26,14 @@ describe("AppInstallStatusBlock", () => {
     expect(block()).toHaveAttribute("data-status", "installed");
     expect(block()).toHaveTextContent("Elchi ilovasiO'rnatilganShu qurilmada ilova sifatida ochilgan");
     expect(within(block()).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("installed belgisi, lekin oddiy brauzer tabi — «ilova sifatida ochilgan» emas, «o'rnatilgan» izohi", () => {
+    window.localStorage.setItem(INSTALLED_STORAGE_KEY, "1");
+    renderWithProviders(<AppInstallStatusBlock />);
+    expect(block()).toHaveAttribute("data-status", "installed");
+    expect(block()).toHaveTextContent("Shu qurilmada o'rnatilgan");
+    expect(block()).not.toHaveTextContent("ilova sifatida ochilgan");
   });
 
   it("installable — «O'rnatilmagan» + «O'rnatish» brauzer oynasini ochadi", async () => {

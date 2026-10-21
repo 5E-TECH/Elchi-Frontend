@@ -659,7 +659,9 @@ describe("DashboardPage (v2) — qisman nosozlik: bo'lak 0 emas, xato holati (Vk
 });
 
 // KI-2: kartaning o'z xulqi `features/pwa-install` testlarida; bu yerda — faqat kuryer tarmog'ida joylashuvi.
-vi.mock("../../features/pwa-install", () => ({
+// Qisman mock: boshqa eksportlar asliday qoladi — DashboardPage keyinroq barreldan yana nimadir olsa ham test buzilmaydi.
+vi.mock("../../features/pwa-install", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../features/pwa-install")>()),
   InstallAppCard: ({ placement }: { placement: string }) => <div data-testid={`pwa-card-${placement}`} />,
 }));
 
