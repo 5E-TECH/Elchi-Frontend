@@ -66,14 +66,17 @@ export const OpsAlert = ({
   tone,
   title,
   children,
+  icon,
   className,
 }: {
   tone: OpsAlertTone;
   title: ReactNode;
   children?: ReactNode;
+  /** Ixtiyoriy: maket tondan boshqa ikonka bergan bo'lsa (sukut — ton ikonkasi). */
+  icon?: LucideIcon;
   className?: string;
 }) => {
-  const Icon = ALERT_ICON[tone];
+  const Icon = icon ?? ALERT_ICON[tone];
   const hasBody = children !== undefined && children !== null && children !== false && children !== "";
   return (
     <div

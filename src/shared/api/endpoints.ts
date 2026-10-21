@@ -458,6 +458,12 @@ export const API_ENDPOINTS = {
     READINESS: "health/readiness",
   },
 
+  // ── AI admin (api-gateway `AiGatewayController`, SUPERADMIN/ADMIN) ───────
+  AI: {
+    // GET { enabled, key_state, models, model_policy, cap, usage_persist_failures } — kalit QIYMATI yo'q (OS-2)
+    STATUS: "ai/status",
+  },
+
   // ── Webhooks (public — provider inbound, no JWT) ─────────────────────────
   WEBHOOKS: {
     BY_SLUG: (slug: string | number) => `webhooks/${slug}`, // POST

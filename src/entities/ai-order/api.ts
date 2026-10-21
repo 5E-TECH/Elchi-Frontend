@@ -9,6 +9,7 @@ import type {
   AiParseImage,
   AiParseRequest,
   AiParseResponse,
+  AiStatusResponse,
 } from "./types";
 
 /**
@@ -104,5 +105,19 @@ export const useAiAvailability = () =>
     staleTime: 60_000,
     retry: false,
     // Tab ko'rinishini boshqaradi — xato bo'lsa tab QOLADI (`isAiTabHidden`), global xabar chiqmaydi.
+    meta: { silentError: true },
+  });
+
+export const AI_STATUS_KEY = "ai-status";
+
+/**
+ * `GET ai/status` — AI kaliti holati (qiymatsiz), modellar va bugungi kunlik limit (Ops → Tizim, «AI holati»; OS-2).
+ * Xato global toast'siz (`silentError`) — karta o'zi «AI holatini olib bo'lmadi» chizadi. 5xx bir marta qayta
+ * urinish — umumiy `queryRetry` qoidasi.
+ */
+export const useAiStatus = () =>
+  useQuery({
+    queryKey: [AI_STATUS_KEY],
+    queryFn: () => api.get(API_ENDPOINTS.AI.STATUS).then((res) => unwrap<AiStatusResponse>(res.data)),
     meta: { silentError: true },
   });

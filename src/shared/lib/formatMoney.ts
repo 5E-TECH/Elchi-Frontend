@@ -154,3 +154,20 @@ export const formatPercentLocalized = (
   const number = formatNumberLocalized(value, { language: lang, fractionDigits: options.fractionDigits ?? 1 });
   return lang === "ru" ? `${number}${NO_BREAK_SPACE}%` : `${number}%`;
 };
+
+/**
+ * AQSH dollari (S4, OS-2 — AI xarajati va kunlik limit): doim 2 kasr xona (nollar saqlanadi), mingliklar ajratkichi
+ * tildan. uz/ru — «12,40 $» / «1 234,50 $» (belgi oxirida, maket `superadmin-ops-system-ai-cap`), en — «$12.40»
+ * (ingliz yozuvi; ega javob bermagan — sukut). Manfiy → «−12,40 $» / «−$12.40» (U+2212); yaxlitlab nol — minussiz.
+ * Mavjud so'm formatlovchilari o'zgarmaydi — bu alohida funksiya.
+ */
+export const formatUsdLocalized = (value: unknown, options: { language?: string | null } = {}): string => {
+  const lang = resolveMoneyLanguage(options.language);
+  const { group, decimal } = SEPARATORS[lang];
+  const num = toFiniteNumber(value);
+  const fixed = Math.abs(num).toFixed(2);
+  const [intPart, fracPart] = fixed.split(".");
+  const body = `${groupDigits(intPart, group)}${decimal}${fracPart}`;
+  const sign = num < 0 && Number(fixed) !== 0 ? MINUS_SIGN : "";
+  return lang === "en" ? `${sign}$${body}` : `${sign}${body} $`;
+};

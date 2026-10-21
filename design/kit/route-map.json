@@ -1630,12 +1630,15 @@
       "components": [
         "src/pages/system-ops/index.tsx",
         "src/pages/system-ops/ui/charts.tsx",
-        "src/pages/system-ops/lib/systemOps.ts"
+        "src/pages/system-ops/lib/systemOps.ts",
+        "src/pages/system-ops/ui/HealthCard.tsx",
+        "src/pages/system-ops/ui/AiStatusCard.tsx",
+        "src/pages/system-ops/lib/aiStatus.ts"
       ],
       "views": {
         "superadmin": ["ops-system", "ops-system-loading", "ops-system-error", "ops-system-partial", "ops-system-down", "ops-system-critical", "ops-system-ai-config", "ops-system-ai-cap"]
       },
-      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4)."
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark."
     },
     {
       "path": "/logs",
@@ -1779,8 +1782,6 @@
     "market_operator-new-orders-create-manual": "Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak).",
     "market_operator-earnings": "Kodda yo'q: market_operator roli frontendda yo'q; balans/daromad/to'lov uchun /me endpoint kerak.",
     "market_operator-earnings-no-commission": "Kodda yo'q (market_operator roli frontendda yo'q).",
-    "superadmin-ops-system-ai-config": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
-    "superadmin-ops-system-ai-cap": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
     "superadmin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
     "admin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
     "manager-new-orders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
@@ -1808,12 +1809,6 @@
     "superadmin-orders-list-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
     "manager-orders-list-all-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
     "manager-orders-list-all-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
-    "superadmin-ops-system": "Kodda bor (OS-1): kirish matni, «Tizim holati» (GET /health/readiness, 14 xizmat, «Yangilash», sanoqlar, ochiladigan ro'yxat), SLA + KPI, token tekshirish. «AI holati» kartasi chizilmagan — OS-2.",
-    "superadmin-ops-system-loading": "Kodda bor (OS-1): «Tizim holati» skeleti («tekshirilmoqda…», o'chiq «Tekshirilmoqda», 4 qator) va SLA/KPI kartalari skeleti. «AI holati» skeleti — OS-2.",
-    "superadmin-ops-system-error": "Kodda bor (OS-1): «Noma'lum», «Oxirgi muvaffaqiyatli tekshiruv», «Tizim holatini olib bo'lmadi», «Xato kodi: N», «Qayta urinish». «AI holati» bloki (AI o'chiq) — OS-2.",
-    "superadmin-ops-system-partial": "Kodda bor (OS-1): «Qisman ishlayapti», «N ta xizmat javob bermayapti», jadval / telefonda kartalar, sabab matni (xom emas). «AI holati» (zaif model, limit) — OS-2.",
-    "superadmin-ops-system-down": "Kodda bor (OS-1): «Hech bir xizmat javob bermayapti», KPI xatosi «Analitika ko'rsatkichlarini olib bo'lmadi» + «Qayta urinish». «AI holatini olib bo'lmadi» bloki — OS-2.",
-    "superadmin-ops-system-critical": "Kodda bor (OS-1, S1): «Asosiy xizmat ishlamayapti: <nom>», ta'sir matni, «Noma'lum» (ulanmagan xizmat). «AI holati» bloki — OS-2.",
     "superadmin-payments-main-cashbox-shift-closed": "Kodda bor (CB-1): «Smena boshlanmagan» banneri, «Tezkor amallar» qulfi («Smena ochilgach ishlaydi»), «Smenani ochish» asosiy tugma (GET finance/shift/current). Oxirgi yopilgan smena kartasi «Smena yopildi · … · Natija» chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3).",
     "superadmin-payments-main-cashbox-shift-open-dialog": "Kodda bor (CB-1, OpenShiftDialog): ochadigan xodim, «Boshlanish: hozir», ochilish qoldig'i (jonli balans), izoh. «Oxirgi smena … bilan yopilgan» ogohlantirishi chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3).",
     "admin-payments-main-cashbox-shift-closed": "Kodda bor (CB-1): «Smena boshlanmagan» banneri, «Tezkor amallar» qulfi («Smena ochilgach ishlaydi»), «Smenani ochish» asosiy tugma (GET finance/shift/current). Oxirgi yopilgan smena kartasi «Smena yopildi · … · Natija» chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3).",
@@ -1936,11 +1931,13 @@
     "admin-notifications-send-unknown": "src/features/notification-dispatch/ui/DispatchUnknownCard.tsx",
     "superadmin-notifications-sent-detail-dialog": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
     "admin-notifications-sent-detail-dialog": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
-    "superadmin-ops-system-loading": "src/pages/system-ops/ui/HealthCard.tsx",
-    "superadmin-ops-system-error": "src/pages/system-ops/ui/HealthCard.tsx",
-    "superadmin-ops-system-partial": "src/pages/system-ops/ui/HealthCard.tsx",
-    "superadmin-ops-system-down": "src/pages/system-ops/ui/HealthCard.tsx",
-    "superadmin-ops-system-critical": "src/pages/system-ops/ui/HealthCard.tsx",
+    "superadmin-ops-system-loading": ["src/pages/system-ops/ui/HealthCard.tsx", "src/pages/system-ops/ui/AiStatusCard.tsx"],
+    "superadmin-ops-system-error": ["src/pages/system-ops/ui/HealthCard.tsx", "src/pages/system-ops/ui/AiStatusCard.tsx"],
+    "superadmin-ops-system-partial": ["src/pages/system-ops/ui/HealthCard.tsx", "src/pages/system-ops/ui/AiStatusCard.tsx"],
+    "superadmin-ops-system-down": ["src/pages/system-ops/ui/HealthCard.tsx", "src/pages/system-ops/ui/AiStatusCard.tsx"],
+    "superadmin-ops-system-critical": ["src/pages/system-ops/ui/HealthCard.tsx", "src/pages/system-ops/ui/AiStatusCard.tsx"],
+    "superadmin-ops-system-ai-config": "src/pages/system-ops/ui/AiStatusCard.tsx",
+    "superadmin-ops-system-ai-cap": "src/pages/system-ops/ui/AiStatusCard.tsx",
     "superadmin-neworders-create-manual-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
     "admin-neworders-create-manual-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
     "superadmin-ops-logistics-approve-dialog": ["src/pages/logistics-ops/index.tsx", "src/pages/logistics-ops/ui/ApproveReturnSummary.tsx"],

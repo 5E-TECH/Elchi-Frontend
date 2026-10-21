@@ -82,13 +82,14 @@ describe("SystemOps page", () => {
     expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=system");
   });
 
-  it("tartib: kirish → Tizim holati → SLA + KPI → Token tekshirish", async () => {
+  it("tartib: kirish → Tizim holati → AI holati → SLA + KPI → Token tekshirish", async () => {
     renderWithProviders(<SystemOpsPage />);
     await screen.findByText("Hamma xizmatlar ishlayapti");
     await screen.findByText("236 400 so'm");
     const wanted = [
       "Tizim — xizmatlar va analitika",
       "Tizim holati",
+      "AI holati",
       "O'z vaqtida (SLA)",
       "Analitika KPI",
       "Token orqali tekshirish",

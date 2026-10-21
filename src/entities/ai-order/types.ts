@@ -192,3 +192,42 @@ export type AiConfirmResult = {
 export type AiConfirmResponse = {
   results: AiConfirmResult[];
 };
+
+/**
+ * `GET ai/status` (api-gateway `AiGatewayController.status`, SUPERADMIN/ADMIN; backend `libs/common/src/ai/
+ * ai-status.contract.ts` → `AiStatusResponse`). Gateway konverti `{ statusCode, message, data }` ichida.
+ * ⚠️ Kalit QIYMATI hech qachon qaytmaydi — faqat `key_state`.
+ */
+/** `ANTHROPIC_API_KEY`: bor / yo'q / boshqa nom bilan berilgan. */
+export type AiKeyState = "ok" | "missing" | "misnamed";
+
+/** Model siyosati: `ok` — mos; `weak` — narx jadvalida bor, lekin ajratish uchun kuchsiz; `unknown` — narx jadvalida yo'q. */
+export type AiModelVerdict = "ok" | "weak" | "unknown";
+
+/** Kunlik shift: ok / ogohlantirish chegarasidan oshdi / tugadi / o'qib bo'lmadi (AI fail-closed). */
+export type AiCapState = "ok" | "warn" | "exceeded" | "unknown";
+
+export type AiStatusResponse = {
+  /** ai-service'da Anthropic mijozi bor (kalit o'qildi). */
+  enabled: boolean;
+  key_state: AiKeyState;
+  /** Model NOMLARI (`AI_ORDER_MODEL`, `AI_ORDER_VISION_MODEL`, `AI_CLASSIFY_MODEL`). */
+  models: { order: string; vision: string; classify: string };
+  model_policy: { ok: boolean; order: AiModelVerdict; vision: AiModelVerdict; classify: AiModelVerdict };
+  cap: {
+    /** Toshkent sanasi (YYYY-MM-DD). */
+    period_key: string;
+    spent_usd: number;
+    /** Asosiy kunlik limit (`AI_DAILY_USD_CAP`). */
+    cap_usd: number;
+    /** Bugun uchun serverda qo'shilgan (ertaga tushadi). */
+    override_usd: number;
+    effective_cap_usd: number;
+    /** `spent / effective_cap` (0..1+). */
+    ratio: number;
+    state: AiCapState;
+    reset_at: string;
+  };
+  /** Xarajat jurnaliga yozilmay qolgan chaqiruvlar soni. */
+  usage_persist_failures: number;
+};
