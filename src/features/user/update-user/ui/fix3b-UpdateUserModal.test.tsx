@@ -534,3 +534,50 @@ describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer �
 });
 
 const aiOrHomeGrid = () => document.querySelector('input[name="tariff_home"]')?.closest("[data-min-col]") ?? null;
+
+describe("UpdateUserModal — CS-C: market «Uyga / Markazga standart narx» (maket `superadmin-users-edit-dialog`)", () => {
+  beforeEach(() => {
+    mocks.updateUser.mockReset().mockResolvedValue({ statusCode: 200 });
+  });
+
+  const market = (overrides: Partial<User> = {}) =>
+    makeUser({ id: "40", name: "Baraka Shop", role: "market", tariff_home: 35000, tariff_center: 25000, ...overrides });
+
+  it.each(["superadmin", "admin"])("%s: market maydonlari yangi yorliqlar bilan, majburiy (*)", (role) => {
+    renderModal(market(), { role, id: "1" });
+
+    const section = screen.getByText("Market ma'lumotlari").closest("section") as HTMLElement;
+    const home = within(section).getByRole("textbox", { name: /^Uyga standart narx/ });
+    const center = within(section).getByRole("textbox", { name: /^Markazga standart narx/ });
+    expect(home).toHaveValue("35 000");
+    expect(center).toHaveValue("25 000");
+    expect(home).toHaveAttribute("aria-required", "true");
+    expect(center).toHaveAttribute("aria-required", "true");
+    expect(screen.queryByText("Uyga tarif")).not.toBeInTheDocument();
+    expect(screen.queryByText("Markazga tarif")).not.toBeInTheDocument();
+    // «Vazn va hajm bo'yicha narx» — backend maydoni yo'q (DAqXPeSy), chizilmaydi.
+    expect(screen.queryByText("Vazn va hajm bo'yicha narx")).not.toBeInTheDocument();
+  });
+
+  it("bo'sh standart narx — maydon ostida aniq xato, so'rov yuborilmaydi", async () => {
+    const user = userEvent.setup();
+    renderModal(market(), { role: "superadmin", id: "1" });
+
+    await user.clear(screen.getByRole("textbox", { name: /^Uyga standart narx/ }));
+    await user.clear(screen.getByRole("textbox", { name: /^Markazga standart narx/ }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    expect(await screen.findByText("Uyga standart narxni kiriting")).toBeInTheDocument();
+    expect(screen.getByText("Markazga standart narxni kiriting")).toBeInTheDocument();
+    expect(screen.queryByText("Uy tarifi yo'q")).not.toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("kuryer — «Uyga tarif» / «Markazga tarif» o'zgarmaydi", () => {
+    renderModal(makeUser(), { role: "superadmin", id: "1" });
+
+    expect(screen.getByRole("textbox", { name: /^Uyga tarif/ })).toHaveValue("10 000");
+    expect(screen.getByRole("textbox", { name: /^Markazga tarif/ })).toHaveValue("8 000");
+    expect(screen.queryByText(/standart narx/)).not.toBeInTheDocument();
+  });
+});

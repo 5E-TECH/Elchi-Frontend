@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **48** · qisman: **114** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **48** · qisman: **118** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -1217,8 +1217,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/all-users/:id` | superadmin | `superadmin-users-detail` — Foydalanuvchi tafsilotlari | [design/fragments/superadmin--users-detail.html](fragments/superadmin--users-detail.html) | sahifa | v2 |
-| `/all-users/:id` | superadmin | `superadmin-users-edit-dialog` — Foydalanuvchini tahrirlash (modal)<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/superadmin--users-edit-dialog.html](fragments/superadmin--users-edit-dialog.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-detail` — Foydalanuvchi tafsilotlari | [design/fragments/superadmin--users-detail.html](fragments/superadmin--users-detail.html) | sahifa | qisman |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-dialog` — Foydalanuvchini tahrirlash (modal)<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/superadmin--users-edit-dialog.html](fragments/superadmin--users-edit-dialog.html) | oyna | qisman |
 | `/all-users/:id` | superadmin | `superadmin-users-courier-transfer-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-role` — Foydalanuvchini tahrirlash — «Rol» maydoni (taklif)<br>↳ `src/features/user/change-role/ui/RoleSection.tsx` | [design/fragments/superadmin--users-edit-role.html](fragments/superadmin--users-edit-role.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-role-confirm-dialog` — Rolni o'zgartirish — tasdiq (taklif)<br>↳ `src/features/user/change-role/ui/roleChangeConfirm.tsx` | [design/fragments/superadmin--users-role-confirm-dialog.html](fragments/superadmin--users-role-confirm-dialog.html) | oyna | v2 |
@@ -1232,8 +1232,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/:id` | superadmin | `superadmin-users-detail-telegram` — Foydalanuvchi tafsilotlari — Telegram guruhi<br>↳ `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | [design/fragments/superadmin--users-detail-telegram.html](fragments/superadmin--users-detail-telegram.html) | sahifa | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR)<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/superadmin--users-detail-telegram-group-dialog.html](fragments/superadmin--users-detail-telegram-group-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/superadmin--users-detail-telegram-group-expired-dialog.html](fragments/superadmin--users-detail-telegram-group-expired-dialog.html) | oyna | v2 |
-| `/all-users/:id` | admin | `admin-users-detail` — Foydalanuvchi tafsiloti | [design/fragments/admin--users-detail.html](fragments/admin--users-detail.html) | sahifa | v2 |
-| `/all-users/:id` | admin | `admin-users-edit-dialog` — Foydalanuvchini tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/admin--users-edit-dialog.html](fragments/admin--users-edit-dialog.html) | oyna | v2 |
+| `/all-users/:id` | admin | `admin-users-detail` — Foydalanuvchi tafsiloti | [design/fragments/admin--users-detail.html](fragments/admin--users-detail.html) | sahifa | qisman |
+| `/all-users/:id` | admin | `admin-users-edit-dialog` — Foydalanuvchini tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/admin--users-edit-dialog.html](fragments/admin--users-edit-dialog.html) | oyna | qisman |
 | `/all-users/:id` | admin | `admin-users-transfer-courier-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
 | `/all-users/:id` | admin | `admin-users-detail-telegram` — Foydalanuvchi tafsiloti — Telegram guruhi<br>↳ `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | [design/fragments/admin--users-detail-telegram.html](fragments/admin--users-detail-telegram.html) | sahifa | v2 |
 | `/all-users/:id` | admin | `admin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR)<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/admin--users-detail-telegram-group-dialog.html](fragments/admin--users-detail-telegram-group-dialog.html) | oyna | v2 |
@@ -2010,11 +2010,11 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | qisman — TG-B: «Telegram boti» ustuni (telegram_linked) va telefon kartasidagi «Bot ulangan / ulanmagan» — kodda. «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmagan — GET /users da telegram_linked parametri yo'q (yA31z7Rr, TG-D). «Filial» ustuni — FY-4. |
 | `superadmin-users-delete-dialog` | Foydalanuvchini o'chirish (tasdiq) | oyna | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | v2 |
 | `superadmin-users-create` | Foydalanuvchi yaratish | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
-| `superadmin-users-detail` | Foydalanuvchi tafsilotlari | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
+| `superadmin-users-detail` | Foydalanuvchi tafsilotlari | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | qisman — Kodda bor (CS-C): market «Tarif» kartasida «Asosiy tarif», «Uyga standart narx», «Markazga standart narx» (kuryer va menejerda «Uyga / Markazga tarif» qoladi). Yo'q: «Vazn va hajm bo'yicha narx» kaliti va «Masalan: standart … + vazn uchun …» izohi (Taklif · backend kerak) — market maydoni va narx dvigateli DAqXPeSy (ega S1) kelgach CS-E. |
 | `superadmin-users-detail-telegram` | Foydalanuvchi tafsilotlari — Telegram guruhi | sahifa | `/all-users/:id` | `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | v2 |
 | `superadmin-users-detail-telegram-group-dialog` | Telegram guruhini ulash (havola, QR) | oyna | `/all-users/:id` | `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | v2 |
 | `superadmin-users-detail-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/all-users/:id` | `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | v2 |
-| `superadmin-users-edit-dialog` | Foydalanuvchini tahrirlash (modal) | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
+| `superadmin-users-edit-dialog` | Foydalanuvchini tahrirlash (modal) | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — Kodda bor (CS-C): «Market ma'lumotlari»da «Asosiy tarif *», «Uyga standart narx *», «Markazga standart narx *» (bo'sh bo'lsa «Uyga/Markazga standart narxni kiriting»); kuryer va menejer maydonlari «Uyga / Markazga tarif». Yo'q: «Vazn va hajm bo'yicha narx» kaliti — backend market maydoni yo'q (DAqXPeSy, ega S1), CS-E. |
 | `superadmin-users-courier-transfer-dialog` | Kuryerni boshqa filialga o'tkazish | oyna | `/all-users/:id` | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | v2 |
 | `superadmin-regions-map` | Hududlar — xarita va statistika | sahifa | `/regions` | `src/pages/region/index.tsx` | v2 |
 | `superadmin-regions-region-modal` | Viloyat ma'lumotlari (modal) | oyna | `/regions` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
@@ -2228,11 +2228,11 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | qisman — TG-B: «Telegram boti» ustuni (telegram_linked) va telefon kartasidagi «Bot ulangan / ulanmagan» — kodda. «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmagan — GET /users da telegram_linked parametri yo'q (yA31z7Rr, TG-D). «Filial» ustuni — FY-4. |
 | `admin-users-delete-dialog` | Foydalanuvchini o'chirish | oyna | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | v2 |
 | `admin-users-create` | Yangi foydalanuvchi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
-| `admin-users-detail` | Foydalanuvchi tafsiloti | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
+| `admin-users-detail` | Foydalanuvchi tafsiloti | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | qisman — Kodda bor (CS-C): market «Tarif» kartasida «Asosiy tarif», «Uyga standart narx», «Markazga standart narx» (kuryer va menejerda «Uyga / Markazga tarif» qoladi). Yo'q: «Vazn va hajm bo'yicha narx» kaliti va «Masalan: standart … + vazn uchun …» izohi (Taklif · backend kerak) — market maydoni va narx dvigateli DAqXPeSy (ega S1) kelgach CS-E. |
 | `admin-users-detail-telegram` | Foydalanuvchi tafsiloti — Telegram guruhi | sahifa | `/all-users/:id` | `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | v2 |
 | `admin-users-detail-telegram-group-dialog` | Telegram guruhini ulash (havola, QR) | oyna | `/all-users/:id` | `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | v2 |
 | `admin-users-detail-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/all-users/:id` | `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | v2 |
-| `admin-users-edit-dialog` | Foydalanuvchini tahrirlash | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
+| `admin-users-edit-dialog` | Foydalanuvchini tahrirlash | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — Kodda bor (CS-C): «Market ma'lumotlari»da «Asosiy tarif *», «Uyga standart narx *», «Markazga standart narx *» (bo'sh bo'lsa «Uyga/Markazga standart narxni kiriting»); kuryer va menejer maydonlari «Uyga / Markazga tarif». Yo'q: «Vazn va hajm bo'yicha narx» kaliti — backend market maydoni yo'q (DAqXPeSy, ega S1), CS-E. |
 | `admin-users-transfer-courier-dialog` | Kuryerni boshqa filialga o'tkazish | oyna | `/all-users/:id` | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | v2 |
 | `admin-regions-map` | Hududlar xaritasi | sahifa | `/regions` | `src/pages/region/index.tsx` | v2 |
 | `admin-regions-region-detail-dialog` | Viloyat ma'lumotlari oynasi | oyna | `/regions` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |

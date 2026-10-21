@@ -347,11 +347,11 @@ export const UpdateUserModal = memo(({
     // Market tariflari majburiy (maket: «*»): bo'sh qoldirilsa avval ham yuborilmasdi — endi sababi aytiladi.
     if (isMarket) {
       if (!values.tariff_home.trim()) {
-        setError("tariff_home", { message: t("homeTariffRequired") });
+        setError("tariff_home", { message: t("v2.edit.marketHomePriceRequired") });
         valid = false;
       }
       if (!values.tariff_center.trim()) {
-        setError("tariff_center", { message: t("centerTariffRequired") });
+        setError("tariff_center", { message: t("v2.edit.marketCenterPriceRequired") });
         valid = false;
       }
     }
@@ -824,8 +824,9 @@ export const UpdateUserModal = memo(({
                   </Field>
                 )}
               />
-              {renderMoneyField("tariff_home", t("v2.edit.homeTariff"), true)}
-              {renderMoneyField("tariff_center", t("v2.edit.centerTariff"), true)}
+              {/* CS-C: market yorlig'i — «Uyga / Markazga standart narx» (maket); kuryer/menejer «… tarif» qoladi. */}
+              {renderMoneyField("tariff_home", t("v2.edit.marketHomePrice"), true)}
+              {renderMoneyField("tariff_center", t("v2.edit.marketCenterPrice"), true)}
               {canEditAiPrice ? (
                 <Controller
                   control={control}

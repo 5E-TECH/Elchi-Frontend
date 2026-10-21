@@ -376,8 +376,15 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
               }
             />
           ) : null}
-          <InfoRow label={t("v2.detail.homeTariff")} value={money(user.tariff_home)} />
-          <InfoRow label={t("v2.detail.centerTariff")} value={money(user.tariff_center)} />
+          {/* CS-C: marketda «Uyga / Markazga standart narx» (maket); kuryer va menejer yorlig'i o'zgarmaydi. */}
+          <InfoRow
+            label={t(isMarket ? "v2.detail.marketHomePrice" : "v2.detail.homeTariff")}
+            value={money(user.tariff_home)}
+          />
+          <InfoRow
+            label={t(isMarket ? "v2.detail.marketCenterPrice" : "v2.detail.centerTariff")}
+            value={money(user.tariff_center)}
+          />
           {isMarket && hasAiPrice && canManagePrivilegedToggles ? (
             <InfoRow label={t("v2.edit.aiPrice")} value={money(aiPrice)} />
           ) : null}
