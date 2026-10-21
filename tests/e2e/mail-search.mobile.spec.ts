@@ -25,8 +25,9 @@ test.describe("Pochta ichida qidiruv — 390px", () => {
     await expect(page.getByText("Takroriy raqam")).toHaveCount(4);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 
+    // Chiplar raqam tartibida (maket): birinchisi «+998 90 233 51 79».
     await chips.first().click();
-    await expect(page).toHaveURL(/\?q=%2B998\+93\+718\+04\+62$/);
+    await expect(page).toHaveURL(/\?q=%2B998\+90\+233\+51\+79$/);
     await expect(page.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(2);
 
     await search.fill("Dilshod");

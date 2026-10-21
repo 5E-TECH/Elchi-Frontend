@@ -5,6 +5,7 @@ import {
   filterMailOrders,
   findDuplicatePhones,
   isPhoneQuery,
+  looksLikeTypedSearch,
   normalizeSearchText,
   parseMailSearch,
   valueBeforeScan,
@@ -78,11 +79,12 @@ describe("mailSearch — qidiruv (MD-1)", () => {
 });
 
 describe("mailSearch — takroriy telefonlar (ega S1, S2)", () => {
-  it("bir xil raqamlar normallashib guruhlanadi (pochta tartibida), yolg'iz raqam guruh emas", () => {
+  it("bir xil raqamlar normallashib guruhlanadi (raqam o'sishi tartibida — maketdagidek), yolg'iz raqam guruh emas", () => {
     const groups = findDuplicatePhones(ORDERS);
+    // Pochtada «+998 93 …» birinchi uchraydi, lekin chiplar raqam tartibida (maket `*-mails-detail-duplicates`).
     expect(groups).toEqual([
-      { key: "937180462", phone: "+998 93 718 04 62", orderIds: ["10209", "10188"] },
       { key: "902335179", phone: "+998 90 233 51 79", orderIds: ["10207", "10192"] },
+      { key: "937180462", phone: "+998 93 718 04 62", orderIds: ["10209", "10188"] },
     ]);
     const siblings = duplicateSiblings(groups);
     expect(siblings.get("10207")).toEqual(["10192"]);
@@ -95,10 +97,39 @@ describe("mailSearch — takroriy telefonlar (ega S1, S2)", () => {
   });
 
   it("faol chip: so'rov shu raqamning o'zi", () => {
-    const [group] = findDuplicatePhones(ORDERS);
+    const [, group] = findDuplicatePhones(ORDERS);
     expect(isPhoneQuery("+998 93 718 04 62", group)).toBe(true);
     expect(isPhoneQuery("937180462", group)).toBe(true);
     expect(isPhoneQuery("93718", group)).toBe(false);
+  });
+
+  it("O'zbekiston raqami bo'lmagan takroriy raqam: chip qidiruvi faol deb taniladi (qayta bosish tozalaydi)", () => {
+    const foreign = [
+      order("1", "A", "+7 912 345 67 89", "X", "Y"),
+      order("2", "B", "79123456789", "X", "Y"),
+    ];
+    const [group] = findDuplicatePhones(foreign);
+    expect(group.key).toBe("79123456789");
+    expect(isPhoneQuery(group.phone, group)).toBe(true);
+    expect(isPhoneQuery("+7 912 345 67 89", group)).toBe(true);
+    expect(isPhoneQuery("912345", group)).toBe(false);
+    expect(isPhoneQuery("Baraka 79123456789", group)).toBe(false);
+    expect(filterMailOrders(foreign, group.phone).visible.map((item) => item.id)).toEqual(["1", "2"]);
+  });
+});
+
+describe("looksLikeTypedSearch — qidiruvga tez yozib Enter (USB skanerga o'xshaydi)", () => {
+  it("shu pochtada ism / tuman / market bo'yicha topiladigan matn — qidiruv", () => {
+    expect(looksLikeTypedSearch(ORDERS, "Baraka")).toBe(true);
+    expect(looksLikeTypedSearch(ORDERS, "Laylo Hasanova")).toBe(true);
+    expect(looksLikeTypedSearch(ORDERS, "kitob tumani")).toBe(true);
+  });
+
+  it("raqam, havola, topilmaydigan token — skan («Bu pochtada yo'q»)", () => {
+    expect(looksLikeTypedSearch(ORDERS, "102071")).toBe(false);
+    expect(looksLikeTypedSearch(ORDERS, "https://elchi.uz/scan/abc123")).toBe(false);
+    expect(looksLikeTypedSearch(ORDERS, "QX7K2PZ9")).toBe(false);
+    expect(looksLikeTypedSearch(ORDERS, "   ")).toBe(false);
   });
 });
 

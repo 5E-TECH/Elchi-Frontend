@@ -1,4 +1,4 @@
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   useRefused: vi.fn(),
   scanner: null as null | {
     onMatch: (order: { id: string }, raw: string, source: "keyboard" | "camera") => void;
+    onMissing: (raw: string, source: "keyboard" | "camera") => void;
     orders: Array<{ id: string }>;
   },
 }));
@@ -242,25 +243,26 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
       "Shu pochtadagi 4 ta buyurtma bir xil raqamlarga ketmoqda. Tekshirib oling — bu jo'natishni to'xtatmaydi.",
     );
     const chips = within(within(banner).getByRole("group", { name: /Takroriy raqamlar/ })).getAllByRole("button");
+    // Chiplar raqam tartibida (maketdagidek), pochtada birinchi uchrashi emas.
     expect(chips.map((chip) => chip.getAttribute("aria-label"))).toEqual([
-      "+998 93 718 04 62 raqamli 2 ta buyurtmani ko'rsatish: №10209, №10188",
       "+998 90 233 51 79 raqamli 2 ta buyurtmani ko'rsatish: №10207, №10192",
+      "+998 93 718 04 62 raqamli 2 ta buyurtmani ko'rsatish: №10209, №10188",
     ]);
     // Takroriy raqamli qatorlarda belgi (4 ta), jo'natish to'silmaydi.
     expect(within(screen.getByRole("table")).getAllByText("Takroriy raqam")).toHaveLength(4);
 
-    await user.click(chips[1]);
+    await user.click(chips[0]);
     expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=%2B998+90+233+51+79`);
     expect(searchbox()).toHaveValue("+998 90 233 51 79");
     expect(rowIds()).toEqual(["10207", "10192"]);
-    expect(chips[1]).toHaveAttribute("aria-pressed", "true");
+    expect(chips[0]).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/bo'yicha/).closest("p")).toHaveTextContent(
       "«+998 90 233 51 79» bo'yicha 2 ta buyurtma topildi",
     );
     // Banner qidiruvdan qat'i nazar turadi.
     expect(screen.getByTestId("mail-duplicate-phones")).toBeInTheDocument();
 
-    await user.click(chips[1]);
+    await user.click(chips[0]);
     expect(location()).toHaveTextContent(new RegExp(`^/mails/${POST_ID}$`));
     expect(rowIds()).toHaveLength(5);
   });
@@ -278,7 +280,8 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
     await user.click(screen.getByRole("checkbox", { name: "№10207 ni tanlash" }));
     await user.clear(searchbox());
     await user.type(searchbox(), "Zarina");
-    expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=Zarina`);
+    // URL kechikib (bir marta) yoziladi.
+    await waitFor(() => expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=Zarina`));
     // state har yozishda saqlanadi.
     expect(location().dataset.state).toContain('"fromTab":"today"');
     expect(rowIds()).toEqual(["10188"]);
@@ -288,7 +291,7 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
     // Jo'natish butun tanlovga — yashirin buyurtma ham hisobda.
     expect(screen.getByRole("button", { name: "Pochtani jo'natish — 1 ta" })).toBeEnabled();
 
-    await user.click(within(region).getByRole("button", { name: "Ko'rinayotgan buyurtmalarni tanlash (1)" }));
+    await user.click(within(region).getByRole("button", { name: "Ko'rinayotganlarni tanlash (1)" }));
     expect(screen.getByRole("button", { name: "Pochtani jo'natish — 2 ta" })).toBeEnabled();
   });
 
@@ -297,11 +300,14 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
     regular(DISPATCH, { status: "new" });
     renderPage(stateFor("registrator", "HQ"), `/mails/${POST_ID}?q=Dilshod`);
     expect(screen.queryByRole("table")).toBeNull();
-    expect(screen.getByText("«Dilshod» bo'yicha buyurtma topilmadi")).toBeInTheDocument();
+    expect(screen.getByTestId("mail-search-status")).toHaveTextContent("«Dilshod» bo'yicha buyurtma topilmadi");
+    expect(screen.getAllByText("«Dilshod» bo'yicha buyurtma topilmadi")).toHaveLength(2);
     expect(screen.getByText("0 ta ko'rsatilmoqda · 5 tadan")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "Qidiruvni tozalash" }).at(-1)!);
+    // Tozalash — darhol (kechikishsiz); fokus maydonga qaytadi.
     expect(location()).toHaveTextContent(new RegExp(`^/mails/${POST_ID}$`));
     expect(rowIds()).toHaveLength(5);
+    expect(searchbox()).toHaveFocus();
   });
 
   it("menejer qabul: banner qabul matni (bitta raqam), market nomi bo'yicha qidiruv", async () => {
@@ -361,6 +367,60 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
       expect(searchbox()).toHaveValue("La");
       expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=La`);
       expect(screen.getByRole("button", { name: "Pochtani jo'natish — 1 ta" })).toBeEnabled();
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it("maydon mahalliy qoralamaga bog'langan: act'siz ketma-ket kiritishda harf yo'qolmaydi, kursor o'rnida qoladi", async () => {
+    regular(DISPATCH, { status: "new" });
+    renderPage(stateFor("superadmin"), `/mails/${POST_ID}?q=Laylo`);
+    const input = searchbox() as HTMLInputElement;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    const typeRaw = (value: string, caret = value.length) => {
+      setValue.call(input, value);
+      input.setSelectionRange(caret, caret);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    // O'rtaga harf: «La|ylo» → «Lax|ylo» — kursor 3 da qoladi (URL'ga bog'langan maydonda oxirga sakrardi).
+    typeRaw("Laxylo", 3);
+    expect(input.value).toBe("Laxylo");
+    expect(input.selectionStart).toBe(3);
+
+    // Tez yozish: router o'tishi tugamasdan ikkinchi harf — birinchisi yo'qolmaydi.
+    typeRaw("Laxylo B");
+    typeRaw("Laxylo Ba");
+    expect(input.value).toBe("Laxylo Ba");
+
+    await waitFor(() => expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=Laxylo+Ba`));
+    expect(input.value).toBe("Laxylo Ba");
+  });
+
+  it("URL har harfda emas, yozish to'xtagach bir marta yoziladi", async () => {
+    const user = userEvent.setup();
+    regular(DISPATCH, { status: "new" });
+    renderPage(stateFor("superadmin"));
+    await user.type(searchbox(), "Zar");
+    // Darhol — hali yozilmagan; jadval esa qoralama bo'yicha.
+    expect(location()).toHaveTextContent(new RegExp(`^/mails/${POST_ID}$`));
+    expect(rowIds()).toEqual(["10188"]);
+    await waitFor(() => expect(location()).toHaveTextContent(`/mails/${POST_ID}?q=Zar`));
+  });
+
+  it("qidiruvga tez yozib Enter (skanerga o'xshaydi), matn shu pochtada topilsa — qidiruv: tiklanmaydi", async () => {
+    const user = userEvent.setup();
+    regular(DISPATCH, { status: "new" });
+    renderPage(stateFor("superadmin"));
+    const now = vi.spyOn(Date, "now");
+    try {
+      now.mockReturnValue(5_000);
+      await user.type(searchbox(), "Laylo");
+      act(() => {
+        mocks.scanner!.onMissing("Laylo", "keyboard");
+      });
+      expect(searchbox()).toHaveValue("Laylo");
+      expect(rowIds()).toEqual(["10207", "10192"]);
     } finally {
       now.mockRestore();
     }

@@ -282,15 +282,14 @@
     "search": {
       "label": "Search orders in this mail",
       "placeholder": "№, customer, phone, district, store",
-      "found": "<strong>{{value}}</strong> orders found for «{{query}}»",
-      "foundByMarket": "<strong>{{value}}</strong> orders found for «{{query}}» · by store name",
+      "found": "Orders found for «{{query}}»: <strong>{{value}}</strong>",
+      "foundByMarket": "Orders found for «{{query}}»: <strong>{{value}}</strong> · by store name",
       "emptyTitle": "No orders found for «{{query}}»",
       "emptyText": "Check the order number, name, phone, district or store name. You can type the phone without «+998», digits only.",
       "clear": "Clear search",
       "hiddenSelected": "{{value}} hidden by the search, but still selected",
       "allSelectedHidden": "Selected orders are hidden by the search, but stay selected",
       "selectVisible": "Select visible",
-      "selectVisibleRows": "Select visible orders",
       "footerShown": "Showing {{shown}} of {{total}}",
       "footerTotal": "Mail total:"
     },

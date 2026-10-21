@@ -34,7 +34,7 @@ test.describe("Pochta ichida qidiruv va takroriy telefonlar — desktop", () => 
     await expect(region).toContainText("1 tasi qidiruvda yashirin, lekin tanlangan qoladi");
     await expect(page.getByText("2 ta ko'rsatilmoqda · 9 tadan")).toBeVisible();
 
-    await region.getByRole("button", { name: "Ko'rinayotgan buyurtmalarni tanlash (2)" }).click();
+    await region.getByRole("button", { name: "Ko'rinayotganlarni tanlash (2)" }).click();
     await expect(page.getByRole("button", { name: "Pochtani jo'natish — 3 ta" })).toBeEnabled();
 
     // Qidiruv URL'da — sahifa yangilansa ham saqlanadi.
@@ -45,11 +45,40 @@ test.describe("Pochta ichida qidiruv va takroriy telefonlar — desktop", () => 
     await expect(page.getByText("«Baraka» bo'yicha")).toContainText("market nomi bo'yicha");
 
     await search.fill("Dilshod");
-    await expect(page.getByText("«Dilshod» bo'yicha buyurtma topilmadi")).toBeVisible();
+    // Ko'rinadigan sarlavha + doimiy jonli hudud (ekran o'quvchisi uchun) — bir xil matn.
+    await expect(page.getByText("«Dilshod» bo'yicha buyurtma topilmadi").last()).toBeVisible();
+    await expect(page.getByTestId("mail-search-status")).toHaveText("«Dilshod» bo'yicha buyurtma topilmadi");
     await expect(page.getByText("0 ta ko'rsatilmoqda · 9 tadan")).toBeVisible();
     await page.getByRole("button", { name: "Qidiruvni tozalash" }).last().click();
     await expect(page).toHaveURL(/\/mails\/2483$/);
+    // Tugma yo'qoladi — fokus qidiruv maydoniga qaytadi.
+    await expect(search).toBeFocused();
     await expect(table.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(9);
+    expect(leaked).toEqual([]);
+  });
+
+  test("yozish: o'rtaga harf qo'shilsa kursor joyida qoladi, tez yozishda harf yo'qolmaydi, URL bir marta yoziladi", async ({ page }) => {
+    const { leaked } = await mockMailSearchApi(page);
+    await openMailSearch(page, "?q=Laylo");
+    const search = page.getByRole("searchbox", { name: "Pochtadagi buyurtmalarni qidirish" });
+    await expect(search).toHaveValue("Laylo");
+
+    await search.click();
+    await search.press("Home");
+    await search.press("ArrowRight");
+    await search.press("ArrowRight");
+    await search.pressSequentially("xy");
+    await expect(search).toHaveValue("Laxyylo");
+    expect(await search.evaluate((input: HTMLInputElement) => input.selectionStart)).toBe(4);
+
+    await search.fill("");
+    await expect(page).toHaveURL(/\/mails\/2483$/);
+    await search.pressSequentially("Laylo Hasanova");
+    await expect(search).toHaveValue("Laylo Hasanova");
+    await expect(page).toHaveURL(/\/mails\/2483\?q=Laylo\+Hasanova$/);
+    await expect(
+      page.getByRole("table", { name: "Pochtadagi buyurtmalar" }).getByRole("checkbox", { name: /^№\d+ ni tanlash$/ }),
+    ).toHaveCount(2);
     expect(leaked).toEqual([]);
   });
 

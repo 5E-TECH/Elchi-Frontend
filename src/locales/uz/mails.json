@@ -290,12 +290,11 @@
       "hiddenSelected": "{{value}} tasi qidiruvda yashirin, lekin tanlangan qoladi",
       "allSelectedHidden": "Tanlanganlar qidiruvda yashirin, lekin tanlangan qoladi",
       "selectVisible": "Ko'rinayotganlarni tanlash",
-      "selectVisibleRows": "Ko'rinayotgan buyurtmalarni tanlash",
       "footerShown": "{{shown}} ta ko'rsatilmoqda · {{total}} tadan",
       "footerTotal": "Pochta jami:"
     },
     "duplicates": {
-      "title": "Takroriy telefon raqamlar aniqlandi ({{value}} ta)",
+      "title": "Takroriy telefon raqamlar aniqlandi ({{value}}\u00a0ta)",
       "sendOne": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamga ketmoqda. Tekshirib oling — bu jo'natishni to'xtatmaydi.",
       "sendMany": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamlarga ketmoqda. Tekshirib oling — bu jo'natishni to'xtatmaydi.",
       "receiveOne": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamga kelgan. Tekshirib oling — bu qabul qilishni to'xtatmaydi.",

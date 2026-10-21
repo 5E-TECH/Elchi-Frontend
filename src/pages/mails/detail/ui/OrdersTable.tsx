@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
-import { memo, useCallback, useMemo, useState, type ReactNode, type Ref } from "react";
+import { memo, useCallback, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { EyeOff, ListChecks, Phone, ScanLine, SearchX, Trash2, X } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
@@ -152,8 +152,11 @@ interface OrdersTableProps {
    * `visible`. Sarlavha belgisi va «Ko'rinayotganlarni tanlash» — `onSelectRows` (faqat ko'rinadiganlar).
    */
   search?: OrdersTableSearch;
-  /** Qidiruv maydoni (`search` bilan) — USB skandan keyin `q` ni tiklash uchun fokus tekshiruvi. */
-  searchInputRef?: Ref<HTMLInputElement>;
+  /**
+   * Qidiruv maydoni (`search` bilan) — USB skandan keyin `q` ni tiklash uchun fokus tekshiruvi; «Qidiruvni
+   * tozalash» (bo'sh holat) dan keyin fokus shu maydonga qaytadi.
+   */
+  searchInputRef?: RefObject<HTMLInputElement | null>;
   /** Sarlavha (va qidiruv holati) ostidagi banner — takroriy telefonlar. */
   alert?: ReactNode;
   /** Takroriy raqamli qator: belgi maslahati («Shu raqamga yana: №…») yoki `null` — belgi va chiziq yo'q. */
@@ -161,7 +164,10 @@ interface OrdersTableProps {
 }
 
 export type OrdersTableSearch = {
+  /** Maydondagi matn (mahalliy qoralama). */
   value: string;
+  /** Jadvalga qo'llangan so'rov (holat qatori va bo'sh holat matni; berilmasa — `value`). */
+  query?: string;
   onValueChange: (value: string) => void;
   /** Qidiruv faol (bo'sh bo'lmagan so'rov). */
   active: boolean;
@@ -297,7 +303,7 @@ const OrdersTable = memo(
 
     const duplicateBadge = useCallback(
       (note: string) => (
-        <Badge tone="warning" size="sm" icon={Phone} title={note}>
+        <Badge tone="warning" icon={Phone} title={note}>
           {t("detailPage.duplicates.rowBadge")}
         </Badge>
       ),
@@ -460,7 +466,7 @@ const OrdersTable = memo(
               onToggle: (order) => onToggleOne(order.id),
               // Qidiruvda sarlavha belgisi faqat ko'rinadigan qatorlarga (yashirin tanlov o'zgarmaydi).
               onToggleAll: (checked) =>
-                search ? search.onSelectRows(rows.map((order) => String(order.id)), checked) : onToggleAll(),
+                search ? search.onSelectRows(rows.map((order) => order.id), checked) : onToggleAll(),
               headerLabel: t("detailPage.selectAllRows"),
               rowLabel: (order) => t("detailPage.selectRow", { id: order.id }),
             }
@@ -513,7 +519,7 @@ const OrdersTable = memo(
     const allVisibleSelected = rows.length > 0 && visibleSelectedCount === rows.length;
     const selectVisible = () => {
       if (!search || allVisibleSelected) return;
-      search.onSelectRows(rows.map((order) => String(order.id)), true);
+      search.onSelectRows(rows.map((order) => order.id), true);
     };
 
     const selectionActions = (
@@ -526,7 +532,8 @@ const OrdersTable = memo(
               leftIcon={ListChecks}
               disabled={allVisibleSelected}
               onClick={selectVisible}
-              aria-label={`${t("detailPage.search.selectVisibleRows")} (${count(rows.length)})`}
+              // Nomi ko'rinadigan matndan boshlanadi (WCAG 2.5.3 — ovozli boshqaruv).
+              aria-label={`${t("detailPage.search.selectVisible")} (${count(rows.length)})`}
               className="max-md:px-2"
             >
               {t("detailPage.search.selectVisible")}
@@ -645,8 +652,15 @@ const OrdersTable = memo(
     const hasEmpty = orders.length === 0;
     const searchEmpty = searching && rows.length === 0;
     const hasHeaderSide = headerBadge != null || headerExtra != null || search != null;
-    const query = search?.value.trim() ?? "";
-    const clearSearch = () => search?.onValueChange("");
+    const query = (search?.query ?? search?.value ?? "").trim();
+    // Bo'sh holatdagi tugma yo'qoladi — fokus <body> ga tushmasin, qidiruv maydoniga qaytadi.
+    const clearSearch = () => {
+      search?.onValueChange("");
+      searchInputRef?.current?.focus();
+    };
+    // Bitta doimiy jonli hudud (qidiruv bor ekan): «… N ta topildi» yoki «… topilmadi» — matni almashadi, o'zi
+    // yo'qolmaydi (yangi qo'shilgan hudud ko'pincha o'qilmaydi). Bo'sh holatda matn faqat ekran o'quvchisi uchun.
+    const searchStatusVisible = searching && !searchEmpty && !hasEmpty;
 
     const searchField = search ? (
       <TextInput
@@ -692,14 +706,25 @@ const OrdersTable = memo(
           {phoneHeaderAction ? <div className="w-full md:hidden">{phoneHeaderAction}</div> : null}
         </div>
 
-        {searching && !searchEmpty && !hasEmpty ? (
-          <p role="status" aria-live="polite" className="-mt-1 px-5 pb-3 text-[13px] text-text-muted max-md:px-4">
-            <Trans
-              t={t}
-              i18nKey={search?.byMarket ? "detailPage.search.foundByMarket" : "detailPage.search.found"}
-              values={{ query, value: count(rows.length) }}
-              components={{ strong: <span className="font-semibold text-text" /> }}
-            />
+        {search ? (
+          <p
+            role="status"
+            aria-live="polite"
+            data-testid="mail-search-status"
+            className={
+              searchStatusVisible ? "-mt-1 px-5 pb-3 text-[13px] text-text-muted max-md:px-4" : "sr-only"
+            }
+          >
+            {searchStatusVisible ? (
+              <Trans
+                t={t}
+                i18nKey={search.byMarket ? "detailPage.search.foundByMarket" : "detailPage.search.found"}
+                values={{ query, value: count(rows.length) }}
+                components={{ strong: <span className="font-semibold text-text" /> }}
+              />
+            ) : searchEmpty && !hasEmpty ? (
+              t("detailPage.search.emptyTitle", { query })
+            ) : null}
           </p>
         ) : null}
 

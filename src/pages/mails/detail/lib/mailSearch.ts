@@ -157,7 +157,10 @@ export type DuplicatePhoneGroup = {
   orderIds: string[];
 };
 
-/** Shu pochtada bir xil raqamga ketayotgan buyurtmalar guruhlari (≥ 2 ta; birinchi uchrashi tartibida). */
+/**
+ * Shu pochtada bir xil raqamga ketayotgan buyurtmalar guruhlari (≥ 2 ta). Chiplar raqam o'sishi tartibida
+ * (maket `*-mails-detail-duplicates`: «+998 90 …» «+998 93 …» dan oldin) — jadval saralanishidan qat'i nazar barqaror.
+ */
 export const findDuplicatePhones = (orders: PostOrder[]): DuplicatePhoneGroup[] => {
   const groups = new Map<string, DuplicatePhoneGroup>();
   for (const order of orders) {
@@ -168,7 +171,9 @@ export const findDuplicatePhones = (orders: PostOrder[]): DuplicatePhoneGroup[] 
     if (group) group.orderIds.push(String(order.id));
     else groups.set(key, { key, phone: formatPhone(raw), orderIds: [String(order.id)] });
   }
-  return [...groups.values()].filter((group) => group.orderIds.length > 1);
+  return [...groups.values()]
+    .filter((group) => group.orderIds.length > 1)
+    .sort((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
 };
 
 /** Buyurtma → shu raqamga ketayotgan BOSHQA buyurtmalar (qator belgisi «Shu raqamga yana: №…»). */
@@ -180,10 +185,29 @@ export const duplicateSiblings = (groups: DuplicatePhoneGroup[]) => {
   return siblings;
 };
 
-/** Faol chip: so'rov shu guruh raqamining o'zi (`+998` bilan yoki siz). */
+/**
+ * Faol chip: so'rov shu guruh raqamining o'zi (`+998` bilan yoki siz). O'zbekiston raqami bo'lmagan guruh
+ * (kalit — faqat raqamlar) so'rovning raqamlari bilan solishtiriladi.
+ */
 export const isPhoneQuery = (raw: string, group: DuplicatePhoneGroup) => {
-  const local = parseUzbekPhone(raw.trim());
-  return local !== null && local === group.key;
+  const trimmed = raw.trim();
+  const local = parseUzbekPhone(trimmed);
+  if (local !== null) return local === group.key;
+  if (!DIGIT_LIKE.test(trimmed)) return false;
+  const digits = trimmed.replace(/\D/g, "");
+  return digits.length >= 7 && digits === group.key;
+};
+
+/**
+ * Qidiruv maydoniga tez yozilib Enter bosilgan matn (USB skaner buferi uni «kod» deb oladi) — aslida qidiruvmi:
+ * raqam emas, havola emas va shu pochtadagi buyurtmani ism / tuman / market bo'yicha topadi. Begona buyurtma
+ * kodi (raqam, token, `/scan/…` havola) bu yerda deyarli hech qachon mos kelmaydi.
+ */
+export const looksLikeTypedSearch = (orders: readonly PostOrder[], raw: string) => {
+  if (raw.includes("/")) return false;
+  const query = parseMailSearch(raw);
+  if (!query.text || query.digits !== null) return false;
+  return orders.some((order) => matchMailOrder(order, query) !== null);
 };
 
 /**

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-send-dialog, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-send-branch-dialog, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-send-dialog, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old, courier-mails-detail-print-menu
-import { Fragment, memo, useEffect, useMemo, useCallback, useRef, useState } from "react";
+import { Fragment, memo, useDeferredValue, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
@@ -62,6 +62,7 @@ import {
   filterMailOrders,
   findDuplicatePhones,
   isPhoneQuery,
+  looksLikeTypedSearch,
   valueBeforeScan,
   type DuplicatePhoneGroup,
   type SearchEdit,
@@ -105,9 +106,14 @@ import { useMailDetailState } from "./model/useMailDetailState";
  * QIDIRUV VA TAKRORIY TELEFONLAR (MD-1, ega S1–S4; maketlar `*-mails-detail-search`, `-search-empty`,
  * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — faqat xodim jo'natish rejimida (superadmin, admin,
  * registrator) va menejer qabul rejimida: qidiruv matni URL'da (`?q=`, `replace`, `location.state` saqlanadi),
- * tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. USB skaner qidiruv maydoni fokusda
- * bo'lganda tokenni maydonga ham yozadi — skandan keyin oldingi `q` tiklanadi (`valueBeforeScan`).
+ * tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. Maydon mahalliy qoralamaga bog'langan
+ * (URL kechikib yoziladi). USB skaner qidiruv maydoni fokusda bo'lganda tokenni maydonga ham yozadi — skandan keyin
+ * oldingi `q` tiklanadi (`valueBeforeScan`); shu pochtada topiladigan matn esa skan emas, qidiruv
+ * (`looksLikeTypedSearch`).
  */
+
+/** Qidiruv matni URL'ga (`?q=`) shuncha kutib yoziladi (har harfda `history.replaceState` emas). */
+const MAIL_QUERY_DEBOUNCE_MS = 250;
 
 /** «← …» havolasi — qaytiladigan bo'lim nomi (taxta `tizim-states-navigation`). */
 const MAIL_TAB_LABEL_KEYS: Record<MailTab, string> = {
@@ -435,9 +441,27 @@ const MailDetailPage = () => {
           ? "receive"
           : null
         : "send";
+  // `q` — URL'da (`replace`; rejim `location.state` da saqlanadi). Maydon MAHALLIY qoralamaga bog'langan: router
+  // har bir joylashuv o'zgarishini `startTransition` ichida qo'llaydi — URL'ga bevosita bog'langan maydonda kursor
+  // oxirga sakraydi, tez yozilgan harflar yo'qoladi (IME ham buziladi). URL kechikish bilan yoziladi; tozalash,
+  // chip va skandan keyingi tiklash — darhol.
+  const [queryDraft, setQueryDraft] = useState(mailQuery);
+  /** Oxirgi o'zimiz URL'ga yozgan (yoki URL'dan olgan) `q`. */
+  const [writtenQuery, setWrittenQuery] = useState(mailQuery);
+  const [prevMailQuery, setPrevMailQuery] = useState(mailQuery);
+  if (prevMailQuery !== mailQuery) {
+    // URL tashqaridan o'zgardi (back/forward, boshqa pochta) — maydon ham. O'zimiz yozgan qiymat — maydon tegilmaydi.
+    setPrevMailQuery(mailQuery);
+    if (mailQuery !== writtenQuery) {
+      setWrittenQuery(mailQuery);
+      setQueryDraft(mailQuery);
+    }
+  }
+  /** Jadval qoralamadan bir qadam orqada (sekin telefonda yozish tormozlanmasin). */
+  const appliedQuery = useDeferredValue(queryDraft);
   const searchResult = useMemo(
-    () => filterMailOrders(orders, searchMode ? mailQuery : ""),
-    [mailQuery, orders, searchMode],
+    () => filterMailOrders(orders, searchMode ? appliedQuery : ""),
+    [appliedQuery, orders, searchMode],
   );
   const duplicateGroups = useMemo(() => (searchMode ? findDuplicatePhones(orders) : []), [orders, searchMode]);
   const duplicateMap = useMemo(() => duplicateSiblings(duplicateGroups), [duplicateGroups]);
@@ -451,30 +475,54 @@ const MailDetailPage = () => {
     [duplicateMap, t],
   );
 
-  // `q` — URL'da (`replace`; rejim `location.state` da saqlanadi).
-  const setMailQuery = useCallback(
+  const writeMailQuery = useCallback(
     (value: string) => {
+      setWrittenQuery(value);
       const next = value ? `?${new URLSearchParams({ q: value }).toString()}` : "";
       navigate({ pathname: location.pathname, search: next }, { replace: true, state: location.state });
     },
     [location.pathname, location.state, navigate],
   );
+  // Kechikkan yozuv ENG SO'NGGI `writeMailQuery` ni chaqiradi (yo'l / `location.state` kutish orasida o'zgarishi mumkin).
+  const writeMailQueryRef = useRef(writeMailQuery);
+  useEffect(() => {
+    writeMailQueryRef.current = writeMailQuery;
+  });
+  useEffect(() => {
+    if (queryDraft === writtenQuery) return;
+    const timer = window.setTimeout(() => writeMailQueryRef.current(queryDraft), MAIL_QUERY_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [queryDraft, writtenQuery]);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchEditsRef = useRef<SearchEdit[]>([]);
-  const mailQueryRef = useRef(mailQuery);
+  const queryDraftRef = useRef(queryDraft);
   useEffect(() => {
-    mailQueryRef.current = mailQuery;
-  }, [mailQuery]);
+    queryDraftRef.current = queryDraft;
+  }, [queryDraft]);
+  /** Darhol qo'llash (chip, tozalash, skandan keyin tiklash): qoralama va URL birga. */
+  const applyMailQuery = useCallback(
+    (value: string) => {
+      queryDraftRef.current = value;
+      setQueryDraft(value);
+      writeMailQuery(value);
+    },
+    [writeMailQuery],
+  );
   const handleQueryChange = useCallback(
     (value: string) => {
       searchEditsRef.current = [
         ...searchEditsRef.current.slice(-63),
-        { before: mailQueryRef.current, after: value, at: Date.now() },
+        { before: queryDraftRef.current, after: value, at: Date.now() },
       ];
-      mailQueryRef.current = value;
-      setMailQuery(value);
+      if (!value) {
+        applyMailQuery("");
+        return;
+      }
+      queryDraftRef.current = value;
+      setQueryDraft(value);
     },
-    [setMailQuery],
+    [applyMailQuery],
   );
   /** USB skan qidiruv maydoniga ham yozilgan bo'lsa — maydon skandan oldingi qiymatiga qaytadi. */
   const restoreQueryAfterScan = useCallback(
@@ -483,16 +531,28 @@ const MailDetailPage = () => {
       if (document.activeElement !== searchInputRef.current) return;
       const before = valueBeforeScan(searchEditsRef.current, Date.now());
       searchEditsRef.current = [];
-      if (before === null || before === mailQueryRef.current) return;
-      mailQueryRef.current = before;
-      setMailQuery(before);
+      if (before === null || before === queryDraftRef.current) return;
+      applyMailQuery(before);
     },
-    [setMailQuery],
+    [applyMailQuery],
   );
-  const activeDuplicateKey = duplicateGroups.find((group) => isPhoneQuery(mailQuery, group))?.key ?? null;
+  /**
+   * Qidiruv maydoniga TEZ yozib Enter bosilgani (USB skanerga o'xshaydi): «kod» shu pochtadagi buyurtmalarni
+   * ism / tuman / market bo'yicha topsa — bu qidiruv, skan emas («Bu pochtada yo'q» va tiklash yo'q).
+   */
+  const isTypedSearchInField = useCallback(
+    (rawValue: string, source: ScanSource) =>
+      source === "keyboard" &&
+      searchMode !== null &&
+      searchInputRef.current !== null &&
+      document.activeElement === searchInputRef.current &&
+      looksLikeTypedSearch(orders, rawValue),
+    [orders, searchMode],
+  );
+  const activeDuplicateKey = duplicateGroups.find((group) => isPhoneQuery(queryDraft, group))?.key ?? null;
   const toggleDuplicatePhone = useCallback(
-    (group: DuplicatePhoneGroup, active: boolean) => setMailQuery(active ? "" : group.phone),
-    [setMailQuery],
+    (group: DuplicatePhoneGroup, active: boolean) => applyMailQuery(active ? "" : group.phone),
+    [applyMailQuery],
   );
   // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va pochtada yo'q kodlar.
   const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
@@ -677,6 +737,10 @@ const MailDetailPage = () => {
       restoreQueryAfterScan(source);
     },
     onMissing: (rawValue, source) => {
+      if (isTypedSearchInField(rawValue, source)) {
+        searchEditsRef.current = [];
+        return;
+      }
       restoreQueryAfterScan(source);
       void handleMissingScannedOrder(rawValue);
     },
@@ -1185,7 +1249,8 @@ const MailDetailPage = () => {
         search={
           searchMode && orders.length > 0
             ? {
-                value: mailQuery,
+                value: queryDraft,
+                query: appliedQuery,
                 onValueChange: handleQueryChange,
                 active: searchResult.active,
                 visible: searchResult.visible,

@@ -290,7 +290,6 @@
       "hiddenSelected": "Скрыто поиском: {{value}}, но выбор сохраняется",
       "allSelectedHidden": "Выбранные скрыты поиском, но выбор сохраняется",
       "selectVisible": "Выбрать видимые",
-      "selectVisibleRows": "Выбрать видимые заказы",
       "footerShown": "Показано {{shown}} из {{total}}",
       "footerTotal": "Итого по почте:"
     },
