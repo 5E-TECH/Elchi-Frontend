@@ -657,3 +657,36 @@ describe("DashboardPage (v2) — qisman nosozlik: bo'lak 0 emas, xato holati (Vk
     expect(screen.queryByTestId("courier-ranking")).not.toBeInTheDocument();
   });
 });
+
+// KI-2: kartaning o'z xulqi `features/pwa-install` testlarida; bu yerda — faqat kuryer tarmog'ida joylashuvi.
+vi.mock("../../features/pwa-install", () => ({
+  InstallAppCard: ({ placement }: { placement: string }) => <div data-testid={`pwa-card-${placement}`} />,
+}));
+
+describe("DashboardPage (v2) — «Ilovani o'rnatish» (KI-2, courier-dashboard-pwa-install)", () => {
+  beforeEach(() => {
+    settingsState.data = undefined;
+    getDashboardMock.mockReturnValue(query({ data: { orders: {} } }));
+    getKpiMock.mockReturnValue(
+      query({ data: { averageOrderValue: 0, averageFulfillmentHours: 0, onTimeRate: 0, cancellationRate: 0, courierEfficiency: 0, marketRating: [] } }),
+    );
+    getRevenueMock.mockReturnValue(query({ data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: [], values: [] } } }));
+    useRegionStatsMock.mockReturnValue(query({ regions: [], summary: null, scopedDetail: null }));
+    myCashboxMock.mockReturnValue(query(undefined));
+  });
+
+  it("kuryer — sarlavhadan keyin bir martalik karta (placement=dashboard)", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+    const card = screen.getByTestId("pwa-card-dashboard");
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it.each([
+    ["admin", adminState],
+    ["registrator", registratorState],
+  ])("%s — kartasiz (ega javobi KI-S3: faqat kuryer)", (_name, state) => {
+    renderWithProviders(<DashboardPage />, { preloadedState: state });
+    expect(screen.queryByTestId("pwa-card-dashboard")).not.toBeInTheDocument();
+  });
+});

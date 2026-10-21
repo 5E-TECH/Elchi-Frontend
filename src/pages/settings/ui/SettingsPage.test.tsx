@@ -62,7 +62,7 @@ describe("SettingsPage — tuzilma (maketlar common-settings-*)", () => {
       "Bosh sahifaKo'rsatiladigan bloklar",
       "InterfeysYon panel holati",
       "SkanerKamera, ovoz va tebranish",
-      "BildirishnomalarShu qurilmaga xabarlar",
+      "BildirishnomalarShu qurilmaga xabarlar · ilova",
     ]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Saqlandi");
@@ -382,5 +382,22 @@ describe("SettingsPage — Bildirishnomalar tabi", () => {
     expect(mocks.mutate).toHaveBeenCalledWith({
       notifications: { quiet_hours: { from: "21:15" } },
     });
+  });
+});
+
+describe("SettingsPage — Bildirishnomalar → «Ilova» (KI-2, common-settings-notifications-pwa)", () => {
+  it("qurilma blokidan keyin «Ilova» kartasi: sarlavha, izoh va o'rnatish holati (doim ko'rinadi)", async () => {
+    await openTab(/^Bildirishnomalar/);
+    const card = screen.getByTestId("settings-app-install");
+    expect(within(card).getByRole("heading", { level: 2, name: "Ilova" })).toBeInTheDocument();
+    expect(card).toHaveTextContent("Elchi'ni o'rnatsangiz, alohida oynada tez ochiladi");
+    // jsdom — `beforeinstallprompt` yo'q, iOS emas: «Qo'llab-quvvatlanmaydi», tugmasiz.
+    expect(within(card).getByTestId("pwa-install-status")).toHaveAttribute("data-status", "unsupported");
+    expect(within(card).queryByRole("button")).not.toBeInTheDocument();
+    // Tartib: qurilma kartasi → «Ilova» → ogohlantirish.
+    const device = screen.getByText("Qurilma bildirishnomalari").closest("section") as HTMLElement;
+    const notice = screen.getByTestId("notifications-scope-notice");
+    expect(device.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(card.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

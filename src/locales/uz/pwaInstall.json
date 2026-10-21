@@ -1,0 +1,57 @@
+{
+  "install": "O'rnatish",
+  "howTo": "Qanday qo'shiladi",
+  "card": {
+    "title": "Elchi'ni ilova sifatida o'rnating",
+    "iosTitle": "Elchi'ni bosh ekranga qo'shing",
+    "iosBody": "iPhone va iPad'da bildirishnomalar faqat bosh ekrandan ochilgan ilovaga keladi. Qo'shish — 3 qadam.",
+    "iosBodyDashboard": "iPhone va iPad'da bildirishnomalar faqat bosh ekrandan ochilgan ilovaga keladi. Yopsangiz, taklif Sozlamalar va Bildirishnomalarda qoladi.",
+    "inbox": {
+      "desktop": "Ish stolidan yoki boshlash menyusidan alohida oynada ochiladi.",
+      "phone": "Bosh ekrandan bir bosishda, alohida oynada ochiladi."
+    },
+    "dashboard": {
+      "desktop": "Ish stolidan alohida oynada ochiladi. Yopsangiz, taklif Sozlamalar va Bildirishnomalarda qoladi.",
+      "phone": "Bosh ekrandan bir bosishda ochiladi. Yopsangiz, taklif Sozlamalar va Bildirishnomalarda qoladi."
+    },
+    "dismiss": "Taklifni yopish"
+  },
+  "status": {
+    "appName": "Elchi ilovasi",
+    "installed": "O'rnatilgan",
+    "notInstalled": "O'rnatilmagan",
+    "unsupported": "Qo'llab-quvvatlanmaydi",
+    "hint": {
+      "installed": "Shu qurilmada ilova sifatida ochilgan",
+      "installable": "Hozir brauzer orqali ochilgan",
+      "ios": "iPhone va iPad'da Safari orqali bosh ekranga qo'shiladi",
+      "unsupported": "Bu brauzerda o'rnatib bo'lmaydi — Chrome, Edge yoki Safari'da oching"
+    }
+  },
+  "ios": {
+    "title": "Bosh ekranga qo'shing",
+    "body": "Elchi alohida ilova bo'lib ochiladi va bildirishnomalar qurilmangizga keladi — ilova yopiq bo'lsa ham.",
+    "stepsLabel": "Qo'shish qadamlari",
+    "steps": {
+      "share": {
+        "title": "«Ulashish» tugmasini bosing",
+        "hint": "Safari pastidagi (iPad'da yuqoridagi) kvadrat va strelka belgisi"
+      },
+      "add": {
+        "title": "«Bosh ekranga qo'shish» ni tanlang",
+        "hint": "Ro'yxatni pastga suring — band ochilgan menyuning o'rtasida"
+      },
+      "confirm": {
+        "title": "«Qo'shish» ni bosing",
+        "hint": "Elchi belgisi bosh ekranda paydo bo'ladi — ilovani shu yerdan oching"
+      }
+    },
+    "safariOnly": "Faqat Safari'da ishlaydi. Boshqa brauzerda ochgan bo'lsangiz, havolani Safari'da oching.",
+    "later": "Keyinroq",
+    "gotIt": "Tushunarli"
+  },
+  "menuHint": {
+    "title": "Brauzer menyusidan o'rnating",
+    "body": "Manzil satridagi o'rnatish belgisini yoki brauzer menyusidagi «Ilovani o'rnatish» bandini bosing."
+  }
+}
