@@ -26,7 +26,8 @@
     "requestError": {
       "badRequest": "Ma'lumot qabul qilinmadi ({{status}}). Kiritilganini tekshirib, qayta urinib ko'ring.",
       "notFound": "Topilmadi (404). ID to'g'riligini tekshiring.",
-      "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring."
+      "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring.",
+      "forbidden": "Bu amal sizning rolingiz uchun ochilmagan (403)."
     }
   },
   "finance": {
@@ -241,7 +242,7 @@
       "cancelLabel": "Yo'q",
       "success": "Paket muvaffaqiyatli bekor qilindi",
       "error": "Paketni bekor qilib bo'lmadi",
-      "unknownError": "Noma'lum xatolik yuz berdi"
+      "rejected": "Paket bu holatda bekor qilinmaydi (400): u allaqachon qabul qilingan yoki bekor qilingan bo'lishi mumkin. Paket ID va holatini tekshiring."
     }
   },
   "identity": {

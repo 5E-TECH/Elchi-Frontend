@@ -61,7 +61,7 @@ const mockApi = ({
   apiGetMock.mockImplementation((url: string) => {
     if (url === "health/readiness") return health();
     if (url === "analytics/kpi") return kpi();
-    return other?.(url) ?? Promise.resolve({ data: {} });
+    return other?.(url) ?? Promise.resolve(mockEnvelope({}));
   });
 };
 
@@ -499,7 +499,7 @@ describe("SystemOps page", () => {
     const user = userEvent.setup();
     mockApi({
       other: (url) =>
-        url.startsWith("scan/") ? Promise.reject({ response: { status: 404, data: { message: "Topilmadi" } } }) : undefined,
+        url.startsWith("scan/") ? Promise.reject(mockRejection(404)) : undefined,
     });
     renderWithProviders(<SystemOpsPage />);
 
@@ -507,6 +507,22 @@ describe("SystemOps page", () => {
     await user.click(screen.getByRole("button", { name: "Tekshirish" }));
 
     expect(await screen.findByText("Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.")).toBeInTheDocument();
+    expectNoRawBackendText();
+  });
+
+  it("so'rov rad etildi (token 400) — o'z matnimiz, xom backend matni yo'q", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      other: (url) => (url.startsWith("scan/") ? Promise.reject(mockRejection(400)) : undefined),
+    });
+    renderWithProviders(<SystemOpsPage />);
+
+    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t-bad");
+    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
+
+    expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
+    expectNoRawBackendText();
   });
 
   describe("ru/en matnlar", () => {

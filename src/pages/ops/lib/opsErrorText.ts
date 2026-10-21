@@ -8,7 +8,8 @@ import { getErrorKind, getErrorStatus } from "../../../shared/lib/errorKind";
  *
  *  - ro'yxat (`ErrorState` izohi): turga qarab `ui:states.error.*` — «Server xatosi (500)…», «So'rov bajarilmadi (400).»;
  *  - amal (`action: true`, `OpsAlert` matni): 400/422 — «Ma'lumot qabul qilinmadi», 404 — «Topilmadi», 409 —
- *    «Holat allaqachon o'zgargan»; qolgani ro'yxatdagidek.
+ *    «Holat allaqachon o'zgargan», 403 — «Bu amal rolingiz uchun ochilmagan»; qolgani ro'yxatdagidek.
+ *    Sahifaga xos holat xatosi (masalan filial paketi 400 = paket holati) — sahifa o'zi alohida kalit bilan.
  */
 export const useOpsErrorText = () => {
   const { t } = useTranslation(["ops", "ui"]);
@@ -21,6 +22,8 @@ export const useOpsErrorText = () => {
         if (status === 400 || status === 422) return t("ops:common.requestError.badRequest", { status });
         if (status === 404) return t("ops:common.requestError.notFound");
         if (status === 409) return t("ops:common.requestError.conflict");
+        // 403 amalda — ro'yxat blokidagi «sahifaning qolgan qismidan foydalanishingiz mumkin» matni mos emas.
+        if (status === 403) return t("ops:common.requestError.forbidden");
       }
       switch (kind) {
         case "server":

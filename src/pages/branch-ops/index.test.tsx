@@ -197,7 +197,11 @@ describe("BranchOps page", () => {
 
       const alert = await screen.findByRole("alert");
       expect(alert).toHaveTextContent("Paketni bekor qilib bo'lmadi");
-      expect(alert).toHaveTextContent("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
+      // Backend 400 = paket holati (RECEIVED / CANCELLED) — sahifaga xos matn, umumiy «Kiritilganini tekshiring» emas.
+      expect(alert).toHaveTextContent(
+        "Paket bu holatda bekor qilinmaydi (400): u allaqachon qabul qilingan yoki bekor qilingan bo'lishi mumkin. Paket ID va holatini tekshiring.",
+      );
+      expect(alert).not.toHaveTextContent("Kiritilganini tekshirib");
       expect(alert).not.toHaveTextContent("reason must");
       expect(screen.queryByText("Paket muvaffaqiyatli bekor qilindi")).toBeNull();
     });

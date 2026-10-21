@@ -27,7 +27,7 @@ test.describe("Filiallar — operatsiyalar — 390px", () => {
     await cancelBatchButton(page).click();
     await confirmBatchCancel(page);
     const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
-    await expect(alert).toContainText("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
+    await expect(alert).toContainText("Paket bu holatda bekor qilinmaydi (400)");
     await expect(alert).not.toContainText("Partiya topilmadi");
 
     const outside = await page

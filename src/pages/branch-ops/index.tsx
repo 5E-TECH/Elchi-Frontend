@@ -19,6 +19,7 @@ import {
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 import { useOpsErrorText } from "../ops/lib/opsErrorText";
+import { getErrorStatus } from "../../shared/lib/errorKind";
 
 /**
  * OPS → «Filiallar» (maket `superadmin-ops-branches`): yangi buyurtmali filiallar (`GET branches/new-orders`,
@@ -182,7 +183,11 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             {cancelBatch.isSuccess ? <OpsAlert tone="success" title={t("branches.cancel.success")} /> : null}
             {cancelBatch.isError ? (
               <OpsAlert tone="danger" title={t("branches.cancel.error")}>
-                {errorText(cancelBatch.error, { action: true })}
+                {/* Backend bu amalda 400 ni paket HOLATI uchun qaytaradi (RECEIVED / CANCELLED — branch-transfer-batch
+                    `cancelBatch`), umumiy «Kiritilganini tekshiring» chalg'itadi — o'z matnimiz. */}
+                {getErrorStatus(cancelBatch.error) === 400
+                  ? t("branches.cancel.rejected")
+                  : errorText(cancelBatch.error, { action: true })}
               </OpsAlert>
             ) : null}
           </form>

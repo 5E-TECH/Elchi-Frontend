@@ -71,7 +71,7 @@ for (const width of [1920, 1440]) {
 
       const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
       await expect(alert).toBeVisible();
-      await expect(alert).toContainText("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
+      await expect(alert).toContainText("Paket bu holatda bekor qilinmaydi (400)");
       await expect(alert).not.toContainText("Faqat SENT holatdagi partiyani bekor qilish mumkin");
       expect(leaked).toEqual([]);
     });

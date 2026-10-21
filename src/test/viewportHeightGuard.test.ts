@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -7,7 +8,7 @@ import { describe, expect, it } from "vitest";
  * birlik: `100dvh` / `h-dvh` / `min-h-dvh` (yoki `svh` — ataylab eng kichik balandlik kerak bo'lsa).
  *
  * Ratchet: `ALLOWED` — qolgan eski joylar (fayl → son); faqat kamayadi. Hozir bo'sh — yangisi qo'shilmaydi.
- * Izohlardagi eslatmalar hisobga kirmaydi.
+ * Izohlardagi eslatmalar hisobga kirmaydi (TS/TSX izohlari parser bilan aniqlanadi — satrdagi `image/*` izoh emas).
  */
 
 const sources = import.meta.glob(["../**/*.{ts,tsx,css}", "!../**/*.test.{ts,tsx}"], {
@@ -22,20 +23,45 @@ const ALLOWED: Readonly<Record<string, number>> = {};
 /** `100vh` va Tailwind `h-screen` oilasi (`min-h-screen`, `max-h-screen`, variantlari bilan: `md:h-screen`). */
 const VIEWPORT_HEIGHT_PATTERN = /(?<![\w.-])100vh\b|(?<![\w-])(?:min-|max-)?h-screen(?![\w-])/g;
 
-/** `//` va `/* … *\/` izohlarini olib tashlaydi (qator raqamlari saqlanadi). */
-const stripComments = (text: string) =>
-  text
-    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, " "))
-    .replace(/(^|[^:"'`\\])\/\/.*$/gm, (_line, lead: string) => lead);
+/**
+ * Izoh oraliqlari [boshi, oxiri). TS/TSX — TypeScript parseri tokenlarining oldingi trivia'sidan: satr ichidagi
+ * `/*` (`accept="image/*"`) yoki `//` (`"a // b"`) izoh deb sanalmaydi — regex bilan kesish shu yerda kodni
+ * yashirib qo'yardi. JSX matnida trivia yo'q (u yerdagi `//` — oddiy matn). CSS — faqat `/* … *\/` bloklari.
+ */
+const commentRanges = (path: string, text: string): Array<[number, number]> => {
+  if (path.endsWith(".css")) return [...text.matchAll(/\/\*[\s\S]*?\*\//g)].map((m) => [m.index, m.index + m[0].length]);
+  const kind = path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, false, kind);
+  const ranges: Array<[number, number]> = [];
+  const visit = (node: ts.Node) => {
+    const children = node.getChildren(source);
+    if (children.length > 0) {
+      children.forEach(visit);
+    } else if (node.kind !== ts.SyntaxKind.JsxText) {
+      // Token oldidagi trivia: avvalgi token bilan bir qatordagi izoh (`trailing`) + keyingi qatorlardagilar (`leading`).
+      const trivia = [...(ts.getTrailingCommentRanges(text, node.pos) ?? []), ...(ts.getLeadingCommentRanges(text, node.pos) ?? [])];
+      for (const range of trivia) ranges.push([range.pos, range.end]);
+    }
+  };
+  visit(source);
+  return ranges;
+};
 
-const findViewportHeightUses = (text: string) =>
-  stripComments(text)
-    .split("\n")
-    .flatMap((line, index) => [...line.matchAll(VIEWPORT_HEIGHT_PATTERN)].map((match) => ({ line: index + 1, match: match[0] })));
+const lineOf = (text: string, index: number) => text.slice(0, index).split("\n").length;
+
+/** Fayldagi `100vh` / `h-screen` oilasi uchrashuvlari (izohlardagilardan tashqari). Fayl turi — `path` kengaytmasi. */
+const findViewportHeightUses = (text: string, path = "probe.tsx") => {
+  const matches = [...text.matchAll(VIEWPORT_HEIGHT_PATTERN)];
+  if (matches.length === 0) return []; // parser faqat shubhali fayllarda ishlaydi — qo'riqchi tez qoladi
+  const comments = commentRanges(path, text);
+  return matches
+    .filter(({ index }) => !comments.some(([start, end]) => index >= start && index < end))
+    .map(({ index, 0: match }) => ({ line: lineOf(text, index), match }));
+};
 
 const scan = () =>
   Object.entries(sources)
-    .map(([path, text]) => ({ path: path.replace(/^\.\.\//, "src/"), uses: findViewportHeightUses(text) }))
+    .map(([path, text]) => ({ path: path.replace(/^\.\.\//, "src/"), uses: findViewportHeightUses(text, path) }))
     .filter(({ uses }) => uses.length > 0);
 
 describe("viewport height guard (100vh → dvh)", () => {
@@ -58,6 +84,19 @@ describe("viewport height guard (100vh → dvh)", () => {
     expect(hits(`<div className="min-h-dvh h-[100dvh] max-h-[100svh] w-screen" />`)).toEqual([]);
     expect(hits(`const x = "100vhx"; const y = "data-h-screen-id";`)).toEqual([]);
     expect(hits("// eski: min-h-screen edi\n/* 100vh — iOS'da xato */")).toEqual([]);
+    expect(hits(`<div>{/* min-h-screen edi */}</div>`)).toEqual([]);
+    expect(hits(`const a = 1; // min-h-screen edi\nconst b = 2; /* 100vh */ const c = 3;`, "probe.ts")).toEqual([]);
+  });
+
+  it("satr ichidagi `/*` va `//` izoh ochmaydi — keyingi kod yashirinmaydi", () => {
+    const hits = (text: string, path?: string) => findViewportHeightUses(text, path).map((use) => use.match);
+    expect(hits(`<input accept="image/*" />\n<div className="min-h-screen" />\n/** x */`)).toEqual(["min-h-screen"]);
+    expect(hits(`const glob = "src/**/*.ts";\nconst c = "h-screen";\n// */`, "probe.ts")).toEqual(["h-screen"]);
+    expect(hits(`const url = "https://x.uz"; const c = "a // b min-h-screen";`, "probe.ts")).toEqual(["min-h-screen"]);
+    expect(hits(`const re = /["'/*]/; const c = "max-h-screen"; // */`, "probe.ts")).toEqual(["max-h-screen"]);
+    expect(hits(`<p>Don't // stop</p>\n<div className="h-screen" />`)).toEqual(["h-screen"]);
+    // CSS: faqat blok izohlar; `url(//…)` izoh emas.
+    expect(hits(`.a { background: url(//cdn/x.png); min-height: 100vh; } /* 100vh */`, "x.css")).toEqual(["100vh"]);
   });
 
   it("src/ da 100vh / h-screen / min-h-screen yo'q (faqat dvh) — ratchet", () => {
