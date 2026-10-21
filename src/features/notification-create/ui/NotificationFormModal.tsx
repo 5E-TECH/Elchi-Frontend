@@ -33,8 +33,11 @@ interface NotificationFormModalProps {
   onClose: () => void;
 }
 
-/** Olingan havola + mahalliy soat bo'yicha muddati (`toLinkWindow`: soat farqi yoki `expires_at` yo'qligi). */
-type ActiveGroupLink = GroupLinkCode & { expiresAtMs: number };
+/**
+ * Olingan havola + mahalliy soat bo'yicha muddati va sanoq uzunligi (`toLinkWindow`: soat farqi yoki `expires_at`
+ * yo'qligi). `totalMs` ham saqlanadi — server muddati 10 daqiqadan uzun ko'rinsa (soat ortda) sanoq «10:00» da qotmaydi.
+ */
+type ActiveGroupLink = GroupLinkCode & ReturnType<typeof toLinkWindow>;
 
 /**
  * «Bildirishnoma qo'shish» — market guruhini bir martalik havola bilan ulash (Trello 6jXw0DDr, 4TfLyTrL).
@@ -142,7 +145,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
     const seq = ++requestSeq.current;
     try {
       const next = await requestLink.mutateAsync({ purpose: "market_group", group_type: groupType, market_id: marketId });
-      if (seq === requestSeq.current) setLink({ ...next, expiresAtMs: toLinkWindow(next.expires_at).expiresAtMs });
+      if (seq === requestSeq.current) setLink({ ...next, ...toLinkWindow(next.expires_at) });
     } catch (error) {
       if (seq !== requestSeq.current) return;
       // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan; ataylab bekor qilingan
@@ -301,6 +304,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
               <LinkCountdown
                 variant="inline"
                 expiresAtMs={activeLink.expiresAtMs}
+                totalMs={activeLink.totalMs}
                 untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expiresAtMs) })}
               />
               <p role="status" className="m-0 flex items-center gap-2 text-[13px] font-semibold text-text">

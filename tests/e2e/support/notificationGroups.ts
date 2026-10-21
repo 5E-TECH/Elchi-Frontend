@@ -40,9 +40,10 @@ export type NotificationGroupsMock = {
 export type NotificationGroupsOptions = {
   /**
    * TOZ-1: havolaning `expires_at` i hozirdan qancha keyin (ms, sukut 10 daqiqa). Manfiy — mahalliy soat server
-   * soatidan oldinda (havola muddati mahalliy «o'tmishda»).
+   * soatidan oldinda (havola muddati mahalliy «o'tmishda»); 10 daqiqadan uzun — mahalliy soat ortda;
+   * `null` — server `expires_at` bermadi.
    */
-  linkExpiresInMs?: number;
+  linkExpiresInMs?: number | null;
 };
 
 export const openNotificationGroups = async (
@@ -86,7 +87,7 @@ export const openNotificationGroups = async (
           token: "c0de42",
           purpose: "market_group",
           group_type: body.group_type,
-          expires_at: new Date(Date.now() + linkExpiresInMs).toISOString(),
+          expires_at: linkExpiresInMs === null ? null : new Date(Date.now() + linkExpiresInMs).toISOString(),
           deep_link: GROUP_DEEP_LINK,
           command: "/start c0de42",
         },

@@ -128,3 +128,29 @@ test("⭐ TOZ-1: kompyuter soati 1 soat oldinda — havola darhol «eskirgan» e
   await expect(dialog.getByText("Havola muddati tugadi")).toHaveCount(0);
   await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", GROUP_DEEP_LINK);
 });
+
+test("⭐ TOZ-1: kompyuter soati 3 daqiqa ortda — sanoq 13 daqiqadan, «10:00» da qotmaydi", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openNotificationGroups(page, { linkExpiresInMs: 13 * 60_000 });
+  const dialog = await openCreateDialog(page);
+
+  await pickMarket(page, "Bahor Kiyim");
+  await dialog.getByRole("button", { name: "Ulash havolasini olish" }).click();
+
+  const section = dialog.getByRole("region", { name: "Bir martalik havola tayyor" });
+  await expect(section.getByRole("timer")).toHaveText(/^(13:00|12:\d{2}) qoldi$/);
+});
+
+test("⭐ TOZ-1: server `expires_at` bermasa — 10 daqiqalik sanoq, «NaN» yo'q", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openNotificationGroups(page, { linkExpiresInMs: null });
+  const dialog = await openCreateDialog(page);
+
+  await pickMarket(page, "Bahor Kiyim");
+  await dialog.getByRole("button", { name: "Ulash havolasini olish" }).click();
+
+  const section = dialog.getByRole("region", { name: "Bir martalik havola tayyor" });
+  await expect(section.getByRole("timer")).toHaveText(/^(10:00|9:\d{2}) qoldi$/);
+  await expect(section.getByText(/NaN/)).toHaveCount(0);
+  await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", GROUP_DEEP_LINK);
+});

@@ -328,6 +328,20 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     expect(screen.queryByText("Havola muddati tugadi")).not.toBeInTheDocument();
   });
 
+  it("kompyuter soati ortda (server muddati 13 daqiqa ko'rinadi) — sanoq «10:00» da qotmaydi, 13 daqiqadan boshlanadi", async () => {
+    const user = userEvent.setup();
+    // Mahalliy soat 3 daqiqa ortda — `toLinkWindow` 13 daqiqalik muddatga ishonadi; `totalMs` uzatilmasa
+    // `LinkCountdown` 10 daqiqaga qisib, 3 daqiqa davomida «10:00 qoldi» ko'rsatardi.
+    mocks.post.mockResolvedValue(linkResponse(13 * 60_000));
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Baraka Shop/);
+    await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
+
+    expect(await screen.findByRole("link", { name: "Telegram'da ochish" })).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent(/^(13:00|12:\d{2}) qoldi$/);
+  });
+
   it("en/ru: «· valid until 14:37» — o'rta nuqtadan keyin kichik harf", () => {
     expect(enGroups.create.expiresAt).toBe("valid until {{time}}");
     expect(ruGroups.create.expiresAt).toBe("действует до {{time}}");
