@@ -193,8 +193,15 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     bandlari: kuryer tab sonlari va pochta qidiruvi testlari, `100vh` qo'riqchisi, `SalaryPaymentPopup` tokenlari,
     ops sahifalari uchun haqiqiy konvert mocklari). Integratsiyada LG-2 poygasi tuzatildi («Logist yaratish» dan keyin
     yangi logist tanlanmay qolardi). 5966 unit, 374 e2e.
-  - **Navbatda — 3-to'lqin, 2-yarmi** (ishda): CS-B, SA-2, LG-3, OS-2, MO-2, IN-2; keyin 4-to'lqin (KM-2, KM-3, MO-3,
-    IS-3, CS-C, TOZ-1).
+  - **3-to'lqin, 2-yarmi tayyor (2026-10-21):** CS-B (yetkazish turida market standart narxi, mahsulot rasmi —
+    umumiy `entities/product` `ProductThumb`, narx matni, «Umumiy summa» taklifi, vaqtinchalik «Yetkazish narxi» — ega
+    tasdig'i kutilmoqda, `disabled` da «AI bilan» yashirin), SA-2 (SATO kodlarini yozish, «Tuman qo'shish», takroriy
+    nomlar va birlashtirish — `DistrictMergeDialog` qayta ishlatildi), LG-3 (logist `/regions` — o'z viloyati, pulsiz),
+    OS-2 («AI holati» kartasi, USD formatlovchisi), MO-2 (market operatori qobig'i, `/my-earnings`), IN-2
+    (`/investments`, `/profits`, investor pastki menyusi 4 katak); TOZ-2 (foydalanuvchi ro'yxati keshi, kassa/balans
+    invalidatsiyasi, o'lik settlement mutatsiyalari olindi, forma a11y, tungi kontrast e2e). Route 81 / 81.
+    Integratsiyada: 6243 unit, 418 e2e.
+  - **Navbatda — 4-to'lqin** (ishda): KM-2, MO-3, IS-3, CS-C, TOZ-1; keyin KM-3 (KM-2 dan keyin).
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
