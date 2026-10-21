@@ -180,7 +180,14 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     prop'lar), MD-1 (pochta tafsilotida `?q=` qidiruv va takroriy telefonlar banneri), FY-1 (9 rol tabi, telefonda
     «Rol» tanlovi, AI narxi, logist maoshi, kuryer ish hududi), MH-1 (market mahsulotlarni faqat ko'radi, «Narx», xato
     xulosasi, market operatori — ko'rish), MO-1 (quyida — oxirgi v1 route ko'chdi). Integratsiyada: 5544 unit, 291 e2e.
-  - **Navbatda — 2-to'lqin, 3-to'plam** (ishda): LG-1, LG-2, IN-1, SA-1, KM-1, KI-2; keyin 3-to'lqin (roadmap 4.1).
+  - **2-to'lqin, 3-to'plam tayyor (2026-10-21):** LG-1 (logist qobig'i va bosh sahifasi — o'z viloyatlari, pulsiz;
+    `region/stats/all` brauzerda `logist_id` bo'yicha filtrlanadi, serverda cheklash — iOnGbEqi), LG-2 (`/regions/
+    logist-assignment` va «Logist» yaratish), IN-1 (investor kabineti — `investors/me`, `StackedBars` primitivi),
+    SA-1 (SATO: qobiq, KPI, holat tablari, inline kod muharriri), KM-1 (SMS kampaniya — mijozlar segmenti, jonli
+    auditoriya, kunlik limit), KI-2 («Ilovani o'rnatish» — kuryer bosh sahifasi, `/inbox`, Sozlamalar «Ilova»).
+    Endi `/` da 403 faqat market operatorida (MO-2 gacha). Integratsiyada: 5778 unit, 328 e2e. 2-to'lqin yopildi.
+  - **Navbatda — 3-to'lqin** (roadmap 4.1): NG-B, TG-B, FY-2, NS-2, CS-B, CB-2, IS-2, SA-2, LG-3, OS-2, MO-2, IN-2;
+    keyin 4-to'lqin (KM-2, KM-3, MO-3, IS-3, CS-C, TOZ-1).
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
