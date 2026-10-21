@@ -143,6 +143,11 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
       await page.getByRole("table", { name: "Qarz yozuvlari" }).getByRole("button", { name: "To'lov №82" }).click();
       await expect(page.locator("[data-remittances-head]")).toBeFocused();
       expect(page.url()).toBe(before);
+      // Faqat <main> suriladi: qobiq ildizi (`h-dvh overflow-hidden`) joyida, topbar ekranda (scrollIntoView 64 px surardi).
+      await expect.poll(() => page.evaluate(() => document.querySelector("main")?.scrollTop ?? 0)).toBeGreaterThan(0);
+      await page.waitForTimeout(600); // silliq aylantirish tugasin
+      expect(await page.evaluate(() => document.querySelector<HTMLElement>(".h-dvh")?.scrollTop)).toBe(0);
+      expect(await page.locator('[data-shell-slot="topbar"]').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
       expect(leaked).toEqual([]);
     });
 
@@ -153,7 +158,7 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
       const section = page.getByRole("region", { name: "Olingan to'lovlar" });
       await section.getByRole("button", { name: "№82 to'lovini bekor qilish" }).click();
       const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
-      await expect(dialog).toContainText(/№82 · 1\s500\s000 so'm · /);
+      await expect(dialog).toContainText(/№82 · 1\s500\s000\sso'm · /);
       await expect(dialog).toContainText(/1 ta qarz qaytadan «Kutilmoqda» bo'ladi — Tez Yetkaz qarzi 1\s150\s000 so'mga ortadi/);
       await expect(dialog).toContainText(/Asosiy kassadan 1\s500\s000 so'm teskari chiqim yoziladi/);
       await expect(dialog).toContainText(/Shu to'lovdan qolgan 350\s000 so'm avans ham bekor bo'ladi/);

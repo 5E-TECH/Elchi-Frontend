@@ -209,6 +209,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
 
       {/* ═══ OLINGAN TO'LOVLAR (IS-3) ═══ */}
       <RemittancesSection
+        // Boshqa ulanish — filtr, sana, sahifa va oyna holati yangidan (A ning 3-sahifasi B ga o'tmasin).
+        key={connection.id}
         integrationId={connection.id}
         connectionName={connection.name}
         // Qoldiq o'qilmagan bo'lsa — bekor qilish to'sig'i oldindan aytilmaydi (backend 409 zaxira).
@@ -235,7 +237,17 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         />
       </PanelSection>
       <QueryBoundary
-        query={{ data: list.data ? rows : undefined, isLoading: list.isLoading, isError: list.isError, error: list.error, refetch: list.refetch }}
+        query={{
+          data: list.data ? rows : undefined,
+          isLoading: list.isLoading,
+          isPending: list.isPending,
+          isFetching: list.isFetching,
+          // Oflayn — «Internet aloqasi yo'q», yolg'on «qarz yo'q» emas.
+          isPaused: list.isPaused,
+          isError: list.isError,
+          error: list.error,
+          refetch: list.refetch,
+        }}
         loading={
           <SkeletonTable
             framed={false}

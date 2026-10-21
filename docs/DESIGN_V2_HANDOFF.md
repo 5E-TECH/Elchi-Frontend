@@ -207,6 +207,10 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     oynasi (oqibatlar, «Sabab *», eski yozuvda majburiy kassa tanlovi, «Hozir bekor qilib bo'lmaydi» oldindan + 409
     zaxira, 502 — kassa xatosi; xom backend matni ko'rsatilmaydi); «To'lov №N» — bo'limga o'tish. Muallif ismi va eski
     yozuvdagi kassa tanlovi — BD2-10 (IS-4) kutadi. O'lik `sidebar.settlement` kaliti olindi (N9jY9xVV).
+    Review: bo'lim ulanish bo'yicha `key` bilan (filtr/sahifa A dan B ga o'tmaydi), sahifa yangi javobdan keyingina oxirgi
+    haqiqiy sahifaga suriladi (LG-2), oflayn — «Internet aloqasi yo'q» (`isPaused`); «To'lov №N» faqat `<main>` ni suradi
+    (`scrollIntoView` qobiq ildizini 64 px surardi); summalar `nowrap`, 409 dan keyin fokus «Orqaga» da, ikonkalar
+    CircleX / RotateCcw, en matnlarida “”.
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;

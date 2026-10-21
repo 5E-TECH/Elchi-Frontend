@@ -1,9 +1,9 @@
 // dizayn-v2: superadmin-integrations-settlement-cancel-dialog, admin-integrations-settlement-cancel-dialog
-import { useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Ban, Clock, Info, Undo2, Wallet, type LucideIcon } from "lucide-react";
+import { CircleX, Clock, Info, RotateCcw, Wallet, type LucideIcon } from "lucide-react";
 import {
   remittanceAdvanceContribution,
   useCancelRemittance,
@@ -43,13 +43,14 @@ import { InlineAlert } from "../../ui";
 
 const REASON_MAX = 500;
 const CASHBOX_PATH = "/payments/main-cashbox";
-const STRONG = <strong className="font-semibold" />;
+/** Summa raqam o'rtasida bo'linmasin («1» / «150 000 so'm» emas) — maketda har summa `nowrap`. */
+const STRONG = <strong className="whitespace-nowrap font-semibold" />;
 const INLINE_LINK = "text-action-fg underline underline-offset-2 hover:text-action-hover";
 
 type ServerError = "blocked" | "cashbox" | "failed";
 
 const Consequence = ({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) => (
-  <li className="flex items-start gap-2.5 px-3.5 py-2.5 text-[13px] leading-[18px] text-text [&+&]:border-t [&+&]:border-border">
+  <li className="flex items-start gap-2.5 text-[13px] leading-[18px] text-text">
     <Icon size={16} aria-hidden="true" className="mt-px flex-none text-text-muted" />
     <span className="min-w-0">{children}</span>
   </li>
@@ -87,6 +88,13 @@ const CancelRemittanceDialog = ({
   const [legacy, setLegacy] = useState<"yes" | "no" | null>(null);
   const [touched, setTouched] = useState(false);
   const [serverError, setServerError] = useState<ServerError | null>(null);
+  /** Bir tikda ikki marta yuborishdan himoya (`cancel.isPending` keyingi renderdagina yangilanadi). */
+  const inFlight = useRef(false);
+
+  // 409 dan keyin forma o'rniga ogohlantirish chiqadi va fokusdagi tugma o'chadi — fokus <body> ga tushmasin.
+  useEffect(() => {
+    if (open && serverError === "blocked") backRef.current?.focus();
+  }, [open, serverError]);
 
   // Qayta ochilganda eski qiymat va xato ko'rinmasin (render paytida — effektsiz).
   const [wasOpen, setWasOpen] = useState(open);
@@ -123,10 +131,11 @@ const CancelRemittanceDialog = ({
 
   const submit = async (event?: FormEvent) => {
     event?.preventDefault();
-    if (blocked || cancel.isPending) return;
+    if (blocked || cancel.isPending || inFlight.current) return;
     setTouched(true);
     if (!trimmed || trimmed.length > REASON_MAX || (isLegacy && legacy === null)) return;
     setServerError(null);
+    inFlight.current = true;
     try {
       const result = await cancel.mutateAsync({
         integrationId,
@@ -147,20 +156,28 @@ const CancelRemittanceDialog = ({
           ? t("remittances.dialog.doneReversed", { amount: money(result.amount || r.amount) })
           : t("remittances.dialog.doneUnchanged"),
       ].filter(Boolean);
-      notify.success(t("remittances.dialog.done"), { description: parts.join(" · ") });
+      const description = parts.join(" · ");
+      // «kassa o'zgarmadi» qism birinchi kelganda ham gap bosh harfdan boshlansin.
+      notify.success(t("remittances.dialog.done"), {
+        description: description.charAt(0).toLocaleUpperCase(language) + description.slice(1),
+      });
     } catch (error) {
       // Xom backend matni (409 / 502 — faqat o'zbekcha) ko'rsatilmaydi — holat kodi bo'yicha i18n matn.
       const status = getErrorStatus(error);
+      // Natija noma'lum (tarmoq uzildi / 5xx): bekor qilish o'tgan bo'lishi mumkin — kassa keshi ham yangilansin.
+      if (status === undefined || status >= 500) void refreshCashboxQueries(client);
       if (status === 409) {
         setServerError("blocked");
       } else if (status === 404) {
         onClose();
         notify.error(t("remittances.dialog.notFound"), { description: t("remittances.dialog.notFoundDesc") });
-      } else if (willReverse && status !== undefined && (status === 502 || (status >= 400 && status < 500))) {
+      } else if (willReverse && status !== undefined && (status === 502 || (status >= 400 && status < 500 && status !== 401 && status !== 403))) {
         setServerError("cashbox");
       } else {
         setServerError("failed");
       }
+    } finally {
+      inFlight.current = false;
     }
   };
 
@@ -189,10 +206,11 @@ const CancelRemittanceDialog = ({
       title={t("remittances.dialog.title")}
       description={t("remittances.dialog.subtitle", {
         id: r.id,
-        amount: money(r.amount),
+        // Summa bo'linmasin (maket `cc-desc` dagi `nowrap`).
+        amount: money(r.amount).replace(/ /g, "\u00a0"),
         date: r.createdAt ? formatDateTimeLocalized(r.createdAt, { language }) : "—",
       })}
-      icon={Ban}
+      icon={CircleX}
       iconTone="danger"
       iconShape="circle"
       size="md"
@@ -217,7 +235,7 @@ const CancelRemittanceDialog = ({
           </InlineAlert>
         ) : (
           <>
-            <ul className="m-0 flex list-none flex-col rounded-xl bg-sunken p-0" data-testid="cancel-consequences">
+            <ul className="m-0 flex list-none flex-col gap-2.5 rounded-xl bg-sunken px-3.5 py-3" data-testid="cancel-consequences">
               {r.settledCount > 0 ? (
                 <Consequence icon={Clock}>
                   <Trans
@@ -239,7 +257,7 @@ const CancelRemittanceDialog = ({
                 </Consequence>
               ) : null}
               {contribution > 0 ? (
-                <Consequence icon={Undo2}>
+                <Consequence icon={RotateCcw}>
                   <Trans t={t} i18nKey="remittances.dialog.advance" values={{ amount: money(contribution) }} components={{ strong: STRONG }} />
                 </Consequence>
               ) : null}
@@ -304,7 +322,12 @@ const CancelRemittanceDialog = ({
 
             {serverError === "cashbox" ? (
               <InlineAlert tone="danger" title={t("remittances.dialog.cashboxErrorTitle")}>
-                {t("remittances.dialog.cashboxErrorDesc")}
+                {/* Finance rad etishi (kassada pul yetmaydi, smena yopiq) qayta bosish bilan tuzalmaydi — Asosiy kassaga yo'l. */}
+                <Trans
+                  t={t}
+                  i18nKey="remittances.dialog.cashboxErrorDesc"
+                  components={{ cashbox: <Link to={CASHBOX_PATH} className={INLINE_LINK} /> }}
+                />
               </InlineAlert>
             ) : serverError === "failed" ? (
               <InlineAlert tone="danger" title={t("remittances.dialog.failedTitle")}>

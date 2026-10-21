@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-integrations-panel-settlement, admin-integrations-conn-settlement
 import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, CircleCheck, CircleX, Clock, Receipt, RefreshCw, Undo2, Wallet, type LucideIcon } from "lucide-react";
+import { Calendar, CircleCheck, CircleX, Clock, Receipt, RefreshCw, RotateCcw, Wallet, type LucideIcon } from "lucide-react";
 import {
   cancelBlock,
   useRemittances,
@@ -9,7 +9,7 @@ import {
   type RemittanceStatusFilter,
 } from "../../../../entities/integrations/settlement";
 import { cx } from "../../../../shared/lib/cx";
-import { formatDateLocalized, formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
+import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import {
   Badge,
@@ -26,6 +26,7 @@ import {
 import { FilterChips, InlineAlert, PanelSection, SectionHead } from "../../ui";
 import CancelRemittanceDialog from "./CancelRemittanceDialog";
 import { REMITTANCES_SECTION_ID } from "./remittancesAnchor";
+import { remittancesPeriodText } from "./remittancesPeriod";
 
 /**
  * «OLINGAN TO'LOVLAR» (IS-3, DxdZFdIk; maket `*-panel-settlement` / `admin-integrations-conn-settlement`).
@@ -84,6 +85,14 @@ const RemittancesSection = ({
   );
   const rows = query.data?.items ?? [];
   const total = query.data?.pagination.total ?? 0;
+  /**
+   * Sahifa oxirgi haqiqiy sahifadan oshib qoldi (bekor qilingach «Faol» filtrida oxirgi qator ketdi va h.k.):
+   * bo'sh `items` + `total > 0`. Yolg'on «to'lov yo'q» chizilmaydi; sahifa faqat YANGI javob kelgach (fonda qayta
+   * so'ralmayotganda) oxirgi sahifaga suriladi — eskirgan javob bo'yicha tanlov almashtirilmaydi (LG-2 qoidasi).
+   */
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageOverflow = Boolean(query.data) && rows.length === 0 && total > 0 && page > lastPage;
+  if (pageOverflow && !query.isFetching) setPage(lastPage);
   const hasDates = Boolean(range.from || range.to);
   const filtered = hasDates || status !== "all";
 
@@ -101,10 +110,8 @@ const RemittancesSection = ({
 
   const closeCancel = () => setCancelOpen(false);
 
-  const rangeText = [range.from, range.to]
-    .filter(Boolean)
-    .map((d) => formatDateLocalized(d, { language }))
-    .join(" – ");
+  const period = remittancesPeriodText(range, language);
+  const emptyPeriodText = t(`remittances.${period.key}`, period.values);
 
   const debtsLine = (r: Remittance) =>
     r.status === "cancelled"
@@ -117,7 +124,7 @@ const RemittancesSection = ({
     if (r.settledAmount !== null) parts.push(money(r.settledAmount));
     if (r.status === "active" && r.toAdvance > 0) {
       parts.push(
-        <span key="adv" className="text-success-fg">
+        <span key="adv" className="whitespace-nowrap text-success-fg">
           {t("remittances.toAdvance", { amount: money(r.toAdvance) })}
         </span>,
       );
@@ -128,18 +135,22 @@ const RemittancesSection = ({
   /** «Bekor qilindi: 16.10.2026, 15:32 · «Summa xato…»» — sabab foydalanuvchi yozgan matn (backend xatosi emas). */
   const cancelledLine = (r: Remittance) =>
     r.status === "cancelled"
-      ? [t("remittances.cancelledAt", { date: dateTime(r.cancelledAt) }), r.cancelReason ? `«${r.cancelReason}»` : null]
+      ? [
+          t("remittances.cancelledAt", { date: dateTime(r.cancelledAt) }),
+          r.cancelReason ? t("remittances.reasonQuoted", { reason: r.cancelReason }) : null,
+        ]
           .filter(Boolean)
           .join(" · ")
       : null;
 
-  const statusCell = (r: Remittance) => {
+  /** `inline` — telefon kartasida holat va kassa bir qatorda (maket: wrap, 8 px oraliq). */
+  const statusCell = (r: Remittance, inline = false) => {
     const cancelled = r.status === "cancelled";
     let cash: ReactNode;
     if (r.cashboxPosted === null) cash = <CashLine icon={Clock}>{t("remittances.cashLegacy")}</CashLine>;
     else if (cancelled)
       cash = r.cashboxPosted ? (
-        <CashLine icon={Undo2}>{t("remittances.cashReversed")}</CashLine>
+        <CashLine icon={RotateCcw}>{t("remittances.cashReversed")}</CashLine>
       ) : (
         <CashLine icon={Wallet}>{t("remittances.cashUnchanged")}</CashLine>
       );
@@ -154,7 +165,7 @@ const RemittancesSection = ({
         </>
       );
     return (
-      <span className="flex min-w-0 flex-col items-start gap-1.5">
+      <span className={cx("flex min-w-0", inline ? "flex-wrap items-center gap-2" : "flex-col items-start gap-1.5")}>
         <StatusBadge
           tone={cancelled ? "danger" : "success"}
           label={cancelled ? t("remittances.statusCancelled") : t("remittances.statusActive")}
@@ -177,8 +188,8 @@ const RemittancesSection = ({
       </Button>
     ) : null;
 
-  const referenceBlock = (r: Remittance, compact: boolean) => {
-    const cancelledText = cancelledLine(r);
+  const referenceBlock = (r: Remittance, compact: boolean, withCancelled = true) => {
+    const cancelledText = withCancelled ? cancelledLine(r) : null;
     return (
       <>
         {compact ? (
@@ -252,7 +263,7 @@ const RemittancesSection = ({
       hideBelow: "lg",
       cell: (r) => <span className="flex min-w-0 max-w-[260px] flex-col">{referenceBlock(r, false)}</span>,
     },
-    { id: "status", header: t("remittances.colStatus"), cell: statusCell },
+    { id: "status", header: t("remittances.colStatus"), cell: (r) => statusCell(r) },
     {
       id: "actions",
       header: <span className="sr-only">{t("remittances.colActions")}</span>,
@@ -284,6 +295,12 @@ const RemittancesSection = ({
               </>
             }
           />
+          {/* Bo'lim nomi (`aria-labelledby`) son bilan o'zgarmasin — jami son ekran o'quvchiga alohida matn. */}
+          {query.data ? (
+            <span className="sr-only" data-testid="remittances-total">
+              {t("remittances.totalSr", { count: total, formatted: formatNumberLocalized(total, { language }) })}
+            </span>
+          ) : null}
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <DateRange
@@ -311,7 +328,18 @@ const RemittancesSection = ({
         </div>
       </PanelSection>
       <QueryBoundary
-        query={{ data: query.data ? rows : undefined, isLoading: query.isLoading, isError: query.isError, error: query.error, refetch: query.refetch }}
+        query={{
+          // Sahifa oshib qolgan javob — «bo'sh» emas: oxirgi sahifa kelguncha oldingi ro'yxat turadi.
+          data: query.data && !pageOverflow ? rows : undefined,
+          isLoading: query.isLoading,
+          isPending: query.isPending,
+          isFetching: query.isFetching || pageOverflow,
+          // Oflayn (so'rov kutib turibdi) — «Internet aloqasi yo'q», yolg'on «to'lov yo'q» emas.
+          isPaused: query.isPaused,
+          isError: query.isError,
+          error: query.error,
+          refetch: query.refetch,
+        }}
         loadingLabel={t("remittances.loading")}
         loading={
           <SkeletonTable
@@ -325,7 +353,7 @@ const RemittancesSection = ({
             <EmptyState
               icon={hasDates ? Calendar : Receipt}
               title={hasDates ? t("remittances.emptyPeriodTitle") : t("remittances.emptyFilterTitle")}
-              description={hasDates ? t("remittances.emptyPeriodText", { range: rangeText }) : t("remittances.emptyFilterText")}
+              description={hasDates ? emptyPeriodText : t("remittances.emptyFilterText")}
               action={
                 <Button variant="ghost" onClick={clearFilters}>
                   {t("remittances.clearFilters")}
@@ -340,13 +368,14 @@ const RemittancesSection = ({
           <div className="px-5 py-4 max-md:px-4">
             <InlineAlert
               tone="danger"
-              title={t("remittances.error")}
               action={
                 <Button variant="secondary" size="sm" leftIcon={RefreshCw} onClick={retry}>
                   {t("remittances.retry")}
                 </Button>
               }
-            />
+            >
+              {t("remittances.error")}
+            </InlineAlert>
           </div>
         )}
         className="border-t border-border"
@@ -362,14 +391,23 @@ const RemittancesSection = ({
               <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
                 <span className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-semibold text-text">{dateTime(r.createdAt)}</span>
-                  <span className={cx("font-semibold", r.status === "cancelled" ? "text-text-muted" : "text-text")}>
+                  <span
+                    className={cx("whitespace-nowrap font-semibold", r.status === "cancelled" ? "text-text-muted" : "text-text")}
+                  >
                     {money(r.amount)}
                   </span>
                 </span>
                 <span className={SUB}>{t("remittances.number", { id: r.id })}</span>
-                {settledLine(r)}
-                {referenceBlock(r, true)}
-                <span className="mt-1">{statusCell(r)}</span>
+                {r.status === "cancelled" ? (
+                  // Maket: «7 ta qarz qayta ochildi · Bekor qilindi: … · «sabab»», keyin to'lov raqami.
+                  <span className={cx(SUB, "block wrap-break-word")}>
+                    {[debtsLine(r), cancelledLine(r)].filter(Boolean).join(" · ")}
+                  </span>
+                ) : (
+                  settledLine(r)
+                )}
+                {referenceBlock(r, true, false)}
+                <span className="mt-1">{statusCell(r, true)}</span>
                 {r.status === "active" ? <span className="mt-1 flex">{cancelButton(r)}</span> : null}
               </div>
             )}

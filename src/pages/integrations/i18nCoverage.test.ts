@@ -54,6 +54,8 @@ const RU_NO_CYRILLIC_OK = new Set([
   "wzNextPartner2b",
   // IS-3: «№82 · 1 500 000 so'm · Bugun, 11:20» — faqat o'zgaruvchilar va belgilar, tarjima talab qilmaydi.
   "remittances.dialog.subtitle",
+  // IS-3: «{{reason}}» — foydalanuvchi yozgan sabab qo'shtirnoqda (en da “…”), tarjima talab qilmaydi.
+  "remittances.reasonQuoted",
 ]);
 
 /**
