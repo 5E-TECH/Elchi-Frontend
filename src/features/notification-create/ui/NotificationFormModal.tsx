@@ -11,6 +11,7 @@ import {
   useNotifications,
   type NotificationGroupType,
 } from "../../../entities/notification";
+import { isNetworkFailure } from "../../../auth/networkError";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
@@ -137,9 +138,9 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
       if (seq === requestSeq.current) setLink(next);
     } catch (error) {
       if (seq !== requestSeq.current) return;
-      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan. Backend matni
-      // foydalanuvchiga chiqmaydi — faqat i18n izoh (403 — bu market uchun ulash yopiq).
-      if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
+      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan; ataylab bekor qilingan
+      // so'rov — jim. Backend matni foydalanuvchiga chiqmaydi — faqat i18n izoh (403 — bu market uchun ulash yopiq).
+      if (axios.isCancel(error) || isNetworkFailure(error)) return;
       const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
       notify.error(t("create.linkError"), {
         description: t(forbidden ? "create.linkErrorForbidden" : "create.linkErrorRetry"),
@@ -156,6 +157,8 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
   };
 
   const activeLink = link && !expired ? link : null;
+  // `expires_at` kelmasa (normalizatsiyada "") — sanoq chizilmaydi («NaN:NaN qoldi» o'rniga).
+  const activeExpiresAtMs = activeLink ? Date.parse(activeLink.expires_at) : Number.NaN;
 
   const primaryAction = inactiveConnection ? (
     <Button
@@ -290,11 +293,13 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
               </div>
             )}
             <div className="flex flex-col gap-2 border-t border-border pt-3">
-              <LinkCountdown
-                variant="inline"
-                expiresAtMs={Date.parse(activeLink.expires_at)}
-                untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
-              />
+              {Number.isFinite(activeExpiresAtMs) ? (
+                <LinkCountdown
+                  variant="inline"
+                  expiresAtMs={activeExpiresAtMs}
+                  untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
+                />
+              ) : null}
               <p role="status" className="m-0 flex items-center gap-2 text-[13px] font-semibold text-text">
                 <Spinner size="sm" />
                 {t("create.waiting")}

@@ -16,6 +16,7 @@ describe("LinkCountdown", () => {
     );
 
     expect(screen.getByRole("timer")).toHaveTextContent("9:41 qoldi");
+    expect(screen.getByRole("timer", { name: "Havola muddati: 9 daqiqa 41 soniya qoldi" })).toBeInTheDocument();
     expect(screen.getByText("· 14:37 gacha amal qiladi")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 
@@ -23,6 +24,7 @@ describe("LinkCountdown", () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
     expect(screen.getByRole("timer")).toHaveTextContent("9:39 qoldi");
+    expect(screen.getByRole("timer", { name: "Havola muddati: 9 daqiqa 39 soniya qoldi" })).toBeInTheDocument();
   });
 
   it("sukut (bar): progress chizig'i bor — shaxsiy Telegram oynasi o'zgarmaydi", () => {

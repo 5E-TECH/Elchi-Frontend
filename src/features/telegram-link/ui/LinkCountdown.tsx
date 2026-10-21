@@ -4,7 +4,7 @@ import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { LINK_TTL_MS, formatLinkTimeLeft } from "../lib/linkTime";
+import { LINK_TTL_MS, formatLinkTimeLeft, splitLinkTimeLeft } from "../lib/linkTime";
 
 export type LinkCountdownProps = {
   /** Havola amal qiladigan oxirgi lahza (ms, mahalliy soat bo'yicha). */
@@ -50,12 +50,15 @@ export const LinkCountdown = ({
   const totalSeconds = Math.round(totalMs / 1000);
   const leftSeconds = Math.ceil(leftMs / 1000);
   const percent = totalMs > 0 ? (leftMs / totalMs) * 100 : 0;
+  // `inline`: ekran o'quvchiga «9:41» emas, to'liq matn (maket: `aria-label="Havola muddati: 9 daqiqa 41 soniya
+  // qoldi"`). `bar` o'zgarmaydi — progress chizig'i nomini shu ko'rinadigan matndan oladi (TG-A).
+  const timerLabel = t("timeLeftA11y", splitLinkTimeLeft(leftMs));
 
   if (variant === "inline") {
     return (
       <p className={cx("m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px]", className)}>
         <Clock aria-hidden="true" size={16} strokeWidth={2} className="shrink-0 text-text-muted" />
-        <span role="timer" className="whitespace-nowrap font-semibold text-text tabular-nums">
+        <span role="timer" aria-label={timerLabel} className="whitespace-nowrap font-semibold text-text tabular-nums">
           {t("timeLeft", { time: formatLinkTimeLeft(leftMs) })}
         </span>
         <span className="text-text-muted">

@@ -69,7 +69,7 @@
     "step1": "Open the link or scan the QR code with a phone that has Telegram.",
     "step2": "Choose the group — the bot joins it.",
     "step3": "The bot connects the group by itself, the list refreshes.",
-    "expiresAt": "Valid until {{time}}",
+    "expiresAt": "valid until {{time}}",
     "waiting": "Waiting for the group to connect…",
     "expired": "The link has expired",
     "expiredHint": "The link is valid for 10 minutes and works once. Get a new one.",

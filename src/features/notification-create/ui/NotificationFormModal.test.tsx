@@ -1,10 +1,13 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AxiosError, type AxiosResponse } from "axios";
+import { AxiosError, CanceledError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NotificationFormModal from "./NotificationFormModal";
 import { GROUP_LINK_POLL_MS } from "../model/constants";
 import { renderWithProviders } from "../../../test/test-utils";
+import { notify } from "../../../shared/lib/notify";
+import enGroups from "../../../locales/en/notificationGroups.json";
+import ruGroups from "../../../locales/ru/notificationGroups.json";
 
 /**
  * 6jXw0DDr / 4TfLyTrL: guruh bir martalik havola bilan ulanadi — `POST /telegram/link-code`
@@ -27,7 +30,7 @@ const apiError = (status: number, message: string) =>
     data: { statusCode: status, message },
   } as AxiosResponse);
 
-const linkResponse = (expiresInMs = 10 * 60_000, deepLink: string | null = DEEP_LINK) => ({
+const linkResponse = (expiresInMs: number | null = 10 * 60_000, deepLink: string | null = DEEP_LINK) => ({
   data: {
     statusCode: 200,
     message: "Telegram link",
@@ -35,7 +38,7 @@ const linkResponse = (expiresInMs = 10 * 60_000, deepLink: string | null = DEEP_
       token: "c0de42",
       purpose: "market_group",
       group_type: "cancel",
-      expires_at: new Date(Date.now() + expiresInMs).toISOString(),
+      expires_at: expiresInMs === null ? null : new Date(Date.now() + expiresInMs).toISOString(),
       deep_link: deepLink,
       command: "/start c0de42",
     },
@@ -77,6 +80,7 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("market va tur bilan havola so'raydi, QR va «Telegram'da ochish» ni ko'rsatadi", async () => {
@@ -107,6 +111,10 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
 
     // NG-B: ajratgich ostida teskari sanoq (`LinkCountdown` inline) — «9:59 qoldi · 14:37 gacha amal qiladi».
     expect(screen.getByRole("timer")).toHaveTextContent(/^(10:00|9:\d{2}) qoldi$/);
+    // Ekran o'quvchiga to'liq matn (maket `aria-label`).
+    expect(
+      screen.getByRole("timer", { name: /^Havola muddati: (10 daqiqa 0|9 daqiqa \d{1,2}) soniya qoldi$/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/^· \d{2}:\d{2} gacha amal qiladi$/)).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(
@@ -256,21 +264,58 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     expect(screen.queryByRole("link", { name: "Telegram'da ochish" })).not.toBeInTheDocument();
   });
 
-  it("boshqa xato — «Birozdan keyin qayta urinib ko'ring»; javobsiz (tarmoq) xato — ikkinchi xabar chiqmaydi", async () => {
+  it("boshqa xato — bitta notify.error «Birozdan keyin qayta urinib ko'ring» (backend matni chiqmaydi)", async () => {
     const user = userEvent.setup();
-    mocks.post
-      .mockRejectedValueOnce(apiError(500, "relation telegram_link_tokens does not exist"))
-      .mockRejectedValueOnce(new AxiosError("Network Error", "ERR_NETWORK"));
+    const errorSpy = vi.spyOn(notify, "error");
+    mocks.post.mockRejectedValueOnce(apiError(500, "relation telegram_link_tokens does not exist"));
     renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
 
     await pickMarket(user, /Baraka Shop/);
     await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
     expect(await screen.findByText("Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
     expect(screen.queryByText(/telegram_link_tokens/)).not.toBeInTheDocument();
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith("Havolani olib bo'lmadi", {
+      description: "Birozdan keyin qayta urinib ko'ring.",
+    });
+  });
 
+  it.each([
+    ["javobsiz (tarmoq) xato — «Internet aloqasi yo'q» ni interceptor ko'rsatadi", () => new AxiosError("Network Error", "ERR_NETWORK")],
+    ["vaqt tugadi (ECONNABORTED)", () => new AxiosError("timeout of 15000ms exceeded", "ECONNABORTED")],
+    ["ataylab bekor qilingan so'rov", () => new CanceledError()],
+  ])("%s — oyna o'z xato xabarini chiqarmaydi", async (_name, makeError) => {
+    const user = userEvent.setup();
+    const errorSpy = vi.spyOn(notify, "error");
+    mocks.post.mockRejectedValueOnce(makeError());
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Baraka Shop/);
     await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
-    await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(2));
-    expect(screen.getAllByText("Havolani olib bo'lmadi")).toHaveLength(1);
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Ulash havolasini olish" })).toBeEnabled());
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText("Havolani olib bo'lmadi")).not.toBeInTheDocument();
+  });
+
+  it("expires_at kelmasa — sanoq chizilmaydi («NaN» yo'q), havola va kutish ko'rinadi", async () => {
+    const user = userEvent.setup();
+    mocks.post.mockResolvedValue(linkResponse(null));
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Baraka Shop/);
+    await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
+
+    expect(await screen.findByRole("link", { name: "Telegram'da ochish" })).toBeInTheDocument();
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Guruh ulanishi kutilmoqda…");
+  });
+
+  it("en/ru: «· valid until 14:37» — o'rta nuqtadan keyin kichik harf", () => {
+    expect(enGroups.create.expiresAt).toBe("valid until {{time}}");
+    expect(ruGroups.create.expiresAt).toBe("действует до {{time}}");
   });
 
   it("muddati tugasa — «Yangi havola olish» yangi kod so'raydi", async () => {

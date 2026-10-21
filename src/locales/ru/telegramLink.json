@@ -32,6 +32,7 @@
   "unlinking": "Отключаем…",
   "unlinkedToast": "Telegram отключён",
   "timeLeft": "осталось {{time}}",
+  "timeLeftA11y": "Срок ссылки: осталось {{minutes}} мин {{seconds}} с",
   "waiting": "Ожидаем подключения…",
   "phoneStep1": "Нажмите «Открыть в Telegram»",
   "phoneStep3": "Вернитесь на эту страницу — она обновится сама",
