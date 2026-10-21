@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildDispatchPayload, createDefaultValues, createDispatchSchema, type DispatchFormValues } from "./schema";
+import { toAudienceTarget } from "../../../entities/notification-campaign";
+import {
+  buildCampaignPayload,
+  buildDispatchPayload,
+  createDefaultValues,
+  createDispatchSchema,
+  type DispatchFormValues,
+} from "./schema";
 
 const t = (key: string) => key;
 const base = (patch: Partial<DispatchFormValues>): DispatchFormValues => ({
@@ -18,8 +25,8 @@ describe("buildDispatchPayload", () => {
     expect(payload).not.toHaveProperty("broadcast");
   });
 
-  it("targets roles with a roles array", () => {
-    expect(buildDispatchPayload(base({ mode: "roles", roles: ["courier", "market"] }))).toMatchObject({ roles: ["courier", "market"] });
+  it("the «Rol» mode is gone — no roles field ever reaches the dispatch payload (KM-2)", () => {
+    expect(buildDispatchPayload(base({ mode: "all" }))).not.toHaveProperty("roles");
   });
 
   it("targets a picked list with recipient_ids", () => {
@@ -42,7 +49,7 @@ describe("buildDispatchPayload", () => {
   });
 
   it("Telegram without a market: channel kept, no telegram target (personal chats)", () => {
-    const payload = buildDispatchPayload(base({ mode: "roles", roles: ["courier"], telegram: true, telegram_market_id: "" }));
+    const payload = buildDispatchPayload(base({ mode: "list", recipient_ids: ["56"], telegram: true, telegram_market_id: "" }));
     expect(payload.channels).toEqual(["in_app", "realtime", "telegram"]);
     expect(payload).not.toHaveProperty("telegram");
   });
@@ -73,8 +80,11 @@ describe("createDispatchSchema", () => {
   it("requires a group key and a target for the chosen mode", async () => {
     await expect(schema.validate(base({ mode: "all", group_key: " " }))).rejects.toThrow("dispatch.errors.groupKey");
     await expect(schema.validate(base({ mode: "single", recipient_id: "" }))).rejects.toThrow("dispatch.errors.recipient");
-    await expect(schema.validate(base({ mode: "roles", roles: [] }))).rejects.toThrow("dispatch.errors.roles");
     await expect(schema.validate(base({ mode: "list", recipient_ids: [] }))).rejects.toThrow("dispatch.errors.recipients");
+  });
+
+  it("«Auditoriya» needs no group key (the campaign has none)", async () => {
+    await expect(schema.validate(base({ mode: "audience", group_key: "" }))).resolves.toBeTruthy();
   });
 
   it("Telegram market is optional — without it Telegram goes to personal chats (TgYRqaTk)", async () => {
@@ -85,5 +95,40 @@ describe("createDispatchSchema", () => {
     await expect(schema.validate(base({ mode: "all", telegram: true, telegram_market_id: "3" }))).resolves.toMatchObject({
       telegram_market_id: "3",
     });
+  });
+});
+
+describe("buildCampaignPayload", () => {
+  const target = toAudienceTarget({
+    kinds: ["customer", "staff"],
+    staffRoles: ["courier"],
+    customerSegment: { region_id: "5" },
+    allCustomers: false,
+  });
+
+  it("sends the audience target, the type and only campaign channels — no Telegram, SMS or group key", () => {
+    const payload = buildCampaignPayload(
+      base({ mode: "audience", category: "marketing", realtime: true, telegram: true, sms: true, push: true }),
+      target!,
+    );
+    expect(payload).toEqual({
+      roles: ["courier"],
+      include_customers: true,
+      segment: { region_id: "5" },
+      type: "marketing.manual",
+      category: "marketing",
+      priority: "normal",
+      title: "Ish vaqti",
+      body: "Ertaga 9:00 dan",
+      channels: ["in_app", "realtime", "push"],
+    });
+  });
+
+  it("drops empty optional fields and keeps in_app alone", () => {
+    const payload = buildCampaignPayload(base({ mode: "audience", body: " ", link: "", realtime: false }), target!);
+    expect(payload.channels).toEqual(["in_app"]);
+    expect(payload).not.toHaveProperty("body");
+    expect(payload).not.toHaveProperty("link");
+    expect(payload).not.toHaveProperty("group_key");
   });
 });

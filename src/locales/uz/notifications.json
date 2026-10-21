@@ -38,7 +38,7 @@
     "logistics": "Logistika",
     "account": "Hisob",
     "system": "Tizim",
-    "marketing": "Marketing"
+    "marketing": "Reklama"
   },
   "priority": {
     "low": "Past",
@@ -57,7 +57,7 @@
   },
   "dispatch": {
     "pageTitle": "Xabar yuborish",
-    "pageDescription": "Tizim ichidagi foydalanuvchilarga bildirishnoma",
+    "pageDescription": "Tizim ichidagi foydalanuvchilarga va mijozlarga bildirishnoma",
     "openSend": "Xabar yuborish",
     "backLabel": "Bildirishnomalar",
     "formLabel": "Xabar yuborish formasi",
@@ -68,8 +68,8 @@
     "sectionPreview": "Oldindan ko'rish",
     "mode": {
       "single": "Bitta odam",
-      "roles": "Rol",
       "list": "Tanlangan ro'yxat",
+      "audience": "Auditoriya",
       "all": "Hamma"
     },
     "recipientPlaceholder": "Ism yoki telefon bo'yicha qidiring",
@@ -78,8 +78,6 @@
     "recipientsEmpty": "Hech kim topilmadi",
     "recipientsSelected": "Tanlanganlar",
     "removeRecipient": "{{name}} — ro'yxatdan olib tashlash",
-    "rolesLabel": "Rollar",
-    "customerDisabled": "Mijozlarga bu yerdan yuborib bo'lmaydi — tizim ularni rol bo'yicha topmaydi (0 ta qabul qiluvchi).",
     "allHint": "Xabar tizimdagi barcha xodim va marketlarga boradi.",
     "estimate": "<b>Taxminan {{value}} ta</b> qabul qiluvchi",
     "estimateLoading": "Qabul qiluvchilar hisoblanmoqda…",
@@ -128,7 +126,6 @@
     "errors": {
       "recipient": "Qabul qiluvchini tanlang",
       "recipients": "Kamida bitta qabul qiluvchini tanlang",
-      "roles": "Kamida bitta rolni tanlang",
       "title": "Sarlavhani kiriting",
       "groupKey": "Guruh kalitini kiriting",
       "tooLong": "{{max}} belgidan oshmasin"
@@ -377,6 +374,195 @@
     "error": {
       "title": "Yuborilganlar ro'yxatini olib bo'lmadi",
       "text": "Server hozir javob bermayapti. Birozdan keyin qayta urinib ko'ring."
+    }
+  },
+  "campaign": {
+    "kindsLabel": "Turi",
+    "kind": {
+      "customer": "Mijoz",
+      "market": "Market",
+      "staff": "Xodim"
+    },
+    "staffRolesLabel": "Xodim rollari",
+    "staffSelected": "{{value}} ta tanlandi",
+    "staffExcluded": "Superadmin va investor auditoriyaga kirmaydi",
+    "role": {
+      "admin": "Admin",
+      "manager": "Menejer",
+      "registrator": "Registrator",
+      "courier": "Kuryer",
+      "logist": "Logist",
+      "market": "Market",
+      "customer": "Mijoz",
+      "unknown": "Boshqa"
+    },
+    "filtersHidden": "Mijoz filtrlari yashirin — ular faqat «Mijoz» tanlanganda chiqadi. Hudud va buyurtma shartlari xodimlarga qo'llanmaydi.",
+    "segments": {
+      "label": "Saqlangan segment",
+      "placeholder": "Segment tanlang",
+      "empty": "Saqlangan segment yo'q",
+      "meta": "{{value}} ta · {{time}} da sanalgan",
+      "metaNoTime": "{{value}} ta",
+      "loadError": "Segmentlarni olib bo'lmadi",
+      "delete": "«{{name}}» segmentini o'chirish",
+      "deleteTitle": "Segmentni o'chirasizmi?",
+      "deleteText": "«{{name}}» o'chiriladi, uni qaytarib bo'lmaydi. Yuborilgan kampaniyalarga ta'sir qilmaydi.",
+      "deleteConfirm": "Segmentni o'chirish",
+      "deleteClose": "Yopish",
+      "deleted": "Segment o'chirildi",
+      "deleteFailed": "Segmentni o'chirib bo'lmadi — birozdan keyin qayta urinib ko'ring",
+      "deleteGone": "Segment allaqachon o'chirilgan"
+    },
+    "summary": {
+      "title": "Auditoriya: {{value}} ta",
+      "customer": "Mijoz {{value}}",
+      "market": "Market {{value}}",
+      "staff": "Xodim {{value}}",
+      "staffOnly": "Xodim: {{list}}",
+      "roleCount": "{{role}} {{value}}",
+      "push": "Push: {{value}} ta foydalanuvchi",
+      "loading": "Auditoriya hisoblanmoqda",
+      "loadingHint": "Filtr o'zgardi — bir lahza",
+      "emptyHint": "Tanlangan filtrlar bo'yicha qabul qiluvchi topilmadi — filtrlarni kengaytiring.",
+      "overCapTitle": "Auditoriya: {{value}} ta — chegara {{max}} ta",
+      "overCapText": "Bunday kampaniya yuborilmaydi. Filtrlarni toraytiring yoki auditoriyani hududlar bo'yicha ikkiga bo'ling.",
+      "bigHint": "Navbat orqali {{batch}} tadan bo'laklab yuboriladi",
+      "bigTitle": "Kampaniya sifatida yuboriladi",
+      "bigText": "«Auditoriya» rejimi doim kampaniya: navbat orqali {{batch}} tadan, reklama — tungi taqiq bilan. Telegram yo'q.",
+      "errorTitle": "Auditoriyani hisoblab bo'lmadi",
+      "errorText": "Server javob bermadi. Filtrlar saqlanib qoldi.",
+      "errorBadRequest": "Bu filtrlar bo'yicha sanab bo'lmadi — mijozlar filtri juda keng bo'lishi mumkin, toraytiring. Filtrlar saqlanib qoldi.",
+      "retry": "Qayta urinish",
+      "needsFilterTitle": "Mijozlar uchun filtr tanlang",
+      "needsFilterText": "Hudud, market, oxirgi buyurtma yoki buyurtmalar soni bo'yicha kamida bitta filtr kerak. Son filtr tanlangandan keyin chiqadi.",
+      "allCustomers": "Filtrsiz — barcha mijozlarga yuborish",
+      "sample": "Namunani ko'rish",
+      "save": "Segmentni saqlash"
+    },
+    "errors": {
+      "kinds": "Kamida bitta turni tanlang",
+      "staffRoles": "Kamida bitta xodim rolini tanlang",
+      "range": "«gacha» «dan» dan kichik bo'lmasin",
+      "customerFilter": "Mijozlar uchun filtr tanlang yoki «Filtrsiz» ni belgilang",
+      "counting": "Auditoriya hali hisoblanmoqda — bir lahza kuting"
+    },
+    "sampleDialog": {
+      "title": "Auditoriya namunasi",
+      "description": "{{total}} ta qabul qiluvchidan {{shown}} tasi",
+      "privacy": "Maxfiylik uchun ism ko'rsatilmaydi va telefonning faqat oxirgi 4 raqami chiqadi.",
+      "table": "Auditoriya namunasi",
+      "no": "№",
+      "id": "ID",
+      "kind": "Turi",
+      "phone": "Telefon",
+      "close": "Yopish",
+      "empty": "Namuna bo'sh",
+      "emptyHint": "Auditoriyada hozir hech kim yo'q",
+      "error": "Namunani olib bo'lmadi"
+    },
+    "saveDialog": {
+      "title": "Segmentni saqlash",
+      "description": "Shartlar saqlanadi — keyingi kampaniyada soni qayta hisoblanadi",
+      "name": "Nomi",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: kuzgi aksiya uchun",
+      "kinds": "Turi",
+      "staffRoles": "Xodim rollari",
+      "region": "Mijoz hududi",
+      "market": "Market",
+      "lastOrder": "Oxirgi buyurtma",
+      "orders": "Buyurtmalar soni",
+      "now": "Hozir",
+      "all": "Barchasi",
+      "allCustomers": "Barcha mijozlar (filtrsiz)",
+      "ordersRange": "{{from}}–{{to}}",
+      "ordersFrom": "{{from}} dan",
+      "ordersTo": "{{to}} gacha",
+      "nowValue": "{{value}} ta",
+      "cancel": "Bekor qilish",
+      "submit": "Saqlash",
+      "nameRequired": "Nomini kiriting",
+      "nameTaken": "Bu nomli segment allaqachon bor — boshqa nom yozing",
+      "saved": "Segment saqlandi",
+      "failed": "Segmentni saqlab bo'lmadi — birozdan keyin qayta urinib ko'ring",
+      "badRequest": "Segmentni saqlab bo'lmadi — auditoriya shartlarini tekshiring"
+    },
+    "channel": {
+      "realtime": "Ochiq ekranga",
+      "realtimeHint": "Hozir ilovada bo'lganlarga",
+      "pushHint": "{{value}} ta foydalanuvchida yoqilgan",
+      "pushHintUnknown": "Bildirishnomani yoqqan qurilmalarga",
+      "telegramOff": "Kampaniyada yo'q",
+      "hint": "Auditoriya bo'yicha xabar doim kampaniya sifatida navbat orqali ketadi; reklama tungi taqiq bilan. Telegram — market guruhlari uchun, kampaniyada yo'q."
+    },
+    "previewNote": "Darhol · kampaniya · {{value}} ta qabul qiluvchi",
+    "disabled": {
+      "overCap": "Auditoriya chegaradan oshgan — yuborib bo'lmaydi",
+      "empty": "Auditoriya bo'sh — yuborib bo'lmaydi",
+      "counting": "Auditoriya hisoblanmoqda — bir lahza",
+      "error": "Auditoriyani hisoblab bo'lmadi — qayta urinib ko'ring"
+    },
+    "who": {
+      "customerFiltered": "Mijoz ({{filters}})",
+      "customerAll": "Mijoz (barchasi)",
+      "customerSegment": "Mijoz (filtr bilan)",
+      "market": "Market",
+      "staff": "Xodim: {{roles}}"
+    },
+    "confirm": {
+      "count": "{{value}} ta",
+      "time": "Yuborish vaqti",
+      "timeNow": "Darhol",
+      "category": "Kategoriya",
+      "quietTitle": "Reklama {{time}} da yuboriladi",
+      "quietText": "Reklama {{start}}–{{end}} oralig'ida yuborilmaydi (Toshkent vaqti) — taqiq tugashi bilan navbat o'zi boshlanadi.",
+      "cancelNote": "Yuborish tugaguncha kampaniyani bekor qilish mumkin."
+    },
+    "createError": {
+      "title": "Kampaniya yaratilmadi",
+      "overCap": "Kampaniya auditoriyasi {{total}} — chegara {{max}}. Hech kimga yuborilmadi.",
+      "empty": "Auditoriya bo'sh — hech kimga yuborilmadi.",
+      "badRequest": "Server kampaniyani rad etdi — auditoriya va kanallarni tekshiring. Hech kimga yuborilmadi.",
+      "conflict": "Bu so'rov boshqa mazmundagi kampaniyaga tegishli — «Yangi xabar» bilan qaytadan yozing.",
+      "forbidden": "Kampaniya yuborishga ruxsatingiz yo'q.",
+      "tooMany": "So'rovlar juda ko'p — birozdan keyin qayta urinib ko'ring.",
+      "server": "Serverda xatolik yuz berdi — birozdan keyin qayta urinib ko'ring.",
+      "generic": "Kampaniyani yaratib bo'lmadi — birozdan keyin qayta urinib ko'ring."
+    },
+    "progress": {
+      "title": "Kampaniya",
+      "counts": "<b>{{sent}}</b> / {{total}} yuborildi",
+      "live": "Har 2–3 soniyada yangilanadi",
+      "bar": "Yuborildi",
+      "scheduled": "{{time}} da yuboriladi",
+      "quietShifted": "Reklama tungi taqiq tufayli {{time}} da yuboriladi",
+      "failedCount": "{{value}} ta xato",
+      "skippedCount": "{{value}} ta o'tkazib yuborildi",
+      "duplicate": "Bu kampaniya avval yaratilgan — o'sha kampaniya holati ko'rsatilmoqda",
+      "loadError": "Holatni yangilab bo'lmadi — o'zi qayta urinadi",
+      "cancel": "Bekor qilish",
+      "cancelTitle": "Kampaniyani bekor qilasizmi?",
+      "cancelText": "Navbatdagi qismlar yuborilmaydi. Allaqachon yuborilgan xabarlar qaytarilmaydi.",
+      "cancelRemaining": "Qolgan {{value}} ta qabul qiluvchiga yuborilmaydi",
+      "cancelConfirm": "Kampaniyani bekor qilish",
+      "cancelClose": "Yopish",
+      "cancelled": "Kampaniya bekor qilindi",
+      "cancelConflict": "Kampaniya allaqachon yakunlangan — bekor qilib bo'lmadi",
+      "cancelFailed": "Kampaniyani bekor qilib bo'lmadi — birozdan keyin qayta urinib ko'ring",
+      "unknownTitle": "Javob kelmadi",
+      "unknownText": "Kampaniya yaratilgan bo'lishi mumkin. «Qayta urinish» aynan shu so'rovni yuboradi — ikkinchi kampaniya yaratilmaydi.",
+      "retry": "Qayta urinish",
+      "retrying": "Tekshirilmoqda…",
+      "retryFailed": "Qayta urinish ham bo'lmadi",
+      "locked": "Kampaniya navbatga qo'yildi — forma qulflandi. Yangisini yozish uchun «Yangi xabar» ni bosing.",
+      "lockedUnknown": "Natija noma'lum — kampaniya ikki marta yaratilmasligi uchun forma qulflandi."
+    },
+    "status": {
+      "scheduled": "Rejalashtirilgan",
+      "sending": "Yuborilmoqda",
+      "sent": "Yuborilgan",
+      "failed": "Xato",
+      "cancelled": "Bekor qilingan"
     }
   }
 }

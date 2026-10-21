@@ -367,6 +367,23 @@ export const API_ENDPOINTS = {
     SENT_BY_ID: (dispatchId: string) => `notifications/sent/${encodeURIComponent(dispatchId)}`,
     // GET qo'lda yuborilgan xabarlar tarixi (?page&limit&status&created_by) — yangisi birinchi (NS-2, superadmin/admin)
     SENT: "notifications/sent",
+    // Auditoriya va kampaniya (KM-2, superadmin/admin) ──────────────────────
+    // POST nishon → aniq son, rollar kesimi, kanal bo'yicha yaroqlilar, ?with_sample — 20 ta maskalangan qator
+    AUDIENCE_PREVIEW: "notifications/audience/preview",
+    AUDIENCE_SEGMENTS: "notifications/audience/segments", // GET saqlangan segmentlar / POST saqlash (409 — nom band)
+    AUDIENCE_SEGMENT_BY_ID: (id: string) => `notifications/audience/segments/${encodeURIComponent(id)}`, // DELETE
+    CAMPAIGNS: "notifications/campaigns", // GET tarix (?page&limit&state) / POST yaratish (Idempotency-Key) → 202
+    CAMPAIGN_SCHEDULE_POLICY: "notifications/campaigns/schedule-policy", // GET tungi taqiq (?scheduled_at&category)
+    CAMPAIGN_BY_ID: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}`, // GET progress
+    CAMPAIGN_CANCEL: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/cancel`, // POST (409 — tugagan)
+    CAMPAIGN_REPORT: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/report`, // GET
+    CAMPAIGN_UNDELIVERED: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/undelivered`, // GET
+    // GET CSV (faqat superadmin): ≤10 000 — fayl, kattasi — 202 { export_id }
+    CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
+      `notifications/campaigns/${encodeURIComponent(id)}/undelivered/export`,
+    CAMPAIGN_EXPORT_BY_ID: (exportId: string) => `notifications/campaigns/exports/${encodeURIComponent(exportId)}`,
+    CAMPAIGN_EXPORT_DOWNLOAD: (exportId: string) =>
+      `notifications/campaigns/exports/${encodeURIComponent(exportId)}/download`,
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device

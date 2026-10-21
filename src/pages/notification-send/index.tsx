@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown
+// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown, superadmin-notifications-send-audience, superadmin-notifications-send-states
 import { History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -10,7 +10,8 @@ import { NotificationInboxItem } from "../../widgets/notification-inbox";
  * Xabar yuborish (`/notifications/send`) — superadmin va admin, dizayn v2 (maket `superadmin-notifications-send`).
  * «← Bildirishnomalar» — `/inbox` (ega savoli 10, sukut: kirish nuqtasi inbox, admin `/notifications` ni ocholmaydi).
  * Oldindan ko'rish — inbox kartasining o'zi (`NotificationInboxItem preview`). Sarlavhada «Yuborilganlar» (NS-2) —
- * `/notifications/sent` (ikkinchi darajali; asosiy amal — formadagi «Yuborish»).
+ * `/notifications/sent` (ikkinchi darajali; asosiy amal — formadagi «Yuborish»). KM-2: «Auditoriya» rejimi (kampaniya) —
+ * formaning o'zida (maketlar `-send-audience`, `-send-states`).
  */
 const NotificationSendPage = () => {
   const { t } = useTranslation("notifications");

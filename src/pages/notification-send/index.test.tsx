@@ -13,7 +13,7 @@ describe("NotificationSendPage", () => {
     renderWithProviders(<NotificationSendPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Xabar yuborish" })).toBeInTheDocument();
-    expect(screen.getByText("Tizim ichidagi foydalanuvchilarga bildirishnoma")).toBeInTheDocument();
+    expect(screen.getByText("Tizim ichidagi foydalanuvchilarga va mijozlarga bildirishnoma")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
       "href",
       "/inbox",

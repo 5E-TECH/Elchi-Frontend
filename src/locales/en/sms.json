@@ -113,6 +113,9 @@
     "lastOrderAny": "Any time",
     "minOrders": "Number of orders",
     "minOrdersPlaceholder": "from",
+    "maxOrdersPlaceholder": "to",
+    "ordersFrom": "Number of orders — from",
+    "ordersTo": "Number of orders — to",
     "loadError": "Could not load the list"
   },
   "audience": {

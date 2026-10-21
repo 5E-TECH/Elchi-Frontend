@@ -5,11 +5,26 @@ import { api } from "../../../shared/api/api";
 import { renderWithProviders } from "../../../test/test-utils";
 import NotificationDispatchForm from "./NotificationDispatchForm";
 
+/**
+ * «Hamma» soni — `POST notifications/audience/preview` (KM-2). Bu faylda `api.post` faqat yuborish so'rovlari uchun
+ * (navbatli javoblar) — preview alohida soxtalanadi. «Auditoriya» rejimi — `NotificationDispatchForm.audience.test.tsx`.
+ */
+vi.mock("../../../entities/notification-campaign/api/campaignApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../entities/notification-campaign/api/campaignApi")>();
+  return {
+    ...actual,
+    previewAudience: vi.fn(async () =>
+      actual.normalizeAudiencePreview({
+        data: { exact: true, total: 250, by_role: { courier: 220, market: 30 }, by_channel: { push: 12 } },
+      }),
+    ),
+  };
+});
+
 const USERS = [
   { id: "56", name: "Kuryer Ali", phone_number: "+998970000095", role: "courier" },
   { id: "3", name: "Yandex", phone_number: "+998900000001", role: "market" },
 ];
-const ROLE_TOTALS: Record<string, number> = { courier: 12, market: 30, manager: 200, admin: 8 };
 
 let getSpy: MockInstance<typeof api.get>;
 let postSpy: MockInstance<typeof api.post>;
@@ -45,11 +60,6 @@ beforeEach(() => {
     const params = config?.params ?? {};
     if (url.startsWith("notifications/sent/")) {
       return { data: sentDetail(decodeURIComponent(url.slice("notifications/sent/".length)), params) };
-    }
-    if (url === "users" && params.limit === 1) {
-      // Rolsiz ro'yxatda backend `total` ni sahifa hajmi qilib qaytaradi (jonli xato) — ishlatilmasligi kerak.
-      const total = params.role ? (ROLE_TOTALS[String(params.role)] ?? 0) : 1;
-      return { data: { data: { items: [], meta: { total } } } };
     }
     if (url === "users") return { data: { data: { items: USERS, meta: { total: USERS.length } } } };
     if (url === "markets") return { data: { data: { items: [{ id: 3, name: "Yandex" }] } } };
@@ -161,40 +171,10 @@ describe("NotificationDispatchForm — recipients", () => {
     await expectResult(1);
   });
 
-  it("sends a roles array, keeps customers disabled with the reason, and estimates the count", async () => {
-    const user = userEvent.setup();
+  it("has no «Rol» mode any more — the modes are Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma (KM-2)", () => {
     renderForm();
-    await chooseMode(user, "Rol");
-
-    const customer = screen.getByRole("checkbox", { name: "Mijoz" });
-    expect(customer).toBeDisabled();
-    expect(customer).toHaveAccessibleDescription(/Mijozlarga bu yerdan yuborib bo'lmaydi/);
-
-    await user.click(screen.getByRole("checkbox", { name: "Kuryer" }));
-    await user.click(screen.getByRole("checkbox", { name: "Market" }));
-    expect(await screen.findByTestId("recipient-estimate")).toHaveTextContent(
-      "Taxminan 42 ta qabul qiluvchi",
-    );
-
-    await fillContent(user);
-    const dialog = await submitAndConfirm(user);
-    expect(within(dialog).getByTestId("confirm-count")).toHaveTextContent("taxminan 42 ta");
-    expect(within(dialog).getByText("Kuryer, Market")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
-
-    await waitFor(() => expect(sentPayload()).toMatchObject({ roles: ["courier", "market"] }));
-    expect(sentPayload()).not.toHaveProperty("recipient_id");
-  });
-
-  it("shows a validation error when no role is picked", async () => {
-    const user = userEvent.setup();
-    renderForm();
-    await chooseMode(user, "Rol");
-    await fillContent(user);
-    await user.click(screen.getByRole("button", { name: /^Yuborish/ }));
-
-    expect(await screen.findByText("Kamida bitta rolni tanlang")).toBeInTheDocument();
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    const modes = within(screen.getByRole("radiogroup", { name: "Qabul qiluvchilar turi" })).getAllByRole("radio");
+    expect(modes.map((mode) => mode.textContent)).toEqual(["Bitta odam", "Tanlangan ro'yxat", "Auditoriya", "Hamma"]);
   });
 
   it("sends recipient_ids for a picked list and lets a picked person be removed", async () => {
@@ -239,6 +219,8 @@ describe("NotificationDispatchForm — recipients", () => {
     renderForm();
     await chooseMode(user, "Hamma");
     await fillContent(user);
+    // Son backend preview'dan (`{ broadcast: true }`), debounce bilan.
+    expect(await screen.findByText("Taxminan 250 ta", { exact: false })).toBeInTheDocument();
 
     const dialog = await submitAndConfirm(user);
     expect(

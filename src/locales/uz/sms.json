@@ -113,6 +113,9 @@
     "lastOrderAny": "Istalgan vaqt",
     "minOrders": "Buyurtmalar soni",
     "minOrdersPlaceholder": "dan",
+    "maxOrdersPlaceholder": "gacha",
+    "ordersFrom": "Buyurtmalar soni — dan",
+    "ordersTo": "Buyurtmalar soni — gacha",
     "loadError": "Ro'yxatni olib bo'lmadi"
   },
   "audience": {
