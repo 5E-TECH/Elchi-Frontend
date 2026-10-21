@@ -32,8 +32,8 @@
     "canCreateOrdersByRoleAndBranchType": { "source": "access.ts → canCreateOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "", "market_operator": "taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)" } },
     "canManageExternalIntegrations": { "source": "access.ts → canReceiveExternalOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "" } },
     "canHandoverCancelledToMarket": { "source": "access.ts → canHandoverCancelledToMarket", "roles": { "superadmin": "", "admin": "", "registrator": "faqat HQ" } },
-    "canCreateProducts": { "source": "access.ts → canCreateProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "" } },
-    "canViewProducts": { "source": "access.ts → canViewProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "", "market_operator": "taklif — faqat ko'rish" } },
+    "canCreateProducts": { "source": "access.ts → canCreateProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "" } },
+    "canViewProducts": { "source": "access.ts → canViewProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "faqat ko'rish", "market_operator": "faqat ko'rish" } },
     "canViewBranchDashboard": { "source": "routes.tsx → canViewBranchDashboard", "roles": { "manager": "" } },
     "canViewOps": { "source": "routes.tsx → canViewOps", "roles": { "superadmin": "", "admin": "" } },
     "canViewOpsPages": { "source": "routes.tsx → canViewOpsPages", "roles": { "superadmin": "" } },
@@ -1031,15 +1031,18 @@
     {
       "path": "/products",
       "section": "products",
-      "title": "Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash; dizayn v2)",
+      "title": "Mahsulotlar ro'yxati (xodim: tahrirlash, o'chirish, yaratish uchun market tanlash; market va market operatori — faqat ko'rish; dizayn v2)",
       "components": [
         "src/pages/products/list/index.tsx",
         "src/pages/products/list/ui/SelectMarketDialog.tsx",
         "src/pages/products/list/ui/EditProductDialog.tsx",
         "src/pages/products/ui/useDeleteProductConfirm.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/FormErrorSummary.tsx",
         "src/pages/products/ui/ProductThumb.tsx",
-        "src/pages/products/model/productView.ts"
+        "src/pages/products/model/productView.ts",
+        "src/pages/products/model/productErrors.ts"
       ],
       "views": {
         "superadmin": ["products-list", "products-select-market-dialog", "products-edit-dialog", "products-delete-dialog"],
@@ -1050,10 +1053,10 @@
         "market_operator": ["products-list", "products-unassigned"]
       },
       "roleNotes": {
-        "market": "Faqat ko'rish (ega qarori 2026-10-15): yaratish, tahrirlash, o'chirish va «Amallar» ustuni yo'q.",
-        "market_operator": "Faqat ko'rish (ega qarori 2026-10-15): tahrirlash, o'chirish, yaratish yo'q, garchi backend POST product va PATCH product/my/:id ni MARKET_OPERATOR'ga ochsa ham. Ma'lumot — GET product/my-products. Market biriktirilmagan bo'lsa — products-unassigned."
+        "market": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): yaratish, tahrirlash, o'chirish va «Amallar» ustuni yo'q; qidiruv yonida «Faqat ko'rish…» izohi, sarlavhada «Jami N ta mahsulot · <market>».",
+        "market_operator": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): tahrirlash, o'chirish, yaratish yo'q, garchi backend POST product va PATCH product/my/:id ni MARKET_OPERATOR'ga ochsa ham. Ma'lumot — GET product/my-products, market nomi qatordan (market.name). Market biriktirilmagan bo'lsa (my-products → 400) — products-unassigned («Qayta tekshirish» qayta so'raydi). Menyu bandi — MO-2 (plannedMenu)."
       },
-      "note": "Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). Maket taklifi (2026-10-19): ro'yxatda Narx, Og'irlik, O'lcham, Hisob vazni ustunlari; planshetda market nomi mahsulot nomi ostida. «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi, kodga ko'chirilmaydi."
+      "note": "Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). Og'irlik, O'lcham, Hisob vazni ustunlari — maket taklifi (backend kerak, 9fHyFp3y → MH-2), chizilmaydi; «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi."
     },
     {
       "path": "/products/create-product/:id",
@@ -1062,8 +1065,11 @@
       "components": [
         "src/pages/products/create/index.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/FormErrorSummary.tsx",
         "src/pages/products/ui/ProductThumb.tsx",
-        "src/pages/products/ui/useDeleteProductConfirm.tsx"
+        "src/pages/products/ui/useDeleteProductConfirm.tsx",
+        "src/pages/products/model/productErrors.ts"
       ],
       "views": {
         "superadmin": ["products-create", "products-create-errors"],
@@ -1071,9 +1077,9 @@
         "manager": ["products-create", "products-create-errors"],
         "registrator": ["products-create", "products-create-errors"]
       },
-      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. Maket taklifi (2026-10-19): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni», «Narx». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. Maket taklifi (2026-10-19, backend kerak — MH-2): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
       "roleNotes": {
-        "market": "Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15)."
+        "market": "Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1)."
       }
     },
     {
@@ -1741,12 +1747,6 @@
     "superadmin-notifications-campaign-report-dialog": "Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export)",
     "superadmin-notifications-send-states": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "superadmin-notifications-sms-campaign-segment": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
-    "superadmin-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
-    "admin-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
-    "manager-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
-    "registrator-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
-    "market_operator-products-list": "Maket taklifi (2026-10-19): market_operator roli menyusi kodda hali yo'q; market--products-list bilan bitta fragment.",
-    "market_operator-products-unassigned": "Maket taklifi (2026-10-19): market biriktirilmagan market_operator holati kodda yo'q.",
     "superadmin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
     "admin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
     "superadmin-regions-logist-assignment-confirm-dialog": "Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q.",
@@ -1945,7 +1945,11 @@
     "admin-regions-districts-merge-unknown": "Kodda bor (DM-1, v2): timeout / javobsiz / 500 / 502 / 504 / 524 → «Natija noma'lum», «Qayta urinish» yo'q, «Faoliyat jurnalini ochish» (/activity-logs) va «Tumanlarni yangilash». Farq: qadamlar matnida jurnal yozuvi nomlari («Tuman birlashtirildi» / «… chala qoldi») yo'q — backend ularni hali yozmaydi (ILq3WNL1, DM-3); o'rniga «shu tuman yozuvlarini ko'ring».",
     "admin-regions-districts-merge-error": "Oyna chizilmagan (DM-1): 409 / 503 / 400 / 404 da umumiy notify.error «Birlashtirib bo'lmadi» + «Faoliyat jurnali» havolasi, oyna yopiladi, ro'yxat yangilanadi — «qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi. «Sabab», sonlar, «Xabarni nusxalash», «Qayta urinish» — backend N1 (gateway xato `data`) + tf324cXN / vsmpTweI dan keyin — DM-2.",
     "admin-regions-districts-merge-error-unavailable": "Oyna chizilmagan (DM-1): 409 / 503 / 400 / 404 da umumiy notify.error «Birlashtirib bo'lmadi» + «Faoliyat jurnali» havolasi, oyna yopiladi, ro'yxat yangilanadi — «qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi. «Sabab», sonlar, «Xabarni nusxalash», «Qayta urinish» — backend N1 (gateway xato `data`) + tf324cXN / vsmpTweI dan keyin — DM-2.",
-    "admin-regions-districts-merge-error-manual": "Oyna chizilmagan (DM-1): 409 / 503 / 400 / 404 da umumiy notify.error «Birlashtirib bo'lmadi» + «Faoliyat jurnali» havolasi, oyna yopiladi, ro'yxat yangilanadi — «qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi. «Bo'z tumaniga qaytmadi» ro'yxati (stranded), «Sabab», «Xabarni nusxalash», «Qayta urinish» — backend N1 (gateway xato `data`) + tf324cXN / vsmpTweI dan keyin — DM-2."
+    "admin-regions-districts-merge-error-manual": "Oyna chizilmagan (DM-1): 409 / 503 / 400 / 404 da umumiy notify.error «Birlashtirib bo'lmadi» + «Faoliyat jurnali» havolasi, oyna yopiladi, ro'yxat yangilanadi — «qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi. «Bo'z tumaniga qaytmadi» ro'yxati (stranded), «Sabab», «Xabarni nusxalash», «Qayta urinish» — backend N1 (gateway xato `data`) + tf324cXN / vsmpTweI dan keyin — DM-2.",
+    "superadmin-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2).",
+    "admin-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2).",
+    "manager-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2).",
+    "registrator-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2)."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",

@@ -158,29 +158,23 @@ export const canHandoverCancelledToMarket: Predicate = anyOf(
 );
 
 /**
- * Mahsulot YARATISH — backend POST /product endi filial xodimlariga ham ruxsat
- * beradi: MARKET, ADMIN, SUPERADMIN ustiga REGISTRATOR va MANAGER qo'shildi
- * (market_id majburiy — xodim mahsulotni qaysi market uchun yaratishini
- * tanlaydi). Avval faqat MARKET/ADMIN/SUPERADMIN edi va registrator saqlashda
- * doim 403 olardi.
+ * Mahsulot YARATISH va TAHRIRLASH — faqat Elchi xodimlari: SUPERADMIN, ADMIN, REGISTRATOR, MANAGER (backend
+ * POST /product; market_id majburiy — xodim mahsulotni qaysi market uchun yaratishini tanlaydi).
+ * MH-1 (ega qarori 2026-10-15): market endi faqat ko'radi — ro'yxatda «Mahsulot yaratish» va amallar yo'q,
+ * `/products/create-product/:id` marketga 403. Backend market yozish yo'llarini keyin yopadi (Pc4CAFdB).
  */
-export const canCreateProducts: Predicate = hasRole(
-  "superadmin",
-  "admin",
-  "market",
-  "registrator",
-  "manager",
-);
+export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "registrator", "manager");
 
 /**
  * Mahsulotlar ro'yxati (`/products`) — avval `routes.tsx` da qo'lda nusxalangan `canManageProducts` edi (ROL-0
- * shu yerga ko'chirdi, rollar o'zgarmadi). MH-1 marketni faqat ko'rishga, MO-2 market operatorini shu yerda
- * o'zgartiradi.
+ * shu yerga ko'chirdi). Market va market operatori (MH-1) — faqat ko'rish (`GET product/my-products`; operatorga
+ * biriktirilgan marketi). Operatorning menyu bandi — MO-2.
  */
 export const canViewProducts: Predicate = hasRole(
   "superadmin",
   "admin",
   "market",
+  "market_operator",
   "registrator",
   "manager",
 );

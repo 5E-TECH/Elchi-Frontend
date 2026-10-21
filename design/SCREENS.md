@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **141** · qisman: **112** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **135** · qisman: **116** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -90,8 +90,8 @@
 | `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
 | `(taklif) /my-earnings` | Moliya | `src/app/lib/routes.tsx` | market_operator (taklif — yangi rol, yangi route) | 2 | eski |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
-| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (taklif — faqat ko'rish) | 19 | v2 |
-| `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator, market | 8 | v2 |
+| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 19 | v2 |
+| `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
 | `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
 | `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 8 | v2 |
 | `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 23 | v2 |
@@ -1105,14 +1105,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Mahsulotlar
 
-#### `/products` — Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash; dizayn v2)
+#### `/products` — Mahsulotlar ro'yxati (xodim: tahrirlash, o'chirish, yaratish uchun market tanlash; market va market operatori — faqat ko'rish; dizayn v2)
 
-- **Fayllar:** `src/pages/products/list/index.tsx` · `src/pages/products/list/ui/SelectMarketDialog.tsx` · `src/pages/products/list/ui/EditProductDialog.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductThumb.tsx` · `src/pages/products/model/productView.ts`
+- **Fayllar:** `src/pages/products/list/index.tsx` · `src/pages/products/list/ui/SelectMarketDialog.tsx` · `src/pages/products/list/ui/EditProductDialog.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/pages/products/ui/ProductThumb.tsx` · `src/pages/products/model/productView.ts` · `src/pages/products/model/productErrors.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewProducts` (access.ts → canViewProducts)
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator (taklif — faqat ko'rish)
+- **Rollar:** superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish)
 - **Menyuda:** «Mahsulotlar» (`products`) — superadmin, admin, manager, registrator, market
 - **Holat:** v2
-- **Izoh:** Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). Maket taklifi (2026-10-19): ro'yxatda Narx, Og'irlik, O'lcham, Hisob vazni ustunlari; planshetda market nomi mahsulot nomi ostida. «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi, kodga ko'chirilmaydi.
+- **Izoh:** Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). Og'irlik, O'lcham, Hisob vazni ustunlari — maket taklifi (backend kerak, 9fHyFp3y → MH-2), chizilmaydi; «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1133,29 +1133,29 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/products` | registrator | `registrator-products-edit-dialog` — Mahsulotni tahrirlash<br>↳ `src/pages/products/list/ui/EditProductDialog.tsx` | [design/fragments/admin--products-edit-dialog.html](fragments/admin--products-edit-dialog.html) | oyna | v2 |
 | `/products` | registrator | `registrator-products-delete-dialog` — Mahsulotni o'chirish<br>↳ `src/pages/products/ui/useDeleteProductConfirm.tsx` | [design/fragments/admin--products-delete-dialog.html](fragments/admin--products-delete-dialog.html) | oyna | v2 |
 | `/products` | market | `market-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | v2 |
-| `/products` | market_operator | `market_operator-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | yangi (kodda yo'q) |
-| `/products` | market_operator | `market_operator-products-unassigned` — Mahsulotlar — market biriktirilmagan | [design/fragments/market_operator--products-unassigned.html](fragments/market_operator--products-unassigned.html) | sahifa | yangi (kodda yo'q) |
+| `/products` | market_operator | `market_operator-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | v2 |
+| `/products` | market_operator | `market_operator-products-unassigned` — Mahsulotlar — market biriktirilmagan | [design/fragments/market_operator--products-unassigned.html](fragments/market_operator--products-unassigned.html) | sahifa | v2 |
 
 #### `/products/create-product/:id` — Mahsulot yaratish (:id — market; dizayn v2)
 
-- **Fayllar:** `src/pages/products/create/index.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductThumb.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx`
+- **Fayllar:** `src/pages/products/create/index.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/pages/products/ui/ProductThumb.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/model/productErrors.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canCreateProducts` (access.ts → canCreateProducts)
-- **Rollar:** superadmin, admin, manager, registrator, market
+- **Rollar:** superadmin, admin, manager, registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. Maket taklifi (2026-10-19): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni», «Narx». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
+- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. Maket taklifi (2026-10-19, backend kerak — MH-2): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/products/create-product/:id` | superadmin | `superadmin-products-create` — Mahsulot yaratish (market uchun) | [design/fragments/superadmin--products-create.html](fragments/superadmin--products-create.html) | sahifa | v2 |
-| `/products/create-product/:id` | superadmin | `superadmin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
+| `/products/create-product/:id` | superadmin | `superadmin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
 | `/products/create-product/:id` | admin | `admin-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
-| `/products/create-product/:id` | admin | `admin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
+| `/products/create-product/:id` | admin | `admin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
 | `/products/create-product/:id` | manager | `manager-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
-| `/products/create-product/:id` | manager | `manager-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
+| `/products/create-product/:id` | manager | `manager-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
 | `/products/create-product/:id` | registrator | `registrator-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
-| `/products/create-product/:id` | registrator | `registrator-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
-| `/products/create-product/:id` | market | — Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15). | — | — | v2 |
+| `/products/create-product/:id` | registrator | `registrator-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
+| `/products/create-product/:id` | market | — Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1). | — | — | v2 |
 
 ### Foydalanuvchilar
 
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 168 · kodda yo'q: 54
+222 ta maket · kodda bor: 169 · kodda yo'q: 53
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1996,7 +1996,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-select-market-dialog` | Mahsulot yaratish — market tanlash | oyna | `/products` | `src/pages/products/list/ui/SelectMarketDialog.tsx` | v2 |
 | `superadmin-products-edit-dialog` | Mahsulotni tahrirlash (popup) | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `superadmin-products-create` | Mahsulot yaratish (market uchun) | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
-| `superadmin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
+| `superadmin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | qisman — Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2). |
 | `superadmin-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `superadmin-users-list` | Foydalanuvchilar ro'yxati | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
 | `superadmin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak. |
@@ -2136,7 +2136,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 126 · kodda yo'q: 26
+152 ta maket · kodda bor: 127 · kodda yo'q: 25
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2215,7 +2215,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `admin-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `admin-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
-| `admin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
+| `admin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | qisman — Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2). |
 | `admin-users-list` | Foydalanuvchilar ro'yxati | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
 | `admin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak. |
 | `admin-users-delete-dialog` | Foydalanuvchini o'chirish | oyna | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | v2 |
@@ -2295,7 +2295,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-86 ta maket · kodda bor: 77 · kodda yo'q: 9
+86 ta maket · kodda bor: 78 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2373,7 +2373,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-products-list` | Mahsulotlar ro'yxati | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `manager-products-market-select-dialog` | Mahsulot uchun market tanlash | oyna | `/products` | `src/pages/products/list/ui/SelectMarketDialog.tsx` | v2 |
 | `manager-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
-| `manager-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
+| `manager-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | qisman — Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2). |
 | `manager-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `manager-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `manager-users-list` | Foydalanuvchilar (filial xodimlari) | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
@@ -2388,7 +2388,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### registrator — Registrator
 
-54 ta maket · kodda bor: 50 · kodda yo'q: 4
+54 ta maket · kodda bor: 51 · kodda yo'q: 3
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2443,7 +2443,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `registrator-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `registrator-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
-| `registrator-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
+| `registrator-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | qisman — Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2). |
 | `registrator-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `registrator-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 
@@ -2491,12 +2491,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market_operator — Market operatori
 
-5 ta maket · kodda bor: 0 · kodda yo'q: 5
+5 ta maket · kodda bor: 2 · kodda yo'q: 3
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
-| `market_operator-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): market_operator roli menyusi kodda hali yo'q; market--products-list bilan bitta fragment. |
-| `market_operator-products-unassigned` | Mahsulotlar — market biriktirilmagan | sahifa | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): market biriktirilmagan market_operator holati kodda yo'q. |
+| `market_operator-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
+| `market_operator-products-unassigned` | Mahsulotlar — market biriktirilmagan | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `market_operator-earnings` | Daromadim | sahifa | `(taklif) /my-earnings` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Kodda yo'q: market_operator roli frontendda yo'q; balans/daromad/to'lov uchun /me endpoint kerak. |
 | `market_operator-earnings-no-commission` | Daromadim — komissiya belgilanmagan | sahifa | `(taklif) /my-earnings` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Kodda yo'q (market_operator roli frontendda yo'q). |
 | `market_operator-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak). |
@@ -2948,8 +2948,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/products/list/index.tsx` | `/products` |
 | `src/pages/products/list/ui/EditProductDialog.tsx` | `/products` |
 | `src/pages/products/list/ui/SelectMarketDialog.tsx` | `/products` |
+| `src/pages/products/model/productErrors.ts` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/model/productView.ts` | `/products` |
+| `src/pages/products/ui/FormErrorSummary.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/ProductImageField.tsx` | `/products`, `/products/create-product/:id` |
+| `src/pages/products/ui/ProductPriceField.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/ProductThumb.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/useDeleteProductConfirm.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/profile/lib/profileView.ts` | `/profile` |

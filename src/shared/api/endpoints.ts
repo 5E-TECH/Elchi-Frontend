@@ -242,14 +242,13 @@ export const API_ENDPOINTS = {
     REPORT_ORDERS: "analytics/reports/orders",
   },
 
-  // ── Products / Catalog (market owns; admin/registrator manage) ───────────
+  // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──
   PRODUCTS: {
     BASE: "product", // GET list / POST create
     HEALTH: "product/health",
-    MY_PRODUCTS: "product/my-products",
+    MY_PRODUCTS: "product/my-products", // GET (market / market_operator — faqat o'qish)
     BY_ID: (id: string | number) => `product/${id}`, // GET / PATCH (admin/registrator) / DELETE
     BY_MARKET_ID: (id: string | number) => `product/market/${id}`,
-    UPDATE_MY: (id: string | number) => `product/my/${id}`, // PATCH own product (market)
   },
 
   // ── Integrations (admin/registrator) ─────────────────────────────────────

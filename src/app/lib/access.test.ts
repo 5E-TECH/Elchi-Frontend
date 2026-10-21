@@ -18,6 +18,7 @@ import {
   canViewReturnsPage,
   canViewUsers,
   canViewProducts,
+  canCreateProducts,
   canViewAdminDashboard,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
@@ -42,6 +43,9 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  * (admin bosh sahifasi — sizish yopildi, mDfjKeQi).
  *
  * 2026-10-21 (NG-A): `canViewNotifications` · admin — → ✓ (ega NG-S2; backend `/notifications` SUPERADMIN + ADMIN).
+ *
+ * 2026-10-21 (MH-1): `canViewProducts` · mo — → ✓ (faqat ko'rish, `GET product/my-products`); yangi qator
+ * `canCreateProducts` — market ✓ → — (market endi faqat ko'radi, ega qarori 2026-10-15).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -88,7 +92,8 @@ const MATRIX: Record<string, string> = {
   canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —   —   —   —",
   canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —   —   —   —",
   canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —   —   —   —",
-  canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
+  canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   ✓   —",
+  canCreateProducts: "✓ ✓   —   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
   // Menejer — o'z bosh sahifasi (`/branch-dashboard`), market — `MarketDashboardPage`.
   canViewAdminDashboard: "✓ ✓ —   ✓   ✓   —   —   —   —   —   —   —   —",
 };
@@ -111,6 +116,7 @@ const PREDICATES = {
   canCreateOrders,
   canReceiveExternalOrders,
   canViewProducts,
+  canCreateProducts,
   canViewAdminDashboard,
 };
 

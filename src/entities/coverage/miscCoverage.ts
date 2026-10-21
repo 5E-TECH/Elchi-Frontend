@@ -188,11 +188,6 @@ export const useMiscCoverage = () => {
         api.get(API_ENDPOINTS.PRODUCTS.HEALTH).then((res) => res.data),
     });
 
-  const updateMyProduct = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
-      api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data),
-  });
-
   // ── SCAN ───────────────────────────────────────────────────────────────────
 
   const useGetScanByToken = (token: string, enabled: boolean = true, options?: SilentErrorOption) =>
@@ -244,7 +239,6 @@ export const useMiscCoverage = () => {
     printThermalPdf,
     // Products
     useGetProductsHealth,
-    updateMyProduct,
     // Scan
     useGetScanByToken,
     // Search
