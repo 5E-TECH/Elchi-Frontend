@@ -168,6 +168,19 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - **Ochiq (ega qarori):** IP — Toaster'ga Undo2 ikonka va ikkinchi darajali tugma (hozir umumiy `notify`,
     `partialViews` izohida); MO — market operatori global qidiruvi; ROL-0 dan: logist / market operatorida menyu
     qidiruvi `/orders` ochilguncha (LG-4 / MO-3) yashirin, yuqori paneldagi global qidiruv qoladi.
+  - **2-to'lqin, 1-to'plam tayyor (2026-10-21, `67d4d21d`):** KI-1 (kvitansiya yorliqlari rolga qarab — xodim
+    «Kuryer …», kuryer «Siz …»; shell'da «Asosiy kontentga o'tish», `#main-content`), NG-A (yuqorida), TG-A (shaxsiy
+    Telegram: teskari sanoq, QR, buyruq rejimi; umumiy havola qismlari `features/telegram-link`), NS-1 (yuborish
+    natijasi, «Natija noma'lum» — o'sha `client_request_id`, tafsilot oynasi; `entities/notification-dispatch`), OS-1
+    («Tizim holati» — `health/readiness`, 14 xizmat), OS-3 (qaytarish so'rovlarini tasdiqlash oynasi va natija
+    xabari). Integratsiyada: 5375 unit, 258 e2e yashil. Sukut bilan qilingan qarorlar va egaga savollar — ega
+    papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md`.
+  - **2-to'lqin, 2-to'plam tayyor (2026-10-21, `183079c5`):** DM-1 (quyida), OR-1 (buyurtmalar ro'yxati avtomatik
+    yangilanadi, «Yangilash», «Ro'yxat yangilanmadi» ogohlantirishi, kuryer tab sonlari; `PageHeader` / `Tabs` — opt-in
+    prop'lar), MD-1 (pochta tafsilotida `?q=` qidiruv va takroriy telefonlar banneri), FY-1 (9 rol tabi, telefonda
+    «Rol» tanlovi, AI narxi, logist maoshi, kuryer ish hududi), MH-1 (market mahsulotlarni faqat ko'radi, «Narx», xato
+    xulosasi, market operatori — ko'rish), MO-1 (quyida — oxirgi v1 route ko'chdi). Integratsiyada: 5544 unit, 291 e2e.
+  - **Navbatda — 2-to'lqin, 3-to'plam** (ishda): LG-1, LG-2, IN-1, SA-1, KM-1, KI-2; keyin 3-to'lqin (roadmap 4.1).
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
@@ -186,15 +199,6 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     vsmpTweI, ILq3WNL1), `partialViews` izohlarida. Egaga: proksi read timeout'i ≥ 125 s bo'lsin (nginx 60 s,
     Cloudflare 100 s), aks holda ko'pincha «Natija noma'lum»; timeout'da global «Tarmoq xatosi» toast'i ham chiqadi;
     admin `regions` «Visual» sahnasi kutilgan farq — «Run workflow (update)».
-  - **2-to'lqin, 1-to'plam tayyor (2026-10-21, `67d4d21d`):** KI-1 (kvitansiya yorliqlari rolga qarab — xodim
-    «Kuryer …», kuryer «Siz …»; shell'da «Asosiy kontentga o'tish», `#main-content`), NG-A (yuqorida), TG-A (shaxsiy
-    Telegram: teskari sanoq, QR, buyruq rejimi; umumiy havola qismlari `features/telegram-link`), NS-1 (yuborish
-    natijasi, «Natija noma'lum» — o'sha `client_request_id`, tafsilot oynasi; `entities/notification-dispatch`), OS-1
-    («Tizim holati» — `health/readiness`, 14 xizmat), OS-3 (qaytarish so'rovlarini tasdiqlash oynasi va natija
-    xabari). Integratsiyada: 5375 unit, 258 e2e yashil. Sukut bilan qilingan qarorlar va egaga savollar — ega
-    papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md`.
-  - **Navbatda — 2-to'lqin, 2-to'plam** (ishda): DM-1, OR-1, MD-1, FY-1, MH-1, MO-1; keyin LG-1, LG-2, IN-1, SA-1,
-    KM-1, KI-2.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
