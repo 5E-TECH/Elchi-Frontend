@@ -66,4 +66,38 @@ test.describe("Integratsiya — Hisob-kitob, 390px", () => {
     expect((await result.getByRole("button", { name: "Tayyor" }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
     expect(leaked).toEqual([]);
   });
+
+  test("IS-3: «Olingan to'lovlar» kartalari, bekor qilish oynasi pastki varaqa, tugmalar ≥ 44px", async ({ page }) => {
+    const { cancels, leaked } = await mockSettlementApi(page);
+    await openSettlement(page);
+    const section = page.getByRole("region", { name: "Olingan to'lovlar" });
+    await expect(section.getByText("To'lov topshiriqnomasi №4518 · Oktyabr, 2-hafta COD")).toBeVisible();
+    await expect(section.getByText("Kassadan qaytarildi")).toBeVisible();
+    expect(await mainHorizontalOverflow(page)).toBeLessThanOrEqual(0);
+    for (const name of ["Faol", "Bekor qilingan", "Barchasi"]) {
+      expect((await section.getByRole("button", { name, exact: true }).boundingBox())!.height, name).toBeGreaterThanOrEqual(44);
+    }
+    const cancelButton = section.getByRole("button", { name: "№82 to'lovini bekor qilish" });
+    expect((await cancelButton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await cancelButton.click();
+
+    const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
+    await expect(dialog).toBeVisible();
+    const viewport = page.viewportSize()!;
+    await expect
+      .poll(async () => {
+        const box = (await dialog.boundingBox())!;
+        return Math.abs(box.y + box.height - viewport.height);
+      })
+      .toBeLessThanOrEqual(1);
+    expect(await dialog.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+    for (const name of ["Orqaga", "To'lovni bekor qilish"]) {
+      expect((await dialog.getByRole("button", { name }).boundingBox())!.height, name).toBeGreaterThanOrEqual(44);
+    }
+    await dialog.getByRole("textbox", { name: /Sabab/ }).fill("Summa ikki marta kiritilgan");
+    await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(cancels).toHaveLength(1);
+    expect(leaked).toEqual([]);
+  });
 });

@@ -299,7 +299,10 @@ export const API_ENDPOINTS = {
     PAYMENTS: "integrations/payments",
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
-    REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST
+    REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST yozish · GET ro'yxat (IS-3)
+    // IS-3 (DxdZFdIk): to'lovni bekor qilish — `{ reason, reverse_cashbox? }` (409 — avans ishlatilgan / eski yozuv).
+    REMITTANCE_CANCEL: (id: string | number, remittanceId: string | number) =>
+      `integrations/${id}/remittances/${remittanceId}/cancel`, // POST
     HEALTHCHECK: (id: string | number) => `integrations/${id}/healthcheck`, // POST
     TEST: (id: string | number) => `integrations/${id}/test`, // POST
     RETRY: (id: string | number) => `integrations/${id}/retry`, // POST

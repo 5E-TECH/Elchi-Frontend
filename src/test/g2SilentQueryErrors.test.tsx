@@ -21,7 +21,7 @@ import {
 } from "../entities/integrations";
 import { useIntegrationsCoverage } from "../entities/integrations/integrationsCoverage";
 import { usePayments } from "../entities/integrations/payments";
-import { useReceivableBalance, useReceivables } from "../entities/integrations/settlement";
+import { useReceivableBalance, useReceivables, useRemittances } from "../entities/integrations/settlement";
 import { usePartnerShipments, useProviderShipments } from "../entities/integrations/shipments";
 import { useSyncHistory } from "../entities/integrations/syncHistory";
 import { useWebhookLogs } from "../entities/integrations/webhookLogs";
@@ -122,6 +122,7 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
     ["sinxronlash tarixi", () => useSyncHistory({ integrationId: "7", limit: 20 }, S)],
     ["debitor balansi", () => useReceivableBalance("7", S)],
     ["debitorlar", () => useReceivables({ integrationId: "7", page: 1, limit: 20 }, S)],
+    ["olingan to'lovlar (IS-3)", () => useRemittances({ integrationId: "7", page: 1, limit: 10 }, S)],
     ["posilkalar (chiquvchi)", () => useProviderShipments({ integrationId: "7", page: 1 }, S)],
     ["posilkalar (hamkor)", () => usePartnerShipments({ partnerId: "7", page: 1 }, S)],
     // Bildirishnomalar

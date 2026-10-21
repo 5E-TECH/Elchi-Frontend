@@ -7,6 +7,9 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `POST integrations/7/remittances` tanasi `remittances` ga yoziladi, javobi — `remittanceResponse` (sukut: qarzga
  * aniq tushgan va kassaga yozilgan to'lov; `OVERPAID_RESPONSE` — maketdagi ortiqcha to'lov). Qarz yozuvlarida bitta
  * yopilgan qator (`To'lov №82`). Boshqa yozuvchi so'rov — `leaked`.
+ * IS-3: «Olingan to'lovlar» — `GET integrations/7/remittances` (`REMITTANCES`, maket qatorlari; `status` filtri
+ * hisobga olinadi, so'rov parametrlari `remittanceQueries` ga), bekor qilish `POST …/remittances/:id/cancel` —
+ * tanasi `cancels` ga, javobi `cancelResponse` (status bilan).
  * ⚠️ Hech qanday so'rov serverga KETMAYDI.
  */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -67,15 +70,39 @@ export const OVERPAID_RESPONSE = {
   cashbox_posted: true,
 };
 
+/** Maket «Olingan to'lovlar» (backend `listRemittances` shakli). */
+export const REMITTANCES = [
+  { id: 82, integration_id: "7", created_at: "2026-10-14T06:20:00.000Z", amount: 1500000, settled_count: 1, settled_amount: 1150000, unapplied_amount: 350000, advance_applied: 0, reference: "To'lov topshiriqnomasi №4518", note: "Oktyabr, 2-hafta COD", created_by: "1", status: "active", cashbox_posted: true, cancelled_at: null, cancelled_by: null, cancel_reason: null },
+  { id: 79, integration_id: "7", created_at: "2026-10-13T12:45:00.000Z", amount: 2000000, settled_count: 6, settled_amount: 2000000, unapplied_amount: 0, advance_applied: 0, reference: "PAY-2026-10-18-002", note: null, created_by: "2", status: "active", cashbox_posted: false, cancelled_at: null, cancelled_by: null, cancel_reason: null },
+  { id: 77, integration_id: "7", created_at: "2026-10-12T10:10:00.000Z", amount: 5000000, settled_count: 7, settled_amount: 5000000, unapplied_amount: 0, advance_applied: 0, reference: "To'lov topshiriqnomasi №4497", note: null, created_by: "1", status: "cancelled", cashbox_posted: true, cancelled_at: "2026-10-12T10:32:00.000Z", cancelled_by: "2", cancel_reason: "Summa xato: 500 000 o'rniga 5 000 000" },
+  { id: 61, integration_id: "7", created_at: "2026-10-02T07:00:00.000Z", amount: 2300000, settled_count: 9, settled_amount: null, unapplied_amount: null, advance_applied: null, reference: null, note: "Sentabr hisob-kitobi", created_by: "1", status: "active", cashbox_posted: null, cancelled_at: null, cancelled_by: null, cancel_reason: null },
+];
+
+/** Bekor qilish javobi (backend `cancelRemittance`): №82 — 1 qarz qayta ochildi, kassadan qaytarildi. */
+export const CANCEL_RESPONSE = {
+  remittance_id: "82",
+  integration_id: "7",
+  amount: 1500000,
+  status: "cancelled",
+  reopened_count: 1,
+  reopened_order_ids: ["10209"],
+  cashbox_reversed: true,
+  settlement_reverted: true,
+};
+
 export const mockSettlementApi = async (
   page: Page,
   {
     role = "superadmin" as "superadmin" | "admin",
     theme = "light" as "light" | "dark",
     remittanceResponse = EXACT_RESPONSE as Record<string, unknown>,
+    remittanceRows = REMITTANCES as Record<string, unknown>[],
+    cancelResponse = { status: 200, body: wrap(CANCEL_RESPONSE) as unknown },
   } = {},
 ) => {
   const remittances: Record<string, unknown>[] = [];
+  const cancels: { id: string; body: Record<string, unknown> }[] = [];
+  const remittanceQueries: Record<string, string>[] = [];
   const leaked: string[] = [];
 
   await page.context().route("**/*", async (route) => {
@@ -106,6 +133,17 @@ export const mockSettlementApi = async (
     if (path === "integrations/receivables") {
       return reply(route, wrap({ items: RECEIVABLES, pagination: { total: RECEIVABLES.length, page: 1, limit: 20 } }));
     }
+    if (path === "integrations/7/remittances" && request.method() === "GET") {
+      const params = Object.fromEntries(url.searchParams.entries());
+      remittanceQueries.push(params);
+      const items = remittanceRows.filter((r) => !params.status || r.status === params.status);
+      return reply(route, wrap({ items, pagination: { total: items.length, page: 1, limit: 10, totalPages: 1 } }));
+    }
+    const cancelMatch = /^integrations\/7\/remittances\/(\d+)\/cancel$/.exec(path);
+    if (cancelMatch && request.method() === "POST") {
+      cancels.push({ id: cancelMatch[1], body: request.postDataJSON() as Record<string, unknown> });
+      return reply(route, cancelResponse.body, cancelResponse.status);
+    }
     if (path === "integrations/7/remittances" && request.method() === "POST") {
       remittances.push(request.postDataJSON() as Record<string, unknown>);
       return reply(route, wrap(remittanceResponse), 201);
@@ -130,7 +168,7 @@ export const mockSettlementApi = async (
     },
     { t: theme, r: role },
   );
-  return { remittances, leaked };
+  return { remittances, cancels, remittanceQueries, leaked };
 };
 
 export const openSettlement = async (page: Page) => {

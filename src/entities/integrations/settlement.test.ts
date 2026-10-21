@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  cancelBlock,
   isExactRemittance,
+  normalizeCancelResult,
+  normalizeRemittance,
   normalizeRemittanceResult,
+  normalizeRemittancesPage,
+  remittanceAdvanceContribution,
   overpayPreview,
   resolveBalance,
   toAmount,
@@ -194,5 +199,136 @@ describe("overpayPreview — ortiqcha summa (ega S2)", () => {
   it("tiyin aniqligi — suzuvchi nuqta qoldig'isiz", () => {
     const s = resolveBalance({ integration_id: "7", outstanding_amount: "0.30", outstanding_count: 1, advance_balance: "0.10" });
     expect(overpayPreview(0.3, s)).toEqual({ excess: 0.1, advanceAfter: 0.1, recordsClosed: 1 });
+  });
+});
+
+/* ═══════════ IS-3 «Olingan to'lovlar» va bekor qilish (DxdZFdIk) ═══════════ */
+
+const ROW = {
+  id: 82,
+  integration_id: "7",
+  created_at: "2026-10-14T06:20:00.000Z",
+  amount: "1500000.00",
+  settled_count: 1,
+  settled_amount: "1150000.00",
+  unapplied_amount: "350000.00",
+  advance_applied: "0.00",
+  reference: " To'lov topshiriqnomasi №4518 ",
+  note: "",
+  created_by: "1",
+  status: "active",
+  cashbox_posted: true,
+  cancelled_at: null,
+  cancel_reason: null,
+};
+
+describe("normalizeRemittance", () => {
+  it("⭐ `numeric` satrlar songa, bo'sh matn `null` ga, id satrga", () => {
+    expect(normalizeRemittance(ROW)).toEqual({
+      id: "82",
+      createdAt: "2026-10-14T06:20:00.000Z",
+      amount: 1_500_000,
+      settledCount: 1,
+      settledAmount: 1_150_000,
+      toAdvance: 350_000,
+      advanceApplied: 0,
+      reference: "To'lov topshiriqnomasi №4518",
+      note: null,
+      status: "active",
+      cashboxPosted: true,
+      cancelledAt: null,
+      cancelReason: null,
+    });
+  });
+
+  it("eski yozuv: settled/advance `null`, kassa noma'lum; manfiy qoldiq avans emas; noma'lum holat — faol", () => {
+    const r = normalizeRemittance({
+      ...ROW,
+      settled_amount: null,
+      unapplied_amount: "-100.00",
+      advance_applied: null,
+      cashbox_posted: null,
+      status: undefined,
+    });
+    expect(r.settledAmount).toBeNull();
+    expect(r.advanceApplied).toBeNull();
+    expect(r.toAdvance).toBe(0);
+    expect(r.cashboxPosted).toBeNull();
+    expect(r.status).toBe("active");
+  });
+});
+
+describe("normalizeRemittancesPage", () => {
+  it("⭐ `{ statusCode, data: { items, pagination } }` qobig'i", () => {
+    const page = normalizeRemittancesPage(
+      { statusCode: 200, data: { items: [ROW], pagination: { total: 14, page: 2, limit: 10 } } },
+      2,
+      10,
+    );
+    expect(page.items.map((r) => r.id)).toEqual(["82"]);
+    expect(page.pagination).toEqual({ total: 14, page: 2, limit: 10 });
+  });
+
+  it("massiv yoki bo'sh javob — buzilmaydi (eski mock / bo'sh backend)", () => {
+    expect(normalizeRemittancesPage({ data: [ROW] }, 1, 10).items).toHaveLength(1);
+    expect(normalizeRemittancesPage({ data: [] }, 1, 10)).toEqual({ items: [], pagination: { total: 0, page: 1, limit: 10 } });
+    expect(normalizeRemittancesPage(undefined, 1, 10).items).toEqual([]);
+  });
+});
+
+describe("remittanceAdvanceContribution / cancelBlock (backend assertAdvanceNotConsumed nusxasi)", () => {
+  const r82 = normalizeRemittance(ROW);
+  const r85 = normalizeRemittance({
+    ...ROW,
+    id: 85,
+    created_at: "2026-10-15T06:20:00.000Z",
+    unapplied_amount: 0,
+    advance_applied: "140000.00",
+  });
+
+  it("hissa = max(qoldiq, 0) − avansdan ishlatilgan; eski yozuvda 0", () => {
+    expect(remittanceAdvanceContribution(r82)).toBe(350_000);
+    expect(remittanceAdvanceContribution(r85)).toBe(-140_000);
+    expect(remittanceAdvanceContribution(normalizeRemittance({ ...ROW, advance_applied: null }))).toBe(0);
+  });
+
+  it("⭐ avans yetadi — bloklanmaydi", () => {
+    expect(cancelBlock(r82, 350_000, [r82])).toBeNull();
+    expect(cancelBlock(r82, 500_000, [r82])).toBeNull();
+  });
+
+  it("⭐ avansning bir qismi keyingi to'lovda ishlatilgan — bloklanadi, ishlatgan to'lov ko'rsatiladi", () => {
+    expect(cancelBlock(r82, 210_000, [r85, r82])).toEqual({ used: 140_000, consumers: ["85"] });
+  });
+
+  it("ishlatgan to'lov sahifada yo'q — raqamsiz", () => {
+    expect(cancelBlock(r82, 210_000, [r82])).toEqual({ used: 140_000, consumers: [] });
+  });
+
+  it("qoldiq o'qilmagan, bekor qilingan yoki hissasiz to'lov — oldindan aytilmaydi", () => {
+    expect(cancelBlock(r82, null, [r82])).toBeNull();
+    expect(cancelBlock({ ...r82, status: "cancelled" }, 0, [])).toBeNull();
+    expect(cancelBlock(r85, 0, [])).toBeNull();
+  });
+});
+
+describe("normalizeCancelResult", () => {
+  it("⭐ backend javobi: qayta ochilgan qarzlar, kassa, summa; xom `message` o'qilmaydi", () => {
+    expect(
+      normalizeCancelResult({
+        statusCode: 200,
+        message: "To'lov bekor qilindi",
+        data: { remittance_id: "82", amount: 1500000, status: "cancelled", reopened_count: 1, cashbox_reversed: true },
+      }),
+    ).toEqual({ idempotent: false, reopenedCount: 1, cashboxReversed: true, amount: 1_500_000 });
+  });
+
+  it("idempotent javob (allaqachon bekor qilingan) — sonlarsiz", () => {
+    expect(normalizeCancelResult({ data: { remittance_id: "82", amount: 1500000, status: "cancelled", idempotent: true } })).toEqual({
+      idempotent: true,
+      reopenedCount: 0,
+      cashboxReversed: false,
+      amount: 1_500_000,
+    });
   });
 });

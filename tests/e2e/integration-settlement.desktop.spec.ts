@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { OVERPAID_RESPONSE, mockSettlementApi, openSettlement } from "./support/integrationSettlement";
+import { OVERPAID_RESPONSE, REMITTANCES, mockSettlementApi, openSettlement } from "./support/integrationSettlement";
 
 /**
  * Integratsiya → Hisob-kitob (IS-1, N3yNa6rO): «To'lov olindi» summasi ASOSIY KASSAGA o'zi yoziladi — panel buni
@@ -102,6 +102,127 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
     const alert = result.getByRole("alert");
     await expect(alert).toContainText("Summa asosiy kassaga tushmadi");
     await expect(alert.getByRole("link", { name: "Asosiy kassa" })).toHaveAttribute("href", "/payments/main-cashbox");
+    expect(leaked).toEqual([]);
+  });
+
+  for (const role of ["superadmin", "admin"] as const) {
+    test(`⭐ ${role}: «Olingan to'lovlar» — jadval, kassa yorliqlari, filtr (IS-3)`, async ({ page }) => {
+      const { remittanceQueries, leaked } = await mockSettlementApi(page, { role });
+      await openSettlement(page);
+
+      const section = page.getByRole("region", { name: "Olingan to'lovlar" });
+      const table = section.getByRole("table", { name: "Olingan to'lovlar" });
+      for (const name of ["Sana", "Summa", "Yopilgan qarzlar", "To'lov raqami · izoh", "Holat · kassa"]) {
+        await expect(table.getByRole("columnheader", { name })).toBeVisible();
+      }
+      const row82 = table.getByRole("row", { name: /№82/ });
+      await expect(row82).toContainText(/1\s500\s000 so'm/);
+      await expect(row82).toContainText(/1 ta qarz/);
+      await expect(row82).toContainText(/350\s000 so'm avansga o'tdi/);
+      await expect(row82).toContainText("To'lov topshiriqnomasi №4518");
+      await expect(row82).toContainText("Faol");
+      await expect(row82).toContainText("Kassaga yozildi");
+      await expect(table.getByRole("row", { name: /№79/ })).toContainText(/Kassaga yozilmadi\s*Asosiy kassa tarixini tekshiring/);
+      const row77 = table.getByRole("row", { name: /№77/ });
+      await expect(row77).toContainText("7 ta qarz qayta ochildi");
+      await expect(row77).toContainText("Kassadan qaytarildi");
+      await expect(row77).toContainText("«Summa xato: 500 000 o'rniga 5 000 000»");
+      await expect(row77.getByRole("button", { name: /bekor qilish/ })).toHaveCount(0);
+      await expect(table.getByRole("row", { name: /№61/ })).toContainText("Kassa: eski yozuv");
+      // Muallif ismi — Taklif (backend id beradi): chizilmaydi.
+      await expect(section).not.toContainText("Shodiyor");
+
+      await section.getByRole("button", { name: "Bekor qilingan" }).click();
+      await expect(table.getByRole("row")).toHaveCount(2);
+      expect(remittanceQueries.at(-1)).toMatchObject({ status: "cancelled", page: "1" });
+      await section.getByRole("button", { name: "Barchasi" }).click();
+      await expect(table.getByRole("row")).toHaveCount(REMITTANCES.length + 1);
+
+      // «Qarz yozuvlari» dagi «To'lov №82» — bo'limga o'tadi (URL o'zgarmaydi).
+      const before = page.url();
+      await page.getByRole("table", { name: "Qarz yozuvlari" }).getByRole("button", { name: "To'lov №82" }).click();
+      await expect(page.locator("[data-remittances-head]")).toBeFocused();
+      expect(page.url()).toBe(before);
+      expect(leaked).toEqual([]);
+    });
+
+    test(`⭐ ${role}: to'lovni bekor qilish — oqibatlar, sabab, xabar (IS-3)`, async ({ page }) => {
+      const { cancels, leaked } = await mockSettlementApi(page, { role });
+      await openSettlement(page);
+
+      const section = page.getByRole("region", { name: "Olingan to'lovlar" });
+      await section.getByRole("button", { name: "№82 to'lovini bekor qilish" }).click();
+      const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
+      await expect(dialog).toContainText(/№82 · 1\s500\s000 so'm · /);
+      await expect(dialog).toContainText(/1 ta qarz qaytadan «Kutilmoqda» bo'ladi — Tez Yetkaz qarzi 1\s150\s000 so'mga ortadi/);
+      await expect(dialog).toContainText(/Asosiy kassadan 1\s500\s000 so'm teskari chiqim yoziladi/);
+      await expect(dialog).toContainText(/Shu to'lovdan qolgan 350\s000 so'm avans ham bekor bo'ladi/);
+      await expect(dialog).toContainText("«Bekor qilingan · Kassadan qaytarildi»");
+      // Fokus xavfsiz tugmada.
+      await expect(dialog.getByRole("button", { name: "Orqaga" })).toBeFocused();
+
+      await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+      await expect(dialog).toContainText("Sababni yozing");
+      expect(cancels).toEqual([]);
+
+      await dialog.getByRole("textbox", { name: /Sabab/ }).fill("Summa ikki marta kiritilgan");
+      await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByText("To'lov bekor qilindi", { exact: true })).toBeVisible();
+      await expect(page.getByText(/^1 ta qarz qayta ochildi · kassadan 1\s500\s000 so'm qaytarildi$/)).toBeVisible();
+      expect(cancels).toEqual([{ id: "82", body: { reason: "Summa ikki marta kiritilgan" } }]);
+      expect(leaked).toEqual([]);
+    });
+  }
+
+  test("eski yozuv — kassa tanlovi majburiy, `reverse_cashbox` yuboriladi", async ({ page }) => {
+    const { cancels, leaked } = await mockSettlementApi(page);
+    await openSettlement(page);
+    await page.getByRole("button", { name: "№61 to'lovini bekor qilish" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
+    await expect(dialog.getByRole("group", { name: /Bu to'lov asosiy kassaga kirim qilinganmi/ })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "Asosiy kassa" })).toHaveAttribute("href", "/payments/main-cashbox");
+    await dialog.getByRole("textbox", { name: /Sabab/ }).fill("Pul kassaga kiritilmagan edi");
+    await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+    await expect(dialog).toContainText("Kassa bo'yicha javobni tanlang");
+    expect(cancels).toEqual([]);
+    await dialog.getByRole("radio", { name: /Yo'q — kassa o'zgarmasin/ }).check();
+    await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(cancels).toEqual([{ id: "61", body: { reason: "Pul kassaga kiritilmagan edi", reverse_cashbox: false } }]);
+    expect(leaked).toEqual([]);
+  });
+
+  test("409 — «Hozir bekor qilib bo'lmaydi» (xom matnsiz), tasdiqlash o'chiq", async ({ page }) => {
+    const raw409 = "Bu to'lovdan qolgan avansning 140000 so'mi keyingi to'lov(lar)da qarz yopishga ishlatilgan (#85)";
+    const { leaked } = await mockSettlementApi(page, {
+      cancelResponse: { status: 409, body: { statusCode: 409, message: raw409 } },
+    });
+    await openSettlement(page);
+    await page.getByRole("button", { name: "№82 to'lovini bekor qilish" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
+    await dialog.getByRole("textbox", { name: /Sabab/ }).fill("Xato");
+    await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Hozir bekor qilib bo'lmaydi");
+    await expect(dialog).not.toContainText("#85");
+    await expect(dialog.getByRole("button", { name: "To'lovni bekor qilish" })).toBeDisabled();
+    await dialog.getByRole("button", { name: "Orqaga" }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(leaked).toEqual([]);
+  });
+
+  test("502 — kassa xatosi oyna ichida, oyna ochiq qoladi", async ({ page }) => {
+    const { leaked } = await mockSettlementApi(page, {
+      cancelResponse: { status: 502, body: { statusCode: 502, message: "Kassadan teskari chiqim yozilmadi — to'lov bekor qilinmadi: x" } },
+    });
+    await openSettlement(page);
+    await page.getByRole("button", { name: "№82 to'lovini bekor qilish" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "To'lovni bekor qilasizmi?" });
+    await dialog.getByRole("textbox", { name: /Sabab/ }).fill("Xato");
+    await dialog.getByRole("button", { name: "To'lovni bekor qilish" }).click();
+    await expect(dialog.getByRole("alert")).toContainText(/Kassadan chiqim yozib bo'lmadi\s*To'lov, qarzlar va kassa avvalgidek qoldi/);
+    await expect(dialog).not.toContainText("teskari chiqim yozilmadi");
+    await expect(dialog.getByRole("button", { name: "To'lovni bekor qilish" })).toBeEnabled();
     expect(leaked).toEqual([]);
   });
 });
