@@ -1,10 +1,11 @@
 // dizayn-v2: superadmin-notifications-sms-campaign-segment
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMarketLookup } from "../../markets/lookup";
 import { useRegionDistrictCatalog } from "../../region";
 import { useRegionLookup } from "../../region/lookup";
 import { cx } from "../../../shared/lib/cx";
+import { useDebounce } from "../../../shared/lib/useDebounce";
 import { DateRange, Field, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
 import { parseMinOrders, type CustomerSegment } from "../model/segment";
 
@@ -43,8 +44,13 @@ export const CustomerSegmentFilters = ({
   const { t } = useTranslation("sms");
   const regionId = value.region_id ?? "";
   const regions = useRegionLookup(enabled);
-  const districts = useRegionDistrictCatalog(regionId, enabled);
-  const markets = useMarketLookup(enabled);
+  const districts = useRegionDistrictCatalog(regionId, enabled, { silentError: true });
+  // Market — server qidiruvi: backend bir so'rovda ko'pi bilan 100 ta beradi, ro'yxat to'liq emas bo'lishi mumkin.
+  const [marketSearch, setMarketSearch] = useState("");
+  const updateMarketSearch = useDebounce((next: string) => setMarketSearch(next.trim()), 350);
+  const markets = useMarketLookup(marketSearch, enabled);
+  /** Tanlangan market nomi — qidiruv natijasi almashsa ham maydonda qolsin. */
+  const [pickedMarket, setPickedMarket] = useState<SelectOption | null>(null);
 
   const all = t("segment.all");
   const regionOptions = useMemo<SelectOption[]>(
@@ -58,13 +64,17 @@ export const CustomerSegmentFilters = ({
         : [],
     [all, districts.data, regionId],
   );
-  const marketOptions = useMemo<SelectOption[]>(
-    () => [
-      { value: "", label: all },
-      ...(markets.data ?? []).map((item) => ({ value: item.id, label: item.name, searchText: item.phone })),
-    ],
-    [all, markets.data],
-  );
+  const marketId = value.market_id ?? "";
+  const marketOptions = useMemo<SelectOption[]>(() => {
+    const found = (markets.data?.items ?? []).map((item) => ({ value: item.id, label: item.name }));
+    const picked =
+      pickedMarket && pickedMarket.value === marketId && !found.some((item) => item.value === marketId)
+        ? [pickedMarket]
+        : [];
+    return [{ value: "", label: all }, ...picked, ...found];
+  }, [all, markets.data, marketId, pickedMarket]);
+  const marketsCut =
+    !marketSearch && markets.data && markets.data.total > markets.data.items.length ? markets.data : null;
 
   const set = (patch: Partial<CustomerSegment>) => onChange({ ...value, ...patch });
   const loadError = t("segment.loadError");
@@ -76,7 +86,8 @@ export const CustomerSegmentFilters = ({
         <span className="text-xs text-text-muted">{t("segment.scope")}</span>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] gap-4">
+      {/* 160px: telefonda (390) Viloyat va Tuman ustma-ust — tanlangan nom × tugmasi bilan kesilmaydi. */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(160px,100%),1fr))] gap-4">
         <Field
           label={t("segment.region")}
           labelAs="span"
@@ -115,15 +126,26 @@ export const CustomerSegmentFilters = ({
           label={t("segment.market")}
           labelAs="span"
           className="min-w-0"
-          hint={markets.isError ? loadError : undefined}
+          hint={
+            markets.isError
+              ? loadError
+              : marketsCut
+                ? t("segment.marketMore", { shown: marketsCut.items.length, total: marketsCut.total })
+                : undefined
+          }
           hintLive
         >
           <Select
             searchable
+            filter={false}
+            onSearchChange={updateMarketSearch}
             options={marketOptions}
-            value={value.market_id ?? ""}
-            onChange={(next) => set({ market_id: next || undefined })}
-            loading={markets.isLoading}
+            value={marketId}
+            onChange={(next, option) => {
+              setPickedMarket(next && option ? { value: option.value, label: option.label } : null);
+              set({ market_id: next || undefined });
+            }}
+            loading={markets.isFetching}
           />
         </Field>
         <Field label={t("segment.lastOrder")} labelAs="span" className="min-w-0">

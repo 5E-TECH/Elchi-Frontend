@@ -44,7 +44,11 @@ import {
 } from "../../../shared/ui/primitives";
 import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
-import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
+import {
+  CampaignAudienceSummary,
+  isRetryableAudienceError,
+  type CampaignAudienceState,
+} from "./sms/CampaignAudienceSummary";
 import { CampaignSendTime } from "./sms/CampaignSendTime";
 import { CardList } from "./sms/CardList";
 
@@ -148,7 +152,8 @@ const CampaignPage = () => {
   const tariffs = useSmsTariffs();
   const templates = useSmsTemplates();
   const history = useSmsCampaigns({ silentError: true });
-  const status = useSmsStatus();
+  // Kvota noma'lum bo'lsa limit qatori chizilmaydi — global xabar (xom backend matni) kerak emas.
+  const status = useSmsStatus({ silentError: true });
   const sendCampaign = useSendSmsCampaign();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const isBelowLg = useIsBelowLg();
@@ -216,6 +221,8 @@ const CampaignPage = () => {
               ? "limit"
               : "ready";
 
+  const audienceErrorKind = audienceQuery.isError ? smsCampaignErrorKind(audienceQuery.error) : undefined;
+
   const recipientsGuess =
     audience === "phones" ? phoneList.length : (audienceData?.recipients ?? 1);
 
@@ -234,7 +241,9 @@ const CampaignPage = () => {
 
   const audienceHint: Record<Exclude<CampaignAudienceState, "ready">, string> = {
     loading: t("campaign.hintAudienceWait"),
-    error: t("campaign.hintAudienceError"),
+    error: isRetryableAudienceError(audienceErrorKind)
+      ? t("campaign.hintAudienceError")
+      : t("campaign.hintAudienceBlocked"),
     fanout: t("campaign.hintFanout"),
     empty: t("campaign.hintAudienceEmpty"),
     limit: t("campaign.hintLimit"),
@@ -538,6 +547,7 @@ const CampaignPage = () => {
                   state={audienceState}
                   data={audienceData}
                   quota={quota}
+                  errorKind={audienceErrorKind}
                   onRetry={() => void audienceQuery.refetch()}
                 />
               </>

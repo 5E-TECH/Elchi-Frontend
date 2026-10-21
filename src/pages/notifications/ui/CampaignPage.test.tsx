@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import CampaignPage from "./CampaignPage";
+import { SMS_KEYS } from "../../../entities/sms";
 
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -415,13 +416,13 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeDisabled();
   });
 
-  it("auditoriya xatosi — i18n matn va «Qayta urinish» (xom matn yo'q)", async () => {
+  it("auditoriya xatosi (server) — i18n matn va «Qayta urinish» (xom matn yo'q)", async () => {
     let fail = true;
     mockPreview(() =>
       fail
         ? Promise.reject(
             Object.assign(new Error("x"), {
-              response: { status: 409, data: { message: "SMS_OPT_OUT_BASE_URL sozlanmagan" } },
+              response: { status: 500, data: { message: "SMS_OPT_OUT_BASE_URL sozlanmagan" } },
             }),
           )
         : Promise.resolve({ data: { data: audience() } }),
@@ -439,6 +440,38 @@ describe("CampaignPage (sVByLMnt)", () => {
     await user.click(within(block).getByRole("button", { name: "Qayta urinish" }));
     await waitFor(() => expect(block).toHaveAttribute("data-state", "ready"));
     expect(block).toHaveTextContent("Auditoriya: 386 ta");
+  });
+
+  it.each([
+    [409, "SMS sozlamalari to'liq emas"],
+    [400, "matn, o'zgaruvchilar va filtrlarni tekshiring"],
+  ])("⭐ auditoriya xatosi %s — sababi i18n matnda, «Qayta urinish» yo'q (natija o'zgarmaydi)", async (status, reason) => {
+    mockPreview(() =>
+      Promise.reject(
+        Object.assign(new Error("x"), {
+          response: { status, data: { message: "opt_out_not_configured" } },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<CampaignPage />);
+    await fill(user, "Chegirma");
+    const block = await openSegment(user);
+
+    await waitFor(() => expect(block).toHaveAttribute("data-state", "error"));
+    expect(block).toHaveTextContent("Auditoriyani hisoblab bo'lmadi");
+    expect(block).toHaveTextContent(reason);
+    expect(block).not.toHaveTextContent("Tarmoqni tekshirib");
+    expect(within(block).queryByRole("button", { name: "Qayta urinish" })).toBeNull();
+    expect(screen.queryByText(/opt_out_not_configured/)).toBeNull();
+    expect(screen.getByText("Auditoriyani hisoblab bo'lmaguncha ko'rib chiqish yopiq")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeDisabled();
+  });
+
+  it("SMS holati (kvota) xatosi global xabarga chiqmaydi (`silentError`)", async () => {
+    const { queryClient } = renderWithProviders(<CampaignPage />);
+    await waitFor(() => expect(queryClient.getQueryCache().find({ queryKey: SMS_KEYS.status })).toBeDefined());
+    expect(queryClient.getQueryCache().find({ queryKey: SMS_KEYS.status })?.meta).toEqual({ silentError: true });
   });
 
   it("«Raqamlar» rejimida jonli so'rov ketmaydi; tasdiq oynasida limitdan oshsa «Yuborish» o'chiq", async () => {

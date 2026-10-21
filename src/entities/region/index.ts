@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export { pendingOf, shareOf, shortRegionName, splitCompactMoney, successRateOf } from "./lib/stats";
 
@@ -586,6 +587,7 @@ export const useRegionDetailStats = (
 export const useRegionDistrictCatalog = (
   regionId: string,
   enabled = true,
+  options?: SilentErrorOption,
 ) =>
   useQuery({
     queryKey: ["region-district-catalog", regionId],
@@ -600,6 +602,8 @@ export const useRegionDistrictCatalog = (
     enabled: enabled && Boolean(regionId),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Iste'molchi xatoni o'zi ko'rsatsa (`{ silentError: true }`) — global xabar (xom backend matni) chiqmaydi.
+    ...silentErrorMeta(options),
   });
 
 /**

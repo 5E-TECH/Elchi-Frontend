@@ -23,6 +23,11 @@ const DISTRICTS: Record<string, Array<{ id: number; name: string; region_id: num
   "2": [{ id: 21, name: "Samarqand shahri", region_id: 2 }],
 };
 
+const MARKETS = [
+  { id: 3, name: "Baraka Shop", phone_number: "+998901112233" },
+  { id: 99, name: "Zamon Market", phone_number: "+998909998877" },
+];
+
 const Harness = ({ onChange }: { onChange: (next: CustomerSegment) => void }) => {
   const [value, setValue] = useState<CustomerSegment>({});
   return (
@@ -46,10 +51,13 @@ describe("CustomerSegmentFilters (KM-1)", () => {
         });
       if (url === "district")
         return Promise.resolve({ data: { data: DISTRICTS[String(config?.params?.region_id)] ?? [] } });
-      if (url === "markets")
-        return Promise.resolve({
-          data: { data: { items: [{ id: 3, name: "Baraka Shop", phone_number: "+998901112233" }] } },
-        });
+      if (url === "markets") {
+        const search = String(config?.params?.search ?? "");
+        const items = search
+          ? MARKETS.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+          : MARKETS.slice(0, 1);
+        return Promise.resolve({ data: { data: { items, meta: { total: search ? items.length : 120 } } } });
+      }
       return Promise.resolve({ data: { data: [] } });
     });
   });
@@ -103,12 +111,52 @@ describe("CustomerSegmentFilters (KM-1)", () => {
     await user.click(screen.getByRole("combobox", { name: /^Market/ }));
     await user.click(await screen.findByRole("option", { name: "Baraka Shop" }));
     expect(onChange).toHaveBeenLastCalledWith({ market_id: "3" });
-    expect(api.get).toHaveBeenCalledWith("markets", { params: { status: "active", limit: 1000 } });
+    // Backend `limit` ni 100 bilan cheklaydi — 1000 so'rash ro'yxatni jim kesardi.
+    expect(api.get).toHaveBeenCalledWith("markets", { params: { status: "active", limit: 50 } });
 
     await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "2");
     expect(onChange).toHaveBeenLastCalledWith({ market_id: "3", min_orders: 2 });
     await user.clear(screen.getByRole("textbox", { name: "Buyurtmalar soni" }));
     expect(onChange).toHaveBeenLastCalledWith({ market_id: "3", min_orders: undefined });
+  });
+
+  it("⭐ market — server qidiruvi: ro'yxatdan tashqaridagi market ham topiladi, kesilgan ro'yxat — izoh bilan", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithProviders(<Harness onChange={onChange} />);
+
+    const market = screen.getByRole("combobox", { name: /^Market/ });
+    await waitFor(() => expect(market).toHaveAccessibleDescription("Ro'yxatda 1 / 120 ta — qolganini qidiruvda toping"));
+    await user.click(market);
+    await user.keyboard("zamon");
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith("markets", { params: { status: "active", limit: 50, search: "zamon" } }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Zamon Market" }));
+    expect(onChange).toHaveBeenLastCalledWith({ market_id: "99" });
+    // Qidiruv tozalangach (birinchi sahifada yo'q) ham tanlangan nom maydonda qoladi.
+    await waitFor(() => expect(market).toHaveValue("Zamon Market"));
+  });
+
+  it("«Buyurtmalar soni» 1000 dan oshmaydi (backend @Max(1000))", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithProviders(<Harness onChange={onChange} />);
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "1500");
+    expect(onChange).toHaveBeenLastCalledWith({ min_orders: 1000 });
+  });
+
+  it("tuman ro'yxati xatosi global xabarga (xom backend matni) chiqmaydi — faqat maydon izohi", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = renderWithProviders(<Harness onChange={() => undefined} />);
+    await user.click(screen.getByRole("combobox", { name: /^Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Toshkent sh." }));
+    await waitFor(() =>
+      expect(queryClient.getQueryCache().find({ queryKey: ["region-district-catalog", "1"] })).toBeDefined(),
+    );
+    expect(queryClient.getQueryCache().find({ queryKey: ["region-district-catalog", "1"] })?.meta).toEqual({
+      silentError: true,
+    });
   });
 
   it("ro'yxat yuklanmasa — maydon ostida xato izohi (xom backend matnisiz)", async () => {

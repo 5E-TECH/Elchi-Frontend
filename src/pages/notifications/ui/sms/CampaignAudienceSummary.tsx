@@ -1,8 +1,8 @@
 // dizayn-v2: superadmin-notifications-sms-campaign-segment
 import { useId } from "react";
-import { CircleAlert, RotateCw, Users } from "lucide-react";
+import { CircleX, RotateCw, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { SmsCampaignPreview, SmsDailyQuota } from "../../../../entities/sms";
+import type { SmsCampaignErrorKind, SmsCampaignPreview, SmsDailyQuota } from "../../../../entities/sms";
 import { cx } from "../../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Button, Spinner } from "../../../../shared/ui/primitives";
@@ -10,7 +10,9 @@ import { Button, Spinner } from "../../../../shared/ui/primitives";
 /**
  * Jonli auditoriya holati:
  *  - `loading` — filtr o'zgardi yoki so'rov ketmoqda (oldingi son xira ko'rinadi);
- *  - `error` — hisoblab bo'lmadi («Qayta urinish»);
+ *  - `error` — hisoblab bo'lmadi: tarmoq / server (`timeout`, `unknown`) — «Qayta urinish»; so'rov yoki sozlama
+ *    xatosi (`badRequest` 400, `conflict` 409 — masalan opt-out havolasi sozlanmagan, `forbidden`) — sababi i18n
+ *    matnda, qayta urinish tugmasi yo'q (natija o'zgarmaydi);
  *  - `fanout` — bitta kampaniya chegarasidan ko'p;
  *  - `empty` — mos mijoz yo'q;
  *  - `limit` — bugungi SMS limiti yetmaydi;
@@ -24,8 +26,14 @@ export type CampaignAudienceSummaryProps = {
   data: SmsCampaignPreview | undefined;
   /** Bugungi kvota (`GET sms/status`); noma'lum — limit qatori chizilmaydi. */
   quota: SmsDailyQuota | null;
+  /** `error` holatida — `smsCampaignErrorKind(error)`; berilmasa `unknown`. */
+  errorKind?: SmsCampaignErrorKind;
   onRetry: () => void;
 };
+
+/** Qayta urinish natijani o'zgartira oladigan xatolar (tarmoq, server). */
+export const isRetryableAudienceError = (kind: SmsCampaignErrorKind = "unknown") =>
+  kind === "timeout" || kind === "unknown";
 
 /**
  * «AUDITORIYA» BLOKI — maket `superadmin-notifications-sms-campaign-segment` (o'ng ustun pastida, `sunken`):
@@ -33,7 +41,13 @@ export type CampaignAudienceSummaryProps = {
  * va bugungi sarf chizig'i (KM-S4). Limit yetmasa — son va chiziq qizil, izoh bilan. «Segmentni saqlash» va
  * saqlangan segmentlar — «Taklif · backend kerak», chizilmaydi.
  */
-export const CampaignAudienceSummary = ({ state, data, quota, onRetry }: CampaignAudienceSummaryProps) => {
+export const CampaignAudienceSummary = ({
+  state,
+  data,
+  quota,
+  errorKind = "unknown",
+  onRetry,
+}: CampaignAudienceSummaryProps) => {
   const { t, i18n } = useTranslation("sms");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const quotaLabelId = useId();
@@ -46,9 +60,10 @@ export const CampaignAudienceSummary = ({ state, data, quota, onRetry }: Campaig
 
   let title: string;
   let detail: string | null = null;
+  const retryable = isRetryableAudienceError(errorKind);
   if (state === "error") {
     title = t("audience.error");
-    detail = t("audience.errorHint");
+    detail = retryable ? t("audience.errorHint") : t(`campaign.errors.${errorKind}`);
   } else if (loading && !data) {
     title = t("audience.loading");
   } else if (state === "fanout") {
@@ -84,7 +99,7 @@ export const CampaignAudienceSummary = ({ state, data, quota, onRetry }: Campaig
     >
       <div className="flex min-w-0 flex-[1_1_220px] items-center gap-3">
         {state === "error" ? (
-          <CircleAlert aria-hidden="true" size={20} className="shrink-0 text-danger-fg" />
+          <CircleX aria-hidden="true" size={20} className="shrink-0 text-danger-fg" />
         ) : loading ? (
           <Spinner size="md" className="shrink-0 text-text-muted" />
         ) : (
@@ -103,7 +118,7 @@ export const CampaignAudienceSummary = ({ state, data, quota, onRetry }: Campaig
         </div>
       </div>
 
-      {state === "error" ? (
+      {state === "error" && retryable ? (
         <Button variant="secondary" size="sm" leftIcon={RotateCw} onClick={onRetry} className="max-md:w-full">
           {t("audience.retry")}
         </Button>
@@ -135,6 +150,7 @@ export const CampaignAudienceSummary = ({ state, data, quota, onRetry }: Campaig
             aria-valuemin={0}
             aria-valuemax={quota.cap}
             aria-valuenow={Math.min(quota.used, quota.cap)}
+            // Izi `bg-border`, CODE-MAP `.el-progress` dagi `bg-sunken` emas: blokning o'zi `bg-sunken` — iz ko'rinmay qolardi.
             className="h-2 overflow-hidden rounded-full bg-border"
           >
             <span

@@ -1,5 +1,6 @@
 export {
   isCustomerSegmentEmpty,
+  MAX_MIN_ORDERS,
   nextIsoDay,
   parseMinOrders,
   toCustomerSegmentPayload,

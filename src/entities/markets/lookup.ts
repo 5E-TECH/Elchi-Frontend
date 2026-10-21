@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { markets } from "./index";
@@ -10,8 +10,15 @@ export interface MarketLookupItem {
   phone?: string;
 }
 
-/** Faol marketlar, bitta sahifada (`GET /markets?status=active&limit=…`). */
-const LOOKUP_PARAMS = { status: "active", limit: 1000 } as const;
+/** Tanlov ro'yxatidagi marketlar soni bir so'rovda. Backend `limit` ni 100 bilan cheklaydi (`normalizeQuery`), superadmin
+ * va admin uchun har qator — kassa RPC; shuning uchun ro'yxat kichik, qolgani — server qidiruvi (`search`). */
+export const MARKET_LOOKUP_LIMIT = 50;
+
+/** Bir so'rov natijasi: ko'rsatilganlar va (backend `meta.total`) mos marketlar jami. */
+export interface MarketLookupPage {
+  items: MarketLookupItem[];
+  total: number;
+}
 
 /** `GET /markets` javobi: massiv, `{ data: [] }`, `{ items: [] }` yoki `{ data: { items: [] } }`. */
 export const toMarketLookup = (payload: unknown): MarketLookupItem[] => {
@@ -39,16 +46,31 @@ export const toMarketLookup = (payload: unknown): MarketLookupItem[] => {
   return items;
 };
 
+/** `{ data: { items, meta: { total } } }` (yoki `{ meta }` yuqorida) → sahifa; `total` bo'lmasa — ko'rsatilganlar soni. */
+export const toMarketLookupPage = (payload: unknown): MarketLookupPage => {
+  const items = toMarketLookup(payload);
+  const record = (payload ?? {}) as Record<string, unknown>;
+  const data = (record.data ?? {}) as Record<string, unknown>;
+  const meta = (data.meta ?? record.meta ?? {}) as Record<string, unknown>;
+  const total = Number(meta.total);
+  return { items, total: Number.isFinite(total) && total >= items.length ? total : items.length };
+};
+
 /**
- * Faol marketlar ro'yxati — forma va filtrlardagi `Select` uchun (KM-1 «Mijoz filtrlari»). Xatoni iste'molchi
- * o'zi ko'rsatadi (global xabar yo'q).
+ * Faol marketlar — forma va filtrlardagi `Select` uchun (KM-1 «Mijoz filtrlari»). `search` — server qidiruvi
+ * (nom, telefon, username; iste'molchi debounce qiladi); qidiruv almashganda oldingi ro'yxat ko'rinib turadi.
+ * Xatoni iste'molchi o'zi ko'rsatadi (global xabar yo'q).
  */
-export const useMarketLookup = (enabled = true) =>
-  useQuery({
-    queryKey: [markets, "lookup", LOOKUP_PARAMS],
-    queryFn: async () => toMarketLookup((await api.get(API_ENDPOINTS.MARKETS.BASE, { params: LOOKUP_PARAMS })).data),
+export const useMarketLookup = (search = "", enabled = true) => {
+  const query = search.trim();
+  const params = { status: "active", limit: MARKET_LOOKUP_LIMIT, ...(query ? { search: query } : {}) };
+  return useQuery({
+    queryKey: [markets, "lookup", params],
+    queryFn: async () => toMarketLookupPage((await api.get(API_ENDPOINTS.MARKETS.BASE, { params })).data),
     enabled,
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
     meta: { silentError: true },
   });
+};

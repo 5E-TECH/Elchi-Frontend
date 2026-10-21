@@ -46,9 +46,10 @@ test.describe("SMS kampaniya — mijozlar segmenti, 1440px", () => {
           region_id: "1",
           district_id: "12",
           market_id: "3",
-          last_order_from: "2026-10-01",
+          // Toshkent yarim tuni (order-service yalang sanani UTC deb o'qiydi).
+          last_order_from: "2026-10-01T00:00:00+05:00",
           // «Bu oy» 21-oktabrgacha; backend `< to` — oxirgi kun ham kirsin deb keyingi kun.
-          last_order_to: "2026-10-22",
+          last_order_to: "2026-10-22T00:00:00+05:00",
           min_orders: 2,
         },
       });

@@ -37,6 +37,11 @@ test("⭐ 390: segment filtrlari, jonli auditoriya va limit; toshish yo'q, nisho
   const market = (await panel.getByText("Market", { exact: true }).boundingBox())!;
   expect(market.y).toBeGreaterThan(region.y);
   expect(Math.abs(market.x - region.x)).toBeLessThan(2);
+  // Viloyat va Tuman ham ustma-ust: yonma-yon bo'lsa tanlangan nom × tugmasi bilan kesilardi («Toshkent…»).
+  const district = (await panel.getByText("Tuman", { exact: true }).boundingBox())!;
+  expect(district.y).toBeGreaterThan(region.y);
+  expect(Math.abs(district.x - region.x)).toBeLessThan(2);
+  await expect(panel.getByRole("combobox", { name: /^Viloyat/ })).toContainText("Toshkent sh.");
 
   await panel.getByRole("textbox", { name: "Xabar matni" }).fill("Elchi: kuzgi chegirma 20%");
   await expect(panel.getByRole("button", { name: "Ko'rib chiqish" })).toBeEnabled();

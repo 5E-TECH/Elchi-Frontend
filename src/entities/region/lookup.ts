@@ -9,7 +9,11 @@ export interface RegionLookupItem {
   name: string;
 }
 
-export const REGION_LOOKUP_KEY = ["region-lookup"] as const;
+/**
+ * `region-district-catalog` prefiksi ostida — viloyat/tuman o'zgarganda (`pages/region/pages/districts`) shu prefiks
+ * bekor qilinadi, tanlov ro'yxati ham yangilanadi. Tuman kataloglari kaliti — raqamli `regionId`, to'qnashmaydi.
+ */
+export const REGION_LOOKUP_KEY = ["region-district-catalog", "regions"] as const;
 
 const toLookup = (payload: unknown): RegionLookupItem[] =>
   unwrapRegions(payload).map(({ id, name }) => ({ id, name }));

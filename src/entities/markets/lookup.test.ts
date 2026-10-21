@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toMarketLookup } from "./lookup";
+import { toMarketLookup, toMarketLookupPage } from "./lookup";
 
 describe("toMarketLookup (KM-1)", () => {
   it("massiv, { data }, { items } va { data: { items } } konvertlarini o'qiydi", () => {
@@ -20,5 +20,15 @@ describe("toMarketLookup (KM-1)", () => {
     ]);
     expect(toMarketLookup(undefined)).toEqual([]);
     expect(toMarketLookup({ data: "x" })).toEqual([]);
+  });
+
+  it("sahifa: backend `meta.total` (ko'rsatilgandan ko'p bo'lsa — qidiruv kerak); meta yo'q — ko'rsatilganlar", () => {
+    const row = { id: 7, name: "Alfa" };
+    expect(toMarketLookupPage({ data: { items: [row], meta: { total: 140 } } })).toEqual({
+      items: [{ id: "7", name: "Alfa" }],
+      total: 140,
+    });
+    expect(toMarketLookupPage({ data: [row] }).total).toBe(1);
+    expect(toMarketLookupPage({ data: { items: [row], meta: { total: "x" } } }).total).toBe(1);
   });
 });
