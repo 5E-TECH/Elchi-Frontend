@@ -240,3 +240,16 @@ describe("rol yo'q bo'lsa hech narsa ochilmaydi", () => {
     }
   });
 });
+
+describe("logist (LG-1) — bosh sahifa o'zida, moliya yopiq (ega LG-S1)", () => {
+  const logist = state("logist");
+
+  it("admin bosh sahifasi predikatiga tushmaydi (`DashboardEntry` logistni o'z sahifasiga beradi)", () => {
+    expect(canViewAdminDashboard(logist)).toBe(false);
+  });
+
+  it("moliya predikatlari — rad", () => {
+    expect(canViewPaymentsPage(logist)).toBe(false);
+    expect(canViewFinancialBalance(logist)).toBe(false);
+  });
+});

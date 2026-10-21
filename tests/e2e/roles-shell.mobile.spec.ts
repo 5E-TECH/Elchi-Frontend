@@ -5,8 +5,9 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *
  *  - market (ega MO-S1): pastki menyu Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» —
  *    «Menyu» varaqasida (maket `market-dashboard-mobile-menu`).
- *  - logist, investor: `/` admin bosh sahifasiga tushmaydi — shell ichida 403 (sizish mDfjKeQi); skaner yo'q;
- *    menyu bandlari hali yo'q — pastki menyu chizilmaydi. Logistda qidiruv bor, investorda yo'q.
+ *  - investor: `/` admin bosh sahifasiga tushmaydi — shell ichida 403 (sizish mDfjKeQi); skaner yo'q;
+ *    menyu bandlari hali yo'q — pastki menyu chizilmaydi; qidiruv yo'q. Logist — o'z bosh sahifasi (LG-1,
+ *    `logist-home.*.spec.ts`).
  *
  * API — `route.fulfill` bilan soxta; yozish so'rovlari taqiqlangan.
  */
@@ -90,7 +91,6 @@ test("market: pastki menyu — Bosh sahifa · Buyurtmalar · Yaratish · To'lovl
 });
 
 for (const { role, name, search } of [
-  { role: "logist", name: "Aziz Rahimov", search: true },
   { role: "investor", name: "Habibulla Nazirov", search: false },
 ]) {
   test(`${role}: «/» — shell ichida 403, admin bosh sahifasi so'rovlari ketmaydi; skanersiz, pastki menyusiz`, async ({

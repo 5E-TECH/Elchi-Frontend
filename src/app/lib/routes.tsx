@@ -229,6 +229,9 @@ const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewCourierBulk = canViewCourierBulkPage;
 
 
+/** LG-1: logist bosh sahifasi (`DashboardEntry` → logist tarmog'i). */
+const LogistDashboardPage = lazy(() => import("../../pages/dashboard/LogistDashboardPage"));
+
 /**
  * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: qolgan har
  * rol (logist, market operatori, investor, menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida,
@@ -249,8 +252,9 @@ const DashboardEntry = () => {
 
   // Yangi rollarning o'z bosh sahifasi kelguncha — 403 (admin bosh sahifasi kompaniya tushumini ko'rsatadi).
   // Har rol o'z tarmog'ida: LG-1 / MO-2 / IN-1 faqat o'z qatorini almashtiradi.
+  // LG-1: logist — o'z viloyatlari, pulsiz (ega LG-S1).
   if (role === "logist") {
-    return <ForbiddenPage />;
+    return <LogistDashboardPage />;
   }
 
   if (role === "market_operator") {

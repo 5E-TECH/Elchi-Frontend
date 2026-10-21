@@ -499,3 +499,22 @@ describe("MobileMenu — bildirishnomalar", () => {
     }
   });
 });
+
+describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () => {
+  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
+
+    expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="sheet"]')).not.toBeNull();
+    expect(screen.getByRole("link", { name: /Profilni ochish/ })).toHaveTextContent("Logist");
+    const home = within(sectionsNav()).getByRole("link", { name: "Bosh sahifa" });
+    expect(home).toHaveAttribute("href", "/");
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(within(sectionsNav()).getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
+    expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+    const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) expect(hrefs).not.toContain(finance);
+  });
+});

@@ -67,3 +67,16 @@ export const shortRegionName = (name: string): string => {
   if (/^toshkent (viloyati|vil\.?)$/.test(lower)) return "Toshkent vil.";
   return trimmed.replace(/\s+(viloyati|respublikasi)$/i, "") || trimmed;
 };
+
+/**
+ * LG-1: logistga biriktirilgan viloyatlar (`logistId === me`). Backend `stats/all` logistga hozircha 14 viloyatning
+ * hammasini qaytaradi (cheklov — backend iOnGbEqi); shu vaqtgacha doira klientda. Logist aniqlanmasa — bo'sh.
+ */
+export const regionsOfLogist = <T extends { logistId?: string | null }>(
+  regions: readonly T[],
+  logistId: string | number | null | undefined,
+): T[] => {
+  const me = logistId == null ? "" : String(logistId).trim();
+  if (!me) return [];
+  return regions.filter((region) => region.logistId != null && String(region.logistId) === me);
+};

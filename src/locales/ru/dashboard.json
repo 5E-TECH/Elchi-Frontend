@@ -338,5 +338,65 @@
       "colRate": "Процент продаж",
       "colPart": "Продано / всего"
     }
+  },
+  "v2Logist": {
+    "headerSub": "Вам назначено областей: {{count}} — {{names}}",
+    "headerSubGeneric": "Показатели по назначенным вам областям",
+    "kpi": {
+      "label": "Общие показатели по моим областям",
+      "totalHint": "В процессе: {{pending}} · областей: {{regions}}",
+      "totalAria": "Всего {{total}}: продано {{sold}}, в процессе {{pending}}, отменено {{cancelled}}",
+      "soldHint": "Вручено клиенту",
+      "cancelledHint": "Вернётся в маркет",
+      "couriers": "Активные курьеры",
+      "couriersHint": "Курьеры в активном статусе",
+      "couriersUnit": "/ {{total}}",
+      "couriersAria": "Активные курьеры: {{active}} из {{total}}",
+      "share": "Доля от общего",
+      "soldShareAria": "Доля проданных",
+      "cancelledShareAria": "Доля отменённых",
+      "activity": "Активность"
+    },
+    "legend": {
+      "sold": "Продано",
+      "pending": "В процессе",
+      "cancelledShort": "Отмена",
+      "cancelled": "Отменено"
+    },
+    "success": {
+      "sub": "{{period}} · моих областей: {{count}}"
+    },
+    "regions": {
+      "title": "Успешность по областям",
+      "sub": "Продано / принято · от самой низкой",
+      "aria": "Успешность: {{name}}",
+      "noOrders": "Нет заказов",
+      "lowest": "Самая низкая успешность",
+      "highest": "Самая высокая успешность",
+      "extremeMeta": "{{rate}} · {{sold}} / {{total}} шт."
+    },
+    "table": {
+      "title": "Мои области",
+      "label": "Таблица моих областей",
+      "region": "Область",
+      "orders": "Заказы",
+      "status": "Статус",
+      "success": "Успешность",
+      "couriers": "Активные курьеры",
+      "districts": "Районов: {{count}}",
+      "ordersAria": "{{name}}: заказов {{count}}",
+      "statusAria": "продано {{sold}}, в процессе {{pending}}, отменено {{cancelled}}",
+      "total": "Итого · областей: {{count}}",
+      "cardSummary": "{{rate}} продано · курьеры {{active}} / {{total}}",
+      "cardSummaryNoCouriers": "{{rate}} продано"
+    },
+    "error": {
+      "title": "Не удалось загрузить статистику по областям",
+      "description": "Проверьте подключение к интернету и повторите попытку."
+    },
+    "empty": {
+      "title": "Вам пока не назначена ни одна область",
+      "description": "Когда администратор назначит область, её статистика появится здесь."
+    }
   }
 }

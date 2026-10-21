@@ -2,7 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
-export { pendingOf, shareOf, shortRegionName, splitCompactMoney, successRateOf } from "./lib/stats";
+export {
+  pendingOf,
+  regionsOfLogist,
+  shareOf,
+  shortRegionName,
+  splitCompactMoney,
+  successRateOf,
+} from "./lib/stats";
 
 /**
  * Region (hudud) statistikasi — markaziy data-layer.
@@ -40,6 +47,13 @@ export interface RegionItem {
    * yuboradi — u holda `activeCouriers` 0 bo'ladi, lekin bu «yolg'on 0»: UI qatorni chizmaydi.
    */
   couriersKnown?: boolean;
+  /**
+   * LG-1 (additiv): viloyatga biriktirilgan logist (`stats/all` → `logist_id`, `admins.id`); biriktirilmagan — `null`.
+   * Logist bosh sahifasi o'z viloyatlarini shu bo'yicha klientda ajratadi (backend hozircha 14 viloyatni beradi).
+   */
+  logistId?: string | null;
+  /** LG-1 (additiv): viloyatdagi barcha kuryerlar (`stats/all` → `totalCouriers`); noma'lum — `couriersKnown` false. */
+  totalCouriers?: number;
 }
 
 /** UzbekistanRegionMap kutadigan ko'rinish. */
@@ -112,6 +126,9 @@ export const toNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toIdOrNull = (value: unknown): string | null =>
+  value === null || value === undefined || value === "" ? null : String(value);
+
 export const normalizeRegionItem = (raw: unknown): RegionItem | null => {
   const item = raw as Record<string, unknown>;
   const stats = asRecord(item.stats);
@@ -161,6 +178,10 @@ export const normalizeRegionItem = (raw: unknown): RegionItem | null => {
     ),
     couriersKnown:
       (item.activeCouriers ?? item.active_couriers ?? stats.activeCouriers ?? stats.active_couriers) != null,
+    logistId: toIdOrNull(item.logist_id ?? item.logistId),
+    totalCouriers: toNumber(
+      item.totalCouriers ?? item.total_couriers ?? stats.totalCouriers ?? stats.total_couriers,
+    ),
   };
 };
 

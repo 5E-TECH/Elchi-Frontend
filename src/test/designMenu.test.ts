@@ -33,7 +33,7 @@ describe("maket menyusi — rejadagi (kodda hali yo'q) bandlar", () => {
   ];
 
   it("menyusi bo'sh yangi rollar (ROL-0) qobiqda bor", () => {
-    expect(EMPTY_MENU_ROLES).toEqual(expect.arrayContaining(["logist", "market_operator", "investor"]));
+    expect(EMPTY_MENU_ROLES).toEqual(expect.arrayContaining(["market_operator", "investor"]));
   });
 
   it.each(EMPTY_MENU_ROLES)("%s: kodda yo'q yoki bo'sh menyuli rolning butun menyusi plannedMenu da", (role) => {

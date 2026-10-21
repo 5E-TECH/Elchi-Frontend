@@ -34,6 +34,10 @@ vi.mock("../../pages/dashboard/MarketDashboardPage", () => ({
   default: () => <p>Market bosh sahifasi</p>,
 }));
 
+vi.mock("../../pages/dashboard/LogistDashboardPage", () => ({
+  default: () => <p>Logist bosh sahifasi</p>,
+}));
+
 vi.mock("../../pages/branch-dashboard", () => ({
   default: () => <p>Filial bosh sahifasi</p>,
 }));
@@ -59,7 +63,7 @@ const renderHome = (role: string) =>
   );
 
 describe("DashboardEntry — `/` rolga qarab", () => {
-  it.each(["logist", "market_operator", "investor"])(
+  it.each(["market_operator", "investor"])(
     "%s: admin bosh sahifasiga tushmaydi — shell ichida 403",
     async (role) => {
       renderHome(role);
@@ -85,5 +89,15 @@ describe("DashboardEntry — `/` rolga qarab", () => {
   it("menejer — filial bosh sahifasiga yo'naltiriladi", async () => {
     renderHome("manager");
     expect(await screen.findByText("Filial bosh sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
+  });
+});
+
+describe("DashboardEntry — logist (LG-1)", () => {
+  it("logist — o'z bosh sahifasi (admin sahifasi va 403 emas)", async () => {
+    renderHome("logist");
+    expect(await screen.findByText("Logist bosh sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByTestId("shell")).toBeInTheDocument();
+    expect(screen.queryByText("Admin bosh sahifasi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Bu sahifaga ruxsatingiz yo'q" })).not.toBeInTheDocument();
   });
 });

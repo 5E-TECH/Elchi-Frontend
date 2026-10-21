@@ -338,5 +338,65 @@
       "colRate": "Sotuv foizi",
       "colPart": "Sotilgan / jami"
     }
+  },
+  "v2Logist": {
+    "headerSub": "Sizga biriktirilgan {{count}} ta viloyat: {{names}}",
+    "headerSubGeneric": "Biriktirilgan viloyatlaringiz bo'yicha ko'rsatkichlar",
+    "kpi": {
+      "label": "Viloyatlarim bo'yicha umumiy ko'rsatkichlar",
+      "totalHint": "Jarayonda {{pending}} ta · {{regions}} viloyat",
+      "totalAria": "Jami {{total}} ta: sotilgan {{sold}}, jarayonda {{pending}}, bekor qilingan {{cancelled}}",
+      "soldHint": "Mijozga topshirilgan",
+      "cancelledHint": "Marketga qaytadi",
+      "couriers": "Faol kuryerlar",
+      "couriersHint": "Faol holatdagi kuryerlar",
+      "couriersUnit": "/ {{total}}",
+      "couriersAria": "Faol kuryerlar: {{total}} tadan {{active}} tasi",
+      "share": "Jamidan ulushi",
+      "soldShareAria": "Sotilganlar ulushi",
+      "cancelledShareAria": "Bekor qilinganlar ulushi",
+      "activity": "Faollik"
+    },
+    "legend": {
+      "sold": "Sotilgan",
+      "pending": "Jarayonda",
+      "cancelledShort": "Bekor",
+      "cancelled": "Bekor qilingan"
+    },
+    "success": {
+      "sub": "{{period}} · {{count}} ta viloyatim"
+    },
+    "regions": {
+      "title": "Viloyatlar muvaffaqiyati",
+      "sub": "Sotilgan / qabul qilingan · eng pastdan boshlab",
+      "aria": "{{name}} muvaffaqiyati",
+      "noOrders": "Buyurtma yo'q",
+      "lowest": "Eng past muvaffaqiyat",
+      "highest": "Eng yuqori muvaffaqiyat",
+      "extremeMeta": "{{rate}} · {{sold}} / {{total}} ta"
+    },
+    "table": {
+      "title": "Viloyatlarim",
+      "label": "Viloyatlarim jadvali",
+      "region": "Viloyat",
+      "orders": "Buyurtmalar",
+      "status": "Holat",
+      "success": "Muvaffaqiyat",
+      "couriers": "Faol kuryer",
+      "districts": "{{count}} tuman",
+      "ordersAria": "{{name}}: {{count}} ta buyurtma",
+      "statusAria": "{{sold}} sotilgan, {{pending}} jarayonda, {{cancelled}} bekor",
+      "total": "Jami · {{count}} viloyat",
+      "cardSummary": "{{rate}} sotildi · {{active}} / {{total}} kuryer",
+      "cardSummaryNoCouriers": "{{rate}} sotildi"
+    },
+    "error": {
+      "title": "Viloyatlar statistikasini yuklab bo'lmadi",
+      "description": "Internet aloqasini tekshirib, qayta urining."
+    },
+    "empty": {
+      "title": "Sizga hali viloyat biriktirilmagan",
+      "description": "Administrator viloyat biriktirgach, uning statistikasi shu yerda chiqadi."
+    }
   }
 }
