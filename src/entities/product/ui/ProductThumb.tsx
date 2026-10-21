@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-list, superadmin-orders-detail, superadmin-neworders-create-manual-step2-existing-customer
+// dizayn-v2: superadmin-products-list, admin-products-list, market-products-list, superadmin-products-create, admin-products-create, superadmin-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-create-manual-step2-existing-customer
 import { useState } from "react";
 import { Tag, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";

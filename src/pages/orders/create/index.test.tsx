@@ -11,6 +11,9 @@ vi.mock("../../../shared/api/api", () => ({
 }));
 
 import OrderCreate from "./index";
+import enOrders from "../../../locales/en/orders.json";
+import ruOrders from "../../../locales/ru/orders.json";
+import uzOrders from "../../../locales/uz/orders.json";
 
 /**
  * /new-orders/create — "QO'LDA" VA "AI BILAN" REJIMLARI (DUFZDG5r) + dizayn v2 (maketlar
@@ -848,7 +851,7 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(deliveryPrice()).toHaveTextContent("25 000 so'm");
   });
 
-  it("standart narxsiz market: kartalarda «Narx yo'q», ogohlantirish, xulosada «Narx yo'q»", async () => {
+  it("standart narxsiz market: kartalarda «Narx yo'q», ogohlantirish; xulosada «Yetkazish narxi» qatori yo'q (maketdagidek)", async () => {
     mocks.get.mockImplementation(marketGet({ tariff_home: null, tariff_center: 0, default_tariff: null }));
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
 
@@ -859,8 +862,53 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(card(/Markazgacha/)).toHaveTextContent("Narx yo'q");
     expect(card(/Uygacha/)).toHaveTextContent("Narx yo'q");
     expect(radio(/Markazgacha/)).toBeChecked();
-    expect(deliveryPrice()).toHaveTextContent("Narx yo'q");
-    expect(deliveryPrice()).toHaveTextContent("Standart narx belgilanmagan · narx sotuvda qo'llanadi");
+    // Maketning «Standart narxsiz market» holatida faqat kartalar va ogohlantirish — xulosada takror yo'q.
+    expect(deliveryPrice()).not.toBeInTheDocument();
+    expect(aside()).not.toHaveTextContent(/Narx yo'q|belgilanmagan/);
+  });
+
+  it("bitta tur narxsiz: o'sha kartada «Narx yo'q»; sukut turi narxsiz bo'lsa izohda «Sukut bo'yicha» yo'q, xulosada qator yo'q", async () => {
+    mocks.get.mockImplementation(marketGet({ tariff_home: 35000, tariff_center: null, default_tariff: "center" }));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(card(/Markazgacha/)).toHaveTextContent("Narx yo'q");
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(within(deliveryGroup()).getByText("Sizning standart narxingiz")).toBeInTheDocument();
+    expect(deliveryGroup()).not.toHaveTextContent(/Sukut bo'yicha/);
+    expect(screen.queryByText("Standart narxingiz belgilanmagan")).not.toBeInTheDocument();
+    expect(deliveryPrice()).not.toBeInTheDocument();
+
+    fireEvent.click(radio(/Uygacha/));
+    expect(deliveryPrice()).toHaveTextContent("35 000 so'm");
+  });
+
+  it("«Yetkazish narxi» qatori 14 px (`text-sm`, maket `.el`) — karta tanasining 16 px i meros bo'lmaydi", async () => {
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(deliveryPrice()).toHaveTextContent("35 000 so'm"));
+    expect(deliveryPrice()).toHaveClass("text-sm");
+  });
+
+  it("tariflar kech kelsa va forma to'ldirila boshlagan bo'lsa — ko'rinib turgan tur o'z-o'zidan almashmaydi", async () => {
+    const user = userEvent.setup();
+    let resolveProfile: (value: unknown) => void = () => {};
+    const profile = new Promise((resolve) => {
+      resolveProfile = resolve;
+    });
+    mocks.get.mockImplementation(marketGet(profile));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    expect(radio(/Markazgacha/)).toBeChecked();
+    // Turga tegilmadi — faqat telefon yozildi.
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+
+    resolveProfile({ data: { statusCode: 200, data: { id: "7", role: "market", ...TARIFFS } } });
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(screen.getByLabelText(/^Manzil/)).not.toHaveAttribute("aria-required");
+    expect(deliveryPrice()).toHaveTextContent("25 000 so'm");
   });
 
   it("profil so'rovi yiqilsa narx ko'rsatilmaydi va «Narx yo'q» deyilmaydi (jim)", async () => {
@@ -1005,6 +1053,43 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     // «Qo'llash» — yana avtomatik: mahsulot olib tashlansa summa ham yangilanadi.
     await user.click(screen.getByRole("button", { name: "Avto changyutgichni olib tashlash" }));
     expect(total()).toHaveValue("90 000");
+  });
+
+  it("«Qo'llash» havolasi 14 px (maket `.el-btn-link`), telefonda 44 px balandlik qoidasi bilan", async () => {
+    const user = userEvent.setup();
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.clear(total());
+    await user.type(total(), "100000");
+    const apply = within(aside()).getByRole("button", { name: /summani qo'llash/ });
+    expect(apply).toHaveClass("text-sm", "max-md:min-h-11");
+    expect(apply).not.toHaveClass("text-[13px]");
+  });
+
+  it("12 xonadan uzun mahsulotlar summasi maydonga yozilmaydi — izohda «juda katta», «Qo'llash» yo'q", async () => {
+    const user = userEvent.setup();
+    mocks.get.mockImplementation((url: string) =>
+      url.startsWith("product/") ? ok([{ id: 601, name: "Qimmat uskuna", price: "999999999999.00" }]) : marketGet(TARIFFS)(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const product = await screen.findByRole("button", { name: /Qimmat uskuna/ });
+    await user.click(product);
+    expect(total()).toHaveValue("999 999 999 999");
+    await user.click(product);
+    expect(total()).toHaveValue("");
+    expect(total()).toHaveAccessibleDescription("Summa juda katta — ko'pi bilan 12 xonali son");
+    expect(within(aside()).queryByText("Mahsulotlar bo'yicha:")).not.toBeInTheDocument();
+  });
+
+  it("izoh + «Narxsiz N ta …» birikmasi lokal faylda (uz/ru/en `createPricing.hintWithNote`)", () => {
+    for (const locale of [uzOrders, ruOrders, enOrders]) {
+      const template = (locale as { createPricing: Record<string, string> }).createPricing.hintWithNote;
+      expect(template).toContain("{{hint}}");
+      expect(template).toContain("{{note}}");
+    }
   });
 
   it("faqat narxsiz mahsulotlar — summa avtomatik to'ldirilmaydi va taklif qatori yo'q", async () => {

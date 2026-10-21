@@ -1,5 +1,6 @@
 import type { DeliveryType, OrderItem } from "../../../../entities/order/types/order";
 import { resolveAssetUrl } from "../../../../shared/lib/assetUrl";
+import { ORDER_AMOUNT_MAX_DIGITS } from "../../lib/orderAmountInput";
 
 /**
  * BUYURTMA YARATISH — NARX YORDAMCHILARI (CS-B, Trello IT1YpboR / zRqDRLAZ).
@@ -75,6 +76,8 @@ export type CatalogProduct = {
   image?: string | null;
   photo_url?: string | null;
   photo?: string | null;
+  file?: string | null;
+  url?: string | null;
 };
 
 /** Mahsulot narxi (so'm) yoki `null` — kiritilmagan, bo'sh yoki noto'g'ri. `0` — haqiqiy narx (bepul). */
@@ -86,10 +89,21 @@ export const readProductPrice = (product?: CatalogProduct | null): number | null
   return Number.isFinite(value) && value >= 0 ? value : null;
 };
 
-/** Mahsulot rasmi — ochiq manzil (MinIO ichki manzili `resolveAssetUrl` bilan almashtiriladi). */
+/**
+ * Mahsulot rasmi — ochiq manzil (MinIO ichki manzili `resolveAssetUrl` bilan almashtiriladi). Maydonlar tartibi
+ * `/products` (`getProductImageUrl`) va buyurtma tafsiloti bilan bir xil — rasm faqat `file` / `url` da bo'lsa ham.
+ */
 export const readProductImageUrl = (product?: CatalogProduct | null): string | undefined =>
   product
-    ? resolveAssetUrl(product.image_url ?? product.imageUrl ?? product.image ?? product.photo_url ?? product.photo)
+    ? resolveAssetUrl(
+        product.image_url ??
+          product.imageUrl ??
+          product.image ??
+          product.photo_url ??
+          product.photo ??
+          product.file ??
+          product.url,
+      )
     : undefined;
 
 export type ItemsTotal = {
@@ -125,5 +139,13 @@ export const computeItemsTotal = (
   return { total: Math.round(total), priced, unpriced };
 };
 
-/** «Umumiy summa» avto-taklifi: hisobga kirgan mahsulot bo'lsa — summa raqamlari, aks holda bo'sh. */
-export const suggestedTotalDigits = ({ total, priced }: ItemsTotal): string => (priced > 0 ? String(total) : "");
+/** Mahsulotlar summasi maydonga sig'maydi (12 xonadan uzun, `numeric(14,2)`) — taklif qilinmaydi. */
+export const isItemsTotalTooLong = ({ total, priced }: ItemsTotal): boolean =>
+  priced > 0 && String(total).length > ORDER_AMOUNT_MAX_DIGITS;
+
+/**
+ * «Umumiy summa» avto-taklifi: hisobga kirgan mahsulot bo'lsa — summa raqamlari, aks holda bo'sh. 12 xonadan uzun
+ * summa ham bo'sh — maydonga yozilsa sxema xatosi chiqardi (qo'lda yozishdagi «juda katta» izohi o'rniga).
+ */
+export const suggestedTotalDigits = (itemsTotal: ItemsTotal): string =>
+  itemsTotal.priced > 0 && !isItemsTotalTooLong(itemsTotal) ? String(itemsTotal.total) : "";

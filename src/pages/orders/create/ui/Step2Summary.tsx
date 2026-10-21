@@ -10,7 +10,7 @@ import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/
 import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../../shared/ui/primitives";
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
-import { computeItemsTotal, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
+import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 
@@ -37,7 +37,7 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  *
  * CS-B (maket `*-step2-existing-customer`):
  *  - «Yetkazish narxi» — VAQTINCHA faqat market standart narxi (narx dvigateli DAqXPeSy → CS-E); superadmin,
- *    admin, market; tariflar kelmaguncha yoki xatoda qator yo'q;
+ *    admin, market; tariflar kelmaguncha, xatoda yoki tanlangan tur narxsiz bo'lsa qator yo'q;
  *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
  *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
  */
@@ -79,6 +79,8 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
   const totalPriceAuto = useWatch({ control, name: "totalPriceAuto" });
   const itemsTotal = useMemo(() => computeItemsTotal(items, findProduct), [findProduct, items]);
   const suggestedDigits = suggestedTotalDigits(itemsTotal);
+  // 12 xonadan uzun summa maydonga yozilmaydi — avto rejimda sababi izohda (qo'lda yozishdagi «juda katta»).
+  const itemsTotalTooLong = isItemsTotalTooLong(itemsTotal);
 
   useEffect(() => {
     if (!totalPriceAuto || totalPrice === suggestedDigits) return;
@@ -92,7 +94,7 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
     setValue("details.total_price", suggestedDigits, { shouldDirty: true, shouldValidate: true });
     setAmountHint(undefined);
   };
-  const showSuggestion = !totalPriceAuto && itemsTotal.priced > 0 && totalPrice !== suggestedDigits;
+  const showSuggestion = !totalPriceAuto && suggestedDigits !== "" && totalPrice !== suggestedDigits;
   const unpricedNote =
     itemsTotal.priced > 0 && itemsTotal.unpriced > 0
       ? t("createPricing.unpricedNote", {
@@ -100,25 +102,26 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
           value: formatNumberLocalized(itemsTotal.unpriced, { language }),
         })
       : null;
+  // Izoh + «Narxsiz N ta …» — tinish belgisi lokal faylda (`createPricing.hintWithNote`).
+  const withUnpricedNote = (hint: string) =>
+    unpricedNote ? t("createPricing.hintWithNote", { hint, note: unpricedNote }) : hint;
   const totalHint =
     amountHint ??
-    (totalPriceAuto && totalPrice ? (
+    (totalPriceAuto && itemsTotalTooLong ? (
+      t(ORDER_AMOUNT_ERROR_KEYS.tooLong)
+    ) : totalPriceAuto && totalPrice ? (
       <span className="inline-flex items-start gap-1.5">
         <Check size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
-        <span>
-          {t("createPricing.autoTotalHint")}
-          {unpricedNote ? `. ${unpricedNote}` : null}
-        </span>
+        <span>{withUnpricedNote(t("createPricing.autoTotalHint"))}</span>
       </span>
-    ) : unpricedNote ? (
-      `${t("createTotalHint")}. ${unpricedNote}`
     ) : (
-      t("createTotalHint")
+      withUnpricedNote(t("createTotalHint"))
     ));
 
-  // «Yetkazish narxi» — vaqtincha standart narx (CS-B 5-band, ega tasdig'i kutilmoqda).
+  // «Yetkazish narxi» — vaqtincha standart narx (CS-B 5-band, ega tasdig'i kutilmoqda). Tanlangan turning narxi
+  // bo'lmasa qator yo'q: maketning «Standart narxsiz market» holatida faqat kartalar va ogohlantirish chizilgan.
   const tariffState = useMarketTariffs(control);
-  const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : undefined;
+  const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : null;
 
   const statusText = submitting ? t("createSubmitting") : ready ? t("orderReadyMessage") : t("fillRequiredFields");
 
@@ -143,26 +146,20 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         <dd className="m-0 min-w-0 truncate font-semibold text-text">{districtName ?? "—"}</dd>
       </dl>
 
-      {deliveryPrice !== undefined ? (
-        <div role="group" aria-labelledby={deliveryPriceId} className="flex flex-col gap-1">
+      {deliveryPrice != null ? (
+        // `text-sm` — maketdagi `.el` asosi (14 px): summa `dl` qiymatlari bilan bir o'lchamda, «Umumiy summa» bilan
+        // raqobatlashmaydi (karta tanasining 16 px i meros bo'lmaydi).
+        <div role="group" aria-labelledby={deliveryPriceId} className="flex flex-col gap-1 text-sm">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <span id={deliveryPriceId} className="text-[13px] text-text-muted">
               {t("createPricing.deliveryPrice")}
             </span>
-            {deliveryPrice == null ? (
-              <span className="ml-auto text-[13px] text-text-muted">{t("createPricing.noPrice")}</span>
-            ) : (
-              <span className="ml-auto font-semibold whitespace-nowrap text-text">{money(deliveryPrice)}</span>
-            )}
+            <span className="ml-auto font-semibold whitespace-nowrap text-text">{money(deliveryPrice)}</span>
           </div>
-          <p className="m-0 text-xs text-text-muted">
-            {deliveryPrice == null ? t("createPricing.summaryNoPriceHint") : t("createPricing.summaryStandard")}
+          <p className="m-0 text-xs text-text-muted">{t("createPricing.summaryStandard")}</p>
+          <p className="m-0 text-xs text-text-subtle">
+            {isMarketRole ? t("createPricing.summaryChargedOwn") : t("createPricing.summaryChargedMarket")}
           </p>
-          {deliveryPrice != null ? (
-            <p className="m-0 text-xs text-text-subtle">
-              {isMarketRole ? t("createPricing.summaryChargedOwn") : t("createPricing.summaryChargedMarket")}
-            </p>
-          ) : null}
         </div>
       ) : null}
 
@@ -211,9 +208,9 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
                 <span aria-hidden="true" className="text-text-subtle">
                   ·
                 </span>
+                {/* Maket `.el-btn-link` — 14 px (`md`); havola balandligi BOX dan emas, telefonda 44 px. */}
                 <Button
                   variant="link"
-                  size="sm"
                   aria-label={t("createPricing.applyLabel", { amount: money(itemsTotal.total) })}
                   onClick={applySuggestedTotal}
                 >

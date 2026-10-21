@@ -6,6 +6,8 @@ import {
   hasTariffFields,
   readDeliveryType,
   readMarketTariffs,
+  isItemsTotalTooLong,
+  readProductImageUrl,
   readProductPrice,
   readTariff,
   suggestedTotalDigits,
@@ -95,5 +97,27 @@ describe("orderPricing — mahsulot narxi va summa taklifi (CS-B)", () => {
     expect(suggestedTotalDigits(computeItemsTotal([{ product_id: "3", quantity: 1 }], find))).toBe("");
     expect(suggestedTotalDigits(computeItemsTotal([], find))).toBe("");
     expect(suggestedTotalDigits(computeItemsTotal([{ product_id: "4", quantity: 3 }], find))).toBe("0");
+  });
+
+  it("12 xonadan uzun mahsulotlar summasi taklif qilinmaydi (maydon chegarasi — `ORDER_AMOUNT_MAX_DIGITS`)", () => {
+    const huge = (id: string): CatalogProduct | undefined =>
+      id === "9" ? { id: 9, price: "999999999999.00" } : undefined;
+    const fits = computeItemsTotal([{ product_id: "9", quantity: 1 }], huge);
+    expect(isItemsTotalTooLong(fits)).toBe(false);
+    expect(suggestedTotalDigits(fits)).toBe("999999999999");
+    const overflow = computeItemsTotal([{ product_id: "9", quantity: 2 }], huge);
+    expect(overflow.total).toBe(1999999999998);
+    expect(isItemsTotalTooLong(overflow)).toBe(true);
+    expect(suggestedTotalDigits(overflow)).toBe("");
+  });
+
+  it("mahsulot rasmi: `/products` dagi tartib — `file` va `url` zaxiralari ham o'qiladi", () => {
+    expect(readProductImageUrl({ id: 1, image_url: "https://cdn.example/a.png", file: "https://cdn.example/b.png" })).toBe(
+      "https://cdn.example/a.png",
+    );
+    expect(readProductImageUrl({ id: 2, file: "https://cdn.example/file.png" })).toBe("https://cdn.example/file.png");
+    expect(readProductImageUrl({ id: 3, url: "https://cdn.example/url.png" })).toBe("https://cdn.example/url.png");
+    expect(readProductImageUrl({ id: 4 })).toBeUndefined();
+    expect(readProductImageUrl(undefined)).toBeUndefined();
   });
 });

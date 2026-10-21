@@ -40,6 +40,10 @@ test.describe("Buyurtma yaratish — standart narx va summa taklifi (CS-B), 1440
     const deliveryPrice = summary.getByRole("group", { name: "Yetkazish narxi" });
     await expect(deliveryPrice).toContainText("35 000 so'm");
     await expect(deliveryPrice).toContainText("Sizdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    // Maket `.el-strong` (14 px) — `dl` qiymatlari bilan bir o'lchamda, karta tanasining 16 px i emas.
+    const fontSize = (locator: ReturnType<typeof summary.getByText>) =>
+      locator.evaluate((el) => getComputedStyle(el).fontSize);
+    expect(await fontSize(deliveryPrice.getByText("35 000 so'm"))).toBe("14px");
 
     // Qo'lda tanlangan tur saqlanadi.
     await center.click();
@@ -71,6 +75,8 @@ test.describe("Buyurtma yaratish — standart narx va summa taklifi (CS-B), 1440
     await catalog.getByRole("button", { name: /Avto changyutgich/ }).click();
     await expect(total).toHaveValue("100 000");
     await expect(summary).toContainText("Mahsulotlar bo'yicha:");
+    // «Qo'llash» — maket `.el-btn-link` 14 px.
+    expect(await fontSize(summary.getByRole("button", { name: /summani qo'llash/ }))).toBe("14px");
     await summary.getByRole("button", { name: "Mahsulotlar bo'yicha summani qo'llash: 210 000 so'm" }).click();
     await expect(total).toHaveValue("210 000");
 
@@ -95,7 +101,7 @@ test.describe("Buyurtma yaratish — standart narx va summa taklifi (CS-B), 1440
     expect(leaked).toEqual([]);
   });
 
-  test("standart narxsiz market — «Narx yo'q» va ogohlantirish", async ({ page }) => {
+  test("standart narxsiz market — «Narx yo'q» va ogohlantirish, xulosada qator yo'q", async ({ page }) => {
     const { leaked } = await mockOrderCreateApi(page, {
       profile: { tariff_home: null, tariff_center: null, default_tariff: null },
       products: PRICED_PRODUCTS,
@@ -107,7 +113,8 @@ test.describe("Buyurtma yaratish — standart narx va summa taklifi (CS-B), 1440
     await expect(delivery.locator("label").filter({ hasText: "Uygacha" })).toContainText("Narx yo'q");
     await expect(page.getByText("Standart narxingiz belgilanmagan")).toBeVisible();
     const summary = page.getByRole("complementary", { name: "Buyurtma xulosasi" });
-    await expect(summary.getByRole("group", { name: "Yetkazish narxi" })).toContainText("Narx yo'q");
+    await expect(summary.getByRole("button", { name: "Buyurtma yaratish" })).toBeVisible();
+    await expect(summary.getByRole("group", { name: "Yetkazish narxi" })).toHaveCount(0);
     expect(leaked).toEqual([]);
   });
 });

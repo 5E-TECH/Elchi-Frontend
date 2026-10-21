@@ -149,6 +149,11 @@ const DeliveryPrice = ({ amount, money, standardLabel, noPriceLabel }: {
     </span>
   );
 
+/** Operator 2-qadamni to'ldira boshladimi (telefon, ism, viloyat yoki mahsulot) — kech kelgan sukut tur qo'llanmaydi. */
+const isFormStarted = (values: OrderCreateFormValues) =>
+  Boolean(values.customer.phone || values.customer.name?.trim() || values.customer.region_id) ||
+  (values.details.items?.length ?? 0) > 0;
+
 /** Karta ostidagi xato matni (`Field error` ko'rinishida). */
 const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => (
   <p id={id} className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
@@ -203,10 +208,13 @@ const Step2Combined = () => {
 
   // Sukut turi — market kartasidagi `default_tariff` (CS-B): tariflar shu market uchun kelgach, tur qo'lda
   // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi; yaratishdan keyingi `reset` da yana sukut.
+  // Tariflar kech kelsa (sekin `GET users/:id`, qayta urinish) va operator formani to'ldira boshlagan bo'lsa —
+  // ko'rinib turgan tur o'z-o'zidan almashmaydi (manzil birdan majburiy bo'lib qolmasin).
   useEffect(() => {
     if (deliveryTypeTouched || !defaultDeliveryType || whereDeliver === defaultDeliveryType) return;
+    if (isFormStarted(getValues())) return;
     setValue("details.where_deliver", defaultDeliveryType);
-  }, [defaultDeliveryType, deliveryTypeTouched, setValue, whereDeliver]);
+  }, [defaultDeliveryType, deliveryTypeTouched, getValues, setValue, whereDeliver]);
 
   const regionOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(regions)), [regions]);
   const districtOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(districts)), [districts]);
@@ -276,9 +284,10 @@ const Step2Combined = () => {
   const deliveryOwner = isMarketRole
     ? t("createPricing.ownStandard")
     : t("createPricing.marketStandard", { market: market?.name ?? "—" });
+  // «Sukut bo'yicha: …» faqat sukut turining narxi bo'lsa — aks holda karta «Narx yo'q» deb turganda izoh unga zid.
   const deliveryHint =
     tariffs && !hasNoTariffs(tariffs)
-      ? defaultDeliveryType
+      ? defaultDeliveryType && tariffFor(tariffs, defaultDeliveryType) != null
         ? t("createPricing.deliveryHintDefault", {
             owner: deliveryOwner,
             type: defaultDeliveryType === "address" ? t("deliveryToHome") : t("deliveryToCenter"),
