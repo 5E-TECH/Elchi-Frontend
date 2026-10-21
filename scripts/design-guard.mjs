@@ -190,11 +190,8 @@ export const V2_SCOPES = Object.freeze([
   "src/widgets/scanner",
   "src/widgets/user-detail",
   "src/widgets/user-list",
-  // `src/shared/ui` butunligicha EMAS — u yerda v1 `BackButton.tsx` hali rang bilan (boshqa v1 o'ramlari o'chirildi).
-  "src/shared/ui/primitives",
-  "src/shared/ui/charts",
-  "src/shared/ui/error-page",
-  "src/shared/ui/camera",
+  // TOZ-2: v1 `BackButton.tsx` v2 tokenlariga o'tdi — `src/shared/ui` butunligicha (primitives, charts, error-page, camera …).
+  "src/shared/ui",
   // MO-1: v1 `headerName.tsx` o'chirildi — papka rangda toza (`PrintModeSelect` raw-control ratchetida, rangda 0).
   "src/shared/components",
 ]);

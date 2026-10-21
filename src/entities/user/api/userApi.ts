@@ -18,6 +18,7 @@ import type {
 } from "../types/user";
 import { unwrapUserResponse } from "../lib/normalizeUser";
 import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
+import { queryKeys } from "../../../shared/config/queryKeys";
 
 export const user = "user";
 
@@ -139,6 +140,22 @@ export const useUser = () => {
   const dispatch = useDispatch();
   const reduxStore = useStore<RootState>();
 
+  /**
+   * Foydalanuvchi yaratilgani / o'zgargani / o'chirilgandan keyin IKKALA ro'yxat keshi eskiradi (SZTZ4HEU):
+   * `[user]` — «Foydalanuvchilar» ro'yxati, tafsilot va o'z profili (`useGetUser`, `useGetUserById`, …);
+   * `queryKeys.users` — `useUsers` (filial «Xodim qo'shish» oynasi, «Kim yubordi» filtri). Ikkinchisi faol bo'lmasa
+   * ham eskirgan deb belgilanadi — oyna keyin ochilganda yangi xodim darhol ko'rinadi (30 s `staleTime` kutilmaydi).
+   * `["couriers"]` / `["managers"]` — shu hookning `useGetCouriers` / `useGetManagers` ro'yxatlari (tarqatish sahifasi,
+   * to'lov «kimdan» tanlovi): yangi / o'zgargan / o'chirilgan kuryer yoki menejer ular ichida ham darhol aks etadi.
+   */
+  const invalidateUserLists = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: queryKeys.users.all }),
+      client.invalidateQueries({ queryKey: ["couriers"] }),
+      client.invalidateQueries({ queryKey: ["managers"] }),
+    ]);
+
   /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
   const useGetUser = (params?: IUserFilter, enabled: boolean = true, options?: { silentError?: boolean }) =>
     useQuery({
@@ -165,44 +182,36 @@ export const useUser = () => {
 
   const createAdmin = useMutation({
     mutationFn: (data: CreateAdminRequest) => api.post(API_ENDPOINTS.ADMINS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   const createRegistrator = useMutation({
     mutationFn: (data: CreateRegistratorRequest) =>
       api.post(API_ENDPOINTS.REGISTRATORS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   const createManager = useMutation({
     mutationFn: (data: CreateManagerRequest) =>
       api.post(API_ENDPOINTS.MANAGERS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   const createMarket = useMutation({
     mutationFn: (data: CreateMarketRequest) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   const createCourier = useMutation({
     mutationFn: (data: CreateCourierRequest) => api.post(API_ENDPOINTS.COURIERS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   /** `POST /logists` (LG-2). Logistlar ro'yxati (`["logists"]`, «Logist biriktirish») ham yangilanadi. */
   const createLogist = useMutation({
     mutationFn: (data: CreateLogistRequest) => api.post(API_ENDPOINTS.LOGISTS.BASE, data),
     onSuccess: () =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
-        client.invalidateQueries({ queryKey: ["logists"] }),
-      ]),
+      Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["logists"] })]),
   });
 
   const useGetRegions = (enabled: boolean = true) =>
@@ -241,15 +250,14 @@ export const useUser = () => {
   const updateUserStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
       api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res) => res.data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   const updateUser = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
       api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res) => res.data),
     onSuccess: (response, variables) => {
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
 
       const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile || currentProfile.id !== variables.id) {
@@ -276,7 +284,7 @@ export const useUser = () => {
       api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res) => res.data),
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user, "profile"] });
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
 
       const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile) {
@@ -304,7 +312,7 @@ export const useUser = () => {
         .patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), { add_order })
         .then((res) => res.data),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
@@ -323,7 +331,7 @@ export const useUser = () => {
         })
         .then((res: any) => res.data),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
@@ -342,7 +350,7 @@ export const useUser = () => {
         })
         .then((res: any) => res.data),
     onSuccess: (response, variables) => {
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
 
@@ -382,7 +390,7 @@ export const useUser = () => {
         .then((res) => res.data),
     onSuccess: () => {
       // `[user]` — tafsilot (`[user, "detail", id]`) va o'z profili (`[user, "profile"]`) ham.
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      void invalidateUserLists();
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
@@ -390,8 +398,7 @@ export const useUser = () => {
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: invalidateUserLists,
   });
 
   return {

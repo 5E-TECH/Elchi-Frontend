@@ -50,7 +50,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `PrintModeSelect`), `UI_IMPORT_RATCHET` 0; bitta qator istisnolari 2 (kamera tugmasi, `CampaignPage` prefiksi).
   Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`);
   MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
-- design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
+- design-guard `named-colour` + `V2_SCOPES` (papkalar ro'yxati — `scripts/design-guard.mjs`, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
   (`.github/workflows/visual.yml`); baseline'lar `shodiyor` da (bot commit `a107f5e`, `616bc03` da yaratilgan;
