@@ -47,6 +47,8 @@ test("bosh sahifa: pastki menyu, «Menyu» varaqasi, boshqaruvlar ≥ 44px, jadv
   await shot(page, "investor-home-menu--phone-light");
 
   expect(mock.leaked).toEqual([]);
+  // Admin bosh sahifasining kompaniya so'rovlari telefonda ham ketmaydi (eski roles-shell qo'riqchisi).
+  expect(mock.requested.filter((path) => /^(region\/stats|analytics)/.test(path))).toEqual([]);
 });
 
 test("404: «Investor profili hali bog'lanmagan» — tugmalar ≥ 44px, skroll yo'q", async ({ page }) => {

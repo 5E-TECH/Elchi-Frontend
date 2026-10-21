@@ -10,6 +10,7 @@ import {
   useInvestorDashboard,
   useInvestorInvestments,
   useInvestorProfits,
+  type InvestorDashboard,
   type InvestorMonthsWindow,
   type InvestorSummary,
 } from "../../entities/investors";
@@ -37,6 +38,9 @@ const RECENT_PROFITS = { limit: 5 } as const;
  *  - «So'nggi investitsiyalar» va «Foyda tarixi» — mustaqil so'rovlar.
  *  - Holatlar: yuklanish — skelet; bo'sh — KPI 0 + bo'sh grafik; xato — KPI/grafik o'rnida `ErrorState`, ro'yxatlar
  *    ishlayveradi; 403 / 404 / 409 — butun sahifa holati («Qayta urinish» + «Chiqish»).
+ *  - Davr almashganda xato (12 oy yuklangan, «24 oy» — 500): KPI oxirgi muvaffaqiyatli javobdan qoladi (davrga
+ *    bog'liq emas), «Oylik foyda» kartasi boshqaruvlari bilan joyida, xato faqat grafik o'rnida — boshqa davrga qaytish
+ *    mumkin (butun karta xatosi faqat birinchi yuklanishda, maket `investor-dashboard-error`).
  * Xom backend matni ko'rsatilmaydi; pul — `formatMoney`, sana — `formatDateLocalized`.
  */
 const InvestorDashboardPage = ({ now }: { now?: Date }) => {
@@ -49,6 +53,9 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
   const investments = useInvestorInvestments(RECENT_INVESTMENTS, { silentError: true });
   const profits = useInvestorProfits(RECENT_PROFITS, { silentError: true });
   const fallbackName = useSelector((state: RootState) => state.user.user?.name || state.role.name || "");
+  // Oxirgi muvaffaqiyatli javob: `keepPreviousData` yangi davr xato bo'lganda eski ma'lumotni tashlaydi (TanStack v5).
+  const [lastGood, setLastGood] = useState<InvestorDashboard | undefined>(undefined);
+  if (dashboard.data && dashboard.data !== lastGood) setLastGood(dashboard.data);
 
   const problem = investorAccessProblem(dashboard.error);
   const retryAll = () => {
@@ -66,10 +73,13 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
     );
   }
 
-  const data = dashboard.data;
+  const data = dashboard.data ?? lastGood;
   const name = data?.investor?.name || fallbackName;
-  const loading = dashboard.isPending;
+  const loading = dashboard.isPending && !data;
+  // Hech qachon yuklanmagan bo'lsa — butun karta xatosi; aks holda xato faqat «Oylik foyda» grafigi o'rnida.
   const failed = dashboard.isError && !data;
+  const windowFailed = dashboard.isError && !dashboard.data && data != null;
+  const retryDashboard = () => void dashboard.refetch();
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -84,7 +94,7 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
             error={dashboard.error}
             title={t("monthly.errorTitle")}
             description={`${loadErrorText(t, dashboard.error)} ${t("monthly.errorBelow")}`}
-            onRetry={() => void dashboard.refetch()}
+            onRetry={retryDashboard}
             retrying={dashboard.isFetching}
           />
         </Card>
@@ -96,8 +106,14 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
             onMonthsChange={setMonths}
             view={view}
             onViewChange={setView}
-            items={data?.monthly.items}
+            items={windowFailed ? [] : data?.monthly.items}
+            error={
+              windowFailed
+                ? { error: dashboard.error, onRetry: retryDashboard, retrying: dashboard.isFetching }
+                : undefined
+            }
             empty={
+              !windowFailed &&
               data != null &&
               data.summary.profitSharesCount === 0 &&
               data.monthly.items.every((item) => item.total === 0)

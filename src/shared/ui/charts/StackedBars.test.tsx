@@ -1,11 +1,12 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { createEvent, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import { StackedBars, type StackedBarsColumn, type StackedBarsSeries } from ".";
+import { niceCeiling } from "./StackedBars";
 
 /**
  * IN-1: `StackedBars` — steklangan ustunlar (maket `investor-dashboard-home`, «Oylik foyda»).
- * Balandlik eng katta yig'indiga nisbatan, nol ustun chizilmaydi, seriya tartibi pastdan tepaga,
+ * Balandlik yaxlit shiftga (1 · 2 · 5 × 10ⁿ) nisbatan, nol ustun chizilmaydi, seriya tartibi pastdan tepaga,
  * yig'indilar va siyrak telefon yorliqlari, ko'rsatkich tooltip'i.
  */
 
@@ -31,12 +32,24 @@ const COLUMNS = [
 const stack = (key: string) => document.querySelector<HTMLElement>(`[data-stack="${key}"]`);
 
 describe("StackedBars", () => {
-  it("role=img + aria-label; balandlik eng katta yig'indiga nisbatan; nol ustun chizilmaydi", () => {
+  it("role=img + aria-label; balandlik yaxlit shiftga nisbatan (6,2 mln → 10 mln, maket); nol ustun chizilmaydi", () => {
     renderWithProviders(<StackedBars series={SERIES} columns={COLUMNS} ariaLabel="Oylik foyda" />);
     expect(screen.getByRole("img", { name: "Oylik foyda" })).toBeInTheDocument();
-    expect(stack("Sen")?.style.height).toBe("100%");
-    expect(Number.parseFloat(stack("Iyl")?.style.height ?? "")).toBeCloseTo((4.9 / 6.2) * 100, 3);
+    expect(Number.parseFloat(stack("Sen")?.style.height ?? "")).toBeCloseTo(62, 3);
+    expect(Number.parseFloat(stack("Avg")?.style.height ?? "")).toBeCloseTo(56, 3);
+    expect(Number.parseFloat(stack("Iyl")?.style.height ?? "")).toBeCloseTo(49, 3);
     expect(stack("Okt")).toBeNull();
+  });
+
+  it("niceCeiling: 1 · 2 · 5 × 10ⁿ, aniq qiymat o'zi qoladi; 0 / NaN — 0", () => {
+    expect(niceCeiling(6_200_000)).toBe(10_000_000);
+    expect(niceCeiling(1_200_000)).toBe(2_000_000);
+    expect(niceCeiling(3)).toBe(5);
+    expect(niceCeiling(5)).toBe(5);
+    expect(niceCeiling(100)).toBe(100);
+    expect(niceCeiling(0.3)).toBeCloseTo(0.5, 9);
+    expect(niceCeiling(0)).toBe(0);
+    expect(niceCeiling(Number.NaN)).toBe(0);
   });
 
   it("faqat qiymati bor seriya bo'lagi chiziladi, tartib pastdan tepaga, tonlar tokenlardan", () => {
@@ -91,6 +104,29 @@ describe("StackedBars", () => {
 
     fireEvent.pointerLeave(screen.getByRole("img", { name: "Oylik foyda" }));
     expect(document.querySelector("[data-stacked-tip]")).toBeNull();
+  });
+
+  it("teginish (planshet): bosish tooltip'ni ochadi, barmoq ko'tarilganda yopilmaydi; qayta bosish yopadi", () => {
+    renderWithProviders(<StackedBars series={SERIES} columns={COLUMNS} ariaLabel="Oylik foyda" />);
+    const plot = screen.getByRole("img", { name: "Oylik foyda" });
+    const column = document.querySelector('[data-stack-col="Sen"]')!;
+    const avg = document.querySelector('[data-stack-col="Avg"]')!;
+    // jsdom'da `PointerEvent` yo'q — `pointerType` qo'lda.
+    const touch = (event: Event) => {
+      Object.defineProperty(event, "pointerType", { value: "touch" });
+      return event;
+    };
+    fireEvent(column, touch(createEvent.pointerOver(column)));
+    fireEvent(column, touch(createEvent.pointerDown(column)));
+    fireEvent(column, touch(createEvent.pointerUp(column)));
+    fireEvent(column, touch(createEvent.pointerOut(column, { relatedTarget: document.body })));
+    expect(document.querySelector("[data-stacked-tip]")).toHaveTextContent("Sentabr 2026");
+
+    fireEvent(avg, touch(createEvent.pointerDown(avg)));
+    expect(document.querySelector("[data-stacked-tip]")).toHaveTextContent("5 600 000 so'm");
+    fireEvent(avg, touch(createEvent.pointerDown(avg)));
+    expect(document.querySelector("[data-stacked-tip]")).toBeNull();
+    expect(plot).toBeInTheDocument();
   });
 
   it("hammasi nol — ustunlar yo'q, yiqilmaydi", () => {

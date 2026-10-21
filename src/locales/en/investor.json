@@ -46,6 +46,8 @@
     "errorCard": "Key figures and monthly profit",
     "errorTitle": "Couldn't load the key figures",
     "errorBelow": "Investments and profit history are below.",
+    "windowErrorTitle": "Couldn't load monthly profit for this period",
+    "windowErrorHint": "Pick another period or try again.",
     "monthsShort": [
       "Jan",
       "Feb",

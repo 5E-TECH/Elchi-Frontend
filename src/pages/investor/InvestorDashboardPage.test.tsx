@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
+import { emitQueryError, QUERY_ERROR_EVENT } from "../../shared/lib/queryErrorEvents";
 import { renderWithProviders } from "../../test/test-utils";
 import InvestorDashboardPage from "./InvestorDashboardPage";
 
@@ -87,7 +88,7 @@ const profitsBody = {
       {
         id: "10",
         amount: 5_600_000,
-        percentage: 12.5,
+        percentage: 12.25,
         period_start: "2026-08-01T00:00:00+05:00",
         period_end: "2026-08-31T23:59:59+05:00",
         is_paid: true,
@@ -239,6 +240,8 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     expect(within(pending).getByText("Kutilmoqda")).toBeInTheDocument();
     expect(within(paid).getByText("To'langan")).toBeInTheDocument();
     expect(paid).toHaveTextContent("05.09.2026");
+    // Foiz aniqligi KPI «Ulush» bilan bir xil — 2 xonagacha («12,25%», «12,3%» emas).
+    expect(paid).toHaveTextContent("12,25%");
 
     expect(screen.queryByRole("link", { name: /Barchasi/ })).not.toBeInTheDocument();
   });
@@ -294,7 +297,15 @@ describe("InvestorDashboardPage — holatlar", () => {
     const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
     expect(within(kpis).getByText("Ulush")).toBeInTheDocument();
     expect(kpis.querySelectorAll('[aria-busy="true"]')).toHaveLength(4);
-    expect(screen.getByRole("region", { name: "Oylik foyda" })).toHaveAttribute("aria-busy", "true");
+    const monthly = screen.getByRole("region", { name: "Oylik foyda" });
+    expect(monthly).toHaveAttribute("aria-busy", "true");
+    // Maket `investor-dashboard-loading`: yig'indi qatori skeleti, 12 ustun; «Foyda tarixi» — 5 qator.
+    expect(monthly.querySelectorAll("[data-skeleton-summary] [data-skeleton]")).toHaveLength(6);
+    expect(monthly.querySelectorAll('[data-skeleton-preset="chart"] [data-skeleton]')).toHaveLength(12);
+    const rowsOf = (name: string) =>
+      screen.getByRole("region", { name }).querySelectorAll('[data-skeleton-preset="table"] .h-14').length;
+    expect(rowsOf("So'nggi investitsiyalar")).toBe(3);
+    expect(rowsOf("Foyda tarixi")).toBe(5);
   });
 
   it("bo'sh (investor-dashboard-empty): KPI 0 va izohlar, grafik o'rnida bo'sh holat, boshqaruvlar yashirin", async () => {
@@ -333,6 +344,47 @@ describe("InvestorDashboardPage — holatlar", () => {
     await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByRole("region", { name: "Asosiy ko'rsatkichlar" })).toBeInTheDocument();
     expect(get.mock.calls.filter(([url]) => url === "investors/me/dashboard")).toHaveLength(2);
+  });
+
+  it("davr almashganda xato (12 oy → 24 oy: 500): KPI va davr boshqaruvlari joyida, xato grafik o'rnida; 12 oyga qaytish mumkin", async () => {
+    const user = userEvent.setup();
+    mockApi((url, params) =>
+      url === "investors/me/dashboard" && params?.months === 24 ? httpError(500, "QueryFailedError: timeout") : happy(url, params),
+    );
+    renderPage();
+    await screen.findByText("Jami foyda · 12 oy");
+
+    await user.click(screen.getByRole("radio", { name: "24 oy" }));
+    expect(await screen.findByText("Bu davr uchun oylik foydani yuklab bo'lmadi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Server xatosi (500). Birozdan keyin qayta urinib ko'ring. Boshqa davrni tanlang yoki qayta urinib ko'ring."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/QueryFailedError/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Ko'rsatkichlar va oylik foyda" })).not.toBeInTheDocument();
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(kpis.querySelector("[data-stat-value]")).toHaveTextContent("450 mln so'm");
+    expect(screen.getByRole("radio", { name: "24 oy" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("img", { name: /Oylik foyda/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "12 oy" }));
+    expect(await screen.findByRole("img", { name: /^Oylik foyda, noyabr 2025/ })).toBeInTheDocument();
+    expect(screen.queryByText("Bu davr uchun oylik foydani yuklab bo'lmadi")).not.toBeInTheDocument();
+  });
+
+  it.each([500, 403])("%s: investors/me so'rovlari global xabar chiqarmaydi (silentError — sahifa xatoni o'zi chizadi)", async (status) => {
+    mockApi(() => httpError(status));
+    const { queryClient } = renderPage();
+    const investorQueries = () => queryClient.getQueryCache().findAll({ queryKey: ["investors", "me"] });
+    await waitFor(() => expect(investorQueries().every((query) => query.state.status === "error")).toBe(true));
+    expect(investorQueries()).toHaveLength(3);
+    const listener = vi.fn();
+    window.addEventListener(QUERY_ERROR_EVENT, listener);
+    try {
+      for (const query of investorQueries()) emitQueryError(query.state.error, query.meta);
+    } finally {
+      window.removeEventListener(QUERY_ERROR_EVENT, listener);
+    }
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it.each([

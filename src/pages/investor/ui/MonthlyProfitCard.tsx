@@ -13,9 +13,18 @@ import {
   type StackedBarsColumn,
   type StackedBarsSeries,
 } from "../../../shared/ui/charts";
-import { Badge, Card, DataTable, EmptyState, SegmentedControl, SkeletonChart } from "../../../shared/ui/primitives";
+import {
+  Badge,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  SegmentedControl,
+  Skeleton,
+  SkeletonChart,
+} from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
-import { currentMonthKey, monthNames, monthTitle, parseMonthKey } from "../lib/format";
+import { currentMonthKey, loadErrorText, monthNames, monthTitle, parseMonthKey } from "../lib/format";
 
 const MONTH_WINDOWS: readonly InvestorMonthsWindow[] = [6, 12, 24];
 
@@ -30,6 +39,11 @@ export interface MonthlyProfitCardProps {
   empty?: boolean;
   /** Oyna almashganda eski grafik xira turadi (`.el-chart.is-refetch`). */
   refreshing?: boolean;
+  /**
+   * Tanlangan davr yuklanmadi, lekin avvalgisi bor edi: boshqaruvlar joyida (boshqa davrga qaytish mumkin), grafik
+   * o'rnida `ErrorState` va «Qayta urinish». Birinchi yuklanish xatosi — sahifadagi butun karta (`dashboard-error`).
+   */
+  error?: { error: unknown; onRetry: () => void; retrying?: boolean };
   /** «Hozir» — test uchun. */
   now?: Date;
 }
@@ -50,6 +64,7 @@ export const MonthlyProfitCard = ({
   items,
   empty = false,
   refreshing = false,
+  error,
   now,
 }: MonthlyProfitCardProps) => {
   const { t, i18n } = useTranslation(["investor", "ui"]);
@@ -61,7 +76,7 @@ export const MonthlyProfitCard = ({
   // Telefonda «Jami» qatori kartaga aylanmaydi — summalar karta tepasidagi yig'indida (maket `-home-table`).
   const isPhone = useIsPhone();
 
-  const controls = empty ? undefined : (
+  const controls = empty && !error ? undefined : (
     <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:flex-col max-md:items-stretch">
       <SegmentedControl<string>
         ariaLabel={t("monthly.periodLabel")}
@@ -84,10 +99,34 @@ export const MonthlyProfitCard = ({
     className: "max-md:[&>div:first-child>div:last-child]:w-full",
   };
 
+  if (error) {
+    return (
+      <Card divided={false} {...header} bodyClassName="flex flex-col gap-4">
+        <ErrorState
+          size="chart"
+          error={error.error}
+          title={t("monthly.windowErrorTitle")}
+          description={`${loadErrorText(t, error.error)} ${t("monthly.windowErrorHint")}`}
+          onRetry={error.onRetry}
+          retrying={error.retrying}
+        />
+      </Card>
+    );
+  }
+
   if (items === undefined) {
+    // Maket `investor-dashboard-loading`: yig'indi qatori (Jami · To'langan · Kutilmoqda) va oyna enidagi ustunlar.
     return (
       <Card divided={false} {...header} bodyClassName="flex flex-col gap-4" aria-busy="true">
-        <SkeletonChart />
+        <div data-skeleton-summary="" className="flex flex-wrap gap-4">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="flex min-w-0 flex-[1_1_140px] flex-col gap-1.5">
+              <Skeleton shape="line" width="60%" height={12} />
+              <Skeleton shape="line" width="40%" height={16} />
+            </div>
+          ))}
+        </div>
+        <SkeletonChart bars={Math.min(months, 12)} className="justify-around" />
       </Card>
     );
   }

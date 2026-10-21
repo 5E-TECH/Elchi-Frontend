@@ -46,6 +46,8 @@
     "errorCard": "Ko'rsatkichlar va oylik foyda",
     "errorTitle": "Ko'rsatkichlarni yuklab bo'lmadi",
     "errorBelow": "Investitsiyalar va foyda tarixi quyida.",
+    "windowErrorTitle": "Bu davr uchun oylik foydani yuklab bo'lmadi",
+    "windowErrorHint": "Boshqa davrni tanlang yoki qayta urinib ko'ring.",
     "monthsShort": [
       "Yan",
       "Fev",

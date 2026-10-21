@@ -40,6 +40,7 @@ export const InvestorListCards = ({
 const ListState = <T,>({
   query,
   skeletonColumns,
+  skeletonRows,
   errorTitle,
   isEmpty,
   empty,
@@ -47,6 +48,8 @@ const ListState = <T,>({
 }: {
   query: ListQuery<T>;
   skeletonColumns: readonly string[];
+  /** Maket `investor-dashboard-loading`: investitsiyalar — 3, foyda tarixi — 5 qator (so'rov `limit` i bilan bir xil). */
+  skeletonRows: number;
   errorTitle: string;
   isEmpty: (data: T) => boolean;
   empty: ReactNode;
@@ -54,7 +57,7 @@ const ListState = <T,>({
 }) => {
   const { t } = useTranslation(["investor", "ui"]);
   if (query.isPending) {
-    return <SkeletonTable framed={false} rows={3} mobileRows={3} columns={skeletonColumns} />;
+    return <SkeletonTable framed={false} rows={skeletonRows} mobileRows={skeletonRows} columns={skeletonColumns} />;
   }
   if (query.isError && !query.data) {
     return (
@@ -91,6 +94,7 @@ const RecentInvestmentsCard = ({ query }: { query: ListQuery<InvestorInvestments
     >
       <ListState
         query={query}
+        skeletonRows={3}
         skeletonColumns={[t("investments.colDate"), t("investments.colAmount")]}
         errorTitle={t("investments.errorTitle")}
         isEmpty={(data) => data.items.length === 0}
@@ -142,6 +146,7 @@ const ProfitHistoryCard = ({ query }: { query: ListQuery<InvestorProfitsPage> })
     >
       <ListState
         query={query}
+        skeletonRows={5}
         skeletonColumns={[
           t("profits.colPeriod"),
           t("profits.colPercent"),

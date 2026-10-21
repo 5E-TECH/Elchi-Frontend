@@ -51,13 +51,26 @@ const labelVisible = (index: number, count: number, step: number) => (count - 1 
 const defaultPhoneStep = (count: number) => (count <= 6 ? 1 : count <= 12 ? 3 : 6);
 
 /**
+ * Shkala shifti — eng katta yig'indidan katta-teng yaxlit son (1 · 2 · 5 × 10ⁿ): maketda 5,6 mln ustun plotning 56%
+ * ida (shift 10 mln), eng baland ustun tepaga tegmaydi va uning yig'indisi tooltip ostida qolmaydi.
+ */
+export const niceCeiling = (value: number) => {
+  if (!(value > 0) || !Number.isFinite(value)) return 0;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 5, 10].find((factor) => factor * magnitude >= value * (1 - 1e-9)) ?? 10;
+  return step * magnitude;
+};
+
+/**
  * STEKLANGAN USTUNLAR (`.el-bars`, `.el-bars-col`, `.el-bars-stack` — maket `investor-dashboard-home`,
  * «Oylik foyda»): har ustunda bir nechta seriya ustma-ust (2px oraliq, eng yuqori bo'lak 4px yumaloq uch),
  * ustida yig'indi, ostida o'q yorlig'i. Oddiy div + tokenlar (recharts emas — dashboard byudjeti).
  *
- *  - Nol ustun chizilmaydi, yig'indi «0» bo'lib qoladi (bo'sh oy ko'rinadi).
- *  - Ko'rsatkich (sichqoncha, planshetda teginish) ustun ustiga kelganda — tooltip (`RAISED` karta: sarlavha, har seriya qiymati); telefonda
- *    tooltip va yig'indilar yashirin, o'q yorliqlari siyrak (maket). Klaviatura va ekran o'quvchi uchun ma'lumot
+ *  - Balandlik yaxlit shiftga nisbatan (`niceCeiling`, 1 · 2 · 5 × 10ⁿ). Nol ustun chizilmaydi, yig'indi «0» bo'lib
+ *    qoladi (bo'sh oy ko'rinadi).
+ *  - Sichqoncha ustun ustiga kelganda — tooltip (`RAISED` karta: sarlavha, har seriya qiymati); planshetda teginish
+ *    tooltip'ni ochadi/yopadi (barmoq ko'tarilganda yopilmaydi). Telefonda tooltip va yig'indilar yashirin, o'q
+ *    yorliqlari siyrak (maket). Klaviatura va ekran o'quvchi uchun ma'lumot
  *    `ariaLabel` da va «Grafik | Jadval» egizagida (`ViewToggle` + `DataTable`) — grafik o'zi `role="img"`.
  */
 export const StackedBars = ({
@@ -77,7 +90,7 @@ export const StackedBars = ({
 
   const count = columns.length;
   const totals = columns.map((column) => series.reduce((sum, item) => sum + safe(column.values[item.key]), 0));
-  const max = Math.max(0, ...totals);
+  const max = niceCeiling(Math.max(0, ...totals));
   const withTotals = showTotals ?? count <= 12;
   const step = labelEvery ?? (count <= 12 ? 1 : 2);
   const phoneStep = phoneLabelEvery ?? defaultPhoneStep(count);
@@ -100,7 +113,10 @@ export const StackedBars = ({
           aria-label={ariaLabel}
           data-stacked-bars=""
           className="relative flex h-[240px] min-w-0 items-stretch gap-1 border-b border-border pt-6 max-md:h-[160px] max-md:pt-2"
-          onPointerLeave={() => setHovered(null)}
+          // Teginishda `pointerleave` barmoq ko'tarilishi bilan keladi — tooltip faqat sichqoncha/qalam ketganda yopiladi.
+          onPointerLeave={(event) => {
+            if (event.pointerType !== "touch") setHovered(null);
+          }}
         >
           {columns.map((column, index) => {
             const total = totals[index];
@@ -115,7 +131,12 @@ export const StackedBars = ({
                   "relative h-full min-w-0 flex-1 rounded-md transition-[background-color] duration-150 motion-reduce:transition-none",
                   hovered === index && "bg-row-hover",
                 )}
-                onPointerEnter={() => setHovered(index)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType !== "touch") setHovered(index);
+                }}
+                onPointerDown={(event) => {
+                  if (event.pointerType === "touch") setHovered((current) => (current === index ? null : index));
+                }}
               >
                 {total > 0 ? (
                   <span

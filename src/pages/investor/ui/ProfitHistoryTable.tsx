@@ -24,7 +24,7 @@ export const ProfitHistoryTable = ({ rows, className, busy }: ProfitHistoryTable
   const language = i18n.language;
   const names = monthNames(t);
   const money = (value: number) => formatMoneyLocalized(value, { language });
-  const percent = (value: number | null) => (value == null ? "—" : formatPercentLocalized(value, { language }));
+  const percent = (value: number | null) => (value == null ? "—" : formatPercentLocalized(value, { language, fractionDigits: 2 }));
   const status = (row: InvestorProfit) =>
     row.isPaid ? (
       <StatusBadge tone="success" label={t("profits.statusPaid")} />
