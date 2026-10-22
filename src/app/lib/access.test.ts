@@ -25,6 +25,8 @@ import {
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 // IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
 import { canViewInvestorCabinet } from "./access";
+// Elchi Pochta №1: xarajat kategoriyalari boshqaruvi — o'z describe bloki (pastda).
+import { canManageExpenseCategories } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -269,5 +271,14 @@ describe("canViewInvestorCabinet — investor kabineti (IN-1)", () => {
     for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewOrders, canViewUsers]) {
       expect(predicate(investor)).toBe(false);
     }
+  });
+});
+
+describe("canManageExpenseCategories — kassa xarajati kategoriyalari (Elchi Pochta №1)", () => {
+  it("faqat superadmin (backend POST|PATCH|DELETE @Roles(SUPERADMIN)); admin va menejer — faqat tanlaydi", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canManageExpenseCategories(s), caseName).toBe(caseName === "superadmin");
+    }
+    expect(canManageExpenseCategories(state(null))).toBe(false);
   });
 });
