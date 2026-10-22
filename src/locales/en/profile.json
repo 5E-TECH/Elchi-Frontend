@@ -22,6 +22,27 @@
     "passwordHint": "Once the new password is saved, you will be signed out and sign in again with the new password.",
     "changePassword": "Change password"
   },
+  "sessions": {
+    "title": "Sessions",
+    "description": "Devices signed in to your account. Signing out closes only the session on this device.",
+    "activeCount": "{{count}} active",
+    "current": "This device",
+    "unknownDevice": "Unknown device",
+    "kind": {
+      "phone": "Phone",
+      "tablet": "Tablet",
+      "desktop": "Computer"
+    },
+    "ip": "IP: {{ip}}",
+    "ipUnknown": "IP unknown",
+    "loggedInAt": "Signed in",
+    "lastSeenAt": "Last active",
+    "listLabel": "Active sessions list",
+    "loading": "Loading sessions",
+    "emptyTitle": "No active sessions",
+    "emptyDescription": "Devices signed in to your account appear here. If you signed in earlier, the session shows up at the next refresh (about once an hour).",
+    "truncated": "Showing the latest {{shown}} · {{count}} active sessions in total"
+  },
   "password": {
     "title": "Change password",
     "new": "New password",

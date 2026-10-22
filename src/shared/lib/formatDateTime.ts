@@ -16,6 +16,10 @@ import { resolveMoneyLanguage, type MoneyLanguage } from "./formatMoney";
  *  qisqartirilgan ICU ma'lumotida "uz" yo'q (formatMoney.ts izohi). dayjs ham
  *  yangi kodda to'g'ridan-to'g'ri import qilinmaydi — format shu yerda qo'lda.
  *
+ *    formatRelativeTimeLocalized → uz "Hozirgina" · "12 daqiqa oldin" · "3 soat oldin" · "2 kun oldin"
+ *                               ru "Только что" · "12 минут назад" · en "Just now" · "12 minutes ago"
+ *                               (30 kundan eski — "06.10.2026")
+ *
  *  «Bugun / Kecha» so'zlari locale JSON'da emas, shu faylda (`RELATIVE_DAY_LABEL`) —
  *  `CURRENCY_LABEL` bilan bir xil sabab: formatlovchi aniq til bilan chaqiriladi
  *  (`{ language: "ru" }`), ru/en tarjimalari esa dangasa yuklanadi (`i18n.ts`) va
@@ -187,4 +191,76 @@ export const formatDateTimeLocalized = (value: DateInput, options: DateTimeForma
   }
 
   return `${datePart(date)}, ${time}`;
+};
+
+/** Ruscha ko'plik: 1, 21 — `one`; 2–4, 22–24 — `few`; qolgani (5–20, 11–14 ham) — `many`. */
+const ruPlural = (count: number, one: string, few: string, many: string) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+};
+
+type RelativeUnit = "minute" | "hour" | "day";
+
+/**
+ * «… oldin» so'zlari — uchala tilda, `RELATIVE_DAY_LABEL` bilan bir xil sabab (locale JSON'da emas: formatlovchi
+ * aniq til bilan chaqiriladi, ru/en tarjimalari esa dangasa yuklanadi).
+ */
+export const RELATIVE_TIME_LABEL: Record<
+  DateLanguage,
+  { justNow: string; ago: (count: number, unit: RelativeUnit) => string }
+> = {
+  uz: {
+    justNow: "Hozirgina",
+    ago: (count, unit) => `${count} ${{ minute: "daqiqa", hour: "soat", day: "kun" }[unit]} oldin`,
+  },
+  ru: {
+    justNow: "Только что",
+    ago: (count, unit) => {
+      const word =
+        unit === "minute"
+          ? ruPlural(count, "минуту", "минуты", "минут")
+          : unit === "hour"
+            ? ruPlural(count, "час", "часа", "часов")
+            : ruPlural(count, "день", "дня", "дней");
+      return `${count} ${word} назад`;
+    },
+  },
+  en: {
+    justNow: "Just now",
+    ago: (count, unit) => `${count} ${unit}${count === 1 ? "" : "s"} ago`,
+  },
+};
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+/** Server va brauzer soati farqi: shuncha kelajakdagi lahza ham «hozirgina» (oxirgi faollik — server vaqti). */
+const CLOCK_SKEW_MS = 5 * MINUTE_MS;
+/** Bundan eski lahza — nisbiy emas, sana bilan. */
+const RELATIVE_MAX_DAYS = 30;
+
+/**
+ * Nisbiy vaqt («oxirgi faollik», «kirgan»): 1 daqiqadan kam — «Hozirgina», so'ng daqiqa / soat / kun (pastga
+ * yaxlitlanadi: 59 daqiqa — «59 daqiqa oldin», 60 — «1 soat oldin»); 30 kundan eski — sana ("06.10.2026").
+ * Kelajak: soat farqi ichida (5 daqiqa) — «Hozirgina», undan uzoq — to'liq `formatDateTimeLocalized`.
+ * Bo'sh yoki noto'g'ri — "—". Kun — 24 soatlik oraliq (kalendar kuni emas): «Kecha» kerak bo'lsa — yoniga
+ * `formatDateTimeLocalized`.
+ */
+export const formatRelativeTimeLocalized = (value: DateInput, options: DateTimeFormatOptions = {}): string => {
+  const date = toValidDate(value);
+  if (!date) return EMPTY;
+  const now = toValidDate(options.now ?? null) ?? new Date();
+  const diff = now.getTime() - date.getTime();
+  const labels = RELATIVE_TIME_LABEL[resolveMoneyLanguage(options.language)];
+
+  if (diff < -CLOCK_SKEW_MS) return formatDateTimeLocalized(date, options);
+  if (diff < MINUTE_MS) return labels.justNow;
+  if (diff < HOUR_MS) return labels.ago(Math.floor(diff / MINUTE_MS), "minute");
+  if (diff < DAY_MS) return labels.ago(Math.floor(diff / HOUR_MS), "hour");
+  const days = Math.floor(diff / DAY_MS);
+  if (days < RELATIVE_MAX_DAYS) return labels.ago(days, "day");
+  return datePart(date);
 };

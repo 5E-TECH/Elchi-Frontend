@@ -19,6 +19,7 @@ import { ChangePasswordDialog } from "./ChangePasswordDialog";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { hasProfileSalary } from "../lib/profileView";
 import { ProfileInfoCard, ProfileSalaryCard, ProfileSecurityCard } from "./ProfileCards";
+import { ProfileSessionsCard } from "./ProfileSessionsCard";
 
 /**
  * PROFIL (`/profile`, barcha rollar) — maketlar `common-profile`, `common-profile-password-dialog`.
@@ -27,7 +28,9 @@ import { ProfileInfoCard, ProfileSalaryCard, ProfileSecurityCard } from "./Profi
  * «Oylik maosh» (faqat maoshli xodimda) va «Xavfsizlik» (parol oynasi) yonma-yon, joy yetmasa ustma-ust.
  * Ostida (maket yo'q — eng yaqini «Xavfsizlik» kartasi) o'z Telegram'ini botga ulash/uzish
  * (`TelegramLinkCard`, faqat xodimlarga — mijoz/investor emas) va marketda «Guruhda mijoz ismi va
- * telefoni» kaliti (`MarketTelegramGroupPiiCard`, market o'zini tahrirlaydi).
+ * telefoni» kaliti (`MarketTelegramGroupPiiCard`, market o'zini tahrirlaydi). Eng pastda «Sessiyalar»
+ * (`ProfileSessionsCard`, barcha rollar; maket yo'q — eng yaqini `market-profile` «Telegram guruhi» kartasi):
+ * shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`).
  * Ma'lumot — `GET /auth/my-profile` (`useGetMyProfile`), holatlar `QueryBoundary size="page"`.
  *
  * `UpdateUserModal` (`/all-users/:id` ishlatadi) bu sahifada ishlatilmaydi — profil o'z v2 komponentlari bilan
@@ -115,6 +118,7 @@ const ProfilePage = () => {
                 ) : null}
               </div>
             ) : null}
+            <ProfileSessionsCard />
             <EditProfileDialog open={editOpen} onClose={() => setEditOpen(false)} user={profile} />
             <ChangePasswordDialog
               open={passwordOpen}
