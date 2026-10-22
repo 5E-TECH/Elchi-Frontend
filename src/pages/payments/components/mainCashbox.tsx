@@ -19,6 +19,7 @@ import {
   ListFilter,
   Minus,
   Plus,
+  Settings,
   Timer,
   TrendingUp,
   Truck,
@@ -63,8 +64,10 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
+import { canManageExpenseCategories } from "../../../app/lib/access";
 import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
+import ExpenseCategoriesDialog from "./ExpenseCategoriesDialog";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
@@ -106,7 +109,8 @@ import {
  * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
  * `admin-payments-main-cashbox`, `manager-payments-main-cashbox`; rollar orasida layout bir xil, xulq rolga qarab).
  *
- *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); «Excelga yuklash»
+ *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); faqat superadminda
+ *    «Xarajat kategoriyalari» (Elchi Pochta №1 — `ExpenseCategoriesDialog`, smenadan qat'i nazar); «Excelga yuklash»
  *    (hisobot AYNAN eskidek), smena holati ma'lum bo'lsagina — yopiq: «Smenani ochish» (asosiy), ochiq: «Smenani
  *    yopish» (ikkinchi darajali). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
  *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
@@ -358,6 +362,7 @@ const MainCashbox = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   // Yopilayotgan smena ID si — "Smenani yopish" bosilgan paytdagi ochiq smena
   // (oyna ochiq turganda fon so'rovi uni almashtirib yubormasin).
   const [closingShiftId, setClosingShiftId] = useState<string | null>(null);
@@ -372,6 +377,7 @@ const MainCashbox = () => {
   const manualPendingRef = useRef(false);
 
   const role = useSelector((state: RootState) => state.role.role);
+  const canManageCategories = useSelector(canManageExpenseCategories);
   const profile = useSelector((state: RootState) => state.user.user);
   const profileUserId = useSelector((state: RootState) => state.user.user?.id);
   const roleUserId = useSelector((state: RootState) => state.role.id);
@@ -1514,6 +1520,16 @@ const MainCashbox = () => {
         description={headerDescription}
         actions={
           <>
+            {canManageCategories ? (
+              <Button
+                variant="secondary"
+                leftIcon={Settings}
+                onClick={() => setIsCategoriesOpen(true)}
+                aria-haspopup="dialog"
+              >
+                {t("v2ExpenseCategories.manage")}
+              </Button>
+            ) : null}
             <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
               {t("v2MainCashbox.exportExcel")}
             </Button>
@@ -1614,6 +1630,10 @@ const MainCashbox = () => {
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
+
+      {canManageCategories ? (
+        <ExpenseCategoriesDialog open={isCategoriesOpen} onClose={() => setIsCategoriesOpen(false)} />
+      ) : null}
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect

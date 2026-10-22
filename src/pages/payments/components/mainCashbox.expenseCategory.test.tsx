@@ -360,3 +360,28 @@ describe("Asosiy kassa tarixi — xarajat kategoriyasi", () => {
     }
   });
 });
+
+describe("«Xarajat kategoriyalari» — faqat superadmin", () => {
+  const asRole = (role: string) => ({ role: { id: "1", role, region: null, name: role } }) as never;
+
+  it("superadmin: sarlavhada tugma, bosilsa boshqaruv oynasi ro'yxat bilan ochiladi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole("superadmin") });
+    const button = await screen.findByRole("button", { name: "Xarajat kategoriyalari" });
+    expect(button).toHaveAttribute("aria-haspopup", "dialog");
+    await user.click(button);
+    const dialog = await screen.findByRole("dialog", { name: "Xarajat kategoriyalari" });
+    expect(await within(dialog).findByText("Ijara (arenda)")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Kategoriya qo'shish" })).toBeInTheDocument();
+  });
+
+  it.each(["admin", "manager"])("%s: tugma va oyna yo'q (tanlov esa bor)", async (role) => {
+    const user = userEvent.setup();
+    renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole(role) });
+    await screen.findByRole("button", { name: /Kassadan xarajat/ });
+    expect(screen.queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+
+    const dialog = await openSpend(user);
+    expect(categoryField(dialog)).toBeInTheDocument();
+  });
+});
