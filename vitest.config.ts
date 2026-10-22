@@ -1,6 +1,11 @@
 import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+// Testlar doim Toshkent vaqtida yuradi (ilova foydalanuvchilari va «Visual» sahnalari ham shu mintaqada). Aks holda
+// mahalliy kompyuterda (UTC+5) o'tgan test GitHub runner'ida (UTC) yiqiladi — 2026-10-22 dagi deploy #139/#140
+// shunday to'xtagan edi. Fork ishchilari muhitni shu jarayondan oladi; qo'riqchi — `src/test/timezone.test.ts`.
+process.env.TZ = "Asia/Tashkent";
+
 export default defineConfig({
   plugins: [react()],
   test: {
