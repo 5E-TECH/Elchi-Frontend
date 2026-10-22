@@ -53,7 +53,8 @@ const buildRows = (rows: PaymentRow[], type: "income" | "expense") => {
     return {
       no: index + 1,
       name: row.created_by || row.source_id || row.source_type || "-",
-      comment: row.comment || row.source_type || "-",
+      // Izohsiz chiqim (izoh ixtiyoriy, kategoriya majburiy — 2026-10-22) — «Izoh» ustunida kategoriya nomi.
+      comment: row.comment || row.expense_category_name || row.source_type || "-",
       cash: method === "cash" ? amount : 0,
       card: method === "card" ? amount : 0,
       other: method === "other" ? amount : 0,

@@ -5,12 +5,15 @@ import MainCashbox from "./mainCashbox";
 import { renderWithProviders } from "../../../test/test-utils";
 
 /**
- * Elchi Pochta №1 — «Kassadan xarajat» oynasidagi «Xarajat kategoriyasi» tanlovi:
- *  - faqat chiqimda; ixtiyoriy — tanlanmasa payload'da `expense_category_id` kaliti umuman yo'q;
- *  - tanlansa ID yuboriladi va tasdiq oynasida «Kategoriya» qatori bor;
- *  - to'ldirishda maydon ham, ro'yxat so'rovi ham, kalit ham yo'q (backend `fill` 400 beradi);
- *  - ro'yxat yuklanmasa forma ishlayveradi; o'chirilgan kategoriya (400) — backend matni, ro'yxat qayta o'qiladi,
- *    eskirgan tanlov tozalanadi.
+ * Elchi Pochta №1 — «Kassadan xarajat» oynasidagi «Xarajat kategoriyasi» tanlovi (ega 2026-10-22: kategoriya
+ * MAJBURIY, izoh ixtiyoriy):
+ *  - faqat chiqimda; tanlanmasa saqlab bo'lmaydi (maydon ostida xato, so'rov yo'q); tanlangan ID payload'da va
+ *    tasdiq oynasida «Kategoriya» qatori;
+ *  - izoh bo'sh (yoki faqat bo'sh joy) bo'lsa payload'da `comment` kaliti umuman yo'q;
+ *  - to'ldirishda maydon ham, ro'yxat so'rovi ham, kalit ham yo'q (backend `fill` 400 beradi), izoh u yerda majburiy;
+ *  - ro'yxat yuklanmasa yoki faol kategoriya yo'q bo'lsa — maydon o'chiq, sabab va «Xarajatni saqlash» bloklangan
+ *    (superadminda — «Xarajat kategoriyalari» oynasini ochish); o'chirilgan kategoriya (400) — backend matni, ro'yxat
+ *    qayta o'qiladi, eskirgan tanlov tozalanadi va qaytadan tanlash so'raladi; backend «kategoriyasiz» 400 — matni.
  *
  * Haqiqiy `useCashBox` / `useExpenseCategories` (react-query), haqiqiy oyna va `ConfirmHost` — faqat HTTP qatlami
  * almashtirilgan.
@@ -84,6 +87,7 @@ const openSpend = async (user: ReturnType<typeof userEvent.setup>) => {
   return screen.findByRole("dialog", { name: "Kassadan xarajat" });
 };
 
+/** Summa, to'lov turi va (berilsa) izoh — kategoriyani test o'zi tanlaydi. */
 const fillRequired = async (
   user: ReturnType<typeof userEvent.setup>,
   dialog: HTMLElement,
@@ -91,7 +95,7 @@ const fillRequired = async (
 ) => {
   await user.type(within(dialog).getByLabelText(/^Summa/), amount);
   await user.click(within(dialog).getByRole("radio", { name: "Naqd" }));
-  await user.type(within(dialog).getByLabelText(/^Izoh/), comment);
+  if (comment) await user.type(within(dialog).getByLabelText(/^Izoh/), comment);
 };
 
 const categoryField = (dialog: HTMLElement) =>
@@ -136,12 +140,15 @@ beforeEach(() => {
 });
 
 describe("Kassadan xarajat — xarajat kategoriyasi", () => {
-  it("ixtiyoriy tanlov: faol kategoriyalar tartib bo'yicha, tavsifi bilan; tanlangani tasdiqda va payload'da", async () => {
+  it("majburiy tanlov: yorliqda «*», izoh «(ixtiyoriy)»; faol kategoriyalar tartib bo'yicha; kategoriya + izoh — ikkalasi payload'da", async () => {
     const user = userEvent.setup();
     open();
     const dialog = await openSpend(user);
 
-    expect(within(dialog).getByText("(ixtiyoriy)")).toBeInTheDocument();
+    const categoryLabel = within(dialog).getByText("Xarajat kategoriyasi");
+    expect(categoryLabel).toHaveTextContent("Xarajat kategoriyasi *");
+    expect(categoryField(dialog)).toHaveAttribute("aria-required", "true");
+    expect(within(dialog).getByText("Izoh").closest("label")).toHaveTextContent("Izoh (ixtiyoriy)");
     await fillRequired(user, dialog);
     await user.click(categoryField(dialog));
     const listbox = await screen.findByRole("listbox", { name: "Xarajat kategoriyalari" });
@@ -157,6 +164,7 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     const { confirm, submit } = await confirmOperation(user, "Xarajatni tasdiqlang");
     expect(within(confirm).getByText("Kategoriya")).toBeInTheDocument();
     expect(within(confirm).getByText("Yoqilg'i")).toBeInTheDocument();
+    expect(within(confirm).getByText("Benzin, oktabr")).toBeInTheDocument();
     await submit();
 
     await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
@@ -170,7 +178,62 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     expect(await screen.findByText("Xarajat muvaffaqiyatli saqlandi")).toBeInTheDocument();
   });
 
-  it("qidiruv tavsif bo'yicha ham topadi; tanlov × bilan olib tashlansa kalit yuborilmaydi", async () => {
+  it("kategoriyasiz — saqlanmaydi: maydon ostida «Xarajat kategoriyasini tanlang», tasdiq ham so'rov ham yo'q", async () => {
+    const user = userEvent.setup();
+    open();
+    const dialog = await openSpend(user);
+    await fillRequired(user, dialog, { comment: "Kanselyariya" });
+
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    expect(await within(dialog).findByText("Xarajat kategoriyasini tanlang")).toBeInTheDocument();
+    expect(categoryField(dialog)).toHaveAttribute("aria-invalid", "true");
+    // Izoh ixtiyoriy — uning xatosi yo'q.
+    expect(within(dialog).queryByText(/Izoh majburiy/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(http.patch).not.toHaveBeenCalled();
+
+    // Tanlangach xato ketadi va saqlash ishlaydi.
+    await chooseCategory(user, dialog, /Ovqatlanish/);
+    await waitFor(() => expect(within(dialog).queryByText("Xarajat kategoriyasini tanlang")).not.toBeInTheDocument());
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
+    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
+    expect(patches(SPEND_URL)[0][1]).toEqual({
+      amount: 150_000,
+      type: "cash",
+      comment: "Kanselyariya",
+      expense_category_id: "1",
+    });
+  });
+
+  it("kategoriya bor, izoh yo'q (yoki faqat bo'sh joy) — payload'da `comment` kaliti yo'q, tasdiqda «Izoh» qatori yo'q", async () => {
+    const user = userEvent.setup();
+    open();
+    const dialog = await openSpend(user);
+    await fillRequired(user, dialog, { comment: "" });
+    await chooseCategory(user, dialog, /Ijara/);
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    const first = await confirmOperation(user, "Xarajatni tasdiqlang");
+    expect(within(first.confirm).getByText("Ijara (arenda)")).toBeInTheDocument();
+    expect(within(first.confirm).queryByText("Izoh")).not.toBeInTheDocument();
+    await first.submit();
+
+    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
+    expect(patches(SPEND_URL)[0][1]).toEqual({ amount: 150_000, type: "cash", expense_category_id: "4" });
+    expect(patches(SPEND_URL)[0][1]).not.toHaveProperty("comment");
+    expect(await screen.findByText("Xarajat muvaffaqiyatli saqlandi")).toBeInTheDocument();
+
+    // Faqat bo'sh joylardan iborat izoh ham yuborilmaydi.
+    const again = await openSpend(user);
+    await fillRequired(user, again, { amount: "90000", comment: "   " });
+    await chooseCategory(user, again, /Ovqatlanish/);
+    await user.click(within(again).getByRole("button", { name: "Xarajatni saqlash" }));
+    await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
+    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(2));
+    expect(patches(SPEND_URL)[1][1]).toEqual({ amount: 90_000, type: "cash", expense_category_id: "1" });
+  });
+
+  it("qidiruv tavsif bo'yicha ham topadi; tanlov × bilan olib tashlansa — yana «Xarajat kategoriyasini tanlang»", async () => {
     const user = userEvent.setup();
     open();
     const dialog = await openSpend(user);
@@ -182,37 +245,26 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     await user.click(within(dialog).getByRole("button", { name: "Kategoriyani olib tashlash" }));
 
     await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
-    const { confirm, submit } = await confirmOperation(user, "Xarajatni tasdiqlang");
-    expect(within(confirm).queryByText("Kategoriya")).not.toBeInTheDocument();
-    await submit();
-
-    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).not.toHaveProperty("expense_category_id");
+    expect(await within(dialog).findByText("Xarajat kategoriyasini tanlang")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(http.patch).not.toHaveBeenCalled();
   });
 
-  it("tanlanmasa — payload eski shaklda, `expense_category_id` kaliti yo'q", async () => {
-    const user = userEvent.setup();
-    open();
-    const dialog = await openSpend(user);
-    await fillRequired(user, dialog, { comment: "Kanselyariya" });
-
-    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
-    await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
-
-    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).toEqual({ amount: 150_000, type: "cash", comment: "Kanselyariya" });
-    expect(patches(SPEND_URL)[0][1]).not.toHaveProperty("expense_category_id");
-  });
-
-  it("to'ldirish: maydon yo'q, ro'yxat so'ralmaydi, payload'da kategoriya yo'q", async () => {
+  it("to'ldirish: maydon yo'q, ro'yxat so'ralmaydi, payload'da kategoriya yo'q, izoh majburiy", async () => {
     const user = userEvent.setup();
     open();
     await user.click(screen.getByRole("button", { name: /Kassani to'ldirish/ }));
     const dialog = await screen.findByRole("dialog", { name: "Kassani to'ldirish" });
     expect(within(dialog).queryByRole("combobox", { name: /kategoriya/i })).not.toBeInTheDocument();
     expect(within(dialog).queryByText("Xarajat kategoriyasi")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/\(ixtiyoriy\)/)).not.toBeInTheDocument();
 
-    await fillRequired(user, dialog, { amount: "500000", comment: "Bankdan naqd" });
+    await fillRequired(user, dialog, { amount: "500000", comment: "" });
+    await user.click(within(dialog).getByRole("button", { name: "Kirimni saqlash" }));
+    expect(await within(dialog).findByText("Izoh majburiy — pul qayerdan kelganini yozing")).toBeInTheDocument();
+    expect(http.patch).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getByLabelText(/^Izoh/), "Bankdan naqd");
     await user.click(within(dialog).getByRole("button", { name: "Kirimni saqlash" }));
     await (await confirmOperation(user, "Kirimni tasdiqlang")).submit();
 
@@ -221,25 +273,25 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     expect(categoryGets()).toBe(0);
   });
 
-  it("ro'yxat yuklanmasa: maydon o'chiq, sabab va «Qayta urinish»; xarajat kategoriyasiz saqlanadi", async () => {
+  it("ro'yxat yuklanmasa: maydon o'chiq, sabab va «Qayta urinish»; «Xarajatni saqlash» bloklangan", async () => {
     categoriesFail = true;
     const user = userEvent.setup();
     open();
     const dialog = await openSpend(user);
 
     expect(
-      await within(dialog).findByText("Kategoriyalarni yuklab bo'lmadi — xarajatni kategoriyasiz saqlash mumkin"),
+      await within(dialog).findByText("Kategoriyalarni yuklab bo'lmadi — xarajat kategoriyasiz saqlanmaydi"),
     ).toBeInTheDocument();
     expect(categoryField(dialog)).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
 
     await fillRequired(user, dialog);
     await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
-    await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
-    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).not.toHaveProperty("expense_category_id");
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(http.patch).not.toHaveBeenCalled();
   });
 
-  it("«Qayta urinish» ro'yxatni qayta so'raydi va tanlov ishlaydi", async () => {
+  it("«Qayta urinish» ro'yxatni qayta so'raydi: tanlov ishlaydi va saqlash ochiladi", async () => {
     categoriesFail = true;
     const user = userEvent.setup();
     open();
@@ -249,11 +301,70 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     categoriesFail = false;
     await user.click(retry);
     await waitFor(() => expect(categoryField(dialog)).not.toBeDisabled());
+    expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeEnabled();
     await chooseCategory(user, dialog, /Ovqatlanish/);
     expect(categoryField(dialog)).toHaveValue("Ovqatlanish");
   });
 
-  it("o'chirilgan kategoriya (400): backend matni, ro'yxat qayta o'qiladi, eskirgan tanlov tozalanadi", async () => {
+  it("faol kategoriya yo'q (admin): maydon o'chiq, «superadmin … qo'shadi», saqlash bloklangan, havola yo'q", async () => {
+    categoryRows = [];
+    const user = userEvent.setup();
+    open();
+    const dialog = await openSpend(user);
+
+    expect(
+      await within(dialog).findByText(
+        "Kategoriyalar hali qo'shilmagan — superadmin «Xarajat kategoriyalari» orqali qo'shadi",
+      ),
+    ).toBeInTheDocument();
+    expect(categoryField(dialog)).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
+    expect(within(dialog).queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+  });
+
+  it("faol kategoriya yo'q (superadmin): «Xarajat kategoriyalari» boshqaruv oynasini shu oyna ustida ochadi; qo'shilgan kategoriya darhol tanlanadi", async () => {
+    categoryRows = [];
+    http.post.mockImplementation(async (url: string, body: { name: string }) => {
+      if (url !== CATEGORIES_URL) return { data: { statusCode: 200, data: {} } };
+      const created = category("9", body.name, 1);
+      categoryRows = [...categoryRows, created];
+      return { data: { statusCode: 201, message: "Kategoriya qo'shildi", data: { category: created } } };
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<MainCashbox />, {
+      route: "/payments/main-cashbox",
+      preloadedState: { role: { id: "1", role: "superadmin", region: null, name: "superadmin" } } as never,
+    });
+    const dialog = await openSpend(user);
+    expect(
+      await within(dialog).findByText(
+        "Kategoriyalar hali qo'shilmagan — xarajatni saqlash uchun avval kategoriya qo'shing",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
+
+    await user.click(within(dialog).getByRole("button", { name: "Xarajat kategoriyalari" }));
+    const manage = await screen.findByRole("dialog", { name: "Xarajat kategoriyalari" });
+    await user.click(await within(manage).findByRole("button", { name: "Kategoriya qo'shish" }));
+    const form = await screen.findByRole("dialog", { name: "Kategoriya qo'shish" });
+    await user.type(within(form).getByLabelText(/^Nomi/), "Yoqilg'i");
+    await user.click(within(form).getByRole("button", { name: "Qo'shish" }));
+    expect(await screen.findByText("Kategoriya qo'shildi")).toBeInTheDocument();
+    // Xarajat oynasi so'rov yuborilmagan holda o'z joyida — «Xarajat kategoriyalari» yopilgach unga qaytiladi.
+    expect(http.patch).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument(),
+    );
+    const spend = screen.getByRole("dialog", { name: "Kassadan xarajat" });
+
+    await waitFor(() => expect(categoryField(spend)).not.toBeDisabled());
+    expect(within(spend).getByRole("button", { name: "Xarajatni saqlash" })).toBeEnabled();
+    await chooseCategory(user, spend, /Yoqilg'i/);
+    expect(categoryField(spend)).toHaveValue("Yoqilg'i");
+  });
+
+  it("o'chirilgan kategoriya (400): backend matni, ro'yxat qayta o'qiladi, eskirgan tanlov tozalanadi va qaytadan so'raladi", async () => {
     const message = "Xarajat kategoriyasi topilmadi yoki o'chirilgan — ro'yxatdan faol kategoriya tanlang";
     http.patch.mockImplementationOnce(async () => {
       throw httpError(400, message);
@@ -275,15 +386,43 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     await waitFor(() => expect(categoryGets()).toBeGreaterThan(getsBefore));
     await waitFor(() => expect(categoryField(dialog)).toHaveValue(""));
 
-    // Qayta yuborish — kategoriyasiz (eskirgan ID ketmaydi), o'sha Idempotency-Key bilan.
+    // Eskirgan ID qayta ketmaydi: avval yangi kategoriya tanlash so'raladi.
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    expect(await within(dialog).findByText("Xarajat kategoriyasini tanlang")).toBeInTheDocument();
+    expect(patches(SPEND_URL)).toHaveLength(1);
+
+    // Boshqa kategoriya bilan qayta yuborish — o'sha Idempotency-Key bilan (operatsiya o'zi o'zgarmagan).
+    await chooseCategory(user, dialog, /Ovqatlanish/);
     await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
     await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
     await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(2));
     expect(patches(SPEND_URL)[0][1]).toHaveProperty("expense_category_id", "2");
-    expect(patches(SPEND_URL)[1][1]).not.toHaveProperty("expense_category_id");
+    expect(patches(SPEND_URL)[1][1]).toHaveProperty("expense_category_id", "1");
     expect(patches(SPEND_URL)[1][2]?.headers?.["Idempotency-Key"]).toBe(
       patches(SPEND_URL)[0][2]?.headers?.["Idempotency-Key"],
     );
+  });
+
+  it("backend kategoriyasiz chiqimni rad etsa (400 «Xarajat kategoriyasini tanlang») — matni xabarda, oyna ochiq", async () => {
+    http.patch.mockImplementationOnce(async () => {
+      throw httpError(400, "Xarajat kategoriyasini tanlang");
+    });
+    const user = userEvent.setup();
+    open();
+    const dialog = await openSpend(user);
+    await fillRequired(user, dialog, { comment: "" });
+    await chooseCategory(user, dialog, /Ovqatlanish/);
+    const getsBefore = categoryGets();
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    await (await confirmOperation(user, "Xarajatni tasdiqlang")).submit();
+
+    // Xabar (toast) — maydon xatosi emas: kategoriya tanlangan qoladi.
+    expect(await screen.findByText("Xarajat kategoriyasini tanlang")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Xarajat kategoriyasini tanlang")).not.toBeInTheDocument();
+    expect(categoryField(dialog)).toHaveValue("Ovqatlanish");
+    expect(screen.getByRole("dialog", { name: "Kassadan xarajat" })).toBeInTheDocument();
+    expect(screen.queryByText("Xarajat muvaffaqiyatli saqlandi")).not.toBeInTheDocument();
+    await waitFor(() => expect(categoryGets()).toBeGreaterThan(getsBefore));
   });
 });
 

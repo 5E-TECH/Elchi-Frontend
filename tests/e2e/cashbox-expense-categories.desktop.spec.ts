@@ -9,8 +9,9 @@ import { expectToast } from "./support/toast";
 
 /**
  * Elchi Pochta №1 — kassa xarajatlari kategoriyalari (1440px). Gateway soxta va qat'iy
- * (`support/cashboxExpenseCategories.ts`): DTO'dan tashqari maydon, faol bo'lmagan kategoriya, `fill` dagi
- * `expense_category_id` — 400; boshqaruv faqat superadminga.
+ * (`support/cashboxExpenseCategories.ts`): DTO'dan tashqari maydon, kategoriyasiz chiqim, faol bo'lmagan
+ * kategoriya, `fill` dagi `expense_category_id` — 400; boshqaruv faqat superadminga. Ega 2026-10-22: xarajatda
+ * kategoriya majburiy, izoh ixtiyoriy (bo'sh izoh yuborilmaydi).
  */
 test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -58,32 +59,92 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("kategoriyasiz xarajat va to'ldirish — `expense_category_id` umuman yuborilmaydi", async ({ page }) => {
+  test("⭐ kategoriyasiz xarajat saqlanmaydi; izohsiz — `comment` yuborilmaydi; to'ldirishda kategoriya yo'q, izoh majburiy", async ({ page }) => {
     const { calls, leaked } = await mockCashboxCategoriesApi(page, { role: "admin" });
     await openMainCashbox(page);
     await expect(page.getByRole("button", { name: "Xarajat kategoriyalari" })).toHaveCount(0);
 
-    const spend = await openSpendDialog(page, { comment: "Kanselyariya" });
-    await expect(categoryCombobox(page)).toBeVisible();
+    const spend = await openSpendDialog(page, { comment: "" });
+    await expect(spend.locator("label", { hasText: /^Izoh/ })).toHaveText("Izoh (ixtiyoriy)");
+    await expect(categoryCombobox(page)).toHaveAttribute("aria-required", "true");
+
+    // Kategoriyasiz — maydon ostida xato, tasdiq ham so'rov ham yo'q.
     await spend.getByRole("button", { name: "Xarajatni saqlash" }).click();
-    await page.getByRole("alertdialog", { name: "Xarajatni tasdiqlang" }).getByRole("button", { name: "Tasdiqlash" }).click();
+    await expect(spend.getByText("Xarajat kategoriyasini tanlang")).toBeVisible();
+    await expect(categoryCombobox(page)).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    expect(calls.spends).toEqual([]);
+
+    // Faqat kategoriya (izohsiz) — payload'da `comment` kaliti yo'q.
+    await categoryCombobox(page).click();
+    await page.getByRole("option", { name: /^Ofis xarajatlari/ }).click();
+    await expect(spend.getByText("Xarajat kategoriyasini tanlang")).toHaveCount(0);
+    await spend.getByRole("button", { name: "Xarajatni saqlash" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Xarajatni tasdiqlang" });
+    await expect(confirm.getByText("Ofis xarajatlari")).toBeVisible();
+    await expect(confirm.getByText("Izoh", { exact: true })).toHaveCount(0);
+    await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
     await expectToast(page, "Xarajat muvaffaqiyatli saqlandi", { tone: "success" });
+
+    // Tarixda izohsiz qator — kategoriya belgisi bilan.
+    const table = page.getByRole("table", { name: "Operatsiyalar tarixi" });
+    await expect(table.locator("[data-expense-category]", { hasText: "Ofis xarajatlari" })).toHaveCount(1);
 
     await page.getByRole("button", { name: /Kassani to'ldirish/ }).click();
     const fill = page.getByRole("dialog", { name: "Kassani to'ldirish" });
     await expect(fill.getByRole("combobox", { name: /kategoriya/i })).toHaveCount(0);
     await fill.getByLabel(/^Summa/).fill("500000");
     await fill.getByRole("radio", { name: "Naqd" }).click();
+    await fill.getByRole("button", { name: "Kirimni saqlash" }).click();
+    await expect(fill.getByText("Izoh majburiy — pul qayerdan kelganini yozing")).toBeVisible();
     await fill.getByLabel(/^Izoh/).fill("Bankdan naqd");
     await fill.getByRole("button", { name: "Kirimni saqlash" }).click();
     await page.getByRole("alertdialog", { name: "Kirimni tasdiqlang" }).getByRole("button", { name: "Tasdiqlash" }).click();
     await expectToast(page, "Kassa muvaffaqiyatli to'ldirildi", { tone: "success" });
 
     expect(calls.spends.map((call) => [call.status, call.body])).toEqual([
-      [200, { amount: 150_000, type: "cash", comment: "Kanselyariya" }],
+      [200, { amount: 150_000, type: "cash", expense_category_id: "10" }],
     ]);
     expect(calls.fills.map((call) => [call.status, call.body])).toEqual([
       [200, { amount: 500_000, type: "cash", comment: "Bankdan naqd" }],
+    ]);
+    expect(leaked).toEqual([]);
+  });
+
+  test("kategoriyalar hali yo'q: saqlash bloklangan; superadmin havoladan qo'shadi → tanlaydi → saqlaydi", async ({ page }) => {
+    const { calls, leaked } = await mockCashboxCategoriesApi(page, { emptyCategories: true });
+    await openMainCashbox(page);
+
+    const spend = await openSpendDialog(page, { comment: "Printer qog'ozi" });
+    await expect(
+      spend.getByText("Kategoriyalar hali qo'shilmagan — xarajatni saqlash uchun avval kategoriya qo'shing"),
+    ).toBeVisible();
+    await expect(categoryCombobox(page)).toBeDisabled();
+    await expect(spend.getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
+
+    // Havola boshqaruv oynasini xarajat oynasi USTIDA ochadi; yopilgach xarajat oynasi (kiritilgan summa bilan) qoladi.
+    await spend.getByRole("button", { name: "Xarajat kategoriyalari" }).click();
+    const manage = page.getByRole("dialog", { name: "Xarajat kategoriyalari" });
+    await expect(manage).toBeVisible();
+    await manage.getByRole("button", { name: "Kategoriya qo'shish" }).click();
+    const form = page.getByRole("dialog", { name: "Kategoriya qo'shish" });
+    await form.getByLabel(/^Nomi/).fill("Ofis xarajatlari");
+    await form.getByRole("button", { name: "Qo'shish" }).click();
+    await expectToast(page, "Kategoriya qo'shildi", { tone: "success" });
+    await manage.getByRole("button", { name: "Yopish" }).last().click();
+    await expect(manage).toBeHidden();
+
+    await expect(spend).toBeVisible();
+    await expect(spend.getByLabel(/^Summa/)).toHaveValue(/150/);
+    await expect(categoryCombobox(page)).toBeEnabled();
+    await categoryCombobox(page).click();
+    await page.getByRole("option", { name: /^Ofis xarajatlari/ }).click();
+    await spend.getByRole("button", { name: "Xarajatni saqlash" }).click();
+    await page.getByRole("alertdialog", { name: "Xarajatni tasdiqlang" }).getByRole("button", { name: "Tasdiqlash" }).click();
+    await expectToast(page, "Xarajat muvaffaqiyatli saqlandi", { tone: "success" });
+    expect(calls.creates).toEqual([{ name: "Ofis xarajatlari" }]);
+    expect(calls.spends.map((call) => [call.status, call.body])).toEqual([
+      [200, { amount: 150_000, type: "cash", comment: "Printer qog'ozi", expense_category_id: "1" }],
     ]);
     expect(leaked).toEqual([]);
   });
@@ -151,7 +212,7 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("tanlangan kategoriya boshqa joyda o'chirilsa: 400 matni, tanlov tozalanadi, qayta yuborish kategoriyasiz", async ({ page }) => {
+  test("tanlangan kategoriya boshqa joyda o'chirilsa: 400 matni, tanlov tozalanadi, boshqasi tanlanib qayta yuboriladi", async ({ page }) => {
     const { calls, state } = await mockCashboxCategoriesApi(page);
     await openMainCashbox(page);
     const dialog = await openSpendDialog(page);
@@ -165,11 +226,16 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     await expect(dialog).toBeVisible();
     await expect(categoryCombobox(page)).toHaveValue("");
 
+    // Eskirgan tanlovsiz qayta yuborib bo'lmaydi — avval boshqa kategoriya.
+    await dialog.getByRole("button", { name: "Xarajatni saqlash" }).click();
+    await expect(dialog.getByText("Xarajat kategoriyasini tanlang")).toBeVisible();
+    await categoryCombobox(page).click();
+    await page.getByRole("option", { name: /^Texnika va jihozlar/ }).click();
     await dialog.getByRole("button", { name: "Xarajatni saqlash" }).click();
     await page.getByRole("alertdialog", { name: "Xarajatni tasdiqlang" }).getByRole("button", { name: "Tasdiqlash" }).click();
     await expectToast(page, "Xarajat muvaffaqiyatli saqlandi", { tone: "success" });
     expect(calls.spends.map((call) => call.status)).toEqual([400, 200]);
-    expect(calls.spends[1].body).not.toHaveProperty("expense_category_id");
+    expect(calls.spends[1].body).toHaveProperty("expense_category_id", "12");
     expect(calls.spends[1].key).toBe(calls.spends[0].key);
   });
 });
