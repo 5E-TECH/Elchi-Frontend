@@ -23,6 +23,12 @@ export const API_ENDPOINTS = {
     // last_seen_at, expires_at, current }] } — FAQAT o'z faol sessiyalari, last_seen_at bo'yicha yangisi tepada,
     // ko'pi bilan 50 ta (Elchi Pochta #3)
     SESSIONS: "auth/sessions",
+    // DELETE → { revoked: 1, session_ids: [id] } — o'z boshqa sessiyasini yopish; 400 — joriy sessiya yoki noto'g'ri
+    // ID, 404 — topilmadi yoki allaqachon yopilgan. Yopilgan qurilma keyingi so'rovida 401 oladi (refresh ham rad).
+    SESSION_BY_ID: (id: string) => `auth/sessions/${encodeURIComponent(id)}`,
+    // POST (tanasiz) → { revoked: n, session_ids } — joriydan boshqa barcha faol sessiyalar (n = 0 bo'lishi mumkin);
+    // 400 — joriy sessiya aniqlanmadi (sessiyadan oldingi eski token) → qayta kirish kerak.
+    SESSIONS_REVOKE_OTHERS: "auth/sessions/revoke-others",
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────

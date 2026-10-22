@@ -24,7 +24,7 @@
   },
   "sessions": {
     "title": "Sessions",
-    "description": "Devices signed in to your account. Signing out closes only the session on this device.",
+    "description": "Devices signed in to your account. Signing out closes only the session on this device; sign out a device you don't recognise here.",
     "activeCount": "{{count}} active",
     "current": "This device",
     "unknownDevice": "Unknown device",
@@ -41,7 +41,31 @@
     "loading": "Loading sessions",
     "emptyTitle": "No active sessions",
     "emptyDescription": "Devices signed in to your account appear here. If you signed in earlier, the session shows up at the next refresh (about once an hour).",
-    "truncated": "Showing the latest {{shown}} · {{count}} active sessions in total"
+    "truncated": "Showing the latest {{shown}} · {{count}} active sessions in total",
+    "listRefreshed": "The list has been refreshed.",
+    "revoke": {
+      "action": "Sign out",
+      "aria": "Sign out: {{device}}",
+      "title": "Confirm signing out the device",
+      "description": "This device will be signed out of your account — on its next request it returns to the sign-in page. Signing in again needs the login and password.",
+      "lastSeen": "last active {{when}}",
+      "confirm": "Sign out",
+      "loading": "Signing out…",
+      "success": "Device signed out",
+      "goneTitle": "This session was already closed",
+      "error": "Couldn't close the session. Please try again."
+    },
+    "revokeOthers": {
+      "action": "Sign out of all other devices",
+      "title": "Confirm signing out other devices",
+      "description": "Other devices to sign out: {{count}} — on their next request they return to the sign-in page.",
+      "note": "This device stays signed in.",
+      "confirm": "Sign out all",
+      "success": "Signed out of other devices",
+      "successDescription": "Sessions closed: {{count}}.",
+      "noneTitle": "No other active sessions left",
+      "reloginRequired": "Couldn't identify this device's session. Sign out, sign in again and try once more."
+    }
   },
   "password": {
     "title": "Change password",

@@ -29,3 +29,12 @@ export type AccountSessionList = {
 
 /** Qurilma turi — server yorlig'ining birinchi bo'lagidan («Telefon», «Planshet», «Kompyuter»). */
 export type SessionDeviceKind = "phone" | "tablet" | "desktop";
+
+/**
+ * Sessiyani yopish javobi — `DELETE /auth/sessions/:id` (`revoked: 1`) va `POST /auth/sessions/revoke-others`
+ * (`revoked: n`, 0 bo'lishi mumkin): yopilgan sessiyalar soni va ID lari.
+ */
+export type RevokeSessionsResult = {
+  revoked: number;
+  session_ids: string[];
+};
