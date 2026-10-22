@@ -768,8 +768,7 @@
     "notFoundDescription": "Order №{{id}} does not exist or you do not have access to it.",
     "backToOrders": "Back to orders"
   },
-  "createCatalogEmpty": "This market's catalog is empty",
-  "createCatalogEmptyHint": "Add the product with the “Product not in catalog” field.",
+  "createCatalogEmptyHint": "This market's catalog is empty. Add the product with the “Product not in catalog” field.",
   "amountInput": {
     "fraction": "Enter the amount as a whole number — decimals are not accepted",
     "negative": "The amount cannot be negative",

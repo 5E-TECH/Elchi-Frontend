@@ -320,7 +320,8 @@ export const ScannerCamera = ({
   const platform = detectCameraPlatform();
 
   // Yon panelda (planshet 300 px) ikki tugma bir qatorga sig'sin — ixcham (`compact`) ichki chekka.
-  const manualButton = (size: "md" | "lg", className?: string) => (
+  /** `label` — «ruxsat berilmagan» kartasida «Kodni qo'lda kiritish» (maket `courier-scan-permission-denied`). */
+  const manualButton = (size: "md" | "lg", className?: string, label: "manual" | "manualCode" = "manual") => (
     <Button
       variant="secondary"
       size={size}
@@ -330,7 +331,7 @@ export const ScannerCamera = ({
       onClick={() => setSheet("manual")}
       className={className}
     >
-      {t("camera.action.manual")}
+      {t(`camera.action.${label}`)}
     </Button>
   );
 
@@ -400,7 +401,7 @@ export const ScannerCamera = ({
             <Button size="lg" leftIcon={RefreshCw} onClick={session.retry}>
               {t("camera.action.retry")}
             </Button>
-            {manualButton("lg")}
+            {manualButton("lg", undefined, "manualCode")}
           </>
         }
       >

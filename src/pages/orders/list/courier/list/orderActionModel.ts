@@ -47,6 +47,12 @@ export type ActionOrder = {
   cancel_requires_media?: boolean;
   /** Marketga to'lanishi kerak bo'lgan summa — «Marketga to'langan summa» chegarasi uchun. */
   to_be_paid?: number | string | null;
+  /**
+   * Kutilayotgan (`waiting`) buyurtmada backend hisoblagan chegara: hozir to'liq sotilsa marketga to'lash mumkin
+   * bo'lgan summa, qo'shimcha xarajatdan OLDIN (uguUEhin). `to_be_paid` bu holatda 0 — sotuvda hisoblanadi.
+   * Boshqa holatda yoki tarif aniqlanmasa `null`.
+   */
+  sale_market_paid_max?: number | string | null;
   /** Hamkor (BeePost/API) buyurtmasi — marketga to'lov maydoni ko'rsatilmaydi. */
   external_id?: string | number | null;
 };

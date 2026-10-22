@@ -17,6 +17,11 @@ export interface RegionRow {
   /** 0..100 */
   rate: number;
   activeCouriers: number;
+  /**
+   * Kuryerlar soni ma'lummi (o2j9uDtT): backend `stats/all` da identity javob bermasa `activeCouriers: null` —
+   * `activeCouriers` 0 bo'ladi, lekin bu yolg'on 0, ko'rsatilmaydi.
+   */
+  couriersKnown: boolean;
   /** Asl qator (dialog uchun). */
   item: RegionItem;
 }
@@ -45,6 +50,7 @@ export const toRegionRows = (regions: readonly RegionItem[]): RegionRow[] =>
         revenue: finite(item.totalRevenue),
         rate: Math.min(100, Math.max(0, rate)),
         activeCouriers: finite(item.activeCouriers),
+        couriersKnown: item.couriersKnown !== false,
         item,
       };
     })
@@ -101,6 +107,8 @@ export interface RegionSummaryModel {
   totalRevenue: number;
   activeCouriers: number;
   regionsWithCouriers: number;
+  /** Kamida bitta hududda kuryerlar soni ma'lum — aks holda «Faol kuryerlar» «—» (yolg'on 0 emas). */
+  couriersKnown: boolean;
   top?: RegionRow;
   /** Eng past sotuv — kamida 10 ta buyurtmali hududlar orasida. */
   lowest?: RegionRow;
@@ -123,8 +131,9 @@ export const summarizeRegions = (rows: readonly RegionRow[]): RegionSummaryModel
     totalCancelled: rows.reduce((sum, row) => sum + row.cancelled, 0),
     totalPending: rows.reduce((sum, row) => sum + row.pending, 0),
     totalRevenue: rows.reduce((sum, row) => sum + row.revenue, 0),
-    activeCouriers: rows.reduce((sum, row) => sum + row.activeCouriers, 0),
-    regionsWithCouriers: rows.filter((row) => row.activeCouriers > 0).length,
+    activeCouriers: rows.reduce((sum, row) => sum + (row.couriersKnown ? row.activeCouriers : 0), 0),
+    regionsWithCouriers: rows.filter((row) => row.couriersKnown && row.activeCouriers > 0).length,
+    couriersKnown: rows.some((row) => row.couriersKnown),
     top: rows[0] && rows[0].orders > 0 ? rows[0] : undefined,
     lowest,
     mostCancelled: mostCancelled && mostCancelled.cancelled > 0 ? mostCancelled : undefined,

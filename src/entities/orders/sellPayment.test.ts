@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMarketPaidMax, getSellPaymentStatus } from "./sellPayment";
+import { getMarketPaidMax, getSellPaymentStatus, readMarketPaidBase } from "./sellPayment";
 
 describe("sellPayment (uguUEhin)", () => {
   it("javobdagi data.status — paid / partly_paid; boshqasi null", () => {
@@ -8,6 +8,13 @@ describe("sellPayment (uguUEhin)", () => {
     expect(getSellPaymentStatus({ data: { status: "sold" } })).toBeNull();
     expect(getSellPaymentStatus({ statusCode: 202, data: { approval_required: true } })).toBeNull();
     expect(getSellPaymentStatus(undefined)).toBeNull();
+  });
+
+  it("chegara asosi: backend `sale_market_paid_max` ustun, `null` / yo'q bo'lsa `to_be_paid`", () => {
+    expect(readMarketPaidBase({ to_be_paid: 0, sale_market_paid_max: 30000 })).toBe(30000);
+    expect(getMarketPaidMax(readMarketPaidBase({ to_be_paid: 0, sale_market_paid_max: "30000" }), 10000)).toBe(20000);
+    expect(readMarketPaidBase({ to_be_paid: 120000, sale_market_paid_max: null })).toBe(120000);
+    expect(readMarketPaidBase({ to_be_paid: 120000 })).toBe(120000);
   });
 
   it("maksimum: to_be_paid − extraCost; noma'lum bo'lsa null, manfiy emas", () => {

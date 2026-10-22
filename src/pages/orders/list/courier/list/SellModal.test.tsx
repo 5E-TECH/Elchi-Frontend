@@ -79,6 +79,30 @@ describe("SellModal — «Marketga to'langan summa» (uguUEhin)", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/Marketga to'lov 100\D000 so'mdan oshmasligi kerak/);
   });
 
+  it("№73: kutilayotgan buyurtmada `to_be_paid` 0 — chegara backend `sale_market_paid_max` dan (0 emas)", async () => {
+    const user = userEvent.setup();
+    const onSell = vi.fn();
+    renderSell({ onSell, order: { ...order, to_be_paid: 0, sale_market_paid_max: 30000 } as never });
+    expect(screen.getByText(/30\D000 so'mdan oshmasin/)).toBeInTheDocument();
+    expect(screen.queryByText(/ 0 so'mdan oshmasin/)).toBeNull();
+
+    await user.type(paidInput(), "5000");
+    expect(paidInput()).not.toHaveAttribute("aria-invalid");
+    expect(screen.queryByText(/oshmasligi kerak/)).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0, paidAmount: 5000 });
+  });
+
+  it("№73: qo'shimcha xarajat chegaradan ayriladi (30 000 − 10 000); oshsa ogohlantiradi", async () => {
+    const user = userEvent.setup();
+    renderSell({ order: { ...order, to_be_paid: 0, sale_market_paid_max: 30000 } as never });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "10000");
+    expect(screen.getByText(/20\D000 so'mdan oshmasin/)).toBeInTheDocument();
+    await user.type(paidInput(), "25000");
+    expect(paidInput()).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent(/Marketga to'lov 20\D000 so'mdan oshmasligi kerak/);
+  });
+
   it("hamkor (external_id) buyurtmasida maydon yo'q", () => {
     renderSell({ order: { ...order, external_id: "BP-120" } as never });
     expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();

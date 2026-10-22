@@ -34,7 +34,9 @@ import type { TrendPoint } from "./FinancialTrendPlot";
 /**
  * recharts FAQAT shu plotda va u alohida chunk: plot maydoni ekranga kirgandagina yuklanadi
  * (`DeferredMount rootMargin="0px"`). 1440×900 da plot birinchi ekrandan pastda — dashboard birinchi
- * ochilishida recharts yuklanmaydi (§1.9 byudjeti, `tests/e2e/dashboard-bundle.preview.spec.ts`).
+ * ochilishida recharts yuklanmaydi (§1.9 byudjeti, `tests/e2e/dashboard-bundle.preview.spec.ts`). Kuzatish
+ * sahifa ma'lumoti kelgach boshlanadi (`layoutReady`): daromad dashboarddan oldin kelsa, yuqoridagi past
+ * skeletlar ostida plot bir lahza ekranga tushib, recharts'ni yuklab yuborardi (NIFAnCvf, prod 529 KB).
  */
 const FinancialTrendPlot = lazy(() => import("./FinancialTrendPlot"));
 
@@ -46,17 +48,30 @@ export interface FinancialAnalysisProps {
   startDate?: string;
   endDate?: string;
   analyticsScope?: string;
+  /** Sahifaning yuqoridagi bloklari yuklanib, joylashuv barqaror (sukut `true`) — plot kuzatuvi shundan keyin. */
+  layoutReady?: boolean;
 }
 
-/** Joriy javobdan grafik nuqtalari (`chart.labels/values`, bo'lmasa xom `RevenuePoint` lar). */
+/**
+ * Joriy javobdan grafik nuqtalari — faqat `chart.labels/values` (2Fj7iw1k: backend ularni doim to'ldiradi; eski
+ * zaxira yo'li — javobdagi raqamli `"0"`, `"1"` kalitlaridan `RevenuePoint` yig'ish — olib tashlandi). Buyurtmalar
+ * soni — `data[]` bo'laklaridan (`ordersCount`), `label` bo'yicha; topilmasa `null` («—», 0 emas).
+ */
 const toChartData = (payload: RevenueResponse["data"] | undefined) => {
-  if (!payload) return [];
-  if (payload.chart?.labels?.length && payload.chart?.values?.length) {
-    return payload.chart.labels.map((label, index) => ({ date: label, revenue: Number(payload.chart?.values?.[index] ?? 0) }));
-  }
-  return Object.values(payload)
-    .filter((item): item is RevenuePoint => typeof item === "object" && item !== null && "label" in item && "revenue" in item)
-    .map((item) => ({ date: item.label, revenue: Number(item.revenue ?? 0) }));
+  const labels = payload?.chart?.labels ?? [];
+  const values = payload?.chart?.values ?? [];
+  if (!labels.length || !values.length) return [];
+  const buckets = Array.isArray(payload?.data) ? (payload.data as Partial<RevenuePoint>[]) : [];
+  const ordersByLabel = new Map(
+    buckets
+      .filter((bucket) => typeof bucket?.label === "string" && Number.isFinite(Number(bucket.ordersCount)))
+      .map((bucket) => [bucket.label as string, Number(bucket.ordersCount)]),
+  );
+  return labels.map((label, index) => ({
+    date: label,
+    revenue: Number(values[index] ?? 0),
+    orders: ordersByLabel.get(label) ?? null,
+  }));
 };
 
 /**
@@ -104,7 +119,7 @@ const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: bo
  * nuqtalar soni teng bo'lmasa oldingi chiziq yashiriladi, foiz o'zgarishi `calculatePercentChange`.
  * Ega savoli 4 sukuti: qator — daromad (`SUM(total_price)`), sarlavha «Moliyaviy tahlil».
  */
-const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnalysisProps) => {
+const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = true }: FinancialAnalysisProps) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
   const { getRevenue } = useDashboard();
@@ -183,6 +198,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
       chartData.map((point, index) => ({
         label: point.date,
         current: point.revenue,
+        orders: point.orders,
         previous: showPreviousLine ? (previousValues?.[index] ?? null) : null,
         previousLabel: showPreviousLine && previousLabels?.[index]
           ? t("v2Dashboard.finance.previousPoint", { label: previousLabels[index] })
@@ -301,6 +317,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
                   <DeferredMount
                     minHeight={PLOT_HEIGHT.desktop}
                     rootMargin="0px"
+                    ready={layoutReady}
                     className="h-[300px] max-md:h-[180px]"
                   >
                     <Suspense fallback={<SkeletonChart className="h-full" />}>
@@ -319,6 +336,32 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
                   getRowKey={(row, index) => `${row.label}-${index}`}
                   label={t("v2Dashboard.finance.title")}
                   density="compact"
+                  // Telefon (< 768): 4 ustun sig'maydi — har nuqta karta (gorizontal skroll yo'q).
+                  renderCard={(row) => (
+                    <div className="flex items-start gap-3 px-4 py-3 text-sm text-text">
+                      <span className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="flex justify-between gap-2">
+                          <span className="min-w-0 font-semibold">{row.label}</span>
+                          <span className="whitespace-nowrap font-semibold tabular-nums">
+                            {formatMoneyLocalized(row.current, { language })}
+                          </span>
+                        </span>
+                        <span className="text-[13px] text-text-muted">
+                          {row.orders == null
+                            ? "—"
+                            : t("v2Charts.countTa", { value: formatNumberLocalized(row.orders, { language }) })}
+                          {showPreviousLine && row.previous != null ? (
+                            <>
+                              {" · "}
+                              <span className="whitespace-nowrap">
+                                {t("v2Dashboard.finance.previous")}: {formatMoneyLocalized(row.previous, { language })}
+                              </span>
+                            </>
+                          ) : null}
+                        </span>
+                      </span>
+                    </div>
+                  )}
                   columns={[
                     { id: "label", header: t("v2Dashboard.finance.tableDate"), cell: (row) => row.label },
                     {
@@ -337,6 +380,16 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
                           },
                         ]
                       : []),
+                    {
+                      // Buyurtmalar soni — «Jadval»da (maketda grafikda yo'q; davr yakunida jami — yuqorida).
+                      id: "orders",
+                      header: t("v2Dashboard.finance.orders"),
+                      align: "end" as const,
+                      cell: (row: TrendPoint) =>
+                        row.orders == null
+                          ? "—"
+                          : t("v2Charts.countTa", { value: formatNumberLocalized(row.orders, { language }) }),
+                    },
                   ]}
                 />
               )}

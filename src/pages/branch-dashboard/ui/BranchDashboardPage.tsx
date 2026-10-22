@@ -9,6 +9,7 @@ import { useDashboard } from "../../../entities/dashboard";
 import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
 import { periodLabel, resolveDashboardPeriod, share } from "../../../entities/dashboard/lib/period";
 import { readProfileBranchName } from "../../../entities/dashboard/lib/profile";
+import { buildDashboardDateParams, getEffectiveAllTimeRange } from "../../../entities/dashboard/lib/allTime";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -55,15 +56,11 @@ const BranchDashboardPage = () => {
   const [toDate, setToDate] = useState(
     typeof storedToDate === "string" && storedToDate ? storedToDate : defaultDateRange.to,
   );
-  const hasDateFilter = Boolean(fromDate && toDate);
   const analyticsScope = `${userRole || "unknown"}:${userId || "unknown"}`;
   const analyticsParams = useMemo(
-    () => ({
-      branch_id: branchId || "",
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-    }),
-    [branchId, fromDate, hasDateFilter, toDate],
+    // «Barchasi» — `all=true` (tya24blo), `start_day=1970-01-01` emas.
+    () => ({ branch_id: branchId || "", ...buildDashboardDateParams(fromDate, toDate) }),
+    [branchId, fromDate, toDate],
   );
   const { getDashboard } = useDashboard();
   const { data, isLoading, isFetching, isError, refetch } = getDashboard(analyticsParams, true, analyticsScope);
@@ -116,6 +113,7 @@ const BranchDashboardPage = () => {
       description={description}
       fromDate={fromDate}
       toDate={toDate}
+      effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
       onChange={applyRange}
       onClear={clearRange}
       showYear={false}

@@ -200,3 +200,20 @@ describe("normalizeBranchList — qabul mezonlari", () => {
     });
   });
 });
+
+describe("normalizeBranch — yaratilgan sana (cI5gqN90)", () => {
+  const first = (item: Record<string, unknown>) => normalizeBranchList({ data: { items: [{ id: "3", name: "QA Filial", ...item }] } }).data[0];
+
+  it("`createdAt` (camelCase) o'qiladi — bugungi sana EMAS", () => {
+    expect(first({ createdAt: "2026-06-02T07:15:00.000Z" }).created_at).toBe("2026-06-02T07:15:00.000Z");
+    expect(first({ created_at: "2025-07-09T05:00:00.000Z", createdAt: "2026-06-02T07:15:00.000Z" }).created_at).toBe(
+      "2025-07-09T05:00:00.000Z",
+    );
+  });
+
+  it("sana umuman yo'q — bo'sh (ekranda «—»), `new Date()` bilan to'ldirilmaydi", () => {
+    const created = first({}).created_at;
+    expect(created).toBe("");
+    expect(created).not.toContain(new Date().toISOString().slice(0, 10));
+  });
+});

@@ -18,6 +18,7 @@ import {
   share,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileName } from "../../entities/dashboard/lib/profile";
+import { buildDashboardDateParams, getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import {
@@ -77,17 +78,14 @@ const MarketDashboardPage = () => {
   const { data: settingsData } = useSettings();
   const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
-  const hasDateFilter = Boolean(fromDate && toDate);
   const isAllTime = (() => {
     const all = getAllTimeRange();
     return fromDate === all.from && toDate === all.to;
   })();
   const period = resolveDashboardPeriod(fromDate, toDate);
   const analyticsScope = useMemo(() => `${role ?? "unknown"}:${user?.id ?? "unknown"}`, [role, user?.id]);
-  const analyticsParams = useMemo(
-    () => ({ start_day: hasDateFilter ? fromDate : "", end_day: hasDateFilter ? toDate : "" }),
-    [fromDate, hasDateFilter, toDate],
-  );
+  // «Barchasi» — `all=true` (tya24blo), `start_day=1970-01-01` emas.
+  const analyticsParams = useMemo(() => buildDashboardDateParams(fromDate, toDate), [fromDate, toDate]);
 
   const { getDashboard } = useDashboard();
 
@@ -191,6 +189,7 @@ const MarketDashboardPage = () => {
         }
         fromDate={fromDate}
         toDate={toDate}
+        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
         onChange={applyRange}
         onClear={clearRange}
         primaryAction={createOrderButton}

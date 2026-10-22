@@ -31,7 +31,14 @@ export const SELL_PAYMENT_NOTICE_KEYS: Record<SellPaymentStatus, string> = {
 };
 
 /**
- * Marketga to'lanishi mumkin bo'lgan eng ko'p summa: `to_be_paid − extraCost`.
+ * Chegara asosi (uguUEhin): backend bergan `sale_market_paid_max` (kutilayotgan buyurtma — `to_be_paid` hali 0),
+ * bo'lmasa `to_be_paid`.
+ */
+export const readMarketPaidBase = (order: { sale_market_paid_max?: unknown; to_be_paid?: unknown }): unknown =>
+  order.sale_market_paid_max ?? order.to_be_paid;
+
+/**
+ * Marketga to'lanishi mumkin bo'lgan eng ko'p summa: `asos − extraCost` (asos — `readMarketPaidBase`).
  * Bu faqat KO'RSATMA — yakuniy chegarani backend tekshiradi (400 xabari).
  * `to_be_paid` noma'lum bo'lsa `null`.
  */

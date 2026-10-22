@@ -11,6 +11,7 @@ import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { getUzbekistanPhoneDigits } from "../../../../shared/lib/phone";
+import { useCatalogSearch } from "./useCatalogSearch";
 import {
   Button,
   Card,
@@ -187,10 +188,13 @@ const Step2Combined = () => {
   const allProducts = useMemo(() => toApiList<CatalogProduct>(productsData), [productsData]);
 
   const [productSearch, setProductSearch] = useState("");
-  const filteredProducts = useMemo(() => {
-    const query = productSearch.trim().toLowerCase();
-    return query ? allProducts.filter((product) => product.name?.toLowerCase().includes(query)) : allProducts;
-  }, [allProducts, productSearch]);
+  // qNwXfqLL: qidiruv serverda (`?search=`), mijozdagi filtr emas.
+  const { products: filteredProducts, isLoading: searchLoading } = useCatalogSearch({
+    marketId: productSourceMarketId,
+    isMarketRole,
+    search: productSearch,
+    catalog: allProducts,
+  });
 
   const updateItems = (updater: (current: OrderItemValue[]) => OrderItemValue[]) => {
     setValue("details.items", updater(getValues("details.items")), { shouldDirty: true, shouldValidate: true });
@@ -463,10 +467,10 @@ const Step2Combined = () => {
 
             <ul
               aria-label={t("createCatalogLabel", { market: catalogOwner ?? "—" })}
-              aria-busy={prodLoading || undefined}
+              aria-busy={prodLoading || searchLoading || undefined}
               className="m-0 flex max-h-[296px] list-none flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-xl bg-sunken p-1 text-sm"
             >
-              {prodLoading ? (
+              {prodLoading || searchLoading ? (
                 Array.from({ length: 3 }, (_, index) => (
                   <li key={index} aria-hidden="true" className="flex min-h-13 items-center gap-3 px-3 py-2">
                     <Skeleton shape="block" tone="border" width={36} height={36} />
@@ -477,11 +481,11 @@ const Step2Combined = () => {
                   </li>
                 ))
               ) : allProducts.length === 0 ? (
-                // Katalog umuman bo'sh — «Topilmadi» emas (hech narsa qidirilmagan), qayerdan qo'shish aytiladi (D-19).
+                // Katalog umuman bo'sh — «Topilmadi» (qNwXfqLL), izohda katalog bo'shligi va qayerdan qo'shish (D-19).
                 <li>
                   <EmptyState
                     icon={ShoppingBag}
-                    title={t("createCatalogEmpty")}
+                    title={t("notFound", { ns: "common" })}
                     description={t("createCatalogEmptyHint")}
                   />
                 </li>

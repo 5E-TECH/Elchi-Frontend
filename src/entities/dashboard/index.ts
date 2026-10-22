@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { readPartialFailure } from "./lib/partialFailure";
+import { readAppliedRange, type AppliedRange } from "./lib/allTime";
 
 export { hasFailedPart } from "./lib/partialFailure";
 
@@ -176,6 +177,8 @@ export interface DashboardResponse {
     degraded?: boolean;
     /** Olinmagan bo'laklar — javob kalitlari (`topMarkets`, `couriers`, `branchDashboard` …). */
     failedParts?: string[];
+    /** «Barchasi» (`all=true`): backend oraliqni qisqartirgan bo'lsa — haqiqiy oraliq (tya24blo). */
+    appliedRange?: AppliedRange | null;
   };
 }
 
@@ -627,6 +630,8 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         Object.keys(asRecord(data.myRanking ?? data.my_ranking)).length > 0
           ? normalizeTopCourier(data.myRanking ?? data.my_ranking)
           : null,
+      // Xom `data` dan: `orders` va `myStat` yuqorida qayta quriladi, ulardagi `applied_range` yo'qolardi.
+      appliedRange: readAppliedRange(data),
       ...readPartialFailure(response, data, DASHBOARD_PARTS),
     },
   };

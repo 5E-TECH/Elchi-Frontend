@@ -107,7 +107,8 @@ const normalizeBranch = (value: unknown): Branch => {
     address: item.address ?? "—",
     status: item.status === "inactive" ? "inactive" : "active",
     employees_count: Number(item.employees_count ?? 0),
-    created_at: item.created_at ?? new Date().toISOString(),
+    // cI5gqN90: backend `createdAt` (camelCase) ham yuboradi; sana yo'q bo'lsa — bo'sh («—»), bugungi sana EMAS.
+    created_at: item.created_at ?? item.createdAt ?? "",
     olinishi_kerak: Number(item.olinishi_kerak ?? 0),
     berilishi_kerak: Number(item.berilishi_kerak ?? 0),
     kassadagi_summa: Number(item.kassadagi_summa ?? 0),

@@ -297,3 +297,32 @@ describe("BranchListWidget — filtrlar, o'chirish, holatlar", () => {
     expect(await screen.findByText("1–12 / 13 ta filial")).toBeInTheDocument();
   });
 });
+
+describe("BranchListWidget — «Sana» ustuni (cI5gqN90)", () => {
+  beforeEach(() => {
+    api.get.mockReset();
+    api.get.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: {
+          items: [
+            { id: "3", name: "QA Filial", code: "QA", type: "REGIONAL", status: "active", level: 1, createdAt: "2026-06-02T07:15:00.000Z" },
+            { id: "4", name: "Sanasiz filial", code: "SZ", type: "REGIONAL", status: "active", level: 1 },
+          ],
+          meta: { page: 1, limit: 12, total: 2, totalPages: 1 },
+        },
+      },
+    });
+  });
+
+  it("`createdAt` — o'sha sana; sana yo'q — «—» (bugungi sana EMAS)", async () => {
+    renderWithProviders(<BranchListWidget viewMode="table" onViewModeChange={vi.fn()} onEdit={vi.fn()} />);
+    const withDate = (await screen.findByText("QA Filial")).closest("tr") as HTMLElement;
+    expect(withDate).toHaveTextContent("02.06.2026");
+    const today = new Date();
+    const todayText = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
+    const noDate = screen.getByText("Sanasiz filial").closest("tr") as HTMLElement;
+    expect(noDate).toHaveTextContent("—");
+    expect(noDate).not.toHaveTextContent(todayText);
+  });
+});

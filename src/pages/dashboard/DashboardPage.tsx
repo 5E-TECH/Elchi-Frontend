@@ -18,6 +18,7 @@ import {
   splitCompactMoney,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
+import { getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import { CURRENCY_LABEL, formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../shared/lib/formatMoney";
@@ -553,6 +554,7 @@ const DashboardPage = () => {
         onClear={clearRange}
         showYear={!isCourier}
         rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}
+        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
       />
       {renderCourier()}
       {renderStats()}
@@ -561,6 +563,8 @@ const DashboardPage = () => {
           startDate={hasDateFilter ? fromDate : ""}
           endDate={hasDateFilter ? toDate : ""}
           analyticsScope={analyticsScope}
+          // NIFAnCvf: yuqoridagi KPI va kartalar yuklangach — aks holda plot skeletlar ostida ekranga tushadi.
+          layoutReady={!isLoading && !kpiLoading}
         />
       ) : null}
       {renderRankings()}
