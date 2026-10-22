@@ -746,7 +746,7 @@
   ,"v2ExpenseCategories": {
     "manage": "Expense categories",
     "title": "Expense categories",
-    "subtitle": "The list in the «Cashbox expense» dialog · {{n}} total",
+    "subtitle": "The list in the «Cashbox expense» dialog · {{n}} total",
     "subtitleShort": "The list in the «Cashbox expense» dialog",
     "add": "Add a category",
     "listLabel": "Expense categories",

@@ -746,7 +746,7 @@
   ,"v2ExpenseCategories": {
     "manage": "Xarajat kategoriyalari",
     "title": "Xarajat kategoriyalari",
-    "subtitle": "«Kassadan xarajat» oynasidagi ro'yxat · {{n}} ta",
+    "subtitle": "«Kassadan xarajat» oynasidagi ro'yxat · {{n}} ta",
     "subtitleShort": "«Kassadan xarajat» oynasidagi ro'yxat",
     "add": "Kategoriya qo'shish",
     "listLabel": "Xarajat kategoriyalari",

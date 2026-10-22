@@ -62,7 +62,10 @@ const today = (minutesAgo: number) => {
   return new Date(Math.max(now - minutesAgo * 60_000, midnight + (60 - minutesAgo))).toISOString();
 };
 
-export const mockCashboxCategoriesApi = async (page: Page, { role = "superadmin" }: { role?: string } = {}) => {
+export const mockCashboxCategoriesApi = async (
+  page: Page,
+  { role = "superadmin", theme }: { role?: string; theme?: "light" | "dark" } = {},
+) => {
   const origin = appOrigin();
   const cors = {
     "access-control-allow-origin": origin,
@@ -179,7 +182,9 @@ export const mockCashboxCategoriesApi = async (page: Page, { role = "superadmin"
     const method = request.method();
 
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "1", role, name: "Shodiyor Ergashev", status: "active" }));
+      // Mavzu — profil sozlamasidan (kirgandan keyin u localStorage'dan ustun).
+      const settings = theme ? { settings: { appearance: { theme, themeChosen: true } } } : {};
+      return reply(route, wrap({ id: "1", role, name: "Shodiyor Ergashev", status: "active", ...settings }));
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
     if (path === "finance/shift/current") {

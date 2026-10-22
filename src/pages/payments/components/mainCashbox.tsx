@@ -1521,11 +1521,13 @@ const MainCashbox = () => {
         actions={
           <>
             {canManageCategories ? (
+              // Telefonda sozlama tugmasi asosiy amallardan keyin (alohida qator), kompyuterda — chapda.
               <Button
                 variant="secondary"
                 leftIcon={Settings}
                 onClick={() => setIsCategoriesOpen(true)}
                 aria-haspopup="dialog"
+                className="max-md:order-last"
               >
                 {t("v2ExpenseCategories.manage")}
               </Button>
