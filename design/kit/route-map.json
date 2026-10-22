@@ -917,6 +917,7 @@
         "src/pages/payments/components/PaymentSummaryCards.tsx",
         "src/pages/payments/components/patmentHistoryTable.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/ExpenseCategoryBadge.tsx",
         "src/pages/payments/components/SettlementPickerDialog.tsx",
         "src/pages/payments/components/InactiveBadge.tsx",
         "src/pages/payments/components/paymentSourceType.ts",
@@ -942,6 +943,8 @@
         "src/pages/payments/components/MainCashboxBalanceChart.tsx",
         "src/pages/payments/components/lib/mainCashboxStats.ts",
         "src/pages/payments/components/CashboxFormPopup.tsx",
+        "src/pages/payments/components/ExpenseCategoriesDialog.tsx",
+        "src/pages/payments/components/ExpenseCategoryBadge.tsx",
         "src/pages/payments/components/CloseShiftPopup.tsx",
         "src/pages/payments/components/OpenShiftDialog.tsx",
         "src/pages/payments/components/ShiftResultDialog.tsx",
@@ -958,7 +961,7 @@
         "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"],
         "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"]
       },
-      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena (kfdfYDik; ega javoblari CB-S1…S5, 2026-10-19): smena HAMMA kassada majburiy (asosiy va filial; production FINANCE_REQUIRE_OPEN_SHIFT=all) — `required: false` holati chizilmaydi (…-shift-optional olib tashlandi). Holat — GET finance/shift/current (`shift` — faqat OCHIQ smena yoki null). Smena yo'q → «Smena boshlanmagan» (warning) banneri, tezkor amallar o'chiq, «Smenani ochish» — asosiy tugma (…-shift-closed). Menejer o'z filiali kassasida smenani ochadi va sanalgan pul bilan yopadi (CB-S1, backend R6 — o'z filiali doirasi JWT'dan). Yopish oynasi: «Sanalgan naqd» majburiy, «Sanalgan karta» ixtiyoriy (CB-S5): bo'sh → discrepancy_card null, natijada «Sanalmadi» (neutral). «Tizim bo'yicha kutilgan» = kassaning jonli balance_cash / balance_card; yakuniy qiymatlar POST finance/shift/close javobidan. Farq bo'lsa izoh majburiy (frontend qoidasi). Oxirgi yopilgan smena (CB-S2): «Smena yopildi · … · Natija» kartasi, ochish oynasidagi «Oxirgi smena … bilan yopilgan» va natija oynasi sahifa qayta yuklangandan keyin ham — barcha rollarda (menejer ham) GET finance/shift/current `last_closed` dan (Taklif · backend kerak, karta); ro'yxat uchun GET finance/shift cashbox_user_id filtri + closed_at saralash (CB-S3, backend karta). Xodim ismi: opened_by / closed_by — faqat ID; joriy foydalanuvchi bo'lsa — o'z profili, aks holda GET users/:id; topilmasa «—». Xatolar: ochish/yopish xatosi — Dialog ichida qoladi + notify.error; loadingText «Ochilmoqda…» / «Yopilmoqda…». «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi."
+      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena (kfdfYDik; ega javoblari CB-S1…S5, 2026-10-19): smena HAMMA kassada majburiy (asosiy va filial; production FINANCE_REQUIRE_OPEN_SHIFT=all) — `required: false` holati chizilmaydi (…-shift-optional olib tashlandi). Holat — GET finance/shift/current (`shift` — faqat OCHIQ smena yoki null). Smena yo'q → «Smena boshlanmagan» (warning) banneri, tezkor amallar o'chiq, «Smenani ochish» — asosiy tugma (…-shift-closed). Menejer o'z filiali kassasida smenani ochadi va sanalgan pul bilan yopadi (CB-S1, backend R6 — o'z filiali doirasi JWT'dan). Yopish oynasi: «Sanalgan naqd» majburiy, «Sanalgan karta» ixtiyoriy (CB-S5): bo'sh → discrepancy_card null, natijada «Sanalmadi» (neutral). «Tizim bo'yicha kutilgan» = kassaning jonli balance_cash / balance_card; yakuniy qiymatlar POST finance/shift/close javobidan. Farq bo'lsa izoh majburiy (frontend qoidasi). Oxirgi yopilgan smena (CB-S2): «Smena yopildi · … · Natija» kartasi, ochish oynasidagi «Oxirgi smena … bilan yopilgan» va natija oynasi sahifa qayta yuklangandan keyin ham — barcha rollarda (menejer ham) GET finance/shift/current `last_closed` dan (Taklif · backend kerak, karta); ro'yxat uchun GET finance/shift cashbox_user_id filtri + closed_at saralash (CB-S3, backend karta). Xodim ismi: opened_by / closed_by — faqat ID; joriy foydalanuvchi bo'lsa — o'z profili, aks holda GET users/:id; topilmasa «—». Xatolar: ochish/yopish xatosi — Dialog ichida qoladi + notify.error; loadingText «Ochilmoqda…» / «Yopilmoqda…». «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). Xarajat kategoriyalari (Elchi Pochta №1, 2026-10-22; maketda yo'q — kategoriyalar backendda bo'lmagani uchun chizilmagan edi): «Kassadan xarajat» oynasida ixtiyoriy «Xarajat kategoriyasi» (qidiruvli Select, GET finance/cashbox/expense-categories — faol kategoriyalar sort_order bo'yicha, ostida «Nimalar kiradi»; tanlansa spend'ga expense_category_id, to'ldirishda maydon ham kalit ham yo'q — backend fill 400 beradi), tasdiq oynasida «Kategoriya» qatori; tarixda (jadval, telefon kartalari, FinanceHistoryDetailPopup «Kategoriya» qatori) expense_category_name — yozilgan paytdagi nom, nuqtasiz neytral Badge; faqat superadminga sarlavhada «Xarajat kategoriyalari» → ExpenseCategoriesDialog (ro'yxat + qo'shish / tahrirlash / o'chirish, useConfirm; eng yaqin maketlar superadmin-payments-market-picker-dialog, superadmin-products-delete-dialog). Nomli kartalar (card_id) chizilmaydi."
     },
     {
       "path": "/payments/cash-detail/:id",
@@ -970,6 +973,7 @@
         "src/pages/payments/components/PaymentHistoryList.tsx",
         "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/ExpenseCategoryBadge.tsx",
         "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
       "views": {
@@ -987,6 +991,7 @@
         "src/pages/payments/components/MyCashboxPage.tsx",
         "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/ExpenseCategoryBadge.tsx",
         "src/pages/payments/components/paymentSourceType.ts"
       ],
       "views": {

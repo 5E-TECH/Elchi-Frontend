@@ -209,6 +209,11 @@ export const API_ENDPOINTS = {
     MAIN: "finance/cashbox/main", // was stale "cashbox/main"
     SPEND: "finance/cashbox/spend",
     FILL: "finance/cashbox/fill",
+    // Elchi Pochta №1 — kassa xarajati kategoriyalari: GET (superadmin, admin, menejer; `include_deleted` — faqat
+    // superadmin), POST / PATCH :id / DELETE :id (faqat superadmin, o'chirish — yumshoq). `spend` ixtiyoriy
+    // `expense_category_id` oladi, `fill` uni rad etadi (400).
+    EXPENSE_CATEGORIES: "finance/cashbox/expense-categories",
+    EXPENSE_CATEGORY: (id: string | number) => `finance/cashbox/expense-categories/${id}`,
     // Smena (kfdfYDik): joriy holat — `GET finance/shift/current` (`data.shift` — ochiq smena yoki null,
     // `data.required`); kassa doirasi JWT'dan (SA/admin — MAIN, menejer — o'z filiali). Ro'yxat — `finance/shift`.
     SHIFT_CURRENT: "finance/shift/current",

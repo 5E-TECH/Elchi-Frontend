@@ -264,3 +264,45 @@ describe("FinanceHistoryDetailPopup — kuryer kvitansiyasi javobi (2crjWf7v)", 
     expect(within(dialog).queryByText("Kvitansiya javobi", { selector: "dt" })).not.toBeInTheDocument();
   });
 });
+
+describe("FinanceHistoryDetailPopup — xarajat kategoriyasi (Elchi Pochta №1)", () => {
+  const spendRow: PaymentRow = {
+    id: "740",
+    amount: 150_000,
+    balance_after: 2_350_000,
+    operation_type: "expense",
+    cashbox_id: "1",
+    source_type: "manual_expense",
+    cashbox_type: "main",
+    payment_method: "cash",
+    payment_date: "2026-10-21T09:15:00.000Z",
+    comment: "Benzin, oktabr",
+    expense_category_id: "2",
+    expense_category_name: "Yoqilg'i",
+  };
+
+  it("qatordagi nom (yozilgan paytdagi nusxa) — «Manba turi» dan keyin «Kategoriya» qatori", async () => {
+    open(spendRow);
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Kategoriya")).toHaveTextContent("Yoqilg'i");
+    const terms = within(dialog).getAllByText(/./, { selector: "dt" }).map((node) => node.textContent);
+    expect(terms.indexOf("Kategoriya")).toBe(terms.indexOf("Manba turi") + 1);
+  });
+
+  it("qatorda bo'lmasa — tafsilot javobidan; kategoriyasiz yozuvda qator yo'q", async () => {
+    detailState.result = {
+      data: { data: { id: "740", amount: 150_000, cashbox_id: "1", expense_category_name: "Ijara (arenda)" } },
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...spendRow, expense_category_name: undefined });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Kategoriya")).toHaveTextContent("Ijara (arenda)");
+  });
+
+  it("kategoriyasiz chiqim — «Kategoriya» qatori chizilmaydi", async () => {
+    open({ ...spendRow, expense_category_id: null, expense_category_name: null });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).queryByText("Kategoriya", { selector: "dt" })).not.toBeInTheDocument();
+  });
+});

@@ -18,7 +18,9 @@ import {
   SkeletonTable,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getCashboxTypeLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
 import type { PaymentAck } from "./paymentAck";
@@ -48,6 +50,12 @@ export interface PaymentRow {
    * (2crjWf7v): `confirmed` / `disputed` / `null` (javob yo'q). Boshqa qatorlarda yo'q.
    */
   payment_ack?: PaymentAck | null;
+  /**
+   * Elchi Pochta №1 — qo'lda chiqimning xarajat kategoriyasi: ID va yozilgan paytdagi nom nusxasi (kategoriya
+   * keyin o'zgarsa ham tarix o'zgarmaydi). Kategoriyasiz yozuvda `null`, eski javoblarda yo'q.
+   */
+  expense_category_id?: string | null;
+  expense_category_name?: string | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {
@@ -192,10 +200,19 @@ const PaymentHistoryTable = ({
     [direction, language],
   );
 
+  // Kartaning nomi (aria-label) ichidagini almashtiradi — xarajat kategoriyasi (Elchi Pochta №1) ham aytilsin.
   const openLabel = useCallback(
-    (row: PaymentRow) => t("v2Common.openDetail", { title: sourceTitle(row), date: dateText(row) }),
+    (row: PaymentRow) => {
+      const category = getExpenseCategoryName(row);
+      const title = sourceTitle(row);
+      return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: dateText(row) });
+    },
     [dateText, sourceTitle, t],
   );
+  const categoryBadge = useCallback((row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    return category ? <ExpenseCategoryBadge name={category} /> : null;
+  }, []);
 
   const columns = useMemo<DataTableColumn<PaymentRow>[]>(
     () => [
@@ -222,14 +239,25 @@ const PaymentHistoryTable = ({
         header: t("v2Overview.history.columns.source"),
         cell: (row) => {
           const sub = counterparty(row);
+          const category = categoryBadge(row);
+          const title = (
+            <Pressable
+              onClick={() => setSelectedRow(row)}
+              className="text-left font-semibold text-text hover:text-action-fg hover:underline"
+            >
+              {sourceTitle(row)}
+            </Pressable>
+          );
           return (
             <>
-              <Pressable
-                onClick={() => setSelectedRow(row)}
-                className="text-left font-semibold text-text hover:text-action-fg hover:underline"
-              >
-                {sourceTitle(row)}
-              </Pressable>
+              {category ? (
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  {title}
+                  {category}
+                </div>
+              ) : (
+                title
+              )}
               {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
             </>
           );
@@ -277,7 +305,7 @@ const PaymentHistoryTable = ({
         ),
       },
     ],
-    [amountNode, cashboxLabel, counterparty, dateText, isManager, openLabel, operationBadge, sourceTitle, t],
+    [amountNode, cashboxLabel, categoryBadge, counterparty, dateText, isManager, openLabel, operationBadge, sourceTitle, t],
   );
 
   // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · kassa · badge + sana · yaratgan.
@@ -295,8 +323,9 @@ const PaymentHistoryTable = ({
             {amountNode(row)}
           </span>
           {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {operationBadge(row)}
+            {categoryBadge(row)}
             <span className="text-[13px] text-text-muted">
               <span className="whitespace-nowrap">{dateText(row)}</span> · {actorName(row)}
             </span>
@@ -304,7 +333,7 @@ const PaymentHistoryTable = ({
         </Pressable>
       );
     },
-    [amountNode, cashboxLabel, counterparty, dateText, openLabel, operationBadge, sourceTitle],
+    [amountNode, cashboxLabel, categoryBadge, counterparty, dateText, openLabel, operationBadge, sourceTitle],
   );
 
   const total = pagination?.total ?? data?.length ?? 0;

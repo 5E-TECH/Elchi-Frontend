@@ -6,7 +6,9 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { getPaymentActorName, resolvePaymentActorName } from "./paymentHistoryActor";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 import {
   getPaymentMethodLabel,
   getPaymentSourceTitle,
@@ -131,6 +133,8 @@ const HistoryRow = memo(
     const ackAudience = paymentAckAudienceOf(viewerRole);
     const ackKeys = paymentAckKeys(row.payment_ack, ackAudience);
     const labelTitle = comment.isRollback ? `${title} (${t("v2CashDetail.list.rollback")})` : title;
+    // Qo'lda chiqimning xarajat kategoriyasi (Elchi Pochta №1) — belgilar qatorida va tugma nomida.
+    const category = getExpenseCategoryName(row);
 
     return (
       <li>
@@ -143,6 +147,7 @@ const HistoryRow = memo(
               amount: signedAmount,
               date,
             }),
+            category ? `${t("v2Common.category")}: ${category}` : "",
             ackKeys ? t(ackKeys.label) : "",
           ]
             .filter(Boolean)
@@ -167,8 +172,9 @@ const HistoryRow = memo(
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
                 kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
                 `.el-badge` — 24px (`md`). */}
-            {comment.isRollback || row.payment_ack ? (
-              <span className="mt-1 flex flex-wrap items-center gap-2">
+            {comment.isRollback || row.payment_ack || category ? (
+              <span className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                {category ? <ExpenseCategoryBadge name={category} /> : null}
                 {comment.isRollback ? (
                   <Badge variant="outline">
                     {t("v2CashDetail.list.rollback")}

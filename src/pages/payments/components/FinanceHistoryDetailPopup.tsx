@@ -38,6 +38,7 @@ import {
   getViewerOperationType,
 } from "./paymentSourceType";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 
 /**
@@ -46,7 +47,8 @@ import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
  * Maketlar: `*-payments-history-detail-dialog` (superadmin, admin, menejer), `market-cashbox-history-detail-dialog`,
  * `courier-cashbox-history-detail`. `Dialog` (telefonda pastki varaqa): sarlavha «Kirim operatsiyasi» / «Chiqim
  * operatsiyasi» + «Operatsiyalar tarixi · {sana}»; xulosa — ishorali summa va «Operatsiyadan keyingi balans»;
- * `dl` — Manba turi, Kassa turi (`hideCashboxType` — kuryer maketi), Qayerdan/Qayerga (ism + rol + telefon),
+ * `dl` — Manba turi, Kategoriya (qo'lda chiqimning xarajat kategoriyasi — Elchi Pochta №1, maketda yo'q: yozilgan
+ * paytdagi nom, bo'lsagina), Kassa turi (`hideCashboxType` — kuryer maketi), Qayerdan/Qayerga (ism + rol + telefon),
  * To'lov turi, To'lov sanasi; «Izoh»; «Bog'langan buyurtma» (Market, Holat, Tuman, Manzil, Mijoz telefoni + uch
  * summa); pastda «Yopish».
  *
@@ -141,6 +143,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
       payment_method: current.payment_method ?? detail?.payment_method ?? undefined,
       payment_date: current.payment_date ?? detail?.payment_date ?? current.createdAt ?? detail?.createdAt,
       comment: current.comment ?? detail?.comment ?? undefined,
+      expense_category_name: getExpenseCategoryName(current) ?? getExpenseCategoryName(detail),
       cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
     };
   }, [current, detail]);
@@ -233,6 +236,12 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           t("v2HistoryDetail.sourceType"),
           getPaymentSourceTitle(display.source_type, t, { role: viewerRole, cashboxType: display.cashbox_type }),
         )}
+        {display.expense_category_name
+          ? kvRow(
+              t("v2HistoryDetail.category"),
+              <span data-expense-category="">{display.expense_category_name}</span>,
+            )
+          : null}
         {hideCashboxType
           ? null
           : kvRow(t("v2HistoryDetail.cashboxType"), getCashboxTypeLabel(display.cashbox_type, t, viewerRole))}

@@ -98,6 +98,13 @@ export const canViewNotifications: Predicate = hasRole("superadmin", "admin");
 /** Xabar yuborish (`/notifications/send`) — backend `POST /notifications/dispatch` `@Roles(SUPERADMIN, ADMIN)` bilan AYNAN bir xil. */
 export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
 
+/**
+ * Kassa xarajati kategoriyalarini qo'shish / tahrirlash / o'chirish (Elchi Pochta №1) — backend `POST|PATCH|DELETE
+ * finance/cashbox/expense-categories` `@Roles(SUPERADMIN)` bilan AYNAN bir xil. Ro'yxatni (tanlov) admin va
+ * menejer ham o'qiydi — bu predikat faqat boshqaruv uchun.
+ */
+export const canManageExpenseCategories: Predicate = hasRole("superadmin");
+
 export const canViewBranches: Predicate = hasRole("superadmin");
 
 export const canViewLogs: Predicate = hasRole("superadmin");
