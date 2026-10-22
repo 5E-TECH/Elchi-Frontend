@@ -6,6 +6,8 @@ import {
   campaignDisplayStatus,
   isCampaignActive,
   type Campaign,
+  type CampaignListPage,
+  type CampaignListParams,
   type CampaignPayload,
 } from "../model/campaign";
 import type { AudienceTarget } from "../model/audience";
@@ -14,8 +16,14 @@ import {
   createAudienceSegment,
   createCampaign,
   deleteAudienceSegment,
+  downloadCampaignExport,
+  exportCampaignUndelivered,
   getAudienceSegments,
   getCampaign,
+  getCampaignExportJob,
+  getCampaignReport,
+  getCampaignUndelivered,
+  getCampaigns,
   getSchedulePolicy,
   previewAudience,
   type CreateSegmentInput,
@@ -191,9 +199,97 @@ export const useCancelCampaign = () => {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationCampaigns.detail(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationCampaigns.lists }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.notificationCampaigns.report(id) }),
       ]),
   });
 };
+
+/**
+ * «KAMPANIYALAR TARIXI» (KM-3): `GET /notifications/campaigns?page&limit&state`. Yangilanish: sahifada yuborilayotgan
+ * kampaniya bo'lsa — har 3 s (maket «Holat har 3 soniyada yangilanadi»), faqat rejalashtirilgan bo'lsa — 60 s,
+ * qolganida — yo'q. Sahifa almashganda eski qatorlar yangisi kelguncha qoladi.
+ */
+export const campaignListRefetchInterval = (page: CampaignListPage | undefined): number | false => {
+  const items = page?.items ?? [];
+  if (items.some((item) => isCampaignActive(item.status) && campaignDisplayStatus(item) === "sending"))
+    return CAMPAIGN_PROGRESS_INTERVAL_MS;
+  if (items.some((item) => campaignDisplayStatus(item) === "scheduled")) return CAMPAIGN_SCHEDULED_INTERVAL_MS;
+  return false;
+};
+
+export const useCampaigns = (params: CampaignListParams) =>
+  useQuery({
+    queryKey: queryKeys.notificationCampaigns.list(params),
+    queryFn: () => getCampaigns(params),
+    placeholderData: keepPreviousData,
+    refetchInterval: (query) => campaignListRefetchInterval(query.state.data),
+    refetchIntervalInBackground: false,
+  });
+
+/** Kampaniya hisoboti (oyna ochiq ekan). Yuborilayotgan kampaniyada — har 3 s. */
+export const useCampaignReport = (id: string | null) =>
+  useQuery({
+    queryKey: queryKeys.notificationCampaigns.report(id ?? ""),
+    queryFn: () => getCampaignReport(id as string),
+    enabled: Boolean(id),
+    refetchInterval: (query) =>
+      query.state.data?.campaign.display_status === "sending" ? CAMPAIGN_PROGRESS_INTERVAL_MS : false,
+    refetchIntervalInBackground: false,
+  });
+
+/** «Yetkazilmaganlar» sahifasi (`limit` ≤ 100). */
+export const useCampaignUndelivered = (id: string | null, params: { page: number; limit: number }) =>
+  useQuery({
+    queryKey: queryKeys.notificationCampaigns.undelivered(id ?? "", params),
+    queryFn: () => getCampaignUndelivered(id as string, params),
+    enabled: Boolean(id),
+    placeholderData: keepPreviousData,
+  });
+
+/** Fon eksporti holatini so'rash oralig'i (navbatda / tayyorlanmoqda). */
+export const CAMPAIGN_EXPORT_POLL_MS = 2_000;
+/** Fon eksportini kutish chegarasi — oshsa «Fayl hali tayyor emas». */
+export const CAMPAIGN_EXPORT_MAX_POLLS = 60;
+
+export type CampaignExportOutcome =
+  | { kind: "saved"; fileName: string }
+  | { kind: "failed" }
+  | { kind: "timeout" };
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * CSV eksport (faqat superadmin): ≤ 10 000 qator — fayl darhol; kattasi — fon vazifasi, holati har 2 s so'raladi va
+ * tayyor bo'lgach fayl yuklab olinadi. Fayl brauzer orqali saqlanadi (`save`).
+ */
+export const useExportCampaignUndelivered = (
+  save: (blob: Blob, fileName: string) => void,
+  { pollMs = CAMPAIGN_EXPORT_POLL_MS, maxPolls = CAMPAIGN_EXPORT_MAX_POLLS } = {},
+) =>
+  useMutation({
+    mutationFn: async (id: string): Promise<CampaignExportOutcome> => {
+      const fallbackName = `kampaniya-${id}-yetkazilmaganlar.csv`;
+      const result = await exportCampaignUndelivered(id);
+      if (result.kind === "file") {
+        const fileName = result.fileName ?? fallbackName;
+        save(result.blob, fileName);
+        return { kind: "saved", fileName };
+      }
+      for (let attempt = 0; attempt < maxPolls; attempt += 1) {
+        await wait(pollMs);
+        const job = await getCampaignExportJob(result.exportId);
+        if (job.status === "failed") return { kind: "failed" };
+        if (job.status === "done") {
+          const file = await downloadCampaignExport(result.exportId);
+          const fileName = file.fileName ?? job.filename ?? fallbackName;
+          save(file.blob, fileName);
+          return { kind: "saved", fileName };
+        }
+      }
+      return { kind: "timeout" };
+    },
+    retry: 0,
+  });
 
 /** Reklama tungi taqiqi: «Darhol» hozir yuborilsa surilsa — qachonga (tasdiq oynasi). */
 export const useSchedulePolicy = (
@@ -207,6 +303,21 @@ export const useSchedulePolicy = (
     retry: false,
     staleTime: 0,
     gcTime: 0,
+    refetchOnWindowFocus: false,
+    meta: { silentError: true },
+  });
+
+/**
+ * Forma uchun siyosat (KM-3 «Yuborish vaqti»): reklama taqiq oynasi, `is_promo` va 90 kun chegarasi — kategoriya
+ * bo'yicha, `scheduled_at` siz. Kamdan-kam o'zgaradi — 5 daqiqa yangi hisoblanadi.
+ */
+export const useSchedulePolicyInfo = (category: string, enabled: boolean) =>
+  useQuery({
+    queryKey: queryKeys.notificationCampaigns.schedulePolicy({ category }),
+    queryFn: () => getSchedulePolicy({ category }),
+    enabled,
+    retry: 1,
+    staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
     meta: { silentError: true },
   });

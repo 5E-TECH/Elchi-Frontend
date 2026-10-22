@@ -10,6 +10,14 @@ import {
   type CampaignPayload,
   type CampaignStatus,
 } from "../model/campaign";
+import type {
+  CampaignExportJob,
+  CampaignExportStatus,
+  CampaignReport,
+  CampaignReportChannel,
+  CampaignUndeliveredPage,
+} from "../model/report";
+import { DEFAULT_MAX_SCHEDULE_DAYS } from "../model/schedule";
 
 /**
  * Auditoriya va bildirishnoma kampaniyasi API'si (KM-2; backend `notification-campaign-gateway.controller.ts`,
@@ -222,6 +230,7 @@ export const normalizeCampaign = (payload: unknown): Campaign => {
     finished_at: toText(data.finished_at),
     can_cancel: data.can_cancel === true,
     is_promo: data.is_promo === true,
+    paused_until: toText(data.paused_until),
   };
 };
 
@@ -256,6 +265,10 @@ export const getCampaigns = async (params: CampaignListParams = {}) =>
 export interface CampaignSchedulePolicy {
   /** Reklama taqiq oynasi (Toshkent, `HH:MM`); `enabled: false` — taqiq yo'q. */
   quietHours: { start: string; end: string; enabled: boolean } | null;
+  /** So'ralgan `category` reklamami (`promo_categories`) — taqiq faqat shunga. */
+  isPromo: boolean;
+  /** Rejalashtirish chegarasi (kun, sukut 90). */
+  maxScheduleDays: number;
   /** `scheduled_at` tekshiruvi: surildimi va haqiqiy yuborish lahzasi. */
   check: { shifted: boolean; effectiveAt: string | null } | null;
 }
@@ -269,6 +282,8 @@ export const normalizeSchedulePolicy = (payload: unknown): CampaignSchedulePolic
       typeof quiet.start === "string" && typeof quiet.end === "string"
         ? { start: quiet.start, end: quiet.end, enabled: quiet.enabled !== false }
         : null,
+    isPromo: data.is_promo === true,
+    maxScheduleDays: toCount(data.max_schedule_days) || DEFAULT_MAX_SCHEDULE_DAYS,
     check: check
       ? { shifted: check.shifted === true, effectiveAt: toText(check.effective_at) }
       : null,
@@ -281,17 +296,103 @@ export const getSchedulePolicy = async (params: { scheduled_at?: string; categor
     (await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_SCHEDULE_POLICY, { params })).data,
   );
 
-/**
- * Hisobot va yetkazilmaganlar (KM-3 chizadi): ochilgan `data` obyekti qaytadi, maydonlarni KM-3 normallashtiradi.
- * Sabab matnlari (`reason`) xom — faqat kod xaritasi orqali ko'rsatiladi.
- */
-export const getCampaignReport = async (id: string) =>
-  unwrap((await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_REPORT(id))).data);
+// ───────────────────────────── Hisobot (KM-3) ─────────────────────────────
 
+const toReportChannel = (raw: unknown): CampaignReportChannel => {
+  const row = asRecord(raw);
+  return {
+    channel: toText(row.channel) ?? "",
+    sent: toCount(row.sent),
+    failed: toCount(row.failed),
+    skipped: toCount(row.skipped),
+    // `other` (noma'lum yangi holat) — hali yakunlanmagan deb hisoblanadi.
+    pending: toCount(row.pending) + toCount(row.other),
+    statuses: Object.fromEntries(
+      Object.entries(asRecord(row.statuses)).map(([status, n]) => [status, toCount(n)]),
+    ),
+  };
+};
+
+/** Hisobot javobi. Xom matnlar (`note`, `dlr.note`, `cost.note`) olinmaydi — foydalanuvchiga faqat i18n. */
+export const normalizeCampaignReport = (payload: unknown): CampaignReport => {
+  const data = unwrap(payload);
+  const campaign = asRecord(data.campaign);
+  const stats = asRecord(data.stats);
+  const permissions = asRecord(data.permissions);
+  return {
+    campaign: {
+      id: toText(campaign.id) ?? "",
+      title: toText(campaign.title) ?? "",
+      category: toText(campaign.category),
+      channels: Array.isArray(campaign.channels) ? campaign.channels.map(String) : [],
+      display_status: isCampaignDisplayStatus(campaign.display_status) ? campaign.display_status : null,
+      scheduled_at: toText(campaign.scheduled_at),
+      created_at: toText(campaign.created_at),
+      finished_at: toText(campaign.finished_at),
+    },
+    stats: {
+      audience: toCount(stats.audience),
+      sent: toCount(stats.sent),
+      delivered: toNullableCount(stats.delivered),
+      failed: toCount(stats.failed),
+      skipped: toCount(stats.skipped),
+      pending: toCount(stats.pending),
+      undelivered: toCount(stats.undelivered),
+    },
+    byChannel: (Array.isArray(data.by_channel) ? data.by_channel : [])
+      .map(toReportChannel)
+      .filter((row) => row.channel),
+    canExport: permissions.can_export === true,
+    exportSyncLimit: toCount(data.export_sync_limit) || 10_000,
+  };
+};
+
+/** `GET …/campaigns/:id/report` — statistika va kanal kesimi. */
+export const getCampaignReport = async (id: string) =>
+  normalizeCampaignReport((await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_REPORT(id))).data);
+
+export const normalizeCampaignUndelivered = (payload: unknown): CampaignUndeliveredPage => {
+  const data = unwrap(payload);
+  const meta = asRecord(data.meta);
+  const limit = toCount(meta.limit) || 20;
+  const total = toCount(meta.total);
+  return {
+    items: (Array.isArray(data.items) ? data.items : []).map((raw) => {
+      const item = asRecord(raw);
+      return {
+        ref_id: toText(item.ref_id) ?? "",
+        recipient_id: toText(item.recipient_id),
+        name: toText(item.name),
+        role: toText(item.role),
+        phone: toText(item.phone),
+        failures: (Array.isArray(item.failures) ? item.failures : []).map((rawFailure) => {
+          const failure = asRecord(rawFailure);
+          return {
+            channel: toText(failure.channel) ?? "",
+            status: toText(failure.status) ?? "",
+            reason: toText(failure.reason),
+          };
+        }),
+      };
+    }),
+    meta: {
+      page: toCount(meta.page) || 1,
+      limit,
+      total,
+      totalPages: toCount(meta.totalPages) || Math.max(1, Math.ceil(total / limit)),
+    },
+    unlistedFailed: toCount(data.unlisted_failed),
+  };
+};
+
+/** `GET …/campaigns/:id/undelivered?page&limit` (limit ≤ 100) — ism, rol, kanal va sabab kodi. */
 export const getCampaignUndelivered = async (
   id: string,
   params: { page?: number; limit?: number } = {},
-) => unwrap((await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED(id), { params })).data);
+) =>
+  normalizeCampaignUndelivered(
+    (await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED(id), { params })).data,
+  );
 
 /** `Blob` → matn (`blob.text` bo'lmagan muhitda — `FileReader`). */
 const readBlobText = (blob: unknown): Promise<string> => {
@@ -304,8 +405,18 @@ const readBlobText = (blob: unknown): Promise<string> => {
   });
 };
 
+/** `Content-Disposition: attachment; filename="…"` → fayl nomi (sarlavha ochilmagan bo'lsa — `null`). */
+const fileNameFrom = (headers: unknown) => {
+  const record = asRecord(headers);
+  const raw = record["content-disposition"] ?? record["Content-Disposition"];
+  const match = typeof raw === "string" ? /filename="?([^";]+)"?/i.exec(raw) : null;
+  return match ? match[1] : null;
+};
+
 /** CSV (faqat superadmin): ≤10 000 — fayl (200), kattasi — fon vazifasi (202 `{ export_id }`). */
-export type CampaignExportResult = { kind: "file"; blob: Blob } | { kind: "job"; exportId: string };
+export type CampaignExportResult =
+  | { kind: "file"; blob: Blob; fileName: string | null }
+  | { kind: "job"; exportId: string };
 
 export const exportCampaignUndelivered = async (id: string): Promise<CampaignExportResult> => {
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED_EXPORT(id), {
@@ -322,5 +433,33 @@ export const exportCampaignUndelivered = async (id: string): Promise<CampaignExp
     }
     return { kind: "job", exportId: toText(unwrap(parsed).export_id) ?? "" };
   }
-  return { kind: "file", blob };
+  return { kind: "file", blob, fileName: fileNameFrom(response.headers) };
+};
+
+const EXPORT_STATUSES: readonly CampaignExportStatus[] = ["queued", "running", "done", "failed"];
+
+export const normalizeCampaignExportJob = (payload: unknown): CampaignExportJob => {
+  const data = unwrap(payload);
+  const status = toText(data.status);
+  return {
+    exportId: toText(data.export_id) ?? "",
+    status: EXPORT_STATUSES.includes(status as CampaignExportStatus)
+      ? (status as CampaignExportStatus)
+      : "queued",
+    filename: toText(data.filename),
+  };
+};
+
+/** `GET …/campaigns/exports/:export_id` — fon eksporti holati. */
+export const getCampaignExportJob = async (exportId: string) =>
+  normalizeCampaignExportJob(
+    (await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_EXPORT_BY_ID(exportId))).data,
+  );
+
+/** `GET …/exports/:export_id/download` — tayyor fayl (tayyor bo'lmasa 409, muddati o'tgan — 410). */
+export const downloadCampaignExport = async (exportId: string) => {
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_EXPORT_DOWNLOAD(exportId), {
+    responseType: "blob",
+  });
+  return { blob: response.data as Blob, fileName: fileNameFrom(response.headers) };
 };

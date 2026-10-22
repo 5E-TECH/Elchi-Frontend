@@ -214,6 +214,9 @@ describe("campaignApi (KM-2)", () => {
       getSchedulePolicy({ scheduled_at: "2026-10-21T19:10:00+05:00", category: "marketing" }),
     ).resolves.toEqual({
       quietHours: { start: "18:00", end: "09:00", enabled: true },
+      // `is_promo` / `max_schedule_days` kelmasa — `false` va sukut 90.
+      isPromo: false,
+      maxScheduleDays: 90,
       check: { shifted: true, effectiveAt: "2026-10-22T04:00:00.000Z" },
     });
     expect(get).toHaveBeenCalledWith("notifications/campaigns/schedule-policy", {
@@ -224,7 +227,7 @@ describe("campaignApi (KM-2)", () => {
   it("CSV export: small — the file, big — a background job id", async () => {
     const blob = new Blob(["a,b"]);
     const get = vi.spyOn(api, "get").mockResolvedValueOnce({ status: 200, data: blob });
-    await expect(exportCampaignUndelivered("7")).resolves.toEqual({ kind: "file", blob });
+    await expect(exportCampaignUndelivered("7")).resolves.toEqual({ kind: "file", blob, fileName: null });
     expect(get).toHaveBeenCalledWith("notifications/campaigns/7/undelivered/export", {
       responseType: "blob",
     });

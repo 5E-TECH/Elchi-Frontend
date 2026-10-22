@@ -40,7 +40,10 @@ export const isCampaignActive = (status: CampaignStatus | null | undefined) =>
 export const CAMPAIGN_CHANNELS = ["in_app", "realtime", "push"] as const;
 export type CampaignChannel = (typeof CAMPAIGN_CHANNELS)[number];
 
-/** `POST /notifications/campaigns` tanasi (KM-2: faqat «Darhol» — `scheduled_at` KM-3 da). */
+/**
+ * `POST /notifications/campaigns` tanasi. `scheduled_at` — faqat «Belgilangan vaqtda» (KM-3), Toshkent vaqti
+ * `+05:00` bilan; «Darhol» da umuman yuborilmaydi.
+ */
 export type CampaignPayload = AudienceTarget & {
   type: string;
   category: string;
@@ -57,6 +60,7 @@ export interface CampaignCreated {
   campaign_id: string;
   status: CampaignStatus | null;
   total: number;
+  /** Haqiqiy yuborish lahzasi (kechiktirilgan bo'lsa); «Darhol» — `null`. */
   scheduled_at: string | null;
   duplicate: boolean;
   /** Reklama tungi taqiqqa tushib ertangi ochilishga surildi. */
@@ -82,6 +86,8 @@ export interface Campaign {
   finished_at: string | null;
   can_cancel: boolean;
   is_promo: boolean;
+  /** Reklama tungi taqiqda to'xtagan — shu lahzada davom etadi (WIsb9Ytq). */
+  paused_until: string | null;
 }
 
 export interface CampaignListPage {

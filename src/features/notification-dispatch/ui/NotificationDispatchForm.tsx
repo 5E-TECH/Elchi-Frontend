@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown, superadmin-notifications-send-audience, superadmin-notifications-send-states
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Clock, Lock, Send, TriangleAlert, Users, X } from "lucide-react";
+import { CalendarClock, Clock, Lock, Send, TriangleAlert, Users, X } from "lucide-react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -17,12 +17,18 @@ import {
   audiencePreviewState,
   canSendAudience,
   createAudienceDraft,
+  isFutureSlot,
+  isQuietTime,
+  tashkentNowIso,
   toAudienceTarget,
   useAudienceDescription,
   useAudiencePreview,
   useCreateCampaign,
+  useCampaignTime,
+  useClock,
   useRecountAudience,
   useSchedulePolicy,
+  useSchedulePolicyInfo,
   type AudienceBuilderErrors,
   type AudienceDraft,
   type AudienceGate,
@@ -68,12 +74,16 @@ import {
   RECIPIENT_MODES,
   buildCampaignPayload,
   buildDispatchPayload,
+  createDefaultSchedule,
   createDefaultValues,
   createDispatchSchema,
+  type CampaignScheduleValue,
   type DispatchFormValues,
   type DispatchPayload,
 } from "../model/schema";
 import { CampaignProgressCard } from "./CampaignProgressCard";
+import { CampaignScheduleCard, type CampaignScheduleErrors } from "./CampaignScheduleCard";
+import { CHOICE_CARD, CHOICE_INPUT } from "./choiceCard";
 import { DispatchResultCard } from "./DispatchResultCard";
 import { DispatchUnknownCard } from "./DispatchUnknownCard";
 
@@ -107,13 +117,18 @@ type DispatchOutcome =
   | (CampaignRequest & { kind: "campaign"; created: CampaignCreated })
   | (CampaignRequest & { kind: "campaignUnknown" });
 
-/** Tasdiq oynasidagi kampaniya: so'rov, konstruktor holati va «Darhol» lahzasi (tungi taqiq tekshiruvi). */
+/**
+ * Tasdiq oynasidagi kampaniya: so'rov, konstruktor holati va yuborish lahzasi — «Darhol» da hozir, «Belgilangan
+ * vaqtda» — tanlangan vaqt (`scheduled_at`); reklamada tungi taqiq shu lahza bo'yicha tekshiriladi.
+ */
 type CampaignConfirm = {
   payload: CampaignPayload;
   target: AudienceTarget;
   draft: AudienceDraft;
   preview: CampaignRequest["preview"];
   requestedAt: string;
+  /** «Belgilangan vaqtda» — tanlangan Toshkent kuni va soati. */
+  scheduled: { day: string; time: string } | null;
 };
 
 const GATE_ERRORS: Partial<Record<AudienceGate, keyof AudienceBuilderErrors>> = {
@@ -133,10 +148,6 @@ const LOCKED_KEYS: Record<DispatchOutcome["kind"], string> = {
   campaign: "campaign.progress.locked",
   campaignUnknown: "campaign.progress.lockedUnknown",
 };
-
-/** Hozirgi lahza Toshkent vaqtida, aniq zona bilan (`2026-10-21T19:10:00+05:00`) — backend zonasiz vaqtni rad etadi. */
-const tashkentNowIso = (now = Date.now()) =>
-  `${new Date(now + 5 * 60 * 60 * 1000).toISOString().slice(0, 19)}+05:00`;
 
 type SendError = { title: string; text: string };
 
@@ -164,18 +175,6 @@ const toMarkets = (value: unknown): MarketOption[] => {
   return [];
 };
 
-/**
- * `.el-choice-card` (CODE-MAP 2.2): tanlangan — `action` chegara va `action-soft` fon; o'chirilgani — `sunken`,
- * `text-subtle` (maketdagi «Mijoz», «Ilova ichida»).
- */
-const CHOICE_CARD =
-  "flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border-strong bg-surface px-3.5 py-3 " +
-  "text-sm text-text has-[:checked]:border-action has-[:checked]:bg-action-soft " +
-  "has-[:disabled]:cursor-not-allowed has-[:disabled]:border-border has-[:disabled]:bg-sunken";
-
-/** `.el-check`. */
-const CHECKBOX =
-  "size-[18px] shrink-0 cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-60";
 
 type ChoiceCheckboxProps = {
   checked: boolean;
@@ -203,7 +202,7 @@ const ChoiceCheckbox = ({
   <label className={cx(CHOICE_CARD, disabled && !checked && "text-text-subtle", className)}>
     <input
       type="checkbox"
-      className={CHECKBOX}
+      className={CHOICE_INPUT}
       checked={checked}
       disabled={disabled}
       // Izohli kartada nom — faqat sarlavha, izoh — tavsif (`aria-describedby`).
@@ -309,6 +308,36 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     audienceTouched && gateError ? { [gateError]: t(GATE_ERROR_KEYS[gateError]) } : {};
   /** «Yangi xabar» — konstruktor ichki holati (tanlangan segment, market nomi) ham boshidan. */
   const [builderEpoch, setBuilderEpoch] = useState(0);
+
+  // KM-3: «Yuborish vaqti». Reklama (`marketing`) tungi taqiq soatlari — `schedule-policy` dan (kodda qotirilmaydi).
+  const promo = values.category === "marketing";
+  const schedulePolicy = useSchedulePolicyInfo(values.category, isAudience);
+  const schedule: CampaignScheduleValue = values.schedule ?? createDefaultSchedule();
+  const scheduled = isAudience && schedule.when === "scheduled";
+  const campaignTime = useCampaignTime();
+  const now = useClock();
+  /**
+   * Sana/soat xatosi. «Tanlang» — faqat yuborishga urinilgach; o'tib ketgan vaqt va (kategoriya reklamaga
+   * o'zgartirilsa) taqiq soati — darhol.
+   */
+  const validateSchedule = (
+    value: CampaignScheduleValue,
+    touched: boolean,
+    at: number,
+  ): CampaignScheduleErrors => {
+    if (value.when !== "scheduled") return {};
+    if (!value.day) return touched ? { day: t("campaign.schedule.errors.day") } : {};
+    if (!value.time) return touched ? { time: t("campaign.schedule.errors.time") } : {};
+    if (!isFutureSlot(value.day, value.time, at)) return { time: t("campaign.schedule.errors.past") };
+    const quiet = schedulePolicy.data?.quietHours;
+    if (promo && quiet && isQuietTime(value.time, quiet)) {
+      return { time: t("campaign.schedule.errors.quiet", { start: quiet.start, end: quiet.end }) };
+    }
+    return {};
+  };
+  const scheduleErrors = isAudience ? validateSchedule(schedule, audienceTouched, now) : {};
+  /** Reklama taqiqi hali kelmagan — soat tekshirib bo'lmaydi, «Rejalashtirish» kutadi. */
+  const policyPending = scheduled && promo && schedulePolicy.isLoading;
 
   const estimate: { count: number | null; loading: boolean } =
     values.mode === "single"
@@ -447,12 +476,18 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
       const data = audiencePreview.data;
       // Son hali hisoblanmagan, 0, chegaradan katta yoki xato — yuborilmaydi (tugma o'chiq, sababi ostida).
       if (!target || !canSendAudience(previewState) || !data) return;
+      // Vaqt tanlanmagan, o'tib ketgan yoki taqiqqa tushgan — xato kartada.
+      if (policyPending || Object.keys(validateSchedule(formValues.schedule, true, Date.now())).length) return;
+      const payload = buildCampaignPayload(formValues, target);
       setConfirmCampaign({
-        payload: buildCampaignPayload(formValues, target),
+        payload,
         target,
         draft: formValues.audience,
         preview: { total: data.total, campaignMax: data.campaignMax },
-        requestedAt: tashkentNowIso(),
+        requestedAt: payload.scheduled_at ?? tashkentNowIso(),
+        scheduled: payload.scheduled_at
+          ? { day: formValues.schedule.day, time: formValues.schedule.time }
+          : null,
       });
       return;
     }
@@ -674,6 +709,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   const confirmMessage: { title: string; body?: string; link?: string } | null =
     confirmCampaign?.payload ?? confirmPayload;
+  /** Tasdiq oynasi «Belgilangan vaqtda» kampaniyasi uchun (maket `-send-confirm-scheduled-dialog`). */
+  const confirmScheduled = confirmCampaign?.scheduled ?? null;
 
   /**
    * «Auditoriya» da «Yuborish» o'chiq va sababi ostida: son hisoblanmoqda, xato, 0 ta yoki chegaradan katta. Konstruktor
@@ -691,7 +728,9 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           ? "campaign.disabled.empty"
           : previewState === "overCap"
             ? "campaign.disabled.overCap"
-            : null;
+            : policyPending
+              ? "campaign.disabled.policy"
+              : null;
 
   /** «Yuborish» ostidagi izoh (sababi yoki «Darhol · kampaniya · N ta»); yo'q bo'lsa tugma unga bog'lanmaydi. */
   const sendNote = !isAudience
@@ -699,7 +738,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     : sendBlockedKey
       ? t(sendBlockedKey)
       : canSendAudience(previewState)
-        ? t("campaign.previewNote", { value: count(audiencePreview.data?.total ?? 0) })
+        ? scheduled && schedule.day && schedule.time && !scheduleErrors.time && !scheduleErrors.day
+          ? t("campaign.previewNoteScheduled", {
+              time: campaignTime.moment({ day: schedule.day, time: schedule.time }, now),
+              value: count(audiencePreview.data?.total ?? 0),
+            })
+          : t("campaign.previewNote", { value: count(audiencePreview.data?.total ?? 0) })
         : null;
 
   return (
@@ -1029,6 +1073,25 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               </Field>
             ) : null}
           </Card>
+
+          {isAudience ? (
+            <Controller
+              control={control}
+              name="schedule"
+              render={({ field }) => (
+                <CampaignScheduleCard
+                  value={field.value}
+                  onChange={field.onChange}
+                  promo={promo}
+                  policy={schedulePolicy.data}
+                  policyLoading={schedulePolicy.isLoading}
+                  errors={scheduleErrors}
+                  disabled={locked}
+                  now={now}
+                />
+              )}
+            />
+          ) : null}
         </div>
 
         <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-6 max-md:gap-4">
@@ -1191,12 +1254,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                   type="submit"
                   size="lg"
                   fullWidth
-                  leftIcon={Send}
+                  leftIcon={scheduled ? CalendarClock : Send}
                   loading={sending || recounting}
                   disabled={sendBlockedKey !== null}
                   aria-describedby={sendNote ? "campaign-send-note" : undefined}
                 >
-                  {t("dispatch.send")}
+                  {scheduled ? t("campaign.schedule.submit") : t("dispatch.send")}
                 </Button>
                 {isAudience ? (
                   // Doim joyida (jonli hudud qayta yaratilmaydi) — faqat matni almashadi.
@@ -1226,8 +1289,19 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           setConfirmCampaign(null);
         }}
         role="alertdialog"
-        title={t("dispatch.confirmTitle")}
-        icon={Send}
+        title={confirmScheduled ? t("campaign.confirm.scheduledTitle") : t("dispatch.confirmTitle")}
+        description={
+          confirmScheduled && confirmCampaign ? (
+            <Trans
+              t={t}
+              i18nKey="campaign.confirm.scheduledDescription"
+              values={{ value: count(confirmCampaign.preview.total) }}
+              components={{ b: <span className="font-semibold text-text" /> }}
+            />
+          ) : undefined
+        }
+        icon={confirmScheduled ? CalendarClock : Send}
+        closable={Boolean(confirmScheduled)}
         size="md"
         busy={sending}
         initialFocus={cancelRef}
@@ -1243,17 +1317,17 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                 setConfirmCampaign(null);
               }}
             >
-              {t("dispatch.cancel")}
+              {confirmScheduled ? t("campaign.confirm.back") : t("dispatch.cancel")}
             </Button>
             <Button
               variant={confirmPayload?.broadcast ? "danger" : "primary"}
-              leftIcon={Send}
+              leftIcon={confirmScheduled ? CalendarClock : Send}
               loading={sending}
-              loadingText={t("dispatch.confirmSending")}
+              loadingText={confirmScheduled ? t("campaign.confirm.scheduling") : t("dispatch.confirmSending")}
               disabled={quietPending}
               onClick={confirmSend}
             >
-              {t("dispatch.confirmSend")}
+              {confirmScheduled ? t("campaign.schedule.submit") : t("dispatch.confirmSend")}
             </Button>
           </>
         }
@@ -1267,6 +1341,15 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                 icon={TriangleAlert}
                 title={t("dispatch.confirmBroadcast")}
               />
+            ) : null}
+            {confirmScheduled && !quietCheck?.check?.effectiveAt ? (
+              <NoticeAlert
+                tone="info"
+                icon={CalendarClock}
+                title={t("campaign.schedule.chosenTitle", { when: campaignTime.moment(confirmScheduled) })}
+              >
+                {t("campaign.confirm.scheduledExact", { when: campaignTime.exact(confirmScheduled) })}
+              </NoticeAlert>
             ) : null}
             {quietCheck?.check?.effectiveAt ? (
               <NoticeAlert
@@ -1307,7 +1390,10 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                       label: t("campaign.confirm.category"),
                       value: t(`category.${confirmCampaign.payload.category}`),
                     },
-                    { label: t("campaign.confirm.time"), value: t("campaign.confirm.timeNow") },
+                    // «Belgilangan vaqtda» — vaqt yuqoridagi ko'k blokda (maket `-send-confirm-scheduled-dialog`).
+                    ...(confirmScheduled
+                      ? []
+                      : [{ label: t("campaign.confirm.time"), value: t("campaign.confirm.timeNow") }]),
                   ]
                 : confirmPayload
                   ? [
@@ -1371,7 +1457,9 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               </div>
             </div>
             {confirmCampaign ? (
-              <p className="m-0 text-[13px] text-text-muted">{t("campaign.confirm.cancelNote")}</p>
+              <p className="m-0 text-[13px] text-text-muted">
+                {t(confirmScheduled ? "campaign.confirm.scheduledCancelNote" : "campaign.confirm.cancelNote")}
+              </p>
             ) : (
               <p className="m-0 text-[13px] font-semibold text-text">
                 {t("dispatch.confirmIrreversible")}

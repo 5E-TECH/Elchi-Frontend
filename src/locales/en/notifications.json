@@ -509,7 +509,8 @@
       "empty": "The audience is empty — cannot send",
       "counting": "Counting the audience — one moment",
       "error": "Could not count the audience — try again",
-      "offline": "No internet connection — the audience is not counted"
+      "offline": "No internet connection — the audience is not counted",
+      "policy": "Checking the advertising ban — one moment"
     },
     "who": {
       "customerFiltered": "Customers ({{filters}})",
@@ -525,7 +526,13 @@
       "category": "Category",
       "quietTitle": "Advertising will be sent at {{time}}",
       "quietText": "Advertising is not sent between {{start}} and {{end}} (Tashkent time) — the queue starts by itself when the ban ends.",
-      "cancelNote": "The campaign can be cancelled until sending is finished."
+      "cancelNote": "The campaign can be cancelled until sending is finished.",
+      "scheduledTitle": "Confirm scheduling the campaign",
+      "scheduledDescription": "Will be sent to <b>{{value}}</b> recipients",
+      "back": "Back",
+      "scheduling": "Scheduling…",
+      "scheduledExact": "{{when}} · Tashkent time",
+      "scheduledCancelNote": "Until it is sent, it can be cancelled in «Campaign history»."
     },
     "createError": {
       "title": "Campaign not created",
@@ -552,7 +559,6 @@
       "cancel": "Cancel",
       "cancelTitle": "Cancel the campaign?",
       "cancelText": "The remaining parts will not be sent. Messages already sent cannot be recalled.",
-      "cancelRemaining": "The remaining {{value}} recipients will not get it",
       "cancelConfirm": "Cancel campaign",
       "cancelClose": "Close",
       "cancelled": "Campaign cancelled",
@@ -565,7 +571,8 @@
       "retryFailed": "The retry failed too",
       "locked": "The campaign is queued — the form is locked. Press «New message» to write a new one.",
       "lockedUnknown": "The result is unknown — the form is locked so the campaign is not created twice.",
-      "statusLive": "Campaign status: {{status}}"
+      "statusLive": "Campaign status: {{status}}",
+      "cancelRemainingRich": "The remaining <b>{{value}}</b> recipients will not get it"
     },
     "status": {
       "scheduled": "Scheduled",
@@ -573,6 +580,120 @@
       "sent": "Sent",
       "failed": "Failed",
       "cancelled": "Cancelled"
+    },
+    "when": {
+      "today": "Today, {{time}}",
+      "tomorrow": "Tomorrow, {{time}}",
+      "yesterday": "Yesterday, {{time}}",
+      "date": "{{date}}, {{time}}"
+    },
+    "schedule": {
+      "title": "Send time",
+      "tashkent": "Tashkent time",
+      "now": "Now",
+      "nowHint": "Queued right after confirmation",
+      "scheduled": "At a set time",
+      "scheduledHint": "Up to {{days}} days ahead",
+      "day": "Date",
+      "time": "Time",
+      "timeHint": "Tashkent time (UTC+5)",
+      "timePlaceholder": "Choose a time",
+      "policyLoading": "Checking the advertising ban…",
+      "quietSlot": "Advertising ban",
+      "quietNote": "Advertising is not sent between {{start}} and {{end}}: these hours cannot be chosen, and «Now» moves to {{end}} the next morning.",
+      "nowShiftedTitle": "It is {{now}} now — the advertising will be sent {{when}}",
+      "nowShiftedText": "The queue continues by itself when the night ban ends",
+      "chosenTitle": "Will be sent: {{when}}",
+      "chosenText": "Until then it can be cancelled in «Campaign history»",
+      "submit": "Schedule",
+      "errors": {
+        "day": "Choose a date",
+        "time": "Choose a time",
+        "past": "This time has passed — choose a later one",
+        "quiet": "Advertising is not sent between {{start}} and {{end}} — choose another time"
+      }
+    },
+    "previewNoteScheduled": "{{time}} · {{value}} recipients",
+    "history": {
+      "title": "Campaign history",
+      "subtitle": "Scheduled messages and messages sent through the queue",
+      "all": "All",
+      "filterLabel": "Campaign status",
+      "columns": {
+        "time": "Time",
+        "message": "Message",
+        "audience": "Audience",
+        "status": "Status",
+        "sent": "Sent",
+        "action": "Actions"
+      },
+      "orders": "{{range}} orders",
+      "paused": "Night ban — continues {{time}}",
+      "sent": "{{sent}} sent",
+      "sentWithFailed": "{{sent}} sent · {{failed}} failed",
+      "progress": "{{done}} / {{total}}",
+      "untitled": "Untitled",
+      "cancelLabel": "Cancel the «{{title}}» campaign",
+      "report": "Report",
+      "reportLabel": "Report for «{{title}}»",
+      "summary": "{{from}}–{{to}} of {{total}}",
+      "live": "Status updates every 3 seconds",
+      "loading": "Loading campaigns",
+      "error": {
+        "title": "Could not load the campaign history",
+        "text": "Check the internet connection and try again"
+      },
+      "empty": {
+        "title": "No campaigns yet",
+        "text": "Messages sent or scheduled by «Audience» appear here"
+      },
+      "emptyFiltered": {
+        "title": "No campaigns with the «{{status}}» status",
+        "text": "Choose another status or show all"
+      },
+      "showAll": "Show all"
+    },
+    "report": {
+      "title": "Campaign report",
+      "close": "Close",
+      "export": "Download CSV",
+      "exporting": "Preparing the file…",
+      "exportSaved": "CSV file downloaded",
+      "exportTimeout": "The file is not ready yet — try again a bit later",
+      "exportFailed": "Could not prepare the CSV file — try again a bit later",
+      "loading": "Loading the report",
+      "error": {
+        "title": "Could not load the report",
+        "text": "Try again a bit later"
+      },
+      "audience": "Audience",
+      "audienceCaption": "recipients",
+      "sent": "Sent",
+      "sentCaption": "without errors",
+      "pendingCaption": "{{value}} in progress",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "none": "none",
+      "inChannel": "in {{channel}}",
+      "inChannels": "in {{value}} channels",
+      "byChannel": "By channel",
+      "channel": "Channel",
+      "col": {
+        "sent": "Sent",
+        "failed": "Failed",
+        "skipped": "Skipped",
+        "pending": "In progress"
+      },
+      "channelLine": "Sent {{sent}} · Failed {{failed}} · Skipped {{skipped}} · In progress {{pending}}",
+      "undelivered": "Not delivered",
+      "undeliveredRange": "{{from}}–{{to}} of {{total}}",
+      "undeliveredRangeMasked": "{{from}}–{{to}} of {{total}} · phones masked",
+      "undeliveredError": "Could not load the list",
+      "undeliveredNone": "Nothing undelivered",
+      "unlisted": "{{value}} more recipients got no message record (batch error) — they are not in the list",
+      "undeliveredPages": "Pages of undelivered",
+      "failureFailed": "{{channel}} — failed",
+      "failureSkipped": "{{channel}} — skipped"
     }
   }
 }
