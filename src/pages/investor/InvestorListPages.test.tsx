@@ -42,11 +42,11 @@ const paramsOf = (get: ReturnType<typeof mockApi>, url: string) =>
   get.mock.calls.filter(([called]) => called === url).map(([, config]) => (config as AxiosRequestConfig).params);
 
 const INVESTMENTS = [
-  { id: "1", amount: 100_000_000, invested_at: "2026-08-01T00:00:00+05:00" },
-  { id: "2", amount: 50_000_000, invested_at: "2026-06-20T00:00:00+05:00" },
-  { id: "3", amount: 100_000_000, invested_at: "2026-04-12T00:00:00+05:00" },
-  { id: "4", amount: 80_000_000, invested_at: "2026-03-03T00:00:00+05:00" },
-  { id: "5", amount: 120_000_000, invested_at: "2026-01-15T00:00:00+05:00" },
+  { id: "1", amount: 100_000_000, invested_at: "2026-08-01T12:00:00+05:00" },
+  { id: "2", amount: 50_000_000, invested_at: "2026-06-20T12:00:00+05:00" },
+  { id: "3", amount: 100_000_000, invested_at: "2026-04-12T12:00:00+05:00" },
+  { id: "4", amount: 80_000_000, invested_at: "2026-03-03T12:00:00+05:00" },
+  { id: "5", amount: 120_000_000, invested_at: "2026-01-15T12:00:00+05:00" },
 ];
 
 const investmentsBody = (
@@ -68,7 +68,7 @@ const profit = (id: string, month: number, last: number, amount: number, paidAt:
     id,
     amount,
     percentage: 12.5,
-    period_start: `2026-${mm}-01T00:00:00+05:00`,
+    period_start: `2026-${mm}-01T12:00:00+05:00`,
     period_end: `2026-${mm}-${last}T23:59:59+05:00`,
     is_paid: paidAt != null,
     paid_at: paidAt,

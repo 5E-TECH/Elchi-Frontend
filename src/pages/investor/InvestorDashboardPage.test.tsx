@@ -41,7 +41,7 @@ const dashboardBody = (months = 12) => ({
     summary: {
       total_invested: 450_000_000,
       investments_count: 5,
-      last_invested_at: "2026-08-01T00:00:00+05:00",
+      last_invested_at: "2026-08-01T12:00:00+05:00",
       total_paid_profit: 34_300_000,
       total_unpaid_profit: 6_200_000,
       total_profit: 40_500_000,
@@ -64,9 +64,9 @@ const dashboardBody = (months = 12) => ({
 const investmentsBody = {
   data: {
     items: [
-      { id: "1", amount: 100_000_000, invested_at: "2026-08-01T00:00:00+05:00" },
-      { id: "2", amount: 50_000_000, invested_at: "2026-06-20T00:00:00+05:00" },
-      { id: "3", amount: 100_000_000, invested_at: "2026-04-12T00:00:00+05:00" },
+      { id: "1", amount: 100_000_000, invested_at: "2026-08-01T12:00:00+05:00" },
+      { id: "2", amount: 50_000_000, invested_at: "2026-06-20T12:00:00+05:00" },
+      { id: "3", amount: 100_000_000, invested_at: "2026-04-12T12:00:00+05:00" },
     ],
     meta: { page: 1, limit: 3, total: 5, totalPages: 2 },
     summary: { total_amount: 450_000_000 },
@@ -80,7 +80,7 @@ const profitsBody = {
         id: "11",
         amount: 6_200_000,
         percentage: 12.5,
-        period_start: "2026-09-01T00:00:00+05:00",
+        period_start: "2026-09-01T12:00:00+05:00",
         period_end: "2026-09-30T23:59:59+05:00",
         is_paid: false,
         paid_at: null,
@@ -89,7 +89,7 @@ const profitsBody = {
         id: "10",
         amount: 5_600_000,
         percentage: 12.25,
-        period_start: "2026-08-01T00:00:00+05:00",
+        period_start: "2026-08-01T12:00:00+05:00",
         period_end: "2026-08-31T23:59:59+05:00",
         is_paid: true,
         paid_at: "2026-09-05T10:00:00+05:00",
