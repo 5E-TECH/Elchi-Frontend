@@ -93,17 +93,19 @@ describe("expense category hooks", () => {
     http.get.mockImplementation(() => new Promise(() => undefined));
     http.post.mockResolvedValue({ data: { statusCode: 201, data: { category: row("18", "Ijara", 0) } } });
     await act(() => result.current.create.mutateAsync({ name: "Ijara", sort_order: 0 }));
-    expect(result.current.list.data?.map((item) => item.id)).toEqual(["18", "1", "2"]);
+    // Kesh `onSuccess` da yozilgan; hook natijasi esa React Query bildirishnomasidan (setTimeout 0) keyin yangilanadi.
+    // Qayta so'rov hech qachon javob bermaydi — demak ko'rinadigan ro'yxat faqat qo'lda yozilgan keshdan.
+    await waitFor(() => expect(result.current.list.data?.map((item) => item.id)).toEqual(["18", "1", "2"]));
     await waitFor(() => expect(http.get.mock.calls.length).toBeGreaterThan(getsBefore));
 
     http.patch.mockResolvedValue({ data: { statusCode: 200, data: { category: row("1", "Ovqat va choy", 1) } } });
     await act(() => result.current.update.mutateAsync({ id: "1", body: { name: "Ovqat va choy" } }));
     expect(http.patch).toHaveBeenCalledWith("finance/cashbox/expense-categories/1", { name: "Ovqat va choy" });
-    expect(result.current.list.data?.find((item) => item.id === "1")?.name).toBe("Ovqat va choy");
+    await waitFor(() => expect(result.current.list.data?.find((item) => item.id === "1")?.name).toBe("Ovqat va choy"));
 
     http.delete.mockResolvedValue({ data: { statusCode: 200, data: { category: row("2", "Yoqilg'i", 2, { is_deleted: true }) } } });
     await act(() => result.current.remove.mutateAsync("2"));
-    expect(result.current.list.data?.map((item) => item.id)).toEqual(["18", "1"]);
+    await waitFor(() => expect(result.current.list.data?.map((item) => item.id)).toEqual(["18", "1"]));
   });
 
   it("409 xato — kesh o'zgarmaydi, xato chaqiruvchiga qaytadi", async () => {
