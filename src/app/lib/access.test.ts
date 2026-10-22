@@ -29,6 +29,8 @@ import { canViewInvestorCabinet } from "./access";
 import { canViewMyEarnings, canViewRegionStats } from "./access";
 // MO-3: market operatori buyurtmalari — o'z describe bloki (pastda).
 import { canHandoverCancelledToMarket } from "./access";
+// Elchi Pochta №1: xarajat kategoriyalari boshqaruvi — o'z describe bloki (pastda).
+import { canManageExpenseCategories } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -333,5 +335,14 @@ describe("market operatori (MO-3) — o'z marketi buyurtmalari va «AI bilan» y
     ]) {
       expect(predicate(operator)).toBe(false);
     }
+  });
+});
+
+describe("canManageExpenseCategories — kassa xarajati kategoriyalari (Elchi Pochta №1)", () => {
+  it("faqat superadmin (backend POST|PATCH|DELETE @Roles(SUPERADMIN)); admin va menejer — faqat tanlaydi", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canManageExpenseCategories(s), caseName).toBe(caseName === "superadmin");
+    }
+    expect(canManageExpenseCategories(state(null))).toBe(false);
   });
 });

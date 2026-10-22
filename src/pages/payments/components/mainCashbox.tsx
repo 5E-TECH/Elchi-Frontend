@@ -19,6 +19,7 @@ import {
   ListFilter,
   Minus,
   Plus,
+  Settings,
   Timer,
   TrendingUp,
   Truck,
@@ -61,9 +62,13 @@ import {
 } from "../../../shared/ui/primitives";
 import { useUser } from "../../../entities/user/api/userApi";
 import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
+import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
-import CashboxFormPopup from "./CashboxFormPopup";
+import { canManageExpenseCategories } from "../../../app/lib/access";
+import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
+import ExpenseCategoriesDialog from "./ExpenseCategoriesDialog";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
@@ -77,6 +82,7 @@ import SettlementPickerDialog, {
 import type { PaymentRow } from "./patmentHistoryTable";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getPaymentMethodLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useCashboxShift } from "./lib/useCashboxShift";
 import {
@@ -103,7 +109,8 @@ import {
  * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
  * `admin-payments-main-cashbox`, `manager-payments-main-cashbox`; rollar orasida layout bir xil, xulq rolga qarab).
  *
- *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); «Excelga yuklash»
+ *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); faqat superadminda
+ *    «Xarajat kategoriyalari» (Elchi Pochta №1 — `ExpenseCategoriesDialog`, smenadan qat'i nazar); «Excelga yuklash»
  *    (hisobot AYNAN eskidek), smena holati ma'lum bo'lsagina — yopiq: «Smenani ochish» (asosiy), ochiq: «Smenani
  *    yopish» (ikkinchi darajali). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
  *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
@@ -159,9 +166,10 @@ type ManualOperation = "fill" | "spend";
 type SalaryEmployee = Record<string, unknown> & { id: string; name?: string; role?: string };
 
 /**
- * Qo'lda kassa operatsiyasining barmoq izi (D3): tur + kassa egasi + summa + to'lov turi. Izoh kirmaydi
- * (`paymentIdempotency` qoidasi — operatsiyaning o'zini o'zgartirmaydi). Prefiks kuryer/market/filial
- * izlari bilan to'qnashmaydi.
+ * Qo'lda kassa operatsiyasining barmoq izi (D3): tur + kassa egasi + summa + to'lov turi. Izoh va xarajat
+ * kategoriyasi kirmaydi (`paymentIdempotency` qoidasi — operatsiyaning o'zini o'zgartirmaydi: javobi kelmagan
+ * chiqimni boshqa kategoriya bilan qayta yuborish YANGI kalit olib, pulni ikki marta yozmasin). Prefiks
+ * kuryer/market/filial izlari bilan to'qnashmaydi.
  */
 const manualOperationFingerprint = (operation: ManualOperation, scope: string, amount: number, type?: string) =>
   JSON.stringify([`cashbox-${operation}`, scope, amount, type ?? ""]);
@@ -195,6 +203,12 @@ const getPersonName = (item: Record<string, unknown>, fallback: string) =>
   ).trim() || fallback;
 
 const getText = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : "");
+
+/** Server so'rovni rad etdi (4xx, 401/403 dan tashqari) — masalan o'chirilgan xarajat kategoriyasi (400). */
+const isClientRejection = (error: unknown) => {
+  const status = Number((error as { response?: { status?: unknown } } | null)?.response?.status);
+  return status >= 400 && status < 500 && status !== 401 && status !== 403;
+};
 
 /** «01.10 – 08.10.2026» (bir yil ichida), bitta kun — «08.10.2026». */
 const formatShortRange = (from: string, to: string) => {
@@ -348,6 +362,7 @@ const MainCashbox = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   // Yopilayotgan smena ID si — "Smenani yopish" bosilgan paytdagi ochiq smena
   // (oyna ochiq turganda fon so'rovi uni almashtirib yubormasin).
   const [closingShiftId, setClosingShiftId] = useState<string | null>(null);
@@ -362,6 +377,7 @@ const MainCashbox = () => {
   const manualPendingRef = useRef(false);
 
   const role = useSelector((state: RootState) => state.role.role);
+  const canManageCategories = useSelector(canManageExpenseCategories);
   const profile = useSelector((state: RootState) => state.user.user);
   const profileUserId = useSelector((state: RootState) => state.user.user?.id);
   const roleUserId = useSelector((state: RootState) => state.role.id);
@@ -376,6 +392,7 @@ const MainCashbox = () => {
   const ownBranchName = getText(asRecord(ownBranch.branch).name) || getText(ownBranch.name) || undefined;
 
   const { useGetUser } = useUser();
+  const refreshExpenseCategories = useRefreshExpenseCategories();
   const {
     cashboxSpand,
     cashboxFill,
@@ -612,27 +629,34 @@ const MainCashbox = () => {
   }, [cashboxInfoQuery, historyQuery, mainCashboxQuery]);
 
   /**
-   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload eski shaklda `{ amount, type, comment }`; D3 — `Idempotency-Key`
-   * barmoq iziga bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta
-   * yuborilganda backend uni bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi).
+   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload `{ amount, type, comment }`, chiqimda kategoriya tanlangan
+   * bo'lsa `+ expense_category_id` (to'ldirishga hech qachon — backend 400); D3 — `Idempotency-Key` barmoq iziga
+   * bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta yuborilganda backend uni
+   * bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi). Kategoriya bilan chiqim rad
+   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi.
    */
   const submitManualOperation = useCallback(
-    async (operation: ManualOperation, { amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+    async (operation: ManualOperation, { amount, type, comment, expense_category_id }: CashboxFormPayload) => {
       if (manualPendingRef.current) return;
       manualPendingRef.current = true;
       const mutation = operation === "fill" ? cashboxFill : cashboxSpand;
       const close = operation === "fill" ? () => setIsRefillPopupOpen(false) : () => setIsSpendPopupOpen(false);
       const fingerprint = manualOperationFingerprint(operation, currentUserId || normalizedRole, amount, type);
+      const categoryId = operation === "spend" ? expense_category_id : undefined;
       try {
         const idempotencyKey = takePaymentKey(fingerprint);
         let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
         try {
-          response = await mutation.mutateAsync({ data: { amount, type, comment }, idempotencyKey });
+          response = await mutation.mutateAsync({
+            data: { amount, type, comment, ...(categoryId ? { expense_category_id: categoryId } : {}) },
+            idempotencyKey,
+          });
         } catch (error) {
           // Kalit saqlanadi: aynan shu operatsiya qayta yuborilsa backend uni bir marta yozadi.
           notify.error(t("common:error"), {
             description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
           });
+          if (categoryId && isClientRejection(error)) void refreshExpenseCategories();
           if (isUncertainPaymentError(error)) {
             notify.warning(t("common:warning"), {
               description: t("v2MainCashbox.notify.outcomeUnknown"),
@@ -658,15 +682,16 @@ const MainCashbox = () => {
         manualPendingRef.current = false;
       }
     },
-    [cashboxFill, cashboxSpand, currentUserId, normalizedRole, refetchCashboxState, t],
+    [cashboxFill, cashboxSpand, currentUserId, normalizedRole, refetchCashboxState, refreshExpenseCategories, t],
   );
 
   const handleSpend = useCallback(
-    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("spend", payload),
+    (payload: CashboxFormPayload) => submitManualOperation("spend", payload),
     [submitManualOperation],
   );
   const handleRefill = useCallback(
-    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("fill", payload),
+    // To'ldirishda kategoriya yo'q (oyna maydonni chizmaydi, backend `fill` uni 400 bilan rad etadi).
+    ({ amount, type, comment }: CashboxFormPayload) => submitManualOperation("fill", { amount, type, comment }),
     [submitManualOperation],
   );
 
@@ -757,8 +782,16 @@ const MainCashbox = () => {
   const rowDirection = (row: PaymentRow) => getViewerOperationType(row, normalizedRole);
   const rowCounterparty = (row: PaymentRow) =>
     resolvePaymentCounterparty(row, (id) => t("v2Common.orderNumber", { id }));
-  const openLabel = (row: PaymentRow) =>
-    t("v2Common.openDetail", { title: rowSourceTitle(row), date: rowDateText(row) });
+  // Kartaning nomi (aria-label) ichidagini almashtiradi — xarajat kategoriyasi ham aytilsin.
+  const openLabel = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    const title = rowSourceTitle(row);
+    return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: rowDateText(row) });
+  };
+  const categoryBadge = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    return category ? <ExpenseCategoryBadge name={category} /> : null;
+  };
 
   const operationBadge = (row: PaymentRow) => {
     const direction = rowDirection(row);
@@ -813,14 +846,26 @@ const MainCashbox = () => {
       header: t("v2MainCashbox.history.columns.source"),
       cell: (row) => {
         const sub = rowCounterparty(row);
+        const category = categoryBadge(row);
+        const title = (
+          <Pressable
+            onClick={() => setSelectedRow(row)}
+            className="text-left font-semibold text-text hover:text-action-fg hover:underline"
+          >
+            {rowSourceTitle(row)}
+          </Pressable>
+        );
         return (
           <>
-            <Pressable
-              onClick={() => setSelectedRow(row)}
-              className="text-left font-semibold text-text hover:text-action-fg hover:underline"
-            >
-              {rowSourceTitle(row)}
-            </Pressable>
+            {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
+            {category ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                {title}
+                {category}
+              </div>
+            ) : (
+              title
+            )}
             {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
             <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
           </>
@@ -871,7 +916,8 @@ const MainCashbox = () => {
     },
   ];
 
-  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge + sana · yaratgan.
+  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge (+ xarajat kategoriyasi) +
+  // sana · yaratgan.
   const renderHistoryCard = (row: PaymentRow) => {
     const sub = [rowCounterparty(row), paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
     return (
@@ -885,8 +931,9 @@ const MainCashbox = () => {
           {amountNode(row)}
         </span>
         {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
+          {categoryBadge(row)}
           <span className="text-[13px] text-text-muted">
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>
@@ -1473,6 +1520,18 @@ const MainCashbox = () => {
         description={headerDescription}
         actions={
           <>
+            {canManageCategories ? (
+              // Telefonda sozlama tugmasi asosiy amallardan keyin (alohida qator), kompyuterda — chapda.
+              <Button
+                variant="secondary"
+                leftIcon={Settings}
+                onClick={() => setIsCategoriesOpen(true)}
+                aria-haspopup="dialog"
+                className="max-md:order-last"
+              >
+                {t("v2ExpenseCategories.manage")}
+              </Button>
+            ) : null}
             <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
               {t("v2MainCashbox.exportExcel")}
             </Button>
@@ -1573,6 +1632,10 @@ const MainCashbox = () => {
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
+
+      {canManageCategories ? (
+        <ExpenseCategoriesDialog open={isCategoriesOpen} onClose={() => setIsCategoriesOpen(false)} />
+      ) : null}
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect

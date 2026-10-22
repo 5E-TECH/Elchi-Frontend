@@ -177,8 +177,33 @@ const investorMock = (path, query) => {
   return null;
 };
 
+/**
+ * EP-3: `GET auth/sessions` — profil «Sessiyalar» kartasi to'liq ko'rinishda (bo'sh holat emas): shu qurilma,
+ * boshqa kompyuter va nomi aniqlanmagan qurilma. Vaqtlar «hozir» dan orqaga hisoblanadi (sintetik ma'lumot).
+ */
+const sessionsMock = () => {
+  const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
+  const row = (id, device_name, ip, loggedMin, seenMin, current = false, user_agent = null) => ({
+    id, device_name, device_id: null, user_agent, ip, logged_in_at: ago(loggedMin), last_seen_at: ago(seenMin),
+    expires_at: ago(-24 * 60), current,
+  });
+  return {
+    statusCode: 200,
+    message: 'success',
+    data: {
+      active_count: 3,
+      sessions: [
+        row('s-2', 'Kompyuter · Windows · Edge', '84.54.70.12', 2 * 24 * 60 + 95, 7),
+        row('s-1', 'Telefon · Android · Chrome', '213.230.64.10', 26 * 60, 42, true),
+        row('s-3', null, null, 5 * 24 * 60, 3 * 24 * 60, false, 'PostmanRuntime/7.39.0'),
+      ],
+    },
+  };
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
+  if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };

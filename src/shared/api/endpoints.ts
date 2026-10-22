@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
     MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
     TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
+    // GET (istalgan rol) → { active_count, sessions: [{ id, device_name, device_id, user_agent, ip, logged_in_at,
+    // last_seen_at, expires_at, current }] } — FAQAT o'z faol sessiyalari, last_seen_at bo'yicha yangisi tepada,
+    // ko'pi bilan 50 ta (Elchi Pochta #3)
+    SESSIONS: "auth/sessions",
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────
@@ -209,6 +213,11 @@ export const API_ENDPOINTS = {
     MAIN: "finance/cashbox/main", // was stale "cashbox/main"
     SPEND: "finance/cashbox/spend",
     FILL: "finance/cashbox/fill",
+    // Elchi Pochta №1 — kassa xarajati kategoriyalari: GET (superadmin, admin, menejer; `include_deleted` — faqat
+    // superadmin), POST / PATCH :id / DELETE :id (faqat superadmin, o'chirish — yumshoq). `spend` ixtiyoriy
+    // `expense_category_id` oladi, `fill` uni rad etadi (400).
+    EXPENSE_CATEGORIES: "finance/cashbox/expense-categories",
+    EXPENSE_CATEGORY: (id: string | number) => `finance/cashbox/expense-categories/${id}`,
     // Smena (kfdfYDik): joriy holat — `GET finance/shift/current` (`data.shift` — ochiq smena yoki null,
     // `data.required`); kassa doirasi JWT'dan (SA/admin — MAIN, menejer — o'z filiali). Ro'yxat — `finance/shift`.
     SHIFT_CURRENT: "finance/shift/current",

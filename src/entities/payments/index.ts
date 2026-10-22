@@ -89,6 +89,9 @@ export interface FinanceHistoryDetail {
   comment?: string | null;
   created_by?: string | null;
   payment_date?: string | null;
+  /** Elchi Pochta №1 — qo'lda chiqimning xarajat kategoriyasi (ID va yozilgan paytdagi nom), bo'lmasa `null`. */
+  expense_category_id?: string | null;
+  expense_category_name?: string | null;
   cashbox?: FinanceHistoryCashbox | null;
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;

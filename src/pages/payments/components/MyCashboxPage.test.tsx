@@ -269,6 +269,28 @@ describe("MyCashboxPage — menejer (maket yo'q, eng yaqini market-cashbox-my)",
     expect(within(row).getByText("Kirim")).toBeInTheDocument();
     expect(row).toHaveTextContent("+1 500 000 so'm");
   });
+
+  it("qo'lda chiqimning xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida belgi", async () => {
+    respond("branch", 3_635_000, [
+      {
+        id: "702",
+        operation_type: "expense",
+        source_type: "manual_expense",
+        amount: 150_000,
+        payment_method: "cash",
+        comment: "Benzin, oktabr",
+        expense_category_id: "2",
+        expense_category_name: "Yoqilg'i",
+        balance_after: 3_635_000,
+        createdAt: at(7, 11),
+      },
+    ]);
+    renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("manager") });
+
+    const badge = await screen.findByText("Yoqilg'i");
+    expect(badge.closest("[data-expense-category]")).toHaveTextContent("Kategoriya: Yoqilg'i");
+    expect(document.querySelectorAll("[data-expense-category]")).toHaveLength(1);
+  });
 });
 
 describe("MyCashboxPage — holatlar", () => {
