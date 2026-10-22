@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
     MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
     TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
+    // GET (istalgan rol) → { active_count, sessions: [{ id, device_name, device_id, user_agent, ip, logged_in_at,
+    // last_seen_at, expires_at, current }] } — FAQAT o'z faol sessiyalari, last_seen_at bo'yicha yangisi tepada,
+    // ko'pi bilan 50 ta (Elchi Pochta #3)
+    SESSIONS: "auth/sessions",
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────

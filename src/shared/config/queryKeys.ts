@@ -45,4 +45,9 @@ export const queryKeys = {
     user: (userId: string, params: object) =>
       ["activity-logs", "user", userId, params] as const,
   },
+  /** O'z hisobining faol sessiyalari (`GET /auth/sessions`, Elchi Pochta #3). */
+  accountSessions: {
+    all: ["account-sessions"] as const,
+    mine: ["account-sessions", "mine"] as const,
+  },
 } as const;
