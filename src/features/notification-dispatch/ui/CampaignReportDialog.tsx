@@ -165,6 +165,8 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
           keepPreviousData={false}
           isEmpty={() => false}
           size="inline"
+          // O'ram bo'limlar oralig'ini saqlaydi (kataklar · kanallar · yetkazilmaganlar).
+          className="flex min-w-0 flex-col gap-4"
           loadingLabel={t("campaign.report.loading")}
           loading={<SkeletonLines lines={6} />}
           error={(_, retry) => (

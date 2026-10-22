@@ -5,7 +5,9 @@ import { mockCampaignApi, noHorizontalScroll, openAudience, shot } from "./suppo
  * KM-3 telefonda (390px): «Yuborish vaqti» kartasi, «Kampaniyalar tarixi» kartalari (jadval o'rniga), bekor qilish va
  * hisobot oynalari — pastki varaqa; bosiladigan narsalar ≥ 44px, gorizontal skroll yo'q. Kunduzgi va tungi.
  */
-const tall = async (locator: Locator) => expect((await locator.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+// Pastki varaqa ochilish animatsiyasida (`transform`) o'lcham bir lahza 43.99… bo'ladi — animatsiya tugashini kutamiz.
+const tall = async (locator: Locator) =>
+  expect.poll(async () => (await locator.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
 test.describe("Kampaniyani rejalashtirish va tarix — 390px", () => {
   test.describe.configure({ timeout: 120_000 });
