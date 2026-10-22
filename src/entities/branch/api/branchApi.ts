@@ -106,8 +106,11 @@ const normalizeBranch = (value: unknown): Branch => {
     },
     address: item.address ?? "—",
     status: item.status === "inactive" ? "inactive" : "active",
+    // Backend 2026-10-16 dan beri ikkalasini beradi; `?? 0` — maydonsiz eski javob uchun.
     employees_count: Number(item.employees_count ?? 0),
-    created_at: item.created_at ?? new Date().toISOString(),
+    // Sana bo'lmasa bo'sh qoladi (UI «—» chizadi). Bugungi sana bilan to'ldirilmaydi: aks holda har filial
+    // «bugun yaratilgan» bo'lib ko'rinadi (cI5gqN90). `created_at` — backenddagi `createdAt` ning aliasi.
+    created_at: item.created_at ?? item.createdAt ?? "",
     olinishi_kerak: Number(item.olinishi_kerak ?? 0),
     berilishi_kerak: Number(item.berilishi_kerak ?? 0),
     kassadagi_summa: Number(item.kassadagi_summa ?? 0),
@@ -138,7 +141,7 @@ const normalizeEmployee = (value: unknown): Employee => {
         "—",
     },
     position: item.position ?? item.role ?? user.role ?? i18n.t("branches:fallback.employee"),
-    joined_at: item.joined_at ?? item.created_at ?? item.createdAt ?? new Date().toISOString(),
+    joined_at: item.joined_at ?? item.created_at ?? item.createdAt ?? "",
   };
 };
 

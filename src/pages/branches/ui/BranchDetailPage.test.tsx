@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import BranchDetailPage from "./BranchDetailPage";
 
@@ -112,5 +112,66 @@ describe("BranchDetailPage (v2)", () => {
 
     expect(await screen.findByText("Filial ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+  });
+
+  describe("sana va xodimlar soni soxta emas (cI5gqN90)", () => {
+    // «Bugun» filial sanalaridan uzoq: normalizer bugungi kun bilan to'ldirsa, «22.10.2026» chiqadi.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-22T09:00:00.000Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const serve = (branch: Record<string, unknown>, employees: unknown[] = EMPLOYEES) =>
+      api.get.mockImplementation((url: string) => {
+        if (url === "branches/15") return Promise.resolve({ data: { statusCode: 200, data: branch } });
+        if (url === "branches/15/users") return Promise.resolve({ data: { statusCode: 200, data: employees } });
+        return Promise.resolve({ data: { statusCode: 200, data: [] } });
+      });
+
+    const createdValue = async () => {
+      await screen.findByRole("heading", { level: 1, name: "Urgut filiali" });
+      const info = screen.getByRole("region", { name: "Filial ma'lumotlari" });
+      return within(info).getByText("Yaratilgan sana").nextElementSibling;
+    };
+
+    it("⭐ TC2: sana kelmasa «Yaratilgan sana» — «—», bugungi kun emas", async () => {
+      serve({ ...URGUT, created_at: undefined });
+      renderPage();
+
+      expect(await createdValue()).toHaveTextContent(/^—$/);
+      expect(screen.queryByText("22.10.2026")).not.toBeInTheDocument();
+    });
+
+    it("⭐ TC1: faqat createdAt kelsa — o'sha sana", async () => {
+      const { created_at: createdAt, ...withoutDate } = URGUT;
+      serve({ ...withoutDate, createdAt });
+      renderPage();
+
+      expect(await createdValue()).toHaveTextContent(/^09\.07\.2025$/);
+    });
+
+    it("TC4: XODIMLAR kartasidagi son — jadvaldagi qatorlar soni (4 = 4)", async () => {
+      const staff = [
+        ...EMPLOYEES,
+        { id: 3, user_id: 211, role: "COURIER", createdAt: "2025-08-01T12:00:00.000Z", user: { id: 211, name: "Jasur Aliyev", phone_number: "+998901112233" } },
+        { id: 4, user_id: 212, role: "REGISTRATOR", user: { id: 212, name: "Nodira Qodirova", phone_number: "+998901112244" } },
+      ];
+      serve({ ...URGUT, employees_count: 4 }, staff);
+      renderPage();
+
+      await screen.findByRole("heading", { level: 1, name: "Urgut filiali" });
+      expect(within(screen.getByRole("region", { name: "Filial ma'lumotlari" })).getByText("4 ta")).toBeInTheDocument();
+      const table = await screen.findByRole("table", { name: "Filial xodimlari" });
+      const rows = within(table).getAllByRole("row").filter((row) => row.closest("tbody"));
+      expect(rows).toHaveLength(4);
+      // Qo'shilgan sanasi kelmagan xodim — «—», bugungi kun emas.
+      const nodira = rows.find((row) => within(row).queryByText("Nodira Qodirova"));
+      expect(nodira).toHaveTextContent("—");
+      expect(within(table).queryByText("22.10.2026")).not.toBeInTheDocument();
+    });
   });
 });

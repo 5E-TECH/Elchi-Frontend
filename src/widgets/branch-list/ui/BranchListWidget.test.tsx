@@ -297,3 +297,42 @@ describe("BranchListWidget — filtrlar, o'chirish, holatlar", () => {
     expect(await screen.findByText("1–12 / 13 ta filial")).toBeInTheDocument();
   });
 });
+
+describe("BranchListWidget — «Sana» ustuni soxta emas (cI5gqN90)", () => {
+  beforeEach(() => {
+    // «Bugun» filial sanalaridan uzoq: normalizer bugungi kun bilan to'ldirsa, «22.10.2026» chiqadi.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T09:00:00.000Z"));
+    api.get.mockReset();
+    api.get.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: {
+          items: [
+            { id: "2", name: "Andijon filiali", code: "AND-01", type: "REGIONAL", status: "active", employees_count: 4, createdAt: "2026-06-02T07:30:00.000Z" },
+            { id: "3", name: "Buxoro filiali", code: "BUX-01", type: "REGIONAL", status: "active", employees_count: 0 },
+          ],
+          meta: { page: 1, limit: 12, total: 2 },
+        },
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("⭐ faqat createdAt li qatorda — o'sha sana, sanasiz qatorda — «—»; bugungi kun yo'q", async () => {
+    renderWithProviders(<BranchListWidget viewMode="table" onViewModeChange={vi.fn()} onEdit={vi.fn()} />);
+    await screen.findByRole("link", { name: "Andijon filiali" });
+
+    const dateIndex = screen.getAllByRole("columnheader").findIndex((header) => header.textContent?.includes("Sana"));
+    expect(dateIndex).toBeGreaterThan(-1);
+    const dateCell = (name: string) => screen.getByRole("link", { name }).closest("tr")?.children[dateIndex];
+
+    expect(dateCell("Andijon filiali")).toHaveTextContent(/^02\.06\.2026$/);
+    expect(dateCell("Buxoro filiali")).toHaveTextContent(/^—$/);
+    expect(screen.queryByText("22.10.2026")).not.toBeInTheDocument();
+    expect(screen.getByText("4 ta")).toBeInTheDocument();
+  });
+});
