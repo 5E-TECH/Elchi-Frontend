@@ -60,8 +60,9 @@ const httpError = (status: number, message: string) =>
     response: { status, data: { statusCode: status, message } },
   });
 
-const revoked = (ids: string[]) => ({
-  data: { statusCode: 200, message: "Sessiya yopildi", data: { revoked: ids.length, session_ids: ids } },
+/** Gateway kontrakti: DELETE — «Sessiya yopildi», revoke-others — «Boshqa sessiyalardan chiqildi». */
+const revoked = (ids: string[], message = "Sessiya yopildi") => ({
+  data: { statusCode: 200, message, data: { revoked: ids.length, session_ids: ids } },
 });
 
 beforeEach(() => {
@@ -309,7 +310,9 @@ describe("Sessiyalar — boshqa qurilmalarni chiqarish", () => {
 
   it("400 (joriy sessiya / noto'g'ri ID) — oyna ochiq, ichida backend sababi", async () => {
     sessionsResponse = three();
-    mocks.delete.mockRejectedValue(httpError(400, "Joriy sessiyani bu yerdan yopib bo'lmaydi"));
+    mocks.delete.mockRejectedValue(
+      httpError(400, "Joriy sessiyani bu yerdan yopib bo'lmaydi — «Chiqish» tugmasidan foydalaning"),
+    );
     const user = userEvent.setup();
     renderWithProviders(<ProfileSessionsCard />);
     const [, win] = await rows();
@@ -318,7 +321,9 @@ describe("Sessiyalar — boshqa qurilmalarni chiqarish", () => {
     const confirm = await screen.findByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
     await user.click(within(confirm).getByRole("button", { name: "Chiqarish" }));
 
-    expect(await within(confirm).findByRole("alert")).toHaveTextContent("Joriy sessiyani bu yerdan yopib bo'lmaydi");
+    expect(await within(confirm).findByRole("alert")).toHaveTextContent(
+      "Joriy sessiyani bu yerdan yopib bo'lmaydi — «Chiqish» tugmasidan foydalaning",
+    );
     expect(screen.getByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" })).toBeInTheDocument();
     expect(screen.queryByText("Qurilma chiqarildi")).not.toBeInTheDocument();
   });
@@ -330,7 +335,7 @@ describe("Sessiyalar — boshqa qurilmalarni chiqarish", () => {
         active_count: 1,
         sessions: [session({ id: "me", device_name: "Telefon · Android · Chrome", current: true })],
       });
-      return revoked(["win", "ua"]);
+      return revoked(["win", "ua"], "Boshqa sessiyalardan chiqildi");
     });
     const user = userEvent.setup();
     renderWithProviders(<ProfileSessionsCard />);
@@ -352,8 +357,10 @@ describe("Sessiyalar — boshqa qurilmalarni chiqarish", () => {
 
   it("revoke-others 0 ta yopdi — ma'lumot xabari; 400 (eski token) — oyna ichida «qayta kiring»", async () => {
     sessionsResponse = three();
-    mocks.post.mockResolvedValueOnce(revoked([]));
-    mocks.post.mockRejectedValueOnce(httpError(400, "Current session could not be identified"));
+    mocks.post.mockResolvedValueOnce({
+      data: { statusCode: 200, message: "Boshqa faol sessiya yo'q", data: { revoked: 0, session_ids: [] } },
+    });
+    mocks.post.mockRejectedValueOnce(httpError(400, "Joriy sessiya aniqlanmadi — qayta kiring"));
     const user = userEvent.setup();
     renderWithProviders(<ProfileSessionsCard />);
     await rows();

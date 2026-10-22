@@ -107,14 +107,12 @@ test("yopilgan qurilma: keyingi so'rov 401 → refresh 401 → kirish sahifasida
 
   // Shu qurilma boshqa qurilmadan chiqarildi; foydalanuvchi oynaga qaytadi — sessiyalar qayta so'raladi.
   revoke!.revokedHere = true;
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("blur"));
-    window.dispatchEvent(new Event("focus"));
-    document.dispatchEvent(new Event("visibilitychange"));
-  });
+  // React Query `focusManager` oynadagi `visibilitychange` ni tinglaydi (hujjatdan ko'tariladi).
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange", { bubbles: true })));
 
   await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Sessiya tugadi" })).toBeVisible();
+  await expect(page.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring.")).toBeVisible();
   // Parallel 401 lar umumiy refresh'ni kutadi; kirish sahifasida so'rovlar to'xtaydi — son o'smaydi (aylanma yo'q).
   const refreshes = revoke!.refreshes;
   const logouts = revoke!.logouts;

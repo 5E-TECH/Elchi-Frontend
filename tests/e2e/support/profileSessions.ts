@@ -8,7 +8,7 @@ import { setupShellSession } from "./shellSession";
  * Sessiyalarni yopish (`mockSessionRevoke`) — gateway kabi: `DELETE auth/sessions/:id` (joriy — 400, yo'q yoki
  * yopilgan — 404, aks holda `{ revoked: 1, session_ids: [id] }`), `POST auth/sessions/revoke-others` (tanasiz →
  * joriydan boshqalari, `revoked: n`). `revokedHere` — shu brauzerning o'z sessiyasi boshqa qurilmadan yopilgani:
- * har API so'rovi 401, `POST auth/refresh` ham 401 (yopilgan qurilma oqimi).
+ * har API so'rovi 401 «Session revoked», `POST auth/refresh` ham 401 «Invalid refresh token» (yopilgan qurilma).
  */
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -103,13 +103,13 @@ export const mockSessionRevoke = async (page: Page) => {
     const method = request.method();
     if (path === "auth/refresh") {
       state.refreshes += 1;
-      return reply(route, { statusCode: 401, message: "Sessiya yopilgan", error: "Unauthorized" }, 401);
+      return reply(route, { statusCode: 401, message: "Invalid refresh token" }, 401);
     }
     if (path === "auth/logout") {
       state.logouts += 1;
       return reply(route, { statusCode: 401, message: "Unauthorized" }, 401);
     }
-    if (state.revokedHere) return reply(route, { statusCode: 401, message: "Sessiya yopilgan" }, 401);
+    if (state.revokedHere) return reply(route, { statusCode: 401, message: "Session revoked" }, 401);
     if (path === "auth/sessions" && method === "GET") {
       return reply(route, { statusCode: 200, message: "success", data: list() });
     }
@@ -117,7 +117,8 @@ export const mockSessionRevoke = async (page: Page) => {
       state.revokeOthers += 1;
       const ids = state.sessions.filter((row) => !row.current).map((row) => row.id);
       state.sessions = state.sessions.filter((row) => row.current);
-      return reply(route, { statusCode: 200, message: "Boshqa sessiyalar yopildi", data: { revoked: ids.length, session_ids: ids } });
+      const message = ids.length ? "Boshqa sessiyalardan chiqildi" : "Boshqa faol sessiya yo'q";
+      return reply(route, { statusCode: 200, message, data: { revoked: ids.length, session_ids: ids } });
     }
     const match = path.match(/^auth\/sessions\/([^/]+)$/);
     if (match && method === "DELETE") {
@@ -125,7 +126,13 @@ export const mockSessionRevoke = async (page: Page) => {
       state.deletes.push(id);
       const row = state.sessions.find((item) => item.id === id);
       if (!row) return reply(route, { statusCode: 404, message: "Sessiya topilmadi yoki allaqachon yopilgan" }, 404);
-      if (row.current) return reply(route, { statusCode: 400, message: "Joriy sessiyani bu yerdan yopib bo'lmaydi" }, 400);
+      if (row.current) {
+        return reply(
+          route,
+          { statusCode: 400, message: "Joriy sessiyani bu yerdan yopib bo'lmaydi — «Chiqish» tugmasidan foydalaning" },
+          400,
+        );
+      }
       state.sessions = state.sessions.filter((item) => item.id !== id);
       return reply(route, { statusCode: 200, message: "Sessiya yopildi", data: { revoked: 1, session_ids: [id] } });
     }
@@ -139,7 +146,7 @@ export const mockSessionRevoke = async (page: Page) => {
     }
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     if (/\/auth\/(sessions|refresh|logout)(\/|$)/.test(url.pathname)) return route.fallback();
-    return reply(route, { statusCode: 401, message: "Sessiya yopilgan" }, 401);
+    return reply(route, { statusCode: 401, message: "Session revoked" }, 401);
   });
   return state;
 };
