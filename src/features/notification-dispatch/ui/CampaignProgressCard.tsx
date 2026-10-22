@@ -1,23 +1,27 @@
 // dizayn-v2: superadmin-notifications-send-states
 import { useEffect, useRef } from "react";
-import { Ban, Clock, Plus, RefreshCw } from "lucide-react";
+import { CalendarClock, CircleX, Clock, History, Plus, RefreshCw } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   CAMPAIGN_STATUS_META,
   CampaignStatusBadge,
+  campaignBarPct,
   campaignDisplayStatus,
+  campaignEffectiveAt,
   isCampaignActive,
+  isCampaignPaused,
   useCampaign,
-  useCancelCampaign,
+  useCampaignTime,
+  useClock,
   type CampaignCreated,
 } from "../../../entities/notification-campaign";
 import { DispatchStatusBadge } from "../../../entities/notification-dispatch";
 import { NoticeAlert } from "../../../entities/notification";
-import { getErrorStatus } from "../../../shared/lib/errorKind";
-import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { notify } from "../../../shared/lib/notify";
-import { Button, Card, useConfirm } from "../../../shared/ui/primitives";
+import { Button, Card } from "../../../shared/ui/primitives";
+import { CampaignProgressBar } from "./CampaignProgressBar";
+import { scrollToCampaignHistory } from "./campaignHistoryAnchor";
+import { useCampaignCancel } from "./useCampaignCancel";
 
 export type CampaignProgressCardProps = {
   /** Xabar sarlavhasi (kampaniya javobi kelguncha). */
@@ -34,25 +38,12 @@ export type CampaignProgressCardProps = {
     }
 );
 
-/** `.el-progress` (CODE-MAP): `h-2 rounded-full bg-sunken` > `bg-action`. */
-const ProgressBar = ({ value, label }: { value: number; label: string }) => (
-  <div
-    role="progressbar"
-    aria-label={label}
-    aria-valuemin={0}
-    aria-valuemax={100}
-    aria-valuenow={value}
-    className="h-2 w-full overflow-hidden rounded-full bg-sunken"
-  >
-    <span className="block h-full rounded-full bg-action" style={{ width: `${value}%` }} />
-  </div>
-);
-
 /**
  * KAMPANIYA PROGRESSI (maket `superadmin-notifications-send-states` «"Yuborish" bosildi — navbatga qo'yildi»):
  * sarlavha + holat belgisi, progress chizig'i, «654 / 1 308 yuborildi», «Har 2–3 soniyada yangilanadi»
- * (`GET campaigns/:id` har 3 s, kampaniya faol ekan), «Bekor qilish» (tasdiq bilan; yakunlangan — 409 → xabar va
- * yangilash), «Yangi xabar». Reklama tungi taqiqqa tushsa — qachon yuborilishi. «Kampaniyalar tarixi» havolasi — KM-3.
+ * (`GET campaigns/:id` har 3 s, kampaniya faol ekan), «Kampaniyalar tarixi» (sahifadagi tarix kartasiga), «Bekor
+ * qilish» (tasdiq oynasi `useCampaignCancel`; yakunlangan — 409 → xabar va yangilash), «Yangi xabar». Rejalashtirilgan
+ * (KM-3) yoki reklama tungi taqiqqa surilgan bo'lsa — qachon yuborilishi (Toshkent vaqti).
  *
  * Javob kelmasa — «Javob kelmadi» + «Qayta urinish» (ayni `Idempotency-Key`, ikkinchi kampaniya yaratilmaydi).
  */
@@ -61,11 +52,12 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   const { t, i18n } = useTranslation("notifications");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
-  const confirm = useConfirm();
+  const campaignTime = useCampaignTime();
+  const now = useClock();
+  const askCancel = useCampaignCancel();
   const rootRef = useRef<HTMLElement>(null);
   const campaignId = props.kind === "created" ? props.created.campaign_id : null;
   const query = useCampaign(campaignId);
-  const cancel = useCancelCampaign();
 
   useEffect(() => {
     // Skroll qiluvchi — shell'ning `<main>` i; karta sahifa sarlavhasi ostida — tepaga.
@@ -121,7 +113,7 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   const status = campaign?.status ?? created.status ?? "queued";
   const display = campaign
     ? campaignDisplayStatus(campaign)
-    : // Yaratish javobida `scheduled_at` faqat kechiktirilganda bor (KM-2 da — reklama tungi taqiqqa surilganda).
+    : // Yaratish javobida `scheduled_at` faqat kechiktirilganda bor (rejalashtirilgan yoki tungi taqiqqa surilgan).
       created.scheduled_at
       ? "scheduled"
       : "sending";
@@ -129,38 +121,33 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   const sent = campaign?.sent ?? 0;
   const failed = campaign?.failed ?? 0;
   const skipped = campaign?.skipped ?? 0;
-  const pct = campaign?.progress_pct ?? 0;
+  const pct = campaign ? campaignBarPct(campaign) : 0;
   const active = isCampaignActive(status);
   const canCancel = campaign ? campaign.can_cancel : active;
-  const scheduledAt = campaign?.scheduled_at ?? created.scheduled_at;
+  // Navbatdagi reklama tungi taqiqda to'xtagan bo'lsa — haqiqiy lahza `paused_until` (eski `scheduled_at` emas).
+  const effectiveAt = campaign ? campaignEffectiveAt(campaign) : null;
+  const scheduledAt = effectiveAt ?? created.scheduled_at;
+  const quietShifted =
+    created.quiet_hours_shifted || Boolean(campaign?.paused_until && effectiveAt === campaign.paused_until);
+  /** Yuborilayotgan reklama tungi taqiqda to'xtadi — qachon davom etadi. */
+  const pausedUntil =
+    campaign && display === "sending" && isCampaignPaused(campaign, now) ? campaign.paused_until : null;
 
-  const askCancel = async () => {
+  const onCancel = () => {
     if (!campaignId) return;
-    const remaining = Math.max(0, total - sent - failed - skipped);
-    const done = await confirm({
-      title: t("campaign.progress.cancelTitle"),
-      description: t("campaign.progress.cancelText"),
-      confirmLabel: t("campaign.progress.cancelConfirm"),
-      cancelLabel: t("campaign.progress.cancelClose"),
-      tone: "danger",
-      icon: Ban,
-      details: remaining
-        ? t("campaign.progress.cancelRemaining", { value: num(remaining) })
-        : undefined,
-      onConfirm: async () => {
-        try {
-          await cancel.mutateAsync(campaignId);
-          notify.success(t("campaign.progress.cancelled"));
-        } catch (error) {
-          if (getErrorStatus(error) !== 409) throw error;
-          // Allaqachon yakunlangan — xabar va yangi holat (oyna yopiladi).
-          notify.error(t("campaign.progress.cancelConflict"));
-          void query.refetch();
-        }
+    void askCancel(
+      {
+        id: campaignId,
+        title: campaign?.title || title,
+        display,
+        total,
+        sent,
+        failed,
+        skipped,
+        progressPct: pct,
       },
-      errorMessage: () => t("campaign.progress.cancelFailed"),
-    });
-    void done;
+      { onConflict: () => void query.refetch() },
+    );
   };
 
   const extra = [
@@ -188,12 +175,20 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
           >
             {t("dispatch.newMessage")}
           </Button>
+          <Button
+            variant="secondary"
+            leftIcon={History}
+            onClick={scrollToCampaignHistory}
+            className="max-md:h-12"
+          >
+            {t("campaign.history.title")}
+          </Button>
           {canCancel ? (
             <Button
               variant="danger-soft"
-              leftIcon={Ban}
+              leftIcon={CircleX}
               aria-haspopup="dialog"
-              onClick={() => void askCancel()}
+              onClick={onCancel}
               className="max-md:h-12"
             >
               {t("campaign.progress.cancel")}
@@ -212,18 +207,20 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
         <NoticeAlert tone="info">{t("campaign.progress.duplicate")}</NoticeAlert>
       ) : null}
       {display === "scheduled" && scheduledAt ? (
-        <NoticeAlert tone="warning" icon={Clock} role="status">
-          {t(
-            created.quiet_hours_shifted
-              ? "campaign.progress.quietShifted"
-              : "campaign.progress.scheduled",
-            {
-              time: formatDateTimeLocalized(scheduledAt, { language }),
-            },
-          )}
+        // Rejalashtirilgan — ko'k (maket `-send-schedule`), tungi taqiq tufayli surilgan — sariq (`-send-states`).
+        <NoticeAlert tone={quietShifted ? "warning" : "info"} icon={quietShifted ? Clock : CalendarClock} role="status">
+          {t(quietShifted ? "campaign.progress.quietShifted" : "campaign.progress.scheduled", {
+            // Gap o'rtasida: «Kampaniya ertaga, 10:00 da yuboriladi».
+            time: campaignTime.inline(scheduledAt, now) ?? "",
+          })}
         </NoticeAlert>
       ) : null}
-      <ProgressBar value={pct} label={t("campaign.progress.bar")} />
+      {pausedUntil ? (
+        <NoticeAlert tone="warning" icon={Clock} role="status">
+          {t("campaign.progress.paused", { time: campaignTime.inline(pausedUntil, now) ?? "" })}
+        </NoticeAlert>
+      ) : null}
+      <CampaignProgressBar value={pct} label={t("campaign.progress.bar")} />
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span className="text-[13px] text-text" data-testid="campaign-counts">
           <Trans

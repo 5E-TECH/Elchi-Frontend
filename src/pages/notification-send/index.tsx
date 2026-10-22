@@ -1,8 +1,8 @@
-// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown, superadmin-notifications-send-audience, superadmin-notifications-send-states
+// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown, superadmin-notifications-send-audience, superadmin-notifications-send-states, superadmin-notifications-send-schedule, superadmin-notifications-send-confirm-scheduled-dialog, superadmin-notifications-campaign-cancel-dialog, superadmin-notifications-campaign-report-dialog
 import { History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { NotificationDispatchForm } from "../../features/notification-dispatch";
+import { CampaignHistoryCard, NotificationDispatchForm } from "../../features/notification-dispatch";
 import { ButtonIcon, PageHeader, buttonClasses } from "../../shared/ui/primitives";
 import { NotificationInboxItem } from "../../widgets/notification-inbox";
 
@@ -11,7 +11,8 @@ import { NotificationInboxItem } from "../../widgets/notification-inbox";
  * «← Bildirishnomalar» — `/inbox` (ega savoli 10, sukut: kirish nuqtasi inbox, admin `/notifications` ni ocholmaydi).
  * Oldindan ko'rish — inbox kartasining o'zi (`NotificationInboxItem preview`). Sarlavhada «Yuborilganlar» (NS-2) —
  * `/notifications/sent` (ikkinchi darajali; asosiy amal — formadagi «Yuborish»). KM-2: «Auditoriya» rejimi (kampaniya) —
- * formaning o'zida (maketlar `-send-audience`, `-send-states`).
+ * formaning o'zida (maketlar `-send-audience`, `-send-states`). KM-3: «Yuborish vaqti» (formada) va pastda
+ * «Kampaniyalar tarixi» — bekor qilish va hisobot oynalari bilan (maketlar `-send-schedule`, `-campaign-*-dialog`).
  */
 const NotificationSendPage = () => {
   const { t } = useTranslation("notifications");
@@ -35,6 +36,7 @@ const NotificationSendPage = () => {
           <NotificationInboxItem notification={notification} preview />
         )}
       />
+      <CampaignHistoryCard />
     </div>
   );
 };
