@@ -154,7 +154,9 @@ describe("BranchDetailPage (v2)", () => {
       expect(await createdValue()).toHaveTextContent(/^09\.07\.2025$/);
     });
 
-    it("TC4: XODIMLAR kartasidagi son — jadvaldagi qatorlar soni (4 = 4)", async () => {
+    // TC4 ning tengligi backendda (`employees_count` = /branches/:id/users qatorlari, PROD'da tasdiqlangan); bu yerda —
+    // sahifa backend sonini o'zgartirmay chizadi va qo'shilgan sanasi kelmagan xodimda «—».
+    it("TC4 (render): XODIMLAR — backend soni (4), jadvalda 4 qator; sanasiz xodim — «—»", async () => {
       const staff = [
         ...EMPLOYEES,
         { id: 3, user_id: 211, role: "COURIER", createdAt: "2025-08-01T12:00:00.000Z", user: { id: 211, name: "Jasur Aliyev", phone_number: "+998901112233" } },
