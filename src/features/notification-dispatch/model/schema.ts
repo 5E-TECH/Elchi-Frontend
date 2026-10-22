@@ -2,6 +2,7 @@ import * as yup from "yup";
 import {
   CAMPAIGN_CHANNELS,
   createAudienceDraft,
+  toScheduledAt,
   type AudienceDraft,
   type AudienceTarget,
   type CampaignPayload,
@@ -24,12 +25,19 @@ export const DISPATCH_LIMITS = { title: 255, body: 4096, link: 512, groupKey: 25
 export type RecipientMode = "single" | "list" | "audience" | "all";
 export const RECIPIENT_MODES: readonly RecipientMode[] = ["single", "list", "audience", "all"];
 
+/** Kampaniya yuborish vaqti (KM-3): «Darhol» yoki «Belgilangan vaqtda» (Toshkent kuni va soati). */
+export type CampaignSendWhen = "now" | "scheduled";
+export type CampaignScheduleValue = { when: CampaignSendWhen; day: string; time: string };
+export const createDefaultSchedule = (): CampaignScheduleValue => ({ when: "now", day: "", time: "" });
+
 export type DispatchFormValues = {
   mode: RecipientMode;
   recipient_id: string;
   recipient_ids: string[];
   /** «Auditoriya» konstruktori qoralamasi (kampaniya nishoni). */
   audience: AudienceDraft;
+  /** Kampaniya yuborish vaqti — faqat «Auditoriya» da (sinxron yuborish doim darhol). */
+  schedule: CampaignScheduleValue;
   realtime: boolean;
   telegram: boolean;
   /** SMS — pullik; faqat telefoni bor qabul qiluvchilarga (chegara serverda). */
@@ -61,6 +69,7 @@ export const createDefaultValues = (): DispatchFormValues => ({
   recipient_id: "",
   recipient_ids: [],
   audience: createAudienceDraft(),
+  schedule: createDefaultSchedule(),
   realtime: true,
   telegram: false,
   sms: false,
@@ -92,6 +101,8 @@ export const createDispatchSchema = (t: Translate) =>
       }),
     // Konstruktor holati alohida tekshiriladi (`audienceGate`) — xatolar kartaning o'zida.
     audience: yup.mixed<AudienceDraft>().required(),
+    // Sana/soat tekshiruvi tungi taqiq siyosatiga bog'liq — formaning o'zida (`scheduleErrors`).
+    schedule: yup.mixed<CampaignScheduleValue>().required(),
     realtime: yup.boolean().required(),
     telegram: yup.boolean().required(),
     sms: yup.boolean().required(),
@@ -181,8 +192,8 @@ export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayloa
 
 /**
  * «Auditoriya» → `POST /notifications/campaigns` tanasi. Kanallar — faqat kampaniyada ruxsat etilganlari (`in_app`
- * doim, «Ochiq ekranga», Push); Telegram va SMS yuborilmaydi (backend 400). Guruh kaliti yo'q. KM-2 da faqat
- * «Darhol» (`scheduled_at` — KM-3).
+ * doim, «Ochiq ekranga», Push); Telegram va SMS yuborilmaydi (backend 400). Guruh kaliti yo'q. «Belgilangan vaqtda»
+ * (KM-3) — `scheduled_at` Toshkent vaqti `+05:00` bilan; «Darhol» da `scheduled_at` umuman yo'q.
  */
 export const buildCampaignPayload = (values: DispatchFormValues, target: AudienceTarget): CampaignPayload => {
   const channels: CampaignPayload["channels"] = ["in_app"];
@@ -199,5 +210,8 @@ export const buildCampaignPayload = (values: DispatchFormValues, target: Audienc
     ...(body ? { body } : {}),
     ...(link ? { link } : {}),
     channels: channels.filter((channel) => (CAMPAIGN_CHANNELS as readonly string[]).includes(channel)),
+    ...(values.schedule?.when === "scheduled" && values.schedule.day && values.schedule.time
+      ? { scheduled_at: toScheduledAt(values.schedule.day, values.schedule.time) }
+      : {}),
   };
 };

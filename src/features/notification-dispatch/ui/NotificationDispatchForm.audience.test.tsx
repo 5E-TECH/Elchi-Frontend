@@ -1,7 +1,7 @@
 import { onlineManager } from "@tanstack/react-query";
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi, type MockInstance } from "vitest";
 import { api } from "../../../shared/api/api";
 import { renderWithProviders } from "../../../test/test-utils";
 import NotificationDispatchForm from "./NotificationDispatchForm";
@@ -200,6 +200,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Avval forma yechiladi: «onlayn» hodisasi ochiq so'rovlarni (masalan tungi taqiq siyosati) qayta yurgizmasin —
+  // aks holda ular tiklangan (soxta bo'lmagan) `api` ga ketadi.
+  cleanup();
   onlineManager.setOnline(true);
   getSpy.mockRestore();
   postSpy.mockRestore();
@@ -225,6 +228,13 @@ const openAudience = async (user: User) => {
 const summary = () => screen.getByTestId("audience-summary");
 const sendButton = () => screen.getByRole("button", { name: /^Yuborish/ });
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** Market + sarlavha — yuborilmaydi (KM-3 vaqt tanlovi uchun). */
+const fillMarkets = async (user: User, title: string) => {
+  await user.click(screen.getByRole("checkbox", { name: "Market" }));
+  await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+  await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), title);
+};
 
 const sendMarkets = async (user: User, title = "Yangi tariflar") => {
   await user.click(screen.getByRole("checkbox", { name: "Market" }));
@@ -502,6 +512,26 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     expect(await screen.findByText("Yuborilmoqda")).toBeInTheDocument();
   });
 
+  it("504 → «Qayta urinish» 409 (ayni kalit) — «qaytadan yozing» emas: tarixdan tekshirish, forma qulfli", async () => {
+    const user = userEvent.setup();
+    createReplies = [
+      { status: 504, body: {} },
+      { status: 409, body: { message: "Idempotency-Key boshqa so'rov bilan ishlatilgan" } },
+    ];
+    await openAudience(user);
+    await sendMarkets(user);
+    const unknown = await screen.findByTestId("campaign-progress");
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(campaignCalls()).toHaveLength(2));
+    expect(
+      await within(unknown).findByText(
+        "Kampaniya birinchi urinishda yaratilgan bo'lishi mumkin — qaytadan yubormang, «Kampaniyalar tarixi»da tekshiring",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("dispatch-locked")).toHaveTextContent("Natija noma'lum");
+    expect(screen.queryByText(/boshqa so'rov bilan ishlatilgan/)).toBeNull();
+  });
+
   it("400 — a clear text from the preview limits, the form stays editable; a new attempt after a change uses a new key", async () => {
     const user = userEvent.setup();
     createReplies = [{ status: 400, body: {} }];
@@ -525,6 +555,10 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
   });
 
   it("advertising at night: the confirmation says when it will actually go", async () => {
+    // 20:00 Toshkent — taqiq ichida (ogohlantirish jonli soatdan ham hisoblanadi; test real soatga bog'liq bo'lmasin).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T15:00:00Z"));
+    onTestFinished(() => void vi.useRealTimers());
     const user = userEvent.setup();
     policyShifted = true;
     await openAudience(user);
@@ -537,10 +571,14 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     const dialog = await screen.findByRole("alertdialog", {
       name: "Xabarni yuborishni tasdiqlang",
     });
-    expect(await within(dialog).findByText(/^Reklama .* da yuboriladi$/)).toBeInTheDocument();
+    // Toshkent vaqtida, gap o'rtasida — «ertaga, 09:00» (brauzer mintaqasidagi sana emas).
+    expect(await within(dialog).findByText("Reklama ertaga, 09:00 da yuboriladi")).toBeInTheDocument();
     expect(within(dialog).getByText(/18:00–09:00 oralig'ida yuborilmaydi/)).toBeInTheDocument();
+    // Formaning o'z so'rovi (`?category=`) ham bor — tasdiqdagi tekshiruv `scheduled_at` bilan.
     const policyCall = getSpy.mock.calls.find(
-      ([url]) => url === "notifications/campaigns/schedule-policy",
+      ([url, config]) =>
+        url === "notifications/campaigns/schedule-policy" &&
+        Boolean((config as { params?: { scheduled_at?: string } } | undefined)?.params?.scheduled_at),
     );
     expect(policyCall?.[1]).toMatchObject({
       params: { category: "marketing", scheduled_at: expect.stringMatching(/\+05:00$/) },
@@ -775,6 +813,9 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
   });
 
   it("advertising: «Ha, yuborish» waits for the night-ban check", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T15:00:00Z"));
+    onTestFinished(() => void vi.useRealTimers());
     const user = userEvent.setup();
     policyShifted = true;
     let release = () => {};
@@ -854,5 +895,105 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     await user.click(within(summary()).getByRole("button", { name: "Segmentni saqlash" }));
     const dialog = await screen.findByRole("dialog", { name: "Segmentni saqlash" });
     expect(within(dialog).getByText("Izoh")).toHaveTextContent("Izoh (ixtiyoriy)");
+  });
+
+  // ─────────────────────────── KM-3: «Yuborish vaqti» ───────────────────────────
+
+  describe("KM-3 — «Belgilangan vaqtda» (2026-10-21 10:05 Toshkent)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-21T05:05:00Z"));
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("«Rejalashtirish» → tasdiq oynasi (vaqt Toshkentda) → scheduled_at +05:00 → «Rejalashtirilgan»", async () => {
+      const user = userEvent.setup();
+      createReplies = [
+        {
+          status: 202,
+          body: {
+            data: {
+              campaign_id: "7",
+              status: "queued",
+              total: 98,
+              scheduled_at: "2026-10-22T05:00:00.000Z",
+              display_status: "scheduled",
+              duplicate: false,
+              quiet_hours_shifted: false,
+            },
+          },
+        },
+      ];
+      campaignState = { status: "queued", display_status: "scheduled", sent: 0, total: 98, can_cancel: true };
+      await openAudience(user);
+      await fillMarkets(user, "Kuzgi chegirma");
+      const card = screen.getByTestId("campaign-schedule");
+      await user.click(within(card).getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      expect(card).toHaveTextContent("Ertaga, 10:00 da yuboriladi");
+      expect(screen.getByText("Ertaga, 10:00 · 98 ta qabul qiluvchi")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Rejalashtirish" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "Kampaniyani rejalashtirishni tasdiqlang" });
+      expect(dialog).toHaveTextContent("98 ta qabul qiluvchiga yuboriladi");
+      expect(dialog).toHaveTextContent("Ertaga, 10:00 da yuboriladi");
+      expect(dialog).toHaveTextContent("22.10.2026, 10:00 · Toshkent vaqti");
+      expect(dialog).not.toHaveTextContent("Yuborish vaqti");
+      expect(dialog).toHaveTextContent("Yuborilguncha «Kampaniyalar tarixi»da bekor qilish mumkin.");
+      await user.click(within(dialog).getByRole("button", { name: "Rejalashtirish" }));
+
+      await waitFor(() => expect(campaignCalls()).toHaveLength(1));
+      expect(campaignCalls()[0][1]).toMatchObject({ scheduled_at: "2026-10-22T10:00:00+05:00" });
+      const progress = await screen.findByTestId("campaign-progress");
+      expect(progress).toHaveAttribute("data-status", "scheduled");
+      expect(progress).toHaveTextContent("Kampaniya ertaga, 10:00 da yuboriladi");
+    });
+
+    it("tasdiq oynasi ochiq turganda vaqt o'tsa — yuborilmaydi: oyna yopiladi, kartada «Bu vaqt o'tib ketdi»", async () => {
+      const user = userEvent.setup();
+      await openAudience(user);
+      await fillMarkets(user, "Kuzgi chegirma");
+      const card = screen.getByTestId("campaign-schedule");
+      await user.click(within(card).getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Rejalashtirish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "Kampaniyani rejalashtirishni tasdiqlang" });
+      // Ertangi 10:00 o'tib ketdi (oyna ochiq qoldirilgan).
+      vi.setSystemTime(new Date("2026-10-22T05:01:00Z"));
+      await user.click(within(dialog).getByRole("button", { name: "Rejalashtirish" }));
+      await waitFor(() =>
+        expect(screen.queryByRole("alertdialog", { name: "Kampaniyani rejalashtirishni tasdiqlang" })).toBeNull(),
+      );
+      expect(campaignCalls()).toHaveLength(0);
+      expect(await within(card).findByText("Bu vaqt o'tib ketdi — keyingi soatni tanlang")).toBeInTheDocument();
+      // Izoh «Darhol» demaydi — vaqt tanlanmagan.
+      expect(screen.queryByText(/^Darhol · kampaniya/)).toBeNull();
+      expect(screen.getByText("Yuborish vaqtini tanlang · 98 ta qabul qiluvchi")).toBeInTheDocument();
+    });
+
+    it("reklamaga o'zgartirilsa taqiq soati — xato, yuborilmaydi; «Darhol» da scheduled_at yo'q", async () => {
+      const user = userEvent.setup();
+      await openAudience(user);
+      await fillMarkets(user, "Chegirma");
+      const card = screen.getByTestId("campaign-schedule");
+      await user.click(within(card).getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(within(card).getByRole("combobox", { name: "Soat" }));
+      await user.click(await screen.findByRole("option", { name: /^20:00/ }));
+      await user.click(screen.getByRole("combobox", { name: "Kategoriya" }));
+      await user.click(await screen.findByRole("option", { name: "Reklama" }));
+      expect(
+        await within(card).findByText("Reklama 18:00–09:00 oralig'ida yuborilmaydi — boshqa soatni tanlang"),
+      ).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Rejalashtirish" }));
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+
+      await user.click(within(card).getByRole("radio", { name: /Darhol/ }));
+      await user.click(sendButton());
+      const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+      await waitFor(() => expect(within(dialog).getByRole("button", { name: /Ha, yuborish/ })).toBeEnabled());
+      await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+      await waitFor(() => expect(campaignCalls()).toHaveLength(1));
+      expect(campaignCalls()[0][1]).not.toHaveProperty("scheduled_at");
+    });
   });
 });

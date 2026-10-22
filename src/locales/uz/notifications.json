@@ -503,7 +503,8 @@
       "empty": "Auditoriya bo'sh — yuborib bo'lmaydi",
       "counting": "Auditoriya hisoblanmoqda — bir lahza",
       "error": "Auditoriyani hisoblab bo'lmadi — qayta urinib ko'ring",
-      "offline": "Internet aloqasi yo'q — auditoriya sanalmadi"
+      "offline": "Internet aloqasi yo'q — auditoriya sanalmadi",
+      "policy": "Reklama taqiqi tekshirilmoqda — bir lahza"
     },
     "who": {
       "customerFiltered": "Mijoz ({{filters}})",
@@ -519,7 +520,15 @@
       "category": "Kategoriya",
       "quietTitle": "Reklama {{time}} da yuboriladi",
       "quietText": "Reklama {{start}}–{{end}} oralig'ida yuborilmaydi (Toshkent vaqti) — taqiq tugashi bilan navbat o'zi boshlanadi.",
-      "cancelNote": "Yuborish tugaguncha kampaniyani bekor qilish mumkin."
+      "slotPassedTitle": "Tanlangan vaqt o'tib ketdi",
+      "slotPassedText": "Orqaga qaytib keyingi soatni tanlang — o'tgan vaqt bilan kampaniya darhol yuborilib ketardi.",
+      "cancelNote": "Yuborish tugaguncha kampaniyani bekor qilish mumkin.",
+      "scheduledTitle": "Kampaniyani rejalashtirishni tasdiqlang",
+      "scheduledDescription": "<b>{{value}} ta</b> qabul qiluvchiga yuboriladi",
+      "back": "Orqaga",
+      "scheduling": "Rejalashtirilmoqda…",
+      "scheduledExact": "{{when}} · Toshkent vaqti",
+      "scheduledCancelNote": "Yuborilguncha «Kampaniyalar tarixi»da bekor qilish mumkin."
     },
     "createError": {
       "title": "Kampaniya yaratilmadi",
@@ -537,8 +546,9 @@
       "counts": "<b>{{sent}}</b> / {{total}} yuborildi",
       "live": "Har 2–3 soniyada yangilanadi",
       "bar": "Yuborildi",
-      "scheduled": "{{time}} da yuboriladi",
+      "scheduled": "Kampaniya {{time}} da yuboriladi",
       "quietShifted": "Reklama tungi taqiq tufayli {{time}} da yuboriladi",
+      "paused": "Reklama tungi taqiq tufayli to'xtadi — {{time}} da davom etadi",
       "failedCount": "{{value}} ta xato",
       "skippedCount": "{{value}} ta o'tkazib yuborildi",
       "duplicate": "Bu kampaniya avval yaratilgan — o'sha kampaniya holati ko'rsatilmoqda",
@@ -546,7 +556,6 @@
       "cancel": "Bekor qilish",
       "cancelTitle": "Kampaniyani bekor qilasizmi?",
       "cancelText": "Navbatdagi qismlar yuborilmaydi. Allaqachon yuborilgan xabarlar qaytarilmaydi.",
-      "cancelRemaining": "Qolgan {{value}} ta qabul qiluvchiga yuborilmaydi",
       "cancelConfirm": "Kampaniyani bekor qilish",
       "cancelClose": "Yopish",
       "cancelled": "Kampaniya bekor qilindi",
@@ -557,9 +566,11 @@
       "retry": "Qayta urinish",
       "retrying": "Tekshirilmoqda…",
       "retryFailed": "Qayta urinish ham bo'lmadi",
+      "retryConflict": "Kampaniya birinchi urinishda yaratilgan bo'lishi mumkin — qaytadan yubormang, «Kampaniyalar tarixi»da tekshiring",
       "locked": "Kampaniya navbatga qo'yildi — forma qulflandi. Yangisini yozish uchun «Yangi xabar» ni bosing.",
       "lockedUnknown": "Natija noma'lum — kampaniya ikki marta yaratilmasligi uchun forma qulflandi.",
-      "statusLive": "Kampaniya holati: {{status}}"
+      "statusLive": "Kampaniya holati: {{status}}",
+      "cancelRemainingRich": "Qolgan <b>{{value}} ta</b> qabul qiluvchiga yuborilmaydi"
     },
     "status": {
       "scheduled": "Rejalashtirilgan",
@@ -567,6 +578,124 @@
       "sent": "Yuborilgan",
       "failed": "Xato",
       "cancelled": "Bekor qilingan"
+    },
+    "when": {
+      "today": "Bugun, {{time}}",
+      "tomorrow": "Ertaga, {{time}}",
+      "yesterday": "Kecha, {{time}}",
+      "date": "{{date}}, {{time}}"
+    },
+    "schedule": {
+      "title": "Yuborish vaqti",
+      "tashkent": "Toshkent vaqti",
+      "now": "Darhol",
+      "nowHint": "Tasdiqlangandan keyin navbatga qo'yiladi",
+      "scheduled": "Belgilangan vaqtda",
+      "scheduledHint": "{{days}} kungacha oldinga",
+      "day": "Sana",
+      "time": "Soat",
+      "timeHint": "Toshkent vaqti (UTC+5)",
+      "timePlaceholder": "Soatni tanlang",
+      "policyLoading": "Reklama taqiqi tekshirilmoqda…",
+      "quietSlot": "Reklama taqiqi",
+      "quietNote": "Reklama {{start}}–{{end}} oralig'ida yuborilmaydi: bu soatlar tanlanmaydi, «Darhol» esa taqiq tugashi bilan ({{end}}) yuboriladi.",
+      "nowShiftedTitle": "Hozir {{now}} — reklama {{when}} da yuboriladi",
+      "nowShiftedText": "Tungi taqiq tugashi bilan navbat o'zi davom etadi",
+      "chosenTitle": "{{when}} da yuboriladi",
+      "chosenText": "Vaqti kelguncha «Kampaniyalar tarixi»da bekor qilish mumkin",
+      "submit": "Rejalashtirish",
+      "errors": {
+        "day": "Sanani tanlang",
+        "time": "Soatni tanlang",
+        "past": "Bu vaqt o'tib ketdi — keyingi soatni tanlang",
+        "quiet": "Reklama {{start}}–{{end}} oralig'ida yuborilmaydi — boshqa soatni tanlang"
+      }
+    },
+    "previewNoteScheduled": "{{time}} · {{value}} ta qabul qiluvchi",
+    "previewNoteScheduledPending": "Yuborish vaqtini tanlang · {{value}} ta qabul qiluvchi",
+    "history": {
+      "title": "Kampaniyalar tarixi",
+      "subtitle": "Rejalashtirilgan va navbat orqali yuborilgan xabarlar",
+      "all": "Barchasi",
+      "filterLabel": "Kampaniya holati",
+      "columns": {
+        "time": "Vaqt",
+        "message": "Xabar",
+        "audience": "Auditoriya",
+        "status": "Holat",
+        "sent": "Yuborildi",
+        "action": "Amallar"
+      },
+      "orders": "{{range}} buyurtma",
+      "paused": "Tungi taqiq — {{time}} da davom etadi",
+      "quietShifted": "Tungi taqiq tufayli surildi",
+      "sent": "{{sent}} yuborildi",
+      "sentWithFailed": "{{sent}} yuborildi · {{failed}} xato",
+      "progress": "{{done}} / {{total}}",
+      "progressLabel": "«{{title}}» — yuborildi",
+      "untitled": "Sarlavhasiz",
+      "cancelLabel": "«{{title}}» kampaniyasini bekor qilish",
+      "report": "Hisobot",
+      "reportLabel": "«{{title}}» hisoboti",
+      "summary": "{{total}} tadan {{from}}–{{to}}",
+      "live": "Holat har 3 soniyada yangilanadi",
+      "loading": "Kampaniyalar yuklanmoqda",
+      "error": {
+        "title": "Kampaniyalar tarixini yuklab bo'lmadi",
+        "text": "Internet aloqasini tekshirib, qayta urinib ko'ring"
+      },
+      "empty": {
+        "title": "Hali kampaniya yo'q",
+        "text": "«Auditoriya» bo'yicha yuborilgan va rejalashtirilgan xabarlar shu yerda ko'rinadi"
+      },
+      "emptyFiltered": {
+        "title": "«{{status}}» holatida kampaniya yo'q",
+        "text": "Boshqa holatni tanlang yoki barchasini ko'ring"
+      },
+      "showAll": "Barchasini ko'rsatish"
+    },
+    "report": {
+      "title": "Kampaniya hisoboti",
+      "close": "Yopish",
+      "export": "CSV yuklab olish",
+      "exporting": "Fayl tayyorlanmoqda…",
+      "exportSaved": "CSV fayl yuklab olindi",
+      "exportTimeout": "Fayl hali tayyor emas — birozdan keyin qayta urinib ko'ring",
+      "exportFailed": "CSV faylni tayyorlab bo'lmadi — birozdan keyin qayta urinib ko'ring",
+      "loading": "Hisobot yuklanmoqda",
+      "error": {
+        "title": "Hisobotni yuklab bo'lmadi",
+        "text": "Birozdan keyin qayta urinib ko'ring"
+      },
+      "audience": "Auditoriya",
+      "audienceCaption": "qabul qiluvchi",
+      "sent": "Yuborildi",
+      "sentCaption": "xatosiz",
+      "pendingCaption": "{{value}} ta jarayonda",
+      "failed": "Xato",
+      "skipped": "O'tkazib yuborildi",
+      "none": "yo'q",
+      "inChannel": "{{channel}} kanalida",
+      "inChannels": "{{value}} ta kanalda",
+      "byChannel": "Kanallar bo'yicha",
+      "channel": "Kanal",
+      "col": {
+        "sent": "Yuborildi",
+        "failed": "Xato",
+        "skipped": "O'tkazildi",
+        "pending": "Jarayonda"
+      },
+      "channelLine": "Yuborildi {{sent}} · Xato {{failed}} · O'tkazildi {{skipped}} · Jarayonda {{pending}}",
+      "undelivered": "Yetkazilmaganlar",
+      "undeliveredRange": "{{total}} tadan {{from}}–{{to}}",
+      "undeliveredRangeMasked": "{{total}} tadan {{from}}–{{to}} · telefon maskalangan",
+      "undeliveredError": "Ro'yxatni yuklab bo'lmadi",
+      "undeliveredLoading": "Yetkazilmaganlar yuklanmoqda",
+      "undeliveredNone": "Yetkazilmaganlar yo'q",
+      "unlisted": "Yana {{value}} ta qabul qiluvchiga xabar yozilmadi (partiya xatosi) — ular ro'yxatda yo'q",
+      "undeliveredPages": "Yetkazilmaganlar sahifalari",
+      "failureFailed": "{{channel}} — xato",
+      "failureSkipped": "{{channel}} — o'tkazildi"
     }
   }
 }

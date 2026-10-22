@@ -28,6 +28,8 @@ export const queryKeys = {
     lists: ["notification-campaigns", "list"] as const,
     list: (params: object) => ["notification-campaigns", "list", params] as const,
     detail: (id: string) => ["notification-campaigns", "detail", id] as const,
+    report: (id: string) => ["notification-campaigns", "report", id] as const,
+    undelivered: (id: string, params: object) => ["notification-campaigns", "undelivered", id, params] as const,
   },
   branches: {
     all: ["branches"] as const,
