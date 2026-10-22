@@ -212,6 +212,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da
     Actions → Visual → Run workflow (update ✓). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
     Ish usuli: `~/.elchi-work` (worktree'lar, `merge-branches.sh`, `merge-routemap.py`, `full-check.sh`, `trello.py`).
+  - **dev bilan sinxron (2026-10-22):** `origin/dev` (Urozov04: EP-1 «Xarajat kategoriyalari» kassada, EP-3 profil
+    «Sessiyalar») `shodiyor` ga merge qilindi — `shodiyor → dev` endi to'qnashuvsiz. To'qnashuvlar: `ProfilePage`
+    (TG-B tuzilmasi + «Sessiyalar» barcha rollarga), `access.test.ts`, `app-shot.mjs`, route-map `/profile` izohi,
+    SCREENS.md. Birlashmadan keyin: `accountSessions.all` — `queryKeyInvalidation` READ_ONLY ga; dev'dagi
+    `useExpenseCategories.test.tsx` poygasi (hook natijasi setTimeout 0 dan keyin) — `waitFor` bilan.
   - **IS-3 (2026-10-21, `feat/is-3-settlement-received`):** integratsiya hisob-kitobida «Olingan to'lovlar» (sana
     oralig'i, «Faol · Bekor qilingan · Barchasi», «Holat · kassa» `cashbox_posted` bo'yicha) va «To'lovni bekor qilish»
     oynasi (oqibatlar, «Sabab *», eski yozuvda majburiy kassa tanlovi, «Hozir bekor qilib bo'lmaydi» oldindan + 409
