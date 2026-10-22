@@ -168,6 +168,44 @@ describe("setupAuthInterceptors", () => {
       expect(api).not.toHaveBeenCalled();
     });
 
+    it("session revoked from another device: parallel 401s share ONE refresh; its 401 logs out once, no retry loop", async () => {
+      mocks.getAccessToken.mockReturnValue("revoked");
+      const refreshRejected = { isAxiosError: true, response: { status: 401 }, message: "Sessiya yopilgan" };
+      let rejectRefresh: (reason: unknown) => void = () => undefined;
+      mocks.refreshAccessToken.mockImplementation(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectRefresh = reject;
+          }),
+      );
+      let finishLogout: () => void = () => undefined;
+      mocks.logoutAndRedirect.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finishLogout = resolve;
+          }),
+      );
+      const { api, runResponseError } = wireInterceptors();
+
+      const first = runResponseError({ response: { status: 401 }, config: { url: "/orders", headers: {} } });
+      const second = runResponseError({ response: { status: 401 }, config: { url: "/auth/sessions", headers: {} } });
+      const settled = Promise.allSettled([first, second]);
+      await vi.waitFor(() => expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1));
+      rejectRefresh(refreshRejected);
+      await vi.waitFor(() => expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1));
+      finishLogout();
+
+      expect(await settled).toEqual([
+        { status: "rejected", reason: refreshRejected },
+        { status: "rejected", reason: refreshRejected },
+      ]);
+      expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1);
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledWith({ reason: "sessionExpired" });
+      // Asl so'rovlar qayta yuborilmadi (401 → refresh → 401 → yana refresh … aylanmasi yo'q).
+      expect(api).not.toHaveBeenCalled();
+    });
+
     it("does not refresh on the login/refresh endpoints or non-401 errors", async () => {
       mocks.getAccessToken.mockReturnValue("stale");
       const { runResponseError } = wireInterceptors();
