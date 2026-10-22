@@ -26,13 +26,23 @@ const getRefreshedAccessToken = () => {
  */
 let sessionExpiredLogout: Promise<void> | null = null;
 
-const logoutSessionExpired = () => {
+const logoutSessionExpired = (revoked = false) => {
   if (!sessionExpiredLogout) {
-    sessionExpiredLogout = logoutAndRedirect({ reason: "sessionExpired" }).finally(() => {
+    sessionExpiredLogout = logoutAndRedirect(
+      revoked ? { reason: "sessionExpired", revoked: true } : { reason: "sessionExpired" },
+    ).finally(() => {
       sessionExpiredLogout = null;
     });
   }
   return sessionExpiredLogout;
+};
+
+/** Gateway sessiyasi boshqa qurilmadan yopilganda 401 javobida `message: "Session revoked"` beradi. */
+const SESSION_REVOKED_MESSAGE = "session revoked";
+
+const isSessionRevoked = (error: AxiosError) => {
+  const message = (error.response?.data as { message?: unknown } | undefined)?.message;
+  return typeof message === "string" && message.trim().toLowerCase() === SESSION_REVOKED_MESSAGE;
 };
 
 const hasRefreshTokenExpired = () => {
@@ -47,11 +57,11 @@ const hasRefreshTokenExpired = () => {
  * qayta urinadi). Ilgari smena boshida ofisdagi bitta IP dan 10+ qurilma
  * yangilaganda 429 olganlar /login ga tashlanardi.
  */
-const handleRefreshFailure = async (refreshError: unknown) => {
+const handleRefreshFailure = async (refreshError: unknown, revoked = false) => {
   if (!isTransientAuthFailure(refreshError)) {
-    // Sessiya haqiqatan tugagan (yoki boshqa qurilmadan yopilgan) — login sahifasida «Sessiya tugadi» ekrani
-    // (dizayn v2 `common-session-expired`).
-    await logoutSessionExpired();
+    // Sessiya haqiqatan tugagan (yoki boshqa qurilmadan yopilgan — `revoked`) — login sahifasida «Sessiya tugadi»
+    // ekrani (dizayn v2 `common-session-expired`), yopilgan bo'lsa sababi bilan.
+    await logoutSessionExpired(revoked);
   } else if (isNetworkFailure(refreshError)) {
     // `authClient` da interceptor yo'q — "Tarmoq xatosi" shu yerdan chiqadi.
     emitNetworkError(refreshError);
@@ -126,7 +136,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
 
         return api(originalRequest);
       } catch (refreshError) {
-        return handleRefreshFailure(refreshError);
+        return handleRefreshFailure(refreshError, isSessionRevoked(error));
       }
     },
   );

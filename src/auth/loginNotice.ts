@@ -6,7 +6,8 @@
  * sessionStorage'da qoldiriladi va login sahifasi uni o'qib ko'rsatadi:
  *   - `passwordChanged` — o'z parolini o'zgartirgan foydalanuvchi (`UpdateUserModal`);
  *   - `sessionExpired`  — sessiya tugadi (`authService.logoutAndRedirect({ reason })`), `at` — tugagan vaqt
- *     (ms), «Sessiya tugadi» ekranida ko'rsatiladi (maket `common-session-expired`).
+ *     (ms), «Sessiya tugadi» ekranida ko'rsatiladi (maket `common-session-expired`); `revoked: true` — sessiya
+ *     boshqa qurilmadan yopilgan (server 401 «Session revoked»), ekran shu sababni aytadi.
  *
  * Bir vaqtda bitta xabar turadi (oxirgi yozgan yutadi). Saqlash shakli — JSON
  * (`{"notice":"sessionExpired","at":…}`); o'quvchi eski oddiy satrni (`passwordChanged`) ham qabul qiladi.
@@ -16,11 +17,15 @@ export type LoginNotice = "passwordChanged" | "sessionExpired";
 export type LoginNoticeMeta = {
   /** Hodisa vaqti (ms). `sessionExpired` uchun — sessiya tugagan vaqt. */
   at?: number | null;
+  /** `sessionExpired`: sessiya boshqa qurilmadan («Sessiyalar» → «Chiqarish») yopilgan. */
+  revoked?: boolean;
 };
 
 export type LoginNoticeDetails = {
   notice: LoginNotice;
   at: number | null;
+  /** Faqat `true` bo'lsa bor. */
+  revoked?: true;
 };
 
 const LOGIN_NOTICE_KEY = "elchi_login_notice";
@@ -39,9 +44,13 @@ const parseNotice = (raw: string | null): LoginNoticeDetails | null => {
   // Eski shakl: oddiy satr.
   if (isKnownNotice(raw)) return { notice: raw, at: null };
   try {
-    const parsed = JSON.parse(raw) as { notice?: unknown; at?: unknown } | null;
+    const parsed = JSON.parse(raw) as { notice?: unknown; at?: unknown; revoked?: unknown } | null;
     if (!parsed || typeof parsed !== "object" || !isKnownNotice(parsed.notice)) return null;
-    return { notice: parsed.notice, at: toTimestamp(parsed.at) };
+    return {
+      notice: parsed.notice,
+      at: toTimestamp(parsed.at),
+      ...(parsed.notice === "sessionExpired" && parsed.revoked === true ? { revoked: true as const } : {}),
+    };
   } catch {
     return null;
   }
@@ -49,8 +58,12 @@ const parseNotice = (raw: string | null): LoginNoticeDetails | null => {
 
 export const rememberLoginNotice = (notice: LoginNotice, meta: LoginNoticeMeta = {}) => {
   const at = toTimestamp(meta.at);
+  const revoked = notice === "sessionExpired" && meta.revoked === true;
   try {
-    window.sessionStorage.setItem(LOGIN_NOTICE_KEY, JSON.stringify(at ? { notice, at } : { notice }));
+    window.sessionStorage.setItem(
+      LOGIN_NOTICE_KEY,
+      JSON.stringify({ notice, ...(at ? { at } : {}), ...(revoked ? { revoked: true } : {}) }),
+    );
   } catch {
     // Saqlab bo'lmasa xabar ko'rinmaydi, chiqish baribir bajariladi.
   }

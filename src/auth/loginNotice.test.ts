@@ -49,6 +49,18 @@ describe("loginNotice", () => {
     expect(peekLoginNoticeDetails()).toEqual({ notice: "passwordChanged", at: null });
   });
 
+  it("sessionExpired + revoked (sessiya boshqa qurilmadan yopilgan) — saqlanadi va o'qiladi; boshqa holatlarda kalit yo'q", () => {
+    rememberLoginNotice("sessionExpired", { at: 1_000, revoked: true });
+    expect(JSON.parse(window.sessionStorage.getItem(KEY) ?? "null")).toEqual({ notice: "sessionExpired", at: 1_000, revoked: true });
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: 1_000, revoked: true });
+
+    rememberLoginNotice("passwordChanged", { revoked: true });
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "passwordChanged", at: null });
+
+    window.sessionStorage.setItem(KEY, JSON.stringify({ notice: "sessionExpired", at: 1_000, revoked: "yes" }));
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: 1_000 });
+  });
+
   it("clearLoginNotice removes it", () => {
     rememberLoginNotice("sessionExpired", { at: 1_000 });
     clearLoginNotice();

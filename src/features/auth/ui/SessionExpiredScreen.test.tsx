@@ -41,6 +41,16 @@ describe("SessionExpiredScreen (dizayn v2: common-session-expired)", () => {
     expect(screen.queryByText(/©/)).not.toBeInTheDocument();
   });
 
+  it("revoked — the text says the session was closed from another device", () => {
+    renderWithProviders(<SessionExpiredScreen expiredAt={todayAt1415()} revoked onContinue={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Sessiya tugadi" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Xavfsizlik uchun qayta kirishingiz kerak/)).not.toBeInTheDocument();
+  });
+
   it("hides the time row when the expiry time is unknown", () => {
     renderWithProviders(<SessionExpiredScreen expiredAt={null} onContinue={vi.fn()} />);
 
@@ -91,6 +101,16 @@ describe("/login — «Sessiya tugadi» oqimi", () => {
     first.unmount();
     renderWithProviders(<Login />, { route: "/login" });
     expect(screen.getByRole("heading", { level: 1, name: "Tizimga kirish" })).toBeInTheDocument();
+  });
+
+  it("session closed from another device (revoked notice) — the screen says why", () => {
+    rememberLoginNotice("sessionExpired", { at: todayAt1415(), revoked: true });
+    renderWithProviders(<Login />, { route: "/login" });
+
+    expect(screen.getByRole("heading", { level: 1, name: "Sessiya tugadi" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring."),
+    ).toBeInTheDocument();
   });
 
   it("a plain logout (no notice) opens the form directly with the navy brand panel texts", () => {

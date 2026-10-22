@@ -337,6 +337,8 @@ export type LogoutReason = "sessionExpired";
 
 export type LogoutAndRedirectOptions = {
   reason?: LogoutReason;
+  /** `sessionExpired`: server sessiyani «Session revoked» deb rad etdi (boshqa qurilmadan yopilgan). */
+  revoked?: boolean;
 };
 
 /**
@@ -344,7 +346,7 @@ export type LogoutAndRedirectOptions = {
  * Refresh token muddati hali o'tmagan bo'lsa (server sessiyani oldinroq rad etdi) — hozirgi vaqt.
  * `passwordChanged` ustun: parol o'zgargach chiqarilgan foydalanuvchiga o'sha sabab ko'rinadi.
  */
-const rememberSessionExpired = () => {
+const rememberSessionExpired = (revoked = false) => {
   const existing = peekLoginNoticeDetails();
   if (existing?.notice === "passwordChanged") return;
   const now = Date.now();
@@ -352,8 +354,11 @@ const rememberSessionExpired = () => {
   const at = refreshTokenExpiresAt && refreshTokenExpiresAt <= now ? refreshTokenExpiresAt : now;
   // Bir vaqtdagi bir nechta chaqiruv (parallel so'rovlar): `logout()` metama'lumotni tozalagach kelgani
   // birinchisi yozgan haqiqiy tugash vaqtini «hozir» bilan almashtirmasin — eng erta vaqt qoladi.
-  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at) return;
-  rememberLoginNotice("sessionExpired", { at });
+  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at && (existing.revoked || !revoked)) {
+    return;
+  }
+  const earliest = existing?.notice === "sessionExpired" && existing.at && existing.at <= at ? existing.at : at;
+  rememberLoginNotice("sessionExpired", { at: earliest, revoked: revoked || existing?.revoked === true });
 };
 
 /**
@@ -365,7 +370,7 @@ const rememberSessionExpired = () => {
  */
 export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) => {
   if (options?.reason === "sessionExpired") {
-    rememberSessionExpired();
+    rememberSessionExpired(options.revoked === true);
   } else if (peekLoginNotice() === "sessionExpired") {
     clearLoginNotice();
   }
