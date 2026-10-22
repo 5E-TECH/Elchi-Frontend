@@ -229,8 +229,7 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     vaqtida (`vitest.config.ts` `TZ`, qo'riqchi `src/test/timezone.test.ts` — deploy #139/#140 sababi).
   - **ERTAGA DAVOM (2026-10-22):** (1) ~~KM-3~~ — tayyor (yuqorida). Shu bilan roadmap'ning backendsiz qismi
     tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
-    javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da
-    Actions → Visual → Run workflow (update ✓). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
+    javoblar kichik tuzatish PR'larida). (3) ~~«Visual» baseline'lari~~ — yangilandi (2026-10-22, quyida). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
     Ish usuli: `~/.elchi-work` (worktree'lar, `merge-branches.sh`, `merge-routemap.py`, `full-check.sh`, `trello.py`).
   - **dev bilan sinxron (2026-10-22):** `origin/dev` (Urozov04: EP-1 «Xarajat kategoriyalari» kassada, EP-3 profil
     «Sessiyalar») `shodiyor` ga merge qilindi — `shodiyor → dev` endi to'qnashuvsiz. To'qnashuvlar: `ProfilePage`
@@ -299,6 +298,12 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (5 band), menyu qidiruvi ochildi, bosh sahifada «Buyurtma yaratish» va «Tezkor harakatlar». Yangi route yo'q.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
+- «Visual» baseline'lari 2026-10-22 da yangilandi (bot commit `592556b`, PR #319): 10 sahna × 4 loyiha — `dev` ga
+  kirgan o'zgarishlardan kutilgan farq (market menyusida «Operatorlar», admin menyusida «Bildirishnomalar»,
+  buyurtmalarda «Oxirgi yangilanish · Avtomatik yangilanadi» + «Yangilash», foydalanuvchilarda rol tablari va
+  «Telegram boti» ustuni, hududlarda «Tumanlar», market telefon pastki menyusida «Menyu», sozlamalar izohi). Oldin
+  `origin/dev` va PR head shu 44 sahnani lokalda bir xil chizgani tekshirildi (farq PR'dan emas). Shu PR'da investor e2e
+  fiksturalari ham kun o'rtasiga surildi (`72cf337`) — CI brauzeri UTC'da yarim tun oldingi kunga chiqardi.
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski
