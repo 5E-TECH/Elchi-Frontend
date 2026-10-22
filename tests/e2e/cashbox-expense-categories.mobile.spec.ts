@@ -64,12 +64,20 @@ test("⭐ 390: boshqaruv oynasi — pastki varaqa, amallar ≥ 44 px, qo'shish f
 
   const actions = manage.getByRole("button", { name: /kategoriyasini (tahrirlash|o'chirish)$/ });
   await expect(actions).toHaveCount(34);
-  for (const target of await actions.evaluateAll((nodes) =>
-    nodes.slice(0, 6).map((node) => node.getBoundingClientRect().toJSON() as DOMRect),
-  )) {
-    expect(target.width).toBeGreaterThanOrEqual(44);
-    expect(target.height).toBeGreaterThanOrEqual(44);
-  }
+  // Pastki varaqa ochilish animatsiyasi tugaguncha tugmalar kichikroq o'lchanishi mumkin — barqaror o'lchamni
+  // kutamiz (dispatch-floor.mobile.spec bilan bir xil usul).
+  await expect
+    .poll(async () =>
+      Math.min(
+        ...(await actions.evaluateAll((nodes) =>
+          nodes.slice(0, 6).flatMap((node) => {
+            const rect = node.getBoundingClientRect();
+            return [rect.width, rect.height];
+          }),
+        )),
+      ),
+    )
+    .toBeGreaterThanOrEqual(44);
   await expectNoHorizontalOverflow(page);
 
   await manage.getByRole("button", { name: "Kategoriya qo'shish" }).click();
