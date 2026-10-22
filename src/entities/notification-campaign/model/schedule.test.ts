@@ -81,3 +81,34 @@ describe("schedule (KM-3) — Toshkent vaqti, brauzer mintaqasidan qat'i nazar",
     expect(relativeTashkentDay("2026-10-06", EVENING)).toBeNull();
   });
 });
+
+/**
+ * Testlar Toshkent vaqtiga qotirilgan (`vitest.config.ts`) — shuning uchun mustaqillik shu yerda ATAYLAB boshqa
+ * mintaqalarda tekshiriladi (Node `process.env.TZ` ni ish paytida qabul qiladi). Natijalar Toshkentdagidan farq qilmasin.
+ */
+describe("schedule — brauzer mintaqasi boshqa bo'lsa ham natija bir xil", () => {
+  const snapshot = () => ({
+    moment: toTashkentMoment("2026-10-21T20:30:00Z"),
+    scheduledAt: toScheduledAt("2026-10-22", "10:00"),
+    nowIso: tashkentNowIso(EVENING),
+    today: tashkentToday(Date.parse("2026-10-21T19:30:00Z")),
+    future: [isFutureSlot("2026-10-21", "19:00", EVENING), isFutureSlot("2026-10-21", "19:30", EVENING)],
+    range: scheduleDayRange(90, EVENING),
+    release: quietReleaseMoment(QUIET, EVENING),
+    first: firstAvailableSlot("2026-10-22", { quiet: QUIET, promo: true, now: EVENING }),
+    relative: relativeTashkentDay("2026-10-22", EVENING),
+  });
+
+  it.each(["UTC", "America/New_York", "Pacific/Auckland"])("%s", (zone) => {
+    const tashkent = snapshot();
+    const original = process.env.TZ;
+    try {
+      process.env.TZ = zone;
+      // Mintaqa haqiqatan almashdi (aks holda test hech narsani tekshirmaydi).
+      expect(new Date("2026-01-15T00:00:00Z").getTimezoneOffset()).not.toBe(-300);
+      expect(snapshot()).toEqual(tashkent);
+    } finally {
+      process.env.TZ = original;
+    }
+  });
+});

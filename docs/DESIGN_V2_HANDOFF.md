@@ -212,7 +212,8 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     pastda «Kampaniyalar tarixi» (`CampaignHistoryCard`: holat tablari — backend `state`, jadval / kartalar, har 3 s),
     bekor qilish oynasi (`useCampaignCancel`, natija kartasi bilan umumiy) va hisobot oynasi (`CampaignReportDialog`:
     4 katak, kanallar, yetkazilmaganlar, CSV — faqat `can_export`, katta eksport fon vazifasi). Vaqt hisobi brauzer
-    mintaqasidan mustaqil (`entities/notification-campaign/model/schedule.ts`, UTC/Toshkent/Nyu-York testlari).
+    mintaqasidan mustaqil (`entities/notification-campaign/model/schedule.ts`; `schedule.test.ts` uni UTC, Nyu-York va
+    Oklendda ham tekshiradi — testlar Toshkentga qotirilgan bo'lsa ham).
     Maketdan farqlar — `route-map.json` `partialViews` (4 ekran «kodda yo'q» dan chiqdi). Trello `WIsb9Ytq`, `H7kpCman`
     — izoh bilan In Test. SMS kampaniyasi hisoboti (`/notifications/sms/campaigns/:id/report`) va SMS «Belgilangan
     vaqtda» — KM-4/KM-6 (alohida maket kerak).
