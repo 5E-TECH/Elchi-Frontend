@@ -206,8 +206,17 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (market operatori buyurtmalari ro'yxati/tafsiloti va «AI bilan» yaratish), IS-3 («Olingan to'lovlar» va to'lovni
     bekor qilish), CS-C (marketda «Uyga / Markazga standart narx» yorliqlari), TOZ-1 (bildirishnoma qo'shish oynasi
     tozaligi). Integratsiyada: 6441 unit, 444 e2e.
-  - **ERTAGA DAVOM (2026-10-22):** (1) KM-3 — kampaniya rejalashtirish, «Kampaniyalar tarixi», bekor qilish oynasi,
-    hisobot (KM-2 API funksiyalari tayyor; Trello `WIsb9Ytq`, `H7kpCman`). Shu bilan roadmap'ning backendsiz qismi
+  - **KM-3 tayyor (2026-10-22, bulut sessiyasi, branch `claude/happy-mendel-9hwkkn` — `origin/dev` ustida):**
+    `/notifications/send` da «Yuborish vaqti» (`CampaignScheduleCard`: Darhol / Belgilangan vaqtda, Toshkent vaqti,
+    reklama taqiq soatlari faqat `schedule-policy` dan, `scheduled_at` `+05:00` bilan), «Rejalashtirish» tasdig'i,
+    pastda «Kampaniyalar tarixi» (`CampaignHistoryCard`: holat tablari — backend `state`, jadval / kartalar, har 3 s),
+    bekor qilish oynasi (`useCampaignCancel`, natija kartasi bilan umumiy) va hisobot oynasi (`CampaignReportDialog`:
+    4 katak, kanallar, yetkazilmaganlar, CSV — faqat `can_export`, katta eksport fon vazifasi). Vaqt hisobi brauzer
+    mintaqasidan mustaqil (`entities/notification-campaign/model/schedule.ts`, UTC/Toshkent/Nyu-York testlari).
+    Maketdan farqlar — `route-map.json` `partialViews` (4 ekran «kodda yo'q» dan chiqdi). Trello `WIsb9Ytq`, `H7kpCman`
+    — izoh bilan In Test. SMS kampaniyasi hisoboti (`/notifications/sms/campaigns/:id/report`) va SMS «Belgilangan
+    vaqtda» — KM-4/KM-6 (alohida maket kerak).
+  - **ERTAGA DAVOM (2026-10-22):** (1) ~~KM-3~~ — tayyor (yuqorida). Shu bilan roadmap'ning backendsiz qismi
     tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
     javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da
     Actions → Visual → Run workflow (update ✓). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
