@@ -19,6 +19,7 @@ import {
   createAudienceDraft,
   isFutureSlot,
   isQuietTime,
+  quietReleaseMoment,
   tashkentNowIso,
   toAudienceTarget,
   useAudienceDescription,
@@ -46,7 +47,6 @@ import {
 import { cx } from "../../../shared/lib/cx";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { useDebounce } from "../../../shared/lib/useDebounce";
 import {
@@ -315,7 +315,13 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const schedule: CampaignScheduleValue = values.schedule ?? createDefaultSchedule();
   const scheduled = isAudience && schedule.when === "scheduled";
   const campaignTime = useCampaignTime();
-  const now = useClock();
+  const clock = useClock();
+  /**
+   * Yuborishda haqiqiy vaqt bilan tekshiruv rad etsa — soat darhol shu lahzaga suriladi, aks holda (30 s qadamli soat
+   * eskirgan bo'lsa) «Rejalashtirish» hech narsa ko'rsatmay qolardi.
+   */
+  const [syncedAt, setSyncedAt] = useState(0);
+  const now = Math.max(clock, syncedAt);
   /**
    * Sana/soat xatosi. «Tanlang» — faqat yuborishga urinilgach; o'tib ketgan vaqt va (kategoriya reklamaga
    * o'zgartirilsa) taqiq soati — darhol.
@@ -477,7 +483,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
       // Son hali hisoblanmagan, 0, chegaradan katta yoki xato — yuborilmaydi (tugma o'chiq, sababi ostida).
       if (!target || !canSendAudience(previewState) || !data) return;
       // Vaqt tanlanmagan, o'tib ketgan yoki taqiqqa tushgan — xato kartada.
-      if (policyPending || Object.keys(validateSchedule(formValues.schedule, true, Date.now())).length) return;
+      if (policyPending) return;
+      const at = Date.now();
+      if (Object.keys(validateSchedule(formValues.schedule, true, at)).length) {
+        setSyncedAt(at);
+        return;
+      }
       const payload = buildCampaignPayload(formValues, target);
       setConfirmCampaign({
         payload,
@@ -591,6 +602,14 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           if (!current()) return;
           setConfirmCampaign(null);
           const status = getErrorStatus(error);
+          if (retry && status === 409) {
+            // Ayni Idempotency-Key bilan qayta urinishda 409 — birinchi urinish kampaniyani YARATGAN (masalan
+            // rejalashtirilgan vaqt o'tib, backend mazmunni boshqacha hisobladi). «Qaytadan yozing» demaymiz — ikkinchi
+            // ommaviy yuborish bo'lardi; tarixdan tekshirishga yo'naltiramiz.
+            setRetryError(t("campaign.progress.retryConflict"));
+            release();
+            return;
+          }
           if (status !== 400 && status !== 422) {
             const kind = classifyCampaignError(error, request.preview);
             if (kind.kind === "unknown") setOutcome({ ...request, kind: "campaignUnknown" });
@@ -621,6 +640,14 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   const confirmSend = () => {
     if (confirmCampaign) {
+      // Oyna ochiq turganda tanlangan vaqt o'tib ketgan bo'lsa — yubormaymiz (backend o'tgan vaqtni «darhol» deb oladi,
+      // reklamani esa ertalabga suradi): oyna yopiladi, kartada «Bu vaqt o'tib ketdi».
+      const slot = confirmCampaign.scheduled;
+      if (slot && !isFutureSlot(slot.day, slot.time, Date.now())) {
+        setConfirmCampaign(null);
+        setSyncedAt(Date.now());
+        return;
+      }
       const fingerprint = `campaign:${JSON.stringify(confirmCampaign.payload)}`;
       sendCampaign(
         {
@@ -711,6 +738,26 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     confirmCampaign?.payload ?? confirmPayload;
   /** Tasdiq oynasi «Belgilangan vaqtda» kampaniyasi uchun (maket `-send-confirm-scheduled-dialog`). */
   const confirmScheduled = confirmCampaign?.scheduled ?? null;
+  /** Oyna ochiq turganda tanlangan vaqt o'tib ketdi — «Rejalashtirish» o'chiq, sababi oynada. */
+  const slotPassed = Boolean(confirmScheduled && !isFutureSlot(confirmScheduled.day, confirmScheduled.time, now));
+  /**
+   * Reklama taqiqi ogohlantirishi (Toshkent vaqtida): «Darhol» va taqiq oynasi ma'lum — jonli soat bo'yicha (oyna
+   * 17:59 da ochilib 18:01 da tasdiqlansa ham chiqadi, 09:00 dan keyin yo'qoladi); aks holda — backend tekshiruvi
+   * (`check.shifted`, oyna ochilgan lahzaga).
+   */
+  const liveQuiet =
+    confirmCampaign && !confirmScheduled && confirmCampaign.payload.category === "marketing"
+      ? schedulePolicy.data?.quietHours
+      : undefined;
+  const liveRelease = liveQuiet ? quietReleaseMoment(liveQuiet, now) : null;
+  const quietWhen = liveQuiet
+    ? liveRelease
+      ? campaignTime.inlineMoment(liveRelease, now)
+      : null
+    : quietCheck?.check?.effectiveAt
+      ? campaignTime.inline(quietCheck.check.effectiveAt, now)
+      : null;
+  const quietHoursShown = quietCheck?.quietHours ?? schedulePolicy.data?.quietHours ?? null;
 
   /**
    * «Auditoriya» da «Yuborish» o'chiq va sababi ostida: son hisoblanmoqda, xato, 0 ta yoki chegaradan katta. Konstruktor
@@ -738,12 +785,22 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     : sendBlockedKey
       ? t(sendBlockedKey)
       : canSendAudience(previewState)
-        ? scheduled && schedule.day && schedule.time && !scheduleErrors.time && !scheduleErrors.day
-          ? t("campaign.previewNoteScheduled", {
-              time: campaignTime.moment({ day: schedule.day, time: schedule.time }, now),
+        ? !scheduled
+          ? t("campaign.previewNote", {
               value: count(audiencePreview.data?.total ?? 0),
+              count: audiencePreview.data?.total ?? 0,
             })
-          : t("campaign.previewNote", { value: count(audiencePreview.data?.total ?? 0) })
+          : schedule.day && schedule.time && !scheduleErrors.time && !scheduleErrors.day
+            ? t("campaign.previewNoteScheduled", {
+                time: campaignTime.moment({ day: schedule.day, time: schedule.time }, now),
+                value: count(audiencePreview.data?.total ?? 0),
+                count: audiencePreview.data?.total ?? 0,
+              })
+            : // Vaqt hali tanlanmagan yoki xato — «Darhol» deyilmaydi (tugma «Rejalashtirish»).
+              t("campaign.previewNoteScheduledPending", {
+                value: count(audiencePreview.data?.total ?? 0),
+                count: audiencePreview.data?.total ?? 0,
+              })
         : null;
 
   return (
@@ -1295,6 +1352,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
             <Trans
               t={t}
               i18nKey="campaign.confirm.scheduledDescription"
+              count={confirmCampaign.preview.total}
               values={{ value: count(confirmCampaign.preview.total) }}
               components={{ b: <span className="font-semibold text-text" /> }}
             />
@@ -1324,7 +1382,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               leftIcon={confirmScheduled ? CalendarClock : Send}
               loading={sending}
               loadingText={confirmScheduled ? t("campaign.confirm.scheduling") : t("dispatch.confirmSending")}
-              disabled={quietPending}
+              disabled={quietPending || slotPassed}
               onClick={confirmSend}
             >
               {confirmScheduled ? t("campaign.schedule.submit") : t("dispatch.confirmSend")}
@@ -1342,27 +1400,32 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                 title={t("dispatch.confirmBroadcast")}
               />
             ) : null}
-            {confirmScheduled && !quietCheck?.check?.effectiveAt ? (
+            {slotPassed ? (
+              <NoticeAlert tone="danger" role="alert" title={t("campaign.confirm.slotPassedTitle")}>
+                {t("campaign.confirm.slotPassedText")}
+              </NoticeAlert>
+            ) : null}
+            {confirmScheduled && !slotPassed && !quietCheck?.check?.effectiveAt ? (
               <NoticeAlert
                 tone="info"
                 icon={CalendarClock}
-                title={t("campaign.schedule.chosenTitle", { when: campaignTime.moment(confirmScheduled) })}
+                title={t("campaign.schedule.chosenTitle", { when: campaignTime.moment(confirmScheduled, now) })}
               >
                 {t("campaign.confirm.scheduledExact", { when: campaignTime.exact(confirmScheduled) })}
               </NoticeAlert>
             ) : null}
-            {quietCheck?.check?.effectiveAt ? (
+            {quietWhen ? (
               <NoticeAlert
                 tone="warning"
                 icon={Clock}
                 title={t("campaign.confirm.quietTitle", {
-                  time: formatDateTimeLocalized(quietCheck.check.effectiveAt, { language }),
+                  time: quietWhen,
                 })}
               >
-                {quietCheck.quietHours
+                {quietHoursShown
                   ? t("campaign.confirm.quietText", {
-                      start: quietCheck.quietHours.start,
-                      end: quietCheck.quietHours.end,
+                      start: quietHoursShown.start,
+                      end: quietHoursShown.end,
                     })
                   : null}
               </NoticeAlert>

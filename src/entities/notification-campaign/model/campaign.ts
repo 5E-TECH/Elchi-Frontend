@@ -101,6 +101,32 @@ export interface CampaignListParams {
   state?: CampaignDisplayStatus;
 }
 
+/**
+ * Progress chizig'i (foiz): yuborilgan kampaniyada — backend `progress_pct`; qolganida — `sent / total`. Backend
+ * bekor qilish va xatoda qolganlarni `skipped` / `failed` ga yozadi, shuning uchun ularning `progress_pct` i doim 100 —
+ * «406 / 1 312» yonida to'la chiziq «hammasi ketdi» degan yolg'on bo'lardi (maketda 31%).
+ */
+export const campaignBarPct = (
+  campaign: Pick<Campaign, "status" | "display_status" | "sent" | "total" | "progress_pct">,
+) =>
+  campaignDisplayStatus(campaign) === "sent" || !campaign.total
+    ? campaign.progress_pct
+    : Math.min(100, Math.max(0, Math.round((campaign.sent / campaign.total) * 100)));
+
+/**
+ * Haqiqiy yuborish lahzasi: reklama tungi taqiqda to'xtagan bo'lsa (`paused_until` keyinroq) — o'sha, aks holda
+ * `scheduled_at`. Backend navbatdagi reklamani ham `paused_until` bilan «rejalashtirilgan» deb ko'rsatadi.
+ */
+export const campaignEffectiveAt = (campaign: Pick<Campaign, "scheduled_at" | "paused_until">) =>
+  campaign.paused_until &&
+  (!campaign.scheduled_at || Date.parse(campaign.paused_until) > Date.parse(campaign.scheduled_at))
+    ? campaign.paused_until
+    : campaign.scheduled_at;
+
+/** Reklama hozir tungi taqiqda to'xtab turibdimi (`paused_until` kelajakda). */
+export const isCampaignPaused = (campaign: Pick<Campaign, "paused_until">, now: number = Date.now()) =>
+  Boolean(campaign.paused_until && Date.parse(campaign.paused_until) > now);
+
 /** Ko'rsatiladigan holat: `display_status` bo'lmasa xom holatdan. */
 export const campaignDisplayStatus = (
   campaign: Pick<Campaign, "status" | "display_status">,

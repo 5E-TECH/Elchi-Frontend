@@ -5,10 +5,14 @@ import { Trans, useTranslation } from "react-i18next";
 import {
   CAMPAIGN_STATUS_META,
   CampaignStatusBadge,
+  campaignBarPct,
   campaignDisplayStatus,
+  campaignEffectiveAt,
   isCampaignActive,
+  isCampaignPaused,
   useCampaign,
   useCampaignTime,
+  useClock,
   type CampaignCreated,
 } from "../../../entities/notification-campaign";
 import { DispatchStatusBadge } from "../../../entities/notification-dispatch";
@@ -49,6 +53,7 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
   const campaignTime = useCampaignTime();
+  const now = useClock();
   const askCancel = useCampaignCancel();
   const rootRef = useRef<HTMLElement>(null);
   const campaignId = props.kind === "created" ? props.created.campaign_id : null;
@@ -116,10 +121,17 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   const sent = campaign?.sent ?? 0;
   const failed = campaign?.failed ?? 0;
   const skipped = campaign?.skipped ?? 0;
-  const pct = campaign?.progress_pct ?? 0;
+  const pct = campaign ? campaignBarPct(campaign) : 0;
   const active = isCampaignActive(status);
   const canCancel = campaign ? campaign.can_cancel : active;
-  const scheduledAt = campaign?.scheduled_at ?? created.scheduled_at;
+  // Navbatdagi reklama tungi taqiqda to'xtagan bo'lsa — haqiqiy lahza `paused_until` (eski `scheduled_at` emas).
+  const effectiveAt = campaign ? campaignEffectiveAt(campaign) : null;
+  const scheduledAt = effectiveAt ?? created.scheduled_at;
+  const quietShifted =
+    created.quiet_hours_shifted || Boolean(campaign?.paused_until && effectiveAt === campaign.paused_until);
+  /** Yuborilayotgan reklama tungi taqiqda to'xtadi — qachon davom etadi. */
+  const pausedUntil =
+    campaign && display === "sending" && isCampaignPaused(campaign, now) ? campaign.paused_until : null;
 
   const onCancel = () => {
     if (!campaignId) return;
@@ -196,17 +208,16 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
       ) : null}
       {display === "scheduled" && scheduledAt ? (
         // Rejalashtirilgan — ko'k (maket `-send-schedule`), tungi taqiq tufayli surilgan — sariq (`-send-states`).
-        <NoticeAlert
-          tone={created.quiet_hours_shifted ? "warning" : "info"}
-          icon={created.quiet_hours_shifted ? Clock : CalendarClock}
-          role="status"
-        >
-          {t(
-            created.quiet_hours_shifted
-              ? "campaign.progress.quietShifted"
-              : "campaign.progress.scheduled",
-            { time: campaignTime.format(scheduledAt) ?? "" },
-          )}
+        <NoticeAlert tone={quietShifted ? "warning" : "info"} icon={quietShifted ? Clock : CalendarClock} role="status">
+          {t(quietShifted ? "campaign.progress.quietShifted" : "campaign.progress.scheduled", {
+            // Gap o'rtasida: «Kampaniya ertaga, 10:00 da yuboriladi».
+            time: campaignTime.inline(scheduledAt, now) ?? "",
+          })}
+        </NoticeAlert>
+      ) : null}
+      {pausedUntil ? (
+        <NoticeAlert tone="warning" icon={Clock} role="status">
+          {t("campaign.progress.paused", { time: campaignTime.inline(pausedUntil, now) ?? "" })}
         </NoticeAlert>
       ) : null}
       <CampaignProgressBar value={pct} label={t("campaign.progress.bar")} />

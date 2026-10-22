@@ -53,7 +53,7 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     });
     const progress = page.getByTestId("campaign-progress");
     await expect(progress).toContainText("Rejalashtirilgan");
-    await expect(progress).toContainText("Ertaga, 10:00 da yuboriladi");
+    await expect(progress).toContainText("Kampaniya ertaga, 10:00 da yuboriladi");
     await expect(progress.getByRole("button", { name: "Kampaniyalar tarixi" })).toBeVisible();
     expect(mock.leaked).toEqual([]);
   });
@@ -83,6 +83,16 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     await expect(history).toContainText("210 yuborildi · 2 xato");
     await expect(history).toContainText("Xodim: Kuryer");
     await expect(history).toContainText("6 tadan 1–6");
+    // Bekor qilingan va xato kampaniyada chiziq — yuborilganlar ulushi (backend `progress_pct` = 100 emas).
+    await expect(history.getByRole("progressbar", { name: "«Bayram kunlari ish tartibi» — yuborildi" })).toHaveAttribute(
+      "aria-valuenow",
+      "31",
+    );
+    await expect(
+      history.getByRole("progressbar", { name: "«Samarqand filiali yangi manzilda» — yuborildi" }),
+    ).toHaveAttribute("aria-valuenow", "64");
+    // Sahifada yuborilayotgan kampaniya bor — ro'yxat jonli.
+    await expect(history).toContainText("Holat har 3 soniyada yangilanadi");
     await shot(page, "desktop-history", history);
 
     await history.getByRole("tab", { name: "Rejalashtirilgan" }).click();

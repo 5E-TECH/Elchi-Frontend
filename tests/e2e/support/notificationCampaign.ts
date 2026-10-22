@@ -7,6 +7,13 @@ import { expect, type Locator, type Page, type Route } from "@playwright/test";
  */
 export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 
+/**
+ * Sahifa soati (`page.clock.install`, keyin tabiiy oqadi) va fiksturalar BITTA lahzadan — 2026-10-21 11:00 Toshkent.
+ * Aks holda «Ertaga» / «Kecha» Node soati bo'yicha yasalib, brauzer soati bilan Toshkent yarim tunida (19:00 UTC)
+ * ajralib qolardi; reklama tungi taqiqi ham CI qaysi soatda yurganiga bog'liq bo'lardi.
+ */
+export const E2E_NOW = Date.parse("2026-10-21T06:00:00Z");
+
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -43,7 +50,7 @@ const SEGMENTS = [
       segment: { region_id: "1", district_id: "11", min_orders: 2, max_orders: 10 },
     },
     last_total: 1308,
-    last_counted_at: new Date().toISOString(),
+    last_counted_at: new Date(E2E_NOW).toISOString(),
   },
   {
     id: "4",
@@ -51,13 +58,13 @@ const SEGMENTS = [
     description: null,
     audience: { include_customers: true, segment: { last_order_to: "2026-07-01T00:00:00+05:00" } },
     last_total: 3420,
-    last_counted_at: new Date(Date.now() - 86_400_000).toISOString(),
+    last_counted_at: new Date(E2E_NOW - 86_400_000).toISOString(),
   },
 ];
 
-/** Toshkent kuni (`YYYY-MM-DD`) — bugundan `offset` kun. */
+/** Toshkent kuni (`YYYY-MM-DD`) — «bugun» (`E2E_NOW`) dan `offset` kun. */
 export const tashkentDay = (offset = 0) =>
-  new Date(Date.now() + 5 * 3_600_000 + offset * 86_400_000).toISOString().slice(0, 10);
+  new Date(E2E_NOW + 5 * 3_600_000 + offset * 86_400_000).toISOString().slice(0, 10);
 const at = (day: string, time: string) => `${day}T${time}:00+05:00`;
 
 /**
@@ -88,7 +95,7 @@ const historyRows = () => {
       total: 1308,
       sent: 0,
       progress_pct: 0,
-      created_at: new Date(Date.now() - 600_000).toISOString(),
+      created_at: new Date(E2E_NOW - 600_000).toISOString(),
       scheduled_at: at(tashkentDay(1), "10:00"),
       can_cancel: true,
       is_promo: true,
@@ -104,7 +111,7 @@ const historyRows = () => {
       total: 4860,
       sent: 2040,
       progress_pct: 42,
-      created_at: new Date(Date.now() - 1_200_000).toISOString(),
+      created_at: new Date(E2E_NOW - 1_200_000).toISOString(),
       scheduled_at: null,
       can_cancel: true,
       is_promo: false,
@@ -120,7 +127,7 @@ const historyRows = () => {
       total: 3420,
       sent: 0,
       progress_pct: 0,
-      created_at: new Date(Date.now() - 3_600_000).toISOString(),
+      created_at: new Date(E2E_NOW - 3_600_000).toISOString(),
       scheduled_at: at(tashkentDay(1), "09:00"),
       can_cancel: true,
       is_promo: true,
@@ -152,7 +159,9 @@ const historyRows = () => {
       audience: { roles: ["manager", "market"] },
       total: 1312,
       sent: 406,
-      progress_pct: 31,
+      // Backend bekor qilishda qolganlarni `skipped` ga yozadi va `progress_pct` = 100 (chiziq esa 406 / 1 312 = 31%).
+      skipped: 906,
+      progress_pct: 100,
       created_at: "2026-10-06T09:00:00+05:00",
       scheduled_at: null,
       can_cancel: false,
@@ -168,7 +177,8 @@ const historyRows = () => {
       audience: { include_customers: true, segment: { region_id: "2" } },
       total: 2980,
       sent: 1908,
-      progress_pct: 64,
+      failed: 1072,
+      progress_pct: 100,
       created_at: "2026-10-03T15:20:00+05:00",
       scheduled_at: null,
       can_cancel: false,
@@ -306,6 +316,7 @@ export const mockCampaignApi = async (
   let total = 0;
   let title = "";
   let scheduledAt: string | null = null;
+  await page.clock.install({ time: E2E_NOW });
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -345,7 +356,7 @@ export const mockCampaignApi = async (
           route,
           {
             statusCode: 201,
-            data: { id: "9", ...data, last_total: 236, last_counted_at: new Date().toISOString() },
+            data: { id: "9", ...data, last_total: 236, last_counted_at: new Date(E2E_NOW).toISOString() },
           },
           201,
         );

@@ -1,15 +1,21 @@
 // dizayn-v2: superadmin-notifications-send-schedule, superadmin-notifications-campaign-cancel-dialog
 import { useMemo, useState } from "react";
-import { CircleX, FileText, History, Megaphone, ServerCrash } from "lucide-react";
+import { FileText, ListX, Send, ServerCrash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   CAMPAIGN_DISPLAY_STATUSES,
+  CAMPAIGN_PROGRESS_INTERVAL_MS,
   CampaignStatusBadge,
+  campaignBarPct,
   campaignDisplayStatus,
+  campaignEffectiveAt,
+  campaignListRefetchInterval,
   draftFromSavedAudience,
+  isCampaignPaused,
   useAudienceDescription,
   useCampaignTime,
   useCampaigns,
+  useClock,
   type Campaign,
   type CampaignDisplayStatus,
 } from "../../../entities/notification-campaign";
@@ -83,6 +89,8 @@ export const CampaignHistoryCard = () => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
   const time = useCampaignTime();
+  // Nisbiy kun («Bugun» / «Ertaga») Toshkent yarim tunida o'zi almashadi — render toza, soat bitta.
+  const now = useClock();
   const askCancel = useCampaignCancel();
   const [filter, setFilter] = useState<HistoryFilter>("all");
   const [page, setPage] = useState(1);
@@ -106,10 +114,15 @@ export const CampaignHistoryCard = () => {
   const query = {
     data: (listQuery.isError && !data) || pending ? undefined : data?.items,
     isLoading: listQuery.isLoading || pending,
+    // Oflayn (so'rov kutib turibdi) — «Internet aloqasi yo'q», «Hali kampaniya yo'q» emas.
+    isPaused: listQuery.isPaused,
+    isFetching: listQuery.isFetching,
     isError: listQuery.isError && !data,
     error: listQuery.error,
     refetch: () => void listQuery.refetch(),
   };
+  /** «Holat har 3 soniyada yangilanadi» — faqat sahifada yuborilayotgan kampaniya bo'lsa (ro'yxat shunda so'raladi). */
+  const live = campaignListRefetchInterval(data, now) === CAMPAIGN_PROGRESS_INTERVAL_MS;
 
   const channelLabel = (channel: string) =>
     channel === "realtime" ? t("campaign.channel.realtime") : t(`dispatch.channel.${channel}`);
@@ -120,12 +133,26 @@ export const CampaignHistoryCard = () => {
     ]
       .filter(Boolean)
       .join(" · ");
-  const when = (campaign: Campaign) => time.format(campaign.scheduled_at ?? campaign.created_at) ?? "—";
-  /** Vaqt ostidagi izoh: reklama tungi taqiqda to'xtagan — qachon davom etadi. */
-  const whenNote = (campaign: Campaign) =>
-    campaign.paused_until && campaignDisplayStatus(campaign) === "sending"
-      ? t("campaign.history.paused", { time: time.inline(campaign.paused_until) ?? "" })
+  /**
+   * Vaqt: rejalashtirilgan — haqiqiy yuborish lahzasi (navbatdagi reklama tungi taqiqqa surilgan bo'lsa —
+   * `paused_until`), qolganida — boshlangan vaqt.
+   */
+  const when = (campaign: Campaign) =>
+    time.format(
+      (campaignDisplayStatus(campaign) === "scheduled" ? campaignEffectiveAt(campaign) : campaign.scheduled_at) ??
+        campaign.created_at,
+      now,
+    ) ?? "—";
+  /** Vaqt ostidagi izoh: reklama tungi taqiqda — surilgan (hali boshlanmagan) yoki qachon davom etadi. */
+  const whenNote = (campaign: Campaign) => {
+    if (!isCampaignPaused(campaign, now)) return null;
+    const display = campaignDisplayStatus(campaign);
+    if (display === "scheduled")
+      return campaignEffectiveAt(campaign) === campaign.paused_until ? t("campaign.history.quietShifted") : null;
+    return display === "sending"
+      ? t("campaign.history.paused", { time: time.inline(campaign.paused_until, now) ?? "" })
       : null;
+  };
   const recipients = (campaign: Campaign) => t("campaign.confirm.count", { value: num(campaign.total) });
   const progressText = (campaign: Campaign) => {
     if (campaignDisplayStatus(campaign) === "sent") {
@@ -147,7 +174,7 @@ export const CampaignHistoryCard = () => {
         sent: campaign.sent,
         failed: campaign.failed,
         skipped: campaign.skipped,
-        progressPct: campaign.progress_pct,
+        progressPct: campaignBarPct(campaign),
       },
       { onConflict: () => void listQuery.refetch() },
     );
@@ -185,7 +212,10 @@ export const CampaignHistoryCard = () => {
       <span className="text-text-subtle">—</span>
     ) : (
       <div className="flex w-[132px] flex-col gap-1.5">
-        <CampaignProgressBar value={campaign.progress_pct} label={t("campaign.progress.bar")} />
+        <CampaignProgressBar
+          value={campaignBarPct(campaign)}
+          label={t("campaign.history.progressLabel", { title: title(campaign) })}
+        />
         <span className="text-xs text-text-muted tabular-nums">{progressText(campaign)}</span>
       </div>
     );
@@ -270,7 +300,11 @@ export const CampaignHistoryCard = () => {
       {whenNote(campaign) ? <span className="text-xs text-text-muted">{whenNote(campaign)}</span> : null}
       {campaignDisplayStatus(campaign) === "scheduled" ? null : (
         <div className="flex min-w-0 items-center gap-3">
-          <CampaignProgressBar value={campaign.progress_pct} label={t("campaign.progress.bar")} className="flex-1" />
+          <CampaignProgressBar
+            value={campaignBarPct(campaign)}
+            label={t("campaign.history.progressLabel", { title: title(campaign) })}
+            className="flex-1"
+          />
           <span className="shrink-0 text-xs text-text-muted tabular-nums">{progressText(campaign)}</span>
         </div>
       )}
@@ -300,7 +334,9 @@ export const CampaignHistoryCard = () => {
                 summary={(range) => t("campaign.history.summary", { ...range, count: data.meta.total })}
                 className="min-w-0 flex-1"
               />
-              <span className="text-[13px] text-text-muted max-md:hidden">{t("campaign.history.live")}</span>
+              {live ? (
+                <span className="text-[13px] text-text-muted max-md:hidden">{t("campaign.history.live")}</span>
+              ) : null}
             </div>
           ) : undefined
         }
@@ -348,19 +384,26 @@ export const CampaignHistoryCard = () => {
           empty={
             filter === "all" ? (
               <EmptyState
-                icon={Megaphone}
+                icon={Send}
                 title={t("campaign.history.empty.title")}
                 description={t("campaign.history.empty.text")}
               />
             ) : (
               <EmptyState
-                icon={History}
+                icon={ListX}
                 title={t("campaign.history.emptyFiltered.title", {
                   status: t(`campaign.status.${filter}`),
                 })}
                 description={t("campaign.history.emptyFiltered.text")}
                 action={
-                  <Button variant="secondary" leftIcon={CircleX} onClick={() => setFilter("all")}>
+                  <Button
+                    variant="secondary"
+                    leftIcon={ListX}
+                    onClick={() => {
+                      setFilter("all");
+                      setPage(1);
+                    }}
+                  >
                     {t("campaign.history.showAll")}
                   </Button>
                 }

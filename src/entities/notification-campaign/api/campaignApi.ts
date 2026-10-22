@@ -1,4 +1,5 @@
 import { api } from "../../../shared/api/instance";
+import { LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { AudienceTarget } from "../model/audience";
 import {
@@ -419,8 +420,10 @@ export type CampaignExportResult =
   | { kind: "job"; exportId: string };
 
 export const exportCampaignUndelivered = async (id: string): Promise<CampaignExportResult> => {
+  // CSV 10 000 qatorgacha sinxron quriladi (gateway 60 s kutadi) — umumiy 20 s emas, eksport muddati.
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED_EXPORT(id), {
     responseType: "blob",
+    timeout: LONG_REQUEST_TIMEOUT_MS,
   });
   const blob = response.data as Blob;
   if (response.status === 202) {
@@ -460,6 +463,7 @@ export const getCampaignExportJob = async (exportId: string) =>
 export const downloadCampaignExport = async (exportId: string) => {
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_EXPORT_DOWNLOAD(exportId), {
     responseType: "blob",
+    timeout: LONG_REQUEST_TIMEOUT_MS,
   });
   return { blob: response.data as Blob, fileName: fileNameFrom(response.headers) };
 };

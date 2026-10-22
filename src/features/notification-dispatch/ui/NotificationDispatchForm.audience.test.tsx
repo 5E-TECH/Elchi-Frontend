@@ -1,7 +1,7 @@
 import { onlineManager } from "@tanstack/react-query";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi, type MockInstance } from "vitest";
 import { api } from "../../../shared/api/api";
 import { renderWithProviders } from "../../../test/test-utils";
 import NotificationDispatchForm from "./NotificationDispatchForm";
@@ -512,6 +512,26 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     expect(await screen.findByText("Yuborilmoqda")).toBeInTheDocument();
   });
 
+  it("504 → «Qayta urinish» 409 (ayni kalit) — «qaytadan yozing» emas: tarixdan tekshirish, forma qulfli", async () => {
+    const user = userEvent.setup();
+    createReplies = [
+      { status: 504, body: {} },
+      { status: 409, body: { message: "Idempotency-Key boshqa so'rov bilan ishlatilgan" } },
+    ];
+    await openAudience(user);
+    await sendMarkets(user);
+    const unknown = await screen.findByTestId("campaign-progress");
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(campaignCalls()).toHaveLength(2));
+    expect(
+      await within(unknown).findByText(
+        "Kampaniya birinchi urinishda yaratilgan bo'lishi mumkin — qaytadan yubormang, «Kampaniyalar tarixi»da tekshiring",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("dispatch-locked")).toHaveTextContent("Natija noma'lum");
+    expect(screen.queryByText(/boshqa so'rov bilan ishlatilgan/)).toBeNull();
+  });
+
   it("400 — a clear text from the preview limits, the form stays editable; a new attempt after a change uses a new key", async () => {
     const user = userEvent.setup();
     createReplies = [{ status: 400, body: {} }];
@@ -535,6 +555,10 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
   });
 
   it("advertising at night: the confirmation says when it will actually go", async () => {
+    // 20:00 Toshkent — taqiq ichida (ogohlantirish jonli soatdan ham hisoblanadi; test real soatga bog'liq bo'lmasin).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T15:00:00Z"));
+    onTestFinished(() => void vi.useRealTimers());
     const user = userEvent.setup();
     policyShifted = true;
     await openAudience(user);
@@ -547,7 +571,8 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     const dialog = await screen.findByRole("alertdialog", {
       name: "Xabarni yuborishni tasdiqlang",
     });
-    expect(await within(dialog).findByText(/^Reklama .* da yuboriladi$/)).toBeInTheDocument();
+    // Toshkent vaqtida, gap o'rtasida — «ertaga, 09:00» (brauzer mintaqasidagi sana emas).
+    expect(await within(dialog).findByText("Reklama ertaga, 09:00 da yuboriladi")).toBeInTheDocument();
     expect(within(dialog).getByText(/18:00–09:00 oralig'ida yuborilmaydi/)).toBeInTheDocument();
     // Formaning o'z so'rovi (`?category=`) ham bor — tasdiqdagi tekshiruv `scheduled_at` bilan.
     const policyCall = getSpy.mock.calls.find(
@@ -788,6 +813,9 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
   });
 
   it("advertising: «Ha, yuborish» waits for the night-ban check", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T15:00:00Z"));
+    onTestFinished(() => void vi.useRealTimers());
     const user = userEvent.setup();
     policyShifted = true;
     let release = () => {};
@@ -919,7 +947,28 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
       expect(campaignCalls()[0][1]).toMatchObject({ scheduled_at: "2026-10-22T10:00:00+05:00" });
       const progress = await screen.findByTestId("campaign-progress");
       expect(progress).toHaveAttribute("data-status", "scheduled");
-      expect(progress).toHaveTextContent("Ertaga, 10:00 da yuboriladi");
+      expect(progress).toHaveTextContent("Kampaniya ertaga, 10:00 da yuboriladi");
+    });
+
+    it("tasdiq oynasi ochiq turganda vaqt o'tsa — yuborilmaydi: oyna yopiladi, kartada «Bu vaqt o'tib ketdi»", async () => {
+      const user = userEvent.setup();
+      await openAudience(user);
+      await fillMarkets(user, "Kuzgi chegirma");
+      const card = screen.getByTestId("campaign-schedule");
+      await user.click(within(card).getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Rejalashtirish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "Kampaniyani rejalashtirishni tasdiqlang" });
+      // Ertangi 10:00 o'tib ketdi (oyna ochiq qoldirilgan).
+      vi.setSystemTime(new Date("2026-10-22T05:01:00Z"));
+      await user.click(within(dialog).getByRole("button", { name: "Rejalashtirish" }));
+      await waitFor(() =>
+        expect(screen.queryByRole("alertdialog", { name: "Kampaniyani rejalashtirishni tasdiqlang" })).toBeNull(),
+      );
+      expect(campaignCalls()).toHaveLength(0);
+      expect(await within(card).findByText("Bu vaqt o'tib ketdi — keyingi soatni tanlang")).toBeInTheDocument();
+      // Izoh «Darhol» demaydi — vaqt tanlanmagan.
+      expect(screen.queryByText(/^Darhol · kampaniya/)).toBeNull();
+      expect(screen.getByText("Yuborish vaqtini tanlang · 98 ta qabul qiluvchi")).toBeInTheDocument();
     });
 
     it("reklamaga o'zgartirilsa taqiq soati — xato, yuborilmaydi; «Darhol» da scheduled_at yo'q", async () => {

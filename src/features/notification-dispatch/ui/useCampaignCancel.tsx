@@ -57,7 +57,7 @@ export const useCampaignCancel = () => {
             <div className="flex min-w-0 items-center gap-3">
               <CampaignProgressBar
                 value={campaign.progressPct}
-                label={t("campaign.progress.bar")}
+                label={t("campaign.history.progressLabel", { title: campaign.title })}
                 track="surface"
                 className="flex-1"
               />
@@ -71,6 +71,7 @@ export const useCampaignCancel = () => {
               <Trans
                 t={t}
                 i18nKey="campaign.progress.cancelRemainingRich"
+                count={remaining}
                 values={{ value: num(remaining) }}
                 components={{ b: <span className="font-semibold" /> }}
               />

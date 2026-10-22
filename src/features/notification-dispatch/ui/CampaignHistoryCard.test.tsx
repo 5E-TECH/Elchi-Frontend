@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { onlineManager } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { api } from "../../../shared/api/api";
@@ -110,9 +111,20 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
+  onlineManager.setOnline(true);
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+/** Ro'yxat javobini almashtirish (boshqa so'rovlar — asosiy soxta). */
+const listReturns = (items: Array<Record<string, unknown>>) => {
+  const base = getSpy.getMockImplementation()!;
+  getSpy.mockImplementation((async (url: string, config?: unknown) =>
+    url === "notifications/campaigns"
+      ? { data: { data: { items, meta: { page: 1, limit: 10, total: items.length, totalPages: 1 } } } }
+      : base(url, config as never)) as never);
+};
 
 describe("CampaignHistoryCard (KM-3)", () => {
   it("qatorlar: Toshkent vaqti, auditoriya, holat, progress va amal", async () => {
@@ -135,7 +147,82 @@ describe("CampaignHistoryCard (KM-3)", () => {
     expect(within(rows[1]).getByRole("button", { name: "«Kuzgi chegirma» kampaniyasini bekor qilish" })).toBeVisible();
     expect(within(rows[3]).getByRole("button", { name: "«Kuryerlar uchun yangi qoidalar» hisoboti" })).toBeVisible();
     expect(card).toHaveTextContent("3 tadan 1–3");
+    // Yagona yuborilayotgan kampaniya tungi taqiqda to'xtagan — 3 s yangilanish yo'q, «jonli» yozuv ham yo'q.
+    expect(card).not.toHaveTextContent("Holat har 3 soniyada yangilanadi");
+    // Har chiziqning o'z nomi.
+    expect(within(rows[2]).getByRole("progressbar", { name: "«Yangi tariflar» — yuborildi" })).toHaveAttribute(
+      "aria-valuenow",
+      "42",
+    );
     expect(getSpy).toHaveBeenCalledWith("notifications/campaigns", { params: { page: 1, limit: 10 } });
+  });
+
+  it("bekor qilingan / xato: chiziq — yuborilganlar ulushi (backend `progress_pct` 100); jonli yozuv yo'q", async () => {
+    listReturns([
+      {
+        id: "15",
+        status: "cancelled",
+        display_status: "cancelled",
+        title: "Bayram kunlari ish tartibi",
+        category: "system",
+        channels: ["in_app"],
+        audience: { roles: ["manager"] },
+        total: 1312,
+        sent: 406,
+        skipped: 906,
+        progress_pct: 100,
+        created_at: "2026-10-06T04:00:00Z",
+        can_cancel: false,
+      },
+    ]);
+    renderWithProviders(<CampaignHistoryCard />);
+    const card = await screen.findByTestId("campaign-history");
+    const table = await within(card).findByRole("table");
+    expect(within(table).getByRole("progressbar", { name: "«Bayram kunlari ish tartibi» — yuborildi" })).toHaveAttribute(
+      "aria-valuenow",
+      "31",
+    );
+    expect(table).toHaveTextContent("406 / 1 312");
+    expect(card).not.toHaveTextContent("Holat har 3 soniyada yangilanadi");
+  });
+
+  it("navbatdagi reklama tungi taqiqqa surilgan — vaqt `paused_until`, izoh «Tungi taqiq tufayli surildi»", async () => {
+    listReturns([
+      {
+        id: "17",
+        status: "queued",
+        display_status: "scheduled",
+        title: "Kechki aksiya",
+        category: "marketing",
+        channels: ["in_app"],
+        audience: { roles: ["market"] },
+        total: 98,
+        sent: 0,
+        progress_pct: 0,
+        created_at: "2026-10-21T05:50:00Z",
+        // «Darhol» kechqurun yaratilgan: backend ertangi 09:00 ga to'xtatdi.
+        scheduled_at: "2026-10-20T15:00:00Z",
+        paused_until: "2026-10-22T04:00:00Z",
+        can_cancel: true,
+      },
+    ]);
+    renderWithProviders(<CampaignHistoryCard />);
+    const card = await screen.findByTestId("campaign-history");
+    const table = await within(card).findByRole("table");
+    const row = within(table).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("Ertaga, 09:00");
+    expect(row).toHaveTextContent("Tungi taqiq tufayli surildi");
+    expect(row).not.toHaveTextContent("Kecha");
+  });
+
+  it("oflayn — «Internet aloqasi yo'q» («Hali kampaniya yo'q» emas)", async () => {
+    onlineManager.setOnline(false);
+    renderWithProviders(<CampaignHistoryCard />);
+    const card = await screen.findByTestId("campaign-history");
+    expect(await within(card).findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(card).not.toHaveTextContent("Hali kampaniya yo'q");
+    onlineManager.setOnline(true);
+    expect(await within(card).findByRole("table")).toBeVisible();
   });
 
   it("holat tablari — backend `state`; bo'sh holat", async () => {

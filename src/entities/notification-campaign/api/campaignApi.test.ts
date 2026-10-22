@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "../../../shared/api/api";
+import { LONG_REQUEST_TIMEOUT_MS, api } from "../../../shared/api/api";
 import {
   cancelCampaign,
   createAudienceSegment,
@@ -228,8 +228,10 @@ describe("campaignApi (KM-2)", () => {
     const blob = new Blob(["a,b"]);
     const get = vi.spyOn(api, "get").mockResolvedValueOnce({ status: 200, data: blob });
     await expect(exportCampaignUndelivered("7")).resolves.toEqual({ kind: "file", blob, fileName: null });
+    // Gateway eksportni 60 s gacha kutadi — sukut 20 s emas.
     expect(get).toHaveBeenCalledWith("notifications/campaigns/7/undelivered/export", {
       responseType: "blob",
+      timeout: LONG_REQUEST_TIMEOUT_MS,
     });
     get.mockResolvedValueOnce({
       status: 202,

@@ -189,6 +189,8 @@ export const CampaignScheduleCard = ({
         <NoticeAlert
           tone="warning"
           icon={Clock}
+          // Matnda yuruvchi soat («Hozir 19:10») — jonli hudud har daqiqada qayta o'qimasin.
+          role="note"
           title={t("campaign.schedule.nowShiftedTitle", {
             now: toTashkentMoment(new Date(now).toISOString())?.time ?? "",
             // Gap o'rtasida: «… reklama ertaga, 09:00 da yuboriladi».

@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-notifications-campaign-report-dialog
 import { useMemo, useState, type ReactNode } from "react";
-import { Download, FileText, ServerCrash } from "lucide-react";
+import { CircleCheck, Download, FileText, ServerCrash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   CampaignStatusBadge,
@@ -10,6 +10,7 @@ import {
   useCampaignReport,
   useCampaignTime,
   useCampaignUndelivered,
+  useClock,
   useExportCampaignUndelivered,
   sumReportBucket,
   type Campaign,
@@ -27,11 +28,15 @@ import { notify } from "../../../shared/lib/notify";
 import {
   Badge,
   Button,
+  DataTable,
   Dialog,
+  EmptyState,
   ErrorState,
   Pagination,
+  QueryBoundary,
   SkeletonLines,
   SkeletonList,
+  type DataTableColumn,
 } from "../../../shared/ui/primitives";
 
 /** «Yetkazilmaganlar» bir sahifada. */
@@ -43,13 +48,13 @@ export type CampaignReportDialogProps = {
   onClose: () => void;
 };
 
-const BOX = "rounded-xl border border-border";
+const BOX = "overflow-hidden rounded-xl border border-border";
 
-/** Statistika katagi (maket: `sunken` quti — kichik yorliq, katta son, izoh). */
+/** Statistika katagi (maket: `sunken` quti — kichik yorliq, `.el-h2` son, izoh). */
 const StatTile = ({ label, value, caption }: { label: string; value: string; caption: string }) => (
   <div className="flex min-w-0 flex-col gap-0.5 rounded-xl bg-sunken p-3">
     <span className="text-xs text-text-muted">{label}</span>
-    <span className="text-[22px] leading-[30px] font-bold text-text tabular-nums">{value}</span>
+    <span className="text-base font-bold text-text tabular-nums">{value}</span>
     <span className="text-xs text-text-subtle">{caption}</span>
   </div>
 );
@@ -63,20 +68,37 @@ const StatTile = ({ label, value, caption }: { label: string; value: string; cap
  * tayyorlanadi). «Yetkazildi» (DLR) va narx bildirishnoma kanallarida o'lchanmaydi (`null` / bepul) — maketdagidek
  * chizilmaydi. Yuborilayotgan kampaniyada hisobot har 3 s yangilanadi.
  */
-export const CampaignReportDialog = ({ campaign, onClose }: CampaignReportDialogProps) => {
+export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: CampaignReportDialogProps) => {
   const { t, i18n } = useTranslation("notifications");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
   const time = useCampaignTime();
+  const now = useClock();
+  const open = Boolean(openCampaign);
+  // Yopilish animatsiyasida oxirgi kampaniya ko'rinib turadi («Sarlavhasiz» + skeletga sakramaydi; effektsiz).
+  const [lastCampaign, setLastCampaign] = useState<Campaign | null>(openCampaign);
+  if (openCampaign && openCampaign !== lastCampaign) setLastCampaign(openCampaign);
+  const campaign = openCampaign ?? lastCampaign;
   const id = campaign?.id ?? null;
   // Sahifa kampaniyaga bog'langan: boshqa kampaniya ochilsa — yana 1-sahifa (effektsiz).
   const [pageOf, setPageOf] = useState<{ id: string | null; page: number }>({ id: null, page: 1 });
   const page = pageOf.id === id ? pageOf.page : 1;
   const setPage = (next: number) => setPageOf({ id, page: next });
 
-  const report = useCampaignReport(id);
-  const undelivered = useCampaignUndelivered(id, { page, limit: CAMPAIGN_UNDELIVERED_PAGE_SIZE });
-  const exporter = useExportCampaignUndelivered(saveBlob);
+  // Oyna yopiq — so'rov va 3 s yangilanish yo'q (kesh yopilish animatsiyasi uchun qoladi).
+  const report = useCampaignReport(id, open);
+  const undelivered = useCampaignUndelivered(id, { page, limit: CAMPAIGN_UNDELIVERED_PAGE_SIZE }, open);
+  // Natija xabari mutatsiya darajasida — oyna yopilgan yoki boshqa kampaniya ochilgan bo'lsa ham chiqadi.
+  const exporter = useExportCampaignUndelivered(saveBlob, {
+    onOutcome: (outcome) => {
+      if (outcome.kind === "saved") notify.success(t("campaign.report.exportSaved"));
+      else if (outcome.kind === "timeout") notify.info(t("campaign.report.exportTimeout"));
+      else notify.error(t("campaign.report.exportFailed"));
+    },
+    onError: () => notify.error(t("campaign.report.exportFailed")),
+  });
+  /** Eksport bitta (kuzatuvchi umumiy) — «tayyorlanmoqda» faqat o'sha kampaniyada. */
+  const exporting = exporter.isPending && exporter.variables === id;
 
   const draft = useMemo(() => draftFromSavedAudience(campaign?.audience ?? {}), [campaign?.audience]);
   const audience = useAudienceDescription(draft, { enabled: Boolean(campaign?.audience) });
@@ -86,7 +108,7 @@ export const CampaignReportDialog = ({ campaign, onClose }: CampaignReportDialog
 
   const data = report.data;
   const title = campaign?.title || data?.campaign.title || t("campaign.history.untitled");
-  const when = time.format(campaign?.scheduled_at ?? campaign?.created_at ?? data?.campaign.created_at);
+  const when = time.format(campaign?.scheduled_at ?? campaign?.created_at ?? data?.campaign.created_at, now);
   const display = campaign ? campaignDisplayStatus(campaign) : (data?.campaign.display_status ?? null);
   const metaLine = [
     campaign?.category ? t(`category.${campaign.category}`, { defaultValue: campaign.category }) : null,
@@ -97,20 +119,13 @@ export const CampaignReportDialog = ({ campaign, onClose }: CampaignReportDialog
     .join(" · ");
 
   const exportFile = () => {
-    if (!id || exporter.isPending) return;
-    exporter.mutate(id, {
-      onSuccess: (outcome) => {
-        if (outcome.kind === "saved") notify.success(t("campaign.report.exportSaved"));
-        else if (outcome.kind === "timeout") notify.info(t("campaign.report.exportTimeout"));
-        else notify.error(t("campaign.report.exportFailed"));
-      },
-      onError: () => notify.error(t("campaign.report.exportFailed")),
-    });
+    if (!id || exporting) return;
+    exporter.mutate(id);
   };
 
   return (
     <Dialog
-      open={Boolean(campaign)}
+      open={open}
       onClose={onClose}
       title={t("campaign.report.title")}
       description={[title, when].filter(Boolean).join(" · ")}
@@ -126,7 +141,7 @@ export const CampaignReportDialog = ({ campaign, onClose }: CampaignReportDialog
             <Button
               variant="secondary"
               leftIcon={Download}
-              loading={exporter.isPending}
+              loading={exporting}
               loadingText={t("campaign.report.exporting")}
               onClick={exportFile}
             >
@@ -144,36 +159,43 @@ export const CampaignReportDialog = ({ campaign, onClose }: CampaignReportDialog
           </div>
         ) : null}
 
-        {report.isError && !data ? (
-          <ErrorState
-            kind="server"
-            size="inline"
-            icon={ServerCrash}
-            title={t("campaign.report.error.title")}
-            description={t("campaign.report.error.text")}
-            onRetry={() => void report.refetch()}
-            retrying={report.isFetching}
-          />
-        ) : !data ? (
-          <div aria-busy="true" aria-label={t("campaign.report.loading")}>
-            <SkeletonLines lines={6} />
-          </div>
-        ) : (
-          <ReportBody
-            report={data}
-            channelLabel={channelLabel}
-            num={num}
-            undelivered={
-              <UndeliveredSection
-                query={undelivered}
-                page={page}
-                onPageChange={setPage}
-                channelLabel={channelLabel}
-                num={num}
-              />
-            }
-          />
-        )}
+        <QueryBoundary
+          query={report}
+          // Boshqa kampaniya ochilganda oldingisining hisoboti ko'rinmaydi.
+          keepPreviousData={false}
+          isEmpty={() => false}
+          size="inline"
+          loadingLabel={t("campaign.report.loading")}
+          loading={<SkeletonLines lines={6} />}
+          error={(_, retry) => (
+            <ErrorState
+              kind="server"
+              size="inline"
+              icon={ServerCrash}
+              title={t("campaign.report.error.title")}
+              description={t("campaign.report.error.text")}
+              onRetry={retry}
+              retrying={report.isFetching}
+            />
+          )}
+        >
+          {(loaded: CampaignReport) => (
+            <ReportBody
+              report={loaded}
+              channelLabel={channelLabel}
+              num={num}
+              undelivered={
+                <UndeliveredSection
+                  query={undelivered}
+                  page={page}
+                  onPageChange={setPage}
+                  channelLabel={channelLabel}
+                  num={num}
+                />
+              }
+            />
+          )}
+        </QueryBoundary>
       </div>
     </Dialog>
   );
@@ -211,6 +233,17 @@ const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps)
   const cell = (value: number) => (
     <span className={value ? "text-text" : "text-text-subtle"}>{num(value)}</span>
   );
+  const columns: DataTableColumn<CampaignReportChannel>[] = [
+    { id: "channel", header: t("campaign.report.channel"), cell: (row) => channelLabel(row.channel) },
+    ...(["sent", "failed", "skipped", "pending"] as const).map(
+      (bucket): DataTableColumn<CampaignReportChannel> => ({
+        id: bucket,
+        header: t(`campaign.report.col.${bucket}`),
+        align: "end",
+        cell: (row) => cell(row[bucket]),
+      }),
+    ),
+  ];
 
   return (
     <>
@@ -238,36 +271,16 @@ const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps)
           <span id="campaign-report-channels" className="text-[13px] font-semibold text-text">
             {t("campaign.report.byChannel")}
           </span>
-          <div className={cx(BOX, "overflow-hidden max-md:hidden")}>
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-sunken text-left text-xs font-semibold tracking-[.04em] text-text-muted uppercase">
-                <tr>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">
-                    {t("campaign.report.channel")}
-                  </th>
-                  {(["sent", "failed", "skipped", "pending"] as const).map((bucket) => (
-                    <th key={bucket} scope="col" className="px-3 py-2.5 text-right font-semibold">
-                      {t(`campaign.report.col.${bucket}`)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row: CampaignReportChannel) => (
-                  <tr key={row.channel} className="border-t border-border">
-                    <td className="px-3 py-2.5 text-text">{channelLabel(row.channel)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{cell(row.sent)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{cell(row.failed)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{cell(row.skipped)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{cell(row.pending)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ul className={cx(BOX, "m-0 hidden list-none flex-col overflow-hidden p-0 max-md:flex")}>
-            {rows.map((row) => (
-              <li key={row.channel} className="flex flex-col gap-0.5 border-t border-border px-3 py-2.5 first:border-t-0">
+          <DataTable
+            rows={rows}
+            columns={columns}
+            getRowKey={(row) => row.channel}
+            density="compact"
+            label={t("campaign.report.byChannel")}
+            cardsLabel={t("campaign.report.byChannel")}
+            className={BOX}
+            renderCard={(row) => (
+              <div className="flex min-w-0 flex-col gap-0.5 px-3 py-2.5">
                 <span className="text-sm font-semibold text-text">{channelLabel(row.channel)}</span>
                 <span className="text-xs text-text-muted">
                   {t("campaign.report.channelLine", {
@@ -277,9 +290,9 @@ const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps)
                     pending: num(row.pending),
                   })}
                 </span>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          />
         </section>
       ) : null}
 
@@ -333,59 +346,63 @@ const UndeliveredSection = ({ query, page, onPageChange, channelLabel, num }: Un
         ) : null}
       </div>
 
-      {query.isError && !data ? (
-        <ErrorState
-          kind="server"
-          size="inline"
-          title={t("campaign.report.undeliveredError")}
-          onRetry={() => void query.refetch()}
-          retrying={query.isFetching}
-        />
-      ) : !data ? (
-        <div aria-busy="true" aria-label={t("campaign.report.loading")}>
-          <SkeletonList rows={3} />
-        </div>
-      ) : items.length === 0 ? (
-        <p className="m-0 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted">
-          {t("campaign.report.undeliveredNone")}
-        </p>
-      ) : (
-        <ul
-          className={cx(BOX, "m-0 flex list-none flex-col overflow-hidden p-0", query.isPlaceholderData && "opacity-60")}
-          aria-busy={query.isPlaceholderData}
-        >
-          {items.map((item) => (
-            <li
-              key={item.ref_id || item.recipient_id}
-              className="flex min-w-0 items-start gap-3 border-t border-border px-3 py-2.5 first:border-t-0"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-sm font-semibold text-text [overflow-wrap:anywhere]">
-                  {item.name?.trim() || t("dispatch.undelivered.noName", { id: item.recipient_id ?? "—" })}
-                </span>
-                {person(item) ? <span className="text-xs text-text-muted">{person(item)}</span> : null}
-              </div>
-              <div className="flex min-w-0 flex-col items-end gap-1 text-right">
-                {item.failures.map((failure) => {
-                  const reasonKey = failureReasonKey(failure.channel, failure.status, failure.reason);
-                  return (
-                    <span key={`${failure.channel}-${failure.status}`} className="flex flex-col items-end gap-0.5">
-                      <Badge tone={deliveryBucket(failure.status) === "failed" ? "danger" : "neutral"}>
-                        {failureLabel(failure)}
-                      </Badge>
-                      {reasonKey ? <span className="text-xs text-text-muted">{t(reasonKey)}</span> : null}
-                    </span>
-                  );
-                })}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <QueryBoundary
+        query={query}
+        // Oldingi sahifa (shu kampaniya ichida) — `placeholderData`; boshqa kampaniyaniki ko'rinmaydi.
+        keepPreviousData={false}
+        isEmpty={(loaded) => loaded.items.length === 0}
+        size="inline"
+        loadingLabel={t("campaign.report.undeliveredLoading")}
+        loading={<SkeletonList rows={3} />}
+        error={(_, retry) => (
+          <ErrorState
+            kind="server"
+            size="inline"
+            title={t("campaign.report.undeliveredError")}
+            onRetry={retry}
+            retrying={query.isFetching}
+          />
+        )}
+        empty={<EmptyState size="inline" icon={CircleCheck} title={t("campaign.report.undeliveredNone")} />}
+      >
+        {() => (
+          <ul
+            className={cx(BOX, "m-0 flex list-none flex-col p-0", query.isPlaceholderData && "opacity-60")}
+            aria-busy={query.isPlaceholderData || undefined}
+          >
+            {items.map((item) => (
+              <li
+                key={item.ref_id || item.recipient_id}
+                className="flex min-w-0 items-start gap-3 border-t border-border px-3 py-2.5 first:border-t-0"
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="text-sm font-semibold text-text [overflow-wrap:anywhere]">
+                    {item.name?.trim() || t("dispatch.undelivered.noName", { id: item.recipient_id ?? "—" })}
+                  </span>
+                  {person(item) ? <span className="text-xs text-text-muted">{person(item)}</span> : null}
+                </div>
+                <div className="flex min-w-0 flex-col items-end gap-1 text-right">
+                  {item.failures.map((failure) => {
+                    const reasonKey = failureReasonKey(failure.channel, failure.status, failure.reason);
+                    return (
+                      <span key={`${failure.channel}-${failure.status}`} className="flex flex-col items-end gap-0.5">
+                        <Badge tone={deliveryBucket(failure.status) === "failed" ? "danger" : "neutral"}>
+                          {failureLabel(failure)}
+                        </Badge>
+                        {reasonKey ? <span className="text-xs text-text-muted">{t(reasonKey)}</span> : null}
+                      </span>
+                    );
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </QueryBoundary>
 
       {data && data.unlistedFailed > 0 ? (
         <p className="m-0 text-xs text-text-muted">
-          {t("campaign.report.unlisted", { value: num(data.unlistedFailed) })}
+          {t("campaign.report.unlisted", { value: num(data.unlistedFailed), count: data.unlistedFailed })}
         </p>
       ) : null}
 

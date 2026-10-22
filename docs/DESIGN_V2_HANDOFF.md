@@ -216,6 +216,16 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     Maketdan farqlar — `route-map.json` `partialViews` (4 ekran «kodda yo'q» dan chiqdi). Trello `WIsb9Ytq`, `H7kpCman`
     — izoh bilan In Test. SMS kampaniyasi hisoboti (`/notifications/sms/campaigns/:id/report`) va SMS «Belgilangan
     vaqtda» — KM-4/KM-6 (alohida maket kerak).
+  - **KM-3 ko'rib chiqish tuzatishlari (2026-10-22, `shodiyor` ga olindi):** tasdiq oynasi ochiq turganda vaqt o'tsa —
+    yuborilmaydi («Tanlangan vaqt o'tib ketdi», tugma o'chiq; bosilsa oyna yopiladi, kartada «Bu vaqt o'tib ketdi»);
+    qayta urinishda 409 (ayni kalit) — «qaytadan yozing» emas, tarixdan tekshirish; «Darhol» reklama ogohlantirishi
+    jonli soatdan va Toshkent vaqtida; bekor / xato kampaniya chizig'i `sent / total` (backend `progress_pct` 100);
+    navbatdagi reklama tungi taqiqqa surilgan bo'lsa — vaqt `paused_until`, to'xtagan kampaniya 60 s da so'raladi;
+    «Holat har 3 soniyada» — faqat yuborilayotgan bo'lsa; tarix va hisobotda oflayn holat, `QueryBoundary`, kanal
+    jadvali `DataTable compact`; yetkazilmaganlar boshqa kampaniyaga «oqmaydi»; CSV eksport — 120 s, kampaniyaga
+    bog'langan, fon vazifasi id'si eslab qolinadi (kutish oshsa keyingi bosish davom ettiradi, 404/410 — yangisi);
+    ru/en ko'plik shakllari; e2e soati qotirilgan (`E2E_NOW`). Testlar mahalliy kompyuterdan qat'i nazar Toshkent
+    vaqtida (`vitest.config.ts` `TZ`, qo'riqchi `src/test/timezone.test.ts` — deploy #139/#140 sababi).
   - **ERTAGA DAVOM (2026-10-22):** (1) ~~KM-3~~ — tayyor (yuqorida). Shu bilan roadmap'ning backendsiz qismi
     tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
     javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da

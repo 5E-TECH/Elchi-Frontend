@@ -2,7 +2,8 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "../../../shared/api/api";
+import { LONG_REQUEST_TIMEOUT_MS, api } from "../../../shared/api/api";
+import { campaignBarPct, campaignEffectiveAt, isCampaignPaused } from "../model/campaign";
 import {
   getCampaignExportJob,
   getCampaignReport,
@@ -15,10 +16,15 @@ import {
   CAMPAIGN_PROGRESS_INTERVAL_MS,
   CAMPAIGN_SCHEDULED_INTERVAL_MS,
   campaignListRefetchInterval,
+  resetPendingCampaignExports,
+  useCampaignUndelivered,
   useExportCampaignUndelivered,
 } from "./hooks";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  resetPendingCampaignExports();
+});
 
 /**
  * KM-3 — rejalashtirish siyosati, tarix qatori, hisobot, «Yetkazilmaganlar» va CSV eksport (backend H7kpCman /
@@ -186,7 +192,10 @@ describe("useExportCampaignUndelivered (CSV)", () => {
     await act(async () => {
       await result.current.mutateAsync("14");
     });
-    expect(get).toHaveBeenCalledWith("notifications/campaigns/exports/5/download", { responseType: "blob" });
+    expect(get).toHaveBeenCalledWith("notifications/campaigns/exports/5/download", {
+      responseType: "blob",
+      timeout: LONG_REQUEST_TIMEOUT_MS,
+    });
     expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.csv");
   });
 
@@ -203,5 +212,153 @@ describe("useExportCampaignUndelivered (CSV)", () => {
     });
     await waitFor(() => expect(outcome).toEqual({ kind: "timeout" }));
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it("kutish oshgan vazifa eslab qolinadi: keyingi bosish yangi eksport ochmaydi — tayyor faylni yuklaydi", async () => {
+    const file = new Blob(["x"]);
+    let status = "running";
+    const get = vi.spyOn(api, "get").mockImplementation((async (url: string) => {
+      if (url.endsWith("/undelivered/export")) {
+        return { status: 202, data: new Blob([JSON.stringify({ data: { export_id: 5 } })]), headers: {} };
+      }
+      if (url.endsWith("/exports/5")) return { data: { data: { export_id: 5, status } } };
+      if (url.endsWith("/exports/5/download")) return { status: 200, data: file, headers: {} };
+      throw new Error(url);
+    }) as never);
+    const save = vi.fn();
+    const onOutcome = vi.fn();
+    const { result } = renderHook(
+      () => useExportCampaignUndelivered(save, { pollMs: 1, maxPolls: 2, onOutcome }),
+      { wrapper },
+    );
+    await act(async () => {
+      await result.current.mutateAsync("14");
+    });
+    expect(onOutcome).toHaveBeenLastCalledWith({ kind: "timeout" });
+    status = "done";
+    await act(async () => {
+      await result.current.mutateAsync("14");
+    });
+    expect(onOutcome).toHaveBeenLastCalledWith({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.csv" });
+    expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.csv");
+    expect(get.mock.calls.filter(([url]) => String(url).endsWith("/undelivered/export"))).toHaveLength(1);
+  });
+
+  it("eslab qolingan vazifa topilmasa (410) — yangisi ochiladi", async () => {
+    const file = new Blob(["x"]);
+    let exports = 0;
+    let first = true;
+    vi.spyOn(api, "get").mockImplementation((async (url: string) => {
+      if (url.endsWith("/undelivered/export")) {
+        exports += 1;
+        const id = exports === 1 ? 5 : 6;
+        return { status: 202, data: new Blob([JSON.stringify({ data: { export_id: id } })]), headers: {} };
+      }
+      if (url.endsWith("/exports/5")) {
+        if (first) {
+          first = false;
+          return { data: { data: { export_id: 5, status: "running" } } };
+        }
+        throw Object.assign(new Error("gone"), { isAxiosError: true, response: { status: 410 } });
+      }
+      if (url.endsWith("/exports/6")) return { data: { data: { export_id: 6, status: "done" } } };
+      if (url.endsWith("/exports/6/download")) return { status: 200, data: file, headers: {} };
+      throw new Error(url);
+    }) as never);
+    const save = vi.fn();
+    const { result } = renderHook(() => useExportCampaignUndelivered(save, { pollMs: 1, maxPolls: 1 }), {
+      wrapper,
+    });
+    await act(async () => {
+      await result.current.mutateAsync("14");
+    });
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.mutateAsync("14");
+    });
+    expect(exports).toBe(2);
+    expect(outcome).toEqual({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.csv" });
+  });
+});
+
+describe("useCampaignUndelivered — boshqa kampaniya", () => {
+  it("oldingi sahifa faqat shu kampaniya ichida; boshqa kampaniyada eski qatorlar ko'rinmaydi", async () => {
+    let release: (() => void) | null = null;
+    vi.spyOn(api, "get").mockImplementation((async (url: string, config?: { params?: { page?: number } }) => {
+      const id = url.split("/")[2];
+      if (id === "15") await new Promise<void>((resolve) => (release = resolve));
+      return {
+        data: {
+          data: {
+            items: [{ ref_id: `${id}-${config?.params?.page}`, recipient_id: "1", failures: [] }],
+            meta: { page: config?.params?.page ?? 1, limit: 10, total: 30, totalPages: 3 },
+            unlisted_failed: 0,
+          },
+        },
+      };
+    }) as never);
+    const client = new QueryClient();
+    const { result, rerender } = renderHook(
+      ({ id, page }: { id: string; page: number }) => useCampaignUndelivered(id, { page, limit: 10 }),
+      {
+        initialProps: { id: "14", page: 1 },
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        ),
+      },
+    );
+    await waitFor(() => expect(result.current.data?.items[0].ref_id).toBe("14-1"));
+    // Shu kampaniyada sahifa almashdi — oldingi sahifa yangisi kelguncha qoladi.
+    rerender({ id: "14", page: 2 });
+    expect(result.current.data?.items[0].ref_id).toBe("14-1");
+    expect(result.current.isPlaceholderData).toBe(true);
+    await waitFor(() => expect(result.current.data?.items[0].ref_id).toBe("14-2"));
+    // Boshqa kampaniya — 14 ning qatorlari ko'rinmaydi.
+    rerender({ id: "15", page: 1 });
+    expect(result.current.data).toBeUndefined();
+    await waitFor(() => expect(release).not.toBeNull());
+    act(() => release?.());
+    await waitFor(() => expect(result.current.data?.items[0].ref_id).toBe("15-1"));
+  });
+});
+
+describe("kampaniya qatori yordamchilari", () => {
+  it("chiziq: bekor / xatoda — sent / total (backend `progress_pct` 100), yuborilganda — backend", () => {
+    expect(
+      campaignBarPct({ status: "cancelled", display_status: "cancelled", sent: 406, total: 1312, progress_pct: 100 }),
+    ).toBe(31);
+    expect(campaignBarPct({ status: "failed", display_status: "failed", sent: 1908, total: 2980, progress_pct: 100 })).toBe(
+      64,
+    );
+    expect(campaignBarPct({ status: "done", display_status: "sent", sent: 210, total: 212, progress_pct: 100 })).toBe(100);
+    expect(campaignBarPct({ status: "queued", display_status: "scheduled", sent: 0, total: 0, progress_pct: 0 })).toBe(0);
+  });
+
+  it("haqiqiy lahza: `paused_until` keyinroq bo'lsa — o'sha; to'xtaganmi — hozirga nisbatan", () => {
+    expect(campaignEffectiveAt({ scheduled_at: "2026-10-21T13:00:00Z", paused_until: "2026-10-22T04:00:00Z" })).toBe(
+      "2026-10-22T04:00:00Z",
+    );
+    expect(campaignEffectiveAt({ scheduled_at: "2026-10-23T05:00:00Z", paused_until: "2026-10-22T04:00:00Z" })).toBe(
+      "2026-10-23T05:00:00Z",
+    );
+    expect(campaignEffectiveAt({ scheduled_at: null, paused_until: "2026-10-22T04:00:00Z" })).toBe(
+      "2026-10-22T04:00:00Z",
+    );
+    expect(campaignEffectiveAt({ scheduled_at: null, paused_until: null })).toBeNull();
+    const at = Date.parse("2026-10-21T15:00:00Z");
+    expect(isCampaignPaused({ paused_until: "2026-10-22T04:00:00Z" }, at)).toBe(true);
+    expect(isCampaignPaused({ paused_until: "2026-10-21T04:00:00Z" }, at)).toBe(false);
+    expect(isCampaignPaused({ paused_until: null }, at)).toBe(false);
+  });
+
+  it("ro'yxat: tungi taqiqda to'xtagan yuborilayotgan kampaniya — 60 s (3 s emas)", () => {
+    const at = Date.parse("2026-10-21T15:00:00Z");
+    const page = normalizeCampaignList({
+      data: {
+        items: [{ status: "running", display_status: "sending", paused_until: "2026-10-22T04:00:00Z" }],
+        meta: { total: 1 },
+      },
+    });
+    expect(campaignListRefetchInterval(page, at)).toBe(CAMPAIGN_SCHEDULED_INTERVAL_MS);
   });
 });
