@@ -453,9 +453,13 @@ const Payments = () => {
     // FE-PAY-01 fix3 dan oldingi holatida qoldirilgan (foydalanuvchi qarori
     // #7): filial puli HQ ga faqat superadmin/admin "Qabul qilinishi kerak"
     // orqali qabul qilganda o'tadi — menejer o'zi topshirmaydi.
+    // Filial id (IjqTYQks): profildagi `branch` — branch_users QATORI, uning `id` si bog'lanish yozuvi; filial —
+    // `branch_id` / ichki `branch.id`. `ownBranch.id` faqat kassa javobidagi filial obyektida olinadi.
     const branchId =
       getRecordString(data, "branch_id") ||
-      getRecordString(ownBranch, "id") ||
+      getRecordString(ownBranch, "branch_id") ||
+      getRecordString(asRecord(ownBranch.branch), "id") ||
+      (data.branch ? getRecordString(ownBranch, "id") : "") ||
       getRecordString(profile, "branch_id");
 
     if (!branchId) return null;

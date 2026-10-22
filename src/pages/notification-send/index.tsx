@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog
+// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown
 import { useTranslation } from "react-i18next";
 import { NotificationDispatchForm } from "../../features/notification-dispatch";
 import { PageHeader } from "../../shared/ui/primitives";

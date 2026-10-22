@@ -76,26 +76,32 @@ export const resolveNewOrdersShellMode = (
 export type NewOrdersTabKey = "markets" | "incoming" | "branches" | "cancelled" | "marketNew" | "marketCancelled";
 
 /**
- * Ko'rinadigan tablar — v1 qobig'idagi shartlar AYNAN (`pages/new_orders/index.tsx`, dizayn v2 gacha):
+ * Ko'rinadigan tablar:
  *  - market: «Yangi buyurtmalar» va (market id ma'lum bo'lsa) «Bekor qilinganlar»;
- *  - xodim: «Marketlar» doim; «Kiruvchi posilkalar» va «Filial paketlari» — faqat superadmin/admin;
- *    «Bekor qilinganlar» — `canHandoverCancelledToMarket` (superadmin/admin va HQ registratori).
- * Natija: menejer — 1 ta tab (tablar qatori yo'q), HQ registratori — 2 ta, boshqa registrator — 1 ta.
+ *  - xodim: «Marketlar» doim; «Kiruvchi posilkalar» — posilka qabul qiladigan hamma xodimga
+ *    (`canReceiveIncoming` = `canReceiveExternalOrders`, route guard bilan bir xil: superadmin, admin, registrator,
+ *    `intake` li menejer — HQ · PICKUP · HYBRID; ega qarori S1, 2026-10-19); «Filial paketlari» — faqat
+ *    superadmin/admin; «Bekor qilinganlar» — `canHandoverCancelledToMarket` (superadmin/admin va HQ registratori).
+ * Natija: menejer va registrator — «Marketlar · Kiruvchi posilkalar», HQ registratorida yana «Bekor qilinganlar».
+ * Qobiqqa kiradigan har xodimda (`canCreateOrders` — registrator va `intake` li menejer) tablar ikkita va undan ko'p.
  */
 export const resolveNewOrdersTabKeys = ({
   role,
   roleId,
+  canReceiveIncoming,
   canSeeCancelled,
 }: {
   role: string | null | undefined;
   roleId: string | null | undefined;
+  canReceiveIncoming: boolean;
   canSeeCancelled: boolean;
 }): NewOrdersTabKey[] => {
   if (role === "market") return roleId ? ["marketNew", "marketCancelled"] : ["marketNew"];
 
   const isAdmin = role === "superadmin" || role === "admin";
   const keys: NewOrdersTabKey[] = ["markets"];
-  if (isAdmin) keys.push("incoming", "branches");
+  if (canReceiveIncoming) keys.push("incoming");
+  if (isAdmin) keys.push("branches");
   if (canSeeCancelled) keys.push("cancelled");
   return keys;
 };

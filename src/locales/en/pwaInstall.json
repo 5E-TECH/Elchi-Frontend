@@ -1,0 +1,58 @@
+{
+  "install": "Install",
+  "howTo": "How to add",
+  "card": {
+    "title": "Install Elchi as an app",
+    "iosTitle": "Add Elchi to your Home Screen",
+    "iosBody": "On iPhone and iPad, notifications only reach the app opened from the Home Screen. Adding takes 3 steps.",
+    "iosBodyDashboard": "On iPhone and iPad, notifications only reach the app opened from the Home Screen. If you close this, the offer stays in Settings and Notifications.",
+    "inbox": {
+      "desktop": "Opens in its own window from the desktop or the Start menu.",
+      "phone": "Opens in its own window with one tap from the Home Screen."
+    },
+    "dashboard": {
+      "desktop": "Opens in its own window from the desktop. If you close this, the offer stays in Settings and Notifications.",
+      "phone": "Opens with one tap from the Home Screen. If you close this, the offer stays in Settings and Notifications."
+    },
+    "dismiss": "Close the offer"
+  },
+  "status": {
+    "appName": "Elchi app",
+    "installed": "Installed",
+    "notInstalled": "Not installed",
+    "unsupported": "Not supported",
+    "hint": {
+      "installed": "Opened as an app on this device",
+      "installedHere": "Installed on this device — open the app from the home screen or desktop",
+      "installable": "Currently opened in the browser",
+      "ios": "On iPhone and iPad it is added to the Home Screen via Safari",
+      "unsupported": "This browser can't install it — open it in Chrome, Edge or Safari"
+    }
+  },
+  "ios": {
+    "title": "Add to Home Screen",
+    "body": "Elchi opens as a separate app and notifications reach your device — even when the app is closed.",
+    "stepsLabel": "Steps to add",
+    "steps": {
+      "share": {
+        "title": "Tap «Share»",
+        "hint": "The square-and-arrow icon at the bottom of Safari (at the top on iPad)"
+      },
+      "add": {
+        "title": "Choose «Add to Home Screen»",
+        "hint": "Scroll the list down — the item is in the middle of the menu"
+      },
+      "confirm": {
+        "title": "Tap «Add»",
+        "hint": "The Elchi icon appears on the Home Screen — open the app from there"
+      }
+    },
+    "safariOnly": "Works only in Safari. If you opened the link in another browser, open it in Safari.",
+    "later": "Later",
+    "gotIt": "Got it"
+  },
+  "menuHint": {
+    "title": "Install from the browser menu",
+    "body": "Click the install icon in the address bar or «Install app» in the browser menu."
+  }
+}

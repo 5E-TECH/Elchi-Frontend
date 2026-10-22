@@ -1,8 +1,7 @@
-// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog
-import { useMemo, useRef, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { AxiosError } from "axios";
-import { Send, TriangleAlert, Users, X } from "lucide-react";
+import { Lock, Send, TriangleAlert, Users, X } from "lucide-react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -12,7 +11,12 @@ import {
 } from "../../../entities/notification-inbox";
 import { useMarkets } from "../../../entities/markets";
 import { NoticeAlert } from "../../../entities/notification";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import {
+  SentDetailDialog,
+  deriveDispatchStatus,
+  isDispatchHistoryStatus,
+  type DispatchHistoryStatus,
+} from "../../../entities/notification-dispatch";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
@@ -36,6 +40,7 @@ import {
   type RecipientUser,
 } from "../api/useDispatchNotification";
 import { createDispatchAttempts, dispatchFingerprint } from "../model/clientRequestId";
+import { classifyDispatchError } from "../model/dispatchError";
 import {
   DISABLED_DISPATCH_ROLES,
   DISPATCH_LIMITS,
@@ -47,8 +52,23 @@ import {
   type DispatchPayload,
   type RecipientMode,
 } from "../model/schema";
+import { DispatchResultCard } from "./DispatchResultCard";
+import { DispatchUnknownCard } from "./DispatchUnknownCard";
 
 const MODES: RecipientMode[] = ["single", "roles", "list", "all"];
+
+/** Yuborilgan so'rov (`client_request_id` bilan) va uning barmoq izi — «Qayta urinish» aynan shuni yuboradi. */
+type SentRequest = { request: DispatchPayload & { client_request_id: string }; fingerprint: string; sentAt: string };
+
+/**
+ * Yuborishdan keyingi holat (forma qulflanadi): `result` — javob keldi (natija kartasi); `unknown` — javob kelmadi
+ * yoki backend «hali yuborilmoqda» dedi (natija noma'lum kartasi).
+ */
+type DispatchOutcome =
+  | (SentRequest & { kind: "result"; result: DispatchResult; status: DispatchHistoryStatus })
+  | (SentRequest & { kind: "unknown"; reason: "timeout" | "running" });
+
+type SendError = { title: string; text: string };
 
 const ROLE_LABEL_KEYS: Record<string, string> = {
   admin: "roleAdmin",
@@ -147,15 +167,19 @@ type NotificationDispatchFormProps = {
  * Telegram — market guruhi). O'ng ustun: «Mazmun» (Sarlavha*, Matn, Kategoriya, Muhimlik, Havola, Guruh kaliti*),
  * «Oldindan ko'rish» (inbox kartasi) + «Yuborish». Telefonda ustunlar ketma-ket.
  *
- * Tasdiq oynasi (`Dialog role="alertdialog"`): Kimga · Qabul qiluvchilar taxminan · Kanallar · to'liq xabar; «Hamma» da qizil
- * ogohlantirish va qizil tugma. Ikki marta yuborilmaydi (`submittingRef` + `isPending`); javobsiz / 502–504 — natija
- * noma'lum, qayta yuborilmaydi, forma «Yangi xabar» gacha qulflanadi (avvalgidek).
+ * Tasdiq oynasi (`Dialog role="alertdialog"`): Kimga · Qabul qiluvchilar taxminan · Kanallar · to'liq xabar; «Hamma» da
+ * qizil ogohlantirish va qizil tugma. Ikki marta yuborilmaydi (`submittingRef` + `isPending`).
+ *
+ * Natija (NS-1, maketlar `*-send-result`, `*-send-unknown`) — formadan YUQORIDA alohida karta, forma qulflanadi
+ * («Yangi xabar» gacha): javob keldi — `DispatchResultCard` (kanal kesimi, «Yetkazilmaganlar» darhol); javobsiz /
+ * 502–504 — `DispatchUnknownCard` («Tarixdan tekshirish», «Qayta urinish» o'sha `client_request_id` bilan, «Yangi
+ * xabar»). Xato matni faqat i18n (`model/dispatchError.ts`), backend `message` ko'rsatilmaydi (ega S4).
  *
  * Takror himoyasi — `client_request_id` (`model/clientRequestId.ts`): har yuborish urinishiga bitta UUID, mazmunga
  * bog'langan. Xatodan keyin aynan shu mazmun qayta yuborilsa — o'sha id (backend ikkinchi marta yubormaydi); mazmun
  * o'zgarsa, muvaffaqiyatdan yoki «Yangi xabar» dan keyin — yangi id. Backend takrorni tarixdagi natija bilan qaytaradi
- * (`duplicate`): yuborilgan — natija; `running` — hali yuborilmoqda (forma qulflanadi); `failed` — avvalgi urinish xato
- * bilan tugagan (xato ko'rsatiladi, keyingi «Yuborish» — yangi urinish).
+ * (`duplicate`): yuborilgan — natija kartasi + «Avval yuborilgan»; `running` — natija noma'lum («Hali yuborilmoqda»);
+ * `failed` — avvalgi urinish xato bilan tugagan (forma ochiladi, keyingi «Yuborish» — yangi urinish).
  */
 const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormProps) => {
   const { t, i18n } = useTranslation("notifications");
@@ -190,18 +214,35 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   const dispatchMutation = useDispatchNotification();
   const [confirmPayload, setConfirmPayload] = useState<DispatchPayload | null>(null);
-  const [result, setResult] = useState<DispatchResult | null>(null);
-  /** Natija noma'lum: `timeout` — javob kelmadi (502–504); `running` — backend «hali yuborilmoqda» dedi. */
-  const [unknownOutcome, setUnknownOutcome] = useState<"timeout" | "running" | null>(null);
-  const [sendError, setSendError] = useState("");
+  const [outcome, setOutcome] = useState<DispatchOutcome | null>(null);
+  const [sendError, setSendError] = useState<SendError | null>(null);
+  /** «Qayta urinish» rad etildi (natija noma'lum kartasida). */
+  const [retryError, setRetryError] = useState<string | null>(null);
+  /** Tafsilot oynasi («Tarixdan tekshirish», «Barcha N tasini ko'rish») — `dispatch_id`. */
+  const [detailId, setDetailId] = useState<string | null>(null);
+  /** Tafsilot natija noma'lum kartasidan ochildimi (404 matni — «Qayta urinish» ga yo'naltiradi). */
+  const [detailFromUnknown, setDetailFromUnknown] = useState(false);
   const submittingRef = useRef(false);
+  /**
+   * Joriy urinish raqami: «Yangi xabar» uni oshiradi — eski (hali tugamagan) so'rov javobi yangi formaga tushmaydi va
+   * `submittingRef` ni qulflab qoldirmaydi (`mutation.reset()` dan keyin har chaqiruv callback'lari chaqirilmaydi).
+   */
+  const attemptRef = useRef(0);
   const [attempts] = useState(createDispatchAttempts);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [previewCreatedAt] = useState(() => new Date().toISOString());
 
   // Yuborilgan (yoki natijasi noma'lum) xabar shu formadan qayta yuborilmaydi —
-  // faqat "Yangi xabar" orqali (yangi guruh kaliti bilan).
-  const locked = Boolean(unknownOutcome) || Boolean(result);
+  // faqat "Yangi xabar" orqali (yangi guruh kaliti bilan) yoki noma'lumda «Qayta urinish» (o'sha id).
+  const locked = Boolean(outcome);
+  /** Tasdiq oynasi yopilgach fokus: natija kartasi chiqsa — unga, aks holda «Yuborish» tugmasiga. */
+  const outcomeRef = useRef<HTMLDivElement>(null);
+  const outcomeKey = outcome ? `${outcome.kind}:${outcome.request.client_request_id}` : null;
+  // Natija almashganda (noma'lum → «Qayta urinish» → natija) fokus yangi kartaga — bosilgan tugma o'chib ketadi.
+  // Tasdiq oynasidan keyingi birinchi natija — oynaning `returnFocus` i orqali.
+  useEffect(() => {
+    if (outcomeKey && !confirmPayload) outcomeRef.current?.focus({ preventScroll: true });
+  }, [outcomeKey, confirmPayload]);
 
   const roleLabel = (role?: string) => (role ? tUsers(ROLE_LABEL_KEYS[role] ?? role) : "");
   const userLabel = (user: RecipientUser) =>
@@ -261,56 +302,98 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   const onValid = (formValues: DispatchFormValues) => {
     if (locked) return;
-    setSendError("");
+    setSendError(null);
     setConfirmPayload(buildDispatchPayload(formValues));
   };
 
-  const confirmSend = () => {
-    if (!confirmPayload || submittingRef.current || dispatchMutation.isPending) return;
+  const errorText = (error: unknown) => {
+    const kind = classifyDispatchError(error);
+    return kind.kind === "error" ? t(kind.messageKey) : null;
+  };
+
+  /**
+   * Bitta urinish: `sent` — so'rov (o'z `client_request_id` i bilan). `retry` — natija noma'lum kartasidagi «Qayta
+   * urinish» (xato forma ostida emas, kartada ko'rinadi).
+   */
+  const send = (sent: SentRequest, retry: boolean) => {
+    if (submittingRef.current || dispatchMutation.isPending) return;
     submittingRef.current = true;
-    // Bitta urinish — bitta id: xatodan keyin aynan shu mazmun qayta yuborilsa o'sha id ketadi.
-    const fingerprint = dispatchFingerprint(confirmPayload);
-    const request = { ...confirmPayload, client_request_id: attempts.take(fingerprint) };
-    dispatchMutation.mutate(request, {
+    const token = ++attemptRef.current;
+    const current = () => token === attemptRef.current;
+    setRetryError(null);
+    dispatchMutation.mutate(sent.request, {
       onSuccess: (response) => {
+        if (!current()) return;
         setConfirmPayload(null);
         if (response.duplicate && response.status === "running") {
           // Ayni id bilan avvalgi so'rov hali ishlanmoqda — natija noma'lum, qayta yuborilmaydi.
-          setUnknownOutcome("running");
+          setOutcome({ ...sent, kind: "unknown", reason: "running" });
           return;
         }
-        attempts.settle(fingerprint);
+        attempts.settle(sent.fingerprint);
         if (response.duplicate && response.status === "failed") {
           // Avvalgi urinish xato bilan tugagan, backend qayta yubormadi. Keyingi «Yuborish» — yangi urinish (yangi id).
-          setSendError(t("dispatch.duplicateFailed"));
+          setOutcome(null);
+          setSendError({ title: t("dispatch.duplicateFailedTitle"), text: t("dispatch.duplicateFailedText") });
           return;
         }
-        setResult(response);
+        const status =
+          response.duplicate && isDispatchHistoryStatus(response.status)
+            ? response.status
+            : deriveDispatchStatus(response);
+        setOutcome({ ...sent, kind: "result", result: response, status });
       },
       onError: (error) => {
-        const status = (error as AxiosError).response?.status;
+        if (!current()) return;
         setConfirmPayload(null);
         // Id saqlanadi (`settle` yo'q): aynan shu mazmun qayta yuborilsa backend uni ikkinchi marta yubormaydi.
-        // Javobsiz / 502-504: qatorlar yozilgan bo'lishi mumkin — natija
-        // noma'lum. QAYTA YUBORILMAYDI, tugma bloklanadi.
-        if (!status || status >= 502) {
-          setUnknownOutcome("timeout");
+        const text = errorText(error);
+        if (text === null) {
+          // Javobsiz / 502-504: qatorlar yozilgan bo'lishi mumkin — natija noma'lum. QAYTA YUBORILMAYDI.
+          setOutcome({ ...sent, kind: "unknown", reason: "timeout" });
           return;
         }
-        setSendError(getBackendErrorMessage(error) ?? t("dispatch.sendFailed"));
+        if (retry) {
+          setRetryError(text);
+          return;
+        }
+        setSendError({ title: t("dispatch.sendFailed"), text });
       },
       onSettled: () => {
-        submittingRef.current = false;
+        if (current()) submittingRef.current = false;
       },
     });
   };
 
+  const confirmSend = () => {
+    if (!confirmPayload) return;
+    // Bitta urinish — bitta id: xatodan keyin aynan shu mazmun qayta yuborilsa o'sha id ketadi.
+    const fingerprint = dispatchFingerprint(confirmPayload);
+    send(
+      {
+        request: { ...confirmPayload, client_request_id: attempts.take(fingerprint) },
+        fingerprint,
+        sentAt: new Date().toISOString(),
+      },
+      false,
+    );
+  };
+
+  const retryUnknown = () => {
+    if (outcome?.kind !== "unknown") return;
+    send({ request: outcome.request, fingerprint: outcome.fingerprint, sentAt: outcome.sentAt }, true);
+  };
+
   const startNewMessage = () => {
+    // Tugamagan so'rov (masalan «Qayta urinish») endi bu formaga tegishli emas.
+    attemptRef.current += 1;
+    submittingRef.current = false;
     reset(createDefaultValues());
     attempts.clear();
-    setResult(null);
-    setUnknownOutcome(null);
-    setSendError("");
+    setOutcome(null);
+    setSendError(null);
+    setRetryError(null);
+    setDetailId(null);
     setSelectedUsers({});
     setDebouncedSearch("");
     dispatchMutation.reset();
@@ -339,6 +422,38 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   return (
     <>
+      {outcome ? (
+        <div ref={outcomeRef} tabIndex={-1} className="min-w-0 outline-none">
+          {outcome.kind === "result" ? (
+            <DispatchResultCard
+              result={outcome.result}
+              status={outcome.status}
+              payload={outcome.request}
+              dispatchId={outcome.result.dispatch_id ?? outcome.request.client_request_id}
+              sentAt={outcome.sentAt}
+              onNewMessage={startNewMessage}
+              onOpenDetail={() => {
+                setDetailFromUnknown(false);
+                setDetailId(outcome.result.dispatch_id ?? outcome.request.client_request_id);
+              }}
+            />
+          ) : (
+            <DispatchUnknownCard
+              reason={outcome.reason}
+              sentAt={outcome.sentAt}
+              retrying={dispatchMutation.isPending}
+              retryError={retryError}
+              onRetry={retryUnknown}
+              onCheckHistory={() => {
+                setDetailFromUnknown(true);
+                setDetailId(outcome.request.client_request_id);
+              }}
+              onNewMessage={startNewMessage}
+            />
+          )}
+        </div>
+      ) : null}
+
       <form
         noValidate
         aria-label={t("dispatch.formLabel")}
@@ -734,46 +849,28 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           <Card title={t("dispatch.sectionPreview")} bodyClassName="flex flex-col gap-4">
             <div data-testid="dispatch-preview">{renderPreview(previewNotification)}</div>
 
-            {result ? (
-              <NoticeAlert tone="success" title={t("dispatch.sent", { count: result.dispatched })}>
-                {result.duplicate || result.channels.length ? (
-                  <>
-                    {result.duplicate ? (
-                      <span className="block">{t("dispatch.duplicateSent")}</span>
-                    ) : null}
-                    {result.channels.length
-                      ? t("dispatch.sentChannels", { channels: channelLabels(result.channels) })
-                      : null}
-                  </>
-                ) : null}
+            {sendError ? (
+              <NoticeAlert tone="danger" title={sendError.title}>
+                {sendError.text}
               </NoticeAlert>
             ) : null}
-            {unknownOutcome ? (
-              <NoticeAlert tone="warning">
-                {t(
-                  unknownOutcome === "running"
-                    ? "dispatch.duplicateRunning"
-                    : "dispatch.unknownOutcome",
-                )}
-              </NoticeAlert>
-            ) : null}
-            {sendError ? <NoticeAlert tone="danger">{sendError}</NoticeAlert> : null}
 
-            <Button
-              type="submit"
-              size="lg"
-              fullWidth
-              leftIcon={Send}
-              loading={dispatchMutation.isPending}
-              disabled={locked}
-            >
-              {t("dispatch.send")}
-            </Button>
-            {locked ? (
-              <Button variant="secondary" fullWidth onClick={startNewMessage}>
-                {t("dispatch.newMessage")}
+            {outcome ? (
+              <p className="m-0 flex items-center gap-2 text-[13px] text-text-muted" data-testid="dispatch-locked">
+                <Lock size={16} aria-hidden="true" className="shrink-0" />
+                {t(outcome.kind === "result" ? "dispatch.lockedSent" : "dispatch.lockedUnknown")}
+              </p>
+            ) : (
+              <Button
+                type="submit"
+                size="lg"
+                fullWidth
+                leftIcon={Send}
+                loading={dispatchMutation.isPending}
+              >
+                {t("dispatch.send")}
               </Button>
-            ) : null}
+            )}
           </Card>
         </div>
       </form>
@@ -791,6 +888,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         size="md"
         busy={dispatchMutation.isPending}
         initialFocus={cancelRef}
+        returnFocus={outcomeRef}
         footer={
           <>
             <Button
@@ -890,6 +988,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           </div>
         ) : null}
       </Dialog>
+
+      <SentDetailDialog
+        dispatchId={detailId}
+        source={detailFromUnknown ? "unknown" : "history"}
+        onClose={() => setDetailId(null)}
+      />
     </>
   );
 };

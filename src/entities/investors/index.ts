@@ -156,3 +156,34 @@ export const useInvestors = () => {
     markProfitPaid,
   };
 };
+
+// ==================== INVESTOR KABINETI (IN-1) ====================
+// Investorning o'zi: `GET investors/me/*` (doira JWT'dan). Hook'lar va normalizator — alohida fayllarda.
+export {
+  investorMeKeys,
+  useInvestorDashboard,
+  useInvestorInvestments,
+  useInvestorMe,
+  useInvestorProfits,
+} from "./api/me";
+export type { InvestorListParams, InvestorMonthsWindow, InvestorProfitParams } from "./api/me";
+export {
+  investorAccessProblem,
+  toInvestorDashboard,
+  toInvestorInvestmentsPage,
+  toInvestorMe,
+  toInvestorProfitsPage,
+} from "./model/me";
+export type {
+  InvestorAccessProblem,
+  InvestorDashboard,
+  InvestorInvestment,
+  InvestorInvestmentsPage,
+  InvestorMe,
+  InvestorMonthlyPoint,
+  InvestorPageMeta,
+  InvestorProfit,
+  InvestorProfitsPage,
+  InvestorSelfProfile,
+  InvestorSummary,
+} from "./model/me";

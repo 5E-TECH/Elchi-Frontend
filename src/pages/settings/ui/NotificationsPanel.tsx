@@ -1,4 +1,4 @@
-// dizayn-v2: common-settings-notifications
+// dizayn-v2: common-settings-notifications, common-settings-notifications-pwa
 import { useId, useState, type ReactNode } from "react";
 import { ArrowRight, Clock, Info, ShieldAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import {
   type NotificationCategory,
 } from "../../../entities/notification-inbox";
 import { PushPermissionButton } from "../../../features/push-notifications";
+import { AppInstallStatusBlock } from "../../../features/pwa-install";
 import { buttonClasses, Card, Field, TextInput } from "../../../shared/ui/primitives";
 import { SectionHead, SwitchList, SwitchRow } from "./settingsUi";
 
@@ -100,7 +101,8 @@ const QuietTimeField = ({
 
 /**
  * «BILDIRISHNOMALAR» — maket `common-settings-notifications`: «Qurilma bildirishnomalari» (push kaliti, brauzer
- * ruxsati, bloklanganda yo'riqnoma — `PushPermissionButton variant="switch"`), pastida «Qutini ochish».
+ * ruxsati, bloklanganda yo'riqnoma — `PushPermissionButton variant="switch"`), pastida «Qutini ochish»; so'ng «Ilova»
+ * kartasi (maket `common-settings-notifications-pwa`, KI-2) — o'rnatish holati `AppInstallStatusBlock` (4 holat).
  *
  * Maketda yo'q, lekin kodda bor bo'limlar (kanallar, kategoriyalar, reklama, sokin soatlar — e2e
  * `settings-notifications.*`) — spec §10 savol 3 sukuti: saqlanadi, qurilma blokidan keyin maket kartalari
@@ -118,6 +120,7 @@ export const NotificationsPanel = ({
   const muted = new Set(settings.muted_categories);
   const quiet = settings.quiet_hours;
   const deviceHeadId = useId();
+  const appHeadId = useId();
 
   const onChannel = (id: NotificationChannelId, on: boolean) =>
     persist({ notifications: { channels: { [id]: on } } });
@@ -145,6 +148,17 @@ export const NotificationsPanel = ({
             {t("settings:notifications.open_inbox")}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
+        </div>
+      </Card>
+
+      <Card padding="none" aria-labelledby={appHeadId} data-testid="settings-app-install">
+        <div className="flex flex-col gap-4 p-5 max-md:p-4">
+          <SectionHead
+            id={appHeadId}
+            title={t("settings:notifications.app_title")}
+            hint={t("settings:notifications.app_hint")}
+          />
+          <AppInstallStatusBlock />
         </div>
       </Card>
 

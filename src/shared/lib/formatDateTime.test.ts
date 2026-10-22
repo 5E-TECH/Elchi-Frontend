@@ -4,6 +4,7 @@ import {
   RELATIVE_DAY_LABEL,
   formatDateLocalized,
   formatDateTimeLocalized,
+  formatRelativeTimeLocalized,
   formatTimeLocalized,
   toValidDate,
 } from "./formatDateTime";
@@ -263,5 +264,51 @@ describe("yozgi vaqtga o'tish (Europe/Berlin)", () => {
     expect(formatDateTimeLocalized(at(2026, 10, 25, 0, 10), { now, language: "en" })).toBe("Yesterday, 00:10");
     expect(formatDateTimeLocalized(at(2026, 10, 24, 23, 50), { now, language: "en" })).toBe("24.10.2026, 23:50");
     expect(formatDateTimeLocalized(at(2026, 10, 26, 0, 5), { now, language: "en" })).toBe("Today, 00:05");
+  });
+});
+
+describe("formatRelativeTimeLocalized — «… oldin»", () => {
+  const ago = (ms: number) => new Date(NOW.getTime() - ms);
+  const MIN = 60_000;
+
+  it.each([
+    ["uz", "Hozirgina", "1 daqiqa oldin", "59 daqiqa oldin", "1 soat oldin", "23 soat oldin", "1 kun oldin", "29 kun oldin"],
+    ["ru", "Только что", "1 минуту назад", "59 минут назад", "1 час назад", "23 часа назад", "1 день назад", "29 дней назад"],
+    ["en", "Just now", "1 minute ago", "59 minutes ago", "1 hour ago", "23 hours ago", "1 day ago", "29 days ago"],
+  ])("%s: hozirgina, daqiqa, soat, kun (pastga yaxlitlanadi)", (language, now, m1, m59, h1, h23, d1, d29) => {
+    expect(formatRelativeTimeLocalized(ago(59_000), { language, now: NOW })).toBe(now);
+    expect(formatRelativeTimeLocalized(ago(MIN), { language, now: NOW })).toBe(m1);
+    expect(formatRelativeTimeLocalized(ago(59 * MIN + 59_000), { language, now: NOW })).toBe(m59);
+    expect(formatRelativeTimeLocalized(ago(60 * MIN), { language, now: NOW })).toBe(h1);
+    expect(formatRelativeTimeLocalized(ago(23 * 60 * MIN + 59 * MIN), { language, now: NOW })).toBe(h23);
+    expect(formatRelativeTimeLocalized(ago(24 * 60 * MIN), { language, now: NOW })).toBe(d1);
+    expect(formatRelativeTimeLocalized(ago(29 * 24 * 60 * MIN), { language, now: NOW })).toBe(d29);
+  });
+
+  it("ruscha ko'plik: 2–4 — few, 5–20 va 11–14 — many, 21 — one", () => {
+    const ru = (minutes: number) => formatRelativeTimeLocalized(ago(minutes * MIN), { language: "ru", now: NOW });
+    expect(ru(2)).toBe("2 минуты назад");
+    expect(ru(5)).toBe("5 минут назад");
+    expect(ru(11)).toBe("11 минут назад");
+    expect(ru(12)).toBe("12 минут назад");
+    expect(ru(21)).toBe("21 минуту назад");
+    expect(ru(22)).toBe("22 минуты назад");
+    expect(formatRelativeTimeLocalized(ago(2 * 24 * 60 * MIN), { language: "ru", now: NOW })).toBe("2 дня назад");
+    expect(formatRelativeTimeLocalized(ago(5 * 60 * MIN), { language: "ru", now: NOW })).toBe("5 часов назад");
+  });
+
+  it("30 kundan eski — sana; kelajak: 5 daqiqagacha «Hozirgina», undan uzoq — to'liq sana va vaqt", () => {
+    expect(formatRelativeTimeLocalized(ago(30 * 24 * 60 * MIN), { language: "uz", now: NOW })).toBe("08.09.2026");
+    expect(formatRelativeTimeLocalized(ago(-4 * MIN), { language: "uz", now: NOW })).toBe("Hozirgina");
+    expect(formatRelativeTimeLocalized(at(2026, 10, 9, 9, 0), { language: "uz", now: NOW })).toBe("09.10.2026, 09:00");
+  });
+
+  it("ISO satr (Z / +05:00) va bo'sh / noto'g'ri qiymat", () => {
+    const now = new Date("2026-10-21T10:00:00Z");
+    expect(formatRelativeTimeLocalized("2026-10-21T09:48:00Z", { language: "uz", now })).toBe("12 daqiqa oldin");
+    expect(formatRelativeTimeLocalized("2026-10-21T12:00:00+05:00", { language: "uz", now })).toBe("3 soat oldin");
+    expect(formatRelativeTimeLocalized(null, { now })).toBe("—");
+    expect(formatRelativeTimeLocalized("", { now })).toBe("—");
+    expect(formatRelativeTimeLocalized("2026-02-30", { now })).toBe("—");
   });
 });

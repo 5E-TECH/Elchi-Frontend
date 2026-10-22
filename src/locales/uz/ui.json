@@ -313,7 +313,11 @@
     "groups": {
       "orderStatus": {
         "title": "Buyurtma holati",
-        "meta": "11 ta · nuqtali"
+        "meta": "13 ta · nuqtali"
+      },
+      "cancelStage": {
+        "title": "Bekor bosqichi",
+        "meta": "5 ta · ikonkali, nuqtasiz; ostida joy va muddat"
       },
       "variants": {
         "title": "Tonlar, ko'rinishlar va o'lchamlar",
@@ -352,7 +356,8 @@
       "description": "Izoh va amallar (asosiy amal bitta)",
       "back": "Orqaga havolasi bilan",
       "meta": "Holat, nusxalash va amallar",
-      "long": "Uzun sarlavha — qatorga o'raladi, kesilmaydi"
+      "long": "Uzun sarlavha — qatorga o'raladi, kesilmaydi",
+      "refresh": "O'sadigan matn bloki — sarlavha yonida holat va telefondagi ikonka tugma"
     },
     "demo": {
       "dashboardTitle": "Bosh sahifa",
@@ -368,7 +373,11 @@
       "cancel": "Bekor qilish",
       "sell": "Sotish",
       "longTitle": "Chilonzor qabul punkti bo'yicha bekor qilingan va qaytarilgan buyurtmalarning haftalik hisoboti",
-      "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma"
+      "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma",
+      "refreshing": "Yangilanmoqda…",
+      "refresh": "Yangilash",
+      "refreshList": "Ro'yxatni yangilash",
+      "lastUpdated": "Oxirgi yangilanish: 14:42"
     }
   },
   "table": {
@@ -434,7 +443,9 @@
       "dayCloseLabel": "№10238 natijasi",
       "closeSold": "Sotildi",
       "closeCancel": "Bekor",
-      "closeTomorrow": "Ertaga"
+      "closeTomorrow": "Ertaga",
+      "countBusyTitle": "Sonlar yangilanmoqda",
+      "countBusyNote": "Eski son joyida xira turadi — tab bosiladi, kenglik o'zgarmaydi"
     }
   },
   "kit": {
@@ -764,15 +775,22 @@
     },
     "demo": {
       "shiftTitle": "Smenani yopish",
-      "shiftDescription": "Joriy kassa smenasi yakunlanadi",
+      "shiftDescription": "Kassani sanang va sanalgan summani kiriting",
       "shiftCurrent": "Joriy smena",
       "shiftCurrentValue": "Bugun, 09:00 dan",
       "shiftOpenedBy": "Ochgan xodim",
       "shiftOpenedByValue": "Ravshan Ortiqov",
-      "shiftCash": "Kassadagi summa",
-      "shiftExcel": "Smenani yopganingizda Excel hisobot avtomatik ravishda yuklab olinadi.",
+      "shiftCountedCash": "Sanalgan naqd",
+      "shiftCountedCard": "Sanalgan karta",
+      "shiftExpected": "Tizim bo'yicha kutilgan:",
+      "shiftDiff": "Farq",
+      "shiftSurplus": "Ortiqcha",
+      "shiftNotCounted": "Sanalmadi",
+      "shiftDiffAlert": "Farq bor — sababini izohga yozing",
+      "shiftCommentHint": "Farq bo'lsa izoh majburiy. Farq bo'lmasa — ixtiyoriy.",
+      "shiftNote": "Kutilgan — kassaning joriy qoldig'i, yakuniy farq yopish paytida hisoblanadi. Karta bo'sh qolsa — «Sanalmadi». Smena yopilgach Excel hisobot avtomatik yuklab olinadi.",
       "shiftComment": "Izoh",
-      "shiftCommentPlaceholder": "Smena haqida izoh...",
+      "shiftCommentPlaceholder": "Masalan: naqd ikki marta sanaldi",
       "shiftAction": "Smenani yopish",
       "deleteTitle": "O'chirishni tasdiqlang",
       "deleteDescription": "Mahsulot katalogdan butunlay o'chiriladi.",
@@ -1259,5 +1277,34 @@
       "text": "Yorug'lik kam",
       "action": "Chiroqni yoqish"
     }
+  },
+  "chartsKit": {
+    "title": "Grafiklar",
+    "description": "Steklangan ustunlar — har ustunda bir nechta qism, ustida yig'indi, ustiga kelganda qiymatlar oynasi.",
+    "stackedTitle": "Steklangan ustunlar",
+    "stackedMeta": "Maket: investor-dashboard-home («Oylik foyda»). Telefonda yig'indi va qiymatlar oynasi yashirin, oy yorliqlari siyrak.",
+    "ariaLabel": "Oylik foyda, mart – oktabr 2026: 3,6 mln dan 6,2 mln so'mgacha; sentabr foydasi hali to'lanmagan",
+    "paid": "To'langan",
+    "unpaid": "Kutilmoqda",
+    "months": [
+      "Mar",
+      "Apr",
+      "May",
+      "Iyn",
+      "Iyl",
+      "Avg",
+      "Sen",
+      "Okt"
+    ],
+    "monthTitles": [
+      "Mart 2026",
+      "Aprel 2026",
+      "May 2026",
+      "Iyun 2026",
+      "Iyul 2026",
+      "Avgust 2026",
+      "Sentabr 2026",
+      "Oktabr 2026"
+    ]
   }
 }

@@ -78,6 +78,8 @@ vi.mock("../../../entities/user/api/userApi", () => ({
         isLoading: false,
       };
     },
+    // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
+    useGetCouriers: () => ({ data: undefined, isLoading: false }),
   }),
 }));
 vi.mock("../../../entities/branch/api/useBranches", () => ({

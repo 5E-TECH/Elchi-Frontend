@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail
+// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack
 import { memo, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +38,8 @@ import {
   getViewerOperationType,
 } from "./paymentSourceType";
 import { PaymentAckBadge } from "./PaymentAckBadge";
-import { toPaymentAck } from "./paymentAck";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
+import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 
 /**
  * KASSA TARIXI YOZUVI TAFSILOTI — «Moliya» sahifalarining umumiy oynasi (dizayn v2).
@@ -46,7 +47,8 @@ import { toPaymentAck } from "./paymentAck";
  * Maketlar: `*-payments-history-detail-dialog` (superadmin, admin, menejer), `market-cashbox-history-detail-dialog`,
  * `courier-cashbox-history-detail`. `Dialog` (telefonda pastki varaqa): sarlavha «Kirim operatsiyasi» / «Chiqim
  * operatsiyasi» + «Operatsiyalar tarixi · {sana}»; xulosa — ishorali summa va «Operatsiyadan keyingi balans»;
- * `dl` — Manba turi, Kassa turi (`hideCashboxType` — kuryer maketi), Qayerdan/Qayerga (ism + rol + telefon),
+ * `dl` — Manba turi, Kategoriya (qo'lda chiqimning xarajat kategoriyasi — Elchi Pochta №1, maketda yo'q: yozilgan
+ * paytdagi nom, bo'lsagina), Kassa turi (`hideCashboxType` — kuryer maketi), Qayerdan/Qayerga (ism + rol + telefon),
  * To'lov turi, To'lov sanasi; «Izoh»; «Bog'langan buyurtma» (Market, Holat, Tuman, Manzil, Mijoz telefoni + uch
  * summa); pastda «Yopish».
  *
@@ -141,6 +143,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
       payment_method: current.payment_method ?? detail?.payment_method ?? undefined,
       payment_date: current.payment_date ?? detail?.payment_date ?? current.createdAt ?? detail?.createdAt,
       comment: current.comment ?? detail?.comment ?? undefined,
+      expense_category_name: getExpenseCategoryName(current) ?? getExpenseCategoryName(detail),
       cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
     };
   }, [current, detail]);
@@ -193,8 +196,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const partyPhone = party?.phone_number?.trim() || party?.phone?.trim() || "";
   const comment = display.comment?.trim();
   // 2crjWf7v: kuryerning bot kvitansiyasiga javobi — faqat «Kuryerdan qabul» qatorida (ro'yxat qatoridan;
-  // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maketda yo'q (Trello kartasidagi ega qarori).
+  // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maket `manager-payments-history-detail-dialog-ack`;
+  // matn ko'ruvchiga qarab (KI-S1): kuryer — «Siz tasdiqlagansiz», xodim — «Kuryer tasdiqladi».
   const paymentAck = toPaymentAck(current?.payment_ack);
+  const paymentAckAudience = paymentAckAudienceOf(viewerRole);
 
   const order = detail?.order ?? null;
   const orderId = order?.id != null ? String(order.id) : "";
@@ -231,6 +236,12 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           t("v2HistoryDetail.sourceType"),
           getPaymentSourceTitle(display.source_type, t, { role: viewerRole, cashboxType: display.cashbox_type }),
         )}
+        {display.expense_category_name
+          ? kvRow(
+              t("v2HistoryDetail.category"),
+              <span data-expense-category="">{display.expense_category_name}</span>,
+            )
+          : null}
         {hideCashboxType
           ? null
           : kvRow(t("v2HistoryDetail.cashboxType"), getCashboxTypeLabel(display.cashbox_type, t, viewerRole))}
@@ -256,7 +267,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           ? kvRow(
               t("v2HistoryDetail.paymentAck"),
               paymentAck ? (
-                <PaymentAckBadge ack={paymentAck} />
+                <PaymentAckBadge ack={paymentAck} audience={paymentAckAudience} />
               ) : (
                 <span className="font-normal text-text-muted">{t("v2HistoryDetail.paymentAckNone")}</span>
               ),

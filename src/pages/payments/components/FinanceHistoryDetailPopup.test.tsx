@@ -219,20 +219,37 @@ describe("FinanceHistoryDetailPopup — kuryer kvitansiyasi javobi (2crjWf7v)", 
     ...(payment_ack === undefined ? {} : { payment_ack }),
   });
 
-  it("disputed → «Kvitansiya javobi: Noto'g'ri» (ro'yxatdagi belgi bilan bir xil)", async () => {
+  it("xodim, disputed → «Kvitansiya javobi: Kuryer: noto'g'ri» (maket manager-payments-history-detail-dialog-ack)", async () => {
     open(courierPayment("disputed"), "manager");
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
-    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Noto'g'ri");
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Kuryer: noto'g'ri");
     expect(badge).toHaveAttribute("data-payment-ack", "disputed");
+    expect(badge).toHaveAttribute("title", "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi");
   });
 
-  it("confirmed → «Tasdiqlangan»", async () => {
-    open(courierPayment("confirmed"), "courier", { hideCashboxType: true });
+  it("xodim, confirmed → «Kuryer tasdiqladi»", async () => {
+    open(courierPayment("confirmed"), "manager");
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
-    expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Tasdiqlangan")).toHaveAttribute(
+    expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Kuryer tasdiqladi")).toHaveAttribute(
       "data-payment-ack",
       "confirmed",
     );
+  });
+
+  it("kuryerning o'zi, confirmed → «Siz tasdiqlagansiz» (KI-S1)", async () => {
+    open(courierPayment("confirmed"), "courier", { hideCashboxType: true });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Siz tasdiqlagansiz");
+    expect(badge).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(badge).toHaveAttribute("title", "Botdagi kvitansiyani siz tasdiqlagansiz");
+  });
+
+  it("kuryerning o'zi, disputed → «Siz: noto'g'ri»", async () => {
+    open(courierPayment("disputed"), "courier", { hideCashboxType: true });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Siz: noto'g'ri");
+    expect(badge).toHaveAttribute("title", "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz");
+    expect(within(dialog).queryByText(/^Kuryer(: noto'g'ri| tasdiqladi)$/)).not.toBeInTheDocument();
   });
 
   it("javob yo'q (null) → «Javob yo'q»; maydon kelmagan qatorda qator umuman yo'q", async () => {
@@ -245,5 +262,47 @@ describe("FinanceHistoryDetailPopup — kuryer kvitansiyasi javobi (2crjWf7v)", 
     open(courierPayment(undefined), "manager");
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
     expect(within(dialog).queryByText("Kvitansiya javobi", { selector: "dt" })).not.toBeInTheDocument();
+  });
+});
+
+describe("FinanceHistoryDetailPopup — xarajat kategoriyasi (Elchi Pochta №1)", () => {
+  const spendRow: PaymentRow = {
+    id: "740",
+    amount: 150_000,
+    balance_after: 2_350_000,
+    operation_type: "expense",
+    cashbox_id: "1",
+    source_type: "manual_expense",
+    cashbox_type: "main",
+    payment_method: "cash",
+    payment_date: "2026-10-21T09:15:00.000Z",
+    comment: "Benzin, oktabr",
+    expense_category_id: "2",
+    expense_category_name: "Yoqilg'i",
+  };
+
+  it("qatordagi nom (yozilgan paytdagi nusxa) — «Manba turi» dan keyin «Kategoriya» qatori", async () => {
+    open(spendRow);
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Kategoriya")).toHaveTextContent("Yoqilg'i");
+    const terms = within(dialog).getAllByText(/./, { selector: "dt" }).map((node) => node.textContent);
+    expect(terms.indexOf("Kategoriya")).toBe(terms.indexOf("Manba turi") + 1);
+  });
+
+  it("qatorda bo'lmasa — tafsilot javobidan; kategoriyasiz yozuvda qator yo'q", async () => {
+    detailState.result = {
+      data: { data: { id: "740", amount: 150_000, cashbox_id: "1", expense_category_name: "Ijara (arenda)" } },
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...spendRow, expense_category_name: undefined });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Kategoriya")).toHaveTextContent("Ijara (arenda)");
+  });
+
+  it("kategoriyasiz chiqim — «Kategoriya» qatori chizilmaydi", async () => {
+    open({ ...spendRow, expense_category_id: null, expense_category_name: null });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).queryByText("Kategoriya", { selector: "dt" })).not.toBeInTheDocument();
   });
 });

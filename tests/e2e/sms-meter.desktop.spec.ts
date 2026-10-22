@@ -74,7 +74,7 @@ test.describe("SMS hisoblagichi — narx, 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test('⭐ Kampaniya: TC6 reklama narxi oshadi, TC7 qabul qiluvchilar bilan qayta hisoblanadi, TC10 "taxminiy"', async ({
+  test('⭐ Kampaniya: TC6 reklama tarifi, TC7 qabul qiluvchilar bilan qayta hisoblanadi, TC10 "taxminiy"', async ({
     page,
   }) => {
     const leaked = await mockSmsApi(page);
@@ -82,25 +82,16 @@ test.describe("SMS hisoblagichi — narx, 1440px", () => {
     const panel = page.getByRole("tabpanel");
     await expect(panel.getByTestId("sms-meter")).toBeVisible({ timeout: 60_000 });
 
-    // «Xabar turi» — v2 segment (`radiogroup`).
-    await panel.getByRole("radio", { name: "Xizmat xabari" }).click();
+    // KM-1: kampaniya faqat reklama — «Xabar turi» faqat o'qish, «Xizmat xabari» yo'q.
+    await expect(panel.getByRole("textbox", { name: "Xabar turi" })).toHaveValue("Reklama");
+    await expect(panel.getByRole("radio", { name: "Xizmat xabari" })).toHaveCount(0);
     await panel.getByLabel("Xabar matni").fill(TEXT_50);
     await panel.getByLabel("Telefon raqamlari (har qatorda bittadan)").fill("+998901234567");
 
-    // TC10: narx yonida "taxminiy".
+    // TC10: narx yonida "taxminiy"; TC6: reklama tarifi (175) — bekor qilish havolasi bilan bo'laklar.
     await expect(panel.getByTestId("sms-meter-cost")).toContainText("(taxminiy)");
-    const transactional = await costOf(page, panel);
-    expect(await partsOf(panel)).toBe(1);
-    expect(transactional.sum).toBe(1 * 95 * 1);
-
-    // TC6: "Reklama" — reklama tarifi (175) qo'llanadi, narx OSHADI.
-    await panel.getByRole("radio", { name: "Reklama" }).click();
-    await expect
-      .poll(async () => (await costOf(page, panel)).sum)
-      .toBeGreaterThan(transactional.sum!);
     const promoParts = await partsOf(panel);
     expect((await costOf(page, panel)).sum).toBe(promoParts * 175 * 1);
-    await expect(panel.getByTestId("sms-meter-cost")).toContainText("(taxminiy)");
 
     // TC7: qabul qiluvchilar 1 → 3 → 5 — narx har safar qayta hisoblanadi.
     await panel
@@ -111,10 +102,7 @@ test.describe("SMS hisoblagichi — narx, 1440px", () => {
       .getByLabel("Telefon raqamlari (har qatorda bittadan)")
       .fill("+998901234567\n+998911234567\n+998931234567\n+998941234567\n+998951234567");
     await expect.poll(async () => (await costOf(page, panel)).sum).toBe(promoParts * 175 * 5);
-
-    // Xizmat xabariga qaytsa — yana arzon tarif.
-    await panel.getByRole("radio", { name: "Xizmat xabari" }).click();
-    await expect.poll(async () => (await costOf(page, panel)).sum).toBe(1 * 95 * 5);
+    await expect(panel.getByTestId("sms-meter-cost")).toContainText("(taxminiy)");
     expect(leaked).toEqual([]);
   });
 

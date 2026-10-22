@@ -227,6 +227,8 @@
     "subtitleShiftOpen": "Main cashbox management · shift open",
     "subtitleShiftClosed": "Main cashbox management · shift closed",
     "subtitleBranch": "Main cashbox management · {{branch}}",
+    "subtitleBranchShiftOpen": "{{branch}} · shift open",
+    "subtitleBranchShiftClosed": "{{branch}} · shift closed",
     "exportExcel": "Export to Excel",
     "openShift": "Open shift",
     "closeShift": "Close shift",
@@ -345,6 +347,15 @@
       "fillCommentRequired": "A comment is required — write where the money came from",
       "spendCommentRequired": "A comment is required — write what the money was spent on",
       "typeRequired": "Choose the payment type",
+      "category": "Expense category",
+      "categoryPlaceholder": "Choose a category",
+      "categoryListLabel": "Expense categories",
+      "categoryLoading": "Loading categories…",
+      "categoryEmpty": "No categories have been added yet",
+      "categoryClear": "Remove the category",
+      "categoryLoadError": "Couldn't load the categories — you can save the expense without one",
+      "categoryRetry": "Try again",
+      "categoryIncludes": "Includes: {{text}}",
       "fillSubmit": "Save income",
       "spendSubmit": "Save expense",
       "cancel": "Cancel",
@@ -355,23 +366,82 @@
       "spendTitle": "Confirm the expense",
       "description": "Check the details — once confirmed, the amount shows in the cashbox immediately.",
       "cashbox": "Cashbox",
+      "category": "Category",
       "mainCashbox": "Main cashbox",
       "comment": "Comment",
       "submit": "Confirm"
     },
     "shift": {
-      "title": "Close shift",
-      "subtitle": "The current cashbox shift will be finished",
       "current": "Current shift",
       "since": "since {{time}}",
       "openedBy": "Opened by",
-      "cashboxTotal": "Amount in the cashbox",
-      "excelNote": "When you close the shift, an Excel report is downloaded automatically.",
+      "closedBy": "Closed by",
+      "opener": "Opened by",
       "comment": "Comment",
-      "commentPlaceholder": "Comment about the shift...",
       "cancel": "Cancel",
-      "submit": "Close shift",
-      "closing": "Closing…"
+      "cash": "Cash",
+      "card": "Card",
+      "cardClick": "Card (Click)",
+      "mainCashbox": "Main cashbox",
+      "branchCashbox": "{{branch}} cashbox",
+      "branchCashboxFallback": "Branch cashbox",
+      "locked": "Available once the shift is open",
+      "banner": {
+        "title": "Shift not started",
+        "main": "Receiving money, market payouts, expenses and cashbox top-ups work once the shift is open. The balance and operations history stay visible.",
+        "branch": "Receiving from couriers, expenses and cashbox top-ups work once the shift is open. The balance and operations history stay visible."
+      },
+      "open": {
+        "title": "Open shift",
+        "subtitle": "{{cashbox}} · a new shift starts",
+        "start": "Start",
+        "now": "now",
+        "balanceTitle": "Opening balance",
+        "total": "Total",
+        "balanceHint": "The current cashbox balance is recorded. The expected amount at closing is calculated from it.",
+        "commentPlaceholder": "For example: evening shift",
+        "submit": "Open shift",
+        "opening": "Opening…"
+      },
+      "close": {
+        "title": "Close shift",
+        "subtitle": "Count the cashbox and enter the counted amount",
+        "countedCash": "Counted cash",
+        "countedCard": "Counted card",
+        "expected": "Expected by the system:",
+        "diff": "Difference",
+        "diffAlert": "There is a difference — write the reason in the comment",
+        "commentHint": "A comment is required if there is a difference. Otherwise — optional.",
+        "commentPlaceholder": "For example: cash was counted twice",
+        "cashRequired": "Enter the counted cash amount",
+        "commentRequired": "There is a difference — write a comment",
+        "note": "Expected is the current cashbox balance; the final difference is calculated at closing. If the card is left empty — «Not counted», no card difference is calculated. After closing, the Excel report downloads automatically.",
+        "submit": "Close shift",
+        "closing": "Closing…"
+      },
+      "diff": {
+        "shortage": "Shortage",
+        "surplus": "Surplus",
+        "match": "Matches",
+        "notCounted": "Not counted",
+        "expectedUnknown": "Expected unknown"
+      },
+      "result": {
+        "title": "Shift closed",
+        "subtitle": "{{range}} · {{cashbox}}",
+        "tableLabel": "Shift result: cash and card",
+        "metric": "Metric",
+        "opening": "At opening",
+        "income": "Income",
+        "expense": "Expense",
+        "expected": "Expected",
+        "counted": "Counted",
+        "diff": "Difference",
+        "cardNotCounted": "Card not counted — no card difference was calculated.",
+        "excelNote": "The Excel report was downloaded. Download again if needed.",
+        "export": "Export to Excel",
+        "done": "Done"
+      }
     },
     "notify": {
       "alreadyRecorded": "This operation has already been recorded — the cashbox was refreshed, please check the amount",
@@ -554,6 +624,7 @@
     "entry": {
       "title": "Add a manual entry",
       "source": "Source type",
+      "cashboxAutoNote": "Cashbox income and expenses are logged automatically — enter only entries that don't touch the cashbox here.",
       "direction": "Direction",
       "income": "Income (+)",
       "expense": "Expense (−)",
@@ -582,8 +653,8 @@
     },
     "sources": {
       "sell_profit": "Post profit",
-      "sell_extra_cost": "Extra cost",
-      "cancel_extra_cost": "Extra cost",
+      "sell_extra_cost": "Extra cost (sale)",
+      "cancel_extra_cost": "Extra cost (cancellation)",
       "manual_income": "Manual income",
       "manual_expense": "Manual expense",
       "salary": "Salary",
@@ -598,6 +669,7 @@
     "orderNumber": "Order №{{id}}",
     "openDetail": "Open details: {{title}} ({{date}})",
     "detail": "Details",
+    "category": "Category",
     "paginationOperations": "{{from}}–{{to}} of {{total}} operations",
     "paymentMethod": {
       "cash": "Cash",
@@ -647,6 +719,7 @@
     "amount": "Amount",
     "balanceAfter": "Balance after the operation",
     "sourceType": "Source type",
+    "category": "Category",
     "cashboxType": "Cashbox type",
     "from": "From",
     "to": "To",
@@ -669,6 +742,60 @@
     "close": "Close",
     "loading": "Loading details",
     "loadError": "Could not load the details"
+  }
+  ,"v2ExpenseCategories": {
+    "manage": "Expense categories",
+    "title": "Expense categories",
+    "subtitle": "The list in the «Cashbox expense» dialog · {{n}} total",
+    "subtitleShort": "The list in the «Cashbox expense» dialog",
+    "add": "Add a category",
+    "listLabel": "Expense categories",
+    "orderLabel": "Order: {{n}}",
+    "editAria": "Edit the «{{name}}» category",
+    "deleteAria": "Delete the «{{name}}» category",
+    "noDescription": "No description",
+    "empty": "No categories",
+    "emptyDescription": "Add a category — it appears in the list of the «Cashbox expense» dialog",
+    "loadError": "Couldn't load the categories",
+    "loading": "Loading categories",
+    "close": "Close",
+    "form": {
+      "addTitle": "Add a category",
+      "editTitle": "Edit the category",
+      "addSubtitle": "The new category shows up in the «Cashbox expense» list right away",
+      "editSubtitle": "Expenses recorded earlier keep the old name",
+      "name": "Name",
+      "namePlaceholder": "For example: Fuel",
+      "nameRequired": "Enter the category name",
+      "nameTooLong": "The name must be at most {{max}} characters",
+      "description": "What it includes",
+      "descriptionPlaceholder": "For example: petrol, gas, diesel",
+      "descriptionTooLong": "The description must be at most {{max}} characters",
+      "sortOrder": "Order",
+      "sortOrderHint": "Lower numbers come first. Leave empty to add it at the end",
+      "sortOrderEditHint": "Lower numbers come first",
+      "sortOrderInvalid": "Enter a whole number from 0 to {{max}}",
+      "back": "Back",
+      "create": "Add",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "delete": {
+      "title": "Confirm deletion",
+      "description": "The category below is removed from the list in the «Cashbox expense» dialog.",
+      "note": "Expenses recorded earlier keep the category name.",
+      "confirm": "Delete",
+      "loading": "Deleting…"
+    },
+    "notify": {
+      "created": "Category added",
+      "updated": "Category saved",
+      "deleted": "Category deleted",
+      "nameDescription": "«{{name}}»",
+      "saveError": "Couldn't save the category",
+      "notFound": "Category not found",
+      "notFoundDescription": "It may have been deleted — the list was refreshed"
+    }
   }
   ,"v2Picker": {
     "select": "Select",
@@ -874,8 +1001,12 @@
       "rollback": "Correction"
     }
   }
-  ,"paymentAckDisputed": "Disputed"
-  ,"paymentAckDisputedHint": "The courier marked the bot receipt as wrong"
-  ,"paymentAckConfirmed": "Confirmed"
-  ,"paymentAckConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffConfirmed": "Courier confirmed"
+  ,"paymentAckStaffConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffDisputed": "Courier: wrong"
+  ,"paymentAckStaffDisputedHint": "The courier marked the bot receipt as wrong"
+  ,"paymentAckSelfConfirmed": "You confirmed"
+  ,"paymentAckSelfConfirmedHint": "You confirmed the bot receipt"
+  ,"paymentAckSelfDisputed": "You: wrong"
+  ,"paymentAckSelfDisputedHint": "You marked the bot receipt as wrong"
 }

@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, market-products-edit-dialog, superadmin-products-create, admin-products-create, market-products-create
+// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, superadmin-products-create, admin-products-create
 import { useId, useRef, useState, type ChangeEvent } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";

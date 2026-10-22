@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { CANCEL_RETURN_STAGE_ORDER, type CancelReturnStage } from "../../../entities/order/model/cancelReturnStage";
 import { ORDER_STATUSES } from "../../../entities/order/model/statusRegistry";
 import { OrderStatusBadge } from "../../../entities/order/ui/OrderStatusBadge";
 import { Badge, type BadgeSize, type BadgeVariant } from "../../../shared/ui/primitives/Badge";
@@ -12,6 +13,27 @@ import { ThemePair } from "../ThemePair";
 
 const VARIANTS: readonly BadgeVariant[] = ["soft", "outline", "solid"];
 const SIZES: readonly BadgeSize[] = ["md", "sm"];
+
+/**
+ * Bekor bosqichi namunalari (`tizim-states-data` §09) — bosqich buyurtma yozuvidan hisoblanadi; joy va
+ * muddat maketdagidek («Samarqand filiali · 2 kun», «→ Toshkent HQ»).
+ */
+const DAY_MS = 86_400_000;
+const stageSample = (stage: CancelReturnStage): Record<string, unknown> => {
+  const ago = (days: number) => new Date(Date.now() - days * DAY_MS - 3_600_000).toISOString();
+  switch (stage) {
+    case "courier":
+      return { status: "cancelled", holder_type: "COURIER", courier: { name: "Jasur Tursunov" }, last_handover_at: ago(1) };
+    case "in_transit":
+      return { status: "cancelled (sent)", branch: { name: "Toshkent HQ" } };
+    case "branch":
+      return { status: "cancelled", holder_type: "BRANCH", post_id: "41", branch: { name: "Samarqand filiali" }, last_handover_at: ago(2) };
+    case "hq":
+      return { status: "cancelled", holder_type: "HQ", post_id: "41", branch: { name: "Toshkent HQ" }, last_handover_at: ago(3) };
+    default:
+      return { status: "returned_to_market", holder_type: "MARKET", branch: { name: "Toshkent HQ" }, last_handover_at: Date.now() };
+  }
+};
 
 /** API'da uchraydigan yozilishlar va noma'lum qiymat — `OrderStatusBadge` normallashtirishi namunasi. */
 const RAW_SAMPLES: ReadonlyArray<{ raw: unknown; caption: string }> = [
@@ -43,8 +65,8 @@ const Wrap = ({ children }: { children: ReactNode }) => (
 );
 
 /**
- * «Holat belgilari» bo'limi: barcha ton × ko'rinish × o'lcham, 11 buyurtma
- * holati (`OrderStatusBadge`), maketdagi tur/holat namunalari va API qiymatlarini
+ * «Holat belgilari» bo'limi: barcha ton × ko'rinish × o'lcham, buyurtma holatlari (`OrderStatusBadge`; «Marketga
+ * topshirildi» — bekor bosqichi qatorida), bekor bosqichi (5 ta, joy qatori bilan), maketdagi tur/holat namunalari va API qiymatlarini
  * normallashtirish. Har namuna kunduzgi va tungi mavzuda (`ThemePair`).
  * Maket: `tizim-states-data` → «Holat belgilari — to'liq to'plam».
  */
@@ -60,10 +82,20 @@ export const BadgesSection = () => {
         <Card as="div" padding="none" bodyClassName="divide-y divide-border">
           <Row title={t("badge.groups.orderStatus.title")} meta={t("badge.groups.orderStatus.meta")}>
             <Wrap>
-              {ORDER_STATUSES.map((status) => (
+              {/* «Marketga topshirildi» — bekor bosqichi qatorida (ikonkali), bu yerda qolgan nuqtali holatlar. */}
+              {ORDER_STATUSES.filter((status) => status !== "returned_to_market").map((status) => (
                 <OrderStatusBadge key={status} status={status} />
               ))}
             </Wrap>
+          </Row>
+
+          <Row title={t("badge.groups.cancelStage.title")} meta={t("badge.groups.cancelStage.meta")}>
+            <div className="flex min-w-0 flex-wrap items-start gap-x-6 gap-y-3" data-kit-cancel-stages="">
+              {CANCEL_RETURN_STAGE_ORDER.map((stage) => {
+                const order = stageSample(stage);
+                return <OrderStatusBadge key={stage} status={order.status} order={order} withPlace />;
+              })}
+            </div>
           </Row>
 
           <Row title={t("badge.groups.variants.title")} meta={t("badge.groups.variants.meta")}>

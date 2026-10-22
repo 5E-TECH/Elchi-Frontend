@@ -1,4 +1,4 @@
-// dizayn-v2: common-inbox, superadmin-notifications-inbox, courier-inbox-list, superadmin-notifications-push-explain-dialog, courier-inbox-push-explain-dialog
+// dizayn-v2: common-inbox, superadmin-notifications-inbox, courier-inbox-list, superadmin-notifications-push-explain-dialog, courier-inbox-push-explain-dialog, courier-inbox-pwa-install, courier-inbox-pwa-ios-dialog
 import { Bell, BellOff, BellRing, CheckCheck, MessageSquareText, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -11,6 +11,7 @@ import {
   usePushControl,
   type PushControl,
 } from "../../../features/push-notifications";
+import { InstallAppCard } from "../../../features/pwa-install";
 import { notify } from "../../../shared/lib/notify";
 import { Button, buttonClasses, Card, PageHeader } from "../../../shared/ui/primitives";
 import { NotificationInboxList } from "../../../widgets/notification-inbox";
@@ -83,7 +84,9 @@ const PushStateBlock = ({ push }: { push: PushControl }) => {
  * `courier-inbox-list` va push tushuntirish oynalari. Spec D4: layout bitta, xulq rolga ko'ra —
  * sarlavha «Bildirishnomalar»; amallar: push so'ralmagan bo'lsa «Bildirishnomalarni yoqish», «Barchasini o'qilgan
  * deb belgilash», yubora oladiganlarga (`canSendNotifications`) «SMS» va «Xabar yuborish» (asosiy).
- * Push holat bloki (bloklangan / yoqilgan) sarlavha ostida; ro'yxat — `NotificationInboxList`.
+ * Push holat bloki (bloklangan / yoqilgan) sarlavha ostida; so'ng «Ilovani o'rnatish» kartasi (KI-2, maketlar
+ * `courier-inbox-pwa-install` / `courier-inbox-pwa-ios-dialog`, barcha rollar, doim — yopishsiz, ilova o'rnatilmagan va
+ * o'rnatish mumkin bo'lsa); ro'yxat — `NotificationInboxList`.
  *
  * Per-user inbox (o'qilgan/o'qilmagan, o'chirish). Admin `NotificationsPage` (Telegram guruhlari) — boshqa sahifa.
  */
@@ -148,6 +151,8 @@ const NotificationInboxPage = () => {
       />
 
       <PushStateBlock push={push} />
+
+      <InstallAppCard placement="inbox" />
 
       <NotificationInboxList />
 

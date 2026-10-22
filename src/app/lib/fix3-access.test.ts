@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RootState } from "../config/store";
-import { canCreateProducts, canHandoverCancelledToMarket } from "./access";
+import { canCreateProducts, canHandoverCancelledToMarket, canViewProducts } from "./access";
 import { getSidebarConfigForUser, type BranchType } from "../../widgets/Sidebar/model/menuConfig";
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -37,11 +37,12 @@ describe("canHandoverCancelledToMarket (fix3 CODE-16 / C4)", () => {
   });
 });
 
-describe("canCreateProducts (fix3 RBAC-17)", () => {
-  it("POST /product rollari: superadmin, admin, market", () => {
+describe("canCreateProducts (fix3 RBAC-17, MH-1)", () => {
+  it("POST /product rollari: superadmin, admin; market — yo'q (MH-1: market faqat ko'radi)", () => {
     expect(canCreateProducts(state("superadmin"))).toBe(true);
     expect(canCreateProducts(state("admin"))).toBe(true);
-    expect(canCreateProducts(state("market"))).toBe(true);
+    expect(canCreateProducts(state("market"))).toBe(false);
+    expect(canCreateProducts(state("market_operator"))).toBe(false);
   });
 
   it("registrator va manager ham yarata oladi (#1); courier yo'q", () => {
@@ -51,10 +52,40 @@ describe("canCreateProducts (fix3 RBAC-17)", () => {
   });
 });
 
+describe("canViewProducts (ROL-0: yagona predikat; MH-1: market operatori — faqat ko'rish)", () => {
+  const ROLES = ["superadmin", "admin", "market", "registrator", "manager", "courier", "logist", "market_operator", "investor"];
+
+  it("superadmin, admin, market, registrator, menejer, market operatori — ha; kuryer, logist, investor — yo'q", () => {
+    expect(ROLES.filter((role) => canViewProducts(state(role)))).toEqual([
+      "superadmin",
+      "admin",
+      "market",
+      "registrator",
+      "manager",
+      "market_operator",
+    ]);
+  });
+
+  it("yarata oladigan har rol ro'yxatni ham ko'radi (yaratish sahifasidan qaytishda 403 yo'q)", () => {
+    for (const role of ROLES) {
+      if (canCreateProducts(state(role))) expect(canViewProducts(state(role)), role).toBe(true);
+    }
+  });
+
+  it("logist va investor — ko'rmaydi ham, yaratmaydi ham", () => {
+    for (const role of ["logist", "investor"]) {
+      expect(canViewProducts(state(role)), role).toBe(false);
+      expect(canCreateProducts(state(role)), role).toBe(false);
+    }
+  });
+});
+
 describe("menyu tuzatishlari (fix3 RBAC-18, CODE-21)", () => {
-  it("market menyusida 'Operatorlar' yo'q (GET /users marketga doim 403)", () => {
-    expect(paths("market")).not.toContain("/market-operators");
-    expect(paths("market")).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box"]);
+  it("market menyusida «Operatorlar» — o'z operatorlari (MO-1: GET /market-operators, @Roles(MARKET))", () => {
+    expect(paths("market")).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box", "/market-operators"]);
+    for (const role of ["superadmin", "admin", "registrator", "courier", "market_operator"]) {
+      expect(paths(role), role).not.toContain("/market-operators");
+    }
   });
 
   it("superadmin menyusida /batches va /returns bor (guard avvaldan ochiq edi)", () => {

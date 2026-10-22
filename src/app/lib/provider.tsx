@@ -6,7 +6,6 @@ import { I18nextProvider } from "react-i18next";
 import store from "../config/store";
 import type { RootState } from "../config/store";
 import { ThemeProvider } from "../providers/theme/ThemeContext";
-import AntdThemeProvider from "../providers/theme/AntdThemeProvider";
 import { NotificationProvider } from "../providers/notification/NotificationProvider";
 import { UiHost } from "../providers/UiHost";
 import PageLoader from "../../shared/ui/PageLoader";
@@ -54,33 +53,30 @@ const GlobalLoader = ({ children }: { children: ReactNode }) => {
 const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <I18nextProvider i18n={i18n} defaultNS="common">
+      {/*
+        antd global provayderi YO'Q (rzzxMItN): ilovada antd'dan faqat `QRCode` qolgan va uning ranglari o'zida
+        (`MarketQrDialog`). Global `ConfigProvider` har sahifaga, kirish sahifasiga ham ~30 KB gzip antd yuklardi.
+      */}
       <ThemeProvider>
-        {/*
-          ⚠️ `ThemeProvider` NING ICHIDA: antd mavzusi ilova mavzusiga
-          bog'lanadi. Busiz antd komponentlari sukutdagi YORUG' temada
-          chizilib, qorong'i rejimda oq karta ustida oq yozuv chiqardi.
-        */}
-        <AntdThemeProvider>
-          <Provider store={store}>
-            <BrowserRouter>
-              <QueryClientProvider client={queryClient}>
-                <NotificationProvider>
-                  <ScanFeedbackOverlay />
-                  <UiHost />
-                  <AuthBootstrap>
-                    <SettingsSync />
-                    <PushSync />
-                    <RealtimeSync />
-                    <SessionExpiryCountdown />
-                    <GlobalLoader>
-                      <Suspense fallback={<PageLoader />}>{children}</Suspense>
-                    </GlobalLoader>
-                  </AuthBootstrap>
-                </NotificationProvider>
-              </QueryClientProvider>
-            </BrowserRouter>
-          </Provider>
-        </AntdThemeProvider>
+        <Provider store={store}>
+          <BrowserRouter>
+            <QueryClientProvider client={queryClient}>
+              <NotificationProvider>
+                <ScanFeedbackOverlay />
+                <UiHost />
+                <AuthBootstrap>
+                  <SettingsSync />
+                  <PushSync />
+                  <RealtimeSync />
+                  <SessionExpiryCountdown />
+                  <GlobalLoader>
+                    <Suspense fallback={<PageLoader />}>{children}</Suspense>
+                  </GlobalLoader>
+                </AuthBootstrap>
+              </NotificationProvider>
+            </QueryClientProvider>
+          </BrowserRouter>
+        </Provider>
       </ThemeProvider>
     </I18nextProvider>
   );

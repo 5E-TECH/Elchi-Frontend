@@ -5,13 +5,11 @@ import { normalizeKey } from "../model/describeTrackingEvent";
 import { useTrackingStatusLabel } from "../model/useTrackingStatusLabel";
 
 /**
- * Tarixdagi holat belgisi. 11 talik holatlar — `OrderStatusBadge` (yagona registr). Backend'ning
- * ichki holatlari esa o'z nomi bilan: «Marketga qaytarilgan» (`OrderStatusBadge` uni «Bekor
- * qilingan» deb ko'rsatadi — ro'yxat uchun), «Mijoz kutilmoqda», «Jarayonda», «Tayyor».
+ * Tarixdagi holat belgisi. Registrdagi 13 holat («Marketga topshirildi» — neytral, `PackageCheck`; «Mijoz kutilmoqda» ham —
+ * SllBYhnt) — `OrderStatusBadge` (yagona registr). Registrda yo'q ichki holatlar o'z nomi bilan:
+ * «Jarayonda», «Tayyor».
  */
 const EXTRA_TONES: Record<string, Tone> = {
-  returned_to_market: "neutral",
-  waiting_customer: "warning",
   processing: "warning",
   completed: "info",
 };

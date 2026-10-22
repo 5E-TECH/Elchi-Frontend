@@ -3,7 +3,7 @@
 > Holat (2026-10-19): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 76 tasi v2 — G1, G2, G3 birlashtirildi,
 > `/scan` skaner 1-bosqichida (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato,
 > `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Kamera ishi (skaner 1–4-bosqich) tayyor.
-> Qolgan ish (§14): yopiq `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
+> Qolgan ish (§14): v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5). `/market-operators` — MO-1 da v2 (77 / 77).
 > Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
@@ -258,7 +258,13 @@ noto'g'ri (`2026-02-30`, `10/06/2026`) — `—`. Brauzerning mahalliy vaqti (ti
 - O'zbek lotin, gap registri (Title Case yo'q). Inglizcha so'z yo'q («history», «Export», «Return» emas):
   `Bosh sahifa`, `Qaytarishlar`, `Filial paketlari`, `Yaratilgan`, `Nofaol`, `Excelga yuklash`, `Operatsiyalar tarixi`.
 - Buyurtma holati → ton: Yangi / Yaratilgan / Qabul qilindi — **info**; Yo'lda, Kutilmoqda, Qisman to'langan —
-  **warning**; Sotilgan, To'langan — **success**; Bekor qilingan, Bekor — jo'natilgan — **danger**; Yopilgan — neytral.
+  **warning**; Sotilgan, To'langan — **success**; Bekor qilingan, Bekor — jo'natilgan — **danger**; Yopilgan — neytral;
+  Marketga topshirildi (`returned_to_market`) — **neytral** (ega qarori 2026-10-19: bekor zanjiri yopildi).
+- Bekor qilingan buyurtmaning **joy bosqichi** (holat o'zgarmaydi, `entities/order` → `cancelReturnStage.ts`, maket
+  `tizim-states-data` §09): «Bekor · kuryerda» (`CircleX`), «Bekor · yo'lda» (`RotateCcw`, chegarali), «Bekor ·
+  filialda» (`Building2`), «Bekor · HQ'da» (`Warehouse`) — **danger**; «Marketga topshirildi» (`PackageCheck`) —
+  **neytral**. Belgi nuqtasiz, ikonkali; joy nomi va muddat ikkinchi qatorda («Toshkent HQ · 2 kun», yo'ldagisi
+  «→ Toshkent HQ») — nom alohida turadi, qo'shimcha nomga yopishtirilmaydi.
 - Pul o'tkazish, foydalanuvchini nofaol qilish, «Kunni yakunlash» — **tasdiqlash oynasi** orqali
   (`useConfirm()` / `ConfirmDialog`). Shu qatorda: kassa va to'lov amallari (maosh, kassadan to'lov), API kalitini
   almashtirish, hamkor/ulanishni o'chirish, filialdan chiqarish, buzuvchi o'chirish. Tasdiq tugmasida aniq fe'l
@@ -297,7 +303,7 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 76 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19); qolgan `/market-operators` — yopiq |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19; oxirgi `/market-operators` — MO-1, 2026-10-21) |
 | 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
@@ -361,7 +367,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   yiqilganda — butun ekran (`standalone`, `routes.tsx` → `STANDALONE_ERROR_PAGES`).
 - **Global qatlam** — `app/providers/UiHost.tsx` (`ConfirmHost` + `Toaster`), ilova provayderida bir marta.
 - **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2: `FilterSelect`, `PopupSelect`, `PrintModeSelect`,
-  `Popup`, `FormPopup`, `PageLoader`. Iste'molchisiz qolganlari o'chirildi: `shared/ui/Select.tsx`,
+  `Popup`, `PageLoader`. Iste'molchisiz qolganlari o'chirildi: `FormPopup`, `PageContainer`, `headerName` (MO-1), `shared/ui/Select.tsx`,
   `features/Select/selectInput.tsx`, `StatusSelect/` (3-bosqich), `QuickDateRangeFilter` (G1), `ConfirmButton` (G2);
   5-bosqich B da — `SearchableSelect`, `FilterMultiSelect`, `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`,
   `FilterDateInput`, `PopupConfirm`, `UpdatePopup`, `EmptyState`, `QueryErrorState`, `TableSkeleton`, `Loader`,
@@ -374,8 +380,8 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-77 route'dan 76 tasi v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), qolgani — yopiq
-`/market-operators` (ko'chirilmaydi). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
+77 / 77 route v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
+`/market-operators` (MO-1, 2026-10-21: market o'z operatorlari, menyuda «Operatorlar»). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
 markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
 Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
 
@@ -457,11 +463,10 @@ o'ramlari — ichi v2) va 2-bosqich shell (`src/widgets/layout/**`, `src/widgets
 `tests/`, `scripts/`, `design/` — qamrovdan tashqari.
 
 **Ratchet (faqat qisqaradi).** `RAW_CONTROL_RATCHET` — xom element hali qolgan v1 fayllar, kalit — fayl, qiymat —
-sabab (`scripts/eslint-design-v2.mjs`, hozir 3 ta, `MAX_RAW = 3`; kamera ishi chiqdi — `src/pages/scan/index.tsx`
+sabab (`scripts/eslint-design-v2.mjs`, hozir 2 ta, `MAX_RAW = 2`; MO-1 da `/market-operators` chiqdi; kamera ishi chiqdi — `src/pages/scan/index.tsx`
 skaner 1-bosqichida v2 ga o'tdi, v1 `src/shared/components/ScannerCameraModal.tsx` 2-bosqichida o'chirildi):
 
-- yopiq `/market-operators` (`src/pages/market-operators/index.tsx`, ko'chirilmaydi) va yetib bo'lmaydigan
-  `src/pages/payments/components/SalaryPaymentPopup.tsx` («Maosh to'lash» yashirin);
+- yetib bo'lmaydigan `src/pages/payments/components/SalaryPaymentPopup.tsx` («Maosh to'lash» yashirin);
 - v1 o'rami `src/shared/components/PrintModeSelect.tsx` (ichi v2, menyu bandlari; `shared/ui` ga ko'chirilguncha).
 
 Bosqich B integratsiyasida iste'molchisi qolmagan (o'lik) v1 fayllar — `UserInfoCards.tsx`,
@@ -540,8 +545,9 @@ ko'chirilgan slice'larda **har fayl** — `// dizayn-v2:` belgisiz `.ts` yordamc
 `colour`, `palette`, `dark-pair`, `legacy`, `gradient`, `named-colour`) ruxsat 0; boshqa qoidalar (`money`,
 `tiny-text`, `weight`, `v1-helper` …) baseline bo'yicha qoladi. Ro'yxatlar — `scripts/design-guard.mjs`:
 
-- `V2_SCOPES` — 82 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
-  butunligicha emas — `primitives`, `charts`, `error-page`, `camera`; yopiq `src/pages/market-operators` yo'q). Scope faylining
+- `V2_SCOPES` — 88 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
+  butunligicha emas — `primitives`, `charts`, `error-page`, `camera`; MO-1 da `src/pages/market-operators`,
+  `src/entities/market-operator` va `src/shared/components` qo'shildi). Scope faylining
   rang soni `--update` da baseline'ga yozilmaydi; buzilish «(V2_SCOPES: rang qoidalarida ruxsat 0)» deb chiqadi.
 - `V2_SCOPE_PENDING` — scope ichida hali v1 qolgan fayllar (sabab bilan, `≤ MAX_PENDING`): baseline ruxsati saqlanadi.
   Hozir 1 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan; `pages/scan/index.tsx` skaner 1-bosqichida chiqdi); v1
@@ -1045,3 +1051,12 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   tugma va `widgets/scanner/ScannerHost` (shell, ega roziligi), v2 `ScannerCamera` (`shared/ui/camera`). Batafsil va
   maketdan farqlar — §14 «Kamera ishi». Chiqarilgan v1: `pages/scan/lib/scanShared.ts` (`playScanFeedback` →
   `shared/lib/scanner/feedback.ts`), `/scan` ning `RAW_CONTROL_RATCHET` va `V2_SCOPE_PENDING` yozuvlari.
+- **Ko'chirilgan:** MO-1 (2026-10-21) — «Operatorlar» `/market-operators`, faqat market (maketlar `market-operators-list`,
+  `-empty`, `-create-dialog`, `-commission-dialog`, `-commission-fixed-dialog`, `-delete-dialog`): sarlavha + «Operator
+  qo'shish», «Komissiya belgilanmagan» ogohlantirishi (joriy sahifa, faol operatorlar; 1 ta — «Belgilash», 2+ — «Faqat
+  ularni ko'rsatish»), qidiruv + «Holat», `DataTable` (telefonda kartalar), «N ta operator» / `Pagination`; qo'shish
+  (POST 3 maydon → PATCH komissiya), Komissiya (foiz / qat'iy, «Namuna», «Komissiyani olib tashlash» tasdiq bilan) va
+  o'chirish oynalari; menyu «Operatorlar» (telefonda «Menyu» varag'ida), `canViewMarketOperators`. Yangi entity
+  `entities/market-operator`. «Nofaol qilish / Faollashtirish» — MO-4 (backend). Chiqarilgan v1: eski sahifa,
+  `shared/components/headerName.tsx`, `shared/ui/FormPopup/`, `shared/ui/PageContainer.tsx`,
+  `entities/user/ui/UserStatusBadge.tsx`; `RAW_CONTROL_RATCHET` 3 → 2 — 77 / 77 route v2.

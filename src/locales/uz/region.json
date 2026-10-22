@@ -339,21 +339,315 @@
         "title": "Yangi tuman qo'shish",
         "name": "Tuman nomi",
         "region": "Viloyat"
+      },
+      "duplicateName": "Bu viloyatda shu nomli tuman bor",
+      "rows": {
+        "orders": "Buyurtmalar",
+        "users": "Foydalanuvchilar",
+        "branches": "Filiallar",
+        "before": "oldin {{count}}"
+      },
+      "deleteBlocked": {
+        "title": "{{name}}ni o'chirib bo'lmaydi",
+        "text": "Tumanga buyurtma, foydalanuvchi yoki filial bog'langan. O'chirilsa, ular hech qaysi tumanga tegishli bo'lmay qoladi.",
+        "note": "Birlashtirsangiz, bularning hammasi siz tanlagan tumanga ko'chadi va {{name}} o'chiriladi. Yoki buyurtma, foydalanuvchi va filiallarni boshqa tumanga alohida ko'chiring.",
+        "close": "Yopish",
+        "merge": "Birlashtirish"
+      },
+      "merge": {
+        "title": "Tumanni birlashtirish",
+        "text": "{{name}}dagi hamma narsa tanlangan tumanga ko'chadi, {{name}} o'chiriladi.",
+        "source": "O'chiriladigan tuman",
+        "target": "Maqsad tuman",
+        "targetPlaceholder": "Tumanni tanlang",
+        "targetHint": "Faqat {{region}} tumanlari",
+        "targetHintFull": "Faqat {{region}} tumanlari. {{name}}ning o'zi ro'yxatda yo'q.",
+        "noTargets": "Bu viloyatda boshqa tuman yo'q",
+        "irreversibleTitle": "Bu amalni qaytarib bo'lmaydi",
+        "irreversibleText": "{{name}} butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin.",
+        "cancel": "Bekor qilish",
+        "submit": "Birlashtirish"
+      },
+      "progress": {
+        "title": "Birlashtirilmoqda…",
+        "text": "{{from}} → {{to}}. Buyurtmalar, foydalanuvchilar va filiallar ko'chirilib, sonlari qayta tekshirilmoqda.",
+        "elapsed": "O'tgan vaqt {{time}}",
+        "keepOpenTitle": "Oynani yopmang",
+        "keepOpenText": "2 daqiqagacha davom etishi mumkin. Sahifani yangilamang. Aloqa uzilsa, natijani «Faoliyat jurnali»da ko'ring."
+      },
+      "result": {
+        "title": "Tumanlar birlashtirildi",
+        "text": "{{from}} o'chirildi. Uning buyurtma, foydalanuvchi va filiallari {{to}}ga ko'chirildi.",
+        "nowIn": "{{name}}da endi",
+        "note": "O'chirilgan yozuvlar sanalmaydi.",
+        "close": "Yopish"
+      },
+      "unknown": {
+        "title": "Natija noma'lum",
+        "text": "Javob kelmadi: aloqa uzildi yoki kutish vaqti tugadi. Birlashtirish serverda yakunlangan yoki bekor qilingan bo'lishi mumkin.",
+        "check": "Natijani tekshiring",
+        "step1": "Tumanlar ro'yxatini yangilang. {{from}} ro'yxatda bo'lmasa — birlashtirildi.",
+        "step2": "{{from}} hali turgan bo'lsa, Faoliyat jurnalida shu tuman yozuvlarini ko'ring.",
+        "note": "Natija aniq bo'lmaguncha qayta boshlamang.",
+        "journal": "Faoliyat jurnalini ochish",
+        "refresh": "Tumanlarni yangilash"
+      },
+      "error": {
+        "title": "Birlashtirib bo'lmadi",
+        "text": "Tumanlar ro'yxati yangilandi: {{from}} ro'yxatda turgan bo'lsa, birlashtirilmagan.",
+        "journal": "Faoliyat jurnali"
       }
     },
     "sato": {
-      "title": "Tumanlarni o'tkazish",
-      "subtitle": "Tumanlarni viloyatlar bo'yicha boshqarish: tumanni ushlab olib kerakli viloyat ustiga tashlang",
-      "moveErrorText": "Ro'yxat qayta yuklandi, tuman joyida qoldi"
+      "title": "Tumanlar va SATO kodlari",
+      "subtitle": "Tumanlarni viloyatlarga biriktirish va rasmiy SATO kodlarini yozish",
+      "moveErrorText": "Ro'yxat qayta yuklandi, tuman joyida qoldi",
+      "moveInfo": "Tumanni ushlab olib kerakli viloyat ustiga tashlang yoki uning o'tkazish tugmasini bosing.",
+      "pageTabsAria": "Tumanlar bo'limlari",
+      "pageTabs": {
+        "move": "Tumanlarni o'tkazish",
+        "sato": "SATO kodlari"
+      },
+      "kpi": {
+        "aria": "SATO solishtirish natijasi",
+        "unit": "ta",
+        "totalDb": "Bazada",
+        "totalDbHint": "Elchi tumanlari",
+        "totalSato": "SATO'da",
+        "totalSatoHint": "Rasmiy ro'yxat",
+        "matched": "Mos keldi",
+        "matchedHint": "{{value}} tasida kod bor",
+        "matchedShareAria": "Mos kelganlar ulushi",
+        "unmatched": "Mos kelmadi",
+        "unmatchedHint": "Kod qo'lda kiritiladi",
+        "duplicates": "Takroriy",
+        "duplicatesHint": "Yozuv · {{value}} ta nomda",
+        "missing": "Bazada yo'q",
+        "missingHint": "Faqat SATO'da"
+      },
+      "tabs": {
+        "found": "Topildi",
+        "notFound": "Topilmadi",
+        "hasCode": "Kodi bor",
+        "duplicates": "Takroriy nomlar",
+        "missing": "Bazada yo'q",
+        "noCode": "Kodsiz"
+      },
+      "statusTabsAria": "SATO holati bo'yicha",
+      "statusSelectAria": "SATO bo'limi: {{tab}}",
+      "sectionAria": {
+        "found": "SATO kodi topilgan tumanlar",
+        "notFound": "SATO kodi topilmagan tumanlar",
+        "hasCode": "SATO kodi bor tumanlar",
+        "duplicates": "Dublikat tumanlar",
+        "missing": "Bazada yo'q SATO yozuvlari",
+        "noCode": "SATO kodi yo'q tumanlar"
+      },
+      "filters": {
+        "searchAria": "Tuman, viloyat yoki SATO kodi bo'yicha qidirish",
+        "searchPlaceholder": "Tuman, viloyat yoki kod",
+        "region": "Viloyat",
+        "allRegions": "Barchasi",
+        "clear": "Filtrlarni tozalash"
+      },
+      "info": {
+        "found": "Bu kodlar rasmiy ro'yxatdan nomi bo'yicha topildi, lekin hali yozilmagan. Kodni tekshirib, shu yerda saqlang yoki xato topilganini tuzating.",
+        "notFound": "Bu tumanlar rasmiy ro'yxatda nomi bo'yicha topilmadi. Kodni qo'lda kiriting; tuman «Bazada yo'q» tabida boshqa nom bilan turgan bo'lishi mumkin.",
+        "hasCode": "Kodni faqat xato kiritilgan bo'lsa o'zgartiring. Bitta kod faqat bitta tumanga yoziladi.",
+        "duplicates": "Bir xil nomli tumanlarga kod avtomatik yozilmaydi. Har bir yozuvga kodni qo'lda kiriting.",
+        "missing": "Bu tumanlar rasmiy SATO ro'yxatida bor, lekin bazada topilmadi. Nomi boshqacha yozilgan bo'lsa, bazadagi tumanga kodni qo'lda kiriting.",
+        "noCode": "Kodni tumanning rasmiy SATO raqamidan kiriting. Bitta kod faqat bitta tumanga yoziladi."
+      },
+      "columns": {
+        "district": "Tuman",
+        "region": "Viloyat",
+        "satoCode": "SATO kodi",
+        "foundCode": "Topilgan kod",
+        "officialName": "Rasmiy nomi",
+        "actions": "Amallar"
+      },
+      "row": {
+        "noCode": "Kod yo'q",
+        "enter": "Kod kiritish",
+        "editAria": "{{name}} — SATO kodini o'zgartirish",
+        "enterAria": "{{name}} — SATO kodini kiritish",
+        "enterButtonAria": "Kod kiritish: {{name}}",
+        "nameWithRegion": "{{name}} ({{region}})",
+        "id": "ID {{id}}",
+        "meta": "{{region}} · {{code}}",
+        "metaWithId": "{{region}} · ID {{id}} · {{code}}"
+      },
+      "editor": {
+        "label": "SATO kodi",
+        "fieldAria": "{{name}} — SATO kodi",
+        "hint": "Faqat raqamlar, masalan 1727401",
+        "cancel": "Bekor",
+        "save": "Saqlash",
+        "saving": "Saqlanmoqda…",
+        "saved": "SATO kodi saqlandi",
+        "savedText": "{{name}} · {{code}}",
+        "invalid": "Faqat raqamlar kiriting, masalan 1727401",
+        "taken": "Bu kod band: {{district}}, {{region}}",
+        "takenNoRegion": "Bu kod band: {{district}}",
+        "takenUnknown": "Bu kod boshqa tumanga yozilgan",
+        "failed": "Kodni saqlab bo'lmadi. Qayta urinib ko'ring.",
+        "failedTitle": "{{name}} — SATO kodi saqlanmadi",
+        "errorAnnounce": "{{name}} — SATO kodi: {{error}}"
+      },
+      "footer": {
+        "districts": "{{value}} ta tuman",
+        "districtsRange": "{{from}}–{{to}} / {{total}} ta tuman",
+        "records": "{{value}} ta yozuv",
+        "recordsRange": "{{from}}–{{to}} / {{total}} ta yozuv",
+        "duplicates": "{{names}} ta nom · {{value}} ta yozuv"
+      },
+      "states": {
+        "previewLoading": "Solishtirish yuklanmoqda",
+        "districtsLoading": "Ro'yxat yuklanmoqda",
+        "previewError": "Solishtirishni yuklab bo'lmadi",
+        "districtsError": "Tumanlarni yuklab bo'lmadi",
+        "loadErrorText": "Internetni tekshirib, qayta urinib ko'ring."
+      },
+      "empty": {
+        "found": {
+          "title": "Yoziladigan kod yo'q",
+          "description": "Topilgan kodlarning hammasi yozilgan."
+        },
+        "notFound": {
+          "title": "Topilmagan tuman yo'q",
+          "description": "Hamma tuman rasmiy ro'yxatdan topildi."
+        },
+        "hasCode": {
+          "title": "Kodli tuman yo'q",
+          "description": "Kod saqlangach, tuman shu yerda ko'rinadi."
+        },
+        "duplicates": {
+          "title": "Takroriy nom yo'q",
+          "description": "Bazada bir xil nomli tumanlar yo'q."
+        },
+        "missing": {
+          "title": "Hamma SATO tumani bazada bor",
+          "description": "Rasmiy ro'yxatdagi har bir tuman bazada topildi."
+        },
+        "noCode": {
+          "title": "Hamma tumanda SATO kodi bor",
+          "description": "Yangi tuman qo'shilsa, shu yerda ko'rinadi."
+        },
+        "filtered": {
+          "title": "Hech narsa topilmadi",
+          "description": "Qidiruv yoki viloyat filtrini o'zgartiring."
+        }
+      }
     },
     "logist": {
       "title": "Logist biriktirish",
-      "subtitle": "Logistlarni viloyatlarga biriktirish bo'limi",
-      "empty": {
-        "title": "Bo'lim hali ishga tushmagan",
-        "text": "Logist biriktirish imkoniyati tayyor bo'lgach shu sahifada paydo bo'ladi. Hozircha hududlar xaritasidan foydalaning."
+      "subtitle": "Logistni tanlang va unga viloyatlarni belgilang · bir viloyatda bitta logist",
+      "create": "Logist yaratish",
+      "list": {
+        "title": "Logistlar",
+        "searchPlaceholder": "Ism yoki telefon",
+        "searchLabel": "Logistni qidirish",
+        "groupLabel": "Logistlar ro'yxati",
+        "notFound": "Logist topilmadi",
+        "notFoundHint": "Boshqa ism yoki telefon raqam bilan qidiring.",
+        "inactive": "Nofaol",
+        "noRegions": "Viloyatsiz",
+        "regionCount_one": "{{count}} viloyat",
+        "regionCount_other": "{{count}} viloyat",
+        "inactiveNote": "Nofaol logistga viloyat biriktirilmaydi."
       },
-      "back": "Hududlarga qaytish"
+      "picker": {
+        "label": "Logist",
+        "noRegions": "viloyatsiz"
+      },
+      "regions": {
+        "title": "{{name}} viloyatlari",
+        "checkedOf": "{{total}} tadan {{checked}} tasi belgilangan",
+        "legend": "{{name}}ga biriktiriladigan viloyatlar",
+        "filterLabel": "Viloyatlar filtri",
+        "filter": {
+          "all": "Barchasi · {{count}}",
+          "checked": "Belgilangan · {{count}}",
+          "free": "Logistsiz · {{count}}"
+        },
+        "filteredEmpty": "Bu filtrda viloyat yo'q",
+        "note": "Boshqa logistdagi viloyat belgilansa, u shu logistga o'tadi. Belgi olib tashlangan viloyat logistsiz qoladi.",
+        "state": {
+          "free": "Logist yo'q",
+          "assigned": "Biriktirilgan",
+          "adding": "Hozir logist yo'q",
+          "transfer": "Hozir: {{name}}",
+          "removing": "Logistsiz qoladi",
+          "otherUnknown": "Boshqa logist"
+        },
+        "badge": {
+          "adding": "Qo'shiladi",
+          "transfer": "O'tkaziladi",
+          "removing": "Olib tashlanadi"
+        }
+      },
+      "changes": {
+        "regionLabel": "Saqlanmagan o'zgarishlar",
+        "count_one": "{{count}} ta o'zgarish",
+        "count_other": "{{count}} ta o'zgarish",
+        "none": "O'zgarish yo'q",
+        "added": "{{count}} ta qo'shiladi",
+        "transferred": "{{count}} ta o'tkaziladi",
+        "removed": "{{count}} ta olib tashlanadi",
+        "addedShort": "{{count}} qo'shiladi",
+        "transferredShort": "{{count}} o'tkaziladi",
+        "removedShort": "{{count}} olib tashlanadi",
+        "cancel": "Bekor qilish",
+        "save": "Saqlash",
+        "saving": "Saqlanmoqda…"
+      },
+      "confirm": {
+        "title": "O'zgarishlarni saqlaysizmi?",
+        "description": "{{name}} viloyatlari yangilanadi: {{parts}}.",
+        "removedPart": "{{count}} ta viloyat olib tashlanadi",
+        "transferredPart": "{{count}} ta viloyat boshqa logistdan o'tadi",
+        "transferredPartAfter": "{{count}} tasi boshqa logistdan o'tadi",
+        "listLabel": "O'zgarishlar",
+        "removedHint": "Viloyat logistsiz qoladi",
+        "transferHint": "{{name}}dan olinadi",
+        "transferHintUnknown": "Boshqa logistdan olinadi",
+        "addedHint": "Hozir logist yo'q",
+        "note": "Logistsiz viloyat hech bir logistning bosh sahifasida ko'rinmaydi.",
+        "confirm": "Saqlash"
+      },
+      "leave": {
+        "title": "O'zgarishlar saqlanmaydi",
+        "description_one": "{{name}} uchun {{count}} ta o'zgarish saqlanmagan. {{next}}ga o'tsangiz, ular bekor bo'ladi.",
+        "description_other": "{{name}} uchun {{count}} ta o'zgarish saqlanmagan. {{next}}ga o'tsangiz, ular bekor bo'ladi.",
+        "stay": "Qolish",
+        "confirm": "O'zgarishsiz o'tish"
+      },
+      "saved": {
+        "title": "Saqlandi",
+        "description_one": "{{name}} · {{count}} ta viloyat",
+        "description_other": "{{name}} · {{count}} ta viloyat"
+      },
+      "saveError": {
+        "title": "Saqlab bo'lmadi",
+        "inactive": "Logist nofaol — avval uni faollashtiring. O'zgarishlar sahifada qoldi.",
+        "notFound": "Logist yoki viloyat topilmadi — ro'yxat yangilandi. O'zgarishlar sahifada qoldi.",
+        "forbidden": "Logist biriktirishga ruxsatingiz yo'q.",
+        "generic": "Server javob bermadi — birozdan so'ng qayta urining. O'zgarishlar sahifada qoldi."
+      },
+      "inactive": {
+        "title": "{{name}} nofaol",
+        "text": "Nofaol logistga viloyat biriktirib bo'lmaydi. Uni «Foydalanuvchilar» bo'limida faollashtiring."
+      },
+      "loading": "Logistlar yuklanmoqda",
+      "error": {
+        "logists": "Logistlarni yuklab bo'lmadi",
+        "regions": "Viloyatlarni yuklab bo'lmadi",
+        "text": "Internet aloqasini tekshirib, qayta urining."
+      },
+      "empty": {
+        "title": "Logist yo'q",
+        "text": "Viloyatlarni biriktirish uchun avval «Logist» rolida foydalanuvchi yarating. Yaratilgan logist shu ro'yxatda chiqadi."
+      }
     }
   }
 }

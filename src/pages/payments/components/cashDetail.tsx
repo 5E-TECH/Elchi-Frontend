@@ -42,7 +42,7 @@ import {
   takePaymentKey,
   type CourierPaymentIdentity,
 } from "./lib/paymentIdempotency";
-import { RECEIVE_BRANCHES_PARAMS } from "./lib/receiveOptions";
+import { RECEIVE_BRANCHES_PARAMS, useManagerCourierReceivable } from "./lib/receiveOptions";
 import { toPaymentAck } from "./paymentAck";
 import CashboxActionFormCard, {
   type CashboxActionFormValues,
@@ -553,6 +553,8 @@ const CashDetail = () => {
   // `type` faqat sarlavha/ikonka konfiguratsiyasi uchun.
   const isTypeUnknown = resolvedType === null;
   const type: CashDetailType = resolvedType ?? "market";
+  // Menejer kuryer kassasida summa so'rovdan (T2VHX1Y7) — router state to'lovdan keyin eskirardi, F5 da eski qolardi.
+  const serverCourierReceivable = useManagerCourierReceivable(id, type === "courier" && isCurrentManagerRole);
   const entityName =
     nameSources.map((source) => toOptionalString(source?.name)?.trim()).find(Boolean) ||
     nameSources.map((source) => toOptionalString(source?.phone_number)?.trim()).find(Boolean) ||
@@ -583,15 +585,19 @@ const CashDetail = () => {
   const isHqBranchView = type === "branch" && !isCurrentManagerRole;
   const hasServerBranchPayable = isHqBranchView && serverBranchPayable !== undefined;
   const isHqBranchReceiveDetail = isHqBranchView && (hasStateAmount || hasServerBranchPayable);
+  const hasServerCourierReceivable = isCourierReceiveDetail && serverCourierReceivable !== undefined;
   // Ko'rsatilgan summa router state'idan va server uni qayta o'qib bera olmaydi
   // (to'lovdan keyin u mahalliy kamaytiriladi).
   const isAmountFromRouterState =
-    hasStateAmount && (isCourierReceiveDetail || (isHqBranchView && !hasServerBranchPayable));
+    hasStateAmount &&
+    ((isCourierReceiveDetail && !hasServerCourierReceivable) || (isHqBranchView && !hasServerBranchPayable));
   const apiBalance = toNumber(cashbox?.balance ?? stateAmount);
   const contextBalance =
-    (isCourierReceiveDetail || isHqBranchReceiveDetail) && hasStateAmount
-      ? stateAmount
-      : apiBalance;
+    hasServerCourierReceivable && serverCourierReceivable !== undefined
+      ? serverCourierReceivable
+      : (isCourierReceiveDetail || isHqBranchReceiveDetail) && hasStateAmount
+        ? stateAmount
+        : apiBalance;
   const settlementBalance =
     hasServerBranchPayable && serverBranchPayable !== undefined
       ? serverBranchPayable
@@ -715,6 +721,14 @@ const CashDetail = () => {
     ]);
 
   const refreshAfterPayment = async (amount: number) => {
+    if (hasServerCourierReceivable) {
+      // Summa `GET /couriers` dan: to'lov mutatsiyasi uni ["couriers"] bilan allaqachon qayta o'qigan (T2VHX1Y7) —
+      // mahalliy kamaytirish va kassa `balance` i bilan almashtirish kerak emas.
+      setBalanceOverride(null);
+      resetActionForm();
+      await refetchPaymentState();
+      return;
+    }
     setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
     resetActionForm();
 

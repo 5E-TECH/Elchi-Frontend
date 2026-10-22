@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
     createRegistrator: vi.fn(),
     createMarket: vi.fn(),
     createCourier: vi.fn(),
+    createLogist: vi.fn(),
     useBranches: vi.fn(),
     navigate: vi.fn(),
   };
@@ -46,6 +47,7 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
     createRegistrator: { mutateAsync: mocks.createRegistrator, isPending: false },
     createMarket: { mutateAsync: mocks.createMarket, isPending: false },
     createCourier: { mutateAsync: mocks.createCourier, isPending: false },
+    createLogist: { mutateAsync: mocks.createLogist, isPending: false },
   }),
 }));
 
@@ -93,7 +95,14 @@ const fill = async (user: User, container: HTMLElement, name: string, value: str
 const save = (user: User) => user.click(screen.getByRole("button", { name: "Saqlash" }));
 
 beforeEach(() => {
-  for (const fn of [mocks.createAdmin, mocks.createManager, mocks.createRegistrator, mocks.createMarket, mocks.createCourier]) {
+  for (const fn of [
+    mocks.createAdmin,
+    mocks.createManager,
+    mocks.createRegistrator,
+    mocks.createMarket,
+    mocks.createCourier,
+    mocks.createLogist,
+  ]) {
     fn.mockReset().mockResolvedValue({ statusCode: 201 });
   }
   mocks.navigate.mockReset();
@@ -101,7 +110,7 @@ beforeEach(() => {
 });
 
 describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
-  it("sarlavha, rol kartasi (5 rol, izohlari bilan), izoh va forma kartasi", () => {
+  it("sarlavha, rol kartasi (6 rol, izohlari bilan), izoh va forma kartasi", () => {
     renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
 
     expect(screen.getByRole("heading", { level: 1, name: "Yangi foydalanuvchi" })).toBeInTheDocument();
@@ -112,10 +121,14 @@ describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
       "admin",
       "manager",
       "registrator",
+      "logist",
       "courier",
       "marketing",
     ]);
     expect(screen.getByRole("radio", { name: /^Kuryer/ })).toHaveAccessibleName("Kuryer Maosh yoki buyurtma tarifi");
+    expect(screen.getByRole("radio", { name: /^Logist/ })).toHaveAccessibleName(
+      "Logist Buyurtmalar va holat tarixi, moliyasiz",
+    );
     expect(screen.getByText("Kirish ma'lumotlarini o'zingiz bering")).toBeInTheDocument();
     expect(screen.getByRole("form", { name: "Admin qo'shish" })).toBeInTheDocument();
   });
@@ -350,7 +363,6 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
       phone_number: "+998946273051",
       password: "urgut2026",
       branch_id: "44",
-      region_id: "12",
       tariff_home: 20000,
       tariff_center: 15000,
     });
@@ -380,5 +392,106 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await waitFor(() => expect(mocks.createRegistrator).toHaveBeenCalledTimes(1));
     expect(mocks.createRegistrator).toHaveBeenCalledWith(expect.objectContaining({ branch_id: "44", payment_day: 25 }));
+  });
+});
+
+describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-logist`)", () => {
+  const fillLogist = async (user: User, container: HTMLElement) => {
+    await fill(user, container, "fullName", "Aziz Rahimov");
+    await fill(user, container, "phone", "901234567");
+    await fill(user, container, "password", "logist2026");
+  };
+
+  it("forma: «Logist qo'shish», maosh majburiy, to'lov kuni ixtiyoriy, «Viloyatlar» izohi; POST → «Logist biriktirish»", async () => {
+    mocks.createLogist.mockResolvedValue({ data: { statusCode: 201, data: { id: 57, name: "Aziz Rahimov" } } });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Logist");
+    expect(screen.getByRole("form", { name: "Logist qo'shish" })).toBeInTheDocument();
+    expect(screen.getByText("Logist o'ziga biriktirilgan viloyatlar statistikasini kuzatadi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Maosh" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Viloyatlar" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Logist filialga biriktirilmaydi. Saqlagach «Logist biriktirish» sahifasi shu logist tanlangan holda ochiladi — viloyatlarni o'sha yerda belgilaysiz.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Filial" })).not.toBeInTheDocument();
+
+    await fillLogist(user, container);
+    await save(user);
+    expect(await screen.findByText("Maosh kiritilmadi")).toBeInTheDocument();
+    expect(mocks.createLogist).not.toHaveBeenCalled();
+
+    await fill(user, container, "salary", "6000000");
+    await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
+    await user.click(screen.getByRole("option", { name: "10" }));
+    await save(user);
+
+    await waitFor(() => expect(mocks.createLogist).toHaveBeenCalledTimes(1));
+    expect(mocks.createLogist).toHaveBeenCalledWith({
+      name: "Aziz Rahimov",
+      phone_number: "+998901234567",
+      password: "logist2026",
+      salary: 6000000,
+      payment_day: 10,
+    });
+    expect(await screen.findByText("Logist yaratildi")).toBeInTheDocument();
+    expect(screen.getByText("Aziz Rahimov · endi unga viloyatlarni belgilang")).toBeInTheDocument();
+    expect(mocks.navigate).toHaveBeenCalledWith("/regions/logist-assignment?logist=57");
+  });
+
+  it("to'lov kunisiz yuboriladi; 409 — telefon ostida «Bu telefon raqam allaqachon mavjud», server matni yo'q", async () => {
+    mocks.createLogist.mockRejectedValue({
+      response: { status: 409, data: { message: "Conflict: phone_number duplicate key" } },
+    });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, {
+      preloadedState: superadminState,
+      route: "/all-users/create-user?role=logist",
+    });
+
+    expect(screen.getByRole("radio", { name: /^Logist/ })).toBeChecked();
+    await fillLogist(user, container);
+    await fill(user, container, "salary", "6000000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createLogist).toHaveBeenCalledTimes(1));
+    expect(mocks.createLogist).toHaveBeenCalledWith({
+      name: "Aziz Rahimov",
+      phone_number: "+998901234567",
+      password: "logist2026",
+      salary: 6000000,
+    });
+    expect(await screen.findByText("Bu telefon raqam allaqachon mavjud")).toBeInTheDocument();
+    expect(screen.queryByText(/duplicate key/)).not.toBeInTheDocument();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
+  it("boshqa xato — «Logistni yaratib bo'lmadi», sahifada qoladi", async () => {
+    mocks.createLogist.mockRejectedValue({ response: { status: 503, data: { message: "identity timeout" } } });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, {
+      preloadedState: { role: { id: "2", role: "admin", region: null, name: "Admin" } } as never,
+      route: "/all-users/create-user?role=logist",
+    });
+    await fillLogist(user, container);
+    await fill(user, container, "salary", "6000000");
+    await save(user);
+
+    expect(await screen.findByText("Logistni yaratib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Ma'lumotlarni tekshirib, qayta urining.")).toBeInTheDocument();
+    expect(screen.queryByText("identity timeout")).not.toBeInTheDocument();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
+  it("menejerda ?role=logist e'tiborga olinmaydi (logist kartasi yo'q)", () => {
+    renderWithProviders(<CreateUserForm />, {
+      preloadedState: managerState("HYBRID"),
+      route: "/all-users/create-user?role=logist",
+    });
+    expect(screen.queryByRole("radio", { name: /^Logist/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^Kuryer/ })).toBeChecked();
   });
 });

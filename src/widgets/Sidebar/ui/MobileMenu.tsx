@@ -22,8 +22,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
+import { canViewOrders } from "../../../app/lib/access";
 import { useUnreadCount } from "../../../entities/notification-inbox";
-import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { getUserRoleLabelKey, roleHasGlobalSearch } from "../../../entities/user/lib/role";
 import { cx } from "../../../shared/lib/cx";
 import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 import { useLogout } from "../../../shared/lib/useLogout";
@@ -170,6 +171,11 @@ type VariantProps = {
   activeTo: string | null;
   persona: Persona;
   branchTypeMissing: boolean;
+  /**
+   * Menyu qidiruvi — global qidiruvi bor (`roleHasGlobalSearch`; investor maketida yo'q) va buyurtmalar ochiladigan
+   * (`canViewOrders`) rolda.
+   */
+  showSearch: boolean;
   label: (item: NavEntry) => string;
   /** Ixcham katak yorlig'i (qisqa shakl bo'lsa — u). */
   shortLabel: (item: NavEntry) => string;
@@ -205,6 +211,7 @@ const Drawer = ({
   activeTo,
   persona,
   branchTypeMissing,
+  showSearch,
   label,
   onClose,
   onSearch,
@@ -243,9 +250,11 @@ const Drawer = ({
         {t("menu")}
       </h2>
 
-      <div className="mt-1 mb-3">
-        <MenuSearch onSearch={onSearch} tone="nav" />
-      </div>
+      {showSearch ? (
+        <div className="mt-1 mb-3">
+          <MenuSearch onSearch={onSearch} tone="nav" />
+        </div>
+      ) : null}
 
       {branchTypeMissing ? (
         <div
@@ -365,6 +374,7 @@ const Sheet = ({
   activeTo,
   persona,
   branchTypeMissing,
+  showSearch,
   label,
   shortLabel,
   onClose,
@@ -394,7 +404,7 @@ const Sheet = ({
         <IconButton size="lg" label={t("closeMenu")} icon={X} onClick={onClose} />
       </div>
 
-      <MenuSearch onSearch={onSearch} tone="surface" />
+      {showSearch ? <MenuSearch onSearch={onSearch} tone="surface" /> : null}
 
       <Link
         to="/profile"
@@ -538,6 +548,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
   const { role, user, sections, items, branchTypeMissing } = useNavSections();
   const roleState = useSelector((state: RootState) => state.role);
+  // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar ochilmaydigan rolda (logist, market operatori:
+  // LG-4 / MO-3 gacha) u 403 sahifasiga olib borardi; yuqori paneldagi global qidiruv qoladi.
+  const canOpenOrders = useSelector(canViewOrders);
   // Yuqori paneldagi qo'ng'iroqcha bilan bir xil so'rov (kesh umumiy) — qo'shimcha so'rov ketmaydi.
   const { data: unreadCount = 0 } = useUnreadCount(Boolean(roleState.role));
   const pathname = useNavPathname();
@@ -546,9 +559,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const panelRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: onClose });
 
   /**
-   * «Shaxsiy»: shaxsiy bildirishnomalar qutisi (`/inbox`) va sozlamalar. Superadmin menyusida Telegram
-   * guruhlari sahifasi (`/notifications`) ham «Bildirishnomalar» — ikkisi adashmasin deb qutining nomi
-   * shu rolda «Bildirishnomalar qutisi» (sahifa sarlavhasi, maket `common-inbox`).
+   * «Shaxsiy»: shaxsiy bildirishnomalar qutisi (`/inbox`) va sozlamalar. Superadmin va admin menyusida
+   * (NG-A, ega NG-S2) Telegram guruhlari sahifasi (`/notifications`) ham «Bildirishnomalar» — ikkisi adashmasin
+   * deb qutining nomi shu rollarda «Bildirishnomalar qutisi» (sahifa sarlavhasi, maket `common-inbox`).
    */
   const personal = useMemo<PersonalEntry[]>(() => {
     const inboxClashes = items.some((item) => item.to === "/notifications");
@@ -594,6 +607,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     activeTo,
     persona,
     branchTypeMissing,
+    showSearch: roleHasGlobalSearch(user?.role || role || roleState.role) && canOpenOrders,
     label: (item) => t(item.labelKey),
     shortLabel: (item) => t(item.shortLabelKey ?? item.labelKey),
     onClose,

@@ -14,7 +14,7 @@
     "dashboard": "Visible blocks",
     "interface": "Sidebar state",
     "scanner": "Camera, sound and vibration",
-    "notifications": "Notifications to this device"
+    "notifications": "Notifications to this device · app"
   },
   "appearance": {
     "theme": "Theme",
@@ -113,6 +113,8 @@
     "device_hint": "When a new order or an important event happens, this device gets a notification — even when the app is closed.",
     "footer": "All notifications are also kept in the notifications inbox.",
     "open_inbox": "Open the inbox",
+    "app_title": "App",
+    "app_hint": "Install Elchi to open it quickly in its own window — from the desktop or Start menu on a computer, from the Home Screen on a phone.",
     "scope_title": "For now these settings are only saved",
     "scope_body": "Your channel, category and quiet-hours choices are saved but not yet applied when notifications are sent — you will keep receiving everything as before. Once the server side is ready, your saved choices will apply automatically. The “Notifications on this device” switch above already works.",
     "channels_title": "Channels",

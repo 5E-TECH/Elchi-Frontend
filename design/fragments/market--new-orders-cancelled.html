@@ -14,6 +14,15 @@
     <a class="el-tab" role="tab" aria-selected="true" href="@new-orders-cancelled" style="text-decoration: none; color: var(--text); padding: 0 min(12px, 2.5cqw)">Bekor qilinganlar <span class="el-tab-count">6</span></a>
   </div>
 
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 16px 16px 0">
+    <nav aria-label="Bekor qilinganlar bosqichi" data-scroll-x style="display: flex; gap: 8px; flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none">
+      <a class="el-chip el-chip-active" href="@new-orders-cancelled" aria-current="page" style="flex: none; text-decoration: none">Olib ketishga tayyor <span class="el-tab-count" style="background: var(--surface); color: var(--action-fg)">6</span></a>
+      <a class="el-chip" href="@new-orders-cancelled-transit" style="flex: none; text-decoration: none">Yo'lda <span class="el-tab-count">3</span></a>
+      <a class="el-chip" href="@new-orders-cancelled-received" style="flex: none; text-decoration: none">Olganlarim <span class="el-tab-count">12</span></a>
+    </nav>
+    <span class="el-badge el-tone-neutral" title="«Yo'lda» va «Olganlarim» uchun market bekorlarining barcha bosqichi kerak (BG3)">Taklif · backend kerak</span>
+  </div>
+
   <div class="el-card-pad" style="padding: 16px 16px 12px">
     <div role="region" aria-labelledby="handover-title" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 16px; border-radius:12px; background: var(--sunken)">
       <div style="display: flex; gap: 14px; align-items: flex-start; flex: 1 1 380px; min-width: 0">

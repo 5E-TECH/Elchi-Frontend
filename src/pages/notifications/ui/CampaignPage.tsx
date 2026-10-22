@@ -1,11 +1,20 @@
-// dizayn-v2: superadmin-notifications-sms-campaign, superadmin-notifications-sms-campaign-confirm-dialog
+// dizayn-v2: superadmin-notifications-sms-campaign, superadmin-notifications-sms-campaign-confirm-dialog, superadmin-notifications-sms-campaign-segment
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { Clock, History, Info, MessageSquareText, Send } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { NoticeAlert } from "../../../entities/notification";
 import {
+  CustomerSegmentFilters,
+  toCustomerSegmentPayload,
+  type CustomerSegment,
+} from "../../../entities/notification-campaign";
+import {
+  isRetryableSmsCampaignError,
   previewSmsCampaign,
+  smsCampaignErrorKind,
+  smsDailyQuota,
   useSendSmsCampaign,
+  useSmsCampaignAudience,
   useSmsCampaigns,
   useSmsStatus,
   useSmsTariffs,
@@ -14,7 +23,6 @@ import {
   type SmsCampaignInput,
   type SmsCampaignPreview,
 } from "../../../entities/sms";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -24,7 +32,6 @@ import {
   Button,
   Card,
   DataTable,
-  DateInput,
   Dialog,
   EmptyState,
   ErrorState,
@@ -38,6 +45,8 @@ import {
 } from "../../../shared/ui/primitives";
 import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
+import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
+import { CampaignSendTime } from "./sms/CampaignSendTime";
 import { CardList } from "./sms/CardList";
 
 type Audience = "phones" | "segment";
@@ -122,12 +131,17 @@ const Num = ({
  * SMS KAMPANIYASI (sVByLMnt #6/#7), dizayn v2 — maketlar `superadmin-notifications-sms-campaign`,
  * `-campaign-confirm-dialog`.
  *
- * «Yangi kampaniya»: shablon yoki o'z matni → turi (Reklama | Xizmat xabari) → hisoblagich → o'zgaruvchilar → kimga
- * (raqamlar | mijozlar segmenti) → «Ko'rib chiqish». Ko'rib chiqish `POST …/campaigns/preview` (hech narsa
+ * «Yangi kampaniya» (KM-1, maket `-campaign-segment`): shablon yoki o'z matni → turi FAQAT «Reklama» (backend
+ * boshqasini 400 `campaign_promo_only` bilan rad etadi; xizmat xabari — tizim hodisalaridan) → hisoblagich →
+ * o'zgaruvchilar → kimga: raqamlar | mijozlar segmenti (`CustomerSegmentFilters`: Viloyat / Tuman / Market
+ * `Select`, «Oxirgi buyurtma» `DateRange`, «Buyurtmalar soni» — minimum) + jonli auditoriya va bugungi SMS limiti
+ * (KM-S4; oshsa «Ko'rib chiqish» o'chiq) → «Yuborish vaqti» (Darhol; tungi taqiqda — qachon ketishi) →
+ * «Ko'rib chiqish». Ko'rib chiqish `POST …/campaigns/preview` (hech narsa
  * yuborilmaydi) va YANGI `Idempotency-Key` → tasdiq oynasi (aniq qabul qiluvchilar, roziligi yo'qlar, noto'g'ri
  * raqamlar, prognoz narx, bo'laklar, rejalashtirilgan vaqt, to'liq matn) → «Yuborish» shu kalit bilan
  * (`POST …/campaigns`, takror — 409, ikki marta ketmaydi). Chegaradan ko'p / 0 qabul qiluvchi — «Yuborish» o'chiq.
- * `{{var}}` to'ldirilmasa ko'rib chiqish bloklanadi. Pastda «Kampaniyalar tarixi».
+ * `{{var}}` to'ldirilmasa ko'rib chiqish bloklanadi. Xato — faqat i18n matn (HTTP holati bo'yicha), xom backend
+ * matni ko'rsatilmaydi. Pastda «Kampaniyalar tarixi».
  */
 const CampaignPage = () => {
   const { t, i18n } = useTranslation("sms");
@@ -135,25 +149,18 @@ const CampaignPage = () => {
   const tariffs = useSmsTariffs();
   const templates = useSmsTemplates();
   const history = useSmsCampaigns({ silentError: true });
-  const status = useSmsStatus();
+  // Kvota noma'lum bo'lsa limit qatori chizilmaydi — global xabar (xom backend matni) kerak emas.
+  const status = useSmsStatus({ silentError: true });
   const sendCampaign = useSendSmsCampaign();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const isBelowLg = useIsBelowLg();
 
-  const [messageClass, setMessageClass] = useState<"promo" | "transactional">("promo");
   const [templateCode, setTemplateCode] = useState<string>("");
   const [text, setText] = useState("");
   const [vars, setVars] = useState<Record<string, string>>({});
   const [audience, setAudience] = useState<Audience>("phones");
   const [phones, setPhones] = useState("");
-  const [segment, setSegment] = useState<{
-    market_id?: string;
-    region_id?: string;
-    district_id?: string;
-    last_order_from?: string;
-    last_order_to?: string;
-    min_orders?: number;
-  }>({});
+  const [segment, setSegment] = useState<CustomerSegment>({});
 
   const [preview, setPreview] = useState<SmsCampaignPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -161,9 +168,13 @@ const CampaignPage = () => {
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // Javob massiv bo'lmasa (kutilmagan konvert) — sahifa yiqilmasin.
+  // Javob massiv bo'lmasa (kutilmagan konvert) — sahifa yiqilmasin. Kampaniya faqat reklama — xizmat va OTP
+  // shablonlari ro'yxatga chiqmaydi (tanlansa backend 400 `campaign_promo_only`).
   const templateList = useMemo(
-    () => (Array.isArray(templates.data) ? templates.data : []),
+    () =>
+      (Array.isArray(templates.data) ? templates.data : []).filter(
+        (item) => item.message_class === "promo",
+      ),
     [templates.data],
   );
   const historyQuery = {
@@ -174,46 +185,80 @@ const CampaignPage = () => {
     templateList.find((item) => item.code === templateCode && item.lang === "uz") ??
     templateList.find((item) => item.code === templateCode);
   const sourceText = template ? template.text : text;
-  const effectiveClass = template
-    ? template.message_class === "promo"
-      ? "promo"
-      : "transactional"
-    : messageClass;
   const variables = useMemo(() => templateVars(sourceText), [sourceText]);
   const missing = variables.filter((name) => !vars[name]?.trim());
   const filled = fillTemplate(sourceText, vars);
-  const finalText = effectiveClass === "promo" && filled ? `${filled}${OPT_OUT_SAMPLE}` : filled;
+  const finalText = filled ? `${filled}${OPT_OUT_SAMPLE}` : filled;
   const phoneList = phones
     .split(/[\n,;]+/)
     .map((value) => value.trim())
     .filter(Boolean);
-  const recipientsGuess = audience === "phones" ? phoneList.length : 1;
+  const segmentPayload = useMemo(() => toCustomerSegmentPayload(segment), [segment]);
+
+  // Jonli auditoriya (faqat «Mijozlar segmenti»): debounce bilan preview, natija + bugungi limit.
+  const audienceQuery = useSmsCampaignAudience(audience === "segment" ? segmentPayload : null);
+  const quota = smsDailyQuota(status.data);
+  const audienceData = audienceQuery.data;
+  const audienceFresh =
+    audienceQuery.settled &&
+    !audienceQuery.isFetching &&
+    !audienceQuery.isPlaceholderData &&
+    !audienceQuery.isError &&
+    audienceData !== undefined;
+  const audienceState: CampaignAudienceState =
+    audienceQuery.settled && !audienceQuery.isFetching && audienceQuery.isError
+      ? "error"
+      : !audienceFresh || !audienceData
+        ? "loading"
+        : audienceData.fanout_exceeded
+          ? "fanout"
+          : audienceData.recipients === 0
+            ? "empty"
+            : quota && audienceData.recipients > quota.remaining
+              ? "limit"
+              : "ready";
+
+  const audienceErrorKind = audienceQuery.isError ? smsCampaignErrorKind(audienceQuery.error) : undefined;
+
+  const recipientsGuess =
+    audience === "phones" ? phoneList.length : (audienceData?.recipients ?? 1);
 
   const input = (): SmsCampaignInput => ({
     ...(template
       ? { template_code: template.code, lang: template.lang }
-      : { message_class: messageClass, text: text.trim() }),
+      : { message_class: "promo" as const, text: text.trim() }),
     ...(variables.length ? { vars } : {}),
-    segment:
-      audience === "phones"
-        ? { phones: phoneList }
-        : Object.fromEntries(
-            Object.entries(segment).filter(([, value]) => value !== undefined && value !== ""),
-          ),
+    segment: audience === "phones" ? { phones: phoneList } : segmentPayload,
   });
 
   const canPreview =
     Boolean(sourceText.trim()) &&
     missing.length === 0 &&
-    (audience === "segment" || phoneList.length > 0);
+    (audience === "segment" ? audienceState === "ready" : phoneList.length > 0);
 
+  const audienceHint: Record<Exclude<CampaignAudienceState, "ready">, string> = {
+    loading: t("campaign.hintAudienceWait"),
+    error: isRetryableSmsCampaignError(audienceErrorKind)
+      ? t("campaign.hintAudienceError")
+      : t("campaign.hintAudienceBlocked"),
+    fanout: t("campaign.hintFanout"),
+    empty: t("campaign.hintAudienceEmpty"),
+    limit: t("campaign.hintLimit"),
+  };
   const footerHint = !sourceText.trim()
     ? t("campaign.hintText")
     : missing.length
       ? t("campaign.hintVars")
       : audience === "phones" && !phoneList.length
         ? t("campaign.hintPhones")
-        : t("campaign.hintReady");
+        : audience === "segment" && audienceState !== "ready"
+          ? audienceHint[audienceState]
+          : t("campaign.hintReady");
+
+  const errorText = (error: unknown, fallback: string) => {
+    const kind = smsCampaignErrorKind(error);
+    return kind === "unknown" ? fallback : t(`campaign.errors.${kind}`);
+  };
 
   const openPreview = async () => {
     setPreviewLoading(true);
@@ -225,7 +270,7 @@ const CampaignPage = () => {
       // Bir tasdiq oynasi — bitta kalit: 504 dan keyin qayta bosilsa ham ikki marta ketmaydi.
       setIdempotencyKey(newKey());
     } catch (error) {
-      setPreviewError(getBackendErrorMessage(error) ?? t("campaign.failed"));
+      setPreviewError(errorText(error, t("campaign.previewFailed")));
     } finally {
       setPreviewLoading(false);
     }
@@ -246,17 +291,17 @@ const CampaignPage = () => {
       setPreview(null);
       setIdempotencyKey(null);
     } catch (error) {
-      setResult({ type: "error", message: getBackendErrorMessage(error) ?? t("campaign.failed") });
+      setResult({ type: "error", message: errorText(error, t("campaign.failed")) });
       setPreview(null);
     }
   };
 
-  const tariff =
-    effectiveClass === "promo"
-      ? (tariffs.data?.promo ?? null)
-      : (tariffs.data?.transactional ?? null);
+  const tariff = tariffs.data?.promo ?? null;
   const scheduledLater = preview && new Date(preview.scheduled_for).getTime() - Date.now() > 60_000;
-  const blockedSend = !preview || preview.recipients === 0 || preview.fanout_exceeded;
+  // KM-S4: aniq qabul qiluvchilar bugungi qoldiqdan ko'p bo'lsa — backend 409 (kvota) qaytaradi; oldindan to'xtatiladi.
+  const overQuota = Boolean(preview && quota && preview.recipients > quota.remaining);
+  const blockedSend =
+    !preview || preview.recipients === 0 || preview.fanout_exceeded || overQuota;
   const count = useCallback(
     (value: number) => t("count", { value: formatNumberLocalized(value, { language }) }),
     [language, t],
@@ -266,18 +311,8 @@ const CampaignPage = () => {
     () => [
       { value: "", label: t("campaign.templateNone") },
       ...[
-        ...new Map(
-          templateList
-            .filter((item) => item.message_class !== "security")
-            .map((item) => [item.code, item]),
-        ).values(),
-      ].map((item) => ({
-        value: item.code,
-        label: t("campaign.templateOption", {
-          code: item.code,
-          class: t(`class.${item.message_class}`),
-        }),
-      })),
+        ...new Map(templateList.map((item) => [item.code, item])).values(),
+      ].map((item) => ({ value: item.code, label: item.code })),
     ],
     [t, templateList],
   );
@@ -402,7 +437,7 @@ const CampaignPage = () => {
     <>
       <Card
         title={t("campaign.newTitle")}
-        bodyClassName="flex flex-wrap gap-x-8 gap-y-6"
+        padding="none"
         footer={
           <>
             <span className="inline-flex min-w-0 flex-[1_1_260px] items-start gap-2 text-[13px] text-text-muted">
@@ -420,159 +455,115 @@ const CampaignPage = () => {
           </>
         }
       >
-        <div className="flex min-w-0 flex-[3_1_400px] flex-col gap-4">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4">
-            <Field label={t("campaign.template")} labelAs="span">
-              <Select
-                options={templateOptions}
-                value={templateCode}
-                onChange={(value) => setTemplateCode(value ?? "")}
-                loading={templates.isLoading}
-              />
-            </Field>
-            {!template ? (
-              <Field label={t("campaign.messageClass")} labelAs="span">
-                <SegmentedControl
-                  ariaLabel={t("campaign.messageClass")}
-                  value={messageClass}
-                  onValueChange={setMessageClass}
-                  fullWidth
-                  options={[
-                    { value: "promo", label: t("class.promo") },
-                    { value: "transactional", label: t("class.transactional") },
-                  ]}
+        <div className="flex flex-wrap gap-x-8 gap-y-6 p-5">
+          <div className="flex min-w-0 flex-[3_1_400px] flex-col gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4">
+              <Field label={t("campaign.template")} labelAs="span">
+                <Select
+                  options={templateOptions}
+                  value={templateCode}
+                  onChange={(value) => setTemplateCode(value ?? "")}
+                  loading={templates.isLoading}
                 />
               </Field>
-            ) : null}
-          </div>
+              <Field label={t("campaign.messageClass")} hint={t("campaign.promoOnlyHint")} readOnly>
+                <TextInput
+                  value={t("class.promo")}
+                  readOnly
+                  suffix={<Badge>{t("campaign.promoOnly")}</Badge>}
+                />
+              </Field>
+            </div>
 
-          <Field label={t("campaign.text")} required={!template} readOnly={Boolean(template)}>
-            <TextInput
-              multiline
-              rows={3}
-              maxLength={1000}
-              value={template ? template.text : text}
-              placeholder={t("campaign.textPlaceholder")}
-              onValueChange={template ? undefined : setText}
-              readOnly={Boolean(template)}
+            <Field label={t("campaign.text")} required={!template} readOnly={Boolean(template)}>
+              <TextInput
+                multiline
+                rows={3}
+                maxLength={1000}
+                value={template ? template.text : text}
+                placeholder={t("campaign.textPlaceholder")}
+                onValueChange={template ? undefined : setText}
+                readOnly={Boolean(template)}
+              />
+            </Field>
+            <SmsMeter
+              text={finalText}
+              recipients={recipientsGuess}
+              tariff={tariff}
+              className="-mt-2"
             />
-          </Field>
-          <SmsMeter
-            text={finalText}
-            recipients={recipientsGuess}
-            tariff={tariff}
-            className="-mt-2"
-          />
 
-          {effectiveClass === "promo" ? (
             <NoticeAlert tone="neutral" role="note" icon={Clock}>
               {t("campaign.promoHint")}
             </NoticeAlert>
-          ) : null}
 
-          {variables.length ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-[13px] font-semibold text-text">{t("campaign.vars")}</span>
-              {variables.map((name) => (
-                <VarInput
-                  key={name}
-                  name={name}
-                  value={vars[name] ?? ""}
-                  placeholder={t("campaign.varMissing")}
-                  onChange={(value) => setVars((current) => ({ ...current, [name]: value }))}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-4">
-          <Field label={t("campaign.audience")} labelAs="span">
-            <SegmentedControl
-              ariaLabel={t("campaign.audience")}
-              value={audience}
-              onValueChange={setAudience}
-              fullWidth
-              options={[
-                { value: "phones", label: t("campaign.audiencePhones") },
-                { value: "segment", label: t("campaign.audienceSegment") },
-              ]}
-            />
-          </Field>
-          {audience === "phones" ? (
-            <Field label={t("campaign.phones")} required className="flex-1">
-              <TextInput
-                multiline
-                rows={9}
-                value={phones}
-                placeholder="+998901234567"
-                onValueChange={setPhones}
-                className="min-h-[232px] flex-1 tabular-nums"
-              />
-            </Field>
-          ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(180px,100%),1fr))] gap-4">
-              {(
-                [
-                  ["market_id", "marketId"],
-                  ["region_id", "regionId"],
-                  ["district_id", "districtId"],
-                ] as const
-              ).map(([key, label]) => (
-                <Field key={key} label={t(`campaign.${label}`)}>
-                  <TextInput
-                    mode="number"
-                    value={segment[key] ?? ""}
-                    onValueChange={(value) =>
-                      setSegment((current) => ({ ...current, [key]: value }))
-                    }
+            {variables.length ? (
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <span className="text-[13px] font-semibold text-text">{t("campaign.vars")}</span>
+                {variables.map((name) => (
+                  <VarInput
+                    key={name}
+                    name={name}
+                    value={vars[name] ?? ""}
+                    placeholder={t("campaign.varMissing")}
+                    onChange={(value) => setVars((current) => ({ ...current, [name]: value }))}
                   />
-                </Field>
-              ))}
-              <Field label={t("campaign.minOrders")}>
-                <TextInput
-                  mode="number"
-                  value={segment.min_orders ? String(segment.min_orders) : ""}
-                  onValueChange={(value) =>
-                    setSegment((current) => ({
-                      ...current,
-                      min_orders: value ? Math.max(1, Number(value)) : undefined,
-                    }))
-                  }
-                />
-              </Field>
-              <Field label={t("campaign.lastOrderFrom")} labelAs="span">
-                <DateInput
-                  value={segment.last_order_from ?? ""}
-                  max={segment.last_order_to || undefined}
-                  onChange={(value) =>
-                    setSegment((current) => ({ ...current, last_order_from: value }))
-                  }
-                />
-              </Field>
-              <Field label={t("campaign.lastOrderTo")} labelAs="span">
-                <DateInput
-                  value={segment.last_order_to ?? ""}
-                  min={segment.last_order_from || undefined}
-                  onChange={(value) =>
-                    setSegment((current) => ({ ...current, last_order_to: value }))
-                  }
-                />
-              </Field>
-            </div>
-          )}
-        </div>
-
-        {previewError || result ? (
-          <div className="flex w-full min-w-0 flex-col gap-3">
-            {previewError ? <NoticeAlert tone="danger">{previewError}</NoticeAlert> : null}
-            {result ? (
-              <NoticeAlert tone={result.type === "success" ? "success" : "danger"}>
-                {result.message}
-              </NoticeAlert>
+                ))}
+              </div>
             ) : null}
           </div>
-        ) : null}
+
+          <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-4">
+            <Field label={t("campaign.audience")} labelAs="span">
+              <SegmentedControl
+                ariaLabel={t("campaign.audience")}
+                value={audience}
+                onValueChange={setAudience}
+                fullWidth
+                options={[
+                  { value: "phones", label: t("campaign.audiencePhones") },
+                  { value: "segment", label: t("campaign.audienceSegment") },
+                ]}
+              />
+            </Field>
+            {audience === "phones" ? (
+              <Field label={t("campaign.phones")} required className="flex-1">
+                <TextInput
+                  multiline
+                  rows={9}
+                  value={phones}
+                  placeholder="+998901234567"
+                  onValueChange={setPhones}
+                  className="min-h-[232px] flex-1 tabular-nums"
+                />
+              </Field>
+            ) : (
+              <>
+                <CustomerSegmentFilters value={segment} onChange={setSegment} />
+                <CampaignAudienceSummary
+                  state={audienceState}
+                  data={audienceData}
+                  quota={quota}
+                  errorKind={audienceErrorKind}
+                  onRetry={() => void audienceQuery.refetch()}
+                />
+              </>
+            )}
+          </div>
+
+          {previewError || result ? (
+            <div className="flex w-full min-w-0 flex-col gap-3">
+              {previewError ? <NoticeAlert tone="danger">{previewError}</NoticeAlert> : null}
+              {result ? (
+                <NoticeAlert tone={result.type === "success" ? "success" : "danger"}>
+                  {result.message}
+                </NoticeAlert>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <CampaignSendTime quietHours={quiet} />
       </Card>
 
       <Card
@@ -712,6 +703,14 @@ const CampaignPage = () => {
             {preview.fanout_exceeded ? (
               <NoticeAlert tone="danger">
                 {t("campaign.fanoutExceeded", { max: preview.max_fanout })}
+              </NoticeAlert>
+            ) : null}
+            {overQuota && quota ? (
+              <NoticeAlert tone="danger">
+                {t("audience.quotaExceeded", {
+                  need: formatNumberLocalized(preview.recipients, { language }),
+                  left: formatNumberLocalized(quota.remaining, { language }),
+                })}
               </NoticeAlert>
             ) : null}
             {!preview.sms_enabled ? (

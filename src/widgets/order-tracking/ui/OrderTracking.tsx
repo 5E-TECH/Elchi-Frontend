@@ -34,6 +34,11 @@ type OrderTrackingProps = {
    * (ikonka, sarlavha, son, chegarali «▾»). Desktop va planshetda — oddiy karta.
    */
   variant?: "default" | "courier";
+  /**
+   * Desktopda ham yig'ilgan ochilsin — bekor qilingan buyurtmada «Qaytarish yo'li» kartasi tepada turadi
+   * (maketlar `*-orders-detail-cancelled`: «Buyurtma tarixi» yig'ilgan).
+   */
+  defaultCollapsed?: boolean;
   className?: string;
 };
 
@@ -74,7 +79,13 @@ const TrackingSkeleton = () => (
  * «Ko'proq yuklash». Holatlar — `QueryBoundary`: skelet, bo'sh («hali tarix yozuvlari yo'q»), xato
  * (backend matni yoki umumiy matn, «Qayta urinish»; 403 da qayta urinish yo'q).
  */
-export const OrderTracking = ({ orderId, context, variant = "default", className }: OrderTrackingProps) => {
+export const OrderTracking = ({
+  orderId,
+  context,
+  variant = "default",
+  defaultCollapsed = false,
+  className,
+}: OrderTrackingProps) => {
   const { t } = useTranslation("orders");
   const currentUser = useSelector((state: RootState) => state.user.user);
   const currentRole = useSelector((state: RootState) => state.role.role);
@@ -83,7 +94,7 @@ export const OrderTracking = ({ orderId, context, variant = "default", className
     orderId,
     canViewTracking,
   );
-  const [open, setOpen] = useState(() => !isPhoneViewport());
+  const [open, setOpen] = useState(() => !defaultCollapsed && !isPhoneViewport());
   const bodyId = useId();
   const titleId = useId();
 

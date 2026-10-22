@@ -34,7 +34,16 @@ const order = (id: string, name: string, over: Record<string, unknown> = {}) => 
 });
 
 export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" = "light") => {
-  const state = { orders: [order("10234", "Feruza Mirzayeva"), order("10235", "Jasur Karimov")] };
+  const state = {
+    orders: [order("10234", "Feruza Mirzayeva"), order("10235", "Jasur Karimov")],
+    /** OR-1: ro'yxat so'rovi 500 qaytaradi (yangilash xatosi). */
+    listFail: false,
+    /** OR-1: ro'yxat va tab sonlari javobi shuncha kechikadi (ms) — «Yangilanmoqda…» holati. */
+    listDelayMs: 0,
+    /** OR-1: `GET orders/courier/orders` va `…/counts` so'rovlari soni. */
+    listCalls: 0,
+    countCalls: 0,
+  };
   const cancels: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
   const sells: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
   const leaked: string[] = [];
@@ -58,7 +67,21 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
         },
       });
     }
+    if (path === "orders/courier/orders/counts") {
+      // OR-1 (0d11ewk7): kuryer tablari soni — ro'yxat `total` i bilan bir xil.
+      state.countCalls += 1;
+      if (state.listDelayMs) await new Promise((done) => setTimeout(done, state.listDelayMs));
+      if (state.listFail) return reply(route, { statusCode: 500, message: "e2e: internal" }, 500);
+      return reply(route, {
+        statusCode: 200,
+        message: "Courier order counts",
+        data: { waiting: state.orders.length, all: state.orders.length + 3, cancelled: 1 },
+      });
+    }
     if (path === "orders/courier/orders") {
+      state.listCalls += 1;
+      if (state.listDelayMs) await new Promise((done) => setTimeout(done, state.listDelayMs));
+      if (state.listFail) return reply(route, { statusCode: 500, message: "e2e: internal" }, 500);
       return reply(route, { statusCode: 200, data: state.orders, total: state.orders.length, page: 1, limit: 10 });
     }
     const cancel = /^orders\/cancel\/(\w+)$/.exec(path);

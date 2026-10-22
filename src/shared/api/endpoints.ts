@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
     MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
     TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
+    // GET (istalgan rol) → { active_count, sessions: [{ id, device_name, device_id, user_agent, ip, logged_in_at,
+    // last_seen_at, expires_at, current }] } — FAQAT o'z faol sessiyalari, last_seen_at bo'yicha yangisi tepada,
+    // ko'pi bilan 50 ta (Elchi Pochta #3)
+    SESSIONS: "auth/sessions",
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────
@@ -51,6 +55,18 @@ export const API_ENDPOINTS = {
     // superadmin, admin, market — faqat o'zinikini)
     TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
   },
+  // Market o'z operatorlari (i76gGjyq; faqat MARKET, faqat o'z operatorlari — JWT `sub`, market_id yuborilmaydi)
+  MARKET_OPERATORS: {
+    BASE: "market-operators", // GET ?search&status&page&limit → { items, meta } / POST { name, phone_number, password }
+    BY_ID: (id: string | number) => `market-operators/${id}`, // DELETE (soft)
+    // PATCH { commission_type: percent | fixed | null, commission_value } — PERCENT 0..100, FIXED 0..1 000 000, 2 kasr
+    COMMISSION: (id: string | number) => `market-operators/${id}/commission`,
+  },
+  // Logistlar (superadmin/admin; LG-2, dzyVftBx): GET ?search&status&page&limit (limit ≤ 100) → { items, meta } /
+  // POST { name, phone_number, password, salary, payment_day? } — filialsiz, viloyatlar alohida (REGIONS.LOGIST_BULK).
+  LOGISTS: {
+    BASE: "logists",
+  },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
     BY_REGION: (regionId: string | number) => `couriers/region/${regionId}`,
@@ -67,15 +83,28 @@ export const API_ENDPOINTS = {
     STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
     MY_DISTRICT_STATS: "region/my/district-stats", // GET — kuryer/menejerning o'z viloyati (tumanlar kesimida)
     BY_ID: (regionId: string | number) => `region/${regionId}`, // GET / PATCH update / DELETE
+    // Logist biriktirish (superadmin/admin; LG-2, dzyVftBx). POST { logist_id, region_ids } — region_ids dagilar
+    // logistga o'tadi, uning qolgan viloyatlaridan u olinadi (bitta tranzaksiya).
+    LOGIST_BULK: "region/logist/bulk",
+    LOGIST: (regionId: string | number) => `region/${regionId}/logist`, // PATCH { logist_id | null } — bitta viloyat
   },
   DISTRICTS: {
     BASE: "district", // GET all / POST create
-    BY_ID: (districtId: string | number) => `district/${districtId}`, // GET / PATCH reassign region / DELETE (superadmin)
+    BY_ID: (districtId: string | number) => `district/${districtId}`, // GET / PATCH reassign region / DELETE (admin/superadmin)
     UPDATE_NAME: (districtId: string | number) => `district/name/${districtId}`, // PATCH
     SATO_MATCH_PREVIEW: "district/sato-match/preview", // GET
     SATO_MATCH_APPLY: "district/sato-match/apply", // POST (superadmin)
     SATO_BY_CODE: (satoCode: string | number) => `district/sato/${satoCode}`, // GET
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
+    // POST {target_district_id} — tuman boshqasiga qo'shiladi va o'chadi (admin/superadmin; DM-1)
+    MERGE: (districtId: string | number) => `district/${districtId}/merge`,
+  },
+
+  // ── Customers — buyurtma yaratishda mijoz taklifi (hiqRNhkI, CS-A) ─────────
+  CUSTOMERS: {
+    // GET ?phone=<kamida 7 raqam>&market_id= — ko'pi bilan 10 ta. Market rolida `market_id` yuborilmaydi
+    // (token); registrator/menejer uchun majburiy; admin uchun — xulosa (`orders_count`) uchun.
+    SUGGEST: "customers/suggest",
   },
 
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
@@ -99,6 +128,7 @@ export const API_ENDPOINTS = {
       `orders/markets/${marketId}/cancelled/handover`,
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
+    COURIER_ORDER_COUNTS: "orders/courier/orders/counts", // GET kuryer tablari soni { waiting, all, cancelled } (0d11ewk7)
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
@@ -179,9 +209,14 @@ export const API_ENDPOINTS = {
     MAIN: "finance/cashbox/main", // was stale "cashbox/main"
     SPEND: "finance/cashbox/spend",
     FILL: "finance/cashbox/fill",
-    // Shifts (smena) — repointed from stale "cashbox/shift/*" to "finance/shift/*".
-    // Backend has no "current shift" route; GET /finance/shift (filters) is used.
-    SHIFT_CURRENT: "finance/shift",
+    // Elchi Pochta №1 — kassa xarajati kategoriyalari: GET (superadmin, admin, menejer; `include_deleted` — faqat
+    // superadmin), POST / PATCH :id / DELETE :id (faqat superadmin, o'chirish — yumshoq). `spend` ixtiyoriy
+    // `expense_category_id` oladi, `fill` uni rad etadi (400).
+    EXPENSE_CATEGORIES: "finance/cashbox/expense-categories",
+    EXPENSE_CATEGORY: (id: string | number) => `finance/cashbox/expense-categories/${id}`,
+    // Smena (kfdfYDik): joriy holat — `GET finance/shift/current` (`data.shift` — ochiq smena yoki null,
+    // `data.required`); kassa doirasi JWT'dan (SA/admin — MAIN, menejer — o'z filiali). Ro'yxat — `finance/shift`.
+    SHIFT_CURRENT: "finance/shift/current",
     SHIFT_HISTORY: "finance/shift",
     SHIFT_OPEN: "finance/shift/open",
     SHIFT_CLOSE: "finance/shift/close",
@@ -209,10 +244,6 @@ export const API_ENDPOINTS = {
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
-    // Shifts
-    SHIFT: "finance/shift",
-    SHIFT_OPEN: "finance/shift/open",
-    SHIFT_CLOSE: "finance/shift/close",
     // Operators (commission) — read by admins; operator reads own
     OPERATOR_PAYMENTS: "finance/operator-payments", // POST payout to operator
     OPERATOR_BALANCE: (operatorId: string | number) => `finance/operators/${operatorId}/balance`,
@@ -236,14 +267,13 @@ export const API_ENDPOINTS = {
     REPORT_ORDERS: "analytics/reports/orders",
   },
 
-  // ── Products / Catalog (market owns; admin/registrator manage) ───────────
+  // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──
   PRODUCTS: {
     BASE: "product", // GET list / POST create
     HEALTH: "product/health",
-    MY_PRODUCTS: "product/my-products",
+    MY_PRODUCTS: "product/my-products", // GET (market / market_operator — faqat o'qish)
     BY_ID: (id: string | number) => `product/${id}`, // GET / PATCH (admin/registrator) / DELETE
     BY_MARKET_ID: (id: string | number) => `product/market/${id}`,
-    UPDATE_MY: (id: string | number) => `product/my/${id}`, // PATCH own product (market)
   },
 
   // ── Integrations (admin/registrator) ─────────────────────────────────────
@@ -299,6 +329,15 @@ export const API_ENDPOINTS = {
   // ── Investors (admin-managed; investor reads own) ────────────────────────
   INVESTORS: {
     BASE: "investors", // GET list / POST create
+    /**
+     * IN-1 (vpKijXce): investorning O'ZI — doira faqat JWT'dan (`@Roles(INVESTOR)`), `investor_id` yuborilmaydi.
+     * ⚠️ Backendda `investors/:id` dan OLDIN e'lon qilingan (aks holda "me" id deb o'qilardi) — shu tartibda.
+     * Xatolar: 403 — profil nofaol, 404 — login investor yozuviga bog'lanmagan, 409 — bir nechta yozuv.
+     */
+    ME: "investors/me", // GET — profil + yig'indi
+    ME_DASHBOARD: "investors/me/dashboard", // GET ?months=1..36 (sukut 12) — KPI + oylik foyda
+    ME_INVESTMENTS: "investors/me/investments", // GET ?from_date&to_date&page&limit — invested_at DESC
+    ME_PROFITS: "investors/me/profits", // GET ?is_paid&page&limit — period_start DESC
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,
@@ -329,6 +368,8 @@ export const API_ENDPOINTS = {
     INBOX_BY_ID: (id: string | number) => `notifications/inbox/${id}`, // GET / DELETE one
     INBOX_READ: (id: string | number) => `notifications/inbox/${id}/read`, // PATCH read/unread
     DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
+    // GET bitta qo'lda yuborish: matn, jonli kanal × holat, yetkazilmaganlar (?page&limit) — id = client_request_id
+    SENT_BY_ID: (dispatchId: string) => `notifications/sent/${encodeURIComponent(dispatchId)}`,
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device

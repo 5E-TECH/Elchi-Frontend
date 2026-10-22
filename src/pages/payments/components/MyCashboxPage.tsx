@@ -1,4 +1,4 @@
-// dizayn-v2: market-cashbox-my, courier-cashbox-my-all, courier-cashbox-my-transfers
+// dizayn-v2: market-cashbox-my, courier-cashbox-my-all, courier-cashbox-my-transfers, courier-cashbox-my-transfers-ack
 // Menejer varianti: maket yo'q — eng yaqini market-cashbox-my (route-map roleNotes; «(maket yo'q) market-cashbox-my»).
 import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -61,8 +61,10 @@ import {
   getViewerOperationType,
   isOrderLinkedSource,
 } from "./paymentSourceType";
-import { toPaymentAck } from "./paymentAck";
+import { paymentAckAudienceOf, paymentAckKeys, toPaymentAck } from "./paymentAck";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 
 /**
  * O'Z KASSAM — `/cash-box` (dizayn v2): market («To'lovlar»), kuryer («Kassa») va menejer (filial kassasi).
@@ -200,6 +202,9 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
           toOptionalString(item["created_at"]),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
+        expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
+        expense_category_name: toOptionalString(item["expense_category_name"]) ?? null,
         balance_after: item["balance_after"] === undefined || item["balance_after"] === null
           ? undefined
           : toNumber(item["balance_after"]),
@@ -566,13 +571,27 @@ const MyCashboxPage = () => {
 
   const correctionBadge = (row: PaymentRow) =>
     isCorrection(row) ? (
-      <Badge variant="outline" size="sm">
+      <Badge variant="outline">
         {t("v2MyCashbox.history.correction")}
       </Badge>
     ) : null;
 
-  /** Kuryer kvitansiyasi javobi (2crjWf7v): faqat `courier_payment` qatorida, javob bo'lsa. */
-  const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} size="sm" />;
+  /**
+   * Kuryer kvitansiyasi javobi (2crjWf7v): faqat `courier_payment` qatorida, javob bo'lsa. Matn ko'ruvchiga qarab
+   * (KI-S1): kuryer — o'z javobi («Siz tasdiqlagansiz» / «Siz: noto'g'ri», maket `courier-cashbox-my-transfers-ack`),
+   * market va menejer — «Kuryer tasdiqladi» / «Kuryer: noto'g'ri». Balandligi «Tuzatish» bilan birga maketdagi
+   * `.el-badge` — 24px (`md`).
+   */
+  const ackAudience = paymentAckAudienceOf(role);
+  const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} />;
+  const categoryBadge = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    return category ? <ExpenseCategoryBadge name={category} /> : null;
+  };
+  const ackText = (row: PaymentRow) => {
+    const keys = paymentAckKeys(row.payment_ack, ackAudience);
+    return keys ? t(keys.label) : "";
+  };
 
   const receivedByNode = (row: PaymentRow) => {
     const name = receiverName(row);
@@ -608,18 +627,16 @@ const MyCashboxPage = () => {
     const id = orderId(row);
     const received = receiverName(row);
     // Telefon kartasining nomi (aria-label) belgilarni ham aytsin — «Tuzatish», kvitansiya javobi (2crjWf7v).
-    const ack =
-      row.payment_ack === "disputed"
-        ? t("paymentAckDisputed")
-        : row.payment_ack === "confirmed"
-          ? t("paymentAckConfirmed")
-          : "";
+    // Kuryerda — kartadagi tartibda (maket `courier-cashbox-my-transfers-ack`): «Qabul qildi» → izoh → javob oxirida.
+    const ack = ackText(row);
+    const comment = row.comment?.trim() ?? "";
     return [
       isCorrection(row) ? t("v2MyCashbox.history.correction") : "",
-      ack,
+      isCourier ? "" : ack,
       id ? t("v2Common.orderNumber", { id }) : "",
       received ? `${t("v2MyCashbox.history.receivedBy")} ${received}` : "",
-      row.comment?.trim() ?? "",
+      comment,
+      isCourier ? ack : "",
     ]
       .filter(Boolean)
       .join(" · ");
@@ -634,8 +651,10 @@ const MyCashboxPage = () => {
   const cardLabel = (row: PaymentRow) => {
     const sub = subPlainText(row);
     const value = direction(row);
+    const category = getExpenseCategoryName(row);
+    const title = category ? `${sourceTitle(row)} · ${category}` : sourceTitle(row);
     return t("v2MyCashbox.history.cardLabel", {
-      title: sub ? `${sourceTitle(row)} (${sub})` : sourceTitle(row),
+      title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
       direction: value ? t(value === "income" ? "v2Common.income" : "v2Common.expense") : "",
       amount: amountText(row),
@@ -676,6 +695,7 @@ const MyCashboxPage = () => {
               >
                 {sourceTitle(row)}
               </Pressable>
+              {categoryBadge(row)}
               {correctionBadge(row)}
               {ackBadge(row)}
             </span>
@@ -739,7 +759,7 @@ const MyCashboxPage = () => {
   ];
 
   // Telefon kartasi. Kuryer (maket `courier-cashbox-my-*`): «Sotuv · №…» + summa / «to'lov turi · sana» +
-  // «Balans: …» / «Tuzatish», «Qabul qildi: …», izoh. Market va menejer (`market-cashbox-my`): sarlavha (+ badge)
+  // «Balans: …» / «Tuzatish», «Qabul qildi: …», izoh, kvitansiya javobi (oxirida). Market va menejer (`market-cashbox-my`): sarlavha (+ badge)
   // + summa / «Buyurtma №… · izoh · to'lov turi» / sana + «Balans: …».
   const renderCard = (row: PaymentRow) => {
     const id = orderId(row);
@@ -765,7 +785,6 @@ const MyCashboxPage = () => {
         {isCorrection(row) || row.payment_ack || receiverName(row) || row.comment?.trim() ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-muted">
             {correctionBadge(row)}
-            {ackBadge(row)}
             {receivedByNode(row)}
             {row.comment?.trim() ? (
               <span className="inline-flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
@@ -774,6 +793,8 @@ const MyCashboxPage = () => {
                 {row.comment.trim()}
               </span>
             ) : null}
+            {/* Kvitansiya javobi — oxirida (maket `courier-cashbox-my-transfers-ack`: «Qabul qildi» → izoh → belgi). */}
+            {ackBadge(row)}
           </span>
         ) : null}
       </>
@@ -782,6 +803,7 @@ const MyCashboxPage = () => {
         <span className="flex w-full min-w-0 items-start justify-between gap-2">
           <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
             <span className="font-semibold">{sourceTitle(row)}</span>
+            {categoryBadge(row)}
             {correctionBadge(row)}
             {ackBadge(row)}
           </span>

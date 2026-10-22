@@ -342,6 +342,32 @@ type UseReceiveOptionsParams = {
  */
 export const RECEIVE_BRANCHES_PARAMS = { status: "active", page: 1, limit: 100 } as const;
 
+/**
+ * Bitta kuryerning «Qabul qilinishi kerak» summasi `GET /couriers` javobidan (T2VHX1Y7) — `toBranchCourierOptions`
+ * bilan bir xil maydonlar, lekin ro'yxat filtrisiz (summa 0 bo'lgan nofaol kuryer ham topiladi). Kuryer yo'q yoki
+ * javob kelmagan — `undefined`.
+ */
+export const findCourierReceivable = (source: unknown, id: string | undefined): number | undefined => {
+  if (!id) return undefined;
+  const courier = toDataItems(source)
+    .map(asRecord)
+    .find((item) => getText(item, "id") === id);
+  if (!courier) return undefined;
+  const cashbox = asRecord(courier.cashbox ?? courier.cashBox ?? courier.cash_box ?? courier.kassa);
+  return getNumber(courier, COURIER_AMOUNT_KEYS, getNumber(cashbox, COURIER_AMOUNT_KEYS));
+};
+
+/**
+ * Menejer kuryer kassasi sahifasidagi summa (T2VHX1Y7): `/payments` dagi «Qabul qilinishi kerak» ro'yxati bilan
+ * BIR so'rov va kalit (`useReceiveOptions` → `GET /couriers`) — kesh ulashiladi, to'lovdan keyin ["couriers"] bilan
+ * yangilanadi. Router state'dagi summa faqat javob kelguncha zaxira.
+ */
+export const useManagerCourierReceivable = (id: string | undefined, enabled: boolean) => {
+  const { useGetCouriers } = useUser();
+  const query = useGetCouriers({ limit: FULL_LIST_LIMIT }, enabled && Boolean(id));
+  return enabled ? findCourierReceivable(query.data, id) : undefined;
+};
+
 export const useReceiveOptions = ({ isManagerRole, enabled }: UseReceiveOptionsParams) => {
   const { t } = useTranslation("payments");
   const { useGetManagers, useGetCouriers } = useUser();

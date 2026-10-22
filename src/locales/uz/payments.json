@@ -227,6 +227,8 @@
     "subtitleShiftOpen": "Asosiy kassa boshqaruvi · smena ochiq",
     "subtitleShiftClosed": "Asosiy kassa boshqaruvi · smena yopiq",
     "subtitleBranch": "Asosiy kassa boshqaruvi · {{branch}}",
+    "subtitleBranchShiftOpen": "{{branch}} · smena ochiq",
+    "subtitleBranchShiftClosed": "{{branch}} · smena yopiq",
     "exportExcel": "Excelga yuklash",
     "openShift": "Smenani ochish",
     "closeShift": "Smenani yopish",
@@ -345,6 +347,15 @@
       "fillCommentRequired": "Izoh majburiy — pul qayerdan kelganini yozing",
       "spendCommentRequired": "Izoh majburiy — pul nimaga sarflanganini yozing",
       "typeRequired": "To'lov turini tanlang",
+      "category": "Xarajat kategoriyasi",
+      "categoryPlaceholder": "Kategoriyani tanlang",
+      "categoryListLabel": "Xarajat kategoriyalari",
+      "categoryLoading": "Kategoriyalar yuklanmoqda…",
+      "categoryEmpty": "Kategoriyalar hali qo'shilmagan",
+      "categoryClear": "Kategoriyani olib tashlash",
+      "categoryLoadError": "Kategoriyalarni yuklab bo'lmadi — xarajatni kategoriyasiz saqlash mumkin",
+      "categoryRetry": "Qayta urinish",
+      "categoryIncludes": "Nimalar kiradi: {{text}}",
       "fillSubmit": "Kirimni saqlash",
       "spendSubmit": "Xarajatni saqlash",
       "cancel": "Bekor qilish",
@@ -355,23 +366,82 @@
       "spendTitle": "Xarajatni tasdiqlang",
       "description": "Tekshirib chiqing — tasdiqlangach, summa kassada darhol aks etadi.",
       "cashbox": "Kassa",
+      "category": "Kategoriya",
       "mainCashbox": "Asosiy kassa",
       "comment": "Izoh",
       "submit": "Tasdiqlash"
     },
     "shift": {
-      "title": "Smenani yopish",
-      "subtitle": "Joriy kassa smenasi yakunlanadi",
       "current": "Joriy smena",
       "since": "{{time}} dan",
       "openedBy": "Ochgan xodim",
-      "cashboxTotal": "Kassadagi summa",
-      "excelNote": "Smenani yopganingizda Excel hisobot avtomatik ravishda yuklab olinadi.",
+      "closedBy": "Yopgan xodim",
+      "opener": "Ochadigan xodim",
       "comment": "Izoh",
-      "commentPlaceholder": "Smena haqida izoh...",
       "cancel": "Bekor qilish",
-      "submit": "Smenani yopish",
-      "closing": "Yopilmoqda…"
+      "cash": "Naqd",
+      "card": "Karta",
+      "cardClick": "Karta (Click)",
+      "mainCashbox": "Asosiy kassa",
+      "branchCashbox": "{{branch}} kassasi",
+      "branchCashboxFallback": "Filial kassasi",
+      "locked": "Smena ochilgach ishlaydi",
+      "banner": {
+        "title": "Smena boshlanmagan",
+        "main": "Pul qabul qilish, marketga to'lov, xarajat va kassani to'ldirish smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+        "branch": "Kuryerdan qabul qilish, xarajat va kassani to'ldirish smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi."
+      },
+      "open": {
+        "title": "Smenani ochish",
+        "subtitle": "{{cashbox}} · yangi smena boshlanadi",
+        "start": "Boshlanish",
+        "now": "hozir",
+        "balanceTitle": "Ochilish qoldig'i",
+        "total": "Jami",
+        "balanceHint": "Kassadagi joriy qoldiq yoziladi. Smena yopilganda kutilgan summa shundan hisoblanadi.",
+        "commentPlaceholder": "Masalan: kechki smena",
+        "submit": "Smenani ochish",
+        "opening": "Ochilmoqda…"
+      },
+      "close": {
+        "title": "Smenani yopish",
+        "subtitle": "Kassani sanang va sanalgan summani kiriting",
+        "countedCash": "Sanalgan naqd",
+        "countedCard": "Sanalgan karta",
+        "expected": "Tizim bo'yicha kutilgan:",
+        "diff": "Farq",
+        "diffAlert": "Farq bor — sababini izohga yozing",
+        "commentHint": "Farq bo'lsa izoh majburiy. Farq bo'lmasa — ixtiyoriy.",
+        "commentPlaceholder": "Masalan: naqd ikki marta sanaldi",
+        "cashRequired": "Sanalgan naqd summasini kiriting",
+        "commentRequired": "Farq bor — izoh yozing",
+        "note": "Kutilgan — kassaning joriy qoldig'i, yakuniy farq yopish paytida hisoblanadi. Karta bo'sh qolsa — «Sanalmadi», karta farqi hisoblanmaydi. Smena yopilgach Excel hisobot avtomatik yuklab olinadi.",
+        "submit": "Smenani yopish",
+        "closing": "Yopilmoqda…"
+      },
+      "diff": {
+        "shortage": "Kamomad",
+        "surplus": "Ortiqcha",
+        "match": "Mos keldi",
+        "notCounted": "Sanalmadi",
+        "expectedUnknown": "Kutilgan noma'lum"
+      },
+      "result": {
+        "title": "Smena yopildi",
+        "subtitle": "{{range}} · {{cashbox}}",
+        "tableLabel": "Smena natijasi: naqd va karta",
+        "metric": "Ko'rsatkich",
+        "opening": "Ochilishda",
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "expected": "Kutilgan",
+        "counted": "Sanalgan",
+        "diff": "Farq",
+        "cardNotCounted": "Karta sanalmadi — karta bo'yicha farq hisoblanmadi.",
+        "excelNote": "Excel hisobot yuklab olindi. Kerak bo'lsa qayta yuklang.",
+        "export": "Excelga yuklash",
+        "done": "Tayyor"
+      }
     },
     "notify": {
       "alreadyRecorded": "Bu operatsiya allaqachon yozilgan — kassa yangilandi, summani tekshiring",
@@ -554,6 +624,7 @@
     "entry": {
       "title": "Qo'lda yozuv qo'shish",
       "source": "Manba turi",
+      "cashboxAutoNote": "Kassa kirim/chiqimi daftarga avtomatik yoziladi — bu yerda faqat kassaga tegmaydigan yozuvlarni kiriting.",
       "direction": "Yo'nalish",
       "income": "Kirim (+)",
       "expense": "Chiqim (−)",
@@ -582,8 +653,8 @@
     },
     "sources": {
       "sell_profit": "Pochta foydasi",
-      "sell_extra_cost": "Qo'shimcha xarajat",
-      "cancel_extra_cost": "Qo'shimcha xarajat",
+      "sell_extra_cost": "Qo'shimcha xarajat (sotuv)",
+      "cancel_extra_cost": "Qo'shimcha xarajat (bekor)",
       "manual_income": "Qo'lda kirim",
       "manual_expense": "Qo'lda chiqim",
       "salary": "Maosh",
@@ -598,6 +669,7 @@
     "orderNumber": "Buyurtma №{{id}}",
     "openDetail": "{{title}} ({{date}}) tafsilotini ochish",
     "detail": "Tafsilot",
+    "category": "Kategoriya",
     "paginationOperations": "{{from}}–{{to}} / {{total}} ta operatsiya",
     "paymentMethod": {
       "cash": "Naqd",
@@ -647,6 +719,7 @@
     "amount": "Summa",
     "balanceAfter": "Operatsiyadan keyingi balans",
     "sourceType": "Manba turi",
+    "category": "Kategoriya",
     "cashboxType": "Kassa turi",
     "from": "Qayerdan",
     "to": "Qayerga",
@@ -669,6 +742,60 @@
     "close": "Yopish",
     "loading": "Tafsilot yuklanmoqda",
     "loadError": "Tafsilotni yuklab bo'lmadi"
+  }
+  ,"v2ExpenseCategories": {
+    "manage": "Xarajat kategoriyalari",
+    "title": "Xarajat kategoriyalari",
+    "subtitle": "«Kassadan xarajat» oynasidagi ro'yxat · {{n}} ta",
+    "subtitleShort": "«Kassadan xarajat» oynasidagi ro'yxat",
+    "add": "Kategoriya qo'shish",
+    "listLabel": "Xarajat kategoriyalari",
+    "orderLabel": "Tartib raqami: {{n}}",
+    "editAria": "«{{name}}» kategoriyasini tahrirlash",
+    "deleteAria": "«{{name}}» kategoriyasini o'chirish",
+    "noDescription": "Tavsif yozilmagan",
+    "empty": "Kategoriyalar yo'q",
+    "emptyDescription": "Kategoriya qo'shing — u «Kassadan xarajat» oynasidagi ro'yxatda chiqadi",
+    "loadError": "Kategoriyalarni yuklab bo'lmadi",
+    "loading": "Kategoriyalar yuklanmoqda",
+    "close": "Yopish",
+    "form": {
+      "addTitle": "Kategoriya qo'shish",
+      "editTitle": "Kategoriyani tahrirlash",
+      "addSubtitle": "Yangi kategoriya «Kassadan xarajat» ro'yxatida darhol chiqadi",
+      "editSubtitle": "Avval yozilgan xarajatlarda eski nom saqlanib qoladi",
+      "name": "Nomi",
+      "namePlaceholder": "Masalan: Yoqilg'i",
+      "nameRequired": "Kategoriya nomini yozing",
+      "nameTooLong": "Nom {{max}} belgidan oshmasin",
+      "description": "Nimalar kiradi",
+      "descriptionPlaceholder": "Masalan: benzin, gaz, dizel",
+      "descriptionTooLong": "Tavsif {{max}} belgidan oshmasin",
+      "sortOrder": "Tartib raqami",
+      "sortOrderHint": "Kichigi ro'yxatda tepada turadi. Bo'sh qoldirilsa — oxiriga qo'shiladi",
+      "sortOrderEditHint": "Kichigi ro'yxatda tepada turadi",
+      "sortOrderInvalid": "0 dan {{max}} gacha butun son yozing",
+      "back": "Orqaga",
+      "create": "Qo'shish",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda…"
+    },
+    "delete": {
+      "title": "O'chirishni tasdiqlang",
+      "description": "Quyidagi kategoriya «Kassadan xarajat» oynasidagi ro'yxatdan olib tashlanadi.",
+      "note": "Avval yozilgan xarajatlarda kategoriya nomi saqlanib qoladi.",
+      "confirm": "O'chirish",
+      "loading": "O'chirilmoqda…"
+    },
+    "notify": {
+      "created": "Kategoriya qo'shildi",
+      "updated": "Kategoriya saqlandi",
+      "deleted": "Kategoriya o'chirildi",
+      "nameDescription": "«{{name}}»",
+      "saveError": "Kategoriyani saqlab bo'lmadi",
+      "notFound": "Kategoriya topilmadi",
+      "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
+    }
   }
   ,"v2Picker": {
     "select": "Tanlash",
@@ -874,8 +1001,12 @@
       "rollback": "Tuzatish"
     }
   }
-  ,"paymentAckDisputed": "Noto'g'ri"
-  ,"paymentAckDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
-  ,"paymentAckConfirmed": "Tasdiqlangan"
-  ,"paymentAckConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
+  ,"paymentAckStaffConfirmed": "Kuryer tasdiqladi"
+  ,"paymentAckStaffConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
+  ,"paymentAckStaffDisputed": "Kuryer: noto'g'ri"
+  ,"paymentAckStaffDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
+  ,"paymentAckSelfConfirmed": "Siz tasdiqlagansiz"
+  ,"paymentAckSelfConfirmedHint": "Botdagi kvitansiyani siz tasdiqlagansiz"
+  ,"paymentAckSelfDisputed": "Siz: noto'g'ri"
+  ,"paymentAckSelfDisputedHint": "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz"
 }

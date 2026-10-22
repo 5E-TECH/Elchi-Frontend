@@ -27,6 +27,13 @@
     "design:guard": "node scripts/design-guard.mjs",
     "app:shot": "node design/tools/app-shot.mjs"
   },
+  "browserslist": [
+    "chrome >= 90",
+    "safari >= 15.4",
+    "ios_saf >= 15.4",
+    "firefox >= 90",
+    "edge >= 90"
+  ],
   "dependencies": {
     "@highcharts/map-collection": "^2.3.2",
     "@hookform/resolvers": "^5.2.2",

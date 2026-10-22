@@ -54,7 +54,7 @@ describe("DialogSection", () => {
     const open = screen.getByRole("button", { name: "Oynani ochish" });
     await user.click(open);
     const dialog = screen.getByRole("dialog", { name: "Smenani yopish" });
-    expect(within(dialog).getByRole("textbox", { name: /Izoh/ })).toHaveFocus();
+    expect(within(dialog).getByRole("textbox", { name: /Sanalgan naqd/ })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(open).toHaveFocus();

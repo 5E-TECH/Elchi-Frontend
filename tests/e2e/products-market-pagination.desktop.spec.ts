@@ -1,73 +1,16 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { mockProductsApi as mockApi } from "./support/products";
 
 /**
  * 3qDsJpfW — market o'z mahsulotlarida sahifa va qidiruv; yaratish sahifasida «mavjud mahsulotlar» to'liq.
  * Kontrakt: FRONTEND_CHANGELOG 2026-10-14 (Guruh E): `GET /product/my-products` va `GET /product/market/:id`
  * `search` / `page` / `limit` (≤ 500) qabul qiladi, javob `{ data, total, page, limit }`, sukut limit 10.
  * Soxta backend serverdek: parametr bermasa — 10 ta. 1440px.
+ *
+ * MH-1 (ega qarori 2026-10-15): market faqat ko'radi (yaratish, tahrirlash, o'chirish yo'q; yaratish sahifasi —
+ * 403), «Narx» ustuni (`price`), market operatori — `my-products` dan o'sha ro'yxat, biriktirilmagan bo'lsa (400) —
+ * «Siz hali marketga biriktirilmagansiz» + «Qayta tekshirish»; planshetda (768) «Market» ustuni yashirin.
  */
-const ORIGIN = "http://127.0.0.1:4173";
-const cors = {
-  "access-control-allow-origin": ORIGIN,
-  "access-control-allow-credentials": "true",
-  "access-control-allow-headers": "*",
-  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
-};
-const reply = (route: Route, body: unknown) =>
-  route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
-
-const product = (n: number, marketId: string) => ({
-  id: String(100 + n),
-  name: `Mahsulot ${String(n).padStart(2, "0")}`,
-  image_url: null,
-  user_id: marketId,
-  market: { id: marketId, name: marketId === "7" ? "Baraka Shop" : "Nur Savdo", phone_number: "+998901234567", status: "active" },
-  createdAt: "2026-10-01T09:00:00.000Z",
-});
-
-const page = (items: unknown[], params: URLSearchParams) => {
-  const search = (params.get("search") ?? "").toLowerCase();
-  const filtered = search ? items.filter((item) => (item as { name: string }).name.toLowerCase().includes(search)) : items;
-  const limit = Math.min(500, Number(params.get("limit")) || 10);
-  const current = Number(params.get("page")) || 1;
-  return { statusCode: 200, data: filtered.slice((current - 1) * limit, current * limit), total: filtered.length, page: current, limit };
-};
-
-const mockApi = async (p: Page, role: "market" | "superadmin") => {
-  const requests: URLSearchParams[] = [];
-  const marketItems = Array.from({ length: 14 }, (_, i) => product(i + 1, "7"));
-  const otherItems = Array.from({ length: 15 }, (_, i) => product(i + 1, "3"));
-  await p.context().route("**/*", async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    if (url.origin === ORIGIN) return route.continue();
-    if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
-    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    const path = url.pathname.replace(/^\//, "");
-    if (path === "auth/my-profile") {
-      return reply(route, { statusCode: 200, data: { id: role === "market" ? "7" : "1", role, name: role === "market" ? "Baraka Shop" : "E2E", status: "active", add_order: true } });
-    }
-    if (path === "product/my-products") {
-      requests.push(url.searchParams);
-      return reply(route, page(marketItems, url.searchParams));
-    }
-    if (path === "product/market/3") {
-      requests.push(url.searchParams);
-      return reply(route, page(otherItems, url.searchParams));
-    }
-    return reply(route, { statusCode: 200, data: [] });
-  });
-  await p.addInitScript(() => {
-    const far = Date.now() + 86_400_000;
-    window.sessionStorage.setItem("accessToken", "e2e.local.token");
-    window.sessionStorage.setItem(
-      "authSessionMetadata",
-      JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
-    );
-  });
-  return { requests };
-};
-
 test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
   test.describe.configure({ timeout: 120_000 });
@@ -114,12 +57,90 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     expect(requests.at(-1)?.get("limit")).toBe("500");
   });
 
-  test("yaratish sahifasi — market rolida o'z 14 mahsulotining hammasi (`my-products?limit=500`)", async ({ page: p }) => {
-    const { requests } = await mockApi(p, "market");
-    await p.goto("/products/create-product/7");
+  test("MH-1: market — faqat ko'rish: yaratish va amallar yo'q, «Narx» ustuni, yaratish sahifasi — 403", async ({ page: p }) => {
+    await mockApi(p, "market");
+    await p.goto("/products");
 
-    await expect(p.getByText("Mahsulot 14", { exact: true })).toBeVisible({ timeout: 90_000 });
-    await expect(p.getByText("Mahsulot 11", { exact: true })).toBeVisible();
-    expect(requests.at(-1)?.get("limit")).toBe("500");
+    await expect(p.getByText("Mahsulot 01", { exact: true })).toBeVisible({ timeout: 90_000 });
+    await expect(p.getByText("Jami 14 ta mahsulot · Baraka Shop")).toBeVisible();
+    await expect(p.getByText("Faqat ko'rish. Mahsulotni Elchi xodimlari qo'shadi va o'zgartiradi.")).toBeVisible();
+    await expect(p.getByRole("button", { name: "Mahsulot yaratish" })).toHaveCount(0);
+    await expect(p.getByRole("button", { name: /— tahrirlash$/ })).toHaveCount(0);
+    await expect(p.getByRole("button", { name: /— o'chirish$/ })).toHaveCount(0);
+    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Narx"]);
+    const first = p.getByRole("row").filter({ hasText: "Mahsulot 01" });
+    await expect(first.getByRole("cell").nth(2)).toHaveText(/^10\s000 so'm$/);
+    const fifth = p.getByRole("row").filter({ hasText: "Mahsulot 05" });
+    // Narxsiz: ko'rinishda «—» (ekran o'quvchidan yashirin), ekran o'quvchiga «Narx kiritilmagan».
+    await expect(fifth.getByRole("cell").nth(2).getByText("—")).toBeVisible();
+    await expect(fifth.getByRole("cell").nth(2).getByText("Narx kiritilmagan")).toHaveClass(/sr-only/);
+
+    await p.goto("/products/create-product/7");
+    await expect(p).toHaveURL(/\/403$/, { timeout: 30_000 });
+  });
+
+  test("MH-1: market operatori — `my-products` dan o'sha ro'yxat, market nomi qatordan, faqat ko'rish", async ({ page: p }) => {
+    const { requests } = await mockApi(p, "market_operator");
+    await p.goto("/products");
+
+    await expect(p.getByText("Mahsulot 01", { exact: true })).toBeVisible({ timeout: 90_000 });
+    await expect(p.getByText("Jami 14 ta mahsulot · Baraka Shop")).toBeVisible();
+    expect(requests.at(-1)?.get("page")).toBe("1");
+    await expect(p.getByRole("button", { name: "Mahsulot yaratish" })).toHaveCount(0);
+    await expect(p.getByRole("button", { name: /— tahrirlash$/ })).toHaveCount(0);
+  });
+
+  test("MH-1: market operatori biriktirilmagan (400) — bo'sh holat, «Qayta tekshirish» qayta so'raydi", async ({ page: p }) => {
+    let unassigned = true;
+    const { requests } = await mockApi(p, "market_operator", { unassigned: () => unassigned });
+    await p.goto("/products");
+
+    await expect(p.getByText("Siz hali marketga biriktirilmagansiz")).toBeVisible({ timeout: 90_000 });
+    await expect(p.getByText("Market biriktirilmagan", { exact: true })).toBeVisible();
+    await expect(p.getByText(/Operator hech qaysi/)).toHaveCount(0);
+    const before = requests.length;
+
+    unassigned = false;
+    await p.getByRole("button", { name: "Qayta tekshirish" }).click();
+    await expect.poll(() => requests.length).toBeGreaterThan(before);
+    await expect(p.getByText("Mahsulot 01", { exact: true })).toBeVisible();
+  });
+
+  test("MH-1: xodim — «Narx» ustuni, tahrirlash oynasida narx o'zgartiriladi (`PATCH product/:id` + price)", async ({ page: p }) => {
+    const { patches } = await mockApi(p, "superadmin");
+    await p.goto("/products");
+
+    await expect(p.getByText("Mahsulot 01", { exact: true }).first()).toBeVisible({ timeout: 90_000 });
+    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Market", "Narx", "Amallar"]);
+    await p.getByRole("button", { name: "Mahsulot 01 — tahrirlash" }).first().click();
+    const dialog = p.getByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    await expect(dialog.getByText("Mahsulot rasmi")).toBeVisible();
+    const price = dialog.getByRole("textbox", { name: "Narx" });
+    await expect(price).toHaveValue(/^10\s000$/);
+    await price.fill("");
+    await price.pressSequentially("125000");
+    await dialog.getByRole("button", { name: "Saqlash" }).click();
+
+    await expect.poll(() => patches.length).toBe(1);
+    expect(patches[0].path).toBe("product/101");
+    expect(patches[0].body).toMatch(/name="price"\r\n\r\n125000\r\n/);
+    await expect(p.getByRole("region", { name: "Bildirishnomalar" }).getByText("Mahsulot muvaffaqiyatli yangilandi")).toBeVisible();
+  });
+});
+
+test.describe("MH-1: planshet (768) — «Market» ustuni yashirin, market nomi mahsulot nomi ostida", () => {
+  test.use({ viewport: { width: 768, height: 1024 } });
+  test.describe.configure({ timeout: 120_000 });
+
+  test("xodim ro'yxati", async ({ page: p }) => {
+    await mockApi(p, "superadmin");
+    await p.goto("/products");
+
+    const first = p.getByRole("row").filter({ hasText: "Mahsulot 01" }).first();
+    await expect(first).toBeVisible({ timeout: 90_000 });
+    await expect(p.getByRole("columnheader", { name: "Market" })).toBeHidden();
+    await expect(first.getByRole("cell").nth(1).getByText("Baraka Shop")).toBeVisible();
+    await expect(p.getByRole("columnheader", { name: "Narx" })).toBeVisible();
+    expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });

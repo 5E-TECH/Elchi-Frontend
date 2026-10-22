@@ -69,15 +69,6 @@ export const useProducts = () => {
     },
   });
 
-  const updateMyProduct = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data, { timeout: LONG_REQUEST_TIMEOUT_MS }),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [products] });
-      client.invalidateQueries({ queryKey: ["market"] });
-    },
-  });
-
   /**
    * `GET /product/market/:marketId` va `GET /product/my-products` `search` / `page` / `limit` (≤ 500) ni qabul
    * qiladi (3qDsJpfW). `params` — ixtiyoriy (berilmasa kalit va so'rov avvalgidek, server sukuti: 1-sahifa,
@@ -126,7 +117,6 @@ export const useProducts = () => {
     useGetProducts,
     useGetProductById,
     updateProduct,
-    updateMyProduct,
     deleteProduct,
     useGetByMarketId,
     useGetMyProducts,

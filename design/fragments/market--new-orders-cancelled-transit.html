@@ -1,0 +1,101 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Qabul va yaratish</h1>
+    <p class="el-sub">Yangi buyurtmalaringiz va bekor qilinganlarni pochtaga topshirish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@new-orders-create-manual"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Bekor qilingan buyurtmalar">
+  <div class="el-tabs" role="tablist" aria-label="Qabul va yaratish bo'limlari" style="padding: 0 min(12px, 1cqw)">
+    <a class="el-tab" role="tab" aria-selected="false" href="@new-orders-list" style="text-decoration: none; color: var(--text-muted); padding: 0 min(12px, 2.5cqw)">Yangi buyurtmalar <span class="el-tab-count">5</span></a>
+    <a class="el-tab" role="tab" aria-selected="true" href="@new-orders-cancelled" style="text-decoration: none; color: var(--text); padding: 0 min(12px, 2.5cqw)">Bekor qilinganlar <span class="el-tab-count">6</span></a>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 16px 16px 0">
+    <nav aria-label="Bekor qilinganlar bosqichi" data-scroll-x style="display: flex; gap: 8px; flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none">
+      <a class="el-chip" href="@new-orders-cancelled" style="flex: none; text-decoration: none">Olib ketishga tayyor <span class="el-tab-count">6</span></a>
+      <a class="el-chip el-chip-active" href="@new-orders-cancelled-transit" aria-current="page" style="flex: none; text-decoration: none">Yo'lda <span class="el-tab-count" style="background: var(--surface); color: var(--action-fg)">3</span></a>
+      <a class="el-chip" href="@new-orders-cancelled-received" style="flex: none; text-decoration: none">Olganlarim <span class="el-tab-count">12</span></a>
+    </nav>
+    <span class="el-badge el-tone-neutral" title="«Yo'lda» va «Olganlarim» uchun market bekorlarining barcha bosqichi kerak (BG3)">Taklif · backend kerak</span>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 16px 20px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 320px">
+      <h3 class="el-h3">Yo'ldagi bekor buyurtmalar</h3>
+      <p class="el-small el-muted">Toshkent HQ qabul qilgach, buyurtma «Olib ketishga tayyor» ro'yxatiga o'tadi.</p>
+    </div>
+    <p class="el-small el-muted"><span style="white-space: nowrap"><span class="el-strong">3</span> ta buyurtma</span> · <span style="white-space: nowrap">jami <span class="el-strong">724 000 so'm</span></span></p>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Buyurtma</th>
+          <th>Mijoz</th>
+          <th class="el-hide-tablet">Tuman / viloyat</th>
+          <th>Qayerda</th>
+          <th class="el-hide-tablet">Mahsulotlar</th>
+          <th class="el-num">Summa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@orders-detail-cancelled" style="text-decoration: none; color: var(--text)">№10241</a><div class="el-cell-sub">Bugun, 10:12</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Dilnoza Karimova</div><div class="el-cell-sub">+998 90 123 45 67</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Bekor · kuryerda</span><span class="el-cell-sub">Akmal Rahimov</span></div></td>
+          <td class="el-hide-tablet"><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Qishki shapka <span class="el-muted">· 2 ta</span></span></div></td>
+          <td class="el-num el-strong">185 000 so'm</td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@orders-detail-cancelled" style="text-decoration: none; color: var(--text)">№10233</a><div class="el-cell-sub">Kecha, 15:30</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sherzod Nazarov</div><div class="el-cell-sub">+998 93 207 11 84</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Samarqand sh.</div><div class="el-cell-sub">Samarqand vil.</div></td>
+          <td><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-tone-danger el-badge-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Bekor · yo'lda</span><span class="el-cell-sub">→ Toshkent HQ</span></div></td>
+          <td class="el-hide-tablet"><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Bluetooth kolonka <span class="el-muted">· 1 ta</span></span></div></td>
+          <td class="el-num el-strong">310 000 so'm</td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@orders-detail-cancelled" style="text-decoration: none; color: var(--text)">№10227</a><div class="el-cell-sub">06.10.2026, 12:05</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Madina Rasulova</div><div class="el-cell-sub">+998 97 455 09 12</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Marg'ilon sh.</div><div class="el-cell-sub">Farg'ona vil.</div></td>
+          <td><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>Bekor · filialda</span><span class="el-cell-sub">Farg'ona filiali · <span style="white-space: nowrap">2 kun</span></span></div></td>
+          <td class="el-hide-tablet"><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Termos, 0,5 l <span class="el-muted">· 2 ta</span></span></div></td>
+          <td class="el-num el-strong">229 000 so'm</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="el-list el-show-mobile" style="flex-direction: column; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border)">
+    <li class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail-cancelled" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Dilnoza Karimova</span><span class="el-strong" style="white-space: nowrap">185 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10241 · Chilonzor tumani · <span style="white-space: nowrap">Bugun, 10:12</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Bekor · kuryerda</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Akmal Rahimov</span>
+      </a>
+    </li>
+    <li class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail-cancelled" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Sherzod Nazarov</span><span class="el-strong" style="white-space: nowrap">310 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10233 · Samarqand sh. · <span style="white-space: nowrap">Kecha, 15:30</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-tone-danger el-badge-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Bekor · yo'lda</span></span>
+        <span class="el-cell-sub" style="white-space: normal">→ Toshkent HQ</span>
+      </a>
+    </li>
+    <li class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail-cancelled" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Madina Rasulova</span><span class="el-strong" style="white-space: nowrap">229 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10227 · Marg'ilon sh. · <span style="white-space: nowrap">06.10.2026, 12:05</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>Bekor · filialda</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Farg'ona filiali · <span style="white-space: nowrap">2 kun</span></span>
+      </a>
+    </li>
+  </ul>
+</section>

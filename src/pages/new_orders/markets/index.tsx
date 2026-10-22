@@ -27,7 +27,6 @@ import {
   sumTodayMarkets,
   type TodayMarketRow,
 } from "../model/todayMarkets";
-import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
 
 /** Maketdagidek: buyurtmasi ko'p market tepada (`aria-sort="descending"`). */
@@ -48,8 +47,8 @@ const STRONG = <strong className="font-semibold text-text" />;
  * «QABUL VA YARATISH» → «Marketlar» (`/new-orders`, xodimlar uchun).
  *
  * Bugun qabul kutayotgan buyurtmasi bor marketlar: kartaning boshida qobiq tablari (`NewOrdersTabs`), ostida
- * qidiruv + kunlik xulosa, jadval (telefonda — kartalar ro'yxati). Bitta tabli rol (menejer, HQ bo'lmagan
- * registrator) — tablar o'rnida «Marketlar» sarlavhasi va «Bugun: …» xulosasi (maket `manager-new-orders-markets`).
+ * qidiruv + kunlik xulosa, jadval (telefonda — kartalar ro'yxati). Qobiqqa kiradigan har xodimda tablar kamida
+ * ikkita («Marketlar · Kiruvchi posilkalar», maket `manager-new-orders-markets`).
  * Qidiruv va saralash mijoz tomonida (ro'yxat to'liq keladi). Market roli o'z buyurtmalariga yo'naltiriladi.
  */
 const Markets = () => {
@@ -60,9 +59,8 @@ const Markets = () => {
   const marketId = useSelector((state: RootState) => state.role.id);
   const isMarketRole = role === "market";
   // Maketlarda matn rolga qarab: superadmin/admin — xulosa «Bugun:» siz, havola «{nom} ni ochish»;
-  // menejer va registrator (HQ ham, tablari bo'lsa ham) — «Bugun: …» va «{nom} buyurtmalarini ochish».
+  // menejer va registrator (har filial turida) — «Bugun: …» va «{nom} buyurtmalarini ochish».
   const isAdmin = role === "superadmin" || role === "admin";
-  const hasTabs = useHasNewOrdersTabs();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_SORT);
 
@@ -230,13 +228,7 @@ const Markets = () => {
     );
 
   return (
-    <Card
-      padding="none"
-      // Tablar bo'lsa karta nomi — «Qabul kutayotgan buyurtmalar»; bitta tabli rolda — «Marketlar» sarlavhasi.
-      aria-label={hasTabs ? t("markets.cardLabel") : undefined}
-      title={hasTabs ? undefined : t("markets.title")}
-      actions={hasTabs ? undefined : summary}
-    >
+    <Card padding="none" aria-label={t("markets.cardLabel")}>
       <NewOrdersTabs />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
@@ -248,7 +240,7 @@ const Markets = () => {
           aria-label={t("markets.searchLabel")}
           className="max-w-[480px] flex-[1_1_320px]"
         />
-        {hasTabs ? summary : null}
+        {summary}
       </div>
 
       <QueryBoundary

@@ -19,11 +19,15 @@ type Shortcut = { keys: string[]; joiner: "plus" | "then" | null; label: string 
 type ShortcutsDialogProps = {
   open: boolean;
   onClose: () => void;
+  /** «Qidiruv» (Ctrl K) — global qidiruvi bor rolda (`roleHasGlobalSearch`; investorda yo'q). */
+  showSearch?: boolean;
+  /** «Buyurtmalarga o'tish» (G → O) — buyurtmalar ochiladigan rolda (`canViewOrders`). */
+  showOrders?: boolean;
   /** «Paketlarga o'tish» (G → B) faqat menejerda. */
   showBatches: boolean;
 };
 
-const ShortcutsDialog = ({ open, onClose, showBatches }: ShortcutsDialogProps) => {
+const ShortcutsDialog = ({ open, onClose, showSearch = true, showOrders = true, showBatches }: ShortcutsDialogProps) => {
   const { t } = useTranslation("ui");
   const titleId = useId();
   const panelRef = useFocusTrap<HTMLDivElement>(open, { onEscape: onClose, inertAppRoot: true });
@@ -31,8 +35,8 @@ const ShortcutsDialog = ({ open, onClose, showBatches }: ShortcutsDialogProps) =
   if (!open || typeof document === "undefined") return null;
 
   const shortcuts: Shortcut[] = [
-    { keys: ["Ctrl", "K"], joiner: "plus", label: t("header.shortcuts.search") },
-    { keys: ["G", "O"], joiner: "then", label: t("header.shortcuts.orders") },
+    ...(showSearch ? [{ keys: ["Ctrl", "K"], joiner: "plus" as const, label: t("header.shortcuts.search") }] : []),
+    ...(showOrders ? [{ keys: ["G", "O"], joiner: "then" as const, label: t("header.shortcuts.orders") }] : []),
     ...(showBatches ? [{ keys: ["G", "B"], joiner: "then" as const, label: t("header.shortcuts.batches") }] : []),
     { keys: ["Esc"], joiner: null, label: t("header.shortcuts.escape") },
     { keys: ["Tab"], joiner: null, label: t("header.shortcuts.tab") },

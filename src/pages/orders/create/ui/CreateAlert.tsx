@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, market-new-orders-create-manual
+// dizayn-v2: superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-existing-customer
 import type { ReactNode } from "react";
 import { CircleCheck, CircleX, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import { cx } from "../../../../shared/lib/cx";
@@ -39,7 +39,8 @@ const DEFAULT_ICON: Record<CreateAlertTone, LucideIcon> = {
  *   <CreateAlert tone="warning" title="AI hozir o'chiq" action={<Button variant="secondary" size="sm" …/>}>…</CreateAlert>
  *   <CreateAlert tone="success" title="2 ta yaratildi" />
  *
- * Maketlar: `*-neworders-create-manual-step2` («Server xatosi»), `*-create-ai-input` (to'siq va xatolar),
+ * Maketlar: `*-neworders-create-manual-step2` («Server xatosi»), `*-step2-existing-customer` («Bu mijozda yangi
+ * buyurtma bor»), `*-create-ai-input` (to'siq va xatolar),
  * `*-create-ai-preview` (natija). Umumiy primitiv emas — shu sahifa ichida (AI va qo'lda qism birga ishlatadi).
  */
 export const CreateAlert = ({

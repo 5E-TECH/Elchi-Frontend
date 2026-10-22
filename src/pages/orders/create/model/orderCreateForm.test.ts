@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCreateOrderPayload,
   createOrderSchema,
+  isExistingCustomerUnchanged,
   ORDER_CREATE_DEFAULT_VALUES,
   type OrderCreateFormValues,
 } from "./orderCreateForm";
@@ -51,6 +52,7 @@ describe("buildCreateOrderPayload", () => {
       phone_number: "+998901112233",
       status: "active",
     },
+    existingCustomer: null,
     customer: {
       phone: "901234567",
       extra_phone: "991112233",
@@ -121,5 +123,48 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("address");
     expect(payload).not.toHaveProperty("comment");
     expect(payload).not.toHaveProperty("operator");
+  });
+});
+
+describe("buildCreateOrderPayload — mavjud mijoz (CS-A, hiqRNhkI)", () => {
+  const base = validBaseValues("center");
+  const linked = (customer = base.customer): OrderCreateFormValues => ({
+    ...base,
+    existingCustomer: {
+      id: "55",
+      name: "Mijoz",
+      orders_count: 4,
+      new_orders_count: 0,
+      new_order_ids: [],
+      last_order_at: null,
+      filled: { ...customer },
+      previous: { ...ORDER_CREATE_DEFAULT_VALUES.customer },
+    },
+  });
+
+  it("bog'lanmagan mijoz — `customer_id` yo'q", () => {
+    expect(buildCreateOrderPayload(base)).not.toHaveProperty("customer_id");
+  });
+
+  it("bog'langan va o'zgarmagan — `customer_id` va `customer` obyekti birga", () => {
+    const values = linked();
+    expect(isExistingCustomerUnchanged(values)).toBe(true);
+    const payload = buildCreateOrderPayload(values);
+    expect(payload.customer_id).toBe("55");
+    expect(payload.customer).toMatchObject({ name: "Mijoz", phone_number: "+998901234567", district_id: "district-1" });
+  });
+
+  it("bo'sh joy farqi o'zgarish emas; ism, tuman yoki qo'shimcha raqam o'zgarsa — `customer_id` yuborilmaydi", () => {
+    const values = linked();
+    expect(isExistingCustomerUnchanged({ ...values, customer: { ...values.customer, name: " Mijoz " } })).toBe(true);
+    for (const patch of [{ name: "Boshqa" }, { district_id: "district-2" }, { extra_phone: "991234567" }, { address: "Yangi" }]) {
+      const changed = { ...values, customer: { ...values.customer, ...patch } };
+      expect(isExistingCustomerUnchanged(changed), JSON.stringify(patch)).toBe(false);
+      expect(buildCreateOrderPayload(changed), JSON.stringify(patch)).not.toHaveProperty("customer_id");
+    }
+  });
+
+  it("sxema bog'lanish holatini tekshirmaydi (yuborishga tayyorlikka ta'sir qilmaydi)", async () => {
+    await expect(createOrderSchema(false).validate(linked(), { abortEarly: false })).resolves.toBeTruthy();
   });
 });

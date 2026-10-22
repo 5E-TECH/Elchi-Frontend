@@ -85,7 +85,9 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const navigate = useNavigate();
   const confirmLeave = useConfirm();
 
-  const readyDrafts = drafts.filter((draft) => evalPreview(draft.order).ready);
+  // «Mavjud (#N)» kartasi (`duplicate_recent`) na tayyorlar, na to'ldirilmaganlar qatorida — u yuborilmaydi.
+  const pendingDrafts = drafts.filter((draft) => !draft.existingOrderId);
+  const readyDrafts = pendingDrafts.filter((draft) => evalPreview(draft.order).ready);
   const hasUnconfirmedReady = readyDrafts.length > 0;
 
   useKeepFocusedFieldVisible(cardsRef, barRef, active && drafts.length > 0);
@@ -155,7 +157,9 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
 
   const updateDraft = (key: string, order: AiDraft["order"]) =>
     setDrafts((prev) =>
-      prev.map((draft) => (draft.key === key ? { ...draft, order, createError: undefined } : draft)),
+      prev.map((draft) =>
+        draft.key === key ? { ...draft, order, createError: undefined, existingOrderId: undefined } : draft,
+      ),
     );
 
   const removeDraft = (key: string) => setDrafts((prev) => prev.filter((draft) => draft.key !== key));
@@ -169,7 +173,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
    * ko'r-ko'rona qayta yuborish dublikat buyurtma demakdir.
    */
   const submit = (targets: AiDraft[]) => {
-    const readyTargets = targets.filter((draft) => evalPreview(draft.order).ready);
+    const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalPreview(draft.order).ready);
     if (submittingRef.current || confirm.isPending || readyTargets.length === 0) return;
     submittingRef.current = true;
     setConfirmError("");
@@ -187,11 +191,13 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
       onSuccess: (response) => {
         const createdIds = new Map<string, string | undefined>();
         const failed = new Map<string, string>();
+        const existing = new Map<string, string>();
         for (const result of response?.results ?? []) {
           const draft = readyTargets[result.index];
           if (!draft) continue;
           if (result.ok) createdIds.set(draft.key, result.order_id);
           else failed.set(draft.key, confirmFailureText(result, t));
+          if (!result.ok && result.code === "duplicate_recent" && result.order_id) existing.set(draft.key, result.order_id);
         }
 
         const createdDrafts = readyTargets.filter((draft) => createdIds.has(draft.key));
@@ -200,7 +206,11 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
         setDrafts((prev) =>
           prev
             .filter((draft) => !createdIds.has(draft.key))
-            .map((draft) => (failed.has(draft.key) ? { ...draft, createError: failed.get(draft.key) } : draft)),
+            .map((draft) =>
+              failed.has(draft.key)
+                ? { ...draft, createError: failed.get(draft.key), existingOrderId: existing.get(draft.key) }
+                : draft,
+            ),
         );
         setResultSummary({ created: createdDrafts.length, failed: failed.size });
       },
@@ -285,7 +295,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
       {drafts.length > 0 ? (
         <AiConfirmBar
           readyOrders={readyDrafts.map((draft) => draft.order)}
-          notReadyCount={drafts.length - readyDrafts.length}
+          notReadyCount={pendingDrafts.length - readyDrafts.length}
           pending={confirm.isPending}
           onConfirm={() => submit(readyDrafts)}
           onJumpToUnready={jumpToUnready}

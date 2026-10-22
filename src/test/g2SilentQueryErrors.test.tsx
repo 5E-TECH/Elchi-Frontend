@@ -25,7 +25,12 @@ import { useReceivableBalance, useReceivables } from "../entities/integrations/s
 import { usePartnerShipments, useProviderShipments } from "../entities/integrations/shipments";
 import { useSyncHistory } from "../entities/integrations/syncHistory";
 import { useWebhookLogs } from "../entities/integrations/webhookLogs";
-import { useInvestors } from "../entities/investors";
+import {
+  useInvestorDashboard,
+  useInvestorInvestments,
+  useInvestorProfits,
+  useInvestors,
+} from "../entities/investors";
 import { useLogisticsCoverage } from "../entities/logistics/logisticsCoverage";
 import { useNotifications } from "../entities/notification/api/useNotifications";
 import { useInboxList } from "../entities/notification-inbox/api/useInbox";
@@ -151,11 +156,15 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
       () => useLogisticsCoverage().useGetReturnRequestsList(undefined, S),
     ],
     ["tizim KPI (ops)", () => useMiscCoverage().useGetAnalyticsKpi(undefined, S)],
-    ["tizim holati (ops)", () => useMiscCoverage().useGetHealthLiveness(S)],
+    ["tizim holati — readiness (ops)", () => useMiscCoverage().useGetHealthReadiness(S)],
     ["token bo'yicha skan (ops)", () => useMiscCoverage().useGetScanByToken("abc", true, S)],
     // Hisob
     ["profil", () => useUser().useGetMyProfile(S)],
     ["bildirishnomalar qutisi", () => useInboxList({ page: 1, limit: 20 }, S)],
+    // Investor kabineti (IN-1): sahifa 403 / 404 / 409 holat ekranlari va `ErrorState` ni o'zi chizadi.
+    ["investor bosh sahifasi", () => useInvestorDashboard(12, S)],
+    ["investorning investitsiyalari", () => useInvestorInvestments({ limit: 3 }, S)],
+    ["investorning foyda tarixi", () => useInvestorProfits({ limit: 5 }, S)],
   ])("%s — global xabar yo'q", async (_name, hook) => {
     expect(await globalErrorsOf(hook)).toBe(0);
   });

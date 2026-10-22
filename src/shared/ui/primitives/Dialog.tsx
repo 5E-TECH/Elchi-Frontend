@@ -13,7 +13,6 @@ import {
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
-import { AntdLayer } from "./dialog/AntdLayer";
 import { useBackdropPress } from "./dialog/useBackdropPress";
 import { ButtonIcon, type IconSlot } from "./Button";
 import { IconButton } from "./IconButton";
@@ -476,25 +475,23 @@ const DialogModal = ({
         className={cx(ROOT, exiting && "pointer-events-none")}
       >
         <div aria-hidden="true" data-state={state} className={BACKDROP} />
-        <AntdLayer>
-          <DialogPanel
-            {...panelProps}
-            role={role}
-            aria-modal="true"
-            tabIndex={-1}
-            data-state={state}
-            layout="auto"
-            panelRef={trapRef}
-            bodyRef={bodyRef}
-            gripProps={gripProps}
-            onCloseClick={closable ? () => requestClose("close-button") : undefined}
-            closeDisabled={busy}
-            onTransitionEnd={(event) => {
-              if (exiting && event.target === event.currentTarget) finish();
-            }}
-            className={cx(PANEL_MOTION, panelProps.className)}
-          />
-        </AntdLayer>
+        <DialogPanel
+          {...panelProps}
+          role={role}
+          aria-modal="true"
+          tabIndex={-1}
+          data-state={state}
+          layout="auto"
+          panelRef={trapRef}
+          bodyRef={bodyRef}
+          gripProps={gripProps}
+          onCloseClick={closable ? () => requestClose("close-button") : undefined}
+          closeDisabled={busy}
+          onTransitionEnd={(event) => {
+            if (exiting && event.target === event.currentTarget) finish();
+          }}
+          className={cx(PANEL_MOTION, panelProps.className)}
+        />
       </div>
     </Portal>
   );

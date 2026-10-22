@@ -9,6 +9,7 @@ import {
   Plus,
   RotateCcw,
   Truck,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import type { BadgeVariant } from "../../../shared/ui/primitives/Badge";
@@ -30,6 +31,12 @@ import type { OrderStatus } from "../types/order";
  *    Qisman to'langan → warning · Sotilgan / To'langan → success ·
  *    Bekor qilingan → danger · Bekor — jo'natilgan → danger + chegarali ·
  *    Yopilgan → neutral.
+ *  Backend'ning ikki qo'shimcha holati — alohida yorliq (ega qarori, SllBYhnt), tafsilot va tarixdagi ton bilan
+ *  bir xil: Mijoz kutilmoqda (`waiting_customer`) → warning · Marketga topshirildi (`returned_to_market`) →
+ *  neutral, `PackageCheck` (ega qarori 2026-10-19, `tizim-states-data` §09: bekor qilingan posilka marketga
+ *  qaytdi, zanjir yopildi).
+ *
+ *  Bekor qilingan buyurtmaning JOY BOSQICHI («Bekor · HQ'da» …) — `cancelReturnStage.ts`.
  *
  *  Ikonka — `design/icon-registry.json` dagi kanonik nom (holat tarixi, filtr
  *  menyusi, ko'rsatkich kartasi uchun). Badge'ning O'ZIDA ikonka yo'q: katalog
@@ -44,11 +51,13 @@ export type OrderStatusKey =
   | "received"
   | "on_the_road"
   | "waiting"
+  | "waiting_customer"
   | "partly_paid"
   | "sold"
   | "paid"
   | "cancelled"
   | "cancelled_sent"
+  | "returned_to_market"
   | "closed";
 
 export interface OrderStatusMeta {
@@ -81,17 +90,20 @@ export const ORDER_STATUS_REGISTRY: Readonly<Record<OrderStatus, OrderStatusMeta
   received: meta("received", "info", Inbox),
   "on the road": meta("on_the_road", "warning", Truck),
   waiting: meta("waiting", "warning", Clock),
+  waiting_customer: meta("waiting_customer", "warning", User),
   partly_paid: meta("partly_paid", "warning", Banknote),
   sold: meta("sold", "success", PackageCheck),
   paid: meta("paid", "success", CircleCheck),
   cancelled: meta("cancelled", "danger", CircleX),
   "cancelled (sent)": meta("cancelled_sent", "danger", RotateCcw, "outline"),
+  returned_to_market: meta("returned_to_market", "neutral", PackageCheck),
   closed: meta("closed", "neutral", Lock),
 };
 
 /**
- * Barcha 11 holat — maketdagi tartibda (`tizim-states-data` «Buyurtma holati»):
- * yangi → jarayonda → bajarildi → bekor → yopilgan.
+ * Barcha 13 holat — maketdagi tartibda (`tizim-states-data` «Buyurtma holati», 11 ta) va ikki qo'shimcha holat
+ * o'z guruhida: yangi → jarayonda (mijoz kutilmoqda) → bajarildi → bekor (marketga topshirildi — bekor zanjirining
+ * yakuni, `tizim-states-data` §09) → yopilgan.
  */
 export const ORDER_STATUSES: readonly OrderStatus[] = [
   "new",
@@ -99,11 +111,13 @@ export const ORDER_STATUSES: readonly OrderStatus[] = [
   "received",
   "on the road",
   "waiting",
+  "waiting_customer",
   "partly_paid",
   "sold",
   "paid",
   "cancelled",
   "cancelled (sent)",
+  "returned_to_market",
   "closed",
 ];
 
@@ -117,23 +131,14 @@ const SPELLINGS: Readonly<Record<string, OrderStatus>> = {
   received: "received",
   "on the road": "on the road",
   waiting: "waiting",
+  "waiting customer": "waiting_customer",
   "partly paid": "partly_paid",
   sold: "sold",
   paid: "paid",
   cancelled: "cancelled",
   "cancelled sent": "cancelled (sent)",
+  "returned to market": "returned_to_market",
   closed: "closed",
-};
-
-/**
- * Backend'ning 11 talikdan tashqari ichki holatlari — FAQAT KO'RSATISH uchun
- * eng yaqin holatga bog'lanadi (`pages/integrations/statusLabel.ts` bilan bir xil):
- * `waiting_customer` — mijozni kutish, «Kutilmoqda»; `returned_to_market` —
- * bekor qilingan buyurtma marketga qaytgan, «Bekor qilingan».
- */
-const DISPLAY_ALIASES: Readonly<Record<string, OrderStatus>> = {
-  "waiting customer": "waiting",
-  "returned to market": "cancelled",
 };
 
 const canonicalForm = (raw: unknown): string | null => {
@@ -150,15 +155,14 @@ const canonicalForm = (raw: unknown): string | null => {
 };
 
 /**
- * Xom holat qiymatini 11 holatdan biriga keltiradi. Kodda va API'da uchraydigan
+ * Xom holat qiymatini 13 holatdan biriga keltiradi. Kodda va API'da uchraydigan
  * yozilishlarni qabul qiladi: `on the road` / `on_the_road` / `on-the-road` /
  * `ON_THE_ROAD` / `onTheRoad`; `cancelled (sent)` / `cancelled_sent` /
  * `cancelled_(sent)` / `canceled (sent)` / `cancelled sent`; `partly_paid` /
  * `partly paid`; harf katta-kichikligi va chetdagi bo'shliqlar farq qilmaydi.
  * Noma'lum, bo'sh yoki satr bo'lmagan qiymat — `null`.
  *
- * Mantiq uchun ham xavfsiz: boshqa holatga «yaqinlashtirmaydi»
- * (`waiting_customer` → `null`). Ko'rsatish uchun `resolveDisplayOrderStatus`.
+ * Mantiq uchun ham xavfsiz: boshqa holatga «yaqinlashtirmaydi».
  */
 export const normalizeOrderStatus = (raw: unknown): OrderStatus | null => {
   const form = canonicalForm(raw);
@@ -166,15 +170,10 @@ export const normalizeOrderStatus = (raw: unknown): OrderStatus | null => {
 };
 
 /**
- * Badge va yorliq uchun: `normalizeOrderStatus` + backend'ning ichki holatlari
- * (`waiting_customer` → «Kutilmoqda», `returned_to_market` → «Bekor qilingan»).
- * Mantiqda (amal ruxsati, filtr) ishlatilmaydi.
+ * Badge va yorliq uchun holat. Ilgari `waiting_customer` / `returned_to_market` «Kutilmoqda» / «Bekor qilingan»
+ * ga bog'lanardi — endi ular registrda o'z yorlig'i bilan (SllBYhnt), shuning uchun `normalizeOrderStatus` bilan bir xil.
  */
-export const resolveDisplayOrderStatus = (raw: unknown): OrderStatus | null => {
-  const form = canonicalForm(raw);
-  if (!form) return null;
-  return SPELLINGS[form] ?? DISPLAY_ALIASES[form] ?? null;
-};
+export const resolveDisplayOrderStatus = (raw: unknown): OrderStatus | null => normalizeOrderStatus(raw);
 
 /**
  * Noma'lum holatni o'qiladigan qilib beradi: `lost_in_transit` / `lostInTransit` → «Lost in transit».

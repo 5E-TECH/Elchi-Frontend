@@ -3,6 +3,7 @@ import {
   buildOrderListParams,
   countPanelFilters,
   EMPTY_ORDER_FILTERS,
+  FILTER_STATUSES,
   getOrderFilterScope,
   matchOrderStatusTab,
   matchQuickPeriod,
@@ -30,6 +31,17 @@ describe("orderFilterModel", () => {
     expect(parseStatusValues("cancelled,cancelled (sent)")).toEqual(["cancelled", "cancelled (sent)"]);
     expect(parseStatusValues("")).toEqual([]);
     expect(parseStatusValues(undefined)).toEqual([]);
+  });
+
+  it("«Marketga topshirildi» filtri: `status=returned_to_market` (taklif §5.1; backend enum'ida bor)", () => {
+    expect(FILTER_STATUSES).toContain("returned_to_market");
+    expect(FILTER_STATUSES.indexOf("returned_to_market")).toBe(FILTER_STATUSES.indexOf("cancelled") + 1);
+    expect(parseStatusValues("returned_to_market,bogus")).toEqual(["returned_to_market"]);
+    expect(normalizeFilterStatuses(["returned_to_market", "cancelled (sent)"])).toEqual(["returned_to_market"]);
+    expect(
+      buildOrderListParams({ ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market"] }, "superadmin", { page: 1, limit: 25 })
+        .status,
+    ).toEqual(["returned_to_market"]);
   });
 
   it("keeps only the «Holat» filter options when the status filter changes", () => {

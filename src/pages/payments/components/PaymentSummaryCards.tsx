@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { useCashBox } from "../../../entities/payments";
+import { normalizeCashboxShift, useCashBox } from "../../../entities/payments";
 import { cx } from "../../../shared/lib/cx";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import {
@@ -369,17 +369,6 @@ type UnknownRecord = Record<string, unknown>;
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
 
-const toItems = (value: unknown): unknown[] => {
-  if (Array.isArray(value)) return value;
-  const record = asRecord(value);
-  if (Array.isArray(record.items)) return record.items;
-  if (Array.isArray(record.data)) return record.data;
-  const data = asRecord(record.data);
-  if (Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data.data)) return data.data;
-  return [];
-};
-
 const toFinite = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -392,8 +381,8 @@ type StaffSummaryCardsProps = Pick<
 
 /**
  * Superadmin/admin kartalari. Qo'shimcha yengil so'rovlar faqat shu rollarda:
- *  - smena holati — `GET /finance/shift?status=open&opened_by=<o'zi>` («Asosiy kassa» sahifasidagi aynan
- *    shu mantiq: ID raqamli bo'lsagina; javob kelmaguncha / xatoda meta faqat «Asosiy kassa»);
+ *  - smena holati — `GET /finance/shift/current` (asosiy kassa smenasi, «Asosiy kassa» sahifasi bilan bir xil
+ *    so'rov va kesh; javob kelmaguncha / xatoda meta faqat «Asosiy kassa»);
  *  - naqd / karta — `GET /finance/cashbox/main?fromDate=toDate=bugun` (`cashbox.balance_cash/balance_card`;
  *    tarix qatorlari bugungi kun bilan cheklangan — javob yengil).
  */
@@ -409,27 +398,16 @@ const StaffSummaryCards = ({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const currency = CURRENCY_LABEL[resolveMoneyLanguage(language)];
   const role = useSelector((state: RootState) => state.role.role);
-  const profileUserId = useSelector((state: RootState) => state.user.user?.id);
-  const roleUserId = useSelector((state: RootState) => state.role.id);
   const normalizedRole = String(role).toLowerCase();
-  const currentUserId = String(profileUserId ?? roleUserId ?? "").trim();
-  const shiftUserId =
-    (normalizedRole === "superadmin" || normalizedRole === "admin") && /^\d+$/.test(currentUserId)
-      ? currentUserId
-      : "";
+  const isStaff = normalizedRole === "superadmin" || normalizedRole === "admin";
   const { useGetCurrentShift, useGetCashBoxMain } = useCashBox();
-  const currentShiftQuery = useGetCurrentShift(shiftUserId, Boolean(shiftUserId));
+  const currentShiftQuery = useGetCurrentShift(isStaff);
   const today = useMemo(() => getTodayRange(), []);
   const mainCashboxQuery = useGetCashBoxMain({ fromDate: today.from, toDate: today.to });
 
+  const currentShift = normalizeCashboxShift(asRecord(asRecord(currentShiftQuery.data).data).shift);
   const shiftState: "open" | "closed" | null =
-    shiftUserId && currentShiftQuery.isSuccess
-      ? toItems(currentShiftQuery.data).some(
-          (item) => String(asRecord(item).status ?? "").toLowerCase() === "open",
-        )
-        ? "open"
-        : "closed"
-      : null;
+    isStaff && currentShiftQuery.isSuccess ? (currentShift?.status === "open" ? "open" : "closed") : null;
 
   const mainCashbox = asRecord(asRecord(asRecord(mainCashboxQuery.data).data).cashbox);
   const splitCash = toFinite(mainCashbox.balance_cash);

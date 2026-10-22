@@ -32,6 +32,14 @@ const ROLES = ["superadmin", "admin", "manager", "registrator", "market", "couri
 const BRANCH_TYPES: (BranchType | null)[] = [null, "HQ", "REGIONAL", "HYBRID", "PICKUP"];
 
 describe("getNavSections — maketdagi guruhlar (roles.json)", () => {
+  it("admin: «Tizim» guruhida Bildirishnomalar → Faoliyat jurnali (NG-A, roles.json)", () => {
+    const sections = getNavSections("admin", userOf("admin"));
+    expect(sections.find((section) => section.id === "system")?.items.map((item) => item.to)).toEqual([
+      "/notifications",
+      "/activity-logs",
+    ]);
+  });
+
   it("superadmin: bosh sahifa yakka, keyin Ish · Moliya · Ma'lumotnoma · Tizim; Integratsiyalar Ma'lumotnoma oxirida", () => {
     const sections = getNavSections("superadmin", userOf("superadmin"));
 
@@ -196,10 +204,12 @@ describe("getActiveNavTo — faol band (maketdagi menuKey)", () => {
     expect(getActiveNavTo(itemsOf("superadmin"), pathname)).toBe("/ops");
   });
 
-  it("superadmin /inbox → «Bildirishnomalar» (maket superadmin-notifications-inbox); boshqa rolda hech biri", () => {
+  it("superadmin /inbox → «Bildirishnomalar» (maket superadmin-notifications-inbox); admin ham (NG-A); boshqa rolda hech biri", () => {
     expect(getActiveNavTo(itemsOf("superadmin"), "/inbox")).toBe("/notifications");
-    expect(getActiveNavTo(itemsOf("admin"), "/inbox")).toBeNull();
+    // NG-A: admin menyusida ham «Bildirishnomalar» — alias shu xulq bilan qabul qilindi (17HWafL7, ega savoli ochiq).
+    expect(getActiveNavTo(itemsOf("admin"), "/inbox")).toBe("/notifications");
     expect(getActiveNavTo(itemsOf("admin"), "/logs")).toBeNull();
+    expect(getActiveNavTo(itemsOf("manager"), "/inbox")).toBeNull();
   });
 
   it("to'g'ridan-to'g'ri mos band ustun: suriluvchi menyudagi shaxsiy /inbox faol qoladi", () => {

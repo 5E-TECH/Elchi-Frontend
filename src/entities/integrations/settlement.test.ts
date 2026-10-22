@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { money, toAmount } from "./settlement";
+import { resolveBalance, toAmount } from "./settlement";
 
 /**
  * ⚠️ POSTGRES `numeric` SATR BO'LIB KELADI.
@@ -35,26 +35,49 @@ describe("toAmount", () => {
   });
 });
 
-describe("money", () => {
-  it("minglik ajratgich bilan chiqadi", () => {
-    // Bo'sh joy turi muhim emas (lokal ` ` ishlatishi mumkin) — raqamlar
-    // ajratilgani muhim.
-    const out = money(1_500_000).replace(/\s/g, " ");
-    expect(out).toContain("1 500 000");
-    expect(out).toContain("so'm");
+/**
+ * «Qoldiq» bloki (IS-1): backend `payable_amount = max(0, outstanding − advance)` beradi. Eski backend bu
+ * maydonlarni bermasa ham ekran yolg'on son ko'rsatmasligi kerak — formula shu yerda takrorlanadi.
+ */
+describe("resolveBalance", () => {
+  it("⭐ backend maydonlari satr bo'lsa ham songa keltiriladi", () => {
+    expect(
+      resolveBalance({
+        integration_id: "7",
+        outstanding_amount: "4860000.00",
+        outstanding_count: 23,
+        advance_balance: "350000.00",
+        payable_amount: "4510000.00",
+      }),
+    ).toEqual({ outstanding: 4_860_000, outstandingCount: 23, advance: 350_000, payable: 4_510_000, noDebt: false });
   });
 
-  it("⭐ kasr qismi yaxlitlanadi — tiyin ko'rsatilmaydi", () => {
-    /**
-     * COD summalari butun so'mda yuritiladi. `1500000.4` ni "1 500 000,4"
-     * deb ko'rsatish operatorni "tiyin qayerdan keldi?" degan savolga
-     * olib borardi.
-     */
-    expect(money(1_500_000.4).replace(/\s/g, " ")).toContain("1 500 000");
-    expect(money(1_500_000.6).replace(/\s/g, " ")).toContain("1 500 001");
+  it("⭐ payable_amount kelmasa — yopilmagan qarz − avans", () => {
+    const out = resolveBalance({ integration_id: "7", outstanding_amount: 1_000_000, outstanding_count: 2, advance_balance: 250_000 });
+    expect(out.payable).toBe(750_000);
   });
 
-  it("0 ham ko'rsatiladi — bo'sh qolmaydi", () => {
-    expect(money(0)).toContain("0");
+  it("avans qarzdan katta — to'lanishi kerak 0, manfiy emas", () => {
+    const out = resolveBalance({ integration_id: "7", outstanding_amount: 100_000, outstanding_count: 1, advance_balance: 490_000 });
+    expect(out.payable).toBe(0);
+    expect(out.noDebt).toBe(false);
+  });
+
+  it("eski backend (avanssiz) — avans 0, to'lanishi kerak = yopilmagan qarz", () => {
+    const out = resolveBalance({ integration_id: "7", outstanding_amount: "5000000.00", outstanding_count: 3 });
+    expect(out).toMatchObject({ advance: 0, payable: 5_000_000, outstanding: 5_000_000 });
+  });
+
+  it("qarz yo'q — noDebt; ma'lumot yo'q bo'lsa ham nollar", () => {
+    expect(resolveBalance({ integration_id: "7", outstanding_amount: 0, outstanding_count: 0, advance_balance: 490_000, payable_amount: 0 })).toMatchObject({
+      noDebt: true,
+      advance: 490_000,
+      payable: 0,
+    });
+    expect(resolveBalance(undefined)).toEqual({ outstanding: 0, outstandingCount: 0, advance: 0, payable: 0, noDebt: true });
+  });
+
+  it("manfiy avans 0 deb olinadi", () => {
+    expect(resolveBalance({ integration_id: "7", outstanding_amount: 100, outstanding_count: 1, advance_balance: -50 }).advance).toBe(0);
   });
 });

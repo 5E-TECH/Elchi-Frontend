@@ -272,17 +272,20 @@ describe("Region page — superadmin / admin", () => {
     expect(calledUrls()).toEqual(["region/stats/all"]);
   });
 
-  it("superadmin sees all three section links, admin has no «Tumanlar»", async () => {
+  it("both see all three section links in the maket order (admin: «Tumanlar» first — DM-1)", async () => {
+    const SECTIONS = ["Tumanlarni o'tkazish", "Tumanlar", "Logist biriktirish"];
+    const sectionOrder = () =>
+      screen
+        .getAllByRole("button")
+        .map((button) => button.textContent ?? "")
+        .filter((name) => SECTIONS.includes(name));
+
     const { unmount } = renderRegion("superadmin");
-    expect(screen.getByRole("button", { name: "Tumanlarni o'tkazish" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tumanlar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Logist biriktirish" })).toBeInTheDocument();
+    expect(sectionOrder()).toEqual(["Tumanlarni o'tkazish", "Tumanlar", "Logist biriktirish"]);
     unmount();
 
     renderRegion("admin");
-    expect(screen.getByRole("button", { name: "Tumanlarni o'tkazish" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Tumanlar" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Logist biriktirish" })).toBeInTheDocument();
+    expect(sectionOrder()).toEqual(["Tumanlar", "Tumanlarni o'tkazish", "Logist biriktirish"]);
   });
 
   it("keeps the period in the URL and sends the matching date range", async () => {

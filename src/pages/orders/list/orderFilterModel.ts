@@ -31,7 +31,9 @@ export const LEGACY_DATE_TO_KEY = "orderDateTo";
 
 /**
  * «Holat» filtridagi variantlar — maketdagi tartibda (`superadmin-orders-filters-mobile`: Yangi, Yaratilgan,
- * Qabul qilindi, Yo'lda, Kutilmoqda, Sotilgan, To'langan, Qisman to'langan, Bekor qilingan, Yopilgan).
+ * Qabul qilindi, Yo'lda, Kutilmoqda, Sotilgan, To'langan, Qisman to'langan, Bekor qilingan, Yopilgan) va maketda
+ * yo'q ikki backend holati o'z guruhida: «Mijoz kutilmoqda» (ega qarori, SllBYhnt) va «Marketga topshirildi»
+ * (`status=returned_to_market`; bekor zanjirining yakuni, taklif §5.1 — backend `status` paramining enum'ida bor).
  * «Bekor — jo'natilgan» alohida variant emas — u «Bekor qilingan» tabi bilan birga keladi.
  */
 export const FILTER_STATUSES: readonly OrderStatus[] = [
@@ -40,10 +42,12 @@ export const FILTER_STATUSES: readonly OrderStatus[] = [
   "received",
   "on the road",
   "waiting",
+  "waiting_customer",
   "sold",
   "paid",
   "partly_paid",
   "cancelled",
+  "returned_to_market",
   "closed",
 ];
 

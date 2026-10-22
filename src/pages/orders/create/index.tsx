@@ -269,6 +269,9 @@ const OrderCreateFormContent = () => {
           }
           setValue("details.items", kept, { shouldDirty: true });
         }
+        // Mavjud mijoz bog'lanishi eski market doirasida (buyurtmalar soni, «yangi buyurtma bor» ogohlantirishi va
+        // havolalar shu marketniki) — uziladi; maydonlar qoladi, telefon yangi market bo'yicha qayta qidiriladi.
+        setValue("existingCustomer", null, { shouldDirty: true });
       }
       itemsMarketRef.current = nextMarket;
       focusStepsRef.current = true;

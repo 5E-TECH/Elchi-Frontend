@@ -9,6 +9,8 @@ import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
+import { loadAppLocales } from "../i18n";
+import { deviceIdHeaders } from "./deviceId";
 
 type LoginCredentials = {
   phone_number: string;
@@ -216,7 +218,8 @@ const isRetryableRefreshError = (error: unknown) => {
 const postRefreshWithRetry = async () => {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {});
+      // `X-Device-Id` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu bilan yoziladi).
+      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceIdHeaders() });
     } catch (error) {
       if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
       await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
@@ -244,8 +247,14 @@ export const refreshAccessToken = async () => {
 };
 
 export const login = async (credentials: LoginCredentials) => {
+  // Kirishdan keyingi sahifalar tarjimasi — so'rov bilan parallel (to'g'ridan-to'g'ri `/login` da kechiktirilgan,
+  // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
+  const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    // Har login — alohida sessiya (Elchi Pochta #3); `X-Device-Id` uni shu brauzerga bog'laydi.
+    const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
+      headers: deviceIdHeaders(),
+    });
     const accessToken = response.data?.accessToken;
 
     if (!accessToken) {
@@ -257,6 +266,7 @@ export const login = async (credentials: LoginCredentials) => {
     store.dispatch(loginSuccess({ accessToken }));
 
     const user = await fetchMyProfile(accessToken);
+    await appLocales;
     store.dispatch(setAppInitializing(false));
 
     return { accessToken, user };
@@ -369,6 +379,9 @@ export const initAuth = async () => {
   }
 
   initPromise = (async () => {
+    // Sessiyali ochilish: tarjimalarning qolgan qismi ham chizishdan oldin (to'g'ridan-to'g'ri `/login` da ham —
+    // undan `/` ga o'tiladi; `src/i18n.ts`, rzzxMItN). Yuklanmasa — chizishda qayta so'raladi.
+    let appLocales: Promise<unknown> = Promise.resolve();
     try {
       if (shouldSkipRefreshAfterLogout()) {
         resetClientAuthState();
@@ -383,6 +396,7 @@ export const initAuth = async () => {
       }
 
       store.dispatch(setAppInitializing(true));
+      appLocales = loadAppLocales().catch(() => undefined);
 
       const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
       if (accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
@@ -409,6 +423,7 @@ export const initAuth = async () => {
       }
       resetClientAuthState();
     } finally {
+      await appLocales;
       store.dispatch(setAppInitializing(false));
       initPromise = null;
     }

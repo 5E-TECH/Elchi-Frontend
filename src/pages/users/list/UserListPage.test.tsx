@@ -88,7 +88,7 @@ beforeEach(() => {
 });
 
 describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", () => {
-  it("sarlavha, «Foydalanuvchi qo'shish», KPI va 7 ta rol tabi", () => {
+  it("sarlavha, «Foydalanuvchi qo'shish», KPI va 9 ta rol tabi (FY-S1 tartibi)", () => {
     render("/all-users");
 
     expect(screen.getByRole("heading", { level: 1, name: "Foydalanuvchilar" })).toBeInTheDocument();
@@ -102,14 +102,18 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
     expect(kpi).not.toHaveTextContent("mijoz");
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
     expect(within(tabs).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-      "Barchasi",
-      "Marketlar",
-      "Kuryerlar",
+      "Hammasi",
+      "Adminlar",
       "Menejerlar",
       "Ro'yxatchilar",
-      "Operatorlar",
-      "Adminlar",
+      "Kuryerlar",
+      "Logistlar",
+      "Marketlar",
+      "Market operatorlari",
+      "Investorlar",
     ]);
+    // Eski «Operatorlar» tabi olindi.
+    expect(within(tabs).queryByRole("tab", { name: "Operatorlar" })).not.toBeInTheDocument();
     // KPI — filtrsiz alohida yengil so'rov.
     expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, true, { silentError: true });
     expect(lastListParams()).toEqual({ page: 1, limit: 10 });
@@ -123,6 +127,67 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
     expect(screen.getByRole("tab", { name: "Kuryerlar" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("searchbox", { name: "Foydalanuvchilarni qidirish" })).toHaveValue("Jasur");
     expect(screen.getByRole("combobox", { name: "Holat" })).toHaveTextContent("Nofaol");
+  });
+
+  it.each([
+    ["Logistlar", "logist"],
+    ["Market operatorlari", "market_operator"],
+    ["Investorlar", "investor"],
+  ])("yangi «%s» tabi — `role=%s` so'rovga ketadi", async (label, role) => {
+    const user = userEvent.setup();
+    render("/all-users");
+
+    await user.click(screen.getByRole("tab", { name: label }));
+
+    expect(currentSearch().get("role")).toBe(role);
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role });
+  });
+
+  it("eski yoki ko'rinuvchida tabi yo'q rol (`operator`) — «Hammasi», so'rovga ketmaydi", () => {
+    render("/all-users?role=operator");
+
+    expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+  });
+
+  it("telefon: tablar o'rnida «Rol: Hammasi» tanlovi — «Xodimlar» va «Tashqi hisoblar» guruhlari, URL `role`", async () => {
+    const user = userEvent.setup();
+    render("/all-users?page=3");
+
+    // Tablar telefonda yashirin (`max-md:hidden`), tanlov — faqat telefonda (`md:hidden`).
+    expect(screen.getByRole("tablist", { name: "Rol bo'yicha" }).closest(".max-md\\:hidden")).not.toBeNull();
+    const select = screen.getByRole("combobox", { name: "Rol" });
+    expect(select.closest(".md\\:hidden")).not.toBeNull();
+    expect(select).toHaveTextContent("Hammasi");
+
+    await user.click(select);
+    const list = screen.getByRole("listbox", { name: "Rol bo'yicha" });
+    expect(within(list).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Hammasi",
+      "Adminlar",
+      "Menejerlar",
+      "Ro'yxatchilar",
+      "Kuryerlar",
+      "Logistlar",
+      "Marketlar",
+      "Market operatorlari",
+      "Investorlar",
+    ]);
+    const staff = within(list).getByRole("group", { name: "Xodimlar" });
+    expect(within(staff).getAllByRole("option")).toHaveLength(5);
+    const external = within(list).getByRole("group", { name: "Tashqi hisoblar" });
+    expect(within(external).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Marketlar",
+      "Market operatorlari",
+      "Investorlar",
+    ]);
+
+    await user.click(within(external).getByRole("option", { name: "Market operatorlari" }));
+    expect(currentSearch().get("role")).toBe("market_operator");
+    expect(currentSearch().get("page")).toBe("1");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "market_operator" });
+    expect(screen.getByRole("tab", { name: "Market operatorlari" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("combobox", { name: "Rol" })).toHaveTextContent("Market operatorlari");
   });
 
   it("tab almashsa — `role` URL'ga yoziladi va sahifa 1 ga qaytadi", async () => {
@@ -239,11 +304,14 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
     expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, false, { silentError: true });
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
     expect(within(tabs).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-      "Barchasi",
+      "Hammasi",
       "Kuryerlar",
       "Ro'yxatchilar",
       "Marketlar",
     ]);
+    // Menejerda 4 ta tab telefonda ham sig'adi — «Rol» tanlovi yo'q, tablar yashirilmaydi.
+    expect(screen.queryByRole("combobox", { name: "Rol" })).not.toBeInTheDocument();
+    expect(tabs.closest(".max-md\\:hidden")).toBeNull();
     expect(screen.queryByRole("button", { name: /amallari$/ })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Mehr Kosmetika tafsilotlari" })[0]).toHaveAttribute(
       "href",

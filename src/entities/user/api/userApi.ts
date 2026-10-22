@@ -8,6 +8,7 @@ import { setName, setRole } from "../../../shared/model/roleSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateLogistRequest,
   CreateManagerRequest,
   CreateMarketRequest,
   CreateRegistratorRequest,
@@ -19,27 +20,6 @@ import { unwrapUserResponse } from "../lib/normalizeUser";
 import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
 export const user = "user";
-
-const getBackendMessageText = (error: unknown): string => {
-  const data = (error as { response?: { data?: unknown } })?.response?.data;
-  const collect = (value: unknown): string => {
-    if (!value) return "";
-    if (typeof value === "string") return value;
-    if (Array.isArray(value)) return value.map(collect).filter(Boolean).join(" ");
-    if (typeof value === "object") {
-      return Object.values(value).map(collect).filter(Boolean).join(" ");
-    }
-    return String(value);
-  };
-
-  return collect(data).toLowerCase();
-};
-
-const shouldRetryCourierWithoutRegion = (error: unknown) => {
-  const message = getBackendMessageText(error);
-
-  return message.includes("region_id") && message.includes("should not exist");
-};
 
 export interface IUserFilter {
   search?: string;
@@ -145,67 +125,13 @@ const normalizeUserListResponse = (
   };
 };
 
-const dedupeUsersById = (items: User[]) => {
-  const usersById = new Map<string, User>();
-
-  items.forEach((item, index) => {
-    const record = asRecord(item);
-    const id = String(record.id ?? record._id ?? index);
-    usersById.set(id, item);
-  });
-
-  return Array.from(usersById.values());
-};
-
-const fetchUserList = async (params?: IUserFilter) => {
-  const normalizedRole = String(params?.role ?? "").toLowerCase();
-  const shouldMergeMarketRoles = normalizedRole === "market" || normalizedRole === "marketing";
-
-  if (!shouldMergeMarketRoles) {
-    const response = await api.get(API_ENDPOINTS.USERS.BASE, { params });
-    return normalizeUserListResponse(response.data, params);
-  }
-
-  const page = Math.max(1, toNumber(params?.page, 1));
-  const limit = Math.max(1, toNumber(params?.limit, 100));
-  const fetchLimit = Math.max(limit * page, 1000);
-  const baseParams = { ...params, page: 1, limit: fetchLimit };
-
-  const responses = await Promise.all(
-    ["market", "marketing"].map((role) =>
-      api.get(API_ENDPOINTS.USERS.BASE, {
-        params: {
-          ...baseParams,
-          role,
-        },
-      }),
-    ),
-  );
-
-  const normalizedResponses = responses.map((response) =>
-    normalizeUserListResponse(response.data, baseParams),
-  );
-  const items = dedupeUsersById(
-    normalizedResponses.flatMap((response) => response.data.items),
-  );
-  const total = items.length;
-  const start = (page - 1) * limit;
-  const pagedItems = items.slice(start, start + limit);
-
-  return {
-    ...normalizedResponses[0],
-    data: {
-      items: pagedItems,
-      meta: {
-        ...normalizedResponses[0].data.meta,
-        page,
-        limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
-        totalMarket: total,
-      },
-    },
-  };
+/**
+ * `GET /users` ro'yxati — bitta so'rov, server sahifalashi (FY-1). Backend `Roles` da `marketing` roli yo'q:
+ * avvalgi «market + marketing» ikki so'rovi va klientdagi sahifalash olib tashlandi (`role=market` — oddiy so'rov).
+ */
+export const fetchUserList = async (params?: IUserFilter) => {
+  const response = await api.get(API_ENDPOINTS.USERS.BASE, { params });
+  return normalizeUserListResponse(response.data, params);
 };
 
 export const useUser = () => {
@@ -264,21 +190,19 @@ export const useUser = () => {
   });
 
   const createCourier = useMutation({
-    mutationFn: async (data: CreateCourierRequest) => {
-      try {
-        return await api.post(API_ENDPOINTS.COURIERS.BASE, data);
-      } catch (error) {
-        if (!data.region_id || !shouldRetryCourierWithoutRegion(error)) {
-          throw error;
-        }
-
-        const payloadWithoutRegion = { ...data };
-        delete payloadWithoutRegion.region_id;
-        return api.post(API_ENDPOINTS.COURIERS.BASE, payloadWithoutRegion);
-      }
-    },
+    mutationFn: (data: CreateCourierRequest) => api.post(API_ENDPOINTS.COURIERS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
+  /** `POST /logists` (LG-2). Logistlar ro'yxati (`["logists"]`, «Logist biriktirish») ham yangilanadi. */
+  const createLogist = useMutation({
+    mutationFn: (data: CreateLogistRequest) => api.post(API_ENDPOINTS.LOGISTS.BASE, data),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+        client.invalidateQueries({ queryKey: ["logists"] }),
+      ]),
   });
 
   const useGetRegions = (enabled: boolean = true) =>
@@ -474,6 +398,7 @@ export const useUser = () => {
     createManager,
     createMarket,
     createCourier,
+    createLogist,
     useGetRegions,
     useGetUser,
     useGetCouriers,

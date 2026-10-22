@@ -89,10 +89,21 @@ export const canViewUsers: Predicate = anyOf(
 
 export const canViewFinancialBalance: Predicate = hasRole("superadmin", "admin");
 
-export const canViewNotifications: Predicate = hasRole("superadmin");
+/**
+ * Telegram guruhlari (`/notifications`) — backend `GET|POST|PATCH|DELETE /notifications` `@Roles(SUPERADMIN, ADMIN)`
+ * bilan bir xil (ega NG-S2, 2026-10-19: adminga ham ochiladi).
+ */
+export const canViewNotifications: Predicate = hasRole("superadmin", "admin");
 
 /** Xabar yuborish (`/notifications/send`) — backend `POST /notifications/dispatch` `@Roles(SUPERADMIN, ADMIN)` bilan AYNAN bir xil. */
 export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
+
+/**
+ * Kassa xarajati kategoriyalarini qo'shish / tahrirlash / o'chirish (Elchi Pochta №1) — backend `POST|PATCH|DELETE
+ * finance/cashbox/expense-categories` `@Roles(SUPERADMIN)` bilan AYNAN bir xil. Ro'yxatni (tanlov) admin va
+ * menejer ham o'qiydi — bu predikat faqat boshqaruv uchun.
+ */
+export const canManageExpenseCategories: Predicate = hasRole("superadmin");
 
 export const canViewBranches: Predicate = hasRole("superadmin");
 
@@ -154,18 +165,48 @@ export const canHandoverCancelledToMarket: Predicate = anyOf(
 );
 
 /**
- * Mahsulot YARATISH — backend POST /product endi filial xodimlariga ham ruxsat
- * beradi: MARKET, ADMIN, SUPERADMIN ustiga REGISTRATOR va MANAGER qo'shildi
- * (market_id majburiy — xodim mahsulotni qaysi market uchun yaratishini
- * tanlaydi). Avval faqat MARKET/ADMIN/SUPERADMIN edi va registrator saqlashda
- * doim 403 olardi.
+ * Mahsulot YARATISH va TAHRIRLASH — faqat Elchi xodimlari: SUPERADMIN, ADMIN, REGISTRATOR, MANAGER (backend
+ * POST /product; market_id majburiy — xodim mahsulotni qaysi market uchun yaratishini tanlaydi).
+ * MH-1 (ega qarori 2026-10-15): market endi faqat ko'radi — ro'yxatda «Mahsulot yaratish» va amallar yo'q,
+ * `/products/create-product/:id` marketga 403. Backend market yozish yo'llarini keyin yopadi (Pc4CAFdB).
  */
-export const canCreateProducts: Predicate = hasRole(
+export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "registrator", "manager");
+
+/**
+ * Mahsulotlar ro'yxati (`/products`) — avval `routes.tsx` da qo'lda nusxalangan `canManageProducts` edi (ROL-0
+ * shu yerga ko'chirdi). Market va market operatori (MH-1) — faqat ko'rish (`GET product/my-products`; operatorga
+ * biriktirilgan marketi). Operatorning menyu bandi — MO-2.
+ */
+export const canViewProducts: Predicate = hasRole(
   "superadmin",
   "admin",
   "market",
+  "market_operator",
   "registrator",
   "manager",
+);
+
+/**
+ * «Operatorlar» (`/market-operators`) — market O'Z operatorlarini boshqaradi (MO-1, ega qarori 2026-10-19). Backend
+ * `market-operators` yo'llari faqat `@Roles(MARKET)` (o'z operatorlari, JWT `sub`) — superadmin/admin uchun `/users`.
+ * Market operatori o'zi bu sahifani ko'rmaydi.
+ */
+export const canViewMarketOperators: Predicate = hasRole("market");
+
+/**
+ * Admin `DashboardPage` (`/`) — kompaniya bo'yicha tushum, viloyatlar kesimi (`RegionOverviewCard`) va
+ * reytinglar. Faqat sanab o'tilgan rollar: yangi rol (logist, market operatori, investor) unga tushib qolmaydi —
+ * avval `DashboardEntry` qolgan har rolni shu sahifaga yuborardi va logist kompaniya tushumini ko'rardi
+ * (mDfjKeQi). Ularning o'z bosh sahifasi kelguncha `/` da 403 (LG-1, MO-2, IN-1 shu yerga o'z tarmog'ini qo'shadi).
+ * `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
+ * bosh sahifasi bor (`DashboardEntry`).
+ */
+export const canViewAdminDashboard: Predicate = hasRole(
+  "superadmin",
+  "admin",
+  "registrator",
+  "courier",
+  "operator",
 );
 
 export const canViewCourierBulkPage: Predicate = anyOf(
@@ -222,3 +263,9 @@ export const canReceiveExternalOrders: Predicate = anyOf(
   hasRole("superadmin", "admin", "registrator"),
   managerCan("intake"),
 );
+
+/**
+ * Investor kabineti (IN-1, vpKijXce): `/` da `InvestorDashboardPage` — faqat investor roli. Ma'lumot doirasi
+ * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
+ */
+export const canViewInvestorCabinet: Predicate = hasRole("investor");

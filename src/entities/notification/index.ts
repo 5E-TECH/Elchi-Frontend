@@ -13,3 +13,4 @@ export { default as NotificationStatusBadge } from "./ui/NotificationStatusBadge
 export { default as NotificationGroupTypeBadge } from "./ui/NotificationGroupTypeBadge";
 export { default as GroupTypeChoice } from "./ui/GroupTypeChoice";
 export type { GroupTypeChoiceProps } from "./ui/GroupTypeChoice";
+export { default as NotificationGroupSummary } from "./ui/NotificationGroupSummary";

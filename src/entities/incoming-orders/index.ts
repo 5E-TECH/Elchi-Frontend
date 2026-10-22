@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * Hamkor tizimlardan (BeePost va h.k.) kelgan buyurtmalar.
@@ -28,6 +29,8 @@ export type IncomingOrder = {
   external_batch_token?: string | null;
   /** Qopdagi posilkalar soni (hamkor aytgani). */
   external_batch_size?: number | null;
+  /** Hamkor tomonidagi qop id'si («BP-24817») — «Qop» ustunidagi yorliq; bo'lmasa token boshi. */
+  external_batch_ref?: string | null;
   customer?: {
     name?: string | null;
     phone_number?: string | null;
@@ -142,8 +145,11 @@ export type IncomingSource = {
 
 export const incomingSourcesKey = "incoming-external-sources";
 
-/** `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tabidagi son faqat tab ko'rinsa so'raladi. */
-export const useIncomingSources = (options?: { enabled?: boolean }) =>
+/**
+ * `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tabidagi son faqat tab ko'rinsa so'raladi.
+ * `options.silentError` — tab sonidagi kabi fon so'rovi: xato global xabar bermaydi (son shunchaki yozilmaydi).
+ */
+export const useIncomingSources = (options?: { enabled?: boolean } & SilentErrorOption) =>
   useQuery({
     queryKey: [incomingSourcesKey],
     queryFn: () =>
@@ -151,6 +157,7 @@ export const useIncomingSources = (options?: { enabled?: boolean }) =>
         .get(API_ENDPOINTS.ORDERS.EXTERNAL_SOURCES)
         .then((res) => extractIncomingSources(res.data)),
     enabled: options?.enabled ?? true,
+    ...silentErrorMeta(options),
   });
 
 /** Qobiq qatlamlari marshrutga qarab farq qiladi — himoyalangan ochish. */

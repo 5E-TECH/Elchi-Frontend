@@ -88,6 +88,69 @@ export const orderLabel = (order: IncomingOrder): string =>
 export const districtName = (order: IncomingOrder): string =>
   order.customer?.district?.name ?? order.district?.name ?? "—";
 
+/* ─── Qop (hamkor qopi) ─────────────────────────────────────────────────────── */
+
+const textOf = (value: unknown): string => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
+
+/** Posilkaning o'z QR tokeni (bo'sh bo'lsa — `""`). */
+export const parcelToken = (order: IncomingOrder): string => textOf(order.qr_code_token);
+
+/**
+ * Qop kaliti — qoplarni sanash uchun: qop QR tokeni (`external_batch_token`), bo'lmasa hamkor qop id'si
+ * (`external_batch_ref`); qopsiz posilka — `null`.
+ */
+export const bagKeyOf = (order: IncomingOrder): string | null =>
+  textOf(order.external_batch_token) || textOf(order.external_batch_ref) || null;
+
+/** Token qisqartmasi: ko'pi bilan 8 belgi, uzunroq bo'lsa «…» bilan (maket: «3733ff7b…»). */
+const BAG_TOKEN_CHARS = 8;
+
+/**
+ * «Qop» ustunidagi yorliq (maket `*-incoming-scan`): hamkor qop id'si («BP-24817»), bo'lmasa qop tokenining
+ * boshi («3733ff7b…»); qopsiz posilka — `null` (ekranda «—»).
+ */
+export const bagLabel = (order: IncomingOrder): string | null => {
+  const ref = textOf(order.external_batch_ref);
+  if (ref) return ref;
+  const token = textOf(order.external_batch_token);
+  if (!token) return null;
+  return token.length > BAG_TOKEN_CHARS ? `${token.slice(0, BAG_TOKEN_CHARS)}…` : token;
+};
+
+/** Ro'yxatdagi qoplar soni (xulosa «N ta · M ta qop»). */
+export const countBags = (orders: readonly IncomingOrder[]): number =>
+  new Set(orders.map(bagKeyOf).filter((key): key is string => key !== null)).size;
+
+/**
+ * RO'YXAT YANGILANGANDA SKAN BELGILARI SAQLANADI (eo3eeJxs).
+ *
+ * Ilgari har yangilanish («Yangilash», qabuldan keyingi qayta so'rov, oynaga qaytish) belgilarni jimgina
+ * o'chirardi: operator yarim qopni skanerlab, ro'yxatni yangilasa — qaytadan boshlardi. Endi belgi yangi
+ * ro'yxatda HALI BOR posilkalarda qoladi (kesishma); ro'yxatdan chiqqan (qabul qilingan, boshqa joyda olingan)
+ * posilka belgisi va tokeni olib tashlanadi — serverga ro'yxatda yo'q token ketmaydi.
+ *
+ * O'zgarish bo'lmasa — o'sha obyektlar qaytadi (jadval qayta chizilmaydi).
+ */
+export const keepScannedInList = (
+  orders: readonly IncomingOrder[],
+  scannedIds: ReadonlySet<string>,
+  scannedTokens: readonly string[],
+): { ids: ReadonlySet<string>; tokens: readonly string[] } => {
+  const ids = new Set<string>();
+  const tokens = new Set<string>();
+  for (const order of orders) {
+    if (!scannedIds.has(order.id)) continue;
+    ids.add(order.id);
+    const token = parcelToken(order);
+    if (token) tokens.add(token);
+  }
+  const keptTokens = scannedTokens.filter((token) => tokens.has(token));
+  return {
+    ids: ids.size === scannedIds.size ? scannedIds : ids,
+    tokens: keptTokens.length === scannedTokens.length ? scannedTokens : keptTokens,
+  };
+};
+
 /* ─── Manbalar taqsimoti (donut, segment chizig'i, legenda) ─────────────────── */
 
 /**

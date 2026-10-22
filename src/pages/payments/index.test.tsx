@@ -36,12 +36,14 @@ const pageState = vi.hoisted(() => ({
   hqCouriers: undefined as unknown,
   hqCouriersEnabled: [] as boolean[],
   currentShift: { isSuccess: false, data: undefined } as { isSuccess: boolean; data: unknown },
-  shiftOpenedBy: [] as unknown[],
+  /** `useGetCurrentShift(enabled)` chaqiruvlari (faqat yoqilganlari). */
+  shiftRequests: 0,
   mainCashbox: undefined as unknown,
   mainCashboxParams: [] as unknown[],
 }));
 
-vi.mock("../../entities/payments", () => ({
+vi.mock("../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/payments")>()),
   useCashBox: () => ({
     useGetCashBoxInfo: () => ({ data: pageState.cashboxInfo, isLoading: false }),
     useGetFinanceHistory: (params: unknown) => getFinanceHistoryMock(params),
@@ -50,8 +52,8 @@ vi.mock("../../entities/payments", () => ({
       pageState.hqCouriersEnabled.push(enabled);
       return { data: enabled ? pageState.hqCouriers : undefined, isLoading: false };
     },
-    useGetCurrentShift: (openedBy: unknown, enabled: boolean) => {
-      if (enabled) pageState.shiftOpenedBy.push(openedBy);
+    useGetCurrentShift: (enabled: boolean) => {
+      if (enabled) pageState.shiftRequests += 1;
       return enabled ? pageState.currentShift : { isSuccess: false, data: undefined };
     },
     useGetCashBoxMain: (params: unknown) => {
@@ -153,7 +155,7 @@ beforeEach(() => {
   pageState.hqCouriers = hqCouriersResponse;
   pageState.hqCouriersEnabled = [];
   pageState.currentShift = { isSuccess: false, data: undefined };
-  pageState.shiftOpenedBy = [];
+  pageState.shiftRequests = 0;
   pageState.mainCashbox = undefined;
   pageState.mainCashboxParams = [];
 });
@@ -318,7 +320,11 @@ describe("Payments — header and KPI cards", () => {
         courierCashboxTotal: 9_870_000,
       },
     };
-    pageState.currentShift = { isSuccess: true, data: { data: { items: [{ id: "4", status: "open" }] } } };
+    // GET finance/shift/current — asosiy kassaning ochiq smenasi (kim ochganidan qat'i nazar).
+    pageState.currentShift = {
+      isSuccess: true,
+      data: { data: { shift: { id: "4", opened_by: "9", status: "open" }, required: true } },
+    };
     pageState.mainCashbox = { data: { cashbox: { balance: 24_615_000, balance_cash: 18_240_000, balance_card: 6_375_000 } } };
     open(superadmin);
 
@@ -332,8 +338,8 @@ describe("Payments — header and KPI cards", () => {
     expect(within(mainCard).getByText("24,6")).toBeInTheDocument();
     expect(within(mainCard).getByText("Asosiy kassa · smena ochiq")).toBeInTheDocument();
     expect(within(mainCard).getByRole("img", { name: "Naqd 18 240 000 so'm, karta 6 375 000 so'm" })).toBeInTheDocument();
-    // Smena — o'zining ID si bilan; naqd/karta — bugungi kun bilan cheklangan yengil so'rov.
-    expect(pageState.shiftOpenedBy).toContain("1");
+    // Smena — shift/current (asosiy kassa); naqd/karta — bugungi kun bilan cheklangan yengil so'rov.
+    expect(pageState.shiftRequests).toBeGreaterThan(0);
     expect(pageState.mainCashboxParams.at(-1)).toEqual({
       fromDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       toDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
@@ -345,6 +351,13 @@ describe("Payments — header and KPI cards", () => {
       within(receiveCard).getByRole("img", { name: "Filiallar 8 800 000 so'm, HQ kuryerlari 1 070 000 so'm" }),
     ).toBeInTheDocument();
     expect(within(screen.getByRole("button", { name: /Berilishi kerak/ })).getByText("13,5")).toBeInTheDocument();
+  });
+
+  it("superadmin: shift/current without a shift → «Asosiy kassa · smena yopiq»", () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: false } } };
+    open(superadmin);
+    const mainCard = screen.getByRole("link", { name: /Kassadagi summa/ });
+    expect(within(mainCard).getByText("Asosiy kassa · smena yopiq")).toBeInTheDocument();
   });
 
   it("superadmin: unknown shift state shows only «Asosiy kassa» (no guess)", () => {
@@ -393,7 +406,7 @@ describe("Payments — header and KPI cards", () => {
     expect(within(giveCard).getByText("Kassada qoladi: 325 000 so'm")).toBeInTheDocument();
     expect(within(giveCard).getByText("Yetarli")).toBeInTheDocument();
 
-    expect(pageState.shiftOpenedBy).toEqual([]);
+    expect(pageState.shiftRequests).toBe(0);
     expect(pageState.mainCashboxParams).toEqual([]);
   });
 
