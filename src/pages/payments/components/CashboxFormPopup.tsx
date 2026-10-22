@@ -1,11 +1,12 @@
 // dizayn-v2: superadmin-payments-main-cashbox-fill-dialog, admin-payments-cashbox-form-dialog, manager-payments-cashbox-form-dialog
-import { memo, useEffect, useId, useRef, type ReactNode } from "react";
+import { memo, useEffect, useId, useMemo, useRef, type ReactNode } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Banknote, Check, CreditCard, Minus, Plus, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
+import { useExpenseCategories } from "../../../entities/expense-category";
 import { CURRENCY_LABEL, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 import {
     Badge,
@@ -13,8 +14,10 @@ import {
     Dialog,
     Field,
     SegmentedControl,
+    Select,
     TextInput,
     useConfirm,
+    type SelectOption,
 } from "../../../shared/ui/primitives";
 import { parseAmountInput } from "./lib/amountInput";
 
@@ -30,19 +33,35 @@ import { parseAmountInput } from "./lib/amountInput";
  * Validatsiya (yup) o'zgarmagan: summa majburiy va > 0, `requireType` / `requireComment` (izoh `trim` bilan).
  * Xato matnlari maydon ostida — saqlash bosilganda (maketdagi «Izoh majburiy — …» holati).
  *
- * Pul harakati — TASDIQ bilan: «saqlash» → `useConfirm` (summa + to'lov turi, «Kassa», «Izoh») → faqat
- * «Tasdiqlash» dan keyin `onSubmit({ amount, type?, comment })` (payload eski shaklda). Ikki marta yuborish yo'q:
- * tasdiq ochiq yoki so'rov ketayotganda qayta bosish e'tiborsiz (ref qulf), `isLoading` da tugma yuklanishda va
- * oyna yopilmaydi.
+ * Pul harakati — TASDIQ bilan: «saqlash» → `useConfirm` (summa + to'lov turi, «Kassa», «Kategoriya», «Izoh») →
+ * faqat «Tasdiqlash» dan keyin `onSubmit({ amount, type?, comment, expense_category_id? })`. Ikki marta yuborish
+ * yo'q: tasdiq ochiq yoki so'rov ketayotganda qayta bosish e'tiborsiz (ref qulf), `isLoading` da tugma yuklanishda
+ * va oyna yopilmaydi.
+ *
+ * «Xarajat kategoriyasi» (Elchi Pochta №1; maketda yo'q — `route-map.json` izohi, eng yaqini shu oynaning
+ * `Select` maydonlari, taxta `tizim-states-forms` 03) — FAQAT `variant="spend"`: ixtiyoriy, qidiruvli `Select`
+ * (`GET finance/cashbox/expense-categories`, faol kategoriyalar `sort_order` bo'yicha, ostida «Nimalar kiradi»),
+ * tanlansa payload'ga `expense_category_id` qo'shiladi, tanlanmasa — kalit umuman yo'q. To'ldirish oynasida maydon
+ * ham, so'rov ham yo'q (backend `fill` bu maydonni 400 bilan rad etadi). Ro'yxat yuklanmasa forma ishlayveradi —
+ * maydon o'chiq, ostida sabab va «Qayta urinish»; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat
+ * tozalanadi.
  */
 
 interface CashboxFormValues {
     amount: string;
     type: string;
     comment: string;
+    /** Faqat `spend`: tanlangan kategoriya ID si yoki `""`. */
+    expenseCategoryId: string;
 }
 
-type CashboxFormPayload = { amount: number; type?: string; comment: string };
+export type CashboxFormPayload = {
+    amount: number;
+    type?: string;
+    comment: string;
+    /** Faqat `spend` va kategoriya tanlangan bo'lsa (raqamli satr ID). */
+    expense_category_id?: string;
+};
 
 interface CashboxFormPopupProps {
     isOpen: boolean;
@@ -118,24 +137,53 @@ const CashboxFormPopup = ({
         comment: requireComment
             ? yup.string().trim().required(commentRequiredMessage ?? i18n.t("payments:commentRequired"))
             : yup.string().defined(),
+        expenseCategoryId: yup.string().defined(),
     });
 
     const {
         control,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<CashboxFormValues>({
         defaultValues: {
             amount: "",
             type: "",
             comment: "",
+            expenseCategoryId: "",
         },
         resolver: yupResolver(cashboxFormSchema) as Resolver<CashboxFormValues>,
     });
 
     const hasTypeOptions = sourceTypes.length > 0;
     const busy = isLoading;
+
+    // ── Xarajat kategoriyasi (faqat chiqim) ─────────────────────────────────────
+    const withCategory = variant === "spend";
+    const categoriesQuery = useExpenseCategories({ enabled: isOpen && withCategory });
+    const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
+    const categoryOptions = useMemo<SelectOption[]>(
+        () =>
+            categories.map((category) => ({
+                value: category.id,
+                label: category.name,
+                description: category.description ?? undefined,
+                searchText: category.description ?? undefined,
+            })),
+        [categories],
+    );
+    const selectedCategoryId = watch("expenseCategoryId");
+    const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
+    const categoriesLoaded = categoriesQuery.isSuccess;
+    // Tanlangan kategoriya yangilangan ro'yxatda yo'q (boshqa superadmin o'chirgan, «Kassadan xarajat» 400 dan
+    // keyin ro'yxat qayta o'qildi) — eskirgan ID qayta yuborilmasin.
+    useEffect(() => {
+        if (selectedCategoryId && categoriesLoaded && !selectedCategory) {
+            setValue("expenseCategoryId", "");
+        }
+    }, [categoriesLoaded, selectedCategory, selectedCategoryId, setValue]);
 
     const handleClose = () => {
         if (busy) return;
@@ -156,10 +204,14 @@ const CashboxFormPopup = ({
         if (submittingRef.current || busy) return;
         submittingRef.current = true;
         try {
+            const category = withCategory
+                ? (categories.find((item) => item.id === values.expenseCategoryId) ?? null)
+                : null;
             const payload: CashboxFormPayload = {
                 amount: parseAmountInput(values.amount),
                 ...(values.type ? { type: values.type } : {}),
                 comment: values.comment.trim(),
+                ...(category ? { expense_category_id: category.id } : {}),
             };
 
             if (confirmCopy) {
@@ -173,6 +225,7 @@ const CashboxFormPopup = ({
                     },
                     rows: [
                         { label: t("v2MainCashbox.confirm.cashbox"), value: confirmCopy.cashboxLabel },
+                        ...(category ? [{ label: t("v2MainCashbox.confirm.category"), value: category.name }] : []),
                         ...(payload.comment
                             ? [{ label: t("v2MainCashbox.confirm.comment"), value: payload.comment, stacked: true }]
                             : []),
@@ -191,6 +244,22 @@ const CashboxFormPopup = ({
 
     const Icon = variant === "spend" ? Minus : Plus;
     const typeFieldId = `${fieldId}-type`;
+
+    const categoryHint = categoriesQuery.isError ? (
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>{t("v2MainCashbox.form.categoryLoadError")}</span>
+            <Button
+                variant="link"
+                size="sm"
+                onClick={() => void categoriesQuery.refetch()}
+                className="max-md:min-h-11"
+            >
+                {t("v2MainCashbox.form.categoryRetry")}
+            </Button>
+        </span>
+    ) : selectedCategory?.description ? (
+        t("v2MainCashbox.form.categoryIncludes", { text: selectedCategory.description })
+    ) : undefined;
 
     return (
         <Dialog
@@ -263,6 +332,38 @@ const CashboxFormPopup = ({
                                     label: item.name,
                                     icon: TYPE_ICON[String(item.id)],
                                 }))}
+                            />
+                        )}
+                    />
+                </Field>
+            ) : null}
+
+            {withCategory ? (
+                <Field
+                    labelAs="span"
+                    label={t("v2MainCashbox.form.category")}
+                    optional
+                    hint={categoryHint}
+                    disabled={categoriesQuery.isError}
+                >
+                    <Controller
+                        control={control}
+                        name="expenseCategoryId"
+                        render={({ field }) => (
+                            <Select
+                                searchable
+                                clearable
+                                name={field.name}
+                                value={field.value || null}
+                                onChange={(value) => field.onChange(value ?? "")}
+                                onBlur={field.onBlur}
+                                options={categoryOptions}
+                                placeholder={t("v2MainCashbox.form.categoryPlaceholder")}
+                                listLabel={t("v2MainCashbox.form.categoryListLabel")}
+                                clearLabel={t("v2MainCashbox.form.categoryClear")}
+                                loading={categoriesQuery.isLoading}
+                                loadingText={t("v2MainCashbox.form.categoryLoading")}
+                                noOptionsText={t("v2MainCashbox.form.categoryEmpty")}
                             />
                         )}
                     />

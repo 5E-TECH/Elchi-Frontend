@@ -61,8 +61,9 @@ import {
 } from "../../../shared/ui/primitives";
 import { useUser } from "../../../entities/user/api/userApi";
 import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
+import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
-import CashboxFormPopup from "./CashboxFormPopup";
+import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
@@ -159,9 +160,10 @@ type ManualOperation = "fill" | "spend";
 type SalaryEmployee = Record<string, unknown> & { id: string; name?: string; role?: string };
 
 /**
- * Qo'lda kassa operatsiyasining barmoq izi (D3): tur + kassa egasi + summa + to'lov turi. Izoh kirmaydi
- * (`paymentIdempotency` qoidasi — operatsiyaning o'zini o'zgartirmaydi). Prefiks kuryer/market/filial
- * izlari bilan to'qnashmaydi.
+ * Qo'lda kassa operatsiyasining barmoq izi (D3): tur + kassa egasi + summa + to'lov turi. Izoh va xarajat
+ * kategoriyasi kirmaydi (`paymentIdempotency` qoidasi — operatsiyaning o'zini o'zgartirmaydi: javobi kelmagan
+ * chiqimni boshqa kategoriya bilan qayta yuborish YANGI kalit olib, pulni ikki marta yozmasin). Prefiks
+ * kuryer/market/filial izlari bilan to'qnashmaydi.
  */
 const manualOperationFingerprint = (operation: ManualOperation, scope: string, amount: number, type?: string) =>
   JSON.stringify([`cashbox-${operation}`, scope, amount, type ?? ""]);
@@ -195,6 +197,12 @@ const getPersonName = (item: Record<string, unknown>, fallback: string) =>
   ).trim() || fallback;
 
 const getText = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : "");
+
+/** Server so'rovni rad etdi (4xx, 401/403 dan tashqari) — masalan o'chirilgan xarajat kategoriyasi (400). */
+const isClientRejection = (error: unknown) => {
+  const status = Number((error as { response?: { status?: unknown } } | null)?.response?.status);
+  return status >= 400 && status < 500 && status !== 401 && status !== 403;
+};
 
 /** «01.10 – 08.10.2026» (bir yil ichida), bitta kun — «08.10.2026». */
 const formatShortRange = (from: string, to: string) => {
@@ -376,6 +384,7 @@ const MainCashbox = () => {
   const ownBranchName = getText(asRecord(ownBranch.branch).name) || getText(ownBranch.name) || undefined;
 
   const { useGetUser } = useUser();
+  const refreshExpenseCategories = useRefreshExpenseCategories();
   const {
     cashboxSpand,
     cashboxFill,
@@ -612,27 +621,34 @@ const MainCashbox = () => {
   }, [cashboxInfoQuery, historyQuery, mainCashboxQuery]);
 
   /**
-   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload eski shaklda `{ amount, type, comment }`; D3 — `Idempotency-Key`
-   * barmoq iziga bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta
-   * yuborilganda backend uni bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi).
+   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload `{ amount, type, comment }`, chiqimda kategoriya tanlangan
+   * bo'lsa `+ expense_category_id` (to'ldirishga hech qachon — backend 400); D3 — `Idempotency-Key` barmoq iziga
+   * bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta yuborilganda backend uni
+   * bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi). Kategoriya bilan chiqim rad
+   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi.
    */
   const submitManualOperation = useCallback(
-    async (operation: ManualOperation, { amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+    async (operation: ManualOperation, { amount, type, comment, expense_category_id }: CashboxFormPayload) => {
       if (manualPendingRef.current) return;
       manualPendingRef.current = true;
       const mutation = operation === "fill" ? cashboxFill : cashboxSpand;
       const close = operation === "fill" ? () => setIsRefillPopupOpen(false) : () => setIsSpendPopupOpen(false);
       const fingerprint = manualOperationFingerprint(operation, currentUserId || normalizedRole, amount, type);
+      const categoryId = operation === "spend" ? expense_category_id : undefined;
       try {
         const idempotencyKey = takePaymentKey(fingerprint);
         let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
         try {
-          response = await mutation.mutateAsync({ data: { amount, type, comment }, idempotencyKey });
+          response = await mutation.mutateAsync({
+            data: { amount, type, comment, ...(categoryId ? { expense_category_id: categoryId } : {}) },
+            idempotencyKey,
+          });
         } catch (error) {
           // Kalit saqlanadi: aynan shu operatsiya qayta yuborilsa backend uni bir marta yozadi.
           notify.error(t("common:error"), {
             description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
           });
+          if (categoryId && isClientRejection(error)) void refreshExpenseCategories();
           if (isUncertainPaymentError(error)) {
             notify.warning(t("common:warning"), {
               description: t("v2MainCashbox.notify.outcomeUnknown"),
@@ -658,15 +674,16 @@ const MainCashbox = () => {
         manualPendingRef.current = false;
       }
     },
-    [cashboxFill, cashboxSpand, currentUserId, normalizedRole, refetchCashboxState, t],
+    [cashboxFill, cashboxSpand, currentUserId, normalizedRole, refetchCashboxState, refreshExpenseCategories, t],
   );
 
   const handleSpend = useCallback(
-    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("spend", payload),
+    (payload: CashboxFormPayload) => submitManualOperation("spend", payload),
     [submitManualOperation],
   );
   const handleRefill = useCallback(
-    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("fill", payload),
+    // To'ldirishda kategoriya yo'q (oyna maydonni chizmaydi, backend `fill` uni 400 bilan rad etadi).
+    ({ amount, type, comment }: CashboxFormPayload) => submitManualOperation("fill", { amount, type, comment }),
     [submitManualOperation],
   );
 
