@@ -4,7 +4,7 @@ import uz from "../../../../../locales/uz/orders.json";
 import ru from "../../../../../locales/ru/orders.json";
 import en from "../../../../../locales/en/orders.json";
 import type { AiConfirmFailureCode, AiParseFailureReason } from "../../../../../entities/ai-order";
-import { confirmFailureText, parseFailureView } from "./aiErrorText";
+import { confirmFailureText, parseFailureView, parseHttpErrorView } from "./aiErrorText";
 
 /**
  * AI XATO MATNLARI (6LSlbHoi): har sabab o'z matni va harakati bilan,
@@ -98,5 +98,58 @@ describe("aiErrorText", () => {
     expect(confirmFailureText({ index: 0, ok: false, code: "timeout_unknown", reason: "Natija noma’lum" }, ruT)).toMatch(
       /Результат неизвестен/,
     );
+  });
+});
+
+describe("qo'lda yaratish yo'q rol (market operatori, MO-3)", () => {
+  const view = (reason: AiParseFailureReason) => parseFailureView(reason, { canSelectMarket: false, canCreateManually: false });
+
+  it("«qo'lda kiriting» o'rniga kimga murojaat qilish aytiladi; har kalit uch tilda bor", () => {
+    expect(view("disabled").description).toBe("operatorCreate.aiDisabled");
+    expect(view("ai_off").description).toBe("operatorCreate.aiDisabled");
+    expect(view("insufficient").description).toBe("operatorCreate.aiInsufficient");
+    expect(view("cap_exceeded").description).toBe("operatorCreate.aiCap");
+    expect(view("no_market").description).toBe("aiReasonNoMarket");
+    for (const reason of PARSE_REASONS) {
+      const { description } = view(reason);
+      for (const locale of [uz, ru, en]) {
+        const value = description.split(".").reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], locale);
+        expect(typeof value, `${reason}: ${description}`).toBe("string");
+      }
+    }
+  });
+
+  it("AI rad etgan matn — «Matnni tahrirlash»; boshqa rollarda o'zgarishsiz", () => {
+    expect(view("refused")).toMatchObject({ action: "editText", description: "operatorCreate.aiRefused" });
+    expect(parseFailureView("refused", { canSelectMarket: false }).description).toBe("aiRefusedDescription");
+    expect(parseFailureView("disabled", { canSelectMarket: true }).description).toBe("aiDisabledDescription");
+  });
+
+  it("403 — operator matni, xom server izohisiz", () => {
+    const error = { isAxiosError: true, response: { status: 403, data: { message: "Forbidden resource" } } };
+    expect(parseHttpErrorView(error)).toMatchObject({ description: "aiHttpForbiddenDescription", detail: "Forbidden resource" });
+    const operator = parseHttpErrorView(error, { canCreateManually: false });
+    expect(operator).toMatchObject({ description: "operatorCreate.aiForbidden" });
+    expect(operator).not.toHaveProperty("detail");
+  });
+
+  it.each([400, 422, 404, 409])("%i — xom server izohi operatorga chiqmaydi (boshqa rollarda bor)", (status) => {
+    const error = { isAxiosError: true, response: { status, data: { message: "property text should not exist" } } };
+    expect(parseHttpErrorView(error)).toHaveProperty("detail", "property text should not exist");
+    const operator = parseHttpErrorView(error, { canCreateManually: false });
+    expect(operator).not.toBeNull();
+    expect(operator).not.toHaveProperty("detail");
+  });
+
+  it("5xx — «Qayta urinish», lekin «qo'lda kiriting» maslahatisiz (uch tilda)", () => {
+    const error = { isAxiosError: true, response: { status: 502, data: {} } };
+    expect(parseHttpErrorView(error)).toMatchObject({ action: "retry", description: "aiHttpServerDescription" });
+    const operator = parseHttpErrorView(error, { canCreateManually: false });
+    expect(operator).toMatchObject({ action: "retry", description: "operatorCreate.aiServer" });
+    for (const locale of [uz, ru, en]) {
+      const text = (locale as { operatorCreate: Record<string, string> }).operatorCreate.aiServer;
+      expect(text).toBeTruthy();
+      expect(text).not.toMatch(/qo'lda|вручную|manual/i);
+    }
   });
 });

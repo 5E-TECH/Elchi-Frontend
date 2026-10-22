@@ -217,7 +217,7 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     );
   });
 
-  it("«So'nggi investitsiyalar» va «Foyda tarixi»: jami, sanalar, holat badge'lari; «Barchasi» hali yo'q (IN-2)", async () => {
+  it("«So'nggi investitsiyalar» va «Foyda tarixi»: jami, sanalar, holat badge'lari; «Barchasi» → ro'yxat sahifalari (IN-2)", async () => {
     mockApi(happy);
     renderPage();
 
@@ -243,7 +243,11 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     // Foiz aniqligi KPI «Ulush» bilan bir xil — 2 xonagacha («12,25%», «12,3%» emas).
     expect(paid).toHaveTextContent("12,25%");
 
-    expect(screen.queryByRole("link", { name: /Barchasi/ })).not.toBeInTheDocument();
+    // IN-2: sarlavhadagi «Barchasi ›» — to'liq nom `aria-label` da (maket).
+    const allInvestments = within(investments).getByRole("link", { name: "Barcha investitsiyalar" });
+    expect(allInvestments).toHaveAttribute("href", "/investments");
+    expect(allInvestments).toHaveTextContent("Barchasi");
+    expect(within(profits).getByRole("link", { name: "Barcha foyda yozuvlari" })).toHaveAttribute("href", "/profits");
   });
 
   it("davr 6 oy — yangi so'rov; «Jadval» — oylar yangi tepada, joriy oy belgisi va «Jami · 12 oy»", async () => {
@@ -321,6 +325,8 @@ describe("InvestorDashboardPage — holatlar", () => {
     expect(await screen.findByText("Hali investitsiya yo'q")).toBeInTheDocument();
     expect(screen.getByText("Hali foyda yozuvi yo'q")).toBeInTheDocument();
     expect(screen.getByText("Jami: 0 so'm")).toBeInTheDocument();
+    // Maket `investor-dashboard-empty`: bo'sh ro'yxatlarda «Barchasi» yo'q.
+    expect(screen.queryByRole("link", { name: /^Barcha / })).not.toBeInTheDocument();
   });
 
   it("xato 500 (investor-dashboard-error): KPI o'rnida xato kartasi, ro'yxatlar ishlaydi; «Qayta urinish» qayta so'raydi", async () => {

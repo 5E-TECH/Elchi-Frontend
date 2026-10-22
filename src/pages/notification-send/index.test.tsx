@@ -13,12 +13,14 @@ describe("NotificationSendPage", () => {
     renderWithProviders(<NotificationSendPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Xabar yuborish" })).toBeInTheDocument();
-    expect(screen.getByText("Tizim ichidagi foydalanuvchilarga bildirishnoma")).toBeInTheDocument();
+    expect(screen.getByText("Tizim ichidagi foydalanuvchilarga va mijozlarga bildirishnoma")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
       "href",
       "/inbox",
     );
     expect(screen.getByRole("form", { name: "Xabar yuborish formasi" })).toBeInTheDocument();
+    // NS-2: sarlavhada «Yuborilganlar» (ikkinchi darajali havola).
+    expect(screen.getByRole("link", { name: "Yuborilganlar" })).toHaveAttribute("href", "/notifications/sent");
     getSpy.mockRestore();
   });
 

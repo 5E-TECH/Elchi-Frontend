@@ -38,7 +38,7 @@
     "logistics": "Logistics",
     "account": "Account",
     "system": "System",
-    "marketing": "Marketing"
+    "marketing": "Advertising"
   },
   "priority": {
     "low": "Low",
@@ -57,7 +57,7 @@
   },
   "dispatch": {
     "pageTitle": "Send message",
-    "pageDescription": "Notification to users of the system",
+    "pageDescription": "Notification to users of the system and to customers",
     "openSend": "Send message",
     "backLabel": "Notifications",
     "formLabel": "Send message form",
@@ -68,8 +68,8 @@
     "sectionPreview": "Preview",
     "mode": {
       "single": "One person",
-      "roles": "Role",
       "list": "Selected list",
+      "audience": "Audience",
       "all": "Everyone"
     },
     "recipientPlaceholder": "Search by name or phone",
@@ -78,8 +78,6 @@
     "recipientsEmpty": "No one found",
     "recipientsSelected": "Selected",
     "removeRecipient": "{{name}} — remove from the list",
-    "rolesLabel": "Roles",
-    "customerDisabled": "Customers cannot be messaged from here — the system does not find them by role (0 recipients).",
     "allHint": "The message goes to every employee and market in the system.",
     "estimate": "<b>About {{value}}</b> recipients",
     "estimateLoading": "Counting recipients…",
@@ -128,7 +126,6 @@
     "errors": {
       "recipient": "Choose a recipient",
       "recipients": "Choose at least one recipient",
-      "roles": "Choose at least one role",
       "title": "Enter a title",
       "groupKey": "Enter a group key",
       "tooLong": "At most {{max}} characters"
@@ -281,8 +278,10 @@
       "audienceAll": "Everyone",
       "audienceRoles": "Role: {{roles}}",
       "audienceSingle": "One person",
-      "audienceList": "Selected list"
-    }
+      "audienceList": "Selected list",
+      "resend": "Send again"
+    },
+    "historyLink": "Sent"
   },
   "push": {
     "turnOn": "Turn on notifications",
@@ -325,5 +324,255 @@
   },
   "realtime": {
     "manyNew": "{{count}} new notifications"
+  },
+  "sent": {
+    "pageTitle": "Sent",
+    "pageDescription": "Manually sent messages and who received them",
+    "listTitle": "Sent messages",
+    "listDescription": "Newest first · result per channel",
+    "total": "{{value}}",
+    "loading": "Loading sent messages",
+    "summary_one": "{{from}}–{{to}} of {{total}} message",
+    "summary_other": "{{from}}–{{to}} of {{total}} messages",
+    "filters": {
+      "label": "Sent message filters",
+      "status": "Result",
+      "author": "Sent by",
+      "all": "All",
+      "authorsLoading": "Loading…",
+      "clear": "Clear filter"
+    },
+    "columns": {
+      "date": "Date",
+      "title": "Title",
+      "author": "Sent by",
+      "audience": "To",
+      "channels": "Channels",
+      "status": "Result",
+      "open": "Details"
+    },
+    "openRow": "Open the result of “{{title}}” ({{time}})",
+    "untitled": "Untitled message",
+    "toLabel": "To:",
+    "recipients_one": "{{value}} recipient",
+    "recipients_other": "{{value}} recipients",
+    "recipientsNone": "No recipients",
+    "channelShort": {
+      "realtime": "Instant"
+    },
+    "note": {
+      "running": "Started: {{time}}",
+      "failed": "Reached no one — send it again",
+      "skipped": "Turned notifications off: {{value}}",
+      "noProvider": "{{channels}}: provider not connected",
+      "skippedChannels": "Skipped: {{list}}",
+      "failedChannels": "Failed: {{list}}"
+    },
+    "empty": {
+      "title": "No messages sent yet",
+      "text": "Once a message is sent, it shows up here with its result: who got it, who didn't and why."
+    },
+    "emptyFiltered": {
+      "statusTitle": "No messages with this result",
+      "title": "No messages match this filter",
+      "text": "Change or clear the filter."
+    },
+    "error": {
+      "title": "Couldn't load sent messages",
+      "text": "The server is not responding right now. Try again a bit later."
+    }
+  },
+  "campaign": {
+    "kindsLabel": "Type",
+    "kind": {
+      "customer": "Customer",
+      "market": "Market",
+      "staff": "Staff"
+    },
+    "staffRolesLabel": "Staff roles",
+    "staffSelected": "{{value}} selected",
+    "staffExcluded": "Superadmin and investor are not part of the audience",
+    "role": {
+      "admin": "Admin",
+      "manager": "Manager",
+      "registrator": "Registrar",
+      "courier": "Courier",
+      "logist": "Logistician",
+      "market": "Market",
+      "customer": "Customer",
+      "unknown": "Other"
+    },
+    "filtersHidden": "Customer filters are hidden — they appear only when «Customer» is selected. Region and order conditions do not apply to staff.",
+    "segments": {
+      "label": "Saved segment",
+      "placeholder": "Choose a segment",
+      "empty": "No saved segments",
+      "meta": "{{value}} · counted {{time}}",
+      "metaNoTime": "{{value}}",
+      "loadError": "Could not load segments",
+      "delete": "Delete segment «{{name}}»",
+      "deleteTitle": "Delete the segment?",
+      "deleteText": "«{{name}}» will be deleted and cannot be restored. Sent campaigns are not affected.",
+      "deleteConfirm": "Delete segment",
+      "deleteClose": "Close",
+      "deleted": "Segment deleted",
+      "deleteFailed": "Could not delete the segment — try again a bit later",
+      "deleteGone": "The segment is already deleted"
+    },
+    "summary": {
+      "title": "Audience: {{value}}",
+      "customer": "Customers {{value}}",
+      "market": "Markets {{value}}",
+      "staff": "Staff {{value}}",
+      "staffOnly": "Staff: {{list}}",
+      "roleCount": "{{role}} {{value}}",
+      "push": "Push: {{value}} users",
+      "loading": "Counting the audience",
+      "loadingHint": "The filter changed — one moment",
+      "emptyHint": "No recipients match the selected filters — widen the filters.",
+      "overCapTitle": "Audience: {{value}} — limit {{max}}",
+      "overCapText": "Such a campaign cannot be sent. Narrow the filters or split the audience by region.",
+      "bigHint": "Sent through the queue in parts of {{batch}}",
+      "bigTitle": "Sent as a campaign",
+      "bigText": "«Audience» mode is always a campaign: through the queue in parts of {{batch}}, advertising — with the night ban. No Telegram.",
+      "errorTitle": "Could not count the audience",
+      "errorText": "The server did not respond. The filters are kept.",
+      "errorBadRequest": "Could not count with these filters — the customer filter may be too wide, narrow it. The filters are kept.",
+      "offlineTitle": "No internet connection",
+      "offlineText": "The audience will be counted when the connection is back. The filters are kept.",
+      "retry": "Retry",
+      "needsFilterTitle": "Choose a filter for customers",
+      "needsFilterText": "At least one filter is needed: region, market, last order or number of orders. The count appears after a filter is chosen.",
+      "allCustomers": "No filter — send to all customers",
+      "sample": "View sample",
+      "save": "Save segment"
+    },
+    "errors": {
+      "kinds": "Choose at least one type",
+      "staffRoles": "Choose at least one staff role",
+      "range": "«to» must not be less than «from»",
+      "customerFilter": "Choose a customer filter or tick «No filter»",
+      "counting": "The audience is still being counted — wait a moment"
+    },
+    "sampleDialog": {
+      "title": "Audience sample",
+      "description": "{{shown}} of {{total}} recipients",
+      "privacy": "For privacy the name is not shown and only the last 4 digits of the phone are visible.",
+      "table": "Audience sample",
+      "no": "No.",
+      "id": "ID",
+      "kind": "Type",
+      "phone": "Phone",
+      "close": "Close",
+      "empty": "The sample is empty",
+      "emptyHint": "Nobody is in the audience right now",
+      "error": "Could not load the sample"
+    },
+    "saveDialog": {
+      "title": "Save segment",
+      "description": "The conditions are saved — the count is recalculated in the next campaign",
+      "name": "Name",
+      "note": "Note",
+      "notePlaceholder": "For example: for the autumn promo",
+      "kinds": "Type",
+      "staffRoles": "Staff roles",
+      "region": "Customer area",
+      "market": "Market",
+      "lastOrder": "Last order",
+      "orders": "Number of orders",
+      "now": "Now",
+      "all": "All",
+      "allCustomers": "All customers (no filter)",
+      "ordersRange": "{{from}}–{{to}}",
+      "ordersFrom": "from {{from}}",
+      "ordersTo": "up to {{to}}",
+      "nowValue": "{{value}}",
+      "cancel": "Cancel",
+      "submit": "Save",
+      "nameRequired": "Enter a name",
+      "nameTaken": "A segment with this name already exists — enter another name",
+      "saved": "Segment saved",
+      "failed": "Could not save the segment — try again a bit later",
+      "badRequest": "Could not save the segment — check the audience conditions"
+    },
+    "channel": {
+      "realtime": "To open screens",
+      "realtimeHint": "To those in the app right now",
+      "pushHint": "Enabled for {{value}} users",
+      "pushHintUnknown": "To users with notifications on",
+      "telegramOff": "Not in campaigns",
+      "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. Telegram is for market groups and is not in campaigns."
+    },
+    "previewNote": "Now · campaign · {{value}} recipients",
+    "disabled": {
+      "overCap": "The audience is over the limit — cannot send",
+      "empty": "The audience is empty — cannot send",
+      "counting": "Counting the audience — one moment",
+      "error": "Could not count the audience — try again",
+      "offline": "No internet connection — the audience is not counted"
+    },
+    "who": {
+      "customerFiltered": "Customers ({{filters}})",
+      "customerAll": "Customers (all)",
+      "customerSegment": "Customers (filtered)",
+      "market": "Markets",
+      "staff": "Staff: {{roles}}"
+    },
+    "confirm": {
+      "count": "{{value}}",
+      "time": "Send time",
+      "timeNow": "Now",
+      "category": "Category",
+      "quietTitle": "Advertising will be sent at {{time}}",
+      "quietText": "Advertising is not sent between {{start}} and {{end}} (Tashkent time) — the queue starts by itself when the ban ends.",
+      "cancelNote": "The campaign can be cancelled until sending is finished."
+    },
+    "createError": {
+      "title": "Campaign not created",
+      "overCap": "Campaign audience {{total}} — limit {{max}}. Nothing was sent.",
+      "empty": "The audience is empty — nothing was sent.",
+      "badRequest": "The server rejected the campaign — check the audience and channels. Nothing was sent.",
+      "conflict": "This request belongs to a campaign with different content — start over with «New message».",
+      "forbidden": "You are not allowed to send campaigns.",
+      "tooMany": "Too many requests — try again a bit later.",
+      "server": "Server error — try again a bit later.",
+      "generic": "Could not create the campaign — try again a bit later."
+    },
+    "progress": {
+      "title": "Campaign",
+      "counts": "<b>{{sent}}</b> / {{total}} sent",
+      "live": "Updates every 2–3 seconds",
+      "bar": "Sent",
+      "scheduled": "Will be sent at {{time}}",
+      "quietShifted": "Because of the night ban the advertising will be sent at {{time}}",
+      "failedCount": "{{value}} failed",
+      "skippedCount": "{{value}} skipped",
+      "duplicate": "This campaign was already created — showing its status",
+      "loadError": "Could not refresh the status — it will retry by itself",
+      "cancel": "Cancel",
+      "cancelTitle": "Cancel the campaign?",
+      "cancelText": "The remaining parts will not be sent. Messages already sent cannot be recalled.",
+      "cancelRemaining": "The remaining {{value}} recipients will not get it",
+      "cancelConfirm": "Cancel campaign",
+      "cancelClose": "Close",
+      "cancelled": "Campaign cancelled",
+      "cancelConflict": "The campaign has already finished — could not cancel",
+      "cancelFailed": "Could not cancel the campaign — try again a bit later",
+      "unknownTitle": "No response",
+      "unknownText": "The campaign may have been created. «Retry» sends the same request — a second campaign will not be created.",
+      "retry": "Retry",
+      "retrying": "Checking…",
+      "retryFailed": "The retry failed too",
+      "locked": "The campaign is queued — the form is locked. Press «New message» to write a new one.",
+      "lockedUnknown": "The result is unknown — the form is locked so the campaign is not created twice.",
+      "statusLive": "Campaign status: {{status}}"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "sending": "Sending",
+      "sent": "Sent",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
   }
 }

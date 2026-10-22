@@ -15,7 +15,19 @@ export const queryKeys = {
   /** Qo'lda yuborilgan xabarlar tarixi (`/notifications/sent`). */
   notificationsSent: {
     all: ["notifications-sent"] as const,
+    lists: ["notifications-sent", "list"] as const,
+    list: (params: object) => ["notifications-sent", "list", params] as const,
     detail: (dispatchId: string, params: object) => ["notifications-sent", "detail", dispatchId, params] as const,
+  },
+  /** Auditoriya va bildirishnoma kampaniyalari (KM-2; `/notifications/send` «Auditoriya» rejimi). */
+  notificationCampaigns: {
+    audience: (target: string) => ["notification-campaigns", "audience", target] as const,
+    sample: (target: string) => ["notification-campaigns", "sample", target] as const,
+    segments: ["notification-campaigns", "segments"] as const,
+    schedulePolicy: (params: object) => ["notification-campaigns", "schedule-policy", params] as const,
+    lists: ["notification-campaigns", "list"] as const,
+    list: (params: object) => ["notification-campaigns", "list", params] as const,
+    detail: (id: string) => ["notification-campaigns", "detail", id] as const,
   },
   branches: {
     all: ["branches"] as const,

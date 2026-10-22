@@ -91,6 +91,25 @@ describe("mailSearch — takroriy telefonlar (ega S1, S2)", () => {
     expect(siblings.get("10212")).toBeUndefined();
   });
 
+  it("bir xil raqamli 3 ta buyurtma (har xil yozilgan) — bitta guruh, ichida 3 ta id; har biriga qolgan ikkitasi (mSix70Ca 83e677)", () => {
+    const triple = [
+      order("501", "Dilnoza Aliyeva", "+998901112233", "Qarshi sh.", "Baraka Shop"),
+      order("502", "Sardor Karimov", "+998935556677", "Kitob tumani", "Nur Elektronika"),
+      order("503", "Dilnoza Aliyeva", "90 111 22 33", "Qarshi sh.", "Chilonzor Market"),
+      order("504", "D. Aliyeva", "998901112233", "Koson tumani", "Ipak Yo'li Savdo"),
+    ];
+    const groups = findDuplicatePhones(triple);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toEqual({ key: "901112233", phone: "+998 90 111 22 33", orderIds: ["501", "503", "504"] });
+    const siblings = duplicateSiblings(groups);
+    expect(siblings.get("501")).toEqual(["503", "504"]);
+    expect(siblings.get("503")).toEqual(["501", "504"]);
+    expect(siblings.get("504")).toEqual(["501", "503"]);
+    expect(siblings.has("502")).toBe(false);
+    expect(isPhoneQuery("+998 90 111 22 33", groups[0])).toBe(true);
+    expect(filterMailOrders(triple, groups[0].phone).visible.map((item) => item.id)).toEqual(["501", "503", "504"]);
+  });
+
   it("telefonsiz buyurtma takroriy hisoblanmaydi", () => {
     const blank = [order("1", "A", "", "X", "Y"), order("2", "B", "", "X", "Y")];
     expect(findDuplicatePhones(blank)).toEqual([]);

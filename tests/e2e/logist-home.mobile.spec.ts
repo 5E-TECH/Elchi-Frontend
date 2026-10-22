@@ -3,7 +3,7 @@ import { expectNoFinanceRequests, expectNoHorizontalOverflow, openLogistHome } f
 import { tapTargets, tooSmall } from "./support/tapTargets";
 
 /**
- * LG-1 — logist bosh sahifasi telefonda (390): pastki menyu «Bosh sahifa» + «Menyu» (skanersiz), «Viloyatlarim»
+ * LG-1 — logist bosh sahifasi telefonda (390): pastki menyu «Bosh sahifa» · «Hududlar» (LG-3) · «Menyu» (skanersiz), «Viloyatlarim»
  * kartalarda, nishonlar ≥ 44 px, oqish yo'q; «Menyu» varaqasi — profil, Bildirishnomalar (+ son), Sozlamalar,
  * Chiqish, moliya bandlarisiz (maket `logist-dashboard-mobile-menu`).
  */
@@ -13,7 +13,7 @@ test("⭐ 390: kartalar, pastki menyu, nishonlar ≥ 44 px, oqish yo'q", async (
   const mock = await openLogistHome(page);
 
   const bottom = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(bottom.getByRole("link")).toHaveText(["Bosh sahifa"]);
+  await expect(bottom.getByRole("link")).toHaveText(["Bosh sahifa", "Hududlar"]);
   await expect(bottom.getByRole("button", { name: "Menyu" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Skaner" })).toHaveCount(0);
   // Ega LG-S2: logistda global qidiruv bor (yuqori panel tugmasi).

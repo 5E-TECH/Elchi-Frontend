@@ -20,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21) |
+| 4 sahifalar migratsiyasi | **tayyor**: 81 / 81 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, `/my-earnings` — MO-2, `/investments` va `/profits` — IN-2, v2 da yozilgan) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -50,7 +50,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `PrintModeSelect`), `UI_IMPORT_RATCHET` 0; bitta qator istisnolari 2 (kamera tugmasi, `CampaignPage` prefiksi).
   Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`);
   MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
-- design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
+- design-guard `named-colour` + `V2_SCOPES` (papkalar ro'yxati — `scripts/design-guard.mjs`, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
   (`.github/workflows/visual.yml`); baseline'lar `shodiyor` da (bot commit `a107f5e`, `616bc03` da yaratilgan;
@@ -186,8 +186,46 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     SA-1 (SATO: qobiq, KPI, holat tablari, inline kod muharriri), KM-1 (SMS kampaniya — mijozlar segmenti, jonli
     auditoriya, kunlik limit), KI-2 («Ilovani o'rnatish» — kuryer bosh sahifasi, `/inbox`, Sozlamalar «Ilova»).
     Endi `/` da 403 faqat market operatorida (MO-2 gacha). Integratsiyada: 5778 unit, 328 e2e. 2-to'lqin yopildi.
-  - **Navbatda — 3-to'lqin** (roadmap 4.1): NG-B, TG-B, FY-2, NS-2, CS-B, CB-2, IS-2, SA-2, LG-3, OS-2, MO-2, IN-2;
-    keyin 4-to'lqin (KM-2, KM-3, MO-3, IS-3, CS-C, TOZ-1).
+  - **3-to'lqin, 1-yarmi tayyor (2026-10-21):** NG-B (qo'shish oynasi — «ulangan, lekin nofaol» faollashtirish, havola
+    sanog'i), TG-B («Telegram guruhi» kartasi, market profili, «Telegram boti» ustuni), FY-2 (superadmin rolni
+    o'zgartiradi), NS-2 (`/notifications/sent` — «Yuborilganlar», 78-route), CB-2 (menejer «To'lovlar» va kassa
+    tafsilotida smena qulfi), IS-2 (ortiqcha to'lov, «To'lov yozildi» natija oynasi), TOZ-0 (kartalarda qolgan front
+    bandlari: kuryer tab sonlari va pochta qidiruvi testlari, `100vh` qo'riqchisi, `SalaryPaymentPopup` tokenlari,
+    ops sahifalari uchun haqiqiy konvert mocklari). Integratsiyada LG-2 poygasi tuzatildi («Logist yaratish» dan keyin
+    yangi logist tanlanmay qolardi). 5966 unit, 374 e2e.
+  - **3-to'lqin, 2-yarmi tayyor (2026-10-21):** CS-B (yetkazish turida market standart narxi, mahsulot rasmi —
+    umumiy `entities/product` `ProductThumb`, narx matni, «Umumiy summa» taklifi, vaqtinchalik «Yetkazish narxi» — ega
+    tasdig'i kutilmoqda, `disabled` da «AI bilan» yashirin), SA-2 (SATO kodlarini yozish, «Tuman qo'shish», takroriy
+    nomlar va birlashtirish — `DistrictMergeDialog` qayta ishlatildi), LG-3 (logist `/regions` — o'z viloyati, pulsiz),
+    OS-2 («AI holati» kartasi, USD formatlovchisi), MO-2 (market operatori qobig'i, `/my-earnings`), IN-2
+    (`/investments`, `/profits`, investor pastki menyusi 4 katak); TOZ-2 (foydalanuvchi ro'yxati keshi, kassa/balans
+    invalidatsiyasi, o'lik settlement mutatsiyalari olindi, forma a11y, tungi kontrast e2e). Route 81 / 81.
+    Integratsiyada: 6243 unit, 418 e2e.
+  - **4-to'lqin tayyor (2026-10-21, KM-3 dan tashqari):** KM-2 (xabar yuborishda «Auditoriya» — kampaniya
+    konstruktori, jonli son, saqlangan segmentlar, progress va bekor qilish; 400 da auditoriya qayta sanaladi), MO-3
+    (market operatori buyurtmalari ro'yxati/tafsiloti va «AI bilan» yaratish), IS-3 («Olingan to'lovlar» va to'lovni
+    bekor qilish), CS-C (marketda «Uyga / Markazga standart narx» yorliqlari), TOZ-1 (bildirishnoma qo'shish oynasi
+    tozaligi). Integratsiyada: 6441 unit, 444 e2e.
+  - **ERTAGA DAVOM (2026-10-22):** (1) KM-3 — kampaniya rejalashtirish, «Kampaniyalar tarixi», bekor qilish oynasi,
+    hisobot (KM-2 API funksiyalari tayyor; Trello `WIsb9Ytq`, `H7kpCman`). Shu bilan roadmap'ning backendsiz qismi
+    tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
+    javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da
+    Actions → Visual → Run workflow (update ✓). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
+    Ish usuli: `~/.elchi-work` (worktree'lar, `merge-branches.sh`, `merge-routemap.py`, `full-check.sh`, `trello.py`).
+  - **dev bilan sinxron (2026-10-22):** `origin/dev` (Urozov04: EP-1 «Xarajat kategoriyalari» kassada, EP-3 profil
+    «Sessiyalar») `shodiyor` ga merge qilindi — `shodiyor → dev` endi to'qnashuvsiz. To'qnashuvlar: `ProfilePage`
+    (TG-B tuzilmasi + «Sessiyalar» barcha rollarga), `access.test.ts`, `app-shot.mjs`, route-map `/profile` izohi,
+    SCREENS.md. Birlashmadan keyin: `accountSessions.all` — `queryKeyInvalidation` READ_ONLY ga; dev'dagi
+    `useExpenseCategories.test.tsx` poygasi (hook natijasi setTimeout 0 dan keyin) — `waitFor` bilan.
+  - **IS-3 (2026-10-21, `feat/is-3-settlement-received`):** integratsiya hisob-kitobida «Olingan to'lovlar» (sana
+    oralig'i, «Faol · Bekor qilingan · Barchasi», «Holat · kassa» `cashbox_posted` bo'yicha) va «To'lovni bekor qilish»
+    oynasi (oqibatlar, «Sabab *», eski yozuvda majburiy kassa tanlovi, «Hozir bekor qilib bo'lmaydi» oldindan + 409
+    zaxira, 502 — kassa xatosi; xom backend matni ko'rsatilmaydi); «To'lov №N» — bo'limga o'tish. Muallif ismi va eski
+    yozuvdagi kassa tanlovi — BD2-10 (IS-4) kutadi. O'lik `sidebar.settlement` kaliti olindi (N9jY9xVV).
+    Review: bo'lim ulanish bo'yicha `key` bilan (filtr/sahifa A dan B ga o'tmaydi), sahifa yangi javobdan keyingina oxirgi
+    haqiqiy sahifaga suriladi (LG-2), oflayn — «Internet aloqasi yo'q» (`isPaused`); «To'lov №N» faqat `<main>` ni suradi
+    (`scrollIntoView` qobiq ildizini 64 px surardi); summalar `nowrap`, 409 dan keyin fokus «Orqaga» da, ikonkalar
+    CircleX / RotateCcw, en matnlarida “”.
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
@@ -206,6 +244,39 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     vsmpTweI, ILq3WNL1), `partialViews` izohlarida. Egaga: proksi read timeout'i ≥ 125 s bo'lsin (nginx 60 s,
     Cloudflare 100 s), aks holda ko'pincha «Natija noma'lum»; timeout'da global «Tarmoq xatosi» toast'i ham chiqadi;
     admin `regions` «Visual» sahnasi kutilgan farq — «Run workflow (update)».
+  - **NS-2 (2026-10-21, `feat/ns-2-sent-history`):** yangi route `/notifications/sent` — «Yuborilganlar» (superadmin,
+    admin; `canSendNotifications`, menyusiz — «Xabar yuborish» sarlavhasidagi va natija kartasi xatosidagi havola):
+    `GET /notifications/sent`, «Natija» / «Kim yubordi» filtrlari, sahifa va ochiq oyna (`?id=`) URL'da, telefonda
+    «Filtrlar» varaqasi; «Kimga» hozircha «—» + qabul qiluvchilar (auditoriya ro'yxat javobida yo'q — S2, backend);
+    tafsilot oynasida «Xato bilan tugadi» → «Qayta yuborish». Route soni 78 / 78.
+  - **LG-3 (2026-10-21, `feat/lg-3-logist-regions`):** `/regions` logistga ochildi (`canViewRegionStats` endi
+    `access.ts` da; menyuda va pastki menyuda «Hududlar»): `LogistRegionView` — o'z viloyatlari tanlovi (`?region=`,
+    desktopda seg, telefonda / 5 tadan ko'pida `Select`), `GET region/stats/:id` — spidometr, umumiy ko'rsatkichlar
+    («Faol kuryerlar» — `status = 'active'`), tumanlar taxtasi va «Tanlangan tuman» (Tushum o'rnida «Kuryerlar»),
+    «Tumanlar kesimida» (Tushumsiz), «Kuryerlar» top 5; pul yo'q (LG-S1), `GET /district` chaqirilmaydi. Begona /
+    o'tkazilgan viloyat (yangi ro'yxat bo'yicha yoki 403) — «Bu viloyat endi sizga biriktirilmagan». Bosh sahifada
+    «Tafsilot» ochildi — bosh sahifa davri bilan (`period=today|month|all`, hafta/yil/oraliq — `period=custom` aniq
+    kunlar bilan). Eskirgan keshni qayta tekshirish har davr kaliti uchun alohida; URL'da viloyat bo'lmasa ko'rsatilgani
+    davr almashganda ham saqlanadi; oflayn (keshda ro'yxat bo'lsa ham) — «Internet aloqasi yo'q». Logist qatorlarida
+    tushum maydoni umuman yo'q (`toDistrictRows(…, { withRevenue: false })`). «Tuman buyurtmalari» — LG-4,
+    «Barcha kuryerlar» — LG-5. Yangi route yo'q.
+  - **MO-2 (2026-10-21, `feat/mo-2-operator-shell`):** market operatori qobig'i — yon menyu Bosh sahifa · Mahsulotlar ·
+    Daromadim (pastki menyu shu 3 katak; Buyurtmalar va «Buyurtma yaratish» — MO-3); `/` — `MarketDashboardPage`
+    operator rejimida (xarajat tasdiqlarisiz — backend 403, buyurtma havolalari MO-3 gacha yashirin); yangi route
+    `/my-earnings` — «Stavkam» (`auth/my-profile` komissiyasi) va «Komissiya belgilanmagan» ogohlantirishi; «Hisob»,
+    «To'lovlar», «Daromadlar» — backend `finance/operators/me/*` (MO-6). Route soni 81 / 81 (IN-2 bilan).
+  - **IN-2 (2026-10-21, `feat/in-2-investor-lists`):** yangi route'lar `/investments` («Investitsiyalar» — `DateRange`
+    «Barcha vaqt», «Jamidagi hissasi», oraliq jami — bitta sahifada yig'indi, aks holda faqat son, N6 → IN-3) va
+    `/profits` («Foyda tarixi» — «To'lov holati» segmenti, umumiy `ProfitHistoryTable`); filtr va sahifa URL'da,
+    `canViewInvestorCabinet`; investor menyusi va pastki menyusi to'liq (4 katak), bosh sahifada «Barchasi».
+    Route soni 81 / 81 (MO-2 bilan).
+  - **MO-3 (2026-10-21, `feat/mo-3-operator-orders`):** market operatoriga `/orders` va `/orders/edit/:orderId`
+    (`canViewOrders`; o'z marketi — backend cheklaydi): market ro'yxati (`isMarketSideRole` — market/kuryer filtrlarisiz,
+    Excel izohi; «Viloyat» filtri yo'q — `GET /region` 403, N11), tafsilot — market ko'rinishi, faqat o'qish, «Kuzatuv»
+    va «Qaytarish yo'li»siz (`orders/:id/tracking` 403). `canCreateOrders` — `/new-orders` → `/new-orders/create`,
+    qobiqning boshqa bolalari 403 (`NewOrdersRoleGate`, `resolveMarketOperatorNewOrdersAccess`); yaratish — faqat «AI
+    bilan» (tanlovsiz, viloyat maydonisiz, «Qo'lda …» tugmalarisiz; qo'lda — MO-7). Menyu va pastki menyu to'liq
+    (5 band), menyu qidiruvi ochildi, bosh sahifada «Buyurtma yaratish» va «Tezkor harakatlar». Yangi route yo'q.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

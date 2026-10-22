@@ -3,7 +3,6 @@ import { memo, useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useInvestors } from "../../entities/investors";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { formatPhone } from "../../shared/lib/formatPhone";
 import { isCompleteUzbekistanPhone } from "../../shared/lib/phone";
 import {
@@ -20,6 +19,7 @@ import {
   type DataTableColumn,
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { useOpsErrorText } from "../ops/lib/opsErrorText";
 
 /**
  * OPS → «Investorlar» (maket `superadmin-ops-investors`): ro'yxat (`GET investors?page&limit`, 10 tadan) va
@@ -42,6 +42,8 @@ const toRow = (item: Record<string, unknown>, index: number): InvestorRow => {
 const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t } = useTranslation("ops");
   const { useGetInvestors, createInvestor } = useInvestors();
+  // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
+  const errorText = useOpsErrorText();
 
   const [page, setPage] = useState(1);
   const investorsQuery = useGetInvestors({ page, limit: PAGE_SIZE }, { silentError: true });
@@ -116,7 +118,13 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             isEmpty={() => rows.length === 0}
             empty={<EmptyState title={t("investors.list.empty")} description={t("investors.list.emptyHint")} />}
             error={(error, retry) => (
-              <ErrorState error={error} title={t("investors.list.loadError")} retryLabel={t("common.retry")} onRetry={retry} />
+              <ErrorState
+                error={error}
+                title={t("investors.list.loadError")}
+                description={errorText(error)}
+                retryLabel={t("common.retry")}
+                onRetry={retry}
+              />
             )}
           >
             {() => (
@@ -174,7 +182,7 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             ) : null}
             {createInvestor.isError ? (
               <OpsAlert tone="danger" title={t("investors.create.error")}>
-                {getBackendErrorMessage(createInvestor.error)}
+                {errorText(createInvestor.error, { action: true })}
               </OpsAlert>
             ) : null}
           </form>

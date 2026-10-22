@@ -32,14 +32,16 @@ describe("maket menyusi — rejadagi (kodda hali yo'q) bandlar", () => {
     ...CODE_DESIGN_ROLES.filter((role) => SIDEBAR_CONFIG[role as SidebarUserRole].length === 0),
   ];
 
-  it("menyusi bo'sh yangi rollar (ROL-0) qobiqda bor", () => {
-    expect(EMPTY_MENU_ROLES).toEqual(expect.arrayContaining(["market_operator"]));
-  });
-
-  it("IN-1 / LG-1: investor va logist menyusida «Bosh sahifa» bor (qolgani plannedMenu da) — bo'sh rollar ro'yxatida emas", () => {
-    expect(CODE_DESIGN_ROLES).toEqual(expect.arrayContaining(["investor", "logist"]));
+  it("IN-1 / LG-1 / MO-2: investor, logist va market operatori menyusida bandlar bor (qolgani plannedMenu da) — bo'sh rollar ro'yxatida emas", () => {
+    expect(CODE_DESIGN_ROLES).toEqual(expect.arrayContaining(["investor", "logist", "market_operator"]));
     expect(EMPTY_MENU_ROLES).not.toContain("investor");
     expect(EMPTY_MENU_ROLES).not.toContain("logist");
+    expect(EMPTY_MENU_ROLES).not.toContain("market_operator");
+  });
+
+  it("MO-3: market operatorining menyusi va pastki menyusi kodda to'liq — rejada hech narsa qolmadi", () => {
+    expect(plannedMenuKeys("market_operator")).toEqual([]);
+    expect(plannedBottomNav("market_operator")).toEqual([]);
   });
 
   it.each(EMPTY_MENU_ROLES)("%s: kodda yo'q yoki bo'sh menyuli rolning butun menyusi plannedMenu da", (role) => {

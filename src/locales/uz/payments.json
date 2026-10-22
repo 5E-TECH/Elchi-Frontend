@@ -1009,4 +1009,19 @@
   ,"paymentAckSelfConfirmedHint": "Botdagi kvitansiyani siz tasdiqlagansiz"
   ,"paymentAckSelfDisputed": "Siz: noto'g'ri"
   ,"paymentAckSelfDisputedHint": "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz"
+  ,"cashDetail": {
+    "shift": {
+      "overviewSubtitle": "Kassa va to'lovlarni boshqarish · smena yopiq",
+      "overviewBanner": "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "formLocked": "Smena ochilgach ishlaydi",
+      "visibleHint": "Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "banner": {
+        "courierBranch": "Filial kassasida smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
+        "hqTransfer": "Filial kassasida smena ochilgandan keyin HQ'ga pul o'tkazish ishlaydi.",
+        "courierMain": "Asosiy kassada smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
+        "market": "Asosiy kassada smena ochilgandan keyin marketga to'lov ishlaydi.",
+        "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."
+      }
+    }
+  }
 }

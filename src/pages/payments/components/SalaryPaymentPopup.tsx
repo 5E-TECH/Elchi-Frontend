@@ -167,21 +167,21 @@ const SalaryPaymentPopup = ({
   return (
     <Popup isShow={isOpen} onClose={onClose} ariaLabel={t("paySalary")}>
       <section
-        className="w-[min(94vw,580px)] overflow-hidden rounded-2xl border border-main/25 bg-primary text-maindark shadow-2xl dark:border-white/10 dark:bg-primarydark dark:text-primary"
+        className="w-[min(94vw,580px)] overflow-hidden rounded-2xl border border-action/25 bg-raised text-text shadow-2xl dark:border-white/10"
       >
-        <header className="flex items-center gap-3 bg-main px-5 py-4 text-white">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+        <header className="flex items-center gap-3 bg-action px-5 py-4 text-on-solid">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-on-solid/15">
             <WalletCards size={21} />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold">{employee.name || t("userFallback")}</h2>
-            <p className="text-sm text-white/75">{t("paySalary")}</p>
+            <p className="text-sm text-on-solid/75">{t("paySalary")}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={t("cancelShort")}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 transition hover:bg-white/25"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-on-solid/15 transition hover:bg-on-solid/25"
           >
             <X size={21} />
           </button>
@@ -193,7 +193,7 @@ const SalaryPaymentPopup = ({
               <p className="text-xs font-medium text-rose-500">{t("salaryUnpaidBalance")}</p>
               <p className="mt-1 text-lg font-bold text-rose-500">{formatAmount(unpaidAmount)} {t("currency")}</p>
             </div>
-            <div className="rounded-xl border border-main/20 bg-main/8 p-3.5">
+            <div className="rounded-xl border border-action/20 bg-action/8 p-3.5">
               <p className="text-xs font-medium text-[color:var(--color-text-muted)] dark:text-white/60">{t("monthlySalary")}</p>
               <p className="mt-1 text-lg font-bold">{formatAmount(monthlySalary)} {t("currency")}</p>
             </div>
@@ -206,7 +206,7 @@ const SalaryPaymentPopup = ({
               onChange={(event) => handleAmountChange(event.target.value)}
               inputMode="numeric"
               placeholder="0"
-              className="h-12 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-base font-semibold outline-none transition placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
+              className="h-12 w-full rounded-xl border border-action/20 bg-action/8 px-4 text-base font-semibold outline-none transition placeholder:text-text-muted focus:border-action focus:ring-2 focus:ring-action/20 dark:border-white/10 dark:bg-white/8"
             />
           </label>
 
@@ -219,14 +219,14 @@ const SalaryPaymentPopup = ({
                   setPaymentMethod("cash");
                   setSelectedCardId("");
                 }}
-                className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${paymentMethod === "cash" ? "border-main bg-main text-white" : "border-main/20 bg-main/5 hover:border-main/45 dark:border-white/10 dark:bg-white/5"}`}
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${paymentMethod === "cash" ? "border-action bg-action text-on-solid" : "border-action/20 bg-action/5 hover:border-action/45 dark:border-white/10 dark:bg-white/5"}`}
               >
                 <Banknote size={17} /> {t("cash")}
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod("card")}
-                className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${paymentMethod === "card" ? "border-main bg-main text-white" : "border-main/20 bg-main/5 hover:border-main/45 dark:border-white/10 dark:bg-white/5"}`}
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${paymentMethod === "card" ? "border-action bg-action text-on-solid" : "border-action/20 bg-action/5 hover:border-action/45 dark:border-white/10 dark:bg-white/5"}`}
               >
                 <CreditCard size={17} /> {t("card")}
               </button>
@@ -259,7 +259,7 @@ const SalaryPaymentPopup = ({
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder={t("commentPlaceholder")}
-              className="h-11 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-base md:text-sm outline-none transition placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
+              className="h-11 w-full rounded-xl border border-action/20 bg-action/8 px-4 text-base md:text-sm outline-none transition placeholder:text-text-muted focus:border-action focus:ring-2 focus:ring-action/20 dark:border-white/10 dark:bg-white/8"
             />
           </label>
 
@@ -267,19 +267,19 @@ const SalaryPaymentPopup = ({
             type="button"
             disabled={!isValidAmount || !isCardPaymentReady || createSalary.isPending}
             onClick={() => void handleSubmit()}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-main px-4 font-semibold text-white transition hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-action px-4 font-semibold text-on-solid transition hover:bg-action/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <WalletCards size={18} />
             {createSalary.isPending ? t("loadingLabel") : t("paySalary")}
           </button>
 
-          <div className="overflow-hidden rounded-xl border border-main/12 dark:border-white/10">
-            <div className="flex items-center gap-2 border-b border-main/12 px-4 py-3 dark:border-white/10">
-              <History size={17} className="text-main" />
+          <div className="overflow-hidden rounded-xl border border-action/12 dark:border-white/10">
+            <div className="flex items-center gap-2 border-b border-action/12 px-4 py-3 dark:border-white/10">
+              <History size={17} className="text-action-fg" />
               <p className="text-sm font-bold">{t("paymentHistory")}</p>
               <span className="ml-auto text-xs text-[color:var(--color-text-muted)] dark:text-white/55">{t("salaryPaidTotal", { amount: formatAmount(paidAmount) })}</span>
             </div>
-            <div className="max-h-52 divide-y divide-main/10 overflow-y-auto dark:divide-white/10">
+            <div className="max-h-52 divide-y divide-action/10 overflow-y-auto dark:divide-white/10">
               {isHistoryLoading ? (
                 <p className="px-4 py-5 text-sm text-[color:var(--color-text-muted)] dark:text-white/60">{t("loadingLabel")}</p>
               ) : historyItems.length === 0 ? (
@@ -290,7 +290,7 @@ const SalaryPaymentPopup = ({
                 const formattedDate = rawDate ? new Date(rawDate).toLocaleString("uz-UZ") : "";
                 return (
                   <div key={String(item.id ?? index)} className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-action/10 text-action-fg">
                       <WalletCards size={16} />
                     </div>
                     <div className="min-w-0 flex-1">

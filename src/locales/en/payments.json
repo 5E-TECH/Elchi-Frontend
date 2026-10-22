@@ -1009,4 +1009,19 @@
   ,"paymentAckSelfConfirmedHint": "You confirmed the bot receipt"
   ,"paymentAckSelfDisputed": "You: wrong"
   ,"paymentAckSelfDisputedHint": "You marked the bot receipt as wrong"
+  ,"cashDetail": {
+    "shift": {
+      "overviewSubtitle": "Manage cashboxes and payments · shift closed",
+      "overviewBanner": "Receiving from couriers, transfers to HQ, expenses and cashbox top-ups work once a shift is open in the branch cashbox. The balance and operations history stay visible.",
+      "formLocked": "Works once the shift is open",
+      "visibleHint": "The balance and operations history stay visible.",
+      "banner": {
+        "courierBranch": "Receiving money from couriers works once a shift is open in the branch cashbox.",
+        "hqTransfer": "Transferring money to HQ works once a shift is open in the branch cashbox.",
+        "courierMain": "Receiving money from couriers works once a shift is open in the main cashbox.",
+        "market": "Market payouts work once a shift is open in the main cashbox.",
+        "branchReceive": "Receiving money from branches works once a shift is open in the main cashbox."
+      }
+    }
+  }
 }

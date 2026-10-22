@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isCustomerSegmentEmpty, MAX_MIN_ORDERS, nextIsoDay, parseMinOrders, toCustomerSegmentPayload } from "./segment";
+import {
+  isCustomerSegmentEmpty,
+  isOrderRangeInverted,
+  MAX_MIN_ORDERS,
+  nextIsoDay,
+  parseMinOrders,
+  toCustomerSegmentPayload,
+} from "./segment";
 
 describe("KM-1 mijozlar segmenti → so'rov tanasi", () => {
   it("bo'sh maydonlar tashlanadi; hech narsa tanlanmasa — bo'sh obyekt", () => {
@@ -67,5 +74,14 @@ describe("KM-1 mijozlar segmenti → so'rov tanasi", () => {
     expect(parseMinOrders("1000")).toBe(1000);
     expect(parseMinOrders("1500")).toBe(1000);
     expect(toCustomerSegmentPayload({ min_orders: 5000 })).toEqual({ min_orders: 1000 });
+  });
+
+  it("«gacha» (KM-2): `max_orders` — butun son ≥ 1; teskari oraliq aniqlanadi", () => {
+    expect(toCustomerSegmentPayload({ min_orders: 2, max_orders: 10 })).toEqual({ min_orders: 2, max_orders: 10 });
+    expect(toCustomerSegmentPayload({ max_orders: 0 })).toEqual({});
+    expect(toCustomerSegmentPayload({ max_orders: 5000 })).toEqual({ max_orders: 1000 });
+    expect(isOrderRangeInverted({ min_orders: 10, max_orders: 2 })).toBe(true);
+    expect(isOrderRangeInverted({ min_orders: 2, max_orders: 2 })).toBe(false);
+    expect(isOrderRangeInverted({ min_orders: 10 })).toBe(false);
   });
 });

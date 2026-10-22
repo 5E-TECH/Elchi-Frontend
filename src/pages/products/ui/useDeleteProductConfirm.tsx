@@ -3,10 +3,10 @@ import { useCallback } from "react";
 import { Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../entities/product";
+import { ProductThumb } from "../../../entities/product/ui/ProductThumb";
 import { useConfirm } from "../../../shared/ui/primitives";
 import { describeProductError } from "../model/productErrors";
-import type { Product } from "../model/productView";
-import { ProductThumb } from "./ProductThumb";
+import { getProductImageUrl, type Product } from "../model/productView";
 
 /**
  * O'CHIRISH TASDIG'I — maket `*-products-delete-dialog`: qizil `Trash2`, «O'chirishni tasdiqlang», «Quyidagi
@@ -32,7 +32,7 @@ export const useDeleteProductConfirm = () => {
         loadingLabel: t("v2.delete.loading"),
         details: (
           <span className="flex min-w-0 items-center gap-3">
-            <ProductThumb product={product} className="bg-surface" />
+            <ProductThumb imageUrl={getProductImageUrl(product)} className="bg-surface" />
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="font-semibold text-text wrap-break-word">{product.name}</span>
               {marketName ? (

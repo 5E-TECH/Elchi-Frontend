@@ -5,7 +5,17 @@ import enRegion from "../../../locales/en/region.json";
 import {
   buildAdminSatoView,
   buildSuperadminSatoView,
+  countSatoCodesWritten,
+  filterSatoDuplicateGroups,
   filterSatoRows,
+  findSimilarSatoDistrict,
+  groupSatoDuplicates,
+  parseSatoAppliedCount,
+  pickSatoMerge,
+  satoApplySummary,
+  satoMergeCandidates,
+  satoNameStem,
+  satoRegionNameKey,
   isValidSatoCode,
   normalizeSatoDistricts,
   normalizeSatoOwner,
@@ -14,6 +24,7 @@ import {
   satoDraftFor,
   satoMatchedPercent,
   satoRegionOptions,
+  type SatoDistrict,
   type SatoDistrictRow,
   type SatoRow,
 } from "./satoModel";
@@ -222,6 +233,167 @@ describe("satoModel — kod va KPI", () => {
     const stats = normalizeSatoPreview(PREVIEW).stats;
     expect(satoMatchedPercent({ ...stats, totalDb: 204, matchedCount: 197 })).toBeCloseTo(96.57, 1);
     expect(satoMatchedPercent({ ...stats, totalDb: 0 })).toBe(0);
+  });
+});
+
+const row = (id: string, regionId: string, satoCode: string | null, name = "Bo'ka tumani"): SatoDistrictRow => ({
+  kind: "district",
+  id,
+  name,
+  regionId,
+  regionName: regionId === "2" ? "Toshkent viloyati" : "Toshkent sh.",
+  satoCode,
+});
+
+describe("satoModel — SA-2: kodlarni yozish", () => {
+  const view = buildSuperadminSatoView(normalizeSatoPreview(PREVIEW), normalizeSatoDistricts(DISTRICTS));
+
+  it("oyna xulosasi: Yoziladi = «Topildi», O'zgarmaydi = «Kodi bor», Yozilmaydi = topilmagan + takroriy yozuvlar", () => {
+    const summary = satoApplySummary(view.rows);
+    expect(summary).toMatchObject({ write: 2, unchanged: 2, skipped: 4, notFound: 2, duplicates: 2, rest: 0 });
+    expect(summary.ids).toEqual(["11", "10"]);
+    expect(summary.preview.map((r) => r.name)).toEqual(["Bektemir tumani", "Yangihayot tumani"]);
+  });
+
+  it("birinchi 3 tuman va «yana N ta»", () => {
+    const found = Array.from({ length: 12 }, (_, i) => row(String(100 + i), "1", null, `T${i}`));
+    const summary = satoApplySummary({ found, hasCode: [], notFound: [], duplicates: [] });
+    expect(summary.preview).toHaveLength(3);
+    expect(summary.rest).toBe(9);
+    expect(summary.ids).toHaveLength(12);
+  });
+
+  it("apply javobi: `appliedCount` (konvert ichida yoki tashqarida), bo'lmasa null", () => {
+    expect(parseSatoAppliedCount({ statusCode: 200, data: { appliedCount: 12, applied: [] } })).toBe(12);
+    expect(parseSatoAppliedCount({ appliedCount: 0 })).toBe(0);
+    expect(parseSatoAppliedCount({ statusCode: 200, data: {} })).toBeNull();
+    expect(parseSatoAppliedCount(null)).toBeNull();
+  });
+
+  it("haqiqiy holat (504 dan keyin): nechta tumanda endi kod bor", () => {
+    const districts = normalizeSatoDistricts(DISTRICTS);
+    expect(countSatoCodesWritten(["10", "12", "15", "404"], districts)).toBe(2);
+  });
+});
+
+describe("satoModel — SA-2: tuman qo'shish", () => {
+  const districts = normalizeSatoDistricts(DISTRICTS);
+
+  it("viloyat nomi kaliti: «viloyati» tushadi, «sh.» = «shahri», lekin Toshkent sh. ≠ Toshkent viloyati", () => {
+    expect(satoRegionNameKey("Samarqand viloyati")).toBe(satoRegionNameKey("Samarqand"));
+    expect(satoRegionNameKey("Toshkent shahri")).toBe(satoRegionNameKey("Toshkent sh."));
+    expect(satoRegionNameKey("Toshkent viloyati")).not.toBe(satoRegionNameKey("Toshkent sh."));
+    expect(satoRegionNameKey("Qoraqalpog‘iston Respublikasi")).toBe("qoraqalpog'iston");
+  });
+
+  it("«Bazada yo'q» viloyati: prefiks topilmasa — rasmiy viloyat nomidan", () => {
+    const preview = normalizeSatoPreview(PREVIEW);
+    preview.missing = [{ satoCode: "1799002", satoName: "Yangi tuman", regionName: "Toshkent viloyati" }];
+    const view = buildSuperadminSatoView(preview, districts);
+    expect(view.rows.missing).toEqual([
+      { kind: "missing", satoCode: "1799002", satoName: "Yangi tuman", regionId: "2", regionName: "Toshkent viloyati" },
+    ]);
+  });
+
+  it("nom o'zagi: «tumani», «sh.», apostroflar", () => {
+    expect(satoNameStem("Urgut tumani")).toBe("urgut");
+    expect(satoNameStem("Urgut sh.")).toBe("urgut");
+    expect(satoNameStem("Do‘stobod shahri")).toBe("do'stobod");
+  });
+
+  it("o'xshash nom — shu viloyatda; boshqa viloyatda yoki uzoq nom — yo'q", () => {
+    expect(findSimilarSatoDistrict(districts, { name: "Urgut tumani", regionId: "6" })?.id).toBe("14");
+    expect(findSimilarSatoDistrict(districts, { name: "Urgut tumani", regionId: "1" })).toBeNull();
+    expect(findSimilarSatoDistrict(districts, { name: "Urgut tumani", regionId: null })?.id).toBe("14");
+    expect(findSimilarSatoDistrict(districts, { name: "Yangihayot", regionId: "1" })?.id).toBe("10");
+    expect(findSimilarSatoDistrict(districts, { name: "Qibray tumani", regionId: "1" })).toBeNull();
+    expect(findSimilarSatoDistrict(districts, { name: "Ur", regionId: "6" })).toBeNull();
+  });
+});
+
+describe("satoModel — SA-2: takroriylar va birlashtirish", () => {
+  it("guruhlar: tartib saqlanadi, viloyatlar ro'yxati; turli viloyatda — birlashtirilmaydi", () => {
+    const view = buildSuperadminSatoView(normalizeSatoPreview(PREVIEW), normalizeSatoDistricts(DISTRICTS));
+    expect(view.rows.duplicates.map((r) => (r as SatoDistrictRow).duplicateGroup)).toEqual([0, 0]);
+    const [group] = groupSatoDuplicates(view.rows.duplicates);
+    expect(group).toMatchObject({ key: "31", name: "Chilonzor tumani", regionNames: ["Toshkent sh.", "Toshkent viloyati"], merge: null });
+  });
+
+  it("sukut (ega S4): kodsiz yozuv → kodli yozuv", () => {
+    const merge = pickSatoMerge([row("142", "2", "1727228"), row("203", "2", null)]);
+    expect(merge?.source.id).toBe("203");
+    expect(merge?.target.id).toBe("142");
+    // Kodli yozuv yangiroq bo'lsa ham maqsad — u.
+    expect(pickSatoMerge([row("142", "2", null), row("203", "2", "1727228")])).toMatchObject({
+      source: { id: "142" },
+      target: { id: "203" },
+    });
+  });
+
+  it("ikkalasida kod bor yoki hech birida yo'q — maqsad eski yozuv (kichik ID), manba eng yangisi", () => {
+    expect(pickSatoMerge([row("203", "2", null), row("31", "2", null)])).toMatchObject({
+      source: { id: "203" },
+      target: { id: "31" },
+    });
+    expect(pickSatoMerge([row("9", "2", "1"), row("10", "2", "2")])).toMatchObject({
+      source: { id: "10" },
+      target: { id: "9" },
+    });
+  });
+
+  it("aralash guruh: bitta viloyatda ≥ 2 yozuv bo'lsa o'sha viloyat ichida; hammasi turli — null", () => {
+    expect(pickSatoMerge([row("1", "1", "5"), row("2", "2", null), row("3", "2", "7")])).toMatchObject({
+      source: { id: "2" },
+      target: { id: "3" },
+    });
+    expect(pickSatoMerge([row("1", "1", null), row("2", "2", null)])).toBeNull();
+  });
+
+  it("kodli yozuvlar ≥ 2 va kodsiz bor — kodli yozuv o'chirilmaydi (eng yangi kodsiz → eng eski kodli)", () => {
+    expect(pickSatoMerge([row("5", "2", null), row("10", "2", "1"), row("11", "2", "2")])).toMatchObject({
+      source: { id: "5" },
+      target: { id: "10" },
+    });
+    expect(
+      pickSatoMerge([row("5", "2", null), row("7", "2", null), row("10", "2", "1"), row("11", "2", "2")]),
+    ).toMatchObject({ source: { id: "7" }, target: { id: "10" } });
+  });
+
+  it("guruh kaliti barqaror — eng kichik ID (birlashtirilgach indekslar siljisa ham o'zgarmaydi)", () => {
+    const before = groupSatoDuplicates([
+      { ...row("31", "1", "1726294", "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("188", "2", null, "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("142", "2", "1727228"), duplicateGroup: 1 },
+      { ...row("203", "2", null), duplicateGroup: 1 },
+    ]);
+    expect(before.map((g) => g.key)).toEqual(["31", "142"]);
+    // Chilonzor birlashtirildi — qolgan guruhning indeksi 0 ga tushdi, kaliti esa o'sha.
+    const after = groupSatoDuplicates([
+      { ...row("203", "2", null), duplicateGroup: 0 },
+      { ...row("142", "2", "1727228"), duplicateGroup: 0 },
+    ]);
+    expect(after.map((g) => g.key)).toEqual(["142"]);
+  });
+
+  it("filtr: birorta yozuvi mos kelgan guruh butunligicha", () => {
+    const groups = groupSatoDuplicates([
+      { ...row("31", "1", "1726294", "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("188", "2", null, "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("142", "2", "1727228"), duplicateGroup: 1 },
+      { ...row("203", "2", null), duplicateGroup: 1 },
+    ]);
+    expect(groups.map((g) => g.rows.length)).toEqual([2, 2]);
+    const byCode = filterSatoDuplicateGroups(groups, { search: "1726294", regionId: null });
+    expect(byCode.map((g) => g.name)).toEqual(["Chilonzor tumani"]);
+    expect(byCode[0].rows).toHaveLength(2);
+    expect(filterSatoDuplicateGroups(groups, { search: "", regionId: "2" })).toHaveLength(2);
+  });
+
+  it("maqsadlar — faqat manba viloyatidan (region_id), manbaning o'zisiz, nom va ID bo'yicha", () => {
+    const districts: SatoDistrict[] = normalizeSatoDistricts(DISTRICTS);
+    const ids = satoMergeCandidates(districts, { id: "188", regionId: "2" }).map((d) => d.id);
+    expect(ids).toEqual(["13", "15"]);
+    expect(satoMergeCandidates(districts, { id: "188", regionId: null })).toEqual([]);
   });
 });
 

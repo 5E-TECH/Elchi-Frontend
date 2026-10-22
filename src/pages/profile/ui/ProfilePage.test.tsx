@@ -423,6 +423,23 @@ describe("Profil — market: «Guruhda mijoz ismi va telefoni» (ysBqD9Nx)", () 
     expect(mocks.get.mock.calls.some(([url]) => String(url).endsWith("/tg-token"))).toBe(false);
   });
 
+  it("market (maket `market-profile`, TG-B): «Xavfsizlik» va «Telegram» bir qatorda, ostida «Telegram guruhi» — holatsiz, ikkala turda «Ulash», kalit shu kartada", async () => {
+    serveProfile(() => makeUser("market", { id: "201", name: "Baraka Shop" }));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    const groups = await screen.findByRole("region", { name: "Telegram guruhi" });
+    const security = screen.getByRole("region", { name: "Xavfsizlik" });
+    const telegram = screen.getByRole("region", { name: "Telegram" });
+    // Bir qator: ikkala karta bitta o'ramda, «Telegram guruhi» — undan keyin.
+    expect(security.parentElement).toBe(telegram.parentElement?.parentElement);
+    expect(security.compareDocumentPosition(groups) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(groups).getAllByRole("button", { name: /guruhini ulash/ })).toHaveLength(2);
+    expect(within(groups).queryByText("Ulanmagan")).not.toBeInTheDocument();
+    expect(within(groups).getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toBeEnabled();
+    // Guruhlar holati endpointi market uchun yo'q (TG-C) — so'ralmaydi.
+    expect(mocks.get.mock.calls.some(([url]) => String(url).startsWith("notifications"))).toBe(false);
+  });
+
   it("market bo'lmagan rolda kalit yo'q", async () => {
     serveProfile(() => makeUser("courier"));
     renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("courier") });

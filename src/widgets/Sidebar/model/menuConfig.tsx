@@ -1,4 +1,5 @@
 import {
+  Banknote,
   House,
   Plug,
   Wrench,
@@ -19,6 +20,8 @@ import {
   Building2,
   Truck,
   Zap,
+  PiggyBank,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
@@ -163,16 +166,36 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
    * havolalarini (hammasi 403) ko'rsatmaydi. Logist moliyadan butunlay yopiq (ega LG-S1) — bu yerga hech qachon
    * `/payments`, `/cash-box`, `/financial-balance` qo'shilmaydi.
    */
-  // LG-1: bosh sahifa (o'z viloyatlari, pulsiz). Qolgan bandlar — LG-3 (Hududlar), LG-4 (Buyurtmalar), LG-5
-  // (Pochta, Paketlar, Kuryerlar): `route-map.json` → `plannedMenu.logist`.
-  logist: [{ to: "/", icon: House, label: "dashboard", end: true }],
-  market_operator: [],
+  // LG-1: bosh sahifa (o'z viloyatlari, pulsiz); LG-3: «Hududlar» (o'z viloyati — tumanlar va kuryerlar, pulsiz).
+  // Qolgan bandlar — LG-4 (Buyurtmalar), LG-5 (Pochta, Paketlar, Kuryerlar): `route-map.json` → `plannedMenu.logist`.
+  // Maket tartibi: Bosh sahifa · Buyurtmalar · Pochta · Paketlar · Kuryerlar · Hududlar — «Hududlar» oxirida qoladi.
+  logist: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/regions", icon: MapIcon, label: "regions" },
+  ],
   /**
-   * IN-1 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`). «Investitsiyalar» va
-   * «Foyda tarixi» (`/investments`, `/profits`) o'z sahifalari bilan IN-2 da qo'shiladi (`plannedMenu.investor`).
-   * Moliya/kassa sahifalari bu yerga qo'shilmaydi — investor faqat o'z investitsiyasi va foydasini ko'radi.
+   * MO-2 (ega 2026-10-19): bosh sahifa (market bosh sahifasi operator rejimida), mahsulotlar (faqat ko'rish, MH-1) va
+   * «Daromadim» (o'z stavkasi). MO-3: «Buyurtmalar» (o'z marketi, faqat ko'rish va Excel) va «Buyurtma yaratish»
+   * (`/new-orders` → `/new-orders/create`, faqat «AI bilan»; yorlig'i rolga xos — `navSections.ts`).
+   * Kassa/to'lov bandlari qo'shilmaydi — operatorda moliya ruxsati yo'q, o'z hisobi faqat «Daromadim» da.
    */
-  investor: [{ to: "/", icon: House, label: "dashboard", end: true }],
+  market_operator: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/my-earnings", icon: Banknote, label: "earnings" },
+  ],
+  /**
+   * IN-1 / IN-2 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`), «Investitsiyalar»
+   * (`/investments`) va «Foyda tarixi» (`/profits`) — maket `roles.json` → investor.menu (ikonkalar PiggyBank,
+   * HandCoins). Moliya/kassa sahifalari bu yerga qo'shilmaydi — investor faqat o'z investitsiyasi va foydasini ko'radi.
+   */
+  investor: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/investments", icon: PiggyBank, label: "investments" },
+    { to: "/profits", icon: HandCoins, label: "profits" },
+  ],
 };
 
 /**
@@ -395,9 +418,11 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/payments": 'finance',
   "/cash-box": 'finance',
   "/financial-balance": 'finance',
-  // IN-1: investor kabineti ro'yxatlari (sahifalari IN-2 da) — Moliya guruhida.
+  // IN-1/IN-2: investor kabineti ro'yxatlari — Moliya guruhida (investor menyusi qisqa — guruh sarlavhasi chiqmaydi).
   "/investments": 'finance',
   "/profits": 'finance',
+  // MO-2: market operatorining «Daromadim» sahifasi.
+  "/my-earnings": 'finance',
   // Ma'lumotnoma
   "/products": 'directory',
   "/all-users": 'directory',

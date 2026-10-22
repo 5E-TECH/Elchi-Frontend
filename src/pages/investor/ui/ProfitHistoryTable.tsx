@@ -1,4 +1,4 @@
-// dizayn-v2: investor-dashboard-home
+// dizayn-v2: investor-dashboard-home, investor-profits-list
 import { useTranslation } from "react-i18next";
 import type { InvestorProfit } from "../../../entities/investors";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
@@ -11,15 +11,17 @@ export interface ProfitHistoryTableProps {
   /** Tashqi o'ram klassi (karta ichida — `border-t` kerak emas: sarlavha chizig'i bor). */
   className?: string;
   busy?: boolean;
+  /** Jadval / kartalar ro'yxati nomi (sukut «Foyda tarixi»; `/profits` da — «Foyda yozuvlari»). */
+  label?: string;
 }
 
 /**
- * FOYDA TARIXI jadvali (maket `investor-dashboard-home` → «Foyda tarixi»; IN-2 dagi `/profits` ham shu): Davr
+ * FOYDA TARIXI jadvali (maket `investor-dashboard-home` → «Foyda tarixi» va `/profits` — `investor-profits-list`, IN-2): Davr
  * (oraliq + oy nomi), Foiz, Summa, Holat (To'langan — yashil, Kutilmoqda — sariq; so'z + nuqta), To'langan sana.
  * Planshetda «Foiz» va «To'langan sana» yashirin, telefonda kartalar. Tartib serverda (`period_start` DESC) —
  * sarlavhada saralash tugmasi yo'q.
  */
-export const ProfitHistoryTable = ({ rows, className, busy }: ProfitHistoryTableProps) => {
+export const ProfitHistoryTable = ({ rows, className, busy, label }: ProfitHistoryTableProps) => {
   const { t, i18n } = useTranslation(["investor", "ui"]);
   const language = i18n.language;
   const names = monthNames(t);
@@ -36,8 +38,8 @@ export const ProfitHistoryTable = ({ rows, className, busy }: ProfitHistoryTable
     <DataTable<InvestorProfit>
       rows={rows}
       getRowKey={(row, index) => row.id || `profit-${index}`}
-      label={t("profits.label")}
-      cardsLabel={t("profits.label")}
+      label={label ?? t("profits.label")}
+      cardsLabel={label ?? t("profits.label")}
       className={className}
       busy={busy}
       columns={[

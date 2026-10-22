@@ -33,6 +33,14 @@ export const API_ENDPOINTS = {
     // O'z Telegram'ini botga ulash (har qanday xodim; mijoz/investor — 403).
     MY_TELEGRAM_LINK_CODE: "users/me/telegram/link-code", // POST → { token, purpose, expires_at, deep_link, command } (bir martalik, 10 daqiqa)
     MY_TELEGRAM: "users/me/telegram", // DELETE → { unlinked }
+    // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
+    // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
+    ROLE: (id: string | number) => `users/${id}/role`,
+  },
+  // Rol katalogi (FY-2, K3scaE0W; superadmin, admin, menejer): GET → { items, changeable_roles }. Yorliqlar faqat
+  // o'zbekcha — frontend faqat `changeable_roles` ni oladi, nomlar i18n'dan.
+  ROLES: {
+    BASE: "roles",
   },
   ADMINS: {
     BASE: "admins", // GET list / POST create
@@ -155,10 +163,6 @@ export const API_ENDPOINTS = {
     AI_PARSE: "orders/ai-parse", // POST multipart: text, market_id, images[]
     AI_CONFIRM: "orders/ai-confirm", // POST { market_id?, orders[] }
     AI_AVAILABILITY: "orders/ai-availability", // GET { enabled, state } — AI tabini ko'rsatish/yashirish
-    // COD settlement legs (FIFO per order) — guide §7
-    SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier
-    SETTLEMENT_BRANCH_TO_HQ: "orders/settlement/branch-to-hq", // POST
-    SETTLEMENT_HQ_TO_MARKET: "orders/settlement/hq-to-market", // POST manager/HQ
   },
 
   // ── Posts (registrator/courier/branch) ───────────────────────────────────
@@ -304,7 +308,10 @@ export const API_ENDPOINTS = {
     PAYMENTS: "integrations/payments",
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
-    REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST
+    REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST yozish · GET ro'yxat (IS-3)
+    // IS-3 (DxdZFdIk): to'lovni bekor qilish — `{ reason, reverse_cashbox? }` (409 — avans ishlatilgan / eski yozuv).
+    REMITTANCE_CANCEL: (id: string | number, remittanceId: string | number) =>
+      `integrations/${id}/remittances/${remittanceId}/cancel`, // POST
     HEALTHCHECK: (id: string | number) => `integrations/${id}/healthcheck`, // POST
     TEST: (id: string | number) => `integrations/${id}/test`, // POST
     RETRY: (id: string | number) => `integrations/${id}/retry`, // POST
@@ -370,6 +377,25 @@ export const API_ENDPOINTS = {
     DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
     // GET bitta qo'lda yuborish: matn, jonli kanal × holat, yetkazilmaganlar (?page&limit) — id = client_request_id
     SENT_BY_ID: (dispatchId: string) => `notifications/sent/${encodeURIComponent(dispatchId)}`,
+    // GET qo'lda yuborilgan xabarlar tarixi (?page&limit&status&created_by) — yangisi birinchi (NS-2, superadmin/admin)
+    SENT: "notifications/sent",
+    // Auditoriya va kampaniya (KM-2, superadmin/admin) ──────────────────────
+    // POST nishon → aniq son, rollar kesimi, kanal bo'yicha yaroqlilar, ?with_sample — 20 ta maskalangan qator
+    AUDIENCE_PREVIEW: "notifications/audience/preview",
+    AUDIENCE_SEGMENTS: "notifications/audience/segments", // GET saqlangan segmentlar / POST saqlash (409 — nom band)
+    AUDIENCE_SEGMENT_BY_ID: (id: string) => `notifications/audience/segments/${encodeURIComponent(id)}`, // DELETE
+    CAMPAIGNS: "notifications/campaigns", // GET tarix (?page&limit&state) / POST yaratish (Idempotency-Key) → 202
+    CAMPAIGN_SCHEDULE_POLICY: "notifications/campaigns/schedule-policy", // GET tungi taqiq (?scheduled_at&category)
+    CAMPAIGN_BY_ID: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}`, // GET progress
+    CAMPAIGN_CANCEL: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/cancel`, // POST (409 — tugagan)
+    CAMPAIGN_REPORT: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/report`, // GET
+    CAMPAIGN_UNDELIVERED: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/undelivered`, // GET
+    // GET CSV (faqat superadmin): ≤10 000 — fayl, kattasi — 202 { export_id }
+    CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
+      `notifications/campaigns/${encodeURIComponent(id)}/undelivered/export`,
+    CAMPAIGN_EXPORT_BY_ID: (exportId: string) => `notifications/campaigns/exports/${encodeURIComponent(exportId)}`,
+    CAMPAIGN_EXPORT_DOWNLOAD: (exportId: string) =>
+      `notifications/campaigns/exports/${encodeURIComponent(exportId)}/download`,
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device
@@ -455,6 +481,12 @@ export const API_ENDPOINTS = {
     ROOT: "", // GET / — gateway health via identity service
     LIVENESS: "health",
     READINESS: "health/readiness",
+  },
+
+  // ── AI admin (api-gateway `AiGatewayController`, SUPERADMIN/ADMIN) ───────
+  AI: {
+    // GET { enabled, key_state, models, model_policy, cap, usage_persist_failures } — kalit QIYMATI yo'q (OS-2)
+    STATUS: "ai/status",
   },
 
   // ── Webhooks (public — provider inbound, no JWT) ─────────────────────────

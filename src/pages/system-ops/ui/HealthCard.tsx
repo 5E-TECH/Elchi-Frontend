@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
   CircleCheck,
-  CircleHelp,
+  CircleQuestionMark,
   CircleX,
   RefreshCw,
   ServerOff,
@@ -389,7 +389,7 @@ const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serv
             {t("system.health.counts.down", { count: summary.downCount })}
           </Badge>
           {summary.unknownCount > 0 ? (
-            <Badge icon={CircleHelp}>{t("system.health.counts.unknown", { count: summary.unknownCount })}</Badge>
+            <Badge icon={CircleQuestionMark}>{t("system.health.counts.unknown", { count: summary.unknownCount })}</Badge>
           ) : null}
         </div>
       </div>

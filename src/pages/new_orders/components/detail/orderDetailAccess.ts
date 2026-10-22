@@ -2,6 +2,7 @@ import type { RootState } from "../../../../app/config/store";
 import { isCourierHeldOrder } from "../../../../entities/orders/custody";
 import { canRollbackOrderStatus } from "../../../../entities/orders/rollbackTarget";
 import { canInitiateReturn, canMarkReturnedToMarket } from "../../../../features/order-return";
+import { isMarketSideRole } from "../../../../entities/user/lib/role";
 import {
   canRunCourierAction,
   isOrderReceivedOrLater,
@@ -21,6 +22,9 @@ import type { OrderDetail } from "./orderDetailModel";
  *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi).
  *
  * Ko'rinish maketlar bo'yicha: market va kuryer — faqat o'qish (tahrirlash tugmasi umuman yo'q);
+ * market operatori (MO-3; maket yo'q — eng yaqini `market-orders-detail`) — market ko'rinishi, faqat o'qish:
+ * tahrirlash, sotish / bekor, qaytarish va marketga topshirish yo'q; «Kuzatuv» va «Qaytarish yo'li» ham yo'q
+ * (`GET orders/:id/tracking` — `@Roles` da MARKET_OPERATOR yo'q, 403);
  * registratorda mijoz tugmasi o'chiq (sababi bilan), menejerda tugma yo'q, faqat izoh
  * (`*-orders-detail` maketlari).
  */
@@ -94,6 +98,13 @@ export interface OrderDetailAccess {
   canRollback: boolean;
   canStartReturn: boolean;
   canHandOverReturn: boolean;
+  /**
+   * «Kuzatuv» (tarix) va undan quriladigan «Qaytarish yo'li» — `GET orders/:id/tracking`. Market operatorida yo'q
+   * (backend `@Roles` — MARKET_OPERATOR'siz, 403; MO-3).
+   */
+  canViewTracking: boolean;
+  /** Bekor qilingan buyurtmaning QR sahifasi (`/new-orders/cancelled/:marketId`) — faqat market egasi (MO-3). */
+  canOpenCancelledQr: boolean;
 }
 
 const normalizeRole = (role: string | null | undefined) => (role ?? "").trim().toLowerCase();
@@ -111,7 +122,8 @@ export const getOrderDetailAccess = ({
   order: OrderDetail | null;
 }): OrderDetailAccess => {
   const role = normalizeRole(rawRole);
-  const layout: OrderDetailLayout = role === "courier" ? "courier" : role === "market" ? "market" : "default";
+  const layout: OrderDetailLayout = role === "courier" ? "courier" : isMarketSideRole(role) ? "market" : "default";
+  const isMarketOperator = role === "market_operator";
   const canEditCustomer = role === "superadmin" || role === "admin";
   const canEditOrderFull = canEditCustomer || role === "registrator" || role === "manager";
   const isRegionalManager = role === "manager" && (branchType === "REGIONAL" || branchType === "HYBRID");
@@ -136,6 +148,8 @@ export const getOrderDetailAccess = ({
       (canManagerSellCancel && canRollbackOrderStatus("manager", order?.status)),
     canStartReturn: canInitiateReturn(rawRole, order),
     canHandOverReturn: canMarkReturnedToMarket(rawRole, order),
+    canViewTracking: !isMarketOperator,
+    canOpenCancelledQr: role === "market",
   };
 };
 

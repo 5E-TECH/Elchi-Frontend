@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../entities/product";
+import { ProductThumb } from "../../../entities/product/ui/ProductThumb";
 import { useMarkets } from "../../../entities/markets";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -43,7 +44,6 @@ import { FormErrorSummary } from "../ui/FormErrorSummary";
 import { ProductImageField } from "../ui/ProductImageField";
 import { ProductPrice } from "../ui/ProductPrice";
 import { ProductPriceField } from "../ui/ProductPriceField";
-import { ProductThumb } from "../ui/ProductThumb";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 
 type CreateFormValues = { name: string; price: string };
@@ -223,7 +223,7 @@ const CreateProductPage = () => {
   const nameCell = useCallback(
     (product: Product) => (
       <span className="flex min-w-0 items-center gap-3">
-        <ProductThumb product={product} />
+        <ProductThumb imageUrl={getProductImageUrl(product)} />
         {nameLine(product)}
       </span>
     ),
@@ -256,7 +256,7 @@ const CreateProductPage = () => {
   const renderCard = useCallback(
     (product: Product) => (
       <div className="flex min-h-14 items-start gap-3 py-2.5 pl-4 pr-2 text-sm">
-        <ProductThumb product={product} />
+        <ProductThumb imageUrl={getProductImageUrl(product)} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           {nameLine(product)}
           <span className="text-[13px] text-text-muted">

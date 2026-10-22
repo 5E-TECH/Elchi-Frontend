@@ -451,11 +451,11 @@
         "clear": "Filtrlarni tozalash"
       },
       "info": {
-        "found": "Bu kodlar rasmiy ro'yxatdan nomi bo'yicha topildi, lekin hali yozilmagan. Kodni tekshirib, shu yerda saqlang yoki xato topilganini tuzating.",
+        "found": "Bu kodlar rasmiy ro'yxatdan nomi bo'yicha topildi, lekin hali yozilmagan — «SATO kodlarini yozish» ularni bir martada yozadi. Xato topilganini shu yerda tuzating.",
         "notFound": "Bu tumanlar rasmiy ro'yxatda nomi bo'yicha topilmadi. Kodni qo'lda kiriting; tuman «Bazada yo'q» tabida boshqa nom bilan turgan bo'lishi mumkin.",
         "hasCode": "Kodni faqat xato kiritilgan bo'lsa o'zgartiring. Bitta kod faqat bitta tumanga yoziladi.",
-        "duplicates": "Bir xil nomli tumanlarga kod avtomatik yozilmaydi. Har bir yozuvga kodni qo'lda kiriting.",
-        "missing": "Bu tumanlar rasmiy SATO ro'yxatida bor, lekin bazada topilmadi. Nomi boshqacha yozilgan bo'lsa, bazadagi tumanga kodni qo'lda kiriting.",
+        "duplicates": "Bir xil nomli tumanlarga kod avtomatik yozilmaydi. Bitta viloyatdagi ortiqcha yozuvni «Birlashtirish» bilan qo'shing — buyurtmalar ko'chadi, kodli yozuv qoladi. Turli viloyatdagilarga kodni qo'lda kiriting.",
+        "missing": "Bu tumanlar rasmiy SATO ro'yxatida bor, lekin bazada topilmadi. Nomi boshqacha yozilgan bo'lsa, bazadagi tumanga kodni qo'lda kiriting; bo'lmasa «Tuman qo'shish» — nomi, viloyati va kodi to'ldirilgan holda ochiladi.",
         "noCode": "Kodni tumanning rasmiy SATO raqamidan kiriting. Bitta kod faqat bitta tumanga yoziladi."
       },
       "columns": {
@@ -475,7 +475,9 @@
         "nameWithRegion": "{{name}} ({{region}})",
         "id": "ID {{id}}",
         "meta": "{{region}} · {{code}}",
-        "metaWithId": "{{region}} · ID {{id}} · {{code}}"
+        "metaWithId": "{{region}} · ID {{id}} · {{code}}",
+        "add": "Tuman qo'shish",
+        "addAria": "{{name}} — tuman qo'shish"
       },
       "editor": {
         "label": "SATO kodi",
@@ -499,7 +501,8 @@
         "districtsRange": "{{from}}–{{to}} / {{total}} ta tuman",
         "records": "{{value}} ta yozuv",
         "recordsRange": "{{from}}–{{to}} / {{total}} ta yozuv",
-        "duplicates": "{{names}} ta nom · {{value}} ta yozuv"
+        "duplicates": "{{names}} ta nom · {{value}} ta yozuv",
+        "namesRange": "{{from}}–{{to}} / {{total}} ta nom"
       },
       "states": {
         "previewLoading": "Solishtirish yuklanmoqda",
@@ -537,6 +540,72 @@
           "title": "Hech narsa topilmadi",
           "description": "Qidiruv yoki viloyat filtrini o'zgartiring."
         }
+      },
+      "apply": {
+        "button": "SATO kodlarini yozish",
+        "title": "SATO kodlarini yozasizmi?",
+        "text": "Rasmiy ro'yxatdan topilgan {{value}} ta kod bazadagi tumanlarga yoziladi.",
+        "summaryAria": "Yozish xulosasi",
+        "write": "Yoziladi",
+        "unchanged": "O'zgarmaydi",
+        "skipped": "Yozilmaydi",
+        "listAria": "Yoziladigan kodlar",
+        "more": "yana {{value}} ta tuman",
+        "note": "Kodi bor tumanlar o'zgarmaydi. Topilmagan {{notFound}} ta va takroriy {{duplicates}} ta yozuvga kod yozilmaydi. Amal faoliyat jurnaliga yoziladi.",
+        "cancel": "Bekor qilish",
+        "submit": "{{value}} ta kodni yozish",
+        "writing": "Yozilmoqda…",
+        "done": "{{value}} ta tumanga SATO kodi yozildi",
+        "doneText": "Ro'yxat yangilandi",
+        "none": "Yangi kod yozilmadi",
+        "noneText": "Ro'yxat yangilandi — yoziladigan kod qolmagan.",
+        "partial": "Kodlar qisman yozildi",
+        "partialText": "{{written}} / {{total}} ta tumanga kod yozildi. Ro'yxat yangilandi — qolganini qayta yozing.",
+        "failed": "SATO kodlarini yozib bo'lmadi",
+        "failedText": "Ro'yxat yangilandi — kodlar yozilmagan. Qayta urinib ko'ring.",
+        "unknown": "Natija noma'lum",
+        "unknownText": "Ro'yxatni yangilab bo'lmadi. Sahifani yangilab, «Topildi» tabini tekshiring."
+      },
+      "add": {
+        "title": "Tuman qo'shish",
+        "text": "Rasmiy SATO ro'yxatidan to'ldirildi — tekshirib, saqlang",
+        "name": "Tuman nomi",
+        "namePlaceholder": "Tuman nomi",
+        "region": "Viloyat",
+        "regionPlaceholder": "Viloyatni tanlang",
+        "code": "SATO kodi",
+        "codeHint": "Faqat raqamlar. Bitta kod faqat bitta tumanga yoziladi.",
+        "similar": "Bazada «{{name}}» bor. Agar bu o'sha tuman bo'lsa, yangisini qo'shmang — «{{tab}}» tabida unga kodni kiriting.",
+        "similarWithCode": "Bazada «{{name}}» bor (SATO kodi {{code}}). Agar bu o'sha tuman bo'lsa, yangisini qo'shmang.",
+        "cancel": "Bekor qilish",
+        "submit": "Tuman qo'shish",
+        "saving": "Qo'shilmoqda…",
+        "nameRequired": "Tuman nomini kiriting",
+        "regionRequired": "Viloyatni tanlang",
+        "codeInvalid": "Faqat raqamlar kiriting, masalan 1718236",
+        "nameTaken": "Bu viloyatda shu nomli tuman bor",
+        "regionMissing": "Viloyat topilmadi — ro'yxatni yangilang",
+        "done": "Tuman qo'shildi",
+        "doneText": "{{name}} · {{region}}",
+        "failed": "Tumanni qo'shib bo'lmadi",
+        "failedText": "Qayta urinib ko'ring."
+      },
+      "duplicates": {
+        "records": "{{value}} ta yozuv",
+        "crossRegion": "Turli viloyatda — birlashtirilmaydi",
+        "merge": "Birlashtirish",
+        "mergeAria": "{{name}} yozuvlarini birlashtirish"
+      },
+      "merge": {
+        "recordName": "{{name}} (ID {{id}})",
+        "text": "{{name}} (ID {{id}}) dagi hamma narsa tanlangan tumanga ko'chadi, ID {{id}} yozuvi o'chiriladi.",
+        "sourceTitle": "{{name}} · ID {{id}}",
+        "sourceSubtitle": "{{region}} · {{code}}",
+        "option": "{{name}} · ID {{id}}",
+        "hint": "Faqat {{region}} tumanlari.",
+        "hintKeeps": "Faqat {{region}} tumanlari. SATO kodi {{code}} saqlanadi.",
+        "sourceCodeLost": "ID {{id}} yozuvidagi {{code}} kodi o'chadi.",
+        "irreversibleText": "ID {{id}} yozuvi butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin."
       }
     },
     "logist": {
@@ -647,6 +716,61 @@
       "empty": {
         "title": "Logist yo'q",
         "text": "Viloyatlarni biriktirish uchun avval «Logist» rolida foydalanuvchi yarating. Yaratilgan logist shu ro'yxatda chiqadi."
+      }
+    },
+    "logistView": {
+      "subtitle": "Viloyatning barcha buyurtmalari · tumanlar va kuryerlar kesimida",
+      "titleGeneric": "Viloyatlarim",
+      "cardSubtitle": "{{period}} · {{region}}",
+      "picker": {
+        "label": "Viloyatlarim:",
+        "aria": "Viloyatni tanlash",
+        "field": "Viloyat",
+        "option": "{{name}} · {{count}} ta",
+        "placeholder": "Viloyatni tanlang",
+        "list": "Viloyatlarim"
+      },
+      "overview": {
+        "couriers": "Faol kuryerlar",
+        "couriersUnit": "/ {{total}}",
+        "couriersMeta": "Faol holatdagi kuryerlar"
+      },
+      "selected": {
+        "couriers": "Kuryerlar"
+      },
+      "couriers": {
+        "title": "Kuryerlar",
+        "subtitle": "Buyurtmasi bor kuryerlar · viloyatda faol {{active}} / {{total}}",
+        "subtitleNoCounts": "Buyurtmasi bor kuryerlar",
+        "label": "Kuryerlar jadvali",
+        "listLabel": "Kuryerlar, buyurtmalar soni bo'yicha",
+        "position": "№",
+        "courier": "Kuryer",
+        "district": "Tuman",
+        "orders": "Buyurtmalar",
+        "soldCancelled": "Sotilgan · bekor",
+        "success": "Muvaffaqiyat",
+        "cardSummary": "{{rate}} sotildi · {{cancelled}} bekor",
+        "more": "Yana {{count}} ta kuryer",
+        "less": "Kamroq ko'rsatish",
+        "empty": {
+          "title": "Buyurtmasi bor kuryer yo'q",
+          "text": "Tanlangan davrda bu viloyat kuryerlarida buyurtma bo'lmadi."
+        }
+      },
+      "states": {
+        "error": {
+          "title": "Viloyat ma'lumotini yuklab bo'lmadi",
+          "text": "Internet aloqasini tekshirib, qayta urining."
+        },
+        "notAssigned": {
+          "title": "Bu viloyat endi sizga biriktirilmagan",
+          "text": "Administrator viloyatni boshqa logistga o'tkazgan. Yuqoridagi ro'yxatdan o'z viloyatingizni tanlang."
+        },
+        "none": {
+          "title": "Sizga hali viloyat biriktirilmagan",
+          "text": "Administrator viloyat biriktirgach, uning statistikasi shu yerda chiqadi."
+        }
       }
     }
   }

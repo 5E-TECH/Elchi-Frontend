@@ -32,6 +32,11 @@ import { Button, Card, Field, Select, TextInput } from "../../../shared/ui/primi
  * (ixtiyoriy)»; asosiy tugma (blok, katta). Yuborilayotganda tugmada spinner + «Yuklanmoqda…» va u bosilmaydi
  * (ikki marta yuborish yo'q).
  *
+ * Xatolar ekran o'quvchiga (Trello XsoWhKP5): har boshqaruv `Controller` `ref` i bilan bog'langan — «To'lash»
+ * bosilganda react-hook-form birinchi xato maydonga fokus beradi (maydon `aria-invalid` + xato matni
+ * `aria-describedby` orqali o'qiladi); «To'lov turi» xatosi `role="alert"` (darhol aytiladi), radiolar
+ * `aria-invalid` va `fieldset` xatoga `aria-describedby` bilan ulangan.
+ *
  * Forma qiymatlari va react-hook-form props'lari o'zgarmagan (`CashboxActionFormValues`); summa satr
  * ko'rinishida saqlanadi (`parseAmountInput` o'qiydi). `transferSource*` — eski props, ishlatilmaydi.
  */
@@ -159,6 +164,7 @@ const CashboxActionFormCard = ({
           render={({ field }) => (
             <Field label={amountLabel} required hint={amountHint} error={errors.amount?.message}>
               <TextInput
+                ref={field.ref}
                 size="lg"
                 mode="money"
                 name={field.name}
@@ -193,17 +199,20 @@ const CashboxActionFormCard = ({
                   {" *"}
                 </span>
               </legend>
-              {paymentTypeOptions.map((option) => {
+              {paymentTypeOptions.map((option, index) => {
                 const Icon = PAYMENT_TYPE_ICONS[option.value] ?? CreditCard;
                 return (
                   <label key={option.value} className={CHOICE_CARD}>
                     <input
+                      // Xatoda fokus birinchi variantga (react-hook-form `shouldFocusError`).
+                      ref={index === 0 ? field.ref : undefined}
                       type="radio"
                       name={field.name}
                       value={option.value}
                       checked={field.value === option.value}
                       onChange={() => field.onChange(option.value)}
                       onBlur={field.onBlur}
+                      aria-invalid={paymentTypeError ? true : undefined}
                       // Shaffof, butun karta ustida: bosish va klaviatura — haqiqiy radio; ko'rinish — doira.
                       className="absolute inset-0 z-10 m-0 size-full cursor-pointer appearance-none rounded-xl opacity-0"
                     />
@@ -220,7 +229,7 @@ const CashboxActionFormCard = ({
                 );
               })}
               {paymentTypeError ? (
-                <div id={paymentTypeErrorId} className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+                <div id={paymentTypeErrorId} role="alert" className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
                   <CircleX aria-hidden="true" size={16} className="mt-px shrink-0" />
                   <span className="min-w-0">{paymentTypeError}</span>
                 </div>
@@ -241,6 +250,7 @@ const CashboxActionFormCard = ({
                 error={errors.marketId?.message}
               >
                 <Select
+                  ref={field.ref}
                   searchable
                   name={field.name}
                   options={marketOptions}
@@ -261,6 +271,7 @@ const CashboxActionFormCard = ({
           render={({ field }) => (
             <Field label={commentLabel} optional>
               <TextInput
+                ref={field.ref}
                 multiline
                 rows={2}
                 name={field.name}

@@ -73,7 +73,8 @@ type AiInputPanelProps = {
   /** Faqat admin/registrator uchun; market roli uchun server o'zi aniqlaydi. */
   marketId?: string;
   onParsed: (orders: AiPreviewOrder[], draftId?: string) => void;
-  onSwitchToManual: () => void;
+  /** «Qo'lda» rejimiga o'tish. Berilmasa (market operatori, MO-3) xatodagi «Qo'lda …» tugmasi chiqmaydi. */
+  onSwitchToManual?: () => void;
   /** Admin/registrator: `no_market` bo'lsa market tanlashga qaytaradi. Market rolida yo'q. */
   onSelectMarket?: () => void;
 };
@@ -207,7 +208,12 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
       {
         onSuccess: (response) => {
           if (!response?.ok) {
-            setFailure(parseFailureView(response?.reason, { canSelectMarket: Boolean(onSelectMarket) }));
+            setFailure(
+              parseFailureView(response?.reason, {
+                canSelectMarket: Boolean(onSelectMarket),
+                canCreateManually: Boolean(onSwitchToManual),
+              }),
+            );
             return;
           }
           const orders = response.orders ?? [];
@@ -223,7 +229,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
             return;
           }
           // `null` — operator o'zi bekor qildi: xato emas, hech narsa ko'rsatilmaydi.
-          setFailure(parseHttpErrorView(error));
+          setFailure(parseHttpErrorView(error, { canCreateManually: Boolean(onSwitchToManual) }));
         },
         onSettled: () => {
           if (controllerRef.current === controller) controllerRef.current = null;
@@ -238,8 +244,11 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
   const runFailureAction = (view: AiErrorView) => {
     if (view.action === "editText") textareaRef.current?.focus();
     else if (view.action === "selectMarket" && onSelectMarket) onSelectMarket();
-    else onSwitchToManual();
+    else onSwitchToManual?.();
   };
+  // Tugma faqat bajariladigan amal bo'lsa: «Qayta urinish» — asosiy tugmaning o'zi, «Qo'lda …» — qo'lda rejim bor rolda.
+  const hasFailureAction = (view: AiErrorView) =>
+    view.action !== "retry" && (view.action !== "manual" || Boolean(onSwitchToManual));
 
   if (collapsed) {
     return (
@@ -438,7 +447,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
           data-testid={failure.tone === "block" ? "ai-block" : "ai-error"}
           action={
             // «Qayta urinib ko'ring» — asosiy tugmaning o'zi (pastda), bu yerda takrorlanmaydi.
-            failure.action !== "retry" ? (
+            hasFailureAction(failure) ? (
               <Button
                 variant="secondary"
                 size="sm"

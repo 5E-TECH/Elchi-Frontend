@@ -35,7 +35,8 @@ const normalizeNotification = (value: unknown): Notification => {
     group_type: item.group_type === "cancel" ? "cancel" : "create",
     // Maydon yo'q bo'lsa (eski javob) — faol; faqat aniq `false` nofaol.
     is_active: item.is_active !== false && item.is_active !== "false",
-    created_at: item.created_at ?? item.createdAt ?? item.updatedAt ?? new Date().toISOString(),
+    // Sana kelmasa — `null` («hozir» deb to'qilmaydi; ko'rsatuvchi «—» yoki sanasiz matn chizadi).
+    created_at: item.created_at ?? item.createdAt ?? item.updatedAt ?? null,
   };
 };
 

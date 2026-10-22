@@ -39,13 +39,20 @@ export const needsPriceConfirm = (order: AiDraftOrder) =>
   Number.isFinite(Number(order.total_price)) &&
   Number(order.total_price) < PRICE_CONFIRM_THRESHOLD;
 
-export const evalPreview = (order: AiDraftOrder): { ready: boolean; issues: AiIssue[] } => {
+/**
+ * `regionRequired` (sukut `true`) — viloyat ham shartmi. Market operatorida `false` (MO-3): unga viloyatlar ro'yxati
+ * yopiq (N11), `ai-confirm` esa viloyatni tumandan o'zi oladi (`region_id` — «qabul qilinadi, lekin ishlatilmaydi»).
+ */
+export const evalPreview = (
+  order: AiDraftOrder,
+  { regionRequired = true }: { regionRequired?: boolean } = {},
+): { ready: boolean; issues: AiIssue[] } => {
   const issues: AiIssue[] = [];
   const price = order.total_price;
 
   if (!order.customer_name?.trim()) issues.push("name_missing");
   if (!toLocalPhone(order.phone_number)) issues.push("phone_invalid");
-  if (!order.region_id) issues.push("region_missing");
+  if (regionRequired && !order.region_id) issues.push("region_missing");
   if (!order.district_id) issues.push("district_missing");
   if (price === null || !Number.isFinite(Number(price))) issues.push("price_missing");
   else if (needsPriceConfirm(order) && !order.price_confirmed) issues.push("price_confirm");

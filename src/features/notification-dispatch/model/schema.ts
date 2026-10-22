@@ -1,5 +1,12 @@
 import * as yup from "yup";
 import {
+  CAMPAIGN_CHANNELS,
+  createAudienceDraft,
+  type AudienceDraft,
+  type AudienceTarget,
+  type CampaignPayload,
+} from "../../../entities/notification-campaign";
+import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_PRIORITIES,
   type NotificationCategory,
@@ -9,32 +16,20 @@ import {
 /** Backend DTO chegaralari (notification-service DispatchNotificationDto). */
 export const DISPATCH_LIMITS = { title: 255, body: 4096, link: 512, groupKey: 255 } as const;
 
-export type RecipientMode = "single" | "roles" | "list" | "all";
-
 /**
- * Rol bo'yicha yuborish mumkin bo'lgan rollar. `customer` ro'yxatda turadi,
- * lekin O'CHIQ: backend foydalanuvchi qidiruvi mijozlarni chiqarmaydi —
- * `roles: ['customer']` 0 ta qabul qiluvchi va 400 qaytaradi.
+ * «Kimga» rejimlari (KM-2): Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma. «Rol» rejimi olindi — rollar va mijozlar
+ * endi «Auditoriya» konstruktorida, u doim kampaniya (`POST /notifications/campaigns`, ega KM-S1). Qolgan uchtasi —
+ * sinxron `POST /notifications/dispatch`.
  */
-export const DISPATCH_ROLES = ["admin", "manager", "registrator", "courier", "market", "operator"] as const;
-export const DISABLED_DISPATCH_ROLES = ["customer"] as const;
-
-/**
- * "Hamma" (broadcast) yetadigan rollar — taxminiy son shular yig'indisi.
- * Backend superadmin va mijozlarni broadcast'ga qo'shmaydi.
- */
-export const BROADCAST_ROLES = [
-  ...DISPATCH_ROLES,
-  "market_operator",
-  "branch",
-  "investor",
-] as const;
+export type RecipientMode = "single" | "list" | "audience" | "all";
+export const RECIPIENT_MODES: readonly RecipientMode[] = ["single", "list", "audience", "all"];
 
 export type DispatchFormValues = {
   mode: RecipientMode;
   recipient_id: string;
   recipient_ids: string[];
-  roles: string[];
+  /** «Auditoriya» konstruktori qoralamasi (kampaniya nishoni). */
+  audience: AudienceDraft;
   realtime: boolean;
   telegram: boolean;
   /** SMS — pullik; faqat telefoni bor qabul qiluvchilarga (chegara serverda). */
@@ -65,7 +60,7 @@ export const createDefaultValues = (): DispatchFormValues => ({
   mode: "single",
   recipient_id: "",
   recipient_ids: [],
-  roles: [],
+  audience: createAudienceDraft(),
   realtime: true,
   telegram: false,
   sms: false,
@@ -83,7 +78,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 export const createDispatchSchema = (t: Translate) =>
   yup.object({
-    mode: yup.string<RecipientMode>().oneOf(["single", "roles", "list", "all"]).required(),
+    mode: yup.string<RecipientMode>().oneOf([...RECIPIENT_MODES]).required(),
     recipient_id: yup.string().default("").when("mode", {
       is: "single",
       then: (schema) => schema.required(t("dispatch.errors.recipient")),
@@ -95,13 +90,8 @@ export const createDispatchSchema = (t: Translate) =>
         is: "list",
         then: (schema) => schema.min(1, t("dispatch.errors.recipients")),
       }),
-    roles: yup
-      .array(yup.string().required())
-      .default([])
-      .when("mode", {
-        is: "roles",
-        then: (schema) => schema.min(1, t("dispatch.errors.roles")),
-      }),
+    // Konstruktor holati alohida tekshiriladi (`audienceGate`) — xatolar kartaning o'zida.
+    audience: yup.mixed<AudienceDraft>().required(),
     realtime: yup.boolean().required(),
     telegram: yup.boolean().required(),
     sms: yup.boolean().required(),
@@ -124,10 +114,15 @@ export const createDispatchSchema = (t: Translate) =>
       .default("")
       .trim()
       .max(DISPATCH_LIMITS.link, t("dispatch.errors.tooLong", { max: DISPATCH_LIMITS.link })),
+    // Kampaniyada guruh kaliti yo'q (backend `campaign:<id>` ni o'zi qo'yadi) — faqat sinxron yuborishda majburiy.
     group_key: yup
       .string()
       .trim()
-      .required(t("dispatch.errors.groupKey"))
+      .when("mode", {
+        is: "audience",
+        then: (schema) => schema.default(""),
+        otherwise: (schema) => schema.required(t("dispatch.errors.groupKey")),
+      })
       .max(DISPATCH_LIMITS.groupKey, t("dispatch.errors.tooLong", { max: DISPATCH_LIMITS.groupKey })),
   });
 
@@ -143,7 +138,6 @@ export type DispatchPayload = {
   channels: Array<"in_app" | "realtime" | "telegram" | "sms" | "push">;
   recipient_id?: string;
   recipient_ids?: string[];
-  roles?: string[];
   broadcast?: true;
   /** Faqat market tanlanganda; yo'q bo'lsa backend Telegram'ni shaxsiy chatga yuboradi. */
   telegram?: { market_id: string };
@@ -168,9 +162,7 @@ export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayloa
       ? { recipient_id: values.recipient_id }
       : values.mode === "list"
         ? { recipient_ids: values.recipient_ids }
-        : values.mode === "roles"
-          ? { roles: values.roles }
-          : { broadcast: true as const };
+        : { broadcast: true as const };
 
   return {
     // Backend `type` ni majburiy qiladi (`{domain}.{event}`) — qo'lda yuborilgan xabar.
@@ -184,5 +176,28 @@ export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayloa
     channels,
     ...target,
     ...(values.telegram && values.telegram_market_id ? { telegram: { market_id: values.telegram_market_id } } : {}),
+  };
+};
+
+/**
+ * «Auditoriya» → `POST /notifications/campaigns` tanasi. Kanallar — faqat kampaniyada ruxsat etilganlari (`in_app`
+ * doim, «Ochiq ekranga», Push); Telegram va SMS yuborilmaydi (backend 400). Guruh kaliti yo'q. KM-2 da faqat
+ * «Darhol» (`scheduled_at` — KM-3).
+ */
+export const buildCampaignPayload = (values: DispatchFormValues, target: AudienceTarget): CampaignPayload => {
+  const channels: CampaignPayload["channels"] = ["in_app"];
+  if (values.realtime) channels.push("realtime");
+  if (values.push) channels.push("push");
+  const body = values.body.trim();
+  const link = values.link.trim();
+  return {
+    ...target,
+    type: `${values.category}.manual`,
+    category: values.category,
+    priority: values.priority,
+    title: values.title.trim(),
+    ...(body ? { body } : {}),
+    ...(link ? { link } : {}),
+    channels: channels.filter((channel) => (CAMPAIGN_CHANNELS as readonly string[]).includes(channel)),
   };
 };

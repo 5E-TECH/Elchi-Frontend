@@ -5,9 +5,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *
  *  - market (ega MO-S1): pastki menyu Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» —
  *    «Menyu» varaqasida (maket `market-dashboard-mobile-menu`).
- *  - market_operator: `/` admin bosh sahifasiga tushmaydi — shell ichida 403 (sizish mDfjKeQi); skaner yo'q;
- *    menyu bandlari hali yo'q — pastki menyu chizilmaydi (MO-2 gacha). Logist — o'z bosh sahifasi (LG-1,
- *    `logist-home.*.spec.ts`), investor — o'z kabineti (IN-1, `investor-home.*.spec.ts`).
+ *  - Yangi rollar o'z spec'larida: logist — LG-1 (`logist-home.*.spec.ts`), investor — IN-1
+ *    (`investor-home.*.spec.ts`), market operatori — MO-2 (`market-operator-home.*.spec.ts`, sizish to'sig'i bilan).
  *
  * API — `route.fulfill` bilan soxta; yozish so'rovlari taqiqlangan.
  */
@@ -89,36 +88,3 @@ test("market: pastki menyu — Bosh sahifa · Buyurtmalar · Yaratish · To'lovl
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(leaked).toEqual([]);
 });
-
-for (const { role, name, search } of [
-  { role: "market_operator", name: "Dilnoza Karimova", search: true },
-  // logist — LG-1 (`logist-home.*.spec.ts`), investor — IN-1 (`investor-home.*.spec.ts`): o'z bosh sahifalari.
-]) {
-  test(`${role}: «/» — shell ichida 403, admin bosh sahifasi so'rovlari ketmaydi; skanersiz, pastki menyusiz`, async ({
-    page,
-  }) => {
-    const { leaked, requested } = await setup(page, role, name);
-    await page.goto("/");
-
-    await expect(page.getByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" })).toBeVisible();
-    // Admin bosh sahifasining kompaniya bo'yicha so'rovlari (viloyatlar tushumi va h.k.) yuborilmaydi.
-    expect(requested.filter((path) => /^(region\/stats|analytics)/.test(path))).toEqual([]);
-
-    await expect(bottomNav(page)).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Skanerlash/ })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Qidiruvni ochish" })).toHaveCount(search ? 1 : 0);
-
-    // Menyu yuqori paneldan ochiladi: profil, Bildirishnomalar, Sozlamalar, Chiqish.
-    await page.getByRole("button", { name: "Menyuni ochish" }).click();
-    const sheet = page.getByRole("dialog", { name: "Menyu" });
-    await expect(sheet).toBeVisible();
-    // Menyu qidiruvi `/orders?search=` ga olib boradi — bu rollarda buyurtmalar yopiq (403), shuning uchun yo'q;
-    // global qidiruv (yuqori panel) logistda qoladi.
-    await expect(sheet.getByRole("searchbox", { name: "Qidiruv" })).toHaveCount(0);
-    await expect(sheet.getByRole("link", { name: /Sozlamalar/ })).toBeVisible();
-    await expect(sheet.getByRole("button", { name: "Chiqish" })).toBeVisible();
-
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    expect(leaked).toEqual([]);
-  });
-}

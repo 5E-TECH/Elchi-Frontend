@@ -9,6 +9,7 @@ import type {
   AiParseImage,
   AiParseRequest,
   AiParseResponse,
+  AiStatusResponse,
 } from "./types";
 
 /**
@@ -82,8 +83,15 @@ export const useAiConfirm = () => {
 export const AI_AVAILABILITY_KEY = "ai-order-availability";
 
 /**
- * AI yoqilganmi (`AI_ORDER_ENABLED` konfiguratsiya kaliti). `enabled:false`
- * bo'lsa "AI bilan" tabi umuman ko'rsatilmaydi.
+ * «AI bilan» tabi yashirilsinmi (ega Ops S3): faqat AI aniq o'chiq bo'lsa — `enabled:false` yoki
+ * `state === "disabled"` (kalit yo'q / noto'g'ri). `unknown`, `cap_exceeded` va javob yo'q (xato) — tab qoladi.
+ */
+export const isAiTabHidden = (availability: AiAvailability | null | undefined): boolean =>
+  availability?.enabled === false || availability?.state === "disabled";
+
+/**
+ * AI yoqilganmi (`AI_ORDER_ENABLED` konfiguratsiya kaliti va ai-service holati). Tab ko'rinishi —
+ * `isAiTabHidden`.
  *
  * ⚠️ So'rov YIQILSA (masalan eski backend'da endpoint yo'q) tab YASHIRILMAYDI:
  * AI o'chiq bo'lsa ham `ai-parse` baribir `disabled` qaytaradi va panel
@@ -96,6 +104,20 @@ export const useAiAvailability = () =>
       api.get(API_ENDPOINTS.ORDERS.AI_AVAILABILITY).then((res) => unwrap<AiAvailability>(res.data)),
     staleTime: 60_000,
     retry: false,
-    // Tab ko'rinishini boshqaradi — xato bo'lsa AI tab shunchaki yashiriladi.
+    // Tab ko'rinishini boshqaradi — xato bo'lsa tab QOLADI (`isAiTabHidden`), global xabar chiqmaydi.
+    meta: { silentError: true },
+  });
+
+export const AI_STATUS_KEY = "ai-status";
+
+/**
+ * `GET ai/status` — AI kaliti holati (qiymatsiz), modellar va bugungi kunlik limit (Ops → Tizim, «AI holati»; OS-2).
+ * Xato global toast'siz (`silentError`) — karta o'zi «AI holatini olib bo'lmadi» chizadi. 5xx bir marta qayta
+ * urinish — umumiy `queryRetry` qoidasi.
+ */
+export const useAiStatus = () =>
+  useQuery({
+    queryKey: [AI_STATUS_KEY],
+    queryFn: () => api.get(API_ENDPOINTS.AI.STATUS).then((res) => unwrap<AiStatusResponse>(res.data)),
     meta: { silentError: true },
   });

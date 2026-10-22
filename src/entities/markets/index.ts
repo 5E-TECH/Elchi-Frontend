@@ -19,10 +19,12 @@ export const useMarkets = () => {
       enabled,
     });
 
-  const useGetMarketById = (id: number, enabled: boolean = true) => useQuery({
+  /** `silentError` — sahifa xatoni o'zi hal qiladi (masalan narxni ko'rsatmaydi), global xabar chiqmaydi. */
+  const useGetMarketById = (id: number, enabled: boolean = true, options?: { silentError?: boolean }) => useQuery({
       queryKey: [markets, id],
       queryFn: () => api.get(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
       enabled: enabled && Number.isFinite(id) && id > 0,
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   return {

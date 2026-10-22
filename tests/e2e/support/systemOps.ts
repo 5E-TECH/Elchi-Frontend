@@ -82,12 +82,73 @@ export const KPI_OK: MockReply = {
   },
 };
 
+/**
+ * `GET ai/status` (api-gateway `AiGatewayController.status`, konvert `{ statusCode, message, data }`; backend
+ * `AiStatusResponse`) — sukut: hammasi joyida (maket `superadmin-ops-system`).
+ */
+export const aiStatus = (patch: Record<string, unknown> = {}, capPatch: Record<string, unknown> = {}): MockReply => ({
+  status: 200,
+  body: {
+    statusCode: 200,
+    message: "success",
+    data: {
+      enabled: true,
+      key_state: "ok",
+      models: { order: "claude-sonnet-5", vision: "claude-sonnet-5", classify: "claude-haiku-4-5" },
+      model_policy: { ok: true, order: "ok", vision: "ok", classify: "ok" },
+      cap: {
+        period_key: "2026-10-21",
+        spent_usd: 5.82,
+        cap_usd: 25,
+        override_usd: 0,
+        effective_cap_usd: 25,
+        ratio: 0.2328,
+        state: "ok",
+        reset_at: "2026-10-21T19:00:00.000Z",
+        ...capPatch,
+      },
+      usage_persist_failures: 0,
+      ...patch,
+    },
+  },
+});
+
+/** Maket `superadmin-ops-system-ai-cap` — kunlik limit tugadi. */
+export const AI_CAP = aiStatus({}, { spent_usd: 25, ratio: 1, state: "exceeded" });
+
+/** Maket `superadmin-ops-system-ai-config` — kalit nomi noto'g'ri, rasm modeli narx jadvalida yo'q. */
+export const AI_CONFIG = aiStatus(
+  {
+    enabled: false,
+    key_state: "misnamed",
+    models: { order: "claude-sonnet-5", vision: "claude-sonet-5", classify: "claude-haiku-4-5" },
+    model_policy: { ok: false, order: "ok", vision: "unknown", classify: "ok" },
+  },
+  { spent_usd: 0, ratio: 0 },
+);
+
+/** Maket `superadmin-ops-system-partial` — zaif model, 84%, qo'shimcha limit, 3 ta yozilmagan chaqiruv. */
+export const AI_WEAK = aiStatus(
+  {
+    models: { order: "claude-sonnet-4-6", vision: "claude-sonnet-5", classify: "claude-haiku-4-5" },
+    model_policy: { ok: false, order: "weak", vision: "ok", classify: "ok" },
+    usage_persist_failures: 3,
+  },
+  { spent_usd: 29.4, override_usd: 10, effective_cap_usd: 35, ratio: 0.84, state: "warn" },
+);
+
+/** `GET orders/ai-availability` — gateway bayrog'i (`AI_ORDER_ENABLED`). */
+export const aiFlag = (enabled: boolean): MockReply => ({
+  status: 200,
+  body: { statusCode: 200, message: "success", data: { enabled, state: enabled ? "enabled" : "disabled" } },
+});
+
 export const mockSystemOpsApi = async (
   page: Page,
-  options: { health?: MockReply[]; kpi?: MockReply[] } = {},
+  options: { health?: MockReply[]; kpi?: MockReply[]; ai?: MockReply[]; aiFlag?: MockReply } = {},
 ) => {
   const leaked: string[] = [];
-  const calls = { health: 0, kpi: 0 };
+  const calls = { health: 0, kpi: 0, ai: 0 };
   // Navbatdagi javob; oxirgisi keyingi so'rovlarda takrorlanadi.
   const next = (list: MockReply[] | undefined, index: number, fallback: MockReply) =>
     list && list.length ? list[Math.min(index, list.length - 1)] : fallback;
@@ -110,6 +171,15 @@ export const mockSystemOpsApi = async (
     if (path === "analytics/kpi") {
       const result = next(options.kpi, calls.kpi, KPI_OK);
       calls.kpi += 1;
+      return reply(route, result.body, result.status);
+    }
+    if (path === "ai/status") {
+      const result = next(options.ai, calls.ai, aiStatus());
+      calls.ai += 1;
+      return reply(route, result.body, result.status);
+    }
+    if (path === "orders/ai-availability") {
+      const result = options.aiFlag ?? aiFlag(true);
       return reply(route, result.body, result.status);
     }
     if (request.method() !== "GET") {
@@ -135,3 +205,5 @@ export const openSystemOps = async (page: Page) => {
 };
 
 export const healthCard = (page: Page) => page.getByRole("region", { name: "Tizim holati" });
+
+export const aiCard = (page: Page) => page.getByRole("region", { name: "AI holati" });

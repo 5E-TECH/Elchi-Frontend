@@ -64,6 +64,10 @@ export interface NavSection {
 /** Rolga xos yorliq kaliti (yo'l bo'yicha). */
 const LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   courier: { "/cash-box": "cashbox" },
+  // MO-2/MO-3: market operatorida yaratish bandi «Buyurtma yaratish» (maket `roles.json`; qabul/bekorlar yo'q). Band
+  // `/new-orders` (MO-3: operatorda u `/new-orders/create` ga yo'naltiriladi); `/new-orders/create` ham shu yorliqda —
+  // aks holda umumiy «Qabul va yaratish» chiqardi.
+  market_operator: { "/new-orders": "createOrder", "/new-orders/create": "createOrder" },
 };
 
 /**
@@ -81,9 +85,13 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».
   market: { "/new-orders": "createShort" },
+  // Investor: varaqa plitkalarida TO'LIQ nom («Investitsiyalar», «Foyda tarixi» — maket
+  // `investor--dashboard-mobile-menu`); qisqa «Investitsiya» / «Foyda» faqat pastki menyuda (`BottomNav`).
+  market_operator: { "/new-orders": "createShort", "/new-orders/create": "createShort" },
 };
 
-const toEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {
+/** Menyu bandi → yorliq kalitlari bilan (rolga xos to'liq va qisqa yorliq). Testlar uchun eksport. */
+export const toNavEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {
   const shortLabelKey =
     (role ? SHORT_LABEL_KEY_BY_ROLE[role]?.[item.to] : undefined) ??
     SHORT_LABEL_KEY_BY_PATH[item.to];
@@ -109,7 +117,7 @@ export const getNavSections = (
 
   for (const group of getSidebarGroupsForUser(normalizedRole, user)) {
     const id = group.id ? SECTION_OF_GROUP[group.id] : null;
-    const items = group.items.map((item) => toEntry(normalizedRole, item));
+    const items = group.items.map((item) => toNavEntry(normalizedRole, item));
     const previous = sections[sections.length - 1];
     if (id && previous?.id === id) previous.items.push(...items);
     else sections.push({ id, items });

@@ -6,6 +6,9 @@ import type {
   DispatchAudience,
   SentDetail,
   SentDetailParams,
+  SentListItem,
+  SentListPage,
+  SentListParams,
   UndeliveredFailure,
   UndeliveredItem,
 } from "../model/types";
@@ -72,13 +75,19 @@ const toUndeliveredItem = (value: unknown): UndeliveredItem => {
   };
 };
 
+const toAuthor = (value: unknown): SentDetail["created_by"] => {
+  const record = asRecord(value);
+  return Object.keys(record).length
+    ? { id: String(record.id ?? ""), name: toText(record.name), role: toText(record.role) }
+    : null;
+};
+
 /** `GET /notifications/sent/:dispatch_id` javobi → `SentDetail` (backend `DispatchHistoryService.detail`). */
 export const normalizeSentDetail = (payload: unknown, params: SentDetailParams = {}): SentDetail => {
   const data = unwrap(payload);
   const undelivered = asRecord(data.undelivered);
   const meta = asRecord(undelivered.meta);
   const items = Array.isArray(undelivered.items) ? undelivered.items.map(toUndeliveredItem) : [];
-  const createdBy = asRecord(data.created_by);
   return {
     dispatch_id: String(data.dispatch_id ?? ""),
     status: isDispatchHistoryStatus(data.status) ? data.status : "running",
@@ -96,9 +105,7 @@ export const normalizeSentDetail = (payload: unknown, params: SentDetailParams =
     channel_status: toChannelStatus(data.channel_status),
     no_provider: toStrings(data.no_provider),
     audience: toAudience(data.audience),
-    created_by: Object.keys(createdBy).length
-      ? { id: String(createdBy.id ?? ""), name: toText(createdBy.name), role: toText(createdBy.role) }
-      : null,
+    created_by: toAuthor(data.created_by),
     created_at: toText(data.created_at ?? data.createdAt),
     finished_at: toText(data.finished_at),
     undelivered: {
@@ -113,4 +120,58 @@ export const normalizeSentDetail = (payload: unknown, params: SentDetailParams =
 export const getSentDetail = async (dispatchId: string, params: SentDetailParams = {}) => {
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.SENT_BY_ID(dispatchId), { params });
   return normalizeSentDetail(response.data, params);
+};
+
+/** Ro'yxat qatori (`toPublic`): xom `message` olinmaydi. */
+export const normalizeSentListItem = (value: unknown): SentListItem => {
+  const data = asRecord(value);
+  return {
+    dispatch_id: String(data.dispatch_id ?? ""),
+    status: isDispatchHistoryStatus(data.status) ? data.status : "running",
+    type: String(data.type ?? ""),
+    title: String(data.title ?? ""),
+    body_preview: toText(data.body_preview),
+    channels: toStrings(data.channels),
+    recipients: toCount(data.recipients),
+    dispatched: toCount(data.dispatched),
+    skipped_by_preference: toCount(data.skipped_by_preference),
+    by_channel: toCountMap(data.by_channel),
+    channel_status: toChannelStatus(data.channel_status),
+    no_provider: toStrings(data.no_provider),
+    audience: toAudience(data.audience),
+    created_by: toAuthor(data.created_by),
+    created_at: toText(data.created_at ?? data.createdAt),
+    finished_at: toText(data.finished_at),
+  };
+};
+
+/** `GET /notifications/sent` javobi (`{ items, meta: { page, limit, total, totalPages } }`) → `SentListPage`. */
+export const normalizeSentList = (payload: unknown, params: SentListParams = {}): SentListPage => {
+  const data = unwrap(payload);
+  const meta = asRecord(data.meta);
+  const items = (Array.isArray(data.items) ? data.items : [])
+    .map(normalizeSentListItem)
+    .filter((item) => item.dispatch_id);
+  const limit = toCount(meta.limit) || params.limit || items.length || 1;
+  const total = meta.total !== undefined ? toCount(meta.total) : items.length;
+  return {
+    items,
+    page: toCount(meta.page) || params.page || 1,
+    limit,
+    total,
+    totalPages: toCount(meta.totalPages) || Math.max(1, Math.ceil(total / limit)),
+  };
+};
+
+/** Bo'sh filtr yuborilmaydi (backend `status=''` ni qabul qiladi, lekin URL toza qolsin). */
+const listQuery = ({ page, limit, status, created_by }: SentListParams) => ({
+  ...(page ? { page } : {}),
+  ...(limit ? { limit } : {}),
+  ...(status ? { status } : {}),
+  ...(created_by ? { created_by } : {}),
+});
+
+export const getSentList = async (params: SentListParams = {}) => {
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.SENT, { params: listQuery(params) });
+  return normalizeSentList(response.data, params);
 };

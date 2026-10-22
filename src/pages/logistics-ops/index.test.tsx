@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import LogisticsOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { expectNoRawBackendText, expectRequestBody, mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 
 const apiGetMock = vi.fn();
 const apiPostMock = vi.fn();
@@ -16,8 +17,11 @@ vi.mock("../../shared/api/api", () => ({
 
 describe("LogisticsOps page", () => {
   beforeEach(() => {
-    apiGetMock.mockResolvedValue({ data: [] });
-    apiPostMock.mockResolvedValue({ data: {} });
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    // Haqiqiy konvert: `GET post/return-requests/list` → `{ statusCode, message, data: { total, scope, groups } }`.
+    apiGetMock.mockResolvedValue(mockEnvelope({ total: 0, scope: { type: "HQ" }, groups: [] }));
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 0, order_ids: [], skipped_order_ids: [] }));
   });
 
   it("renders header \"Logistika — qaytarish so'rovlari\"", () => {
@@ -39,12 +43,12 @@ describe("LogisticsOps page", () => {
 
   it("calls api.post with \"post/return-requests/approve\" and {order_ids} of the selected rows — fix3b CODE-09", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockResolvedValue({
-      data: {
-        statusCode: 200,
-        data: { total: 1, groups: [{ courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] }] },
-      },
-    });
+    apiGetMock.mockResolvedValue(
+      mockEnvelope({
+        total: 1,
+        groups: [{ courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] }],
+      }),
+    );
     renderWithProviders(<LogisticsOpsPage />);
 
     await screen.findByText("Kuryer Ali");
@@ -56,24 +60,21 @@ describe("LogisticsOps page", () => {
     expect(apiPostMock).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "1 tasini tasdiqlash" }));
 
-    await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001"] });
-    });
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    // Tana aynan `{ order_ids }` (`ReturnRequestsActionRequestDto`) — faqat URL emas.
+    expectRequestBody(apiPostMock, "post/return-requests/approve", { order_ids: ["9001"] });
   });
 
   it("renders return requests grouped by courier (data.groups[].orders) — fix3 CODE-09", async () => {
-    apiGetMock.mockResolvedValue({
-      data: {
-        statusCode: 200,
-        data: {
-          total: 2,
-          groups: [
-            { courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] },
-            { courier_id: null, courier: null, orders: [{ id: "9002", status: "waiting" }] },
-          ],
-        },
-      },
-    });
+    apiGetMock.mockResolvedValue(
+      mockEnvelope({
+        total: 2,
+        groups: [
+          { courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] },
+          { courier_id: null, courier: null, orders: [{ id: "9002", status: "waiting" }] },
+        ],
+      }),
+    );
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(await screen.findAllByText("9001")).not.toHaveLength(0);
@@ -83,24 +84,21 @@ describe("LogisticsOps page", () => {
 
   it("v2: «← Ops vositalari», holat yorliqlari (maket), tanlov paneli va «Tanlovni bekor qilish»", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockResolvedValue({
-      data: {
-        statusCode: 200,
-        data: {
-          total: 2,
-          groups: [
-            {
-              courier_id: "56",
-              courier: { id: "56", name: "Kuryer Ali" },
-              orders: [
-                { id: "9001", status: "waiting" },
-                { id: "9002", status: "on the road" },
-              ],
-            },
-          ],
-        },
-      },
-    });
+    apiGetMock.mockResolvedValue(
+      mockEnvelope({
+        total: 2,
+        groups: [
+          {
+            courier_id: "56",
+            courier: { id: "56", name: "Kuryer Ali" },
+            orders: [
+              { id: "9001", status: "waiting" },
+              { id: "9002", status: "on the road" },
+            ],
+          },
+        ],
+      }),
+    );
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=logistics");
@@ -114,5 +112,15 @@ describe("LogisticsOps page", () => {
     await user.click(screen.getByRole("button", { name: "Tanlovni bekor qilish" }));
     expect(screen.getByRole("checkbox", { name: "So'rov 9001 ni tanlash" })).not.toBeChecked();
     expect(screen.getByRole("button", { name: "Tasdiqlash — 0 ta" })).toBeDisabled();
+  });
+
+  it("so'rov rad etildi (ro'yxat 400) — xato holati i18n matni bilan, xom backend matni yo'q", async () => {
+    apiGetMock.mockRejectedValue(mockRejection(400));
+    renderWithProviders(<LogisticsOpsPage />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Qaytarish so'rovlarini yuklab bo'lmadi");
+    expect(alert).toHaveTextContent("So'rov bajarilmadi (400).");
+    expectNoRawBackendText();
   });
 });

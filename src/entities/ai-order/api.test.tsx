@@ -10,7 +10,7 @@ vi.mock("../../auth/authService", () => ({
 }));
 
 import { api } from "../../shared/api/api";
-import { AI_REQUEST_TIMEOUT_MS, useAiAvailability, useAiConfirm, useAiParse } from "./api";
+import { AI_REQUEST_TIMEOUT_MS, AI_STATUS_KEY, isAiTabHidden, useAiAvailability, useAiConfirm, useAiParse, useAiStatus } from "./api";
 import type { AiConfirmRequest } from "./types";
 
 /**
@@ -188,5 +188,54 @@ describe("useAiAvailability", () => {
     expect(result.current.data).toEqual({ enabled: false, state: "disabled" });
     expect(requests[0].url).toBe("orders/ai-availability");
     expect(requests[0].method).toBe("get");
+  });
+});
+
+describe("isAiTabHidden (ega Ops S3, CS-B)", () => {
+  it("faqat AI aniq o'chiq bo'lsa yashiriladi: `enabled:false` yoki `state: disabled`", () => {
+    expect(isAiTabHidden({ enabled: false })).toBe(true);
+    expect(isAiTabHidden({ enabled: false, state: "unknown" })).toBe(true);
+    expect(isAiTabHidden({ enabled: true, state: "disabled" })).toBe(true);
+  });
+
+  it("`unknown`, `cap_exceeded`, `enabled` va javob yo'q (xato / yuklanmoqda) — tab qoladi", () => {
+    expect(isAiTabHidden({ enabled: true, state: "unknown" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true, state: "cap_exceeded" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true, state: "enabled" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true })).toBe(false);
+    expect(isAiTabHidden(undefined)).toBe(false);
+    expect(isAiTabHidden(null)).toBe(false);
+  });
+});
+
+describe("useAiStatus (OS-2)", () => {
+  const STATUS = {
+    enabled: true,
+    key_state: "ok",
+    models: { order: "claude-sonnet-5", vision: "claude-sonnet-5", classify: "claude-haiku-4-5" },
+    model_policy: { ok: true, order: "ok", vision: "ok", classify: "ok" },
+    cap: {
+      period_key: "2026-10-21",
+      spent_usd: 5.82,
+      cap_usd: 25,
+      override_usd: 0,
+      effective_cap_usd: 25,
+      ratio: 0.2328,
+      state: "ok",
+      reset_at: "2026-10-21T19:00:00.000Z",
+    },
+    usage_persist_failures: 0,
+  };
+
+  it("GET ai/status javobini qobig'idan ochadi; xato global toast'siz (silentError)", async () => {
+    respond = () => Promise.resolve({ statusCode: 200, message: "ok", data: STATUS });
+    const client = newClient();
+    const { result } = renderHook(() => useAiStatus(), { wrapper: wrapperFor(client) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(STATUS);
+    expect(requests[0].url).toBe("ai/status");
+    expect(requests[0].method).toBe("get");
+    expect(client.getQueryCache().find({ queryKey: [AI_STATUS_KEY] })?.meta).toEqual({ silentError: true });
   });
 });

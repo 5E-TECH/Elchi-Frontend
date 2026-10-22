@@ -220,6 +220,29 @@ describe("region statistics adapters", () => {
     expect(result.couriers?.[1]).toMatchObject({ id: "c2", isPrimary: true });
   });
 
+  it("LG-3: courier status (lower-case) and districtId from GET region/stats/:id", () => {
+    const result = normalizeRegionDetailStats({
+      statusCode: 200,
+      data: {
+        region: { id: "6", name: "Samarqand viloyati" },
+        summary: { totalOrders: 3, deliveredOrders: 2, cancelledOrders: 1 },
+        couriers: [
+          { id: "c1", name: "A", status: "ACTIVE", districtId: 15, totalOrders: 3, deliveredOrders: 2 },
+          { id: "c2", name: "B", status: null, districtId: null, totalOrders: 0, deliveredOrders: 0 },
+          { id: "c3", name: "C", status: "inactive", district_id: "16" },
+        ],
+        districts: [],
+      },
+    });
+
+    expect(result.couriers?.map(({ status, districtId }) => ({ status, districtId }))).toEqual([
+      { status: "active", districtId: "15" },
+      { status: null, districtId: null },
+      { status: "inactive", districtId: "16" },
+    ]);
+    expect(result.couriers?.[0].successRate).toBeCloseTo(66.67, 1);
+  });
+
   it("normalizes GET region/my/district-stats (uherIk8r) incl. zero-order districts", () => {
     const result = normalizeMyRegionDistrictStats({
       statusCode: 200,

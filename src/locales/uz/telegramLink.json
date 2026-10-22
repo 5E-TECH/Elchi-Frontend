@@ -32,6 +32,7 @@
   "unlinking": "Uzilmoqda…",
   "unlinkedToast": "Telegram uzildi",
   "timeLeft": "{{time}} qoldi",
+  "timeLeftA11y": "Havola muddati: {{minutes}} daqiqa {{seconds}} soniya qoldi",
   "waiting": "Ulanish kutilmoqda…",
   "phoneStep1": "«Telegram'da ochish» ni bosing",
   "phoneStep3": "Shu sahifaga qayting — u o'zi yangilanadi",
@@ -39,5 +40,26 @@
   "commandStep2": "Uni Elchi botiga shaxsiy xabar qilib yuboring",
   "qrOtherPhone": "Boshqa telefondan — QR kod",
   "linkErrorRetry": "Birozdan keyin qayta urinib ko'ring.",
-  "linkErrorForbidden": "Bu hisob uchun Telegram'ni ulab bo'lmaydi."
+  "linkErrorForbidden": "Bu hisob uchun Telegram'ni ulab bo'lmaydi.",
+  "group": {
+    "title": "Telegram guruhini ulash",
+    "description": "{{market}} · {{type}}",
+    "typeCreate": "Yangi buyurtmalar guruhi",
+    "typeCancel": "Bekor qilinganlar guruhi",
+    "ready": "Bir martalik havola tayyor",
+    "qrAlt": "Telegram guruhini ulash havolasining QR kodi",
+    "step1": "Havolani oching yoki QR kodni telefonda skanerlang",
+    "phoneStep1": "«Telegram'da ochish» ni bosing",
+    "step2": "Guruhni tanlang — bot guruhga qo'shiladi",
+    "step3": "Bot guruhni o'zi ulaydi, holat shu yerda yangilanadi",
+    "step3Notify": "Bot guruhni o'zi ulaydi — ulanganda sizga bildirishnoma keladi",
+    "commandHint": "Guruhga shu buyruqni yuboring:",
+    "commandStep1": "Elchi botini guruhga qo'shing",
+    "commandStep2": "Buyruqni nusxalab, guruhga yuboring",
+    "waiting": "Guruh ulanishi kutilmoqda…",
+    "expiredTitle": "Havola muddati tugadi",
+    "expiredText": "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Yangisini oling.",
+    "connected": "Guruh ulandi",
+    "connectedText": "{{market}} · {{type}}: buyurtma xabarlari endi shu guruhga keladi."
+  }
 }

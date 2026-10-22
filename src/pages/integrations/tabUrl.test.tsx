@@ -237,4 +237,44 @@ describe("Ulanish paneli — tab URL'da", () => {
     expect(screen.getByTestId("ovw-actions")).toBeInTheDocument();
     invalidate.mockRestore();
   });
+
+  it("⭐ Hisob-kitob: «Qarz yozuvlari» dagi «To'lov №82» URL'ni o'zgartirmaydi — «Olingan to'lovlar» ga fokus (IS-3)", async () => {
+    const TEZ = { id: 9, name: "Tez Yetkaz", slug: "tez-yetkaz", type: "api", role: "carrier", category: "cargo", is_active: true };
+    apiGetMock.mockImplementation((url: string) => {
+      const path = String(url);
+      if (path === "integrations") {
+        return Promise.resolve({ data: { data: { items: [TEZ], meta: { total: 1, page: 1, limit: 100, totalPages: 1 } } } });
+      }
+      if (path === "integrations/receivables") {
+        return Promise.resolve({
+          data: {
+            data: {
+              items: [{ id: 4, order_id: "10209", integration_id: "9", external_ref: "TY-447738", amount: "1150000.00", status: "settled", remittance_id: "82", settled_at: "2026-10-14T06:20:00.000Z" }],
+              pagination: { total: 1, page: 1, limit: 20 },
+            },
+          },
+        });
+      }
+      if (path === "integrations/9/remittances") {
+        return Promise.resolve({
+          data: {
+            data: {
+              items: [{ id: 82, created_at: "2026-10-14T06:20:00.000Z", amount: 1500000, settled_count: 1, status: "active", cashbox_posted: true }],
+              pagination: { total: 1, page: 1, limit: 10 },
+            },
+          },
+        });
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+    open("/integrations/connections?scope=external&c=integration:9&t=settlement");
+
+    const link = await waitFor(() => tabButton(/^To'lov №82$/));
+    const searchBefore = currentSearch();
+    fireEvent.click(link);
+    expect(document.querySelector("[data-remittances-head]")).toHaveFocus();
+    expect(currentSearch()).toBe(searchBefore);
+    expect(searchBefore).toContain("t=settlement");
+  });
 });
+

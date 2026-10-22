@@ -175,7 +175,8 @@ oldingi joyi. Bo'limlar orasida o'tishda butun ekranli yuklovchi yo'q: 150 ms da
 (`RouteProgress`), menyuda bosilgan band darhol tanlangan. Sahifa ichida yon menyu, pastki menyu yoki sahifa darajasidagi o'z skroll
 konteyneri yasalmaydi. Sahifa `[data-shell-slot=content]` ichida chiziladi: o'ziga tashqi karta (`bg-surface` o'rami),
 tashqi chekka (`p-*` / `px-*`), `h-screen` yoki pastki menyu uchun joy qo'shmaydi — bular shell'da; sahifa ildizi
-faqat bo'limlar oralig'i (`flex flex-col gap-6 max-md:gap-4`).
+faqat bo'limlar oralig'i (`flex flex-col gap-6 max-md:gap-4`). Ekran balandligi kerak bo'lsa — faqat `dvh` (`min-h-dvh`, `100dvh`): `100vh` / `h-screen` iOS
+Safari'da manzil paneli ostida qoladi (`src/test/viewportHeightGuard.test.ts`).
 
 **Telefonda filtrlar:** ≤ 2 ta filtr — qatorda, ustma-ust (`max-md:min-h-11`; namuna `manager-returns-list`);
 ≥ 3 ta — «Filtrlar» tugmasi (soni bilan) + pastdan chiquvchi oyna, «Tozalash» va «Natijalarni ko'rsatish (N)»
@@ -303,7 +304,7 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19; oxirgi `/market-operators` — MO-1, 2026-10-21) |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 78 / 78 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2) |
 | 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
@@ -380,7 +381,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-77 / 77 route v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
+79 / 79 route v2 (`design/SCREENS.md`; NS-2 — yangi `/notifications/sent`, MO-2 — yangi `/my-earnings`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
 `/market-operators` (MO-1, 2026-10-21: market o'z operatorlari, menyuda «Operatorlar»). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
 markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
 Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
@@ -419,7 +420,7 @@ ESLint'da `-- <sabab>`, design-guard'da `design-guard-ignore: <sabab>`.
 | ESLint ratchet (`src/test/lintRatchet.test.ts`, §12.2) | ratchet ro'yxatlari faqat qisqaradi; `design-v2` disable izohida sabab; `STAGE_A_PENDING` bo'sh | `npm test` | ro'yxatdan olib tashlash | — |
 | Vizual snapshotlar (CI «Visual», §12.5) | piksel farqi: sahnalar × kunduzgi/tungi × 1440/390 | GitHub Actions: PR + «Run workflow» | kodni tuzatish yoki «Run workflow (update)» | sahna `maxDiffPixels` faqat sabab bilan; beqaror — `test.fixme` + issue |
 | `src/test/visualCiVersion.test.ts` (§12.5) | CI Docker obrazi tegi = o'rnatilgan Playwright; aniq pin; lock; workflow qoidalari | `npm test` | bitta PR'da package.json + lock + obraz + baseline'lar | — |
-| Tokenlar, shrift, menyu | `themeTokens.test.ts` (`index.css` ↔ `themeTokens.ts`, kontrast), `inputFontGuard.test.ts` (telefonda maydon 16px), `design/tools/screens.test.mjs` (route ↔ maket, menyu) | `npm test` | `AGENTS.md` «Dizayn qo'riqchisi (CI)» | — |
+| Tokenlar, shrift, menyu | `themeTokens.test.ts` (`index.css` ↔ `themeTokens.ts`, kontrast), `inputFontGuard.test.ts` (telefonda maydon 16px), `viewportHeightGuard.test.ts` (`src` da `100vh` / `h-screen` / `min-h-screen` yo'q — faqat `dvh`, iOS manzil paneli), `design/tools/screens.test.mjs` (route ↔ maket, menyu) | `npm test` | `AGENTS.md` «Dizayn qo'riqchisi (CI)» | — |
 
 ### 12.2 ESLint: xom boshqaruv elementlari, antd va ikonkalar
 
@@ -998,8 +999,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   webhook jurnali. **Telegram guruhini ulash** (`/notifications`, dev birlashtirishi, ega qoidasi) — maketdagi qo'lda
   guruh ID formasi o'rniga bir martalik havola: `POST /telegram/link-code` → QR + «Telegram'da ochish» + qadamlar +
   muddat, oyna ochiqligida ro'yxat har 4 s, guruh ulangach oyna yopiladi; jadvalda «Holat» ustuni. `/profile` da
-  xodimning o'z Telegram'ini ulash/uzish (`TelegramLinkCard`, xuddi shu bir martalik oqim) va marketda «Guruhda mijoz
-  ismi va telefoni» (`MarketTelegramGroupPiiCard`) — maket yo'q, eng yaqini «Xavfsizlik» kartasi. Ops panellari — `pages/ops/ui/OpsToolPage.tsx` (`embedded` — hub ichida sarlavhasiz; to'g'ridan-to'g'ri
+  xodimning o'z Telegram'ini ulash/uzish (`TelegramLinkCard`, xuddi shu bir martalik oqim); marketda «Telegram guruhi»
+  (`MarketTelegramGroupsCard`, maket `market-profile`, TG-B — «Ulash» va «Guruhda mijoz ismi va telefoni» kaliti). Ops panellari — `pages/ops/ui/OpsToolPage.tsx` (`embedded` — hub ichida sarlavhasiz; to'g'ridan-to'g'ri
   yo'lda «← Ops vositalari»), telefonda tablar → `Select`. Pul va xavfli amallar tasdiq bilan: operator to'lovi (`useConfirm` +
   `Idempotency-Key`, muvaffaqiyat xabarida server qaytargan summa), SMS kampaniya (tasdiq oynasi + `Idempotency-Key`),
   kalitni yangilash, hamkor / ulanishni to'xtatish, paketni bekor qilish, manba va Telegram guruhini o'chirish. Sozlamalar 5 tab («Skaner» alohida), profil — parol va tahrirlash oynalari
@@ -1060,3 +1061,13 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   `entities/market-operator`. «Nofaol qilish / Faollashtirish» — MO-4 (backend). Chiqarilgan v1: eski sahifa,
   `shared/components/headerName.tsx`, `shared/ui/FormPopup/`, `shared/ui/PageContainer.tsx`,
   `entities/user/ui/UserStatusBadge.tsx`; `RAW_CONTROL_RATCHET` 3 → 2 — 77 / 77 route v2.
+- **Yangi (v2 da yozilgan):** NS-2 (2026-10-21) — «Yuborilganlar» `/notifications/sent`, superadmin va admin (maketlar
+  `*-notifications-sent`, `-loading`, `-empty`, `-error`, `-sent-detail-dialog`, `-sent-detail-states`): «Natija» va
+  «Kim yubordi» filtrlari (URL, telefonda pastki varaqa), `DataTable` (planshetda 3 ustun yashirin, telefonda kartalar)
+  + `Pagination`, `QueryBoundary` holatlari, tafsilot oynasi `SentDetailDialog` («Qayta yuborish»). «Xabar yuborish»
+  sarlavhasida «Yuborilganlar». 78 / 78 route v2.
+- **Yangi (v2 da yozilgan):** MO-2 (2026-10-21) — «Daromadim» `/my-earnings`, faqat market operatori (maketlar
+  `market_operator-earnings`, `-earnings-no-commission` — qisman): «Stavkam» kartasi (`auth/my-profile` →
+  `commission_type`, `commission_value`; «Namuna», «Belgilaydi: Market egasi»), stavka yo'q — ogohlantirish va
+  «Belgilanmagan»; «Hisob», «To'lovlar», «Daromadlar» — backend (MO-6). Operator qobig'i va bosh sahifasi (market bosh
+  sahifasi operator rejimida). 79 / 79 route v2.

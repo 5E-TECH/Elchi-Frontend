@@ -380,9 +380,10 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
 describe("MobileMenu — rol personasi (ROL-0)", () => {
   it.each([
     ["investor", false],
-    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (LG-4 / MO-3 gacha) yo'q.
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (logist: LG-4 gacha) yo'q;
+    // market operatorida MO-3 dan beri bor (`canViewOrders`).
     ["logist", false],
-    ["market_operator", false],
+    ["market_operator", true],
     ["market", true],
     ["courier", true],
   ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q; 403 ga olib bormaydi)", (role, hasSearch) => {
@@ -500,8 +501,8 @@ describe("MobileMenu — bildirishnomalar", () => {
   });
 });
 
-describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () => {
-  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
+describe("MobileMenu — logist (LG-1, LG-3, maket logist-dashboard-mobile-menu)", () => {
+  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), «Hududlar», Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
     asPhone();
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
 
@@ -510,7 +511,10 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
     const home = within(sectionsNav()).getByRole("link", { name: "Bosh sahifa" });
     expect(home).toHaveAttribute("href", "/");
     expect(home).toHaveAttribute("aria-current", "page");
-    expect(within(sectionsNav()).getAllByRole("link")).toHaveLength(1);
+    expect(within(sectionsNav()).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/",
+      "/regions",
+    ]);
     expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
     expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
@@ -531,12 +535,19 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
   });
 });
 
-describe("MobileMenu — investor (IN-1)", () => {
-  it("varaqada «Bosh sahifa» plitkasi (maket `investor-dashboard-mobile-menu`); Investitsiyalar/Foyda tarixi — IN-2", () => {
+describe("MobileMenu — investor (IN-1, IN-2)", () => {
+  it("varaqada «Bosh sahifa», «Investitsiyalar», «Foyda tarixi» — to'liq nom (maket `investor-dashboard-mobile-menu`)", () => {
     asPhone();
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
     const links = within(sectionsNav()).getAllByRole("link");
-    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["Bosh sahifa", "/"]]);
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Bosh sahifa", "/"],
+      ["Investitsiyalar", "/investments"],
+      ["Foyda tarixi", "/profits"],
+    ]);
+    // Qisqa «Investitsiya» / «Foyda» — faqat pastki menyuda (BottomNav), varaqada emas.
+    expect(links[1]).toHaveAccessibleName("Investitsiyalar");
+    expect(links[2]).toHaveAccessibleName("Foyda tarixi");
     expect(links[0]).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });

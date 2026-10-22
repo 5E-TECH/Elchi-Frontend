@@ -54,6 +54,10 @@ export const mockOrderCreateApi = async (
   options: {
     /** `customers/suggest` javobi (sukut — bo'sh: «Mijoz topilmadi», telefonda varaqa ochilmaydi). */
     suggestions?: unknown[];
+    /** `auth/my-profile` ga qo'shimcha maydonlar (CS-B: `tariff_home`, `tariff_center`, `default_tariff`). */
+    profile?: Record<string, unknown>;
+    /** `product/my-products` javobi (sukut — `aiProducts`). */
+    products?: unknown[];
   } = {},
 ) => {
   const leaked: string[] = [];
@@ -76,13 +80,16 @@ export const mockOrderCreateApi = async (
       });
     }
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "7", role: "market", name: "E2E market", status: "active", add_order: true }));
+      return reply(
+        route,
+        wrap({ id: "7", role: "market", name: "E2E market", status: "active", add_order: true, ...options.profile }),
+      );
     }
     if (path === "orders/ai-availability") return reply(route, wrap({ enabled: false, state: "disabled" }));
     if (path === "region") return reply(route, wrap(aiRegions));
     const region = path.match(/^region\/(\d+)$/);
     if (region) return reply(route, { districts: aiDistrictsByRegion[region[1]] ?? [] });
-    if (path === "product/my-products") return reply(route, wrap(aiProducts));
+    if (path === "product/my-products") return reply(route, wrap(options.products ?? aiProducts));
     if (path === "customers/suggest") {
       suggestQueries.push(Object.fromEntries(url.searchParams));
       return reply(route, wrap(options.suggestions ?? []));
@@ -143,3 +150,17 @@ export const measureGrid = (grid: Locator) =>
 /** Haqiqiy skroll konteyneri — `<main>`: ijobiy son = gorizontal skroll bor. */
 export const mainHorizontalOverflow = (page: Page) =>
   page.locator("main:has([data-shell-slot=content])").evaluate((main) => main.scrollWidth - main.clientWidth);
+
+/** 1×1 kulrang PNG — mahsulot rasmi (tarmoqqa chiqmaydi, `data:` manzil). */
+export const PRODUCT_IMAGE_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGOYCQAAmwCarS5ItAAAAABJRU5ErkJggg==";
+
+/** CS-B: standart narxli market (Markazgacha 25 000, Uygacha 35 000, sukut — Uygacha). */
+export const MARKET_TARIFFS = { tariff_home: 35000, tariff_center: 25000, default_tariff: "address" };
+
+/** CS-B: rasmli, narxli va narxsiz katalog. */
+export const PRICED_PRODUCTS = [
+  { id: 501, name: "Telefon ushlagich", price: "45000.00", image_url: PRODUCT_IMAGE_DATA_URL },
+  { id: 502, name: "Avto changyutgich", price: 120000 },
+  { id: 503, name: "USB-C kabel", price: null },
+];

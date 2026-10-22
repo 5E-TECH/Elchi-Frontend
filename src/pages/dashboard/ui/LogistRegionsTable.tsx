@@ -1,14 +1,27 @@
 // dizayn-v2: logist-dashboard-main
-import { CircleX, TriangleAlert } from "lucide-react";
+import { ChevronRight, CircleX, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
 import { CHART_FILL, ChartLegend, successZoneTone } from "../../../shared/ui/charts";
 import { Card, DataTable, type DataTableColumn } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
-import type { LogistDashboardModel, LogistRegionRow, LogistSummary } from "../model/logistDashboard";
+import type { DashboardPeriod } from "../../../entities/dashboard/lib/period";
+import {
+  logistRegionHref,
+  type LogistDashboardModel,
+  type LogistRegionRow,
+  type LogistSummary,
+} from "../model/logistDashboard";
 
 type TableRow = { kind: "region"; row: LogistRegionRow } | { kind: "total"; summary: LogistSummary };
+
+/** «›» havola-ikonka (maket `.el-iconbtn`, ghost `IconButton` md ko'rinishi; telefonda jadval yo'q). */
+const DETAIL_LINK =
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] text-text-muted " +
+  "transition-[background-color,color] duration-150 hover:bg-sunken hover:text-text active:bg-border " +
+  "motion-reduce:transition-none";
 
 /** Kichik holat chizig'i (`.el-segbar`, jadvalda 8px, kartada 6px): sotilgan · jarayonda · bekor. */
 const MiniSegBar = ({
@@ -64,10 +77,19 @@ const RateCell = ({ row }: { row: LogistRegionRow }) => {
 
 /**
  * «VILOYATLARIM (N)» (maket `logist-dashboard-main`): jadval — viloyat (tumanlar soni), buyurtmalar ustuni,
- * holat chizig'i, muvaffaqiyat, faol kuryer; oxirida «Jami» qatori. Planshetda «Holat» va «Faol kuryer» yashirin,
- * telefonda kartalar. «Tafsilot» (viloyat sahifasi) LG-3 gacha yo'q — qator bosilmaydi.
+ * holat chizig'i, muvaffaqiyat, faol kuryer, «›» tafsilot; oxirida «Jami» qatori. Planshetda «Holat» va «Faol kuryer»
+ * yashirin, telefonda kartalar. LG-3: viloyat nomi, «›» va telefon kartasi — `/regions?region=<id>&period=…` havolasi (bosh sahifa davri bilan).
  */
-export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboardModel; periodText: string }) => {
+export const LogistRegionsTable = ({
+  model,
+  period,
+  periodText,
+}: {
+  model: LogistDashboardModel;
+  /** Bosh sahifa davri — «Tafsilot» havolasiga o'tadi (`/regions` shu davrda ochiladi). */
+  period: DashboardPeriod;
+  periodText: string;
+}) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
   const isPhone = useIsPhone();
@@ -84,6 +106,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
       cancelled: count(row.cancelled),
     });
   const totalCell = "font-semibold text-text";
+  const href = (regionId: string) => logistRegionHref(regionId, period);
 
   const columns: DataTableColumn<TableRow>[] = [
     {
@@ -93,12 +116,15 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
         item.kind === "total" ? (
           <span className={totalCell}>{t("v2Logist.table.total", { count: summary.regionCount })}</span>
         ) : (
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <Link
+            to={href(item.row.id)}
+            className="flex min-w-0 flex-col gap-0.5 text-inherit no-underline hover:[&>span:first-child]:underline"
+          >
             <span className="whitespace-nowrap font-semibold text-text">{item.row.name}</span>
             <span className="whitespace-nowrap text-[13px] text-text-muted">
               {t("v2Logist.table.districts", { count: item.row.districtCount })}
             </span>
-          </div>
+          </Link>
         ),
     },
     {
@@ -171,6 +197,22 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
           <span className="whitespace-nowrap">{couriersText(item.row.activeCouriers, item.row.totalCouriers)}</span>
         ),
     },
+    {
+      id: "detail",
+      header: <span className="sr-only">{t("v2Logist.table.detail")}</span>,
+      className: "w-12",
+      cell: (item) =>
+        item.kind === "total" ? null : (
+          <Link
+            to={href(item.row.id)}
+            aria-label={t("v2Logist.table.detailAria", { name: item.row.fullName })}
+            title={t("v2Logist.table.detailAria", { name: item.row.fullName })}
+            className={DETAIL_LINK}
+          >
+            <ChevronRight size={18} aria-hidden="true" />
+          </Link>
+        ),
+    },
   ];
 
   const rows: TableRow[] = [
@@ -184,7 +226,10 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
     const { row } = item;
     const rate = row.hasOrders ? formatPercentLocalized(row.rate, { language }) : "—";
     return (
-      <div className="flex min-h-16 min-w-0 flex-col gap-2 py-3">
+      <Link
+        to={href(row.id)}
+        className="flex min-h-16 min-w-0 flex-col gap-2 py-3 text-inherit no-underline"
+      >
         <span className="flex items-baseline justify-between gap-3">
           <span className="min-w-0 truncate font-semibold text-text">{row.name}</span>
           <span className="whitespace-nowrap font-semibold text-text">
@@ -205,7 +250,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
                 total: count(row.totalCouriers),
               })}
         </span>
-      </div>
+      </Link>
     );
   };
 

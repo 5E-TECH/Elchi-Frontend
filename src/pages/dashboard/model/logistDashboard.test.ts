@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RegionItem } from "../../../entities/region";
-import { buildLogistDashboard, regionStatsParams } from "./logistDashboard";
+import { buildLogistDashboard, logistRegionHref, regionStatsParams } from "./logistDashboard";
 
 const item = (id: string, logistId: string | null, total: number, delivered: number, cancelled: number, couriersKnown = true): RegionItem => ({
   id,
@@ -65,5 +65,22 @@ describe("regionStatsParams", () => {
       startDate: "2026-10-21",
       endDate: "2026-10-21",
     });
+  });
+});
+
+describe("logistRegionHref (LG-3: «Tafsilot» bosh sahifa davri bilan)", () => {
+  const range = { from: "2026-10-19", to: "2026-10-21" };
+  it("bugun · bu oy · barchasi — `/regions` tezkor davri", () => {
+    expect(logistRegionHref("6", { kind: "today", range })).toBe("/regions?region=6&period=today");
+    expect(logistRegionHref("6", { kind: "month", range })).toBe("/regions?region=6&period=month");
+    expect(logistRegionHref("6", { kind: "all", range })).toBe("/regions?region=6&period=all");
+  });
+  it("hafta, yil, oraliq — aynan shu kunlar (`period=custom`), id kodlanadi", () => {
+    expect(logistRegionHref("6", { kind: "week", range })).toBe(
+      "/regions?region=6&period=custom&startDate=2026-10-19&endDate=2026-10-21",
+    );
+    expect(logistRegionHref("a b", { kind: "year", range: { from: "2025-01-01", to: "2025-12-31" } })).toBe(
+      "/regions?region=a+b&period=custom&startDate=2025-01-01&endDate=2025-12-31",
+    );
   });
 });

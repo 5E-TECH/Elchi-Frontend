@@ -63,6 +63,8 @@ export type SatoDistrictRow = {
   foundCode?: string;
   /** «Topildi»: rasmiy nom («Yangihayot tumani (Toshkent shahri)»). */
   officialName?: string;
+  /** «Takroriy nomlar»: guruh tartib raqami (0 dan) — guruh sarlavha qatorlari va «Birlashtirish» uchun (SA-2). */
+  duplicateGroup?: number;
 };
 
 /** «Bazada yo'q»: rasmiy ro'yxatda bor, bazada yo'q tuman. */
@@ -244,17 +246,24 @@ export const buildSuperadminSatoView = (
     .filter((group) => group.length > 0)
     .sort((a, b) => collator.compare(a[0].name, b[0].name));
   for (const group of groups) {
+    const index = duplicateGroups;
     duplicateGroups += 1;
-    duplicates.push(...group);
+    duplicates.push(...group.map((row) => ({ ...row, duplicateGroup: index })));
   }
 
   const regionByPrefix = new Map<string, SatoRegionRef>();
+  const regionByName = new Map<string, SatoRegionRef>();
   for (const district of districts) {
     const code = district.region?.satoCode;
     if (district.region && code && !regionByPrefix.has(code)) regionByPrefix.set(code, district.region);
+    const key = district.region ? satoRegionNameKey(district.region.name) : "";
+    if (district.region && key && !regionByName.has(key)) regionByName.set(key, district.region);
   }
   const missing: SatoMissingRow[] = preview.missing.map((entry) => {
-    const region = regionByPrefix.get(entry.satoCode.slice(0, 4));
+    // Viloyat: `sato_code` prefiksi (4 raqam), zaxira — rasmiy viloyat nomi («Samarqand viloyati» ↔ «Samarqand»).
+    const region =
+      regionByPrefix.get(entry.satoCode.slice(0, 4)) ??
+      (entry.regionName ? regionByName.get(satoRegionNameKey(entry.regionName)) : undefined);
     return {
       kind: "missing",
       satoCode: entry.satoCode,
@@ -351,3 +360,174 @@ export const normalizeSatoOwner = (payload: unknown): { id: string; name: string
 
 /** Qatorni tahrirlashda maydonning boshlang'ich qiymati: saqlangan kod, bo'lmasa topilgan kod. */
 export const satoDraftFor = (row: SatoDistrictRow): string => row.satoCode ?? row.foundCode ?? "";
+
+
+/* ─── SA-2: kodlarni yozish, tuman qo'shish, takroriylar ─────────────────────────────────────────────── */
+
+const apostrophes = (value: string) => value.replace(/[‘’ʻʼ`´]/g, "'");
+
+/**
+ * Viloyat nomi kaliti: «Samarqand viloyati» = «Samarqand», «Toshkent shahri» = «Toshkent sh.» (lekin «Toshkent
+ * viloyati» ≠ «Toshkent sh.»).
+ */
+export const satoRegionNameKey = (value: string): string =>
+  apostrophes(value.toLocaleLowerCase("uz").normalize("NFKC"))
+    .replace(/(^|\s)(sh\.?|shahar)(?=\s|$)/g, "$1shahri")
+    .replace(/(^|\s)(viloyati|viloyat|respublikasi)(?=\s|$)/g, " ")
+    .replace(/[.,()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** Tuman nomining o'zagi: «Urgut tumani» = «Urgut sh.» = «urgut» (o'xshash nom ogohlantirishi uchun). */
+export const satoNameStem = (value: string): string =>
+  apostrophes(value.toLocaleLowerCase("uz").normalize("NFKC"))
+    .replace(/[.,()]/g, " ")
+    .replace(/(^|\s)(tumani|tuman|shahri|shahar|sh|t)(?=\s|$)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * «Tuman qo'shish»: shu viloyatda o'xshash nomli tuman (o'zagi teng yoki biri ikkinchisining boshi, ≥ 4 harf).
+ * Viloyat tanlanmagan bo'lsa — butun bazadan.
+ */
+export const findSimilarSatoDistrict = (
+  districts: readonly SatoDistrict[],
+  { name, regionId }: { name: string; regionId: string | null },
+): SatoDistrict | null => {
+  const stem = satoNameStem(name);
+  if (stem.length < 3) return null;
+  const similar = (other: string) => {
+    if (!other) return false;
+    if (other === stem) return true;
+    const [short, long] = other.length < stem.length ? [other, stem] : [stem, other];
+    return short.length >= 4 && long.startsWith(short);
+  };
+  return (
+    districts.find(
+      (district) => (!regionId || district.region?.id === regionId) && similar(satoNameStem(district.name)),
+    ) ?? null
+  );
+};
+
+/** «SATO kodlarini yozish» oynasining xulosasi (maket `superadmin-regions-sato-codes-apply-dialog`). */
+export type SatoApplySummary = {
+  /** Yoziladi — «Topildi» tabi (N tugmadagi son). */
+  write: number;
+  /** O'zgarmaydi — «Kodi bor». */
+  unchanged: number;
+  /** Yozilmaydi — topilmagan + takroriy yozuvlar. */
+  skipped: number;
+  notFound: number;
+  duplicates: number;
+  /** Yoziladigan tumanlar id'lari (haqiqiy holatni qayta yuklangan ro'yxatdan sanash uchun). */
+  ids: string[];
+  /** Ro'yxatdagi birinchi 3 ta tuman. */
+  preview: SatoDistrictRow[];
+  /** «yana N ta tuman». */
+  rest: number;
+};
+
+export const SATO_APPLY_PREVIEW = 3;
+
+export const satoApplySummary = (rows: SatoTabRows): SatoApplySummary => {
+  const found = (rows.found ?? []).filter((row): row is SatoDistrictRow => row.kind === "district");
+  const notFound = rows.notFound?.length ?? 0;
+  const duplicates = rows.duplicates?.length ?? 0;
+  return {
+    write: found.length,
+    unchanged: rows.hasCode?.length ?? 0,
+    skipped: notFound + duplicates,
+    notFound,
+    duplicates,
+    ids: found.map((row) => row.id),
+    preview: found.slice(0, SATO_APPLY_PREVIEW),
+    rest: Math.max(0, found.length - SATO_APPLY_PREVIEW),
+  };
+};
+
+/** `POST district/sato-match/apply` → `appliedCount` (bo'lmasa `null`). */
+export const parseSatoAppliedCount = (payload: unknown): number | null => {
+  const data = asRecord(unwrap(payload));
+  const value = Number(data.appliedCount);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+};
+
+/** Haqiqiy holat (504, aloqa uzildi, qisman yozildi): `ids` dan nechtasida endi kod bor (qayta yuklangan `/district`). */
+export const countSatoCodesWritten = (ids: readonly string[], districts: readonly SatoDistrict[]): number => {
+  const withCode = new Set(districts.filter((district) => district.satoCode).map((district) => district.id));
+  return ids.filter((id) => withCode.has(id)).length;
+};
+
+/** Takroriy nomlar guruhi (jadvaldagi sarlavha qatori + yozuvlar). */
+export type SatoDuplicateGroup = {
+  key: string;
+  name: string;
+  rows: SatoDistrictRow[];
+  /** Turli viloyatlar nomlari (sarlavhadagi «Toshkent sh., Toshkent viloyati»). */
+  regionNames: string[];
+  /**
+   * Birlashtirish: bitta viloyatda ≥ 2 yozuv bo'lsa — manba (o'chadi) va maqsad (qoladi), aks holda `null`
+   * («Turli viloyatda — birlashtirilmaydi»).
+   */
+  merge: { source: SatoDistrictRow; target: SatoDistrictRow } | null;
+};
+
+/** ID bo'yicha (raqamli: «31» < «142»). */
+const byIdNumber = (a: SatoDistrictRow, b: SatoDistrictRow) => collator.compare(a.id, b.id);
+
+/**
+ * Sukut (ega S4): kodsiz yozuv → kodli yozuv («SATO kodi N saqlanadi»). Ikkalasida kod bor yoki hech birida yo'q
+ * (maket yo'q, ochiq savol): maqsad — eski yozuv (kichik ID), manba — eng yangisi; maqsadni oynada o'zgartirsa bo'ladi.
+ */
+export const pickSatoMerge = (
+  rows: readonly SatoDistrictRow[],
+): { source: SatoDistrictRow; target: SatoDistrictRow } | null => {
+  const byRegion = new Map<string, SatoDistrictRow[]>();
+  for (const row of rows) {
+    if (!row.regionId) continue;
+    byRegion.set(row.regionId, [...(byRegion.get(row.regionId) ?? []), row]);
+  }
+  const bucket = [...byRegion.values()].find((items) => items.length >= 2);
+  if (!bucket) return null;
+  const sorted = [...bucket].sort(byIdNumber);
+  const coded = sorted.filter((row) => row.satoCode);
+  const uncoded = sorted.filter((row) => !row.satoCode);
+  // Kodsiz yozuv bor bo'lsa — hech qachon kodli yozuv o'chirilmaydi: eng yangi kodsiz → eng eski kodli.
+  if (coded.length > 0 && uncoded.length > 0) return { source: uncoded[uncoded.length - 1], target: coded[0] };
+  return { source: sorted[sorted.length - 1], target: sorted[0] };
+};
+
+/**
+ * «Takroriy nomlar» qatorlari (`duplicateGroup` bo'yicha) → guruhlar, tartib saqlanadi. `key` — guruhdagi eng kichik
+ * tuman ID si (barqaror: birlashtirilgach indekslar siljiydi, React va fokus boshqa guruhga o'tib ketmasin).
+ */
+export const groupSatoDuplicates = (rows: readonly SatoRow[]): SatoDuplicateGroup[] => {
+  const groups = new Map<string, SatoDistrictRow[]>();
+  for (const row of rows) {
+    if (row.kind !== "district") continue;
+    const index = String(row.duplicateGroup ?? row.id);
+    groups.set(index, [...(groups.get(index) ?? []), row]);
+  }
+  return [...groups.values()].map((items) => ({
+    key: [...items].sort(byIdNumber)[0].id,
+    name: items[0].name,
+    rows: items,
+    regionNames: [...new Set(items.map((row) => row.regionName))],
+    merge: pickSatoMerge(items),
+  }));
+};
+
+/** Qidiruv/viloyat filtri: guruhning birorta yozuvi mos kelsa — butun guruh (birlashtirish uchun hammasi kerak). */
+export const filterSatoDuplicateGroups = (
+  groups: readonly SatoDuplicateGroup[],
+  filter: { search: string; regionId: string | null },
+): SatoDuplicateGroup[] => groups.filter((group) => filterSatoRows(group.rows, filter).length > 0);
+
+/** Birlashtirish maqsadlari — manba viloyatidagi (`region_id`) boshqa tumanlar, nom va ID bo'yicha (ega S2). */
+export const satoMergeCandidates = (
+  districts: readonly SatoDistrict[],
+  source: { id: string; regionId: string | null },
+): SatoDistrict[] =>
+  districts
+    .filter((district) => district.id !== source.id && source.regionId && district.region?.id === source.regionId)
+    .sort((a, b) => collator.compare(a.name, b.name) || collator.compare(a.id, b.id));

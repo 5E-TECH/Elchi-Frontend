@@ -11,6 +11,7 @@ describe("getOrderDetailAccess — rollar va qulflar", () => {
     ["registrator", "disabled", false, true, true],
     ["manager", "hidden", false, true, true],
     ["market", "hidden", false, false, false],
+    ["market_operator", "hidden", false, false, false],
     ["courier", "hidden", false, false, false],
   ] as const)("%s: mijoz tugmasi %s, mijoz=%s, buyurtma=%s, izoh=%s", (role, edit, customer, full, hint) => {
     const access = getOrderDetailAccess({ role, branchType: null, order: order({ status: "new" }) });
@@ -96,6 +97,40 @@ describe("getOrderDetailAccess — rollar va qulflar", () => {
     expect(getOrderDetailAccess({ role: "manager", branchType, canSellCancel: false, order: sold }).canRollback).toBe(false);
     // Tahrirlash huquqi bayroqqa bog'liq emas.
     expect(getOrderDetailAccess({ role: "manager", branchType, order: order({ status: "new" }) }).canEditOrderFull).toBe(true);
+  });
+});
+
+describe("market operatori (MO-3) — market ko'rinishi, faqat o'qish", () => {
+  it("market maketi; tahrirlash, sotish/bekor, qaytarish va topshirish yo'q (har holatda)", () => {
+    for (const status of ["new", "waiting", "sold", "cancelled", "paid"]) {
+      const access = getOrderDetailAccess({
+        role: "market_operator",
+        branchType: null,
+        canSellCancel: true,
+        order: order({ status, post_id: "90", return_requested: true }),
+      });
+      expect(access, status).toMatchObject({
+        layout: "market",
+        canEditCustomer: false,
+        canEditOrderFull: false,
+        canUseCourierActions: false,
+        canSell: false,
+        canRollback: false,
+        canStartReturn: false,
+        canHandOverReturn: false,
+      });
+    }
+  });
+
+  it("«Kuzatuv» va bekor QR sahifasi yo'q (tracking — 403, QR — faqat market egasi); boshqa rollarda o'zgarmagan", () => {
+    const operator = getOrderDetailAccess({ role: "market_operator", branchType: null, order: null });
+    expect([operator.canViewTracking, operator.canOpenCancelledQr]).toEqual([false, false]);
+    const market = getOrderDetailAccess({ role: "market", branchType: null, order: null });
+    expect([market.canViewTracking, market.canOpenCancelledQr]).toEqual([true, true]);
+    for (const role of ["superadmin", "admin", "registrator", "manager", "courier"]) {
+      const access = getOrderDetailAccess({ role, branchType: null, order: null });
+      expect([access.canViewTracking, access.canOpenCancelledQr], role).toEqual([true, false]);
+    }
   });
 });
 

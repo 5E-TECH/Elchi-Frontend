@@ -99,6 +99,18 @@ export interface User {
   ai_price_per_order?: number | string | null;
   region_id?: string | null;
   region?: Region | null;
+  /**
+   * MO-2: market operatori qaysi marketga biriktirilgan (`GET auth/my-profile` → `market_id`; market nomi kelmaydi —
+   * N13). Boshqa rollarda yo'q yoki `null`.
+   */
+  market_id?: string | number | null;
+  /**
+   * MO-2: market operatorining komissiyasi (`my-profile`, identity `User.commission_*`): `percent` — sotilgan
+   * buyurtma narxidan foiz, `fixed` — har sotuvga so'm. Turi `null` yoki qiymati 0 — daromad yozilmaydi.
+   * `numeric(14,2)` — qiymat son yoki matn bo'lib kelishi mumkin.
+   */
+  commission_type?: "percent" | "fixed" | null;
+  commission_value?: number | string | null;
   avatar?: string;
   balance?: number;
   orders?: Order[];
@@ -236,4 +248,21 @@ export interface UpdateUserRequest {
    * identity `updateUser` uni e'tiborsiz qoldiradi — kuryer hududi filial biriktiruvidan keladi.
    */
   ai_price_per_order?: number | null;
+}
+
+// ==================== CHANGE ROLE (FY-2) ====================
+
+/**
+ * K3scaE0W — `PATCH /users/:id/role` da manba ham, nishon ham bo'la oladigan rollar (backend `CHANGEABLE_ROLES`:
+ * pul/hisob bog'lanmagan xodimlar). Kuryer, market, operator, investor va superadmin almashtirilmaydi.
+ */
+export type ChangeableUserRole = "admin" | "manager" | "registrator" | "logist";
+
+export interface ChangeUserRoleRequest {
+  role: ChangeableUserRole;
+}
+
+/** `GET /roles` — frontend faqat `changeable_roles` ni oladi (katalog yorliqlari faqat o'zbekcha, nomlar i18n'dan). */
+export interface RoleCatalog {
+  changeableRoles: ChangeableUserRole[];
 }

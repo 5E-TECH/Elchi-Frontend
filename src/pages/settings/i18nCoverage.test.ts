@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 /**
  * «Hisob» (profil, sozlamalar, bildirishnomalar qutisi) matnlari uchala tilda bir xil kalitlar bilan
- * (`integrations/i18nCoverage.test.ts` naqshi). `notifications.json` dagi `dispatch.*` — boshqa sahifa (xabar
- * yuborish) egaligida, bu yerda tekshirilmaydi.
+ * (`integrations/i18nCoverage.test.ts` naqshi). `notifications.json` dagi `dispatch.*` va `sent.*` — boshqa
+ * sahifalar (xabar yuborish, «Yuborilganlar») egaligida, ko'plik qo'shimchalari bilan
+ * `pages/notifications/i18nCoverage.test.ts` da tekshiriladi.
  */
 type Tree = { [key: string]: string | Tree };
 
@@ -21,7 +22,13 @@ const keysOf = (language: string, namespace: string) => {
   const bundle = bundles[`../../locales/${language}/${namespace}.json`];
   expect(bundle, `${language}/${namespace}.json`).toBeDefined();
   return flatten(bundle)
-    .filter((key) => !(namespace === "notifications" && key.startsWith("dispatch.")))
+    .filter(
+      (key) =>
+        !(
+          namespace === "notifications" &&
+          (key.startsWith("dispatch.") || key.startsWith("sent."))
+        ),
+    )
     .sort();
 };
 

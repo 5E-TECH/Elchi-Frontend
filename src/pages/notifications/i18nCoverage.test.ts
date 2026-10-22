@@ -35,6 +35,12 @@ const CASES = [
     (ruNotifications as unknown as Tree).dispatch,
     (enNotifications as unknown as Tree).dispatch,
   ],
+  [
+    "notifications.sent",
+    (uzNotifications as unknown as Tree).sent,
+    (ruNotifications as unknown as Tree).sent,
+    (enNotifications as unknown as Tree).sent,
+  ],
 ] as const;
 
 /** Ataylab bo'sh: ingliz tilida sanoq birligi yo'q («2 700» — «2 700 ta» emas). */

@@ -1,16 +1,20 @@
-// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district
-import { memo, useEffect, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district, superadmin-users-edit-role, superadmin-users-role-confirm-dialog, superadmin-users-role-confirm-logist, superadmin-users-edit-role-error
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Eye, EyeOff, Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { useUser } from "../../../../entities/user/api/userApi";
-import type { UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
+import type { ChangeableUserRole, UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
+import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
 import { useLogout } from "../../../../shared/lib/useLogout";
+import { notify } from "../../../../shared/lib/notify";
 import { rememberLoginNotice } from "../../../../auth/loginNotice";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
@@ -27,6 +31,17 @@ import {
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 import { runUserRequest } from "../../lib/userRequest";
+import {
+  RoleSection,
+  buildRoleChangeConfirm,
+  classifyRoleChangeError,
+  loadReleasedRegionNames,
+  useChangeUserRole,
+  type RoleChangeErrorKind,
+} from "../../change-role";
+
+/** «Logist biriktirish» sahifasi (logist boshqa rolga o'tgach — bo'shagan viloyatlarni berish). */
+const LOGIST_ASSIGNMENT_PATH = "/regions/logist-assignment";
 
 /**
  * Backend `Status` enumi — faqat `active | inactive` (UpdateAdminRequestDto
@@ -71,6 +86,8 @@ interface UpdateUserFormValues {
   default_tariff: string;
   /** Market AI buyurtma narxi (so'm). Bo'sh — global narx (`null`), sukut narx ko'rsatilmaydi (FY-S5). */
   ai_price: string;
+  /** FY-2: tanlangan rol (faqat superadmin, admin ⇄ menejer ⇄ ro'yxatchi ⇄ logist). */
+  role: string;
 }
 
 const INITIAL_VALUES: UpdateUserFormValues = {
@@ -85,6 +102,7 @@ const INITIAL_VALUES: UpdateUserFormValues = {
   tariff_center: "",
   default_tariff: "",
   ai_price: "",
+  role: "",
 };
 
 const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
@@ -146,6 +164,14 @@ const FormSection = ({
  * `superadmin-users-edit-courier-district` qisman), filial «Boshqa filialga o'tkazish» orqali (FY-S4). O'lik
  * `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz qoldiradi).
  *
+ * FY-2 (K3scaE0W): superadmin uchun yuqorida «Rol» bo'limi (`features/user/change-role`; faqat admin ⇄ menejer ⇄
+ * ro'yxatchi ⇄ logist, o'zini emas). Saqlash: tasdiq «Rolni o'zgartirasizmi?» → avval `PATCH /users/:id/role`, keyin
+ * qolgan maydonlar (`PATCH /users/:id`). Rol o'zgarmasa (409 — filialga biriktirilgan, 503 / tarmoq — «Qayta
+ * urinish», boshqasi) — xato oyna ichida, qolgan maydonlar yuborilmaydi, kiritilganlar joyida. Rol o'zgarib, qolgani
+ * saqlanmasa — alohida ogohlantirish, oyna ochiq (rol endi yangi), kiritilganlar joyida (tafsilot qayta kelsa ham).
+ * Menejer tariflari faqat menejerda: rol menejerdan boshqasiga o'zgarsa yashirinadi va yuborilmaydi (backend ularni
+ * tozalaydi); menejerga o'zgarsa forma o'zgarmaydi (maketlar) — tariflar rol saqlangach chiqadi.
+ *
  * Props va xulq o'zgarmagan (spec §8.4; `/profile` ham shu oynani ochadi): faqat o'zgargan maydonlar
  * yuboriladi; nofaol qilish — tasdiq oynasi; o'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi
  * (fix3b RBAC-09); backend maydon xatolari maydonga (`applyBackendFieldErrors`); to'lov kuni 1–30.
@@ -163,9 +189,22 @@ export const UpdateUserModal = memo(({
     (state: RootState) => state.user.user?.id ?? state.role.id,
   );
   const { useGetUserById, updateUser, updateMyProfile } = useUser();
+  const changeRole = useChangeUserRole();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const confirm = useConfirm();
   const { logout } = useLogout();
   const [showPassword, setShowPassword] = useState(false);
+  // FY-2: rol so'rovi (va undan oldingi viloyatlar so'rovi) ketmoqda; oxirgi rol xatosi; serverda o'zgargan rol
+  // (qolgan maydonlar saqlanmay qolsa — oyna ochiq, keyingi saqlashda rol qayta yuborilmaydi).
+  const [roleBusy, setRoleBusy] = useState(false);
+  const [roleError, setRoleError] = useState<RoleChangeErrorKind | null>(null);
+  const [committedRole, setCommittedRole] = useState<string | null>(null);
+  // Forma oxirgi marta qaysi foydalanuvchi uchun to'ldirilgan: shu foydalanuvchi ma'lumoti qayta kelsa (rol
+  // o'zgargach `[user]` qayta so'raladi) — kiritilganlar saqlanadi, faqat tegilmagan maydonlar yangilanadi.
+  const filledForUserRef = useRef<string | null>(null);
+  // Ikki marta tez bosish (yoki Enter) ikki oqim boshlamasin — `isPending` keyingi chizishgacha kechikadi.
+  const submittingRef = useRef(false);
   // O'z hisobi: profil sahifasi yoki ro'yxatdan o'zini tahrirlash.
   const isSelf =
     isOwnProfile ||
@@ -197,13 +236,21 @@ export const UpdateUserModal = memo(({
     handleSubmit,
     reset,
     setError,
+    setFocus,
     clearErrors,
+    watch,
   } = methods;
 
   const userData = initialUser ?? unwrapUserResponse(rawUser) ?? null;
   const isLoading = shouldFetchUser ? isUserLoading : false;
 
-  const role = userData?.role ?? "";
+  const role = committedRole ?? userData?.role ?? "";
+  // FY-2: rolni faqat superadmin, faqat boshqa xodimniki va faqat almashtiriladigan rollar orasida (backend
+  // `CHANGEABLE_ROLES`; o'z rolini o'zgartirish — 400).
+  const canChangeRole = authRole === "superadmin" && !isOwnProfile && !isSelf && isChangeableUserRole(role);
+  const selectedRole = watch("role");
+  // Rolga bog'liq maydonlar (menejer tariflari) tanlangan rol bo'yicha.
+  const effectiveRole = canChangeRole && isChangeableUserRole(selectedRole) ? selectedRole : role;
   // Maosh va to'lov kuni: admin, menejer, ro'yxatchi va logist (FY-1, `POST /logists` ham maosh oladi).
   const isAdmin =
     !isOwnProfile && (role === "admin" || role === "manager" || role === "registrator" || role === "logist");
@@ -221,14 +268,21 @@ export const UpdateUserModal = memo(({
   // «Boshqa filialga o'tkazish» tugmasi faqat admin/superadminda (UserDetailView `canTransferCourier`).
   const canTransferCourier = authRole === "admin" || authRole === "superadmin";
   const initialAiPrice = userData?.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "";
+  // Menejer tariflari — faqat saqlangan rol ham, tanlangan rol ham menejer bo'lsa: menejerga o'tkazishda maydonlar
+  // qo'shilmaydi (maketlar `*-role-confirm-dialog`, `*-edit-role-error` — forma o'zgarmaydi), menejerdan boshqasiga
+  // o'tkazishda yashirinadi va yuborilmaydi (backend tariflarni o'zi tozalaydi).
   const canEditManagerFinancial =
     !isOwnProfile &&
     role === "manager" &&
+    effectiveRole === "manager" &&
     (authRole === "admin" || authRole === "superadmin");
 
   useEffect(() => {
     if (!userData) return;
-
+    // Yangi ochilish yoki boshqa foydalanuvchi — to'liq to'ldirish; o'sha foydalanuvchi qayta kelsa (masalan rol
+    // o'zgargach tafsilot qayta so'raldi) — o'zgartirilgan maydonlar joyida qoladi.
+    const sameUser = filledForUserRef.current === String(userData.id);
+    filledForUserRef.current = String(userData.id);
     reset({
       name: userData.name ?? "",
       phone: userData.phone_number ? toUzbekistanPhoneValue(userData.phone_number) : "",
@@ -241,33 +295,44 @@ export const UpdateUserModal = memo(({
       tariff_center: userData.tariff_center != null ? toDigits(userData.tariff_center) : "",
       default_tariff: toTariffOption(userData.default_tariff),
       ai_price: userData.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "",
-    });
+      role: userData.role ?? "",
+    }, sameUser ? { keepDirtyValues: true } : undefined);
   }, [reset, userData]);
 
-  // Oyna yopilganda parol yana yashirin.
+  // Oyna yopilganda parol yana yashirin; boshqa foydalanuvchi yoki yopilish — rol holati tozalanadi.
   useEffect(() => {
-    if (!userId) setShowPassword(false);
+    setRoleError(null);
+    setCommittedRole(null);
+    if (!userId) {
+      setShowPassword(false);
+      filledForUserRef.current = null;
+    }
   }, [userId]);
 
   const validateForm = (values: UpdateUserFormValues): boolean => {
     let valid = true;
     clearErrors();
+    // Bo'sh / noto'g'ri saqlashda fokus birinchi xato maydonga (klaviatura va ekran o'qigichi xatoni topsin).
+    // Tekshiruv tartibi — formadagi tartib; `ref` faqat matn maydonlarida (payment_day — Select, fokussiz).
+    const invalid: Path<UpdateUserFormValues>[] = [];
+    const fail = (name: Path<UpdateUserFormValues>, message: string) => {
+      setError(name, { message });
+      invalid.push(name);
+      valid = false;
+    };
 
     if (!values.name.trim()) {
-      setError("name", { message: t("nameRequired") });
-      valid = false;
+      fail("name", t("nameRequired"));
     }
 
     if (getUzbekistanPhoneDigits(values.phone).length !== 9) {
-      setError("phone", { message: t("phoneValidation") });
-      valid = false;
+      fail("phone", t("phoneValidation"));
     }
 
     if (isAdmin && values.payment_day) {
       const day = Number(values.payment_day);
       if (day < 1 || day > 30) {
-        setError("payment_day", { message: t("paymentDayValidation") });
-        valid = false;
+        fail("payment_day", t("paymentDayValidation"));
       }
     }
 
@@ -276,39 +341,120 @@ export const UpdateUserModal = memo(({
       const hasCenterTariff = Boolean(values.tariff_center.trim());
       if (hasHomeTariff !== hasCenterTariff) {
         if (!hasHomeTariff) {
-          setError("tariff_home", { message: t("homeTariffRequired") });
+          fail("tariff_home", t("homeTariffRequired"));
         }
         if (!hasCenterTariff) {
-          setError("tariff_center", { message: t("centerTariffRequired") });
+          fail("tariff_center", t("centerTariffRequired"));
         }
-        valid = false;
       }
     }
 
     // Market tariflari majburiy (maket: «*»): bo'sh qoldirilsa avval ham yuborilmasdi — endi sababi aytiladi.
     if (isMarket) {
       if (!values.tariff_home.trim()) {
-        setError("tariff_home", { message: t("homeTariffRequired") });
-        valid = false;
+        fail("tariff_home", t("v2.edit.marketHomePriceRequired"));
       }
       if (!values.tariff_center.trim()) {
-        setError("tariff_center", { message: t("centerTariffRequired") });
-        valid = false;
+        fail("tariff_center", t("v2.edit.marketCenterPriceRequired"));
       }
     }
 
     if (canEditAiPrice && values.ai_price.trim() && parseAmount(values.ai_price) > AI_PRICE_MAX_UZS) {
-      setError("ai_price", {
-        message: t("v2.edit.aiPriceRange", { max: formatMoneyLocalized(AI_PRICE_MAX_UZS, { language }) }),
-      });
-      valid = false;
+      fail("ai_price", t("v2.edit.aiPriceRange", { max: formatMoneyLocalized(AI_PRICE_MAX_UZS, { language }) }));
     }
 
+    if (invalid[0]) setFocus(invalid[0]);
     return valid;
   };
 
-  const onSubmit = async (values: UpdateUserFormValues) => {
+  /**
+   * FY-2: rolni o'zgartirish → qolgan maydonlar. Tasdiq (logistdan chiqishda bo'shaydigan viloyatlar bilan) →
+   * `PATCH /users/:id/role`; xato — oyna ichida, qolgan maydonlar yuborilmaydi. So'ng `payload` bo'lsa — `PATCH
+   * /users/:id`; u yiqilsa — «Rol o'zgartirildi, qolgani saqlanmadi», oyna ochiq.
+   */
+  const submitRoleChange = async ({
+    targetRole,
+    fromRole,
+    payload,
+    skipConfirm,
+  }: {
+    targetRole: ChangeableUserRole;
+    fromRole: ChangeableUserRole;
+    payload: UpdateUserRequest;
+    skipConfirm: boolean;
+  }) => {
+    if (!userId || !userData) return;
+    // Saqlangan ism (yangi ism hali yozilmagan).
+    const name = userData.name ?? "";
+    const transition = { from: t(getUserRoleLabelKey(fromRole)), to: t(getUserRoleLabelKey(targetRole)) };
+
+    setRoleBusy(true);
+    try {
+      if (!skipConfirm) {
+        const releasedRegions = fromRole === "logist" ? await loadReleasedRegionNames(queryClient, userId) : undefined;
+        // Tasdiq oynasi ochiq paytda orqadagi oyna tugmalari oddiy holatda (maket `*-role-confirm-dialog`).
+        setRoleBusy(false);
+        const ok = await confirm(
+          buildRoleChangeConfirm({ t, name, from: fromRole, to: targetRole, releasedRegions }),
+        );
+        if (!ok) return;
+      }
+
+      setRoleBusy(true);
+      setRoleError(null);
+      try {
+        await changeRole.mutateAsync({ id: userId, role: targetRole, from: fromRole });
+      } catch (error) {
+        setRoleError(classifyRoleChangeError(error));
+        return;
+      }
+      setCommittedRole(targetRole);
+
+      const assignLogists =
+        fromRole === "logist"
+          ? { label: t("v2.role.success.assignLogists"), onClick: () => navigate(LOGIST_ASSIGNMENT_PATH) }
+          : undefined;
+
+      if (Object.keys(payload).length > 0) {
+        try {
+          await updateUser.mutateAsync({ id: userId, data: payload });
+        } catch (error) {
+          applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
+          notify.warning(t("v2.role.partial.title"), {
+            description: t("v2.role.partial.text", { name, role: t(`v2.role.as.${targetRole}`) }),
+            action: assignLogists,
+          });
+          return;
+        }
+      }
+
+      notify.success(t("v2.role.success.title"), {
+        description: t("v2.role.success.text", { name, ...transition }),
+        action: assignLogists,
+      });
+      onClose();
+    } finally {
+      setRoleBusy(false);
+    }
+  };
+
+  const onSubmit = (values: UpdateUserFormValues) => submitForm(values, false);
+
+  /** `skipRoleConfirm` — «Qayta urinish» (rol tasdig'i olingan, tanlov o'zgarmagan). */
+  const submitForm = async (values: UpdateUserFormValues, skipRoleConfirm: boolean) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    try {
+      await submitFormOnce(values, skipRoleConfirm);
+    } finally {
+      submittingRef.current = false;
+    }
+  };
+
+  const submitFormOnce = async (values: UpdateUserFormValues, skipRoleConfirm: boolean) => {
     if (!userId || !userData || !validateForm(values)) return;
+    const targetRole =
+      canChangeRole && isChangeableUserRole(values.role) && values.role !== role ? values.role : null;
 
     const payload: UpdateUserRequest = {};
 
@@ -383,7 +529,7 @@ export const UpdateUserModal = memo(({
       payload.ai_price_per_order = values.ai_price.trim() ? parseAmount(values.ai_price) : null;
     }
 
-    if (Object.keys(payload).length === 0) {
+    if (!targetRole && Object.keys(payload).length === 0) {
       onClose();
       return;
     }
@@ -402,6 +548,11 @@ export const UpdateUserModal = memo(({
         confirmIcon: UserX,
       });
       if (!ok) return;
+    }
+
+    if (targetRole && isChangeableUserRole(role)) {
+      await submitRoleChange({ targetRole, fromRole: role, payload, skipConfirm: skipRoleConfirm });
+      return;
     }
 
     // fix3b RBAC-09: parol o'zgarsa backend o'sha hisobning sessiyasini
@@ -448,6 +599,7 @@ export const UpdateUserModal = memo(({
           <TextInput
             mode="money"
             name={field.name}
+            ref={field.ref}
             value={field.value}
             onValueChange={field.onChange}
             onBlur={field.onBlur}
@@ -458,9 +610,9 @@ export const UpdateUserModal = memo(({
     />
   );
 
-  const isPending = isOwnProfile ? updateMyProfile.isPending : updateUser.isPending;
+  const isPending = (isOwnProfile ? updateMyProfile.isPending : updateUser.isPending) || roleBusy;
   const description = userData
-    ? t("v2.edit.description", { name: userData.name, role: t(getUserRoleLabelKey(userData.role)) })
+    ? t("v2.edit.description", { name: userData.name, role: t(getUserRoleLabelKey(role)) })
     : undefined;
 
   return (
@@ -489,6 +641,27 @@ export const UpdateUserModal = memo(({
         <SkeletonLines lines={6} />
       ) : (
         <div className="flex flex-col gap-5">
+          {canChangeRole && isChangeableUserRole(role) ? (
+            <Controller
+              control={control}
+              name="role"
+              render={({ field }) => (
+                <RoleSection
+                  value={field.value}
+                  onChange={(next) => {
+                    field.onChange(next);
+                    setRoleError(null);
+                  }}
+                  onBlur={field.onBlur}
+                  originalRole={role}
+                  userName={userData.name ?? ""}
+                  error={roleError}
+                  busy={roleBusy}
+                  onRetry={() => void handleSubmit((values) => submitForm(values, true))()}
+                />
+              )}
+            />
+          ) : null}
           <FormSection title={t("mainData")}>
             <Controller
               control={control}
@@ -497,6 +670,7 @@ export const UpdateUserModal = memo(({
                 <Field label={t(isMarket ? "v2.edit.marketName" : "v2.edit.name")} required error={fieldState.error?.message}>
                   <TextInput
                     name={field.name}
+                    ref={field.ref}
                     value={field.value}
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
@@ -514,6 +688,7 @@ export const UpdateUserModal = memo(({
                   <TextInput
                     mode="phone"
                     name={field.name}
+                    ref={field.ref}
                     value={field.value}
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
@@ -653,8 +828,9 @@ export const UpdateUserModal = memo(({
                   </Field>
                 )}
               />
-              {renderMoneyField("tariff_home", t("v2.edit.homeTariff"), true)}
-              {renderMoneyField("tariff_center", t("v2.edit.centerTariff"), true)}
+              {/* CS-C: market yorlig'i — «Uyga / Markazga standart narx» (maket); kuryer/menejer «… tarif» qoladi. */}
+              {renderMoneyField("tariff_home", t("v2.edit.marketHomePrice"), true)}
+              {renderMoneyField("tariff_center", t("v2.edit.marketCenterPrice"), true)}
               {canEditAiPrice ? (
                 <Controller
                   control={control}
@@ -664,6 +840,7 @@ export const UpdateUserModal = memo(({
                       <TextInput
                         mode="money"
                         name={field.name}
+                        ref={field.ref}
                         value={field.value}
                         onValueChange={field.onChange}
                         onBlur={field.onBlur}

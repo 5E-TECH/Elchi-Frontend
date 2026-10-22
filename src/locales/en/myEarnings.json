@@ -1,0 +1,22 @@
+{
+  "title": "My earnings",
+  "subtitle": "Commission for your sold orders",
+  "unset": {
+    "title": "Commission not set — no earnings recorded",
+    "text": "Until the market owner sets your rate, no earnings are calculated for your sales. Please contact them."
+  },
+  "rate": {
+    "title": "My rate",
+    "percentHint": "of each sold order's price",
+    "fixedHint": "per sold order",
+    "notSet": "Not set",
+    "type": "Type",
+    "typePercent": "Percent",
+    "typeFixed": "Fixed amount",
+    "setBy": "Set by",
+    "marketOwner": "Market owner",
+    "sample": "Example",
+    "note": "If the rate changes, it applies only to future sales.",
+    "unsetNote": "No earnings are recorded until a rate is set. Contact the market owner."
+  }
+}
