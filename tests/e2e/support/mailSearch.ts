@@ -52,10 +52,26 @@ const order = ([id, name, phone, district, market, whereDeliver, price]: (typeof
 
 export const mockMailSearchApi = async (
   page: Page,
-  { role = "superadmin" as "superadmin" | "manager", theme = "light" as "light" | "dark" } = {},
+  {
+    role = "superadmin" as "superadmin" | "manager",
+    theme = "light" as "light" | "dark",
+    /** TOZ-0 (mSix70Ca c2b54a): katta pochta — 9 ta asosiy qatordan keyin shuncha noyob qator (har biri o'z raqami bilan). */
+    extraRows = 0,
+  } = {},
 ) => {
   const isManager = role === "manager";
-  const orders = ROWS.map((row) => order(row, isManager ? "on the road" : "received"));
+  const markets = ["Baraka Shop", "Nur Elektronika", "Chilonzor Market", "Ipak Yo'li Savdo"];
+  const districts = ["Qarshi sh.", "Shahrisabz tumani", "Kitob tumani", "G'uzor tumani", "Koson tumani"];
+  const extra = Array.from({ length: extraRows }, (_, index): (typeof ROWS)[number] => [
+    String(20000 + index),
+    `Mijoz ${String(index + 1).padStart(3, "0")}`,
+    `+99895${String(4000000 + index).padStart(7, "0")}`,
+    districts[index % districts.length],
+    markets[index % markets.length],
+    index % 2 ? "center" : "address",
+    100000 + index * 1000,
+  ]);
+  const orders = [...ROWS, ...extra].map((row) => order(row, isManager ? "on the road" : "received"));
   const leaked: string[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();

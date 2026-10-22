@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const apiMock = vi.hoisted(() => ({ get: vi.fn() }));
+const apiMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), delete: vi.fn() }));
 vi.mock("../../../shared/api/api", () => ({ api: apiMock }));
 
-import { getMySessions, normalizeAccountSession, normalizeAccountSessionList } from "./accountSessionApi";
+import {
+  getMySessions,
+  normalizeAccountSession,
+  normalizeAccountSessionList,
+  normalizeRevokeSessionsResult,
+  revokeOtherSessions,
+  revokeSession,
+} from "./accountSessionApi";
 
 /** `GET /auth/sessions` (Elchi Pochta #3) — faqat o'z faol sessiyalari. */
 const row = (over: Record<string, unknown> = {}) => ({
@@ -74,5 +81,36 @@ describe("getMySessions", () => {
     const list = await getMySessions();
     expect(apiMock.get).toHaveBeenCalledWith("auth/sessions");
     expect(list.sessions).toHaveLength(1);
+  });
+});
+
+describe("sessiyalarni yopish", () => {
+  beforeEach(() => {
+    apiMock.delete.mockReset();
+    apiMock.post.mockReset();
+  });
+
+  it("normalizeRevokeSessionsResult — `{ data: { revoked, session_ids } }`; `revoked` yo'q bo'lsa ID lar soni", () => {
+    expect(
+      normalizeRevokeSessionsResult({ statusCode: 200, message: "ok", data: { revoked: 2, session_ids: ["a", "b"] } }),
+    ).toEqual({ revoked: 2, session_ids: ["a", "b"] });
+    expect(normalizeRevokeSessionsResult({ data: { session_ids: ["a", " ", null, 7] } })).toEqual({
+      revoked: 2,
+      session_ids: ["a", "7"],
+    });
+    expect(normalizeRevokeSessionsResult({ data: { revoked: 0, session_ids: [] } })).toEqual({ revoked: 0, session_ids: [] });
+    expect(normalizeRevokeSessionsResult(null)).toEqual({ revoked: 0, session_ids: [] });
+  });
+
+  it("revokeSession — `DELETE auth/sessions/:id` (ID kodlangan)", async () => {
+    apiMock.delete.mockResolvedValue({ data: { statusCode: 200, data: { revoked: 1, session_ids: ["s/1"] } } });
+    await expect(revokeSession("s/1")).resolves.toEqual({ revoked: 1, session_ids: ["s/1"] });
+    expect(apiMock.delete).toHaveBeenCalledWith("auth/sessions/s%2F1");
+  });
+
+  it("revokeOtherSessions — `POST auth/sessions/revoke-others` tanasiz", async () => {
+    apiMock.post.mockResolvedValue({ data: { statusCode: 200, data: { revoked: 0, session_ids: [] } } });
+    await expect(revokeOtherSessions()).resolves.toEqual({ revoked: 0, session_ids: [] });
+    expect(apiMock.post).toHaveBeenCalledWith("auth/sessions/revoke-others");
   });
 });

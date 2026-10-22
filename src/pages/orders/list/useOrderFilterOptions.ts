@@ -5,6 +5,8 @@ import { useBranches } from "../../../entities/branch";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import { useMarkets } from "../../../entities/markets";
 import { useUser } from "../../../entities/user/api/userApi";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
+import { getOrderFilterScope } from "./orderFilterModel";
 
 export type FilterOption = { value: string; label: string };
 
@@ -51,10 +53,13 @@ const readManagerRegionId = (source: Record<string, unknown> | null): string => 
  */
 export const useOrderFilterOptions = (role: string | null, courierRegionId: string) => {
   const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
-  const isMarketRole = role === "market";
+  // Market tomoni (market va market operatori) — o'z marketi: market va kuryer ro'yxatlari so'ralmaydi.
+  const isMarketRole = isMarketSideRole(role);
   const isManagerRole = role === "manager";
   const canUseBranchFilter = role === "admin" || role === "superadmin";
   const canLoadRoleDependentOptions = role !== null && !isMarketRole;
+  // Market operatoriga `GET /region` yopiq (N11) — hudud filtri yo'q (`getOrderFilterScope` → `area: "none"`).
+  const canLoadRegions = getOrderFilterScope(role).area === "region";
 
   const { useGetRegions, useGetCouriers, useGetMyProfile } = useUser();
   const { useGetDistricts } = useLogistics();
@@ -79,7 +84,7 @@ export const useOrderFilterOptions = (role: string | null, courierRegionId: stri
     },
     canLoadRoleDependentOptions && (!isManagerRole || Boolean(managerRegionId)),
   );
-  const regionsQuery = useGetRegions(!isManagerRole);
+  const regionsQuery = useGetRegions(canLoadRegions);
   const districtsQuery = useGetDistricts(managerRegionId || undefined);
 
   const markets = useMemo(() => toOptions(toItems(marketsQuery.data)), [marketsQuery.data]);

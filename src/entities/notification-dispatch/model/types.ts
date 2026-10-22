@@ -75,3 +75,44 @@ export type SentDetail = {
 };
 
 export type SentDetailParams = { page?: number; limit?: number };
+
+/**
+ * `GET /notifications/sent` qatori (NS-2, `DispatchHistoryService.list` → `toPublic`). `channel_status` — YAKUNDAGI
+ * saqlangan nusxa (yuborilayotganda `null`; jonli raqamlar — tafsilotda). `audience` ro'yxat javobida hozircha yo'q
+ * (ega S2 — backend qo'shadi): kelsa «Kimga» shundan, kelmasa «—». Xom `message` olinmaydi (foydalanuvchiga chiqmaydi).
+ */
+export type SentListItem = {
+  dispatch_id: string;
+  status: DispatchHistoryStatus;
+  type: string;
+  title: string;
+  /** Matnning birinchi 160 belgisi (to'liq — tafsilotda). */
+  body_preview: string | null;
+  channels: string[];
+  recipients: number;
+  dispatched: number;
+  skipped_by_preference: number;
+  by_channel: Record<string, number>;
+  channel_status: ChannelStatusCounts | null;
+  no_provider: string[];
+  audience: DispatchAudience | null;
+  created_by: { id: string; name: string | null; role: string | null } | null;
+  created_at: string | null;
+  finished_at: string | null;
+};
+
+export type SentListParams = {
+  page?: number;
+  limit?: number;
+  status?: DispatchHistoryStatus;
+  /** Yuborgan foydalanuvchi id'si (raqam). */
+  created_by?: string;
+};
+
+export type SentListPage = {
+  items: SentListItem[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};

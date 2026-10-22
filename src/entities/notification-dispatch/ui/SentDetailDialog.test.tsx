@@ -162,6 +162,26 @@ describe("SentDetailDialog", () => {
     expect(within(dialog).getByText("Yuborish xato bilan tugadi")).toBeInTheDocument();
     expect(within(dialog).getByText(/Tizimda nosozlik bo'ldi/)).toBeInTheDocument();
     expect(screen.queryByText(/QueryFailedError/)).not.toBeInTheDocument();
+    // Yuborish sahifasining o'zida (resendHref yo'q) «Qayta yuborish» chiqmaydi.
+    expect(within(dialog).queryByRole("link", { name: "Qayta yuborish" })).not.toBeInTheDocument();
+  });
+
+  it("failed + resendHref (NS-2 «Yuborilganlar»): «Qayta yuborish» opens the send page and closes the dialog", async () => {
+    respond = () => detail({ status: "failed", dispatched: 0, title: "Kuryerlar yig'ilishi soat 9:00 da" });
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<SentDetailDialog dispatchId={ID} onClose={onClose} resendHref="/notifications/send" />);
+    const dialog = await screen.findByRole("dialog", { name: "Kuryerlar yig'ilishi soat 9:00 da" });
+    const resend = within(dialog).getByRole("link", { name: "Qayta yuborish" });
+    expect(resend).toHaveAttribute("href", "/notifications/send");
+    await user.click(resend);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("resendHref is ignored unless the dispatch failed", async () => {
+    renderWithProviders(<SentDetailDialog dispatchId={ID} onClose={vi.fn()} resendHref="/notifications/send" />);
+    const dialog = await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" });
+    expect(within(dialog).queryByRole("link", { name: "Qayta yuborish" })).not.toBeInTheDocument();
   });
 
   it("404 — «Xabar topilmadi»", async () => {

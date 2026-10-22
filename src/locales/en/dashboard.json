@@ -325,9 +325,18 @@
     "operatorRate": "Operator sell-through",
     "marketAverage": "{{name}} average · {{rate}}",
     "yourMarket": "Market",
+    "operatorUnassigned": {
+      "subtitle": "No market assigned",
+      "title": "You are not assigned to a market yet",
+      "description": "Home page figures open after the market owner adds you in the «Operators» section. Contact the market owner.",
+      "retry": "Check again",
+      "checking": "Checking..."
+    },
     "quick": {
       "viewHint": "Your orders in Intake and creation",
-      "createHint": "Manually or with AI"
+      "listHint": "Your market's order list",
+      "createHint": "Manually or with AI",
+      "createHintAi": "With AI"
     },
     "sales": {
       "title": "Sell-through by market",
@@ -395,7 +404,9 @@
       "total": "Total · {{count}} regions",
       "total_one": "Total · {{count}} region",
       "cardSummary": "{{rate}} sold · {{active}} / {{total}} couriers",
-      "cardSummaryNoCouriers": "{{rate}} sold"
+      "cardSummaryNoCouriers": "{{rate}} sold",
+      "detail": "Details",
+      "detailAria": "{{name}} details"
     },
     "error": {
       "title": "Couldn't load region statistics",

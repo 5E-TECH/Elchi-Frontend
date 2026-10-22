@@ -38,30 +38,68 @@ const pageState = vi.hoisted(() => ({
   currentShift: { isSuccess: false, data: undefined } as { isSuccess: boolean; data: unknown },
   /** `useGetCurrentShift(enabled)` chaqiruvlari (faqat yoqilganlari). */
   shiftRequests: 0,
+  /**
+   * Yoqilgan `useGetCurrentShift` chaqiruvchisi: `"lock"` — CB-2 qulfi (`useCashboxShift`), `"summary"` —
+   * `PaymentSummaryCards` (faqat superadmin/admin — asosiy kassa bo'linishi uchun).
+   */
+  shiftCallers: [] as string[],
+  /** `useGetUserById` ga berilgan ID lar (ochgan xodim ismi — CB-2 ekranlari so'ramaydi). */
+  userByIdCalls: [] as unknown[],
+  /** Qayta chizish (`setCurrentShift`) — mock `useSyncExternalStore` bilan obuna. */
+  shiftVersion: 0,
+  shiftListeners: new Set<() => void>(),
   mainCashbox: undefined as unknown,
   mainCashboxParams: [] as unknown[],
 }));
+/** CB-2: `POST finance/shift/open` (menejer «To'lovlar» — smena yopiq). */
+const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
+/** «Server» dagi joriy smenani almashtiradi (qayta o'qish natijasi) va obunachilarni qayta chizadi. */
+const setCurrentShift = (shift: Record<string, unknown> | null) => {
+  const refetch = (pageState.currentShift as { refetch?: unknown }).refetch;
+  pageState.currentShift = { isSuccess: true, data: { data: { shift, required: true } }, ...(refetch ? { refetch } : {}) } as never;
+  pageState.shiftVersion += 1;
+  pageState.shiftListeners.forEach((listener) => listener());
+};
 
-vi.mock("../../entities/payments", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../entities/payments")>()),
-  useCashBox: () => ({
-    useGetCashBoxInfo: () => ({ data: pageState.cashboxInfo, isLoading: false }),
-    useGetFinanceHistory: (params: unknown) => getFinanceHistoryMock(params),
-    useGetFinanceHistoryById: () => ({ data: undefined, isLoading: false }),
-    useGetHqCourierReceivables: (enabled: boolean) => {
-      pageState.hqCouriersEnabled.push(enabled);
-      return { data: enabled ? pageState.hqCouriers : undefined, isLoading: false };
-    },
-    useGetCurrentShift: (enabled: boolean) => {
-      if (enabled) pageState.shiftRequests += 1;
-      return enabled ? pageState.currentShift : { isSuccess: false, data: undefined };
-    },
-    useGetCashBoxMain: (params: unknown) => {
-      pageState.mainCashboxParams.push(params);
-      return { data: pageState.mainCashbox, isLoading: false };
-    },
-  }),
-}));
+vi.mock("../../entities/payments", async (importOriginal) => {
+  const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
+  return {
+    ...(await importOriginal<typeof import("../../entities/payments")>()),
+    useCashBox: () => ({
+      useGetCashBoxInfo: () => ({ data: pageState.cashboxInfo, isLoading: false }),
+      useGetFinanceHistory: (params: unknown) => getFinanceHistoryMock(params),
+      useGetFinanceHistoryById: () => ({ data: undefined, isLoading: false }),
+      useGetHqCourierReceivables: (enabled: boolean) => {
+        pageState.hqCouriersEnabled.push(enabled);
+        return { data: enabled ? pageState.hqCouriers : undefined, isLoading: false };
+      },
+      useGetCurrentShift: (enabled: boolean) => {
+        useSyncExternalStore(
+          (listener) => {
+            pageState.shiftListeners.add(listener);
+            return () => void pageState.shiftListeners.delete(listener);
+          },
+          () => pageState.shiftVersion,
+        );
+        if (enabled) {
+          pageState.shiftRequests += 1;
+          const stack = new Error().stack ?? "";
+          pageState.shiftCallers.push(
+            stack.includes("useCashboxShift") ? "lock" : stack.includes("PaymentSummaryCards") ? "summary" : "other",
+          );
+        }
+        return enabled ? pageState.currentShift : { isSuccess: false, data: undefined };
+      },
+      // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat ochiq bo'lganda so'raydi; sukut — so'raladi.
+      useGetCashBoxMain: (params: unknown, enabled: boolean = true) => {
+        if (!enabled) return { data: undefined, isLoading: false, isSuccess: false };
+        pageState.mainCashboxParams.push(params);
+        return { data: pageState.mainCashbox, isLoading: false, isSuccess: pageState.mainCashbox !== undefined };
+      },
+      openShift: openShiftMutation,
+    }),
+  };
+});
 
 vi.mock("../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({
@@ -80,6 +118,10 @@ vi.mock("../../entities/user/api/userApi", () => ({
       data: enabled ? pageState.managers : undefined,
       isLoading: false,
     }),
+    useGetUserById: (id: unknown) => {
+      pageState.userByIdCalls.push(id);
+      return { data: undefined };
+    },
     useGetCouriers: (params: unknown, enabled: boolean) => {
       if (enabled) pageState.courierParams.push(params);
       return { data: enabled ? pageState.couriers : undefined, isLoading: false };
@@ -156,6 +198,8 @@ beforeEach(() => {
   pageState.hqCouriersEnabled = [];
   pageState.currentShift = { isSuccess: false, data: undefined };
   pageState.shiftRequests = 0;
+  pageState.shiftCallers = [];
+  pageState.userByIdCalls = [];
   pageState.mainCashbox = undefined;
   pageState.mainCashboxParams = [];
 });
@@ -340,6 +384,9 @@ describe("Payments — header and KPI cards", () => {
     expect(within(mainCard).getByRole("img", { name: "Naqd 18 240 000 so'm, karta 6 375 000 so'm" })).toBeInTheDocument();
     // Smena — shift/current (asosiy kassa); naqd/karta — bugungi kun bilan cheklangan yengil so'rov.
     expect(pageState.shiftRequests).toBeGreaterThan(0);
+    // KPI kartasi so'raydi; CB-2 qulfi superadmin uchun so'ramaydi (sarlavha o'zgarmaydi).
+    expect(pageState.shiftCallers).toContain("summary");
+    expect(pageState.shiftCallers).not.toContain("lock");
     expect(pageState.mainCashboxParams.at(-1)).toEqual({
       fromDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       toDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
@@ -379,7 +426,7 @@ describe("Payments — header and KPI cards", () => {
     expect(await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" })).toBeInTheDocument();
   });
 
-  it("manager: full values, HQ share meta, «Yetarli» badge; no shift / main-cashbox split requests", () => {
+  it("manager: full values, HQ share meta, «Yetarli» badge; no main-cashbox split request (shift — CB-2 only)", () => {
     pageState.cashboxInfo = { data: { kassadagi_summa: 3_785_000, berilishi_kerak: 3_460_000, olinishi_kerak: 2_940_000 } };
     pageState.couriers = {
       data: {
@@ -406,7 +453,10 @@ describe("Payments — header and KPI cards", () => {
     expect(within(giveCard).getByText("Kassada qoladi: 325 000 so'm")).toBeInTheDocument();
     expect(within(giveCard).getByText("Yetarli")).toBeInTheDocument();
 
-    expect(pageState.shiftRequests).toBe(0);
+    // CB-2: menejer o'z filiali kassasi smenasini so'raydi (faqat qulf); KPI kartasi (asosiy kassa bo'linishi) — yo'q.
+    expect(pageState.shiftCallers).toContain("lock");
+    expect(pageState.shiftCallers).not.toContain("summary");
+    expect(pageState.shiftCallers).not.toContain("other");
     expect(pageState.mainCashboxParams).toEqual([]);
   });
 
@@ -594,5 +644,150 @@ describe("Payments — 'Qabul qilinishi kerak'", () => {
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/15");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=branch");
+  });
+});
+
+/**
+ * CB-2 (kfdfYDik, ega javobi CB-S4): menejer «To'lovlar», filial kassasida smena yo'q — maket
+ * `manager-payments-overview-shift-closed`: izoh «… · smena yopiq», ikki amal o'rnida bitta «Smenani ochish»,
+ * «Smena boshlanmagan» banneri; KPI va tarix o'zgarmaydi.
+ */
+describe("Payments — menejer, smena yopiq (CB-2)", () => {
+  const open = (preloadedState: never) =>
+    renderWithProviders(
+      <>
+        <Payments />
+        <LocationProbe />
+      </>,
+      { route: "/payments", preloadedState },
+    );
+  const withBranch = () => {
+    // `branch_id` — «HQ'ga o'tkazish» tugmasi chiqishi uchun (smena ochiq bo'lsa).
+    pageState.cashboxInfo = { data: { kassadagi_summa: 3_785_000, berilishi_kerak: 3_460_000, branch_id: "15" } };
+  };
+
+  afterEach(() => {
+    openShiftMutation.mutateAsync.mockReset();
+  });
+
+  it("⭐ smena yo'q: «Smenani ochish» bitta asosiy amal, banner, sarlavha izohi; KPI va tarix qoladi", () => {
+    withBranch();
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    open(manager);
+
+    expect(screen.getByText("Kassa va to'lovlarni boshqarish · smena yopiq")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Smenani ochish" })).toHaveAttribute("aria-haspopup", "dialog");
+    expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Kuryerdan qabul qilish" })).not.toBeInTheDocument();
+    const banner = screen.getByTestId("shift-banner");
+    expect(banner).toHaveTextContent("Smena boshlanmagan");
+    expect(banner).toHaveTextContent(
+      "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+    );
+    expect(screen.getByRole("link", { name: /Kassadagi summa/ })).toBeInTheDocument();
+    expect(screen.getByTestId("payment-history-table")).toBeInTheDocument();
+    // Qoldiq faqat oyna ochilganda so'raladi.
+    expect(pageState.mainCashboxParams).toEqual([]);
+  });
+
+  it("⭐ «Smenani ochish» → oyna (filial kassasi, jonli qoldiq) → POST → «Smena ochildi»", async () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    pageState.mainCashbox = { data: { cashbox: { balance_cash: 2_000_000, balance_card: 500_000 } } };
+    openShiftMutation.mutateAsync.mockResolvedValue({ data: { id: "9", status: "open" } });
+    const user = userEvent.setup();
+    open(manager);
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    expect(dialog).toHaveTextContent("Filial kassasi · yangi smena boshlanadi");
+    expect(dialog).toHaveTextContent(/2\D000\D000/);
+    expect(dialog).toHaveTextContent(/2\D500\D000/);
+    expect(pageState.mainCashboxParams).toEqual([undefined]);
+
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+    expect(openShiftMutation.mutateAsync).toHaveBeenCalledWith({ comment: undefined });
+    expect(await screen.findByText("Smena ochildi")).toBeInTheDocument();
+  });
+
+  it("smena ochiq: avvalgi amallar, banner yo'q", () => {
+    withBranch();
+    pageState.currentShift = {
+      isSuccess: true,
+      data: { data: { shift: { id: "5", status: "open", opened_by: "198" }, required: true } },
+    };
+    open(manager);
+
+    expect(screen.getByRole("button", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+    expect(screen.getByText("Kassa va to'lovlarni boshqarish")).toBeInTheDocument();
+  });
+
+  it("holat noma'lum (403 / yuklanmoqda): avvalgi amallar, qulf taxmin qilinmaydi", () => {
+    withBranch();
+    pageState.currentShift = { isSuccess: false, data: undefined };
+    open(manager);
+
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+  });
+
+  it("superadmin: sarlavha o'zgarmaydi (maketda smena holati yo'q) — «Marketga to'lov» / «Pul qabul qilish»", () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    open(superadmin);
+
+    expect(screen.getByRole("button", { name: "Pul qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+  });
+  // «HQ'ga o'tkazish» bo'lmaganda React tugma DOM ini qayta ishlatmaydi — fokus <body> ga tushardi.
+  it("smena shu ekrandan ochildi: oyna yopiladi, fokus tiklangan birinchi amalga («Kuryerdan qabul qilish»)", async () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    openShiftMutation.mutateAsync.mockImplementation(async () => {
+      setCurrentShift({ id: "9", status: "open", opened_by: "198" });
+      return { data: { id: "9", status: "open" } };
+    });
+    const user = userEvent.setup();
+    open(manager);
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Smenani ochish" })).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toHaveFocus());
+  });
+
+  it("400 «allaqachon ochiq» (boshqa xodim ochgan): qayta o'qishdan keyin oyna yopiladi, avvalgi amallar", async () => {
+    withBranch();
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    openShiftMutation.mutateAsync.mockRejectedValue(Object.assign(new Error("raw"), { response: { status: 400 } }));
+    const refetch = vi.fn(() => setCurrentShift({ id: "9", status: "open", opened_by: "77" }));
+    pageState.currentShift = { ...pageState.currentShift, refetch } as never;
+    const user = userEvent.setup();
+    open(manager);
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+
+    expect(refetch).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Smenani ochish" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+  });
+
+  it("ochgan xodim ismi bu ekranda ko'rsatilmaydi — `GET users/:id` so'ralmaydi", () => {
+    withBranch();
+    pageState.currentShift = {
+      isSuccess: true,
+      data: { data: { shift: { id: "5", status: "open", opened_by: "77" }, required: true } },
+    };
+    open(manager);
+
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(pageState.userByIdCalls).not.toContain("77");
   });
 });

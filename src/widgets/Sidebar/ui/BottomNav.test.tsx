@@ -93,14 +93,16 @@ afterAll(async () => {
 });
 
 describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
-  it.each(CURRENT_ROLES)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
+  it.each(CURRENT_ROLES)("%s: 5 ta katak (investorda 4), tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
     const branchType = DEFAULT_BRANCH[role] ?? null;
     renderNav(role, { branchType });
     const menu = getSidebarConfigForUser(role, userOf(role, branchType));
     const design = ROLES[role];
 
-    expect(design.bottomNav).toHaveLength(5);
-    expect(cells()).toHaveLength(5);
+    // Investorda 4 katak (ega IN-S2), qolgan rollarda 5.
+    const count = role === "investor" ? 4 : 5;
+    expect(design.bottomNav).toHaveLength(count);
+    expect(cells()).toHaveLength(count);
 
     design.bottomNav.forEach((key, index) => {
       const cell = cells()[index];
@@ -179,15 +181,27 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it.each(["market_operator"] as const)(
-    "%s (ROL-0): menyusi hali bo'sh — pastki menyu chizilmaydi (yolg'iz «Menyu» yoki admin havolalari yo'q)",
-    (role) => {
-      renderNav(role);
-      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-      expect(screen.queryAllByRole("link")).toHaveLength(0);
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    },
-  );
+  it("market operatori (MO-2, MO-3): Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim — skanersiz, «Menyu»siz", () => {
+    renderNav("market_operator");
+    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/products", "/my-earnings"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Buyurtmalar", "Yaratish", "Mahsulotlar", "Daromadim"]);
+    expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Menyu" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["ru", ["Главная", "Заказы", "Создать", "Товары", "Мой доход"]],
+    ["en", ["Home", "Orders", "Create", "Products", "Earnings"]],
+  ] as const)("market operatori (MO-2, MO-3), %s: qisqa yorliqlar maketdagidek (roles.json → short)", async (lang, labels) => {
+    await i18n.changeLanguage(lang);
+    try {
+      renderNav("market_operator", { route: "/my-earnings" });
+      expect(cells().map((cell) => cell.textContent)).toEqual(labels);
+      expect(screen.getByRole("link", { name: labels[4] })).toHaveAttribute("aria-current", "page");
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
 });
 
 describe("BottomNav — filial turi va ruxsat", () => {
@@ -393,10 +407,10 @@ describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
   });
 });
 
-describe("BottomNav — logist (LG-1)", () => {
-  it("«Bosh sahifa» + «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-3/LG-4/LG-5)", () => {
+describe("BottomNav — logist (LG-1, LG-3)", () => {
+  it("«Bosh sahifa» · «Hududlar» · «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-4/LG-5)", () => {
     renderNav("logist");
-    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(hrefs()).toEqual(["/", "/regions", "button:Menyu"]);
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
     for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
@@ -405,15 +419,15 @@ describe("BottomNav — logist (LG-1)", () => {
   });
 });
 
-describe("BottomNav — investor (IN-1)", () => {
+describe("BottomNav — investor (IN-1, IN-2)", () => {
   /**
-   * Investor menyusida hozircha faqat «Bosh sahifa» (IN-1). Maketdagi 4 katak (Bosh sahifa · Investitsiya · Foyda ·
-   * Menyu, ega IN-S2) — «Investitsiyalar» va «Foyda tarixi» o'z sahifalari bilan IN-2 da keladi (`plannedBottomNav`).
+   * Maketdagi 4 katak (ega IN-S2): Bosh sahifa · Investitsiya · Foyda · Menyu — qisqa yorliqlar `roles.json` → short.
    * Skaner yo'q, kataklar teng.
    */
-  it("Bosh sahifa · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
+  it("Bosh sahifa · Investitsiya · Foyda · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
     renderNav("investor");
-    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(hrefs()).toEqual(["/", "/investments", "/profits", "button:Menyu"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Investitsiya", "Foyda", "Menyu"]);
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");

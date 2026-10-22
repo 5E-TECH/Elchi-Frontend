@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { openProfileWithSessions } from "./support/profileSessions";
+import { expectToast } from "./support/toast";
 
 /**
  * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» telefonda (390, kuryer): qatorlar ustma-ust (qurilma, so'ng
- * vaqtlar), «Shu qurilma» tepada, gorizontal oqish yo'q, matn ≥ 12px.
+ * vaqtlar), «Shu qurilma» tepada, gorizontal oqish yo'q, matn ≥ 12px; «Chiqarish» va «Boshqa barcha qurilmalardan
+ * chiqish» ≥ 44 px, tasdiq — pastki varaqa.
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -31,5 +33,43 @@ test("⭐ 390: ustma-ust qatorlar, oqish yo'q, mayda matn yo'q", async ({ page }
       .map((node) => node.textContent),
   );
   expect(tiny).toEqual([]);
+  expect(leaked).toEqual([]);
+});
+
+test("⭐ 390: chiqarish amallari ≥ 44 px, ekranga sig'adi; tasdiq pastki varaqada; oqish yo'q", async ({ page }) => {
+  const { leaked, revoke } = await openProfileWithSessions(page, "courier", { revoke: true });
+  const card = page.getByRole("region", { name: "Sessiyalar" });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(3);
+
+  const all = card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" });
+  const actions = card.getByRole("button", { name: /^Chiqarish:/ });
+  await expect(actions).toHaveCount(2);
+  for (const target of [all, actions.nth(0), actions.nth(1)]) {
+    await target.scrollIntoViewIfNeeded();
+    const box = (await target.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  }
+  // Telefonda amal vaqtlar ostida (qator ustma-ust).
+  const times = (await rows.nth(1).getByText("Kirgan vaqti").boundingBox())!;
+  const action = (await actions.nth(0).boundingBox())!;
+  expect(action.y).toBeGreaterThan(times.y);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await actions.nth(0).click();
+  const confirm = page.getByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
+  await expect(confirm).toBeVisible();
+  const sheet = (await confirm.boundingBox())!;
+  expect(Math.round(sheet.y + sheet.height)).toBeGreaterThanOrEqual(844 - 1);
+  const submit = confirm.getByRole("button", { name: "Chiqarish" });
+  expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await submit.click();
+  await expectToast(page, "Qurilma chiqarildi", { tone: "success" });
+  await expect(rows).toHaveCount(2);
+  expect(revoke!.deletes).toEqual(["s-2"]);
   expect(leaked).toEqual([]);
 });

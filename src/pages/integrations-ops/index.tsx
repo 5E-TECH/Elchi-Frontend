@@ -3,7 +3,6 @@ import { memo, useState, type FormEvent } from "react";
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useIntegrationsCoverage } from "../../entities/integrations/integrationsCoverage";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../shared/lib/formatMoney";
 import {
@@ -22,6 +21,7 @@ import {
   type Tone,
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { useOpsErrorText } from "../ops/lib/opsErrorText";
 
 /**
  * OPS → «Integratsiyalar» (maket `superadmin-ops-integrations`): debitorlik qarzlari (`GET integrations/receivables`
@@ -70,6 +70,8 @@ const IntegrationsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t, i18n } = useTranslation("ops");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { useGetReceivables, sync } = useIntegrationsCoverage();
+  // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
+  const errorText = useOpsErrorText();
 
   const [page, setPage] = useState(1);
   const receivables = useGetReceivables({ page, limit: PAGE_SIZE }, { silentError: true });
@@ -138,7 +140,7 @@ const IntegrationsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
               <ErrorState
                 error={error}
                 title={t("integrations.receivables.loadError")}
-                description={getBackendErrorMessage(error) ?? undefined}
+                description={errorText(error)}
                 retryLabel={t("common.retry")}
                 retrying={receivables.isFetching}
                 onRetry={retry}
@@ -200,7 +202,7 @@ const IntegrationsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             ) : null}
             {sync.isError ? (
               <OpsAlert tone="danger" title={t("integrations.sync.error")}>
-                {getBackendErrorMessage(sync.error)}
+                {errorText(sync.error, { action: true })}
               </OpsAlert>
             ) : null}
           </form>

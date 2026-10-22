@@ -26,10 +26,17 @@ import {
   canViewUiKit,
   canViewMarketOperators,
   canViewInvestorCabinet,
+  canViewRegionStats,
+  canViewMyEarnings,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
 import ErrorBoundary from "../../shared/ui/ErrorBoundary";
+// MO-3: market operatori qobiqda faqat yaratadi — qaysi bola yo'l ochiq (sof funksiya, testlanadi).
+import {
+  MARKET_OPERATOR_CREATE_PATH,
+  resolveMarketOperatorNewOrdersAccess,
+} from "../../pages/new_orders/model/newOrdersShell";
 // ✅ Login page: `lazy` + to'g'ridan-to'g'ri `/login` da oldindan yuklash.
 import Login from "./loginPage";
 
@@ -65,6 +72,11 @@ const MarketDashboardPage = lazy(
 );
 // IN-1: investor kabineti — alohida lazy chunk (dashboard bundle chegarasi 450 KB).
 const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
+/** MO-2: market operatorining «Daromadim» sahifasi (o'z stavkasi). */
+const MyEarningsPage = lazy(() => import("../../pages/my-earnings"));
+// IN-2: investor ro'yxatlari — «Investitsiyalar» va «Foyda tarixi» (o'z chunk'lari).
+const InvestmentsPage = lazy(() => import("../../pages/investor/InvestmentsPage"));
+const ProfitsPage = lazy(() => import("../../pages/investor/ProfitsPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -143,6 +155,8 @@ const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sat
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const NotificationSendPage = lazy(() => import("../../pages/notification-send"));
+// NS-2: «Yuborilganlar» — qo'lda yuborilgan xabarlar tarixi (menyusiz, «Xabar yuborish» sarlavhasidan).
+const NotificationSentPage = lazy(() => import("../../pages/notification-sent"));
 const SmsPage = lazy(() => import("../../pages/notifications/ui/SmsPage"));
 const NotificationInboxPage = lazy(
   () => import("../../pages/notifications/ui/NotificationInboxPage"),
@@ -218,16 +232,6 @@ const canViewAdminNewOrderTabs = (state: RootState) => {
   return role === "admin" || role === "superadmin";
 };
 
-const canViewRegionStats = (state: RootState) => {
-  const role = state.role.role;
-  return (
-    role === "admin" ||
-    role === "superadmin" ||
-    role === "manager" ||
-    role === "courier"
-  );
-};
-
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewCourierBulk = canViewCourierBulkPage;
 
@@ -236,10 +240,9 @@ const canViewCourierBulk = canViewCourierBulkPage;
 const LogistDashboardPage = lazy(() => import("../../pages/dashboard/LogistDashboardPage"));
 
 /**
- * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: qolgan har
- * rol (logist, market operatori, investor, menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida,
- * yangi UI yo'q (taxta `tizim-errors`). O'z bosh sahifasi kelganda har rol shu yerga o'z tarmog'ini qo'shadi
- * (LG-1 logist, MO-2 market operatori, IN-1 investor).
+ * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: o'z bosh sahifasi
+ * yo'q har rol (menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida, yangi UI yo'q (taxta `tizim-errors`).
+ * Yangi rollar — o'z tarmog'ida (LG-1 logist, MO-2 market operatori, IN-1 investor).
  */
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
@@ -260,8 +263,9 @@ const DashboardEntry = () => {
     return <LogistDashboardPage />;
   }
 
+  // MO-2: market operatori — market bosh sahifasi operator rejimida (xarajat tasdiqlarisiz, o'z marketi doirasida).
   if (role === "market_operator") {
-    return <ForbiddenPage />;
+    return <MarketDashboardPage variant="operator" />;
   }
 
   // IN-1: investor kabineti (`canViewInvestorCabinet`) — KPI, oylik foyda, investitsiyalar va foyda tarixi.
@@ -330,6 +334,22 @@ const NewOrdersCancelledDetailEntry = () => {
   }
 
   return <NewOrdersCancelledDetail />;
+};
+
+/**
+ * MO-3: «Qabul va yaratish» qobig'i market operatorida — faqat `/new-orders/create` («AI bilan» yaratish).
+ * `/new-orders` (menyu bandi) → yaratishga, qolgan bolalar (market ro'yxati, bekorlar, qabul, paketlar,
+ * foydalanuvchi tafsiloti) → 403: ularning backend yo'llari operatorga yopiq. Boshqa rollar — o'zgarishsiz.
+ */
+const NewOrdersRoleGate = ({ children }: { children: ReactNode }) => {
+  const { pathname } = useLocation();
+  const role = useSelector((state: RootState) => state.role.role);
+  if (role !== "market_operator") return <>{children}</>;
+
+  const access = resolveMarketOperatorNewOrdersAccess(pathname);
+  if (access === "redirect") return <Navigate replace to={MARKET_OPERATOR_CREATE_PATH} />;
+  if (access === "forbidden") return <Navigate replace to="/403" />;
+  return <>{children}</>;
 };
 
 const NewOrdersMarketAccessEntry = ({ children }: { children: ReactNode }) => {
@@ -738,7 +758,9 @@ const AppRouter = () => {
               path: "new-orders",
               element: (
                 <ProtectedRoute canActivate={canCreateOrdersByRoleAndBranchType}>
-                  <NewOrders />
+                  <NewOrdersRoleGate>
+                    <NewOrders />
+                  </NewOrdersRoleGate>
                 </ProtectedRoute>
               ),
               children: [
@@ -968,6 +990,15 @@ const AppRouter = () => {
               ),
             },
             {
+              // MO-2: market operatorining «Daromadim» (o'z stavkasi; hisob/to'lovlar — backend E6iEOAVs, MO-6).
+              path: "my-earnings",
+              element: (
+                <ProtectedRoute canActivate={canViewMyEarnings}>
+                  <MyEarningsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
               path: "market-operators",
               element: (
                 <ProtectedRoute canActivate={canViewMarketOperators}>
@@ -988,6 +1019,23 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewFinancialBalance}>
                   <FinancialBalance />
+                </ProtectedRoute>
+              ),
+            },
+            // IN-2: investor kabineti ro'yxatlari — faqat investor (`canViewInvestorCabinet`; backend `@Roles(INVESTOR)`).
+            {
+              path: "investments",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <InvestmentsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "profits",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <ProfitsPage />
                 </ProtectedRoute>
               ),
             },
@@ -1017,6 +1065,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canSendNotifications}>
                   <NotificationSendPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "notifications/sent",
+              element: (
+                <ProtectedRoute canActivate={canSendNotifications}>
+                  <NotificationSentPage />
                 </ProtectedRoute>
               ),
             },

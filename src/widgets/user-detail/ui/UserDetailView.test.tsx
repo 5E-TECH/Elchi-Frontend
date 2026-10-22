@@ -1,15 +1,15 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AxiosError, type AxiosResponse } from "axios";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { User, UserRole } from "../../../entities/user/types/user";
+import i18n from "../../../i18n";
 import { UserDetailView } from "./UserDetailView";
 
 /**
  * Yangi v2 tafsilot (`/all-users/:id`, `/new-orders/userDetail/:id`) — eski (o'chirilgan) `UserDetailWidget` testlaridagi
  * holatlar shu yerda: kuryer o'tkazish tugmasi (faqat superadmin/admin va faqat kuryer), har kalit
- * mutatsiyasi va xabarlari, «Telegram guruhi» (bir martalik havola) kartasi.
+ * mutatsiyasi va xabarlari, «Telegram guruhi» kartasi kimga chiqishi (TG-B).
  */
 
 const mocks = vi.hoisted(() => ({
@@ -32,10 +32,11 @@ vi.mock("../../../entities/user/api/userApi", () => ({
   }),
 }));
 
-// Guruh ulash oynasi o'z so'rovlarini yuboradi — bu yerda faqat qaysi market bilan ochilgani tekshiriladi.
-vi.mock("../../../features/notification-create", () => ({
-  NotificationFormModal: ({ open, marketId }: { open: boolean; marketId?: string }) =>
-    open ? <div role="dialog" aria-label="Bildirishnoma qo'shish" data-market-id={marketId} /> : null,
+// Karta o'z so'rovlarini yuboradi (o'z testi — `MarketTelegramGroupsCard.test.tsx`); bu yerda faqat kim ko'radi.
+vi.mock("./MarketTelegramGroupsCard", () => ({
+  MarketTelegramGroupsCard: ({ user, mode }: { user: User; mode: string }) => (
+    <section aria-label="Telegram guruhi" data-mode={mode} data-market-id={user.id} />
+  ),
 }));
 
 vi.mock("../../../features/courier-transfer-branch", () => ({
@@ -266,106 +267,30 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     expect(screen.queryByText("Rasm yoki video isbot")).not.toBeInTheDocument();
   });
 
-  // ysBqD9Nx — «Guruhda mijoz ismi va telefoni» (`PATCH markets/:id/telegram-group-pii`) v2 «Ruxsatlar» qatorida;
-  // xulq va tahrir qoidalari `/profile` dagi `MarketTelegramGroupPiiCard` bilan bitta hook'dan.
-  const piiName = { name: "Guruhda mijoz ismi va telefoni" };
-
-  it("market: Telegram guruhi PII kaliti «Ruxsatlar» ichida, izohi bilan; maydon kelmasa — yoqiq", () => {
+  it("«Ruxsatlar» da «Guruhda mijoz ismi va telefoni» kaliti yo'q — u «Telegram guruhi» kartasiga ko'chdi (TG-B S3)", () => {
     renderView(makeUser("market"), "superadmin");
-
     const permissions = screen.getByRole("region", { name: "Ruxsatlar" });
-    const control = within(permissions).getByRole("switch", piiName);
-    expect(control).toHaveAttribute("aria-checked", "true");
-    expect(control).toHaveAccessibleDescription(
-      "O'chirilsa, Telegram guruhidagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
-    );
-  });
-
-  it("market: PII kaliti tasdiqsiz — PATCH teskari qiymat bilan va «Saqlandi»", async () => {
-    const user = userEvent.setup();
-    renderView(makeUser("market", { tg_group_show_customer_pii: true }), "admin");
-
-    const control = screen.getByRole("switch", piiName);
-    await user.click(control);
-
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    await waitFor(() =>
-      expect(mocks.updateMarketTelegramGroupPii).toHaveBeenCalledWith({ id: "201", tg_group_show_customer_pii: false }),
-    );
-    expect(await screen.findByText("Saqlandi")).toBeInTheDocument();
-    expect(screen.getByText("Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi")).toBeInTheDocument();
-    expect(control).toHaveAttribute("aria-checked", "false");
-  });
-
-  it("market: PII PATCH yiqilsa — kalit qaytadi, backend matni xabarda", async () => {
-    mocks.updateMarketTelegramGroupPii.mockRejectedValue(
-      new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
-        status: 403,
-        data: { message: "Ruxsat yo'q" },
-      } as AxiosResponse),
-    );
-    const user = userEvent.setup();
-    renderView(makeUser("market", { tg_group_show_customer_pii: false }), "superadmin");
-
-    const control = screen.getByRole("switch", piiName);
-    await user.click(control);
-
-    expect(await screen.findByText("Saqlanmadi")).toBeInTheDocument();
-    expect(screen.getByText("Ruxsat yo'q")).toBeInTheDocument();
-    expect(control).toHaveAttribute("aria-checked", "false");
-  });
-
-  it.each(["manager", "registrator"])("%s PII kalitini faqat ko'radi (PATCH ketmaydi)", async (role) => {
-    const user = userEvent.setup();
-    renderView(makeUser("market"), role);
-
-    const control = screen.getByRole("switch", piiName);
-    expect(control).toBeDisabled();
-    await user.click(control);
-    expect(mocks.updateMarketTelegramGroupPii).not.toHaveBeenCalled();
-  });
-
-  it("market o'z yozuvida PII kalitini o'zgartira oladi, boshqa market — yo'q", () => {
-    const own = renderWithProviders(<UserDetailView user={makeUser("market")} />, {
-      preloadedState: { role: { id: "201", role: "market", region: null, name: "market" } } as never,
-    });
-    expect(screen.getByRole("switch", piiName)).toBeEnabled();
-    own.unmount();
-
-    renderWithProviders(<UserDetailView user={makeUser("market")} />, {
-      preloadedState: { role: { id: "202", role: "market", region: null, name: "market" } } as never,
-    });
-    expect(screen.getByRole("switch", piiName)).toBeDisabled();
-  });
-
-  it.each<UserRole>(["courier", "manager"])("%s foydalanuvchida PII kaliti yo'q", (role) => {
-    renderView(makeUser(role), "superadmin");
-    expect(screen.queryByRole("switch", piiName)).not.toBeInTheDocument();
+    expect(within(permissions).queryByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).not.toBeInTheDocument();
   });
 });
 
-describe("UserDetailView — Telegram guruhi (bir martalik havola, 4TfLyTrL — eski «Telegram token» o'rnida)", () => {
-  it("superadmin: karta va tugma; bosilsa guruh ulash oynasi shu market bilan ochiladi; token so'ralmaydi", async () => {
-    const user = userEvent.setup();
-    renderView(makeUser("market"), "superadmin");
-
+describe("UserDetailView — «Telegram guruhi» kartasi (TG-B, `*-users-detail-telegram`)", () => {
+  it.each(["superadmin", "admin"])("%s: market tafsilotida karta (`staff` rejimi, shu market bilan)", (role) => {
+    renderView(makeUser("market"), role);
     const card = screen.getByRole("region", { name: "Telegram guruhi" });
-    expect(card).toHaveTextContent("Bir martalik havola (10 daqiqa)");
+    expect(card).toHaveAttribute("data-mode", "staff");
+    expect(card).toHaveAttribute("data-market-id", "201");
     expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
-    expect(screen.queryByText(/tokenni yuborsin/)).not.toBeInTheDocument();
-
-    await user.click(within(card).getByRole("button", { name: "Ulash havolasini olish" }));
-
-    expect(screen.getByRole("dialog", { name: "Bildirishnoma qo'shish" })).toHaveAttribute("data-market-id", "201");
   });
 
-  it.each(["admin", "manager"])("%s uchun karta chizilmaydi (guruh ulash oynasi faqat superadminda)", (role) => {
+  it.each(["manager", "registrator"])("%s market tafsilotida kartani ham, PII kalitini ham ko'rmaydi (maket)", (role) => {
     renderView(makeUser("market"), role);
     expect(screen.queryByRole("region", { name: "Telegram guruhi" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).not.toBeInTheDocument();
   });
 
-  it("market bo'lmagan foydalanuvchida karta yo'q", () => {
-    renderView(makeUser("courier"), "superadmin");
+  it.each<UserRole>(["courier", "manager", "customer"])("%s foydalanuvchida karta yo'q", (role) => {
+    renderView(makeUser(role), "superadmin");
     expect(screen.queryByRole("region", { name: "Telegram guruhi" })).not.toBeInTheDocument();
   });
 });
@@ -452,5 +377,59 @@ describe("UserDetailView — FY-1: «AI narxi» va logist maoshi", () => {
 
     renderView(makeUser("logist", { name: "Dilshod Karimov", salary: 0 }), "admin");
     expect(screen.getByRole("region", { name: "Profil ma'lumotlari" })).toHaveTextContent("0 so'm");
+  });
+});
+
+describe("UserDetailView — CS-C: market yorliqlari «Uyga / Markazga standart narx» (maket `superadmin-users-detail`)", () => {
+  const valueOf = (region: HTMLElement, label: string) => within(region).getByText(label).nextElementSibling;
+
+  it.each(["superadmin", "admin"])("%s: market «Tarif» kartasida standart narx yorliqlari va summalari", (viewerRole) => {
+    renderView(makeUser("market"), viewerRole);
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Asosiy tarif")).toHaveTextContent("Uygacha");
+    expect(valueOf(tariff, "Uyga standart narx")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga standart narx")).toHaveTextContent("25 000 so'm");
+    expect(tariff).not.toHaveTextContent("Uyga tarif");
+    expect(tariff).not.toHaveTextContent("Markazga tarif");
+    // «Vazn va hajm bo'yicha narx» — backend maydoni yo'q (DAqXPeSy), chizilmaydi.
+    expect(screen.queryByText("Vazn va hajm bo'yicha narx")).not.toBeInTheDocument();
+  });
+
+  it("menejer market sahifasida ham yangi yorliqlarni ko'radi", () => {
+    renderView(makeUser("market"), "manager", "Urgut filiali");
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Uyga standart narx")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga standart narx")).toHaveTextContent("25 000 so'm");
+  });
+
+  it("kuryer va menejer (tarifli) — eski «Uyga tarif» / «Markazga tarif» o'zgarmaydi", () => {
+    const { unmount } = renderView(makeUser("courier", { name: "Sherzod Alimov" }), "superadmin");
+    let tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Uyga tarif")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga tarif")).toHaveTextContent("25 000 so'm");
+    expect(tariff).not.toHaveTextContent("standart narx");
+    unmount();
+
+    renderView(makeUser("manager", { name: "Aziz Karimov" }), "superadmin");
+    tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(within(tariff).getByText("Uyga tarif")).toBeInTheDocument();
+    expect(tariff).not.toHaveTextContent("standart narx");
+  });
+
+  it.each([
+    ["ru", "Тариф", "Стандартная цена до дома", "Стандартная цена до центра"],
+    ["en", "Tariff", "Standard price to the door", "Standard price to the centre"],
+  ])("%s: market yorliqlari tarjima qilingan", async (language, title, home, center) => {
+    await i18n.changeLanguage(language);
+    try {
+      renderView(makeUser("market"), "superadmin");
+      const tariff = screen.getByRole("region", { name: title });
+      expect(within(tariff).getByText(home)).toBeInTheDocument();
+      expect(within(tariff).getByText(center)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
   });
 });

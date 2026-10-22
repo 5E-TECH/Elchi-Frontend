@@ -1,10 +1,12 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * Investor kabineti (IN-1) — soxta backend: INVESTOR («Habibulla Nazirov»), `GET investors/me/dashboard|investments|
- * profits` maket qiymatlari bilan (`investor-dashboard-home`; oylar joriy oydan orqaga). Holatlar: `empty`, `status`
- * (dashboard va ro'yxatlar shu kod bilan yiqiladi — 403 / 404 / 409 / 500). Yozish so'rovlari taqiqlangan.
- * Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi).
+ * Investor kabineti (IN-1, IN-2) — soxta backend: INVESTOR («Habibulla Nazirov»), `GET investors/me/dashboard|
+ * investments|profits` maket qiymatlari bilan (`investor-dashboard-home`, `investor-investments-list`,
+ * `investor-profits-list`; oylar joriy oydan orqaga). Ro'yxatlar to'liq to'plamdan (5 investitsiya, 9 foyda davri)
+ * `page` / `limit` / `from_date` / `to_date` / `is_paid` bo'yicha kesiladi — bosh sahifadagi `limit=3` / `limit=5`
+ * javoblari avvalgidek. Holatlar: `empty`, `status` (dashboard va ro'yxatlar shu kod bilan yiqiladi — 403 / 404 /
+ * 409 / 500). Yozish so'rovlari taqiqlangan. Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -63,24 +65,39 @@ const dashboard = (months: number, empty: boolean) => ({
   },
 });
 
-const investments = (empty: boolean) => ({
-  items: empty
-    ? []
-    : [
-        { id: "1", amount: 100_000_000, invested_at: "2026-08-01T00:00:00+05:00" },
-        { id: "2", amount: 50_000_000, invested_at: "2026-06-20T00:00:00+05:00" },
-        { id: "3", amount: 100_000_000, invested_at: "2026-04-12T00:00:00+05:00" },
-      ],
-  meta: { page: 1, limit: 3, total: empty ? 0 : 5, totalPages: empty ? 1 : 2 },
-  summary: { total_amount: empty ? 0 : 450_000_000 },
-});
+/** `page` / `limit` bo'yicha bitta sahifa (backend `normalizePagination`: sukut 10). */
+const pageOf = <T>(rows: T[], query: URLSearchParams) => {
+  const limit = Number(query.get("limit")) || 10;
+  const page = Number(query.get("page")) || 1;
+  return {
+    items: rows.slice((page - 1) * limit, page * limit),
+    meta: { page, limit, total: rows.length, totalPages: Math.max(1, Math.ceil(rows.length / limit)) },
+  };
+};
 
-const profit = (id: string, month: number, last: number, amount: number, paidAt: string | null) => {
+const INVESTMENTS = [
+  { id: "1", amount: 100_000_000, invested_at: "2026-08-01T00:00:00+05:00" },
+  { id: "2", amount: 50_000_000, invested_at: "2026-06-20T00:00:00+05:00" },
+  { id: "3", amount: 100_000_000, invested_at: "2026-04-12T00:00:00+05:00" },
+  { id: "4", amount: 80_000_000, invested_at: "2026-03-03T00:00:00+05:00" },
+  { id: "5", amount: 120_000_000, invested_at: "2026-01-15T00:00:00+05:00" },
+];
+
+const investments = (empty: boolean, query: URLSearchParams) => {
+  const from = Date.parse(query.get("from_date") ?? "") || -Infinity;
+  const to = Date.parse(query.get("to_date") ?? "") || Infinity;
+  const rows = empty
+    ? []
+    : INVESTMENTS.filter((row) => Date.parse(row.invested_at) >= from && Date.parse(row.invested_at) <= to);
+  return { ...pageOf(rows, query), summary: { total_amount: empty ? 0 : 450_000_000 } };
+};
+
+const profit = (id: string, month: number, last: number, amount: number, paidAt: string | null, percentage = 12.5) => {
   const mm = String(month).padStart(2, "0");
   return {
     id,
     amount,
-    percentage: 12.5,
+    percentage,
     period_start: `2026-${mm}-01T00:00:00+05:00`,
     period_end: `2026-${mm}-${last}T23:59:59+05:00`,
     is_paid: paidAt != null,
@@ -88,19 +105,26 @@ const profit = (id: string, month: number, last: number, amount: number, paidAt:
   };
 };
 
-const profits = (empty: boolean) => ({
-  items: empty
-    ? []
-    : [
-        profit("20", 9, 30, 6_200_000, null),
-        profit("19", 8, 31, 5_600_000, "2026-09-05"),
-        profit("18", 7, 31, 4_900_000, "2026-08-05"),
-        profit("17", 6, 30, 5_300_000, "2026-07-05"),
-        profit("16", 5, 31, 5_000_000, "2026-06-05"),
-      ],
-  meta: { page: 1, limit: 5, total: empty ? 0 : 9, totalPages: empty ? 1 : 2 },
-  summary: { total_paid_amount: empty ? 0 : 34_300_000, total_unpaid_amount: empty ? 0 : 6_200_000 },
-});
+const PROFITS = [
+  profit("20", 9, 30, 6_200_000, null),
+  profit("19", 8, 31, 5_600_000, "2026-09-05"),
+  profit("18", 7, 31, 4_900_000, "2026-08-05"),
+  profit("17", 6, 30, 5_300_000, "2026-07-05"),
+  profit("16", 5, 31, 5_000_000, "2026-06-05"),
+  profit("15", 4, 30, 4_400_000, "2026-05-05"),
+  profit("14", 3, 31, 3_600_000, "2026-04-05", 12),
+  profit("13", 2, 28, 3_100_000, "2026-03-05", 12),
+  profit("12", 1, 31, 2_400_000, "2026-02-05", 12),
+];
+
+const profits = (empty: boolean, query: URLSearchParams) => {
+  const isPaid = query.get("is_paid");
+  const rows = empty ? [] : PROFITS.filter((row) => isPaid == null || row.is_paid === (isPaid === "true"));
+  return {
+    ...pageOf(rows, query),
+    summary: { total_paid_amount: empty ? 0 : 34_300_000, total_unpaid_amount: empty ? 0 : 6_200_000 },
+  };
+};
 
 /** Backendning xom xato matni — sahifada HECH QACHON ko'rinmasligi kerak. */
 export const RAW_BACKEND_MESSAGE = "investor profile is not available (e2e raw)";
@@ -108,6 +132,8 @@ export const RAW_BACKEND_MESSAGE = "investor profile is not available (e2e raw)"
 export type InvestorHomeMock = {
   /** `investors/me/dashboard` ga ketgan `months` qiymatlari. */
   months: string[];
+  /** Ro'yxat so'rovlarining query satri (`investors/me/investments?…`, `investors/me/profits?…`). */
+  lists: string[];
   requested: string[];
   leaked: string[];
 };
@@ -121,7 +147,7 @@ export type InvestorHomeOptions = {
 };
 
 export const mockInvestorHome = async (page: Page, { empty = false, status, dashboardOnly = false, theme }: InvestorHomeOptions = {}) => {
-  const mock: InvestorHomeMock = { months: [], requested: [], leaked: [] };
+  const mock: InvestorHomeMock = { months: [], lists: [], requested: [], leaked: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -156,8 +182,9 @@ export const mockInvestorHome = async (page: Page, { empty = false, status, dash
         return reply(route, { statusCode: status, message: RAW_BACKEND_MESSAGE, error: "Error" }, status);
       }
       if (isDashboard) return reply(route, wrap(dashboard(Number(url.searchParams.get("months") ?? 12), empty)));
-      if (path === "investors/me/investments") return reply(route, wrap(investments(empty)));
-      if (path === "investors/me/profits") return reply(route, wrap(profits(empty)));
+      mock.lists.push(`${path}?${url.searchParams.toString()}`);
+      if (path === "investors/me/investments") return reply(route, wrap(investments(empty, url.searchParams)));
+      if (path === "investors/me/profits") return reply(route, wrap(profits(empty, url.searchParams)));
     }
     return reply(route, wrap({ items: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } }));
   });
@@ -176,6 +203,14 @@ export const openInvestorHome = async (page: Page, options: InvestorHomeOptions 
   const mock = await mockInvestorHome(page, options);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeVisible({ timeout: 90_000 });
+  return mock;
+};
+
+/** IN-2: investor ro'yxat sahifasi (`/investments`, `/profits` + query) — h1 chiqquncha kutadi. */
+export const openInvestorPage = async (page: Page, path: string, title: string, options: InvestorHomeOptions = {}) => {
+  const mock = await mockInvestorHome(page, options);
+  await page.goto(path);
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible({ timeout: 90_000 });
   return mock;
 };
 

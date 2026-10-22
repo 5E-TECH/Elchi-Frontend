@@ -58,7 +58,10 @@ export const useInvestorDashboard = (months: InvestorMonthsWindow, options?: Opt
     ...silentErrorMeta(options),
   });
 
-/** O'z investitsiyalari (`invested_at` DESC — tartib serverda). */
+/**
+ * O'z investitsiyalari (`invested_at` DESC — tartib serverda). Sahifa yoki oraliq almashganda eski ro'yxat turib
+ * turadi (`/investments`, IN-2) — `isPlaceholderData` paytida sahifa URL'ni ham, «bo'sh» holatni ham chizmaydi.
+ */
 export const useInvestorInvestments = (params: InvestorListParams, options?: Options) =>
   useQuery<InvestorInvestmentsPage>({
     queryKey: investorMeKeys.investments(params),
@@ -66,11 +69,12 @@ export const useInvestorInvestments = (params: InvestorListParams, options?: Opt
       api
         .get(API_ENDPOINTS.INVESTORS.ME_INVESTMENTS, { params, signal })
         .then((response) => toInvestorInvestmentsPage(response.data)),
+    placeholderData: keepPreviousData,
     enabled: options?.enabled ?? true,
     ...silentErrorMeta(options),
   });
 
-/** O'z foyda tarixi (`period_start` DESC — tartib serverda). */
+/** O'z foyda tarixi (`period_start` DESC — tartib serverda). Filtr/sahifa almashganda eski ro'yxat turadi (IN-2). */
 export const useInvestorProfits = (params: InvestorProfitParams, options?: Options) =>
   useQuery<InvestorProfitsPage>({
     queryKey: investorMeKeys.profits(params),
@@ -78,6 +82,7 @@ export const useInvestorProfits = (params: InvestorProfitParams, options?: Optio
       api
         .get(API_ENDPOINTS.INVESTORS.ME_PROFITS, { params, signal })
         .then((response) => toInvestorProfitsPage(response.data)),
+    placeholderData: keepPreviousData,
     enabled: options?.enabled ?? true,
     ...silentErrorMeta(options),
   });

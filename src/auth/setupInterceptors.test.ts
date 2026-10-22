@@ -168,6 +168,51 @@ describe("setupAuthInterceptors", () => {
       expect(api).not.toHaveBeenCalled();
     });
 
+    it("session revoked from another device: parallel 401s share ONE refresh; its 401 logs out once, no retry loop", async () => {
+      mocks.getAccessToken.mockReturnValue("revoked");
+      // Gateway kontrakti: yopilgan sessiya — 401 `{ message: "Session revoked" }`, refresh — 401 «Invalid refresh token».
+      const revokedResponse = { status: 401, data: { statusCode: 401, message: "Session revoked" } };
+      const refreshRejected = {
+        isAxiosError: true,
+        response: { status: 401, data: { statusCode: 401, message: "Invalid refresh token" } },
+        message: "Request failed with status code 401",
+      };
+      let rejectRefresh: (reason: unknown) => void = () => undefined;
+      mocks.refreshAccessToken.mockImplementation(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectRefresh = reject;
+          }),
+      );
+      let finishLogout: () => void = () => undefined;
+      mocks.logoutAndRedirect.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finishLogout = resolve;
+          }),
+      );
+      const { api, runResponseError } = wireInterceptors();
+
+      const first = runResponseError({ response: revokedResponse, config: { url: "/orders", headers: {} } });
+      const second = runResponseError({ response: revokedResponse, config: { url: "/auth/sessions", headers: {} } });
+      const settled = Promise.allSettled([first, second]);
+      await vi.waitFor(() => expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1));
+      rejectRefresh(refreshRejected);
+      await vi.waitFor(() => expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1));
+      finishLogout();
+
+      expect(await settled).toEqual([
+        { status: "rejected", reason: refreshRejected },
+        { status: "rejected", reason: refreshRejected },
+      ]);
+      expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1);
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1);
+      // Login sahifasi sababni aytadi: «Sessiyangiz boshqa qurilmadan yopildi».
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledWith({ reason: "sessionExpired", revoked: true });
+      // Asl so'rovlar qayta yuborilmadi (401 → refresh → 401 → yana refresh … aylanmasi yo'q).
+      expect(api).not.toHaveBeenCalled();
+    });
+
     it("does not refresh on the login/refresh endpoints or non-401 errors", async () => {
       mocks.getAccessToken.mockReturnValue("stale");
       const { runResponseError } = wireInterceptors();

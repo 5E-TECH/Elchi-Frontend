@@ -15,18 +15,24 @@ import { expectToast } from "./support/toast";
  */
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ 390: varaqada kategoriya tanlash → payload, kartada nom, oqish yo'q", async ({ page }) => {
+test("⭐ 390: varaqada kategoriya majburiy (xato ko'rinadi), izohsiz → payload'da `comment` yo'q, oqish yo'q", async ({ page }) => {
   const { calls, leaked } = await mockCashboxCategoriesApi(page);
   await openMainCashbox(page);
 
   const card = page.getByRole("button", { name: /Qo'lda chiqim · Yoqilg'i/ });
   await expect(card.locator("[data-expense-category]")).toHaveText("Kategoriya: Yoqilg'i");
 
-  const dialog = await openSpendDialog(page);
+  const dialog = await openSpendDialog(page, { comment: "" });
   const box = (await dialog.boundingBox())!;
   expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(844 - 1);
 
   const field = categoryCombobox(page);
+  // Kategoriyasiz saqlash — maydon ostida xato (varaqa ichida ko'rinadi), so'rov yo'q.
+  await dialog.getByRole("button", { name: "Xarajatni saqlash" }).click();
+  const required = dialog.getByText("Xarajat kategoriyasini tanlang");
+  await expect(required).toBeVisible();
+  await expect(required).toBeInViewport();
+  expect(calls.spends).toEqual([]);
   await field.scrollIntoViewIfNeeded();
   const fieldBox = (await field.locator("xpath=..").boundingBox())!;
   expect(fieldBox.height).toBeGreaterThanOrEqual(44);
@@ -43,12 +49,7 @@ test("⭐ 390: varaqada kategoriya tanlash → payload, kartada nom, oqish yo'q"
   await dialog.getByRole("button", { name: "Xarajatni saqlash" }).click();
   await page.getByRole("alertdialog", { name: "Xarajatni tasdiqlang" }).getByRole("button", { name: "Tasdiqlash" }).click();
   await expectToast(page, "Xarajat muvaffaqiyatli saqlandi", { tone: "success" });
-  expect(calls.spends[0].body).toEqual({
-    amount: 150_000,
-    type: "cash",
-    comment: "Benzin, oktabr",
-    expense_category_id: "2",
-  });
+  expect(calls.spends[0].body).toEqual({ amount: 150_000, type: "cash", expense_category_id: "2" });
   expect(leaked).toEqual([]);
 });
 

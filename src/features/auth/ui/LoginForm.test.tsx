@@ -75,6 +75,54 @@ describe("LoginForm (dizayn v2: common-login, common-login-error)", () => {
     expect(loginFn).not.toHaveBeenCalled();
   });
 
+  it("XsoWhKP5 782227: empty submit — password input aria-invalid, described by the v2 Field error text", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+
+    expect(passwordInput()).not.toHaveAttribute("aria-invalid");
+    await user.click(submitButton());
+
+    const passwordError = (await screen.findByText("Parol shart")).parentElement!;
+    expect(passwordError.id).toBeTruthy();
+    expect(passwordInput()).toHaveAttribute("aria-invalid", "true");
+    expect(passwordInput().getAttribute("aria-describedby")?.split(" ")).toContain(passwordError.id);
+    expect(passwordInput()).toHaveAttribute("aria-errormessage", passwordError.id);
+    expect(passwordInput()).toHaveAccessibleDescription("Parol shart");
+    // Telefon: xato birinchi o'qiladi, «+998» izohi saqlanadi.
+    const phoneError = screen.getByText("Telefon raqam shart").parentElement!;
+    expect(phoneInput().getAttribute("aria-describedby")?.split(" ")[0]).toBe(phoneError.id);
+    expect(phoneInput()).toHaveAccessibleDescription("Telefon raqam shart Raqam +998 bilan boshlanadi");
+  });
+
+  it("XsoWhKP5 a4bfc3: empty submit moves focus to the first invalid field (phone); then to password once phone is valid", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+
+    await user.click(submitButton());
+    await waitFor(() => expect(phoneInput()).toHaveFocus());
+
+    await user.type(phoneInput(), "901234567");
+    await user.click(submitButton());
+    await waitFor(() => expect(passwordInput()).toHaveFocus());
+    expect(passwordInput()).toHaveAttribute("aria-invalid", "true");
+    expect(phoneInput()).not.toHaveAttribute("aria-invalid");
+    expect(loginFn).not.toHaveBeenCalled();
+  });
+
+  it("XsoWhKP5 a4bfc3: the server error block is role=alert (announced), field errors are not alerts", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue({ response: { status: 401 } });
+    renderWithProviders(<LoginForm />);
+
+    await user.click(submitButton());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await fillAndSubmit(user);
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("Parol noto'g'ri yoki foydalanuvchi topilmadi");
+  });
+
   it("shows phone format validation for an incomplete phone number", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />);

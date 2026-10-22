@@ -9,6 +9,7 @@ import {
   getNavPersona,
   getNavSections,
   getTileAccessibleName,
+  toNavEntry,
 } from "./navSections";
 import { designRoleInCode } from "../../../test/designMenu";
 import uzSidebar from "../../../locales/uz/sidebar.json";
@@ -263,5 +264,21 @@ describe("getInitials / getNavPersona", () => {
       initials: "NR",
       branchName: null,
     });
+  });
+});
+
+describe("market_operator — «Buyurtma yaratish» yorlig'i (MO-2 → MO-3 shartnomasi)", () => {
+  // MO-3 bandni `/new-orders` yoki `/new-orders/create` bilan qo'shishi mumkin — ikkalasida ham rolga xos yorliq.
+  it.each(["/new-orders", "/new-orders/create"])("%s → createOrder / createShort", (to) => {
+    const entry = toNavEntry("market_operator", { to, label: "newOrders", icon: Inbox });
+    expect(entry.labelKey).toBe("createOrder");
+    expect(entry.shortLabelKey).toBe("createShort");
+    expect(uzSidebar.createOrder).toBe("Buyurtma yaratish");
+  });
+
+  it("market egasi bandi o'zgarmaydi (umumiy yorliq, qisqasi «Yaratish»)", () => {
+    const entry = toNavEntry("market", { to: "/new-orders", label: "newOrders", icon: Inbox });
+    expect(entry.labelKey).toBe("newOrders");
+    expect(entry.shortLabelKey).toBe("createShort");
   });
 });

@@ -14,7 +14,8 @@ export interface Notification {
    * «Telegram guruhi nofaol» bildirishnomasi ham keladi). Qayta ulash — tahrirlash yoki o'chirib qayta ulash.
    */
   is_active: boolean;
-  created_at: string;
+  /** Ulangan sana; javobda bo'lmasa `null`. */
+  created_at: string | null;
 }
 
 /** `GET /notifications` query (OpenAPI: market_id, group_type, is_active, page, limit). */

@@ -65,11 +65,15 @@ export const branchTypeOf = (state: RootState): BranchType | null =>
 // Har biri o'sha paytdagi ruxsat matritsasini AYNAN takrorlaydi —
 // refaktor hech kimning huquqini kengaytirmaydi va toraytirmaydi.
 
-/** Barcha rollarda bor edi. */
+/**
+ * Barcha rollarda bor edi. MO-3 (ega 2026-10-19): market operatori — o'z marketi buyurtmalari (backend `GET /orders`
+ * operatorni `user.market_id` ga cheklaydi, tafsilot `assertCanViewOrder` — faqat o'z marketi); faqat ko'rish va Excel.
+ */
 export const canViewOrders: Predicate = hasRole(
   "superadmin",
   "admin",
   "market",
+  "market_operator",
   "registrator",
   "courier",
   "manager",
@@ -175,7 +179,7 @@ export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "regi
 /**
  * Mahsulotlar ro'yxati (`/products`) — avval `routes.tsx` da qo'lda nusxalangan `canManageProducts` edi (ROL-0
  * shu yerga ko'chirdi). Market va market operatori (MH-1) — faqat ko'rish (`GET product/my-products`; operatorga
- * biriktirilgan marketi). Operatorning menyu bandi — MO-2.
+ * biriktirilgan marketi). Operatorning menyu bandi — MO-2 (`menuConfig.tsx`).
  */
 export const canViewProducts: Predicate = hasRole(
   "superadmin",
@@ -197,8 +201,8 @@ export const canViewMarketOperators: Predicate = hasRole("market");
  * Admin `DashboardPage` (`/`) — kompaniya bo'yicha tushum, viloyatlar kesimi (`RegionOverviewCard`) va
  * reytinglar. Faqat sanab o'tilgan rollar: yangi rol (logist, market operatori, investor) unga tushib qolmaydi —
  * avval `DashboardEntry` qolgan har rolni shu sahifaga yuborardi va logist kompaniya tushumini ko'rardi
- * (mDfjKeQi). Ularning o'z bosh sahifasi kelguncha `/` da 403 (LG-1, MO-2, IN-1 shu yerga o'z tarmog'ini qo'shadi).
- * `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
+ * (mDfjKeQi). Ularning o'z bosh sahifasi `DashboardEntry` da (LG-1 logist, MO-2 market operatori — market bosh sahifasi
+ * operator rejimida, IN-1 investor). `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
  * bosh sahifasi bor (`DashboardEntry`).
  */
 export const canViewAdminDashboard: Predicate = hasRole(
@@ -246,9 +250,14 @@ export const canViewReturnsPage: Predicate = anyOf(
  * ⚠️ Bu `canReceiveExternalOrders` dan ATAYLAB ajratilgan. Avval ikkalasi bitta
  * shart edi, ya'ni "hamkordan kelgan posilkani qabul qilish" huquqini berish
  * uchun "yangi buyurtma yaratish" huquqini ham berishga to'g'ri kelardi.
+ *
+ * MO-3 (ega MO-S3): market operatori — faqat «AI bilan» (`POST orders/ai-parse`, `ai-confirm` `@Roles(…
+ * MARKET_OPERATOR)`, market serverda `user.market_id` dan). «Qabul va yaratish» qobig'idan unga faqat
+ * `/new-orders/create` ochiq (`/new-orders` → shu yerga, qolgan bolalar 403 — `newOrdersShell.ts`). Qo'lda yaratish
+ * (`POST /orders`) — backend ruxsatidan keyin (OfRSoRUX, MO-7).
  */
 export const canCreateOrders: Predicate = anyOf(
-  hasRole("superadmin", "admin", "market", "registrator"),
+  hasRole("superadmin", "admin", "market", "market_operator", "registrator"),
   managerCan("intake"),
 );
 
@@ -269,3 +278,17 @@ export const canReceiveExternalOrders: Predicate = anyOf(
  * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
  */
 export const canViewInvestorCabinet: Predicate = hasRole("investor");
+
+/**
+ * «Hududlar» (`/regions`). Superadmin va admin — butun kompaniya xaritasi; menejer va kuryer — o'z viloyati
+ * (`region/my/district-stats`); logist (LG-3, ega LG-S3) — faqat o'ziga biriktirilgan viloyatlar, PULSIZ
+ * (`RegionPage` → `LogistRegionView`). Avval `routes.tsx` ichidagi qo'lda yozilgan predikat edi.
+ */
+export const canViewRegionStats: Predicate = hasRole("superadmin", "admin", "manager", "courier", "logist");
+
+/**
+ * «Daromadim» (`/my-earnings`, MO-2, ega 2026-10-19) — faqat market operatori: o'z stavkasi (`GET auth/my-profile` →
+ * `commission_type`, `commission_value`). Hisob, to'lovlar va daromadlar ro'yxati — backend `finance/operators/me/*`
+ * (E6iEOAVs, MO-6) kelgach; operator boshqa moliya sahifalarini ko'rmaydi.
+ */
+export const canViewMyEarnings: Predicate = hasRole("market_operator");

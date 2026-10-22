@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canCreateProducts } from "../../../app/lib/access";
 import { useProducts } from "../../../entities/product";
+import { ProductThumb } from "../../../entities/product/ui/ProductThumb";
 import { useMarkets } from "../../../entities/markets";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
@@ -37,6 +38,7 @@ import {
   type SelectOption,
 } from "../../../shared/ui/primitives";
 import {
+  getProductImageUrl,
   getProductList,
   getProductMarketName,
   getProductMeta,
@@ -45,7 +47,6 @@ import {
   type ProductMarket,
 } from "../model/productView";
 import { ProductPrice } from "../ui/ProductPrice";
-import { ProductThumb } from "../ui/ProductThumb";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 import { EditProductDialog } from "./ui/EditProductDialog";
 import { SelectMarketDialog } from "./ui/SelectMarketDialog";
@@ -256,7 +257,7 @@ const ProductTable = () => {
           const marketName = isMarketSide ? null : getProductMarketName(product);
           return (
             <span className="flex min-w-0 items-center gap-3">
-              <ProductThumb product={product} />
+              <ProductThumb imageUrl={getProductImageUrl(product)} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
                 {marketName ? (
@@ -313,7 +314,7 @@ const ProductTable = () => {
       const marketName = isMarketSide ? null : getProductMarketName(product);
       return (
         <div className={cx("flex min-h-14 items-start gap-3 py-2.5 pl-4", canManage ? "pr-2" : "pr-4")}>
-          <ProductThumb product={product} />
+          <ProductThumb imageUrl={getProductImageUrl(product)} />
           <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
             <span className="font-semibold text-text wrap-break-word">{product.name}</span>
             {marketName ? (

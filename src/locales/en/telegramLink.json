@@ -32,6 +32,7 @@
   "unlinking": "Unlinking…",
   "unlinkedToast": "Telegram unlinked",
   "timeLeft": "{{time}} left",
+  "timeLeftA11y": "Link expires in {{minutes}} min {{seconds}} s",
   "waiting": "Waiting for the link…",
   "phoneStep1": "Tap «Open in Telegram»",
   "phoneStep3": "Come back to this page — it updates by itself",
@@ -39,5 +40,26 @@
   "commandStep2": "Send it to the Elchi bot as a private message",
   "qrOtherPhone": "From another phone — QR code",
   "linkErrorRetry": "Please try again in a moment.",
-  "linkErrorForbidden": "Telegram cannot be linked for this account."
+  "linkErrorForbidden": "Telegram cannot be linked for this account.",
+  "group": {
+    "title": "Connect a Telegram group",
+    "description": "{{market}} · {{type}}",
+    "typeCreate": "New orders group",
+    "typeCancel": "Cancelled orders group",
+    "ready": "One-time link is ready",
+    "qrAlt": "QR code of the Telegram group link",
+    "step1": "Open the link or scan the QR code with your phone",
+    "phoneStep1": "Tap «Open in Telegram»",
+    "step2": "Choose the group — the bot joins it",
+    "step3": "The bot connects the group itself; the status updates here",
+    "step3Notify": "The bot connects the group itself — you will get a notification when it is done",
+    "commandHint": "Send this command to the group:",
+    "commandStep1": "Add the Elchi bot to the group",
+    "commandStep2": "Copy the command and send it to the group",
+    "waiting": "Waiting for the group to connect…",
+    "expiredTitle": "The link has expired",
+    "expiredText": "The link is valid for 10 minutes and works once. Get a new one.",
+    "connected": "Group connected",
+    "connectedText": "{{market}} · {{type}}: order messages now go to this group."
+  }
 }

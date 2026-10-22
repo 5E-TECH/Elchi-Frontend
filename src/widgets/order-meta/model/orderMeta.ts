@@ -113,7 +113,10 @@ export const visibleTariffs = (role: string | null | undefined): TariffField[] =
     case "admin":
     case "manager":
       return ["marketTariff", "courierTariff", "courierShare", "branchShare"];
+    // MO-3: market operatori — backend proyeksiyasi market bilan bir xil (`order-role-projection`: MARKET /
+    // MARKET_OPERATOR — kuryer tarifi/ulushi va filial ulushisiz).
     case "market":
+    case "market_operator":
       return ["marketTariff"];
     case "courier":
       return ["courierTariff"];

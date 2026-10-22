@@ -8,7 +8,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * - `POST` / `PATCH :id` / `DELETE :id` — faqat superadmin (aks holda 403); nom 1–100, takror (katta-kichik harfsiz)
  *   — 409 «"<nom>" nomli kategoriya allaqachon bor», topilmadi — 404, bo'sh PATCH — 400; o'chirish yumshoq;
  * - `PATCH finance/cashbox/spend` — DTO `forbidNonWhitelisted` (`amount, type, comment, card_id,
- *   expense_category_id`), `Idempotency-Key` majburiy, faol bo'lmagan kategoriya — 400; tarix qatoriga
+ *   expense_category_id`), `Idempotency-Key` majburiy, kategoriya MAJBURIY (yo'q — 400 «Xarajat kategoriyasini
+ *   tanlang», ega 2026-10-22), izoh ixtiyoriy, faol bo'lmagan kategoriya — 400; tarix qatoriga
  *   `expense_category_id` + `expense_category_name` (nom nusxasi);
  * - `PATCH finance/cashbox/fill` — `expense_category_id` bo'lsa 400 `property expense_category_id should not exist`.
  *
@@ -64,7 +65,11 @@ const today = (minutesAgo: number) => {
 
 export const mockCashboxCategoriesApi = async (
   page: Page,
-  { role = "superadmin", theme }: { role?: string; theme?: "light" | "dark" } = {},
+  {
+    role = "superadmin",
+    theme,
+    emptyCategories = false,
+  }: { role?: string; theme?: "light" | "dark"; /** Faol kategoriya yo'q (hali qo'shilmagan). */ emptyCategories?: boolean } = {},
 ) => {
   const origin = appOrigin();
   const cors = {
@@ -80,7 +85,7 @@ export const mockCashboxCategoriesApi = async (
 
   const stamp = "2026-10-21T08:00:00.000Z";
   const state = {
-    categories: SEED.map(([name, description], index): Category => ({
+    categories: (emptyCategories ? [] : SEED).map(([name, description], index): Category => ({
       id: String(index + 1),
       name,
       description,
@@ -237,7 +242,7 @@ export const mockCashboxCategoriesApi = async (
         if (duplicate(name)) return error(route, 409, `"${name}" nomli kategoriya allaqachon bor`);
         const maxOrder = Math.max(0, ...active().map((category) => category.sort_order));
         const category: Category = {
-          id: String(Math.max(...state.categories.map((item) => Number(item.id))) + 1),
+          id: String(Math.max(0, ...state.categories.map((item) => Number(item.id))) + 1),
           name,
           description: typeof body.description === "string" && body.description.trim() ? body.description.trim() : null,
           sort_order: typeof body.sort_order === "number" ? body.sort_order : maxOrder + 1,
@@ -298,6 +303,10 @@ export const mockCashboxCategoriesApi = async (
         return error(route, 400, "Idempotency-Key sarlavhasi majburiy");
       }
       let category: Category | null = null;
+      if (kind === "spend" && body.expense_category_id === undefined) {
+        log.push({ body, key, status: 400 });
+        return error(route, 400, "Xarajat kategoriyasini tanlang");
+      }
       if (kind === "spend" && body.expense_category_id !== undefined) {
         category = active().find((item) => item.id === String(body.expense_category_id)) ?? null;
         if (!/^\d+$/.test(String(body.expense_category_id)) || !category) {
@@ -336,14 +345,17 @@ export const openMainCashbox = async (page: Page) => {
   await expect(page.getByRole("button", { name: /Kassadan xarajat/ })).toBeEnabled();
 };
 
-/** «Kassadan xarajat» oynasini ochib, majburiy maydonlarni to'ldiradi (kategoriya — chaqiruvchida). */
+/**
+ * «Kassadan xarajat» oynasini ochib summa, to'lov turi va (bo'sh bo'lmasa) ixtiyoriy izohni to'ldiradi; majburiy
+ * kategoriya — chaqiruvchida.
+ */
 export const openSpendDialog = async (page: Page, { amount = "150000", comment = "Benzin, oktabr" } = {}) => {
   await page.getByRole("button", { name: /Kassadan xarajat/ }).click();
   const dialog = page.getByRole("dialog", { name: "Kassadan xarajat" });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel(/^Summa/).fill(amount);
   await dialog.getByRole("radio", { name: "Naqd" }).click();
-  await dialog.getByLabel(/^Izoh/).fill(comment);
+  if (comment) await dialog.getByLabel(/^Izoh/).fill(comment);
   return dialog;
 };
 

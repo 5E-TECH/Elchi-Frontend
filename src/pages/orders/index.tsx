@@ -76,6 +76,7 @@ import {
   type DataTableSort,
   type TabItem,
 } from "../../shared/ui/primitives";
+import { isMarketSideRole } from "../../entities/user/lib/role";
 
 /** Eksport natijasi xabari bitta: yangi natija eskisining o'rnini oladi (xWsCAA5N). */
 const EXPORT_TOAST_ID = "orders-export";
@@ -1033,7 +1034,7 @@ const Orders = () => {
               compact
               leftIcon={Download}
               loading={isExporting}
-              title={role === "market" ? t("ordersList.exportAllHint") : undefined}
+              title={isMarketSideRole(role) ? t("ordersList.exportAllHint") : undefined}
               onClick={() => void handleExportOrders()}
             >
               {t("ordersList.exportExcel")}

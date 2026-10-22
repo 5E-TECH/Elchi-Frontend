@@ -16,10 +16,15 @@ import { Button } from "../../../shared/ui/primitives";
 type SessionExpiredScreenProps = {
   /** Sessiya tugagan vaqt (ms). Yo'q bo'lsa — vaqt qatori chizilmaydi. */
   expiredAt: number | null;
+  /**
+   * Sessiya boshqa qurilmadan yopilgan (profil «Sessiyalar» → «Chiqarish»; server 401 «Session revoked») — izoh
+   * sababni aytadi (maket yo'q — o'sha kartaning matni almashadi, tuzilma bir xil).
+   */
+  revoked?: boolean;
   onContinue: () => void;
 };
 
-const SessionExpiredScreen = ({ expiredAt, onContinue }: SessionExpiredScreenProps) => {
+const SessionExpiredScreen = ({ expiredAt, revoked = false, onContinue }: SessionExpiredScreenProps) => {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const textId = useId();
@@ -51,7 +56,7 @@ const SessionExpiredScreen = ({ expiredAt, onContinue }: SessionExpiredScreenPro
               {t("sessionExpiredScreen.title")}
             </h1>
             <p id={textId} className="max-w-[300px] text-sm text-text-muted">
-              {t("sessionExpiredScreen.text")}
+              {t(revoked ? "sessionExpiredScreen.revokedText" : "sessionExpiredScreen.text")}
             </p>
           </div>
 

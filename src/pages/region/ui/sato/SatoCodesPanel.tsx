@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-missing
+// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-missing, superadmin-regions-sato-codes-add-dialog, superadmin-regions-sato-codes-merge-dialog
 import { useCallback, useMemo, useRef, useState } from "react";
 import { CircleCheck, Info, Map as MapIcon, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -25,14 +25,22 @@ import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
 import {
   ADMIN_SATO_TABS,
   SUPERADMIN_SATO_TABS,
+  filterSatoDuplicateGroups,
   filterSatoRows,
+  groupSatoDuplicates,
   paginateSatoRows,
+  type SatoDistrict,
+  type SatoDuplicateGroup,
+  type SatoMissingRow,
   type SatoRow,
   type SatoTab,
   type SatoTabRows,
 } from "../../model/satoModel";
 import { useSatoCodeEditor } from "./useSatoCodeEditor";
 import { SatoCodesTable } from "./SatoCodesTable";
+import { SatoAddDistrictDialog } from "./SatoAddDistrictDialog";
+import { SatoMergeDialog } from "./SatoMergeDialog";
+import { useSatoMerge } from "./useSatoMerge";
 
 /** Tab sonidagi belgi (`.el-tab-count`) — telefondagi bo'lim tanlagichida (maket: faol — ko'k). */
 const COUNT_BADGE =
@@ -54,6 +62,10 @@ type Props = {
   query: { isLoading: boolean; isError: boolean; error: unknown; isFetching: boolean; refetch: () => unknown };
   /** Kod saqlangach: preview va `/district` birga qayta yuklanadi. */
   onSaved: () => Promise<unknown>;
+  /** Superadmin (SA-2): `/district` — «Tuman qo'shish» (o'xshash nom) va birlashtirish maqsadlari uchun. */
+  districts?: readonly SatoDistrict[];
+  /** Tuman qo'shilgach yoki birlashtirilgach: preview, `/district` va viloyatlar taxtasi qayta yuklanadi. */
+  onChanged?: () => Promise<unknown>;
 };
 
 /**
@@ -62,7 +74,16 @@ type Props = {
  * Bazada yo'q; admin — Kodsiz · Kodi bor (preview chaqirilmaydi). Bo'sh, yuklanish va xato holatlari maketdagi
  * «Boshqa holatlar» bo'yicha.
  */
-export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptions, query, onSaved }: Props) => {
+export const SatoCodesPanel = ({
+  variant,
+  rows,
+  duplicateGroups = 0,
+  regionOptions,
+  query,
+  onSaved,
+  districts,
+  onChanged,
+}: Props) => {
   const { t, i18n } = useTranslation("region");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const number = (value: number) => formatNumberLocalized(value, { language });
@@ -87,8 +108,31 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
 
   const tabRows = useMemo<SatoRow[]>(() => rows?.[tab] ?? [], [rows, tab]);
   const filtered = useMemo(() => filterSatoRows(tabRows, { search, regionId }), [tabRows, search, regionId]);
+  // «Takroriy nomlar» (SA-2): guruh bo'yicha — birorta yozuvi mos kelgan guruh butunligicha, sahifalash guruhlar bilan.
+  const grouped = tab === "duplicates" && Boolean(districts);
+  const [addRow, setAddRow] = useState<SatoMissingRow | null>(null);
+  const refreshAll = useCallback(() => (onChanged ? onChanged() : onSaved()), [onChanged, onSaved]);
+  const merge = useSatoMerge(refreshAll);
+  const { mergedIds } = merge;
+
+  const groups = useMemo<SatoDuplicateGroup[]>(
+    () =>
+      grouped
+        ? filterSatoDuplicateGroups(groupSatoDuplicates(tabRows), { search, regionId }).filter(
+            // Birlashtirilgan (o'chgan) yozuvli guruh — yangi ro'yxat kelguncha ko'rsatilmaydi.
+            (group) => !group.rows.some((row) => mergedIds.has(row.id)),
+          )
+        : [],
+    [grouped, tabRows, search, regionId, mergedIds],
+  );
   const paged = paginateSatoRows(filtered, page, pageSize);
+  const pagedGroups = paginateSatoRows(groups, page, pageSize);
   const hasFilters = search.trim().length > 0 || regionId != null;
+  const tabOf = useCallback(
+    (id: string): SatoTab | null =>
+      (tabs.find((value) => rows?.[value]?.some((row) => row.kind === "district" && row.id === id)) ?? null),
+    [rows, tabs],
+  );
 
   const resetView = () => {
     setPage(1);
@@ -117,14 +161,15 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
     ...regionOptions.map((option) => ({ value: option.value, label: option.label })),
   ];
 
-  const unit = tab === "missing" ? "records" : "districts";
-  const total = filtered.length;
+  const unit = grouped ? "names" : tab === "missing" ? "records" : "districts";
+  const records = grouped ? groups.reduce((sum, group) => sum + group.rows.length, 0) : filtered.length;
+  const total = grouped ? groups.length : filtered.length;
   const summary =
-    tab === "duplicates" && !hasFilters
+    tab === "duplicates" && (grouped || !hasFilters)
       ? t("v2.sato.footer.duplicates", {
-          names: number(duplicateGroups),
-          count: total,
-          value: number(total),
+          names: number(grouped ? groups.length : duplicateGroups),
+          count: records,
+          value: number(records),
         })
       : t(`v2.sato.footer.${unit}`, { count: total, value: number(total) });
   const footer =
@@ -132,7 +177,7 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
       // Hajm tanlagichi yo'qolmasin: kattaroq hajm tanlangach ham (12 qator, 20 talik) qaytarib bo'lsin.
       total > MIN_PAGE_SIZE ? (
         <Pagination
-          page={paged.page}
+          page={grouped ? pagedGroups.page : paged.page}
           pageSize={pageSize}
           total={total}
           onPageChange={(next) => {
@@ -257,7 +302,7 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
 
         <QueryBoundary
           query={{
-            data: rows ? paged.items : undefined,
+            data: rows ? (grouped ? pagedGroups.items.flatMap((group) => group.rows) : paged.items) : undefined,
             isLoading: query.isLoading,
             isError: query.isError,
             error: query.error,
@@ -286,10 +331,27 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
               editor={editor}
               busy={isRefetching}
               label={t(`v2.sato.sectionAria.${tab}`)}
+              groups={grouped ? pagedGroups.items : undefined}
+              onAdd={districts && tab === "missing" ? setAddRow : undefined}
+              onMerge={grouped ? merge.openGroup : undefined}
             />
           )}
         </QueryBoundary>
       </div>
+      {districts ? (
+        <>
+          <SatoAddDistrictDialog
+            row={addRow}
+            districts={districts}
+            regionOptions={regionOptions}
+            tabOf={tabOf}
+            onClose={() => setAddRow(null)}
+            onAdded={refreshAll}
+            fallbackFocus={searchRef}
+          />
+          <SatoMergeDialog merge={merge} districts={districts} fallbackFocus={searchRef} />
+        </>
+      ) : null}
     </Card>
   );
 };

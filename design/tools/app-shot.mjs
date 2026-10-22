@@ -102,13 +102,24 @@ const profile = (themeName) => ({
     ...(branchType
       ? { branch_id: '1', branch_type: branchType, branch: { id: '1', name: 'Namuna filiali', type: branchType, branch_type: branchType } }
       : {}),
+    // MO-2: market operatori — marketi va komissiyasi («Daromadim» → «Stavkam», maket `market_operator-earnings`).
+    ...(role === 'market_operator' ? { market_id: '1', commission_type: 'percent', commission_value: '5.00' } : {}),
   },
 });
 /**
  * IN-1: investor kabineti (`investors/me/*`) — maketdagi namunaviy qiymatlar (`investor-dashboard-home`), oylar joriy
- * oydan orqaga hisoblanadi: shunda bosh sahifa bo'sh holat emas, to'liq ko'rinishda chiziladi.
+ * oydan orqaga hisoblanadi: shunda bosh sahifa bo'sh holat emas, to'liq ko'rinishda chiziladi. IN-2: ro'yxatlar
+ * (`/investments`, `/profits`) — to'liq to'plam (5 investitsiya, 9 foyda davri), `page` / `limit` / `is_paid` bo'yicha.
  */
-const investorMock = (path) => {
+const pageOf = (rows, query, fallbackLimit) => {
+  const limit = Number(query?.get('limit')) || fallbackLimit;
+  const page = Number(query?.get('page')) || 1;
+  return {
+    items: rows.slice((page - 1) * limit, page * limit),
+    meta: { page, limit, total: rows.length, totalPages: Math.max(1, Math.ceil(rows.length / limit)) },
+  };
+};
+const investorMock = (path, query) => {
   const now = new Date();
   const key = (back) => {
     const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
@@ -135,30 +146,32 @@ const investorMock = (path) => {
     };
   }
   if (path.startsWith('investors/me/investments')) {
-    const rows = [['2026-08-01', 100_000_000], ['2026-06-20', 50_000_000], ['2026-04-12', 100_000_000]];
-    return {
-      statusCode: 200,
-      data: {
-        items: rows.map(([date, amount], i) => ({ id: String(i + 1), amount, invested_at: `${date}T00:00:00+05:00` })),
-        meta: { page: 1, limit: 3, total: 5, totalPages: 2 },
-        summary: { total_amount: 450_000_000 },
-      },
-    };
+    const rows = [['2026-08-01', 100_000_000], ['2026-06-20', 50_000_000], ['2026-04-12', 100_000_000], ['2026-03-03', 80_000_000], ['2026-01-15', 120_000_000]];
+    const from = Date.parse(query?.get('from_date') ?? '') || -Infinity;
+    const to = Date.parse(query?.get('to_date') ?? '') || Infinity;
+    const all = rows
+      .map(([date, amount], i) => ({ id: String(i + 1), amount, invested_at: `${date}T00:00:00+05:00` }))
+      .filter((row) => Date.parse(row.invested_at) >= from && Date.parse(row.invested_at) <= to);
+    return { statusCode: 200, data: { ...pageOf(all, query, 10), summary: { total_amount: 450_000_000 } } };
   }
   if (path.startsWith('investors/me/profits')) {
-    const rows = [[9, 30, 6_200_000, null], [8, 31, 5_600_000, '2026-09-05'], [7, 31, 4_900_000, '2026-08-05'], [6, 30, 5_300_000, '2026-07-05'], [5, 31, 5_000_000, '2026-06-05']];
+    const rows = [
+      [9, 30, 6_200_000, null, 12.5], [8, 31, 5_600_000, '2026-09-05', 12.5], [7, 31, 4_900_000, '2026-08-05', 12.5],
+      [6, 30, 5_300_000, '2026-07-05', 12.5], [5, 31, 5_000_000, '2026-06-05', 12.5], [4, 30, 4_400_000, '2026-05-05', 12.5],
+      [3, 31, 3_600_000, '2026-04-05', 12], [2, 28, 3_100_000, '2026-03-05', 12], [1, 31, 2_400_000, '2026-02-05', 12],
+    ];
     const mm = (m) => String(m).padStart(2, '0');
+    const isPaid = query?.get('is_paid');
+    const all = rows
+      .map(([m, last, amount, paidAt, percentage], i) => ({
+        id: String(20 - i), amount, percentage,
+        period_start: `2026-${mm(m)}-01T00:00:00+05:00`, period_end: `2026-${mm(m)}-${last}T23:59:59+05:00`,
+        is_paid: paidAt != null, paid_at: paidAt ? `${paidAt}T10:00:00+05:00` : null,
+      }))
+      .filter((row) => (isPaid == null ? true : row.is_paid === (isPaid === 'true')));
     return {
       statusCode: 200,
-      data: {
-        items: rows.map(([m, last, amount, paidAt], i) => ({
-          id: String(20 - i), amount, percentage: 12.5,
-          period_start: `2026-${mm(m)}-01T00:00:00+05:00`, period_end: `2026-${mm(m)}-${last}T23:59:59+05:00`,
-          is_paid: paidAt != null, paid_at: paidAt ? `${paidAt}T10:00:00+05:00` : null,
-        })),
-        meta: { page: 1, limit: 5, total: 9, totalPages: 2 },
-        summary: { total_paid_amount: 34_300_000, total_unpaid_amount: 6_200_000 },
-      },
+      data: { ...pageOf(all, query, 10), summary: { total_paid_amount: 34_300_000, total_unpaid_amount: 6_200_000 } },
     };
   }
   return null;
@@ -188,10 +201,10 @@ const sessionsMock = () => {
   };
 };
 
-const mockBody = (path, themeName) => {
+const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
-  if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path) ?? { statusCode: 200, data: {} };
+  if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };
@@ -311,7 +324,7 @@ try {
           'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
         };
         if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
-        const body = mockBody(url.pathname.replace(/^\//, ''), themeName);
+        const body = mockBody(url.pathname.replace(/^\//, ''), themeName, url.searchParams);
         return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(body) });
       });
       await context.addInitScript(({ themeName, lang, role }) => {

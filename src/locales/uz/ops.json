@@ -22,7 +22,13 @@
   "common": {
     "count": "{{count}} ta",
     "idValue": "ID {{id}}",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "requestError": {
+      "badRequest": "Ma'lumot qabul qilinmadi ({{status}}). Kiritilganini tekshirib, qayta urinib ko'ring.",
+      "notFound": "Topilmadi (404). ID to'g'riligini tekshiring.",
+      "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring.",
+      "forbidden": "Bu amal sizning rolingiz uchun ochilmagan (403)."
+    }
   },
   "finance": {
     "intro": {
@@ -236,7 +242,7 @@
       "cancelLabel": "Yo'q",
       "success": "Paket muvaffaqiyatli bekor qilindi",
       "error": "Paketni bekor qilib bo'lmadi",
-      "unknownError": "Noma'lum xatolik yuz berdi"
+      "rejected": "Paket bu holatda bekor qilinmaydi (400): u allaqachon qabul qilingan yoki bekor qilingan bo'lishi mumkin. Paket ID va holatini tekshiring."
     }
   },
   "identity": {
@@ -417,6 +423,120 @@
           "name": "AI buyurtma",
           "area": "AI"
         }
+      }
+    },
+    "ai": {
+      "title": "AI holati",
+      "subtitle": "AI bilan buyurtma yaratish: kalit, modellar va kunlik limit",
+      "loadingLabel": "AI holati tekshirilmoqda",
+      "badge": {
+        "enabled": "Yoqilgan",
+        "off": "AI o'chiq",
+        "capExceeded": "Limit tugadi",
+        "unknown": "Noma'lum",
+        "weakModel": "Zaif model",
+        "unknownModel": "Noma'lum model"
+      },
+      "settingsLabel": "AI kaliti va modellar",
+      "key": {
+        "label": "API kaliti",
+        "state": {
+          "ok": "Sozlangan",
+          "missing": "Kalit yo'q",
+          "misnamed": "Kalit nomi noto'g'ri",
+          "unknown": "Noma'lum"
+        },
+        "hint": {
+          "ok": "Kalit qiymati hech qachon ko'rsatilmaydi",
+          "missing": "ANTHROPIC_API_KEY serverda berilmagan",
+          "misnamed": "ANTHROPIC_API_KEY nomi bilan berilishi kerak",
+          "unknown": "Kalit qiymati hech qachon ko'rsatilmaydi"
+        }
+      },
+      "models": {
+        "order": "Buyurtma ajratish (matn)",
+        "vision": "Buyurtma ajratish (rasm)",
+        "classify": "Tuman va mahsulotni tanlash"
+      },
+      "purpose": {
+        "order": "Matndan buyurtma ajratish",
+        "vision": "Rasmdan buyurtma ajratish",
+        "classify": "Tuman va mahsulotni tanlash"
+      },
+      "purposeInline": {
+        "order": "matndan buyurtma ajratish",
+        "vision": "rasmdan buyurtma ajratish",
+        "classify": "tuman va mahsulotni tanlash"
+      },
+      "verdict": {
+        "ok": "Mos",
+        "weak": "Zaif model",
+        "unknown": "Noma'lum model"
+      },
+      "modelHint": {
+        "classifyOk": "arzon model yetarli",
+        "unknown": "narx jadvalida yo'q"
+      },
+      "off": {
+        "flagOff": {
+          "title": "AI o'chiq — serverda o'chirib qo'yilgan",
+          "text": "Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi. Yoqish uchun serverdagi sozlamada <strong>AI_ORDER_ENABLED</strong> ni yoqing."
+        },
+        "keyMissing": {
+          "title": "AI o'chiq — kalit sozlanmagan",
+          "text": "Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi. Yoqish uchun serverdagi sozlamaga ANTHROPIC_API_KEY qo'shing."
+        },
+        "keyMisnamed": {
+          "title": "AI o'chiq — kalit nomi noto'g'ri",
+          "text": "Kalit serverda boshqa nom bilan berilgan, shuning uchun AI uni ko'rmaydi. Kalit <strong>ANTHROPIC_API_KEY</strong> nomi bilan berilishi kerak. Shu paytgacha buyurtma yaratishda «AI bilan» tabi ko'rinmaydi."
+        },
+        "disabled": {
+          "title": "AI o'chiq",
+          "text": "AI xizmati o'chiq. Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi."
+        }
+      },
+      "weak": {
+        "title": "Zaif model: buyurtma ajratish sifati tushadi",
+        "text": "{{purpose}} uchun <strong>{{model}}</strong> tanlangan — bu ish uchun kuchsiz. Tumandan viloyatni topish va narxni hisoblash xato chiqishi mumkin.",
+        "fixOn": "Serverdagi sozlamada kuchliroq modelga almashtiring — AI shu paytgacha ishlayveradi.",
+        "fixOff": "Serverdagi sozlamada kuchliroq modelga almashtiring."
+      },
+      "unknownModel": {
+        "title": "Noma'lum model: {{purpose}}",
+        "text": "<strong>{{model}}</strong> nomi narx jadvalida yo'q — nomi xato yozilgan bo'lishi mumkin.",
+        "impactOff": "AI yoqilganda bu chaqiruvlar xato beradi.",
+        "impactOn": "Bu chaqiruvlar xato beradi.",
+        "fix": "Model nomini serverdagi sozlamada tekshiring."
+      },
+      "capExceeded": {
+        "title": "Kunlik limit tugadi — AI ertaga 00:00 gacha o'chiq",
+        "text": "Bugungi {{cap}} to'liq sarflandi. Buyurtma yaratishda «AI bilan» tabida «AI kunlik limiti tugadi» xabari chiqadi, buyurtmalar qo'lda kiritiladi."
+      },
+      "capUnknown": {
+        "title": "Kunlik limit holatini o'qib bo'lmadi",
+        "text": "Xarajat hisoblagichi javob bermadi — shu paytgacha AI ishlamaydi, buyurtmalar qo'lda yaratilaveradi."
+      },
+      "cap": {
+        "title": "Bugungi limit",
+        "value": "{{spent}} / {{cap}} · {{percent}}",
+        "aria": "Bugungi AI limiti: {{spent}} sarflandi, {{cap}} dan {{percent}}",
+        "warn": "{{threshold}} dan oshdi",
+        "exceeded": "Limit tugadi",
+        "unknown": "Noma'lum",
+        "reset": "Ertaga, 00:00 da yangilanadi (Toshkent vaqti)",
+        "override": "Asosiy limit {{base}} · bugun uchun +{{extra}} oshirilgan",
+        "resetOverride": "Ertaga, 00:00 da {{base}} ga qaytadi",
+        "resetExceeded": "AI ertaga, 00:00 da qayta yoqiladi (Toshkent vaqti)",
+        "serverOnly": "limit faqat serverda oshiriladi",
+        "offIdle": "AI o'chiq — bugun sarflanmagan, limit hisoblanmaydi",
+        "offSpent": "AI o'chiq — limit hisoblanmaydi",
+        "unknownText": "Bugungi xarajatni o'qib bo'lmadi",
+        "persist": "Xarajat jurnaliga yozilmagan chaqiruvlar:"
+      },
+      "error": {
+        "title": "AI holatini olib bo'lmadi",
+        "text": "AI xizmati ulanmagan yoki javob bermadi. Buyurtmalar qo'lda yaratilaveradi.",
+        "timeout": "AI xizmati javob bermadi ({{status}}). Tizim holatida «AI buyurtma» qatorini tekshiring."
       }
     },
     "sla": {

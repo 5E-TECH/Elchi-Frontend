@@ -629,8 +629,9 @@ const MainCashbox = () => {
   }, [cashboxInfoQuery, historyQuery, mainCashboxQuery]);
 
   /**
-   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload `{ amount, type, comment }`, chiqimda kategoriya tanlangan
-   * bo'lsa `+ expense_category_id` (to'ldirishga hech qachon — backend 400); D3 — `Idempotency-Key` barmoq iziga
+   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload `{ amount, type, comment? }` (bo'sh izoh yuborilmaydi —
+   * chiqimda ixtiyoriy), chiqimda `+ expense_category_id` (majburiy; to'ldirishga hech qachon — backend 400). Backend
+   * kategoriyasiz chiqimni 400 bilan rad etadi — uning matni xabarda chiqadi. D3 — `Idempotency-Key` barmoq iziga
    * bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta yuborilganda backend uni
    * bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi). Kategoriya bilan chiqim rad
    * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi.
@@ -648,7 +649,12 @@ const MainCashbox = () => {
         let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
         try {
           response = await mutation.mutateAsync({
-            data: { amount, type, comment, ...(categoryId ? { expense_category_id: categoryId } : {}) },
+            data: {
+              amount,
+              type,
+              ...(comment ? { comment } : {}),
+              ...(categoryId ? { expense_category_id: categoryId } : {}),
+            },
             idempotencyKey,
           });
         } catch (error) {
@@ -656,7 +662,7 @@ const MainCashbox = () => {
           notify.error(t("common:error"), {
             description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
           });
-          if (categoryId && isClientRejection(error)) void refreshExpenseCategories();
+          if (operation === "spend" && isClientRejection(error)) void refreshExpenseCategories();
           if (isUncertainPaymentError(error)) {
             notify.warning(t("common:warning"), {
               description: t("v2MainCashbox.notify.outcomeUnknown"),
@@ -1575,11 +1581,14 @@ const MainCashbox = () => {
         description={t("v2MainCashbox.form.spendSubtitle")}
         submitLabel={t("v2MainCashbox.form.spendSubmit")}
         commentPlaceholder={t("v2MainCashbox.form.spendPlaceholder")}
-        commentRequiredMessage={t("v2MainCashbox.form.spendCommentRequired")}
         confirm={{ title: t("v2MainCashbox.confirm.spendTitle"), cashboxLabel: confirmCashboxLabel }}
         isLoading={cashboxSpand.isPending}
         onSubmit={handleSpend}
         {...manualFormProps}
+        // Xarajat kategoriya orqali (majburiy, oynaning o'zida) — izoh ixtiyoriy (ega 2026-10-22).
+        requireComment={false}
+        categoryRequiredMessage={t("v2MainCashbox.form.categoryRequired")}
+        onManageCategories={canManageCategories ? () => setIsCategoriesOpen(true) : undefined}
       />
 
       <CashboxFormPopup

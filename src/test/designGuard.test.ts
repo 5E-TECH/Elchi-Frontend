@@ -622,7 +622,8 @@ describe("design guard engine", () => {
       expect(isInV2Scope("src/shared/ui/primitives/Button.tsx")).toBe(true);
       expect(isInV2Scope("src/pages/ordersX/x.ts")).toBe(false); // papka chegarasi
       expect(isInV2Scope("src/pages/orders")).toBe(false);
-      expect(isInV2Scope("src/shared/ui/BackButton.tsx")).toBe(false); // shared/ui butunligicha emas
+      expect(isInV2Scope("src/shared/ui/BackButton.tsx")).toBe(true); // TOZ-2: shared/ui butunligicha
+      expect(isInV2Scope("src/shared/lib/downscaleImage.ts")).toBe(false); // shared/lib — scope emas
       expect(scanSource(scopedFile, "export {};").scoped).toBe(true);
       expect(scanSource(pendingFile, "export {};").scoped).toBe(false);
       expect(pendingFile in V2_SCOPE_PENDING).toBe(true);

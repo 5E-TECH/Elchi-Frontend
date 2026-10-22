@@ -10,6 +10,9 @@ const getKpiMock = vi.fn();
 const approvalsState: { data: unknown; isLoading: boolean; isError: boolean } = { data: undefined, isLoading: false, isError: false };
 const approveState = { mutate: vi.fn(), isPending: false, variables: undefined as { id: string } | undefined };
 const rejectState = { mutate: vi.fn(), isPending: false, variables: undefined as { id: string } | undefined };
+// Hook chaqiruvlari kuzatiladi: operator rejimida xarajat tasdiqlari so'rovi umuman yuborilmasligi kerak (backend 403).
+const extraCostHook = vi.fn(() => approvalsState);
+const autoApprovedHook = vi.fn(() => ({ data: undefined }));
 
 vi.mock("../../entities/dashboard", () => ({
   useDashboard: () => ({ getDashboard: getDashboardMock, getKpi: getKpiMock }),
@@ -17,12 +20,16 @@ vi.mock("../../entities/dashboard", () => ({
 
 vi.mock("../../entities/orders", () => ({
   useOrders: () => ({
-    useAutoApprovedExtraCostApprovals: () => ({ data: undefined }),
-    useExtraCostApprovals: () => approvalsState,
+    useAutoApprovedExtraCostApprovals: () => autoApprovedHook(),
+    useExtraCostApprovals: () => extraCostHook(),
     approveExtraCostApproval: approveState,
     rejectExtraCostApproval: rejectState,
   }),
 }));
+
+// «Qayta tekshirish» (biriktirilmagan operator) — profil qayta o'qiladi; tarmoqqa chiqmaydi.
+const fetchMyProfileMock = vi.fn(() => Promise.resolve({}));
+vi.mock("../../auth/authService", () => ({ fetchMyProfile: () => fetchMyProfileMock() }));
 
 const settingsState: { data: unknown } = { data: undefined };
 vi.mock("../../entities/settings", async (importOriginal) => ({
@@ -294,6 +301,104 @@ describe("MarketDashboardPage (v2)", () => {
       expect(screen.queryByRole("heading", { name: "Muvaffaqiyat darajasi" })).not.toBeInTheDocument();
       await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
       expect(refetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("market operatori rejimi (MO-2, `variant=\"operator\"`)", () => {
+    const operatorState = {
+      role: { id: "op-9", role: "market_operator", region: null, name: "Dilnoza Karimova" },
+      user: {
+        user: { id: "op-9", name: "Dilnoza Karimova", role: "market_operator", market_id: 1, add_order: true } as never,
+        isAuthenticated: true,
+        accessToken: "token",
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      },
+    } as never;
+
+    it("KPI va grafiklar o'z marketi bo'yicha; xarajat tasdiqlari so'ralmaydi va chizilmaydi (backend 403)", () => {
+      approvalsState.data = {
+        data: [{ id: "ap-1", order_id: "1251165", market_id: "1", requested_by_user_id: "56", action: "sell", amount: 25000, status: "pending" }],
+      };
+      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+
+      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "market_operator:op-9");
+      expect(screen.getByTestId("market-stats-grid")).toHaveTextContent("38");
+      expect(extraCostHook).not.toHaveBeenCalled();
+      expect(autoApprovedHook).not.toHaveBeenCalled();
+      expect(screen.queryByText("Qo'shimcha xarajat tasdiqlari")).not.toBeInTheDocument();
+      // Profildagi `name` — operatorning o'z ismi, market nomi emas: sarlavha izohida yo'q.
+      expect(screen.queryByText(/Dilnoza Karimova/)).not.toBeInTheDocument();
+    });
+
+    it("sotuv foizida o'z qatori «Siz» — profildagi `market_id` (operatorning o'z id'si emas)", () => {
+      getDashboardMock.mockImplementation(() => {
+        const response = buildDashboardResponse();
+        response.data.data.topMarkets = [
+          { market_id: "1", market_name: "Baraka Shop", total_orders: 10, successful_orders: 4, success_rate: 40 },
+          { market_id: "op-9", market_name: "Boshqa market", total_orders: 10, successful_orders: 9, success_rate: 90 },
+        ];
+        return response;
+      });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+      const rows = within(screen.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).getAllByRole("listitem");
+      expect(rows[0]).toHaveTextContent("Boshqa market");
+      expect(rows[0]).not.toHaveTextContent("Siz");
+      expect(rows[1]).toHaveTextContent("Baraka ShopSiz");
+    });
+
+    it("marketga biriktirilmagan (profilda `market_id` yo'q) — nol KPI emas, «Siz hali marketga biriktirilmagansiz» + «Qayta tekshirish»; analitika so'ralmaydi", async () => {
+      const user = userEvent.setup();
+      const unassignedState = {
+        role: { id: "op-9", role: "market_operator", region: null, name: "Dilnoza Karimova" },
+        user: {
+          user: { id: "op-9", name: "Dilnoza Karimova", role: "market_operator", market_id: null } as never,
+          isAuthenticated: true,
+          accessToken: "token",
+          loading: false,
+          isAppInitializing: false,
+          error: null,
+        },
+      } as never;
+      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: unassignedState });
+
+      expect(screen.getByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeInTheDocument();
+      expect(screen.getByText("Market biriktirilmagan")).toBeInTheDocument();
+      expect(within(screen.getByTestId("operator-unassigned")).getByText("Siz hali marketga biriktirilmagansiz")).toBeInTheDocument();
+      expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).not.toBeInTheDocument();
+      // `analytics/dashboard` yoqilmagan (enabled = false) — operatorning o'z id'si bo'yicha bo'sh statistika so'ralmaydi.
+      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, false, "market_operator:op-9");
+      expect(getDashboardMock.mock.calls.every(([, enabled]) => enabled === false)).toBe(true);
+
+      await user.click(screen.getByRole("button", { name: "Qayta tekshirish" }));
+      expect(fetchMyProfileMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("market egasi rejimi `market_id` siz ham odatdagidek (holat faqat operatorda)", () => {
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+      expect(screen.queryByTestId("operator-unassigned")).not.toBeInTheDocument();
+      expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
+    });
+
+    it("MO-3: buyurtmalar ochilgach — «Buyurtma yaratish», «Tezkor harakatlar» (ro'yxat va yaratish) va ro'yxat havolasi bor", () => {
+      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+
+      expect(screen.getByRole("button", { name: "Buyurtma yaratish" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Tezkor harakatlar" })).toBeInTheDocument();
+      expect(within(section("Buyurtmalar holati")).getByRole("link", { name: /Ro'yxat/ })).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^\/orders/),
+      );
+      const hrefs = screen.queryAllByRole("link").map((link) => link.getAttribute("href") ?? "");
+      // Operatorda «Qabul va yaratish» (`/new-orders`) yo'q — faqat ro'yxat va yaratish.
+      expect(hrefs).toEqual(expect.arrayContaining(["/orders", "/new-orders/create"]));
+      expect(hrefs).not.toContain("/new-orders");
+      // Operatorda qo'lda yaratish yo'q (MO-7 gacha) — izoh «Qo'lda yoki AI» ni va'da qilmaydi.
+      const create = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/new-orders/create");
+      expect(create).toHaveTextContent("AI yordamida yaratish");
+      expect(create).not.toHaveTextContent(/Qo'lda/);
     });
   });
 });

@@ -86,18 +86,45 @@ const PARSE_ERRORS: Record<AiParseFailureReason, AiErrorView> = {
 const UNKNOWN_PARSE_ERROR = editText("aiParseFailedTitle", "aiParseFailed");
 
 /**
+ * MO-3: qo'lda yaratish yo'q rol (market operatori — `POST /orders` unga hali yopiq, MO-7). «Qo'lda kiriting»
+ * maslahati o'rniga kim hal qilishi aytiladi; «Qo'lda yaratish» tugmasi chiqmaydi (`AiInputPanel`). AI rad etgan
+ * matn — «Matnni tahrirlash». 5xx «Qayta urinish» izohi ham «qo'lda kiriting» desiz.
+ */
+const NO_MANUAL_DESCRIPTION: Record<string, string> = {
+  aiDisabledDescription: "operatorCreate.aiDisabled",
+  aiInsufficientDescription: "operatorCreate.aiInsufficient",
+  aiCapDescription: "operatorCreate.aiCap",
+  aiRefusedDescription: "operatorCreate.aiRefused",
+  aiHttpForbiddenDescription: "operatorCreate.aiForbidden",
+  aiHttpServerDescription: "operatorCreate.aiServer",
+};
+
+/**
+ * Har qanday ko'rinish (faqat `manual` emas): tavsif operator matniga almashtiriladi va xom server izohi
+ * (`detail`) HECH QAYSI holatda ko'rsatilmaydi (400/422/404… ham) — sabab i18n matnda.
+ */
+const withoutManual = (view: AiErrorView): AiErrorView => {
+  const description = NO_MANUAL_DESCRIPTION[view.description] ?? view.description;
+  if (view.action === "manual" && view.title === "aiRefusedTitle") return editText(view.title, description);
+  return { tone: view.tone, title: view.title, description, action: view.action, actionLabel: view.actionLabel };
+};
+
+type ManualOption = {
+  /** Qo'lda yaratish bormi (sukut `true`); market operatorida `false` (MO-3). */
+  canCreateManually?: boolean;
+};
+
+/**
  * `ok:false` javobidagi sabab. `canSelectMarket` — admin/registrator market
  * tanlay oladimi; market rolida `no_market` faqat administrator hal qiladi.
  */
 export const parseFailureView = (
   reason: AiParseFailureReason | undefined,
-  { canSelectMarket }: { canSelectMarket: boolean },
+  { canSelectMarket, canCreateManually = true }: { canSelectMarket: boolean } & ManualOption,
 ): AiErrorView => {
-  const view = (reason && PARSE_ERRORS[reason]) || UNKNOWN_PARSE_ERROR;
-  if (view.action === "selectMarket" && !canSelectMarket) {
-    return manual(view.title, "aiReasonNoMarket");
-  }
-  return view;
+  const found = (reason && PARSE_ERRORS[reason]) || UNKNOWN_PARSE_ERROR;
+  const view = found.action === "selectMarket" && !canSelectMarket ? manual(found.title, "aiReasonNoMarket") : found;
+  return canCreateManually ? view : withoutManual(view);
 };
 
 /**
@@ -105,7 +132,7 @@ export const parseFailureView = (
  * o'zi bekor qildi); 429 chaqiruvchida (tugma bloklanadi).
  * 401 → mavjud interceptor (sessiya yangilanadi / login).
  */
-export const parseHttpErrorView = (error: unknown): AiErrorView | null => {
+const httpErrorView = (error: unknown): AiErrorView | null => {
   if (isCancel(error)) return null;
   const status = (error as AxiosError | undefined)?.response?.status;
 
@@ -122,6 +149,11 @@ export const parseHttpErrorView = (error: unknown): AiErrorView | null => {
     return { ...editText("aiHttpBadRequestTitle", "aiHttpBadRequestDescription"), detail: serverDetail(error) };
   }
   return { ...UNKNOWN_PARSE_ERROR, description: "aiParseRequestFailed", detail: serverDetail(error) };
+};
+
+export const parseHttpErrorView = (error: unknown, { canCreateManually = true }: ManualOption = {}): AiErrorView | null => {
+  const view = httpErrorView(error);
+  return view && !canCreateManually ? withoutManual(view) : view;
 };
 
 // ───────────────────────── ai-confirm: har buyurtma natijasi ─────────────────

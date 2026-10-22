@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import IntegrationsOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { expectNoRawBackendText, expectRequestBody, mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 
 const apiPostMock = vi.fn();
 const apiGetMock = vi.fn();
@@ -16,8 +17,13 @@ vi.mock("../../shared/api/api", () => ({
 
 describe("IntegrationsOps page", () => {
   beforeEach(() => {
-    apiGetMock.mockResolvedValue({ data: [] });
-    apiPostMock.mockResolvedValue({ data: {} });
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    // Haqiqiy konvert: `GET integrations/receivables` → `{ statusCode, message, data: { items, pagination } }`.
+    apiGetMock.mockResolvedValue(
+      mockEnvelope({ items: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } }, { message: "Provider receivables" }),
+    );
+    apiPostMock.mockResolvedValue(mockEnvelope({ processed: 0 }, { message: "Sync started" }));
   });
 
   it("renders the page title 'Integratsiyalar' with the back link and the intro card", () => {
@@ -44,16 +50,15 @@ describe("IntegrationsOps page", () => {
   });
 
   it("renders receivables from the backend's { data: { items } } envelope without crashing", async () => {
-    apiGetMock.mockResolvedValue({
-      data: {
-        statusCode: 200,
-        message: "Provider receivables",
-        data: {
+    apiGetMock.mockResolvedValue(
+      mockEnvelope(
+        {
           items: [{ id: "rcv-1", amount: "15000.00", status: "pending" }],
           pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
         },
-      },
-    });
+        { message: "Provider receivables" },
+      ),
+    );
 
     renderWithProviders(<IntegrationsOpsPage />);
 
@@ -63,22 +68,21 @@ describe("IntegrationsOps page", () => {
     expect(screen.getByText("1 ta")).toBeInTheDocument();
   });
 
-  it("shows an error Alert (not an empty table) when the receivables request fails", async () => {
-    apiGetMock.mockRejectedValue({
-      response: { status: 500, data: { message: "Integratsiya xizmati javob bermadi" } },
-    });
+  it("so'rov rad etildi (ro'yxat 500): xato holati (bo'sh jadval emas), i18n matn, xom backend matni yo'q", async () => {
+    apiGetMock.mockRejectedValue(mockRejection(500));
 
     renderWithProviders(<IntegrationsOpsPage />);
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Debitorlik qarzlarini yuklab bo'lmadi");
-    expect(alert).toHaveTextContent("Integratsiya xizmati javob bermadi");
+    expect(alert).toHaveTextContent("Server xatosi (500). Birozdan keyin qayta urinib ko'ring.");
+    expectNoRawBackendText();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("refetches receivables when 'Qayta urinish' is clicked", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockRejectedValue({ response: { status: 500, data: { message: "down" } } });
+    apiGetMock.mockRejectedValue(mockRejection(500));
 
     renderWithProviders(<IntegrationsOpsPage />);
     await screen.findByRole("alert");
@@ -90,9 +94,7 @@ describe("IntegrationsOps page", () => {
   });
 
   it("shows the empty state only when the request succeeded with zero rows", async () => {
-    apiGetMock.mockResolvedValue({
-      data: { statusCode: 200, data: { items: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } } },
-    });
+    apiGetMock.mockResolvedValue(mockEnvelope({ items: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } }));
 
     renderWithProviders(<IntegrationsOpsPage />);
 
@@ -101,16 +103,17 @@ describe("IntegrationsOps page", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("shows an error Alert when Sync fails", async () => {
+  it("so'rov rad etildi (sinxronlash 404) — i18n matn, xom backend matni yo'q", async () => {
     const user = userEvent.setup();
-    apiPostMock.mockRejectedValue({ response: { status: 404, data: { message: "Integratsiya topilmadi" } } });
+    apiPostMock.mockRejectedValue(mockRejection(404));
 
     renderWithProviders(<IntegrationsOpsPage />);
     await user.type(screen.getByRole("textbox", { name: /Integratsiya ID/ }), "missing");
     await user.click(screen.getByRole("button", { name: "Sinxronlash" }));
 
     const alert = await screen.findByText("Sinxronizatsiya bajarilmadi");
-    expect(alert.closest("[role='alert']")).toHaveTextContent("Integratsiya topilmadi");
+    expect(alert.closest("[role='alert']")).toHaveTextContent("Topilmadi (404). ID to'g'riligini tekshiring.");
+    expectNoRawBackendText();
   });
 
   it("keeps Sync disabled until an integration id is entered", () => {
@@ -126,9 +129,9 @@ describe("IntegrationsOps page", () => {
     await user.type(screen.getByRole("textbox", { name: /Integratsiya ID/ }), "i1");
     await user.click(screen.getByRole("button", { name: "Sinxronlash" }));
 
-    await waitFor(() =>
-      expect(apiPostMock.mock.calls[0][0]).toBe("integrations/i1/sync"),
-    );
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    // Tana yo'q — backend `StartSyncRequestDto` ixtiyoriy (`limit` sukut 20).
+    expectRequestBody(apiPostMock, "integrations/i1/sync", undefined);
     expect(await screen.findByText("Sinxronizatsiya muvaffaqiyatli bajarildi")).toBeInTheDocument();
     expect(screen.getByText(/^Integratsiya i1 · /)).toBeInTheDocument();
   });

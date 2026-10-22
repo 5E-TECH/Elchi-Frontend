@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, CircleCheck, History, Plus, RefreshCw, Users } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   ChannelBreakdown,
   DispatchStatusBadge,
@@ -15,7 +16,7 @@ import { NoticeAlert } from "../../../entities/notification";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Badge, Button, Card, Pressable, Skeleton } from "../../../shared/ui/primitives";
+import { Badge, Button, ButtonIcon, Card, Pressable, Skeleton, buttonClasses } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import type { DispatchResult } from "../api/useDispatchNotification";
 import type { DispatchPayload } from "../model/schema";
@@ -150,15 +151,21 @@ export const DispatchResultCard = ({
               tone="danger"
               title={t("dispatch.undelivered.errorTitle")}
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={RefreshCw}
-                  loading={undelivered.isFetching}
-                  onClick={() => void undelivered.refetch()}
-                >
-                  {t("dispatch.undelivered.retry")}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={RefreshCw}
+                    loading={undelivered.isFetching}
+                    onClick={() => void undelivered.refetch()}
+                  >
+                    {t("dispatch.undelivered.retry")}
+                  </Button>
+                  <Link to="/notifications/sent" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+                    <ButtonIcon icon={History} px={16} />
+                    {t("dispatch.historyLink")}
+                  </Link>
+                </div>
               }
             >
               {t("dispatch.undelivered.errorText")}

@@ -53,6 +53,8 @@ describe("buildCreateOrderPayload", () => {
       status: "active",
     },
     existingCustomer: null,
+    deliveryTypeTouched: true,
+    totalPriceAuto: false,
     customer: {
       phone: "901234567",
       extra_phone: "991112233",

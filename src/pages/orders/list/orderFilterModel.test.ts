@@ -91,6 +91,22 @@ describe("orderFilterModel", () => {
     expect(countPanelFilters(EMPTY_ORDER_FILTERS, getOrderFilterScope("admin"))).toBe(0);
   });
 
+  it("MO-3: market operatori — o'z marketi; market, kuryer va viloyat (GET /region 403, N11) parametrlari ketmaydi", () => {
+    const scope = getOrderFilterScope("market_operator");
+    expect(scope).toEqual({ marketSelect: false, market: false, branch: false, area: "none", courier: false });
+    expect(buildOrderListParams({ ...filled, search: "Ali" }, "market_operator", { page: 1, limit: 10 })).toEqual({
+      page: 1,
+      limit: 10,
+      status: ["waiting", "sold"],
+      where_deliver: "address",
+      start_day: "2026-10-01",
+      end_day: "2026-10-08",
+      search: "Ali",
+    });
+    // Yetkazish turi va holat — 2 ta (viloyat URL'da qolgan bo'lsa ham sanalmaydi).
+    expect(countPanelFilters(filled, scope)).toBe(2);
+  });
+
   it("recognises the quick periods of the phone sheet", () => {
     const today = getTodayRange();
     const week = getThisWeekRange();

@@ -97,6 +97,10 @@ export interface RegionCourierStats {
   successRate: number;
   /** Viloyatning asosiy kuryeri (`region.mainCourier`). */
   isPrimary?: boolean;
+  /** LG-3 (additiv): identity holati (`active` / `inactive`, kichik harfda); noma'lum — `null`. */
+  status?: string | null;
+  /** LG-3 (additiv): kuryer biriktirilgan tuman (`district_id`); yo'q — `null`. */
+  districtId?: string | null;
 }
 
 export interface RegionDetailStats {
@@ -357,6 +361,8 @@ const normalizeRegionCouriers = (source: Record<string, unknown>): RegionCourier
       successRate:
         totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : toNumber(courier.successRate ?? courier.success_rate),
       isPrimary: mainId != null && String(mainId) === id,
+      status: courier.status == null || courier.status === "" ? null : String(courier.status).toLowerCase(),
+      districtId: toIdOrNull(courier.districtId ?? courier.district_id),
     };
   });
 };

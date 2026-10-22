@@ -1,6 +1,6 @@
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import type { AccountSession, AccountSessionList } from "../model/types";
+import type { AccountSession, AccountSessionList, RevokeSessionsResult } from "../model/types";
 
 type Raw = Record<string, unknown>;
 
@@ -51,4 +51,37 @@ export const normalizeAccountSessionList = (value: unknown): AccountSessionList 
 export const getMySessions = async (): Promise<AccountSessionList> => {
   const response = await api.get(API_ENDPOINTS.AUTH.SESSIONS);
   return normalizeAccountSessionList(response.data);
+};
+
+/**
+ * `{ statusCode, message, data: { revoked, session_ids } }` → `RevokeSessionsResult`. `session_ids` dagi bo'sh /
+ * satr bo'lmagan qiymatlar tashlanadi; `revoked` yo'q yoki noto'g'ri bo'lsa — ID lar soni.
+ */
+export const normalizeRevokeSessionsResult = (value: unknown): RevokeSessionsResult => {
+  const response = asRecord(value) ?? {};
+  const data = asRecord(response.data) ?? response;
+  const ids = Array.isArray(data.session_ids)
+    ? data.session_ids.map(text).filter((id): id is string => id !== null)
+    : [];
+  const reported = Number(data.revoked);
+  const revoked = Number.isFinite(reported) && reported >= 0 ? Math.floor(reported) : ids.length;
+  return { revoked, session_ids: ids };
+};
+
+/**
+ * `DELETE /auth/sessions/:id` — o'z BOSHQA sessiyasini yopish (o'sha qurilma keyingi so'rovida 401 oladi va kirish
+ * sahifasiga tushadi). 400 — joriy sessiya yoki noto'g'ri ID, 404 — topilmadi / allaqachon yopilgan.
+ */
+export const revokeSession = async (id: string): Promise<RevokeSessionsResult> => {
+  const response = await api.delete(API_ENDPOINTS.AUTH.SESSION_BY_ID(id));
+  return normalizeRevokeSessionsResult(response.data);
+};
+
+/**
+ * `POST /auth/sessions/revoke-others` (tanasiz) — joriydan boshqa barcha faol sessiyalarni yopish. 400 — joriy
+ * sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak.
+ */
+export const revokeOtherSessions = async (): Promise<RevokeSessionsResult> => {
+  const response = await api.post(API_ENDPOINTS.AUTH.SESSIONS_REVOKE_OTHERS);
+  return normalizeRevokeSessionsResult(response.data);
 };

@@ -54,7 +54,7 @@ export const FilterChips = <V extends string>({
               className={cx(
                 "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border border-border-strong bg-surface px-3 text-[13px] font-medium text-text",
                 "transition-[background-color,border-color,color] duration-150 hover:border-text-subtle motion-reduce:transition-none",
-                "aria-pressed:border-action aria-pressed:bg-action-soft aria-pressed:font-semibold aria-pressed:text-action-fg max-md:h-11",
+                "aria-pressed:border-action aria-pressed:bg-action-soft aria-pressed:font-semibold aria-pressed:text-action-fg max-md:h-11 max-md:min-w-11 max-md:justify-center",
               )}
             >
               {Icon ? <Icon size={14} aria-hidden="true" className="shrink-0" /> : null}

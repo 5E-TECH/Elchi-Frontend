@@ -345,15 +345,17 @@
       "fillPlaceholder": "Masalan: bank hisobidan naqd olindi",
       "spendPlaceholder": "Masalan: ofis ijarasi, oktabr",
       "fillCommentRequired": "Izoh majburiy — pul qayerdan kelganini yozing",
-      "spendCommentRequired": "Izoh majburiy — pul nimaga sarflanganini yozing",
       "typeRequired": "To'lov turini tanlang",
       "category": "Xarajat kategoriyasi",
       "categoryPlaceholder": "Kategoriyani tanlang",
       "categoryListLabel": "Xarajat kategoriyalari",
       "categoryLoading": "Kategoriyalar yuklanmoqda…",
       "categoryEmpty": "Kategoriyalar hali qo'shilmagan",
+      "categoryRequired": "Xarajat kategoriyasini tanlang",
+      "categoryNone": "Kategoriyalar hali qo'shilmagan — superadmin «Xarajat kategoriyalari» orqali qo'shadi",
+      "categoryNoneManage": "Kategoriyalar hali qo'shilmagan — xarajatni saqlash uchun avval kategoriya qo'shing",
       "categoryClear": "Kategoriyani olib tashlash",
-      "categoryLoadError": "Kategoriyalarni yuklab bo'lmadi — xarajatni kategoriyasiz saqlash mumkin",
+      "categoryLoadError": "Kategoriyalarni yuklab bo'lmadi — xarajat kategoriyasiz saqlanmaydi",
       "categoryRetry": "Qayta urinish",
       "categoryIncludes": "Nimalar kiradi: {{text}}",
       "fillSubmit": "Kirimni saqlash",
@@ -1009,4 +1011,19 @@
   ,"paymentAckSelfConfirmedHint": "Botdagi kvitansiyani siz tasdiqlagansiz"
   ,"paymentAckSelfDisputed": "Siz: noto'g'ri"
   ,"paymentAckSelfDisputedHint": "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz"
+  ,"cashDetail": {
+    "shift": {
+      "overviewSubtitle": "Kassa va to'lovlarni boshqarish · smena yopiq",
+      "overviewBanner": "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "formLocked": "Smena ochilgach ishlaydi",
+      "visibleHint": "Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "banner": {
+        "courierBranch": "Filial kassasida smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
+        "hqTransfer": "Filial kassasida smena ochilgandan keyin HQ'ga pul o'tkazish ishlaydi.",
+        "courierMain": "Asosiy kassada smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
+        "market": "Asosiy kassada smena ochilgandan keyin marketga to'lov ishlaydi.",
+        "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."
+      }
+    }
+  }
 }

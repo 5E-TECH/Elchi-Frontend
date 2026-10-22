@@ -548,8 +548,8 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
   const { role, user, sections, items, branchTypeMissing } = useNavSections();
   const roleState = useSelector((state: RootState) => state.role);
-  // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar ochilmaydigan rolda (logist, market operatori:
-  // LG-4 / MO-3 gacha) u 403 sahifasiga olib borardi; yuqori paneldagi global qidiruv qoladi.
+  // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar ochilmaydigan rolda (logist: LG-4 gacha) u 403
+  // sahifasiga olib borardi; yuqori paneldagi global qidiruv qoladi. Market operatorida MO-3 dan beri ochiq.
   const canOpenOrders = useSelector(canViewOrders);
   // Yuqori paneldagi qo'ng'iroqcha bilan bir xil so'rov (kesh umumiy) — qo'shimcha so'rov ketmaydi.
   const { data: unreadCount = 0 } = useUnreadCount(Boolean(roleState.role));

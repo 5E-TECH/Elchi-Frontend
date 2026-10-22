@@ -136,8 +136,8 @@ const NewOrderUpdate = () => {
   const returnPath = useOrderReturnPath(order, {
     hqName: readHqName(order),
     version: trackingVersion,
-    // Kuryer tafsilotida karta yo'q (maket `courier-orders-detail` o'zgarmagan).
-    enabled: access.layout !== "courier",
+    // Kuryer tafsilotida karta yo'q (maket `courier-orders-detail` o'zgarmagan); market operatoriga tarix 403 (MO-3).
+    enabled: access.layout !== "courier" && access.canViewTracking,
   });
   const handoverMethodLabel = useCancelHandoverMethodLabel();
   const handoverStep = returnPath.path?.steps.find((step) => step.kind === "handed") ?? null;
@@ -339,17 +339,19 @@ const NewOrderUpdate = () => {
     ) : null;
 
   // ─── Ko'rinishlar ─────────────────────────────────────────────────────────
-  const tracking = (detail: OrderDetail, variant: "default" | "courier" = "default") => (
-    <OrderTracking
-      key={`${detail.id}:${trackingVersion}`}
-      orderId={detail.id}
-      currentStatus={detail.status}
-      access={trackingAccess}
-      context={trackingContext}
-      variant={variant}
-      defaultCollapsed={Boolean(returnPath.path)}
-    />
-  );
+  // MO-3: market operatorida «Kuzatuv» yo'q — `GET orders/:id/tracking` unga 403 (`access.canViewTracking`).
+  const tracking = (detail: OrderDetail, variant: "default" | "courier" = "default") =>
+    access.canViewTracking ? (
+      <OrderTracking
+        key={`${detail.id}:${trackingVersion}`}
+        orderId={detail.id}
+        currentStatus={detail.status}
+        access={trackingAccess}
+        context={trackingContext}
+        variant={variant}
+        defaultCollapsed={Boolean(returnPath.path)}
+      />
+    ) : null;
   // `/new-orders/:marketId/edit` maketlarida «Buyurtma ma'lumotlari» kartasi yo'q.
   const meta = (className?: string) =>
     isNewOrdersRoute ? null : (
@@ -383,7 +385,7 @@ const NewOrderUpdate = () => {
       isError={returnPath.isError}
       onRetry={returnPath.retry}
       marketView={access.layout === "market"}
-      qrHref={access.layout === "market" && order?.market_id ? `/new-orders/cancelled/${String(order.market_id)}` : null}
+      qrHref={access.canOpenCancelledQr && order?.market_id ? `/new-orders/cancelled/${String(order.market_id)}` : null}
     />
   ) : null;
 

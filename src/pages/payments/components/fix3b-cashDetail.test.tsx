@@ -34,8 +34,18 @@ const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false
 const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 
-vi.mock("../../../entities/payments", () => ({
+vi.mock("../../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/payments")>()),
   useCashBox: () => ({
+    // CB-2: smena ochiq (qulf yo'q) — forma testlari smenaga bog'liq emas.
+    useGetCurrentShift: () => ({
+      isSuccess: true,
+      isError: false,
+      data: { data: { shift: { id: "5", status: "open", opened_by: "1" }, required: true } },
+      refetch: vi.fn(),
+    }),
+    openShift: { mutateAsync: vi.fn(), isPending: false },
+    useGetCashBoxMain: () => ({ isSuccess: false, data: undefined }),
     useGetCashBoxById: () => ({ data: state.cashbox, isLoading: false, refetch: cashboxRefetch }),
     useGetFinanceHistory: (params: Record<string, unknown>, enabled: unknown) => {
       state.historyCalls.push({ params, enabled });
@@ -72,6 +82,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
       return { data: undefined, isLoading: false };
     },
     // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
+    useGetUserById: () => ({ data: undefined }),
     useGetCouriers: (_params: unknown, enabled: unknown) => ({ data: enabled ? state.couriers : undefined, isLoading: false }),
   }),
 }));

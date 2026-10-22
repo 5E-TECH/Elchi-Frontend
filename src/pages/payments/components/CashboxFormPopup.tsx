@@ -28,23 +28,26 @@ import { parseAmountInput } from "./lib/amountInput";
  *
  * `Dialog` md (telefonda pastki varaqa): ikonka Plus/Minus, sarlavha + «Kirim/Chiqim operatsiyasi · Asosiy kassa»;
  * «Summa *» (katta maydon, mingliklar bilan, o'ngda «so'm»), «To'lov turi *» segment (Naqd · Karta (Click)),
- * «Izoh *»; pastda «Bekor qilish» / «Kirimni saqlash» | «Xarajatni saqlash».
+ * chiqimda «Xarajat kategoriyasi *», «Izoh» (to'ldirishda «Izoh *», chiqimda «Izoh (ixtiyoriy)»); pastda
+ * «Bekor qilish» / «Kirimni saqlash» | «Xarajatni saqlash».
  *
- * Validatsiya (yup) o'zgarmagan: summa majburiy va > 0, `requireType` / `requireComment` (izoh `trim` bilan).
- * Xato matnlari maydon ostida — saqlash bosilganda (maketdagi «Izoh majburiy — …» holati).
+ * Validatsiya (yup): summa majburiy va > 0, `requireType` / `requireComment` (izoh `trim` bilan), chiqimda
+ * kategoriya majburiy. Xato matnlari maydon ostida — saqlash bosilganda (maketdagi «Izoh majburiy — …» holati).
  *
  * Pul harakati — TASDIQ bilan: «saqlash» → `useConfirm` (summa + to'lov turi, «Kassa», «Kategoriya», «Izoh») →
- * faqat «Tasdiqlash» dan keyin `onSubmit({ amount, type?, comment, expense_category_id? })`. Ikki marta yuborish
- * yo'q: tasdiq ochiq yoki so'rov ketayotganda qayta bosish e'tiborsiz (ref qulf), `isLoading` da tugma yuklanishda
- * va oyna yopilmaydi.
+ * faqat «Tasdiqlash» dan keyin `onSubmit({ amount, type?, comment?, expense_category_id? })`; bo'sh izoh
+ * (`trim`) payload'ga umuman kirmaydi. Ikki marta yuborish yo'q: tasdiq ochiq yoki so'rov ketayotganda qayta bosish
+ * e'tiborsiz (ref qulf), `isLoading` da tugma yuklanishda va oyna yopilmaydi.
  *
  * «Xarajat kategoriyasi» (Elchi Pochta №1; maketda yo'q — `route-map.json` izohi, eng yaqini shu oynaning
- * `Select` maydonlari, taxta `tizim-states-forms` 03) — FAQAT `variant="spend"`: ixtiyoriy, qidiruvli `Select`
- * (`GET finance/cashbox/expense-categories`, faol kategoriyalar `sort_order` bo'yicha, ostida «Nimalar kiradi»),
- * tanlansa payload'ga `expense_category_id` qo'shiladi, tanlanmasa — kalit umuman yo'q. To'ldirish oynasida maydon
- * ham, so'rov ham yo'q (backend `fill` bu maydonni 400 bilan rad etadi). Ro'yxat yuklanmasa forma ishlayveradi —
- * maydon o'chiq, ostida sabab va «Qayta urinish»; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat
- * tozalanadi.
+ * `Select` maydonlari, taxta `tizim-states-forms` 03) — FAQAT `variant="spend"`: MAJBURIY (ega 2026-10-22:
+ * xarajat kategoriya orqali, izoh ixtiyoriy; backend ham kategoriyasiz `spend` ni 400 bilan rad etadi), qidiruvli
+ * `Select` (`GET finance/cashbox/expense-categories`, faol kategoriyalar `sort_order` bo'yicha, ostida «Nimalar
+ * kiradi»), payload'ga `expense_category_id`. To'ldirish oynasida maydon ham, so'rov ham yo'q (backend `fill` bu
+ * maydonni 400 bilan rad etadi). Ro'yxat yuklanmasa (ostida sabab va «Qayta urinish») yoki faol kategoriya yo'q
+ * bo'lsa (superadminda — «Xarajat kategoriyalari» oynasini ochish, `onManageCategories`) maydon o'chiq va
+ * «Xarajatni saqlash» bloklanadi; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat tozalanadi va
+ * qaytadan tanlash so'raladi.
  */
 
 interface CashboxFormValues {
@@ -58,8 +61,9 @@ interface CashboxFormValues {
 export type CashboxFormPayload = {
     amount: number;
     type?: string;
-    comment: string;
-    /** Faqat `spend` va kategoriya tanlangan bo'lsa (raqamli satr ID). */
+    /** Faqat bo'sh bo'lmasa (`trim`); chiqimda ixtiyoriy. */
+    comment?: string;
+    /** Faqat `spend` (raqamli satr ID) — chiqimda majburiy. */
     expense_category_id?: string;
 };
 
@@ -91,6 +95,13 @@ interface CashboxFormPopupProps {
     commentPlaceholder?: string;
     commentRequiredMessage?: string;
     typeRequiredMessage?: string;
+    /** Faqat `spend`: kategoriya tanlanmasa chiqadigan xato (sukut — «Xarajat kategoriyasini tanlang»). */
+    categoryRequiredMessage?: string;
+    /**
+     * Faqat `spend`, kategoriyalarni boshqara oladigan rol (superadmin): faol kategoriya yo'q bo'lsa maydon ostida
+     * «Xarajat kategoriyalari» havolasi shu funksiyani chaqiradi (boshqaruv oynasi shu oyna ustida ochiladi).
+     */
+    onManageCategories?: () => void;
     /** Berilsa — yuborishdan oldin tasdiq oynasi (pul harakati — majburiy). */
     confirm?: { title: string; cashboxLabel: string };
 }
@@ -114,6 +125,8 @@ const CashboxFormPopup = ({
     commentPlaceholder,
     commentRequiredMessage,
     typeRequiredMessage,
+    categoryRequiredMessage,
+    onManageCategories,
     confirm: confirmCopy,
 }: CashboxFormPopupProps) => {
     const { t, i18n: i18nInstance } = useTranslation("payments");
@@ -122,8 +135,10 @@ const CashboxFormPopup = ({
     const fieldId = useId();
     // Tasdiq ochiq yoki so'rov ketmoqda — ikkinchi «saqlash» e'tiborsiz.
     const submittingRef = useRef(false);
+    // Xarajat kategoriyasi — faqat chiqimda (va u yerda majburiy).
+    const withCategory = variant === "spend";
 
-    // Qoidalar eski sxema bilan AYNAN; xato matnlari chaqiruvchidan (maketdagi izoh matni) yoki eski kalitlar.
+    // Xato matnlari chaqiruvchidan (maketdagi izoh matni) yoki eski kalitlar.
     const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
         amount: yup
             .string()
@@ -137,7 +152,11 @@ const CashboxFormPopup = ({
         comment: requireComment
             ? yup.string().trim().required(commentRequiredMessage ?? i18n.t("payments:commentRequired"))
             : yup.string().defined(),
-        expenseCategoryId: yup.string().defined(),
+        expenseCategoryId: withCategory
+            ? yup
+                  .string()
+                  .required(categoryRequiredMessage ?? i18n.t("payments:v2MainCashbox.form.categoryRequired"))
+            : yup.string().defined(),
     });
 
     const {
@@ -161,7 +180,6 @@ const CashboxFormPopup = ({
     const busy = isLoading;
 
     // ── Xarajat kategoriyasi (faqat chiqim) ─────────────────────────────────────
-    const withCategory = variant === "spend";
     const categoriesQuery = useExpenseCategories({ enabled: isOpen && withCategory });
     const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
     const categoryOptions = useMemo<SelectOption[]>(
@@ -177,6 +195,11 @@ const CashboxFormPopup = ({
     const selectedCategoryId = watch("expenseCategoryId");
     const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
     const categoriesLoaded = categoriesQuery.isSuccess;
+    // Tanlab bo'lmaydi: ro'yxat umuman yuklanmadi (keshda eski ro'yxat bo'lsa — u ishlatiladi) yoki faol kategoriya
+    // yo'q. Kategoriya majburiy bo'lgani uchun bu holatda «Xarajatni saqlash» bloklanadi.
+    const categoriesFailed = withCategory && categoriesQuery.isError && categories.length === 0;
+    const categoriesEmpty = withCategory && categoriesLoaded && categories.length === 0;
+    const categoriesUnavailable = categoriesFailed || categoriesEmpty;
     // Tanlangan kategoriya yangilangan ro'yxatda yo'q (boshqa superadmin o'chirgan, «Kassadan xarajat» 400 dan
     // keyin ro'yxat qayta o'qildi) — eskirgan ID qayta yuborilmasin.
     useEffect(() => {
@@ -207,10 +230,11 @@ const CashboxFormPopup = ({
             const category = withCategory
                 ? (categories.find((item) => item.id === values.expenseCategoryId) ?? null)
                 : null;
+            const comment = values.comment.trim();
             const payload: CashboxFormPayload = {
                 amount: parseAmountInput(values.amount),
                 ...(values.type ? { type: values.type } : {}),
-                comment: values.comment.trim(),
+                ...(comment ? { comment } : {}),
                 ...(category ? { expense_category_id: category.id } : {}),
             };
 
@@ -245,7 +269,7 @@ const CashboxFormPopup = ({
     const Icon = variant === "spend" ? Minus : Plus;
     const typeFieldId = `${fieldId}-type`;
 
-    const categoryHint = categoriesQuery.isError ? (
+    const categoryHint = categoriesFailed ? (
         <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{t("v2MainCashbox.form.categoryLoadError")}</span>
             <Button
@@ -257,6 +281,23 @@ const CashboxFormPopup = ({
                 {t("v2MainCashbox.form.categoryRetry")}
             </Button>
         </span>
+    ) : categoriesEmpty ? (
+        onManageCategories ? (
+            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>{t("v2MainCashbox.form.categoryNoneManage")}</span>
+                <Button
+                    variant="link"
+                    size="sm"
+                    onClick={onManageCategories}
+                    aria-haspopup="dialog"
+                    className="max-md:min-h-11"
+                >
+                    {t("v2ExpenseCategories.manage")}
+                </Button>
+            </span>
+        ) : (
+            t("v2MainCashbox.form.categoryNone")
+        )
     ) : selectedCategory?.description ? (
         t("v2MainCashbox.form.categoryIncludes", { text: selectedCategory.description })
     ) : undefined;
@@ -280,6 +321,7 @@ const CashboxFormPopup = ({
                     <Button
                         type="submit"
                         leftIcon={Icon}
+                        disabled={categoriesUnavailable}
                         loading={busy}
                         loadingText={t("v2MainCashbox.form.saving")}
                     >
@@ -342,9 +384,10 @@ const CashboxFormPopup = ({
                 <Field
                     labelAs="span"
                     label={t("v2MainCashbox.form.category")}
-                    optional
+                    required
                     hint={categoryHint}
-                    disabled={categoriesQuery.isError}
+                    error={errors.expenseCategoryId?.message}
+                    disabled={categoriesUnavailable}
                 >
                     <Controller
                         control={control}
@@ -373,6 +416,7 @@ const CashboxFormPopup = ({
             <Field
                 label={t("v2MainCashbox.form.comment")}
                 required={requireComment}
+                optional={!requireComment}
                 error={errors.comment?.message}
             >
                 <Controller

@@ -25,6 +25,7 @@ import {
     type DataTableColumn,
     type DataTableSort,
 } from "../../../shared/ui/primitives";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
 
@@ -150,7 +151,8 @@ const OrdersTable = ({
     const { t, i18n } = useTranslation("orders");
     const language = i18n.resolvedLanguage ?? i18n.language;
     const role = useSelector((state: RootState) => state.role.role);
-    const isMarket = role === "market";
+    // Market tomoni (market va market operatori, MO-3) — market jadvali (maket `market-orders-list`).
+    const isMarket = isMarketSideRole(role);
     const hasActions = Boolean(onSellOrder || onCancelOrder || onRollbackOrder);
     const hasSelection = Boolean(isSelectable && onSelectChange && onSelectAll);
     const density = hasActions || hasSelection ? "tight" : isMarket ? "tablet-tight" : "default";

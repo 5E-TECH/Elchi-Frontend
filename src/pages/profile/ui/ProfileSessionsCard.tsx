@@ -1,11 +1,14 @@
 // dizayn-v2: (maket yo'q) market-profile, common-profile
 import { useEffect, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   currentSessionFirst,
   describeSessionDevice,
   useMySessions,
+  useRevokeOtherSessions,
+  useRevokeSession,
   type AccountSession,
   type AccountSessionList,
 } from "../../../entities/account-session";
@@ -14,7 +17,17 @@ import {
   formatRelativeTimeLocalized,
   toValidDate,
 } from "../../../shared/lib/formatDateTime";
-import { Badge, Card, EmptyState, QueryBoundary, Skeleton } from "../../../shared/ui/primitives";
+import { getActionErrorMessage } from "../../../shared/lib/actionError";
+import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  QueryBoundary,
+  Skeleton,
+  useConfirm,
+} from "../../../shared/ui/primitives";
 
 /**
  * «SESSIYALAR» — profil (`/profile`, barcha rollar), Elchi Pochta #3. Maket yo'q — eng yaqini `market-profile`
@@ -32,6 +45,12 @@ import { Badge, Card, EmptyState, QueryBoundary, Skeleton } from "../../../share
  *    qisqa qolsa (server chegarasi) — pastda «Oxirgi 50 tasi ko'rsatilgan».
  *  - So'rov bo'lim ochilganda va oynaga qaytilganda (`useMySessions`); davriy so'rov yo'q — faqat nisbiy vaqt
  *    har daqiqada qayta chiziladi.
+ *  - Boshqa qurilmalarni chiqarish: har «Shu qurilma» BO'LMAGAN qatorda «Chiqarish» (`DELETE /auth/sessions/:id`),
+ *    sarlavhada — kamida bitta boshqa sessiya bo'lsa — «Boshqa barcha qurilmalardan chiqish»
+ *    (`POST /auth/sessions/revoke-others`). Ikkalasi `useConfirm` (danger: qaysi qurilma / nechta) orqali, tasdiq
+ *    tugmasida yuklanish, muvaffaqiyat — `notify`, ro'yxat keshi yangilanadi. 404 — sessiya allaqachon yopilgan:
+ *    ro'yxat qayta so'raladi, `notify.info`; 400 — oyna ichida sabab (joriy sessiya / eski token — qayta kirish).
+ *    Yopilgan qurilma keyingi so'rovida 401 → refresh ham rad → kirish sahifasi (`setupInterceptors`).
  */
 
 /** `.el-stat-icon` — neytral ikonka qutisi (CODE-MAP; `ProfileCards` dagi bilan bir xil). */
@@ -55,6 +74,20 @@ const useNow = (intervalMs: number) => {
 
 const isoOf = (value: string | null) => toValidDate(value)?.toISOString();
 
+/** Qurilma nomi: tur joriy tilda + server yorlig'ining qolgani; bo'lmasa qisqa User-Agent yoki «Noma'lum qurilma». */
+const sessionLabel = (session: AccountSession, t: TFunction<"profile">) => {
+  const device = describeSessionDevice(session);
+  return device.kind
+    ? [t(`sessions.kind.${device.kind}`), device.detail].filter(Boolean).join(" · ")
+    : (device.detail ?? t("sessions.unknownDevice"));
+};
+
+const statusOf = (error: unknown): number | undefined =>
+  (error as { response?: { status?: number } } | null)?.response?.status;
+
+/** Amal natijasi tasdiq oynasidan tashqariga: 404 — sessiya allaqachon yopilgan (xato emas). */
+type RevokeOutcome = { kind: "done"; revoked: number } | { kind: "gone" };
+
 const SessionsSkeleton = () => (
   <ul aria-hidden="true" className="flex flex-col">
     {[0, 1].map((index) => (
@@ -69,13 +102,19 @@ const SessionsSkeleton = () => (
   </ul>
 );
 
-const SessionRow = ({ session, now }: { session: AccountSession; now: number }) => {
+const SessionRow = ({
+  session,
+  now,
+  onRevoke,
+}: {
+  session: AccountSession;
+  now: number;
+  /** Faqat «Shu qurilma» bo'lmagan qatorda. */
+  onRevoke?: (session: AccountSession) => void;
+}) => {
   const { t, i18n } = useTranslation("profile");
   const language = i18n.language;
-  const device = describeSessionDevice(session);
-  const label = device.kind
-    ? [t(`sessions.kind.${device.kind}`), device.detail].filter(Boolean).join(" · ")
-    : (device.detail ?? t("sessions.unknownDevice"));
+  const label = sessionLabel(session, t);
 
   return (
     <li className={`flex flex-wrap items-start justify-between gap-x-6 gap-y-3 ${ROW}`}>
@@ -119,15 +158,115 @@ const SessionRow = ({ session, now }: { session: AccountSession; now: number }) 
           </dd>
         </div>
       </dl>
+      {onRevoke ? (
+        <Button
+          variant="danger-soft"
+          size="sm"
+          leftIcon={LogOut}
+          aria-haspopup="dialog"
+          aria-label={t("sessions.revoke.aria", { device: label })}
+          onClick={() => onRevoke(session)}
+          className="shrink-0 self-center max-md:self-start"
+        >
+          {t("sessions.revoke.action")}
+        </Button>
+      ) : null}
     </li>
   );
 };
 
 export const ProfileSessionsCard = ({ className }: { className?: string }) => {
-  const { t } = useTranslation("profile");
+  const { t, i18n } = useTranslation("profile");
+  const language = i18n.language;
   const query = useMySessions();
+  const revokeOne = useRevokeSession();
+  const revokeOthers = useRevokeOtherSessions();
+  const confirm = useConfirm();
   const now = useNow(CLOCK_TICK_MS);
   const list = query.data;
+  const others = list?.sessions.filter((session) => !session.current) ?? [];
+  // Ro'yxat 50 ta bilan cheklangan — sarlavhadagi son to'liq (`active_count`), joriy sessiya ham shu sonda.
+  const otherCount = list
+    ? Math.max(others.length, list.active_count - (list.sessions.some((session) => session.current) ? 1 : 0))
+    : 0;
+
+  const handleRevoke = async (session: AccountSession) => {
+    const label = sessionLabel(session, t);
+    // Natija tasdiq oynasi ichidagi `onConfirm` dan chiqadi (oyna yopilgach xabar).
+    const result: { outcome?: RevokeOutcome } = {};
+    const ok = await confirm({
+      tone: "danger",
+      icon: LogOut,
+      title: t("sessions.revoke.title"),
+      description: t("sessions.revoke.description"),
+      details: (
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-semibold wrap-break-word text-text">{label}</span>
+          <span className="text-[13px] wrap-break-word text-text-muted">
+            {[
+              session.ip ? t("sessions.ip", { ip: session.ip }) : t("sessions.ipUnknown"),
+              t("sessions.revoke.lastSeen", {
+                when: formatRelativeTimeLocalized(session.last_seen_at, { language, now: Date.now() }),
+              }),
+            ].join(" · ")}
+          </span>
+        </span>
+      ),
+      confirmLabel: t("sessions.revoke.confirm"),
+      confirmIcon: LogOut,
+      loadingLabel: t("sessions.revoke.loading"),
+      onConfirm: async () => {
+        try {
+          const response = await revokeOne.mutateAsync(session.id);
+          result.outcome = { kind: "done", revoked: response.revoked };
+        } catch (error) {
+          // Boshqa qurilmadan (yoki boshqa oynadan) allaqachon yopilgan — xato emas, ro'yxat yangilanadi.
+          if (statusOf(error) === 404) {
+            result.outcome = { kind: "gone" };
+            return;
+          }
+          throw error;
+        }
+      },
+    });
+    if (!ok || !result.outcome) return;
+    if (result.outcome.kind === "gone") {
+      notify.info(t("sessions.revoke.goneTitle"), { description: t("sessions.listRefreshed") });
+    } else {
+      notify.success(t("sessions.revoke.success"), { description: label });
+    }
+  };
+
+  const handleRevokeOthers = async () => {
+    const result: { revoked?: number } = {};
+    const ok = await confirm({
+      tone: "danger",
+      icon: LogOut,
+      title: t("sessions.revokeOthers.title"),
+      description: t("sessions.revokeOthers.description", { count: otherCount }),
+      note: t("sessions.revokeOthers.note"),
+      confirmLabel: t("sessions.revokeOthers.confirm"),
+      confirmIcon: LogOut,
+      loadingLabel: t("sessions.revoke.loading"),
+      // 400 — joriy sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak.
+      errorMessage: (error) =>
+        statusOf(error) === 400
+          ? t("sessions.revokeOthers.reloginRequired")
+          : (getActionErrorMessage(error, t("sessions.revoke.error")) ?? t("sessions.revoke.error")),
+      onConfirm: async () => {
+        const response = await revokeOthers.mutateAsync();
+        result.revoked = response.revoked;
+      },
+    });
+    if (!ok || result.revoked === undefined) return;
+    if (result.revoked > 0) {
+      notify.success(t("sessions.revokeOthers.success"), {
+        description: t("sessions.revokeOthers.successDescription", { count: result.revoked }),
+      });
+    } else {
+      notify.info(t("sessions.revokeOthers.noneTitle"), { description: t("sessions.listRefreshed") });
+    }
+  };
 
   return (
     <Card
@@ -142,6 +281,19 @@ export const ProfileSessionsCard = ({ className }: { className?: string }) => {
         ) : null
       }
       description={t("sessions.description")}
+      actions={
+        others.length > 0 ? (
+          <Button
+            variant="danger-soft"
+            size="sm"
+            leftIcon={LogOut}
+            aria-haspopup="dialog"
+            onClick={() => void handleRevokeOthers()}
+          >
+            {t("sessions.revokeOthers.action")}
+          </Button>
+        ) : null
+      }
       footer={
         list && list.active_count > list.sessions.length ? (
           <p className="text-[13px] text-text-muted">
@@ -166,7 +318,12 @@ export const ProfileSessionsCard = ({ className }: { className?: string }) => {
         {(data) => (
           <ul aria-label={t("sessions.listLabel")} className="flex flex-col">
             {currentSessionFirst(data.sessions).map((session) => (
-              <SessionRow key={session.id} session={session} now={now} />
+              <SessionRow
+                key={session.id}
+                session={session}
+                now={now}
+                onRevoke={session.current ? undefined : (target) => void handleRevoke(target)}
+              />
             ))}
           </ul>
         )}

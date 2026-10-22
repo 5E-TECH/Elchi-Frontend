@@ -15,6 +15,16 @@ test("⭐ market: «AI narxi» tafsilotda va tahrirda; tozalansa `ai_price_per_o
 
   const tariff = content.getByRole("region", { name: "Tarif" });
   await expect(tariff.getByText("AI narxi (1 buyurtma)")).toBeVisible();
+  // CS-C: market yorliqlari — «Uyga / Markazga standart narx» (maket `superadmin-users-detail`).
+  await expect(tariff.locator("dt", { hasText: "Uyga standart narx" }).locator("xpath=following-sibling::dd[1]")).toHaveText(
+    /^35\s?000\s?so'm$/,
+  );
+  await expect(
+    tariff.locator("dt", { hasText: "Markazga standart narx" }).locator("xpath=following-sibling::dd[1]"),
+  ).toHaveText(/^25\s?000\s?so'm$/);
+  // Eski yorliq qatori umuman yo'q (aniq matn bo'yicha — «… standart narx» yorlig'ini sanamaydi).
+  await expect(tariff.locator("dt").filter({ hasText: /^(Uyga|Markazga) tarif$/ })).toHaveCount(0);
+  await expect(tariff.locator("dt").filter({ hasText: /^(Uyga|Markazga) standart narx$/ })).toHaveCount(2);
   await expect(tariff).toContainText(/250\s?so'm/);
 
   await content.getByRole("button", { name: "Tahrirlash" }).click();
@@ -25,10 +35,12 @@ test("⭐ market: «AI narxi» tafsilotda va tahrirda; tozalansa `ai_price_per_o
   await expect(ai).toHaveValue("250");
   await expect(ai).toHaveAccessibleDescription("Shu market uchun · 0 — bepul");
 
-  // Maket to'ri `minmax(min(240px,100%),1fr)`: 1440 va 768 da 2×2 — «Markazga tarif» va «AI narxi» bir qatorda,
-  // «AI narxi» o'ngda va «Uyga tarif» bilan bir ustunda (3 + 1 emas).
-  const center = dialog.getByRole("textbox", { name: /^Markazga tarif/ });
-  const home = dialog.getByRole("textbox", { name: /^Uyga tarif/ });
+  // Maket to'ri `minmax(min(240px,100%),1fr)`: 1440 va 768 da 2×2 — «Markazga standart narx» va «AI narxi» bir
+  // qatorda, «AI narxi» o'ngda va «Uyga standart narx» bilan bir ustunda (3 + 1 emas). Yorliqlar — CS-C.
+  const center = dialog.getByRole("textbox", { name: /^Markazga standart narx/ });
+  const home = dialog.getByRole("textbox", { name: /^Uyga standart narx/ });
+  await expect(home).toHaveValue(/^35\s?000$/);
+  await expect(center).toHaveValue(/^25\s?000$/);
   for (const width of [1440, 768]) {
     await page.setViewportSize({ width, height: 900 });
     await expect

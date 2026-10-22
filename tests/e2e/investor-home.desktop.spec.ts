@@ -17,9 +17,9 @@ test("ma'lumot bilan: KPI, oylik foyda (6 · 12 · 24, Grafik | Jadval), investi
   await expect(kpis.getByText("Oxirgi to'lov: 05.09.2026")).toBeVisible();
   await expect(kpis.locator("[data-stat-value]")).toHaveText(["450 mln so'm", "12,5 %", "34,3 mln so'm", "6,2 mln so'm"]);
 
-  // Menyu: faqat «Bosh sahifa» (IN-2 gacha); yuqori panelda qidiruv yo'q (ROL-0).
+  // Menyu: Bosh sahifa · Investitsiyalar · Foyda tarixi (IN-2); yuqori panelda qidiruv yo'q (ROL-0).
   const menu = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(menu.getByRole("link")).toHaveText(["Bosh sahifa"]);
+  await expect(menu.getByRole("link")).toHaveText(["Bosh sahifa", "Investitsiyalar", "Foyda tarixi"]);
   await expect(page.getByRole("combobox", { name: /Qidiruv/ })).toHaveCount(0);
 
   const chart = page.getByRole("img", { name: /^Oylik foyda, .*jami 40,5 mln so'm, to'langan 34,3 mln so'm, kutilmoqda 6,2 mln so'm$/ });
@@ -38,7 +38,9 @@ test("ma'lumot bilan: KPI, oylik foyda (6 · 12 · 24, Grafik | Jadval), investi
   await expect(profits.getByRole("row").nth(1)).toContainText("01.09 – 30.09.2026");
   await expect(profits.getByRole("row").nth(1).getByText("Kutilmoqda")).toBeVisible();
   await expect(profits.getByRole("row").nth(2).getByText("To'langan")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Barchasi/ })).toHaveCount(0);
+  // IN-2: «Barchasi ›» → ro'yxat sahifalari.
+  await expect(page.getByRole("link", { name: "Barcha investitsiyalar" })).toHaveAttribute("href", "/investments");
+  await expect(page.getByRole("link", { name: "Barcha foyda yozuvlari" })).toHaveAttribute("href", "/profits");
 
   await page.getByRole("radio", { name: "Jadval" }).click();
   const table = page.getByRole("table", { name: "Oylik foyda jadvali" });

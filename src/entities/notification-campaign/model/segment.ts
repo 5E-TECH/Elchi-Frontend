@@ -16,6 +16,11 @@ export interface CustomerSegment {
   last_order_to?: string;
   /** Kamida shuncha buyurtma (1 … `MAX_MIN_ORDERS`). */
   min_orders?: number;
+  /**
+   * Ko'pi bilan shuncha buyurtma («gacha»). Faqat bildirishnoma auditoriyasida (KM-2, `AudienceSegmentDto.max_orders`);
+   * SMS kampaniyasi DTO'sida yo'q — u yerda maydon chizilmaydi va qiymat bo'sh qoladi.
+   */
+  max_orders?: number;
 }
 
 /** «Buyurtmalar soni — dan» yuqori chegarasi: backend DTO `@Max(1000)` (`SmsCampaignSegmentDto.min_orders`). */
@@ -28,8 +33,11 @@ export const MAX_MIN_ORDERS = 1000;
 const TASHKENT_OFFSET = "+05:00";
 
 /** So'rovga ketadigan shakl: bo'sh maydonlarsiz. */
-export type CustomerSegmentPayload = Partial<Record<Exclude<keyof CustomerSegment, "min_orders">, string>> & {
+export type CustomerSegmentPayload = Partial<
+  Record<Exclude<keyof CustomerSegment, "min_orders" | "max_orders">, string>
+> & {
   min_orders?: number;
+  max_orders?: number;
 };
 
 const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -68,7 +76,15 @@ export const toCustomerSegmentPayload = (segment: CustomerSegment): CustomerSegm
   if (toBound) payload.last_order_to = toBound;
   const min = Number(segment.min_orders);
   if (Number.isInteger(min) && min >= 1) payload.min_orders = Math.min(min, MAX_MIN_ORDERS);
+  const max = Number(segment.max_orders);
+  if (Number.isInteger(max) && max >= 1) payload.max_orders = Math.min(max, MAX_MIN_ORDERS);
   return payload;
+};
+
+/** «dan» «gacha» dan katta — backend 400 qaytaradi (teskari oraliq), so'rov yuborilmaydi. */
+export const isOrderRangeInverted = (segment: CustomerSegment) => {
+  const { min_orders: min, max_orders: max } = toCustomerSegmentPayload(segment);
+  return min !== undefined && max !== undefined && min > max;
 };
 
 /** Hech qaysi filtr tanlanmagan (butun mijozlar bazasi). */

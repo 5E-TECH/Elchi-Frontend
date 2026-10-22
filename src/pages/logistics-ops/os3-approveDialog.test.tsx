@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LogisticsOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { mockEnvelope } from "../../test/mockEnvelope";
 import i18n from "../../i18n";
 
 /**
@@ -21,30 +22,26 @@ vi.mock("../../shared/api/api", () => ({
   },
 }));
 
-const listResponse = (scopeType: "HQ" | "BRANCH" | null = "HQ") => ({
-  data: {
-    statusCode: 200,
-    data: {
-      total: 7,
-      ...(scopeType ? { scope: { type: scopeType, branch_id: "1" } } : {}),
-      groups: [
-        {
-          courier_id: "56",
-          courier: { id: "56", name: "Jasur Tursunov" },
-          orders: [
-            { id: "9001", status: "waiting" },
-            { id: "9002", status: "on the road" },
-            { id: "9003", status: "waiting" },
-            { id: "9004", status: "on the road" },
-            { id: "9005", status: "waiting" },
-          ],
-        },
-        { courier_id: null, courier: null, orders: [{ id: "9007", status: "waiting" }] },
-        { courier_id: "57", courier: { id: "57", name: "Sherzod Komilov" }, orders: [{ id: "9006", status: "waiting" }] },
-      ],
-    },
-  },
-});
+const listResponse = (scopeType: "HQ" | "BRANCH" | null = "HQ") =>
+  mockEnvelope({
+    total: 7,
+    ...(scopeType ? { scope: { type: scopeType, branch_id: "1" } } : {}),
+    groups: [
+      {
+        courier_id: "56",
+        courier: { id: "56", name: "Jasur Tursunov" },
+        orders: [
+          { id: "9001", status: "waiting" },
+          { id: "9002", status: "on the road" },
+          { id: "9003", status: "waiting" },
+          { id: "9004", status: "on the road" },
+          { id: "9005", status: "waiting" },
+        ],
+      },
+      { courier_id: null, courier: null, orders: [{ id: "9007", status: "waiting" }] },
+      { courier_id: "57", courier: { id: "57", name: "Sherzod Komilov" }, orders: [{ id: "9006", status: "waiting" }] },
+    ],
+  });
 
 const DIALOG = { name: "Qaytarish so'rovlarini tasdiqlang" };
 
@@ -60,16 +57,13 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
     apiGetMock.mockReset();
     apiPostMock.mockReset();
     apiGetMock.mockResolvedValue(listResponse());
-    apiPostMock.mockResolvedValue({
-      data: {
-        statusCode: 200,
-        data: {
-          approved: 7,
-          order_ids: ["9001", "9002", "9003", "9004", "9005", "9007", "9006"],
-          skipped_order_ids: [],
-        },
-      },
-    });
+    apiPostMock.mockResolvedValue(
+      mockEnvelope({
+        approved: 7,
+        order_ids: ["9001", "9002", "9003", "9004", "9005", "9007", "9006"],
+        skipped_order_ids: [],
+      }),
+    );
   });
 
   afterEach(async () => {
@@ -173,9 +167,7 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
 
   it("qisman: «N ta tasdiqlandi, M tasi o'tkazib yuborildi» ogohlantirishi va o'tkazilgan buyurtma raqami", async () => {
     const user = userEvent.setup();
-    apiPostMock.mockResolvedValue({
-      data: { statusCode: 200, data: { approved: 6, order_ids: [], skipped_order_ids: ["9004"] } },
-    });
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 6, order_ids: [], skipped_order_ids: ["9004"] }));
     renderWithProviders(<LogisticsOpsPage />);
     const dialog = await openDialog(user);
 
@@ -191,9 +183,7 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
 
   it("ko'p o'tkazib yuborilsa — 3 tasi nomi bilan, qolgani «va yana N ta»", async () => {
     const user = userEvent.setup();
-    apiPostMock.mockResolvedValue({
-      data: { statusCode: 200, data: { approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] } },
-    });
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] }));
     renderWithProviders(<LogisticsOpsPage />);
     const dialog = await openDialog(user);
 
@@ -211,12 +201,8 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
   it("en: bir nechta o'tkazilgan — ko'plikda («them»), 3 tadan ko'p — «and N more»", async () => {
     await i18n.changeLanguage("en");
     const user = userEvent.setup();
-    apiPostMock.mockResolvedValueOnce({
-      data: { statusCode: 200, data: { approved: 5, skipped_order_ids: ["9001", "9002"] } },
-    });
-    apiPostMock.mockResolvedValueOnce({
-      data: { statusCode: 200, data: { approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] } },
-    });
+    apiPostMock.mockResolvedValueOnce(mockEnvelope({ approved: 5, skipped_order_ids: ["9001", "9002"] }));
+    apiPostMock.mockResolvedValueOnce(mockEnvelope({ approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] }));
     renderWithProviders(<LogisticsOpsPage />);
     await screen.findByText("Sherzod Komilov");
     const approveAll = async () => {
@@ -244,9 +230,7 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
 
   it("hech biri tasdiqlanmasa — «0 ta buyurtma omborga qaytarildi» yozilmaydi", async () => {
     const user = userEvent.setup();
-    apiPostMock.mockResolvedValue({
-      data: { statusCode: 200, data: { approved: 0, skipped_order_ids: ["9004"] } },
-    });
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 0, skipped_order_ids: ["9004"] }));
     renderWithProviders(<LogisticsOpsPage />);
     const dialog = await openDialog(user);
 
@@ -327,7 +311,7 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
   });
 
   it("bo'sh ro'yxat — EmptyState sarlavha va izoh bilan", async () => {
-    apiGetMock.mockResolvedValue({ data: { statusCode: 200, data: { total: 0, scope: { type: "HQ" }, groups: [] } } });
+    apiGetMock.mockResolvedValue(mockEnvelope({ total: 0, scope: { type: "HQ" }, groups: [] }));
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(await screen.findByText("Qaytarish so'rovlari yo'q")).toBeInTheDocument();
