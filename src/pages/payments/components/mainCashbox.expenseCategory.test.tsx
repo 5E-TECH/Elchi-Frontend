@@ -286,3 +286,77 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     );
   });
 });
+
+describe("Asosiy kassa tarixi — xarajat kategoriyasi", () => {
+  const historyRows = [
+    {
+      id: "740",
+      amount: 150_000,
+      balance_after: 2_350_000,
+      operation_type: "expense",
+      source_type: "manual_expense",
+      cashbox_type: "main",
+      payment_method: "cash",
+      comment: "Benzin, oktabr",
+      expense_category_id: "2",
+      expense_category_name: "Yoqilg'i",
+      created_by_user: { id: "2", name: "Nilufar Rashidova" },
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "741",
+      amount: 90_000,
+      balance_after: 2_500_000,
+      operation_type: "expense",
+      source_type: "manual_expense",
+      cashbox_type: "main",
+      payment_method: "cash",
+      comment: "Kanselyariya",
+      expense_category_id: null,
+      expense_category_name: null,
+      created_by_user: { id: "2", name: "Nilufar Rashidova" },
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  beforeEach(() => {
+    const base = http.get.getMockImplementation();
+    http.get.mockImplementation(async (url: string, config?: unknown) =>
+      url === "finance/history"
+        ? { data: { statusCode: 200, message: "success", data: { items: historyRows } } }
+        : base?.(url, config),
+    );
+  });
+
+  it("jadval: «Manba» ustunida nom yonida kategoriya belgisi, kategoriyasiz qatorda yo'q", async () => {
+    open();
+    const table = await screen.findByRole("table", { name: "Operatsiyalar tarixi" });
+    const withCategory = (await within(table).findByText("Benzin, oktabr")).closest("tr") as HTMLElement;
+    const badge = withCategory.querySelector("[data-expense-category]") as HTMLElement;
+    expect(badge).toHaveTextContent("Kategoriya: Yoqilg'i");
+    const without = within(table).getByText("Kanselyariya").closest("tr") as HTMLElement;
+    expect(without.querySelector("[data-expense-category]")).toBeNull();
+  });
+
+  it("telefon kartasi: belgi va karta nomida kategoriya", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      open();
+      const card = await screen.findByRole("button", { name: /· Yoqilg'i/ });
+      expect(within(card).getByText("Yoqilg'i")).toBeInTheDocument();
+      expect(document.querySelectorAll("[data-expense-category]")).toHaveLength(1);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});

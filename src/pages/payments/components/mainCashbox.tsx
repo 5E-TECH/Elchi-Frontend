@@ -65,6 +65,7 @@ import { useRefreshExpenseCategories } from "../../../entities/expense-category"
 import type { RootState } from "../../../app/config/store";
 import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
@@ -78,6 +79,7 @@ import SettlementPickerDialog, {
 import type { PaymentRow } from "./patmentHistoryTable";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getPaymentMethodLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useCashboxShift } from "./lib/useCashboxShift";
 import {
@@ -774,8 +776,16 @@ const MainCashbox = () => {
   const rowDirection = (row: PaymentRow) => getViewerOperationType(row, normalizedRole);
   const rowCounterparty = (row: PaymentRow) =>
     resolvePaymentCounterparty(row, (id) => t("v2Common.orderNumber", { id }));
-  const openLabel = (row: PaymentRow) =>
-    t("v2Common.openDetail", { title: rowSourceTitle(row), date: rowDateText(row) });
+  // Kartaning nomi (aria-label) ichidagini almashtiradi — xarajat kategoriyasi ham aytilsin.
+  const openLabel = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    const title = rowSourceTitle(row);
+    return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: rowDateText(row) });
+  };
+  const categoryBadge = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    return category ? <ExpenseCategoryBadge name={category} /> : null;
+  };
 
   const operationBadge = (row: PaymentRow) => {
     const direction = rowDirection(row);
@@ -830,14 +840,26 @@ const MainCashbox = () => {
       header: t("v2MainCashbox.history.columns.source"),
       cell: (row) => {
         const sub = rowCounterparty(row);
+        const category = categoryBadge(row);
+        const title = (
+          <Pressable
+            onClick={() => setSelectedRow(row)}
+            className="text-left font-semibold text-text hover:text-action-fg hover:underline"
+          >
+            {rowSourceTitle(row)}
+          </Pressable>
+        );
         return (
           <>
-            <Pressable
-              onClick={() => setSelectedRow(row)}
-              className="text-left font-semibold text-text hover:text-action-fg hover:underline"
-            >
-              {rowSourceTitle(row)}
-            </Pressable>
+            {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
+            {category ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                {title}
+                {category}
+              </div>
+            ) : (
+              title
+            )}
             {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
             <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
           </>
@@ -888,7 +910,8 @@ const MainCashbox = () => {
     },
   ];
 
-  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge + sana · yaratgan.
+  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge (+ xarajat kategoriyasi) +
+  // sana · yaratgan.
   const renderHistoryCard = (row: PaymentRow) => {
     const sub = [rowCounterparty(row), paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
     return (
@@ -902,8 +925,9 @@ const MainCashbox = () => {
           {amountNode(row)}
         </span>
         {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
+          {categoryBadge(row)}
           <span className="text-[13px] text-text-muted">
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>

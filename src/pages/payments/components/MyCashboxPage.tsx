@@ -63,6 +63,8 @@ import {
 } from "./paymentSourceType";
 import { paymentAckAudienceOf, paymentAckKeys, toPaymentAck } from "./paymentAck";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
+import { getExpenseCategoryName } from "./lib/expenseCategory";
 
 /**
  * O'Z KASSAM — `/cash-box` (dizayn v2): market («To'lovlar»), kuryer («Kassa») va menejer (filial kassasi).
@@ -200,6 +202,9 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
           toOptionalString(item["created_at"]),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
+        expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
+        expense_category_name: toOptionalString(item["expense_category_name"]) ?? null,
         balance_after: item["balance_after"] === undefined || item["balance_after"] === null
           ? undefined
           : toNumber(item["balance_after"]),
@@ -579,6 +584,10 @@ const MyCashboxPage = () => {
    */
   const ackAudience = paymentAckAudienceOf(role);
   const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} />;
+  const categoryBadge = (row: PaymentRow) => {
+    const category = getExpenseCategoryName(row);
+    return category ? <ExpenseCategoryBadge name={category} /> : null;
+  };
   const ackText = (row: PaymentRow) => {
     const keys = paymentAckKeys(row.payment_ack, ackAudience);
     return keys ? t(keys.label) : "";
@@ -642,8 +651,10 @@ const MyCashboxPage = () => {
   const cardLabel = (row: PaymentRow) => {
     const sub = subPlainText(row);
     const value = direction(row);
+    const category = getExpenseCategoryName(row);
+    const title = category ? `${sourceTitle(row)} · ${category}` : sourceTitle(row);
     return t("v2MyCashbox.history.cardLabel", {
-      title: sub ? `${sourceTitle(row)} (${sub})` : sourceTitle(row),
+      title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
       direction: value ? t(value === "income" ? "v2Common.income" : "v2Common.expense") : "",
       amount: amountText(row),
@@ -684,6 +695,7 @@ const MyCashboxPage = () => {
               >
                 {sourceTitle(row)}
               </Pressable>
+              {categoryBadge(row)}
               {correctionBadge(row)}
               {ackBadge(row)}
             </span>
@@ -791,6 +803,7 @@ const MyCashboxPage = () => {
         <span className="flex w-full min-w-0 items-start justify-between gap-2">
           <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
             <span className="font-semibold">{sourceTitle(row)}</span>
+            {categoryBadge(row)}
             {correctionBadge(row)}
             {ackBadge(row)}
           </span>
