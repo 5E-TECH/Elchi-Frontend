@@ -54,9 +54,10 @@ import { cx } from "../../../shared/lib/cx";
  *    har daqiqada qayta chiziladi.
  *  - Boshqa qurilmalarni chiqarish: har «Shu qurilma» BO'LMAGAN qatorda «Chiqarish» (`DELETE /auth/sessions/:id`),
  *    sarlavhada — kamida bitta boshqa sessiya (faol yoki `expired`) bo'lsa — «Boshqa barcha qurilmalardan chiqish»
- *    (`POST /auth/sessions/revoke-others`, tasdiqdagi son — barcha boshqalar). Ikkalasi `useConfirm` (danger: qaysi qurilma / nechta) orqali, tasdiq
- *    tugmasida yuklanish, muvaffaqiyat — `notify`, ro'yxat keshi yangilanadi. 404 — sessiya allaqachon yopilgan:
- *    ro'yxat qayta so'raladi, `notify.info`; 400 — oyna ichida sabab (joriy sessiya / eski token — qayta kirish).
+ *    (`POST /auth/sessions/revoke-others`, tasdiqdagi son — barcha boshqalar). Ikkalasi `useConfirm` (danger:
+ *    qaysi qurilma / nechta; `expired` qatorda o'z izohi) orqali, tasdiq tugmasida yuklanish, muvaffaqiyat —
+ *    `notify`, ro'yxat keshi yangilanadi. 404 — sessiya allaqachon yopilgan: ro'yxat qayta so'raladi,
+ *    `notify.info`; 400 — oyna ichida sabab (joriy sessiya / eski token — qayta kirish).
  *    Yopilgan qurilma keyingi so'rovida 401 → refresh ham rad → kirish sahifasi (`setupInterceptors`).
  */
 
