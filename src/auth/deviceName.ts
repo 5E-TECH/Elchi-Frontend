@@ -265,7 +265,8 @@ const navigatorInfo = () => {
   return {
     userAgent: navigator.userAgent ?? "",
     maxTouchPoints: navigator.maxTouchPoints ?? 0,
-    data: (navigator as Navigator & { userAgentData?: UserAgentDataLike }).userAgentData,
+    // Ba'zi bog'liqliklarning global tipi `userAgentData` ni torroq e'lon qiladi — o'z tipimiz bilan o'qiladi.
+    data: (navigator as unknown as { userAgentData?: UserAgentDataLike }).userAgentData,
   };
 };
 
