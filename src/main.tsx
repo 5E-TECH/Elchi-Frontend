@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./app/ui/App";
 import { registerBeforeLogout } from "./auth/authService";
+import { primeDeviceName } from "./auth/deviceName";
 import { unsubscribePushOnLogout } from "./features/push-notifications/lib/pushClient";
 import { captureInstallPrompt } from "./features/pwa-install/lib/installPrompt";
 import { preloadLoginPage } from "./app/lib/loginPagePreload";
@@ -16,6 +17,10 @@ document.getElementById("legacy-fallback")?.remove();
 // «Ilovani o'rnatish» (KI-2): `beforeinstallprompt` sahifa yuklanishi bilan bir marta keladi — tarjimalar va birinchi
 // chizishni KUTMASDAN ushlanadi (aks holda hodisa o'tib ketadi va «O'rnatish» tugmasi chiqmaydi).
 captureInstallPrompt();
+
+// «Sessiyalar» (Elchi Pochta #3): aniq qurilma nomi (Client Hints — model, OT va brauzer versiyasi) fonda bir marta
+// hisoblanib saqlanadi; kirish va refresh so'rovlari uni kutmaydi (`auth/deviceName.ts`).
+void primeDeviceName();
 
 // Tanlangan til (ru/en) fayllari yuklangach chiziladi — bir lahza o'zbekcha
 // matn ko'rinib qolmasin.
