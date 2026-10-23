@@ -1204,6 +1204,7 @@
     },
     "action": {
       "manual": "Qo'lda kiritish",
+      "manualCode": "Kodni qo'lda kiritish",
       "finish": "Tugatish",
       "close": "Yopish",
       "retry": "Qayta urinish",

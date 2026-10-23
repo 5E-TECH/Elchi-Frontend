@@ -324,7 +324,7 @@ describe("ScannerCamera — ruxsat va xato holatlari (§04.1, 04.2, 04.14)", () 
     expect(screen.queryByText("Kameraga ruxsat bering")).not.toBeInTheDocument();
   });
 
-  it("ruxsat rad etilgan — 3 qadam (desktop: qulf belgisi), «Qayta urinish» va «Qo'lda kiritish»", async () => {
+  it("ruxsat rad etilgan — 3 qadam (desktop: qulf belgisi), «Qayta urinish» va «Kodni qo'lda kiritish» (maket)", async () => {
     setPermission("denied");
     renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
     const card = await screen.findByRole("alert");
@@ -332,7 +332,8 @@ describe("ScannerCamera — ruxsat va xato holatlari (§04.1, 04.2, 04.14)", () 
     expect(within(card).getByText("Manzil satridagi qulf belgisini bosing")).toBeInTheDocument();
     expect(within(card).getByText("«Kamera» bandida «Ruxsat berish»ni tanlang")).toBeInTheDocument();
     expect(within(card).getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
-    expect(within(card).getByRole("button", { name: "Qo'lda kiritish" })).toBeInTheDocument();
+    // Maket `courier-scan-permission-denied`: «Kodni qo'lda kiritish» (kkDkrAIz).
+    expect(within(card).getByRole("button", { name: "Kodni qo'lda kiritish" })).toBeInTheDocument();
     expect(camera.isActive).toBe(false);
   });
 
@@ -643,12 +644,12 @@ describe("ScannerCamera — uzluksiz skan va review tuzatishlari", () => {
 });
 
 describe("ScannerCamera — telefon pastki paneli karta holatiga qarab (04.1, 04.2, 04.14)", () => {
-  it("ruxsat rad etilgan — pastki panel yo'q: bitta «Qo'lda kiritish», bitta asosiy amal", async () => {
+  it("ruxsat rad etilgan — pastki panel yo'q: bitta «Kodni qo'lda kiritish», bitta asosiy amal", async () => {
     setPhone(true);
     setPermission("denied");
     renderWithProviders(<ScannerCamera target={makeTarget({ finish: { label: "Tugatish", onFinish: vi.fn() } })} onClose={vi.fn()} />);
     await screen.findByText("Kameraga ruxsat berilmagan");
-    expect(screen.getAllByRole("button", { name: "Qo'lda kiritish" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Kodni qo'lda kiritish" })).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Tugatish" })).not.toBeInTheDocument();
   });
 

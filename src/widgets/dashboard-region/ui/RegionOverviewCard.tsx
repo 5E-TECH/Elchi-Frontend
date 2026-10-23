@@ -215,11 +215,14 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
                       <div className="flex min-w-0 flex-col gap-0.5">
                         <dt className="text-xs text-text-muted">{t("v2Dashboard.region.activeCouriers")}</dt>
                         <dd className="m-0 text-sm font-semibold text-text">
-                          {t("v2Charts.countTa", { value: count(summary.activeCouriers) })}
+                          {/* o2j9uDtT: backend kuryerlar sonini bermasa — «—», yolg'on «0 ta» emas. */}
+                          {summary.couriersKnown ? t("v2Charts.countTa", { value: count(summary.activeCouriers) }) : "—"}
                         </dd>
-                        <dd className="m-0 text-xs text-text-muted">
-                          {t("v2Dashboard.region.inRegions", { count: summary.regionsWithCouriers })}
-                        </dd>
+                        {summary.couriersKnown ? (
+                          <dd className="m-0 text-xs text-text-muted">
+                            {t("v2Dashboard.region.inRegions", { count: summary.regionsWithCouriers })}
+                          </dd>
+                        ) : null}
                       </div>
                     )}
                   </dl>

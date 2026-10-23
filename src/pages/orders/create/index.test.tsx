@@ -546,7 +546,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     expect(mocks.get).toHaveBeenCalledWith("product/my-products", { params: { limit: 500 } });
   });
 
-  it("⭐ D-19: bo'sh katalog — «Topilmadi» emas, «katalogi bo'sh» va qayerdan qo'shish", async () => {
+  it("⭐ D-19 + qNwXfqLL: bo'sh katalog — «Topilmadi», izohda «katalogi bo'sh» va qayerdan qo'shish", async () => {
     mocks.get.mockImplementation((url: string) =>
       url.startsWith("product/")
         ? Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 500 } })
@@ -554,9 +554,10 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     );
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
     const catalog = await screen.findByRole("list", { name: "Test market katalogi" });
-    expect(await within(catalog).findByText("Bu marketning katalogi bo'sh")).toBeInTheDocument();
-    expect(within(catalog).getByText("Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.")).toBeInTheDocument();
-    expect(within(catalog).queryByText("Topilmadi")).not.toBeInTheDocument();
+    expect(await within(catalog).findByText("Topilmadi")).toBeInTheDocument();
+    expect(
+      within(catalog).getByText("Bu marketning katalogi bo'sh. Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing."),
+    ).toBeInTheDocument();
   });
 
   it("katalogda yo'q mahsulot: nom + soni, Enter yoki «Qo'shish» bilan; «Katalogdan tashqari»", async () => {

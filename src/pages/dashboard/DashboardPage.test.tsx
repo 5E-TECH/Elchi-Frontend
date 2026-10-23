@@ -181,6 +181,21 @@ describe("DashboardPage (v2)", () => {
     ).toBeInTheDocument();
   });
 
+  it("tya24blo: «Barchasi» va backend oraliqni qisqartirgan (`clamped`) — sana maydonida haqiqiy oraliq", async () => {
+    const user = userEvent.setup();
+    getDashboardMock.mockImplementation((params: { all?: boolean }) =>
+      query({ data: { orders: ordersFixture, ...(params?.all ? { appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-20" } } : {}) } }),
+    );
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+    expect(screen.queryByText(/21\.10\.2025/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+
+    expect(getDashboardMock).toHaveBeenCalledWith({ all: true }, true, "admin:unknown");
+    expect(screen.getByText(/^21\.10\.2025\s–\s20\.10\.2026$/)).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Barchasi" })).toBeChecked();
+  });
+
   it("davr redux'dan tiklanadi (sahifa qayta ochilganda) va «Tanlangan davr» izohi", () => {
     renderWithProviders(<DashboardPage />, {
       preloadedState: {

@@ -18,6 +18,7 @@ import {
   splitCompactMoney,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
+import { getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { InstallAppCard } from "../../features/pwa-install";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
@@ -554,6 +555,7 @@ const DashboardPage = () => {
         onClear={clearRange}
         showYear={!isCourier}
         rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}
+        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
       />
       {/* KI-2 (ega javobi KI-S3): «Ilovani o'rnatish» — faqat kuryer bosh sahifasida, bir marta (yopiladi, shu
           qurilmada eslab qolinadi). Maketda sarlavha va davr filtri orasida; `DashboardHeader` umumiy widget —
@@ -566,6 +568,8 @@ const DashboardPage = () => {
           startDate={hasDateFilter ? fromDate : ""}
           endDate={hasDateFilter ? toDate : ""}
           analyticsScope={analyticsScope}
+          // NIFAnCvf: yuqoridagi KPI va kartalar yuklangach — aks holda plot skeletlar ostida ekranga tushadi.
+          layoutReady={!isLoading && !kpiLoading}
         />
       ) : null}
       {renderRankings()}

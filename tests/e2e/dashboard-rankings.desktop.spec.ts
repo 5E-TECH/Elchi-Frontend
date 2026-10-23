@@ -76,9 +76,11 @@ test.describe("Dashboard reytinglari — 1440px", () => {
     await expect(own).toContainText("Sizning filial");
     await expect(own).toContainText("58 / 86 ta");
 
-    // «Barchasi» (filtr 1970-01-01 dan): izohda «01.01.1970 – …» yozilmaydi.
+    // «Barchasi» — `all=true` (tya24blo): izohda «01.01.1970 – …» emas, backend qisqartirgan haqiqiy oraliq.
     await page.getByRole("radio", { name: "Barchasi" }).click();
-    await expect(branches.getByText("Sotuv foizi · top 5 va sizning filial", { exact: true })).toBeVisible();
+    await expect(
+      branches.getByText(/^Sotuv foizi · top 5 va sizning filial · \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/),
+    ).toBeVisible();
     await expect(branches.getByText(/1970/)).toHaveCount(0);
     expect(leaked).toEqual([]);
   });

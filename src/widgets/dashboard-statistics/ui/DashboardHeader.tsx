@@ -27,6 +27,11 @@ export interface DashboardHeaderProps {
   primaryAction?: ReactNode;
   /** Sana maydonidagi × (sukut `true`); menejerda sukut davr (bugun) tanlanganda yo'q. */
   clearable?: boolean;
+  /**
+   * «Barchasi» tanlangan va backend oraliqni qisqartirgan (`clamped`) bo'lsa — sana maydonida haqiqiy oraliq
+   * (`effective_from – effective_to`, tya24blo). Aks holda «Barchasi»da maydon bo'sh (namuna matni).
+   */
+  effectiveRange?: ISODateRange | null;
 }
 
 /**
@@ -44,6 +49,7 @@ const DashboardHeader = ({
   rangePlaceholder,
   primaryAction,
   clearable = true,
+  effectiveRange = null,
 }: DashboardHeaderProps) => {
   const { t } = useTranslation("dashboard");
   const period = resolveDashboardPeriod(fromDate, toDate);
@@ -65,7 +71,8 @@ const DashboardHeader = ({
     ];
   }, [t]);
 
-  const rangeValue = hasRange && period.kind !== "all" ? { from: fromDate, to: toDate } : null;
+  const rangeValue =
+    period.kind === "all" ? effectiveRange : hasRange ? { from: fromDate, to: toDate } : null;
 
   const controls = (
     <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 max-md:w-full">

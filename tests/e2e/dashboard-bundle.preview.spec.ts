@@ -10,6 +10,11 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * yig'iladi va `dist/` dagi o'sha fayllarning gzip hajmi qo'shiladi
  * (tester o'lchovi bilan bir xil: "Dashboard birinchi yuklash JS").
  * Byudjet: 450 KB gzip — 1440 va 390 da.
+ *
+ * Ma'lumot — haqiqiy shaklda («Visual» sahnasining fixture'lari: KPI, reytinglar, «Moliyaviy tahlil» grafigi
+ * nuqtalari, hududlar). Bo'sh `[]` bilan grafik umuman chizilmasdi va test prod'dagi 529 KB ni (2026-10-19,
+ * 1440px) ko'rmasdi. Prod'dagidek daromad (grafik) tez, dashboard / KPI sekin keladi: yuqoridagi bloklar hali
+ * skelet (past) — grafik shu qisqa paytda birinchi ekranga tushib, Recharts'ni yuklab yubormasligi kerak.
  */
 const ORIGIN = "http://127.0.0.1:4175";
 const BUDGET_BYTES = 450 * 1024;
@@ -21,6 +26,13 @@ const cors = {
 };
 const reply = (route: Route, body: unknown) =>
   route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+
+const fixture = (path: string) => JSON.parse(readFileSync(resolve("tests/visual/fixtures", path), "utf8"));
+const SUPERADMIN = fixture("dashboard/superadmin.json");
+const REGIONS = fixture("regions/stats-all.json");
+/** Prod'dagi kabi: `analytics/dashboard` va `analytics/kpi` sekin (og'ir agregatsiya), daromad tez. */
+const SLOW_MS = 1500;
+const delayed = (route: Route, body: unknown) => new Promise((done) => setTimeout(done, SLOW_MS)).then(() => reply(route, body));
 
 const openDashboardCold = async (page: Page) => {
   const scripts = new Set<string>();
@@ -35,6 +47,10 @@ const openDashboardCold = async (page: Page) => {
     if (path === "auth/my-profile") {
       return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "Bosh admin", status: "active" } });
     }
+    if (path === "analytics/revenue") return reply(route, SUPERADMIN.revenue.current);
+    if (path === "analytics/dashboard") return delayed(route, SUPERADMIN.dashboard.current);
+    if (path === "analytics/kpi") return delayed(route, SUPERADMIN.kpi.current);
+    if (path === "region/stats/all") return reply(route, REGIONS);
     return reply(route, { statusCode: 200, data: [] });
   });
   await page.addInitScript(() => {
@@ -77,6 +93,13 @@ for (const viewport of [
     // ru/en tarjimalari standart tilda yuklanmaydi.
     expect(files.some((file) => /locale-(ru|en)/.test(file.path))).toBe(false);
     expect(total).toBeLessThanOrEqual(BUDGET_BYTES);
+    // Recharts (Moliyaviy tahlil grafigi) birinchi ekranda yuklanmaydi — prod 1440px da shu 85 KB oshirardi.
+    expect(files.some((file) => /CartesianChart|FinancialTrendPlot/.test(file.path))).toBe(false);
+
+    // Grafikka skroll qilinsa — chunk yuklanadi va grafik chiziladi (kechiktirish ishlayveradi).
+    const chart = page.getByRole("figure", { name: /^Daromad, / });
+    await chart.scrollIntoViewIfNeeded();
+    await expect(chart.locator(".recharts-surface")).toBeVisible({ timeout: 30_000 });
     await context.close();
   });
 }

@@ -784,8 +784,7 @@
     "notFoundDescription": "№{{id}} raqamli buyurtma yo'q yoki uni ko'rishga ruxsatingiz yo'q.",
     "backToOrders": "Buyurtmalarga qaytish"
   },
-  "createCatalogEmpty": "Bu marketning katalogi bo'sh",
-  "createCatalogEmptyHint": "Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.",
+  "createCatalogEmptyHint": "Bu marketning katalogi bo'sh. Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.",
   "amountInput": {
     "fraction": "Summani butun son bilan kiriting — kasr qabul qilinmaydi",
     "negative": "Summa manfiy bo'lishi mumkin emas",
