@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openProfileWithSessions } from "./support/profileSessions";
+import { formatLockTime, openProfileWithSessions } from "./support/profileSessions";
 import { expectToast } from "./support/toast";
 
 /**
@@ -8,8 +8,16 @@ import { expectToast } from "./support/toast";
  * tepada, qayta kirishi kerak bo'lgani (`expired`) oxirida, xiralashgan; nomsiz qurilma — «Noma'lum qurilma».
  * Boshqa qurilmalarni chiqarish: qatordagi «Chiqarish» va «Boshqa barcha qurilmalardan chiqish» (tasdiq bilan);
  * yopilgan qurilma keyingi so'rovida 401 → refresh 401 → «Sessiya tugadi» (kirish sahifasi), aylanishsiz.
+ * Yangi qurilma (48 soat, Telegram kabi): `can_revoke_others: false` — ogohlantirish (sabab, vaqt, «parolni
+ * almashtiring» + parol oynasi havolasi), ikkala amal o'chirilgan (sababi `aria-describedby` va `title` da);
+ * baribir 403 `SESSION_TOO_NEW` — tasdiq yopiladi, server matni ogohlantirish xabarida, ro'yxat qayta so'raladi.
  */
 test.describe.configure({ timeout: 120_000 });
+// Cheklov vaqti to'liq sana bilan chiziladi — brauzer vaqti foydalanuvchilarnikidek (CI esa UTC da).
+test.use({ timezoneId: "Asia/Tashkent" });
+
+const LOCK_REASON = "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.";
+const LOCK_URGENT = "Shoshilinch bo'lsa — parolni almashtiring: boshqa barcha qurilmalar darhol chiqadi.";
 
 test("⭐ sessiyalar soni, qurilmalar va vaqtlar; «Shu qurilma» tepada, `expired` oxirida", async ({ page }) => {
   const { leaked, state } = await openProfileWithSessions(page, "superadmin");
@@ -154,4 +162,79 @@ test("yopilgan qurilma: keyingi so'rov 401 → refresh 401 → kirish sahifasida
   expect(revoke!.logouts).toBe(logouts);
   expect(refreshes).toBeGreaterThanOrEqual(1);
   expect(refreshes).toBeLessThanOrEqual(3);
+});
+
+test("⭐ yangi qurilma: ogohlantirish va vaqt, amallar o'chirilgan (sababi bilan), «Parolni o'zgartirish» — parol oynasi", async ({ page }) => {
+  const { leaked, availableAt } = await openProfileWithSessions(page, "superadmin", { locked: true });
+  const card = page.getByRole("region", { name: "Sessiyalar" });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
+
+  const when = formatLockTime(availableAt!);
+  const notice = card.getByTestId("sessions-revoke-lock");
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveAttribute("role", "status");
+  await expect(notice.getByText(LOCK_REASON)).toBeVisible();
+  await expect(notice).toContainText(`${when} dan keyin mumkin bo'ladi. ${LOCK_URGENT}`);
+  // Ogohlantirish sarlavha ostida, ro'yxat ustida.
+  const noticeBox = (await notice.boundingBox())!;
+  const firstRow = (await rows.nth(0).boundingBox())!;
+  expect(noticeBox.y + noticeBox.height).toBeLessThanOrEqual(firstRow.y + 1);
+
+  // Amallar yashirilmaydi — o'chirilgan, sababi (sabab + vaqt) yordamchi texnologiyaga va sichqoncha izohida.
+  const reason = `${LOCK_REASON} ${when} dan keyin mumkin bo'ladi.`;
+  const all = card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" });
+  const actions = card.getByRole("button", { name: /^Chiqarish:/ });
+  await expect(actions).toHaveCount(3);
+  for (const target of [all, actions.nth(0), actions.nth(1), actions.nth(2)]) {
+    await expect(target).toBeDisabled();
+    await expect(target).toHaveAccessibleDescription(reason);
+    await expect(target).toHaveAttribute("title", reason);
+  }
+  await actions.nth(0).click({ force: true });
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+
+  // Shoshilinch yo'l: parolni almashtirish — profil parol oynasi.
+  await notice.getByRole("button", { name: "Parolni o'zgartirish" }).click();
+  const dialog = page.getByRole("dialog", { name: "Parolni o'zgartirish" });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByText("Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi."),
+  ).toBeVisible();
+  expect(leaked).toEqual([]);
+});
+
+test("baribir 403 SESSION_TOO_NEW: tasdiq yopiladi, server matni ogohlantirish xabarida, ro'yxat cheklov bilan qaytadi", async ({ page }) => {
+  const { leaked, revoke, state } = await openProfileWithSessions(page, "admin", { revoke: true });
+  const card = page.getByRole("region", { name: "Sessiyalar" });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
+  await expect(card.getByTestId("sessions-revoke-lock")).toHaveCount(0);
+
+  // Ro'yxat cheklovni aytmagan (masalan, sahifa avvalroq ochilgan), server esa rad etadi.
+  revoke!.tooNew = true;
+  const requestsBefore = state.sessionRequests;
+  await card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Boshqa qurilmalardan chiqishni tasdiqlang" });
+  await confirm.getByRole("button", { name: "Hammasini chiqarish" }).click();
+
+  const when = formatLockTime(revoke!.lockedUntil!);
+  await expectToast(page, "Hozircha chiqarib bo'lmaydi", { tone: "warning" });
+  await expectToast(
+    page,
+    `Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — ${when} dan keyin mumkin`,
+    { tone: "warning" },
+  );
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText("Boshqa qurilmalardan chiqildi")).toHaveCount(0);
+  await expect.poll(() => state.sessionRequests).toBeGreaterThan(requestsBefore);
+  // Yangi ro'yxat — cheklov bilan: ogohlantirish va o'chirilgan amallar; qatorlar joyida.
+  await expect(card.getByTestId("sessions-revoke-lock")).toContainText(`${when} dan keyin mumkin bo'ladi.`);
+  await expect(card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
+  await expect(rows).toHaveCount(4);
+  expect(revoke!.tooNewReplies).toBe(1);
+  expect(revoke!.revokeOthers).toBe(1);
+  expect(leaked).toEqual([]);
 });

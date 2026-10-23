@@ -1,13 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { openProfileWithSessions } from "./support/profileSessions";
+import { formatLockTime, openProfileWithSessions } from "./support/profileSessions";
 import { expectToast } from "./support/toast";
 
 /**
  * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» telefonda (390, kuryer): qatorlar ustma-ust (qurilma, so'ng
  * vaqtlar), «Shu qurilma» tepada, qayta kirishi kerak bo'lgani oxirida («Qayta kirish kerak»), gorizontal oqish
  * yo'q, matn ≥ 12px; «Chiqarish» va «Boshqa barcha qurilmalardan chiqish» ≥ 44 px, tasdiq — pastki varaqa.
+ * Yangi qurilma (48 soat): ogohlantirish 390 ga sig'adi, o'chirilgan amallar va «Parolni o'zgartirish» ≥ 44 px.
  */
 test.describe.configure({ timeout: 120_000 });
+// Cheklov vaqti to'liq sana bilan chiziladi — brauzer vaqti foydalanuvchilarnikidek (CI esa UTC da).
+test.use({ timezoneId: "Asia/Tashkent" });
 
 test("⭐ 390: ustma-ust qatorlar, oqish yo'q, mayda matn yo'q", async ({ page }) => {
   const { leaked } = await openProfileWithSessions(page, "courier");
@@ -73,10 +76,63 @@ test("⭐ 390: chiqarish amallari ≥ 44 px, ekranga sig'adi; tasdiq pastki vara
   const sheet = (await confirm.boundingBox())!;
   expect(Math.round(sheet.y + sheet.height)).toBeGreaterThanOrEqual(844 - 1);
   const submit = confirm.getByRole("button", { name: "Chiqarish" });
-  expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  // Varaqa ochilish harakati (scale/translate) tugaguncha o'lcham kasr bo'lishi mumkin (43.9999) — barqarorini kutamiz.
+  await expect.poll(async () => (await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await submit.click();
   await expectToast(page, "Qurilma chiqarildi", { tone: "success" });
   await expect(rows).toHaveCount(3);
   expect(revoke!.deletes).toEqual(["s-2"]);
+  expect(leaked).toEqual([]);
+});
+
+test("⭐ 390, yangi qurilma: ogohlantirish sig'adi, amallar o'chirilgan va ≥ 44 px, oqish yo'q, mayda matn yo'q", async ({ page }) => {
+  const { leaked, availableAt } = await openProfileWithSessions(page, "courier", { locked: true });
+  const card = page.getByRole("region", { name: "Sessiyalar" });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
+
+  const notice = card.getByTestId("sessions-revoke-lock");
+  await notice.scrollIntoViewIfNeeded();
+  await expect(notice).toContainText(`${formatLockTime(availableAt!)} dan keyin mumkin bo'ladi.`);
+  const noticeBox = (await notice.boundingBox())!;
+  expect(noticeBox.x).toBeGreaterThanOrEqual(0);
+  expect(noticeBox.x + noticeBox.width).toBeLessThanOrEqual(390);
+  // Matn o'raladi (bir qatorga siqilmaydi): har qator ogohlantirish ichida.
+  for (const line of await notice.locator("p").all()) {
+    const box = (await line.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(noticeBox.x + noticeBox.width);
+  }
+
+  const link = notice.getByRole("button", { name: "Parolni o'zgartirish" });
+  const all = card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" });
+  const actions = card.getByRole("button", { name: /^Chiqarish:/ });
+  await expect(actions).toHaveCount(3);
+  for (const target of [link, all, actions.nth(0), actions.nth(1), actions.nth(2)]) {
+    await target.scrollIntoViewIfNeeded();
+    const box = (await target.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  }
+  for (const target of [all, actions.nth(0), actions.nth(1), actions.nth(2)]) await expect(target).toBeDisabled();
+  await expect(link).toBeEnabled();
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  const tiny = await card.evaluate((root) =>
+    [...root.querySelectorAll<HTMLElement>("*")]
+      .filter((node) => node.childNodes.length && [...node.childNodes].some((child) => child.nodeType === 3 && child.textContent?.trim()))
+      .filter((node) => parseFloat(getComputedStyle(node).fontSize) < 12)
+      .map((node) => node.textContent),
+  );
+  expect(tiny).toEqual([]);
+
+  // Havola — parol oynasi (telefonda pastki varaqa).
+  await link.click();
+  const dialog = page.getByRole("dialog", { name: "Parolni o'zgartirish" });
+  await expect(dialog).toBeVisible();
+  const sheet = (await dialog.boundingBox())!;
+  expect(Math.round(sheet.y + sheet.height)).toBeGreaterThanOrEqual(844 - 1);
   expect(leaked).toEqual([]);
 });
