@@ -37,8 +37,37 @@ test.describe("Jonli bildirishnomalar — 1440px", () => {
     expect((await fresh.boundingBox())!.y).toBeLessThan((await older.boundingBox())!.y);
     expect(await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)).toBe(true);
 
+    // Backend havolasi `/orders/:id` — buyurtma tafsilotiga (`/orders/edit/:id`) o'tadi, 404 emas (prod 2026-10-23).
     await toasts.getByRole("button", { name: "Ochish" }).click();
-    await expect(page).toHaveURL(/\/orders\/10225$/);
+    await expect(page).toHaveURL(/\/orders\/edit\/10225$/);
+    await expect(page.getByRole("heading", { name: "Bu sahifa topilmadi" })).toHaveCount(0);
+  });
+
+  test("⭐ TC3: qo'ng'iroqcha menyusidagi buyurtma bildirishnomasi ham tafsilotni ochadi (404 emas)", async ({ page }) => {
+    const { dispatch } = await mockRealtime(page);
+    await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "Bildirishnomalar, 2 ta yangi" })).toBeVisible({ timeout: 90_000 });
+
+    dispatch({ id: "n-9", title: "Yangi buyurtma", body: "Buyurtma #EL-100095 yaratildi.", category: "order", link: "/orders/95" });
+    await page.getByRole("button", { name: "Bildirishnomalar, 3 ta yangi" }).click();
+    await page.getByRole("link", { name: /Yangi buyurtma/ }).first().click();
+
+    await expect(page).toHaveURL(/\/orders\/edit\/95$/);
+    await expect(page.getByRole("heading", { name: "Bu sahifa topilmadi" })).toHaveCount(0);
+  });
+
+  test("⭐ TC3: Inbox sahifasidagi buyurtma qatori ham tafsilotni ochadi (404 emas)", async ({ page }) => {
+    const { dispatch } = await mockRealtime(page);
+    await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "Bildirishnomalar, 2 ta yangi" })).toBeVisible({ timeout: 90_000 });
+
+    dispatch({ id: "n-7", title: "Buyurtma qabul qilindi", body: "№10231 · Baraka Shop", category: "order", link: "/orders/10231" });
+    const row = page.locator("[data-shell-slot=content]").getByText("Buyurtma qabul qilindi").first();
+    await expect(row).toBeVisible();
+    await row.click();
+
+    await expect(page).toHaveURL(/\/orders\/edit\/10231$/);
+    await expect(page.getByRole("heading", { name: "Bu sahifa topilmadi" })).toHaveCount(0);
   });
 
   test("⭐ TC7: bitta hodisa ikki marta kelsa — xabar bitta", async ({ page }) => {

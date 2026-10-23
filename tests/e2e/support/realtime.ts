@@ -26,6 +26,8 @@ export const mockRealtime = async (page: Page) => {
     socketUrls: [] as string[],
     auth: [] as unknown[],
     closed: 0,
+    /** Barcha API so'rovlari yo'li (masalan smena holati qayta so'raldimi). */
+    requests: [] as string[],
   };
 
   await page.context().route("**/*", async (route) => {
@@ -35,6 +37,7 @@ export const mockRealtime = async (page: Page) => {
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
+    state.requests.push(path);
     if (path === "auth/my-profile") {
       return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "E2E", status: "active" } });
     }
@@ -92,5 +95,9 @@ export const mockRealtime = async (page: Page) => {
     state.sockets.at(-1)!.send(`42/realtime,${JSON.stringify(["notification:new", { ...row, priority: "normal", is_read: false }])}`);
   };
 
-  return { state, dispatch };
+  /** Ixtiyoriy jonli hodisa (masalan `finance.shift.auto_closed`) — oxirgi socket orqali. */
+  const emit = (event: string, payload: unknown = {}) =>
+    state.sockets.at(-1)!.send(`42/realtime,${JSON.stringify([event, payload])}`);
+
+  return { state, dispatch, emit };
 };

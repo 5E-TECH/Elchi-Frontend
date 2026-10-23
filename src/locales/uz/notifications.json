@@ -319,7 +319,8 @@
     "howToStep3": "Sahifani yangilang va shu yerda yoqing."
   },
   "realtime": {
-    "manyNew": "{{count}} ta yangi bildirishnoma"
+    "manyNew": "{{count}} ta yangi bildirishnoma",
+    "shiftAutoClosed": "Smena avtomatik yopildi — {{time}}"
   },
   "sent": {
     "pageTitle": "Yuborilganlar",
