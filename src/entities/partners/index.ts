@@ -197,13 +197,18 @@ export const readWebhooksPage = (raw: unknown): PartnerWebhooksPage => {
   throw new Error("Webhook jurnali kutilmagan shaklda keldi");
 };
 
-export const usePartners = (options?: SilentErrorOption) =>
+/**
+ * `options.enabled` — ixtiyoriy (sukut `true`): ro'yxat faqat ko'ra oladigan rolga so'raladi
+ * (backend `admin/partners` — SUPERADMIN, ADMIN; boshqa rolda 403 global xabar bermasin).
+ */
+export const usePartners = (options?: SilentErrorOption & { enabled?: boolean }) =>
   useQuery({
     queryKey: [partnersKey],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.PARTNERS.BASE)
         .then((res) => readPartnerList(res.data)),
+    enabled: options?.enabled ?? true,
     ...silentErrorMeta(options),
   });
 

@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-detail, admin-users-detail, manager-users-detail
+// dizayn-v2: superadmin-users-detail, admin-users-detail, manager-users-detail, superadmin-users-detail-telegram, admin-users-detail-telegram
 import { memo, useId, useMemo, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,8 +28,7 @@ import {
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
-import { useMarketTelegramGroupPiiToggle } from "../model/useMarketTelegramGroupPiiToggle";
-import { MarketTelegramGroupLinkCard } from "./MarketTelegramGroupLinkCard";
+import { MarketTelegramGroupsCard } from "./MarketTelegramGroupsCard";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
 
@@ -131,11 +130,16 @@ export interface UserDetailViewProps {
  * xarajat», «Tarif»), `manager-users-detail` (rol va holat badge'lari, «{filial} · {telefon}», «Profil
  * ma'lumotlari»). «Faoliyat» (Taklif) va menejerdagi «Oylik maosh» kartasi CHIZILMAYDI (spec §6, §9.9).
  * Mijoz (`customer`, maket yo'q — eng yaqini `superadmin-users-detail`): «Aloqa va sanalar» + buyurtmalar jadvali.
+ * FY-1: market «Tarif» kartasida «AI narxi (1 buyurtma)» (`superadmin-users-edit-market-ai`) — faqat marketga
+ * belgilangan qiymat; `null` (global narx) bo'lsa qator yo'q (FY-S5); faqat superadmin/admin (tahrirda ham menejerda
+ * yashirin). Logist — «Profil ma'lumotlari»da maosh va
+ * to'lov kuni (xodimlar kabi).
  *
  * Xulq (eski, o'chirilgan `UserDetailWidget` dan): ruxsat bayroqlari, har kalit mutatsiyasi va
  * xabarlari, kutish holatlari, «Tahrirlash» — `UpdateUserModal`, kuryer o'tkazish — `TransferCourierButton`.
- * Telegram token — faqat superadmin (backend `GET /markets/:id/tg-token` faqat SUPERADMIN; admin uchun token
- * hech qayerda qaytmaydi — karta adminga «token yo'q» deb noto'g'ri gapirmasin).
+ * TG-B (`*-users-detail-telegram`): market tafsilotida superadmin va admin uchun «Telegram guruhi» kartasi
+ * (`MarketTelegramGroupsCard`: har tur holati va «Ulash», «Guruhda mijoz ismi va telefoni» kaliti — «Ruxsatlar»
+ * dan ko'chdi). Menejer va ro'yxatchi kartani ham, kalitni ham ko'rmaydi (maket `manager-users-detail`).
  */
 export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailViewProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
@@ -156,11 +160,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
-  // Guruhni bir martalik havola bilan ulash (eski «Telegram token» o'rnida) — faqat superadmin.
-  const canLinkMarketTelegramGroup = isMarket && currentRole === "superadmin";
-  // ysBqD9Nx: Telegram guruhida mijoz ismi/telefoni — market qatorida; kim o'zgartira olishi hook'da
-  // (superadmin/admin — istalgan market, market — faqat o'zi; qolganlar faqat ko'radi).
-  const groupPii = useMarketTelegramGroupPiiToggle(user);
+  // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
+  // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
+  const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
   const proofConditions = useMemo(
     () => (Array.isArray(user.expense_proof_conditions) ? user.expense_proof_conditions : []),
     [user.expense_proof_conditions],
@@ -303,14 +305,6 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
               disabled={updateMarketCancelledHandoverQr.isPending}
               onToggle={canManagePrivilegedToggles ? () => void handleToggleMarketCancelledHandoverQr() : undefined}
             />
-            <SettingSwitch
-              title={t("tgGroupPiiLabel")}
-              description={t("tgGroupPiiHint")}
-              checked={groupPii.checked}
-              busy={groupPii.isSaving}
-              disabled={groupPii.isSaving}
-              onToggle={groupPii.canEdit ? () => void groupPii.toggle() : undefined}
-            />
             {canManagePrivilegedToggles ? (
               <>
                 <div className="flex flex-col gap-0.5 border-t border-border px-5 pb-1 pt-4 max-md:px-4">
@@ -367,6 +361,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     ) : null;
 
   const hasTariffs = user.tariff_home != null || user.tariff_center != null;
+  // AI narxi: `null` / bo'sh — global narx, sukut (300) ko'rsatilmaydi (FY-S5); 0 — bepul («0 so'm»).
+  const aiPrice = user.ai_price_per_order == null || user.ai_price_per_order === "" ? null : Number(user.ai_price_per_order);
+  const hasAiPrice = aiPrice !== null && Number.isFinite(aiPrice);
   const tariffCard =
     isMarket || isCourier || (user.role === "manager" && hasTariffs) ? (
       <Card as="section" title={t("v2.detail.tariff")} divided>
@@ -379,8 +376,18 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
               }
             />
           ) : null}
-          <InfoRow label={t("v2.detail.homeTariff")} value={money(user.tariff_home)} />
-          <InfoRow label={t("v2.detail.centerTariff")} value={money(user.tariff_center)} />
+          {/* CS-C: marketda «Uyga / Markazga standart narx» (maket); kuryer va menejer yorlig'i o'zgarmaydi. */}
+          <InfoRow
+            label={t(isMarket ? "v2.detail.marketHomePrice" : "v2.detail.homeTariff")}
+            value={money(user.tariff_home)}
+          />
+          <InfoRow
+            label={t(isMarket ? "v2.detail.marketCenterPrice" : "v2.detail.centerTariff")}
+            value={money(user.tariff_center)}
+          />
+          {isMarket && hasAiPrice && canManagePrivilegedToggles ? (
+            <InfoRow label={t("v2.edit.aiPrice")} value={money(aiPrice)} />
+          ) : null}
         </dl>
       </Card>
     ) : null;
@@ -388,7 +395,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const paymentDay = Number(user.payment_day);
   const hasPaymentDay = Number.isInteger(paymentDay) && paymentDay >= 1 && paymentDay <= 31;
   const hasSalary = Number(user.salary ?? 0) > 0;
-  const isStaff = user.role === "admin" || user.role === "manager" || user.role === "registrator";
+  const isStaff =
+    user.role === "admin" || user.role === "manager" || user.role === "registrator" || user.role === "logist";
   const profileCard =
     !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || (isManagerViewer && viewerBranchName)) ? (
       <Card as="section" title={t("v2.detail.profile")} divided>
@@ -407,10 +415,14 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
       </Card>
     ) : null;
 
-  const sideCards = [profileCard, tariffCard, canLinkMarketTelegramGroup ? (
-    // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oyna holati qolmaydi.
-    <MarketTelegramGroupLinkCard key={`tg-group-${user.id}`} marketId={String(user.id)} />
-  ) : null].filter(Boolean);
+  const sideCards = [
+    profileCard,
+    tariffCard,
+    showMarketTelegramGroups ? (
+      // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oyna holati qolmaydi.
+      <MarketTelegramGroupsCard key={`tg-group-${user.id}`} user={user} mode="staff" />
+    ) : null,
+  ].filter(Boolean);
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">

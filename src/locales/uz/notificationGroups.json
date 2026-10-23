@@ -32,10 +32,14 @@
   "status": {
     "active": "Faol",
     "inactive": "Nofaol",
-    "inactiveHint": "Bot guruhdan chiqarilgan — qayta ulang"
+    "inactiveHint": "Xabarlar bu guruhga yuborilmayapti"
   },
-  "editLabel": "{{market}} — {{group}}: tahrirlash",
-  "deleteLabel": "{{market}} — {{group}}: o'chirish",
+  "rowMenu": {
+    "label": "{{market}} — {{group}}: amallar",
+    "deactivate": "Nofaol qilish",
+    "activate": "Faollashtirish",
+    "delete": "O'chirish"
+  },
   "form": {
     "market": "Market",
     "marketPlaceholder": "Marketni tanlang",
@@ -61,7 +65,7 @@
     "open": "Telegram'da ochish",
     "linkTitle": "Bir martalik havola tayyor",
     "qrAlt": "Telegram guruhini ulash havolasining QR kodi",
-    "step1": "Havolani oching yoki QR kodni telefonda skanerlang.",
+    "step1": "Havolani oching yoki QR kodni Telegram bor telefonda skanerlang.",
     "step2": "Guruhni tanlang — bot guruhga qo'shiladi.",
     "step3": "Bot guruhni o'zi ulaydi, ro'yxat yangilanadi.",
     "expiresAt": "{{time}} gacha amal qiladi",
@@ -70,21 +74,14 @@
     "expiredHint": "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Yangisini oling.",
     "command": "Botni guruhga qo'shing va guruhga shu buyruqni yuboring:",
     "existsTitle": "Bu turdagi guruh allaqachon ulangan",
-    "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — ro'yxatda tahrirlang yoki o'chirib, qayta ulang.",
+    "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — boshqa guruh ulash uchun avval eskisini ro'yxatdan o'chiring.",
+    "existsInactiveTitle": "Bu turdagi guruh ulangan, lekin nofaol",
+    "existsInactive": "{{market}} uchun bu turdagi guruh nofaol (ID: {{groupId}}) — xabarlar unga yuborilmayapti. Botni guruhga qayta qo'shib, faollashtiring yoki ulanishni o'chirib, qayta ulang.",
     "linkError": "Havolani olib bo'lmadi",
+    "linkErrorRetry": "Birozdan keyin qayta urinib ko'ring.",
+    "linkErrorForbidden": "Bu market uchun guruh ulash huquqingiz yo'q.",
     "connected": "Guruh ulandi",
     "connectedDescription": "{{market}} — {{type}}"
-  },
-  "edit": {
-    "title": "Bildirishnomani tahrirlash",
-    "groupId": "Telegram guruh ID",
-    "groupIdPlaceholder": "-1001234567890",
-    "groupIdHint": "Masalan: -1001234567890. Guruhda /id yozsangiz, bot guruh ID sini ko'rsatadi.",
-    "groupIdRequired": "Guruh ID sini kiriting",
-    "submit": "O'zgarishlarni saqlash",
-    "saving": "Saqlanmoqda…",
-    "success": "Bildirishnoma yangilandi",
-    "error": "Bildirishnomani saqlashda xatolik bo'ldi"
   },
   "deleteDialog": {
     "title": "Haqiqatan ham o'chirmoqchimisiz?",
@@ -97,5 +94,31 @@
     "loading": "O'chirilmoqda…",
     "deleted": "Bildirishnoma o'chirildi",
     "failed": "Bildirishnomani o'chirishda xatolik yuz berdi"
+  },
+  "toggle": {
+    "deactivate": {
+      "title": "Nofaol qilishni tasdiqlang",
+      "description": {
+        "create": "{{market}}'ning yangi buyurtmalari haqidagi xabarlar bu guruhga yuborilmaydi. Ulanish o'chirilmaydi — uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin.",
+        "cancel": "{{market}}'ning bekor qilingan buyurtmalari haqidagi xabarlar bu guruhga yuborilmaydi. Ulanish o'chirilmaydi — uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin."
+      },
+      "confirm": "Nofaol qilish",
+      "loading": "Nofaol qilinmoqda…",
+      "done": "Guruh nofaol qilindi",
+      "failed": "Guruhni nofaol qilib bo'lmadi. Qayta urinib ko'ring."
+    },
+    "activate": {
+      "title": "Faollashtirishni tasdiqlang",
+      "description": {
+        "create": "{{market}}'ning yangi buyurtmalari haqidagi xabarlar bu guruhga yana yuboriladi.",
+        "cancel": "{{market}}'ning bekor qilingan buyurtmalari haqidagi xabarlar bu guruhga yana yuboriladi."
+      },
+      "warningTitle": "Bot guruhda ekanini tekshiring",
+      "warning": "Faollashtirishdan oldin bot shu guruhda ekaniga ishonch hosil qiling. Bot guruhda bo'lmasa, xabar yetmaydi va ulanish yana nofaol bo'ladi.",
+      "confirm": "Faollashtirish",
+      "loading": "Faollashtirilmoqda…",
+      "done": "Guruh faollashtirildi",
+      "failed": "Guruhni faollashtirib bo'lmadi. Qayta urinib ko'ring."
+    }
   }
 }

@@ -271,18 +271,13 @@
   ],
   "files": {
     "src/app/providers/theme/AntdThemeProvider.tsx": { "colour": 1 },
-    "src/entities/integrations/settlement.ts": { "money": 2 },
-    "src/entities/user/ui/UserStatusBadge.tsx": { "palette": 9 },
     "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "money": 1 },
     "src/pages/mails/detail/lib/printMode.ts": { "money": 1 },
-    "src/pages/market-operators/index.tsx": { "palette": 44, "dark-pair": 25, "legacy": 21, "weight": 6, "v1-helper": 1 },
     "src/pages/new_orders/components/lib/printLabelPdf.ts": { "money": 1 },
-    "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 31, "dark-pair": 21, "legacy": 36, "money": 1 },
+    "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 23, "dark-pair": 17, "money": 1 },
     "src/pages/payments/components/lib/amountInput.ts": { "money": 1 },
     "src/pages/payments/components/lib/exportMainCashboxReport.ts": { "money": 1 },
-    "src/shared/components/headerName.tsx": { "dark-pair": 5, "legacy": 11, "weight": 1 },
     "src/shared/config/designSystem.ts": { "legacy": 9, "tiny-text": 2 },
-    "src/shared/lib/downscaleImage.ts": { "colour": 1 },
-    "src/shared/ui/BackButton.tsx": { "palette": 1, "dark-pair": 2, "legacy": 6 }
+    "src/shared/lib/downscaleImage.ts": { "colour": 1 }
   }
 }

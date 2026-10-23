@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -89,6 +89,9 @@ export interface FinanceHistoryDetail {
   comment?: string | null;
   created_by?: string | null;
   payment_date?: string | null;
+  /** Elchi Pochta №1 — qo'lda chiqimning xarajat kategoriyasi (ID va yozilgan paytdagi nom), bo'lmasa `null`. */
+  expense_category_id?: string | null;
+  expense_category_name?: string | null;
   cashbox?: FinanceHistoryCashbox | null;
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;
@@ -159,32 +162,143 @@ export type CourierPaymentResponse = CashboxPaymentResponse;
 
 const idempotencyHeaders = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
 
-/** Kassa smenasi (finance-service `shifts` jadvali; ID lar bigint satr). */
+/**
+ * Kassa smenasi (finance-service `shifts` jadvali; ID lar bigint satr, pul — `numeric(20,2)` → son).
+ * Yopilgan smenada yig'indilar, kutilgan qoldiq va farq to'ldiriladi (QTCUUgjA): `expected = opening + income −
+ * expense`, `discrepancy = closing − expected` (manfiy — kamomad, musbat — ortiqcha). Sanalgan summa yuborilmasa
+ * farq `null` («Sanalmadi»).
+ */
 export interface CashboxShift {
   id: string;
   opened_by: string;
   closed_by?: string | null;
+  /** Smena qaysi kassaga tegishli: MAIN — `"0"`, filial — filial ID si. */
+  cashbox_user_id?: string | null;
   opened_at?: string;
   closed_at?: string | null;
   status: "open" | "closed";
+  opening_balance_cash?: number;
+  opening_balance_card?: number;
+  closing_balance_cash?: number;
+  closing_balance_card?: number;
+  total_income_cash?: number;
+  total_income_card?: number;
+  total_expense_cash?: number;
+  total_expense_card?: number;
+  expected_balance_cash?: number | null;
+  expected_balance_card?: number | null;
+  discrepancy_cash?: number | null;
+  discrepancy_card?: number | null;
   comment?: string | null;
 }
 
-/** GET /finance/shift javobi. */
-export interface ShiftListResponse {
+/**
+ * GET /finance/shift/current javobi (kfdfYDik): `shift` — kassaning OCHIQ smenasi yoki `null` (yopilgan smena
+ * kelmaydi), `required` — smenasiz pul operatsiyalari bloklanadimi (`FINANCE_REQUIRE_OPEN_SHIFT`). Kassa doirasi
+ * JWT'dan: superadmin/admin — asosiy (MAIN) kassa, menejer — o'z filiali kassasi (filiali topilmasa 403).
+ */
+export interface CurrentShiftResponse {
   statusCode: number;
   message: string;
   data: {
-    items: CashboxShift[];
-    pagination?: { total: number; page: number; limit: number; totalPages: number };
+    shift: CashboxShift | null;
+    required?: boolean;
+    cashbox_user_id?: string;
   };
 }
 
-/** POST /finance/shift/open — gateway OpenShiftRequestDto (sukut: MAIN kassa). */
-export type OpenShiftRequest = { opened_by: string };
+/** POST /finance/shift/open va /close javobi — smena qatori. */
+export interface ShiftMutationResponse {
+  statusCode: number;
+  message: string;
+  data: CashboxShift;
+}
 
-/** POST /finance/shift/close — gateway CloseShiftRequestDto. */
-export type CloseShiftRequest = { closed_by: string; shift_id: string; comment?: string };
+/**
+ * POST /finance/shift/open — gateway `OpenShiftRequestDto`. Ochgan xodim JWT'dan yoziladi (`opened_by`
+ * e'tiborga olinmaydi); ochilish qoldig'i yuborilmaydi — backend kassaning jonli qoldig'ini yozadi.
+ */
+export type OpenShiftRequest = { comment?: string };
+
+/**
+ * POST /finance/shift/close — gateway `CloseShiftRequestDto`. Yopgan xodim JWT'dan (`closed_by` yuborilmaydi).
+ * `closing_balance_cash` — sanalgan naqd (majburiy, UI qoidasi); `closing_balance_card` — sanalgan karta
+ * (ixtiyoriy: yuborilmasa `discrepancy_card` null — «Sanalmadi»).
+ */
+export type CloseShiftRequest = {
+  shift_id: string;
+  closing_balance_cash: number;
+  closing_balance_card?: number | null;
+  comment?: string;
+};
+
+const shiftMoneyKeys = [
+  "opening_balance_cash",
+  "opening_balance_card",
+  "closing_balance_cash",
+  "closing_balance_card",
+  "total_income_cash",
+  "total_income_card",
+  "total_expense_cash",
+  "total_expense_card",
+] as const;
+const shiftNullableMoneyKeys = [
+  "expected_balance_cash",
+  "expected_balance_card",
+  "discrepancy_cash",
+  "discrepancy_card",
+] as const;
+
+const toFiniteNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+/**
+ * Smena qatorini bir xil shaklga keltiradi: ID lar satr, pul maydonlari son (`numeric` satr kelsa ham),
+ * nullable farq/kutilgan qiymatlar `null` saqlanadi. Qator bo'lmasa — `null`.
+ */
+export const normalizeCashboxShift = (value: unknown): CashboxShift | null => {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const id = record.id;
+  if (id === undefined || id === null || id === "") return null;
+  const shift: CashboxShift = {
+    ...(record as Partial<CashboxShift>),
+    id: String(id),
+    opened_by: record.opened_by === undefined || record.opened_by === null ? "" : String(record.opened_by),
+    closed_by: record.closed_by === undefined || record.closed_by === null ? null : String(record.closed_by),
+    status: String(record.status ?? "").toLowerCase() === "closed" ? "closed" : "open",
+  };
+  for (const key of shiftMoneyKeys) shift[key] = toFiniteNumber(record[key]) ?? 0;
+  for (const key of shiftNullableMoneyKeys) shift[key] = toFiniteNumber(record[key]);
+  return shift;
+};
+
+/**
+ * Har pul harakatidan keyin kassa bilan bog'liq barcha so'rovlarni yangilaydi (kassa, balanslar, tarix,
+ * bosh sahifa). Umumiy eksport — boshqa moliya oqimlari (masalan integratsiya hisob-kitobi) ham ishlatadi.
+ */
+export const refreshCashboxQueries = async (client: QueryClient) => {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: [cashbox], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["finance-cov"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
+    // GET /managers — "Qabul qilinishi kerak" oynasidagi filial summalari
+    // (berilishi_kerak). Busiz qabuldan keyin 30 s gacha eski summa
+    // ko'rinib, kassa sahifasiga ham o'tib ketardi (FE-PAY-15).
+    client.invalidateQueries({ queryKey: ["managers"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["branch-dashboard"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["revenue"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: ["kpi"], refetchType: "active" }),
+    client.invalidateQueries({ queryKey: [financeHistory], refetchType: "active" }),
+  ]);
+};
 
 const normalizeFinanceHistoryParams = (params?: any) => {
   if (!params) return params;
@@ -200,25 +314,7 @@ const normalizeFinanceHistoryParams = (params?: any) => {
 export const useCashBox = () => {
   const client = useQueryClient();
 
-  const refreshCashboxQueries = async () => {
-    await Promise.all([
-      client.invalidateQueries({ queryKey: [cashbox], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["finance-cov"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
-      // GET /managers — "Qabul qilinishi kerak" oynasidagi filial summalari
-      // (berilishi_kerak). Busiz qabuldan keyin 30 s gacha eski summa
-      // ko'rinib, kassa sahifasiga ham o'tib ketardi (FE-PAY-15).
-      client.invalidateQueries({ queryKey: ["managers"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["branch-dashboard"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["revenue"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: ["kpi"], refetchType: "active" }),
-      client.invalidateQueries({ queryKey: [financeHistory], refetchType: "active" }),
-    ]);
-  };
+  const refreshCashbox = () => refreshCashboxQueries(client);
 
   const createPaymentCourier = useMutation({
     mutationFn: ({ data, idempotencyKey }: CourierPaymentRequest) =>
@@ -227,7 +323,7 @@ export const useCashBox = () => {
         data,
         idempotencyHeaders(idempotencyKey),
       ),
-    onSuccess: refreshCashboxQueries,
+    onSuccess: refreshCashbox,
   });
 
   // C1 / FE-PAY-03: market to'lovi va filial → HQ ham kuryer to'lovi kabi
@@ -240,7 +336,7 @@ export const useCashBox = () => {
         data,
         idempotencyHeaders(idempotencyKey),
       ),
-    onSuccess: refreshCashboxQueries,
+    onSuccess: refreshCashbox,
   });
 
   const createPaymentMarket = useMutation({
@@ -250,7 +346,7 @@ export const useCashBox = () => {
         data,
         idempotencyHeaders(idempotencyKey),
       ),
-    onSuccess: refreshCashboxQueries,
+    onSuccess: refreshCashbox,
   });
 
   const useGetCashBoxById = (
@@ -293,14 +389,16 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const useGetCashBoxMain = (params?: any) =>
+  // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat oyna ochilganda o'qiydi (sukut o'zgarmagan).
+  const useGetCashBoxMain = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "main", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.CASHBOX_MAIN, { params }).then((res) => res.data),
+      enabled,
     });
 
-  // Kalit `cashbox` prefiksi ostida — refreshCashboxQueries har to'lovdan
+  // Kalit `cashbox` prefiksi ostida — refreshCashbox har to'lovdan
   // keyin ro'yxatni ham yangilaydi (qabul qilingan kuryer summasi kamayadi).
   const useGetHqCourierReceivables = (enabled: boolean = true) =>
     useQuery<HqCourierReceivablesResponse>({
@@ -318,7 +416,7 @@ export const useCashBox = () => {
       idempotencyKey
         ? api.patch(API_ENDPOINTS.CASHBOX.SPEND, data, idempotencyHeaders(idempotencyKey))
         : api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
-    onSuccess: refreshCashboxQueries,
+    onSuccess: refreshCashbox,
   });
 
   const cashboxFill = useMutation({
@@ -326,7 +424,7 @@ export const useCashBox = () => {
       idempotencyKey
         ? api.patch(API_ENDPOINTS.CASHBOX.FILL, data, idempotencyHeaders(idempotencyKey))
         : api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
-    onSuccess: refreshCashboxQueries,
+    onSuccess: refreshCashbox,
   });
 
   const useGetFinanceHistory = (params?: any, enabled: boolean = true) => {
@@ -352,43 +450,44 @@ export const useCashBox = () => {
 
   // ==================== SHIFT (SMENA) HOOKS ====================
   //
-  // FE-PAY-06: backend'da "joriy smena" marshruti yo'q — foydalanuvchining
-  // OCHIQ smenasi GET /finance/shift?status=open&opened_by=<o'zi> bilan
-  // olinadi. Yuboriladigan maydonlar gateway DTO'lari bilan aynan bir xil
-  // (forbidNonWhitelisted): OpenShiftRequestDto → { opened_by },
-  // CloseShiftRequestDto → { closed_by, shift_id, comment? }. Ilgari ochish
-  // tanasiz, yopish faqat { comment } bilan ketib, har doim 400 olardi.
+  // kfdfYDik: holat — GET /finance/shift/current (kassa doirasi JWT'dan: SA/admin — MAIN, menejer — o'z
+  // filiali). Ilgari `GET /finance/shift?status=open&opened_by=<o'zi>` ishlatilardi — boshqa admin ochgan smena
+  // ko'rinmas, «Smenani ochish» 400 berardi, menejer esa 403 olardi. Ochish `{ comment? }`, yopish
+  // `{ shift_id, closing_balance_cash, closing_balance_card?, comment? }` — xodim ID si JWT'dan.
 
-  const useGetCurrentShift = (openedBy?: string | null, enabled: boolean = true) =>
-    useQuery<ShiftListResponse>({
-      queryKey: [shift, "current", openedBy],
-      queryFn: () =>
-        api
-          .get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT, {
-            params: { status: "open", opened_by: openedBy, limit: 1 },
-          })
-          .then((res) => res.data),
-      enabled: enabled && Boolean(openedBy),
+  /** `silentError` — 403 (filiali topilmagan menejer) yoki tarmoq xatosi global xabar chiqarmaydi: holat «noma'lum». */
+  const useGetCurrentShift = (enabled: boolean = true) =>
+    useQuery<CurrentShiftResponse>({
+      queryKey: [shift, "current"],
+      queryFn: () => api.get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT).then((res) => res.data),
+      enabled,
+      meta: { silentError: true },
     });
 
   // Smena holati qayta o'qilguncha kutiladi — tugma ("ochish" ↔ "yopish")
   // muvaffaqiyat xabari bilan bir vaqtda almashadi.
   const openShift = useMutation({
-    mutationFn: ({ opened_by }: OpenShiftRequest) =>
-      api.post(API_ENDPOINTS.CASHBOX.SHIFT_OPEN, { opened_by }),
+    mutationFn: ({ comment }: OpenShiftRequest = {}) =>
+      api
+        .post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_OPEN, comment ? { comment } : {})
+        .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: [shift] }),
   });
 
   const closeShift = useMutation({
-    mutationFn: ({ closed_by, shift_id, comment }: CloseShiftRequest) =>
-      api.post(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, {
-        closed_by,
-        shift_id,
-        // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
-        ...(comment ? { comment } : {}),
-      }),
+    mutationFn: ({ shift_id, closing_balance_cash, closing_balance_card, comment }: CloseShiftRequest) =>
+      api
+        .post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, {
+          shift_id,
+          closing_balance_cash,
+          // Karta sanalmagan bo'lsa yuborilmaydi — backend karta farqini hisoblamaydi («Sanalmadi»).
+          ...(closing_balance_card === null || closing_balance_card === undefined ? {} : { closing_balance_card }),
+          // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
+          ...(comment ? { comment } : {}),
+        })
+        .then((res) => res.data),
     onSuccess: async () => {
-      void refreshCashboxQueries();
+      void refreshCashbox();
       await client.invalidateQueries({ queryKey: [shift] });
     },
   });

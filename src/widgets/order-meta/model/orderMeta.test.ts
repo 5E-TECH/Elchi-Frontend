@@ -73,6 +73,8 @@ describe("tarif ko'rinishi — ROL bo'yicha", () => {
 
   it("market — faqat market tarifi; kuryer — faqat kuryer tarifi", () => {
     expect(visibleTariffs("market")).toEqual(["marketTariff"]);
+    // MO-3: market operatori — market bilan bir xil (backend proyeksiyasi ham bir xil).
+    expect(visibleTariffs("market_operator")).toEqual(["marketTariff"]);
     expect(visibleTariffs("courier")).toEqual(["courierTariff"]);
   });
 

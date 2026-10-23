@@ -8,68 +8,8 @@ export const logiCov = "logi-cov";
 export const useLogisticsCoverage = () => {
   const client = useQueryClient();
 
-  // ── DISTRICTS ──────────────────────────────────────────────────────────────
-
-  const useGetDistricts = (params?: any) =>
-    useQuery({
-      queryKey: [logiCov, "districts", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.DISTRICTS.BASE, { params }).then((res) => res.data),
-    });
-
-  const createDistrict = useMutation({
-    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.DISTRICTS.BASE, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
-  });
-
-  const useGetDistrictById = (id: string | number, enabled: boolean = true) =>
-    useQuery({
-      queryKey: [logiCov, "districts", id],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.DISTRICTS.BY_ID(id)).then((res) => res.data),
-      enabled,
-    });
-
-  const deleteDistrict = useMutation({
-    mutationFn: (id: string | number) =>
-      api.delete(API_ENDPOINTS.DISTRICTS.BY_ID(id)),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
-  });
-
-  const updateDistrictName = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
-      api.patch(API_ENDPOINTS.DISTRICTS.UPDATE_NAME(id), data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
-  });
-
-  const applyDistrictSatoMatch = useMutation({
-    mutationFn: (data: unknown) =>
-      api.post(API_ENDPOINTS.DISTRICTS.SATO_MATCH_APPLY, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
-  });
-
-  const useGetDistrictSatoMatchPreview = (params?: any) =>
-    useQuery({
-      queryKey: [logiCov, "districts", "sato-match-preview", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.DISTRICTS.SATO_MATCH_PREVIEW, { params })
-          .then((res) => res.data),
-    });
-
-  const updateDistrictSato = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
-      api.patch(API_ENDPOINTS.DISTRICTS.SATO_UPDATE(id), data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
-  });
-
-  const useGetDistrictBySatoCode = (satoCode: string | number, enabled: boolean = true) =>
-    useQuery({
-      queryKey: [logiCov, "districts", "sato", satoCode],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.DISTRICTS.SATO_BY_CODE(satoCode))
-          .then((res) => res.data),
-      enabled,
-    });
+  // Tuman hook'lari (`any` parametrli, iste'molchisiz) SA-2 da olib tashlandi: tumanlar va SATO —
+  // `pages/region` dagi tipli so'rovlar (`sato-management`, `districts`, `model/districtMerge.ts`).
 
   // ── POSTS ──────────────────────────────────────────────────────────────────
 
@@ -136,10 +76,20 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
+  // OS-3: backend buyurtmalarni bo'laklab yozadi (atomik emas) — xato bo'lsa ham bir qismi omborga
+  // qaytgan bo'lishi mumkin, shuning uchun ro'yxatlar har holda (onSettled) yangilanadi: Ops ro'yxati,
+  // «Pochta» (`entities/mails` — `["mails", "return" | "old" | "new", …]`) va buyurtmalar.
   const approveReturnRequest = useMutation({
-    mutationFn: (data: unknown) =>
+    mutationFn: (data: { order_ids: string[] }) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: [logiCov, "posts"] });
+      client.invalidateQueries({ queryKey: ["mails", "return"] });
+      // Kuryer pochtasi SENT → RECEIVED bo'lishi va hisoblagichlari kamayishi mumkin (`entities/mails` tasdig'idagidek).
+      client.invalidateQueries({ queryKey: ["mails", "old"] });
+      client.invalidateQueries({ queryKey: ["mails", "new"] });
+      client.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 
   const useGetReturnRequestsList = (params?: any, options?: SilentErrorOption) =>
@@ -185,16 +135,6 @@ export const useLogisticsCoverage = () => {
   });
 
   return {
-    // Districts
-    useGetDistricts,
-    createDistrict,
-    useGetDistrictById,
-    deleteDistrict,
-    updateDistrictName,
-    applyDistrictSatoMatch,
-    useGetDistrictSatoMatchPreview,
-    updateDistrictSato,
-    useGetDistrictBySatoCode,
     // Posts
     useGetPosts,
     useGetPostById,

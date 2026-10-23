@@ -16,6 +16,40 @@ export {
 const orders = "orders";
 
 /**
+ * Ro'yxat sahifasining yangilanish sozlamalari (OR-1, `pages/orders/list/useOrdersRefresh`). Ixtiyoriy —
+ * berilmasa so'rov avvalgidek (global sukut: ilovaga qaytganda so'ralmaydi, xato global xabar beradi).
+ */
+export type ListRefreshQueryOptions = {
+  /** Ilovaga (brauzer tabiga) qaytganda qayta so'rash — faqat shu so'rovda. */
+  refetchOnWindowFocus?: boolean;
+  /** Keshda ma'lumot bo'lsa xato global xabar bermaydi — sahifa «Ro'yxat yangilanmadi» ni o'zi chizadi. */
+  silentErrorWhenCached?: boolean;
+};
+
+/** Kuryer tablari soni — `GET orders/courier/orders/counts` (0d11ewk7; ro'yxat `total` i bilan aynan bir xil). */
+export type CourierOrderCounts = { waiting: number; all: number; cancelled: number };
+
+export const COURIER_ORDER_COUNTS_QUERY_KEY = [orders, "courier", "counts"] as const;
+
+const toCount = (value: unknown): number | null => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : null;
+};
+
+/** `{ data: { waiting, all, cancelled } }` → sonlar; shakl boshqacha bo'lsa `null` (tablar sonsiz chiziladi). */
+export const parseCourierOrderCounts = (body: unknown): CourierOrderCounts | null => {
+  const root = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+  const data = root?.data && typeof root.data === "object" && !Array.isArray(root.data)
+    ? (root.data as Record<string, unknown>)
+    : null;
+  if (!data) return null;
+  const waiting = toCount(data.waiting);
+  const all = toCount(data.all);
+  const cancelled = toCount(data.cancelled);
+  return waiting === null || all === null || cancelled === null ? null : { waiting, all, cancelled };
+};
+
+/**
  * `GET orders/markets/new` (bugun yangi buyurtmasi bor marketlar) so'rovi — kalit va `queryFn` bitta joyda:
  * `useGetTodayOrders` va universal skaner «Qabul qilish» varag'i (`pages/scan`) bir kesh yozuvini ulashadi.
  */
@@ -235,12 +269,42 @@ export const useOrders = () => {
   const useGetOrderCourier = (
     params?: { status?: string; page?: number; limit?: number; search?: string; startDate?: string; endDate?: string },
     refetchInterval?: (data: unknown) => number | false,
-  ) =>
-    useQuery({
-      queryKey: [orders, "courier", params],
+    options?: ListRefreshQueryOptions,
+  ) => {
+    const queryKey = [orders, "courier", params];
+    const silentError = Boolean(options?.silentErrorWhenCached) && client.getQueryData(queryKey) !== undefined;
+    return useQuery({
+      queryKey,
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
+      // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
+      ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
+      ...(silentError ? { meta: { silentError: true } } : {}),
+    });
+  };
+
+  /**
+   * Kuryer tablari soni (`GET orders/courier/orders/counts`, faqat COURIER). Yordamchi so'rov: xato global
+   * xabar bermaydi — sonlar chizilmaydi yoki eskisi qoladi. Sotish/bekor/qaytarish `[orders]` ni yangilaydi —
+   * sonlar ham shu bilan qayta so'raladi.
+   */
+  const useGetCourierOrderCounts = (
+    options?: {
+      enabled?: boolean;
+      refetchInterval?: number | false;
+      refetchOnWindowFocus?: boolean;
+    },
+  ) =>
+    useQuery({
+      queryKey: COURIER_ORDER_COUNTS_QUERY_KEY,
+      queryFn: () =>
+        api.get(API_ENDPOINTS.ORDERS.COURIER_ORDER_COUNTS).then((res) => parseCourierOrderCounts(res.data)),
+      enabled: options?.enabled ?? true,
+      refetchInterval: options?.refetchInterval ?? false,
+      // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
+      ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
+      meta: { silentError: true },
     });
 
   // `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tablaridagi son faqat tab ko'rinsa so'raladi.
@@ -390,6 +454,7 @@ export const useOrders = () => {
     useGetTodayOrdersByMarket,
     useGetOrderById,
     useGetOrderCourier,
+    useGetCourierOrderCounts,
     useCancelledMarkets,
     useCancelledOrdersByMarket,
     SendToPost,

@@ -22,6 +22,51 @@
     "passwordHint": "Yangi parol saqlangach, tizimdan chiqasiz va yangi parol bilan qayta kirasiz.",
     "changePassword": "Parolni o'zgartirish"
   },
+  "sessions": {
+    "title": "Sessiyalar",
+    "description": "Hisobingizga kirgan qurilmalar. Tizimdan chiqsangiz, faqat shu qurilmadagi sessiya yopiladi; tanimagan qurilmani shu yerdan chiqaring.",
+    "activeCount": "{{count}} ta faol",
+    "current": "Shu qurilma",
+    "unknownDevice": "Noma'lum qurilma",
+    "kind": {
+      "phone": "Telefon",
+      "tablet": "Planshet",
+      "desktop": "Kompyuter"
+    },
+    "ip": "IP: {{ip}}",
+    "ipUnknown": "IP noma'lum",
+    "loggedInAt": "Kirgan vaqti",
+    "lastSeenAt": "Oxirgi faollik",
+    "listLabel": "Faol sessiyalar ro'yxati",
+    "loading": "Sessiyalar yuklanmoqda",
+    "emptyTitle": "Faol sessiya topilmadi",
+    "emptyDescription": "Hisobingizga kirgan qurilmalar shu yerda ko'rinadi. Avvalroq kirgan bo'lsangiz, sessiya keyingi yangilanishda (soatiga bir marta) chiqadi.",
+    "truncated": "Oxirgi {{shown}} tasi ko'rsatilgan · jami {{count}} ta faol sessiya",
+    "listRefreshed": "Ro'yxat yangilandi.",
+    "revoke": {
+      "action": "Chiqarish",
+      "aria": "Chiqarish: {{device}}",
+      "title": "Qurilmani chiqarishni tasdiqlang",
+      "description": "Bu qurilma hisobingizdan chiqariladi — keyingi so'rovida kirish sahifasiga qaytadi. Qayta kirish uchun login va parol kerak bo'ladi.",
+      "lastSeen": "oxirgi faollik {{when}}",
+      "confirm": "Chiqarish",
+      "loading": "Chiqarilmoqda…",
+      "success": "Qurilma chiqarildi",
+      "goneTitle": "Bu sessiya allaqachon yopilgan",
+      "error": "Sessiyani yopib bo'lmadi. Qayta urinib ko'ring."
+    },
+    "revokeOthers": {
+      "action": "Boshqa barcha qurilmalardan chiqish",
+      "title": "Boshqa qurilmalardan chiqishni tasdiqlang",
+      "description": "Boshqa {{count}} ta qurilma hisobingizdan chiqariladi — ular keyingi so'rovida kirish sahifasiga qaytadi.",
+      "note": "Shu qurilma tizimda qoladi.",
+      "confirm": "Hammasini chiqarish",
+      "success": "Boshqa qurilmalardan chiqildi",
+      "successDescription": "{{count}} ta sessiya yopildi.",
+      "noneTitle": "Boshqa faol sessiya qolmagan",
+      "reloginRequired": "Shu qurilmaning sessiyasini aniqlab bo'lmadi. Tizimdan chiqib, qayta kiring va yana urinib ko'ring."
+    }
+  },
   "password": {
     "title": "Parolni o'zgartirish",
     "new": "Yangi parol",

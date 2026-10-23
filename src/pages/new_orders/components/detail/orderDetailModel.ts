@@ -165,6 +165,17 @@ export const getProductImageUrl = (item: OrderDetailItem) =>
 
 type NamedRef = { id?: string | number | null; name?: string | null; title?: string | null } | null | undefined;
 
+/**
+ * HQ (bosh ofis) nomi — posilka HQ qo'lida bo'lsa, buyurtmaning `branch` i HQ filiali (bekor oqimida
+ * `branch_id` qabul qilgan joyga almashadi). Boshqa holatda noma'lum — `null` (jumla «HQ» deydi).
+ */
+export const readHqName = (order: OrderDetail | null): string | null => {
+  const holder = String(order?.holder_type ?? order?.holderType ?? "").toUpperCase();
+  const branch = isRecord(order?.branch) ? order.branch : null;
+  const name = branch && typeof branch.name === "string" ? branch.name.trim() : "";
+  return holder === "HQ" && name ? name : null;
+};
+
 /** Tarix (tracking) jumlalaridagi filial / pochta / market nomlari — buyurtmaning o'zidan. */
 export const buildTrackingContext = (order: OrderDetail | null) => {
   const source = (order ?? {}) as {
@@ -222,6 +233,7 @@ export const buildTrackingContext = (order: OrderDetail | null) => {
     marketName: source.market?.name ?? source.market?.title ?? source.market_name ?? null,
     branchNamesById,
     marketNamesById,
+    hqName: readHqName(order),
   };
 };
 

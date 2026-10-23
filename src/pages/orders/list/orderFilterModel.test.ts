@@ -3,6 +3,7 @@ import {
   buildOrderListParams,
   countPanelFilters,
   EMPTY_ORDER_FILTERS,
+  FILTER_STATUSES,
   getOrderFilterScope,
   matchOrderStatusTab,
   matchQuickPeriod,
@@ -30,6 +31,17 @@ describe("orderFilterModel", () => {
     expect(parseStatusValues("cancelled,cancelled (sent)")).toEqual(["cancelled", "cancelled (sent)"]);
     expect(parseStatusValues("")).toEqual([]);
     expect(parseStatusValues(undefined)).toEqual([]);
+  });
+
+  it("«Marketga topshirildi» filtri: `status=returned_to_market` (taklif §5.1; backend enum'ida bor)", () => {
+    expect(FILTER_STATUSES).toContain("returned_to_market");
+    expect(FILTER_STATUSES.indexOf("returned_to_market")).toBe(FILTER_STATUSES.indexOf("cancelled") + 1);
+    expect(parseStatusValues("returned_to_market,bogus")).toEqual(["returned_to_market"]);
+    expect(normalizeFilterStatuses(["returned_to_market", "cancelled (sent)"])).toEqual(["returned_to_market"]);
+    expect(
+      buildOrderListParams({ ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market"] }, "superadmin", { page: 1, limit: 25 })
+        .status,
+    ).toEqual(["returned_to_market"]);
   });
 
   it("keeps only the «Holat» filter options when the status filter changes", () => {
@@ -77,6 +89,22 @@ describe("orderFilterModel", () => {
     expect(countPanelFilters(filled, getOrderFilterScope("market"))).toBe(3);
     expect(countPanelFilters(filled, getOrderFilterScope("superadmin"), { includeStatus: false })).toBe(5);
     expect(countPanelFilters(EMPTY_ORDER_FILTERS, getOrderFilterScope("admin"))).toBe(0);
+  });
+
+  it("MO-3: market operatori — o'z marketi; market, kuryer va viloyat (GET /region 403, N11) parametrlari ketmaydi", () => {
+    const scope = getOrderFilterScope("market_operator");
+    expect(scope).toEqual({ marketSelect: false, market: false, branch: false, area: "none", courier: false });
+    expect(buildOrderListParams({ ...filled, search: "Ali" }, "market_operator", { page: 1, limit: 10 })).toEqual({
+      page: 1,
+      limit: 10,
+      status: ["waiting", "sold"],
+      where_deliver: "address",
+      start_day: "2026-10-01",
+      end_day: "2026-10-08",
+      search: "Ali",
+    });
+    // Yetkazish turi va holat — 2 ta (viloyat URL'da qolgan bo'lsa ham sanalmaydi).
+    expect(countPanelFilters(filled, scope)).toBe(2);
   });
 
   it("recognises the quick periods of the phone sheet", () => {

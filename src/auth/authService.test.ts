@@ -136,6 +136,14 @@ describe("logoutAndRedirect — «Sessiya tugadi» xabari (dizayn v2 common-sess
     expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: expiredAt });
   });
 
+  it("revoked (server 401 «Session revoked») → the notice says so; a later plain call keeps it", async () => {
+    await logoutAndRedirect({ reason: "sessionExpired", revoked: true });
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: NOW, revoked: true });
+
+    await logoutAndRedirect({ reason: "sessionExpired" });
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: NOW, revoked: true });
+  });
+
   it("a passwordChanged notice wins over sessionExpired", async () => {
     rememberLoginNotice("passwordChanged");
 

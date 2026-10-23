@@ -6,8 +6,8 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 /**
  * «Kassani to'ldirish» / «Kassadan xarajat» (dizayn v2):
- *  - pul harakati TASDIQ bilan: bekor qilinsa so'rov KETMAYDI, «Tasdiqlash» dan keyin payload eski shaklda
- *    aynan `{ amount, type, comment }`;
+ *  - pul harakati TASDIQ bilan: bekor qilinsa so'rov KETMAYDI, «Tasdiqlash» dan keyin payload aynan
+ *    `{ amount, type, comment }` (chiqimda + majburiy `expense_category_id` — mainCashbox.expenseCategory.test.tsx);
  *  - ega qarori D3 (2026-10-17): `Idempotency-Key` sarlavhasi — javob kelmagan (504) operatsiya qayta
  *    yuborilsa o'sha kalit, muvaffaqiyatdan keyingi yangi operatsiyaga yangi kalit; takroriy javob
  *    (`idempotent: true`) «muvaffaqiyatli» deb ko'rsatilmaydi;
@@ -29,6 +29,7 @@ vi.mock("./lib/exportMainCashboxReport", () => ({ exportMainCashboxReport: vi.fn
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => ({ data: undefined, isLoading: false }),
+    useGetUserById: () => ({ data: undefined, isLoading: false }),
     useGetManagers: () => ({ data: undefined, isLoading: false }),
     useGetCouriers: () => ({ data: undefined, isLoading: false }),
   }),
@@ -44,6 +45,16 @@ vi.mock("./MainCashboxBalanceChart", () => ({ default: () => null }));
 
 const FILL_URL = "finance/cashbox/fill";
 const SPEND_URL = "finance/cashbox/spend";
+const CATEGORIES_URL = "finance/cashbox/expense-categories";
+const CATEGORY = {
+  id: "3",
+  name: "Kanselyariya",
+  description: null,
+  sort_order: 1,
+  is_deleted: false,
+  created_at: "2026-10-21T08:00:00.000Z",
+  updated_at: "2026-10-21T08:00:00.000Z",
+};
 
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;
 const manager = {
@@ -74,7 +85,7 @@ const httpError = (status: number, message: string) =>
 const open = (preloadedState: never = superadmin) =>
   renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState });
 
-/** Oynani ochib, maydonlarni to'ldiradi va «saqlash» ni bosadi (tasdiq oynasi ochiladi). */
+/** Oynani ochib maydonlarni to'ldiradi (chiqimda — majburiy kategoriya ham); «saqlash» ni test o'zi bosadi. */
 const fillForm = async (
   user: ReturnType<typeof userEvent.setup>,
   { action, title, amount, type, comment }: { action: RegExp; title: string; amount: string; type: string; comment: string },
@@ -83,6 +94,10 @@ const fillForm = async (
   const dialog = await screen.findByRole("dialog", { name: title });
   await user.type(within(dialog).getByLabelText(/^Summa/), amount);
   await user.click(within(dialog).getByRole("radio", { name: type }));
+  if (title === "Kassadan xarajat") {
+    await user.click(within(dialog).getByRole("combobox", { name: /Xarajat kategoriyasi/ }));
+    await user.click(await screen.findByRole("option", { name: /Kanselyariya/ }));
+  }
   await user.type(within(dialog).getByLabelText(/^Izoh/), comment);
   return dialog;
 };
@@ -92,7 +107,20 @@ beforeEach(() => {
   http.get.mockReset();
   http.post.mockReset();
   http.patch.mockReset();
-  http.get.mockImplementation(async () => ({ data: { statusCode: 200, message: "success", data: {} } }));
+  http.get.mockImplementation(async (url: string) =>
+    url === "finance/shift/current"
+      ? // Smena ochiq — tezkor amallar qulfsiz (smena yopiq holati: fix3b-mainCashbox.test.tsx).
+        {
+          data: {
+            statusCode: 200,
+            message: "Current shift",
+            data: { shift: { id: "12", opened_by: "1", status: "open", opened_at: "2026-10-01T04:00:00.000Z" }, required: true },
+          },
+        }
+      : url === CATEGORIES_URL
+        ? { data: { statusCode: 200, message: "Xarajat kategoriyalari", data: { items: [CATEGORY] } } }
+        : { data: { statusCode: 200, message: "success", data: {} } },
+  );
   http.patch.mockImplementation(async () => ({ data: { statusCode: 200, message: "ok", data: { id: "900" } } }));
 });
 
@@ -175,7 +203,12 @@ describe("Main cashbox — fill / spend (v2 form + confirmation)", () => {
     await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).toEqual({ amount: 150_000, type: "click", comment: "Ofis ijarasi, oktabr" });
+    expect(patches(SPEND_URL)[0][1]).toEqual({
+      amount: 150_000,
+      type: "click",
+      comment: "Ofis ijarasi, oktabr",
+      expense_category_id: "3",
+    });
     expect(patches(SPEND_URL)[0][2]?.headers?.["Idempotency-Key"]).toEqual(expect.any(String));
     expect(patches(FILL_URL)).toHaveLength(0);
     expect(await screen.findByText("Xarajat muvaffaqiyatli saqlandi")).toBeInTheDocument();
@@ -321,6 +354,11 @@ describe("Main cashbox — fill / spend (v2 form + confirmation)", () => {
     await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).toEqual({ amount: 120_000, type: "cash", comment: "Kanselyariya tovarlari" });
+    expect(patches(SPEND_URL)[0][1]).toEqual({
+      amount: 120_000,
+      type: "cash",
+      comment: "Kanselyariya tovarlari",
+      expense_category_id: "3",
+    });
   });
 });

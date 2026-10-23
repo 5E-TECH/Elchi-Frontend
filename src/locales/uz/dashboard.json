@@ -323,9 +323,18 @@
     "operatorRate": "Operator sotuv foizi",
     "marketAverage": "{{name}} o'rtachasi · {{rate}}",
     "yourMarket": "Market",
+    "operatorUnassigned": {
+      "subtitle": "Market biriktirilmagan",
+      "title": "Siz hali marketga biriktirilmagansiz",
+      "description": "Bosh sahifa ko'rsatkichlari market egasi sizni «Operatorlar» bo'limida qo'shgandan keyin ochiladi. Market egasiga murojaat qiling.",
+      "retry": "Qayta tekshirish",
+      "checking": "Tekshirilmoqda..."
+    },
     "quick": {
       "viewHint": "Qabul va yaratish bo'limidagi buyurtmalaringiz",
-      "createHint": "Qo'lda yoki AI yordamida yaratish"
+      "listHint": "Market buyurtmalari ro'yxati",
+      "createHint": "Qo'lda yoki AI yordamida yaratish",
+      "createHintAi": "AI yordamida yaratish"
     },
     "sales": {
       "title": "Marketlar bo'yicha sotuv foizi",
@@ -337,6 +346,68 @@
       "colMarket": "Market",
       "colRate": "Sotuv foizi",
       "colPart": "Sotilgan / jami"
+    }
+  },
+  "v2Logist": {
+    "headerSub": "Sizga biriktirilgan {{count}} ta viloyat: {{names}}",
+    "headerSubGeneric": "Biriktirilgan viloyatlaringiz bo'yicha ko'rsatkichlar",
+    "kpi": {
+      "label": "Viloyatlarim bo'yicha umumiy ko'rsatkichlar",
+      "totalHint": "Jarayonda {{pending}} ta · {{count}} viloyat",
+      "totalAria": "Jami {{total}} ta: sotilgan {{sold}}, jarayonda {{pending}}, bekor qilingan {{cancelled}}",
+      "soldHint": "Mijozga topshirilgan",
+      "cancelledHint": "Marketga qaytadi",
+      "couriers": "Faol kuryerlar",
+      "couriersHint": "Faol holatdagi kuryerlar",
+      "couriersUnit": "/ {{total}}",
+      "couriersAria": "Faol kuryerlar: {{total}} tadan {{active}} tasi",
+      "share": "Jamidan ulushi",
+      "soldShareAria": "Sotilganlar ulushi",
+      "cancelledShareAria": "Bekor qilinganlar ulushi",
+      "activity": "Faollik"
+    },
+    "legend": {
+      "sold": "Sotilgan",
+      "pending": "Jarayonda",
+      "cancelledShort": "Bekor",
+      "cancelled": "Bekor qilingan"
+    },
+    "success": {
+      "sub": "{{period}} · {{count}} ta viloyatim"
+    },
+    "regions": {
+      "title": "Viloyatlar muvaffaqiyati",
+      "sub": "Sotilgan / qabul qilingan · eng pastdan boshlab",
+      "aria": "{{name}} muvaffaqiyati",
+      "noOrders": "Buyurtma yo'q",
+      "lowest": "Eng past muvaffaqiyat",
+      "highest": "Eng yuqori muvaffaqiyat",
+      "extremeMeta": "{{rate}} · {{sold}} / {{total}} ta"
+    },
+    "table": {
+      "title": "Viloyatlarim",
+      "label": "Viloyatlarim jadvali",
+      "region": "Viloyat",
+      "orders": "Buyurtmalar",
+      "status": "Holat",
+      "success": "Muvaffaqiyat",
+      "couriers": "Faol kuryer",
+      "districts": "{{count}} tuman",
+      "ordersAria": "{{name}}: {{value}} ta buyurtma",
+      "statusAria": "{{sold}} sotilgan, {{pending}} jarayonda, {{cancelled}} bekor",
+      "total": "Jami · {{count}} viloyat",
+      "cardSummary": "{{rate}} sotildi · {{active}} / {{total}} kuryer",
+      "cardSummaryNoCouriers": "{{rate}} sotildi",
+      "detail": "Tafsilot",
+      "detailAria": "{{name}} tafsiloti"
+    },
+    "error": {
+      "title": "Viloyatlar statistikasini yuklab bo'lmadi",
+      "description": "Internet aloqasini tekshirib, qayta urining."
+    },
+    "empty": {
+      "title": "Sizga hali viloyat biriktirilmagan",
+      "description": "Administrator viloyat biriktirgach, uning statistikasi shu yerda chiqadi."
     }
   }
 }

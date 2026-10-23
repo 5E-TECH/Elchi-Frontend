@@ -16,6 +16,8 @@ const reply = (route: Route, body: unknown, status = 200) =>
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const BATCH_TOKEN = "30d2894f58d3f89170a612c8";
+/** Hamkor qop id'si — «Qop» ustunida ko'rinadi (IP-1). */
+export const BATCH_REF = "BP-24817";
 export const BATCH_ORDERS = [1251162, 1251163, 1251164, 1251165, 1251166, 1251167].map((id, index) => ({
   id: String(id),
   order_number: id,
@@ -23,10 +25,11 @@ export const BATCH_ORDERS = [1251162, 1251163, 1251164, 1251165, 1251166, 125116
   total_price: 150000 + index * 10000,
   qr_code_token: `2afcc394ca289bf23aee44d${index}`,
   external_batch_token: BATCH_TOKEN,
+  external_batch_ref: BATCH_REF,
   external_batch_size: 6,
   customer: { name: `Andijon mijoz ${index + 1}`, district: { name: "Andijon sh." } },
 }));
-const OTHER = {
+export const OTHER_ORDER = {
   id: "1251199",
   order_number: 1251199,
   status: "new",
@@ -35,7 +38,11 @@ const OTHER = {
   customer: { name: "Boshqa qop mijozi", district: { name: "Asaka" } },
 };
 
-export const mockIncomingApi = async (page: Page) => {
+/**
+ * `options.items` — ro'yxatni har so'rovda qaytaradigan funksiya (sukut: qop + boshqa posilka). Testda ro'yxatni
+ * o'zgartirib «Yangilash» qilish uchun (masalan boshqa joyda qabul qilingan posilka chiqib ketadi).
+ */
+export const mockIncomingApi = async (page: Page, options: { items?: () => unknown[] } = {}) => {
   const leaked: string[] = [];
   const received: string[][] = [];
   await page.context().route("**/*", async (route) => {
@@ -52,7 +59,7 @@ export const mockIncomingApi = async (page: Page) => {
       return reply(route, wrap([{ market_id: "121", orders_count: 7, total_price_sum: 1299000, oldest_at: null, market: { id: "121", name: "BeePost Andijon" } }]));
     }
     if (path === "orders/external") {
-      const items = [...BATCH_ORDERS, OTHER];
+      const items = options.items?.() ?? [...BATCH_ORDERS, OTHER_ORDER];
       return reply(route, { statusCode: 200, data: items, total: items.length });
     }
     if (path === "orders/external/receive-by-scan" && request.method() === "POST") {

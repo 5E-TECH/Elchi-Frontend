@@ -8,12 +8,14 @@ test.describe("Balans → Yozuv qo'shish — 1440px", () => {
   test.describe.configure({ timeout: 90_000 });
 
   test("⭐ TC1: manual_expense → 201, payload DTO bilan AYNAN mos, tarix sahifa yangilanmasdan yangilanadi", async ({ page }) => {
-    const { state, posts, leaked, historyGets } = await mockFinancialEntryApi(page);
+    const { state, posts, leaked, historyGets, balanceGets } = await mockFinancialEntryApi(page);
     await openHistoryTab(page);
     await page.evaluate(() => {
       (window as unknown as { __sameDocument: boolean }).__sameDocument = true;
     });
     const getsBefore = historyGets();
+    const balanceGetsBefore = balanceGets();
+    expect(balanceGetsBefore).toBeGreaterThan(0);
 
     const dialog = await submitManualExpense(page, "Ofis ijarasi, oktabr");
     const response = page.waitForResponse(
@@ -36,6 +38,8 @@ test.describe("Balans → Yozuv qo'shish — 1440px", () => {
     await expect(newRow).toContainText("Qo'lda chiqim");
     await expect(newRow).toContainText("Bosh admin");
     expect(historyGets()).toBeGreaterThan(getsBefore);
+    // XAtqsRNH d6a10d / 26eb9d: yuqoridagi balans kartalari ([cashbox, "financial-balance"]) ham darhol qayta so'raladi.
+    await expect.poll(balanceGets).toBeGreaterThan(balanceGetsBefore);
     expect(await page.evaluate(() => (window as unknown as { __sameDocument?: boolean }).__sameDocument)).toBe(true);
     expect(state.history).toHaveLength(2);
     expect(leaked).toEqual([]);

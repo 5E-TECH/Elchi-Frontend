@@ -54,6 +54,10 @@
   "roleOperator": "Operator",
   "roleSuperAdmin": "Superadmin",
   "roleCustomer": "Mijoz",
+  "roleLogist": "Logist",
+  "roleMarketOperator": "Market operatori",
+  "roleInvestor": "Investor",
+  "roleBranch": "Filial",
   "roleUnknown": "Noma'lum",
   "editUser": "Foydalanuvchini tahrirlash",
   "edit": "Tahrirlash",
@@ -141,15 +145,6 @@
   "sellExtraCostProofRequired": "Sotishda qo'shimcha harajat isboti",
   "cancelExtraCostProofRequired": "Bekor qilishda qo'shimcha harajat isboti",
   "permissions": "Ruxsatlar",
-  "tgGroupCardTitle": "Telegram guruhi",
-  "changesSaveInstantly": "O'zgarish darhol saqlanadi",
-  "tgGroupPiiLabel": "Guruhda mijoz ismi va telefoni",
-  "tgGroupPiiHint": "O'chirilsa, Telegram guruhidagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
-  "tgGroupPiiSaved": "Saqlandi",
-  "tgGroupPiiShownDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
-  "tgGroupPiiHiddenDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
-  "tgGroupPiiSaveError": "Saqlanmadi",
-  "tgGroupPiiSaveErrorDescription": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring",
   "v2": {
     "common": {
       "back": "Foydalanuvchilar",
@@ -178,13 +173,20 @@
       "cardsLabel": "Foydalanuvchilar",
       "tabsLabel": "Rol bo'yicha",
       "tabs": {
-        "all": "Barchasi",
-        "market": "Marketlar",
-        "courier": "Kuryerlar",
+        "all": "Hammasi",
+        "admin": "Adminlar",
         "manager": "Menejerlar",
         "registrator": "Ro'yxatchilar",
-        "operator": "Operatorlar",
-        "admin": "Adminlar"
+        "courier": "Kuryerlar",
+        "logist": "Logistlar",
+        "market": "Marketlar",
+        "marketOperator": "Market operatorlari",
+        "investor": "Investorlar"
+      },
+      "roleFilter": "Rol",
+      "roleGroups": {
+        "staff": "Xodimlar",
+        "external": "Tashqi hisoblar"
       },
       "filtersLabel": "Filtrlar",
       "searchLabel": "Foydalanuvchilarni qidirish",
@@ -328,6 +330,8 @@
       "tariffCenter": "Markazgacha",
       "homeTariff": "Uyga tarif",
       "centerTariff": "Markazga tarif",
+      "marketHomePrice": "Uyga standart narx",
+      "marketCenterPrice": "Markazga standart narx",
       "profile": "Profil ma'lumotlari",
       "branch": "Filial",
       "salary": "Oylik maosh",
@@ -361,9 +365,126 @@
       "defaultTariff": "Asosiy tarif",
       "homeTariff": "Uyga tarif",
       "centerTariff": "Markazga tarif",
-      "saving": "Saqlanmoqda…"
+      "marketHomePrice": "Uyga standart narx",
+      "marketCenterPrice": "Markazga standart narx",
+      "marketHomePriceRequired": "Uyga standart narxni kiriting",
+      "marketCenterPriceRequired": "Markazga standart narxni kiriting",
+      "saving": "Saqlanmoqda…",
+      "marketName": "Market nomi",
+      "marketNamePlaceholder": "Masalan: Baraka Shop",
+      "aiPrice": "AI narxi (1 buyurtma)",
+      "aiPriceHint": "Shu market uchun · 0 — bepul",
+      "aiPricePlaceholder": "Masalan: 250",
+      "aiPriceRange": "0 dan {{max}}gacha kiriting",
+      "workArea": "Ish hududi",
+      "region": "Viloyat",
+      "regionHint": "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi",
+      "regionEmpty": "Biriktirilmagan"
+    },
+    "logist": {
+      "roleHint": "Buyurtmalar va holat tarixi, moliyasiz",
+      "formDescription": "Logist o'ziga biriktirilgan viloyatlar statistikasini kuzatadi",
+      "sections": {
+        "salary": "Maosh",
+        "regions": "Viloyatlar"
+      },
+      "salaryHint": "Oylik maosh",
+      "paymentDayHint": "Har oyning 1–30 kuni",
+      "regionsNote": "Logist filialga biriktirilmaydi. Saqlagach «Logist biriktirish» sahifasi shu logist tanlangan holda ochiladi — viloyatlarni o'sha yerda belgilaysiz.",
+      "phoneTaken": "Bu telefon raqam allaqachon mavjud",
+      "created": "Logist yaratildi",
+      "createdDescription": "{{name}} · endi unga viloyatlarni belgilang",
+      "createError": "Logistni yaratib bo'lmadi",
+      "createErrorText": "Ma'lumotlarni tekshirib, qayta urining."
+    },
+    "role": {
+      "section": "Rol",
+      "superadminOnly": "Faqat superadmin",
+      "label": "Rol",
+      "listLabel": "Rollar",
+      "hint": "Faqat admin, menejer, ro'yxatchi va logist o'rtasida almashtiriladi. Saqlashdan oldin tasdiq so'raladi.",
+      "changed": "O'zgartirildi: {{from}} → {{to}} · saqlashda tasdiq so'raladi",
+      "changedShort": "O'zgartirildi: {{from}} → {{to}}",
+      "descriptions": {
+        "admin": "Kompaniya bo'yicha boshqaruv",
+        "manager": "Filial menejeri: o'z filiali pochtasi, kuryerlari va kassasi",
+        "registrator": "Buyurtmalarni qabul qilish va ro'yxatga olish",
+        "logist": "Biriktirilgan viloyatlar: buyurtmalar, holat tarixi, pochta va kuryerlar · moliyasiz"
+      },
+      "as": {
+        "admin": "admin",
+        "manager": "menejer",
+        "registrator": "ro'yxatchi",
+        "logist": "logist"
+      },
+      "confirm": {
+        "title": "Rolni o'zgartirasizmi?",
+        "description": "{{name}} endi {{role}} sifatida ishlaydi.",
+        "action": "Rolni o'zgartirish",
+        "transition": "Rol: {{from}} → {{to}}",
+        "after": "O'zgargandan keyin",
+        "regions": "{{n}} ta viloyat bo'shatiladi: {{names}} — «Logistlarni biriktirish» sahifasida boshqa logistga beriladi",
+        "regionsMore": "{{names}} va yana {{n}} ta",
+        "regionsUnknown": "Logistning viloyatlari bo'shatiladi — «Logistlarni biriktirish» sahifasida boshqa logistga beriladi",
+        "session": "Joriy sessiyasi yopiladi — keyingi kirishda yangi rol bilan ishlaydi",
+        "managerBranch": "Menejerni filialga biriktiring: «Filiallar» → filial → «Xodim qo'shish»",
+        "journal": "Eski va yangi rol faoliyat jurnaliga yoziladi",
+        "journalLogist": "Eski va yangi rol, bo'shatilgan viloyatlar faoliyat jurnaliga yoziladi"
+      },
+      "error": {
+        "title": "Rol o'zgartirilmadi",
+        "assigned": "{{name}} filialga biriktirilgan. Avval uni filialdan chiqaring — rol o'zgargach, yangi rol bilan qayta biriktiring. Oyna yopilmadi — kiritilganlar joyida.",
+        "retry": "Hozir tekshirib bo'lmadi — rol o'zgarmadi. Birozdan so'ng qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+        "unknown": "Javob kelmadi — rol o'zgargan-o'zgarmagani noma'lum. Rolini tekshirib, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+      "failed": "Rolni o'zgartirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+        "retryAction": "Qayta urinish"
+      },
+      "success": {
+        "title": "Rol o'zgartirildi",
+        "text": "{{name}}: {{from}} → {{to}}",
+        "assignLogists": "Logistlarni biriktirish"
+      },
+      "partial": {
+        "title": "Rol o'zgartirildi, qolgani saqlanmadi",
+        "text": "{{name}} endi {{role}}. Boshqa o'zgarishlar saqlanmadi — tekshirib, qayta saqlang."
+      }
     }
   },
-  "tgGroupLinkAction": "Ulash havolasini olish",
-  "tgGroupLinkHint": "Bir martalik havola (10 daqiqa): bot guruhga qo'shiladi va uni o'zi ulaydi. Ulangan guruhlar — «Bildirishnomalar» sahifasida."
+  "tgGroup": {
+    "title": "Telegram guruhi",
+    "hintStaff": "Market buyurtma xabarlari shu guruhlarga keladi. Har bir guruh bir martalik havola bilan ulanadi.",
+    "hintSelf": "Buyurtma xabarlari do'koningizning Telegram guruhiga keladi. Har bir guruh bir martalik havola bilan ulanadi.",
+    "typeCreate": "Yangi buyurtmalar guruhi",
+    "typeCancel": "Bekor qilinganlar guruhi",
+    "connected": "Ulangan",
+    "since": "{{date}} dan",
+    "notConnected": "Ulanmagan",
+    "offCreate": "Yangi buyurtma kartalari kelmaydi",
+    "offCancel": "Bekor qilingan buyurtmalar xabari kelmaydi",
+    "inactive": "Nofaol",
+    "inactiveHint": "Xabarlar bu guruhga yuborilmayapti",
+    "link": "Ulash",
+    "linkCreate": "Yangi buyurtmalar guruhini ulash",
+    "linkCancel": "Bekor qilinganlar guruhini ulash",
+    "allGroups": "Barcha guruhlar «Bildirishnomalar» bo'limida",
+    "loadError": "Guruhlar holatini yuklab bo'lmadi",
+    "loadErrorText": "Qayta urinib ko'ring.",
+    "piiLabel": "Guruhda mijoz ismi va telefoni",
+    "piiHint": "O'chirilsa, guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
+    "piiSaved": "Saqlandi",
+    "piiShown": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
+    "piiHidden": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+    "piiSaveError": "Saqlanmadi",
+    "piiSaveErrorText": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring."
+  },
+  "tgBot": {
+    "column": "Telegram boti",
+    "columnHint": "Shaxsiy Elchi boti ulanishi",
+    "linked": "Ulangan",
+    "unlinked": "Ulanmagan",
+    "cardLinked": "Bot ulangan",
+    "cardUnlinked": "Bot ulanmagan",
+    "listHint": "Shaxsiy Elchi boti ulanishi. Market guruhlari holati — foydalanuvchi tafsilotida, «Telegram guruhi» kartasida.",
+    "unavailable": "Ulab bo'lmaydi"
+  }
 }

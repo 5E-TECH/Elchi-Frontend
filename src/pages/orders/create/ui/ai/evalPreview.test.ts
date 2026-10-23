@@ -123,3 +123,14 @@ describe("previewSig", () => {
     expect(previewSig(first)).not.toBe(previewSig(second));
   });
 });
+
+describe("evalPreview — viloyat shartmi (MO-3)", () => {
+  it("sukut: viloyat shart; `regionRequired: false` (market operatori) — tuman yetarli", () => {
+    const noRegion = order({ region_id: null });
+    expect(evalPreview(noRegion).issues).toContain("region_missing");
+    expect(evalPreview(noRegion, { regionRequired: false })).toEqual({ ready: true, issues: [] });
+    expect(evalPreview(order({ region_id: null, district_id: null }), { regionRequired: false }).issues).toEqual([
+      "district_missing",
+    ]);
+  });
+});

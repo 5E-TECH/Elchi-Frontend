@@ -246,6 +246,28 @@ describe("Tabs — son", () => {
   });
 });
 
+describe("Tabs — countBusy (opt-in, OR-1: ro'yxat yangilanmoqda)", () => {
+  it("sukut: son xira emas, aria-busy yo'q", () => {
+    render(<Controlled />);
+    expect(screen.getByText("1 248")).not.toHaveAttribute("aria-busy");
+    expect(screen.getByText("1 248")).not.toHaveClass("opacity-55");
+  });
+
+  it("countBusy: eski son joyida, xira (opacity-55) va aria-busy; tab tanlanadi, nomi o'zgarmaydi", async () => {
+    const onChange = vi.fn();
+    render(<Controlled countBusy onChange={onChange} />);
+    for (const text of ["1 248", "32", "0"]) {
+      expect(screen.getByText(text)).toHaveAttribute("aria-busy", "true");
+      expect(screen.getByText(text)).toHaveClass("opacity-55");
+    }
+    // Faol son rangi saqlanadi (faqat xiralashadi).
+    expect(screen.getByText("1 248")).toHaveClass("bg-action-soft");
+    expect(screen.getByRole("tab", { name: "Yangi 32" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "Yangi 32" }));
+    expect(onChange).toHaveBeenCalledWith("new");
+  });
+});
+
 describe("Tabs — panel id sxemasi", () => {
   it("getTabId / getPanelId: barqaror, bo'shliqsiz", () => {
     expect(getTabId("orders", "all")).toBe("orders-tab-all");

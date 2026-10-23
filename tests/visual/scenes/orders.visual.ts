@@ -30,6 +30,8 @@ defineScene({
   maket: ["courier-orders-sell-dialog", "courier-orders-pending"],
   api: {
     "GET orders/courier/orders": fixture("order-sell-dialog/courier-orders.json"),
+    // Tab sonlari (OR-1) — oyna ortidagi ro'yxat maketdagidek.
+    "GET orders/courier/orders/counts": fixture("order-sell-dialog/courier-counts.json"),
   },
   // Oyna (telefonda pastki varaqa) — faqat ko'rinadigan oyna suratga olinadi.
   capture: "viewport",

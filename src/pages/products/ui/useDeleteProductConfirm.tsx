@@ -1,17 +1,18 @@
-// dizayn-v2: superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog, market-products-delete-dialog
+// dizayn-v2: superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog
 import { useCallback } from "react";
 import { Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../entities/product";
+import { ProductThumb } from "../../../entities/product/ui/ProductThumb";
 import { useConfirm } from "../../../shared/ui/primitives";
-import type { Product } from "../model/productView";
-import { ProductThumb } from "./ProductThumb";
+import { describeProductError } from "../model/productErrors";
+import { getProductImageUrl, type Product } from "../model/productView";
 
 /**
  * O'CHIRISH TASDIG'I — maket `*-products-delete-dialog`: qizil `Trash2`, «O'chirishni tasdiqlang», «Quyidagi
  * mahsulotni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.», kartochka (rasm/`Tag` · nom · market),
  * «Bekor qilish» / qizil «O'chirish». `DELETE product/:id` (`deleteProduct`) — oyna ichida: so'rov ketayotganda
- * tugmalar qulf, xato bo'lsa matni oynada qoladi. `true` — o'chirildi.
+ * tugmalar qulf, xato bo'lsa i18n matni oynada qoladi (xom backend `message` emas). `true` — o'chirildi.
  */
 export const useDeleteProductConfirm = () => {
   const { t } = useTranslation("products");
@@ -31,7 +32,7 @@ export const useDeleteProductConfirm = () => {
         loadingLabel: t("v2.delete.loading"),
         details: (
           <span className="flex min-w-0 items-center gap-3">
-            <ProductThumb product={product} className="bg-surface" />
+            <ProductThumb imageUrl={getProductImageUrl(product)} className="bg-surface" />
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="font-semibold text-text wrap-break-word">{product.name}</span>
               {marketName ? (
@@ -44,6 +45,7 @@ export const useDeleteProductConfirm = () => {
           </span>
         ),
         onConfirm: () => mutateAsync(product.id),
+        errorMessage: (error) => `${t("v2.delete.error")} ${describeProductError(error, t)}`,
       }),
     [confirm, mutateAsync, t],
   );

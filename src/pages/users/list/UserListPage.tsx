@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-delete-dialog, admin-users-delete-dialog
+// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-list-telegram, admin-users-list-telegram, superadmin-users-list-roles, superadmin-users-list-role-select, superadmin-users-delete-dialog, admin-users-delete-dialog
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { useUser, type IUserFilter } from "../../../entities/user/api/userApi";
 import { readViewerBranch } from "../../../features/user/lib/viewerBranch";
+import { cx } from "../../../shared/lib/cx";
 import { usePagination } from "../../../shared/lib/usePagination";
 import {
   Button,
@@ -32,9 +33,17 @@ import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
 const SEARCH_DEBOUNCE_MS = 500;
 const PAGE_SIZES = [10, 25, 50, 100] as const;
 
-/** Rol tablari (maket): superadmin/admin — 7 ta; menejer — 4 ta. `""` — «Barchasi». */
-const STAFF_TABS = ["", "market", "courier", "manager", "registrator", "operator", "admin"] as const;
+/**
+ * Rol tablari. Superadmin/admin — 9 ta, ega tartibi FY-S1 (maket `superadmin-users-list-roles`): avval xodimlar,
+ * keyin tashqi hisoblar. Eski «Operatorlar» tabi olindi (backend `GET /users` da `operator` — eski rol). Menejer —
+ * 4 ta (`manager-users-list`). `""` — «Hammasi».
+ */
+const STAFF_ROLES = ["admin", "manager", "registrator", "courier", "logist"] as const;
+const EXTERNAL_ROLES = ["market", "market_operator", "investor"] as const;
+const STAFF_TABS = ["", ...STAFF_ROLES, ...EXTERNAL_ROLES] as const;
 const MANAGER_TABS = ["", "courier", "registrator", "market"] as const;
+/** Tab nomi kaliti: `v2.list.tabs.<kalit>` (`market_operator` → `marketOperator`). */
+const tabLabelKey = (value: string) => (value === "market_operator" ? "marketOperator" : value || "all");
 const STATUS_VALUES = ["active", "inactive"] as const;
 
 /** Eski URL kalitlari (`userRole`, `userStatus`, `userSearch`) — yangi `role/status/search` ga ko'chiriladi. */
@@ -50,11 +59,16 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  * xodimlar), karta: rol tablari, qidiruv «Ism yoki telefon raqami» + «Holat: Barchasi», jadval, sahifalash;
  * `manager-users-list`: sarlavha «{filial} xodimlari va marketlari», KPI yo'q, 4 ta tab, amallar o'rnida «Ochish».
  *
+ * FY-1 (`superadmin-users-list-roles`, `-role-select`): superadmin/admin — 9 ta rol tabi (FY-S1); telefonda tablar
+ * o'rnida «Rol: Hammasi» `Select` (guruhlar «Xodimlar» / «Tashqi hisoblar»), URL kaliti o'sha `role`. Ko'rinuvchi
+ * uchun tabda yo'q rol (eski `operator`, menejerdagi `admin` …) — «Hammasi» (so'rovga ham ketmaydi).
+ * Market operatori qatorida market nomi (FY-S3) chizilmaydi — `GET /users` da yo'q (backend kerak).
+ *
  * Holat URL'da (yagona manba): `role` (tab), `status`, `search`, `page`, `limit`. Filtr o'zgarsa — sahifa 1.
  * Eski `userRole/userStatus/userSearch` kalitlari o'qiladi va yangisiga ko'chiriladi. Avvalgi redux sinxroni
  * (`filter.userRole/userStatus`, `search.userSearch`) olib tashlandi — ularni boshqa hech kim o'qimaydi (grep).
- * So'rov: `GET /users?role&status&search&page&limit` (`useUser().useGetUser`, avvalgidek; `market` tabi —
- * `market` + `marketing` birlashtiriladi). Tab sonlari chizilmaydi: menejerda `meta.countsByRole` kuryerlarni
+ * So'rov: `GET /users?role&status&search&page&limit` (`useUser().useGetUser`) — bitta so'rov, server sahifalashi
+ * (avvalgi `market` + `marketing` birlashtirish olib tashlandi, FY-1). Tab sonlari chizilmaydi: menejerda `meta.countsByRole` kuryerlarni
  * filial bo'yicha cheklamaydi (gateway ro'yxatni keyin filtrlaydi) — son ro'yxatga zid bo'lardi.
  */
 const UserListPage = memo(() => {
@@ -70,7 +84,10 @@ const UserListPage = memo(() => {
   const { page, limit, setPage, setLimit } = usePagination({ key: "users", defaultLimit: 10 });
 
   const read = (key: keyof typeof LEGACY_KEYS) => searchParams.get(key) ?? searchParams.get(LEGACY_KEYS[key]) ?? "";
-  const role = normalizeRole(read("role"));
+  const tabValues: readonly string[] = isManager ? MANAGER_TABS : STAFF_TABS;
+  const urlRole = normalizeRole(read("role"));
+  // Ko'rinuvchida tabi yo'q rol — «Hammasi» (URL o'zgartirilmaydi, so'rovga ham ketmaydi).
+  const role = tabValues.includes(urlRole) ? urlRole : "";
   const status = read("status");
   const search = read("search");
 
@@ -155,12 +172,25 @@ const UserListPage = memo(() => {
 
   // ─── Ko'rinish ─────────────────────────────────────────────────────────────
   const tabs = useMemo<TabItem[]>(
-    () =>
-      (isManager ? MANAGER_TABS : STAFF_TABS).map((value) => ({
+    () => tabValues.map((value) => ({ value, label: t(`v2.list.tabs.${tabLabelKey(value)}`) })),
+    [tabValues, t],
+  );
+  // Telefon (maket `superadmin-users-list-role-select`): «Hammasi», so'ng «Xodimlar» va «Tashqi hisoblar» guruhlari.
+  const roleOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("v2.list.tabs.all") },
+      ...STAFF_ROLES.map((value) => ({
         value,
-        label: t(`v2.list.tabs.${value || "all"}`),
+        label: t(`v2.list.tabs.${tabLabelKey(value)}`),
+        group: t("v2.list.roleGroups.staff"),
       })),
-    [isManager, t],
+      ...EXTERNAL_ROLES.map((value) => ({
+        value,
+        label: t(`v2.list.tabs.${tabLabelKey(value)}`),
+        group: t("v2.list.roleGroups.external"),
+      })),
+    ],
+    [t],
   );
   const statusOptions = useMemo<SelectOption[]>(
     () => [
@@ -242,19 +272,41 @@ const UserListPage = memo(() => {
           ) : undefined
         }
       >
+        {/* Superadmin/admin: 9 ta tab telefonga sig'maydi — u yerda «Rol» `Select` (pastda). Menejerda 4 ta — hamma joyda. */}
         <Tabs
           items={tabs}
           value={role}
           onValueChange={(next) => writeFilter("role", next)}
           ariaLabel={t("v2.list.tabsLabel")}
           listClassName="px-3"
+          className={isManager ? undefined : "max-md:hidden"}
         />
 
         <div
           role="group"
           aria-label={t("v2.list.filtersLabel")}
-          className="flex flex-wrap items-center gap-3 border-t border-border px-5 py-4 max-md:px-4"
+          className={cx(
+            "flex flex-wrap items-center gap-3 px-5 py-4 max-md:px-4",
+            isManager ? "border-t border-border" : "md:border-t md:border-border",
+          )}
         >
+          {isManager ? null : (
+            <Field
+              label={t("v2.list.roleFilter")}
+              hideLabel
+              labelAs="span"
+              className="min-w-0 basis-full md:hidden"
+            >
+              <Select
+                options={roleOptions}
+                value={role || null}
+                onChange={(next) => writeFilter("role", next ?? "")}
+                placeholder={t("v2.list.tabs.all")}
+                inlineLabel={t("v2.list.roleFilter")}
+                listLabel={t("v2.list.tabsLabel")}
+              />
+            </Field>
+          )}
           <TextInput
             mode="search"
             value={searchText}
@@ -280,6 +332,11 @@ const UserListPage = memo(() => {
               icon={CircleCheck}
             />
           </Field>
+          {/* TG-B (`*-users-list-telegram`): ustun izohi ko'rinadigan qator (sarlavhadagi `title` faqat sichqonchada).
+              Maketdagi «Telegram boti» filtr chiplari — «Taklif · backend kerak», chizilmaydi. */}
+          {canManageUsers ? (
+            <p className="m-0 basis-full text-[13px] leading-[18px] text-text-muted">{t("tgBot.listHint")}</p>
+          ) : null}
         </div>
 
         <QueryBoundary
@@ -298,6 +355,8 @@ const UserListPage = memo(() => {
                 t("v2.list.columns.phone"),
                 t("v2.list.columns.role"),
                 t("v2.list.columns.status"),
+                // TG-B: «Telegram boti» ustuni (superadmin/admin) — skelet ham shu tartibda.
+                ...(canManageUsers ? [t("tgBot.column")] : []),
                 t("v2.list.columns.joined"),
               ]}
               rows={6}

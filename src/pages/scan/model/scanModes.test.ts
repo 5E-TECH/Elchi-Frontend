@@ -68,6 +68,8 @@ describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
 
   it("market — skanerlamaydi", () => {
     expect(modesOf("market")).toEqual([]);
+    // MO-3: market operatori buyurtma yaratadi (`canCreateOrders`), lekin qabul/skaner unda yo'q.
+    expect(modesOf("market_operator")).toEqual([]);
   });
 });
 

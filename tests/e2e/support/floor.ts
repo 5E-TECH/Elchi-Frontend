@@ -218,3 +218,40 @@ export const markResult = async (page: Page, name: string, option: "Sotildi" | "
 
 export const BULK_SOLD_COMMENT = "Kuryer tezkor amal orqali sotildi deb yakunladi";
 export const BULK_CANCEL_COMMENT = "Kuryer tezkor amal orqali bekor qildi";
+
+/**
+ * «Buyurtmalar» (`/orders`, kuryer bo'lmagan rol) — OR-1 yangilanish e2e'si uchun: `GET orders` (holat tablari bilan bir
+ * xil javob), `listFail` — 500 (yangilash xatosi), `listDelayMs` — kechikish («Yangilanmoqda…»), `listCalls` — so'rovlar
+ * soni (avtomatik / qo'lda / ilovaga qaytganda yangilanish).
+ */
+export const mockOrdersListApi = async (page: Page, role: "superadmin" | "admin" | "registrator" = "superadmin") => {
+  const state = {
+    orders: [
+      order("10242", "Sevara Tursunova", { status: "new" }),
+      order("10241", "Dilnoza Karimova"),
+      order("10238", "Javohir Toshmatov", { status: "on the road" }),
+    ],
+    listFail: false,
+    listDelayMs: 0,
+    listCalls: 0,
+  };
+  const leaked = await routeApi(
+    page,
+    { id: "1", role, name: "TEST Xodim", status: "active", region_id: null },
+    async (route, path, method) => {
+      if (path === "orders" && method === "GET") {
+        state.listCalls += 1;
+        if (state.listDelayMs) await new Promise((done) => setTimeout(done, state.listDelayMs));
+        if (state.listFail) return reply(route, { statusCode: 500, message: "e2e: internal" }, 500);
+        return reply(route, {
+          statusCode: 200,
+          data: state.orders,
+          meta: { page: 1, limit: 10, total: state.orders.length, totalPages: 1 },
+          total: state.orders.length,
+        });
+      }
+      return false;
+    },
+  );
+  return { state, leaked };
+};

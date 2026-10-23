@@ -104,11 +104,13 @@ const renderHeader = ({
   device = "desktop",
   user,
   onMenuClick,
+  route = "/orders",
 }: {
   role?: string;
   device?: Device;
   user?: Record<string, unknown>;
   onMenuClick?: () => void;
+  route?: string;
 } = {}) => {
   setDevice(device);
   return renderWithProviders(
@@ -117,7 +119,7 @@ const renderHeader = ({
       <LocationProbe />
     </ThemeProvider>,
     {
-      route: "/orders",
+      route,
       preloadedState: {
         role: { id: `${role}-1`, role, region: null, name: role },
         user: userState(role, user),
@@ -689,5 +691,72 @@ describe("Header keyboard shortcuts", () => {
     await user.keyboard("?");
     const dialog = screen.getByRole("dialog", { name: /Tezkor tugmalar/ });
     expect(within(dialog).queryByText("Paketlarga o'tish") !== null).toBe(listed);
+  });
+});
+
+describe("Header — rol personasi (ROL-0, maket roles.json → persona)", () => {
+  it.each(["market", "market_operator", "logist", "investor"])("%s: «Skanerlash» yo'q", (role) => {
+    renderHeader({ role });
+    expect(screen.queryByRole("button", { name: /Skanerlash/ })).not.toBeInTheDocument();
+  });
+
+  it.each(["superadmin", "admin", "manager", "registrator", "courier"])("%s: «Skanerlash» bor", (role) => {
+    renderHeader({ role });
+    expect(screen.getByRole("button", { name: "Skanerlash" })).toBeInTheDocument();
+  });
+
+  it.each(["logist", "market_operator"])("%s: global qidiruv bor (desktop maydon, telefonda tugma)", (role) => {
+    const view = renderHeader({ role });
+    expect(screen.getByRole("combobox", { name: "Global qidiruv" })).toBeInTheDocument();
+    view.unmount();
+    renderHeader({ role, device: "phone" });
+    expect(screen.getByRole("button", { name: "Qidiruvni ochish" })).toBeInTheDocument();
+  });
+
+  it("investor: qidiruv maydoni ham, telefondagi qidiruv tugmasi ham yo'q", () => {
+    const view = renderHeader({ role: "investor" });
+    expect(screen.queryByRole("combobox", { name: "Global qidiruv" })).not.toBeInTheDocument();
+    view.unmount();
+    renderHeader({ role: "investor", device: "phone" });
+    expect(screen.queryByRole("button", { name: "Qidiruvni ochish" })).not.toBeInTheDocument();
+    // Bildirishnomalar va profil menyusi joyida.
+    expect(screen.getByRole("button", { name: PROFILE_TRIGGER })).toBeInTheDocument();
+  });
+
+  it("investor: Ctrl K qidiruv ekranini ochmaydi, G → O buyurtmalarga o'tkazmaydi; tezkor tugmalarda ikkalasi yo'q", async () => {
+    const user = userEvent.setup();
+    renderHeader({ role: "investor", device: "tablet", route: "/" });
+    await user.keyboard("{Control>}k{/Control}");
+    expect(screen.queryByRole("dialog", { name: "Global qidiruv" })).not.toBeInTheDocument();
+    await user.keyboard("go");
+    expect(screen.getByTestId("path")).toHaveTextContent(/^\/$/);
+    await user.keyboard("?");
+    const dialog = screen.getByRole("dialog", { name: /Tezkor tugmalar/ });
+    expect(within(dialog).queryByText("Qidiruvga o'tish")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Buyurtmalarga o'tish")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Tezkor tugmalar ro'yxati")).toBeInTheDocument();
+  });
+
+  it("G → O faqat buyurtmalar ochiladigan rolda (logist — LG-4 gacha yo'q), kuryerda bor", async () => {
+    const user = userEvent.setup();
+    const view = renderHeader({ role: "logist", route: "/" });
+    await user.keyboard("go");
+    expect(screen.getByTestId("path")).toHaveTextContent(/^\/$/);
+    view.unmount();
+
+    renderHeader({ role: "courier", route: "/" });
+    await user.keyboard("go");
+    expect(screen.getByTestId("path")).toHaveTextContent("/orders");
+    await act(async () => undefined);
+  });
+
+  it.each([
+    ["logist", "Logist"],
+    ["market_operator", "Market operatori"],
+    ["investor", "Investor"],
+  ])("%s: rol qatori «%s» («Noma'lum» emas)", (role, label) => {
+    renderHeader({ role });
+    expect(screen.getByRole("button", { name: PROFILE_TRIGGER })).toHaveTextContent(label);
+    expect(screen.queryByText("Noma'lum")).not.toBeInTheDocument();
   });
 });

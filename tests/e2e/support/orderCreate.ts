@@ -24,9 +24,45 @@ const reply = (route: Route, body: unknown, status = 200) =>
 
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
-export const mockOrderCreateApi = async (page: Page) => {
+/** `GET customers/suggest` namunasi (CS-A): mavjud mijoz, shu marketda 4 ta buyurtma, 1 tasi yangi. */
+export const SUGGESTED_CUSTOMER = {
+  id: "55",
+  name: "Shahnoza Abdullayeva",
+  phone_number: "+998903456721",
+  extra_number: "99-871-22-64",
+  address: "Chilonzor 9-kvartal, 14-uy",
+  region_id: null,
+  district_id: "101",
+  orders_count: 4,
+  new_orders_count: 1,
+  has_new_orders: true,
+  new_order_ids: ["10260"],
+  last_order_at: null,
+};
+
+/** `GET district/:id` — nom va viloyat (`aiDistrictsByRegion` bilan bir xil). */
+const districtById = (id: string) => {
+  for (const [regionId, districts] of Object.entries(aiDistrictsByRegion)) {
+    const found = districts.find((district) => String(district.id) === id);
+    if (found) return { ...found, region_id: Number(regionId) };
+  }
+  return null;
+};
+
+export const mockOrderCreateApi = async (
+  page: Page,
+  options: {
+    /** `customers/suggest` javobi (sukut — bo'sh: «Mijoz topilmadi», telefonda varaqa ochilmaydi). */
+    suggestions?: unknown[];
+    /** `auth/my-profile` ga qo'shimcha maydonlar (CS-B: `tariff_home`, `tariff_center`, `default_tariff`). */
+    profile?: Record<string, unknown>;
+    /** `product/my-products` javobi (sukut — `aiProducts`). */
+    products?: unknown[];
+  } = {},
+) => {
   const leaked: string[] = [];
   const createdOrders: Record<string, unknown>[] = [];
+  const suggestQueries: Record<string, string>[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -44,13 +80,22 @@ export const mockOrderCreateApi = async (page: Page) => {
       });
     }
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "7", role: "market", name: "E2E market", status: "active", add_order: true }));
+      return reply(
+        route,
+        wrap({ id: "7", role: "market", name: "E2E market", status: "active", add_order: true, ...options.profile }),
+      );
     }
     if (path === "orders/ai-availability") return reply(route, wrap({ enabled: false, state: "disabled" }));
     if (path === "region") return reply(route, wrap(aiRegions));
     const region = path.match(/^region\/(\d+)$/);
     if (region) return reply(route, { districts: aiDistrictsByRegion[region[1]] ?? [] });
-    if (path === "product/my-products") return reply(route, wrap(aiProducts));
+    if (path === "product/my-products") return reply(route, wrap(options.products ?? aiProducts));
+    if (path === "customers/suggest") {
+      suggestQueries.push(Object.fromEntries(url.searchParams));
+      return reply(route, wrap(options.suggestions ?? []));
+    }
+    const district = path.match(/^district\/(\d+)$/);
+    if (district) return reply(route, wrap(districtById(district[1])));
     if (path === "orders" && request.method() === "POST") {
       createdOrders.push(request.postDataJSON() as Record<string, unknown>);
       return reply(route, wrap({ id: "e2e-order-1", status: "new" }), 201);
@@ -61,7 +106,7 @@ export const mockOrderCreateApi = async (page: Page) => {
     }
     return reply(route, wrap([]));
   });
-  return { leaked, createdOrders };
+  return { leaked, createdOrders, suggestQueries };
 };
 
 /**
@@ -105,3 +150,17 @@ export const measureGrid = (grid: Locator) =>
 /** Haqiqiy skroll konteyneri — `<main>`: ijobiy son = gorizontal skroll bor. */
 export const mainHorizontalOverflow = (page: Page) =>
   page.locator("main:has([data-shell-slot=content])").evaluate((main) => main.scrollWidth - main.clientWidth);
+
+/** 1×1 kulrang PNG — mahsulot rasmi (tarmoqqa chiqmaydi, `data:` manzil). */
+export const PRODUCT_IMAGE_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGOYCQAAmwCarS5ItAAAAABJRU5ErkJggg==";
+
+/** CS-B: standart narxli market (Markazgacha 25 000, Uygacha 35 000, sukut — Uygacha). */
+export const MARKET_TARIFFS = { tariff_home: 35000, tariff_center: 25000, default_tariff: "address" };
+
+/** CS-B: rasmli, narxli va narxsiz katalog. */
+export const PRICED_PRODUCTS = [
+  { id: 501, name: "Telefon ushlagich", price: "45000.00", image_url: PRODUCT_IMAGE_DATA_URL },
+  { id: 502, name: "Avto changyutgich", price: 120000 },
+  { id: 503, name: "USB-C kabel", price: null },
+];

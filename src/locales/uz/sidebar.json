@@ -10,6 +10,8 @@
   "users": "Foydalanuvchilar",
   "payments": "To'lovlar",
   "operators": "Operatorlar",
+  "earnings": "Daromadim",
+  "createOrder": "Buyurtma yaratish",
   "balance": "Balans",
   "regions": "Hududlar",
   "logs": "Loglar",
@@ -35,10 +37,11 @@
   "group_integrations": "Integratsiyalar",
   "integrations": "Integratsiyalar",
   "group_system": "Tizim",
-  "settlement": "Hisob-kitob",
   "ops": "Ops vositalari",
   "telegramGroups": "Telegram guruhlari",
   "cashbox": "Kassa",
+  "investments": "Investitsiyalar",
+  "profits": "Foyda tarixi",
   "mainMenu": "Asosiy menyu",
   "sections": "Asosiy bo'limlar",
   "personal": "Shaxsiy",
@@ -53,5 +56,6 @@
   "createShort": "Yaratish",
   "quickActionShort": "Tezkor amal",
   "activityLogsShort": "Faoliyat jurnali",
-  "opsShort": "Ops vositalari"
+  "opsShort": "Ops vositalari",
+  "skipToContent": "Asosiy kontentga o'tish"
 }

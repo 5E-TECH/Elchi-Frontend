@@ -6,8 +6,9 @@ test.describe("Balans → Yozuv qo'shish — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
   test("oyna ekranga sig'adi, manual_expense → 201 va yangi yozuv tarixda", async ({ page }) => {
-    const { posts, leaked } = await mockFinancialEntryApi(page);
+    const { posts, leaked, balanceGets } = await mockFinancialEntryApi(page);
     await openHistoryTab(page);
+    const balanceGetsBefore = balanceGets();
 
     const dialog = await submitManualExpense(page, "Ofis ijarasi");
     const box = (await dialog.locator("form").boundingBox())!;
@@ -24,6 +25,8 @@ test.describe("Balans → Yozuv qo'shish — 390px", () => {
     expect(posts[0].body).toEqual({ amount: -1000, source_type: "manual_expense", comment: "Ofis ijarasi" });
     await expect(dialog).toBeHidden();
     await expect(page.getByText("Ofis ijarasi").first()).toBeVisible();
+    // XAtqsRNH d6a10d: balans kartalari so'rovi (GET finance/cashbox/financial-balanse) yozuvdan keyin qayta yuboriladi.
+    await expect.poll(balanceGets).toBeGreaterThan(balanceGetsBefore);
 
     const main = await page.locator("main:has([data-shell-slot=content])").evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
     expect(main.sw).toBeLessThanOrEqual(main.cw);

@@ -10,7 +10,7 @@ import { PageHeaderSection } from "./PageHeaderSection";
  * «Sahifa sarlavhasi» bo'limi: ikkala panelda 5 namuna, matnlar maketdan
  * (`superadmin-orders-list`, `superadmin-orders-detail`, `manager-orders-detail`),
  * orqaga havolasi — ota bo'lim nomi (taxta `tizim-states-navigation`), har sarlavhada
- * bitta asosiy amal.
+ * bitta asosiy amal; `grow` namunasi — `superadmin-orders-list-refreshing`.
  */
 
 const ROUTE = "/ops/ui-kit?section=page-header";
@@ -29,7 +29,7 @@ afterEach(() => {
 });
 
 describe("PageHeaderSection", () => {
-  it("kunduzgi va tungi panelda bir xil 5 sarlavha (maket matnlari)", () => {
+  it("kunduzgi va tungi panelda bir xil 6 sarlavha (maket matnlari)", () => {
     renderWithProviders(<PageHeaderSection />, { route: ROUTE });
     expect(panels()).toHaveLength(2);
     for (const panel of panels()) {
@@ -41,10 +41,11 @@ describe("PageHeaderSection", () => {
         "Buyurtmalar",
         "№10241",
         "№10305",
+        "Buyurtmalar",
         "Chilonzor qabul punkti bo'yicha bekor qilingan va qaytarilgan buyurtmalarning haftalik hisoboti",
       ]);
       // Maket matnlari (uz) aynan.
-      expect(within(panel).getByText("Jami 1 248 ta buyurtma")).toBeInTheDocument();
+      expect(within(panel).getAllByText("Jami 1 248 ta buyurtma")).toHaveLength(2);
       expect(within(panel).getByText("Yaratilgan: Bugun, 14:15 · Baraka Shop")).toBeInTheDocument();
       expect(
         within(panel).getByText("Yaratilgan: Kecha, 11:40 · Nur Elektronika"),
@@ -74,7 +75,7 @@ describe("PageHeaderSection", () => {
     renderWithProviders(<PageHeaderSection />, { route: ROUTE });
     for (const panel of panels()) {
       const headers = Array.from(panel.querySelectorAll("header"));
-      expect(headers).toHaveLength(5);
+      expect(headers).toHaveLength(6);
       for (const header of headers) {
         expect(
           header.querySelectorAll('button[data-variant="primary"]').length,
@@ -88,6 +89,21 @@ describe("PageHeaderSection", () => {
         "primary",
       );
     }
+  });
+
+  it("grow namunasi (OR-1): «Yangilanmoqda…» sarlavha yonida, telefon ikonka tugmasi o'ng chetda, desktopda ghost «Yangilash»", () => {
+    renderWithProviders(<PageHeaderSection />, { route: `${ROUTE}&theme-pair=0` });
+    expect(screen.getByText("Yangilanmoqda…").closest('[role="status"]')).not.toBeNull();
+    const iconButton = screen.getByRole("button", { name: "Ro'yxatni yangilash" });
+    expect(iconButton).toHaveClass("ml-auto", "md:hidden");
+    const metaRow = iconButton.parentElement as HTMLElement;
+    expect(within(metaRow).getByRole("heading", { level: 1 })).toHaveTextContent("Buyurtmalar");
+    expect(metaRow.parentElement).toHaveClass("flex-auto");
+    expect(screen.getByRole("button", { name: "Yangilash" })).toHaveClass("max-md:hidden");
+    // Haqiqiy sahifadagidek: «Yangilanmoqda…» holatida ikkala «Yangilash» tugmasi ham band.
+    expect(iconButton).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "Yangilash" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Oxirgi yangilanish: 14:42")).toBeInTheDocument();
   });
 
   it("nusxalash tugmasi — nomli, bosilganda buyurtma raqami nusxalanadi", () => {

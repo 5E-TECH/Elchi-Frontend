@@ -12,18 +12,30 @@ export interface DistrictRow {
   sold: number;
   cancelled: number;
   pending: number;
-  revenue: number;
+  /**
+   * Tushum (so'm). LG-3 (ega LG-S1): logist ko'rinishida (`withRevenue: false`) umuman yo'q — pul maydoni
+   * qatorga o'tmaydi, UI ustun/blokni shunga qarab yashiradi (prop unutilsa ham pul chiqmaydi).
+   */
+  revenue?: number;
   /** 0..100 */
   rate: number;
+  /**
+   * LG-3 (additiv): tumandagi kuryerlar soni — `stats/:id` → `districts[].couriers.length`, `my/district-stats` →
+   * `couriersCount` (normalizator `activeCouriers` ga yozadi).
+   */
+  couriers: number;
 }
 
-export const toDistrictRows = (districts: DistrictStatsItem[]): DistrictRow[] =>
+export const toDistrictRows = (
+  districts: DistrictStatsItem[],
+  { withRevenue = true }: { withRevenue?: boolean } = {},
+): DistrictRow[] =>
   districts
-    .map((district) => {
+    .map((district): DistrictRow => {
       const orders = Math.max(0, district.totalOrders);
       const sold = Math.max(0, district.deliveredOrders);
       const cancelled = Math.max(0, district.cancelledOrders);
-      return {
+      const row: DistrictRow = {
         id: district.id,
         name: district.name,
         satoCode: district.satoCode,
@@ -31,9 +43,11 @@ export const toDistrictRows = (districts: DistrictStatsItem[]): DistrictRow[] =>
         sold,
         cancelled,
         pending: pendingOf(orders, sold, cancelled, district.pendingOrders),
-        revenue: Math.max(0, district.revenue),
         rate: successRateOf(sold, orders),
+        couriers: Math.max(0, district.activeCouriers),
       };
+      if (withRevenue) row.revenue = Math.max(0, district.revenue);
+      return row;
     })
     .sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name));
 

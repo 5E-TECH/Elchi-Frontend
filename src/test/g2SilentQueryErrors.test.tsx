@@ -21,11 +21,16 @@ import {
 } from "../entities/integrations";
 import { useIntegrationsCoverage } from "../entities/integrations/integrationsCoverage";
 import { usePayments } from "../entities/integrations/payments";
-import { useReceivableBalance, useReceivables } from "../entities/integrations/settlement";
+import { useReceivableBalance, useReceivables, useRemittances } from "../entities/integrations/settlement";
 import { usePartnerShipments, useProviderShipments } from "../entities/integrations/shipments";
 import { useSyncHistory } from "../entities/integrations/syncHistory";
 import { useWebhookLogs } from "../entities/integrations/webhookLogs";
-import { useInvestors } from "../entities/investors";
+import {
+  useInvestorDashboard,
+  useInvestorInvestments,
+  useInvestorProfits,
+  useInvestors,
+} from "../entities/investors";
 import { useLogisticsCoverage } from "../entities/logistics/logisticsCoverage";
 import { useNotifications } from "../entities/notification/api/useNotifications";
 import { useInboxList } from "../entities/notification-inbox/api/useInbox";
@@ -117,6 +122,7 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
     ["sinxronlash tarixi", () => useSyncHistory({ integrationId: "7", limit: 20 }, S)],
     ["debitor balansi", () => useReceivableBalance("7", S)],
     ["debitorlar", () => useReceivables({ integrationId: "7", page: 1, limit: 20 }, S)],
+    ["olingan to'lovlar (IS-3)", () => useRemittances({ integrationId: "7", page: 1, limit: 10 }, S)],
     ["posilkalar (chiquvchi)", () => useProviderShipments({ integrationId: "7", page: 1 }, S)],
     ["posilkalar (hamkor)", () => usePartnerShipments({ partnerId: "7", page: 1 }, S)],
     // Bildirishnomalar
@@ -151,11 +157,15 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
       () => useLogisticsCoverage().useGetReturnRequestsList(undefined, S),
     ],
     ["tizim KPI (ops)", () => useMiscCoverage().useGetAnalyticsKpi(undefined, S)],
-    ["tizim holati (ops)", () => useMiscCoverage().useGetHealthLiveness(S)],
+    ["tizim holati — readiness (ops)", () => useMiscCoverage().useGetHealthReadiness(S)],
     ["token bo'yicha skan (ops)", () => useMiscCoverage().useGetScanByToken("abc", true, S)],
     // Hisob
     ["profil", () => useUser().useGetMyProfile(S)],
     ["bildirishnomalar qutisi", () => useInboxList({ page: 1, limit: 20 }, S)],
+    // Investor kabineti (IN-1): sahifa 403 / 404 / 409 holat ekranlari va `ErrorState` ni o'zi chizadi.
+    ["investor bosh sahifasi", () => useInvestorDashboard(12, S)],
+    ["investorning investitsiyalari", () => useInvestorInvestments({ limit: 3 }, S)],
+    ["investorning foyda tarixi", () => useInvestorProfits({ limit: 5 }, S)],
   ])("%s — global xabar yo'q", async (_name, hook) => {
     expect(await globalErrorsOf(hook)).toBe(0);
   });

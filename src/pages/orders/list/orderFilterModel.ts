@@ -1,6 +1,7 @@
 import { ORDER_STATUSES } from "../../../entities/order";
 import type { DeliveryType, OrderListParams, OrderStatus } from "../../../entities/order/types/order";
 import { getThisMonthRange, getThisWeekRange, getTodayRange } from "../../../shared/lib/dateRange";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 
 /**
  * «Buyurtmalar» ro'yxati filtrlari — sof mantiq (UI'siz): URL kalitlari, holat tablari, API parametrlari,
@@ -32,7 +33,8 @@ export const LEGACY_DATE_TO_KEY = "orderDateTo";
 /**
  * «Holat» filtridagi variantlar — maketdagi tartibda (`superadmin-orders-filters-mobile`: Yangi, Yaratilgan,
  * Qabul qilindi, Yo'lda, Kutilmoqda, Sotilgan, To'langan, Qisman to'langan, Bekor qilingan, Yopilgan) va maketda
- * yo'q ikki backend holati o'z guruhida: «Mijoz kutilmoqda», «Marketga qaytarilgan» (ega qarori, SllBYhnt).
+ * yo'q ikki backend holati o'z guruhida: «Mijoz kutilmoqda» (ega qarori, SllBYhnt) va «Marketga topshirildi»
+ * (`status=returned_to_market`; bekor zanjirining yakuni, taklif §5.1 — backend `status` paramining enum'ida bor).
  * «Bekor — jo'natilgan» alohida variant emas — u «Bekor qilingan» tabi bilan birga keladi.
  */
 export const FILTER_STATUSES: readonly OrderStatus[] = [
@@ -168,22 +170,34 @@ export type OrderFilterScope = {
   market: boolean;
   /** Filial (superadmin, admin). */
   branch: boolean;
-  /** Menejer — tuman, qolganlar — viloyat. */
-  area: "region" | "district";
-  /** Kuryer (market rolida — yo'q). */
+  /**
+   * Menejer — tuman, qolganlar — viloyat. `none` — market operatori (MO-3): `GET /region` unga yopiq (N11), viloyat
+   * filtri backend ruxsatidan keyin.
+   */
+  area: "region" | "district" | "none";
+  /** Kuryer (market va market operatorida — yo'q). */
   courier: boolean;
 };
 
+/**
+ * Market tomoni (market va uning operatori, `isMarketSideRole`) — o'z marketi: market va kuryer filtrlari yo'q
+ * (backend ro'yxatni tokendagi marketga cheklaydi, boshqa `market_id` — 400).
+ */
 export const getOrderFilterScope = (role: string | null): OrderFilterScope => {
   const isAdmin = role === "admin" || role === "superadmin";
+  const marketSide = isMarketSideRole(role);
   return {
     marketSelect: isAdmin,
-    market: role !== "market",
+    market: !marketSide,
     branch: isAdmin,
-    area: role === "manager" ? "district" : "region",
-    courier: role !== "market",
+    area: role === "manager" ? "district" : role === "market_operator" ? "none" : "region",
+    courier: !marketSide,
   };
 };
+
+/** Panel filtridagi hudud qiymati (`area` bo'yicha; `none` — yo'q). */
+const areaValueOf = (values: Pick<OrderFilterValues, "regionId" | "districtId">, scope: OrderFilterScope) =>
+  scope.area === "district" ? values.districtId : scope.area === "region" ? values.regionId : "";
 
 /**
  * `GET /orders` parametrlari — sahifa (`index.tsx` `apiParams`) bilan bir xil qoida (saralashsiz).
@@ -201,7 +215,7 @@ export const buildOrderListParams = (
   if (scope.branch && values.branchId) params.branch_id = values.branchId;
   if (scope.area === "district") {
     if (values.districtId) params.district_id = values.districtId;
-  } else if (values.regionId) {
+  } else if (scope.area === "region" && values.regionId) {
     params.region_id = values.regionId;
   }
   if (scope.courier && values.courierId) params.courier_id = values.courierId;
@@ -228,7 +242,7 @@ export const countPanelFilters = (
 ): number =>
   Number(scope.market && Boolean(values.marketId)) +
   Number(scope.branch && Boolean(values.branchId)) +
-  Number(Boolean(scope.area === "district" ? values.districtId : values.regionId)) +
+  Number(Boolean(areaValueOf(values, scope))) +
   Number(scope.courier && Boolean(values.courierId)) +
   Number(Boolean(values.deliveryType)) +
   Number(includeStatus && values.statuses.length > 0);

@@ -1,4 +1,5 @@
 import {
+  Banknote,
   House,
   Plug,
   Wrench,
@@ -19,11 +20,26 @@ import {
   Building2,
   Truck,
   Zap,
+  PiggyBank,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
 
-export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
+export type UserRole =
+  | "admin"
+  | "superadmin"
+  | "market"
+  | "courier"
+  | "registrator"
+  /**
+   * Yangi rollar (ROL-0, ega 2026-10-19). Qobiq kaliti bor, bandlari hali BO'SH: har band o'z sahifasi bilan
+   * qo'shiladi (maketdagi to'liq menyu — `design/kit/route-map.json` → `plannedMenu.<rol>`):
+   * logist — LG-1/LG-3/LG-4/LG-5, market_operator — MO-2/MO-3, investor — IN-1/IN-2.
+   */
+  | "logist"
+  | "market_operator"
+  | "investor";
 export type BranchDashboardRole = "manager";
 export type SidebarUserRole = UserRole | BranchDashboardRole;
 
@@ -100,6 +116,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/integrations", icon: Plug, label: "integrations" },
+    // NG-A (ega NG-S2): Telegram guruhlari adminga ham — maketdagi menyu (`roles.json`, «Tizim» guruhi).
+    { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
@@ -108,8 +126,9 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/cash-box", icon: Wallet, label: "payments" },
-    // fix3 RBAC-18: "/market-operators" olib tashlandi — sahifa GET /users ga
-    // tayanadi, u esa marketga doim 403 (backendda market yo'li yo'q).
+    // MO-1 (ega 2026-10-19): market o'z operatorlari — `GET /market-operators` (@Roles(MARKET)). Telefonda pastki
+    // menyuda yo'q, «Menyu» varag'ida (maket `market-dashboard-mobile-menu`; ega MO-S1).
+    { to: "/market-operators", icon: Users, label: "operators" },
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },
@@ -140,6 +159,42 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/regions", icon: MapIcon, label: "regions" },
+  ],
+  /**
+   * Yangi rollar — bandlari hali yo'q (ROL-0). Menyu bandi faqat sahifasi bilan qo'shiladi (AGENTS): o'z bosh
+   * sahifasi kelguncha `/` da 403 (`routes.tsx` → `DashboardEntry`), shuning uchun bo'sh menyu admin
+   * havolalarini (hammasi 403) ko'rsatmaydi. Logist moliyadan butunlay yopiq (ega LG-S1) — bu yerga hech qachon
+   * `/payments`, `/cash-box`, `/financial-balance` qo'shilmaydi.
+   */
+  // LG-1: bosh sahifa (o'z viloyatlari, pulsiz); LG-3: «Hududlar» (o'z viloyati — tumanlar va kuryerlar, pulsiz).
+  // Qolgan bandlar — LG-4 (Buyurtmalar), LG-5 (Pochta, Paketlar, Kuryerlar): `route-map.json` → `plannedMenu.logist`.
+  // Maket tartibi: Bosh sahifa · Buyurtmalar · Pochta · Paketlar · Kuryerlar · Hududlar — «Hududlar» oxirida qoladi.
+  logist: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/regions", icon: MapIcon, label: "regions" },
+  ],
+  /**
+   * MO-2 (ega 2026-10-19): bosh sahifa (market bosh sahifasi operator rejimida), mahsulotlar (faqat ko'rish, MH-1) va
+   * «Daromadim» (o'z stavkasi). MO-3: «Buyurtmalar» (o'z marketi, faqat ko'rish va Excel) va «Buyurtma yaratish»
+   * (`/new-orders` → `/new-orders/create`, faqat «AI bilan»; yorlig'i rolga xos — `navSections.ts`).
+   * Kassa/to'lov bandlari qo'shilmaydi — operatorda moliya ruxsati yo'q, o'z hisobi faqat «Daromadim» da.
+   */
+  market_operator: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/my-earnings", icon: Banknote, label: "earnings" },
+  ],
+  /**
+   * IN-1 / IN-2 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`), «Investitsiyalar»
+   * (`/investments`) va «Foyda tarixi» (`/profits`) — maket `roles.json` → investor.menu (ikonkalar PiggyBank,
+   * HandCoins). Moliya/kassa sahifalari bu yerga qo'shilmaydi — investor faqat o'z investitsiyasi va foydasini ko'radi.
+   */
+  investor: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/investments", icon: PiggyBank, label: "investments" },
+    { to: "/profits", icon: HandCoins, label: "profits" },
   ],
 };
 
@@ -363,6 +418,11 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/payments": 'finance',
   "/cash-box": 'finance',
   "/financial-balance": 'finance',
+  // IN-1/IN-2: investor kabineti ro'yxatlari — Moliya guruhida (investor menyusi qisqa — guruh sarlavhasi chiqmaydi).
+  "/investments": 'finance',
+  "/profits": 'finance',
+  // MO-2: market operatorining «Daromadim» sahifasi.
+  "/my-earnings": 'finance',
   // Ma'lumotnoma
   "/products": 'directory',
   "/all-users": 'directory',
@@ -387,7 +447,7 @@ const STANDALONE_PATHS = new Set(["/", "/branch-dashboard"]);
  *
  * Sabab: kuryer yoki market 6 bandli menyuga ega — ular ustiga to'rtta
  * sarlavha qo'yish yordam bermaydi, aksincha shovqin qo'shadi. Guruhlash
- * uzun menyularda (admin 13, superadmin 14, HYBRID menejer 11) foyda beradi.
+ * uzun menyularda (admin 14, superadmin 16, HYBRID menejer 11) foyda beradi.
  */
 export const SIDEBAR_GROUPING_THRESHOLD = 7;
 

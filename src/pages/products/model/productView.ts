@@ -1,13 +1,15 @@
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
+import { CURRENCY_LABEL, formatNumberLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 
 /**
  * MAHSULOT — `catalog.product.find_all` / `find_by_id` javobidagi qator (backend `origin/main`: `id`, `name`,
- * `image_url`, `user_id`, `market` — `attachMarkets`, market topilmasa `null`). Eski javoblardagi rasm maydonlari
- * (`image`, `photo` …) ham o'qiladi.
+ * `image_url`, `user_id`, `price` — so'm, `numeric(14,2)`, bo'sh bo'lsa `null` (zRqDRLAZ), `market` —
+ * `attachMarkets`, market topilmasa `null`). Eski javoblardagi rasm maydonlari (`image`, `photo` …) ham o'qiladi.
  */
 export type Product = {
   id: number;
   name: string;
+  price?: number | string | null;
   image?: string | null;
   image_url?: string | null;
   imageUrl?: string | null;
@@ -112,6 +114,44 @@ export const getProductImageUrl = (product?: Product | null): string | undefined
 export const getProductMarketName = (product?: Product | null): string | null => {
   const name = product?.market?.name;
   return typeof name === "string" && name.trim() ? name.trim() : null;
+};
+
+/** Mahsulot narxi (so'm) yoki `null` — kiritilmagan, bo'sh yoki noto'g'ri qiymat. */
+export const getProductPrice = (product?: Product | null): number | null => {
+  const raw = product?.price;
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "string" && !raw.trim()) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+};
+
+/**
+ * «Narx» maydoni (`TextInput mode="money"`) — butun so'm, ko'pi bilan 12 xona (backend chegarasi
+ * `999 999 999 999,99`, `catalog.swagger.dto.ts`).
+ */
+export const PRODUCT_PRICE_MAX_DIGITS = 12;
+
+/** Mavjud narx → maydon qiymati (raqamlar satri, butun so'mga yaxlitlangan); narx yo'q — bo'sh. */
+export const toPriceInput = (product?: Product | null): string => {
+  const price = getProductPrice(product);
+  return price === null ? "" : String(Math.round(price));
+};
+
+/**
+ * Maydon qiymati tekshiruvi: bo'sh — mumkin (ixtiyoriy), aks holda 12 xonadan oshmasin. `TextInput mode="money"`
+ * boshidagi nollarni qiymatda saqlaydi, ko'rinishda yashiradi — «0000000000001» ko'rinishi «1», shuning uchun
+ * xonalar boshidagi nollarsiz sanaladi.
+ */
+export const isPriceInputValid = (value: string): boolean =>
+  value.replace(/^0+(?=\d)/, "").length <= PRODUCT_PRICE_MAX_DIGITS;
+
+/**
+ * Ro'yxatdagi narx: butun so'm — «1 250 000 so'm»; tiyinli eski narx (`numeric(14,2)`, masalan 1250000.50) —
+ * yaxlitlanmaydi, kasri bilan «1 250 000,5 so'm» (mavjud bo'lmagan summa ko'rsatilmasin).
+ */
+export const formatProductPrice = (price: number, language?: string | null): string => {
+  const lang = resolveMoneyLanguage(language);
+  return `${formatNumberLocalized(price, { language: lang, fractionDigits: 2 })} ${CURRENCY_LABEL[lang]}`;
 };
 
 /** `GET markets` javobidan marketlar (faqat id va nomli yozuvlar). */

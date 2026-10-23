@@ -4,14 +4,17 @@ import { ORDER_STATUSES } from "../../../entities/order/model/statusRegistry";
 import { renderWithProviders } from "../../../test/test-utils";
 import { BadgesSection } from "./BadgesSection";
 
-/** «Holat belgilari» namunasi: har panelda 11 holat, ton × ko'rinish × o'lcham matritsasi. */
+/**
+ * «Holat belgilari» namunasi: har panelda 12 nuqtali holat («Marketga topshirildi» — bekor bosqichi qatorida),
+ * ton × ko'rinish × o'lcham matritsasi.
+ */
 
 describe("BadgesSection", () => {
-  it("har panelda (kunduzgi + tungi) 13 buyurtma holati", () => {
+  it("har panelda (kunduzgi + tungi) 12 nuqtali buyurtma holati", () => {
     renderWithProviders(<BadgesSection />, { route: "/ops/ui-kit?section=badges" });
     for (const panel of document.querySelectorAll("[data-kit-theme]")) {
       const keys = Array.from(panel.querySelectorAll("[data-order-status]"))
-        .slice(0, ORDER_STATUSES.length)
+        .slice(0, ORDER_STATUSES.length - 1)
         .map((el) => el.getAttribute("data-order-status"));
       expect(keys).toEqual([
         "new",
@@ -25,11 +28,22 @@ describe("BadgesSection", () => {
         "paid",
         "cancelled",
         "cancelled_sent",
-        "returned_to_market",
         "closed",
       ]);
     }
     expect(document.querySelectorAll("[data-kit-theme]")).toHaveLength(2);
+  });
+
+  it("bekor bosqichi (tizim-states-data §09): 5 belgi joy qatori bilan, «Marketga topshirildi» neytral", () => {
+    renderWithProviders(<BadgesSection />, { route: "/ops/ui-kit?section=badges" });
+    for (const panel of document.querySelectorAll("[data-kit-theme]")) {
+      const row = panel.querySelector("[data-kit-cancel-stages]") as HTMLElement;
+      const stages = Array.from(row.querySelectorAll("[data-cancel-stage]")).map((el) => el.getAttribute("data-cancel-stage"));
+      expect(stages).toEqual(["courier", "in_transit", "branch", "hq", "market"]);
+      expect(row).toHaveTextContent("Bekor · HQ'da");
+      expect(row).toHaveTextContent("Toshkent HQ · 3 kun");
+      expect(row).toHaveTextContent("→ Toshkent HQ");
+    }
   });
 
   it("matritsa: 5 ton × 3 ko'rinish × 2 o'lcham har panelda", () => {

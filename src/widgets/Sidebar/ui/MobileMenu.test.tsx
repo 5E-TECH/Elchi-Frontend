@@ -35,7 +35,16 @@ vi.mock("../../../entities/notification-inbox/api/inboxApi", async (importOrigin
   getInboxUnreadCount: vi.fn(async () => unread.count),
 }));
 
-type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "registrator"
+  | "market"
+  | "courier"
+  | "logist"
+  | "market_operator"
+  | "investor";
 type DesignMenuItem = { key: string; label: string; group?: string };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
@@ -207,9 +216,10 @@ describe("MobileMenu — planshet paneli (768–1023)", () => {
     const design = ROLES[role];
 
     expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="drawer"]')).not.toBeNull();
+    // `queryAll` — yangi rollarning menyusi hali bo'sh (ROL-0; har band o'z sahifasi bilan keladi).
     expect(
       within(sectionsNav())
-        .getAllByRole("link")
+        .queryAllByRole("link")
         .map((link) => link.textContent),
     ).toEqual(design.menu.map((item) => item.label));
     const groups = design.grouped
@@ -367,6 +377,45 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
   });
 });
 
+describe("MobileMenu — rol personasi (ROL-0)", () => {
+  it.each([
+    ["investor", false],
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (logist: LG-4 gacha) yo'q;
+    // market operatorida MO-3 dan beri bor (`canViewOrders`).
+    ["logist", false],
+    ["market_operator", true],
+    ["market", true],
+    ["courier", true],
+  ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q; 403 ga olib bormaydi)", (role, hasSearch) => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+    if (hasSearch) expect(screen.getByRole("searchbox", { name: "Qidiruv" })).toBeInTheDocument();
+    else expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("investor varaqasi (telefon): qidiruvsiz; profil (rol «Investor»), Bildirishnomalar, Sozlamalar, Chiqish", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
+
+    expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="sheet"]')).not.toBeNull();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Profilni ochish/ })).toHaveTextContent("Investor");
+    expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
+    expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+  });
+
+  it("yangi rollar menyusida moliya bo'limlari yo'q (logist — ega LG-S1)", () => {
+    for (const role of ["logist", "market_operator", "investor"]) {
+      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role, { route: "/" });
+      const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+      for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
+        expect(hrefs, `${role}: ${finance}`).not.toContain(finance);
+      }
+      view.unmount();
+    }
+  });
+});
+
 describe("MobileMenu — bildirishnomalar", () => {
   it("shaxsiy bildirishnomalar qutisiga olib boradi (Telegram guruhlariga emas)", async () => {
     const user = userEvent.setup();
@@ -381,7 +430,8 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("o'qilmagan yo'q — son ham, nuqta ham yo'q", async () => {
     unread.count = 0;
-    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida `/notifications` yo'q — quti oddiy «Bildirishnomalar» (admin/superadmin — «… qutisi»).
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
     await waitFor(() =>
       expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toBeInTheDocument(),
@@ -393,9 +443,11 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("API'dagi haqiqiy son, o'zgarsa yangilanadi", async () => {
     unread.count = 3;
-    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida Telegram guruhlari (`/notifications`) yo'q — quti nomi «Bildirishnomalar».
+    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
     const link = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(link).toHaveAttribute("href", "/inbox");
     expect(link).toHaveTextContent(/3$/);
 
     unread.count = 7;
@@ -407,10 +459,11 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("katta son «99+»", async () => {
     unread.count = 150;
+    // Admin menyusida Telegram guruhlari ham bor (NG-A) — quti «Bildirishnomalar qutisi».
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
     expect(
-      await screen.findByRole("link", { name: "Bildirishnomalar, 150 ta yangi" }),
+      await screen.findByRole("link", { name: "Bildirishnomalar qutisi, 150 ta yangi" }),
     ).toHaveTextContent(/99\+$/);
   });
 
@@ -422,19 +475,21 @@ describe("MobileMenu — bildirishnomalar", () => {
     expect(await screen.findByTestId("menu-unread-badge")).toHaveTextContent(/^4$/);
   });
 
-  it("Telegram guruhlari (`/notifications`) faqat superadmin menyusida; u yerda quti «Bildirishnomalar qutisi»", () => {
-    const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
-    expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
-      "href",
-      "/notifications",
-    );
-    expect(screen.getByRole("link", { name: "Bildirishnomalar qutisi" })).toHaveAttribute(
-      "href",
-      "/inbox",
-    );
-    view.unmount();
+  it("Telegram guruhlari (`/notifications`) superadmin va admin menyusida (NG-A); u yerda quti «Bildirishnomalar qutisi»", () => {
+    for (const role of ["superadmin", "admin"]) {
+      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+      expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
+        "href",
+        "/notifications",
+      );
+      expect(screen.getByRole("link", { name: "Bildirishnomalar qutisi" })).toHaveAttribute(
+        "href",
+        "/inbox",
+      );
+      view.unmount();
+    }
 
-    for (const role of ["admin", "manager", "market", "courier", "registrator"]) {
+    for (const role of ["manager", "market", "courier", "registrator"]) {
       const roleView = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
       expect(
         screen
@@ -443,5 +498,57 @@ describe("MobileMenu — bildirishnomalar", () => {
       ).toHaveLength(0);
       roleView.unmount();
     }
+  });
+});
+
+describe("MobileMenu — logist (LG-1, LG-3, maket logist-dashboard-mobile-menu)", () => {
+  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), «Hududlar», Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
+
+    expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="sheet"]')).not.toBeNull();
+    expect(screen.getByRole("link", { name: /Profilni ochish/ })).toHaveTextContent("Logist");
+    const home = within(sectionsNav()).getByRole("link", { name: "Bosh sahifa" });
+    expect(home).toHaveAttribute("href", "/");
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(within(sectionsNav()).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/",
+      "/regions",
+    ]);
+    expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
+    expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+    const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) expect(hrefs).not.toContain(finance);
+  });
+
+  it("«Bildirishnomalar» — o'qilmaganlar soni bilan (maket: «Bildirishnomalar + son»); menyu qidiruvi yo'q", async () => {
+    asPhone();
+    unread.count = 3;
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
+
+    const inbox = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(inbox).toHaveAttribute("href", "/inbox");
+    expect(inbox).toHaveTextContent(/3$/);
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — logist buyurtmalari LG-4 gacha yo'q.
+    expect(screen.queryByRole("searchbox", { name: "Qidiruv" })).not.toBeInTheDocument();
+  });
+});
+
+describe("MobileMenu — investor (IN-1, IN-2)", () => {
+  it("varaqada «Bosh sahifa», «Investitsiyalar», «Foyda tarixi» — to'liq nom (maket `investor-dashboard-mobile-menu`)", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
+    const links = within(sectionsNav()).getAllByRole("link");
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Bosh sahifa", "/"],
+      ["Investitsiyalar", "/investments"],
+      ["Foyda tarixi", "/profits"],
+    ]);
+    // Qisqa «Investitsiya» / «Foyda» — faqat pastki menyuda (BottomNav), varaqada emas.
+    expect(links[1]).toHaveAccessibleName("Investitsiyalar");
+    expect(links[2]).toHaveAccessibleName("Foyda tarixi");
+    expect(links[0]).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });
 });

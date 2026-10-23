@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-orders-list, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-pending, manager-orders-list-cancelled
+// dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Info, Plus, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -31,6 +31,9 @@ import {
   type OrderStatusTabId,
 } from "./list/orderFilterModel";
 import OrdersTable from "./list/OrdersTable";
+import { getOrdersRefetchInterval, ORDERS_REFRESH_INTERVAL_MS, useOrdersRefresh, useOrdersRefreshPaused } from "./list/useOrdersRefresh";
+import { OrdersRefreshButton, OrdersRefreshDescription, OrdersRefreshTitleMeta } from "./list/OrdersRefreshMeta";
+import { OrdersRefreshAlert } from "./list/OrdersRefreshAlert";
 import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
@@ -73,6 +76,7 @@ import {
   type DataTableSort,
   type TabItem,
 } from "../../shared/ui/primitives";
+import { isMarketSideRole } from "../../entities/user/lib/role";
 
 /** Eksport natijasi xabari bitta: yangi natija eskisining o'rnini oladi (xWsCAA5N). */
 const EXPORT_TOAST_ID = "orders-export";
@@ -439,9 +443,14 @@ const Orders = () => {
     [setMultipleParams],
   );
 
-  // Kuryer o'z ro'yxatini (`CourierOrders`) o'zi so'raydi — bu so'rov unga kerak emas.
-  const ordersQuery = useGetOrders(apiParams, role !== "courier", (current) =>
-    pollWhileApprovalPending(current?.data ?? []),
+  // Avtomatik yangilanish (OR-1): 60 s va ilovaga qaytganda; oyna yoki kamera ochiq bo'lsa to'xtaydi (tasdiq
+  // pollingi — oyna aynan uni kutadi — davom etadi). Kuryer o'z ro'yxatini (`CourierOrders`) o'zi so'raydi.
+  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollbackOrder));
+  const ordersQuery = useGetOrders(
+    apiParams,
+    role !== "courier",
+    (current) => getOrdersRefetchInterval(refreshPaused, pollWhileApprovalPending(current?.data ?? [])),
+    { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
   const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
 
@@ -460,7 +469,7 @@ const Orders = () => {
    * hech narsa qo'shilmaydi.
    */
   const exactOrderId = /^\d{1,12}$/.test(urlSearch.trim()) ? urlSearch.trim() : "";
-  const { data: exactOrder } = useQuery({
+  const exactOrderQuery = useQuery({
     queryKey: ["orders", "exact-number", exactOrderId],
     queryFn: () =>
       api
@@ -474,7 +483,11 @@ const Orders = () => {
     enabled: Boolean(exactOrderId) && role !== "courier",
     retry: false,
     staleTime: 30_000,
+    // Qadalgan qator ro'yxat bilan birga yangilanadi (OR-1).
+    refetchInterval: refreshPaused ? false : ORDERS_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: !refreshPaused,
   });
+  const exactOrder = exactOrderQuery.data;
   const pinnedOrderId = exactOrderId && exactOrder && currentPage === 1 ? String(exactOrder.id) : "";
   const tableItems = useMemo<OrderListItem[]>(
     () =>
@@ -483,6 +496,7 @@ const Orders = () => {
         : items,
     [exactOrder, items, pinnedOrderId],
   );
+  const refresh = useOrdersRefresh({ list: ordersQuery, extras: [Boolean(exactOrderId) && exactOrderQuery] });
   const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
   const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
   const canSendCancelledToHq = canUseManagerBulkSend && activeStatusTab === "cancelled";
@@ -996,6 +1010,9 @@ const Orders = () => {
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
       <PageHeader
         title={t("title")}
+        // Matn bloki o'sadi: telefonda «Yangilash» ikonka tugmasi sarlavha qatorining o'ng chetida (maket).
+        grow
+        meta={<OrdersRefreshTitleMeta refreshing={refresh.refreshing} onRefresh={() => void refresh.refreshAll()} />}
         // Xatoda va birinchi yuklanishda "Jami 0 ta" YOZILMAYDI — son noma'lum (yuklanishda skelet).
         description={
           isOrdersError && !items.length ? (
@@ -1003,17 +1020,21 @@ const Orders = () => {
           ) : isLoading && !data ? (
             <Skeleton width={150} className="my-1" />
           ) : (
-            t("ordersList.total", { total: formatNumberLocalized(total, { language }) })
+            <OrdersRefreshDescription
+              total={t("ordersList.total", { total: formatNumberLocalized(total, { language }) })}
+              lastUpdatedAt={refresh.lastUpdatedAt}
+            />
           )
         }
         actions={
           <>
+            <OrdersRefreshButton refreshing={refresh.refreshing} onRefresh={() => void refresh.refreshAll()} />
             <Button
               variant="secondary"
               compact
               leftIcon={Download}
               loading={isExporting}
-              title={role === "market" ? t("ordersList.exportAllHint") : undefined}
+              title={isMarketSideRole(role) ? t("ordersList.exportAllHint") : undefined}
               onClick={() => void handleExportOrders()}
             >
               {t("ordersList.exportExcel")}
@@ -1027,6 +1048,15 @@ const Orders = () => {
           </>
         }
       />
+
+      {/* Yangilash yiqildi — eski qatorlar qoladi (bo'sh ro'yxatda jadvalning o'z xato holati yetarli). */}
+      {refresh.errorVisible && tableItems.length > 0 ? (
+        <OrdersRefreshAlert
+          retrying={refresh.fetching}
+          onRetry={() => void refresh.refreshAll()}
+          onDismiss={refresh.dismissError}
+        />
+      ) : null}
 
       <Card
         padding="none"

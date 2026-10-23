@@ -1,8 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
-export { pendingOf, shareOf, shortRegionName, splitCompactMoney, successRateOf } from "./lib/stats";
+export {
+  pendingOf,
+  regionsOfLogist,
+  shareOf,
+  shortRegionName,
+  splitCompactMoney,
+  successRateOf,
+} from "./lib/stats";
 
 /**
  * Region (hudud) statistikasi — markaziy data-layer.
@@ -40,6 +48,13 @@ export interface RegionItem {
    * yuboradi — u holda `activeCouriers` 0 bo'ladi, lekin bu «yolg'on 0»: UI qatorni chizmaydi.
    */
   couriersKnown?: boolean;
+  /**
+   * LG-1 (additiv): viloyatga biriktirilgan logist (`stats/all` → `logist_id`, `admins.id`); biriktirilmagan — `null`.
+   * Logist bosh sahifasi o'z viloyatlarini shu bo'yicha klientda ajratadi (backend hozircha 14 viloyatni beradi).
+   */
+  logistId?: string | null;
+  /** LG-1 (additiv): viloyatdagi barcha kuryerlar (`stats/all` → `totalCouriers`); noma'lum — `couriersKnown` false. */
+  totalCouriers?: number;
 }
 
 /** UzbekistanRegionMap kutadigan ko'rinish. */
@@ -82,6 +97,10 @@ export interface RegionCourierStats {
   successRate: number;
   /** Viloyatning asosiy kuryeri (`region.mainCourier`). */
   isPrimary?: boolean;
+  /** LG-3 (additiv): identity holati (`active` / `inactive`, kichik harfda); noma'lum — `null`. */
+  status?: string | null;
+  /** LG-3 (additiv): kuryer biriktirilgan tuman (`district_id`); yo'q — `null`. */
+  districtId?: string | null;
 }
 
 export interface RegionDetailStats {
@@ -111,6 +130,9 @@ export const toNumber = (value: unknown, fallback = 0): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
+
+const toIdOrNull = (value: unknown): string | null =>
+  value === null || value === undefined || value === "" ? null : String(value);
 
 export const normalizeRegionItem = (raw: unknown): RegionItem | null => {
   const item = raw as Record<string, unknown>;
@@ -161,6 +183,10 @@ export const normalizeRegionItem = (raw: unknown): RegionItem | null => {
     ),
     couriersKnown:
       (item.activeCouriers ?? item.active_couriers ?? stats.activeCouriers ?? stats.active_couriers) != null,
+    logistId: toIdOrNull(item.logist_id ?? item.logistId),
+    totalCouriers: toNumber(
+      item.totalCouriers ?? item.total_couriers ?? stats.totalCouriers ?? stats.total_couriers,
+    ),
   };
 };
 
@@ -335,6 +361,8 @@ const normalizeRegionCouriers = (source: Record<string, unknown>): RegionCourier
       successRate:
         totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : toNumber(courier.successRate ?? courier.success_rate),
       isPrimary: mainId != null && String(mainId) === id,
+      status: courier.status == null || courier.status === "" ? null : String(courier.status).toLowerCase(),
+      districtId: toIdOrNull(courier.districtId ?? courier.district_id),
     };
   });
 };
@@ -586,6 +614,7 @@ export const useRegionDetailStats = (
 export const useRegionDistrictCatalog = (
   regionId: string,
   enabled = true,
+  options?: SilentErrorOption,
 ) =>
   useQuery({
     queryKey: ["region-district-catalog", regionId],
@@ -600,6 +629,8 @@ export const useRegionDistrictCatalog = (
     enabled: enabled && Boolean(regionId),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Iste'molchi xatoni o'zi ko'rsatsa (`{ silentError: true }`) — global xabar (xom backend matni) chiqmaydi.
+    ...silentErrorMeta(options),
   });
 
 /**

@@ -1,11 +1,16 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
+// dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, market-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
 import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
-import { readProofFiles } from "../../../entities/order";
+import {
+  normalizeOrderStatus,
+  readProofFiles,
+  resolveCancelReturnStage,
+  useCancelHandoverMethodLabel,
+} from "../../../entities/order";
 import { useOrders } from "../../../entities/orders";
 import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import {
@@ -20,6 +25,7 @@ import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
 import { Button, QueryBoundary } from "../../../shared/ui/primitives";
 import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
+import { OrderReturnPathCard, useOrderReturnPath } from "../../../widgets/order-return-path";
 import { OrderTracking } from "../../../widgets/order-tracking";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
@@ -45,6 +51,7 @@ import {
   buildTrackingAccess,
   buildTrackingContext,
   normalizeOrderDetail,
+  readHqName,
   readOrderMarket,
   type OrderDetail,
 } from "./detail/orderDetailModel";
@@ -105,7 +112,6 @@ const NewOrderUpdate = () => {
   const lockIds = getLockAlertIds(access.productsLocked, access.destinationLocked);
 
   const actionOrder = useMemo(() => buildActionOrder(order), [order]);
-  const trackingContext = useMemo(() => buildTrackingContext(order), [order]);
   const trackingAccess = useMemo(() => buildTrackingAccess(order), [order]);
   /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
   const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
@@ -124,6 +130,36 @@ const NewOrderUpdate = () => {
   // Tarix (tracking) o'zi qayta so'ralmaydi — amaldan keyin qayta mount.
   const [trackingVersion, setTrackingVersion] = useState(0);
   const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
+  // Bekor bosqichi va «Qaytarish yo'li» (maketlar `*-orders-detail-cancelled`): sarlavhadagi usul va karta
+  // bitta so'rovdan (`GET orders/:id/tracking`).
+  const cancelStage = resolveCancelReturnStage(order);
+  const returnPath = useOrderReturnPath(order, {
+    hqName: readHqName(order),
+    version: trackingVersion,
+    // Kuryer tafsilotida karta yo'q (maket `courier-orders-detail` o'zgarmagan); market operatoriga tarix 403 (MO-3).
+    enabled: access.layout !== "courier" && access.canViewTracking,
+  });
+  const handoverMethodLabel = useCancelHandoverMethodLabel();
+  const handoverStep = returnPath.path?.steps.find((step) => step.kind === "handed") ?? null;
+  const handoverMethod = handoverStep ? handoverMethodLabel(handoverStep.handover) : null;
+  // Topshirish vaqti — tarixdagi hodisadan (`mark-returned-to-market` `last_handover_at` ni yangilamaydi);
+  // tarix kelgach topshirish hodisasi bo'lmasa — `last_handover_at` (bulk topshirish uni yozadi).
+  const handoverAt =
+    handoverStep?.at ?? (returnPath.isLoading ? null : (order?.last_handover_at ?? order?.lastHandoverAt ?? null));
+  // Tarix jumlalaridagi HQ nomi «Qaytarish yo'li» bilan bir xil bo'lsin (topshirilgandan keyin ham «— Toshkent HQ»).
+  const returnPathHqName = returnPath.path?.hqName ?? null;
+  const trackingContext = useMemo(() => {
+    const context = buildTrackingContext(order);
+    return context.hqName || !returnPathHqName ? context : { ...context, hqName: returnPathHqName };
+  }, [order, returnPathHqName]);
+  // Qulf sababi holatdan ham: qabulgacha bekor qilingan (bosqichsiz) buyurtma «filialga jo'natilgan» emas.
+  const normalizedStatus = normalizeOrderStatus(order?.status);
+  const lockReason =
+    cancelStage === "market" || normalizedStatus === "returned_to_market"
+      ? "returned"
+      : cancelStage || normalizedStatus === "cancelled" || normalizedStatus === "cancelled (sent)"
+        ? "cancelled"
+        : null;
   const closeEdit = useCallback(() => setEditing(null), []);
 
   const handleBack = useCallback(() => {
@@ -303,20 +339,30 @@ const NewOrderUpdate = () => {
     ) : null;
 
   // ─── Ko'rinishlar ─────────────────────────────────────────────────────────
-  const tracking = (detail: OrderDetail, variant: "default" | "courier" = "default") => (
-    <OrderTracking
-      key={`${detail.id}:${trackingVersion}`}
-      orderId={detail.id}
-      currentStatus={detail.status}
-      access={trackingAccess}
-      context={trackingContext}
-      variant={variant}
-    />
-  );
+  // MO-3: market operatorida «Kuzatuv» yo'q — `GET orders/:id/tracking` unga 403 (`access.canViewTracking`).
+  const tracking = (detail: OrderDetail, variant: "default" | "courier" = "default") =>
+    access.canViewTracking ? (
+      <OrderTracking
+        key={`${detail.id}:${trackingVersion}`}
+        orderId={detail.id}
+        currentStatus={detail.status}
+        access={trackingAccess}
+        context={trackingContext}
+        variant={variant}
+        defaultCollapsed={Boolean(returnPath.path)}
+      />
+    ) : null;
   // `/new-orders/:marketId/edit` maketlarida «Buyurtma ma'lumotlari» kartasi yo'q.
   const meta = (className?: string) =>
     isNewOrdersRoute ? null : (
-      <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
+      <OrderMeta
+        order={order}
+        role={role}
+        self={user}
+        canOpenMails={canOpenMails}
+        handoverAt={handoverAt}
+        className={className}
+      />
     );
   /** «Buyurtma topilmadi» holatidagi qaytish manzili — sarlavhadagi «←» bilan bir ro'yxat. */
   const notFoundBackTo = marketId ? `/new-orders/${marketId}` : "/orders";
@@ -332,6 +378,16 @@ const NewOrderUpdate = () => {
         : "limited"
       : null;
   const proofs = proofKeys.length > 0 ? <ProofCard keys={proofKeys} /> : null;
+  const returnPathCard = returnPath.path ? (
+    <OrderReturnPathCard
+      path={returnPath.path}
+      isLoading={returnPath.isLoading}
+      isError={returnPath.isError}
+      onRetry={returnPath.retry}
+      marketView={access.layout === "market"}
+      qrHref={access.canOpenCancelledQr && order?.market_id ? `/new-orders/cancelled/${String(order.market_id)}` : null}
+    />
+  ) : null;
 
   const renderDefault = (detail: OrderDetail) => (
     <div className="flex flex-row-reverse flex-wrap gap-6 max-md:gap-4">
@@ -359,6 +415,7 @@ const NewOrderUpdate = () => {
         <PaymentCard order={detail} />
       </div>
       <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">
+        {returnPathCard}
         <ProductsCard
           order={detail}
           editable={access.canEditOrderFull}
@@ -375,6 +432,7 @@ const NewOrderUpdate = () => {
   const renderMarket = (detail: OrderDetail) => (
     <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
       <div className="flex min-w-0 flex-[3_1_520px] flex-col gap-6 max-md:gap-4">
+        {returnPathCard}
         <ProductsCard order={detail} showDelivery={false} />
         <PaymentCard order={detail} />
         {proofs}
@@ -412,6 +470,8 @@ const NewOrderUpdate = () => {
         onBack={handleBack}
         backLabel={newOrdersBackLabel}
         actions={headerActions}
+        handoverMethod={handoverMethod}
+        handoverAt={handoverAt}
       />
 
       {order ? (
@@ -424,6 +484,7 @@ const NewOrderUpdate = () => {
           parentOrderId={parentOrderId}
           editOpen={editOpen}
           marketListHref={isNewOrdersRoute && access.layout === "market" ? `/new-orders/${marketId}` : null}
+          lockReason={lockReason}
         />
       ) : null}
 

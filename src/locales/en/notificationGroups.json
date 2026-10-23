@@ -33,10 +33,14 @@
   "status": {
     "active": "Active",
     "inactive": "Inactive",
-    "inactiveHint": "The bot was removed from the group — reconnect it"
+    "inactiveHint": "Messages are not being sent to this group"
   },
-  "editLabel": "{{market}} — {{group}}: edit",
-  "deleteLabel": "{{market}} — {{group}}: delete",
+  "rowMenu": {
+    "label": "{{market}} — {{group}}: actions",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "delete": "Delete"
+  },
   "form": {
     "market": "Market",
     "marketPlaceholder": "Choose a market",
@@ -62,30 +66,23 @@
     "open": "Open in Telegram",
     "linkTitle": "One-time link is ready",
     "qrAlt": "QR code of the Telegram group connection link",
-    "step1": "Open the link or scan the QR code with your phone.",
+    "step1": "Open the link or scan the QR code with a phone that has Telegram.",
     "step2": "Choose the group — the bot joins it.",
     "step3": "The bot connects the group by itself, the list refreshes.",
-    "expiresAt": "Valid until {{time}}",
+    "expiresAt": "valid until {{time}}",
     "waiting": "Waiting for the group to connect…",
     "expired": "The link has expired",
     "expiredHint": "The link is valid for 10 minutes and works once. Get a new one.",
     "command": "Add the bot to the group and send this command there:",
     "existsTitle": "A group of this type is already connected",
-    "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — edit it in the list, or delete it and connect again.",
+    "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — to connect another group, first delete the old one from the list.",
+    "existsInactiveTitle": "A group of this type is connected but inactive",
+    "existsInactive": "{{market}} has an inactive group of this type (ID: {{groupId}}) — messages are not sent to it. Add the bot to the group again and activate it, or delete the connection and connect again.",
     "linkError": "Could not get the link",
+    "linkErrorRetry": "Please try again a bit later.",
+    "linkErrorForbidden": "You are not allowed to connect a group for this market.",
     "connected": "Group connected",
     "connectedDescription": "{{market}} — {{type}}"
-  },
-  "edit": {
-    "title": "Edit notification",
-    "groupId": "Telegram group ID",
-    "groupIdPlaceholder": "-1001234567890",
-    "groupIdHint": "For example: -1001234567890. Send /id in the group and the bot shows its ID.",
-    "groupIdRequired": "Enter the group ID",
-    "submit": "Save changes",
-    "saving": "Saving…",
-    "success": "Notification updated",
-    "error": "Could not save the notification"
   },
   "deleteDialog": {
     "title": "Do you really want to delete it?",
@@ -98,5 +95,31 @@
     "loading": "Deleting…",
     "deleted": "Notification deleted",
     "failed": "Could not delete the notification"
+  },
+  "toggle": {
+    "deactivate": {
+      "title": "Confirm deactivation",
+      "description": {
+        "create": "Messages about new orders of {{market}} will not be sent to this group. The connection is not deleted — you can activate it again at any time from the actions menu.",
+        "cancel": "Messages about cancelled orders of {{market}} will not be sent to this group. The connection is not deleted — you can activate it again at any time from the actions menu."
+      },
+      "confirm": "Deactivate",
+      "loading": "Deactivating…",
+      "done": "Group deactivated",
+      "failed": "Could not deactivate the group. Please try again."
+    },
+    "activate": {
+      "title": "Confirm activation",
+      "description": {
+        "create": "Messages about new orders of {{market}} will be sent to this group again.",
+        "cancel": "Messages about cancelled orders of {{market}} will be sent to this group again."
+      },
+      "warningTitle": "Check that the bot is in the group",
+      "warning": "Before activating, make sure the bot is a member of this group. If the bot is not in the group, messages will not arrive and the connection will become inactive again.",
+      "confirm": "Activate",
+      "loading": "Activating…",
+      "done": "Group activated",
+      "failed": "Could not activate the group. Please try again."
+    }
   }
 }

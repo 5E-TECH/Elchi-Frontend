@@ -49,6 +49,47 @@ describe("Field", () => {
     expect(screen.queryByText("Ism va familiya")).not.toBeInTheDocument();
   });
 
+  it("XsoWhKP5 ce8cb3: error berilmasa — xato bloki yo'q, aria-invalid / aria-errormessage yo'q", () => {
+    const { container, rerender } = render(
+      <Field label="Parol">
+        <TextInput />
+      </Field>,
+    );
+    const input = screen.getByRole("textbox", { name: "Parol" });
+    expect(input).not.toHaveAttribute("aria-invalid");
+    expect(input).not.toHaveAttribute("aria-errormessage");
+    expect(input).not.toHaveAttribute("aria-describedby");
+    expect(container.querySelector("[data-field]")).not.toHaveAttribute("data-invalid");
+    expect(container.querySelector(".text-danger-fg")).toBeNull();
+
+    // Bo'sh qiymatlar (`""`, `null`, `false`) ham xato emas — react-hook-form `errors.x?.message` shunday keladi.
+    for (const empty of ["", null, false, undefined]) {
+      rerender(
+        <Field label="Parol" error={empty}>
+          <TextInput />
+        </Field>,
+      );
+      expect(screen.getByRole("textbox", { name: "Parol" })).not.toHaveAttribute("aria-invalid");
+      expect(container.querySelector(".text-danger-fg")).toBeNull();
+    }
+
+    // Xato kelib, keyin tuzatilsa — bog'lanish ham yo'qoladi.
+    rerender(
+      <Field label="Parol" error="Parol shart">
+        <TextInput />
+      </Field>,
+    );
+    expect(screen.getByRole("textbox", { name: "Parol" })).toHaveAttribute("aria-invalid", "true");
+    rerender(
+      <Field label="Parol">
+        <TextInput />
+      </Field>,
+    );
+    expect(screen.getByRole("textbox", { name: "Parol" })).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByRole("textbox", { name: "Parol" })).not.toHaveAttribute("aria-describedby");
+    expect(screen.queryByText("Parol shart")).not.toBeInTheDocument();
+  });
+
   it("ixtiyoriy — «(ixtiyoriy)» kulrang", () => {
     render(
       <Field label="Izoh" optional>

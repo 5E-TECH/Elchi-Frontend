@@ -11,6 +11,12 @@ import { setupAuthInterceptors } from "../../auth/setupInterceptors";
 export const API_TIMEOUT_MS = 20_000;
 /** Fayl yuklash va eksport kabi uzoq so'rovlar uchun (per-request override). */
 export const LONG_REQUEST_TIMEOUT_MS = 120_000;
+/**
+ * Tumanni birlashtirish (`POST district/:id/merge`, oNAE3LW9): gateway kutishi 120 s (uch servis bo'ylab
+ * ko'chirish + qayta sanash + kompensatsiya), brauzer undan 5 s ko'proq kutadi — server javobi (200 / 409 / 503)
+ * yo'lda qolmasin. Vaqt tugasa natija noma'lum («Natija noma'lum» oynasi, qayta yuborilmaydi).
+ */
+export const MERGE_REQUEST_TIMEOUT_MS = 125_000;
 
 export const api = axios.create({
   baseURL: BASE_URL,

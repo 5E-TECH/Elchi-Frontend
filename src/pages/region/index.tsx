@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-map, admin-regions-map, manager-regions-scoped, courier-regions-scoped
+// dizayn-v2: superadmin-regions-map, admin-regions-map, manager-regions-scoped, courier-regions-scoped, logist-regions-detail
 import { memo, useEffect, useMemo, useState } from "react";
 import { ArrowLeftRight, Headset, Map as MapIcon } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import {
   type RegionPeriod,
 } from "./model/regionPeriod";
 import RegionPeriodControls from "./ui/RegionPeriodControls";
+import LogistRegionView from "./ui/LogistRegionView";
 import RegionsOverview from "./ui/RegionsOverview";
 import ScopedRegionView from "./ui/ScopedRegionView";
 
@@ -25,10 +26,12 @@ const CHILD_ROUTES = [
 ];
 
 /**
- * «HUDUDLAR» (`/regions`, guard `canViewRegionStats`: superadmin, admin, menejer, kuryer).
+ * «HUDUDLAR» (`/regions`, guard `canViewRegionStats`: superadmin, admin, menejer, kuryer, logist).
  *  - superadmin/admin — butun kompaniya xaritasi (`GET region/stats/all`), sarlavhada bola sahifalar
- *    («Tumanlar» — faqat superadmin);
- *  - menejer/kuryer — o'z viloyati tumanlar kesimida (`GET region/my/district-stats`).
+ *    (maketlar bo'yicha tartib: superadmin — Tumanlarni o'tkazish · Tumanlar · Logist biriktirish;
+ *    admin — Tumanlar · Tumanlarni o'tkazish · Logist biriktirish, ega S1 / DM-1);
+ *  - menejer/kuryer — o'z viloyati tumanlar kesimida (`GET region/my/district-stats`);
+ *  - logist (LG-3) — o'z viloyatlaridan biri (`?region=`), tumanlar va kuryerlar kesimida, pulsiz (`GET region/stats/:id`).
  * Davr URL'da: `period=today|week|month|all|custom` + `startDate/endDate` (bola route'da yozilmaydi).
  */
 const RegionPage = () => {
@@ -48,6 +51,7 @@ const RegionPage = () => {
   const isAdmin = role === "admin";
   const canViewStats = isAdmin || isSuperadmin;
   const canViewScopedStats = role === "manager" || role === "courier";
+  const isLogist = role === "logist";
   const isChildRoute = CHILD_ROUTES.some((route) => pathname.includes(route));
 
   const dateParams = useMemo(() => regionDateParams(period, customRange), [period, customRange]);
@@ -55,7 +59,7 @@ const RegionPage = () => {
   useEffect(() => {
     // Ichki sahifada (masalan, admin /regions/districts dan /regions ga yo'naltirilganda) eski
     // manzilga ?period yozib, redirectni qaytarmasin.
-    if (isChildRoute || !(canViewStats || canViewScopedStats)) return;
+    if (isChildRoute || !(canViewStats || canViewScopedStats || isLogist)) return;
     if (period === "custom" && customRange?.start && customRange?.end) {
       setMultipleParams({
         period: "custom",
@@ -66,13 +70,13 @@ const RegionPage = () => {
     }
     // Bitta yangilash: ketma-ket `setSearchParams` chaqiruvlari eski URL ustidan yozib, davrni yo'qotardi.
     setMultipleParams({ period, startDate: "", endDate: "" });
-  }, [period, customRange, setMultipleParams, isChildRoute, canViewStats, canViewScopedStats]);
+  }, [period, customRange, setMultipleParams, isChildRoute, canViewStats, canViewScopedStats, isLogist]);
 
   if (isChildRoute) {
     return <Outlet />;
   }
 
-  if (!canViewStats && !canViewScopedStats) {
+  if (!canViewStats && !canViewScopedStats && !isLogist) {
     return <Navigate to="/403" replace />;
   }
 
@@ -102,6 +106,18 @@ const RegionPage = () => {
     />
   );
 
+  const districtsButton = (
+    <Button variant="secondary" leftIcon={MapIcon} onClick={() => navigate("districts")}>
+      {t("v2.page.actions.districts")}
+    </Button>
+  );
+
+  if (isLogist) {
+    return (
+      <LogistRegionView dateParams={dateParams} periodLabel={periodLabel} controls={controls} />
+    );
+  }
+
   if (canViewScopedStats) {
     return (
       <ScopedRegionView dateParams={dateParams} periodLabel={periodLabel} controls={controls} />
@@ -115,6 +131,7 @@ const RegionPage = () => {
         description={t("v2.page.subtitle")}
         actions={
           <>
+            {isSuperadmin ? null : districtsButton}
             <Button
               variant="secondary"
               leftIcon={ArrowLeftRight}
@@ -122,11 +139,7 @@ const RegionPage = () => {
             >
               {t("v2.page.actions.sato")}
             </Button>
-            {isSuperadmin ? (
-              <Button variant="secondary" leftIcon={MapIcon} onClick={() => navigate("districts")}>
-                {t("v2.page.actions.districts")}
-              </Button>
-            ) : null}
+            {isSuperadmin ? districtsButton : null}
             <Button
               variant="secondary"
               leftIcon={Headset}

@@ -26,7 +26,16 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
-type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "registrator"
+  | "market"
+  | "courier"
+  | "logist"
+  | "market_operator"
+  | "investor";
 type DesignMenuItem = { key: string; label: string; short?: { uz: string; ru: string; en: string } };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
@@ -84,14 +93,16 @@ afterAll(async () => {
 });
 
 describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
-  it.each(CURRENT_ROLES)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
+  it.each(CURRENT_ROLES)("%s: 5 ta katak (investorda 4), tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
     const branchType = DEFAULT_BRANCH[role] ?? null;
     renderNav(role, { branchType });
     const menu = getSidebarConfigForUser(role, userOf(role, branchType));
     const design = ROLES[role];
 
-    expect(design.bottomNav).toHaveLength(5);
-    expect(cells()).toHaveLength(5);
+    // Investorda 4 katak (ega IN-S2), qolgan rollarda 5.
+    const count = role === "investor" ? 4 : 5;
+    expect(design.bottomNav).toHaveLength(count);
+    expect(cells()).toHaveLength(count);
 
     design.bottomNav.forEach((key, index) => {
       const cell = cells()[index];
@@ -137,9 +148,13 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
       const expected = ROLES[role].bottomNav.map((key) =>
         key === "@scan" ? "/scan" : key === "@menu" ? "button:Menyu" : menu.find((item) => item.label === key)?.to,
       );
-      const actual = cells().map((cell) =>
-        cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
-      );
+      // Menyusi hali bo'sh yangi rol (ROL-0) — pastki menyu umuman chizilmaydi.
+      const nav = screen.queryByRole("navigation");
+      const actual = nav
+        ? (Array.from(nav.children) as HTMLElement[]).map((cell) =>
+            cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
+          )
+        : [];
       expect(actual, `${role}: kod maketdagi pastki menyuga yetdi — route-map.json → plannedBottomNav dan oling`).not.toEqual(
         expected,
       );
@@ -147,17 +162,45 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     }
   });
 
-  it("skaner rollarida «Skaner» markazda, «Menyu» oxirida; marketda skaner ham, «Menyu» ham yo'q", () => {
+  it("skaner rollarida «Skaner» markazda, «Menyu» oxirida; marketda skaner yo'q", () => {
     for (const role of ["superadmin", "admin", "manager", "registrator", "courier"] as const) {
       const { unmount } = renderNav(role, { branchType: DEFAULT_BRANCH[role] ?? null });
       expect(cells()[2]).toHaveAttribute("href", "/scan");
       expect(cells()[4].tagName).toBe("BUTTON");
       unmount();
     }
+  });
+
+  it("market (ega MO-S1): Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» — Menyu varaqasida", () => {
     renderNav("market");
-    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box"]);
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/cash-box", "button:Menyu"]);
+    expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Mahsulotlar" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Yaratish" })).toHaveAttribute("href", "/new-orders");
+    expect(screen.getByRole("link", { name: "To'lovlar" })).toHaveAttribute("href", "/cash-box");
+    expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
+  });
+
+  it("market operatori (MO-2, MO-3): Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim — skanersiz, «Menyu»siz", () => {
+    renderNav("market_operator");
+    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/products", "/my-earnings"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Buyurtmalar", "Yaratish", "Mahsulotlar", "Daromadim"]);
+    expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Menyu" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["ru", ["Главная", "Заказы", "Создать", "Товары", "Мой доход"]],
+    ["en", ["Home", "Orders", "Create", "Products", "Earnings"]],
+  ] as const)("market operatori (MO-2, MO-3), %s: qisqa yorliqlar maketdagidek (roles.json → short)", async (lang, labels) => {
+    await i18n.changeLanguage(lang);
+    try {
+      renderNav("market_operator", { route: "/my-earnings" });
+      expect(cells().map((cell) => cell.textContent)).toEqual(labels);
+      expect(screen.getByRole("link", { name: labels[4] })).toHaveAttribute("aria-current", "page");
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
   });
 });
 
@@ -361,5 +404,32 @@ describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
     await user.click(scan);
     expect(isScannerOverlayOpen()).toBe(false);
     expect(screen.getByTestId("path")).toHaveTextContent("/scan");
+  });
+});
+
+describe("BottomNav — logist (LG-1, LG-3)", () => {
+  it("«Bosh sahifa» · «Hududlar» · «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-4/LG-5)", () => {
+    renderNav("logist");
+    expect(hrefs()).toEqual(["/", "/regions", "button:Menyu"]);
+    expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
+      expect(hrefs()).not.toContain(finance);
+    }
+  });
+});
+
+describe("BottomNav — investor (IN-1, IN-2)", () => {
+  /**
+   * Maketdagi 4 katak (ega IN-S2): Bosh sahifa · Investitsiya · Foyda · Menyu — qisqa yorliqlar `roles.json` → short.
+   * Skaner yo'q, kataklar teng.
+   */
+  it("Bosh sahifa · Investitsiya · Foyda · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
+    renderNav("investor");
+    expect(hrefs()).toEqual(["/", "/investments", "/profits", "button:Menyu"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Investitsiya", "Foyda", "Menyu"]);
+    expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 });

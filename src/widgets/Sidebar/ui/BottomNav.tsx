@@ -35,7 +35,8 @@ import { getActiveNavPath, useMobileMenu, useNavPathname } from "../model/shellN
  *   KONTEKSTLI (ega roziligi 2026-10-19, skaner 1-bosqichi): sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa
  *   (`useScanTarget`) kamera shu sahifa ustida o'sha maqsad bilan ochiladi (`openScanner`, `ScannerHost`),
  *   `aria-label` uni aytadi («Skaner — Qabul qilish»); aks holda universal skaner `/scan` (telefonda to'liq
- *   ekran, pastki menyusiz). Ko'rinish o'zgarmaydi. Marketda skaner yo'q: 5 ta bo'lim.
+ *   ekran, pastki menyusiz). Ko'rinish o'zgarmaydi. Skaner faqat `roleHasScanner` rollarida (market, market
+ *   operatori, logist, investorda yo'q — kataklari oddiy bo'limlar).
  * - Oxirgi katak «Menyu» — qolgan bo'limlar suriluvchi menyuda (`useMobileMenu().open()`, shell shartnomasi).
  * - Fokus faqat klaviaturada: 2px `action` halqa katak ICHIDA (−6px oraliq), burchak 12px.
  *
@@ -70,7 +71,17 @@ const BOTTOM_NAV_SLOTS: Record<SidebarUserRole, readonly BottomNavSlot[]> = {
     registrator: SCANNER_ROLE_SLOTS,
     manager: [link("dashboard"), link("orders"), SCAN, link("dispatch", "newOrders", "products"), MENU],
     courier: [link("dashboard"), link("orders"), SCAN, link("quickAction"), MENU],
-    market: [link("dashboard"), link("orders"), link("newOrders"), link("products"), link("payments")],
+    // MO-S1 (ega 2026-10-19): «Mahsulotlar» va «Operatorlar» — «Menyu» varaqasida.
+    market: [link("dashboard"), link("orders"), link("newOrders"), link("payments"), MENU],
+    /**
+     * Yangi rollar (ROL-0) — maketdagi kataklar; menyu bandlari hali yo'q, shuning uchun katak o'z sahifasi
+     * menyuga kirganda paydo bo'ladi (LG-1/LG-5, MO-2/MO-3, IN-1/IN-2). Investorda 4 katak (ega IN-S2),
+     * market operatorida «Menyu» yo'q — 5 bo'lim (MO-3 da to'liq): Bosh sahifa · Buyurtmalar · Yaratish ·
+     * Mahsulotlar · Daromadim. Skaner yo'q (`roleHasScanner`).
+     */
+    logist: [link("dashboard"), link("orders"), link("couriers"), link("regions"), MENU],
+    market_operator: [link("dashboard"), link("orders"), link("newOrders"), link("products"), link("earnings")],
+    investor: [link("dashboard"), link("investments"), link("profits"), MENU],
 };
 
 /** Menyu kaliti → qisqa yorliq (`ui:shell.bottomNav.*`, maket `roles.json` → `short`). */
@@ -82,11 +93,16 @@ const SHORT_LABEL: Record<string, string> = {
     quickAction: "quickAction",
     products: "products",
     payments: "payments",
+    earnings: "earnings",
 };
 
 /** Rolga xos qisqa yorliq: marketda «Qabul va yaratish» — «Yaratish» (market faqat yaratadi). */
 const SHORT_LABEL_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
     market: { newOrders: "create" },
+    // MO-2/MO-3: «Buyurtma yaratish» → «Yaratish».
+    market_operator: { newOrders: "create" },
+    // IN-2: «Investitsiya», «Foyda» (maket `roles.json` → investor.menu.short).
+    investor: { investments: "investments", profits: "profits" },
 };
 
 type BottomNavEntry =
@@ -184,9 +200,13 @@ const BottomNav = () => {
 
     // Balandlik `:root` ga (`--shell-bottom-inset`): portal qatlamidagi ro'yxat/kalendar pastki menyu ostida qolmaydi.
     const navRef = useRef<HTMLElement>(null);
-    useShellBottomInsetSource(navRef, entries.length > 0);
 
-    if (entries.length === 0) return null;
+    // Birorta bo'lim katagi yo'q (menyusi hali bo'sh yangi rol) — yolg'iz «Menyu» chizilmaydi: suriluvchi menyu
+    // yuqori paneldagi menyu tugmasidan ochiladi.
+    const hasSection = entries.some((entry) => entry.kind !== "menu");
+    useShellBottomInsetSource(navRef, hasSection);
+
+    if (!hasSection) return null;
 
     return (
         <nav ref={navRef} aria-label={t("ui:shell.bottomNav.label")} data-bottomnav className={BAR}>

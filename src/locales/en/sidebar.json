@@ -10,6 +10,8 @@
   "users": "Users",
   "payments": "Payments",
   "operators": "Operators",
+  "earnings": "My earnings",
+  "createOrder": "Create order",
   "balance": "Balance",
   "regions": "Regions",
   "logs": "Logs",
@@ -35,10 +37,11 @@
   "group_integrations": "Integrations",
   "integrations": "Integrations",
   "group_system": "System",
-  "settlement": "Settlement",
   "ops": "Ops tools",
   "telegramGroups": "Telegram groups",
   "cashbox": "Cashbox",
+  "investments": "Investments",
+  "profits": "Profit history",
   "mainMenu": "Main menu",
   "sections": "Main sections",
   "personal": "Personal",
@@ -53,5 +56,6 @@
   "createShort": "Create",
   "quickActionShort": "Close day",
   "activityLogsShort": "Activity log",
-  "opsShort": "Ops tools"
+  "opsShort": "Ops tools",
+  "skipToContent": "Skip to main content"
 }

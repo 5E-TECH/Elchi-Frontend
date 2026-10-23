@@ -298,31 +298,41 @@ describe("BranchListWidget — filtrlar, o'chirish, holatlar", () => {
   });
 });
 
-describe("BranchListWidget — «Sana» ustuni (cI5gqN90)", () => {
+describe("BranchListWidget — «Sana» ustuni soxta emas (cI5gqN90)", () => {
   beforeEach(() => {
+    // «Bugun» filial sanalaridan uzoq: normalizer bugungi kun bilan to'ldirsa, «22.10.2026» chiqadi.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T09:00:00.000Z"));
     api.get.mockReset();
     api.get.mockResolvedValue({
       data: {
         statusCode: 200,
         data: {
           items: [
-            { id: "3", name: "QA Filial", code: "QA", type: "REGIONAL", status: "active", level: 1, createdAt: "2026-06-02T07:15:00.000Z" },
-            { id: "4", name: "Sanasiz filial", code: "SZ", type: "REGIONAL", status: "active", level: 1 },
+            { id: "2", name: "Andijon filiali", code: "AND-01", type: "REGIONAL", status: "active", employees_count: 4, createdAt: "2026-06-02T07:30:00.000Z" },
+            { id: "3", name: "Buxoro filiali", code: "BUX-01", type: "REGIONAL", status: "active", employees_count: 0 },
           ],
-          meta: { page: 1, limit: 12, total: 2, totalPages: 1 },
+          meta: { page: 1, limit: 12, total: 2 },
         },
       },
     });
   });
 
-  it("`createdAt` — o'sha sana; sana yo'q — «—» (bugungi sana EMAS)", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("⭐ faqat createdAt li qatorda — o'sha sana, sanasiz qatorda — «—»; bugungi kun yo'q", async () => {
     renderWithProviders(<BranchListWidget viewMode="table" onViewModeChange={vi.fn()} onEdit={vi.fn()} />);
-    const withDate = (await screen.findByText("QA Filial")).closest("tr") as HTMLElement;
-    expect(withDate).toHaveTextContent("02.06.2026");
-    const today = new Date();
-    const todayText = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
-    const noDate = screen.getByText("Sanasiz filial").closest("tr") as HTMLElement;
-    expect(noDate).toHaveTextContent("—");
-    expect(noDate).not.toHaveTextContent(todayText);
+    await screen.findByRole("link", { name: "Andijon filiali" });
+
+    const dateIndex = screen.getAllByRole("columnheader").findIndex((header) => header.textContent?.includes("Sana"));
+    expect(dateIndex).toBeGreaterThan(-1);
+    const dateCell = (name: string) => screen.getByRole("link", { name }).closest("tr")?.children[dateIndex];
+
+    expect(dateCell("Andijon filiali")).toHaveTextContent(/^02\.06\.2026$/);
+    expect(dateCell("Buxoro filiali")).toHaveTextContent(/^—$/);
+    expect(screen.queryByText("22.10.2026")).not.toBeInTheDocument();
+    expect(screen.getByText("4 ta")).toBeInTheDocument();
   });
 });

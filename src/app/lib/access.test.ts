@@ -17,8 +17,20 @@ import {
   canViewPaymentsPage,
   canViewReturnsPage,
   canViewUsers,
+  canViewProducts,
+  canCreateProducts,
+  canViewAdminDashboard,
+  canViewMarketOperators,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
+// IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
+import { canViewInvestorCabinet } from "./access";
+// LG-3: «Hududlar», MO-2: «Daromadim» — o'z describe bloklari (pastda).
+import { canViewMyEarnings, canViewRegionStats } from "./access";
+// MO-3: market operatori buyurtmalari — o'z describe bloki (pastda).
+import { canHandoverCancelledToMarket } from "./access";
+// Elchi Pochta №1: xarajat kategoriyalari boshqaruvi — o'z describe bloki (pastda).
+import { canManageExpenseCategories } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -32,6 +44,20 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  * noma'lum turni rad etardi. Endi marshrut shu predikatni ishlatadi, shuning
  * uchun matritsa haqiqiy guard bilan moslashtirildi. `canDispatchPostToBranch`
  * qatori yangi (HQ registratori pastdagi alohida blokda).
+ *
+ * 2026-10-19 (ROL-0): yangi rollar ustunlari — logist (lg), market operatori (mo), investor (in). Hozircha
+ * hammasi rad: har rol o'z sahifasi bilan o'z katagini ochadi (LG-1, MO-2, IN-1 …). Logist moliyadan butunlay
+ * yopiq (ega LG-S1) — `canViewPaymentsPage`, `canViewFinancialBalance` qatorlarida `lg` hech qachon ✓ bo'lmaydi.
+ * Yangi qatorlar: `canViewProducts` (routes.tsx dagi qo'lda nusxa o'rniga) va `canViewAdminDashboard`
+ * (admin bosh sahifasi — sizish yopildi, mDfjKeQi).
+ *
+ * 2026-10-21 (NG-A): `canViewNotifications` · admin — → ✓ (ega NG-S2; backend `/notifications` SUPERADMIN + ADMIN).
+ *
+ * 2026-10-21 (MH-1): `canViewProducts` · mo — → ✓ (faqat ko'rish, `GET product/my-products`); yangi qator
+ * `canCreateProducts` — market ✓ → — (market endi faqat ko'radi, ega qarori 2026-10-15).
+ * 2026-10-21 (MO-1): yangi qator `canViewMarketOperators` — faqat market (avval `routes.tsx` da `() => false`).
+ * 2026-10-21 (MO-3): `canViewOrders` · mo — → ✓ (o'z marketi, backend `GET /orders` operatorni cheklaydi);
+ * `canCreateOrders` · mo — → ✓ (faqat «AI bilan» — `/new-orders/create`, qobiqning boshqa bolalari 403).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -53,28 +79,37 @@ const CASES: Case[] = [
   ["manager/REGIONAL", state("manager", "REGIONAL")],
   ["manager/HYBRID", state("manager", "HYBRID")],
   ["manager/noma'lum", state("manager")],
+  ["logist", state("logist")],
+  ["market_operator", state("market_operator")],
+  ["investor", state("investor")],
 ];
 
 /** `✓` = ruxsat, `—` = rad. Ustunlar CASES tartibida. */
 const MATRIX: Record<string, string> = {
-  //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???
-  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓",
-  canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —",
-  canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —",
-  canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —",
-  canViewNotifications: "✓   —   —   —   —   —   —   —   —   —",
-  canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —",
-  canViewBranches: "✓    —   —   —   —   —   —   —   —   —",
-  canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —",
+  //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???  lg  mo  in
+  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   —   ✓   —",
+  canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —   —   —   —",
+  canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —   —   —   —",
+  canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
+  canViewNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
+  canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
+  canViewBranches: "✓    —   —   —   —   —   —   —   —   —   —   —   —",
+  canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —   —   —   —",
   // rg = filial turi noma'lum registrator → rad (routes.tsx guardi bilan bir xil).
-  canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —",
-  canDispatchPostToBranch: "✓ ✓ —   —   —   —   —   —   —   —",
-  canViewCourierBulkPage: "— — —   —   ✓   —   —   ✓   ✓   —",
-  canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
-  canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
-  canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —",
-  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —",
-  canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —",
+  canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —   —   —   —",
+  canDispatchPostToBranch: "✓ ✓ —   —   —   —   —   —   —   —   —   —   —",
+  canViewCourierBulkPage: "— — —   —   ✓   —   —   ✓   ✓   —   —   —   —",
+  canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —   —   —   —",
+  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —   —   ✓   —",
+  canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   ✓   —",
+  canCreateProducts: "✓ ✓   —   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
+  // Menejer — o'z bosh sahifasi (`/branch-dashboard`), market — `MarketDashboardPage`.
+  canViewAdminDashboard: "✓ ✓ —   ✓   ✓   —   —   —   —   —   —   —   —",
+  // MO-1: faqat market (backend `market-operators` — @Roles(MARKET), o'z operatorlari).
+  canViewMarketOperators: "— — ✓   —   —   —   —   —   —   —   —   —   —",
 };
 
 const PREDICATES = {
@@ -94,13 +129,17 @@ const PREDICATES = {
   canViewPaymentsPage,
   canCreateOrders,
   canReceiveExternalOrders,
+  canViewProducts,
+  canCreateProducts,
+  canViewAdminDashboard,
+  canViewMarketOperators,
 };
 
 describe("kirish huquqi matritsasi", () => {
   for (const [name, predicate] of Object.entries(PREDICATES)) {
     const expected = MATRIX[name].trim().split(/\s+/);
 
-    it(`${name} — 10 ta rol/filial kombinatsiyasi`, () => {
+    it(`${name} — ${CASES.length} ta rol/filial kombinatsiyasi`, () => {
       expect(expected).toHaveLength(CASES.length);
 
       CASES.forEach(([caseName, s], index) => {
@@ -209,5 +248,101 @@ describe("rol yo'q bo'lsa hech narsa ochilmaydi", () => {
     for (const [name, predicate] of Object.entries(PREDICATES)) {
       expect(predicate(anonymous), name).toBe(false);
     }
+  });
+});
+
+describe("logist (LG-1) — bosh sahifa o'zida, moliya yopiq (ega LG-S1)", () => {
+  const logist = state("logist");
+
+  it("admin bosh sahifasi predikatiga tushmaydi (`DashboardEntry` logistni o'z sahifasiga beradi)", () => {
+    expect(canViewAdminDashboard(logist)).toBe(false);
+  });
+
+  it("moliya predikatlari — rad", () => {
+    expect(canViewPaymentsPage(logist)).toBe(false);
+    expect(canViewFinancialBalance(logist)).toBe(false);
+  });
+});
+
+describe("canViewInvestorCabinet — investor kabineti (IN-1)", () => {
+  it("faqat investor; boshqa har rol/filial va rolsiz holat — rad", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canViewInvestorCabinet(s), caseName).toBe(caseName === "investor");
+    }
+    expect(canViewInvestorCabinet(state(null))).toBe(false);
+  });
+
+  it("investor admin bosh sahifasini, moliya va buyurtma bo'limlarini ko'rmaydi", () => {
+    const investor = state("investor");
+    for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewOrders, canViewUsers]) {
+      expect(predicate(investor)).toBe(false);
+    }
+  });
+});
+
+describe("canViewRegionStats — «Hududlar» (/regions; LG-3: logist)", () => {
+  it("superadmin, admin, menejer (har filial turi), kuryer va logist — ha; market, registrator, market operatori, investor — yo'q", () => {
+    const allowed = new Set(["superadmin", "admin", "courier", "logist"]);
+    for (const [caseName, s] of CASES) {
+      const want = allowed.has(caseName) || caseName.startsWith("manager/");
+      expect(canViewRegionStats(s), caseName).toBe(want);
+    }
+    expect(canViewRegionStats(state(null))).toBe(false);
+  });
+
+  it("logist uchun «Hududlar» ochilsa ham moliya predikatlari yopiq qoladi (ega LG-S1)", () => {
+    const logist = state("logist");
+    expect(canViewRegionStats(logist)).toBe(true);
+    for (const predicate of [canViewPaymentsPage, canViewFinancialBalance, canViewAdminDashboard]) {
+      expect(predicate(logist)).toBe(false);
+    }
+  });
+});
+
+describe("market operatori (MO-2) — «Daromadim», moliya yopiq", () => {
+  it("canViewMyEarnings — faqat market_operator; boshqa har rol/filial va rolsiz holat — rad", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canViewMyEarnings(s), caseName).toBe(caseName === "market_operator");
+    }
+    expect(canViewMyEarnings(state(null))).toBe(false);
+  });
+
+  it("admin bosh sahifasiga tushmaydi (`DashboardEntry` — market bosh sahifasi operator rejimida); moliya va operatorlar yopiq", () => {
+    const operator = state("market_operator");
+    for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewMarketOperators]) {
+      expect(predicate(operator)).toBe(false);
+    }
+  });
+});
+
+describe("market operatori (MO-3) — o'z marketi buyurtmalari va «AI bilan» yaratish", () => {
+  const operator = state("market_operator");
+
+  it("buyurtmalar ro'yxati/tafsiloti va yaratish ochiq", () => {
+    expect(canViewOrders(operator)).toBe(true);
+    expect(canCreateOrders(operator)).toBe(true);
+  });
+
+  it("qabul, bekorlarni topshirish, pochta, jo'natish va paketlar — yopiq (operator faqat o'z marketi nomidan yaratadi)", () => {
+    for (const predicate of [
+      canReceiveExternalOrders,
+      canHandoverCancelledToMarket,
+      canViewMails,
+      canViewDispatchPage,
+      canViewBatchesPage,
+      canViewReturnsPage,
+      canViewCourierBulkPage,
+    ]) {
+      expect(predicate(operator)).toBe(false);
+    }
+  });
+});
+
+describe("canManageExpenseCategories — kassa xarajati kategoriyalari (Elchi Pochta №1)", () => {
+  it("faqat superadmin (backend POST|PATCH|DELETE @Roles(SUPERADMIN)); admin va menejer — faqat tanlaydi", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canManageExpenseCategories(s), caseName).toBe(caseName === "superadmin");
+    }
+    expect(canManageExpenseCategories(state(null))).toBe(false);
   });
 });

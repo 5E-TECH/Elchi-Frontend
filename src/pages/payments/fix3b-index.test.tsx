@@ -25,12 +25,14 @@ const LocationProbe = () => {
 
 const page = vi.hoisted(() => ({ cashboxInfo: { data: {} } as unknown }));
 
-vi.mock("../../entities/payments", () => ({
+vi.mock("../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/payments")>()),
   useCashBox: () => ({
     useGetCashBoxInfo: () => ({ data: page.cashboxInfo, isLoading: false }),
     useGetFinanceHistory: () => ({ data: { data: { items: [] } }, isLoading: false }),
     useGetHqCourierReceivables: () => ({ data: undefined, isLoading: false }),
     useGetCurrentShift: () => ({ isSuccess: false, data: undefined }),
+    openShift: { mutateAsync: vi.fn(), isPending: false },
     useGetCashBoxMain: () => ({ data: undefined, isLoading: false }),
   }),
 }));
@@ -43,6 +45,7 @@ vi.mock("../../entities/payments/financeCoverage", () => ({
 vi.mock("../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => ({ data: { data: { items: [] } }, isLoading: false }),
+    useGetUserById: () => ({ data: undefined }),
     useGetManagers: () => ({ data: undefined, isLoading: false }),
     useGetCouriers: () => ({ data: undefined, isLoading: false }),
   }),

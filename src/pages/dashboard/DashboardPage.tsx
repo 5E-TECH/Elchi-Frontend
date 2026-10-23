@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-dashboard-main, admin-dashboard-main, registrator-dashboard-main, courier-dashboard-home
+// dizayn-v2: superadmin-dashboard-main, admin-dashboard-main, registrator-dashboard-main, courier-dashboard-home, courier-dashboard-pwa-install
 import { Banknote, CircleCheck, CircleX, Package, ReceiptText, Trophy, Truck, Wallet } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,7 @@ import {
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
 import { getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
+import { InstallAppCard } from "../../features/pwa-install";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import { CURRENCY_LABEL, formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
@@ -556,6 +557,10 @@ const DashboardPage = () => {
         rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}
         effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
       />
+      {/* KI-2 (ega javobi KI-S3): «Ilovani o'rnatish» — faqat kuryer bosh sahifasida, bir marta (yopiladi, shu
+          qurilmada eslab qolinadi). Maketda sarlavha va davr filtri orasida; `DashboardHeader` umumiy widget —
+          tegilmaydi, shuning uchun karta sarlavha blokidan keyin (telefonda davr filtri ostida). */}
+      {isCourier ? <InstallAppCard placement="dashboard" /> : null}
       {renderCourier()}
       {renderStats()}
       {widgets.financial && isAnalyticsAdmin && !isAllTime ? (

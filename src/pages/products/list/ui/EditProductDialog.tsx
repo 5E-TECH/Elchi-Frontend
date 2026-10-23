@@ -1,45 +1,53 @@
-// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog, market-products-edit-dialog
+// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog
 import { useEffect, useState } from "react";
 import { Pencil } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../../entities/product";
-import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import { notify } from "../../../../shared/lib/notify";
 import { Button, Dialog, Field, TextInput } from "../../../../shared/ui/primitives";
-import { getProductImageUrl, getProductMarketName, getProductPayload, type Product } from "../../model/productView";
+import { describeProductError, isDuplicateNameError } from "../../model/productErrors";
+import {
+  getProductImageUrl,
+  getProductMarketName,
+  getProductPayload,
+  isPriceInputValid,
+  toPriceInput,
+  type Product,
+} from "../../model/productView";
 import { usePickedImage } from "../../model/usePickedImage";
+import { FormErrorSummary } from "../../ui/FormErrorSummary";
 import { ProductImageField } from "../../ui/ProductImageField";
+import { ProductPriceField } from "../../ui/ProductPriceField";
 
-type EditFormValues = { name: string };
+type EditFormValues = { name: string; price: string };
 
 export type EditProductDialogProps = {
   /** Tahrirlanayotgan mahsulot (`null` — oyna yopiq). */
   product: Product | null;
-  /** Market roli: izoh (market nomi) yo'q, yorliq «Mahsulot rasmi», so'rov `PATCH product/my/:id`. */
-  isMarketRole: boolean;
   onClose: () => void;
 };
 
 /**
- * MAHSULOTNI TAHRIRLASH — maket `*-products-edit-dialog` (`market-products-edit-dialog`): `Dialog` md (telefonda
- * pastki varaqa), `Pencil`, izoh — market nomi (market rolida yo'q); «Mahsulot nomi *», «Rasm» / «Mahsulot rasmi»
- * (zona + oldindan ko'rish), «Bekor qilish» / «Saqlash».
+ * MAHSULOTNI TAHRIRLASH — maket `*-products-edit-dialog` (faqat xodim: superadmin, admin, menejer, registrator):
+ * `Dialog` md (telefonda pastki varaqa), `Pencil`, izoh — market nomi; «Mahsulot nomi *», «Narx» (ixtiyoriy,
+ * `mode="money"`), «Mahsulot rasmi» (zona + oldindan ko'rish), «Bekor qilish» / «Saqlash». «Saqlash» bosilganda
+ * xato maydon bo'lsa — tepada «Saqlab bo'lmadi · N ta maydonda xato» (maket `*-products-create-errors`).
+ * «Og'irlik va o'lcham» bo'limi — maket taklifi (backend kerak, MH-2), chizilmaydi.
  *
- * Xulq (avvalgidek): ochilganda `GET product/:id` (yangi rasm manzili), FormData `name` (+ `image` fayl tanlangan
- * bo'lsa); muvaffaqiyat — «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — backend matni bilan.
- * So'rov: xodim — `PATCH product/:id`, market — `PATCH product/my/:id` (backend `PATCH :id` ga marketni
- * qo'ymaydi; yaratish sahifasidagi tahrir ham shunday).
+ * Xulq: ochilganda `GET product/:id` (yangi rasm manzili), FormData `name` (+ `price` — faqat o'zgargan bo'lsa:
+ * bo'sh — narx tozalanadi, backend `null`; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
+ * «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — i18n izoh bilan (xom backend matni emas), 409 (nom band) —
+ * «Mahsulot nomi» maydoni ostida. Market va market operatori mahsulotni tahrirlamaydi (MH-1) — `PATCH product/my/:id` ishlatilmaydi.
  */
-export const EditProductDialog = ({ product, isMarketRole, onClose }: EditProductDialogProps) => {
+export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) => {
   const { t } = useTranslation("products");
   // Yopilish harakati paytida ham oxirgi mahsulot ko'rinib tursin (oyna bo'shab qolmasin).
   const [shown, setShown] = useState(product);
   if (product && product !== shown) setShown(product);
   const target = product ?? shown;
 
-  const { useGetProductById, updateProduct, updateMyProduct } = useProducts();
-  const mutation = isMarketRole ? updateMyProduct : updateProduct;
+  const { useGetProductById, updateProduct } = useProducts();
   const { data: detailResponse } = useGetProductById(product?.id, Boolean(product));
   const detail = getProductPayload(detailResponse);
   const [picked, pick] = usePickedImage();
@@ -47,31 +55,40 @@ export const EditProductDialog = ({ product, isMarketRole, onClose }: EditProduc
     control,
     handleSubmit,
     reset,
-    formState: { errors },
-  } = useForm<EditFormValues>({ defaultValues: { name: product?.name ?? "" } });
+    setError,
+    formState: { errors, isSubmitted, dirtyFields },
+  } = useForm<EditFormValues>({ defaultValues: { name: product?.name ?? "", price: toPriceInput(product) } });
 
-  // Har ochilishda forma shu mahsulot nomi bilan qayta to'ladi (oldingi yozilgan, saqlanmagan matn qolmaydi).
+  // Har ochilishda forma shu mahsulot qiymatlari bilan qayta to'ladi (oldingi yozilgan, saqlanmagan matn qolmaydi).
   useEffect(() => {
-    if (product) reset({ name: product.name });
+    if (product) reset({ name: product.name, price: toPriceInput(product) });
   }, [product, reset]);
 
-  const submit = handleSubmit(async ({ name }) => {
-    if (!product) return;
-    const productName = name.trim();
+  const submit = handleSubmit(async ({ name, price }) => {
+    // Enter bilan takroriy yuborish (tugma `loading` bo'lsa ham) — ikkinchi PATCH ketmasin.
+    if (!product || updateProduct.isPending) return;
     const formData = new FormData();
-    formData.append("name", productName);
+    formData.append("name", name.trim());
+    // Narx faqat o'zgargan bo'lsa yuboriladi: kasrli eski narx (125000.50) bekorga yaxlitlanmasin.
+    if (dirtyFields.price) formData.append("price", price);
     if (picked) formData.append("image", picked.file);
 
     try {
-      await mutation.mutateAsync({ id: product.id, data: formData });
+      await updateProduct.mutateAsync({ id: product.id, data: formData });
       notify.success(t("updateSuccess"));
       onClose();
     } catch (error) {
-      notify.error(t("updateError"), { description: getBackendErrorMessage(error) });
+      // 409 — shu marketda shu nomli mahsulot bor: «Mahsulot nomi» qizil + tepadagi xulosa (qayta urinish foydasiz).
+      if (isDuplicateNameError(error)) {
+        setError("name", { type: "server", message: t("v2.errors.duplicateName") }, { shouldFocus: true });
+        return;
+      }
+      notify.error(t("updateError"), { description: describeProductError(error, t) });
     }
   });
 
-  const busy = mutation.isPending;
+  const busy = updateProduct.isPending;
+  const errorCount = isSubmitted ? Object.keys(errors).length : 0;
 
   return (
     <Dialog
@@ -81,7 +98,7 @@ export const EditProductDialog = ({ product, isMarketRole, onClose }: EditProduc
       busy={busy}
       icon={Pencil}
       title={t("v2.edit.title")}
-      description={isMarketRole ? undefined : (getProductMarketName(detail ?? target) ?? undefined)}
+      description={getProductMarketName(detail ?? target) ?? undefined}
       onSubmit={submit}
       formProps={{ noValidate: true }}
       footer={
@@ -95,6 +112,7 @@ export const EditProductDialog = ({ product, isMarketRole, onClose }: EditProduc
         </>
       }
     >
+      <FormErrorSummary count={errorCount} />
       <Controller
         control={control}
         name="name"
@@ -114,8 +132,25 @@ export const EditProductDialog = ({ product, isMarketRole, onClose }: EditProduc
           </Field>
         )}
       />
+      <Controller
+        control={control}
+        name="price"
+        rules={{ validate: (value) => isPriceInputValid(value) || t("validationPriceTooLarge") }}
+        render={({ field }) => (
+          <ProductPriceField
+            id="product-edit-price"
+            name={field.name}
+            inputRef={field.ref}
+            value={field.value}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.price?.message}
+            readOnly={busy}
+          />
+        )}
+      />
       <ProductImageField
-        label={isMarketRole ? t("v2.edit.imageMarket") : t("v2.edit.image")}
+        label={t("v2.edit.image")}
         picked={picked}
         existingUrl={getProductImageUrl(detail ?? target)}
         onPick={pick}

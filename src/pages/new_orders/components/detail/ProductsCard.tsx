@@ -1,13 +1,13 @@
 // dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail
 import { Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ProductThumb } from "../../../../entities/product/ui/ProductThumb";
 import { getOrderItemName } from "../../../../shared/lib/orderItemName";
 import { Badge, Card, DataTable, EmptyState, type DataTableColumn } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey } from "../../../orders/list/courier/list/orderActionModel";
 import { EditButton } from "./EditButton";
 import { OrderComment } from "./OrderComment";
-import { ProductThumb } from "./ProductThumb";
-import { isCatalogLessItem, type OrderDetail, type OrderDetailItem } from "./orderDetailModel";
+import { getProductImageUrl, isCatalogLessItem, type OrderDetail, type OrderDetailItem } from "./orderDetailModel";
 
 type ProductsCardProps = {
   order: OrderDetail;
@@ -46,7 +46,7 @@ export const ProductsCard = ({
       header: productLabel,
       cell: (item) => (
         <div className="flex min-w-0 items-center gap-3">
-          <ProductThumb item={item} />
+          <ProductThumb imageUrl={getProductImageUrl(item)} />
           <div className="min-w-0">
             <div className="font-semibold wrap-break-word text-text">
               {getOrderItemName(item, t("productFallback", { ns: "newOrders" }))}

@@ -1,15 +1,15 @@
-// dizayn-v2: superadmin-ops-system
-import { memo, useState, type FormEvent, type ReactNode } from "react";
-import { Banknote, CircleCheck, Clock, Info, Search, Server, Trophy, Truck, TriangleAlert } from "lucide-react";
+// dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical, superadmin-ops-system-ai-config, superadmin-ops-system-ai-cap
+import { memo, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Banknote, CircleCheck, CircleX, Clock, Info, RefreshCw, Search, Trophy, Truck, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BATCH_STATUS_TONE } from "../../entities/batch";
 import { useMiscCoverage } from "../../entities/coverage/miscCoverage";
 import { OrderStatusBadge } from "../../entities/order";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { getErrorStatus } from "../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
 import { formatPhone } from "../../shared/lib/formatPhone";
+import { cx } from "../../shared/lib/cx";
 import {
   Badge,
   Button,
@@ -19,6 +19,7 @@ import {
   Skeleton,
   StatusBadge,
   TextInput,
+  TONE_SOFT,
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 import {
@@ -30,10 +31,13 @@ import {
   type ScanResult,
 } from "./lib/systemOps";
 import { KpiRing, SlaGauge } from "./ui/charts";
+import { AiStatusCard } from "./ui/AiStatusCard";
+import { HealthCard } from "./ui/HealthCard";
 
 /**
- * OPS → «Tizim» (maket `superadmin-ops-system`): tizim holati (`GET /health` liveness), «O'z vaqtida (SLA)»
- * (`onTimeRate`), «Analitika KPI» (`GET analytics/kpi`) va «Token orqali tekshirish» (`GET scan/:token`).
+ * OPS → «Tizim» (maket `superadmin-ops-system` va holatlari): kirish kartasi → «Tizim holati» (`GET /health/readiness`,
+ * `ui/HealthCard.tsx`) → «AI holati» (`GET ai/status` + gateway bayrog'i, `ui/AiStatusCard.tsx`, OS-2) → «O'z vaqtida (SLA)» (`onTimeRate`) + «Analitika KPI»
+ * (`GET analytics/kpi`) → «Token orqali tekshirish» (`GET scan/:token`).
  * Hozirgi `JSON.stringify` o'rniga natija maydonlar ro'yxati (`dl`). «Kuryer samaradorligi» — foiz halqasi emas,
  * «O'rtacha N ta buyurtma» (API — kuryerga o'rtacha buyurtma soni, spec §8 D3).
  */
@@ -60,21 +64,79 @@ const KpiItem = ({ visual, label, value, hint, extra }: { visual: ReactNode; lab
   </li>
 );
 
+/** KPI yuklanishi (maket `superadmin-ops-system-loading`): ikki karta sarlavhasi bilan, ichida skelet. */
+const KpiSkeleton = ({
+  slaTitle,
+  slaSubtitle,
+  kpiTitle,
+  kpiSubtitle,
+}: {
+  slaTitle: string;
+  slaSubtitle: string;
+  kpiTitle: string;
+  kpiSubtitle: string;
+}) => (
+  <div className="flex flex-wrap gap-6 max-md:gap-4">
+    <Card
+      divided={false}
+      title={slaTitle}
+      description={slaSubtitle}
+      aria-busy="true"
+      className="min-w-0 flex-[1_1_352px]"
+      bodyClassName="flex flex-col items-center gap-3 pt-2 pb-1"
+    >
+      <Skeleton shape="block" tone="border" width="min(312px, 100%)" height={156} style={{ borderRadius: "156px 156px 0 0" }} />
+      <Skeleton tone="border" width={96} height={28} />
+      <Skeleton tone="border" width={180} height={12} />
+    </Card>
+    <Card
+      divided={false}
+      title={kpiTitle}
+      description={kpiSubtitle}
+      aria-busy="true"
+      className="min-w-0 flex-[2_1_348px]"
+    >
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-x-6 gap-y-7 p-0">
+        {[0, 1, 2, 3].map((item) => (
+          <li key={item} className="flex min-w-0 items-center gap-3.5">
+            <Skeleton shape="circle" tone="border" width={72} height={72} />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton tone="border" width="70%" height={12} />
+              <Skeleton tone="border" width="55%" height={20} />
+              <Skeleton tone="border" width="45%" height={12} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  </div>
+);
+
 const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t, i18n } = useTranslation(["ops", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const { useGetAnalyticsKpi, useGetHealthLiveness, useGetScanByToken } = useMiscCoverage();
+  const { useGetAnalyticsKpi, useGetScanByToken } = useMiscCoverage();
 
   const [scanInput, setScanInput] = useState("");
   const [activeToken, setActiveToken] = useState("");
 
-  // Uchala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa.
+  // Ikkala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa. Tizim holati va AI holati — o'z kartalari ichida.
   const kpiQuery = useGetAnalyticsKpi(undefined, { silentError: true });
-  const healthQuery = useGetHealthLiveness({ silentError: true });
   const scanQuery = useGetScanByToken(activeToken, !!activeToken, { silentError: true });
 
   const kpi = readAnalyticsKpi(kpiQuery.data);
   const scan = readScanResult(scanQuery.data);
+
+  // KPI xatosidan «Qayta urinish» bilan tiklansa — fokus «Analitika KPI» kartasiga (tugma yo'qolib, fokus `<body>` ga tushmasin).
+  const kpiCardRef = useRef<HTMLElement>(null);
+  const kpiFocusOnRecovery = useRef(false);
+  const hasKpi = kpi !== null;
+  useEffect(() => {
+    if (!hasKpi || !kpiFocusOnRecovery.current) return;
+    kpiFocusOnRecovery.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) kpiCardRef.current?.focus();
+  }, [hasKpi]);
 
   const percent = (value: number) => formatPercentLocalized(value, { language });
 
@@ -85,33 +147,6 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     if (token === activeToken) void scanQuery.refetch();
     else setActiveToken(token);
   };
-
-  const healthBlock = (
-    <div
-      role="status"
-      aria-label={t("system.health.title")}
-      className="flex min-w-0 flex-[0_1_380px] items-center gap-3 rounded-xl bg-sunken px-4 py-3 max-md:flex-auto"
-    >
-      <span className="inline-flex size-9 flex-none items-center justify-center rounded-[10px] bg-surface text-text-muted">
-        <Server size={20} aria-hidden="true" />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <h3 className="text-sm font-semibold text-text">{t("system.health.title")}</h3>
-          {healthQuery.isLoading ? (
-            <Skeleton className="h-5 w-20" />
-          ) : healthQuery.isError ? (
-            <StatusBadge tone="danger" label={t("system.health.error")} />
-          ) : (
-            <StatusBadge tone="success" label={t("system.health.ok")} />
-          )}
-        </div>
-        <p className="text-xs text-text-muted">
-          {healthQuery.isError ? t("system.health.errorHint") : t("system.health.okHint")}
-        </p>
-      </div>
-    </div>
-  );
 
   const scanStatus = (result: ScanResult, value: string) => {
     if (result.type === "order") return <OrderStatusBadge status={value} />;
@@ -144,19 +179,38 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
 
   return (
     <OpsToolPage tabKey="system" embedded={embedded}>
-      <OpsIntro title={t("system.intro.title")} description={t("system.intro.description")} aside={healthBlock} />
+      <OpsIntro title={t("system.intro.title")} description={t("system.intro.description")} />
+
+      <HealthCard />
+
+      <AiStatusCard />
 
       <QueryBoundary
         query={kpiQuery}
-        skeleton="chart"
         isEmpty={() => kpi === null}
-        error={(error, retry) => (
-          <Card>
-            <OpsAlert tone="danger" title={t("system.kpi.loadError")}>
-              {getBackendErrorMessage(error)}
-            </OpsAlert>
-            <div className="pt-3">
-              <Button variant="secondary" size="sm" onClick={retry}>
+        loadingLabel={t("system.kpi.loadingLabel")}
+        loading={<KpiSkeleton slaTitle={t("system.sla.title")} slaSubtitle={t("system.sla.subtitle")} kpiTitle={t("system.kpi.title")} kpiSubtitle={t("system.kpi.subtitle")} />}
+        error={(_error, retry) => (
+          <Card title={t("system.kpi.title")}>
+            <div
+              role="alert"
+              className={cx("flex min-w-0 flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.danger)}
+            >
+              <CircleX size={18} aria-hidden="true" className="shrink-0" />
+              <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5 text-text">
+                <div className="font-bold">{t("system.kpi.loadError")}</div>
+                <div className="text-[13px] leading-[18px] text-text-muted">{t("system.kpi.loadErrorText")}</div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={RefreshCw}
+                onClick={() => {
+                  kpiFocusOnRecovery.current = true;
+                  retry();
+                }}
+                loading={kpiQuery.isFetching}
+              >
                 {t("common.retry")}
               </Button>
             </div>
@@ -203,6 +257,8 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                 </Card>
 
                 <Card
+                  ref={kpiCardRef}
+                  tabIndex={-1}
                   divided={false}
                   title={t("system.kpi.title")}
                   description={t("system.kpi.subtitle")}
@@ -334,7 +390,7 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
           </OpsAlert>
         ) : scanQuery.isError ? (
           <OpsAlert tone="danger" title={t("system.scan.error")}>
-            {getBackendErrorMessage(scanQuery.error)}
+            {t("system.scan.errorText")}
           </OpsAlert>
         ) : scan && activeToken ? (
           <div role="status" aria-label={t("system.scan.result")} className="flex min-w-0 flex-col gap-3 rounded-xl bg-sunken p-4">

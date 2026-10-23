@@ -10,6 +10,7 @@ import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
 import { loadAppLocales } from "../i18n";
+import { deviceIdHeaders } from "./deviceId";
 
 type LoginCredentials = {
   phone_number: string;
@@ -217,7 +218,8 @@ const isRetryableRefreshError = (error: unknown) => {
 const postRefreshWithRetry = async () => {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {});
+      // `X-Device-Id` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu bilan yoziladi).
+      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceIdHeaders() });
     } catch (error) {
       if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
       await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
@@ -249,7 +251,10 @@ export const login = async (credentials: LoginCredentials) => {
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    // Har login — alohida sessiya (Elchi Pochta #3); `X-Device-Id` uni shu brauzerga bog'laydi.
+    const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
+      headers: deviceIdHeaders(),
+    });
     const accessToken = response.data?.accessToken;
 
     if (!accessToken) {
@@ -332,6 +337,8 @@ export type LogoutReason = "sessionExpired";
 
 export type LogoutAndRedirectOptions = {
   reason?: LogoutReason;
+  /** `sessionExpired`: server sessiyani «Session revoked» deb rad etdi (boshqa qurilmadan yopilgan). */
+  revoked?: boolean;
 };
 
 /**
@@ -339,7 +346,7 @@ export type LogoutAndRedirectOptions = {
  * Refresh token muddati hali o'tmagan bo'lsa (server sessiyani oldinroq rad etdi) — hozirgi vaqt.
  * `passwordChanged` ustun: parol o'zgargach chiqarilgan foydalanuvchiga o'sha sabab ko'rinadi.
  */
-const rememberSessionExpired = () => {
+const rememberSessionExpired = (revoked = false) => {
   const existing = peekLoginNoticeDetails();
   if (existing?.notice === "passwordChanged") return;
   const now = Date.now();
@@ -347,8 +354,11 @@ const rememberSessionExpired = () => {
   const at = refreshTokenExpiresAt && refreshTokenExpiresAt <= now ? refreshTokenExpiresAt : now;
   // Bir vaqtdagi bir nechta chaqiruv (parallel so'rovlar): `logout()` metama'lumotni tozalagach kelgani
   // birinchisi yozgan haqiqiy tugash vaqtini «hozir» bilan almashtirmasin — eng erta vaqt qoladi.
-  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at) return;
-  rememberLoginNotice("sessionExpired", { at });
+  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at && (existing.revoked || !revoked)) {
+    return;
+  }
+  const earliest = existing?.notice === "sessionExpired" && existing.at && existing.at <= at ? existing.at : at;
+  rememberLoginNotice("sessionExpired", { at: earliest, revoked: revoked || existing?.revoked === true });
 };
 
 /**
@@ -360,7 +370,7 @@ const rememberSessionExpired = () => {
  */
 export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) => {
   if (options?.reason === "sessionExpired") {
-    rememberSessionExpired();
+    rememberSessionExpired(options.revoked === true);
   } else if (peekLoginNotice() === "sessionExpired") {
     clearLoginNotice();
   }

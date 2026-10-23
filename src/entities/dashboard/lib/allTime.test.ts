@@ -59,6 +59,18 @@ describe("readAppliedRange", () => {
     expect(normalized.data.myStat).not.toHaveProperty("applied_range");
     expect(normalized.data.appliedRange).toEqual({ clamped: true, from: "2025-10-22", to: "2026-10-22" });
   });
+
+  it("meta javob ildizida (`data` yonida, prod 2026-10-22 shakli) — UTC vaqt Toshkent kuniga", () => {
+    const normalized = normalizeDashboardResponse({
+      statusCode: 200,
+      clamped: true,
+      effective_from: "2025-10-21T19:00:00.000Z",
+      effective_to: "2026-10-22",
+      max_span_days: 366,
+      data: { orders: { acceptedCount: 3 } },
+    });
+    expect(normalized.data.appliedRange).toEqual({ clamped: true, from: "2025-10-22", to: "2026-10-22" });
+  });
 });
 
 describe("getEffectiveAllTimeRange", () => {

@@ -1,7 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+
+export {
+  isRetryableSmsCampaignError,
+  minutesToHhmm,
+  quietHoursNotice,
+  smsCampaignErrorKind,
+  smsDailyQuota,
+  tashkentMinuteOfDay,
+  type QuietHours,
+  type QuietNotice,
+  type SmsCampaignErrorKind,
+  type SmsDailyQuota,
+} from "./model/campaign";
 
 export type SmsMessageClass = "transactional" | "promo" | "security";
 export type SmsLanguage = "uz" | "ru" | "en";
@@ -50,7 +64,11 @@ export interface SmsCampaignSegment {
 }
 
 export interface SmsCampaignInput {
-  message_class?: "promo" | "transactional";
+  /**
+   * Kampaniya FAQAT reklama (sVByLMnt): backend boshqa sinfni 400 `campaign_promo_only` bilan rad etadi. Xizmat
+   * (transactional) va OTP SMS — faqat tizim hodisalaridan.
+   */
+  message_class?: "promo";
   text?: string;
   template_code?: string;
   lang?: SmsLanguage;
@@ -137,6 +155,7 @@ export const SMS_KEYS = {
   tariffs: ["sms", "tariffs"] as const,
   templates: ["sms", "templates"] as const,
   campaigns: ["sms", "campaigns"] as const,
+  audience: (segmentKey: string) => ["sms", "campaign-audience", segmentKey] as const,
   accounts: ["sms", "accounts"] as const,
   report: (from: string, to: string) => ["sms", "report", from, to] as const,
 };
@@ -190,6 +209,52 @@ export const useSmsReport = (from: string, to: string, options?: SilentErrorOpti
 
 export const previewSmsCampaign = async (input: SmsCampaignInput) =>
   unwrap<SmsCampaignPreview>((await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_PREVIEW, input)).data);
+
+/**
+ * Jonli auditoriya uchun namuna matn. `POST …/campaigns/preview` matnsiz ishlamaydi (400 «Xabar matni bo'sh»),
+ * auditoriya (qabul qiluvchilar, roziligi yo'qlar, noto'g'ri raqamlar) esa matnga bog'liq EMAS — shuning uchun
+ * jonli son matn yozilmasdan ham shu neytral matn bilan so'raladi. Hech narsa yuborilmaydi; aniq narx, bo'laklar
+ * va to'liq matn — «Ko'rib chiqish» dagi haqiqiy preview'da.
+ */
+export const SMS_AUDIENCE_PROBE_TEXT = "Elchi";
+/** Filtr o'zgarishidan keyin kutish (ms) — har bosishda so'rov ketmasin. */
+export const SMS_AUDIENCE_DEBOUNCE_MS = 400;
+
+/**
+ * JONLI AUDITORIYA (KM-1): mijozlar segmenti → `POST …/campaigns/preview` (debounce bilan). `segment = null` —
+ * so'rov yo'q (masalan «Raqamlar» rejimi). Oldingi natija yangisi kelguncha qoladi (`keepPreviousData`);
+ * `settled = false` — filtr o'zgargan, so'rov hali ketmagan.
+ */
+export const useSmsCampaignAudience = (
+  segment: SmsCampaignSegment | null,
+  delay: number = SMS_AUDIENCE_DEBOUNCE_MS,
+) => {
+  const key = segment ? JSON.stringify(segment) : null;
+  const [debouncedKey, setDebouncedKey] = useState(key);
+  useEffect(() => {
+    if (key === debouncedKey) return undefined;
+    const timer = setTimeout(() => setDebouncedKey(key), delay);
+    return () => clearTimeout(timer);
+  }, [debouncedKey, delay, key]);
+
+  const query = useQuery({
+    queryKey: SMS_KEYS.audience(debouncedKey ?? ""),
+    queryFn: async () =>
+      previewSmsCampaign({
+        message_class: "promo",
+        text: SMS_AUDIENCE_PROBE_TEXT,
+        segment: JSON.parse(debouncedKey ?? "{}") as SmsCampaignSegment,
+      }),
+    enabled: key !== null && debouncedKey !== null,
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    meta: { silentError: true },
+  });
+
+  return { ...query, settled: key === debouncedKey };
+};
 
 export const useSendSmsCampaign = () => {
   const queryClient = useQueryClient();

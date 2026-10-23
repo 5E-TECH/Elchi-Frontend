@@ -54,6 +54,10 @@
   "roleOperator": "Operator",
   "roleSuperAdmin": "Superadmin",
   "roleCustomer": "Customer",
+  "roleLogist": "Logist",
+  "roleMarketOperator": "Market operator",
+  "roleInvestor": "Investor",
+  "roleBranch": "Branch",
   "roleUnknown": "Unknown",
   "editUser": "Edit user",
   "edit": "Edit",
@@ -141,15 +145,6 @@
   "sellExtraCostProofRequired": "Sale extra cost proof",
   "cancelExtraCostProofRequired": "Cancel extra cost proof",
   "permissions": "Permissions",
-  "tgGroupCardTitle": "Telegram group",
-  "changesSaveInstantly": "Changes are saved instantly",
-  "tgGroupPiiLabel": "Customer name and phone in the group",
-  "tgGroupPiiHint": "When off, the customer's name and phone are hidden on order cards in the Telegram group",
-  "tgGroupPiiSaved": "Saved",
-  "tgGroupPiiShownDescription": "Order cards in the group show the customer's name and phone",
-  "tgGroupPiiHiddenDescription": "Order cards in the group hide the customer's name and phone",
-  "tgGroupPiiSaveError": "Not saved",
-  "tgGroupPiiSaveErrorDescription": "Couldn't save the setting. Try again",
   "v2": {
     "common": {
       "back": "Users",
@@ -179,12 +174,19 @@
       "tabsLabel": "By role",
       "tabs": {
         "all": "All",
-        "market": "Markets",
-        "courier": "Couriers",
+        "admin": "Admins",
         "manager": "Managers",
         "registrator": "Registrars",
-        "operator": "Operators",
-        "admin": "Admins"
+        "courier": "Couriers",
+        "logist": "Logists",
+        "market": "Markets",
+        "marketOperator": "Market operators",
+        "investor": "Investors"
+      },
+      "roleFilter": "Role",
+      "roleGroups": {
+        "staff": "Staff",
+        "external": "External accounts"
       },
       "filtersLabel": "Filters",
       "searchLabel": "Search users",
@@ -328,6 +330,8 @@
       "tariffCenter": "To the centre",
       "homeTariff": "Home tariff",
       "centerTariff": "Centre tariff",
+      "marketHomePrice": "Standard price to the door",
+      "marketCenterPrice": "Standard price to the centre",
       "profile": "Profile details",
       "branch": "Branch",
       "salary": "Monthly salary",
@@ -361,9 +365,126 @@
       "defaultTariff": "Main tariff",
       "homeTariff": "Home tariff",
       "centerTariff": "Centre tariff",
-      "saving": "Saving…"
+      "marketHomePrice": "Standard price to the door",
+      "marketCenterPrice": "Standard price to the centre",
+      "marketHomePriceRequired": "Enter the standard price to the door",
+      "marketCenterPriceRequired": "Enter the standard price to the centre",
+      "saving": "Saving…",
+      "marketName": "Market name",
+      "marketNamePlaceholder": "For example: Baraka Shop",
+      "aiPrice": "AI price (per order)",
+      "aiPriceHint": "For this market · 0 — free",
+      "aiPricePlaceholder": "For example: 250",
+      "aiPriceRange": "Enter a value from 0 to {{max}}",
+      "workArea": "Work area",
+      "region": "Region",
+      "regionHint": "The branch is changed via “Transfer to another branch”",
+      "regionEmpty": "Not assigned"
+    },
+    "logist": {
+      "roleHint": "Orders and status history, no finance",
+      "formDescription": "A logistician follows the statistics of their assigned regions",
+      "sections": {
+        "salary": "Salary",
+        "regions": "Regions"
+      },
+      "salaryHint": "Monthly salary",
+      "paymentDayHint": "Day 1–30 of each month",
+      "regionsNote": "A logistician is not attached to a branch. After saving, «Assign logisticians» opens with this logistician selected — tick the regions there.",
+      "phoneTaken": "This phone number is already registered",
+      "created": "Logistician created",
+      "createdDescription": "{{name}} · now assign their regions",
+      "createError": "Could not create the logistician",
+      "createErrorText": "Check the details and try again."
+    },
+    "role": {
+      "section": "Role",
+      "superadminOnly": "Superadmin only",
+      "label": "Role",
+      "listLabel": "Roles",
+      "hint": "Can only be switched between admin, manager, registrar and logistician. Saving asks for confirmation first.",
+      "changed": "Changed: {{from}} → {{to}} · saving asks for confirmation",
+      "changedShort": "Changed: {{from}} → {{to}}",
+      "descriptions": {
+        "admin": "Company-wide management",
+        "manager": "Branch manager: own branch mail, couriers and cash desk",
+        "registrator": "Receiving and registering orders",
+        "logist": "Assigned regions: orders, status history, mail and couriers · no finance"
+      },
+      "as": {
+        "admin": "an admin",
+        "manager": "a manager",
+        "registrator": "a registrar",
+        "logist": "a logistician"
+      },
+      "confirm": {
+        "title": "Change the role?",
+        "description": "{{name}} will now work as {{role}}.",
+        "action": "Change role",
+        "transition": "Role: {{from}} → {{to}}",
+        "after": "After the change",
+        "regions": "Regions to be released ({{n}}): {{names}} — reassign them to another logistician on the «Assign logisticians» page",
+        "regionsMore": "{{names}} and {{n}} more",
+        "regionsUnknown": "The logistician's regions will be released — reassign them to another logistician on the «Assign logisticians» page",
+        "session": "Their current session will be closed — they will use the new role at the next sign-in",
+        "managerBranch": "Assign the manager to a branch: «Branches» → branch → «Add employee»",
+        "journal": "The old and new role are written to the activity log",
+        "journalLogist": "The old and new role and the released regions are written to the activity log"
+      },
+      "error": {
+        "title": "Role not changed",
+        "assigned": "{{name}} is assigned to a branch. Remove them from the branch first — after the role change, assign them again with the new role. The window stays open — your input is kept.",
+        "retry": "Could not check right now — the role was not changed. Try again in a moment. The window stays open — your input is kept.",
+        "unknown": "No response — it is unknown whether the role changed. Check the role and try again. The window stays open — your input is kept.",
+      "failed": "Could not change the role. Refresh the page and try again. The window stays open — your input is kept.",
+        "retryAction": "Try again"
+      },
+      "success": {
+        "title": "Role changed",
+        "text": "{{name}}: {{from}} → {{to}}",
+        "assignLogists": "Assign logisticians"
+      },
+      "partial": {
+        "title": "Role changed, the rest was not saved",
+        "text": "{{name}} is now {{role}}. Other changes were not saved — check them and save again."
+      }
     }
   },
-  "tgGroupLinkAction": "Get connection link",
-  "tgGroupLinkHint": "One-time link (10 minutes): the bot joins the group and connects it itself. Connected groups are listed on the Notifications page."
+  "tgGroup": {
+    "title": "Telegram group",
+    "hintStaff": "The market's order messages go to these groups. Each group is connected with a one-time link.",
+    "hintSelf": "Order messages go to your shop's Telegram group. Each group is connected with a one-time link.",
+    "typeCreate": "New orders group",
+    "typeCancel": "Cancelled orders group",
+    "connected": "Connected",
+    "since": "since {{date}}",
+    "notConnected": "Not connected",
+    "offCreate": "New order cards are not delivered",
+    "offCancel": "Cancelled order messages are not delivered",
+    "inactive": "Inactive",
+    "inactiveHint": "Messages are not sent to this group",
+    "link": "Connect",
+    "linkCreate": "Connect the new orders group",
+    "linkCancel": "Connect the cancelled orders group",
+    "allGroups": "All groups — in the «Notifications» section",
+    "loadError": "Could not load the group status",
+    "loadErrorText": "Please try again.",
+    "piiLabel": "Customer name and phone in the group",
+    "piiHint": "When off, the customer's name and phone are hidden on order cards in the group. Changes are saved instantly.",
+    "piiSaved": "Saved",
+    "piiShown": "Customer name and phone are shown on order cards in the group",
+    "piiHidden": "Customer name and phone are hidden on order cards in the group",
+    "piiSaveError": "Not saved",
+    "piiSaveErrorText": "Could not save the setting. Please try again."
+  },
+  "tgBot": {
+    "column": "Telegram bot",
+    "columnHint": "Personal Elchi bot connection",
+    "linked": "Connected",
+    "unlinked": "Not connected",
+    "cardLinked": "Bot connected",
+    "cardUnlinked": "Bot not connected",
+    "listHint": "Personal Elchi bot connection. Store group status is on the user's details page, in the “Telegram group” card.",
+    "unavailable": "Cannot be connected"
+  }
 }

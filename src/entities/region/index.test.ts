@@ -5,6 +5,7 @@ import {
   normalizeMyRegionDistrictStats,
   normalizeRegionDetailStats,
   normalizeRegionItem,
+  regionsOfLogist,
   shortRegionName,
   splitCompactMoney,
   successRateOf,
@@ -219,6 +220,29 @@ describe("region statistics adapters", () => {
     expect(result.couriers?.[1]).toMatchObject({ id: "c2", isPrimary: true });
   });
 
+  it("LG-3: courier status (lower-case) and districtId from GET region/stats/:id", () => {
+    const result = normalizeRegionDetailStats({
+      statusCode: 200,
+      data: {
+        region: { id: "6", name: "Samarqand viloyati" },
+        summary: { totalOrders: 3, deliveredOrders: 2, cancelledOrders: 1 },
+        couriers: [
+          { id: "c1", name: "A", status: "ACTIVE", districtId: 15, totalOrders: 3, deliveredOrders: 2 },
+          { id: "c2", name: "B", status: null, districtId: null, totalOrders: 0, deliveredOrders: 0 },
+          { id: "c3", name: "C", status: "inactive", district_id: "16" },
+        ],
+        districts: [],
+      },
+    });
+
+    expect(result.couriers?.map(({ status, districtId }) => ({ status, districtId }))).toEqual([
+      { status: "active", districtId: "15" },
+      { status: null, districtId: null },
+      { status: "inactive", districtId: "16" },
+    ]);
+    expect(result.couriers?.[0].successRate).toBeCloseTo(66.67, 1);
+  });
+
   it("normalizes GET region/my/district-stats (uherIk8r) incl. zero-order districts", () => {
     const result = normalizeMyRegionDistrictStats({
       statusCode: 200,
@@ -295,5 +319,31 @@ describe("region statistics adapters", () => {
     expect(shortRegionName("Toshkent viloyati")).toBe("Toshkent vil.");
     expect(shortRegionName("Samarqand viloyati")).toBe("Samarqand");
     expect(shortRegionName("Qoraqalpog'iston Respublikasi")).toBe("Qoraqalpog'iston");
+  });
+});
+
+describe("LG-1: logist viloyatlari (`stats/all` → logist_id, totalCouriers)", () => {
+  it("normalizes logist_id and totalCouriers additively", () => {
+    expect(
+      normalizeRegionItem({ id: 6, name: "Samarqand", logist_id: 42, activeCouriers: 18, totalCouriers: 22 }),
+    ).toMatchObject({ id: "6", logistId: "42", activeCouriers: 18, totalCouriers: 22, couriersKnown: true });
+    expect(normalizeRegionItem({ id: 7, name: "Navoiy", logist_id: null })).toMatchObject({
+      logistId: null,
+      totalCouriers: 0,
+    });
+  });
+
+  it("keeps only the regions assigned to this logist (client scope until backend iOnGbEqi)", () => {
+    const regions = [
+      { id: "1", logistId: "42" },
+      { id: "2", logistId: "7" },
+      { id: "3", logistId: null },
+      { id: "4" },
+      { id: "5", logistId: "42" },
+    ];
+    expect(regionsOfLogist(regions, 42).map((region) => region.id)).toEqual(["1", "5"]);
+    expect(regionsOfLogist(regions, "42").map((region) => region.id)).toEqual(["1", "5"]);
+    expect(regionsOfLogist(regions, null)).toEqual([]);
+    expect(regionsOfLogist(regions, "")).toEqual([]);
   });
 });

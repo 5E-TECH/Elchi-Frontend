@@ -11,7 +11,8 @@ import { defineScene, fixture } from "../support/test";
 const MAIN_CASHBOX = {
   "GET finance/cashbox/main": fixture("finance/cashbox-main.json"),
   "GET finance/cashbox/all-info": fixture("finance/all-info.json"),
-  "GET finance/shift": fixture("finance/shift-open.json"),
+  // GET finance/shift/current (kfdfYDik): asosiy kassaning ochiq smenasi — admin (persona 2) ochgan.
+  "GET finance/shift/current": fixture("finance/shift-open.json"),
 };
 
 defineScene({

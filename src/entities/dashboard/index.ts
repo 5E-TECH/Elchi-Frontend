@@ -631,7 +631,8 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
           ? normalizeTopCourier(data.myRanking ?? data.my_ranking)
           : null,
       // Xom `data` dan: `orders` va `myStat` yuqorida qayta quriladi, ulardagi `applied_range` yo'qolardi.
-      appliedRange: readAppliedRange(data),
+      // Meta javob ildizida (`data` yonida) kelsa ham o'qiladi (tya24blo).
+      appliedRange: readAppliedRange(data) ?? readAppliedRange(response),
       ...readPartialFailure(response, data, DASHBOARD_PARTS),
     },
   };

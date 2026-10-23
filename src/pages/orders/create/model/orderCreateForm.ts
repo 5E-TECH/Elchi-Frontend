@@ -10,8 +10,39 @@ export interface MarketOption {
   status?: "active" | "inactive" | "blocked" | string;
 }
 
+/** Mijoz maydonlari — mavjud mijoz bog'lanishida «o'zgarmadimi» shu qiymatlar bo'yicha solishtiriladi. */
+export type CustomerFieldValues = OrderCreateFormValues["customer"];
+
+/**
+ * TAKLIFDAN TANLANGAN MAVJUD MIJOZ (CS-A, hiqRNhkI). `filled` — tanlangandan keyingi maydonlar (shular
+ * o'zgarmasa `customer_id` yuboriladi), `previous` — tanlashdan oldingi qiymatlar («Bekor qilish» qaytaradi).
+ * Telefon o'zgarsa bog'lanish uziladi (`null`).
+ */
+export interface ExistingCustomerLink {
+  id: string;
+  name: string;
+  orders_count: number | null;
+  new_orders_count: number;
+  new_order_ids: string[];
+  last_order_at: string | null;
+  filled: CustomerFieldValues;
+  previous: CustomerFieldValues;
+}
+
 export interface OrderCreateFormValues {
   market: MarketOption | null;
+  /** Bog'langan mavjud mijoz (`null` — yangi mijoz yoki taklif tanlanmagan). */
+  existingCustomer: ExistingCustomerLink | null;
+  /**
+   * Yetkazish turi qo'lda tanlanganmi (CS-B). `false` bo'lsa tur market kartasidagi sukut (`default_tariff`) ga
+   * moslanadi; qo'lda tanlangani ustidan yozilmaydi. Payload'ga kirmaydi.
+   */
+  deliveryTypeTouched: boolean;
+  /**
+   * «Umumiy summa» mahsulotlar narxidan avtomatik to'ldiriladimi (CS-B). Qo'lda yozilsa `false` — taklif faqat
+   * «Mahsulotlar bo'yicha: … · Qo'llash» qatorida turadi, maydon ustidan yozilmaydi. Payload'ga kirmaydi.
+   */
+  totalPriceAuto: boolean;
   customer: {
     phone: string;
     extra_phone: string;
@@ -31,6 +62,9 @@ export interface OrderCreateFormValues {
 
 export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   market: null,
+  existingCustomer: null,
+  deliveryTypeTouched: false,
+  totalPriceAuto: true,
   customer: {
     phone: "",
     extra_phone: "",
@@ -64,6 +98,11 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
       market: requireMarket
         ? marketSchema.required(i18n.t("orders:validationSelectMarket"))
         : marketSchema,
+      // Bog'lanish holati (tekshirilmaydi) — `buildCreateOrderPayload` `customer_id` ni shundan oladi.
+      existingCustomer: yup.mixed<ExistingCustomerLink>().nullable().default(null),
+      // Forma holati (tekshirilmaydi, payload'ga kirmaydi) — CS-B.
+      deliveryTypeTouched: yup.boolean().default(false),
+      totalPriceAuto: yup.boolean().default(true),
       customer: yup.object({
         phone: yup
           .string()
@@ -152,6 +191,22 @@ export const formatExtraNumber = (raw: string): string => {
   return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5, 7)}-${digits.slice(7, 9)}`;
 };
 
+const sameCustomerFields = (a: CustomerFieldValues, b: CustomerFieldValues) =>
+  a.phone === b.phone &&
+  a.name.trim() === b.name.trim() &&
+  (a.extra_phone ?? "") === (b.extra_phone ?? "") &&
+  a.address.trim() === b.address.trim() &&
+  a.region_id === b.region_id &&
+  a.district_id === b.district_id;
+
+/**
+ * Mavjud mijoz bog'langan va uning maydonlari tanlangandan keyin o'zgarmaganmi — shunda buyurtma
+ * `customer_id` bilan yuboriladi (identity mijoz kartasini ustidan yozmaydi). O'zgargan bo'lsa — avvalgi yo'l
+ * (`customer` obyekti); «Mijoz kartasi ham yangilansinmi?» so'rovi backend bayrog'idan keyin (CS-D).
+ */
+export const isExistingCustomerUnchanged = (values: Pick<OrderCreateFormValues, "customer" | "existingCustomer">) =>
+  values.existingCustomer != null && sameCustomerFields(values.customer, values.existingCustomer.filled);
+
 export const buildCreateOrderPayload = (
   values: OrderCreateFormValues,
   options?: {
@@ -164,8 +219,13 @@ export const buildCreateOrderPayload = (
   const comment = values.details.comment.trim();
   const operator = values.details.operator.trim();
 
+  const existingCustomerId = isExistingCustomerUnchanged(values) ? values.existingCustomer?.id : undefined;
+
   return {
     ...(includeMarketId && market ? { market_id: String(market.id) } : {}),
+    // `customer` obyekti ham qoladi: market/menejer/registrator uchun backend `customer_id` ni doirada tekshiradi,
+    // doiradan tashqari bo'lsa obyekt bo'yicha avvalgidek aniqlaydi (403 o'rniga).
+    ...(existingCustomerId ? { customer_id: existingCustomerId } : {}),
     customer: {
       name: values.customer.name.trim(),
       phone_number: `+998${values.customer.phone}`,

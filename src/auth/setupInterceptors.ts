@@ -19,6 +19,32 @@ const getRefreshedAccessToken = () => {
   return refreshPromise;
 };
 
+/**
+ * Sessiya tugagani uchun chiqish — bir vaqtdagi so'rovlar (sahifa 5–10 ta so'rov yuboradi) uchun BITTA:
+ * masalan sessiya boshqa qurilmadan yopilganda (profil «Sessiyalar» → «Chiqarish») hammasi 401 oladi, umumiy
+ * refresh ham rad etiladi — `logout` (va `POST auth/logout`) har so'rov uchun qayta-qayta chaqirilmaydi.
+ */
+let sessionExpiredLogout: Promise<void> | null = null;
+
+const logoutSessionExpired = (revoked = false) => {
+  if (!sessionExpiredLogout) {
+    sessionExpiredLogout = logoutAndRedirect(
+      revoked ? { reason: "sessionExpired", revoked: true } : { reason: "sessionExpired" },
+    ).finally(() => {
+      sessionExpiredLogout = null;
+    });
+  }
+  return sessionExpiredLogout;
+};
+
+/** Gateway sessiyasi boshqa qurilmadan yopilganda 401 javobida `message: "Session revoked"` beradi. */
+const SESSION_REVOKED_MESSAGE = "session revoked";
+
+const isSessionRevoked = (error: AxiosError) => {
+  const message = (error.response?.data as { message?: unknown } | undefined)?.message;
+  return typeof message === "string" && message.trim().toLowerCase() === SESSION_REVOKED_MESSAGE;
+};
+
 const hasRefreshTokenExpired = () => {
   const { refreshTokenExpiresAt } = tokenStorage.getSessionMetadata();
   return Boolean(refreshTokenExpiresAt && Date.now() >= refreshTokenExpiresAt);
@@ -31,10 +57,11 @@ const hasRefreshTokenExpired = () => {
  * qayta urinadi). Ilgari smena boshida ofisdagi bitta IP dan 10+ qurilma
  * yangilaganda 429 olganlar /login ga tashlanardi.
  */
-const handleRefreshFailure = async (refreshError: unknown) => {
+const handleRefreshFailure = async (refreshError: unknown, revoked = false) => {
   if (!isTransientAuthFailure(refreshError)) {
-    // Sessiya haqiqatan tugagan — login sahifasida «Sessiya tugadi» ekrani (dizayn v2 `common-session-expired`).
-    await logoutAndRedirect({ reason: "sessionExpired" });
+    // Sessiya haqiqatan tugagan (yoki boshqa qurilmadan yopilgan — `revoked`) — login sahifasida «Sessiya tugadi»
+    // ekrani (dizayn v2 `common-session-expired`), yopilgan bo'lsa sababi bilan.
+    await logoutSessionExpired(revoked);
   } else if (isNetworkFailure(refreshError)) {
     // `authClient` da interceptor yo'q — "Tarmoq xatosi" shu yerdan chiqadi.
     emitNetworkError(refreshError);
@@ -63,7 +90,7 @@ const shouldAttemptRefresh = (error: AxiosError) => {
 export const setupAuthInterceptors = (api: AxiosInstance) => {
   api.interceptors.request.use(async (config) => {
     if (hasRefreshTokenExpired()) {
-      await logoutAndRedirect({ reason: "sessionExpired" });
+      await logoutSessionExpired();
       return Promise.reject(new Error("Refresh token expired"));
     }
 
@@ -109,7 +136,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
 
         return api(originalRequest);
       } catch (refreshError) {
-        return handleRefreshFailure(refreshError);
+        return handleRefreshFailure(refreshError, isSessionRevoked(error));
       }
     },
   );

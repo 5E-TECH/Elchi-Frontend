@@ -145,10 +145,14 @@ describe("DashboardLayout (shell)", () => {
     expect(screen.getByRole("dialog", { name: "Menyu" })).toBeInTheDocument();
     expect(column).toHaveAttribute("inert");
     expect(container.querySelector('[data-shell-slot="bottomnav"]')).toHaveAttribute("inert");
+    // «Asosiy kontentga o'tish» ham orqa fon bilan birga `inert` (skrinrider kursori menyudan chiqmaydi).
+    const skipLink = container.querySelector("[data-skip-link]") as HTMLElement;
+    expect(skipLink).toHaveAttribute("inert");
 
     fireEvent.click(screen.getByRole("button", { name: "Yopish" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(column).not.toHaveAttribute("inert");
+    expect(skipLink).not.toHaveAttribute("inert");
   });
 
   it("⭐ bo'lim almashsa menyu o'zi yopiladi", async () => {
@@ -159,6 +163,28 @@ describe("DashboardLayout (shell)", () => {
     });
     expect(await screen.findByRole("heading", { name: "Pochta" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("⭐ «Asosiy kontentga o'tish» (KI-S2): shell'ning birinchi fokuslanadigan elementi, nishoni — kontent sloti", () => {
+    const { container, router } = renderShell();
+    const root = container.firstElementChild as HTMLElement;
+    const link = screen.getByRole("link", { name: "Asosiy kontentga o'tish" });
+    expect(root.firstElementChild).toBe(link);
+    expect(link).toHaveAttribute("href", "#main-content");
+    // Hujjat tartibida undan oldin fokuslanadigan narsa yo'q.
+    const focusable = container.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
+    expect(focusable[0]).toBe(link);
+
+    const content = container.querySelector('[data-shell-slot="content"]') as HTMLElement;
+    expect(content).toHaveAttribute("id", "main-content");
+    expect(content).toHaveAttribute("tabindex", "-1");
+    expect(content).toHaveClass("outline-none");
+
+    fireEvent.click(link);
+    expect(content).toHaveFocus();
+    // URL'ga `#main-content` yozilmaydi.
+    expect(router.state.location.hash).toBe("");
+    expect(router.state.location.pathname).toBe("/orders");
   });
 
   it("ekran ≥ 1024 ga kengaysa ochiq menyu yopiladi (aks holda orqa fon `inert` qotib qolardi)", () => {

@@ -5,25 +5,61 @@ import { api } from "../../../shared/api/api";
 import { renderWithProviders } from "../../../test/test-utils";
 import NotificationDispatchForm from "./NotificationDispatchForm";
 
+/**
+ * «Hamma» soni — `POST notifications/audience/preview` (KM-2). Bu faylda `api.post` faqat yuborish so'rovlari uchun
+ * (navbatli javoblar) — preview alohida soxtalanadi. «Auditoriya» rejimi — `NotificationDispatchForm.audience.test.tsx`.
+ */
+vi.mock("../../../entities/notification-campaign/api/campaignApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../entities/notification-campaign/api/campaignApi")>();
+  return {
+    ...actual,
+    previewAudience: vi.fn(async () =>
+      actual.normalizeAudiencePreview({
+        data: { exact: true, total: 250, by_role: { courier: 220, market: 30 }, by_channel: { push: 12 } },
+      }),
+    ),
+  };
+});
+
 const USERS = [
   { id: "56", name: "Kuryer Ali", phone_number: "+998970000095", role: "courier" },
   { id: "3", name: "Yandex", phone_number: "+998900000001", role: "market" },
 ];
-const ROLE_TOTALS: Record<string, number> = { courier: 12, market: 30, manager: 200, admin: 8 };
 
 let getSpy: MockInstance<typeof api.get>;
 let postSpy: MockInstance<typeof api.post>;
+/** `GET notifications/sent/:id` javobi (natija kartasidagi «Yetkazilmaganlar» va tafsilot oynasi). */
+let sentDetail: (id: string, params: Record<string, unknown>) => unknown;
+
+const sentDetailBody = (id: string, overrides: Record<string, unknown> = {}) => ({
+  statusCode: 200,
+  data: {
+    dispatch_id: id,
+    status: "sent",
+    title: "Ish vaqti",
+    body: "Ertaga 9:00 dan",
+    channels: ["in_app", "realtime"],
+    dispatched: 1,
+    skipped_by_preference: 0,
+    channel_status: { in_app: { sent: 1 }, realtime: { emitted: 1 } },
+    audience: { broadcast: true },
+    created_by: { id: "1", name: "Bosh admin", role: "superadmin" },
+    created_at: "2026-10-21T09:15:00.000Z",
+    finished_at: "2026-10-21T09:15:02.000Z",
+    undelivered: { items: [], meta: { page: 1, limit: 5, total: 0, totalPages: 1 } },
+    ...overrides,
+  },
+});
 
 beforeEach(() => {
+  sentDetail = (id) => sentDetailBody(id);
   getSpy = vi.spyOn(api, "get").mockImplementation((async (
     url: string,
     config?: { params?: Record<string, unknown> },
   ) => {
     const params = config?.params ?? {};
-    if (url === "users" && params.limit === 1) {
-      // Rolsiz ro'yxatda backend `total` ni sahifa hajmi qilib qaytaradi (jonli xato) — ishlatilmasligi kerak.
-      const total = params.role ? (ROLE_TOTALS[String(params.role)] ?? 0) : 1;
-      return { data: { data: { items: [], meta: { total } } } };
+    if (url.startsWith("notifications/sent/")) {
+      return { data: sentDetail(decodeURIComponent(url.slice("notifications/sent/".length)), params) };
     }
     if (url === "users") return { data: { data: { items: USERS, meta: { total: USERS.length } } } };
     if (url === "markets") return { data: { data: { items: [{ id: 3, name: "Yandex" }] } } };
@@ -37,6 +73,8 @@ beforeEach(() => {
         recipient_ids: ["56"],
         channels: ["in_app", "realtime"],
         telegram: null,
+        by_channel: { in_app: 1, realtime: 1 },
+        channel_status: { in_app: { sent: 1 }, realtime: { emitted: 1 } },
       },
     },
   });
@@ -99,6 +137,13 @@ const httpError = (status: number, message: string) =>
     response: { status, data: { message } },
   });
 const dispatched = (data: Record<string, unknown>) => ({ data: { statusCode: 201, data } });
+/** Natija kartasi chiqdi: «Xabar N ta qabul qiluvchining … qutisiga yozildi.» */
+const expectResult = async (inbox: number) => {
+  const card = await screen.findByTestId("dispatch-result");
+  expect(card).toHaveTextContent(`Xabar ${inbox} ta qabul qiluvchining Bildirishnomalar qutisiga yozildi.`);
+  return card;
+};
+const sendButton = () => screen.queryByRole("button", { name: /^Yuborish/ });
 const confirmInDialog = async (user: User) => {
   const dialog = await submitAndConfirm(user);
   await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
@@ -123,43 +168,13 @@ describe("NotificationDispatchForm — recipients", () => {
       body: "Ertaga 9:00 dan",
       channels: ["in_app", "realtime"],
     });
-    expect(await screen.findByText("Yuborildi: 1 ta qabul qiluvchi.")).toBeInTheDocument();
+    await expectResult(1);
   });
 
-  it("sends a roles array, keeps customers disabled with the reason, and estimates the count", async () => {
-    const user = userEvent.setup();
+  it("has no «Rol» mode any more — the modes are Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma (KM-2)", () => {
     renderForm();
-    await chooseMode(user, "Rol");
-
-    const customer = screen.getByRole("checkbox", { name: "Mijoz" });
-    expect(customer).toBeDisabled();
-    expect(customer).toHaveAccessibleDescription(/Mijozlarga bu yerdan yuborib bo'lmaydi/);
-
-    await user.click(screen.getByRole("checkbox", { name: "Kuryer" }));
-    await user.click(screen.getByRole("checkbox", { name: "Market" }));
-    expect(await screen.findByTestId("recipient-estimate")).toHaveTextContent(
-      "Taxminan 42 ta qabul qiluvchi",
-    );
-
-    await fillContent(user);
-    const dialog = await submitAndConfirm(user);
-    expect(within(dialog).getByTestId("confirm-count")).toHaveTextContent("taxminan 42 ta");
-    expect(within(dialog).getByText("Kuryer, Market")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
-
-    await waitFor(() => expect(sentPayload()).toMatchObject({ roles: ["courier", "market"] }));
-    expect(sentPayload()).not.toHaveProperty("recipient_id");
-  });
-
-  it("shows a validation error when no role is picked", async () => {
-    const user = userEvent.setup();
-    renderForm();
-    await chooseMode(user, "Rol");
-    await fillContent(user);
-    await user.click(screen.getByRole("button", { name: /^Yuborish/ }));
-
-    expect(await screen.findByText("Kamida bitta rolni tanlang")).toBeInTheDocument();
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    const modes = within(screen.getByRole("radiogroup", { name: "Qabul qiluvchilar turi" })).getAllByRole("radio");
+    expect(modes.map((mode) => mode.textContent)).toEqual(["Bitta odam", "Tanlangan ro'yxat", "Auditoriya", "Hamma"]);
   });
 
   it("sends recipient_ids for a picked list and lets a picked person be removed", async () => {
@@ -204,6 +219,8 @@ describe("NotificationDispatchForm — recipients", () => {
     renderForm();
     await chooseMode(user, "Hamma");
     await fillContent(user);
+    // Son backend preview'dan (`{ broadcast: true }`), debounce bilan.
+    expect(await screen.findByText("Taxminan 250 ta", { exact: false })).toBeInTheDocument();
 
     const dialog = await submitAndConfirm(user);
     expect(
@@ -378,38 +395,99 @@ describe("NotificationDispatchForm — sending", () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
 
     resolvePost({ data: { data: { dispatched: 250, recipient_ids: [], channels: ["in_app"] } } });
-    expect(await screen.findByText("Yuborildi: 250 ta qabul qiluvchi.")).toBeInTheDocument();
-    // Yuborilgan xabar shu formadan qayta yuborilmaydi.
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
+    await expectResult(250);
+    // Yuborilgan xabar shu formadan qayta yuborilmaydi: «Yuborish» o'rnida qulf izohi, maydonlar o'chiq.
+    expect(sendButton()).not.toBeInTheDocument();
+    expect(screen.getByTestId("dispatch-locked")).toHaveTextContent("Xabar yuborilgan — forma qulflandi.");
+    expect(titleInput()).toBeDisabled();
     expect(postSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("does not retry after a 504, warns that the outcome is unknown and blocks re-sending", async () => {
+  it("504: the outcome is unknown — no auto retry, the form locks; «Qayta urinish» resends the SAME client_request_id (S5)", async () => {
     const user = userEvent.setup();
-    postSpy.mockRejectedValue(
-      Object.assign(new Error("Gateway Timeout"), {
-        isAxiosError: true,
-        response: { status: 504, data: {} },
-      }),
-    );
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockResolvedValueOnce(
+        dispatched({
+          dispatched: 250,
+          recipient_ids: [],
+          channels: ["in_app", "realtime"],
+          by_channel: { in_app: 250, realtime: 250 },
+        }),
+      );
     renderForm();
     await chooseMode(user, "Hamma");
     await fillContent(user);
-    const dialog = await submitAndConfirm(user);
+    await confirmInDialog(user);
 
-    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
-
-    expect(await screen.findByText(/Xabar baribir yuborilgan bo'lishi mumkin/)).toBeInTheDocument();
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    expect(within(unknown).getByText("Noma'lum — tarixdan tekshiring")).toBeInTheDocument();
+    expect(within(unknown).getByText("Noma'lum")).toBeInTheDocument();
+    expect(within(unknown).getByText(/Xabar baribir yuborilgan bo'lishi mumkin/)).toBeInTheDocument();
+    expect(within(unknown).getAllByRole("listitem")).toHaveLength(3);
     expect(postSpy).toHaveBeenCalledTimes(1);
     expect(sentRequestId(0)).toMatch(UUID_RE);
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
+    // Forma qulflangan, avtomatik qayta yuborilmaydi.
+    expect(sendButton()).not.toBeInTheDocument();
+    expect(screen.getByTestId("dispatch-locked")).toHaveTextContent(/Natija noma'lum/);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(postSpy).toHaveBeenCalledTimes(1);
 
-    // "Yangi xabar" — yangi forma, yangi guruh kaliti.
-    await user.click(screen.getByRole("button", { name: "Yangi xabar" }));
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).not.toBeDisabled();
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    await expectResult(250);
+    expect(postSpy).toHaveBeenCalledTimes(2);
+    expect(sentRequestId(1)).toBe(sentRequestId(0));
+    expect(screen.queryByTestId("dispatch-unknown")).not.toBeInTheDocument();
+  });
+
+  it("504 → «Tarixdan tekshirish» opens the detail by client_request_id; «Yangi xabar» starts over", async () => {
+    const user = userEvent.setup();
+    postSpy.mockRejectedValueOnce(httpError(504, "Gateway Timeout"));
+    sentDetail = (id) =>
+      sentDetailBody(id, {
+        status: "running",
+        title: "Ish vaqti",
+        finished_at: null,
+        channels: ["in_app", "telegram"],
+        channel_status: { in_app: { sent: 12 }, telegram: { sent: 4, queued: 8 } },
+      });
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+
+    await user.click(within(unknown).getByRole("button", { name: "Tarixdan tekshirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ish vaqti" });
+    expect(await within(dialog).findByText("Yuborish hali tugamagan — raqamlar o'zgarib turadi")).toBeInTheDocument();
+    expect(getSpy).toHaveBeenCalledWith(`notifications/sent/${sentRequestId(0)}`, {
+      params: { page: 1, limit: 10 },
+    });
+    await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    await user.click(within(unknown).getByRole("button", { name: "Yangi xabar" }));
+    expect(screen.queryByTestId("dispatch-unknown")).not.toBeInTheDocument();
+    expect(sendButton()).not.toBeDisabled();
     expect(titleInput()).toHaveValue("");
+  });
+
+  it("«Qayta urinish» that is rejected shows a clear error in the unknown card (no raw backend text)", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockRejectedValueOnce(httpError(500, "QueryFailedError: duplicate key value"));
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    expect(await within(unknown).findByText("Qayta urinib bo'lmadi")).toBeInTheDocument();
+    expect(within(unknown).getByText(/Serverda xatolik yuz berdi/)).toBeInTheDocument();
+    expect(screen.queryByText(/QueryFailedError/)).not.toBeInTheDocument();
+    expect(sentRequestId(1)).toBe(sentRequestId(0));
   });
 
   it("shows a 4xx backend error in the form and keeps the form editable", async () => {
@@ -426,8 +504,11 @@ describe("NotificationDispatchForm — sending", () => {
     const dialog = await submitAndConfirm(user);
     await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
 
-    expect(await screen.findByText("Qabul qiluvchi topilmadi")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).not.toBeDisabled();
+    // Xom backend matni ko'rsatilmaydi (ega S4) — faqat tushunarli matn.
+    expect(await screen.findByText(/Server so'rovni rad etdi/)).toBeInTheDocument();
+    expect(screen.getByText("Xabarni yuborib bo'lmadi")).toBeInTheDocument();
+    expect(screen.queryByText("Qabul qiluvchi topilmadi")).not.toBeInTheDocument();
+    expect(sendButton()).not.toBeDisabled();
   });
 });
 
@@ -444,12 +525,13 @@ describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () 
     await fillContent(user);
 
     await confirmInDialog(user);
-    expect(await screen.findByText("Ichki xato")).toBeInTheDocument();
+    expect(await screen.findByText(/Serverda xatolik yuz berdi/)).toBeInTheDocument();
+    expect(screen.queryByText("Ichki xato")).not.toBeInTheDocument();
     expect(sentRequestId(0)).toMatch(UUID_RE);
 
     // Xuddi shu mazmun qayta yuboriladi — o'sha urinish, o'sha id (backend ikkinchi marta yubormaydi).
     await confirmInDialog(user);
-    expect(await screen.findByText("Yuborildi: 250 ta qabul qiluvchi.")).toBeInTheDocument();
+    await expectResult(250);
     expect(postSpy).toHaveBeenCalledTimes(2);
     expect(sentRequestId(1)).toBe(sentRequestId(0));
   });
@@ -466,14 +548,14 @@ describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () 
     await chooseMode(user, "Hamma");
     await fillContent(user);
     await confirmInDialog(user);
-    expect(await screen.findByText("Yuborildi: 1 ta qabul qiluvchi.")).toBeInTheDocument();
+    await expectResult(1);
 
     // Muvaffaqiyatdan keyin — yangi xabar, yangi urinish.
     await user.click(screen.getByRole("button", { name: "Yangi xabar" }));
     await chooseMode(user, "Hamma");
     await fillContent(user);
     await confirmInDialog(user);
-    expect(await screen.findByText("Qabul qiluvchi topilmadi")).toBeInTheDocument();
+    expect(await screen.findByText(/Server so'rovni rad etdi/)).toBeInTheDocument();
     expect(sentRequestId(1)).toMatch(UUID_RE);
     expect(sentRequestId(1)).not.toBe(sentRequestId(0));
 
@@ -503,15 +585,16 @@ describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () 
     await fillContent(user);
 
     await confirmInDialog(user);
-    expect(await screen.findByText("Ichki xato")).toBeInTheDocument();
+    expect(await screen.findByText(/Serverda xatolik yuz berdi/)).toBeInTheDocument();
     await confirmInDialog(user);
-    expect(await screen.findByText(/Avvalgi urinish xato bilan tugagan/)).toBeInTheDocument();
-    expect(screen.queryByText(/^Yuborildi/)).not.toBeInTheDocument();
+    expect(await screen.findByText("Avvalgi urinish xato bilan tugagan")).toBeInTheDocument();
+    expect(screen.getByText(/formadagi «Yuborish» ni bosing/)).toBeInTheDocument();
+    expect(screen.queryByTestId("dispatch-result")).not.toBeInTheDocument();
     expect(sentRequestId(1)).toBe(sentRequestId(0));
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).not.toBeDisabled();
+    expect(sendButton()).not.toBeDisabled();
 
     await confirmInDialog(user);
-    expect(await screen.findByText("Yuborildi: 250 ta qabul qiluvchi.")).toBeInTheDocument();
+    await expectResult(250);
     expect(sentRequestId(2)).toMatch(UUID_RE);
     expect(sentRequestId(2)).not.toBe(sentRequestId(0));
   });
@@ -529,9 +612,11 @@ describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () 
     await fillContent(user);
     await confirmInDialog(user);
 
-    expect(await screen.findByText(/allaqachon yuborilmoqda/)).toBeInTheDocument();
-    expect(screen.queryByText(/^Yuborildi/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    expect(within(unknown).getByText("Hali yuborilmoqda")).toBeInTheDocument();
+    expect(within(unknown).getByText(/allaqachon yuborilmoqda/)).toBeInTheDocument();
+    expect(screen.queryByTestId("dispatch-result")).not.toBeInTheDocument();
+    expect(sendButton()).not.toBeInTheDocument();
 
     postSpy.mockResolvedValueOnce({
       data: {
@@ -543,9 +628,369 @@ describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () 
     await chooseMode(user, "Hamma");
     await fillContent(user);
     await confirmInDialog(user);
-    expect(await screen.findByText("Yuborildi: 7 ta qabul qiluvchi.")).toBeInTheDocument();
-    expect(
-      screen.getByText(/avvalgi urinishda yuborilgan — qayta yuborilmadi/),
-    ).toBeInTheDocument();
+    const card = await expectResult(7);
+    expect(within(card).getByText("Avval yuborilgan")).toBeInTheDocument();
+    expect(within(card).getByText(/avvalgi urinishda yuborilgan — qayta yuborilmadi/)).toBeInTheDocument();
+    // Takror javobidagi tarix holati — belgi.
+    expect(within(card).getByText("Yuborildi")).toBeInTheDocument();
+  });
+});
+
+describe("NotificationDispatchForm — natija kartasi (NS-1)", () => {
+  const UNDELIVERED = [
+    {
+      notification_id: "901",
+      recipient_id: "3",
+      name: "Baraka Shop",
+      role: "market",
+      failures: [{ channel: "telegram", status: "skipped", reason: "no_telegram_id" }],
+    },
+    {
+      notification_id: "902",
+      recipient_id: "56",
+      name: "Jasur Tursunov",
+      role: "courier",
+      failures: [
+        { channel: "telegram", status: "failed", reason: "Forbidden: bot was blocked by the user" },
+        { channel: "sms", status: "skipped", reason: "no_phone" },
+      ],
+    },
+  ];
+
+  const partialResponse = dispatched({
+    dispatch_id: "b2c4d6e8-0000-4000-8000-000000000001",
+    dispatched: 148,
+    recipient_ids: [],
+    channels: ["in_app", "realtime", "telegram", "sms"],
+    by_channel: { in_app: 148, realtime: 148, telegram: 131, sms: 0 },
+    no_provider: [],
+    skipped_by_preference: 3,
+    channel_status: {
+      in_app: { sent: 148 },
+      realtime: { emitted: 148 },
+      telegram: { queued: 131, skipped: 17 },
+      sms: { queued: 139, skipped: 9 },
+    },
+  });
+
+  it("shows the status, stats (recipients = dispatched + skipped), channels and the first 5 undelivered right away (S1)", async () => {
+    const user = userEvent.setup();
+    postSpy.mockResolvedValueOnce(partialResponse);
+    sentDetail = (id, params) =>
+      sentDetailBody(id, {
+        status: "partial",
+        undelivered: { items: UNDELIVERED, meta: { page: 1, limit: Number(params.limit), total: 25 } },
+      });
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+
+    const card = await expectResult(148);
+    // SMS hech kimga ketmagan (by_channel.sms = 0) — backend qoidasi bo'yicha «Qisman yuborildi».
+    expect(within(card).getByText("Qisman yuborildi")).toBeInTheDocument();
+    expect(card).toHaveTextContent("Telegram va SMS navbatga qo'yildi, ba'zilariga esa umuman ketmaydi — ro'yxat pastda.");
+    expect(card).toHaveTextContent("Qabul qiluvchilar151 ta");
+    expect(card).toHaveTextContent("Bildirishnomani o'chirganlar3 ta");
+
+    const channels = within(card).getByRole("list", { name: "Kanallar bo'yicha natija" });
+    const telegram = channels.querySelector('[data-channel="telegram"]') as HTMLElement;
+    expect(telegram).toHaveTextContent("148 ta · shaxsiy chatga");
+    expect(within(telegram).getByText("Navbatda", { selector: "span" })).toBeInTheDocument();
+    expect(within(telegram).getByRole("img", { name: "Telegram: navbatda 131, o'tkazib yuborildi 17" })).toBeInTheDocument();
+    expect(telegram).toHaveTextContent(/bot yuborgach/);
+    const realtime = channels.querySelector('[data-channel="realtime"]') as HTMLElement;
+    expect(realtime).toHaveTextContent("Ilovasi ochiq bo'lganlarga uzatildi");
+
+    // «Yetkazilmaganlar» — qo'shimcha so'rov, limit 5.
+    expect(getSpy).toHaveBeenCalledWith("notifications/sent/b2c4d6e8-0000-4000-8000-000000000001", {
+      params: { page: 1, limit: 5 },
+    });
+    const toggle = await within(card).findByRole("button", { name: /Yetkazilmaganlar/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(toggle).toHaveTextContent("25 ta");
+    expect(within(card).getByText("Baraka Shop")).toBeInTheDocument();
+    expect(within(card).getByText("Telegram ulanmagan")).toBeInTheDocument();
+    expect(within(card).getByText("Telefon raqami yo'q")).toBeInTheDocument();
+    // Xom sabab ko'rsatilmaydi (S4) — kanal bo'yicha tushunarli matn.
+    expect(within(card).getByText("Telegram xatosi")).toBeInTheDocument();
+    expect(screen.queryByText(/bot was blocked/)).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+
+    // «Barcha 25 tasini ko'rish» — tafsilot oynasi (10 tadan).
+    await user.click(within(card).getByRole("button", { name: "Barcha 25 tasini ko'rish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ish vaqti" });
+    await waitFor(() =>
+      expect(getSpy).toHaveBeenCalledWith("notifications/sent/b2c4d6e8-0000-4000-8000-000000000001", {
+        params: { page: 1, limit: 10 },
+      }),
+    );
+    expect(await within(dialog).findByText("25 ta qabul qiluvchiga kamida bitta kanal yetmadi")).toBeInTheDocument();
+  });
+
+  it("no undelivered — a short success line, no list", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    expect(await within(card).findByText("Hozircha yetkazilmaganlar yo'q")).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /Yetkazilmaganlar/ })).not.toBeInTheDocument();
+    // Natija belgisi (sarlavha yonida) — «Yuborildi».
+    expect(within(card).getByRole("heading", { name: "Yuborish natijasi" }).parentElement).toHaveTextContent(
+      "Yuborildi",
+    );
+  });
+
+  it("the undelivered list fails to load — the result stays, a retry is offered", async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    sentDetail = (id, params) => {
+      if (fail) throw httpError(500, "boom");
+      return sentDetailBody(id, {
+        undelivered: { items: UNDELIVERED.slice(0, 1), meta: { page: 1, limit: Number(params.limit), total: 1 } },
+      });
+    };
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    expect(await within(card).findByText("Ro'yxatni olib bo'lmadi")).toBeInTheDocument();
+    expect(within(card).getByText(/faqat yetkazilmaganlar ro'yxati yuklanmadi/)).toBeInTheDocument();
+    // NS-2: xatoda «Yuborilganlar» sahifasiga havola ham bor.
+    expect(within(card).getByRole("link", { name: "Yuborilganlar" })).toHaveAttribute("href", "/notifications/sent");
+
+    fail = false;
+    await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
+    expect(await within(card).findByText("Baraka Shop")).toBeInTheDocument();
+  });
+
+  it("SMS provider not connected — «Faqat ilova ichida», SMS row is grey and never says «Yuborildi»", async () => {
+    const user = userEvent.setup();
+    postSpy.mockResolvedValueOnce(
+      dispatched({
+        dispatched: 12,
+        recipient_ids: [],
+        channels: ["in_app", "sms"],
+        by_channel: { in_app: 12, sms: 0 },
+        no_provider: ["sms"],
+        skipped_by_preference: 0,
+        channel_status: { in_app: { sent: 12 }, sms: { no_provider: 12 } },
+      }),
+    );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await user.click(screen.getByRole("checkbox", { name: "SMS" }));
+    await fillContent(user);
+    await confirmInDialog(user);
+
+    const card = await screen.findByTestId("dispatch-result");
+    expect(within(card).getByText("Faqat ilova ichida")).toBeInTheDocument();
+    expect(card).toHaveTextContent("tashqi kanallarning hech biri ketmadi");
+    const sms = card.querySelector('[data-channel="sms"]') as HTMLElement;
+    expect(within(sms).getAllByText("Provayder ulanmagan").length).toBeGreaterThan(0);
+    expect(within(sms).queryByText("Yuborildi")).not.toBeInTheDocument();
+    expect(sms).toHaveTextContent(/SMS provayderi ulanmagan/);
+  });
+});
+
+describe("NotificationDispatchForm — natija: fokus, qayta urinish, holatlar (NS-1 review)", () => {
+  /** Natija/noma'lum kartasining o'rami (`tabIndex=-1`) — tasdiq oynasidan keyin fokus shu yerda. */
+  const outcomeWrapper = (card: HTMLElement) => card.parentElement as HTMLElement;
+
+  it("after a successful send the focus moves to the result, not to <body>", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    await waitFor(() => expect(outcomeWrapper(card)).toHaveFocus());
+    // Desktop: vaqt sarlavha qatorining o'ng tomonida (amallar), izoh qatorida emas.
+    expect(within(card).getByTestId("dispatch-time").closest("p")).toBeNull();
+  });
+
+  it("504 → the unknown card gets the focus; «Qayta urinish» → the result card gets it", async () => {
+    const user = userEvent.setup();
+    postSpy.mockRejectedValueOnce(httpError(504, "Gateway Timeout"));
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    await waitFor(() => expect(outcomeWrapper(unknown)).toHaveFocus());
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    const card = await expectResult(1);
+    await waitFor(() => expect(outcomeWrapper(card)).toHaveFocus());
+  });
+
+  it("«Yangi xabar» is blocked while «Qayta urinish» runs; afterwards a new message can still be sent", async () => {
+    const user = userEvent.setup();
+    let resolveRetry: (value: unknown) => void = () => undefined;
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveRetry = resolve)) as never);
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    expect(within(unknown).getByRole("button", { name: "Yangi xabar" })).toBeDisabled();
+    resolveRetry(
+      dispatched({ dispatched: 1, recipient_ids: [], channels: ["in_app"], by_channel: { in_app: 1 } }),
+    );
+    const card = await expectResult(1);
+    expect(postSpy).toHaveBeenCalledTimes(2);
+
+    await user.click(within(card).getByRole("button", { name: "Yangi xabar" }));
+    await chooseMode(user, "Hamma");
+    await fillContent(user, "Ikkinchi xabar", "");
+    await confirmInDialog(user);
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(3));
+    expect(sentRequestId(2)).not.toBe(sentRequestId(0));
+    await expectResult(1);
+  });
+
+  it("unknown card icons follow the maket: clock for «Noma'lum», loader for «Hali yuborilmoqda» (no steps there)", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockResolvedValueOnce(dispatched({ duplicate: true, status: "running", dispatched: 0, recipient_ids: [], channels: ["in_app"] }));
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    let unknown = await screen.findByTestId("dispatch-unknown");
+    expect(unknown.querySelector("svg.lucide-clock")).not.toBeNull();
+    expect(within(unknown).getAllByRole("listitem")).toHaveLength(3);
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Hali yuborilmoqda")).toBeInTheDocument();
+    unknown = screen.getByTestId("dispatch-unknown");
+    expect(unknown.querySelector("svg.lucide-loader-circle")).not.toBeNull();
+    // «Tarixda yo'q bo'lsa — Qayta urinish» qadami bu holatga zid — qadamlar yo'q.
+    expect(within(unknown).queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it("504 → «Tarixdan tekshirish» → 404: the text points to «Qayta urinish» on the card", async () => {
+    const user = userEvent.setup();
+    postSpy.mockRejectedValueOnce(httpError(504, "Gateway Timeout"));
+    sentDetail = () => {
+      throw httpError(404, "Dispatch topilmadi");
+    };
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    await user.click(within(unknown).getByRole("button", { name: "Tarixdan tekshirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Yuborilgan xabar" });
+    expect(await within(dialog).findByText(/serverga yetmagan/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/havola eskirgan/)).not.toBeInTheDocument();
+  });
+
+  it("the «Yetkazilmaganlar» header uses the Users icon (UserX means «Nofaol qilish»)", async () => {
+    const user = userEvent.setup();
+    sentDetail = (id, params) =>
+      sentDetailBody(id, {
+        undelivered: {
+          items: [{ notification_id: "1", recipient_id: "3", name: "Baraka Shop", role: "market", failures: [{ channel: "telegram", status: "skipped", reason: "no_telegram_id" }] }],
+          meta: { page: 1, limit: Number(params.limit), total: 1 },
+        },
+      });
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    const toggle = await within(card).findByRole("button", { name: /Yetkazilmaganlar/ });
+    expect(toggle.querySelector("svg.lucide-users")).not.toBeNull();
+    expect(card.querySelector("svg.lucide-user-x")).toBeNull();
+  });
+
+  it("all external channels queued, nobody missed — the maket sentence «…va Telegram'ga uzatildi»", async () => {
+    const user = userEvent.setup();
+    postSpy.mockResolvedValueOnce(
+      dispatched({
+        dispatched: 62,
+        recipient_ids: [],
+        channels: ["in_app", "realtime", "telegram"],
+        by_channel: { in_app: 62, realtime: 62, telegram: 62 },
+        no_provider: [],
+        skipped_by_preference: 0,
+        channel_status: { in_app: { sent: 62 }, realtime: { emitted: 62 }, telegram: { queued: 62 } },
+      }),
+    );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await screen.findByTestId("dispatch-result");
+    expect(card).toHaveTextContent("Xabar 62 ta qabul qiluvchining qutisiga yozildi va Telegram'ga uzatildi.");
+  });
+
+  it("the undelivered list stays live while channels are queued (later failures show up on the card)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      let calls = 0;
+      sentDetail = (id, params) => {
+        if (params.limit === 5) calls += 1;
+        return calls <= 1
+          ? sentDetailBody(id, { status: "sent", channels: ["in_app", "telegram"], channel_status: { in_app: { sent: 1 }, telegram: { queued: 1 } } })
+          : sentDetailBody(id, {
+              status: "partial",
+              channels: ["in_app", "telegram"],
+              channel_status: { in_app: { sent: 1 }, telegram: { failed: 1 } },
+              undelivered: {
+                items: [{ notification_id: "1", recipient_id: "56", name: "Kuryer Ali", role: "courier", failures: [{ channel: "telegram", status: "failed", reason: "bot_blocked" }] }],
+                meta: { page: 1, limit: 5, total: 1 },
+              },
+            });
+      };
+      renderForm();
+      await chooseMode(user, "Hamma");
+      await fillContent(user);
+      await confirmInDialog(user);
+      const card = await screen.findByTestId("dispatch-result");
+      expect(await within(card).findByText("Hozircha yetkazilmaganlar yo'q")).toBeInTheDocument();
+      await vi.advanceTimersByTimeAsync(5_100);
+      expect(await within(card).findByText("Botni bloklagan")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("phone: the time sits under the title, not in the header actions", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width: 767px"),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as typeof window.matchMedia;
+    try {
+      const user = userEvent.setup();
+      renderForm();
+      await chooseMode(user, "Hamma");
+      await fillContent(user);
+      await confirmInDialog(user);
+      const card = await expectResult(1);
+      expect(within(card).getByTestId("dispatch-time").closest("p")).not.toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
   });
 });

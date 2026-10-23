@@ -20,6 +20,7 @@ const emptyQuery = { data: undefined, isLoading: false, isFetching: false };
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => emptyQuery,
+    useGetUserById: () => emptyQuery,
     useGetManagers: () => emptyQuery,
     useGetCouriers: () => emptyQuery,
   }),
@@ -35,13 +36,14 @@ vi.mock("../../../entities/markets", () => ({
 vi.mock("../../../entities/branch/api/useBranches", () => ({
   useBranches: () => ({ data: undefined, isLoading: false }),
 }));
-vi.mock("../../../entities/payments", () => ({
+vi.mock("../../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/payments")>()),
   useCashBox: () => ({
     cashboxSpand: idleMutation,
     cashboxFill: idleMutation,
     openShift: idleMutation,
     closeShift: idleMutation,
-    useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false }),
+    useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false, isError: false, refetch: vi.fn() }),
     useGetCashBoxInfo: () => emptyQuery,
     useGetFinanceHistory: () => emptyQuery,
     useGetFinanceHistoryById: () => emptyQuery,

@@ -6,6 +6,7 @@ import {
   formatNumberLocalized,
   formatPercentLocalized,
   formatSignedMoneyLocalized,
+  formatUsdLocalized,
   MINUS_SIGN,
   resolveMoneyLanguage,
 } from "./formatMoney";
@@ -180,5 +181,40 @@ describe("formatPercentLocalized", () => {
     expect(formatPercentLocalized(50, { language: "uz" })).toBe("50%");
     expect(formatPercentLocalized(12.345, { language: "uz", fractionDigits: 2 })).toBe("12,35%");
     expect(formatPercentLocalized(null, { language: "uz" })).toBe("0%");
+  });
+});
+
+describe("⭐ formatUsdLocalized — dollar (S4): doim 2 kasr, «12,40 $»", () => {
+  it("uz/ru — belgi oxirida, vergul kasr; en — «$12.40»", () => {
+    expect(formatUsdLocalized(12.4, { language: "uz" })).toBe("12,40 $");
+    expect(formatUsdLocalized(12.4, { language: "ru" })).toBe("12,40 $");
+    expect(formatUsdLocalized(12.4, { language: "en" })).toBe("$12.40");
+  });
+
+  it("nollar saqlanadi, 2 xonaga yaxlitlanadi", () => {
+    expect(formatUsdLocalized(25, { language: "uz" })).toBe("25,00 $");
+    expect(formatUsdLocalized(0, { language: "uz" })).toBe("0,00 $");
+    expect(formatUsdLocalized(5.8249, { language: "uz" })).toBe("5,82 $");
+    expect(formatUsdLocalized(29.399, { language: "en" })).toBe("$29.40");
+  });
+
+  it("mingliklar ajratkichi tildan", () => {
+    expect(formatUsdLocalized(1234.5, { language: "uz" })).toBe("1 234,50 $");
+    expect(formatUsdLocalized(1234.5, { language: "ru" })).toBe("1 234,50 $");
+    expect(formatUsdLocalized(1234567.891, { language: "en" })).toBe("$1,234,567.89");
+  });
+
+  it("manfiy — U+2212; yaxlitlab nol — minussiz; son bo'lmasa — 0", () => {
+    expect(formatUsdLocalized(-3.5, { language: "uz" })).toBe(`${MINUS_SIGN}3,50 $`);
+    expect(formatUsdLocalized(-3.5, { language: "en" })).toBe(`${MINUS_SIGN}$3.50`);
+    expect(formatUsdLocalized(-0.001, { language: "uz" })).toBe("0,00 $");
+    expect(formatUsdLocalized("7.1", { language: "uz" })).toBe("7,10 $");
+    expect(formatUsdLocalized(undefined, { language: "uz" })).toBe("0,00 $");
+    expect(formatUsdLocalized(Number.NaN, { language: "ru" })).toBe("0,00 $");
+  });
+
+  it("mavjud so'm formatlovchilari o'zgarmagan", () => {
+    expect(formatMoneyLocalized(185000, { language: "uz" })).toBe("185 000 so'm");
+    expect(formatNumberLocalized(12.4, { language: "uz", fractionDigits: 2 })).toBe("12,4");
   });
 });

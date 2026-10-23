@@ -42,6 +42,7 @@ import {
 } from "./orderFilterModel";
 import { OrderFiltersSheet } from "./OrderFiltersSheet";
 import { useOrderFilterOptions, type FilterOption } from "./useOrderFilterOptions";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 
 /**
  * «Buyurtmalar» ro'yxati filtrlari — dizayn v2 (maketlar `superadmin-orders-list`, `admin-orders-list`,
@@ -145,7 +146,8 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
   const panelId = useId();
 
   const scope = getOrderFilterScope(role);
-  const isMarketRole = role === "market";
+  // Market tomoni (market va market operatori, MO-3) — bir xil asboblar qatori (maket `market-orders-list`).
+  const isMarketRole = isMarketSideRole(role);
   const isManagerRole = role === "manager";
   const isRegistrator = role === "registrator";
   // Menejer va marketda sana telefonda ham asboblar qatorida (maket); qolganlarda — varaqada.
@@ -525,7 +527,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
                 />
               </Field>
             ) : null}
-            {scope.area === "district" ? (
+            {scope.area === "none" ? null : scope.area === "district" ? (
               <Field label={t("district")} labelAs="span">
                 <Select
                   searchable

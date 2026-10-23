@@ -1,8 +1,9 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LogisticsOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 import i18n from "../../i18n";
 
 /**
@@ -21,32 +22,27 @@ vi.mock("../../shared/api/api", () => ({
   },
 }));
 
-const groupsResponse = {
-  data: {
-    statusCode: 200,
-    data: {
-      total: 3,
-      groups: [
-        {
-          courier_id: "56",
-          courier: { id: "56", name: "Kuryer Ali" },
-          orders: [
-            { id: "9001", status: "waiting" },
-            { id: "9002", status: "waiting" },
-          ],
-        },
-        { courier_id: "57", courier: { id: "57", name: "Kuryer Vali" }, orders: [{ id: "9003", status: "waiting" }] },
+const groupsResponse = mockEnvelope({
+  total: 3,
+  groups: [
+    {
+      courier_id: "56",
+      courier: { id: "56", name: "Kuryer Ali" },
+      orders: [
+        { id: "9001", status: "waiting" },
+        { id: "9002", status: "waiting" },
       ],
     },
-  },
-};
+    { courier_id: "57", courier: { id: "57", name: "Kuryer Vali" }, orders: [{ id: "9003", status: "waiting" }] },
+  ],
+});
 
 describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
   beforeEach(() => {
     apiGetMock.mockReset();
     apiPostMock.mockReset();
     apiGetMock.mockResolvedValue(groupsResponse);
-    apiPostMock.mockResolvedValue({ data: { statusCode: 200, data: { approved: 2 } } });
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 2 }));
   });
 
   afterEach(async () => {
@@ -71,14 +67,18 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     await user.click(checkboxes[1]); // 9001
     await user.click(checkboxes[3]); // 9003
     await user.click(screen.getByRole("button", { name: "Tasdiqlash — 2 ta" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qaytarish so'rovlarini tasdiqlang" });
+    await user.click(within(dialog).getByRole("button", { name: "2 tasini tasdiqlash" }));
 
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001", "9003"] }),
     );
-    expect(await screen.findByText("Tanlangan so'rovlar tasdiqlandi")).toBeInTheDocument();
+    // OS-3 (S5): natija — xabar (inline OpsAlert emas).
+    expect(await screen.findByText("2 ta tasdiqlandi")).toBeInTheDocument();
+    expect(screen.getByText("2 ta buyurtma omborga qaytarildi.")).toBeInTheDocument();
   });
 
-  it("tasdiqlash rad etilsa — backend sababi ko'rinadi", async () => {
+  it("tasdiqlash rad etilsa — oyna ochiq, i18n sabab (xom backend matni emas)", async () => {
     const user = userEvent.setup();
     apiPostMock.mockRejectedValue({ response: { status: 403, data: { message: "Bu kuryer sizning filialingizga tegishli emas" } } });
     renderWithProviders(<LogisticsOpsPage />);
@@ -86,13 +86,19 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
 
     await user.click(screen.getAllByRole("checkbox")[1]);
     await user.click(screen.getByRole("button", { name: "Tasdiqlash — 1 ta" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qaytarish so'rovlarini tasdiqlang" });
+    await user.click(within(dialog).getByRole("button", { name: "1 tasini tasdiqlash" }));
 
-    expect(await screen.findByText("Bu kuryer sizning filialingizga tegishli emas")).toBeInTheDocument();
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+    );
+    expect(screen.getByRole("alertdialog", { name: "Qaytarish so'rovlarini tasdiqlang" })).toBeInTheDocument();
+    expect(screen.queryByText("Bu kuryer sizning filialingizga tegishli emas")).not.toBeInTheDocument();
   });
 
   it("ro'yxat yuklanmasa — xato holati va qayta urinish", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockRejectedValueOnce({ response: { status: 500, data: { message: "boom" } } });
+    apiGetMock.mockRejectedValueOnce(mockRejection(500));
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(await screen.findByText("Qaytarish so'rovlarini yuklab bo'lmadi")).toBeInTheDocument();

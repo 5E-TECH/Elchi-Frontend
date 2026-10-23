@@ -4,7 +4,7 @@ import { Copy, Inbox, RotateCcw } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
+import { OrderReturnPlace, OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { ExtraCostApprovalTag } from "../../../entities/orders/ui/ExtraCostApprovalTag";
 import type { RootState } from "../../../app/config/store";
@@ -25,6 +25,7 @@ import {
     type DataTableColumn,
     type DataTableSort,
 } from "../../../shared/ui/primitives";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
 
@@ -150,7 +151,8 @@ const OrdersTable = ({
     const { t, i18n } = useTranslation("orders");
     const language = i18n.resolvedLanguage ?? i18n.language;
     const role = useSelector((state: RootState) => state.role.role);
-    const isMarket = role === "market";
+    // Market tomoni (market va market operatori, MO-3) — market jadvali (maket `market-orders-list`).
+    const isMarket = isMarketSideRole(role);
     const hasActions = Boolean(onSellOrder || onCancelOrder || onRollbackOrder);
     const hasSelection = Boolean(isSelectable && onSelectChange && onSelectAll);
     const density = hasActions || hasSelection ? "tight" : isMarket ? "tablet-tight" : "default";
@@ -196,10 +198,11 @@ const OrdersTable = ({
         [t],
     );
 
+    /** Bekor qilingan buyurtma — joy bosqichi belgisi («Bekor · HQ'da»; maket `tizim-states-data` §09). */
     const statusBadges = useCallback(
         (order: OrderListItem) => (
             <>
-                <OrderStatusBadge status={getDisplayStatus(order)} />
+                <OrderStatusBadge status={getDisplayStatus(order)} order={order} />
                 <ReturnRequestedTag order={order} />
                 <ExtraCostApprovalTag orderId={order.id} status={order.status} />
             </>
@@ -380,7 +383,13 @@ const OrdersTable = ({
                 header: t("ordersList.columns.status"),
                 className: cellPad,
                 sortable: true,
-                cell: (order) => <div className="flex flex-wrap items-center gap-1">{statusBadges(order)}</div>,
+                // Bosqich belgisi ostida joy va muddat: «Toshkent HQ · 2 kun», «→ Toshkent HQ».
+                cell: (order) => (
+                    <div className="flex flex-col items-start gap-1">
+                        <div className="flex flex-wrap items-center gap-1">{statusBadges(order)}</div>
+                        <OrderReturnPlace order={order} />
+                    </div>
+                ),
             },
             {
                 id: "delivery",
@@ -492,6 +501,7 @@ const OrdersTable = ({
                                 <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{dateTime(order.createdAt)}</span>
                             )}
                         </span>
+                        <OrderReturnPlace order={order} />
                     </Link>
                     {showCourierHeldNote ? (
                         <p className={cx("px-4 pb-2 text-xs text-text-muted", selectable && "pl-12")}>

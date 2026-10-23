@@ -1,12 +1,9 @@
 // dizayn-v2: superadmin-ops-finance-operators
 import { memo, useRef, useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useFinanceCoverage } from "../../entities/payments/financeCoverage";
-import { api } from "../../shared/api/api";
-import { API_ENDPOINTS } from "../../shared/api";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../shared/lib/formatMoney";
@@ -51,14 +48,17 @@ import { OperatorBalanceCard } from "./ui/OperatorBalanceCard";
 const EARNINGS_PAGE_SIZE = 5;
 const PAYOUTS_PAGE_SIZE = 10;
 
-const FINANCE_COVERAGE_KEY = ["finance-cov"] as const;
-
 const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t, i18n } = useTranslation("ops");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const confirm = useConfirm();
-  const queryClient = useQueryClient();
-  const { useGetOperatorBalance, useGetOperatorEarnings, useGetOperatorPayouts } = useFinanceCoverage();
+  // To'lov — `useFinanceCoverage().createOperatorPayment`: muvaffaqiyatda operator va kassa keshlari birga yangilanadi.
+  const {
+    useGetOperatorBalance,
+    useGetOperatorEarnings,
+    useGetOperatorPayouts,
+    createOperatorPayment: createPayment,
+  } = useFinanceCoverage();
 
   const [operatorInput, setOperatorInput] = useState("");
   const [lookupError, setLookupError] = useState("");
@@ -86,14 +86,6 @@ const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const balance = readOperatorBalance(balanceQuery.data);
   const earnings = readOperatorEarnings(earningsQuery.data);
   const payouts = readOperatorPayouts(payoutsQuery.data);
-
-  const createPayment = useMutation({
-    mutationFn: ({ payload, key }: { payload: ReturnType<typeof buildOperatorPaymentPayload>; key: string }) =>
-      api
-        .post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, payload, { headers: { "Idempotency-Key": key } })
-        .then((res) => res.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: FINANCE_COVERAGE_KEY }),
-  });
 
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const dateText = (value: string | null) => (value ? formatDateTimeLocalized(value, { language }) : "—");
@@ -135,7 +127,7 @@ const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
       loadingLabel: t("finance.payment.confirmLoading"),
       tone: "primary",
       onConfirm: async () => {
-        response = await createPayment.mutateAsync({ payload, key: paymentKey.current });
+        response = await createPayment.mutateAsync({ payload, idempotencyKey: paymentKey.current });
       },
     });
     if (!ok) return;

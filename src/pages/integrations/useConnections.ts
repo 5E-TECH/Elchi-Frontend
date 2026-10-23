@@ -87,8 +87,12 @@ const integrationToConnection = (i: Integration): Connection => ({
 /**
  * `silentError` — konsol xatoni o'zi chizadi (`ErrorState` / qismiy ogohlantirish), global xabar takrorlanmaydi.
  * Bayroqsiz iste'molchi (manba tanlash) uchun xulq o'zgarmagan.
+ *
+ * `enabled` — ixtiyoriy (sukut `true`). Ikkala ro'yxat (`admin/partners`, `integrations`) backendda faqat
+ * SUPERADMIN va ADMIN ga ochiq: manba tanlash sahifasi menejer va registratorda so'ramaydi (aks holda ikkita
+ * 403 global xato xabari chiqardi), ro'yxat esa bo'sh qoladi.
  */
-export const useConnections = (options?: SilentErrorOption) => {
+export const useConnections = (options?: SilentErrorOption & { enabled?: boolean }) => {
   const partnersQuery = usePartners(options);
   // `limit: 100` — ulanishlar soni kichik; sahifalash bu ekranda ortiqcha
   // murakkablik bo'lardi.
@@ -107,7 +111,10 @@ export const useConnections = (options?: SilentErrorOption) => {
     isError: partnersQuery.isError && integrationsQuery.isError,
     /** Qismiy xato — ro'yxat to'liq emas, buni aytish kerak. */
     partialError: partnersQuery.isError !== integrationsQuery.isError,
+    // `refetch` react-query'da `enabled` ga qaramaydi — o'chiq so'rov (masalan menejer/registratorda, ikkalasi
+    // ham faqat superadmin/admin uchun) qo'lda ham yuborilmaydi (403 bo'lmasin).
     refetch: () => {
+      if (options?.enabled === false) return;
       void partnersQuery.refetch();
       void integrationsQuery.refetch();
     },
