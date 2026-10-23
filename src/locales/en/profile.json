@@ -19,7 +19,7 @@
   "security": {
     "title": "Security",
     "password": "Password",
-    "passwordHint": "Once the new password is saved, you will be signed out and sign in again with the new password.",
+    "passwordHint": "Once the new password is saved, all other devices are signed out of your account; you stay signed in on this device.",
     "changePassword": "Change password"
   },
   "sessions": {
@@ -69,6 +69,14 @@
       "successDescription": "Sessions closed: {{count}}.",
       "noneTitle": "No other active sessions left",
       "reloginRequired": "Couldn't identify this device's session. Sign out, sign in again and try once more."
+    },
+    "lock": {
+      "title": "For security, other sessions can't be signed out from a new device.",
+      "until": "You can do this after {{when}}.",
+      "untilUnknown": "You can do this 48 hours after your first sign-in on this device.",
+      "urgent": "If it's urgent, change your password: all other devices will be signed out immediately.",
+      "changePassword": "Change password",
+      "toastTitle": "Can't sign out devices yet"
     }
   },
   "password": {
@@ -85,10 +93,11 @@
     "tooShort": "The password must be at least 4 characters",
     "show": "Show password",
     "hide": "Hide password",
-    "warning": "After saving you will be signed out. Then sign in with the new password.",
+    "warning": "Once saved, all other devices are signed out of your account immediately. This device stays signed in.",
     "cancel": "Cancel",
     "submit": "Save password",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "changedOthersSignedOut": "Password changed — other devices signed out"
   },
   "editDialog": {
     "title": "Edit profile",

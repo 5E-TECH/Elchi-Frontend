@@ -21,13 +21,15 @@ export const API_ENDPOINTS = {
     TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
     // GET (istalgan rol) → { active_count, sessions: [{ id, device_name, device_id, user_agent, ip, logged_in_at,
     // last_seen_at, expires_at, current }] } — FAQAT o'z faol sessiyalari, last_seen_at bo'yicha yangisi tepada,
-    // ko'pi bilan 50 ta (Elchi Pochta #3)
+    // ko'pi bilan 50 ta (Elchi Pochta #3); + can_revoke_others, revoke_available_at (ISO | null) — shu qurilmadan
+    // birinchi kirganiga 48 soat to'lmagan sessiya boshqalarni yopa olmaydi (eski backend bermaydi — ruxsat)
     SESSIONS: "auth/sessions",
     // DELETE → { revoked: 1, session_ids: [id] } — o'z boshqa sessiyasini yopish; 400 — joriy sessiya yoki noto'g'ri
-    // ID, 404 — topilmadi yoki allaqachon yopilgan. Yopilgan qurilma keyingi so'rovida 401 oladi (refresh ham rad).
+    // ID, 404 — topilmadi yoki allaqachon yopilgan, 403 `code: SESSION_TOO_NEW` (+ available_at) — joriy sessiya
+    // yangi (48 soat). Yopilgan qurilma keyingi so'rovida 401 oladi (refresh ham rad).
     SESSION_BY_ID: (id: string) => `auth/sessions/${encodeURIComponent(id)}`,
     // POST (tanasiz) → { revoked: n, session_ids } — joriydan boshqa barcha faol sessiyalar (n = 0 bo'lishi mumkin);
-    // 400 — joriy sessiya aniqlanmadi (sessiyadan oldingi eski token) → qayta kirish kerak.
+    // 400 — joriy sessiya aniqlanmadi (sessiyadan oldingi eski token) → qayta kirish kerak; 403 SESSION_TOO_NEW.
     SESSIONS_REVOKE_OTHERS: "auth/sessions/revoke-others",
   },
 

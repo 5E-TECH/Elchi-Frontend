@@ -74,6 +74,8 @@
   "cancelledHandoverQrEnabled": "Bekor qilingan buyurtmalarni topshirishda market QR talabi yoqildi",
   "cancelledHandoverQrDisabled": "Bekor qilingan buyurtmalarni topshirishda market QR talabi o'chirildi",
   "userUpdatedSuccess": "\"{{name}}\" muvaffaqiyatli yangilandi!",
+  "userUpdatedPasswordReset": "\"{{name}}\" yangilandi. Parol almashtirildi — foydalanuvchi barcha qurilmalardan chiqarildi.",
+  "ownPasswordChangedOthersSignedOut": "Parol almashtirildi — boshqa qurilmalardan chiqildi",
   "activate": "Faollashtirish",
   "deactivateConfirmTitle": "Nofaol qilishni tasdiqlang",
   "deactivateConfirmText": "{{name}} hisobi nofaol holatga o'tadi. Kerak bo'lsa, uni istalgan vaqtda qayta faollashtirish mumkin.",
@@ -436,7 +438,7 @@
         "assigned": "{{name}} filialga biriktirilgan. Avval uni filialdan chiqaring — rol o'zgargach, yangi rol bilan qayta biriktiring. Oyna yopilmadi — kiritilganlar joyida.",
         "retry": "Hozir tekshirib bo'lmadi — rol o'zgarmadi. Birozdan so'ng qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
         "unknown": "Javob kelmadi — rol o'zgargan-o'zgarmagani noma'lum. Rolini tekshirib, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
-      "failed": "Rolni o'zgartirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+        "failed": "Rolni o'zgartirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
         "retryAction": "Qayta urinish"
       },
       "success": {

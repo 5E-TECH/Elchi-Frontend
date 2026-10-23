@@ -38,6 +38,14 @@ export type AccountSessionList = {
   active_count: number;
   /** Sessiyalar: joriy, so'ng faollar, so'ng qayta kirishi kerak bo'lganlar (server tartibi). */
   sessions: AccountSession[];
+  /**
+   * Joriy sessiya BOSHQA sessiyalarni yopa oladimi (Telegram kabi qoida): shu qurilmadan BIRINCHI kirganiga 48 soat
+   * to'lmagan sessiya boshqalarni chiqara olmaydi (`DELETE /auth/sessions/:id`, `POST …/revoke-others` → 403
+   * `SESSION_TOO_NEW`). O'z «Chiqish» i cheklanmaydi. Eski backend maydonni bermaydi — `true` (bugungi xulq).
+   */
+  can_revoke_others: boolean;
+  /** Qachondan boshlab mumkin bo'ladi (ISO); cheklov yo'q yoki noma'lum — `null`. */
+  revoke_available_at: string | null;
 };
 
 /** Qurilma turi — server yorlig'ining birinchi bo'lagidan («Telefon», «Planshet», «Kompyuter»). */
@@ -50,4 +58,14 @@ export type SessionDeviceKind = "phone" | "tablet" | "desktop";
 export type RevokeSessionsResult = {
   revoked: number;
   session_ids: string[];
+};
+
+/**
+ * 403 `SESSION_TOO_NEW` — yangi qurilmadan boshqa sessiyani yopishga urinish. `message` — backend matni («Xavfsizlik
+ * uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — … dan keyin mumkin»), `available_at` — qachondan
+ * mumkin (ISO); ikkalasi bo'lmasligi mumkin.
+ */
+export type SessionTooNewError = {
+  message: string | null;
+  available_at: string | null;
 };

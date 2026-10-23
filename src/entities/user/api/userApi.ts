@@ -156,6 +156,12 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: ["managers"] }),
     ]);
 
+  /**
+   * O'z parolini o'zgartirgach: backend boshqa barcha qurilmalarni darhol chiqaradi (shu qurilma qoladi) —
+   * profil «Sessiyalar» kartasi (`queryKeys.accountSessions`) qayta so'raladi.
+   */
+  const invalidateOwnSessions = () => void client.invalidateQueries({ queryKey: queryKeys.accountSessions.all });
+
   /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
   const useGetUser = (params?: IUserFilter, enabled: boolean = true, options?: { silentError?: boolean }) =>
     useQuery({
@@ -263,6 +269,8 @@ export const useUser = () => {
       if (!currentProfile || currentProfile.id !== variables.id) {
         return;
       }
+      // O'z parolini o'zgartirdi — backend boshqa qurilmalarni darhol chiqaradi: profil «Sessiyalar» yangilansin.
+      if (variables.data.password) invalidateOwnSessions();
 
       const updatedProfile =
         unwrapUserResponse(response) ??
@@ -285,6 +293,8 @@ export const useUser = () => {
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user, "profile"] });
       void invalidateUserLists();
+      // Parol almashdi — backend boshqa qurilmalarni darhol chiqaradi: profil «Sessiyalar» yangilansin.
+      if (variables.password) invalidateOwnSessions();
 
       const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile) {

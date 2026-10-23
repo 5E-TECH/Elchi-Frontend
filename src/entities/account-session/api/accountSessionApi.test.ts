@@ -8,6 +8,7 @@ import {
   normalizeAccountSession,
   normalizeAccountSessionList,
   normalizeRevokeSessionsResult,
+  parseSessionTooNewError,
   revokeOtherSessions,
   revokeSession,
 } from "./accountSessionApi";
@@ -93,9 +94,72 @@ describe("normalizeAccountSessionList", () => {
   });
 
   it("boshqa shakl (bo'sh `data`, massiv, `null`) — bo'sh ro'yxat", () => {
-    expect(normalizeAccountSessionList({ data: {} })).toEqual({ active_count: 0, sessions: [] });
-    expect(normalizeAccountSessionList({ data: [] })).toEqual({ active_count: 0, sessions: [] });
-    expect(normalizeAccountSessionList(null)).toEqual({ active_count: 0, sessions: [] });
+    const empty = { active_count: 0, sessions: [], can_revoke_others: true, revoke_available_at: null };
+    expect(normalizeAccountSessionList({ data: {} })).toEqual(empty);
+    expect(normalizeAccountSessionList({ data: [] })).toEqual(empty);
+    expect(normalizeAccountSessionList(null)).toEqual(empty);
+  });
+
+  it("yangi qurilma cheklovi: faqat aniq `false` — cheklov; yo'q / boshqa qiymat (eski backend) — ruxsat", () => {
+    const at = "2026-10-25T09:30:00.000Z";
+    expect(
+      normalizeAccountSessionList({ data: { sessions: [row()], can_revoke_others: false, revoke_available_at: at } }),
+    ).toMatchObject({ can_revoke_others: false, revoke_available_at: at });
+    expect(normalizeAccountSessionList({ data: { sessions: [], can_revoke_others: "false" } })).toMatchObject({
+      can_revoke_others: false,
+      revoke_available_at: null,
+    });
+    expect(normalizeAccountSessionList({ data: { sessions: [], can_revoke_others: true } }).can_revoke_others).toBe(true);
+    expect(normalizeAccountSessionList({ data: { sessions: [] } }).can_revoke_others).toBe(true);
+    expect(normalizeAccountSessionList({ data: { sessions: [], can_revoke_others: null } }).can_revoke_others).toBe(true);
+    // Yaroqsiz sana — `null`.
+    expect(
+      normalizeAccountSessionList({ data: { can_revoke_others: false, revoke_available_at: "ertaga" } }).revoke_available_at,
+    ).toBeNull();
+  });
+});
+
+describe("parseSessionTooNewError (403 SESSION_TOO_NEW)", () => {
+  const at = "2026-10-25T09:30:00.000Z";
+  const failed = (status: number, data: unknown) => ({ isAxiosError: true, response: { status, data } });
+
+  it("maydonlar yuqori darajada — backend matni va `available_at`", () => {
+    expect(
+      parseSessionTooNewError(
+        failed(403, {
+          statusCode: 403,
+          message: "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — 25.10.2026, 14:30 dan keyin mumkin",
+          code: "SESSION_TOO_NEW",
+          available_at: at,
+        }),
+      ),
+    ).toEqual({
+      message: "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — 25.10.2026, 14:30 dan keyin mumkin",
+      available_at: at,
+    });
+  });
+
+  it("maydonlar `data` / `details` / `error` ichida, `availableAt` — ham o'qiladi", () => {
+    expect(parseSessionTooNewError(failed(403, { message: "Taqiq", data: { code: "SESSION_TOO_NEW", available_at: at } }))).toEqual({
+      message: "Taqiq",
+      available_at: at,
+    });
+    expect(parseSessionTooNewError(failed(403, { details: { code: "session_too_new", availableAt: at } }))).toEqual({
+      message: null,
+      available_at: at,
+    });
+    expect(parseSessionTooNewError(failed(403, { error: { code: "SESSION_TOO_NEW", message: "Ichki matn" } }))).toEqual({
+      message: "Ichki matn",
+      available_at: null,
+    });
+  });
+
+  it("boshqa xato (kodsiz 403, 400, javobsiz, oddiy Error) — `null`", () => {
+    expect(parseSessionTooNewError(failed(403, { statusCode: 403, message: "Forbidden" }))).toBeNull();
+    expect(parseSessionTooNewError(failed(400, { message: "Joriy sessiya", code: "BAD_REQUEST" }))).toBeNull();
+    expect(parseSessionTooNewError({ isAxiosError: true })).toBeNull();
+    expect(parseSessionTooNewError(new Error("boom"))).toBeNull();
+    expect(parseSessionTooNewError(null)).toBeNull();
   });
 });
 

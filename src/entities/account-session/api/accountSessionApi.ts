@@ -1,10 +1,12 @@
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import { toValidDate } from "../../../shared/lib/formatDateTime";
 import type {
   AccountSession,
   AccountSessionList,
   AccountSessionStatus,
   RevokeSessionsResult,
+  SessionTooNewError,
 } from "../model/types";
 
 type Raw = Record<string, unknown>;
@@ -17,6 +19,16 @@ const text = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+};
+
+/** Faqat aniq `false` (yoki `"false"`) — cheklov; yo'q / boshqa qiymat (eski backend) — ruxsat. */
+const isFalse = (value: unknown) =>
+  value === false || (typeof value === "string" && value.trim().toLowerCase() === "false");
+
+/** Yaroqli sana satri (ISO) — o'zi; bo'sh yoki noto'g'ri — `null`. */
+const isoOrNull = (value: unknown): string | null => {
+  const raw = text(value);
+  return raw && toValidDate(raw) ? raw : null;
 };
 
 /** `status` — faqat aniq `expired` qayta kirish kerak; yo'q yoki boshqa qiymat (eski backend) — `active`. */
@@ -44,9 +56,11 @@ export const normalizeAccountSession = (value: unknown): AccountSession | null =
 };
 
 /**
- * `{ statusCode, message, data: { active_count, sessions } }` → `AccountSessionList`. Tartib server tartibi
- * (joriy, faollar, so'ng `expired`). `active_count` yo'q yoki ro'yxatdagi faollardan kichik bo'lsa — ro'yxatdagi
- * faollar soni (`expired` sanalmaydi); boshqa shakl (bo'sh `data`, massiv) — bo'sh ro'yxat.
+ * `{ statusCode, message, data: { active_count, sessions, can_revoke_others, revoke_available_at } }` →
+ * `AccountSessionList`. Tartib server tartibi (joriy, faollar, so'ng `expired`). `active_count` yo'q yoki
+ * ro'yxatdagi faollardan kichik bo'lsa — ro'yxatdagi faollar soni (`expired` sanalmaydi); boshqa shakl (bo'sh
+ * `data`, massiv) — bo'sh ro'yxat. `can_revoke_others` faqat aniq `false` bo'lsa cheklov (eski backend — ruxsat),
+ * `revoke_available_at` — yaroqli sana bo'lsa.
  */
 export const normalizeAccountSessionList = (value: unknown): AccountSessionList => {
   const response = asRecord(value) ?? {};
@@ -56,7 +70,12 @@ export const normalizeAccountSessionList = (value: unknown): AccountSessionList 
   const reported = Number(data.active_count);
   const activeCount = Number.isFinite(reported) && reported >= 0 ? Math.floor(reported) : 0;
   const activeInList = sessions.filter((session) => session.status === "active").length;
-  return { active_count: Math.max(activeCount, activeInList), sessions };
+  return {
+    active_count: Math.max(activeCount, activeInList),
+    sessions,
+    can_revoke_others: !isFalse(data.can_revoke_others),
+    revoke_available_at: isoOrNull(data.revoke_available_at),
+  };
 };
 
 /**
@@ -85,7 +104,8 @@ export const normalizeRevokeSessionsResult = (value: unknown): RevokeSessionsRes
 
 /**
  * `DELETE /auth/sessions/:id` — o'z BOSHQA sessiyasini yopish (`expired` ham; o'sha qurilma keyingi so'rovida 401
- * oladi va kirish sahifasiga tushadi). 400 — joriy sessiya yoki noto'g'ri ID, 404 — topilmadi / allaqachon yopilgan.
+ * oladi va kirish sahifasiga tushadi). 400 — joriy sessiya yoki noto'g'ri ID, 404 — topilmadi / allaqachon yopilgan,
+ * 403 `SESSION_TOO_NEW` — joriy sessiya yangi (`parseSessionTooNewError`).
  */
 export const revokeSession = async (id: string): Promise<RevokeSessionsResult> => {
   const response = await api.delete(API_ENDPOINTS.AUTH.SESSION_BY_ID(id));
@@ -94,9 +114,34 @@ export const revokeSession = async (id: string): Promise<RevokeSessionsResult> =
 
 /**
  * `POST /auth/sessions/revoke-others` (tanasiz) — joriydan boshqa barcha sessiyalarni (faol va `expired`)
- * yopish. 400 — joriy sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak.
+ * yopish. 400 — joriy sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak; 403
+ * `SESSION_TOO_NEW` — joriy sessiya yangi.
  */
 export const revokeOtherSessions = async (): Promise<RevokeSessionsResult> => {
   const response = await api.post(API_ENDPOINTS.AUTH.SESSIONS_REVOKE_OTHERS);
   return normalizeRevokeSessionsResult(response.data);
+};
+
+/** 403 kodi: yangi qurilmadan (birinchi kirishiga 48 soat to'lmagan) boshqa sessiyani yopish rad etildi. */
+export const SESSION_TOO_NEW = "SESSION_TOO_NEW";
+
+/**
+ * Xato `SESSION_TOO_NEW` bo'lsa — backend matni va `available_at`, aks holda `null`. Maydonlar javobning yuqori
+ * darajasida yoki `data` / `details` / `error` ichida bo'lishi mumkin (gateway shakli) — hammasi o'qiladi; vaqt
+ * `availableAt` deb ham kelishi mumkin. Kod bo'yicha aniqlanadi (boshqa 403 — oddiy xato).
+ */
+export const parseSessionTooNewError = (error: unknown): SessionTooNewError | null => {
+  const body = asRecord(asRecord(asRecord(error)?.response)?.data);
+  if (!body) return null;
+  const sources = [body, body.data, body.details, body.error]
+    .map(asRecord)
+    .filter((source): source is Raw => source !== null);
+  const isTooNew = sources.some((source) => text(source.code)?.toUpperCase() === SESSION_TOO_NEW);
+  if (!isTooNew) return null;
+  const first = (pick: (source: Raw) => string | null) =>
+    sources.map(pick).find((value): value is string => value !== null) ?? null;
+  return {
+    message: first((source) => text(source.message)),
+    available_at: first((source) => isoOrNull(source.available_at) ?? isoOrNull(source.availableAt)),
+  };
 };

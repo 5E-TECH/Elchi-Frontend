@@ -19,7 +19,7 @@
   "security": {
     "title": "Xavfsizlik",
     "password": "Parol",
-    "passwordHint": "Yangi parol saqlangach, tizimdan chiqasiz va yangi parol bilan qayta kirasiz.",
+    "passwordHint": "Yangi parol saqlangach, boshqa barcha qurilmalar hisobingizdan chiqadi; shu qurilmada ishlashda davom etasiz.",
     "changePassword": "Parolni o'zgartirish"
   },
   "sessions": {
@@ -69,6 +69,14 @@
       "successDescription": "{{count}} ta sessiya yopildi.",
       "noneTitle": "Boshqa faol sessiya qolmagan",
       "reloginRequired": "Shu qurilmaning sessiyasini aniqlab bo'lmadi. Tizimdan chiqib, qayta kiring va yana urinib ko'ring."
+    },
+    "lock": {
+      "title": "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.",
+      "until": "{{when}} dan keyin mumkin bo'ladi.",
+      "untilUnknown": "Shu qurilmadan birinchi kirganingizdan 48 soat o'tgach mumkin bo'ladi.",
+      "urgent": "Shoshilinch bo'lsa — parolni almashtiring: boshqa barcha qurilmalar darhol chiqadi.",
+      "changePassword": "Parolni o'zgartirish",
+      "toastTitle": "Hozircha chiqarib bo'lmaydi"
     }
   },
   "password": {
@@ -85,10 +93,11 @@
     "tooShort": "Parol kamida 4 ta belgidan iborat bo'lsin",
     "show": "Parolni ko'rsatish",
     "hide": "Parolni yashirish",
-    "warning": "Saqlangach, tizimdan chiqasiz. Keyin yangi parol bilan qayta kiring.",
+    "warning": "Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi.",
     "cancel": "Bekor qilish",
     "submit": "Parolni saqlash",
-    "saving": "Saqlanmoqda…"
+    "saving": "Saqlanmoqda…",
+    "changedOthersSignedOut": "Parol almashtirildi — boshqa qurilmalardan chiqildi"
   },
   "editDialog": {
     "title": "Profilni tahrirlash",
