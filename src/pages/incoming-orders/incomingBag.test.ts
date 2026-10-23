@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { IncomingOrder } from "../../entities/incoming-orders";
-import { bagKeyOf, bagLabel, countBags, keepScannedInList } from "./lib";
+import { bagKeyOf, bagLabel, countBags, countReceivedByBag, keepScannedInList } from "./lib";
 
 /** «Qop» ustuni va yangilashda skan belgilarini saqlash — sof mantiq (IP-1, DamKku7C / eo3eeJxs). */
 
@@ -52,5 +52,26 @@ describe("keepScannedInList — yangilangan ro'yxat bilan kesishma", () => {
     const kept = keepScannedInList([], new Set(["1"]), ["tok-1"]);
     expect(kept.ids.size).toBe(0);
     expect(kept.tokens).toEqual([]);
+  });
+});
+
+describe("countReceivedByBag — «Qop bo'yicha qabul qilindi» (r8EGkLrP)", () => {
+  const bag = new Set(["p1", "p2", "p3"]);
+
+  it("qop skani belgilaganlarning hammasi qabul qilinsa — hammasi", () => {
+    expect(countReceivedByBag(bag, { received: 4, unmatched: [] })).toBe(3);
+  });
+
+  it("qopdagi posilka qabul qilinmasa — ayriladi; bittalab skanerlangan qabul qilinmagani ta'sir qilmaydi", () => {
+    const unmatched = [
+      { token: "p2", reason: "allaqachon received" },
+      { token: "single", reason: "topilmadi" },
+    ];
+    expect(countReceivedByBag(bag, { received: 2, unmatched })).toBe(2);
+  });
+
+  it("qop skani bo'lmasa — 0; server qop tokenini o'zi ochgan bo'lsa (`batchTokens`) — qabul qilinganlarning hammasi", () => {
+    expect(countReceivedByBag(new Set(), { received: 5, unmatched: [] })).toBe(0);
+    expect(countReceivedByBag(new Set(), { received: 5, unmatched: [], batchTokens: ["bag-token"] })).toBe(5);
   });
 });

@@ -749,6 +749,7 @@
     "testNotReached": "Not delivered",
     "testNotReachedStatus": "Not delivered — HTTP {{status}}",
     "testReached": "Delivered — HTTP {{status}} ({{ms}} ms)",
+    "testSandboxTarget": "Sent to the sandbox address with the sandbox secret: {{url}}",
     "theirs": "Theirs: {{status}}",
     "unitEvents24h": "events · 24 h",
     "unitTa": "",

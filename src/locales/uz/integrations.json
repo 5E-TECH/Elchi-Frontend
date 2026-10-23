@@ -749,6 +749,7 @@
     "testNotReached": "Yetmadi",
     "testNotReachedStatus": "Yetmadi — HTTP {{status}}",
     "testReached": "Yetdi — HTTP {{status}} ({{ms}} ms)",
+    "testSandboxTarget": "Sinov manziliga sinov sekreti bilan yuborildi: {{url}}",
     "theirs": "Ular: {{status}}",
     "unitEvents24h": "hodisa · 24 soat",
     "unitTa": "ta",

@@ -117,6 +117,10 @@ export interface WebhookTestResult {
   signature_sent: string;
   secret_configured: boolean;
   event_id: string;
+  /** Qaysi manzilga ketdi: asosiy yoki sinov (`sandbox`) — jeU3eztP. */
+  target?: string;
+  /** Qaysi sekret bilan imzolandi (`sandbox` — sinov sekreti). */
+  secret_used?: string;
 }
 
 export interface CreatePartnerDto {

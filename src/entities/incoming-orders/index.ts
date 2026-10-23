@@ -194,6 +194,8 @@ export const sourceLabel = (source: IncomingSource): string =>
 export interface ReceiveByScanResult {
   received: number;
   unmatched: Array<{ token: string; reason: string }>;
+  /** Server qop (batch) tokeni sifatida ochgan tokenlar (`batch_tokens`, r8EGkLrP). */
+  batchTokens?: string[];
 }
 
 /**
@@ -211,10 +213,11 @@ const postReceiveByScan = (tokens: string[]): Promise<ReceiveByScanResult> =>
     .then((res) => {
       const raw = res.data as { data?: unknown };
       const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
-      const page = inner as Partial<ReceiveByScanResult> | undefined;
+      const page = inner as (Partial<ReceiveByScanResult> & { batch_tokens?: unknown }) | undefined;
       return {
         received: Number(page?.received ?? 0),
         unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
+        batchTokens: Array.isArray(page?.batch_tokens) ? page!.batch_tokens.map(String) : [],
       } satisfies ReceiveByScanResult;
     });
 
@@ -229,7 +232,7 @@ export const receiveTokensInChunks = async (
   tokens: string[],
   send: (chunk: string[]) => Promise<ReceiveByScanResult> = postReceiveByScan,
 ): Promise<ReceiveByScanResult> => {
-  const result: ReceiveByScanResult = { received: 0, unmatched: [] };
+  const result: ReceiveByScanResult = { received: 0, unmatched: [], batchTokens: [] };
 
   for (let start = 0; start < tokens.length; start += RECEIVE_BY_SCAN_MAX_TOKENS) {
     const chunk = tokens.slice(start, start + RECEIVE_BY_SCAN_MAX_TOKENS);
@@ -237,6 +240,7 @@ export const receiveTokensInChunks = async (
       const part = await send(chunk);
       result.received += part.received;
       result.unmatched.push(...part.unmatched);
+      result.batchTokens!.push(...(part.batchTokens ?? []));
     } catch (error) {
       if (start === 0) throw error;
       const reason = getBackendErrorMessage(error) ?? "yuborib bo'lmadi";
