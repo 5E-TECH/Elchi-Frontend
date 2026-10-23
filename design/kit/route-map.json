@@ -422,7 +422,7 @@
         "src/pages/orders/create/ui/ExistingCustomerNotice.tsx"
       ],
       "views": {
-        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
+        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog", "neworders-create-ai-input-images"],
         "admin": ["neworders-create-manual", "neworders-create-market-picker", "neworders-create-ai", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
         "manager": ["new-orders-create-manual-step1", "new-orders-create-manual-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-manual-step2-customer-suggest", "new-orders-create-manual-step2-existing-customer", "new-orders-create-manual-step2-customer-update-dialog"],
         "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-step2-customer-suggest", "new-orders-create-step2-existing-customer", "new-orders-create-step2-customer-update-dialog"],
@@ -966,7 +966,7 @@
         "src/pages/payments/components/lib/exportMainCashboxReport.ts"
       ],
       "views": {
-        "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"],
+        "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog", "payments-main-cashbox-accounts", "payments-cashbox-account-form-dialog", "payments-main-cashbox-fill-dialog-account", "payments-main-cashbox-shift-dialog-accounts"],
         "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"],
         "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"]
       },
@@ -1073,7 +1073,7 @@
         "admin": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "manager": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "registrator": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
-        "market": ["products-list"],
+        "market": ["products-list", "products-warehouse-stock"],
         "market_operator": ["products-list", "products-unassigned"]
       },
       "roleNotes": {
@@ -1133,7 +1133,7 @@
         "src/features/user/create-user/ui/CreateUserForm.tsx"
       ],
       "views": {
-        "superadmin": ["users-create", "users-create-courier-district", "users-create-logist"],
+        "superadmin": ["users-create", "users-create-courier-district", "users-create-logist", "users-create-password-sms", "users-create-password-result-dialog"],
         "admin": ["users-create", "users-create-logist"],
         "manager": ["users-create-courier", "users-create-hybrid", "users-create-courier-district"]
       },
@@ -1730,7 +1730,7 @@
         "src/features/pwa-install/ui/IosInstallDialog.tsx"
       ],
       "views": {
-        "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications", "settings-notifications-pwa"]
+        "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications", "settings-notifications-pwa", "settings-scanner-feedback"]
       },
       "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. KI-2 (2026-10-21, ega javobi KI-S3 «Sozlamalarda doim»): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi (AppInstallStatusBlock, features/pwa-install; faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas) — «O'rnatilgan» (display-mode: standalone yoki shu qurilmada appinstalled) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt, main.tsx da chizishdan oldin ushlanadi) / iOS va iPadOS — «Qanday qo'shiladi» → IosInstallDialog (courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova». Maketdagi «Boshqa holatlar» bloki — dizayn taxtasi (holatlar namunasi), kodda bir vaqtda faqat joriy holat chiziladi."
     },
@@ -1755,11 +1755,18 @@
         "common": ["inbox"]
       },
       "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). KI-2 (2026-10-21, ega javobi KI-S3): «Ilovani o'rnatish» kartasi (InstallAppCard placement=inbox, features/pwa-install) — barcha rollarda, push blokidan keyin, doim (yopishsiz; maketdagidek faqat «O'rnatish»), faqat ilova o'rnatilmagan va o'rnatish mumkin bo'lsa: Android/kompyuter — «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt; brauzer oynasi oldin yopilgan bo'lsa — brauzer menyusidan o'rnatish izohi, notify.info) — courier-inbox-pwa-install; iPhone/iPad — «Elchi'ni bosh ekranga qo'shing» + «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS Safari tabida PushManager yo'q — push bloki o'zi chiqmaydi, uning o'rnida o'rnatish kartasi turadi. O'rnatilgan yoki qo'llab-quvvatlanmaydigan brauzerda karta yo'q (holat — Sozlamalar → Bildirishnomalar → «Ilova»)."
-    }
+    },
+    {"path": "(taklif) /payments/shifts/:id", "section": "finance", "title": "Smena hisoboti va smenalar tarixi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["payments-shift-report"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Kartalar bo'yicha qoldiq + AI natijasi, «Avtomatik yopildi» banneri, hisobot kimlarga yuborilgani. Tarix ro'yxati /payments/shifts (alohida maket chizilmagan — jadval superadmin-orders-list andozasida)."},
+    {"path": "(taklif) /payments/shift-settings", "section": "finance", "title": "Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)", "components": [], "views": {"superadmin": ["payments-shift-settings"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi."},
+    {"path": "(taklif) /ai-assistant", "section": "finance", "title": "AI moliyaviy yordamchi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["ai-assistant", "ai-assistant-access-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi."},
+    {"path": "(taklif) /warehouses", "section": "products", "title": "Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-list", "warehouse-create-dialog"], "admin": ["warehouse-list", "warehouse-create-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi."},
+    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, jo'natish (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-transfer-dialog"], "admin": ["warehouse-detail", "warehouse-transfer-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."}
   ],
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
-    "logist": ["orders", "mails", "batches", "couriers"]
+    "logist": ["orders", "mails", "batches", "couriers"],
+    "superadmin": ["aiAssistant", "warehouse"],
+    "admin": ["warehouse"]
   },
   "plannedBottomNav": {
     "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali to'liq bo'lmagan pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi). Yangi rollar (ROL-0): kataklar kodda yozilgan, lekin menyu bandlari hali yo'q — har band o'z sahifasi bilan keladi (logist — LG-5, market_operator — MO-3, investor — IN-2 oladi).",
@@ -1802,7 +1809,28 @@
     "market-new-orders-cancelled-transit": "Market «Bekor qilinganlar» → «Yo'lda» chipi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 2): kuryerda / yo'lda / filialda bekorlari, «Qayerda» ustuni. Taklif · backend kerak — GET orders/markets/:id/cancelled market uchun holderType=HQ ga qotirilgan (BG3).",
     "market-new-orders-cancelled-received": "Market «Olganlarim» (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): topshirilganlar — sana, joy, usul, xodim, sana oralig'i filtri. Taklif · backend kerak (BG3 — returned_to_market ro'yxati; usul — BG2; «Parol orqali» — BG6).",
     "superadmin-neworders-cancelled-handover-done": "Topshirish ekrani muvaffaqiyatdan keyin (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): qatorlar yo'qolmaydi — pastda «Topshirildi (N)» kartasi (sessiya ichida, backendsiz; sahifa yangilansa tozalanadi), har qatorda «Marketga topshirildi» badge'i + «Toshkent HQ · QR orqali». QR sessiyasi faol bo'lsa, qolgani uchun taymer qoladi.",
-    "superadmin-neworders-cancelled-pin-dialog": "Market PIN kodi oynasi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1): QR zaxirasi — 6 xonali PIN (Field + TextInput, raqamli), 5 marta xato — sessiya bloklanadi. Taklif · backend kerak (BG6: POST scan/market-cancelled { market_id, pin }). Kirish — skaner oynasidagi «PIN kodni kiritish»."
+    "superadmin-neworders-cancelled-pin-dialog": "Market PIN kodi oynasi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1): QR zaxirasi — 6 xonali PIN (Field + TextInput, raqamli), 5 marta xato — sessiya bloklanadi. Taklif · backend kerak (BG6: POST scan/market-cancelled { market_id, pin }). Kirish — skaner oynasidagi «PIN kodni kiritish».",
+    "superadmin-payments-main-cashbox-accounts": "Trello 2026-10-23 (ega topshirig'i), 1-band: kassa kartalari va hisob raqamlari bo'limi — backend'da MAIN uchun nomli kartalar bor (3PE0B03q), frontend'da UI yo'q; turi/bank/oxirgi 4 raqam/egasi, filial kassalari — yangi.",
+    "superadmin-payments-cashbox-account-form-dialog": "Trello 2026-10-23 (ega topshirig'i), 1-band: karta yoki hisob raqam qo'shish oynasi; smena kalitlari (rasm, AI) faqat superadminga.",
+    "superadmin-payments-main-cashbox-fill-dialog-account": "Trello 2026-10-23 (ega topshirig'i), 1-band: kirim/xarajatda karta yoki hisob raqam tanlovi.",
+    "superadmin-payments-main-cashbox-shift-dialog-accounts": "Trello 2026-10-23 (ega topshirig'i), 2-band: smena yopishda har karta qoldig'i, skrinshot va AI tekshiruvi natijasi (CloseShiftPopup).",
+    "superadmin-payments-shift-report": "Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: smena hisoboti sahifasi — kodda yo'q.",
+    "superadmin-payments-shift-settings": "Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: kassa smenasi sozlamalari — kodda yo'q.",
+    "common-settings-scanner-feedback": "Trello 2026-10-23 (ega topshirig'i), 5-band: to'liq ekran rangli effekt, ovoz to'plami, balandlik, sinab ko'rish (ScannerPanel). Dizayn ega tasdig'idan keyin kodga o'tadi.",
+    "superadmin-neworders-create-ai-input-images": "Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92).",
+    "superadmin-ai-assistant": "Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q.",
+    "superadmin-ai-assistant-access-dialog": "Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q.",
+    "superadmin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborlar ro'yxati — kodda yo'q.",
+    "superadmin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor ochish — kodda yo'q.",
+    "superadmin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor tafsiloti — kodda yo'q.",
+    "superadmin-warehouse-transfer-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot jo'natish — kodda yo'q.",
+    "admin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
+    "admin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
+    "admin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
+    "admin-warehouse-transfer-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
+    "market-products-warehouse-stock": "Trello 2026-10-23 (ega topshirig'i), 8-band: market o'z mahsulotlari qoldig'ini omborlar bo'yicha ko'radi (faqat ko'rish) — kodda yo'q.",
+    "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
+    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish."
   },
   "partialViews": {
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
@@ -2317,6 +2345,9 @@
     "motion": {
       "defines": "Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi.",
       "code": "src/index.css (:focus-visible, animatsiyalar), docs/DESIGN_SYSTEM.md §9"
-    }
+    },
+    "shift-report-messages": {"defines": "Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali.", "code": "taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed)"},
+    "scan-feedback": {"defines": "Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari.", "code": "src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin)"},
+    "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin)"}
   }
 }

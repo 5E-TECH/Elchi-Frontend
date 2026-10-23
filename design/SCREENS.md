@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **37** · qisman: **130** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **686 ta maket** (425 sahifa, 245 oyna, 16 tizim taxtasi; 582 ta fragment fayli) · kodda yo'q: **58** · qisman: **130** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -57,7 +57,7 @@
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 23 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 4 | v2 |
-| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 39 | v2 |
+| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 40 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
@@ -85,15 +85,20 @@
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
 | `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 12 | v2 |
-| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 18 | v2 |
+| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 22 | v2 |
 | `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 14 | v2 |
 | `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
 | `/my-earnings` | Moliya | `src/pages/my-earnings/index.tsx` | market_operator (MO-2: canViewMyEarnings = hasRole('market_operator') (access.ts)) | 2 | v2 |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
-| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 19 | v2 |
+| `(taklif) /payments/shifts/:id` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | eski |
+| `(taklif) /payments/shift-settings` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | eski |
+| `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
+| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 20 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
+| `(taklif) /warehouses` | Mahsulotlar | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 4 | eski |
+| `(taklif) /warehouses/:id` | Mahsulotlar | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 4 | eski |
 | `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
-| `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 8 | v2 |
+| `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 10 | v2 |
 | `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 23 | v2 |
 | `/market-operators` | Foydalanuvchilar | `src/pages/market-operators/index.tsx` | market (MO-1: canViewMarketOperators = hasRole('market') (access.ts); backend market-operators — @Roles(MARKET), faqat o'z operatorlari) | 8 | v2 |
 | `/regions` | Hududlar | `src/pages/region/index.tsx` | superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q) | 9 | v2 |
@@ -125,7 +130,7 @@
 | `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 8 | v2 |
 | `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
 | `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 12 | v2 |
-| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 6 | v2 |
+| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 | `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 
 ## 2. Route bo'yicha maketlar (batafsil)
@@ -405,6 +410,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-customer-suggest` — Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif)<br>↳ `src/pages/orders/create/ui/CustomerPhoneSuggest.tsx` | [design/fragments/superadmin--neworders-create-manual-step2-customer-suggest.html](fragments/superadmin--neworders-create-manual-step2-customer-suggest.html) | sahifa | qisman |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-existing-customer` — Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif)<br>↳ `src/pages/orders/create/ui/ExistingCustomerNotice.tsx` | [design/fragments/superadmin--neworders-create-manual-step2-existing-customer.html](fragments/superadmin--neworders-create-manual-step2-existing-customer.html) | sahifa | qisman |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-customer-update-dialog` — Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html](fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-input-images` — Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | [design/fragments/superadmin--neworders-create-ai-input-images.html](fragments/superadmin--neworders-create-ai-input-images.html) | sahifa | yangi (kodda yo'q) |
 | `/new-orders/create` | admin | `admin-neworders-create-manual` — Buyurtma yaratish — Qo'lda | [design/fragments/admin--neworders-create-manual.html](fragments/admin--neworders-create-manual.html) | sahifa | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-market-picker` — Market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/admin--neworders-create-market-picker.html](fragments/admin--neworders-create-market-picker.html) | oyna | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/admin--neworders-create-ai.html](fragments/admin--neworders-create-ai.html) | sahifa | v2 |
@@ -1014,6 +1020,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/superadmin--payments-main-cashbox-shift-closed.html](fragments/superadmin--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-open-dialog` — Smenani ochish (popup)<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-open-dialog.html](fragments/superadmin--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija (popup)<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-result-dialog.html](fragments/superadmin--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-accounts` — Asosiy kassa — kartalar va hisob raqamlar | [design/fragments/superadmin--payments-main-cashbox-accounts.html](fragments/superadmin--payments-main-cashbox-accounts.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-cashbox-account-form-dialog` — Karta yoki hisob raqam qo'shish (popup) | [design/fragments/superadmin--payments-cashbox-account-form-dialog.html](fragments/superadmin--payments-cashbox-account-form-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-fill-dialog-account` — Kassaga kirim — karta yoki hisob raqamni tanlash (popup) | [design/fragments/superadmin--payments-main-cashbox-fill-dialog-account.html](fragments/superadmin--payments-main-cashbox-fill-dialog-account.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog-accounts` — Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html](fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox` — Asosiy kassa | [design/fragments/admin--payments-main-cashbox.html](fragments/admin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog` — Kassadan xarajat / Kassani to'ldirish<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/admin--payments-cashbox-form-dialog.html](fragments/admin--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-shift-dialog` — Smenani yopish<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/admin--payments-shift-dialog.html](fragments/admin--payments-shift-dialog.html) | oyna | v2 |
@@ -1110,6 +1120,64 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/financial-balance` | admin | `admin-balance-history-detail-dialog` — Balans yozuvi tafsiloti<br>↳ `src/pages/financial-balance/components/FinancialHistoryDetail.tsx` | [design/fragments/superadmin--balance-history-detail-dialog.html](fragments/superadmin--balance-history-detail-dialog.html) | oyna | v2 |
 | `/financial-balance` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
 
+#### `(taklif) /payments/shifts/:id` — Smena hisoboti va smenalar tarixi (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Holat:** eski
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Kartalar bo'yicha qoldiq + AI natijasi, «Avtomatik yopildi» banneri, hisobot kimlarga yuborilgani. Tarix ro'yxati /payments/shifts (alohida maket chizilmagan — jadval superadmin-orders-list andozasida).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /payments/shifts/:id` | superadmin | `superadmin-payments-shift-report` — Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | [design/fragments/superadmin--payments-shift-report.html](fragments/superadmin--payments-shift-report.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /payments/shifts/:id` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shifts/:id` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+
+#### `(taklif) /payments/shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Holat:** eski
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /payments/shift-settings` | superadmin | `superadmin-payments-shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | [design/fragments/superadmin--payments-shift-settings.html](fragments/superadmin--payments-shift-settings.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /payments/shift-settings` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /payments/shift-settings` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+
+#### `(taklif) /ai-assistant` — AI moliyaviy yordamchi (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Holat:** eski
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant` — AI moliyaviy yordamchi | [design/fragments/superadmin--ai-assistant.html](fragments/superadmin--ai-assistant.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-access-dialog` — AI yordamchi — kirish huquqi (popup) | [design/fragments/superadmin--ai-assistant-access-dialog.html](fragments/superadmin--ai-assistant-access-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+
 ### Mahsulotlar
 
 #### `/products` — Mahsulotlar ro'yxati (xodim: tahrirlash, o'chirish, yaratish uchun market tanlash; market va market operatori — faqat ko'rish; dizayn v2)
@@ -1140,6 +1208,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/products` | registrator | `registrator-products-edit-dialog` — Mahsulotni tahrirlash<br>↳ `src/pages/products/list/ui/EditProductDialog.tsx` | [design/fragments/admin--products-edit-dialog.html](fragments/admin--products-edit-dialog.html) | oyna | v2 |
 | `/products` | registrator | `registrator-products-delete-dialog` — Mahsulotni o'chirish<br>↳ `src/pages/products/ui/useDeleteProductConfirm.tsx` | [design/fragments/admin--products-delete-dialog.html](fragments/admin--products-delete-dialog.html) | oyna | v2 |
 | `/products` | market | `market-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | v2 |
+| `/products` | market | `market-products-warehouse-stock` — Mahsulotlar — omborlardagi qoldiq | [design/fragments/market--products-warehouse-stock.html](fragments/market--products-warehouse-stock.html) | sahifa | yangi (kodda yo'q) |
 | `/products` | market_operator | `market_operator-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | v2 |
 | `/products` | market_operator | `market_operator-products-unassigned` — Mahsulotlar — market biriktirilmagan | [design/fragments/market_operator--products-unassigned.html](fragments/market_operator--products-unassigned.html) | sahifa | v2 |
 
@@ -1163,6 +1232,48 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/products/create-product/:id` | registrator | `registrator-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
 | `/products/create-product/:id` | registrator | `registrator-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
 | `/products/create-product/:id` | market | — Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1). | — | — | v2 |
+
+#### `(taklif) /warehouses` — Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Holat:** eski
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /warehouses` | superadmin | `superadmin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /warehouses` | superadmin | `superadmin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /warehouses` | admin | `admin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /warehouses` | admin | `admin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /warehouses` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+
+#### `(taklif) /warehouses/:id` — Ombor tafsiloti — qoldiq, harakatlar, jo'natish (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Holat:** eski
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 8-band.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /warehouses/:id` | superadmin | `superadmin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /warehouses/:id` | superadmin | `superadmin-warehouse-transfer-dialog` — Omborga mahsulot jo'natish (popup) | [design/fragments/superadmin--warehouse-transfer-dialog.html](fragments/superadmin--warehouse-transfer-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /warehouses/:id` | admin | `admin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /warehouses/:id` | admin | `admin-warehouse-transfer-dialog` — Omborga mahsulot jo'natish (popup) | [design/fragments/superadmin--warehouse-transfer-dialog.html](fragments/superadmin--warehouse-transfer-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /warehouses/:id` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /warehouses/:id` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
 
 ### Foydalanuvchilar
 
@@ -1201,6 +1312,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/create-user` | superadmin | `superadmin-users-create` — Foydalanuvchi yaratish | [design/fragments/superadmin--users-create.html](fragments/superadmin--users-create.html) | sahifa | v2 |
 | `/all-users/create-user` | superadmin | `superadmin-users-create-courier-district` — Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | [design/fragments/superadmin--users-create-courier-district.html](fragments/superadmin--users-create-courier-district.html) | sahifa | qisman |
 | `/all-users/create-user` | superadmin | `superadmin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-password-sms` — Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | [design/fragments/superadmin--users-create-password-sms.html](fragments/superadmin--users-create-password-sms.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-password-result-dialog` — Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | [design/fragments/superadmin--users-create-password-result-dialog.html](fragments/superadmin--users-create-password-result-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/create-user` | admin | `admin-users-create` — Yangi foydalanuvchi | [design/fragments/admin--users-create.html](fragments/admin--users-create.html) | sahifa | v2 |
 | `/all-users/create-user` | admin | `admin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-courier` — Yangi xodim — kuryer | [design/fragments/manager--users-create-courier.html](fragments/manager--users-create-courier.html) | sahifa | v2 |
@@ -1870,6 +1983,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/settings` | umumiy (barcha rollar) | `common-settings-scanner` — Sozlamalar — Skaner (kamera va ovoz) | [design/fragments/common--settings-scanner.html](fragments/common--settings-scanner.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-notifications` — Sozlamalar — Bildirishnomalar | [design/fragments/common--settings-notifications.html](fragments/common--settings-notifications.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-notifications-pwa` — Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan<br>↳ `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | [design/fragments/common--settings-notifications-pwa.html](fragments/common--settings-notifications-pwa.html) | sahifa | v2 |
+| `/settings` | umumiy (barcha rollar) | `common-settings-scanner-feedback` — Sozlamalar — Skaner: rangli effekt va ovozlar | [design/fragments/common--settings-scanner-feedback.html](fragments/common--settings-scanner-feedback.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/inbox` — Bildirishnomalar qutisi (qo'ng'iroqcha manzili)
 
@@ -1916,7 +2030,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 212 · kodda yo'q: 10
+237 ta maket · kodda bor: 212 · kodda yo'q: 25
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2142,10 +2256,25 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-activate-dialog` | Guruhni faollashtirish (tasdiq) | oyna | `/notifications` | `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` | qisman — Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring». |
 | `superadmin-notifications-row-menu-inactive` | Guruh amallari menyusi — nofaol guruh | oyna | `/notifications` | `src/pages/notifications/ui/NotificationRowMenu.tsx` | qisman — Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring». |
 | `superadmin-notifications-create-exists-inactive-dialog` | Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | qisman — Kodda bor (v2, NG-B): «Faollashtirish» — ochiq oyna ustida tasdiq (*-activate-dialog, PATCH {is_active: true}). Maketdan farq: nofaollik sababi (inactive_reason) backendda yo'q — matn umumiy («xabarlar unga yuborilmayapti»), maketdagi «bot guruhdan chiqarilgan» yozilmaydi (D1, NG-C). |
+| `superadmin-payments-main-cashbox-accounts` | Asosiy kassa — kartalar va hisob raqamlar | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: kassa kartalari va hisob raqamlari bo'limi — backend'da MAIN uchun nomli kartalar bor (3PE0B03q), frontend'da UI yo'q; turi/bank/oxirgi 4 raqam/egasi, filial kassalari — yangi. |
+| `superadmin-payments-cashbox-account-form-dialog` | Karta yoki hisob raqam qo'shish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: karta yoki hisob raqam qo'shish oynasi; smena kalitlari (rasm, AI) faqat superadminga. |
+| `superadmin-payments-main-cashbox-fill-dialog-account` | Kassaga kirim — karta yoki hisob raqamni tanlash (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: kirim/xarajatda karta yoki hisob raqam tanlovi. |
+| `superadmin-payments-main-cashbox-shift-dialog-accounts` | Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-band: smena yopishda har karta qoldig'i, skrinshot va AI tekshiruvi natijasi (CloseShiftPopup). |
+| `superadmin-payments-shift-report` | Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | sahifa | `(taklif) /payments/shifts/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: smena hisoboti sahifasi — kodda yo'q. |
+| `superadmin-payments-shift-settings` | Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | sahifa | `(taklif) /payments/shift-settings` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: kassa smenasi sozlamalari — kodda yo'q. |
+| `superadmin-neworders-create-ai-input-images` | Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92). |
+| `superadmin-ai-assistant` | AI moliyaviy yordamchi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q. |
+| `superadmin-ai-assistant-access-dialog` | AI yordamchi — kirish huquqi (popup) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q. |
+| `superadmin-warehouse-list` | Omborlar | sahifa | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: omborlar ro'yxati — kodda yo'q. |
+| `superadmin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: ombor ochish — kodda yo'q. |
+| `superadmin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: ombor tafsiloti — kodda yo'q. |
+| `superadmin-warehouse-transfer-dialog` | Omborga mahsulot jo'natish (popup) | oyna | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot jo'natish — kodda yo'q. |
+| `superadmin-users-create-password-sms` | Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi). |
+| `superadmin-users-create-password-result-dialog` | Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | oyna | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish. |
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 148 · kodda yo'q: 4
+156 ta maket · kodda bor: 148 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2301,6 +2430,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | v2 |
 | `admin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
 | `admin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
+| `admin-warehouse-list` | Omborlar | sahifa | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
+| `admin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
+| `admin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
+| `admin-warehouse-transfer-dialog` | Omborga mahsulot jo'natish (popup) | oyna | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
 
 ### manager — Menejer
 
@@ -2458,7 +2591,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-35 ta maket · kodda bor: 28 · kodda yo'q: 7
+36 ta maket · kodda bor: 28 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2497,6 +2630,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | v2 |
 | `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
+| `market-products-warehouse-stock` | Mahsulotlar — omborlardagi qoldiq | sahifa | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: market o'z mahsulotlari qoldig'ini omborlar bo'yicha ko'radi (faqat ko'rish) — kodda yo'q. |
 
 ### market_operator — Market operatori
 
@@ -2609,7 +2743,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### umumiy ekranlar (common — barcha rollar)
 
-19 ta maket · kodda bor: 19 · kodda yo'q: 0
+20 ta maket · kodda bor: 19 · kodda yo'q: 1
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2632,6 +2766,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-profile-telegram-unlink-dialog` | Profil — Telegram'ni uzish (tasdiq) | oyna | `/profile` | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | v2 |
 | `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/NotificationsMenu.tsx` | v2 |
+| `common-settings-scanner-feedback` | Sozlamalar — Skaner: rangli effekt va ovozlar | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 5-band: to'liq ekran rangli effekt, ovoz to'plami, balandlik, sinab ko'rish (ScannerPanel). Dizayn ega tasdig'idan keyin kodga o'tadi. |
 
 ## 5. Dizayn tizimi taxtalari
 
@@ -2652,6 +2787,9 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-feedback` | Bildirishnoma va ogohlantirishlar | Qalqib chiquvchi xabarlar (4 ton, amal bilan, qayta urinish; desktop pastki o'ngda ≤3, telefonda tepada bittadan), xabar bloklari, sahifa bannerlari (internet, sessiya), forma xatolari xulosasi, tasdiqlash oynalari (o'chirish, pul o'tkazish, nofaol qilish, push ruxsati), amal natijasi (to'liq/qisman), skaner signali. | src/app/providers/notification/NotificationProvider.tsx, src/shared/components/popupConfirm.tsx, src/auth/SessionExpiryCountdown.tsx, src/shared/components/ScanFeedbackOverlay.tsx | barcha sahifalar |
 | `tizim-errors` | Xato va bo'sh holatlar | Sahifa xatolari (404, 403, 500, ilova xatosi) va ro'yxat/karta ichidagi holatlar (yuklanmoqda, bo'sh, natija yo'q, yuklanmadi, internet yo'q, ruxsat yo'q, bo'lim xatosi), xato xabarlari. | src/shared/ui/{NotFound,Forbidden,ServerError,ErrorBoundaryPage,EmptyState,QueryErrorState}.tsx, src/shared/ui/primitives/{QueryBoundary,ErrorState}.tsx, src/shared/ui/error-page/ | `/403`, `/404`, `/500`, `/runtime-error`, `/*` |
 | `tizim-motion` | Harakat, fokus va kirish qulayligi | Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi. | src/index.css (:focus-visible, animatsiyalar), docs/DESIGN_SYSTEM.md §9 | barcha sahifalar |
+| `tizim-shift-report-messages` | Smena hisoboti — Telegram va tizim xabarlari | Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali. | taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed) | barcha sahifalar |
+| `tizim-scan-feedback` | Skaner natijasi — to'liq ekran rang effekti va ovozlar | Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari. | src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
+| `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
 
 ## 6. Fayl → route
 
@@ -3208,6 +3346,8 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
 | Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+16) |
 
+Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`), Ombor (`warehouse`).
+
 ### admin — Admin
 
 | Band | Kalit | `to` | Route | Shart (filial turi) | admin maketlari |
@@ -3226,6 +3366,8 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
 | Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Ombor (`warehouse`).
 
 ### manager — Menejer
 
@@ -3262,7 +3404,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+1) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
-| Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` |
+| Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+1) |
 | To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+1) |
 | Operatorlar | `operators` | `/market-operators` | `/market-operators` | — | `market-operators-list` (+7) |
 

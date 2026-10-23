@@ -1,0 +1,269 @@
+<div style="max-width: 1440px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 48px) 72px; display: flex; flex-direction: column; gap: 56px">
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<a class="el-back" href="@main" style="align-self: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Dizayn tizimi</a>
+<header style="background: var(--sidebar); border: 1px solid var(--border); border-radius:20px; padding: clamp(24px, 3vw, 40px); display: flex; flex-wrap: wrap; gap: 32px 48px; align-items: flex-end; justify-content: space-between">
+  <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0; flex: 1 1 520px">
+    <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline" style="color: var(--sidebar-muted)">Dizayn tizimi · Kassa smenasi · Xabarlar</span>
+      <h1 class="el-h1" style="color: var(--sidebar-text)">Smena hisoboti — Telegram va tizim xabarlari</h1>
+      <p style="color: var(--sidebar-text); max-width: 640px">Smena yopilganda superadminga to'liq xulosa, kuryerga faqat o'zi topshirgan pul, marketga faqat o'ziga to'langan summa boradi. Bir xil matn ikki kanalda: Telegram bot va ilovadagi bildirishnomalar qutisi. Avtomatik yopilgan smena matnda alohida aytiladi.</p>
+    </div>
+  </div>
+  <dl style="display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0; max-width: 452px"><div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Qachon</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">Har smena yopilganda — kassir yoki avtomatik</dd></div><div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Kimga</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">Superadmin, shu smenada operatsiyasi bo'lgan kuryer va market</dd></div><div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Kanallar</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">Telegram bot va tizim bildirishnomasi</dd></div><div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Maxfiylik</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">Har kim faqat o'z operatsiyalarini ko'radi</dd></div></dl>
+</header>
+</div>
+
+<section aria-labelledby="s-tg" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">01</span>
+    <h2 class="el-h1" id="s-tg">Telegram xabarlari</h2>
+    <p class="el-sub" style="max-width: 920px">Bot xabari: birinchi qator — nima bo'ldi, keyin raqamlar, oxirida «Hisobotni ochish» tugmasi. Superadminga hisobot fayli ilova qilinadi. Kuryer va market boshqa kuryer, market yoki kassa qoldig'ini ko'rmaydi.</p>
+  </div>
+<div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start">
+  <figure style="margin: 0; flex: 0 0 390px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+    <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Superadminga</span><span class="el-xs el-muted">To'liq xulosa + ilova (PDF yoki Excel — sozlamadan)</span></figcaption>
+    <div class="el-device" style="width: 390px; height: 844px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 8px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)">
+        <button class="el-iconbtn" type="button" aria-label="Orqaga"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+        <span class="el-avatar" aria-hidden="true" style="width: 40px; height: 40px">EP</span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Elchi Pochta</span><span class="el-xs el-muted">bot</span></span>
+        <button class="el-iconbtn" type="button" aria-label="Chat amallari"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+      <div role="log" aria-label="Superadminga — chat" style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 16px 12px; background: var(--sunken)">
+        <span class="el-badge el-tone-neutral" style="align-self: center; background: var(--surface)">Bugun</span>
+        <div style="align-self: flex-start; width: 100%; max-width: 326px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 6px"><p class="el-small" style="margin: 0"><span class="el-strong">Smena avtomatik yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">23.10.2026, 14:05 – 23:00</p><p class="el-small" style="margin: 0">Kassir Shodiyor Ergashev smenani yopmagan; naqd va 2 ta karta sanalmagan, hisob tizim bo'yicha.</p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">Ochilish: <span class="el-strong">17 545 000 so'm</span></p><p class="el-small" style="margin: 0">Kirim: +11 650 000 so'm</p><p class="el-small" style="margin: 0">Chiqim: −4 580 000 so'm</p><p class="el-small" style="margin: 0">Yopilish: <span class="el-strong">24 615 000 so'm</span> (tizim bo'yicha)</p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">Naqd: sanalmagan</p><p class="el-small" style="margin: 0">Kartalar: 1 ta mos keldi, 1 ta farq (−90 000 so'm), 2 ta tekshirilmagan</p><p class="el-small" style="margin: 0">Operatsiyalar: kuryerlardan 14 ta, marketlarga 9 ta, xarajat 3 ta, to'ldirish 1 ta</p><div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: var(--sunken)"><span class="el-stat-icon" style="background: var(--surface)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><span style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">smena-23-10-2026.pdf</span><span class="el-xs el-muted">PDF · 184 KB</span></span></div><span class="el-xs el-subtle" style="align-self: flex-end">23:01</span></div>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button" style="align-self: flex-start; width: 100%; max-width: 326px; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Hisobotni ochish</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 8px 0 16px; flex: none; background: var(--surface); border-top: 1px solid var(--border)">
+        <span class="el-small el-subtle" style="flex: 1">Xabar</span>
+        <button class="el-iconbtn" type="button" aria-label="Yuborish" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></button>
+      </div>
+    </div>
+  </figure>
+  <figure style="margin: 0; flex: 0 0 390px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+    <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Kuryerga · Jasur Tursunov</span><span class="el-xs el-muted">Faqat o'zi topshirgan o'tkazmalar</span></figcaption>
+    <div class="el-device" style="width: 390px; height: 844px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 8px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)">
+        <button class="el-iconbtn" type="button" aria-label="Orqaga"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+        <span class="el-avatar" aria-hidden="true" style="width: 40px; height: 40px">EP</span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Elchi Pochta</span><span class="el-xs el-muted">bot</span></span>
+        <button class="el-iconbtn" type="button" aria-label="Chat amallari"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+      <div role="log" aria-label="Kuryerga · Jasur Tursunov — chat" style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 16px 12px; background: var(--sunken)">
+        <span class="el-badge el-tone-neutral" style="align-self: center; background: var(--surface)">Kecha</span>
+        <div style="align-self: flex-start; width: 100%; max-width: 326px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 6px"><p class="el-small" style="margin: 0"><span class="el-strong">Smena yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">22.10.2026, 22:10</p><p class="el-small" style="margin: 0">Siz topshirgan: 2 ta o'tkazma, 1 300 000 so'm</p><span class="el-xs el-subtle" style="align-self: flex-end">22:11</span></div>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button" style="align-self: flex-start; width: 100%; max-width: 326px; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Hisobotni ochish</button>
+        <span class="el-badge el-tone-neutral" style="align-self: center; background: var(--surface)">Bugun</span>
+        <div style="align-self: flex-start; width: 100%; max-width: 326px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 6px"><p class="el-small" style="margin: 0"><span class="el-strong">Smena yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">23.10.2026, 23:00</p><p class="el-small" style="margin: 0">Siz topshirgan: <span class="el-strong">3 ta o'tkazma, 2 450 000 so'm</span></p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">14:20 — 850 000 so'm, naqd</p><p class="el-small" style="margin: 0">17:05 — 1 000 000 so'm, naqd</p><p class="el-small" style="margin: 0">21:40 — 600 000 so'm, karta (Asosiy karta ··1234)</p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">Qabul qildi: Shodiyor Ergashev</p><p class="el-small" style="margin: 0">Hammasi kassaga kirim qilindi.</p><span class="el-xs el-subtle" style="align-self: flex-end">23:01</span></div>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button" style="align-self: flex-start; width: 100%; max-width: 326px; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Hisobotni ochish</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 8px 0 16px; flex: none; background: var(--surface); border-top: 1px solid var(--border)">
+        <span class="el-small el-subtle" style="flex: 1">Xabar</span>
+        <button class="el-iconbtn" type="button" aria-label="Yuborish" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></button>
+      </div>
+    </div>
+  </figure>
+  <figure style="margin: 0; flex: 0 0 390px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+    <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Marketga · Baraka Shop</span><span class="el-xs el-muted">Faqat o'ziga to'langan summalar</span></figcaption>
+    <div class="el-device" style="width: 390px; height: 844px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 8px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)">
+        <button class="el-iconbtn" type="button" aria-label="Orqaga"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+        <span class="el-avatar" aria-hidden="true" style="width: 40px; height: 40px">EP</span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Elchi Pochta</span><span class="el-xs el-muted">bot</span></span>
+        <button class="el-iconbtn" type="button" aria-label="Chat amallari"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+      <div role="log" aria-label="Marketga · Baraka Shop — chat" style="flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 16px 12px; background: var(--sunken)">
+        <span class="el-badge el-tone-neutral" style="align-self: center; background: var(--surface)">Kecha</span>
+        <div style="align-self: flex-start; width: 100%; max-width: 326px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 6px"><p class="el-small" style="margin: 0"><span class="el-strong">Smena yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">22.10.2026, 22:10</p><p class="el-small" style="margin: 0">Smenada sizga to'landi: 950 000 so'm (naqd)</p><span class="el-xs el-subtle" style="align-self: flex-end">22:11</span></div>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button" style="align-self: flex-start; width: 100%; max-width: 326px; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Hisobotni ochish</button>
+        <span class="el-badge el-tone-neutral" style="align-self: center; background: var(--surface)">Bugun</span>
+        <div style="align-self: flex-start; width: 100%; max-width: 326px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 6px"><p class="el-small" style="margin: 0"><span class="el-strong">Smena yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">23.10.2026, 23:00</p><p class="el-small" style="margin: 0">Smenada sizga to'landi: <span class="el-strong">1 800 000 so'm</span> (karta, Humo virtual)</p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">16:12 — 1 800 000 so'm · Humo virtual ··4417</p><p class="el-small" style="margin: 0">To'ladi: Shodiyor Ergashev</p><hr class="el-divider" style="margin: 2px 0"><p class="el-small" style="margin: 0">Sizga to'lanadigan qoldiq: 640 000 so'm</p><span class="el-xs el-subtle" style="align-self: flex-end">23:01</span></div>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button" style="align-self: flex-start; width: 100%; max-width: 326px; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Hisobotni ochish</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; height: 60px; padding: 0 8px 0 16px; flex: none; background: var(--surface); border-top: 1px solid var(--border)">
+        <span class="el-small el-subtle" style="flex: 1">Xabar</span>
+        <button class="el-iconbtn" type="button" aria-label="Yuborish" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></button>
+      </div>
+    </div>
+  </figure>
+</div>
+<div class="el-alert el-tone-info" role="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px; flex: none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><div class="el-alert-body"><div class="el-alert-title">Telegram ko'rinishi taxminiy</div>Haqiqiy ranglar foydalanuvchining Telegram mavzusiga bog'liq. Maketda faqat matn, tartib, ilova va tugma muhim. «Hisobotni ochish» tugmasi ilovadagi tegishli sahifani ochadi: superadmin — smena hisoboti, kuryer — «Kassa → Tarix», market — «To'lovlar».</div></div>
+</section>
+
+<section aria-labelledby="s-sys" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">02</span>
+    <h2 class="el-h1" id="s-sys">Tizim bildirishnomasi</h2>
+    <p class="el-sub" style="max-width: 920px">Har bir Telegram xabari bildirishnomalar qutisiga ham yoziladi (kategoriya «Moliya»). Ilova ochiq bo'lsa, qalqib chiquvchi xabar ham chiqadi. Avtomatik yopilish va ogohlantirish — «Muhim».</p>
+  </div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <section class="el-card" aria-labelledby="t-inbox" style="flex: 3 1 640px; min-width: 0">
+    <div class="el-card-head">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><h3 class="el-h2" id="t-inbox">Bildirishnomalar qutisi</h3><span class="el-small el-muted">Qo'ng'iroqcha → «Moliya» bo'limi · har kim faqat o'z qatorini ko'radi</span></div>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0">
+      <li style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px 16px 12px;">
+        <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg></span>
+        <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-sr">O'qilmagan: </span><span style="font-weight: 700">Smena avtomatik yopildi</span><span class="el-badge el-tone-danger">Muhim</span></span>
+          <span class="el-small el-muted">Asosiy kassa · 14:05 – 23:00. Kassir yopmagan, naqd va 2 ta karta sanalmagan. Kartalarda farq: −90 000 so'm.</span>
+          <span class="el-xs el-subtle">Moliya · <time>Bugun, 23:01</time></span>
+        </a>
+        <span class="el-badge el-tone-neutral" style="flex: none">Superadmin</span>
+      </li>
+      <li style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px 16px 12px; border-top: 1px solid var(--border);">
+        <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg></span>
+        <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-sr">O'qilmagan: </span><span style="font-weight: 700">Smena yopildi — Asosiy kassa</span></span>
+          <span class="el-small el-muted">Siz topshirgan: 3 ta o'tkazma, 2 450 000 so'm. Hammasi kassaga kirim qilindi.</span>
+          <span class="el-xs el-subtle">Moliya · <time>Bugun, 23:01</time></span>
+        </a>
+        <span class="el-badge el-tone-neutral" style="flex: none">Kuryer</span>
+      </li>
+      <li style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px 16px 12px; border-top: 1px solid var(--border);">
+        <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg></span>
+        <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-sr">O'qilmagan: </span><span style="font-weight: 700">Smena yopildi — Asosiy kassa</span></span>
+          <span class="el-small el-muted">Smenada sizga to'landi: 1 800 000 so'm (karta, Humo virtual).</span>
+          <span class="el-xs el-subtle">Moliya · <time>Bugun, 23:01</time></span>
+        </a>
+        <span class="el-badge el-tone-neutral" style="flex: none">Market</span>
+      </li>
+      <li style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px 16px 12px; border-top: 1px solid var(--border);">
+        <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
+        <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-sr">O'qilmagan: </span><span style="font-weight: 700">Smena 15 daqiqadan keyin yopiladi</span><span class="el-badge el-tone-danger">Muhim</span></span>
+          <span class="el-small el-muted">Asosiy kassa 23:00 da avtomatik yopiladi. Naqd va kartalarni sanab, smenani o'zingiz yoping.</span>
+          <span class="el-xs el-subtle">Moliya · <time>Bugun, 22:45</time></span>
+        </a>
+        <span class="el-badge el-tone-neutral" style="flex: none">Kassir</span>
+      </li>
+    </ul>
+  </section>
+  <div style="flex: 2 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Superadmin · ilova ochiq</h3><span class="el-xs el-muted">role="status" · 6 soniyada yopiladi</span></div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--sunken); border-radius:14px">
+        <div class="el-toast" role="status" style="width: 100%; max-width: 380px; min-width: 0"><span style="color: var(--warning-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div style="flex: 1; min-width: 0"><div class="el-strong">Smena avtomatik yopildi</div><div class="el-small el-muted">Asosiy kassa · hisobot 12 ta kuryer va 8 ta marketga yuborildi.</div><button class="el-btn el-btn-link el-btn-sm" type="button" style="margin-top: 4px; padding: 0">Hisobotni ochish</button></div><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Xabarni yopish" style="margin: -4px -8px 0 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Kassir smenani o'zi yopganda</h3><span class="el-xs el-muted">role="status" · 4 soniyada yopiladi</span></div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--sunken); border-radius:14px">
+        <div class="el-toast" role="status" style="width: 100%; max-width: 380px; min-width: 0"><span style="color: var(--success-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><div style="flex: 1; min-width: 0"><div class="el-strong">Smena yopildi</div><div class="el-small el-muted">Hisobot 21 ta qabul qiluvchiga yuborildi.</div><button class="el-btn el-btn-link el-btn-sm" type="button" style="margin-top: 4px; padding: 0">Hisobotni ochish</button></div><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Xabarni yopish" style="margin: -4px -8px 0 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Kuryer yoki market · ilova ochiq</h3><span class="el-xs el-muted">role="status" · 4 soniyada yopiladi</span></div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--sunken); border-radius:14px">
+        <div class="el-toast" role="status" style="width: 100%; max-width: 380px; min-width: 0"><span style="color: var(--info-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><div style="flex: 1; min-width: 0"><div class="el-strong">Smena yopildi</div><div class="el-small el-muted">Siz topshirgan 2 450 000 so'm kassaga kirim qilindi.</div></div><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Xabarni yopish" style="margin: -4px -8px 0 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section aria-labelledby="s-auto" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">03</span>
+    <h2 class="el-h1" id="s-auto">Avtomatik yopilganda</h2>
+    <p class="el-sub" style="max-width: 920px">Kassir o'z vaqtida yopmasa: 15 daqiqa oldin ogohlantirish, belgilangan vaqtda tizim yopadi va matn o'zgaradi — kim yopgani, nima sanalmagani aytiladi. Kuryer va market matni o'zgarmaydi.</p>
+  </div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+  <section class="el-card" aria-label="Ogohlantirish" style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column">
+    <div class="el-card-head">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-overline">22:45 · yopishdan oldin</span><h3 class="el-h2">Ogohlantirish</h3></div>
+      <span class="el-badge el-tone-neutral">Kassirga</span>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px; flex: 1">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)"><p class="el-small" style="margin: 0"><span class="el-strong">Asosiy kassa smenasi 15 daqiqadan keyin yopiladi</span></p><p class="el-small" style="margin: 0">23:00 da smena avtomatik yopiladi. Naqd va kartalarni sanab, smenani o'zingiz yoping — aks holda qoldiqlar sanalmagan deb yoziladi.</p></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span style="font-weight: 700">Smena 15 daqiqadan keyin yopiladi</span><span class="el-badge el-tone-danger">Muhim</span></span>
+          <span class="el-small el-muted">Asosiy kassa 23:00 da avtomatik yopiladi. Naqd va kartalarni sanab, smenani o'zingiz yoping.</span>
+        </div>
+      </div>
+      <span class="el-xs el-muted">Telegram xabarida tugma: «Smenani yopish» → ilovada «Smenani yopish» oynasi ochiladi.</span>
+    </div>
+  </section>
+  <section class="el-card" aria-label="Odatdagi yopilish" style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column">
+    <div class="el-card-head">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-overline">Kassir yopdi</span><h3 class="el-h2">Odatdagi yopilish</h3></div>
+      <span class="el-badge el-tone-neutral">Superadmin</span>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px; flex: 1">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)"><p class="el-small" style="margin: 0"><span class="el-strong">Smena yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">23.10.2026, 14:05 – 22:52 · yopdi: Shodiyor Ergashev</p><p class="el-small" style="margin: 0">Naqd: 18 240 000 so'm · farq 0 so'm</p><p class="el-small" style="margin: 0">Kartalar: 3 ta mos keldi, 1 ta farq (−90 000 so'm) — izoh: «Kechki to'lov hali tushmagan»</p></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span style="font-weight: 700">Smena yopildi — Asosiy kassa</span></span>
+          <span class="el-small el-muted">14:05 – 22:52 · yopdi: Shodiyor Ergashev. Kartalarda farq: −90 000 so'm.</span>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+  <section class="el-card" aria-label="Avtomatik yopilish" style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column">
+    <div class="el-card-head">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-overline">23:00 · tizim yopdi</span><h3 class="el-h2">Avtomatik yopilish</h3></div>
+      <span class="el-badge el-tone-neutral">Superadmin</span>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px; flex: 1">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)"><p class="el-small" style="margin: 0"><span class="el-strong">Smena <span style="background: var(--warning-soft); border-radius: 6px; padding: 0 4px">avtomatik</span> yopildi — Asosiy kassa</span></p><p class="el-small" style="margin: 0">23.10.2026, 14:05 – 23:00 · <span style="background: var(--warning-soft); border-radius: 6px; padding: 0 4px">kassir Shodiyor Ergashev yopmagan</span></p><p class="el-small" style="margin: 0">Naqd: <span style="background: var(--warning-soft); border-radius: 6px; padding: 0 4px">sanalmagan — hisob tizim bo'yicha</span></p><p class="el-small" style="margin: 0">Kartalar: 1 ta mos keldi, 1 ta farq (−90 000 so'm), <span style="background: var(--warning-soft); border-radius: 6px; padding: 0 4px">2 ta tekshirilmagan</span></p></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border)">
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span style="font-weight: 700">Smena avtomatik yopildi</span><span class="el-badge el-tone-danger">Muhim</span></span>
+          <span class="el-small el-muted">Asosiy kassa · 14:05 – 23:00. Kassir yopmagan, naqd va 2 ta karta sanalmagan.</span>
+        </div>
+      </div>
+      <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 16px; height: 12px; flex: none; border-radius: 6px; background: var(--warning-soft)"></span>Odatdagi yopilishdan farq qiladigan qismlar</span>
+    </div>
+  </section>
+</div>
+</section>
+
+<section aria-labelledby="s-copy" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">04</span>
+    <h2 class="el-h1" id="s-copy">Matnlar jadvali</h2>
+    <p class="el-sub" style="max-width: 920px">Hodisa → qabul qiluvchi → kanal → matn. Shablondagi o'zgaruvchilar backend hodisa ma'lumotidan to'ldiriladi; lokalizatsiya — uz / ru / en.</p>
+  </div>
+<section class="el-card" aria-label="Xabar matnlari jadvali" style="overflow: hidden">
+  <div class="el-table-wrap">
+    <table class="el-table" style="min-width: 1100px">
+      <thead><tr><th style="width: 220px">Hodisa</th><th style="width: 190px">Qabul qiluvchi</th><th style="width: 200px">Kanal</th><th>Matn</th></tr></thead>
+      <tbody>
+        <tr><td><div class="el-cell-title">Yopishdan oldin ogohlantirish</div><div class="el-cell-sub" style="white-space: normal">Sozlamadagi daqiqa (15) qolganda</div></td><td class="el-small">Kassir — smenani ochgan xodim</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px"><span class="el-kbd el-code" style="white-space: nowrap">{kassa}</span> smenasi <span class="el-kbd el-code" style="white-space: nowrap">{daqiqa}</span> daqiqadan keyin (<span class="el-kbd el-code" style="white-space: nowrap">{vaqt}</span>) avtomatik yopiladi. Naqd va kartalarni sanab, smenani o'zingiz yoping.</td></tr>
+        <tr><td><div class="el-cell-title">Smena yopildi</div><div class="el-cell-sub" style="white-space: normal">Kassir «Smenani yopish»ni bosdi</div></td><td class="el-small">Superadmin</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>PDF / Excel ilova</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px">Smena yopildi — <span class="el-kbd el-code" style="white-space: nowrap">{kassa}</span>. <span class="el-kbd el-code" style="white-space: nowrap">{sana}</span>, <span class="el-kbd el-code" style="white-space: nowrap">{ochildi}</span> – <span class="el-kbd el-code" style="white-space: nowrap">{yopildi}</span> · yopdi: <span class="el-kbd el-code" style="white-space: nowrap">{xodim}</span>. Ochilish <span class="el-kbd el-code" style="white-space: nowrap">{ochilish}</span>, kirim <span class="el-kbd el-code" style="white-space: nowrap">{kirim}</span>, chiqim <span class="el-kbd el-code" style="white-space: nowrap">{chiqim}</span>, yopilish <span class="el-kbd el-code" style="white-space: nowrap">{yopilish}</span>. Naqd: <span class="el-kbd el-code" style="white-space: nowrap">{naqd_farq}</span>. Kartalar: <span class="el-kbd el-code" style="white-space: nowrap">{mos}</span> ta mos keldi, <span class="el-kbd el-code" style="white-space: nowrap">{farqli}</span> ta farq (<span class="el-kbd el-code" style="white-space: nowrap">{karta_farq}</span>).</td></tr>
+        <tr><td><div class="el-cell-title">Smena avtomatik yopildi</div><div class="el-cell-sub" style="white-space: normal">Belgilangan vaqt keldi, smena ochiq</div></td><td class="el-small">Superadmin</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>PDF / Excel ilova</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px">Smena avtomatik yopildi — <span class="el-kbd el-code" style="white-space: nowrap">{kassa}</span>, <span class="el-kbd el-code" style="white-space: nowrap">{vaqt}</span>. Kassir <span class="el-kbd el-code" style="white-space: nowrap">{xodim}</span> yopmagan; naqd va <span class="el-kbd el-code" style="white-space: nowrap">{sanalmagan}</span> ta karta sanalmagan, hisob tizim ma'lumoti bo'yicha.</td></tr>
+        <tr><td><div class="el-cell-title">Smena yopildi</div><div class="el-cell-sub" style="white-space: normal">Kuryerning shu smenada o'tkazmasi bor</div></td><td class="el-small">Kuryer — faqat o'z operatsiyalari</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px">Smena yopildi. Siz topshirgan: <span class="el-kbd el-code" style="white-space: nowrap">{soni}</span> ta o'tkazma, <span class="el-kbd el-code" style="white-space: nowrap">{summa}</span>. Har qator: <span class="el-kbd el-code" style="white-space: nowrap">{vaqt}</span> — <span class="el-kbd el-code" style="white-space: nowrap">{summa}</span>, <span class="el-kbd el-code" style="white-space: nowrap">{usul}</span>.</td></tr>
+        <tr><td><div class="el-cell-title">Smena yopildi</div><div class="el-cell-sub" style="white-space: normal">Marketga shu smenada to'lov bo'lgan</div></td><td class="el-small">Market — faqat o'ziga to'lovlar</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px">Smenada sizga to'landi: <span class="el-kbd el-code" style="white-space: nowrap">{summa}</span> (<span class="el-kbd el-code" style="white-space: nowrap">{usul}</span>, <span class="el-kbd el-code" style="white-space: nowrap">{karta}</span>). Sizga to'lanadigan qoldiq: <span class="el-kbd el-code" style="white-space: nowrap">{qoldiq}</span>.</td></tr>
+        <tr><td><div class="el-cell-title">AI farq topdi</div><div class="el-cell-sub" style="white-space: normal">Rasmdagi qoldiq tizimdagidan farq qiladi</div></td><td class="el-small">Superadmin</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Tizim</span></div></td><td class="el-small" style="line-height: 26px"><span class="el-kbd el-code" style="white-space: nowrap">{karta}</span>: rasmda <span class="el-kbd el-code" style="white-space: nowrap">{ai_summa}</span>, tizimda <span class="el-kbd el-code" style="white-space: nowrap">{tizim_summa}</span>, kiritilgan <span class="el-kbd el-code" style="white-space: nowrap">{summa}</span>. Farq <span class="el-kbd el-code" style="white-space: nowrap">{farq}</span> — izoh: <span class="el-kbd el-code" style="white-space: nowrap">{izoh}</span>.</td></tr>
+        <tr><td><div class="el-cell-title">Telegram ulanmagan</div><div class="el-cell-sub" style="white-space: normal">Qabul qiluvchida bot ulanmagan</div></td><td class="el-small">Kuryer yoki market</td><td><div style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Hisobot sahifasi</span></div></td><td class="el-small" style="line-height: 26px"><span class="el-kbd el-code" style="white-space: nowrap">{ism}</span>: Telegram ulanmagan — faqat tizim orqali yuborildi.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-card-foot" style="justify-content: flex-start; flex-wrap: wrap; gap: 8px">
+    <span class="el-small el-muted">O'zgaruvchilar:</span><span class="el-kbd el-code" style="white-space: nowrap">{kassa}</span><span class="el-kbd el-code" style="white-space: nowrap">{sana}</span><span class="el-kbd el-code" style="white-space: nowrap">{xodim}</span><span class="el-kbd el-code" style="white-space: nowrap">{summa}</span><span class="el-small el-muted">— pul doim «185 000 so'm», manfiy «−90 000 so'm», vaqt «23:00».</span>
+  </div>
+</section>
+</section>
+
+</div>
