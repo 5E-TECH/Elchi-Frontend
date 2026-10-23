@@ -13,11 +13,8 @@ export const useAddEmployee = (branchId: string) => {
   return useMutation({
     mutationFn: (payload: AddEmployeeDto) =>
       api.post(API_ENDPOINTS.BRANCHES.USERS(branchId), payload),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.branches.employees(branchId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.branches.detail(branchId) }),
-      ]);
-    },
+    // Hamma filial so'rovlari (xodimlar, tafsilot va ro'yxat): ro'yxatdagi XODIMLAR soni ham o'zgaradi —
+    // aks holda «← Filiallar» da 30 s gacha eski son turadi (cI5gqN90).
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.branches.all }),
   });
 };

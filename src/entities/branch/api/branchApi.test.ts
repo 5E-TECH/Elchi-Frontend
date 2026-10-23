@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getMock = vi.hoisted(() => vi.fn());
 
@@ -7,7 +7,13 @@ vi.mock("../../../shared/api/instance", () => ({
 }));
 
 import { API_ENDPOINTS } from "../../../shared/api";
-import { getBranches, getDispatchDestinations, normalizeBranchList } from "./branchApi";
+import {
+  getBranchById,
+  getBranchEmployees,
+  getBranches,
+  getDispatchDestinations,
+  normalizeBranchList,
+} from "./branchApi";
 
 // C5 javob shakli: { statusCode, message, data: { items, total } }.
 const envelope = (items: unknown[]) => ({
@@ -198,5 +204,76 @@ describe("normalizeBranchList — qabul mezonlari", () => {
         normalizeBranchList({ data: { items: items(2), total: 20, meta: { total: 13 } } }).total,
       ).toBe(20);
     });
+  });
+});
+
+describe("normalizeBranch — sana va xodimlar soni soxta emas (cI5gqN90)", () => {
+  // «Bugun» ataylab filial sanalaridan uzoq: soxta to'ldirish bo'lsa, natijada shu kun chiqadi.
+  const TODAY = "2026-10-22T09:00:00.000Z";
+  const one = (item: Record<string, unknown>) =>
+    normalizeBranchList({ data: { items: [{ id: 3, name: "Andijon filiali", status: "active", ...item }] } }).data[0];
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(TODAY));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("⭐ TC1: faqat createdAt kelsa — created_at shu sana, bugungi kun emas", () => {
+    expect(one({ createdAt: "2026-06-02T07:30:00.000Z" }).created_at).toBe("2026-06-02T07:30:00.000Z");
+  });
+
+  it("ikkalasi kelsa — created_at (snake_case) ustun", () => {
+    expect(
+      one({ created_at: "2026-06-02T07:30:00.000Z", createdAt: "2026-05-01T00:00:00.000Z" }).created_at,
+    ).toBe("2026-06-02T07:30:00.000Z");
+  });
+
+  it("created_at null, createdAt bor — createdAt olinadi", () => {
+    expect(one({ created_at: null, createdAt: "2026-06-02T07:30:00.000Z" }).created_at).toBe(
+      "2026-06-02T07:30:00.000Z",
+    );
+  });
+
+  it("⭐ TC2: sana umuman yo'q (yoki null) — bo'sh qator, bugungi kun emas", () => {
+    expect(one({}).created_at).toBe("");
+    expect(one({ created_at: null, createdAt: null }).created_at).toBe("");
+  });
+
+  it("employees_count backenddan olinadi; maydonsiz eski javobda 0", () => {
+    expect(one({ employees_count: 4 }).employees_count).toBe(4);
+    expect(one({ employees_count: "4" }).employees_count).toBe(4);
+    expect(one({}).employees_count).toBe(0);
+  });
+
+  it("GET /branches/:id — employees_count va created_at o'tadi", async () => {
+    getMock.mockResolvedValue({
+      data: { statusCode: 200, data: { id: 3, name: "Andijon filiali", employees_count: 4, created_at: "2026-06-02T07:30:00.000Z" } },
+    });
+
+    const branch = await getBranchById("3");
+
+    expect(getMock).toHaveBeenCalledWith(API_ENDPOINTS.BRANCHES.BY_ID("3"));
+    expect(branch).toMatchObject({ id: "3", employees_count: 4, created_at: "2026-06-02T07:30:00.000Z" });
+  });
+
+  it("xodimning qo'shilgan sanasi yo'q bo'lsa — bo'sh (bugungi kun emas); createdAt bo'lsa — o'sha", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: [
+          { id: 1, user_id: 210, role: "COURIER", user: { id: 210, name: "Madina Sobirova" } },
+          { id: 2, user_id: 211, role: "COURIER", createdAt: "2025-07-12T12:00:00.000Z", user: { id: 211, name: "Bahodir Karimov" } },
+        ],
+      },
+    });
+
+    const [first, second] = await getBranchEmployees("3");
+
+    expect(first.joined_at).toBe("");
+    expect(second.joined_at).toBe("2025-07-12T12:00:00.000Z");
   });
 });

@@ -231,6 +231,14 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
     javoblar kichik tuzatish PR'larida). (3) ~~«Visual» baseline'lari~~ — yangilandi (2026-10-22, quyida). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
     Ish usuli: `~/.elchi-work` (worktree'lar, `merge-branches.sh`, `merge-routemap.py`, `full-check.sh`, `trello.py`).
+  - **cI5gqN90 (2026-10-22, roadmap 2-bo'limi, birinchi band):** «Filiallar» — sana bugungi kun bilan to'ldirilmaydi.
+    `normalizeBranch`: `created_at ?? createdAt ?? ""` (`new Date()` zaxirasi olindi), xodimning `joined_at` ham;
+    bo'sh sanada ro'yxatdagi «Sana» va detaldagi «Yaratilgan sana» — «—» (UI buni avval ham chizardi). Ko'rinish
+    o'zgarmaydi (maketlar `superadmin-branches-list-table`, `superadmin-branches-detail`). Testlar: unit TC1/TC2,
+    render — «—», faqat `createdAt`, XODIMLAR — backend soni (TC4 tengligi backendda, PROD'da tasdiqlangan). Xodim
+    qo'shish / olib tashlashdan keyin `queryKeys.branches.all` eskiradi — ro'yxatdagi XODIMLAR soni ham (avval faqat
+    tafsilot va xodimlar; «← Filiallar» da 30 s gacha eski son turardi). Navbatda: o2j9uDtT (hududlar, soxta «0 kuryer»),
+    keyin NIFAnCvf + 2Fj7iw1k (ikkalasi `FinancialAnalysis.tsx`), wLNccBkX + lQP3ojwq (Ops RBAC, bitta PR).
   - **dev bilan sinxron (2026-10-22):** `origin/dev` (Urozov04: EP-1 «Xarajat kategoriyalari» kassada, EP-3 profil
     «Sessiyalar») `shodiyor` ga merge qilindi — `shodiyor → dev` endi to'qnashuvsiz. To'qnashuvlar: `ProfilePage`
     (TG-B tuzilmasi + «Sessiyalar» barcha rollarga), `access.test.ts`, `app-shot.mjs`, route-map `/profile` izohi,
