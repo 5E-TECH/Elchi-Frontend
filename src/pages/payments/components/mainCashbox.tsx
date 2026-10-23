@@ -19,7 +19,6 @@ import {
   ListFilter,
   Minus,
   Plus,
-  Settings,
   Timer,
   TrendingUp,
   Truck,
@@ -65,9 +64,9 @@ import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../e
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
+import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
 import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
-import ExpenseCategoriesDialog from "./ExpenseCategoriesDialog";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
@@ -109,10 +108,12 @@ import {
  * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
  * `admin-payments-main-cashbox`, `manager-payments-main-cashbox`; rollar orasida layout bir xil, xulq rolga qarab).
  *
- *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); faqat superadminda
- *    «Xarajat kategoriyalari» (Elchi Pochta №1 — `ExpenseCategoriesDialog`, smenadan qat'i nazar); «Excelga yuklash»
+ *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); «Excelga yuklash»
  *    (hisobot AYNAN eskidek), smena holati ma'lum bo'lsagina — yopiq: «Smenani ochish» (asosiy), ochiq: «Smenani
  *    yopish» (ikkinchi darajali). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
+ *    Xarajat kategoriyalari sozlamasi (Elchi Pochta №1) bu yerda emas — Ops vositalari → «Xarajat kategoriyalari»
+ *    (`/ops?tab=expense-categories`, 2026-10-23 da sarlavhadagi tugma + oynadan ko'chirildi); «Kassadan xarajat»
+ *    oynasida faol kategoriya yo'q bo'lsa superadminga o'sha tabga havola.
  *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
  *    grafigi (`Grafik | Jadval`), ko'z tugmasi summalarni yashiradi. «Tezkor amallar»: qabul (SA/admin — filial
  *    yoki HQ kuryeri, menejer — kuryer), «Marketga to'lov» (faqat SA/admin — backend menejerga 403), xarajat,
@@ -362,7 +363,6 @@ const MainCashbox = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   // Yopilayotgan smena ID si — "Smenani yopish" bosilgan paytdagi ochiq smena
   // (oyna ochiq turganda fon so'rovi uni almashtirib yubormasin).
   const [closingShiftId, setClosingShiftId] = useState<string | null>(null);
@@ -1526,18 +1526,6 @@ const MainCashbox = () => {
         description={headerDescription}
         actions={
           <>
-            {canManageCategories ? (
-              // Telefonda sozlama tugmasi asosiy amallardan keyin (alohida qator), kompyuterda — chapda.
-              <Button
-                variant="secondary"
-                leftIcon={Settings}
-                onClick={() => setIsCategoriesOpen(true)}
-                aria-haspopup="dialog"
-                className="max-md:order-last"
-              >
-                {t("v2ExpenseCategories.manage")}
-              </Button>
-            ) : null}
             <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
               {t("v2MainCashbox.exportExcel")}
             </Button>
@@ -1588,7 +1576,8 @@ const MainCashbox = () => {
         // Xarajat kategoriya orqali (majburiy, oynaning o'zida) — izoh ixtiyoriy (ega 2026-10-22).
         requireComment={false}
         categoryRequiredMessage={t("v2MainCashbox.form.categoryRequired")}
-        onManageCategories={canManageCategories ? () => setIsCategoriesOpen(true) : undefined}
+        // Faol kategoriya yo'q — superadminga Ops → «Xarajat kategoriyalari» havolasi (sozlama o'sha yerda).
+        manageCategoriesTo={canManageCategories ? opsTabPath(EXPENSE_CATEGORIES_TAB) : undefined}
       />
 
       <CashboxFormPopup
@@ -1641,10 +1630,6 @@ const MainCashbox = () => {
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
-
-      {canManageCategories ? (
-        <ExpenseCategoriesDialog open={isCategoriesOpen} onClose={() => setIsCategoriesOpen(false)} />
-      ) : null}
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect

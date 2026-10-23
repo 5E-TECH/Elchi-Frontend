@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import MainCashbox from "./mainCashbox";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -12,8 +13,10 @@ import { renderWithProviders } from "../../../test/test-utils";
  *  - izoh bo'sh (yoki faqat bo'sh joy) bo'lsa payload'da `comment` kaliti umuman yo'q;
  *  - to'ldirishda maydon ham, ro'yxat so'rovi ham, kalit ham yo'q (backend `fill` 400 beradi), izoh u yerda majburiy;
  *  - ro'yxat yuklanmasa yoki faol kategoriya yo'q bo'lsa — maydon o'chiq, sabab va «Xarajatni saqlash» bloklangan
- *    (superadminda — «Xarajat kategoriyalari» oynasini ochish); o'chirilgan kategoriya (400) — backend matni, ro'yxat
- *    qayta o'qiladi, eskirgan tanlov tozalanadi va qaytadan tanlash so'raladi; backend «kategoriyasiz» 400 — matni.
+ *    (superadminda — «Xarajat kategoriyalari» havolasi Ops vositalaridagi sozlama tabiga, `/ops?tab=expense-categories`);
+ *    o'chirilgan kategoriya (400) — backend matni, ro'yxat qayta o'qiladi, eskirgan tanlov tozalanadi va qaytadan tanlash
+ *    so'raladi; backend «kategoriyasiz» 400 — matni;
+ *  - kassa sarlavhasida «Xarajat kategoriyalari» tugmasi yo'q (hech bir rolda) — sozlama Ops vositalarida.
  *
  * Haqiqiy `useCashBox` / `useExpenseCategories` (react-query), haqiqiy oyna va `ConfirmHost` — faqat HTTP qatlami
  * almashtirilgan.
@@ -81,6 +84,11 @@ const httpError = (status: number, message: string) =>
   });
 
 const open = () => renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: admin });
+
+const LocationProbe = () => {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+};
 
 const openSpend = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: /Kassadan xarajat/ }));
@@ -320,48 +328,40 @@ describe("Kassadan xarajat — xarajat kategoriyasi", () => {
     expect(categoryField(dialog)).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
     expect(within(dialog).queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("link", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
   });
 
-  it("faol kategoriya yo'q (superadmin): «Xarajat kategoriyalari» boshqaruv oynasini shu oyna ustida ochadi; qo'shilgan kategoriya darhol tanlanadi", async () => {
+  it("faol kategoriya yo'q (superadmin): saqlash bloklangan, «Xarajat kategoriyalari» — Ops vositalaridagi sozlama tabiga havola", async () => {
     categoryRows = [];
-    http.post.mockImplementation(async (url: string, body: { name: string }) => {
-      if (url !== CATEGORIES_URL) return { data: { statusCode: 200, data: {} } };
-      const created = category("9", body.name, 1);
-      categoryRows = [...categoryRows, created];
-      return { data: { statusCode: 201, message: "Kategoriya qo'shildi", data: { category: created } } };
-    });
     const user = userEvent.setup();
-    renderWithProviders(<MainCashbox />, {
-      route: "/payments/main-cashbox",
-      preloadedState: { role: { id: "1", role: "superadmin", region: null, name: "superadmin" } } as never,
-    });
+    renderWithProviders(
+      <>
+        <MainCashbox />
+        <LocationProbe />
+      </>,
+      {
+        route: "/payments/main-cashbox",
+        preloadedState: { role: { id: "1", role: "superadmin", region: null, name: "superadmin" } } as never,
+      },
+    );
     const dialog = await openSpend(user);
     expect(
       await within(dialog).findByText(
         "Kategoriyalar hali qo'shilmagan — xarajatni saqlash uchun avval kategoriya qo'shing",
       ),
     ).toBeInTheDocument();
+    expect(categoryField(dialog)).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Xarajatni saqlash" })).toBeDisabled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Xarajat kategoriyalari" }));
-    const manage = await screen.findByRole("dialog", { name: "Xarajat kategoriyalari" });
-    await user.click(await within(manage).findByRole("button", { name: "Kategoriya qo'shish" }));
-    const form = await screen.findByRole("dialog", { name: "Kategoriya qo'shish" });
-    await user.type(within(form).getByLabelText(/^Nomi/), "Yoqilg'i");
-    await user.click(within(form).getByRole("button", { name: "Qo'shish" }));
-    expect(await screen.findByText("Kategoriya qo'shildi")).toBeInTheDocument();
-    // Xarajat oynasi so'rov yuborilmagan holda o'z joyida — «Xarajat kategoriyalari» yopilgach unga qaytiladi.
+    // Boshqaruv oynasi endi kassada ochilmaydi — havola sahifani almashtiradi.
+    expect(within(dialog).queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+    const link = within(dialog).getByRole("link", { name: "Xarajat kategoriyalari" });
+    expect(link).toHaveAttribute("href", "/ops?tab=expense-categories");
+    await user.click(link);
+    expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=expense-categories");
+    expect(screen.queryByRole("dialog", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+    expect(http.post).not.toHaveBeenCalled();
     expect(http.patch).not.toHaveBeenCalled();
-    await user.keyboard("{Escape}");
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument(),
-    );
-    const spend = screen.getByRole("dialog", { name: "Kassadan xarajat" });
-
-    await waitFor(() => expect(categoryField(spend)).not.toBeDisabled());
-    expect(within(spend).getByRole("button", { name: "Xarajatni saqlash" })).toBeEnabled();
-    await chooseCategory(user, spend, /Yoqilg'i/);
-    expect(categoryField(spend)).toHaveValue("Yoqilg'i");
   });
 
   it("o'chirilgan kategoriya (400): backend matni, ro'yxat qayta o'qiladi, eskirgan tanlov tozalanadi va qaytadan so'raladi", async () => {
@@ -500,27 +500,19 @@ describe("Asosiy kassa tarixi — xarajat kategoriyasi", () => {
   });
 });
 
-describe("«Xarajat kategoriyalari» — faqat superadmin", () => {
+describe("«Xarajat kategoriyalari» — kassa sarlavhasida yo'q (sozlama Ops vositalarida)", () => {
   const asRole = (role: string) => ({ role: { id: "1", role, region: null, name: role } }) as never;
 
-  it("superadmin: sarlavhada tugma, bosilsa boshqaruv oynasi ro'yxat bilan ochiladi", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole("superadmin") });
-    const button = await screen.findByRole("button", { name: "Xarajat kategoriyalari" });
-    expect(button).toHaveAttribute("aria-haspopup", "dialog");
-    await user.click(button);
-    const dialog = await screen.findByRole("dialog", { name: "Xarajat kategoriyalari" });
-    expect(await within(dialog).findByText("Ijara (arenda)")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Kategoriya qo'shish" })).toBeInTheDocument();
-  });
-
-  it.each(["admin", "manager"])("%s: tugma va oyna yo'q (tanlov esa bor)", async (role) => {
+  it.each(["superadmin", "admin", "manager"])("%s: sarlavhada tugma ham, boshqaruv oynasi ham yo'q (tanlov esa bor)", async (role) => {
     const user = userEvent.setup();
     renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole(role) });
     await screen.findByRole("button", { name: /Kassadan xarajat/ });
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
 
     const dialog = await openSpend(user);
     expect(categoryField(dialog)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
   });
 });

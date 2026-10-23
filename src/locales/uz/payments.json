@@ -746,58 +746,7 @@
     "loadError": "Tafsilotni yuklab bo'lmadi"
   }
   ,"v2ExpenseCategories": {
-    "manage": "Xarajat kategoriyalari",
-    "title": "Xarajat kategoriyalari",
-    "subtitle": "«Kassadan xarajat» oynasidagi ro'yxat · {{n}} ta",
-    "subtitleShort": "«Kassadan xarajat» oynasidagi ro'yxat",
-    "add": "Kategoriya qo'shish",
-    "listLabel": "Xarajat kategoriyalari",
-    "orderLabel": "Tartib raqami: {{n}}",
-    "editAria": "«{{name}}» kategoriyasini tahrirlash",
-    "deleteAria": "«{{name}}» kategoriyasini o'chirish",
-    "noDescription": "Tavsif yozilmagan",
-    "empty": "Kategoriyalar yo'q",
-    "emptyDescription": "Kategoriya qo'shing — u «Kassadan xarajat» oynasidagi ro'yxatda chiqadi",
-    "loadError": "Kategoriyalarni yuklab bo'lmadi",
-    "loading": "Kategoriyalar yuklanmoqda",
-    "close": "Yopish",
-    "form": {
-      "addTitle": "Kategoriya qo'shish",
-      "editTitle": "Kategoriyani tahrirlash",
-      "addSubtitle": "Yangi kategoriya «Kassadan xarajat» ro'yxatida darhol chiqadi",
-      "editSubtitle": "Avval yozilgan xarajatlarda eski nom saqlanib qoladi",
-      "name": "Nomi",
-      "namePlaceholder": "Masalan: Yoqilg'i",
-      "nameRequired": "Kategoriya nomini yozing",
-      "nameTooLong": "Nom {{max}} belgidan oshmasin",
-      "description": "Nimalar kiradi",
-      "descriptionPlaceholder": "Masalan: benzin, gaz, dizel",
-      "descriptionTooLong": "Tavsif {{max}} belgidan oshmasin",
-      "sortOrder": "Tartib raqami",
-      "sortOrderHint": "Kichigi ro'yxatda tepada turadi. Bo'sh qoldirilsa — oxiriga qo'shiladi",
-      "sortOrderEditHint": "Kichigi ro'yxatda tepada turadi",
-      "sortOrderInvalid": "0 dan {{max}} gacha butun son yozing",
-      "back": "Orqaga",
-      "create": "Qo'shish",
-      "save": "Saqlash",
-      "saving": "Saqlanmoqda…"
-    },
-    "delete": {
-      "title": "O'chirishni tasdiqlang",
-      "description": "Quyidagi kategoriya «Kassadan xarajat» oynasidagi ro'yxatdan olib tashlanadi.",
-      "note": "Avval yozilgan xarajatlarda kategoriya nomi saqlanib qoladi.",
-      "confirm": "O'chirish",
-      "loading": "O'chirilmoqda…"
-    },
-    "notify": {
-      "created": "Kategoriya qo'shildi",
-      "updated": "Kategoriya saqlandi",
-      "deleted": "Kategoriya o'chirildi",
-      "nameDescription": "«{{name}}»",
-      "saveError": "Kategoriyani saqlab bo'lmadi",
-      "notFound": "Kategoriya topilmadi",
-      "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
-    }
+    "manage": "Xarajat kategoriyalari"
   }
   ,"v2Picker": {
     "select": "Tanlash",
