@@ -37,12 +37,15 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  *                      Nomi bilan mazmuni mos kelmagani uchun operator
  *                      "Loglar"ni bosib haqiqiy jurnalni topolmasdi. Menyudan
  *                      olindi, o'rni — Ops markazi.
+ * `expense-categories` — kassa xarajati kategoriyalari sozlamasi («Asosiy
+ *                      kassa» oynasidan ko'chirilgan). Hub ichida tug'ilgan —
+ *                      to'g'ridan-to'g'ri eski yo'li yo'q.
  *
  * ⚠️ Bu ro'yxat QO'LDA to'ldiriladi, `*-ops` esa avtomatik sanaladi. Ya'ni
  * yangi `*-ops` papka qo'shilsa va unga tab berilmasa, test HAMON yiqiladi —
  * yetim sahifa kafolati buzilmaydi.
  */
-const extraOpsPages = ["finance-operators", "logs"];
+const extraOpsPages = ["finance-operators", "logs", "expense-categories"];
 
 const discoveredDirs = [
   ...Object.keys(opsPageModules).map(
@@ -65,7 +68,7 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
 
   it("tab kalitlari va eski marshrutlar takrorlanmaydi", () => {
     const keys = OPS_TABS.map((tab) => tab.key);
-    const paths = OPS_TABS.map((tab) => tab.legacyPath);
+    const paths = OPS_TABS.flatMap((tab) => (tab.legacyPath ? [tab.legacyPath] : []));
     expect(new Set(keys).size).toBe(keys.length);
     expect(new Set(paths).size).toBe(paths.length);
   });
@@ -73,8 +76,16 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
   it("har bir eski marshrut o'z papkasiga mos", () => {
     // `/system-ops` -> `system-ops`. Nomuvofiqlik eski havolani buzardi.
     for (const tab of OPS_TABS) {
+      if (tab.legacyPath === undefined) continue;
       expect(tab.legacyPath).toBe(`/${tab.pageDir}`);
     }
+  });
+
+  it("eski yo'lsiz tab faqat hub ichida tug'ilganlar — «Xarajat kategoriyalari» (moliya guruhida, «Moliya operatorlari» dan keyin)", () => {
+    expect(OPS_TABS.filter((tab) => tab.legacyPath === undefined).map((tab) => tab.key)).toEqual([
+      "expense-categories",
+    ]);
+    expect(OPS_TABS.map((tab) => tab.key).slice(0, 2)).toEqual(["finance", "expense-categories"]);
   });
 });
 

@@ -107,6 +107,30 @@ const profile = (themeName) => ({
   },
 });
 /**
+ * Elchi Pochta №1: `GET finance/cashbox/expense-categories` — Ops → «Xarajat kategoriyalari» ro'yxati va «Kassadan
+ * xarajat» tanlovi to'ldirilgan ko'rinishda (bo'sh holat emas). Faol kategoriyalar `sort_order` bo'yicha.
+ */
+const EXPENSE_CATEGORIES = [
+  ['Ovqatlanish', 'Xodimlarning ovqati, tushlik'],
+  ["Yoqilg'i", 'Benzin, gaz, dizel'],
+  ['Avtomobil xarajatlari', "Ta'mirlash, moy almashtirish, ehtiyot qismlar"],
+  ['Ijara (arenda)', 'Filial, ombor, ofis ijarasi'],
+  ["Kommunal to'lovlar", 'Elektr, suv, gaz, chiqindi'],
+  ['Internet va aloqa', 'Internet, telefon, SIM-karta'],
+  ['Xodimlar oyligi', 'Oylik, avans, bonus'],
+  ['Qadoqlash materiallari', null],
+];
+const expenseCategoriesMock = () => ({
+  statusCode: 200,
+  message: 'Xarajat kategoriyalari',
+  data: {
+    items: EXPENSE_CATEGORIES.map(([name, description], index) => ({
+      id: String(index + 1), name, description, sort_order: index + 1, is_deleted: false,
+      created_by: null, updated_by: null, created_at: '2026-10-21T08:00:00.000Z', updated_at: '2026-10-21T08:00:00.000Z',
+    })),
+  },
+});
+/**
  * IN-1: investor kabineti (`investors/me/*`) — maketdagi namunaviy qiymatlar (`investor-dashboard-home`), oylar joriy
  * oydan orqaga hisoblanadi: shunda bosh sahifa bo'sh holat emas, to'liq ko'rinishda chiziladi. IN-2: ro'yxatlar
  * (`/investments`, `/profits`) — to'liq to'plam (5 investitsiya, 9 foyda davri), `page` / `limit` / `is_paid` bo'yicha.
@@ -205,6 +229,7 @@ const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
+  if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };

@@ -1672,14 +1672,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | v2 |
 | `/activity-logs` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
-#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth; dizayn v2)
+#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|branches|identity|system|auth; dizayn v2)
 
-- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx`
+- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
 - **Holat:** v2
-- **Izoh:** Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>).
+- **Izoh:** Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 9 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2770,6 +2770,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/dispatch/ui/DispatchAlert.tsx` | `/dispatch` |
 | `src/pages/dispatch/ui/DispatchOrdersTable.tsx` | `/dispatch` |
 | `src/pages/dispatch/ui/DispatchStats.tsx` | `/dispatch` |
+| `src/pages/expense-categories/index.tsx` | `/ops` |
+| `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` | `/ops` |
+| `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` | `/ops` |
 | `src/pages/finance-operators/index.tsx` | `/finance-operators` |
 | `src/pages/finance-operators/lib/operatorFinance.ts` | `/finance-operators` |
 | `src/pages/finance-operators/ui/OperatorBalanceCard.tsx` | `/finance-operators` |

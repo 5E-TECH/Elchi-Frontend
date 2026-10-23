@@ -9,7 +9,10 @@ import {
   updateExpenseCategory,
 } from "./expenseCategoryApi";
 
-/** Faol kategoriyalar ro'yxati — «Kassadan xarajat» tanlovi va superadmin boshqaruv oynasi shuni o'qiydi. */
+/**
+ * Faol kategoriyalar ro'yxati — «Kassadan xarajat» tanlovi va superadmin boshqaruvi (Ops → «Xarajat kategoriyalari»)
+ * shuni o'qiydi.
+ */
 const ACTIVE_LIST_KEY = queryKeys.expenseCategories.list({ includeDeleted: false });
 
 /** Kategoriyalar kam o'zgaradi: oyna har ochilganda qayta so'ralmaydi (o'zgarishdan keyin kesh o'zi yangilanadi). */
@@ -17,7 +20,7 @@ const STALE_TIME_MS = 60_000;
 
 /**
  * `GET finance/cashbox/expense-categories` (superadmin, admin, menejer). Xatoni chaqiruvchi o'zi chizadi
- * (tanlovda izoh + «Qayta urinish», boshqaruv oynasida `ErrorState`), global xabar chiqmaydi (`silentError`).
+ * (tanlovda izoh + «Qayta urinish», Ops panelida `ErrorState`), global xabar chiqmaydi (`silentError`).
  * `includeDeleted` — faqat superadmin uchun ma'noli (backend boshqa rollarda e'tiborsiz qoldiradi).
  */
 export const useExpenseCategories = (

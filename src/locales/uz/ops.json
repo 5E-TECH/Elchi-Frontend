@@ -11,6 +11,7 @@
   },
   "tabs": {
     "finance": "Moliya operatorlari",
+    "expenseCategories": "Xarajat kategoriyalari",
     "integrations": "Integratsiyalar",
     "investors": "Investorlar",
     "logistics": "Logistika",
@@ -96,6 +97,60 @@
       "empty": "Hali to'lov yo'q",
       "emptyHint": "Qayd qilingan to'lovlar shu yerda ko'rinadi.",
       "loadError": "To'lovlar tarixini olib bo'lmadi"
+    }
+  },
+  "expenseCategories": {
+    "intro": {
+      "title": "Kassa xarajatlari kategoriyalari",
+      "description": "«Kassadan xarajat» oynasidagi tanlov ro'yxati — har xarajat shu kategoriyalardan biri bilan yoziladi. Nom o'zgarsa yoki kategoriya o'chirilsa, avval yozilgan xarajatlarda eski nom saqlanib qoladi."
+    },
+    "list": {
+      "title": "Kategoriyalar",
+      "label": "Xarajat kategoriyalari",
+      "add": "Kategoriya qo'shish",
+      "orderLabel": "Tartib raqami: {{n}}",
+      "editAria": "«{{name}}» kategoriyasini tahrirlash",
+      "deleteAria": "«{{name}}» kategoriyasini o'chirish",
+      "noDescription": "Tavsif yozilmagan",
+      "empty": "Kategoriyalar yo'q",
+      "emptyDescription": "Kategoriya qo'shing — u «Kassadan xarajat» oynasidagi ro'yxatda chiqadi",
+      "loadError": "Kategoriyalarni yuklab bo'lmadi",
+      "loading": "Kategoriyalar yuklanmoqda"
+    },
+    "form": {
+      "addTitle": "Kategoriya qo'shish",
+      "editTitle": "Kategoriyani tahrirlash",
+      "addSubtitle": "Yangi kategoriya «Kassadan xarajat» ro'yxatida darhol chiqadi",
+      "editSubtitle": "Avval yozilgan xarajatlarda eski nom saqlanib qoladi",
+      "name": "Nomi",
+      "namePlaceholder": "Masalan: Yoqilg'i",
+      "nameRequired": "Kategoriya nomini yozing",
+      "description": "Nimalar kiradi",
+      "descriptionPlaceholder": "Masalan: benzin, gaz, dizel",
+      "sortOrder": "Tartib raqami",
+      "sortOrderHint": "Kichigi ro'yxatda tepada turadi. Bo'sh qoldirilsa — oxiriga qo'shiladi",
+      "sortOrderEditHint": "Kichigi ro'yxatda tepada turadi",
+      "sortOrderInvalid": "0 dan {{max}} gacha butun son yozing",
+      "cancel": "Bekor qilish",
+      "create": "Qo'shish",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda…"
+    },
+    "delete": {
+      "title": "O'chirishni tasdiqlang",
+      "description": "Quyidagi kategoriya «Kassadan xarajat» oynasidagi ro'yxatdan olib tashlanadi.",
+      "note": "Avval yozilgan xarajatlarda kategoriya nomi saqlanib qoladi.",
+      "confirm": "O'chirish",
+      "loading": "O'chirilmoqda…"
+    },
+    "notify": {
+      "created": "Kategoriya qo'shildi",
+      "updated": "Kategoriya saqlandi",
+      "deleted": "Kategoriya o'chirildi",
+      "nameDescription": "«{{name}}»",
+      "saveError": "Kategoriyani saqlab bo'lmadi",
+      "notFound": "Kategoriya topilmadi",
+      "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
     }
   },
   "integrations": {
