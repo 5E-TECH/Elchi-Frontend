@@ -166,7 +166,7 @@ const SessionRow = ({
           </p>
         </div>
       </div>
-      <dl className="grid min-w-0 flex-[0_1_400px] grid-cols-2 gap-x-6 gap-y-3 max-md:flex-[1_1_100%]">
+      <dl className="grid min-w-0 flex-[0_1_480px] grid-cols-2 gap-x-6 gap-y-3 max-md:flex-[1_1_100%]">
         <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-[13px] text-text-muted">{t("sessions.loggedInAt")}</dt>
           <dd className={valueClass}>
