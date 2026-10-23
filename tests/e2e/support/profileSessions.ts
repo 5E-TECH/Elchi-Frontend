@@ -2,13 +2,15 @@ import { test, type Page, type Route } from "@playwright/test";
 import { setupShellSession } from "./shellSession";
 
 /**
- * EP-3 (Elchi Pochta #3) — `/profile` «Sessiyalar» e2e: soxta `GET auth/sessions` (faqat o'z faol sessiyalari) va
- * profil. Yozish so'rovlari taqiqlangan (`leaked`); `sessionRequests` — sessiyalar necha marta so'ralgani.
+ * EP-3 (Elchi Pochta #3) — `/profile` «Sessiyalar» e2e: soxta `GET auth/sessions` (faqat o'z sessiyalari: 3 ta
+ * faol + qayta kirishi kerak bo'lgan bitta `expired`; `active_count` — faqat faollar) va profil. Yozish so'rovlari
+ * taqiqlangan (`leaked`); `sessionRequests` — sessiyalar necha marta so'ralgani.
  *
  * Sessiyalarni yopish (`mockSessionRevoke`) — gateway kabi: `DELETE auth/sessions/:id` (joriy — 400, yo'q yoki
- * yopilgan — 404, aks holda `{ revoked: 1, session_ids: [id] }`), `POST auth/sessions/revoke-others` (tanasiz →
- * joriydan boshqalari, `revoked: n`). `revokedHere` — shu brauzerning o'z sessiyasi boshqa qurilmadan yopilgani:
- * har API so'rovi 401 «Session revoked», `POST auth/refresh` ham 401 «Invalid refresh token» (yopilgan qurilma).
+ * yopilgan — 404, aks holda `{ revoked: 1, session_ids: [id] }`; `expired` ham), `POST auth/sessions/revoke-others`
+ * (tanasiz → joriydan boshqalari, `expired` ham, `revoked: n`). `revokedHere` — shu brauzerning o'z sessiyasi
+ * boshqa qurilmadan yopilgani: har API so'rovi 401 «Session revoked», `POST auth/refresh` ham 401 «Invalid refresh
+ * token» (yopilgan qurilma); `refreshDeviceNames` — refresh'dagi `X-Device-Name` (URI-dekodlangan).
  */
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -16,28 +18,34 @@ export const SESSIONS = {
   active_count: 3,
   sessions: [
     {
+      id: "s-1",
+      device_name: "Samsung SM-A515F · Android 13 · Chrome 155",
+      device_id: "8d0f7a52-3c1e-4b7a-9f00-000000000001",
+      user_agent: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 Chrome/155.0.0.0 Mobile Safari/537.36",
+      ip: "213.230.64.10",
+      // Shu qurilmadan qayta kirilgan: oxirgi kirish kecha, birinchisi 9 kun oldin.
+      logged_in_at: ago(26 * 60),
+      first_logged_in_at: ago(9 * 24 * 60),
+      last_seen_at: ago(42),
+      expires_at: ago(-24 * 60),
+      current: true,
+      status: "active",
+    },
+    {
       id: "s-2",
       device_name: "Kompyuter · Windows · Edge",
       device_id: null,
       user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0",
       ip: "84.54.70.12",
       logged_in_at: ago(2 * 24 * 60 + 90),
+      first_logged_in_at: ago(2 * 24 * 60 + 90),
       last_seen_at: ago(7),
       expires_at: ago(-24 * 60),
       current: false,
+      status: "active",
     },
     {
-      id: "s-1",
-      device_name: "Telefon · Android · Chrome",
-      device_id: null,
-      user_agent: "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36",
-      ip: "213.230.64.10",
-      logged_in_at: ago(26 * 60),
-      last_seen_at: ago(42),
-      expires_at: ago(-24 * 60),
-      current: true,
-    },
-    {
+      // Eski backend qatori: `status` va `first_logged_in_at` yo'q — faol, «Birinchi marta» qatorisiz.
       id: "s-3",
       device_name: null,
       device_id: null,
@@ -48,8 +56,37 @@ export const SESSIONS = {
       expires_at: ago(-60),
       current: false,
     },
-  ],
+    {
+      id: "s-4",
+      device_name: "iPhone · iOS 17 · Safari",
+      device_id: "8d0f7a52-3c1e-4b7a-9f00-000000000004",
+      user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 Version/17.4 Mobile/15E148 Safari/604.1",
+      ip: "213.230.64.10",
+      logged_in_at: ago(20 * 24 * 60),
+      first_logged_in_at: ago(40 * 24 * 60),
+      last_seen_at: ago(12 * 24 * 60),
+      expires_at: ago(5 * 24 * 60),
+      current: false,
+      status: "expired",
+    },
+  ] as SessionRow[],
 };
+
+type SessionRow = {
+  id: string;
+  device_name: string | null;
+  device_id: string | null;
+  user_agent: string | null;
+  ip: string | null;
+  logged_in_at: string;
+  first_logged_in_at?: string;
+  last_seen_at: string;
+  expires_at: string;
+  current: boolean;
+  status?: "active" | "expired";
+};
+
+const isActive = (row: SessionRow) => row.status !== "expired";
 
 export const openProfileWithSessions = async (page: Page, role = "courier", { revoke = false } = {}) => {
   const state = { sessionRequests: 0 };
@@ -68,8 +105,6 @@ export const openProfileWithSessions = async (page: Page, role = "courier", { re
   return { leaked, state, revoke: revokeState };
 };
 
-type SessionRow = (typeof SESSIONS.sessions)[number];
-
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 
 export const mockSessionRevoke = async (page: Page) => {
@@ -83,15 +118,16 @@ export const mockSessionRevoke = async (page: Page) => {
   const reply = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
   const state = {
-    sessions: SESSIONS.sessions.map((row) => ({ ...row })) as SessionRow[],
+    sessions: SESSIONS.sessions.map((row) => ({ ...row })),
     /** Shu brauzer sessiyasi boshqa qurilmadan yopilgan — hamma narsa 401. */
     revokedHere: false,
     deletes: [] as string[],
     revokeOthers: 0,
     refreshes: 0,
+    refreshDeviceNames: [] as string[],
     logouts: 0,
   };
-  const list = () => ({ active_count: state.sessions.length, sessions: state.sessions });
+  const list = () => ({ active_count: state.sessions.filter(isActive).length, sessions: state.sessions });
 
   // Keyin ro'yxatdan o'tgan route avval ishlaydi — `setupShellSession` dagi umumiy ishlovchidan ustun.
   await page.context().route(/\/auth\/(sessions|refresh|logout)(\/|$)/, async (route) => {
@@ -103,6 +139,8 @@ export const mockSessionRevoke = async (page: Page) => {
     const method = request.method();
     if (path === "auth/refresh") {
       state.refreshes += 1;
+      const name = request.headers()["x-device-name"];
+      if (name) state.refreshDeviceNames.push(decodeURIComponent(name));
       return reply(route, { statusCode: 401, message: "Invalid refresh token" }, 401);
     }
     if (path === "auth/logout") {

@@ -3,33 +3,50 @@ import { openProfileWithSessions } from "./support/profileSessions";
 import { expectToast } from "./support/toast";
 
 /**
- * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» (desktop): FAQAT o'z hisobining faol sessiyalari — soni, qurilma,
- * IP, «Kirgan vaqti», «Oxirgi faollik»; «Shu qurilma» tepada; nomsiz qurilma — «Noma'lum qurilma».
+ * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» (desktop): FAQAT o'z hisobining sessiyalari — faollar soni,
+ * qurilma (aniq nom), tarmoq IP, «Kirgan vaqti» (oxirgi + «Birinchi marta»), «Oxirgi faollik»; «Shu qurilma»
+ * tepada, qayta kirishi kerak bo'lgani (`expired`) oxirida, xiralashgan; nomsiz qurilma — «Noma'lum qurilma».
  * Boshqa qurilmalarni chiqarish: qatordagi «Chiqarish» va «Boshqa barcha qurilmalardan chiqish» (tasdiq bilan);
  * yopilgan qurilma keyingi so'rovida 401 → refresh 401 → «Sessiya tugadi» (kirish sahifasi), aylanishsiz.
  */
 test.describe.configure({ timeout: 120_000 });
 
-test("⭐ sessiyalar soni, qurilmalar va vaqtlar; «Shu qurilma» tepada", async ({ page }) => {
+test("⭐ sessiyalar soni, qurilmalar va vaqtlar; «Shu qurilma» tepada, `expired` oxirida", async ({ page }) => {
   const { leaked, state } = await openProfileWithSessions(page, "superadmin");
 
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
+  // Faqat faollar: `expired` sanalmaydi.
   await expect(card.getByText("3 ta faol")).toBeVisible();
 
-  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
-  await expect(rows.nth(0).getByRole("heading", { level: 3 })).toHaveText("Telefon · Android · Chrome");
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(0).getByRole("heading", { level: 3 })).toHaveText("Samsung SM-A515F · Android 13 · Chrome 155");
   await expect(rows.nth(0).getByText("Shu qurilma")).toBeVisible();
-  await expect(rows.nth(0).getByText("IP: 213.230.64.10")).toBeVisible();
+  await expect(rows.nth(0).getByText("Tarmoq IP: 213.230.64.10")).toBeVisible();
+  await expect(rows.nth(0).getByText(/^Birinchi marta: \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/)).toBeVisible();
   await expect(rows.nth(0).getByText("Oxirgi faollik")).toBeVisible();
   await expect(rows.nth(0).getByText("42 daqiqa oldin")).toBeVisible();
   await expect(rows.nth(1).getByRole("heading", { level: 3 })).toHaveText("Kompyuter · Windows · Edge");
   await expect(rows.nth(1).getByText("7 daqiqa oldin")).toBeVisible();
   await expect(rows.nth(1).getByText("Shu qurilma")).toHaveCount(0);
+  await expect(rows.nth(1).getByText(/Birinchi marta/)).toHaveCount(0);
   await expect(rows.nth(2).getByRole("heading", { level: 3 })).toHaveText("Noma'lum qurilma");
-  await expect(rows.nth(2).getByText("IP noma'lum")).toBeVisible();
+  await expect(rows.nth(2).getByText("Tarmoq IP noma'lum")).toBeVisible();
   await expect(rows.nth(2).getByText("3 kun oldin")).toBeVisible();
+  await expect(rows.nth(2).getByText(/Birinchi marta/)).toHaveCount(0);
+  // Qayta kirishi kerak: oxirida, xiralashgan (asosiy matn `text-muted`), belgi bilan, «Chiqarish» bor.
+  const expired = rows.nth(3);
+  await expect(expired).toHaveAttribute("data-session-status", "expired");
+  await expect(expired.getByRole("heading", { level: 3 })).toHaveText("iPhone · iOS 17 · Safari");
+  await expect(expired.getByText("Qayta kirish kerak")).toBeVisible();
+  await expect(expired.getByRole("button", { name: "Chiqarish: iPhone · iOS 17 · Safari" })).toBeVisible();
+  const [activeColor, expiredColor] = await Promise.all(
+    [rows.nth(1), expired].map((row) =>
+      row.getByRole("heading", { level: 3 }).evaluate((node) => getComputedStyle(node).color),
+    ),
+  );
+  expect(expiredColor).not.toBe(activeColor);
 
   // Desktopda qurilma va vaqtlar bir qatorda (vaqtlar o'ngda).
   const deviceBox = await rows.nth(0).getByRole("heading", { level: 3 }).boundingBox();
@@ -45,10 +62,10 @@ test("⭐ qatordagi «Chiqarish»: tasdiqda qurilma → DELETE → xabar, qator 
   const { leaked, revoke } = await openProfileWithSessions(page, "superadmin", { revoke: true });
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
-  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
   await expect(rows.nth(0).getByRole("button")).toHaveCount(0);
-  await expect(card.getByRole("button", { name: /^Chiqarish:/ })).toHaveCount(2);
+  await expect(card.getByRole("button", { name: /^Chiqarish:/ })).toHaveCount(3);
 
   // Desktopda amal qatorning o'ng chetida, vaqtlar bilan bir qatorda.
   const action = rows.nth(1).getByRole("button", { name: "Chiqarish: Kompyuter · Windows · Edge" });
@@ -59,15 +76,25 @@ test("⭐ qatordagi «Chiqarish»: tasdiqda qurilma → DELETE → xabar, qator 
   await action.click();
   const confirm = page.getByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
   await expect(confirm.getByText("Kompyuter · Windows · Edge")).toBeVisible();
-  await expect(confirm.getByText(/IP: 84\.54\.70\.12/)).toBeVisible();
+  await expect(confirm.getByText(/Tarmoq IP: 84\.54\.70\.12/)).toBeVisible();
   await confirm.getByRole("button", { name: "Chiqarish" }).click();
 
   await expectToast(page, "Qurilma chiqarildi", { tone: "success" });
   await expect(confirm).toBeHidden();
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
   await expect(card.getByText("2 ta faol")).toBeVisible();
   await expect(card.getByRole("heading", { name: "Kompyuter · Windows · Edge" })).toHaveCount(0);
-  expect(revoke!.deletes).toEqual(["s-2"]);
+
+  // Qayta kirishi kerak bo'lgan qurilma: o'z izohi bilan tasdiq; faollar soni o'zgarmaydi.
+  await card.getByRole("button", { name: "Chiqarish: iPhone · iOS 17 · Safari" }).click();
+  const expiredConfirm = page.getByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
+  await expect(expiredConfirm.getByText(/U baribir qayta kirishi kerak edi/)).toBeVisible();
+  await expiredConfirm.getByRole("button", { name: "Chiqarish" }).click();
+  await expectToast(page, "Qurilma chiqarildi", { tone: "success" });
+  await expect(rows).toHaveCount(2);
+  await expect(card.getByText("2 ta faol")).toBeVisible();
+  await expect(card.getByText("Qayta kirish kerak")).toHaveCount(0);
+  expect(revoke!.deletes).toEqual(["s-2", "s-4"]);
   expect(leaked).toEqual([]);
 });
 
@@ -75,19 +102,21 @@ test("«Boshqa barcha qurilmalardan chiqish»: tasdiqda soni → POST → faqat 
   const { leaked, revoke } = await openProfileWithSessions(page, "admin", { revoke: true });
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
-  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
 
   // Boshqa oynadan yopilgan sessiya: 404 — xato emas, ro'yxat yangilanadi.
   revoke!.sessions = revoke!.sessions.filter((row) => row.id !== "s-3");
   await rows.nth(2).getByRole("button", { name: /^Chiqarish:/ }).click();
   await page.getByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" }).getByRole("button", { name: "Chiqarish" }).click();
   await expectToast(page, "Bu sessiya allaqachon yopilgan", { tone: "info" });
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
+  await expect(card.getByText("2 ta faol")).toBeVisible();
 
+  // Tasdiqdagi son — barcha boshqalar: faol (Windows) + qayta kirishi kerak (iPhone).
   await card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" }).click();
   const confirm = page.getByRole("alertdialog", { name: "Boshqa qurilmalardan chiqishni tasdiqlang" });
-  await expect(confirm.getByText(/Boshqa 1 ta qurilma hisobingizdan chiqariladi/)).toBeVisible();
+  await expect(confirm.getByText(/Boshqa 2 ta qurilma hisobingizdan chiqariladi/)).toBeVisible();
   await expect(confirm.getByText("Shu qurilma tizimda qoladi.")).toBeVisible();
   await confirm.getByRole("button", { name: "Hammasini chiqarish" }).click();
 
@@ -113,6 +142,10 @@ test("yopilgan qurilma: keyingi so'rov 401 → refresh 401 → kirish sahifasida
   await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Sessiya tugadi" })).toBeVisible();
   await expect(page.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring.")).toBeVisible();
+  // Refresh — aniq qurilma nomi bilan (`X-Device-Name`, URI-kodlangan): «Desktop Chrome» emulyatsiyasi Client
+  // Hints'da Windows beradi — «Windows 10 · Chromium 147» (User-Agent zaxirasi bo'lganda «Windows · Chrome 147»).
+  expect(revoke!.refreshDeviceNames.length).toBeGreaterThanOrEqual(1);
+  expect(revoke!.refreshDeviceNames[0]).toMatch(/^Windows( 1[01])? · (Chromium|Chrome) \d+$/);
   // Parallel 401 lar umumiy refresh'ni kutadi; kirish sahifasida so'rovlar to'xtaydi — son o'smaydi (aylanma yo'q).
   const refreshes = revoke!.refreshes;
   const logouts = revoke!.logouts;
