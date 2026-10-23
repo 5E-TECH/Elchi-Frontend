@@ -50,12 +50,13 @@ export default defineConfig({
       },
     },
     // Safari (WebKit, iPhone 12) — faqat `PLAYWRIGHT_WEBKIT=1` bilan: CI faqat Chromium o'rnatadi.
-    // Bosish maydoni (aA5njZNo), `100dvh` balandligi (HcUjGTxT) va kamera xatosi (kkDkrAIz) testlari ikkala dvigatelda o'tishi kerak.
+    // Bosish maydoni (aA5njZNo), `100dvh` balandligi (HcUjGTxT), kamera xatosi (kkDkrAIz) va bosh ekran manifesti
+    // (QgqO0CdZ) testlari ikkala dvigatelda o'tishi kerak.
     ...(process.env.PLAYWRIGHT_WEBKIT
       ? [
           {
             name: "webkit-iphone",
-            testMatch: /(tap-targets|viewport-height|scanner-camera-errors)\.mobile\.spec\.ts$/,
+            testMatch: /(tap-targets|viewport-height|scanner-camera-errors|ios-homescreen)\.mobile\.spec\.ts$/,
             // `--host-resolver-rules` — Chromium bayrog'i; WebKit'da soxtalanmagan so'rov `route.abort` bilan to'xtaydi.
             use: { ...devices["iPhone 12"], launchOptions: {} },
           },

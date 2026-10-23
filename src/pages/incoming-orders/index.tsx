@@ -35,7 +35,7 @@ import {
   SkeletonTable,
   TONE_SOFT,
 } from "../../shared/ui/primitives";
-import { countBags, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
+import { countBags, countReceivedByBag, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
 import IncomingTable from "./ui/IncomingTable";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
@@ -121,6 +121,8 @@ const IncomingOrdersPage = () => {
    * kamerada qopdagi posilka «Bekor qilish» bilan olinsa ham son to'g'ri qoladi.
    */
   const [lastBag, setLastBag] = useState<{ memberIds: string[]; total: number } | null>(null);
+  /** Qop skani belgilagan posilka tokenlari — qabul xabarida «Qop bo'yicha qabul qilindi» (r8EGkLrP). */
+  const [bagTokens, setBagTokens] = useState<ReadonlySet<string>>(new Set());
   const bagShortage = lastBag
     ? Math.max(0, lastBag.total - lastBag.memberIds.filter((id) => scannedIds.has(id)).length)
     : 0;
@@ -233,6 +235,7 @@ const IncomingOrdersPage = () => {
       return next;
     });
     setScannedTokens((prev) => [...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]);
+    setBagTokens((prev) => new Set([...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]));
     const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
     const text = t("incomingBatchMarked", { size: total, count: marked });
     void playScanFeedback("success", text);
@@ -315,6 +318,8 @@ const IncomingOrdersPage = () => {
 
   const handleReceive = () => {
     if (!scannedTokens.length) return;
+    // Qop skani belgilagan va hali ro'yxatda turganlar (qopdagi posilka olib tashlangan bo'lsa — sanalmaydi).
+    const sentByBag = new Set(scannedTokens.filter((token) => bagTokens.has(token)));
 
     receiveByScan.mutate(scannedTokens, {
       onSuccess: (result) => {
@@ -338,14 +343,19 @@ const IncomingOrdersPage = () => {
             }),
           });
         } else {
+          const byBag = countReceivedByBag(sentByBag, result);
           setMessage({
             tone: "success",
-            text: `${result.received} ${t("incomingReceiveSuccess")}`,
+            text:
+              byBag > 0
+                ? t("incomingReceivedByBag", { count: byBag, received: result.received })
+                : `${result.received} ${t("incomingReceiveSuccess")}`,
           });
         }
         setScannedIds(new Set());
         setScannedTokens([]);
         setLastBag(null);
+        setBagTokens(new Set());
         void query.refetch();
         inputRef.current?.focus();
       },

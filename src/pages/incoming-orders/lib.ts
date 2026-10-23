@@ -1,7 +1,18 @@
 /**
  * Kiruvchi posilkalar ekranining sof mantiqi — React'siz, testga qulay.
  */
-import type { IncomingOrder, IncomingSource } from "../../entities/incoming-orders";
+import type { IncomingOrder, IncomingSource, ReceiveByScanResult } from "../../entities/incoming-orders";
+
+/**
+ * Qabulda qop bo'yicha qabul qilingan posilkalar soni (r8EGkLrP): qop skani belgilagan tokenlardan server
+ * qabul qilmaganlari ayriladi. Serverga har posilkaning o'z tokeni ketadi, shuning uchun `batch_tokens`
+ * odatda bo'sh; server qop tokenini o'zi ochgan bo'lsa (`batch_tokens` bor) — qabul qilinganlarning hammasi.
+ */
+export const countReceivedByBag = (bagTokens: ReadonlySet<string>, result: ReceiveByScanResult): number => {
+  const failed = result.unmatched.filter((item) => bagTokens.has(item.token)).length;
+  const byBag = Math.max(bagTokens.size - failed, 0);
+  return byBag === 0 && (result.batchTokens?.length ?? 0) > 0 ? result.received : byBag;
+};
 
 /** Kutish birligi: matn ekranda tarjima qilinadi (`waitingText`), mantiq tilga bog'liq emas. */
 export type WaitingUnit = "none" | "now" | "today" | "hours" | "days";

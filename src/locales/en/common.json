@@ -125,6 +125,7 @@
   "incomingScanNotFound": "This QR was not found in the list — is the parcel from another partner or already received?",
   "incomingBatchMarked": "Bag: {{count}} of {{size}} parcels marked",
   "incomingBatchAlready": "Bag: {{count}} of {{size}} parcels already marked",
+  "incomingReceivedByBag": "Received by bag: {{count}} parcels ({{received}} orders in total)",
   "incomingScanListNotReady": "The list has not loaded yet — the parcel could not be checked. Refresh the list and scan again.",
   "incomingReceiving": "Receiving...",
   "incomingReceiveSuccess": "order(s) received",
