@@ -12,8 +12,9 @@ import { ProfileSessionsCard } from "./ProfileSessionsCard";
 import ProfilePage from "./ProfilePage";
 
 /**
- * «Sessiyalar» (Elchi Pochta #3, `/profile`): faqat o'z hisobining faol sessiyalari — soni, qurilma, IP,
- * «Kirgan vaqti», «Oxirgi faollik» (nisbiy + sana), «Shu qurilma». Sana va vaqt — Toshkent vaqtida
+ * «Sessiyalar» (Elchi Pochta #3, `/profile`): faqat o'z hisobining sessiyalari — faollar soni, qurilma, tarmoq IP,
+ * «Kirgan vaqti» (oxirgi kirish + «Birinchi marta»), «Oxirgi faollik» (nisbiy + sana), «Shu qurilma»; qayta
+ * kirishi kerak bo'lganlar (`status: "expired"`) xiralashgan, «Qayta kirish kerak» bilan. Sana va vaqt — Toshkent vaqtida
  * (foydalanuvchilar Toshkentda, formatlovchi brauzer vaqtini oladi — testda mintaqa qat'iy `Asia/Tashkent`).
  * Boshqa qurilmalarni chiqarish: qatordagi «Chiqarish» (`DELETE auth/sessions/:id`) va «Boshqa barcha
  * qurilmalardan chiqish» (`POST auth/sessions/revoke-others`) — haqiqiy tasdiq oynasi va xabarlar orqali.
@@ -40,11 +41,13 @@ const session = (over: Row = {}): Row => ({
   device_id: null,
   user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36",
   ip: "213.230.64.10",
-  // 04:12 UTC = 09:12 Toshkent.
+  // 04:12 UTC = 09:12 Toshkent. Birinchi kirish shu daqiqada — «Birinchi marta» qatori yo'q.
   logged_in_at: "2026-10-18T04:12:00.000Z",
+  first_logged_in_at: "2026-10-18T04:12:20.000Z",
   last_seen_at: minutesAgo(12),
   expires_at: "2026-10-23T09:00:00.000Z",
   current: false,
+  status: "active",
   ...over,
 });
 
@@ -82,7 +85,7 @@ beforeEach(() => {
 
 const card = () => screen.getByRole("region", { name: "Sessiyalar" });
 const rows = async () => {
-  const list = await screen.findByRole("list", { name: "Faol sessiyalar ro'yxati" });
+  const list = await screen.findByRole("list", { name: "Sessiyalar ro'yxati" });
   return within(list).getAllByRole("listitem");
 };
 
@@ -101,12 +104,23 @@ describe("Sessiyalar — ro'yxat", () => {
     expect(within(card()).getByText("2 ta faol")).toBeInTheDocument();
     expect(within(first).getByRole("heading", { level: 3, name: "Telefon · Android · Chrome" })).toBeInTheDocument();
     expect(within(first).getByText("Shu qurilma")).toBeInTheDocument();
-    expect(within(first).getByText("IP: 213.230.64.10")).toBeInTheDocument();
+    expect(within(first).getByText("Tarmoq IP: 213.230.64.10")).toBeInTheDocument();
     expect(within(second).getByRole("heading", { level: 3, name: "Kompyuter · Windows · Edge" })).toBeInTheDocument();
     expect(within(second).queryByText("Shu qurilma")).not.toBeInTheDocument();
-    expect(within(second).getByText("IP: 84.54.70.2")).toBeInTheDocument();
+    expect(within(second).getByText("Tarmoq IP: 84.54.70.2")).toBeInTheDocument();
     // Faqat o'z sessiyalari: boshqa so'rov (foydalanuvchilar ro'yxati, tizim bo'yicha son) yo'q.
     expect(mocks.get.mock.calls.map(([url]) => url)).toEqual(["auth/sessions"]);
+  });
+
+  it("tarmoq IP — bitta Wi-Fi izohi bilan (`title`)", async () => {
+    sessionsResponse = reply({ active_count: 1, sessions: [session({ current: true })] });
+    renderWithProviders(<ProfileSessionsCard />);
+
+    const [row] = await rows();
+    expect(within(row).getByText("Tarmoq IP: 213.230.64.10")).toHaveAttribute(
+      "title",
+      "Bitta Wi-Fi tarmog'idagi qurilmalar bir xil IP bilan ko'rinadi.",
+    );
   });
 
   it("kirgan vaqti va oxirgi faollik — Toshkent vaqtida, oxirgisi nisbiy + sana", async () => {
@@ -138,8 +152,29 @@ describe("Sessiyalar — ro'yxat", () => {
     const [ua, none, custom] = await rows();
     expect(within(ua).getByRole("heading", { name: "curl/8.4.0" })).toHaveAttribute("title", "curl/8.4.0");
     expect(within(none).getByRole("heading", { name: "Noma'lum qurilma" })).toBeInTheDocument();
-    expect(within(none).getByText("IP noma'lum")).toBeInTheDocument();
+    expect(within(none).getByText("Tarmoq IP noma'lum")).toBeInTheDocument();
     expect(within(custom).getByRole("heading", { name: "Ombor planshet" })).toBeInTheDocument();
+  });
+
+  it("«Kirgan vaqti» — oxirgi kirish; birinchi kirish boshqa bo'lsa ostida «Birinchi marta», bir xil bo'lsa — yo'q", async () => {
+    sessionsResponse = reply({
+      active_count: 2,
+      sessions: [
+        // 06:30 UTC = 11:30 Toshkent.
+        session({ id: "again", current: true, first_logged_in_at: "2026-10-02T06:30:00.000Z" }),
+        session({ id: "once", device_name: "Windows 11 · Chrome 154" }),
+      ],
+    });
+    renderWithProviders(<ProfileSessionsCard />);
+
+    const [again, once] = await rows();
+    expect(within(again).getByText("18.10.2026, 09:12")).toHaveAttribute("dateTime", "2026-10-18T04:12:00.000Z");
+    const first = within(again).getByText("02.10.2026, 11:30");
+    expect(first.tagName).toBe("TIME");
+    expect(first).toHaveAttribute("dateTime", "2026-10-02T06:30:00.000Z");
+    expect(first.closest("dd")).toHaveTextContent("Birinchi marta: 02.10.2026, 11:30");
+    expect(within(once).getByRole("heading", { level: 3, name: "Windows 11 · Chrome 154" })).toBeInTheDocument();
+    expect(within(once).queryByText(/Birinchi marta/)).not.toBeInTheDocument();
   });
 
   it("ro'yxat server chegarasida (50) qisqa qolsa — pastda jami son", async () => {
@@ -152,13 +187,135 @@ describe("Sessiyalar — ro'yxat", () => {
   });
 });
 
+describe("Sessiyalar — qayta kirish kerak (`expired`) va eski backend", () => {
+  const mixed = () =>
+    reply({
+      active_count: 2,
+      sessions: [
+        session({ id: "old", device_name: "iPhone · iOS 17 · Safari", status: "expired", last_seen_at: minutesAgo(3 * 24 * 60) }),
+        session({ id: "me", device_name: "Samsung SM-A515F · Android 13 · Chrome 155", current: true }),
+        session({ id: "win", device_name: "Windows 11 · Chrome 154", ip: "84.54.70.12" }),
+      ],
+    });
+
+  it("faollar tepada, `expired` oxirida — xiralashgan, «Qayta kirish kerak»; «N ta faol» faqat faollar", async () => {
+    sessionsResponse = mixed();
+    renderWithProviders(<ProfileSessionsCard />);
+
+    const [me, win, old] = await rows();
+    expect(within(card()).getByText("2 ta faol")).toBeInTheDocument();
+    expect(within(me).getByRole("heading", { name: "Samsung SM-A515F · Android 13 · Chrome 155" })).toHaveClass("text-text");
+    expect(within(me).queryByText("Qayta kirish kerak")).not.toBeInTheDocument();
+    expect(within(win).queryByText("Qayta kirish kerak")).not.toBeInTheDocument();
+    expect(win).toHaveAttribute("data-session-status", "active");
+
+    expect(old).toHaveAttribute("data-session-status", "expired");
+    const heading = within(old).getByRole("heading", { level: 3, name: "iPhone · iOS 17 · Safari" });
+    expect(heading).toHaveClass("text-text-muted");
+    expect(heading).not.toHaveClass("text-text");
+    expect(within(old).getByText("Qayta kirish kerak")).toBeInTheDocument();
+    expect(within(old).getByText("3 kun oldin").closest("dd")).toHaveClass("text-text-muted");
+    // Qayta kirishi kerak bo'lgan qurilmani ham chiqarish mumkin.
+    expect(within(old).getByRole("button", { name: "Chiqarish: iPhone · iOS 17 · Safari" })).toBeInTheDocument();
+  });
+
+  it("`expired` qatordagi «Chiqarish»: o'z izohi bilan tasdiq → DELETE, faollar soni o'zgarmaydi", async () => {
+    sessionsResponse = mixed();
+    mocks.delete.mockImplementation(async () => {
+      sessionsResponse = reply({
+        active_count: 2,
+        sessions: [
+          session({ id: "me", device_name: "Samsung SM-A515F · Android 13 · Chrome 155", current: true }),
+          session({ id: "win", device_name: "Windows 11 · Chrome 154" }),
+        ],
+      });
+      return revoked(["old"]);
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<ProfileSessionsCard />);
+    const [, , old] = await rows();
+
+    await user.click(within(old).getByRole("button", { name: /Chiqarish/ }));
+    const confirm = await screen.findByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
+    expect(within(confirm).getByText(/U baribir qayta kirishi kerak edi/)).toBeInTheDocument();
+    expect(within(confirm).getByText("iPhone · iOS 17 · Safari")).toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: "Chiqarish" }));
+
+    expect(await screen.findByText("Qurilma chiqarildi")).toBeInTheDocument();
+    expect(mocks.delete).toHaveBeenCalledWith("auth/sessions/old");
+    await waitFor(async () => expect(await rows()).toHaveLength(2));
+    expect(within(card()).getByText("2 ta faol")).toBeInTheDocument();
+    expect(within(card()).queryByText("Qayta kirish kerak")).not.toBeInTheDocument();
+  });
+
+  it("«Boshqa barcha qurilmalardan chiqish» — boshqasi faqat `expired` bo'lsa ham bor; tasdiqda hamma boshqalar sanaladi", async () => {
+    sessionsResponse = reply({
+      active_count: 1,
+      sessions: [
+        session({ id: "me", current: true }),
+        session({ id: "old", device_name: "iPhone · iOS 17 · Safari", status: "expired" }),
+      ],
+    });
+    const user = userEvent.setup();
+    const view = renderWithProviders(<ProfileSessionsCard />);
+    await rows();
+    expect(within(card()).getByText("1 ta faol")).toBeInTheDocument();
+    await user.click(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" }));
+    let confirm = await screen.findByRole("alertdialog", { name: "Boshqa qurilmalardan chiqishni tasdiqlang" });
+    expect(within(confirm).getByText(/Boshqa 1 ta qurilma hisobingizdan chiqariladi/)).toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    view.unmount();
+
+    sessionsResponse = mixed();
+    renderWithProviders(<ProfileSessionsCard />);
+    await rows();
+    await user.click(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" }));
+    confirm = await screen.findByRole("alertdialog", { name: "Boshqa qurilmalardan chiqishni tasdiqlang" });
+    expect(within(confirm).getByText(/Boshqa 2 ta qurilma hisobingizdan chiqariladi/)).toBeInTheDocument();
+  });
+
+  it("server chegarasi: ro'yxatdagi faollar `active_count` dan kam — pastda jami son (`expired` sanalmaydi)", async () => {
+    sessionsResponse = reply({
+      active_count: 51,
+      sessions: [session({ id: "me", current: true }), session({ id: "old", status: "expired" })],
+    });
+    renderWithProviders(<ProfileSessionsCard />);
+
+    await rows();
+    expect(within(card()).getByText("Oxirgi 2 tasi ko'rsatilgan · jami 51 ta faol sessiya")).toBeInTheDocument();
+  });
+
+  it("eski backend (`status` va `first_logged_in_at` yo'q) — hammasi faol, «Birinchi marta» qatori yo'q", async () => {
+    const legacy = (over: Row) => {
+      const row = session(over);
+      delete row.status;
+      delete row.first_logged_in_at;
+      return row;
+    };
+    sessionsResponse = reply({
+      active_count: 2,
+      sessions: [legacy({ id: "win", device_name: "Kompyuter · Windows · Edge" }), legacy({ id: "me", current: true })],
+    });
+    renderWithProviders(<ProfileSessionsCard />);
+
+    const [me, win] = await rows();
+    expect(within(card()).getByText("2 ta faol")).toBeInTheDocument();
+    expect(within(card()).queryByText("Qayta kirish kerak")).not.toBeInTheDocument();
+    expect(within(card()).queryByText(/Birinchi marta/)).not.toBeInTheDocument();
+    expect(within(me).getByText("18.10.2026, 09:12")).toBeInTheDocument();
+    expect(win).toHaveAttribute("data-session-status", "active");
+    expect(within(card()).queryByText(/Oxirgi \d+ tasi/)).not.toBeInTheDocument();
+  });
+});
+
 describe("Sessiyalar — holatlar", () => {
   it("bo'sh — «Faol sessiya topilmadi» va «0 ta faol»", async () => {
     renderWithProviders(<ProfileSessionsCard />);
 
     expect(await screen.findByText("Faol sessiya topilmadi")).toBeInTheDocument();
     expect(within(card()).getByText("0 ta faol")).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Faol sessiyalar ro'yxati" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Sessiyalar ro'yxati" })).not.toBeInTheDocument();
   });
 
   it("xato — «Qayta urinish» so'rovni takrorlaydi va ro'yxat chiqadi", async () => {
@@ -262,7 +419,7 @@ describe("Sessiyalar — boshqa qurilmalarni chiqarish", () => {
     await user.click(within(win).getByRole("button", { name: /Chiqarish/ }));
     let confirm = await screen.findByRole("alertdialog", { name: "Qurilmani chiqarishni tasdiqlang" });
     expect(within(confirm).getByText("Kompyuter · Windows · Edge")).toBeInTheDocument();
-    expect(within(confirm).getByText(/IP: 84\.54\.70\.12 · oxirgi faollik 12 daqiqa oldin/)).toBeInTheDocument();
+    expect(within(confirm).getByText(/Tarmoq IP: 84\.54\.70\.12 · oxirgi faollik 12 daqiqa oldin/)).toBeInTheDocument();
     await user.click(within(confirm).getByRole("button", { name: "Bekor qilish" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(mocks.delete).not.toHaveBeenCalled();

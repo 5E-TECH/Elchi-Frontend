@@ -1,6 +1,6 @@
 // dizayn-v2: (maket yo'q) market-profile, common-profile
 import { useEffect, useState } from "react";
-import { KeyRound, LogOut } from "lucide-react";
+import { KeyRound, LogIn, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
@@ -26,36 +26,42 @@ import {
   EmptyState,
   QueryBoundary,
   Skeleton,
+  StatusBadge,
   useConfirm,
 } from "../../../shared/ui/primitives";
+import { cx } from "../../../shared/lib/cx";
 
 /**
  * «SESSIYALAR» — profil (`/profile`, barcha rollar), Elchi Pochta #3. Maket yo'q — eng yaqini `market-profile`
  * «Telegram guruhi» kartasi (sarlavha + badge, izoh, chiziq bilan ajratilgan qatorlar: `.el-stat-icon`, `.el-h3`,
  * badge, `.el-small` izoh) va `common-profile` «Xavfsizlik» kartasi.
  *
- *  - Sarlavha «Sessiyalar» + «N ta faol» (`active_count` — FAQAT shu hisobning faol sessiyalari; tizim bo'yicha
- *    son yoki boshqa foydalanuvchilar yo'q), izoh — chiqish faqat shu qurilmani yopadi.
- *  - Har qator: qurilma (server yorlig'i «Telefon · Android · Chrome», turi joriy tilda; bo'lmasa qisqa
- *    User-Agent, u ham bo'lmasa «Noma'lum qurilma»; to'liq User-Agent — `title`), «Shu qurilma» badge'i, IP,
- *    «Kirgan vaqti» va «Oxirgi faollik» (nisbiy «12 daqiqa oldin» + «Bugun, 14:15»). «Shu qurilma» tepada,
- *    qolgani server tartibida (oxirgi faollik bo'yicha yangisi tepada).
+ *  - Sarlavha «Sessiyalar» + «N ta faol» (`active_count` — FAQAT shu hisobning `active` sessiyalari; `expired`,
+ *    tizim bo'yicha son yoki boshqa foydalanuvchilar yo'q), izoh — chiqish faqat shu qurilmani yopadi.
+ *  - Har qator: qurilma (mijoz nomi «Samsung SM-A515F · Android 13 · Chrome 155» yoki server yorlig'i
+ *    «Telefon · Android · Chrome», turi joriy tilda; bo'lmasa qisqa User-Agent, u ham bo'lmasa «Noma'lum
+ *    qurilma»; to'liq User-Agent — `title`), «Shu qurilma» badge'i, «Tarmoq IP» (bitta Wi-Fi'dagi qurilmalar bir
+ *    xil IP — `title` izohi), «Kirgan vaqti» (OXIRGI kirish; birinchi kirish boshqa bo'lsa — ostida «Birinchi
+ *    marta: …») va «Oxirgi faollik» (nisbiy «12 daqiqa oldin» + «Bugun, 14:15»). Tartib: «Shu qurilma», faollar,
+ *    so'ng qayta kirishi kerak bo'lganlar.
+ *  - `expired` (qurilmada ochiq sessiya bor, lekin qayta kirishi kerak — refresh muddati tugagan yoki parol
+ *    almashgan): qator xiralashgan (`text-text-muted` / `text-text-subtle`, AA saqlanadi) + neytral «Qayta kirish
+ *    kerak» belgisi (`LogIn`); «Chiqarish» unda ham bor.
  *  - Telefonda qator ustma-ust: qurilma, so'ng ikki ustunli vaqtlar.
- *  - Holatlar `QueryBoundary`: qator shaklidagi skelet, bo'sh holat, xato + «Qayta urinish». Ro'yxat 50 tadan
- *    qisqa qolsa (server chegarasi) — pastda «Oxirgi 50 tasi ko'rsatilgan».
+ *  - Holatlar `QueryBoundary`: qator shaklidagi skelet, bo'sh holat, xato + «Qayta urinish». Ro'yxatdagi faollar
+ *    `active_count` dan kam bo'lsa (server chegarasi) — pastda «Oxirgi N tasi ko'rsatilgan».
  *  - So'rov bo'lim ochilganda va oynaga qaytilganda (`useMySessions`); davriy so'rov yo'q — faqat nisbiy vaqt
  *    har daqiqada qayta chiziladi.
  *  - Boshqa qurilmalarni chiqarish: har «Shu qurilma» BO'LMAGAN qatorda «Chiqarish» (`DELETE /auth/sessions/:id`),
- *    sarlavhada — kamida bitta boshqa sessiya bo'lsa — «Boshqa barcha qurilmalardan chiqish»
- *    (`POST /auth/sessions/revoke-others`). Ikkalasi `useConfirm` (danger: qaysi qurilma / nechta) orqali, tasdiq
+ *    sarlavhada — kamida bitta boshqa sessiya (faol yoki `expired`) bo'lsa — «Boshqa barcha qurilmalardan chiqish»
+ *    (`POST /auth/sessions/revoke-others`, tasdiqdagi son — barcha boshqalar). Ikkalasi `useConfirm` (danger: qaysi qurilma / nechta) orqali, tasdiq
  *    tugmasida yuklanish, muvaffaqiyat — `notify`, ro'yxat keshi yangilanadi. 404 — sessiya allaqachon yopilgan:
  *    ro'yxat qayta so'raladi, `notify.info`; 400 — oyna ichida sabab (joriy sessiya / eski token — qayta kirish).
  *    Yopilgan qurilma keyingi so'rovida 401 → refresh ham rad → kirish sahifasi (`setupInterceptors`).
  */
 
-/** `.el-stat-icon` — neytral ikonka qutisi (CODE-MAP; `ProfileCards` dagi bilan bir xil). */
-const STAT_ICON =
-  "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted";
+/** `.el-stat-icon` — neytral ikonka qutisi (CODE-MAP; `ProfileCards` dagi bilan bir xil); rangi alohida. */
+const STAT_ICON = "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken";
 
 /** Qator chekkasi — maketdagi `padding: 14px 20px` + chiziq (`market-profile` «Telegram guruhi»). */
 const ROW = "border-b border-border px-5 py-3.5 last:border-b-0";
@@ -73,6 +79,18 @@ const useNow = (intervalMs: number) => {
 };
 
 const isoOf = (value: string | null) => toValidDate(value)?.toISOString();
+
+const isExpired = (session: AccountSession) => session.status === "expired";
+
+/**
+ * «Birinchi marta» qatori faqat birinchi kirish oxirgisidan ko'rinadigan aniqlikda (daqiqa) farq qilsa; maydon
+ * yo'q (eski backend) yoki yaroqsiz bo'lsa — yo'q.
+ */
+const firstLoginShown = (session: AccountSession, language: string, now: number) => {
+  if (!toValidDate(session.first_logged_in_at)) return null;
+  const first = formatDateTimeLocalized(session.first_logged_in_at, { language, now });
+  return first === formatDateTimeLocalized(session.logged_in_at, { language, now }) ? null : first;
+};
 
 /** Qurilma nomi: tur joriy tilda + server yorlig'ining qolgani; bo'lmasa qisqa User-Agent yoki «Noma'lum qurilma». */
 const sessionLabel = (session: AccountSession, t: TFunction<"profile">) => {
@@ -115,24 +133,35 @@ const SessionRow = ({
   const { t, i18n } = useTranslation("profile");
   const language = i18n.language;
   const label = sessionLabel(session, t);
+  const expired = isExpired(session);
+  const firstLogin = firstLoginShown(session, language, now);
+  // Qayta kirishi kerak bo'lgan qator xiralashgan: asosiy matn `text-muted` (AA), ikonka `text-subtle`.
+  const valueClass = cx("text-sm font-semibold", expired ? "text-text-muted" : "text-text");
 
   return (
-    <li className={`flex flex-wrap items-start justify-between gap-x-6 gap-y-3 ${ROW}`}>
+    <li
+      data-session-status={session.status}
+      className={`flex flex-wrap items-start justify-between gap-x-6 gap-y-3 ${ROW}`}
+    >
       <div className="flex min-w-0 flex-[1_1_260px] items-start gap-3">
-        <span aria-hidden="true" className={STAT_ICON}>
+        <span aria-hidden="true" className={cx(STAT_ICON, expired ? "text-text-subtle" : "text-text-muted")}>
           <KeyRound size={18} />
         </span>
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <h3
-              className="min-w-0 text-sm font-semibold wrap-break-word text-text"
+              className={cx("min-w-0 wrap-break-word", valueClass)}
               title={session.user_agent ?? undefined}
             >
               {label}
             </h3>
             {session.current ? <Badge tone="info">{t("sessions.current")}</Badge> : null}
+            {expired ? <StatusBadge tone="neutral" icon={LogIn} label={t("sessions.expired")} /> : null}
           </div>
-          <p className="text-[13px] wrap-break-word text-text-muted">
+          <p
+            className="text-[13px] wrap-break-word text-text-muted"
+            title={session.ip ? t("sessions.ipHint") : undefined}
+          >
             {session.ip ? t("sessions.ip", { ip: session.ip }) : t("sessions.ipUnknown")}
           </p>
         </div>
@@ -140,15 +169,23 @@ const SessionRow = ({
       <dl className="grid min-w-0 flex-[0_1_400px] grid-cols-2 gap-x-6 gap-y-3 max-md:flex-[1_1_100%]">
         <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-[13px] text-text-muted">{t("sessions.loggedInAt")}</dt>
-          <dd className="text-sm font-semibold text-text">
+          <dd className={valueClass}>
             <time dateTime={isoOf(session.logged_in_at)}>
               {formatDateTimeLocalized(session.logged_in_at, { language, now })}
             </time>
           </dd>
+          {firstLogin ? (
+            <dd className="text-[13px] text-text-muted">
+              {t("sessions.firstLoggedInAt")}{" "}
+              <time className="whitespace-nowrap" dateTime={isoOf(session.first_logged_in_at)}>
+                {firstLogin}
+              </time>
+            </dd>
+          ) : null}
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-[13px] text-text-muted">{t("sessions.lastSeenAt")}</dt>
-          <dd className="text-sm font-semibold text-text">
+          <dd className={valueClass}>
             <time dateTime={isoOf(session.last_seen_at)}>
               {formatRelativeTimeLocalized(session.last_seen_at, { language, now })}
             </time>
@@ -185,10 +222,11 @@ export const ProfileSessionsCard = ({ className }: { className?: string }) => {
   const now = useNow(CLOCK_TICK_MS);
   const list = query.data;
   const others = list?.sessions.filter((session) => !session.current) ?? [];
-  // Ro'yxat 50 ta bilan cheklangan — sarlavhadagi son to'liq (`active_count`), joriy sessiya ham shu sonda.
-  const otherCount = list
-    ? Math.max(others.length, list.active_count - (list.sessions.some((session) => session.current) ? 1 : 0))
-    : 0;
+  // Ro'yxat server chegarasida qisqa qolishi mumkin — `active_count` to'liq (faqat faollar, joriy ham shu sonda).
+  const activeInList = list?.sessions.filter((session) => !isExpired(session)).length ?? 0;
+  const hiddenActive = list ? Math.max(0, list.active_count - activeInList) : 0;
+  // Tasdiqdagi son — barcha boshqa qurilmalar: faol va qayta kirishi kerak bo'lganlar.
+  const otherCount = others.length + hiddenActive;
 
   const handleRevoke = async (session: AccountSession) => {
     const label = sessionLabel(session, t);
@@ -198,7 +236,7 @@ export const ProfileSessionsCard = ({ className }: { className?: string }) => {
       tone: "danger",
       icon: LogOut,
       title: t("sessions.revoke.title"),
-      description: t("sessions.revoke.description"),
+      description: isExpired(session) ? t("sessions.revoke.descriptionExpired") : t("sessions.revoke.description"),
       details: (
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="font-semibold wrap-break-word text-text">{label}</span>
@@ -295,7 +333,7 @@ export const ProfileSessionsCard = ({ className }: { className?: string }) => {
         ) : null
       }
       footer={
-        list && list.active_count > list.sessions.length ? (
+        hiddenActive > 0 && list ? (
           <p className="text-[13px] text-text-muted">
             {t("sessions.truncated", { shown: list.sessions.length, count: list.active_count })}
           </p>
