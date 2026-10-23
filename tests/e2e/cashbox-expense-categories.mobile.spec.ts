@@ -2,22 +2,28 @@ import { expect, test } from "@playwright/test";
 import {
   categoryCombobox,
   expectNoHorizontalOverflow,
+  expectOpsExpenseCategories,
   mockCashboxCategoriesApi,
   openMainCashbox,
   openSpendDialog,
+  opsCategoriesCard,
+  opsCategoriesList,
 } from "./support/cashboxExpenseCategories";
 import { expectToast } from "./support/toast";
 
 /**
  * Elchi Pochta №1 — telefonda (390): «Kassadan xarajat» pastki varaqasida kategoriya tanlovi (maydon va variantlar
- * ≥ 44 px, qidiruv maydoni 16 px — iOS zoom yo'q), tarix kartasida kategoriya; superadmin boshqaruv oynasi — pastki
- * varaqa, qator amallari ≥ 44 px; gorizontal oqish yo'q.
+ * ≥ 44 px, qidiruv maydoni 16 px — iOS zoom yo'q), tarix kartasida kategoriya, kassa sarlavhasida sozlama tugmasi
+ * yo'q; superadmin boshqaruvi — Ops vositalari → «Xarajat kategoriyalari» (telefonda bo'lim `Select` dan), qator
+ * amallari va «Kategoriya qo'shish» ≥ 44 px, forma — pastki varaqa; gorizontal oqish yo'q.
  */
 test.describe.configure({ timeout: 180_000 });
 
 test("⭐ 390: varaqada kategoriya majburiy (xato ko'rinadi), izohsiz → payload'da `comment` yo'q, oqish yo'q", async ({ page }) => {
   const { calls, leaked } = await mockCashboxCategoriesApi(page);
   await openMainCashbox(page);
+  // Sozlama kassada emas (Ops vositalarida).
+  await expect(page.getByRole("button", { name: "Xarajat kategoriyalari" })).toHaveCount(0);
 
   const card = page.getByRole("button", { name: /Qo'lda chiqim · Yoqilg'i/ });
   await expect(card.locator("[data-expense-category]")).toHaveText("Kategoriya: Yoqilg'i");
@@ -53,43 +59,56 @@ test("⭐ 390: varaqada kategoriya majburiy (xato ko'rinadi), izohsiz → payloa
   expect(leaked).toEqual([]);
 });
 
-test("⭐ 390: boshqaruv oynasi — pastki varaqa, amallar ≥ 44 px, qo'shish formasi", async ({ page }) => {
+test("⭐ 390: Ops → «Xarajat kategoriyalari» — bo'lim tanlovidan, amallar ≥ 44 px, qo'shish formasi pastki varaqa, oqish yo'q", async ({ page }) => {
   const { calls } = await mockCashboxCategoriesApi(page);
-  await openMainCashbox(page);
+  await page.goto("/ops");
+  await expect(page.getByRole("heading", { level: 1, name: "Ops vositalari" })).toBeVisible({ timeout: 60_000 });
 
-  await page.getByRole("button", { name: "Xarajat kategoriyalari" }).click();
-  const manage = page.getByRole("dialog", { name: "Xarajat kategoriyalari" });
-  await expect(manage.getByRole("list", { name: "Xarajat kategoriyalari" }).getByRole("listitem")).toHaveCount(17);
-  const box = (await manage.boundingBox())!;
-  expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(844 - 1);
+  // Telefonda tablar o'rniga `Select` — «Xarajat kategoriyalari» moliya guruhida, «Moliya operatorlari» dan keyin.
+  await page.getByRole("combobox", { name: /^Ops bo'limi:/ }).click();
+  const options = page.getByRole("option");
+  await expect(options.nth(0)).toHaveText("Moliya operatorlari");
+  await expect(options.nth(1)).toHaveText("Xarajat kategoriyalari");
+  await options.nth(1).click();
+  await expectOpsExpenseCategories(page);
+  await expect(page.getByRole("combobox", { name: "Ops bo'limi: Xarajat kategoriyalari" })).toBeVisible();
 
-  const actions = manage.getByRole("button", { name: /kategoriyasini (tahrirlash|o'chirish)$/ });
+  const card = opsCategoriesCard(page);
+  const list = opsCategoriesList(page);
+  await expect(list.getByRole("listitem")).toHaveCount(17);
+  const add = card.getByRole("button", { name: "Kategoriya qo'shish" });
+  const addBox = (await add.boundingBox())!;
+  expect(addBox.height).toBeGreaterThanOrEqual(44);
+
+  const actions = list.getByRole("button", { name: /kategoriyasini (tahrirlash|o'chirish)$/ });
   await expect(actions).toHaveCount(34);
-  // Pastki varaqa ochilish animatsiyasi tugaguncha tugmalar kichikroq o'lchanishi mumkin — barqaror o'lchamni
-  // kutamiz (dispatch-floor.mobile.spec bilan bir xil usul).
-  await expect
-    .poll(async () =>
-      Math.min(
-        ...(await actions.evaluateAll((nodes) =>
-          nodes.slice(0, 6).flatMap((node) => {
-            const rect = node.getBoundingClientRect();
-            return [rect.width, rect.height];
-          }),
-        )),
-      ),
-    )
-    .toBeGreaterThanOrEqual(44);
+  const sizes = await actions.evaluateAll((nodes) =>
+    nodes.flatMap((node) => {
+      const rect = node.getBoundingClientRect();
+      return [rect.width, rect.height];
+    }),
+  );
+  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(44);
   await expectNoHorizontalOverflow(page);
 
-  await manage.getByRole("button", { name: "Kategoriya qo'shish" }).click();
+  await add.click();
   const form = page.getByRole("dialog", { name: "Kategoriya qo'shish" });
+  await expect(form).toBeVisible();
+  // Pastki varaqa: ochilish harakati tugagach pastki cheti ekran pastida.
+  await expect
+    .poll(async () => {
+      const box = await form.boundingBox();
+      return box ? Math.round(box.y + box.height) : 0;
+    })
+    .toBeGreaterThanOrEqual(844 - 1);
   const name = form.getByLabel(/^Nomi/);
   expect(await name.evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
   await name.fill("Bank xizmati");
   await form.getByLabel(/^Tartib raqami/).fill("3");
   await form.getByRole("button", { name: "Qo'shish" }).click();
   await expectToast(page, "Kategoriya qo'shildi", { tone: "success" });
+  await expect(form).toBeHidden();
   expect(calls.creates).toEqual([{ name: "Bank xizmati", sort_order: 3 }]);
-  await expect(manage.getByRole("listitem").nth(3)).toContainText("Bank xizmati");
+  await expect(list.getByRole("listitem").nth(3)).toContainText("Bank xizmati");
   await expectNoHorizontalOverflow(page);
 });
