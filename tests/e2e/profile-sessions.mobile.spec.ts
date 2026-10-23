@@ -4,8 +4,8 @@ import { expectToast } from "./support/toast";
 
 /**
  * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» telefonda (390, kuryer): qatorlar ustma-ust (qurilma, so'ng
- * vaqtlar), «Shu qurilma» tepada, gorizontal oqish yo'q, matn ≥ 12px; «Chiqarish» va «Boshqa barcha qurilmalardan
- * chiqish» ≥ 44 px, tasdiq — pastki varaqa.
+ * vaqtlar), «Shu qurilma» tepada, qayta kirishi kerak bo'lgani oxirida («Qayta kirish kerak»), gorizontal oqish
+ * yo'q, matn ≥ 12px; «Chiqarish» va «Boshqa barcha qurilmalardan chiqish» ≥ 44 px, tasdiq — pastki varaqa.
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -15,9 +15,16 @@ test("⭐ 390: ustma-ust qatorlar, oqish yo'q, mayda matn yo'q", async ({ page }
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
   await expect(card.getByText("3 ta faol")).toBeVisible();
-  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
   await expect(rows.nth(0).getByText("Shu qurilma")).toBeVisible();
+  await expect(rows.nth(0).getByText(/^Birinchi marta:/)).toBeVisible();
+  await expect(rows.nth(3).getByText("Qayta kirish kerak")).toBeVisible();
+  // Uzun aniq nom va belgi telefonda ham kartaga sig'adi.
+  for (const index of [0, 3]) {
+    const box = (await rows.nth(index).getByRole("heading", { level: 3 }).boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  }
 
   // Telefonda vaqtlar qurilma nomining ostida.
   const device = await rows.nth(0).getByRole("heading", { level: 3 }).boundingBox();
@@ -40,13 +47,13 @@ test("⭐ 390: chiqarish amallari ≥ 44 px, ekranga sig'adi; tasdiq pastki vara
   const { leaked, revoke } = await openProfileWithSessions(page, "courier", { revoke: true });
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
-  const rows = card.getByRole("list", { name: "Faol sessiyalar ro'yxati" }).getByRole("listitem");
-  await expect(rows).toHaveCount(3);
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(4);
 
   const all = card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" });
   const actions = card.getByRole("button", { name: /^Chiqarish:/ });
-  await expect(actions).toHaveCount(2);
-  for (const target of [all, actions.nth(0), actions.nth(1)]) {
+  await expect(actions).toHaveCount(3);
+  for (const target of [all, actions.nth(0), actions.nth(1), actions.nth(2)]) {
     await target.scrollIntoViewIfNeeded();
     const box = (await target.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(44);
@@ -69,7 +76,7 @@ test("⭐ 390: chiqarish amallari ≥ 44 px, ekranga sig'adi; tasdiq pastki vara
   expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await submit.click();
   await expectToast(page, "Qurilma chiqarildi", { tone: "success" });
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
   expect(revoke!.deletes).toEqual(["s-2"]);
   expect(leaked).toEqual([]);
 });

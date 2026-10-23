@@ -1,6 +1,7 @@
 export type {
   AccountSession,
   AccountSessionList,
+  AccountSessionStatus,
   RevokeSessionsResult,
   SessionDeviceKind,
 } from "./model/types";

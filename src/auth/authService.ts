@@ -11,6 +11,7 @@ import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./ne
 import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
 import { loadAppLocales } from "../i18n";
 import { deviceIdHeaders } from "./deviceId";
+import { deviceNameHeaders } from "./deviceName";
 
 type LoginCredentials = {
   phone_number: string;
@@ -207,6 +208,12 @@ const keepSessionWhileOffline = (error: unknown) => {
  * urinilmaydi (har biri 15 s kutardi) — u baribir vaqtinchalik hisoblanadi.
  */
 export const REFRESH_RETRY_DELAYS_MS = [1_000, 3_000, 7_000];
+
+/**
+ * Sessiya qurilmasi sarlavhalari (Elchi Pochta #3): `X-Device-Id` (shu brauzer) va `X-Device-Name` (aniq nom —
+ * «Samsung SM-A515F · Android 13 · Chrome 155»; saqlangan yoki User-Agent'dan, so'rov uni kutmaydi).
+ */
+const deviceHeaders = (): Record<string, string> => ({ ...deviceIdHeaders(), ...deviceNameHeaders() });
 const REFRESH_RETRY_JITTER_MS = 500;
 
 const isRetryableRefreshError = (error: unknown) => {
@@ -218,8 +225,9 @@ const isRetryableRefreshError = (error: unknown) => {
 const postRefreshWithRetry = async () => {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      // `X-Device-Id` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu bilan yoziladi).
-      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceIdHeaders() });
+      // `X-Device-Id` / `X-Device-Name` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu
+      // bilan yoziladi; nom o'zgarsa — yangilanadi).
+      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceHeaders() });
     } catch (error) {
       if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
       await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
@@ -251,9 +259,10 @@ export const login = async (credentials: LoginCredentials) => {
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    // Har login — alohida sessiya (Elchi Pochta #3); `X-Device-Id` uni shu brauzerga bog'laydi.
+    // Elchi Pochta #3: `X-Device-Id` sessiyani shu brauzerga bog'laydi (shu qurilmadagi ochiq sessiya qayta
+    // ishlatiladi), `X-Device-Name` — ro'yxatdagi aniq qurilma nomi.
     const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
-      headers: deviceIdHeaders(),
+      headers: deviceHeaders(),
     });
     const accessToken = response.data?.accessToken;
 

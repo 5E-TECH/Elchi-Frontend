@@ -202,14 +202,16 @@ const investorMock = (path, query) => {
 };
 
 /**
- * EP-3: `GET auth/sessions` — profil «Sessiyalar» kartasi to'liq ko'rinishda (bo'sh holat emas): shu qurilma,
- * boshqa kompyuter va nomi aniqlanmagan qurilma. Vaqtlar «hozir» dan orqaga hisoblanadi (sintetik ma'lumot).
+ * EP-3: `GET auth/sessions` — profil «Sessiyalar» kartasi to'liq ko'rinishda (bo'sh holat emas): shu qurilma
+ * (aniq nom, «Birinchi marta»), boshqa kompyuter, nomi aniqlanmagan qurilma va qayta kirishi kerak bo'lgan
+ * (`expired`) iPhone. `active_count` — faqat faollar. Vaqtlar «hozir» dan orqaga hisoblanadi (sintetik ma'lumot).
  */
 const sessionsMock = () => {
   const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
-  const row = (id, device_name, ip, loggedMin, seenMin, current = false, user_agent = null) => ({
-    id, device_name, device_id: null, user_agent, ip, logged_in_at: ago(loggedMin), last_seen_at: ago(seenMin),
-    expires_at: ago(-24 * 60), current,
+  const row = (id, device_name, ip, loggedMin, seenMin, { firstMin = loggedMin, ...extra } = {}) => ({
+    id, device_name, device_id: null, user_agent: null, ip, logged_in_at: ago(loggedMin),
+    first_logged_in_at: ago(firstMin), last_seen_at: ago(seenMin),
+    expires_at: ago(-24 * 60), current: false, status: 'active', ...extra,
   });
   return {
     statusCode: 200,
@@ -217,9 +219,10 @@ const sessionsMock = () => {
     data: {
       active_count: 3,
       sessions: [
-        row('s-2', 'Kompyuter · Windows · Edge', '84.54.70.12', 2 * 24 * 60 + 95, 7),
-        row('s-1', 'Telefon · Android · Chrome', '213.230.64.10', 26 * 60, 42, true),
-        row('s-3', null, null, 5 * 24 * 60, 3 * 24 * 60, false, 'PostmanRuntime/7.39.0'),
+        row('s-1', 'Samsung SM-A515F · Android 13 · Chrome 155', '213.230.64.10', 26 * 60, 42, { current: true, firstMin: 9 * 24 * 60 }),
+        row('s-2', 'Windows 11 · Chrome 154', '84.54.70.12', 2 * 24 * 60 + 95, 7),
+        row('s-3', null, null, 5 * 24 * 60, 3 * 24 * 60, { user_agent: 'PostmanRuntime/7.39.0' }),
+        row('s-4', 'iPhone · iOS 17 · Safari', '213.230.64.10', 20 * 24 * 60, 12 * 24 * 60, { status: 'expired', firstMin: 40 * 24 * 60 }),
       ],
     },
   };

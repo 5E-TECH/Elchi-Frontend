@@ -1,6 +1,11 @@
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import type { AccountSession, AccountSessionList, RevokeSessionsResult } from "../model/types";
+import type {
+  AccountSession,
+  AccountSessionList,
+  AccountSessionStatus,
+  RevokeSessionsResult,
+} from "../model/types";
 
 type Raw = Record<string, unknown>;
 
@@ -14,6 +19,10 @@ const text = (value: unknown): string | null => {
   return trimmed ? trimmed : null;
 };
 
+/** `status` — faqat aniq `expired` qayta kirish kerak; yo'q yoki boshqa qiymat (eski backend) — `active`. */
+const statusOf = (value: unknown): AccountSessionStatus =>
+  typeof value === "string" && value.trim().toLowerCase() === "expired" ? "expired" : "active";
+
 /** Backend qatori → `AccountSession`; `id` siz qator — `null` (ro'yxatdan tashlanadi). */
 export const normalizeAccountSession = (value: unknown): AccountSession | null => {
   const item = asRecord(value);
@@ -26,16 +35,18 @@ export const normalizeAccountSession = (value: unknown): AccountSession | null =
     user_agent: text(item.user_agent),
     ip: text(item.ip),
     logged_in_at: text(item.logged_in_at),
+    first_logged_in_at: text(item.first_logged_in_at),
     last_seen_at: text(item.last_seen_at),
     expires_at: text(item.expires_at),
     current: item.current === true,
+    status: statusOf(item.status),
   };
 };
 
 /**
  * `{ statusCode, message, data: { active_count, sessions } }` → `AccountSessionList`. Tartib server tartibi
- * (oxirgi faollik bo'yicha yangisi tepada). `active_count` yo'q yoki ro'yxatdan kichik bo'lsa — ro'yxat uzunligi;
- * boshqa shakl (bo'sh `data`, massiv) — bo'sh ro'yxat.
+ * (joriy, faollar, so'ng `expired`). `active_count` yo'q yoki ro'yxatdagi faollardan kichik bo'lsa — ro'yxatdagi
+ * faollar soni (`expired` sanalmaydi); boshqa shakl (bo'sh `data`, massiv) — bo'sh ro'yxat.
  */
 export const normalizeAccountSessionList = (value: unknown): AccountSessionList => {
   const response = asRecord(value) ?? {};
@@ -44,10 +55,14 @@ export const normalizeAccountSessionList = (value: unknown): AccountSessionList 
   const sessions = rows.map(normalizeAccountSession).filter((row): row is AccountSession => row !== null);
   const reported = Number(data.active_count);
   const activeCount = Number.isFinite(reported) && reported >= 0 ? Math.floor(reported) : 0;
-  return { active_count: Math.max(activeCount, sessions.length), sessions };
+  const activeInList = sessions.filter((session) => session.status === "active").length;
+  return { active_count: Math.max(activeCount, activeInList), sessions };
 };
 
-/** `GET /auth/sessions` — so'rovchining o'z faol sessiyalari (boshqa foydalanuvchilarniki va umumiy son yo'q). */
+/**
+ * `GET /auth/sessions` — so'rovchining o'z sessiyalari: faollar va qayta kirishi kerak bo'lganlar (boshqa
+ * foydalanuvchilarniki va tizim bo'yicha son yo'q).
+ */
 export const getMySessions = async (): Promise<AccountSessionList> => {
   const response = await api.get(API_ENDPOINTS.AUTH.SESSIONS);
   return normalizeAccountSessionList(response.data);
@@ -69,8 +84,8 @@ export const normalizeRevokeSessionsResult = (value: unknown): RevokeSessionsRes
 };
 
 /**
- * `DELETE /auth/sessions/:id` — o'z BOSHQA sessiyasini yopish (o'sha qurilma keyingi so'rovida 401 oladi va kirish
- * sahifasiga tushadi). 400 — joriy sessiya yoki noto'g'ri ID, 404 — topilmadi / allaqachon yopilgan.
+ * `DELETE /auth/sessions/:id` — o'z BOSHQA sessiyasini yopish (`expired` ham; o'sha qurilma keyingi so'rovida 401
+ * oladi va kirish sahifasiga tushadi). 400 — joriy sessiya yoki noto'g'ri ID, 404 — topilmadi / allaqachon yopilgan.
  */
 export const revokeSession = async (id: string): Promise<RevokeSessionsResult> => {
   const response = await api.delete(API_ENDPOINTS.AUTH.SESSION_BY_ID(id));
@@ -78,8 +93,8 @@ export const revokeSession = async (id: string): Promise<RevokeSessionsResult> =
 };
 
 /**
- * `POST /auth/sessions/revoke-others` (tanasiz) — joriydan boshqa barcha faol sessiyalarni yopish. 400 — joriy
- * sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak.
+ * `POST /auth/sessions/revoke-others` (tanasiz) — joriydan boshqa barcha sessiyalarni (faol va `expired`)
+ * yopish. 400 — joriy sessiya aniqlanmadi (sessiyalardan oldingi eski token): qayta kirish kerak.
  */
 export const revokeOtherSessions = async (): Promise<RevokeSessionsResult> => {
   const response = await api.post(API_ENDPOINTS.AUTH.SESSIONS_REVOKE_OTHERS);
