@@ -42,4 +42,5 @@ export {
 export { createIdempotencyKey, isUncertainWriteError, useIdempotencyKeys } from "./lib/idempotency";
 export { classifyScanCode, isScanCode, normalizeScanCode, splitElchiCode, type ScanCodeKind } from "./lib/scanCode";
 export { ProductCodeTag } from "./ui/ProductCodeTag";
-export { STOCK_LEVEL_TONE, StockLevelBadge, WarehouseStatusBadge } from "./ui/WarehouseBadges";
+export { STOCK_LEVEL_TONE } from "./lib/levelTone";
+export { StockLevelBadge, WarehouseStatusBadge } from "./ui/WarehouseBadges";

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**82 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **62** · qisman: **130** · v2 ga ko'chirilgan route: **82 / 82**
+**84 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **53** · qisman: **131** · v2 ga ko'chirilgan route: **84 / 84**
 
 ## Qanday ishlatiladi
 
@@ -95,8 +95,8 @@
 | `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
 | `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 21 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
-| `(taklif) /warehouses` | Mahsulotlar | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 4 | eski |
-| `(taklif) /warehouses/:id` | Mahsulotlar | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 5 | eski |
+| `/warehouses` | Mahsulotlar | `src/pages/warehouses/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx)) | 4 | v2 |
+| `/warehouses/:id` | Mahsulotlar | `src/pages/warehouses/detail/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx)) | 5 | v2 |
 | `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
 | `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 10 | v2 |
 | `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 24 | v2 |
@@ -1236,47 +1236,39 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/products/create-product/:id` | registrator | `registrator-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | qisman |
 | `/products/create-product/:id` | market | — Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1). | — | — | v2 |
 
-#### `(taklif) /warehouses` — Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)
+#### `/warehouses` — Omborlar — vaqtinchalik ombor tizimi (superadmin, admin; menejer — o'z omboriga yo'naltiriladi)
 
-- **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Holat:** eski
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `(taklif) /warehouses` | superadmin | `superadmin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /warehouses` | superadmin | `superadmin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /warehouses` | admin | `admin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /warehouses` | admin | `admin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /warehouses` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-
-#### `(taklif) /warehouses/:id` — Ombor tafsiloti — qoldiq, harakatlar, kirim, to'xtatish (taklif — kodda yo'q; menejer — faqat ko'rish)
-
-- **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Holat:** eski
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 8-band.
+- **Fayllar:** `src/pages/warehouses/index.tsx` · `src/pages/warehouses/ui/WarehouseListView.tsx` · `src/pages/warehouses/ui/WarehousesTable.tsx` · `src/pages/warehouses/ui/CreateWarehouseDialog.tsx` · `src/pages/warehouses/ui/ManagerWarehouseRedirect.tsx` · `src/pages/warehouses/ui/NoteAlert.tsx` · `src/entities/warehouse/ui/WarehouseBadges.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewWarehouses` (access.ts → canViewWarehouses)
+- **Rollar:** superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx))
+- **Menyuda:** «Ombor» (`warehouse`) — superadmin, admin, manager (REGIONAL · HYBRID)
+- **Holat:** v2
+- **Izoh:** Trello yXC91RRx (backend hY7uacJu / Elchi-Backend#566), ega qarorlari TafZHzCD. GET /warehouses?status&region_id&search&page&limit → KPI (summary — filtrsiz), «Barchasi · Faol · To'xtatilgan» (counts — viloyat/qidiruvdan keyin), «Viloyat:» (GET /region). «Ombor ochish» — filial: GET /branches/dispatch-destinations (faol REGIONAL/HYBRID, menejeri bilan) minus mavjud omborlar; nom «<filial> ombori» taklifi; mas'ul — filial menejeri (o'qish); POST /warehouses, 409 — «Bu filialda ombor allaqachon bor». Ochilgach — tafsilotga o'tadi. Farq: maketdagi «Ombor ↑↓» saralash tugmasi yo'q (API'da saralash parametri yo'q).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `(taklif) /warehouses/:id` | superadmin | `superadmin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /warehouses/:id` | superadmin | `superadmin-warehouse-stock-in-dialog` — Omborga mahsulot qo'shish — kirim (popup) | [design/fragments/superadmin--warehouse-stock-in-dialog.html](fragments/superadmin--warehouse-stock-in-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /warehouses/:id` | admin | `admin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /warehouses/:id` | admin | `admin-warehouse-stock-in-dialog` — Omborga mahsulot qo'shish — kirim (popup) | [design/fragments/superadmin--warehouse-stock-in-dialog.html](fragments/superadmin--warehouse-stock-in-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /warehouses/:id` | manager | `manager-warehouse-detail` — Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | [design/fragments/manager--warehouse-detail.html](fragments/manager--warehouse-detail.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /warehouses/:id` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses/:id` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses/:id` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses/:id` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses/:id` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /warehouses/:id` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `/warehouses` | superadmin | `superadmin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | v2 |
+| `/warehouses` | superadmin | `superadmin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | v2 |
+| `/warehouses` | admin | `admin-warehouse-list` — Omborlar | [design/fragments/superadmin--warehouse-list.html](fragments/superadmin--warehouse-list.html) | sahifa | v2 |
+| `/warehouses` | admin | `admin-warehouse-create-dialog` — Ombor ochish (popup) | [design/fragments/superadmin--warehouse-create-dialog.html](fragments/superadmin--warehouse-create-dialog.html) | oyna | v2 |
+| `/warehouses` | manager | — Filial menejeri (REGIONAL/HYBRID, qobiliyat `warehouse`) — `/warehouses` uni o'z filiali omboriga (`/warehouses/:id`) olib boradi; filialda ombor yo'q — «Filialingizda ombor yo'q» (maket yo'q — eng yaqini manager-warehouse-detail). | — | — | v2 |
+
+#### `/warehouses/:id` — Ombor tafsiloti — qoldiq, harakatlar, kirim, inventarizatsiya, to'xtatish (menejer — faqat ko'rish)
+
+- **Fayllar:** `src/pages/warehouses/detail/index.tsx` · `src/pages/warehouses/detail/ui/WarehouseKpis.tsx` · `src/pages/warehouses/detail/ui/WarehouseActionsMenu.tsx` · `src/pages/warehouses/detail/ui/StockPanel.tsx` · `src/pages/warehouses/detail/ui/MovementsPanel.tsx` · `src/pages/warehouses/detail/ui/MovementItem.tsx` · `src/pages/warehouses/detail/ui/RecentMovementsCard.tsx` · `src/pages/warehouses/detail/ui/StockInDialog.tsx` · `src/pages/warehouses/detail/ui/ScanProductField.tsx` · `src/pages/warehouses/detail/ui/ScanLinesList.tsx` · `src/pages/warehouses/detail/ui/LinkBarcodeDialog.tsx` · `src/pages/warehouses/detail/ui/InventoryDialog.tsx` · `src/pages/warehouses/detail/ui/ThresholdDialog.tsx` · `src/entities/warehouse/ui/ProductCodeTag.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewWarehouses` (access.ts → canViewWarehouses)
+- **Rollar:** superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx))
+- **Menyuda:** yo'q — «Omborlar» qatori; menejerda — «Ombor» bandi
+- **Holat:** v2
+- **Izoh:** GET /warehouses/:id (KPI, movements_count); «Qoldiq» — GET …/stock?search&market_id&level&page&limit (facets → «Market:», «Holat:»; saralash serverda — mavjud o'sishi); «Harakatlar» — GET …/movements (to'liq jurnal + «Turi:» filtri; maket yo'q — qator ko'rinishi «Oxirgi harakatlar» dan); «Oxirgi harakatlar» — so'nggi 5 ta, «Barchasi» tabga o'tadi. Superadmin/admin: «Excelga yuklash» (GET …/export joriy filtrlar bilan; telefonda yashirin — maket), «Mahsulot qo'shish» — kirim oynasi: Ombor, Market, Mahsulot (USB skaner `useKeyboardScanner`; kamera — markaziy skaner `layer: dialog` maqsadi, faqat QR — ELC-P; nom qidiruvi GET /product), har kod GET …/lookup: bir nechta marketda — market tanlovi, zavod kodi topilmasa «Mahsulotga bog'lash» → PATCH /product/:id {barcode}; POST …/stock-in + Idempotency-Key (tarkib barmoq iziga bog'langan). ⋯ «Inventarizatsiya» (maket yo'q — eng yaqini warehouse-stock-in-dialog; sabab majburiy; POST …/inventory + Idempotency-Key), «Omborni to'xtatish / Qayta yoqish» (tasdiq). «Chegara» katagi bosiladi — «Kam qoldiq chegarasi» oynasi (PATCH …/stock/:productId; maketda tugma ko'rinmaydi — qo'shimcha). Farq: kirim qatoridagi «Mahsulotni tahrirlash» havolasi chizilmagan (o'lchovsiz — faqat ogohlantirish).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/warehouses/:id` | superadmin | `superadmin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | v2 |
+| `/warehouses/:id` | superadmin | `superadmin-warehouse-stock-in-dialog` — Omborga mahsulot qo'shish — kirim (popup) | [design/fragments/superadmin--warehouse-stock-in-dialog.html](fragments/superadmin--warehouse-stock-in-dialog.html) | oyna | v2 |
+| `/warehouses/:id` | admin | `admin-warehouse-detail` — Ombor tafsiloti — qoldiq va harakatlar | [design/fragments/superadmin--warehouse-detail.html](fragments/superadmin--warehouse-detail.html) | sahifa | v2 |
+| `/warehouses/:id` | admin | `admin-warehouse-stock-in-dialog` — Omborga mahsulot qo'shish — kirim (popup) | [design/fragments/superadmin--warehouse-stock-in-dialog.html](fragments/superadmin--warehouse-stock-in-dialog.html) | oyna | v2 |
+| `/warehouses/:id` | manager | `manager-warehouse-detail` — Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | [design/fragments/manager--warehouse-detail.html](fragments/manager--warehouse-detail.html) | sahifa | qisman |
 
 ### Foydalanuvchilar
 
@@ -2051,7 +2043,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 214 · kodda yo'q: 28
+242 ta maket · kodda bor: 218 · kodda yo'q: 24
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2286,10 +2278,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-neworders-create-ai-input-images` | Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92). |
 | `superadmin-ai-assistant` | AI moliyaviy yordamchi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q. |
 | `superadmin-ai-assistant-access-dialog` | AI yordamchi — kirish huquqi (popup) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q. |
-| `superadmin-warehouse-list` | Omborlar | sahifa | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: omborlar ro'yxati — kodda yo'q. |
-| `superadmin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: ombor ochish — kodda yo'q. |
-| `superadmin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: ombor tafsiloti — kodda yo'q. |
-| `superadmin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot qo'shish (kirim) — admin to'g'ridan qo'shadi, filial tasdig'i yo'q; kodda yo'q. |
+| `superadmin-warehouse-list` | Omborlar | sahifa | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
+| `superadmin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
+| `superadmin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
+| `superadmin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `superadmin-users-create-password-sms` | Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi). |
 | `superadmin-users-create-password-result-dialog` | Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | oyna | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish. |
 | `superadmin-neworders-create-manual-source` | Buyurtma yaratish — manba: viloyat ombori yoki HQ | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: manba avtomatik: tuman filialida faol ombor va hamma mahsulot yetarli → o'sha ombor, aks holda HQ; yaratuvchi o'zgartiradi (superadmin, admin, registrator; ruxsatli market). |
@@ -2300,7 +2292,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-158 ta maket · kodda bor: 150 · kodda yo'q: 8
+158 ta maket · kodda bor: 154 · kodda yo'q: 4
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2456,16 +2448,16 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | v2 |
 | `admin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
 | `admin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
-| `admin-warehouse-list` | Omborlar | sahifa | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
-| `admin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
-| `admin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
-| `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
+| `admin-warehouse-list` | Omborlar | sahifa | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
+| `admin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
+| `admin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
+| `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 
 ### manager — Menejer
 
-87 ta maket · kodda bor: 81 · kodda yo'q: 6
+87 ta maket · kodda bor: 82 · kodda yo'q: 5
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2555,7 +2547,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `manager-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `manager-users-create-courier-district` | Yangi xodim — kuryer, «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak. |
-| `manager-warehouse-detail` | Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: viloyat filiali menejeri o'z omborini va ombordan ketadigan buyurtmalarni faqat ko'radi. |
+| `manager-warehouse-detail` | Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | qisman — Kodda bor (yXC91RRx): o'z filiali ombori — sarlavha («Mas'ul: … (siz)»), «Qoldiqni admin boshqaradi» izohi, KPI, «Qoldiq \| Harakatlar», «Oxirgi harakatlar»; amallar yo'q. Yo'q: «Ombordan ketadigan buyurtmalar» kartasi — buyurtma ↔ ombor bog'lanishi (band/chiqim, fulfillment_source) backendda hali yo'q (keyingi order-service PR'i). |
 
 ### registrator — Registrator
 
@@ -2846,6 +2838,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
 | `src/entities/product/ui/ProductThumb.tsx` | `/products`, `/products/create-product/:id` |
+| `src/entities/warehouse/ui/ProductCodeTag.tsx` | `/warehouses/:id` |
+| `src/entities/warehouse/ui/WarehouseBadges.tsx` | `/warehouses` |
 | `src/features/auth/index.tsx` | `/login` |
 | `src/features/auth/ui/LoginForm.tsx` | `/login` |
 | `src/features/auth/ui/SessionExpiredScreen.tsx` | `/login` |
@@ -3298,6 +3292,25 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/users/create/CreateUserPage.tsx` | `/all-users/create-user` |
 | `src/pages/users/detail/UserDetailPage.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/pages/users/list/UserListPage.tsx` | `/all-users` |
+| `src/pages/warehouses/detail/index.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/InventoryDialog.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/LinkBarcodeDialog.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/MovementItem.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/MovementsPanel.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/RecentMovementsCard.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/ScanLinesList.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/ScanProductField.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/StockInDialog.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/StockPanel.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/ThresholdDialog.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/WarehouseActionsMenu.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/detail/ui/WarehouseKpis.tsx` | `/warehouses/:id` |
+| `src/pages/warehouses/index.tsx` | `/warehouses` |
+| `src/pages/warehouses/ui/CreateWarehouseDialog.tsx` | `/warehouses` |
+| `src/pages/warehouses/ui/ManagerWarehouseRedirect.tsx` | `/warehouses` |
+| `src/pages/warehouses/ui/NoteAlert.tsx` | `/warehouses` |
+| `src/pages/warehouses/ui/WarehouseListView.tsx` | `/warehouses` |
+| `src/pages/warehouses/ui/WarehousesTable.tsx` | `/warehouses` |
 | `src/shared/components/PrintModeSelect.tsx` | `/mails/:id` |
 | `src/shared/components/ScanFeedbackOverlay.tsx` | `/scan` |
 | `src/shared/components/popupSelect.tsx` | `/payments/main-cashbox` |
@@ -3384,6 +3397,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
+| Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+4) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
@@ -3394,7 +3408,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
 | Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+16) |
 
-Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`), Ombor (`warehouse`).
+Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
 ### admin — Admin
 
@@ -3407,6 +3421,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`), Ombo
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
+| Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+2) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
@@ -3414,8 +3429,6 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`), Ombo
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
 | Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
-
-Maketda bor, kodda hali yo'q (`plannedMenu`): Ombor (`warehouse`).
 
 ### manager — Menejer
 
@@ -3430,11 +3443,10 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): Ombor (`warehouse`).
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
+| Ombor | `warehouse` | `/warehouses` | `/warehouses` | REGIONAL · HYBRID | izohga qarang |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | HQ · PICKUP · REGIONAL · HYBRID | `manager-users-list` |
 | To'lovlar | `payments` | `/payments` | `/payments` | HQ · REGIONAL · HYBRID | `manager-payments-overview` (+3) |
 | Hududlar | `regions` | `/regions` | `/regions` | barchasi | `manager-regions-scoped` |
-
-Maketda bor, kodda hali yo'q (`plannedMenu`): Ombor (`warehouse`).
 
 ### registrator — Registrator
 

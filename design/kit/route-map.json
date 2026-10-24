@@ -40,6 +40,7 @@
     "canViewAdminNewOrderTabs": { "source": "routes.tsx → canViewAdminNewOrderTabs", "roles": { "superadmin": "", "admin": "" } },
     "canViewRegionStats": { "source": "routes.tsx → canViewRegionStats", "roles": { "superadmin": "", "admin": "", "manager": "", "courier": "", "logist": "taklif — o'z viloyatlari (LG-S3), kodda yo'q" } },
     "canManageDeliveryTariffs": { "source": "access.ts → canManageDeliveryTariffs", "roles": { "superadmin": "", "admin": "" } },
+    "canViewWarehouses": { "source": "access.ts → canViewWarehouses", "roles": { "superadmin": "", "admin": "", "manager": "REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx)" } },
     "hasSelfCashboxAccess": { "source": "routes.tsx → hasSelfCashboxAccess", "roles": { "manager": "", "market": "", "courier": "" } },
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} },
     "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } },
@@ -1803,15 +1804,60 @@
     {"path": "(taklif) /payments/shifts/:id", "section": "finance", "title": "Smena hisoboti va smenalar tarixi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["payments-shift-report"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Kartalar bo'yicha qoldiq + AI natijasi, «Avtomatik yopildi» banneri, hisobot kimlarga yuborilgani. Tarix ro'yxati /payments/shifts (alohida maket chizilmagan — jadval superadmin-orders-list andozasida)."},
     {"path": "(taklif) /payments/shift-settings", "section": "finance", "title": "Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)", "components": [], "views": {"superadmin": ["payments-shift-settings"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi."},
     {"path": "(taklif) /ai-assistant", "section": "finance", "title": "AI moliyaviy yordamchi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["ai-assistant", "ai-assistant-access-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi."},
-    {"path": "(taklif) /warehouses", "section": "products", "title": "Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-list", "warehouse-create-dialog"], "admin": ["warehouse-list", "warehouse-create-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi."},
-    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, kirim, to'xtatish (taklif — kodda yo'q; menejer — faqat ko'rish)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-stock-in-dialog"], "admin": ["warehouse-detail", "warehouse-stock-in-dialog"], "manager": ["warehouse-detail"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."}
+    {
+      "path": "/warehouses",
+      "entry": "yon menyu → «Ma'lumotnoma» → «Ombor»",
+      "section": "products",
+      "title": "Omborlar — vaqtinchalik ombor tizimi (superadmin, admin; menejer — o'z omboriga yo'naltiriladi)",
+      "components": [
+        "src/pages/warehouses/index.tsx",
+        "src/pages/warehouses/ui/WarehouseListView.tsx",
+        "src/pages/warehouses/ui/WarehousesTable.tsx",
+        "src/pages/warehouses/ui/CreateWarehouseDialog.tsx",
+        "src/pages/warehouses/ui/ManagerWarehouseRedirect.tsx",
+        "src/pages/warehouses/ui/NoteAlert.tsx",
+        "src/entities/warehouse/ui/WarehouseBadges.tsx"
+      ],
+      "views": {
+        "superadmin": ["warehouse-list", "warehouse-create-dialog"],
+        "admin": ["warehouse-list", "warehouse-create-dialog"]
+      },
+      "roleNotes": {"manager": "Filial menejeri (REGIONAL/HYBRID, qobiliyat `warehouse`) — `/warehouses` uni o'z filiali omboriga (`/warehouses/:id`) olib boradi; filialda ombor yo'q — «Filialingizda ombor yo'q» (maket yo'q — eng yaqini manager-warehouse-detail)."},
+      "note": "Trello yXC91RRx (backend hY7uacJu / Elchi-Backend#566), ega qarorlari TafZHzCD. GET /warehouses?status&region_id&search&page&limit → KPI (summary — filtrsiz), «Barchasi · Faol · To'xtatilgan» (counts — viloyat/qidiruvdan keyin), «Viloyat:» (GET /region). «Ombor ochish» — filial: GET /branches/dispatch-destinations (faol REGIONAL/HYBRID, menejeri bilan) minus mavjud omborlar; nom «<filial> ombori» taklifi; mas'ul — filial menejeri (o'qish); POST /warehouses, 409 — «Bu filialda ombor allaqachon bor». Ochilgach — tafsilotga o'tadi. Farq: maketdagi «Ombor ↑↓» saralash tugmasi yo'q (API'da saralash parametri yo'q)."
+    },
+    {
+      "path": "/warehouses/:id",
+      "entry": "«Omborlar» qatori; menejerda — «Ombor» bandi",
+      "section": "products",
+      "title": "Ombor tafsiloti — qoldiq, harakatlar, kirim, inventarizatsiya, to'xtatish (menejer — faqat ko'rish)",
+      "components": [
+        "src/pages/warehouses/detail/index.tsx",
+        "src/pages/warehouses/detail/ui/WarehouseKpis.tsx",
+        "src/pages/warehouses/detail/ui/WarehouseActionsMenu.tsx",
+        "src/pages/warehouses/detail/ui/StockPanel.tsx",
+        "src/pages/warehouses/detail/ui/MovementsPanel.tsx",
+        "src/pages/warehouses/detail/ui/MovementItem.tsx",
+        "src/pages/warehouses/detail/ui/RecentMovementsCard.tsx",
+        "src/pages/warehouses/detail/ui/StockInDialog.tsx",
+        "src/pages/warehouses/detail/ui/ScanProductField.tsx",
+        "src/pages/warehouses/detail/ui/ScanLinesList.tsx",
+        "src/pages/warehouses/detail/ui/LinkBarcodeDialog.tsx",
+        "src/pages/warehouses/detail/ui/InventoryDialog.tsx",
+        "src/pages/warehouses/detail/ui/ThresholdDialog.tsx",
+        "src/entities/warehouse/ui/ProductCodeTag.tsx"
+      ],
+      "views": {
+        "superadmin": ["warehouse-detail", "warehouse-stock-in-dialog"],
+        "admin": ["warehouse-detail", "warehouse-stock-in-dialog"],
+        "manager": ["warehouse-detail"]
+      },
+      "note": "GET /warehouses/:id (KPI, movements_count); «Qoldiq» — GET …/stock?search&market_id&level&page&limit (facets → «Market:», «Holat:»; saralash serverda — mavjud o'sishi); «Harakatlar» — GET …/movements (to'liq jurnal + «Turi:» filtri; maket yo'q — qator ko'rinishi «Oxirgi harakatlar» dan); «Oxirgi harakatlar» — so'nggi 5 ta, «Barchasi» tabga o'tadi. Superadmin/admin: «Excelga yuklash» (GET …/export joriy filtrlar bilan; telefonda yashirin — maket), «Mahsulot qo'shish» — kirim oynasi: Ombor, Market, Mahsulot (USB skaner `useKeyboardScanner`; kamera — markaziy skaner `layer: dialog` maqsadi, faqat QR — ELC-P; nom qidiruvi GET /product), har kod GET …/lookup: bir nechta marketda — market tanlovi, zavod kodi topilmasa «Mahsulotga bog'lash» → PATCH /product/:id {barcode}; POST …/stock-in + Idempotency-Key (tarkib barmoq iziga bog'langan). ⋯ «Inventarizatsiya» (maket yo'q — eng yaqini warehouse-stock-in-dialog; sabab majburiy; POST …/inventory + Idempotency-Key), «Omborni to'xtatish / Qayta yoqish» (tasdiq). «Chegara» katagi bosiladi — «Kam qoldiq chegarasi» oynasi (PATCH …/stock/:productId; maketda tugma ko'rinmaydi — qo'shimcha). Farq: kirim qatoridagi «Mahsulotni tahrirlash» havolasi chizilmagan (o'lchovsiz — faqat ogohlantirish)."
+    }
   ],
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
     "logist": ["orders", "mails", "batches", "couriers"],
-    "superadmin": ["aiAssistant", "warehouse"],
-    "admin": ["warehouse"],
-    "manager": ["warehouse"]
+    "superadmin": ["aiAssistant"]
   },
   "plannedBottomNav": {
     "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali to'liq bo'lmagan pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi). Yangi rollar (ROL-0): kataklar kodda yozilgan, lekin menyu bandlari hali yo'q — har band o'z sahifasi bilan keladi (logist — LG-5, market_operator — MO-3, investor — IN-2 oladi).",
@@ -1865,23 +1911,15 @@
     "superadmin-neworders-create-ai-input-images": "Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92).",
     "superadmin-ai-assistant": "Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q.",
     "superadmin-ai-assistant-access-dialog": "Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q.",
-    "superadmin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborlar ro'yxati — kodda yo'q.",
-    "superadmin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor ochish — kodda yo'q.",
-    "superadmin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor tafsiloti — kodda yo'q.",
-    "superadmin-warehouse-stock-in-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot qo'shish (kirim) — admin to'g'ridan qo'shadi, filial tasdig'i yo'q; kodda yo'q.",
-    "admin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
-    "admin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
-    "admin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
-    "admin-warehouse-stock-in-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
     "market-products-warehouse-stock": "Trello 2026-10-23 (ega topshirig'i), 8-band: market o'z mahsulotlari qoldig'ini omborlar bo'yicha ko'radi (faqat ko'rish) — kodda yo'q.",
     "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
     "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish.",
     "superadmin-neworders-create-manual-source": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: manba avtomatik: tuman filialida faol ombor va hamma mahsulot yetarli → o'sha ombor, aks holda HQ; yaratuvchi o'zgartiradi (superadmin, admin, registrator; ruxsatli market).",
     "superadmin-users-edit-market-warehouse": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: market bo'yicha «Ombordan buyurtma yaratish» kaliti (sukut o'chiq, SA/ADMIN).",
-    "superadmin-products-edit-dialog-barcode": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: mahsulot shtrix kodi (EAN-13) va Elchi kodi ELC-P-… + QR stiker chop etish.",
-    "manager-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: viloyat filiali menejeri o'z omborini va ombordan ketadigan buyurtmalarni faqat ko'radi."
+    "superadmin-products-edit-dialog-barcode": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: mahsulot shtrix kodi (EAN-13) va Elchi kodi ELC-P-… + QR stiker chop etish."
   },
   "partialViews": {
+    "manager-warehouse-detail": "Kodda bor (yXC91RRx): o'z filiali ombori — sarlavha («Mas'ul: … (siz)»), «Qoldiqni admin boshqaradi» izohi, KPI, «Qoldiq | Harakatlar», «Oxirgi harakatlar»; amallar yo'q. Yo'q: «Ombordan ketadigan buyurtmalar» kartasi — buyurtma ↔ ombor bog'lanishi (band/chiqim, fulfillment_source) backendda hali yo'q (keyingi order-service PR'i).",
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
     "superadmin-notifications-send-schedule": "Kodda bor (KM-3): «Yuborish vaqti» (faqat «Auditoriya») — Darhol / Belgilangan vaqtda, «Sana» (bugundan max_schedule_days gacha), «Soat» (30 daqiqa; bugun o'tgan soatlar ro'yxatda yo'q; reklamada taqiq soatlari o'chiq — «Reklama taqiqi», oyna faqat GET campaigns/schedule-policy dan), «Toshkent vaqti (UTC+5)», ko'k «Ertaga, 10:00 da yuboriladi»; tugma «Rejalashtirish», ostida «Ertaga, 10:00 · N ta qabul qiluvchi»; scheduled_at — +05:00 bilan, «Darhol» da yuborilmaydi. «Kampaniyalar tarixi» (CampaignHistoryCard) — holat tablari (backend state), jadval / planshetda qisqa ustunlar / telefonda kartalar, Pagination, yuborilayotganda har 3 s. Farq: qatorda «18:40 da so'ralgan, tungi taqiq» va «Partiya 3 marta yiqildi» izohlari yo'q — ro'yxat javobida requested_scheduled_at va partiya urinishlari soni yo'q (last_error — xom matn, ko'rsatilmaydi); o'rniga yuborilayotgan reklama tunda to'xtasa — «Tungi taqiq — ertaga, 09:00 da davom etadi», navbatdagisi taqiqqa surilsa — vaqt paused_until va «Tungi taqiq tufayli surildi». «E'lon» kategoriyasi backendda yo'q — kategoriya nomi («Tizim»). Bitta sahifada ham sahifalash tugmalari (Pagination primitivi).",
     "superadmin-notifications-send-confirm-scheduled-dialog": "Kodda bor (KM-3): maketdagidek (sarlavha ostida «N ta qabul qiluvchiga yuboriladi», ko'k vaqt bloki, Kimga · Qabul qiluvchilar · Kanallar · Kategoriya, «Orqaga» · «Rejalashtirish»). Reklama taqiqqa tushsa (schedule-policy check.shifted) — ko'k blok o'rniga sariq «Reklama … da yuboriladi».",

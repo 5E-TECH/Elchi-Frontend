@@ -1,6 +1,7 @@
 // dizayn-v2: superadmin-warehouse-list, superadmin-warehouse-detail, manager-warehouse-detail, market-products-warehouse-stock
 import { useTranslation } from "react-i18next";
-import { StatusBadge, type Tone } from "../../../shared/ui/primitives";
+import { StatusBadge } from "../../../shared/ui/primitives";
+import { STOCK_LEVEL_TONE } from "../lib/levelTone";
 import type { StockLevel, WarehouseStatus } from "../model/types";
 
 /** Ombor holati: «Faol» — success, «To'xtatilgan» — neutral (maket `.el-badge-dot`). */
@@ -14,8 +15,6 @@ export const WarehouseStatusBadge = ({ status, className }: { status: WarehouseS
     />
   );
 };
-
-export const STOCK_LEVEL_TONE: Record<StockLevel, Tone> = { ok: "success", low: "warning", out: "danger" };
 
 /** Qoldiq holati: «Yetarli» — success, «Kam qoldi» — warning, «Tugagan» — danger. */
 export const StockLevelBadge = ({ level, className }: { level: StockLevel; className?: string }) => {
