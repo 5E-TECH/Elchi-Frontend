@@ -11,6 +11,7 @@ import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../.
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
+import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 
@@ -72,6 +73,16 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
   );
 
   const units = items.reduce((total, item) => total + (Number(item.quantity) || 0), 0);
+
+  // 6kHnNH9j: «Qayerdan» — ombor nomi yoki «Toshkent HQ» (manba bloki bilan bir xil so'rov, keshdan).
+  const canChooseSource = useCanChooseOrderSource();
+  const source = useOrderSource(control, canChooseSource);
+  const sourceText =
+    source.effective === "WAREHOUSE"
+      ? (source.preview?.warehouse?.name ?? "—")
+      : source.effective === "HQ"
+        ? t("fulfillment.source.hq")
+        : "—";
 
   // «Umumiy summa» taklifi — mahsulotlar narxidan (katalog `Step2Combined` bilan bir xil so'rov, keshdan).
   const { findProduct } = useOrderCatalog(control);
@@ -144,6 +155,14 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         </dd>
         <dt className="text-text-muted">{t("createSummaryDistrict")}</dt>
         <dd className="m-0 min-w-0 truncate font-semibold text-text">{districtName ?? "—"}</dd>
+        {canChooseSource ? (
+          <>
+            <dt className="text-text-muted">{t("fulfillment.source.summary")}</dt>
+            <dd className="m-0 min-w-0 truncate font-semibold text-text" data-testid="summary-source">
+              {sourceText}
+            </dd>
+          </>
+        ) : null}
       </dl>
 
       {deliveryPrice != null ? (

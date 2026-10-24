@@ -13,6 +13,7 @@ import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/
 import { getUzbekistanPhoneDigits } from "../../../../shared/lib/phone";
 import { useCatalogSearch } from "./useCatalogSearch";
 import {
+  Badge,
   Button,
   Card,
   EmptyState,
@@ -25,6 +26,7 @@ import {
   type SelectOption,
 } from "../../../../shared/ui/primitives";
 import { orderItemKey, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import { hasNoTariffs, readProductImageUrl, readProductPrice, tariffFor, type CatalogProduct } from "../model/orderPricing";
 import { CreateAlert } from "./CreateAlert";
 import { CustomerPhoneSuggest, type CustomerSuggestScope } from "./CustomerPhoneSuggest";
@@ -186,6 +188,9 @@ const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => 
  * market) va «Narx yo'q» holati, sukut tur — `default_tariff`; mahsulot rasmi (40 px, `ProductThumb`); narx matni
  * «2 × 45 000 so'm» · «Narxi kiritilmagan» · «Katalogdan tashqari · narxsiz».
  * Summa, operator va «Buyurtma yaratish» — yon ustundagi `Step2Summary` da.
+ * 6kHnNH9j (maket `superadmin-neworders-create-manual-source`): manba bloki ko'rinadigan rollarda tanlangan mahsulot
+ * ostida «Omborda: N» (hudud ombori tekshirilgan bo'lsa; yetmasa — ogohlantirish toni) va «Katalogda yo'q mahsulot»
+ * izohi «Omborda yo'q mahsulot qo'shilsa, butun buyurtma HQ'dan ketadi». Manbaning o'zi — `OrderSourceCard`.
  */
 const Step2Combined = () => {
   const { t, i18n } = useTranslation(["orders", "common"]);
@@ -215,6 +220,8 @@ const Step2Combined = () => {
   const { data: districts, isLoading: distLoading } = useGetDistricts(selectedRegionId);
 
   const { products: allProducts, findProduct, isLoading: prodLoading } = useOrderCatalog(control);
+  const canChooseSource = useCanChooseOrderSource();
+  const { stockOf } = useOrderSource(control, canChooseSource);
   const tariffState = useMarketTariffs(control);
   const tariffs = tariffState.status === "ready" ? tariffState.tariffs : null;
   const defaultDeliveryType = tariffs?.defaultType ?? null;
@@ -632,7 +639,11 @@ const Step2Combined = () => {
             </ul>
 
             {/* Katalogda yo'q («maxsus») mahsulot — katalog bo'sh bo'lsa ham buyurtma yaratiladi. */}
-            <Field id="create-custom-product" label={t("createCustomProductLabel")}>
+            <Field
+              id="create-custom-product"
+              label={t("createCustomProductLabel")}
+              hint={canChooseSource ? t("fulfillment.source.customHint") : undefined}
+            >
               <TextInput
                 placeholder={t("createCustomProductPlaceholder")}
                 value={customName}
@@ -679,6 +690,7 @@ const Step2Combined = () => {
                   const product = findProduct(item.product_id);
                   const isCustom = item.product_id == null;
                   const name = product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`;
+                  const stock = stockOf(item.product_id);
                   return (
                     <li
                       key={key}
@@ -699,7 +711,7 @@ const Step2Combined = () => {
                         label={t("createRemoveItem", { name })}
                         onClick={() => removeItem(key)}
                       />
-                      <div className="col-start-2 col-end-4">
+                      <div className="col-start-2 col-end-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                         <QuantityStepper
                           value={item.quantity}
                           groupLabel={t("itemQuantityGroup", { name })}
@@ -707,6 +719,16 @@ const Step2Combined = () => {
                           increaseLabel={t("increaseQuantity", { name })}
                           onChange={(next) => setQuantity(key, next)}
                         />
+                        {stock ? (
+                          <Badge
+                            tone={stock.enough ? "success" : "warning"}
+                            dot
+                            title={t("fulfillment.source.inStockTitle", { name: stock.warehouseName })}
+                            data-testid="item-warehouse-stock"
+                          >
+                            {t("fulfillment.source.inStock", { value: formatNumberLocalized(stock.available, { language }) })}
+                          </Badge>
+                        ) : null}
                       </div>
                     </li>
                   );

@@ -17,6 +17,8 @@ import { Trans, useTranslation } from "react-i18next";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
 import Step2Summary from "./ui/Step2Summary";
+import OrderSourceCard from "./ui/OrderSourceCard";
+import { useCanChooseOrderSource } from "./model/useOrderSource";
 import OrderStepper from "./ui/OrderStepper";
 import TodayOrdersCard from "./ui/TodayOrdersCard";
 import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
@@ -156,6 +158,8 @@ const OrderCreateFormContent = () => {
   // (faqat AI qismi; holatlar `market-new-orders-create-ai-*`).
   const isMarketOperator = role === "market_operator";
   const isMarketRole = isMarketSideRole(role);
+  // 6kHnNH9j: «Qayerdan yuboriladi» bloki (superadmin, admin, registrator; market — kalit bilan) va `fulfillment`.
+  const canChooseSource = useCanChooseOrderSource();
   const navigationState = location.state as { selectedMarket?: MarketOption } | null;
   const selectedMarketFromState = navigationState?.selectedMarket ?? null;
   const [step, setStep] = useState<1 | 2>(
@@ -310,7 +314,11 @@ const OrderCreateFormContent = () => {
       return;
     }
 
-    createOrder.mutate(buildCreateOrderPayload(values, { includeMarketId: !isMarketRole }), {
+    const payload = buildCreateOrderPayload(values, {
+      includeMarketId: !isMarketRole,
+      includeFulfillment: canChooseSource,
+    });
+    createOrder.mutate(payload, {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ["orders"] });
         reset({
@@ -452,6 +460,7 @@ const OrderCreateFormContent = () => {
                   />
                 ) : null}
                 {step === 2 ? <Step2Combined /> : null}
+                {step === 2 && canChooseSource ? <OrderSourceCard /> : null}
               </div>
             )}
 

@@ -3,7 +3,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../../entities/order";
 import { useOrders } from "../../../entities/order/api/orderApi";
-import type { DeliveryType } from "../../../entities/order/types/order";
+import type { DeliveryType, OrderFulfillmentSource } from "../../../entities/order/types/order";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import {
   Button,
@@ -290,6 +290,23 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
           onValueChange={(value) => patch({ deliveryType: value === ALL ? "" : value })}
         />
       </Section>
+
+      {/* 6kHnNH9j: «Manba» (maket yo'q — eng yaqini «Yetkazish turi» segmenti). */}
+      {scope.source ? (
+        <Section labelId={`${idBase}-source`} label={t("fulfillment.filter")}>
+          <SegmentedControl<typeof ALL | OrderFulfillmentSource>
+            ariaLabel={t("fulfillment.filter")}
+            fullWidth
+            options={[
+              { value: ALL, label: all },
+              { value: "WAREHOUSE", label: t("fulfillment.filterWarehouse") },
+              { value: "HQ", label: t("fulfillment.filterHq") },
+            ]}
+            value={draft.fulfillmentSource || ALL}
+            onValueChange={(value) => patch({ fulfillmentSource: value === ALL ? "" : value })}
+          />
+        </Section>
+      ) : null}
     </Dialog>
   );
 };
