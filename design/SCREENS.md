@@ -1241,7 +1241,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/pages/warehouses/index.tsx` · `src/pages/warehouses/ui/WarehouseListView.tsx` · `src/pages/warehouses/ui/WarehousesTable.tsx` · `src/pages/warehouses/ui/CreateWarehouseDialog.tsx` · `src/pages/warehouses/ui/ManagerWarehouseRedirect.tsx` · `src/pages/warehouses/ui/NoteAlert.tsx` · `src/entities/warehouse/ui/WarehouseBadges.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewWarehouses` (access.ts → canViewWarehouses)
 - **Rollar:** superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx); menyu bandi faqat GET /warehouses bo'sh bo'lmasa (XtcEyQjb)), registrator (hamma omborlar, faqat ko'rish (XtcEyQjb, ega 2026-10-24); menyuda yo'q — maket roles.json registrator.menu da «warehouse» yo'q (ega qarori kutilmoqda))
-- **Menyuda:** «Ombor» (`warehouse`) — superadmin, admin, manager (REGIONAL · HYBRID)
+- **Menyuda:** «Ombor» (`warehouse`) — superadmin, admin, manager (REGIONAL · HYBRID), registrator
 - **Holat:** v2
 - **Izoh:** Trello yXC91RRx (backend hY7uacJu / Elchi-Backend#566), ega qarorlari TafZHzCD. GET /warehouses?status&region_id&search&page&limit → KPI (summary — filtrsiz), «Barchasi · Faol · To'xtatilgan» (counts — viloyat/qidiruvdan keyin), «Viloyat:» (GET /region). «Ombor ochish» — filial: GET /branches/dispatch-destinations (faol REGIONAL/HYBRID, menejeri bilan) minus mavjud omborlar; nom «<filial> ombori» taklifi; mas'ul — filial menejeri (o'qish); POST /warehouses, 409 — «Bu filialda ombor allaqachon bor». Ochilgach — tafsilotga o'tadi. Farq: maketdagi «Ombor ↑↓» saralash tugmasi yo'q (API'da saralash parametri yo'q).
 
@@ -3471,6 +3471,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `registrator-new-orders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `registrator-mails-today` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `registrator-products-list` (+3) |
+| Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | izohga qarang |
 
 ### market — Market
 
