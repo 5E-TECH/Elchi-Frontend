@@ -485,7 +485,7 @@ L.push('| Route | Bo\'lim | Asosiy fayl | Rollar | Maketlar | Holat |', '|---|--
 for (const s of MAP.sections) {
   for (const r of MAP.routes.filter((x) => x.section === s.id)) {
     const rec = records.get(r.path);
-    const main = rec?.comps.length ? rec.comps.map((c) => code(c.file)).join(' + ') : code(r.components[0]);
+    const main = rec?.comps.length ? rec.comps.map((c) => code(c.file)).join(' + ') : r.components?.length ? code(r.components[0]) : '— (taklif)';
     L.push(`| ${code(cell(r.path))} | ${cell(s.title.split(' — ')[0])} | ${main} | ${cell(rolesText(rolesOf(r, rec)))} | ${countViews(r)} | ${statusOf.get(r.path)} |`);
   }
 }

@@ -5962,6 +5962,303 @@
    "fragment": "superadmin--notifications-create-exists-inactive-dialog",
    "order": 114.7,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-accounts",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — kartalar va hisob raqamlar",
+   "fragment": "superadmin--payments-main-cashbox-accounts",
+   "order": 64.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cashbox-account-form-dialog",
+   "menuKey": "payments",
+   "title": "Karta yoki hisob raqam qo'shish (popup)",
+   "fragment": "superadmin--payments-cashbox-account-form-dialog",
+   "order": 64.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-fill-dialog-account",
+   "menuKey": "payments",
+   "title": "Kassaga kirim — karta yoki hisob raqamni tanlash (popup)",
+   "fragment": "superadmin--payments-main-cashbox-fill-dialog-account",
+   "order": 64.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-shift-dialog-accounts",
+   "menuKey": "payments",
+   "title": "Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup)",
+   "fragment": "superadmin--payments-main-cashbox-shift-dialog-accounts",
+   "order": 64.8,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-report",
+   "menuKey": "payments",
+   "title": "Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish",
+   "fragment": "superadmin--payments-shift-report",
+   "order": 64.9,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-settings",
+   "menuKey": "payments",
+   "title": "Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot",
+   "fragment": "superadmin--payments-shift-settings",
+   "order": 64.95,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "shift-report-messages",
+   "menuKey": "shift-report-messages",
+   "title": "Smena hisoboti — Telegram va tizim xabarlari",
+   "fragment": "tizim--shift-report-messages",
+   "order": 14,
+   "kind": "standalone"
+  },
+  {
+   "role": "tizim",
+   "viewId": "scan-feedback",
+   "menuKey": "scan-feedback",
+   "title": "Skaner natijasi — to'liq ekran rang effekti va ovozlar",
+   "fragment": "tizim--scan-feedback",
+   "order": 15,
+   "kind": "standalone"
+  },
+  {
+   "role": "common",
+   "viewId": "settings-scanner-feedback",
+   "menuKey": "settings",
+   "title": "Sozlamalar — Skaner: rangli effekt va ovozlar",
+   "fragment": "common--settings-scanner-feedback",
+   "order": 397.5,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "receipts",
+   "menuKey": "receipts",
+   "title": "Chek va paket cheki — yangi dizayn",
+   "fragment": "tizim--receipts",
+   "order": 16,
+   "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-ai-input-images",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish",
+   "fragment": "superadmin--neworders-create-ai-input-images",
+   "order": 29.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant",
+   "menuKey": "aiAssistant",
+   "title": "AI moliyaviy yordamchi",
+   "fragment": "superadmin--ai-assistant",
+   "order": 72.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-access-dialog",
+   "menuKey": "aiAssistant",
+   "title": "AI yordamchi — kirish huquqi (popup)",
+   "fragment": "superadmin--ai-assistant-access-dialog",
+   "order": 72.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "warehouse-list",
+   "menuKey": "warehouse",
+   "title": "Omborlar",
+   "fragment": "superadmin--warehouse-list",
+   "order": 78.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "warehouse-create-dialog",
+   "menuKey": "warehouse",
+   "title": "Ombor ochish (popup)",
+   "fragment": "superadmin--warehouse-create-dialog",
+   "order": 78.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "warehouse-detail",
+   "menuKey": "warehouse",
+   "title": "Ombor tafsiloti — qoldiq va harakatlar",
+   "fragment": "superadmin--warehouse-detail",
+   "order": 78.3,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "warehouse-stock-in-dialog",
+   "menuKey": "warehouse",
+   "title": "Omborga mahsulot qo'shish — kirim (popup)",
+   "fragment": "superadmin--warehouse-stock-in-dialog",
+   "order": 78.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "warehouse-list",
+   "menuKey": "warehouse",
+   "title": "Omborlar",
+   "fragment": "superadmin--warehouse-list",
+   "order": 196.81,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "warehouse-create-dialog",
+   "menuKey": "warehouse",
+   "title": "Ombor ochish (popup)",
+   "fragment": "superadmin--warehouse-create-dialog",
+   "order": 196.82,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "warehouse-detail",
+   "menuKey": "warehouse",
+   "title": "Ombor tafsiloti — qoldiq va harakatlar",
+   "fragment": "superadmin--warehouse-detail",
+   "order": 196.83,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "warehouse-stock-in-dialog",
+   "menuKey": "warehouse",
+   "title": "Omborga mahsulot qo'shish — kirim (popup)",
+   "fragment": "superadmin--warehouse-stock-in-dialog",
+   "order": 196.84,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "products-warehouse-stock",
+   "menuKey": "products",
+   "title": "Mahsulotlar — omborlardagi qoldiq",
+   "fragment": "market--products-warehouse-stock",
+   "order": 338.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-create-password-sms",
+   "menuKey": "users",
+   "title": "Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi",
+   "fragment": "superadmin--users-create-password-sms",
+   "order": 81.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-create-password-result-dialog",
+   "menuKey": "users",
+   "title": "Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup)",
+   "fragment": "superadmin--users-create-password-result-dialog",
+   "order": 81.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-manual-source",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — manba: viloyat ombori yoki HQ",
+   "fragment": "superadmin--neworders-create-manual-source",
+   "order": 28.9,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-market-warehouse",
+   "menuKey": "users",
+   "title": "Marketni tahrirlash — «Ombordan buyurtma yaratish» kaliti (popup)",
+   "fragment": "superadmin--users-edit-market-warehouse",
+   "order": 84.23,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "products-edit-dialog-barcode",
+   "menuKey": "products",
+   "title": "Mahsulotni tahrirlash — shtrix kod va QR stiker (popup)",
+   "fragment": "superadmin--products-edit-dialog-barcode",
+   "order": 76.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "warehouse-detail",
+   "menuKey": "warehouse",
+   "title": "Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish)",
+   "fragment": "manager--warehouse-detail",
+   "order": 279.5,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "product-labels",
+   "menuKey": "product-labels",
+   "title": "Mahsulot stikeri — QR va shtrix kod (40×30, 58×40)",
+   "fragment": "tizim--product-labels",
+   "order": 17,
+   "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-delivery-tariffs",
+   "menuKey": "regions",
+   "title": "Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator",
+   "fragment": "superadmin--regions-delivery-tariffs",
+   "order": 90.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-delivery-tariff-edit-dialog",
+   "menuKey": "regions",
+   "title": "Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup)",
+   "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
+   "order": 90.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-delivery-tariffs",
+   "menuKey": "regions",
+   "title": "Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator",
+   "fragment": "superadmin--regions-delivery-tariffs",
+   "order": 201.5,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-delivery-tariff-edit-dialog",
+   "menuKey": "regions",
+   "title": "Tarifni o'zgartirish (popup)",
+   "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
+   "order": 201.6,
+   "kind": "dialog"
   }
  ],
  "groupTitles": {
@@ -5975,7 +6272,11 @@
    "errors": "Xato va bo'sh holatlar",
    "motion": "Harakat va kirish qulayligi",
    "scanner": "Kamera skaner (telefon kamerasi)",
-   "charts": "Grafiklar (statistika, tahlil)"
+   "charts": "Grafiklar (statistika, tahlil)",
+   "shift-report-messages": "Smena hisoboti xabarlari (Telegram, tizim)",
+   "scan-feedback": "Skaner natijasi: rang effekti va ovoz",
+   "receipts": "Chek va paket cheki",
+   "product-labels": "Mahsulot stikeri (QR, shtrix kod)"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",
@@ -5994,7 +6295,9 @@
    "notifications": "Bildirishnomalar",
    "activityLogs": "Faoliyat jurnali",
    "ops": "Ops vositalari",
-   "scan": "Skaner (kamera va natija)"
+   "scan": "Skaner (kamera va natija)",
+   "aiAssistant": "AI yordamchi",
+   "warehouse": "Ombor"
   },
   "admin": {
    "dashboard": "Bosh sahifa",
@@ -6011,7 +6314,8 @@
    "integrations": "Integratsiyalar",
    "notifications": "Bildirishnomalar",
    "activityLogs": "Faoliyat jurnali",
-   "scan": "Skaner (kamera va natija)"
+   "scan": "Skaner (kamera va natija)",
+   "warehouse": "Ombor"
   },
   "manager": {
    "dashboard": "Bosh sahifa · HQ, Viloyat, Qabul punkti, Aralash",
@@ -6026,7 +6330,8 @@
    "products": "Mahsulotlar · HQ, Viloyat, Qabul punkti, Aralash",
    "users": "Foydalanuvchilar · HQ, Viloyat, Qabul punkti, Aralash",
    "regions": "Hududlar · HQ, Viloyat, Qabul punkti, Aralash",
-   "scan": "Skaner (kamera va natija)"
+   "scan": "Skaner (kamera va natija)",
+   "warehouse": "Ombor · Viloyat, Aralash"
   },
   "registrator": {
    "dashboard": "Bosh sahifa",
