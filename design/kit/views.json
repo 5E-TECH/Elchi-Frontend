@@ -6223,6 +6223,42 @@
    "fragment": "tizim--product-labels",
    "order": 17,
    "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-delivery-tariffs",
+   "menuKey": "regions",
+   "title": "Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator",
+   "fragment": "superadmin--regions-delivery-tariffs",
+   "order": 90.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-delivery-tariff-edit-dialog",
+   "menuKey": "regions",
+   "title": "Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup)",
+   "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
+   "order": 90.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-delivery-tariffs",
+   "menuKey": "regions",
+   "title": "Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator",
+   "fragment": "superadmin--regions-delivery-tariffs",
+   "order": 201.5,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-delivery-tariff-edit-dialog",
+   "menuKey": "regions",
+   "title": "Tarifni o'zgartirish (popup)",
+   "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
+   "order": 201.6,
+   "kind": "dialog"
   }
  ],
  "groupTitles": {
