@@ -5,6 +5,7 @@
 export type {
   ChannelStatusCounts,
   DispatchAudience,
+  DispatchAudienceRecipient,
   DispatchHistoryStatus,
   SentDetail,
   SentDetailParams,

@@ -28,7 +28,8 @@ export const SECONDARY_COLUMN_CLASS = "@max-[64rem]:hidden";
  * «Yuborilgan xabarlar» jadvali (maket `*-notifications-sent`): Sana · Sarlavha (+ matn boshi) · Kim yubordi ·
  * Kimga · Kanallar · Natija (+ izoh) · tafsilot (›). Planshetda (< 1024) «Kim yubordi», «Kanallar» va › yashirin;
  * telefonda — kartalar (sarlavha + sana, natija, «Kimga:», kanallar · muallif). Sarlavha va karta — tafsilot oynasini
- * ochadi (`Pressable`); «Kimga» — ro'yxat javobida auditoriya yo'q (ega S2, backend kartasi) — «—» + qabul qiluvchilar.
+ * ochadi (`Pressable`); «Kimga» — ro'yxat javobidagi `audience` (NS-3, NwlmrcMf: rol, «Hamma», bitta odam — ism · rol,
+ * ro'yxat) + qabul qiluvchilar; ichki dispatch (auditoriya `null`) — «—».
  */
 export const SentTable = ({ rows, busy, onOpen }: Props) => {
   const { t, i18n } = useTranslation("notifications");
