@@ -13,7 +13,12 @@ import type { DistrictMergeController } from "./useDistrictMerge";
  * «Qayta urinish», «chala qoldi»), natijada «Ko'chirildi» — `moved_live`, «… ko'chadi» va «Bog'langan» sonlari.
  */
 const BOZ: MergeDistrict = { id: "173", name: "Bo'z tumani", regionId: "2", regionName: "Andijon" };
-const IZBOSKAN: MergeDistrict = { id: "28", name: "Izboskan tumani", regionId: "2", regionName: "Andijon" };
+const IZBOSKAN: MergeDistrict = {
+  id: "28",
+  name: "Izboskan tumani",
+  regionId: "2",
+  regionName: "Andijon",
+};
 
 const controller = (state: MergeState): DistrictMergeController => ({
   state,
@@ -88,16 +93,22 @@ describe("DistrictMergeDialog — xato oynalari (tf324cXN)", () => {
     const copied = plain(await navigator.clipboard.readText());
     expect(copied).toContain("Birlashtirib bo'lmadi");
     expect(copied).toContain("Bo'z tumani (ID 173) → Izboskan tumani (ID 28)");
-    expect(copied).toContain("Sabab: Sonlar mos kelmadi — Izboskan tumanida buyurtmalar 1 255 ta, kutilgan 1 254 ta.");
+    expect(copied).toContain(
+      "Sabab: Sonlar mos kelmadi — Izboskan tumanida buyurtmalar 1 255 ta, kutilgan 1 254 ta.",
+    );
     expect(copied).toContain("Kod: count_mismatch · orders");
     expect(copied).toContain("trace_id: 7d0c2a4e");
     expect(await screen.findByText("Xabar nusxalandi")).toBeInTheDocument();
   });
 
   it("503 timeout: «Servis javob bermadi», «… 15 soniya ichida javob bermadi»", () => {
-    renderDialog(errorState(503, { reason: "timeout", kind: "users", timeoutMs: 15000, mismatches: [] }));
+    renderDialog(
+      errorState(503, { reason: "timeout", kind: "users", timeoutMs: 15000, mismatches: [] }),
+    );
     const dialog = screen.getByRole("alertdialog", { name: "Servis javob bermadi" });
-    expect(dialog).toHaveTextContent("Birlashtirish to'xtatildi. Ko'chirilganlar Bo'z tumaniga qaytarildi");
+    expect(dialog).toHaveTextContent(
+      "Birlashtirish to'xtatildi. Ko'chirilganlar Bo'z tumaniga qaytarildi",
+    );
     expect(plain(within(dialog).getByTestId("merge-error-reason").textContent)).toContain(
       "Foydalanuvchilar ko'chirilmadi — servis 15 soniya ichida javob bermadi.",
     );
@@ -122,14 +133,20 @@ describe("DistrictMergeDialog — xato oynalari (tf324cXN)", () => {
     const dialog = screen.getByRole("alertdialog", { name: "Birlashtirish chala qoldi" });
     expect(within(dialog).getByRole("alert")).toHaveTextContent("Qo'lda tuzatish kerak");
     const list = within(dialog).getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" });
-    const rows = within(list).getAllByRole("listitem").map((row) => plain(row.textContent));
+    const rows = within(list)
+      .getAllByRole("listitem")
+      .map((row) => plain(row.textContent));
     expect(rows).toEqual([
       "Buyurtmalar · 14 taIzboskan tumanida qoldi",
       "Foydalanuvchilar · ID'lar noma'lumJoyi aniqlanmadi — jurnalda tekshiring",
     ]);
-    expect(dialog).toHaveTextContent("«Tuman birlashtirish chala qoldi» yozuvi, Bo'z tumani (ID 173).");
+    expect(dialog).toHaveTextContent(
+      "«Tuman birlashtirish chala qoldi» yozuvi, Bo'z tumani (ID 173).",
+    );
     expect(within(dialog).queryByRole("button", { name: "Qayta urinish" })).toBeNull();
-    expect(within(dialog).getByRole("button", { name: "Faoliyat jurnalini ochish" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Faoliyat jurnalini ochish" }),
+    ).toBeInTheDocument();
   });
 
   it("unknown reason code: dialog without the «Sabab» row", () => {
@@ -158,11 +175,14 @@ describe("DistrictMergeDialog — sonlar (vsmpTweI, usage)", () => {
     });
     const dialog = screen.getByRole("dialog", { name: "Tumanlar birlashtirildi" });
     const moved = within(dialog).getByRole("list", { name: "Ko'chirildi" });
-    expect(within(moved).getAllByRole("listitem").map((row) => plain(row.textContent))).toEqual([
-      "Buyurtmalar128 ta",
-      "Foydalanuvchilar6 ta",
-    ]);
-    expect(within(dialog).getByRole("list", { name: "Izboskan tumanida endi" })).toBeInTheDocument();
+    expect(
+      within(moved)
+        .getAllByRole("listitem")
+        .map((row) => plain(row.textContent)),
+    ).toEqual(["Buyurtmalar128 ta", "Foydalanuvchilar6 ta"]);
+    expect(
+      within(dialog).getByRole("list", { name: "Izboskan tumanida endi" }),
+    ).toBeInTheDocument();
   });
 
   it("tanlash: «Izboskan tumaniga ko'chadi» — GET district/:id/usage sonlari", async () => {
@@ -173,7 +193,11 @@ describe("DistrictMergeDialog — sonlar (vsmpTweI, usage)", () => {
     const dialog = screen.getByRole("dialog", { name: "Tumanni birlashtirish" });
     const list = await within(dialog).findByRole("list", { name: "Ko'chiriladiganlar" });
     expect(within(dialog).getByText("Izboskan tumaniga ko'chadi")).toBeInTheDocument();
-    expect(within(list).getAllByRole("listitem").map((row) => plain(row.textContent))).toEqual([
+    expect(
+      within(list)
+        .getAllByRole("listitem")
+        .map((row) => plain(row.textContent)),
+    ).toEqual([
       "Buyurtmalar128 ta",
       "FoydalanuvchilarMijoz, kuryer va market6 ta",
       "Filiallar1 ta",
@@ -192,6 +216,8 @@ describe("DistrictMergeDialog — sonlar (vsmpTweI, usage)", () => {
     );
     const dialog = screen.getByRole("alertdialog", { name: "Bo'z tumanini o'chirib bo'lmaydi" });
     expect(within(dialog).getByText("Bog'langan")).toBeInTheDocument();
-    expect(within(dialog).getByRole("list", { name: "Tumanga bog'langanlar" })).toHaveTextContent("128 ta");
+    expect(within(dialog).getByRole("list", { name: "Tumanga bog'langanlar" })).toHaveTextContent(
+      "128 ta",
+    );
   });
 });

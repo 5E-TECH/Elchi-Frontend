@@ -201,8 +201,10 @@ const REASONS: ReadonlySet<string> = new Set<MergeErrorReason>([
 ]);
 const asKind = (value: unknown): MergeKind | null =>
   typeof value === "string" && (MERGE_KINDS as readonly string[]).includes(value) ? (value as MergeKind) : null;
-const asId = (value: unknown): string | null =>
-  typeof value === "string" && value.trim() ? value.trim() : typeof value === "number" && Number.isFinite(value) ? String(value) : null;
+const asId = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : null;
+};
 
 /**
  * 409/503 xato javobi (`{ statusCode, message, data: { reason, details }, trace_id }`, tf324cXN) → oyna uchun

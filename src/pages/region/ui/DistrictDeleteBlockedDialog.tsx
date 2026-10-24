@@ -21,7 +21,12 @@ export type DistrictDeleteBlockedDialogProps = {
  * filial bog'langan). Oyna holat kodi bo'yicha ochiladi; «Bog'langan» sonlari — javobdagi `data.usage` dan
  * (DM-2; yo'q yoki hammasi 0 bo'lsa blok chizilmaydi). Server matni ko'rsatilmaydi.
  */
-const DistrictDeleteBlockedDialog = ({ district, usage = null, onClose, onMerge }: DistrictDeleteBlockedDialogProps) => {
+const DistrictDeleteBlockedDialog = ({
+  district,
+  usage = null,
+  onClose,
+  onMerge,
+}: DistrictDeleteBlockedDialogProps) => {
   const { t } = useTranslation("region");
   // Yopilish harakati davomida oxirgi tuman (va sonlari) ko'rinib turadi.
   const [shown, setShown] = useState({ district, usage });

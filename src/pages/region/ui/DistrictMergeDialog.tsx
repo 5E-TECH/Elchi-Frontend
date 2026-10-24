@@ -139,7 +139,8 @@ const hasCounts = (counts: MergeCounts | null | undefined): counts is MergeCount
 /** «128 ta» — `formatNumberLocalized` bilan. */
 const useCountTa = () => {
   const { t, i18n } = useTranslation("region");
-  return (value: number) => t("v2.common.countTa", { count: formatNumberLocalized(value, { language: i18n.language }) });
+  return (value: number) =>
+    t("v2.common.countTa", { count: formatNumberLocalized(value, { language: i18n.language }) });
 };
 
 /**
@@ -318,7 +319,10 @@ const StrandedList = ({
           const Icon = ROW_ICONS[row.kind];
           const kind = t(`v2.districts.rows.${row.kind}`);
           return (
-            <li key={`${row.kind}-${index}`} className="flex items-start gap-3 border-b border-border py-3 last:border-b-0">
+            <li
+              key={`${row.kind}-${index}`}
+              className="flex items-start gap-3 border-b border-border py-3 last:border-b-0"
+            >
               <Icon size={18} aria-hidden="true" className="mt-px shrink-0 text-text-muted" />
               <span className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="text-[13px] font-semibold text-text">
@@ -531,7 +535,11 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
               <CountListSkeleton label={t("v2.districts.merge.countsLoading")} />
             ) : (
               <CountBlock
-                title={presentation?.movesTo ? presentation.movesTo(target) : t("v2.districts.merge.movesTo", { name: nameOf(target) })}
+                title={
+                  presentation?.movesTo
+                    ? presentation.movesTo(target)
+                    : t("v2.districts.merge.movesTo", { name: nameOf(target) })
+                }
                 counts={usage.data}
                 label={t("v2.districts.merge.movesAria")}
               />
@@ -697,7 +705,12 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
       body: (
         <>
           {variant === "manual" ? (
-            <MergeAlert tone="danger" icon={TriangleAlert} role="alert" title={t("v2.districts.mergeError.manualTitle")}>
+            <MergeAlert
+              tone="danger"
+              icon={TriangleAlert}
+              role="alert"
+              title={t("v2.districts.mergeError.manualTitle")}
+            >
               {t("v2.districts.mergeError.manualText", { from: nameOf(source) })}
             </MergeAlert>
           ) : (
