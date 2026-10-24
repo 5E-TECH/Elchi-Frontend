@@ -28,7 +28,14 @@ import DistrictDeleteBlockedDialog from "../../ui/DistrictDeleteBlockedDialog";
 import DistrictMergeDialog from "../../ui/DistrictMergeDialog";
 import { useDistrictMerge } from "../../ui/useDistrictMerge";
 import { filterBoardRegions } from "../../model/boardModel";
-import { httpStatusOf, mergeCandidates, type MergeDistrict } from "../../model/districtMerge";
+import {
+  deleteBlockedUsage,
+  districtUsageKey,
+  httpStatusOf,
+  mergeCandidates,
+  type MergeCounts,
+  type MergeDistrict,
+} from "../../model/districtMerge";
 
 type DistrictItem = { id: string; name: string };
 type RegionWithDistricts = { id: string; name: string; districts: DistrictItem[] };
@@ -87,7 +94,7 @@ const RegionDistrictsPage = () => {
   const [editingName, setEditingName] = useState("");
 
   const canManage = role === "superadmin" || role === "admin";
-  const [blocked, setBlocked] = useState<MergeDistrict | null>(null);
+  const [blocked, setBlocked] = useState<{ district: MergeDistrict; usage: MergeCounts | null } | null>(null);
 
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
@@ -154,8 +161,12 @@ const RegionDistrictsPage = () => {
     },
     onError: (error, district) => {
       // 400 — tumanga buyurtma/foydalanuvchi/filial bog'langan (oNAE3LW9): birlashtirishni taklif qiladigan oyna.
-      if (httpStatusOf(error) === 400) setBlocked(district);
-      else showError(error, "districts.deleteError");
+      // `data.usage` — «Bog'langan» sonlari; birlashtirish oynasining «… ko'chadi» sonlari ham shundan boshlanadi.
+      if (httpStatusOf(error) === 400) {
+        const usage = deleteBlockedUsage(error);
+        if (usage) queryClient.setQueryData<MergeCounts | null>(districtUsageKey(district.id), usage);
+        setBlocked({ district, usage });
+      } else showError(error, "districts.deleteError");
     },
   });
 
@@ -403,7 +414,8 @@ const RegionDistrictsPage = () => {
       )}
 
       <DistrictDeleteBlockedDialog
-        district={blocked}
+        district={blocked?.district ?? null}
+        usage={blocked?.usage}
         onClose={() => setBlocked(null)}
         onMerge={(district) => {
           setBlocked(null);

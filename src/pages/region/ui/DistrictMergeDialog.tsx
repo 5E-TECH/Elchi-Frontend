@@ -1,11 +1,13 @@
-// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown, superadmin-regions-sato-codes-merge-dialog
+// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-error, superadmin-regions-districts-merge-error-unavailable, superadmin-regions-districts-merge-error-manual, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-error, admin-regions-districts-merge-error-unavailable, admin-regions-districts-merge-error-manual, admin-regions-districts-merge-unknown, superadmin-regions-sato-codes-merge-dialog
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   Building2,
   CircleCheck,
   CircleQuestionMark,
+  CircleX,
   Clock,
+  Copy,
   Info,
   MapPin,
   Merge,
@@ -18,14 +20,17 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
 import {
   Badge,
   Button,
   Dialog,
   Field,
   Select,
+  Skeleton,
   Spinner,
   TONE_SOFT,
   type DialogProps,
@@ -33,11 +38,17 @@ import {
 } from "../../../shared/ui/primitives";
 import {
   formatElapsed,
+  MERGE_KINDS,
+  mergeErrorVariant,
+  mergeReasonLines,
   type MergeCounts,
   type MergeDistrict,
+  type MergeKind,
+  type MergeReasonLine,
   type MergeState,
+  type MergeStranded,
 } from "../model/districtMerge";
-import { ACTIVITY_LOGS_PATH, type DistrictMergeController } from "./useDistrictMerge";
+import { ACTIVITY_LOGS_PATH, useDistrictUsage, type DistrictMergeController } from "./useDistrictMerge";
 
 /** Tuman qatori (`.el-stat-icon` + nom + viloyat) — oynalarning «qaysi tuman» bloki. */
 export const DistrictSummary = ({
@@ -81,13 +92,15 @@ const MergeAlert = ({
   icon: Icon,
   title,
   children,
+  role = "note",
 }: {
-  tone: "warning" | "info";
+  tone: "warning" | "info" | "danger";
   icon: LucideIcon;
   title: ReactNode;
   children: ReactNode;
+  role?: "note" | "alert";
 }) => (
-  <div role="note" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT[tone])}>
+  <div role={role} className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT[tone])}>
     <Icon size={20} aria-hidden="true" className="shrink-0" />
     <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-text">
       <div className="font-bold">{title}</div>
@@ -117,11 +130,107 @@ const ElapsedBadge = ({ startedAt }: { startedAt: number }) => {
   );
 };
 
-const ROWS: ReadonlyArray<{ key: keyof MergeCounts; icon: LucideIcon }> = [
-  { key: "orders", icon: ShoppingBag },
-  { key: "users", icon: Users },
-  { key: "branches", icon: Building2 },
-];
+const ROW_ICONS: Record<MergeKind, LucideIcon> = { orders: ShoppingBag, users: Users, branches: Building2 };
+
+/** Hech bo'lmasa bitta nolmas son bormi (hammasi 0 — blok chizilmaydi). */
+const hasCounts = (counts: MergeCounts | null | undefined): counts is MergeCounts =>
+  counts != null && MERGE_KINDS.some((kind) => counts[kind] > 0);
+
+/** «128 ta» — `formatNumberLocalized` bilan. */
+const useCountTa = () => {
+  const { t, i18n } = useTranslation("region");
+  return (value: number) => t("v2.common.countTa", { count: formatNumberLocalized(value, { language: i18n.language }) });
+};
+
+/**
+ * Sonlar ro'yxati («Bog'langan», «… ko'chadi», «Ko'chirilayotganlar», «Ko'chirildi»): har tur — ikonka, nom
+ * (foydalanuvchilarda «Mijoz, kuryer va market» izohi), «N ta». Nol qatorlar chizilmaydi (maket: SATO oynasida
+ * filialsiz, «servis javob bermadi» da faqat buyurtmalar). Chegarali (`border`) yoki `sunken` fonli (natija).
+ */
+export const CountList = ({
+  counts,
+  label,
+  surface = "border",
+  withHints = true,
+}: {
+  counts: MergeCounts;
+  /** Ro'yxat nomi (ekran o'quvchi). */
+  label: string;
+  surface?: "border" | "sunken";
+  withHints?: boolean;
+}) => {
+  const { t } = useTranslation("region");
+  const countTa = useCountTa();
+  const kinds = MERGE_KINDS.filter((kind) => counts[kind] > 0);
+  if (!kinds.length) return null;
+  return (
+    <ul
+      aria-label={label}
+      className={cx(
+        "m-0 list-none rounded-xl px-3 py-0",
+        surface === "border" ? "border border-border" : "bg-sunken",
+      )}
+    >
+      {kinds.map((kind) => {
+        const Icon = ROW_ICONS[kind];
+        return (
+          <li
+            key={kind}
+            className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-b-0"
+          >
+            <Icon size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[13px] font-semibold text-text">{t(`v2.districts.rows.${kind}`)}</span>
+              {withHints && kind === "users" ? (
+                <span className="text-xs text-text-muted">{t("v2.districts.rows.usersHint")}</span>
+              ) : null}
+            </span>
+            <span className="text-sm font-semibold whitespace-nowrap text-text">{countTa(counts[kind])}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+};
+
+/** Sarlavhali sonlar bloki (`.el-overline` + ro'yxat); sonlar bo'lmasa — hech narsa. */
+export const CountBlock = ({
+  title,
+  counts,
+  label,
+  surface,
+  withHints,
+}: {
+  title: ReactNode;
+  counts: MergeCounts | null | undefined;
+  label: string;
+  surface?: "border" | "sunken";
+  withHints?: boolean;
+}) =>
+  hasCounts(counts) ? (
+    <div className="flex flex-col gap-2">
+      <Overline>{title}</Overline>
+      <CountList counts={counts} label={label} surface={surface} withHints={withHints} />
+    </div>
+  ) : null;
+
+/** Sonlar so'ralayotganda — ro'yxat shaklidagi skelet (3 qator). */
+const CountListSkeleton = ({ label }: { label: string }) => (
+  <div role="status" aria-busy="true" aria-label={label} className="flex flex-col gap-2">
+    <Skeleton width={160} height={12} />
+    <div className="rounded-xl border border-border px-3">
+      {MERGE_KINDS.map((kind) => (
+        <div key={kind} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-b-0">
+          <Skeleton shape="circle" width={18} height={18} />
+          <span className="min-w-0 flex-1">
+            <Skeleton width={kind === "users" ? 120 : 88} height={12} />
+          </span>
+          <Skeleton width={44} height={14} />
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 /** «{tuman}da endi» — tirik sonlar, ostida «oldin N ta» (`target_before`). */
 const TargetCounts = ({
@@ -133,15 +242,16 @@ const TargetCounts = ({
   before: MergeCounts | null;
   after: MergeCounts;
 }) => {
-  const { t, i18n } = useTranslation("region");
-  const countTa = (value: number) =>
-    t("v2.common.countTa", { count: formatNumberLocalized(value, { language: i18n.language }) });
+  const { t } = useTranslation("region");
+  const countTa = useCountTa();
   const label = t("v2.districts.result.nowIn", { name });
   return (
     <div className="flex flex-col gap-2">
       <Overline>{label}</Overline>
       <ul aria-label={label} className="m-0 list-none rounded-xl bg-sunken px-3 py-0">
-        {ROWS.map(({ key, icon: Icon }) => (
+        {MERGE_KINDS.map((key) => {
+          const Icon = ROW_ICONS[key];
+          return (
           <li
             key={key}
             className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-b-0"
@@ -159,7 +269,68 @@ const TargetCounts = ({
               ) : null}
             </span>
           </li>
-        ))}
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
+/** «Sabab» qatori (`details.reason` dan; server matni emas). Noma'lum kod — chizilmaydi. */
+const ReasonBox = ({ lines }: { lines: readonly string[] }) => {
+  const { t } = useTranslation("region");
+  if (!lines.length) return null;
+  return (
+    <div
+      data-testid="merge-error-reason"
+      className="flex flex-col gap-1.5 rounded-[10px] border border-border px-3 py-2.5"
+    >
+      <span className="text-xs font-semibold text-text-muted">{t("v2.districts.mergeError.reasonLabel")}</span>
+      {lines.map((line, index) => (
+        <span key={index} className="text-[13px] text-text">
+          {line}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+/** «{manba}ga qaytmadi» — kompensatsiyadan keyin joyiga qaytmagan yozuvlar (`details.stranded`). */
+const StrandedList = ({
+  title,
+  label,
+  rows,
+  placeOf,
+}: {
+  title: string;
+  label: string;
+  rows: readonly MergeStranded[];
+  placeOf: (row: MergeStranded) => string;
+}) => {
+  const { t } = useTranslation("region");
+  const countTa = useCountTa();
+  if (!rows.length) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <Overline>{title}</Overline>
+      <ul aria-label={label} className="m-0 list-none rounded-xl border border-border px-3 py-0">
+        {rows.map((row, index) => {
+          const Icon = ROW_ICONS[row.kind];
+          const kind = t(`v2.districts.rows.${row.kind}`);
+          return (
+            <li key={`${row.kind}-${index}`} className="flex items-start gap-3 border-b border-border py-3 last:border-b-0">
+              <Icon size={18} aria-hidden="true" className="mt-px shrink-0 text-text-muted" />
+              <span className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-[13px] font-semibold text-text">
+                  {row.count == null
+                    ? t("v2.districts.mergeError.strandedUnknown", { kind })
+                    : t("v2.districts.mergeError.strandedCount", { kind, count: countTa(row.count) })}
+                </span>
+                <span className="text-xs [overflow-wrap:anywhere] text-text-muted">{placeOf(row)}</span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -189,6 +360,8 @@ export type DistrictMergePresentation = {
   targetHint?: (source: MergeDistrict, target: MergeDistrict) => ReactNode;
   /** «Bu amalni qaytarib bo'lmaydi» matni. */
   irreversibleText?: (source: MergeDistrict) => ReactNode;
+  /** «{maqsad}ga ko'chadi» sonlar bloki sarlavhasi (SATO: «Nom (ID N) ga ko'chadi»). */
+  movesTo?: (target: MergeDistrict) => string;
 };
 
 export type DistrictMergeDialogProps = {
@@ -211,16 +384,17 @@ const WIDTH_520 = "md:w-[520px]";
  * «TUMANNI BIRLASHTIRISH» OYNASI (oNAE3LW9) — sahifadan ajratilgan: tumanlar sahifasi (o'chirib bo'lmaydi
  * oynasidan) va SATO takroriylari (SA-2) ochadi. Bir `Dialog`, holatga qarab mazmuni:
  * tanlash (`merge-dialog`, `merge-target`) → jarayon (`merge-progress`, yopilmaydi, `beforeunload`) →
- * natija (`merge-result`) yoki noma'lum (`merge-unknown`, «Qayta urinish» yo'q).
- * Sonlar bloklari («Bog'langan», «… ko'chadi», «Ko'chirildi») va xato oynalari — backend N1 dan keyin (DM-2);
- * jurnal yozuvi nomlari — DM-3.
+ * natija (`merge-result`, «Ko'chirildi» — `moved_live`) yoki noma'lum (`merge-unknown`, «Qayta urinish» yo'q)
+ * yoki xato (`merge-error`, `-error-unavailable`, `-error-manual` — 409/503 dagi `data.reason` / `details` dan,
+ * DM-2). «… ko'chadi» / «Ko'chirilayotganlar» sonlari — `GET district/:id/usage`. Jurnal yozuvi nomlari — DM-3.
  */
 const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: DistrictMergeDialogProps) => {
-  const { t } = useTranslation("region");
+  const { t, i18n } = useTranslation("region");
   const nameOf = (district: MergeDistrict) => presentation?.displayName?.(district) ?? district.name;
   const navigate = useNavigate();
-  const { state, select, submit, close, refresh } = merge;
+  const { state, select, submit, retry, close, refresh } = merge;
   const inProgress = state.phase === "progress";
+  const countTa = useCountTa();
 
   // Jarayonda sahifani yopish/yangilash — brauzer so'raydi (ilova ichidagi o'tish modal oyna ortida yopiq).
   useEffect(() => {
@@ -251,9 +425,30 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
   if (state.phase !== "idle" && state !== shown) setShown(state);
   const view = state.phase === "idle" ? shown : state;
 
+  // Manba tumanning tirik sonlari: tanlashda so'raladi, jarayonda keshdagisi ko'rsatiladi.
+  const usageSourceId = view.phase === "confirm" || view.phase === "progress" ? view.source.id : null;
+  const usage = useDistrictUsage(usageSourceId, state.phase === "confirm");
+
   const closeAndRefresh = () => {
     close();
     refresh();
+  };
+
+  /** Sabab qatori → matn: sonlar `formatNumberLocalized`, tuman — oynadagi nom, tur — kichik harfli ko'plik. */
+  const reasonText = (line: MergeReasonLine, source: MergeDistrict, target: MergeDistrict) => {
+    const number = (value: number | undefined) =>
+      formatNumberLocalized(value ?? 0, { language: i18n.language });
+    const kindLower = line.kind
+      ? t(`v2.districts.mergeError.kinds.${line.kind}`)
+      : t("v2.districts.mergeError.kinds.any");
+    const kindTitle = line.kind ? t(`v2.districts.rows.${line.kind}`) : t("v2.districts.mergeError.kinds.any");
+    return t(`v2.districts.mergeError.reason.${line.key}`, {
+      name: nameOf(line.district === "source" ? source : target),
+      kind: line.key.startsWith("countMismatch") ? kindLower : kindTitle,
+      expected: number(line.expected),
+      actual: number(line.actual),
+      seconds: number(line.seconds),
+    });
   };
 
   let content: {
@@ -332,6 +527,17 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
             </Field>
           </div>
           {target ? (
+            usage.isPending && usage.fetchStatus === "fetching" ? (
+              <CountListSkeleton label={t("v2.districts.merge.countsLoading")} />
+            ) : (
+              <CountBlock
+                title={presentation?.movesTo ? presentation.movesTo(target) : t("v2.districts.merge.movesTo", { name: nameOf(target) })}
+                counts={usage.data}
+                label={t("v2.districts.merge.movesAria")}
+              />
+            )
+          ) : null}
+          {target ? (
             <MergeAlert tone="warning" icon={TriangleAlert} title={t("v2.districts.merge.irreversibleTitle")}>
               {presentation?.irreversibleText
                 ? presentation.irreversibleText(source)
@@ -384,6 +590,9 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
             </p>
             <ElapsedBadge startedAt={startedAt} />
           </div>
+          {hasCounts(usage.data) ? (
+            <CountList counts={usage.data} label={t("v2.districts.progress.movingAria")} />
+          ) : null}
           <MergeAlert tone="info" icon={Info} title={t("v2.districts.progress.keepOpenTitle")}>
             {t("v2.districts.progress.keepOpenText")}
           </MergeAlert>
@@ -414,6 +623,13 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
       },
       body: (
         <>
+          <CountBlock
+            title={t("v2.districts.result.moved")}
+            counts={outcome.moved}
+            label={t("v2.districts.result.moved")}
+            surface="sunken"
+            withHints={false}
+          />
           {outcome.after ? (
             <TargetCounts name={nameOf(target)} before={outcome.before} after={outcome.after} />
           ) : null}
@@ -424,6 +640,103 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
         <Button variant="primary" onClick={close}>
           {t("v2.districts.result.close")}
         </Button>
+      ),
+    };
+  } else if (view.phase === "error" && view.details) {
+    const { source, target, status, details } = view;
+    const variant = mergeErrorVariant(status, details);
+    const reasons = mergeReasonLines(details).map((line) => reasonText(line, source, target));
+    const placeOf = (row: MergeStranded) =>
+      row.districtId == null
+        ? t("v2.districts.mergeError.strandedNowhere")
+        : row.districtId === target.id
+          ? t("v2.districts.mergeError.strandedIn", { name: nameOf(target) })
+          : row.districtId === source.id
+            ? t("v2.districts.mergeError.strandedIn", { name: nameOf(source) })
+            : t("v2.districts.mergeError.strandedInId", { id: row.districtId });
+    const title = t(`v2.districts.mergeError.title.${variant}`);
+    const copyReport = () => {
+      const report = [
+        title,
+        `${source.name} (ID ${source.id}) → ${target.name} (ID ${target.id}) · ${source.regionName}`,
+        ...reasons.map((line) => `${t("v2.districts.mergeError.reasonLabel")}: ${line}`),
+        ...details.stranded.map(
+          (row) =>
+            `${t(`v2.districts.rows.${row.kind}`)}: ${row.count == null ? "?" : countTa(row.count)} — ${placeOf(row)}`,
+        ),
+        `${t("v2.districts.mergeError.copyCode")}: ${[details.reason ?? "—", details.kind].filter(Boolean).join(" · ")}`,
+        details.traceId ? `trace_id: ${details.traceId}` : null,
+        `${t("v2.districts.mergeError.copyTime")}: ${new Date().toISOString()}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      void copyToClipboard(report).then((copied) => {
+        if (copied) notify.success(t("v2.districts.mergeError.copied"));
+        else notify.error(t("v2.districts.mergeError.copyFailed"));
+      });
+    };
+    const note =
+      variant === "manual"
+        ? t("v2.districts.mergeError.note.manual", { name: source.name, id: source.id })
+        : variant === "unavailable"
+          ? t("v2.districts.mergeError.note.unavailable")
+          : details.reason === "count_mismatch"
+            ? t("v2.districts.mergeError.note.countMismatch")
+            : t("v2.districts.mergeError.note.error");
+    content = {
+      role: "alertdialog",
+      size: variant === "manual" ? "lg" : "md",
+      className: variant === "manual" ? WIDTH_520 : undefined,
+      props: {
+        title,
+        description: t(`v2.districts.mergeError.text.${variant}`, { from: nameOf(source) }),
+        icon: CircleX,
+        iconTone: "danger",
+        iconShape: "circle",
+      },
+      body: (
+        <>
+          {variant === "manual" ? (
+            <MergeAlert tone="danger" icon={TriangleAlert} role="alert" title={t("v2.districts.mergeError.manualTitle")}>
+              {t("v2.districts.mergeError.manualText", { from: nameOf(source) })}
+            </MergeAlert>
+          ) : (
+            <DistrictSummary title={`${nameOf(source)} → ${nameOf(target)}`} subtitle={source.regionName} />
+          )}
+          <ReasonBox lines={reasons} />
+          {variant === "manual" ? (
+            <StrandedList
+              title={t("v2.districts.mergeError.strandedTitle", { from: nameOf(source) })}
+              label={t("v2.districts.mergeError.strandedAria", { from: nameOf(source) })}
+              rows={details.stranded}
+              placeOf={placeOf}
+            />
+          ) : null}
+          <DialogNote>{note}</DialogNote>
+        </>
+      ),
+      footer: (
+        <>
+          <Button variant="secondary" leftIcon={Copy} onClick={copyReport}>
+            {t("v2.districts.mergeError.copy")}
+          </Button>
+          {variant === "manual" ? (
+            <Button
+              variant="primary"
+              leftIcon={ScrollText}
+              onClick={() => {
+                close();
+                navigate(ACTIVITY_LOGS_PATH);
+              }}
+            >
+              {t("v2.districts.mergeError.journal")}
+            </Button>
+          ) : (
+            <Button variant="primary" leftIcon={RefreshCw} onClick={retry}>
+              {t("v2.districts.mergeError.retry")}
+            </Button>
+          )}
+        </>
       ),
     };
   } else if (view.phase === "unknown") {
@@ -489,7 +802,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
 
   return (
     <Dialog
-      open={state.phase !== "idle" && state.phase !== "error"}
+      open={state.phase !== "idle" && !(state.phase === "error" && !state.details)}
       onClose={view.phase === "unknown" ? closeAndRefresh : close}
       role={content.role}
       size={content.size}

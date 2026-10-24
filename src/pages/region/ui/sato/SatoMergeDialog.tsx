@@ -75,6 +75,7 @@ export const SatoMergeDialog = ({ merge, districts, fallbackFocus }: Props) => {
           : hint;
       },
       irreversibleText: (from) => t("v2.sato.merge.irreversibleText", { id: from.id }),
+      movesTo: (target) => t("v2.sato.merge.movesTo", { name: target.name, id: target.id }),
     };
   }, [codeById, t]);
 
