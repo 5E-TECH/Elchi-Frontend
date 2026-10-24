@@ -92,6 +92,10 @@ jobs:
 
       - name: E2E (Playwright)
         if: github.event_name == 'pull_request'
+        # Ilova vaqtni brauzer mahalliy vaqtida ko'rsatadi; foydalanuvchilar va lokal muhit — Toshkent.
+        # Runner UTC'da edi → «18:00» kutgan testlar «13:00» ko'rardi (realtime-shift). Node ham, Chromium ham TZ dan oladi.
+        env:
+          TZ: Asia/Tashkent
         run: npx playwright test --reporter=line
 
       - name: E2E natijalari (yiqilganda)
