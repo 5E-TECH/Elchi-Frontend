@@ -239,11 +239,46 @@ const sessionsMock = () => {
   };
 };
 
+/**
+ * NG-C (G085w5Qr): `GET /notifications` — Telegram guruhlari jadvali to'ldirilgan ko'rinishda (bo'sh holat emas), maket
+ * `superadmin-notifications-telegram-groups` qatorlari: faol, bot chiqarilgan (`kicked`), qo'lda (`manual`), guruh
+ * topilmadi (`chat_not_found`), yuborishda rad (`blocked_on_send`) va sababi noma'lum (`null`) nofaol guruhlar. Market
+ * nomi qatordagi `market` obyektidan (`GET /markets` bo'sh). `?market_id` bo'lsa — faqat o'sha market qatorlari
+ * (foydalanuvchi tafsilotidagi «Telegram guruhi» kartasi). Vaqtlar «hozir» dan orqaga (sintetik ma'lumot).
+ */
+const NOTIFICATION_GROUPS = [
+  [12, 'Baraka Shop', '-1002184736577', 'cancel', null, 20],
+  [12, 'Baraka Shop', '-1002184736519', 'create', null, 25],
+  [27, 'Nur Elektronika', '-1001937420815', 'create', 'kicked', 26 * 60],
+  [31, 'Chilonzor Market', '-1002066514118', 'cancel', null, 3 * 24 * 60],
+  [18, "Ipak Yo'li Savdo", '-1001845530264', 'create', 'manual', 6 * 24 * 60],
+  [39, 'Mehr Kosmetika', '-1001772904456', 'create', 'chat_not_found', 9 * 24 * 60],
+  [44, 'Sharq Gilamlari', '-1002310078841', 'create', 'blocked_on_send', 12 * 24 * 60],
+  [52, 'Bahor Kiyim', '-1002251846630', 'cancel', 'unknown-row', 14 * 24 * 60],
+];
+const notificationGroupsMock = (query) => {
+  const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
+  const marketId = query?.get('market_id');
+  const items = NOTIFICATION_GROUPS.map(([market_id, name, group_id, group_type, reason, minutes], index) => {
+    const inactive = reason !== null;
+    return {
+      id: String(index + 1), market_id: String(market_id), market: { id: market_id, name }, group_id, group_type,
+      bot_slug: null, is_active: !inactive,
+      // `unknown-row` — migratsiyadan oldingi nofaol qator: sabab va sana `null`.
+      inactive_reason: inactive && reason !== 'unknown-row' ? reason : null,
+      inactive_at: inactive && reason !== 'unknown-row' ? ago(minutes - 30) : null,
+      createdAt: ago(minutes + 7 * 24 * 60),
+    };
+  }).filter((row) => !marketId || row.market_id === marketId);
+  return { statusCode: 200, data: { items, meta: { page: 1, limit: 10, total: items.length, totalPages: 1 } } };
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
+  if (path === 'notifications') return notificationGroupsMock(query);
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };
