@@ -951,7 +951,8 @@
       "loading": "Определяем источник",
       "inStock": "На складе: {{value}}",
       "inStockTitle": "Доступно — {{name}}",
-      "summary": "Откуда"
+      "summary": "Откуда",
+      "notInStock": "Нет на складе"
     }
   }
 }

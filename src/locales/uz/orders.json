@@ -926,7 +926,8 @@
       "loading": "Manba aniqlanmoqda",
       "inStock": "Omborda: {{value}}",
       "inStockTitle": "Mavjud dona — {{name}}",
-      "summary": "Qayerdan"
+      "summary": "Qayerdan",
+      "notInStock": "Omborda yo'q"
     }
   }
 }

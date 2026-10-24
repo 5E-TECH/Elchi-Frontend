@@ -934,7 +934,8 @@
       "loading": "Determining the source",
       "inStock": "In stock: {{value}}",
       "inStockTitle": "Available — {{name}}",
-      "summary": "Ships from"
+      "summary": "Ships from",
+      "notInStock": "Not in stock"
     }
   }
 }

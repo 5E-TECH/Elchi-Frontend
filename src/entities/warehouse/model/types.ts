@@ -453,3 +453,18 @@ export type ResolveSourceRequest = {
   market_id?: string;
   items: { product_id: string; quantity: number }[];
 };
+
+/** `GET /warehouses/availability` — buyurtma formasi katalogidagi «Omborda: N». */
+export type AvailabilityParams = {
+  district_id?: string;
+  region_id?: string;
+  /** Xodim — majburiy (yoki `product_ids`); market tomoni — e'tiborsiz (token). */
+  market_id?: string;
+};
+
+export type WarehouseAvailability = {
+  /** Hudud ombori (to'xtatilgan bo'lsa ham); yo'q — `null`. */
+  warehouse: SourceWarehouse | null;
+  /** Mahsulot → mavjud dona (faqat omborda qatori borlari; to'xtatilgan omborda — bo'sh). */
+  available: Record<string, number>;
+};

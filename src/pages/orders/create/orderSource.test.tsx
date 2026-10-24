@@ -55,8 +55,14 @@ const PAUSED = {
 
 let resolveReply: unknown = OK;
 
+const AVAILABILITY = { region_id: "12", warehouse: WAREHOUSE, items: [{ product_id: "501", on_hand: 31, reserved: 1, available: 30 }] };
+
 const staffGet = (url: string) =>
-  url === "markets" ? Promise.resolve({ data: { statusCode: 200, message: "ok", data: MARKETS } }) : aiApiGet(url);
+  url === "markets"
+    ? Promise.resolve({ data: { statusCode: 200, message: "ok", data: MARKETS } })
+    : url === "warehouses/availability"
+      ? Promise.resolve({ data: AVAILABILITY })
+      : aiApiGet(url);
 
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
@@ -143,6 +149,20 @@ describe("«Qayerdan yuboriladi» — superadmin", () => {
     await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.objectContaining({ fulfillment: "hq" })));
   });
 
+  it("katalogda «Omborda: 30» / «Omborda yo'q» — GET /warehouses/availability (tuman, market)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: stateOf("superadmin") });
+    await toStep2(user);
+    await pickOption(user, "customer.region_id", "Samarqand viloyati • 1718");
+    await pickOption(user, "customer.district_id", "Urgut • 1718236");
+    const catalog = await screen.findByRole("list", { name: /katalogi/ });
+    await waitFor(() => expect(within(catalog).getAllByTestId("catalog-warehouse-stock")).toHaveLength(2));
+    expect(within(catalog).getByRole("button", { name: /Telefon ushlagich/ })).toHaveTextContent("Omborda: 30");
+    expect(within(catalog).getByRole("button", { name: /Avto changyutgich/ })).toHaveTextContent("Omborda yo'q");
+    const call = mocks.get.mock.calls.find(([url]) => url === "warehouses/availability");
+    expect(call?.[1]).toEqual({ params: { district_id: "201", region_id: "12", market_id: "3" } });
+  });
+
   it("yaratilganda tanlov o'zgarmasa — fulfillment=auto", async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: stateOf("admin") });
@@ -221,6 +241,8 @@ describe("«Qayerdan yuboriladi» — rollar", () => {
     expect(screen.queryByTestId("summary-source")).not.toBeInTheDocument();
     await new Promise((done) => setTimeout(done, 450));
     expect(resolveCalls()).toHaveLength(0);
+    expect(mocks.get.mock.calls.some(([url]) => url === "warehouses/availability")).toBe(false);
+    expect(screen.queryByTestId("catalog-warehouse-stock")).not.toBeInTheDocument();
   });
 
   it("market: «Ombordan buyurtma yaratish» yoqilgan — blok bor, so'rovda market_id yo'q (token)", async () => {

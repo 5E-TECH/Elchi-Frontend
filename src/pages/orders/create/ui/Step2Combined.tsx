@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { ProductThumb } from "../../../../entities/product/ui/ProductThumb";
+import { useWarehouseAvailability } from "../../../../entities/warehouse";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
@@ -222,6 +223,24 @@ const Step2Combined = () => {
   const { products: allProducts, findProduct, isLoading: prodLoading } = useOrderCatalog(control);
   const canChooseSource = useCanChooseOrderSource();
   const { stockOf } = useOrderSource(control, canChooseSource);
+  // Katalogdagi «Omborda: N» / «Omborda yo'q» (maket `*-create-manual-source`) — tuman hududi ombori bo'yicha.
+  const selectedDistrictId = useWatch({ control, name: "customer.district_id" }) ?? "";
+  const availabilityParams = useMemo(
+    () =>
+      canChooseSource && selectedDistrictId && (isMarketRole || productSourceMarketId)
+        ? {
+            district_id: selectedDistrictId,
+            ...(selectedRegionId ? { region_id: selectedRegionId } : {}),
+            ...(isMarketRole ? {} : { market_id: productSourceMarketId }),
+          }
+        : null,
+    [canChooseSource, isMarketRole, productSourceMarketId, selectedDistrictId, selectedRegionId],
+  );
+  const availability = useWarehouseAvailability(availabilityParams);
+  const activeAvailability =
+    availabilityParams && availability.data?.warehouse?.status === "ACTIVE" && !availability.isPlaceholderData
+      ? availability.data
+      : null;
   const tariffState = useMarketTariffs(control);
   const tariffs = tariffState.status === "ready" ? tariffState.tariffs : null;
   const defaultDeliveryType = tariffs?.defaultType ?? null;
@@ -619,6 +638,15 @@ const Step2Combined = () => {
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-semibold text-text">{product.name}</span>
                           {price != null ? <span className="text-[13px] text-text-muted">{money(price)}</span> : null}
+                          {activeAvailability ? (
+                            <span className="text-[13px] text-text-muted" data-testid="catalog-warehouse-stock">
+                              {activeAvailability.available[String(product.id)] !== undefined
+                                ? t("fulfillment.source.inStock", {
+                                    value: formatNumberLocalized(activeAvailability.available[String(product.id)], { language }),
+                                  })
+                                : t("fulfillment.source.notInStock")}
+                            </span>
+                          ) : null}
                         </span>
                         {isAdded ? (
                           <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-action-fg">

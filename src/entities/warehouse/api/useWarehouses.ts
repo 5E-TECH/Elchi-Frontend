@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import type {
+  AvailabilityParams,
   CreateWarehouseRequest,
   InventoryRequest,
   MarketStockParams,
@@ -14,6 +15,7 @@ import type {
 import {
   createWarehouse,
   getMarketWarehouseStock,
+  getWarehouseAvailability,
   getWarehouse,
   getWarehouseMovements,
   getWarehouses,
@@ -53,6 +55,19 @@ export const useOrderSourcePreview = (body: ResolveSourceRequest | null) =>
     queryFn: () => resolveOrderSource(body as ResolveSourceRequest),
     enabled: body !== null,
     staleTime: 15_000,
+    retry: false,
+    ...READ_OPTIONS,
+  });
+
+/**
+ * 6kHnNH9j: katalogdagi «Omborda: N» — tuman hududi ombori bo'yicha (tuman tanlangach; `null` — so'rov yo'q).
+ */
+export const useWarehouseAvailability = (params: AvailabilityParams | null) =>
+  useQuery({
+    queryKey: queryKeys.warehouses.availability(params ?? {}),
+    queryFn: () => getWarehouseAvailability(params as AvailabilityParams),
+    enabled: params !== null,
+    staleTime: 30_000,
     retry: false,
     ...READ_OPTIONS,
   });

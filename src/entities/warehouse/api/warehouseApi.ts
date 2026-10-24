@@ -16,6 +16,7 @@ import {
   type MarketStockWarehouse,
   type MovementRefType,
   type MovementType,
+  type AvailabilityParams,
   type OrderSourcePreview,
   type ProductCode,
   type ProductCodeFormat,
@@ -42,6 +43,7 @@ import {
   type WarehouseStatus,
   type WarehouseStockData,
   type WarehouseStockParams,
+  type WarehouseAvailability,
   type WarehouseStockRow,
 } from "../model/types";
 
@@ -716,4 +718,21 @@ export const normalizeOrderSource = (value: unknown): OrderSourcePreview => {
 export const resolveOrderSource = async (body: ResolveSourceRequest): Promise<OrderSourcePreview> => {
   const response = await api.post(API_ENDPOINTS.WAREHOUSES.RESOLVE_SOURCE, body);
   return normalizeOrderSource(response.data);
+};
+
+/** `GET /warehouses/availability` javobi → mahsulot bo'yicha mavjud dona. */
+export const normalizeAvailability = (value: unknown): WarehouseAvailability => {
+  const payload = payloadOf(value) ?? {};
+  const available: Record<string, number> = {};
+  for (const raw of listOf(payload.items)) {
+    const record = asRecord(raw);
+    const productId = idOf(record?.product_id);
+    if (record && productId) available[productId] = numberOf(record.available);
+  }
+  return { warehouse: toSourceWarehouse(payload.warehouse), available };
+};
+
+export const getWarehouseAvailability = async (params: AvailabilityParams): Promise<WarehouseAvailability> => {
+  const response = await api.get(API_ENDPOINTS.WAREHOUSES.AVAILABILITY, { params: compactParams(params) });
+  return normalizeAvailability(response.data);
 };

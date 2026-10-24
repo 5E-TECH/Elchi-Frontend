@@ -85,6 +85,8 @@ export const queryKeys = {
     marketStock: (params: object) => ["warehouses", "market-stock", params] as const,
     /** 6kHnNH9j: buyurtma formasidagi manba (`POST /warehouses/resolve-source`, faqat hisoblaydi). */
     resolveSource: (body: object) => ["warehouses", "resolve-source", body] as const,
+    /** 6kHnNH9j: katalogdagi «Omborda: N» (`GET /warehouses/availability`). */
+    availability: (params: object) => ["warehouses", "availability", params] as const,
     /** XtcEyQjb: filial xodimining o'z filialida ombor bormi (menyu bandi; `GET /warehouses?limit=1`). */
     ownExists: ["warehouses", "own-exists"] as const,
   },

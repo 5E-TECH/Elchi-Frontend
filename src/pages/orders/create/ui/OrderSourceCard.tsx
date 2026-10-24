@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-neworders-create-manual-source
 import { memo, useId, useMemo, type ReactNode } from "react";
-import { Building2, Info, Warehouse, type LucideIcon } from "lucide-react";
+import { Building2, CirclePause, Info, Warehouse, type LucideIcon } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { OrderSourcePreview } from "../../../../entities/warehouse";
@@ -235,7 +235,7 @@ const OrderSourceCard = () => {
             }
             hint={t("fulfillment.source.pausedHint")}
             hintId={warehouseHintId}
-            icon={Warehouse}
+            icon={CirclePause}
           />
           {hqCard(true, t("fulfillment.source.hqHint"))}
         </>,

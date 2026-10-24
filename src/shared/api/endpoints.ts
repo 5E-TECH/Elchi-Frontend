@@ -558,6 +558,9 @@ export const API_ENDPOINTS = {
     // REGISTRATOR, MARKET (kalit bilan), MARKET_OPERATOR. POST { district_id, region_id?, market_id?, items: [{ product_id,
     // quantity }] } → { source: HQ | WAREHOUSE, reason, warehouse, items: [{ product_id, required, available, enough }], shortages }
     RESOLVE_SOURCE: "warehouses/resolve-source",
+    // GET ?district_id&region_id&market_id|product_ids → { region_id, warehouse | null (PAUSED — items []), items:
+    // [{ product_id, on_hand, reserved, available }] } — katalogdagi «Omborda: N» (faqat qatori bor mahsulotlar)
+    AVAILABILITY: "warehouses/availability",
   },
 
   // ── Activity logs / audit trail (admin) — merged across services ─────────
