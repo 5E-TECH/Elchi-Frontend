@@ -1204,6 +1204,7 @@
     },
     "action": {
       "manual": "Enter manually",
+      "manualCode": "Enter code manually",
       "finish": "Finish",
       "close": "Close",
       "retry": "Try again",

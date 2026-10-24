@@ -74,4 +74,27 @@ describe("regionModel", () => {
     expect(summary.activeCouriers).toBe(6);
     expect(summary.regionsWithCouriers).toBe(3);
   });
+
+  it("o2j9uDtT: backend kuryerlar sonini bermasa (`couriersKnown: false`) — yolg'on 0 emas, «ma'lum emas»", () => {
+    const unknown = toRegionRows([
+      region("1", "Toshkent shahri", 20, 10, { activeCouriers: 0, couriersKnown: false }),
+      region("2", "Andijon", 12, 6, { activeCouriers: 0, couriersKnown: false }),
+    ]);
+    expect(unknown.every((row) => row.couriersKnown === false)).toBe(true);
+    const summary = summarizeRegions(unknown);
+    expect(summary.couriersKnown).toBe(false);
+    expect(summary.regionsWithCouriers).toBe(0);
+
+    // Aralash: faqat ma'lum hududlar qo'shiladi; belgi yo'q (eski javob) — ma'lum hisoblanadi.
+    const mixed = summarizeRegions(
+      toRegionRows([
+        region("1", "Toshkent shahri", 20, 10, { activeCouriers: 3, couriersKnown: true }),
+        region("2", "Andijon", 12, 6, { activeCouriers: 0, couriersKnown: false }),
+        region("3", "Buxoro", 11, 6, { activeCouriers: 2 }),
+      ]),
+    );
+    expect(mixed.couriersKnown).toBe(true);
+    expect(mixed.activeCouriers).toBe(5);
+    expect(mixed.regionsWithCouriers).toBe(2);
+  });
 });

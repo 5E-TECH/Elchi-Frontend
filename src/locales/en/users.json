@@ -74,6 +74,8 @@
   "cancelledHandoverQrEnabled": "Market QR requirement enabled for cancelled-order handover",
   "cancelledHandoverQrDisabled": "Market QR requirement disabled for cancelled-order handover",
   "userUpdatedSuccess": "\"{{name}}\" updated successfully!",
+  "userUpdatedPasswordReset": "\"{{name}}\" updated. Password changed — the user was signed out of all devices.",
+  "ownPasswordChangedOthersSignedOut": "Password changed — other devices signed out",
   "activate": "Activate",
   "deactivateConfirmTitle": "Confirm deactivation",
   "deactivateConfirmText": "{{name}}'s account becomes inactive. You can reactivate it at any time if needed.",
@@ -436,7 +438,7 @@
         "assigned": "{{name}} is assigned to a branch. Remove them from the branch first — after the role change, assign them again with the new role. The window stays open — your input is kept.",
         "retry": "Could not check right now — the role was not changed. Try again in a moment. The window stays open — your input is kept.",
         "unknown": "No response — it is unknown whether the role changed. Check the role and try again. The window stays open — your input is kept.",
-      "failed": "Could not change the role. Refresh the page and try again. The window stays open — your input is kept.",
+        "failed": "Could not change the role. Refresh the page and try again. The window stays open — your input is kept.",
         "retryAction": "Try again"
       },
       "success": {

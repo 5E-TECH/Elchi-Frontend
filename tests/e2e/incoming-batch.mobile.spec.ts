@@ -23,6 +23,14 @@ test.describe("Kiruvchi posilkalar — qop yorlig'i, 390px", () => {
     await expect(page.getByRole("button", { name: "Qabul qilish — 6 ta" })).toBeEnabled();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
+
+    // r8EGkLrP: qabul xabari («Qop bo'yicha qabul qilindi») ham ekranga sig'adi.
+    await page.getByRole("button", { name: "Qabul qilish — 6 ta" }).click();
+    const done = page.getByText("Qop bo'yicha qabul qilindi: 6 ta posilka (jami 6 ta buyurtma)");
+    await expect(done).toBeVisible();
+    const doneBox = (await done.boundingBox())!;
+    expect(doneBox.x + doneBox.width).toBeLessThanOrEqual(390);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
   });
 });

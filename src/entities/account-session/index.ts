@@ -1,14 +1,17 @@
 export type {
   AccountSession,
   AccountSessionList,
+  AccountSessionStatus,
   RevokeSessionsResult,
   SessionDeviceKind,
+  SessionTooNewError,
 } from "./model/types";
 export {
   getMySessions,
   normalizeAccountSession,
   normalizeAccountSessionList,
   normalizeRevokeSessionsResult,
+  parseSessionTooNewError,
   revokeOtherSessions,
   revokeSession,
 } from "./api/accountSessionApi";

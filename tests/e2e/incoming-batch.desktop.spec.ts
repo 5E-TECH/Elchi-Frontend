@@ -18,7 +18,8 @@ test.describe("Kiruvchi posilkalar — qop yorlig'i, 1440px", () => {
     await expectScanned(page, 6, 7);
 
     await page.getByRole("button", { name: "Qabul qilish — 6 ta posilka" }).click();
-    await expect(page.getByText("6 buyurtma qabul qilindi")).toBeVisible();
+    // r8EGkLrP: qabul xabari qop bo'yicha qabul qilinganini aytadi.
+    await expect(page.getByText("Qop bo'yicha qabul qilindi: 6 ta posilka (jami 6 ta buyurtma)")).toBeVisible();
     expect(received).toEqual([BATCH_ORDERS.map((order) => order.qr_code_token)]);
     expect(leaked).toEqual([]);
   });

@@ -753,6 +753,7 @@
     "testNotReached": "Не доставлено",
     "testNotReachedStatus": "Не доставлено — HTTP {{status}}",
     "testReached": "Доставлено — HTTP {{status}} ({{ms}} мс)",
+    "testSandboxTarget": "Отправлено на тестовый адрес с тестовым секретом: {{url}}",
     "theirs": "У них: {{status}}",
     "unitEvents24h": "событий · 24 часа",
     "unitTa": "шт.",

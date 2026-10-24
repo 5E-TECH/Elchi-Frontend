@@ -746,58 +746,7 @@
     "loadError": "Could not load the details"
   }
   ,"v2ExpenseCategories": {
-    "manage": "Expense categories",
-    "title": "Expense categories",
-    "subtitle": "The list in the «Cashbox expense» dialog · {{n}} total",
-    "subtitleShort": "The list in the «Cashbox expense» dialog",
-    "add": "Add a category",
-    "listLabel": "Expense categories",
-    "orderLabel": "Order: {{n}}",
-    "editAria": "Edit the «{{name}}» category",
-    "deleteAria": "Delete the «{{name}}» category",
-    "noDescription": "No description",
-    "empty": "No categories",
-    "emptyDescription": "Add a category — it appears in the list of the «Cashbox expense» dialog",
-    "loadError": "Couldn't load the categories",
-    "loading": "Loading categories",
-    "close": "Close",
-    "form": {
-      "addTitle": "Add a category",
-      "editTitle": "Edit the category",
-      "addSubtitle": "The new category shows up in the «Cashbox expense» list right away",
-      "editSubtitle": "Expenses recorded earlier keep the old name",
-      "name": "Name",
-      "namePlaceholder": "For example: Fuel",
-      "nameRequired": "Enter the category name",
-      "nameTooLong": "The name must be at most {{max}} characters",
-      "description": "What it includes",
-      "descriptionPlaceholder": "For example: petrol, gas, diesel",
-      "descriptionTooLong": "The description must be at most {{max}} characters",
-      "sortOrder": "Order",
-      "sortOrderHint": "Lower numbers come first. Leave empty to add it at the end",
-      "sortOrderEditHint": "Lower numbers come first",
-      "sortOrderInvalid": "Enter a whole number from 0 to {{max}}",
-      "back": "Back",
-      "create": "Add",
-      "save": "Save",
-      "saving": "Saving…"
-    },
-    "delete": {
-      "title": "Confirm deletion",
-      "description": "The category below is removed from the list in the «Cashbox expense» dialog.",
-      "note": "Expenses recorded earlier keep the category name.",
-      "confirm": "Delete",
-      "loading": "Deleting…"
-    },
-    "notify": {
-      "created": "Category added",
-      "updated": "Category saved",
-      "deleted": "Category deleted",
-      "nameDescription": "«{{name}}»",
-      "saveError": "Couldn't save the category",
-      "notFound": "Category not found",
-      "notFoundDescription": "It may have been deleted — the list was refreshed"
-    }
+    "manage": "Expense categories"
   }
   ,"v2Picker": {
     "select": "Select",

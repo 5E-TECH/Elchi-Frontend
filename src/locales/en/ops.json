@@ -11,6 +11,7 @@
   },
   "tabs": {
     "finance": "Finance operators",
+    "expenseCategories": "Expense categories",
     "integrations": "Integrations",
     "investors": "Investors",
     "logistics": "Logistics",
@@ -96,6 +97,60 @@
       "empty": "No payouts yet",
       "emptyHint": "Recorded payouts appear here.",
       "loadError": "Couldn't load the payout history"
+    }
+  },
+  "expenseCategories": {
+    "intro": {
+      "title": "Cashbox expense categories",
+      "description": "The pick list in the «Cashbox expense» dialog — every expense is recorded with one of these categories. Renaming or deleting a category keeps the old name on expenses recorded earlier."
+    },
+    "list": {
+      "title": "Categories",
+      "label": "Expense categories",
+      "add": "Add a category",
+      "orderLabel": "Order: {{n}}",
+      "editAria": "Edit the «{{name}}» category",
+      "deleteAria": "Delete the «{{name}}» category",
+      "noDescription": "No description",
+      "empty": "No categories",
+      "emptyDescription": "Add a category — it appears in the list of the «Cashbox expense» dialog",
+      "loadError": "Couldn't load the categories",
+      "loading": "Loading categories"
+    },
+    "form": {
+      "addTitle": "Add a category",
+      "editTitle": "Edit the category",
+      "addSubtitle": "The new category shows up in the «Cashbox expense» list right away",
+      "editSubtitle": "Expenses recorded earlier keep the old name",
+      "name": "Name",
+      "namePlaceholder": "For example: Fuel",
+      "nameRequired": "Enter the category name",
+      "description": "What it includes",
+      "descriptionPlaceholder": "For example: petrol, gas, diesel",
+      "sortOrder": "Order",
+      "sortOrderHint": "Lower numbers come first. Leave empty to add it at the end",
+      "sortOrderEditHint": "Lower numbers come first",
+      "sortOrderInvalid": "Enter a whole number from 0 to {{max}}",
+      "cancel": "Cancel",
+      "create": "Add",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "delete": {
+      "title": "Confirm deletion",
+      "description": "The category below is removed from the list in the «Cashbox expense» dialog.",
+      "note": "Expenses recorded earlier keep the category name.",
+      "confirm": "Delete",
+      "loading": "Deleting…"
+    },
+    "notify": {
+      "created": "Category added",
+      "updated": "Category saved",
+      "deleted": "Category deleted",
+      "nameDescription": "«{{name}}»",
+      "saveError": "Couldn't save the category",
+      "notFound": "Category not found",
+      "notFoundDescription": "It may have been deleted — the list was refreshed"
     }
   },
   "integrations": {

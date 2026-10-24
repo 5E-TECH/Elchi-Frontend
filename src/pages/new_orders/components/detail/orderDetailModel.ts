@@ -254,6 +254,10 @@ export const buildActionOrder = (order: OrderDetail | null) => {
     region: { name: getRegionName(order) ?? "—" },
     // «Marketga to'langan summa» chegarasi va hamkor buyurtmasini aniqlash (uguUEhin).
     to_be_paid: order.to_be_paid,
+    sale_market_paid_max:
+      typeof order.sale_market_paid_max === "number" || typeof order.sale_market_paid_max === "string"
+        ? order.sale_market_paid_max
+        : null,
     external_id: (order.external_id ?? order.externalId ?? null) as string | number | null,
     sell_requires_media: Boolean(
       order.sell_requires_media ?? order.sellRequiresMedia ?? order.require_sell_proof ?? order.sell_proof_required,

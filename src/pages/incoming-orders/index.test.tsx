@@ -321,7 +321,8 @@ describe("IncomingOrdersPage — qop (batch) yorlig'i", () => {
     expect(apiGetMock.mock.calls.some(([url]) => String(url).startsWith("scan/"))).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: "Qabul qilish — 6 ta posilka" }));
-    expect(await screen.findByText("6 buyurtma qabul qilindi")).toBeInTheDocument();
+    // r8EGkLrP: qabul xabari qop bo'yicha qabul qilinganini aytadi.
+    expect(await screen.findByText("Qop bo'yicha qabul qilindi: 6 ta posilka (jami 6 ta buyurtma)")).toBeInTheDocument();
     // Serverga har posilkaning O'Z tokeni (qop tokeni emas) — javobgarlik ikkilanmaydi.
     expect(apiPostMock.mock.calls[0][1]).toEqual({
       tokens: ["parcel-1", "parcel-2", "parcel-3", "parcel-4", "parcel-5", "parcel-6"],
@@ -354,6 +355,23 @@ describe("IncomingOrdersPage — qop (batch) yorlig'i", () => {
     scan(BATCH);
     expect(await screen.findByText("Qop: 6 posilkadan 6 tasi allaqachon belgilangan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qabul qilish — 6 ta posilka" })).toBeEnabled();
+
+    // r8EGkLrP: bittalab skanerlangan 1 tasi «qop bo'yicha» sanalmaydi — qop skani belgilagan 5 tasi.
+    apiPostMock.mockResolvedValue({ data: { data: { received: 6, unmatched: [] } } });
+    fireEvent.click(screen.getByRole("button", { name: "Qabul qilish — 6 ta posilka" }));
+    expect(await screen.findByText("Qop bo'yicha qabul qilindi: 5 ta posilka (jami 6 ta buyurtma)")).toBeInTheDocument();
+  });
+
+  it("r8EGkLrP: qop skanisiz qabul — avvalgi xabar («N buyurtma qabul qilindi»), qop haqida gap yo'q", async () => {
+    mockList([1, 2, 3].map((n) => member(n)));
+    apiPostMock.mockResolvedValue({ data: { data: { received: 1, unmatched: [] } } });
+    renderPage();
+    expect(await screen.findByText("Andijon mijoz 3")).toBeInTheDocument();
+
+    scan("parcel-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+    expect(await screen.findByText("1 buyurtma qabul qilindi")).toBeInTheDocument();
+    expect(screen.queryByText(/Qop bo'yicha qabul qilindi/)).not.toBeInTheDocument();
   });
 
   it("ro'yxatda qop maydoni yo'q — server `GET /scan/:token` qop javobi bilan belgilanadi", async () => {

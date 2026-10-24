@@ -25,7 +25,8 @@ import { UserDetailView } from "../../../widgets/user-detail/ui/UserDetailView";
 
 /**
  * `/profile` (dizayn v2, maketlar `common-profile`, `common-profile-password-dialog`): ma'lumot kartasi, maosh
- * (faqat maoshli xodimda), parol oynasi (≥ 4 belgi, takror mos, saqlangach chiqish) va tahrirlash oynasi
+ * (faqat maoshli xodimda), parol oynasi (≥ 4 belgi, takror mos; saqlangach boshqa qurilmalar chiqadi, shu qurilma
+ * qoladi — «Sessiyalar» qayta so'raladi) va tahrirlash oynasi
  * (faqat o'zgargan maydonlar). Shuningdek o'z Telegram'ini botga ulash (BreQwksC) va marketda «Guruhda mijoz
  * ismi va telefoni» kaliti (ysBqD9Nx) — ikkalasi faqat shu sahifada (o'z profili).
  */
@@ -156,8 +157,13 @@ describe("Profil — parolni o'zgartirish", () => {
     expect(patchCalls()).toEqual([]);
   });
 
-  it("mos kelsa yashil izoh; saqlansa faqat `{ password }` ketadi, xabar, login sababi va chiqish", async () => {
+  it("mos kelsa yashil izoh; saqlansa faqat `{ password }` ketadi, «boshqa qurilmalardan chiqildi», shu qurilma qoladi", async () => {
     const dialog = await openDialog();
+    expect(
+      within(dialog).getByText("Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi."),
+    ).toBeInTheDocument();
+    const sessionCalls = () => mocks.get.mock.calls.filter(([url]) => url === "auth/sessions").length;
+    await waitFor(() => expect(sessionCalls()).toBe(1));
     const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
     expect(first).toHaveAttribute("type", "password");
     await userEvent.click(within(dialog).getAllByRole("button", { name: "Parolni ko'rsatish" })[0]);
@@ -169,10 +175,13 @@ describe("Profil — parolni o'zgartirish", () => {
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     await waitFor(() => expect(patchCalls()).toEqual([{ password: "namuna12" }]));
-    expect(await screen.findByText("Parol o'zgardi — qayta kiring")).toBeInTheDocument();
-    await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
-    // Saqlash shakli `auth/loginNotice.ts` ga tegishli (G3: JSON `{ notice, at }`) — o'quvchi orqali tekshiriladi.
-    expect(peekLoginNotice()).toBe("passwordChanged");
+    expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Parolni o'zgartirish" })).not.toBeInTheDocument());
+    // Backend boshqa qurilmalarni chiqardi — «Sessiyalar» qayta so'raladi; shu qurilma tizimda qoladi.
+    await waitFor(() => expect(sessionCalls()).toBe(2));
+    expect(mocks.logout).not.toHaveBeenCalled();
+    expect(peekLoginNotice()).toBeNull();
+    expect(screen.getByRole("heading", { level: 1, name: "Profil" })).toBeInTheDocument();
   });
 
   it("backend rad etsa — chiqilmaydi, oyna ochiq qoladi, xato ko'rinadi", async () => {

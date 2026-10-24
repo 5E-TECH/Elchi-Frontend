@@ -154,6 +154,13 @@ const ConnectionSettings = ({
   };
 
   /**
+   * jeU3eztP: asosiy manzil bo'sh, sinov rejimi esa saqlangan (yoqiq + manzili bor) — «Sinash» manzilsiz ketadi va
+   * backend sinov manziliga, sinov sekreti bilan yuboradi.
+   */
+  const savedSandbox =
+    Boolean(initial.sandbox_enabled) && Boolean(String(initial.sandbox_webhook_url ?? "").trim());
+
+  /**
    * Sinov tugmasi FAQAT inbound ulanishda: biz ularga webhook yuboramiz, ya'ni sinash mumkin. Outbound'da
    * so'rovni biz yuboramiz va uni sinash boshqa mexanizm (Umumiy holat → «Aloqani sinash»).
    */
@@ -163,7 +170,7 @@ const ConnectionSettings = ({
         variant="secondary"
         leftIcon={Send}
         loading={testWebhook.isPending}
-        disabled={!String(values.webhook_url ?? "").trim()}
+        disabled={!String(values.webhook_url ?? "").trim() && !savedSandbox}
         onClick={() => void runTest()}
         title={t("setTestTip")}
         className="flex-none max-md:min-h-11"
@@ -185,6 +192,10 @@ const ConnectionSettings = ({
               : t("console.testNotReached")
         }
       >
+        {/* jeU3eztP: sinov manziliga ketgan bo'lsa — qaysi manzil va sekret (401 sababini ko'rish uchun). */}
+        {testResult.target === "sandbox" ? (
+          <span className="block break-all">{t("console.testSandboxTarget", { url: testResult.url || "—" })}</span>
+        ) : null}
         {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni tekshira olmaydi — eng ko'p uchraydigan sabab. */}
         {!testResult.secret_configured ? <span className="block">{t("console.testNoSecret")}</span> : null}
         {testResult.error ? <span className="block break-all">{testResult.error}</span> : null}

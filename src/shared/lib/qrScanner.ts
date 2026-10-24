@@ -42,6 +42,29 @@ export const classifyCameraError = (error: unknown): CameraErrorKind => {
   return "unknown";
 };
 
+/** `qr-scanner` ning umumiy xatosi (satr): u har `getUserMedia` rad etilishini (sababi bilan) shunga almashtiradi. */
+const isLibraryCameraError = (error: unknown) => typeof error === "string" && /^camera not found\.?$/i.test(error.trim());
+
+/**
+ * Haqiqiy sabab (kkDkrAIz). Kutubxona `NotAllowedError` / `NotReadableError` / `NotFoundError` ni yutib, hammasini
+ * bitta satrga aylantiradi — «Kamera band» holati hech chiqmasdi, ishga tushishda rad etilgan ruxsat esa «kamera
+ * qo'llab-quvvatlanmaydi» bo'lib ko'rinardi. Shu satr kelsa — bitta oddiy `getUserMedia` (kutubxona o'zi 6 marta
+ * so'raydi): rad etilsa — brauzerning `DOMException` i (nomi bilan) qaytadi, muvaffaqiyatli bo'lsa (masalan faqat
+ * kutubxona cheklovlari mos kelmadi) — oqim darhol yopiladi va asl xato qoladi.
+ */
+export const revealCameraStartError = async (error: unknown): Promise<unknown> => {
+  if (!isLibraryCameraError(error) || typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    return error;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    stream.getTracks().forEach((track) => track.stop());
+    return error;
+  } catch (cause) {
+    return cause;
+  }
+};
+
 export type CameraFacing = "environment" | "user";
 
 export type QrScanRegion = {
@@ -94,19 +117,22 @@ export default class QrScanner {
     );
   }
 
-  /** Kamera ishlata olmaslik sababi (`CameraSupportError`, `kind: "unsupported"`) yoki `null`. Matn — faqat jurnal uchun. */
+  /**
+   * Kamera ishlata olmaslik sababi (`CameraSupportError`, `kind: "unsupported"`) yoki `null`. Matn — faqat jurnal
+   * uchun (ekranga `ui:camera.*` tarjimasi chiqadi); inglizcha yozilmaydi — kkDkrAIz regressiya tekshiruvi.
+   */
   static async getSupportError(): Promise<CameraSupportError | null> {
     if (typeof window === "undefined") {
-      return new CameraSupportError("unsupported", "Scanner is unavailable in this environment.");
+      return new CameraSupportError("unsupported", "Skaner bu muhitda ishlamaydi (window yo'q).");
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      return new CameraSupportError("unsupported", "Camera access is not available in this browser.");
+      return new CameraSupportError("unsupported", "Brauzerda kamera API'si (getUserMedia) yo'q.");
     }
 
     const hasCamera = await BrowserQrScanner.hasCamera().catch(() => false);
     if (!hasCamera) {
-      return new CameraSupportError("unsupported", "Camera not found on this device.");
+      return new CameraSupportError("unsupported", "Qurilmada kamera topilmadi.");
     }
 
     return null;
@@ -118,7 +144,11 @@ export default class QrScanner {
       throw supportError;
     }
 
-    await this.scanner.start();
+    try {
+      await this.scanner.start();
+    } catch (error) {
+      throw await revealCameraStartError(error);
+    }
   }
 
   stop(): void {

@@ -114,3 +114,51 @@ describe("useUser mutatsiyalari → queryKeys.users (filial «Xodim qo'shish» r
     expect(api.get.mock.calls.length).toBeGreaterThan(getsBefore);
   });
 });
+
+/**
+ * 2026-10-23: o'z parolini o'zgartirgach backend boshqa barcha qurilmalarni darhol chiqaradi — profil «Sessiyalar»
+ * (`queryKeys.accountSessions`) eskiradi. Parolsiz yangilash yoki boshqa xodimning paroli — o'z sessiyalariga tegmaydi.
+ */
+describe("o'z paroli → «Sessiyalar» (queryKeys.accountSessions) eskiradi", () => {
+  const setupWithProfile = (profileId: string) => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 30_000 }, mutations: { retry: false } },
+    });
+    const store = createTestStore({
+      user: {
+        user: { id: profileId, name: "Men", role: "admin" },
+        isAuthenticated: true,
+        accessToken: null,
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      },
+    } as never);
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </Provider>
+    );
+    queryClient.setQueryData(queryKeys.accountSessions.mine, { active_count: 2, sessions: [] });
+    const hook = renderHook(() => useUser(), { wrapper });
+    return { queryClient, ...hook };
+  };
+  beforeEach(() => {
+    api.patch.mockResolvedValue({ data: { statusCode: 200, data: { id: "7", name: "Men", role: "admin" } } });
+  });
+  const sessionsInvalidated = (queryClient: QueryClient) =>
+    queryClient.getQueryState(queryKeys.accountSessions.mine)?.isInvalidated;
+
+  it.each<[string, (m: Mutations) => Promise<unknown>, boolean]>([
+    ["updateMyProfile { password } → eskiradi", (m) => m.updateMyProfile.mutateAsync({ password: "yangi12" }), true],
+    ["updateMyProfile { name } → tegmaydi", (m) => m.updateMyProfile.mutateAsync({ name: "Men" }), false],
+    ["updateUser (o'zi) { password } → eskiradi", (m) => m.updateUser.mutateAsync({ id: "7", data: { password: "yangi12" } }), true],
+    ["updateUser (boshqa xodim) { password } → tegmaydi", (m) => m.updateUser.mutateAsync({ id: "263", data: { password: "yangi12" } }), false],
+  ])("%s", async (_name, run, expected) => {
+    const { result, queryClient } = setupWithProfile("7");
+    await act(async () => {
+      await run(result.current);
+    });
+    expect(sessionsInvalidated(queryClient)).toBe(expected);
+  });
+});

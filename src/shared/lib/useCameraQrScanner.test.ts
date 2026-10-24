@@ -107,6 +107,31 @@ describe("useCameraQrScanner", () => {
     vi.restoreAllMocks();
   });
 
+  it("kkDkrAIz: iOS `DOMException` (NotAllowedError) — matn i18n kalitidan (`ui:camera.error.denied`), xom inglizcha yo'q", async () => {
+    await i18nReady;
+    await i18n.changeLanguage("uz");
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => undefined);
+    const videoRef = { current: document.createElement("video") };
+    const before = scanners.starts.length;
+    const raw = "The request is not allowed by the user agent or the platform in the current context.";
+    const { result, unmount } = renderHook(() =>
+      useCameraQrScanner({ isActive: true, videoRef, onDecode: () => undefined, startErrorMessage: "start failed" }),
+    );
+    await waitFor(() => expect(scanners.starts).toHaveLength(before + 1));
+    await act(async () => {
+      scanners.starts[before].reject(new DOMException(raw, "NotAllowedError"));
+    });
+
+    expect(result.current.cameraErrorKind).toBe("denied");
+    expect(result.current.cameraError).toBe(i18n.t("ui:camera.error.denied"));
+    expect(result.current.cameraError).toBe("Kameraga ruxsat berilmagan");
+    expect(result.current.cameraError).not.toContain(raw);
+    expect(result.current.cameraError).not.toMatch(/not allowed|user agent|NotAllowedError|start failed/i);
+    unmount();
+    vi.restoreAllMocks();
+  });
+
   it("asosiy kamera (Sozlamalar → Skaner) va skan hududi skanerga beriladi; bir nechta kamera — almashtirish", async () => {
     vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
     vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => undefined);

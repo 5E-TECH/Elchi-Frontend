@@ -16,6 +16,8 @@
 //            · --wait <css-selektor> (shu element chiqquncha kutadi; sukut: <main> ichida kontent)
 //            · --width <px> — qurilma oynasining kengligi (masalan 375 telefon, 1024 kichik desktop); balandlik va
 //              sensorli rejim `--device` dan qoladi. Fayl nomiga `-w<px>` qo'shiladi.
+//            · --sessions locked — `GET auth/sessions` yangi qurilma cheklovi bilan (`can_revoke_others: false`,
+//              48 soat): profil «Sessiyalar» kartasida ogohlantirish va o'chirilgan chiqarish amallari. Nomga `-sessions-locked`.
 // Natija: design/shots/app/<route>--<qurilma>-<mavzu>.png (rol/til sukutdan farq qilsa nomga qo'shiladi:
 // <route>-<rol>[-<filial turi>]-<til>--…; filial turi faqat sukutdan farq qilsa). design/shots git'ga kirmaydi.
 // Har shot uchun JSON hisobot:
@@ -55,7 +57,7 @@ const MOCK_API = 'http://api.app-shot.test';
 
 // ───────────── argumentlar ─────────────
 const args = process.argv.slice(2);
-const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width'];
+const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width', '--sessions'];
 const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const fail = (message) => { console.error(message); process.exit(1); };
 const device = opt('--device');
@@ -66,6 +68,7 @@ const split = Number(opt('--split')) || 0;
 const waitFor = opt('--wait');
 const branchTypeArg = opt('--branch-type');
 const widthArg = opt('--width');
+const sessionsArg = opt('--sessions');
 const width = widthArg ? Number(widthArg) : 0;
 const branchType = branchTypeArg === 'none' ? null : (branchTypeArg ?? DEFAULT_BRANCH_TYPE[role] ?? null);
 const routes = args.filter((a, i) => !a.startsWith('--') && !FLAGS.includes(args[i - 1]));
@@ -76,12 +79,15 @@ if (!ROLES.includes(role)) fail(`--role: ${ROLES.join(' | ')}`);
 if (!LANGS.includes(lang)) fail(`--lang: ${LANGS.join(' | ')}`);
 if (branchTypeArg && branchTypeArg !== 'none' && !BRANCH_TYPES.includes(branchTypeArg)) fail(`--branch-type: ${BRANCH_TYPES.join(' | ')} | none`);
 if (widthArg && !(Number.isInteger(width) && width >= 320 && width <= 3840)) fail('--width: 320…3840 oralig\'idagi butun son (px)');
+if (sessionsArg && sessionsArg !== 'locked') fail('--sessions: locked');
 for (const r of routes) if (!r.startsWith('/')) fail(`Route "/" bilan boshlanadi: ${r}`);
 
 const slugOf = (route) => {
   const base = route.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home';
   const branchSlug = branchTypeArg && branchType !== (DEFAULT_BRANCH_TYPE[role] ?? null) && (branchType ?? 'none').toLowerCase();
-  return [base, role !== 'superadmin' && role, branchSlug, lang !== 'uz' && lang].filter(Boolean).join('-');
+  return [base, role !== 'superadmin' && role, branchSlug, lang !== 'uz' && lang, sessionsArg && `sessions-${sessionsArg}`]
+    .filter(Boolean)
+    .join('-');
 };
 
 // ───────────── soxta API ─────────────
@@ -104,6 +110,30 @@ const profile = (themeName) => ({
       : {}),
     // MO-2: market operatori — marketi va komissiyasi («Daromadim» → «Stavkam», maket `market_operator-earnings`).
     ...(role === 'market_operator' ? { market_id: '1', commission_type: 'percent', commission_value: '5.00' } : {}),
+  },
+});
+/**
+ * Elchi Pochta №1: `GET finance/cashbox/expense-categories` — Ops → «Xarajat kategoriyalari» ro'yxati va «Kassadan
+ * xarajat» tanlovi to'ldirilgan ko'rinishda (bo'sh holat emas). Faol kategoriyalar `sort_order` bo'yicha.
+ */
+const EXPENSE_CATEGORIES = [
+  ['Ovqatlanish', 'Xodimlarning ovqati, tushlik'],
+  ["Yoqilg'i", 'Benzin, gaz, dizel'],
+  ['Avtomobil xarajatlari', "Ta'mirlash, moy almashtirish, ehtiyot qismlar"],
+  ['Ijara (arenda)', 'Filial, ombor, ofis ijarasi'],
+  ["Kommunal to'lovlar", 'Elektr, suv, gaz, chiqindi'],
+  ['Internet va aloqa', 'Internet, telefon, SIM-karta'],
+  ['Xodimlar oyligi', 'Oylik, avans, bonus'],
+  ['Qadoqlash materiallari', null],
+];
+const expenseCategoriesMock = () => ({
+  statusCode: 200,
+  message: 'Xarajat kategoriyalari',
+  data: {
+    items: EXPENSE_CATEGORIES.map(([name, description], index) => ({
+      id: String(index + 1), name, description, sort_order: index + 1, is_deleted: false,
+      created_by: null, updated_by: null, created_at: '2026-10-21T08:00:00.000Z', updated_at: '2026-10-21T08:00:00.000Z',
+    })),
   },
 });
 /**
@@ -178,24 +208,32 @@ const investorMock = (path, query) => {
 };
 
 /**
- * EP-3: `GET auth/sessions` — profil «Sessiyalar» kartasi to'liq ko'rinishda (bo'sh holat emas): shu qurilma,
- * boshqa kompyuter va nomi aniqlanmagan qurilma. Vaqtlar «hozir» dan orqaga hisoblanadi (sintetik ma'lumot).
+ * EP-3: `GET auth/sessions` — profil «Sessiyalar» kartasi to'liq ko'rinishda (bo'sh holat emas): shu qurilma
+ * (aniq nom, «Birinchi marta»), boshqa kompyuter, nomi aniqlanmagan qurilma va qayta kirishi kerak bo'lgan
+ * (`expired`) iPhone. `active_count` — faqat faollar. Vaqtlar «hozir» dan orqaga hisoblanadi (sintetik ma'lumot).
+ * `--sessions locked` — shu qurilmadan birinchi kirganiga 18 soat (48 soat to'lmagan): `can_revoke_others: false`,
+ * `revoke_available_at` — 30 soatdan keyin (kartada ogohlantirish, chiqarish amallari o'chirilgan).
  */
 const sessionsMock = () => {
   const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
-  const row = (id, device_name, ip, loggedMin, seenMin, current = false, user_agent = null) => ({
-    id, device_name, device_id: null, user_agent, ip, logged_in_at: ago(loggedMin), last_seen_at: ago(seenMin),
-    expires_at: ago(-24 * 60), current,
+  const row = (id, device_name, ip, loggedMin, seenMin, { firstMin = loggedMin, ...extra } = {}) => ({
+    id, device_name, device_id: null, user_agent: null, ip, logged_in_at: ago(loggedMin),
+    first_logged_in_at: ago(firstMin), last_seen_at: ago(seenMin),
+    expires_at: ago(-24 * 60), current: false, status: 'active', ...extra,
   });
   return {
     statusCode: 200,
     message: 'success',
     data: {
       active_count: 3,
+      ...(sessionsArg === 'locked' ? { can_revoke_others: false, revoke_available_at: ago(-30 * 60) } : {}),
       sessions: [
-        row('s-2', 'Kompyuter · Windows · Edge', '84.54.70.12', 2 * 24 * 60 + 95, 7),
-        row('s-1', 'Telefon · Android · Chrome', '213.230.64.10', 26 * 60, 42, true),
-        row('s-3', null, null, 5 * 24 * 60, 3 * 24 * 60, false, 'PostmanRuntime/7.39.0'),
+        sessionsArg === 'locked'
+          ? row('s-1', 'Samsung SM-A515F · Android 13 · Chrome 155', '213.230.64.10', 18 * 60, 4, { current: true })
+          : row('s-1', 'Samsung SM-A515F · Android 13 · Chrome 155', '213.230.64.10', 26 * 60, 42, { current: true, firstMin: 9 * 24 * 60 }),
+        row('s-2', 'Windows 11 · Chrome 154', '84.54.70.12', 2 * 24 * 60 + 95, 7),
+        row('s-3', null, null, 5 * 24 * 60, 3 * 24 * 60, { user_agent: 'PostmanRuntime/7.39.0' }),
+        row('s-4', 'iPhone · iOS 17 · Safari', '213.230.64.10', 20 * 24 * 60, 12 * 24 * 60, { status: 'expired', firstMin: 40 * 24 * 60 }),
       ],
     },
   };
@@ -205,6 +243,7 @@ const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
+  if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };

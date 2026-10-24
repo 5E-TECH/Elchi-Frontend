@@ -70,7 +70,7 @@ describe("BranchDashboardPage (v2)", () => {
     getDashboardMock.mockReturnValue(response());
   });
 
-  it("sukut — bugun, `branch_id` bilan; «Barchasi» — aniq sanalar (`all` emas)", async () => {
+  it("sukut — bugun, `branch_id` bilan; «Barchasi» — `all: true` (tya24blo; `start_day=1970-01-01` emas)", async () => {
     const user = userEvent.setup();
     const today = getTodayRange();
     renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
@@ -85,13 +85,19 @@ describe("BranchDashboardPage (v2)", () => {
     expect(screen.queryByRole("combobox", { name: "Yilni tanlash" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
-    const lastParams = getDashboardMock.mock.lastCall?.[0];
-    expect(getDashboardMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ branch_id: "branch-1", start_day: "1970-01-01", end_day: expect.any(String) }),
-      true,
-      "manager:manager-user-1",
-    );
-    expect(lastParams).not.toHaveProperty("all");
+    expect(getDashboardMock).toHaveBeenLastCalledWith({ branch_id: "branch-1", all: true }, true, "manager:manager-user-1");
+  });
+
+  it("tya24blo: «Barchasi» va `clamped` — sana maydonida haqiqiy oraliq", async () => {
+    const user = userEvent.setup();
+    getDashboardMock.mockImplementation((params: { all?: boolean }) => {
+      const base = response();
+      return params?.all ? { ...base, data: { data: { ...base.data.data, appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-20" } } } } : base;
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+
+    expect(screen.getByText(/^21\.10\.2025\s–\s20\.10\.2026$/)).toBeInTheDocument();
   });
 
   it("kartalar filial panelidan (boshqa doiradagi `orders` emas)", () => {

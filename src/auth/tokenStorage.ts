@@ -152,6 +152,16 @@ export const tokenStorage = {
     );
   },
 
+  /**
+   * Access token'ning sessiya id si (JWT `sid`, Elchi Pochta #3) — kichik harfda (backend xonalari va
+   * `auth:session_revoked` → `session_id` ham kichik harfda). `sid` siz token (Telegram, eski) — `null`.
+   */
+  getSessionId(token: string | null = accessToken): string | null {
+    if (!token) return null;
+    const sid = decodeJwtPayload(token)?.sid;
+    return typeof sid === "string" && sid.trim() ? sid.trim().toLowerCase() : null;
+  },
+
   clear() {
     this.setAccessToken(null);
     this.clearSessionMetadata();
@@ -159,7 +169,7 @@ export const tokenStorage = {
   },
 };
 
-const decodeJwtPayload = (token: string): AuthIdentity | null => {
+const decodeJwtPayload = (token: string): (AuthIdentity & { sid?: unknown }) | null => {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
@@ -174,11 +184,13 @@ const decodeJwtPayload = (token: string): AuthIdentity | null => {
       sub?: string;
       role?: string;
       roles?: string[];
+      sid?: unknown;
     };
 
     return {
       id: decoded.id ?? decoded.sub,
       role: decoded.role ?? decoded.roles?.[0],
+      sid: decoded.sid,
     };
   } catch {
     return null;

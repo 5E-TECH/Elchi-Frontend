@@ -21,6 +21,12 @@ vi.mock("../system-ops", () => ({
   default: () => <p>Tizim tabi</p>,
 }));
 
+vi.mock("../expense-categories", () => ({
+  default: ({ embedded }: { embedded?: boolean }) => (
+    <p>Xarajat kategoriyalari tabi{embedded ? " (hub ichida)" : ""}</p>
+  ),
+}));
+
 const LocationProbe = () => {
   const location = useLocation();
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
@@ -76,13 +82,14 @@ describe("Ops page — tablar (dizayn v2)", () => {
     vi.restoreAllMocks();
   });
 
-  it("8 ta tab maket tartibida, «Kirish diagnostikasi», eski manzil maslahatda; `?tab=` tiklanadi", async () => {
+  it("9 ta tab: maket tartibi + «Xarajat kategoriyalari» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
     renderWithProviders(<OpsPage />, { route: "/ops?tab=system" });
 
     const tablist = screen.getByRole("tablist", { name: "Ops bo'limlari" });
     const tabs = within(tablist).getAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "Moliya operatorlari",
+      "Xarajat kategoriyalari",
       "Integratsiyalar",
       "Investorlar",
       "Logistika",
@@ -98,6 +105,32 @@ describe("Ops page — tablar (dizayn v2)", () => {
     );
     expect(await screen.findByText("Tizim tabi")).toBeInTheDocument();
     expect(screen.getByRole("tabpanel", { name: "Tizim" })).toBeInTheDocument();
+    // Hub ichida tug'ilgan tab — eski manzili yo'q, maslahat ham yo'q.
+    expect(within(tablist).getByRole("tab", { name: "Xarajat kategoriyalari" })).not.toHaveAttribute("title");
+  });
+
+  it("«Xarajat kategoriyalari» — to'g'ridan-to'g'ri havola `?tab=expense-categories` panelni hub ichida ochadi", async () => {
+    renderWithProviders(<OpsPage />, { route: "/ops?tab=expense-categories" });
+
+    const tab = screen.getByRole("tab", { name: "Xarajat kategoriyalari" });
+    expect(tab).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByText("Xarajat kategoriyalari tabi (hub ichida)")).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel", { name: "Xarajat kategoriyalari" })).toBeInTheDocument();
+  });
+
+  it("tab bosilsa «Xarajat kategoriyalari» manzili URL'da (`?tab=expense-categories`)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <OpsPage />
+        <LocationProbe />
+      </>,
+      { route: "/ops?tab=finance" },
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Xarajat kategoriyalari" }));
+    expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=expense-categories");
+    expect(await screen.findByText(/Xarajat kategoriyalari tabi/)).toBeInTheDocument();
   });
 
   it("tab bosilsa URL `?tab=` almashadi (replace)", async () => {

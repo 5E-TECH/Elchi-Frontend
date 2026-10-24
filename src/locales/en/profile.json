@@ -19,7 +19,7 @@
   "security": {
     "title": "Security",
     "password": "Password",
-    "passwordHint": "Once the new password is saved, you will be signed out and sign in again with the new password.",
+    "passwordHint": "Once the new password is saved, all other devices are signed out of your account; you stay signed in on this device.",
     "changePassword": "Change password"
   },
   "sessions": {
@@ -27,17 +27,20 @@
     "description": "Devices signed in to your account. Signing out closes only the session on this device; sign out a device you don't recognise here.",
     "activeCount": "{{count}} active",
     "current": "This device",
+    "expired": "Needs to sign in again",
     "unknownDevice": "Unknown device",
     "kind": {
       "phone": "Phone",
       "tablet": "Tablet",
       "desktop": "Computer"
     },
-    "ip": "IP: {{ip}}",
-    "ipUnknown": "IP unknown",
+    "ip": "Network IP: {{ip}}",
+    "ipUnknown": "Network IP unknown",
+    "ipHint": "Devices on the same Wi-Fi network show the same IP.",
     "loggedInAt": "Signed in",
+    "firstLoggedInAt": "First time:",
     "lastSeenAt": "Last active",
-    "listLabel": "Active sessions list",
+    "listLabel": "Sessions list",
     "loading": "Loading sessions",
     "emptyTitle": "No active sessions",
     "emptyDescription": "Devices signed in to your account appear here. If you signed in earlier, the session shows up at the next refresh (about once an hour).",
@@ -48,6 +51,7 @@
       "aria": "Sign out: {{device}}",
       "title": "Confirm signing out the device",
       "description": "This device will be signed out of your account — on its next request it returns to the sign-in page. Signing in again needs the login and password.",
+      "descriptionExpired": "This device's session will be closed and removed from the list. It has to sign in again anyway — signing in opens a new session.",
       "lastSeen": "last active {{when}}",
       "confirm": "Sign out",
       "loading": "Signing out…",
@@ -65,6 +69,10 @@
       "successDescription": "Sessions closed: {{count}}.",
       "noneTitle": "No other active sessions left",
       "reloginRequired": "Couldn't identify this device's session. Sign out, sign in again and try once more."
+    },
+    "lock": {
+      "title": "For security, other sessions can't be signed out from a new device.",
+      "toastTitle": "Can't sign out devices yet"
     }
   },
   "password": {
@@ -81,10 +89,11 @@
     "tooShort": "The password must be at least 4 characters",
     "show": "Show password",
     "hide": "Hide password",
-    "warning": "After saving you will be signed out. Then sign in with the new password.",
+    "warning": "Once saved, all other devices are signed out of your account immediately. This device stays signed in.",
     "cancel": "Cancel",
     "submit": "Save password",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "changedOthersSignedOut": "Password changed — other devices signed out"
   },
   "editDialog": {
     "title": "Edit profile",

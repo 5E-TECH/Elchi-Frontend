@@ -34,6 +34,11 @@ const current = {
   data: {
     summary: { totalRevenue: 150000, totalOrders: 3, avgRevenue: 10000 },
     chart: { labels: ["01.09", "02.09"], values: [50000, 100000] },
+    // Backend bo'laklari (2Fj7iw1k): «Jadval»dagi buyurtmalar soni shu yerdan.
+    data: [
+      { period: "2026-09-01", label: "01.09", revenue: 50000, ordersCount: 1 },
+      { period: "2026-09-02", label: "02.09", revenue: 100000, ordersCount: 2 },
+    ],
     finance: {
       currentSituation: 22_543_000,
       main: { balance: 24_615_000 },
@@ -223,6 +228,55 @@ describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
     expect(within(table).getByText("100 000 so'm")).toBeInTheDocument();
     expect(within(table).getByText("60 000 so'm")).toBeInTheDocument();
   });
+
+  it("2Fj7iw1k: «Grafik | Jadval» — «Aralash» yo'q; «Jadval»da buyurtmalar soni (`data[].ordersCount`)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    const view = screen.getByRole("radio", { name: "Jadval" }).closest("[role=radiogroup]") as HTMLElement;
+    expect(within(view).getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["Grafik", "Jadval"]);
+    expect(screen.queryByText(/Aralash/)).not.toBeInTheDocument();
+    // Davr yakunida jami buyurtmalar (summary.totalOrders).
+    expect(screen.getByText("Buyurtmalar").parentElement).toHaveTextContent("3 ta");
+
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    const table = screen.getByRole("table", { name: "Moliyaviy tahlil" });
+    expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toContain("Buyurtmalar");
+    const row = within(table).getByText("02.09").closest("tr") as HTMLElement;
+    expect(row).toHaveTextContent("2 ta");
+  });
+
+  it("2Fj7iw1k: bo'lakda `ordersCount` yo'q — «—» (yolg'on 0 emas)", async () => {
+    const user = userEvent.setup();
+    getRevenueMock.mockImplementation((params: { start_day: string }) => ({
+      data: params.start_day === "2026-09-01" ? { data: { ...current.data, data: [] } } : previous,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    const row = within(screen.getByRole("table", { name: "Moliyaviy tahlil" })).getByText("01.09").closest("tr") as HTMLElement;
+    expect(row).toHaveTextContent("—");
+    expect(row).not.toHaveTextContent("0 ta");
+  });
+
+  it("2Fj7iw1k: eski zaxira yo'li yo'q — grafik `chart.labels/values` dan; raqamli kalitlardan nuqta yig'ilmaydi", () => {
+    getRevenueMock.mockImplementation(() => ({
+      data: {
+        data: {
+          summary: { totalRevenue: 150000, totalOrders: 3, avgRevenue: 10000 },
+          chart: { labels: [], values: [] },
+          "0": { period: "2026-09-01", label: "01.09", revenue: 50000 },
+          "1": { period: "2026-09-02", label: "02.09", revenue: 100000 },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    expect(screen.queryByTestId("revenue-chart")).not.toBeInTheDocument();
+  });
 });
 
 describe("Kassa balansi (o'sha revenue javobidan)", () => {
@@ -250,6 +304,23 @@ describe("Kassa balansi (o'sha revenue javobidan)", () => {
 });
 
 describe("TrendTooltip", () => {
+  it("2Fj7iw1k: maketdagidek — sana · joriy · oldingi davr · % farq", () => {
+    renderWithProviders(
+      <TrendTooltip
+        active
+        currentName="Joriy"
+        previousName="Oldingi"
+        showPrevious
+        payload={[{ payload: { label: "02.09", current: 100000, previous: 80000, previousLabel: "18.08 (oldingi)" } }]}
+      />,
+    );
+    expect(screen.getByText("02.09")).toBeInTheDocument();
+    expect(screen.getByText("100 000 so'm")).toBeInTheDocument();
+    expect(screen.getByText("80 000 so'm")).toBeInTheDocument();
+    expect(screen.getByText("18.08 (oldingi)")).toBeInTheDocument();
+    expect(screen.getByText(/\+25/)).toBeInTheDocument();
+  });
+
   it("oldingi nuqta yo'q (null) — qator chizilmaydi, haqiqiy nol esa ko'rinadi", () => {
     renderWithProviders(
       <TrendTooltip

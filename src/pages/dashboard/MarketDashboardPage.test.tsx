@@ -122,16 +122,26 @@ describe("MarketDashboardPage (v2)", () => {
     expect(section("Muvaffaqiyat darajasi")).toHaveTextContent("Kecha · 36,8%");
   });
 
-  it("«Barchasi» — market uchun aniq sanalar (`all` emas), kpi yo'q", async () => {
+  it("«Barchasi» — `all: true` (tya24blo; `start_day=1970-01-01` emas), kpi yo'q", async () => {
     const user = userEvent.setup();
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
 
     const calls = getDashboardMock.mock.calls.filter(([, enabled]) => enabled === true);
-    const lastParams = calls[calls.length - 1][0];
-    expect(lastParams).toEqual(expect.objectContaining({ start_day: "1970-01-01", end_day: expect.any(String) }));
-    expect(lastParams).not.toHaveProperty("all");
+    expect(calls[calls.length - 1][0]).toEqual({ all: true });
     expect(getKpiMock).not.toHaveBeenCalled();
+  });
+
+  it("tya24blo: «Barchasi» va `clamped` — sana maydonida haqiqiy oraliq (oxirgi 366 kun)", async () => {
+    const user = userEvent.setup();
+    getDashboardMock.mockImplementation((params: { all?: boolean }) => {
+      const base = buildDashboardResponse();
+      return params?.all ? { ...base, data: { data: { ...base.data.data, appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-20" } } } } : base;
+    });
+    renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+
+    expect(screen.getByText(/^21\.10\.2025\s–\s20\.10\.2026$/)).toBeInTheDocument();
   });
 
   it("sozlamada o'chirilgan bloklar (reyting, sotuv foizi) chizilmaydi", async () => {

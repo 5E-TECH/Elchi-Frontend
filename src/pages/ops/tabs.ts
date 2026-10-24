@@ -10,12 +10,16 @@ export interface OpsTabMeta {
   labelKey: string;
   /**
    * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut.
-   * SAQLANADI — eski havola yoki xatcho'p buzilmasin.
+   * SAQLANADI — eski havola yoki xatcho'p buzilmasin. Markaz ichida tug'ilgan tabda (masalan «Xarajat
+   * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
    */
-  legacyPath: string;
+  legacyPath?: string;
   /** `src/pages/` ichidagi papka nomi. */
   pageDir: string;
 }
+
+/** «Xarajat kategoriyalari» tabi kaliti — `/ops?tab=expense-categories` («Kassadan xarajat» havolasi ham shu). */
+export const EXPENSE_CATEGORIES_TAB = "expense-categories";
 
 export const OPS_TABS: OpsTabMeta[] = [
   {
@@ -23,6 +27,16 @@ export const OPS_TABS: OpsTabMeta[] = [
     labelKey: "tabs.finance",
     legacyPath: "/finance-operators",
     pageDir: "finance-operators",
+  },
+  {
+    /**
+     * Kassa xarajati kategoriyalari (Elchi Pochta №1) — ilgari «Asosiy kassa» sarlavhasidagi tugmadan ochiladigan
+     * oyna edi; sozlama sifatida Ops vositalariga ko'chirildi (moliya guruhi, «Moliya operatorlari» dan keyin).
+     * To'g'ridan-to'g'ri eski yo'li yo'q. «Kassadan xarajat» oynasidagi havola shu tabga olib keladi.
+     */
+    key: EXPENSE_CATEGORIES_TAB,
+    labelKey: "tabs.expenseCategories",
+    pageDir: "expense-categories",
   },
   {
     key: "integrations",

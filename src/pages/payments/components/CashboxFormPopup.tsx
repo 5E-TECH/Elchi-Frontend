@@ -5,12 +5,14 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Banknote, Check, CreditCard, Minus, Plus, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import i18n from "../../../i18n";
 import { useExpenseCategories } from "../../../entities/expense-category";
 import { CURRENCY_LABEL, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 import {
     Badge,
     Button,
+    buttonClasses,
     Dialog,
     Field,
     SegmentedControl,
@@ -45,7 +47,8 @@ import { parseAmountInput } from "./lib/amountInput";
  * `Select` (`GET finance/cashbox/expense-categories`, faol kategoriyalar `sort_order` bo'yicha, ostida «Nimalar
  * kiradi»), payload'ga `expense_category_id`. To'ldirish oynasida maydon ham, so'rov ham yo'q (backend `fill` bu
  * maydonni 400 bilan rad etadi). Ro'yxat yuklanmasa (ostida sabab va «Qayta urinish») yoki faol kategoriya yo'q
- * bo'lsa (superadminda — «Xarajat kategoriyalari» oynasini ochish, `onManageCategories`) maydon o'chiq va
+ * bo'lsa (superadminda — «Xarajat kategoriyalari» havolasi: Ops vositalaridagi sozlama tabiga o'tadi,
+ * `manageCategoriesTo`) maydon o'chiq va
  * «Xarajatni saqlash» bloklanadi; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat tozalanadi va
  * qaytadan tanlash so'raladi.
  */
@@ -99,9 +102,10 @@ interface CashboxFormPopupProps {
     categoryRequiredMessage?: string;
     /**
      * Faqat `spend`, kategoriyalarni boshqara oladigan rol (superadmin): faol kategoriya yo'q bo'lsa maydon ostida
-     * «Xarajat kategoriyalari» havolasi shu funksiyani chaqiradi (boshqaruv oynasi shu oyna ustida ochiladi).
+     * «Xarajat kategoriyalari» havolasi shu manzilga olib boradi (Ops → «Xarajat kategoriyalari» tabi; sozlama
+     * kassada emas — oyna yopiladi, sahifa almashadi).
      */
-    onManageCategories?: () => void;
+    manageCategoriesTo?: string;
     /** Berilsa — yuborishdan oldin tasdiq oynasi (pul harakati — majburiy). */
     confirm?: { title: string; cashboxLabel: string };
 }
@@ -126,7 +130,7 @@ const CashboxFormPopup = ({
     commentRequiredMessage,
     typeRequiredMessage,
     categoryRequiredMessage,
-    onManageCategories,
+    manageCategoriesTo,
     confirm: confirmCopy,
 }: CashboxFormPopupProps) => {
     const { t, i18n: i18nInstance } = useTranslation("payments");
@@ -282,18 +286,16 @@ const CashboxFormPopup = ({
             </Button>
         </span>
     ) : categoriesEmpty ? (
-        onManageCategories ? (
+        manageCategoriesTo ? (
             <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span>{t("v2MainCashbox.form.categoryNoneManage")}</span>
-                <Button
-                    variant="link"
-                    size="sm"
-                    onClick={onManageCategories}
-                    aria-haspopup="dialog"
-                    className="max-md:min-h-11"
+                {/* Boshqa sahifaga olib boradi — havola (`<Link>` + `buttonClasses`, CODE-MAP 2.1), tugma emas. */}
+                <Link
+                    to={manageCategoriesTo}
+                    className={buttonClasses({ variant: "link", size: "sm", className: "max-md:min-h-11" })}
                 >
                     {t("v2ExpenseCategories.manage")}
-                </Button>
+                </Link>
             </span>
         ) : (
             t("v2MainCashbox.form.categoryNone")

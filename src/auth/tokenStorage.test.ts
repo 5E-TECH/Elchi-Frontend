@@ -61,4 +61,18 @@ describe("tokenStorage", () => {
     expect(window.sessionStorage.getItem("accessToken")).toBeNull();
     expect(window.localStorage.getItem("accessToken")).toBeNull();
   });
+
+  it("getSessionId — JWT `sid` (kichik harfda); `sid` siz, buzilgan yoki yo'q token — null", () => {
+    const b64 = (value: unknown) =>
+      window.btoa(JSON.stringify(value)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const jwt = (claims: Record<string, unknown>) => `${b64({ alg: "HS256" })}.${b64({ sub: "1", ...claims })}.sig`;
+
+    expect(tokenStorage.getSessionId()).toBeNull();
+    tokenStorage.setAccessToken(jwt({ sid: "7F3C2A10-5B6D-4E8F-9A01-23456789ABCD" }));
+    expect(tokenStorage.getSessionId()).toBe("7f3c2a10-5b6d-4e8f-9a01-23456789abcd");
+    expect(tokenStorage.getSessionId(jwt({}))).toBeNull();
+    expect(tokenStorage.getSessionId(jwt({ sid: 42 }))).toBeNull();
+    expect(tokenStorage.getSessionId("not-a-jwt")).toBeNull();
+    expect(tokenStorage.getSessionId(null)).toBeNull();
+  });
 });

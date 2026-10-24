@@ -19,7 +19,7 @@
   "security": {
     "title": "Xavfsizlik",
     "password": "Parol",
-    "passwordHint": "Yangi parol saqlangach, tizimdan chiqasiz va yangi parol bilan qayta kirasiz.",
+    "passwordHint": "Yangi parol saqlangach, boshqa barcha qurilmalar hisobingizdan chiqadi; shu qurilmada ishlashda davom etasiz.",
     "changePassword": "Parolni o'zgartirish"
   },
   "sessions": {
@@ -27,17 +27,20 @@
     "description": "Hisobingizga kirgan qurilmalar. Tizimdan chiqsangiz, faqat shu qurilmadagi sessiya yopiladi; tanimagan qurilmani shu yerdan chiqaring.",
     "activeCount": "{{count}} ta faol",
     "current": "Shu qurilma",
+    "expired": "Qayta kirish kerak",
     "unknownDevice": "Noma'lum qurilma",
     "kind": {
       "phone": "Telefon",
       "tablet": "Planshet",
       "desktop": "Kompyuter"
     },
-    "ip": "IP: {{ip}}",
-    "ipUnknown": "IP noma'lum",
+    "ip": "Tarmoq IP: {{ip}}",
+    "ipUnknown": "Tarmoq IP noma'lum",
+    "ipHint": "Bitta Wi-Fi tarmog'idagi qurilmalar bir xil IP bilan ko'rinadi.",
     "loggedInAt": "Kirgan vaqti",
+    "firstLoggedInAt": "Birinchi marta:",
     "lastSeenAt": "Oxirgi faollik",
-    "listLabel": "Faol sessiyalar ro'yxati",
+    "listLabel": "Sessiyalar ro'yxati",
     "loading": "Sessiyalar yuklanmoqda",
     "emptyTitle": "Faol sessiya topilmadi",
     "emptyDescription": "Hisobingizga kirgan qurilmalar shu yerda ko'rinadi. Avvalroq kirgan bo'lsangiz, sessiya keyingi yangilanishda (soatiga bir marta) chiqadi.",
@@ -48,6 +51,7 @@
       "aria": "Chiqarish: {{device}}",
       "title": "Qurilmani chiqarishni tasdiqlang",
       "description": "Bu qurilma hisobingizdan chiqariladi — keyingi so'rovida kirish sahifasiga qaytadi. Qayta kirish uchun login va parol kerak bo'ladi.",
+      "descriptionExpired": "Bu qurilmaning sessiyasi yopiladi va ro'yxatdan olinadi. U baribir qayta kirishi kerak edi — kirsa, yangi sessiya ochiladi.",
       "lastSeen": "oxirgi faollik {{when}}",
       "confirm": "Chiqarish",
       "loading": "Chiqarilmoqda…",
@@ -65,6 +69,10 @@
       "successDescription": "{{count}} ta sessiya yopildi.",
       "noneTitle": "Boshqa faol sessiya qolmagan",
       "reloginRequired": "Shu qurilmaning sessiyasini aniqlab bo'lmadi. Tizimdan chiqib, qayta kiring va yana urinib ko'ring."
+    },
+    "lock": {
+      "title": "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.",
+      "toastTitle": "Hozircha chiqarib bo'lmaydi"
     }
   },
   "password": {
@@ -81,10 +89,11 @@
     "tooShort": "Parol kamida 4 ta belgidan iborat bo'lsin",
     "show": "Parolni ko'rsatish",
     "hide": "Parolni yashirish",
-    "warning": "Saqlangach, tizimdan chiqasiz. Keyin yangi parol bilan qayta kiring.",
+    "warning": "Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi.",
     "cancel": "Bekor qilish",
     "submit": "Parolni saqlash",
-    "saving": "Saqlanmoqda…"
+    "saving": "Saqlanmoqda…",
+    "changedOthersSignedOut": "Parol almashtirildi — boshqa qurilmalardan chiqildi"
   },
   "editDialog": {
     "title": "Profilni tahrirlash",

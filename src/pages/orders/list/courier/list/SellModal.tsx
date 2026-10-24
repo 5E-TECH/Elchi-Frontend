@@ -26,7 +26,7 @@ import {
   isProofRequiredByConditions,
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
-import { getMarketPaidMax, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
+import { getMarketPaidMax, readMarketPaidBase, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
 import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
   getDeliveryLabelKey,
@@ -212,7 +212,7 @@ const SellDialog = ({
   const isPartnerOrder = order.external_id !== null && order.external_id !== undefined && order.external_id !== "";
   const showMarketPaid = !isPartial && !isPartnerOrder;
   const marketPaidAmount = showMarketPaid ? toAmount(marketPaid) : 0;
-  const marketPaidMax = getMarketPaidMax(order.to_be_paid, effectiveExtraCost);
+  const marketPaidMax = getMarketPaidMax(readMarketPaidBase(order), effectiveExtraCost);
   const isMarketPaidAboveMax = marketPaidMax !== null && marketPaidAmount > marketPaidMax;
 
   const getItemQty = (item: OrderItem) =>

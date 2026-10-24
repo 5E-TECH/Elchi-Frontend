@@ -8,7 +8,7 @@ import type { CatalogProduct } from "../model/orderPricing";
 
 /**
  * Katalog to'liq olinadi (gateway chegarasi 500): `limit` siz server 10 tasini berardi va qidiruv faqat shu
- * 10 ta ichida ishlardi (D-20). Qidiruv — mijozda, olingan ro'yxat bo'yicha.
+ * 10 ta ichida ishlardi (D-20). Qidiruv — serverda (`useCatalogSearch`, qNwXfqLL).
  */
 const CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 

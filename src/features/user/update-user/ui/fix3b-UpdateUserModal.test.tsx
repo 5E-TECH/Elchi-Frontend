@@ -9,8 +9,9 @@ import { peekLoginNotice, clearLoginNotice } from "../../../../auth/loginNotice"
 /**
  * fix3b RBAC-16 (docs: enum = active | inactive) — "Bloklangan" varianti
  * olib tashlandi (backend 400 berardi).
- * fix3b RBAC-09 — o'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi
- * (backend sessiyani yopadi), login sahifasida sababi ko'rsatiladi.
+ * Parol (2026-10-23, fix3b RBAC-09 o'rniga): o'z parolini o'zgartirganda backend BOSHQA qurilmalarni chiqaradi,
+ * shu qurilma qoladi — foydalanuvchi chiqarilmaydi, xabar «Parol almashtirildi — boshqa qurilmalardan chiqildi»;
+ * boshqa xodimning paroli almashsa — xabarda o'sha xodim barcha qurilmalardan chiqarilgani aytiladi.
  */
 
 beforeAll(() => {
@@ -106,7 +107,7 @@ describe("UpdateUserModal — holat variantlari (fix3b)", () => {
   });
 });
 
-describe("UpdateUserModal — o'z parolini o'zgartirish (fix3b RBAC-09)", () => {
+describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)", () => {
   beforeEach(() => {
     mocks.updateUser.mockReset().mockResolvedValue({ statusCode: 200 });
     mocks.updateMyProfile.mockReset().mockResolvedValue({ statusCode: 200 });
@@ -114,40 +115,59 @@ describe("UpdateUserModal — o'z parolini o'zgartirish (fix3b RBAC-09)", () => 
   });
   afterEach(() => clearLoginNotice());
 
-  it("profil sahifasida yangi parol saqlansa — darhol chiqariladi va login xabari qoladi", async () => {
+  it("profil rejimida o'z paroli saqlansa — chiqarilmaydi, «boshqa qurilmalardan chiqildi»", async () => {
     const user = userEvent.setup();
     renderModal(makeUser({ id: "56" }), { role: "courier", id: "56" }, { isOwnProfile: true });
 
     await typePassword(user, "yangiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
-    await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
     expect(mocks.updateMyProfile).toHaveBeenCalledWith(expect.objectContaining({ password: "yangiParol1" }));
-    expect(peekLoginNotice()).toBe("passwordChanged");
-    expect(await screen.findByText("Parol o'zgardi — qayta kiring")).toBeInTheDocument();
+    expect(mocks.logout).not.toHaveBeenCalled();
+    expect(peekLoginNotice()).toBeNull();
   });
 
-  it("admin ro'yxatdan O'ZINI tahrirlab parolni o'zgartirsa ham chiqariladi", async () => {
+  it("admin ro'yxatdan O'ZINI tahrirlab parolni o'zgartirsa ham — chiqarilmaydi, o'sha xabar", async () => {
     const user = userEvent.setup();
     renderModal(makeUser({ id: "7", role: "admin" }), { role: "admin", id: "7" });
 
     await typePassword(user, "yangiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
-    await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
     expect(mocks.updateUser).toHaveBeenCalledWith({ id: "7", data: expect.objectContaining({ password: "yangiParol1" }) });
+    expect(mocks.logout).not.toHaveBeenCalled();
   });
 
-  it("boshqa xodimning parolini o'zgartirgan admin chiqarilmaydi", async () => {
+  it("boshqa xodimning paroli — admin chiqarilmaydi, xabarda xodim barcha qurilmalardan chiqarilgani", async () => {
     const user = userEvent.setup();
     renderModal(makeUser({ id: "263" }), { role: "admin", id: "7" });
 
     await typePassword(user, "yangiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
-    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText(
+        "\"E2E Kuryer\" yangilandi. Parol almashtirildi — foydalanuvchi barcha qurilmalardan chiqarildi.",
+      ),
+    ).toBeInTheDocument();
+    expect(mocks.updateUser).toHaveBeenCalledTimes(1);
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
+  });
+
+  it("parolsiz boshqa xodimni yangilash — oddiy «muvaffaqiyatli yangilandi»", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "263" }), { role: "admin", id: "7" });
+
+    const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+    if (!nameInput) throw new Error("name input not found");
+    await user.type(nameInput, " 2");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    expect(await screen.findByText("\"E2E Kuryer\" muvaffaqiyatli yangilandi!")).toBeInTheDocument();
+    expect(screen.queryByText(/barcha qurilmalardan/)).not.toBeInTheDocument();
   });
 
   it("parolsiz o'z profilini yangilash chiqarmaydi", async () => {

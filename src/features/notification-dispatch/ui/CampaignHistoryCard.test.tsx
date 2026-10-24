@@ -146,6 +146,8 @@ describe("CampaignHistoryCard (KM-3)", () => {
     expect(rows[3]).toHaveTextContent("Xodim: Kuryer");
     expect(within(rows[1]).getByRole("button", { name: "«Kuzgi chegirma» kampaniyasini bekor qilish" })).toBeVisible();
     expect(within(rows[3]).getByRole("button", { name: "«Kuryerlar uchun yangi qoidalar» hisoboti" })).toBeVisible();
+    // WIsb9Ytq: yuborilgan kampaniyada «Bekor qilish» YO'Q (faqat `can_cancel` da).
+    expect(within(rows[3]).queryByRole("button", { name: /bekor qilish/ })).toBeNull();
     expect(card).toHaveTextContent("3 tadan 1–3");
     // Yagona yuborilayotgan kampaniya tungi taqiqda to'xtagan — 3 s yangilanish yo'q, «jonli» yozuv ham yo'q.
     expect(card).not.toHaveTextContent("Holat har 3 soniyada yangilanadi");

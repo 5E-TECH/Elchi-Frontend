@@ -239,6 +239,14 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     qo'shish / olib tashlashdan keyin `queryKeys.branches.all` eskiradi — ro'yxatdagi XODIMLAR soni ham (avval faqat
     tafsilot va xodimlar; «← Filiallar» da 30 s gacha eski son turardi). Navbatda: o2j9uDtT (hududlar, soxta «0 kuryer»),
     keyin NIFAnCvf + 2Fj7iw1k (ikkalasi `FinancialAnalysis.tsx`), wLNccBkX + lQP3ojwq (Ops RBAC, bitta PR).
+  - **Xarajat kategoriyalari → Ops (2026-10-23, `fe-ops-expcat`):** kassa xarajati kategoriyalari sozlamasi «Asosiy
+    kassa» sarlavhasidagi tugma + `ExpenseCategoriesDialog` dan Ops vositalariga ko'chdi: yangi tab «Xarajat
+    kategoriyalari» (`/ops?tab=expense-categories`, moliya guruhi — «Moliya operatorlari» dan keyin; `pages/expense-categories`:
+    `OpsIntro` + «Kategoriyalar» kartasi, qo'shish / tahrirlash — `ExpenseCategoryFormDialog`, o'chirish — `useConfirm`).
+    Hub ichida tug'ilgan tab — `OpsTabMeta.legacyPath` ixtiyoriy, tab maslahatida «Eski manzil» yo'q. Kassa sarlavhasida
+    tugma yo'q; «Kassadan xarajat» da faol kategoriya yo'q bo'lsa superadmin havolasi (`<Link>`) shu tabga olib boradi
+    (bloklangan saqlash va matnlar o'zgarmagan). Dialog va uning testlari olib tashlandi; matnlar `payments:v2ExpenseCategories`
+    dan `ops:expenseCategories` ga (faqat `manage` qoldi). Maket yo'q — eng yaqini `superadmin-ops-investors`.
   - **dev bilan sinxron (2026-10-22):** `origin/dev` (Urozov04: EP-1 «Xarajat kategoriyalari» kassada, EP-3 profil
     «Sessiyalar») `shodiyor` ga merge qilindi — `shodiyor → dev` endi to'qnashuvsiz. To'qnashuvlar: `ProfilePage`
     (TG-B tuzilmasi + «Sessiyalar» barcha rollarga), `access.test.ts`, `app-shot.mjs`, route-map `/profile` izohi,

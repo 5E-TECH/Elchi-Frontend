@@ -51,6 +51,26 @@ describe("SessionExpiredScreen (dizayn v2: common-session-expired)", () => {
     expect(screen.queryByText(/Xavfsizlik uchun qayta kirishingiz kerak/)).not.toBeInTheDocument();
   });
 
+  it("revoked + `password_changed` — «Parol almashtirildi» matni; boshqa sabab — umumiy «yopildi» matni", () => {
+    const { unmount } = renderWithProviders(
+      <SessionExpiredScreen expiredAt={todayAt1415()} revoked revokedReason="password_changed" onContinue={vi.fn()} />,
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Sessiya tugadi" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Parol almashtirildi. Davom ettirish uchun yangi parol bilan qayta kiring."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/boshqa qurilmadan yopildi/)).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(
+      <SessionExpiredScreen expiredAt={todayAt1415()} revoked revokedReason="security_reset" onContinue={vi.fn()} />,
+    );
+    expect(
+      screen.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring."),
+    ).toBeInTheDocument();
+  });
+
   it("hides the time row when the expiry time is unknown", () => {
     renderWithProviders(<SessionExpiredScreen expiredAt={null} onContinue={vi.fn()} />);
 
@@ -74,6 +94,21 @@ describe("SessionExpiredScreen (dizayn v2: common-session-expired)", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Сессия истекла" })).toBeInTheDocument();
     expect(screen.getByText("Сегодня, 14:15")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Войти снова" })).toBeInTheDocument();
+  });
+
+  it("password_changed — ru / en", async () => {
+    await i18n.changeLanguage("ru");
+    const { unmount } = renderWithProviders(
+      <SessionExpiredScreen expiredAt={null} revoked revokedReason="password_changed" onContinue={vi.fn()} />,
+    );
+    expect(screen.getByText("Пароль был изменён. Чтобы продолжить, войдите с новым паролем.")).toBeInTheDocument();
+    unmount();
+
+    await i18n.changeLanguage("en");
+    renderWithProviders(
+      <SessionExpiredScreen expiredAt={null} revoked revokedReason="password_changed" onContinue={vi.fn()} />,
+    );
+    expect(screen.getByText("Your password was changed. Sign in with the new password to continue.")).toBeInTheDocument();
   });
 });
 
@@ -110,6 +145,16 @@ describe("/login — «Sessiya tugadi» oqimi", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Sessiya tugadi" })).toBeInTheDocument();
     expect(
       screen.getByText("Sessiyangiz boshqa qurilmadan yopildi. Davom ettirish uchun qayta kiring."),
+    ).toBeInTheDocument();
+  });
+
+  it("session closed because the password changed (live channel reason) — the screen says so", () => {
+    rememberLoginNotice("sessionExpired", { at: todayAt1415(), revoked: true, revokedReason: "password_changed" });
+    renderWithProviders(<Login />, { route: "/login" });
+
+    expect(screen.getByRole("heading", { level: 1, name: "Sessiya tugadi" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Parol almashtirildi. Davom ettirish uchun yangi parol bilan qayta kiring."),
     ).toBeInTheDocument();
   });
 

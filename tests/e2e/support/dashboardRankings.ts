@@ -81,15 +81,23 @@ export const mockRankingsApi = async (page: Page, { role = "superadmin", topMark
     if (path === "analytics/dashboard") {
       const params = Object.fromEntries(url.searchParams);
       dashboardParams.push(params);
-      const oneDay = !params.start_day || params.start_day === params.end_day;
+      // «Barchasi» — `all=true` (tya24blo): backend oraliqni oxirgi 366 kunga qisqartiradi va reytingni shu
+      // oraliq bo'yicha beradi (`selected_range`, `from` — qisqartirilgan boshlanish, 1970 emas).
+      const today = new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 10);
+      const all = params.all === "true";
+      const startDay = all
+        ? new Date(Date.parse(`${today}T00:00:00Z`) - 365 * 86_400_000).toISOString().slice(0, 10)
+        : params.start_day;
+      const endDay = all ? today : params.end_day;
+      const oneDay = !startDay || startDay === endDay;
       const meta = oneDay
         ? { period_rule: "last_30_days", period_days: 30, min_orders: 1 }
         : {
             period_rule: "selected_range",
             period_days: null,
             // Toshkent vaqti (UTC+5): kun boshi / oxiri.
-            from: `${params.start_day}T00:00:00.000+05:00`,
-            to: `${params.end_day}T23:59:59.999+05:00`,
+            from: `${startDay}T00:00:00.000+05:00`,
+            to: `${endDay}T23:59:59.999+05:00`,
             min_orders: 1,
           };
       return reply(route, {

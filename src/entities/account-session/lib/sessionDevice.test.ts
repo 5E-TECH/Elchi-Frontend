@@ -44,7 +44,8 @@ describe("shortUserAgent", () => {
 });
 
 describe("currentSessionFirst", () => {
-  const session = (id: string, current = false) => ({ id, current }) as AccountSession;
+  const session = (id: string, current = false, status: AccountSession["status"] = "active") =>
+    ({ id, current, status }) as AccountSession;
 
   it("«Shu qurilma» tepada, qolgani server tartibida", () => {
     expect(currentSessionFirst([session("a"), session("b", true), session("c")]).map((s) => s.id)).toEqual([
@@ -52,5 +53,27 @@ describe("currentSessionFirst", () => {
       "a",
       "c",
     ]);
+  });
+
+  it("qayta kirishi kerak bo'lganlar (`expired`) — faollardan keyin", () => {
+    const list = [session("x", false, "expired"), session("a"), session("me", true), session("y", false, "expired"), session("b")];
+    expect(currentSessionFirst(list).map((s) => s.id)).toEqual(["me", "a", "b", "x", "y"]);
+  });
+});
+
+describe("describeSessionDevice — mijoz yuborgan aniq nom", () => {
+  it.each([
+    "Samsung SM-A515F · Android 13 · Chrome 155",
+    "Windows 11 · Chrome 154",
+    "iPhone · iOS 17 · Safari",
+  ])("«%s» — tursiz, o'zicha", (device_name) => {
+    expect(describeSessionDevice({ device_name, user_agent: null })).toEqual({ kind: null, detail: device_name });
+  });
+
+  it("modelsiz telefon «Telefon · Android 14 · Firefox 131» — tur joriy tilda yoziladi", () => {
+    expect(describeSessionDevice({ device_name: "Telefon · Android 14 · Firefox 131", user_agent: null })).toEqual({
+      kind: "phone",
+      detail: "Android 14 · Firefox 131",
+    });
   });
 });

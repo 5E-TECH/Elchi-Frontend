@@ -24,7 +24,21 @@ describe("receiveTokensInChunks", () => {
 
     expect(send.mock.calls.map(([chunk]) => chunk.length)).toEqual([200, 50]);
     expect(send.mock.calls[1][0][49]).toBe("token-250");
-    expect(result).toEqual({ received: 250, unmatched: [] });
+    expect(result).toEqual({ received: 250, unmatched: [], batchTokens: [] });
+  });
+
+  it("r8EGkLrP: bo'laklardagi `batchTokens` jamlanadi (bo'lakda yo'q bo'lsa — bo'sh)", async () => {
+    const send = vi.fn((chunk: string[]) =>
+      Promise.resolve(
+        chunk.length === 200
+          ? { received: 200, unmatched: [], batchTokens: ["bag-1"] }
+          : { received: chunk.length, unmatched: [] },
+      ),
+    );
+
+    const result = await receiveTokensInChunks(tokens(250), send);
+
+    expect(result.batchTokens).toEqual(["bag-1"]);
   });
 
   it("aynan 200 ta token → bitta so'rov; 201 ta → ikkita", async () => {

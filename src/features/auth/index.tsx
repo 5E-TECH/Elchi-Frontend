@@ -16,7 +16,8 @@ import SessionExpiredScreen from "./ui/SessionExpiredScreen";
  *   `surface` ustida forma (≤ 400 px, markazda).
  * - < 1024: panel o'rnida `<main>` tepasida navy tasma (logotip, «Elchi CRM», shior), ostida forma.
  * - Sessiya tugagani sababli chiqarilgan bo'lsa (`loginNotice` → `sessionExpired`) — avval «Sessiya tugadi»
- *   ekrani (boshqa qurilmadan yopilgan bo'lsa — `revoked`, sababi bilan); «Qayta kirish» o'sha sahifada formani ochadi. Xabar bir martalik: initializer'da o'qiladi, effektda
+ *   ekrani (boshqa qurilmadan yopilgan bo'lsa — `revoked`, sababi bilan; parol almashgani uchun — `revokedReason`);
+ *   «Qayta kirish» o'sha sahifada formani ochadi. Xabar bir martalik: initializer'da o'qiladi, effektda
  *   o'chiriladi (StrictMode ikki marta o'qisa ham bir xil).
  * - Mavzu — ilova mavzusi (tokenlar). «© 2026 Elchi Pochta» chizilmaydi (ega qarori 2026-10-16).
  */
@@ -45,6 +46,7 @@ const Login = () => {
       <SessionExpiredScreen
         expiredAt={expiredNotice?.at ?? null}
         revoked={expiredNotice?.revoked === true}
+        revokedReason={expiredNotice?.revokedReason}
         onContinue={() => setShowExpired(false)}
       />
     );

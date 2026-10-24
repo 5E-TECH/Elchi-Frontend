@@ -21,6 +21,8 @@ export interface TrendPoint {
   current: number;
   previous: number | null;
   previousLabel?: string;
+  /** Shu bo'lakdagi buyurtmalar soni (`data[].ordersCount`) — «Jadval» ko'rinishida; noma'lum — `null`. */
+  orders?: number | null;
 }
 
 export interface FinancialTrendPlotProps {
