@@ -6109,10 +6109,10 @@
   },
   {
    "role": "superadmin",
-   "viewId": "warehouse-transfer-dialog",
+   "viewId": "warehouse-stock-in-dialog",
    "menuKey": "warehouse",
-   "title": "Omborga mahsulot jo'natish (popup)",
-   "fragment": "superadmin--warehouse-transfer-dialog",
+   "title": "Omborga mahsulot qo'shish — kirim (popup)",
+   "fragment": "superadmin--warehouse-stock-in-dialog",
    "order": 78.4,
    "kind": "dialog"
   },
@@ -6145,10 +6145,10 @@
   },
   {
    "role": "admin",
-   "viewId": "warehouse-transfer-dialog",
+   "viewId": "warehouse-stock-in-dialog",
    "menuKey": "warehouse",
-   "title": "Omborga mahsulot jo'natish (popup)",
-   "fragment": "superadmin--warehouse-transfer-dialog",
+   "title": "Omborga mahsulot qo'shish — kirim (popup)",
+   "fragment": "superadmin--warehouse-stock-in-dialog",
    "order": 196.84,
    "kind": "dialog"
   },
@@ -6178,6 +6178,51 @@
    "fragment": "superadmin--users-create-password-result-dialog",
    "order": 81.2,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-manual-source",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — manba: viloyat ombori yoki HQ",
+   "fragment": "superadmin--neworders-create-manual-source",
+   "order": 28.9,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-market-warehouse",
+   "menuKey": "users",
+   "title": "Marketni tahrirlash — «Ombordan buyurtma yaratish» kaliti (popup)",
+   "fragment": "superadmin--users-edit-market-warehouse",
+   "order": 84.23,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "products-edit-dialog-barcode",
+   "menuKey": "products",
+   "title": "Mahsulotni tahrirlash — shtrix kod va QR stiker (popup)",
+   "fragment": "superadmin--products-edit-dialog-barcode",
+   "order": 76.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "warehouse-detail",
+   "menuKey": "warehouse",
+   "title": "Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish)",
+   "fragment": "manager--warehouse-detail",
+   "order": 279.5,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "product-labels",
+   "menuKey": "product-labels",
+   "title": "Mahsulot stikeri — QR va shtrix kod (40×30, 58×40)",
+   "fragment": "tizim--product-labels",
+   "order": 17,
+   "kind": "standalone"
   }
  ],
  "groupTitles": {
@@ -6194,7 +6239,8 @@
    "charts": "Grafiklar (statistika, tahlil)",
    "shift-report-messages": "Smena hisoboti xabarlari (Telegram, tizim)",
    "scan-feedback": "Skaner natijasi: rang effekti va ovoz",
-   "receipts": "Chek va paket cheki"
+   "receipts": "Chek va paket cheki",
+   "product-labels": "Mahsulot stikeri (QR, shtrix kod)"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",
@@ -6248,7 +6294,8 @@
    "products": "Mahsulotlar · HQ, Viloyat, Qabul punkti, Aralash",
    "users": "Foydalanuvchilar · HQ, Viloyat, Qabul punkti, Aralash",
    "regions": "Hududlar · HQ, Viloyat, Qabul punkti, Aralash",
-   "scan": "Skaner (kamera va natija)"
+   "scan": "Skaner (kamera va natija)",
+   "warehouse": "Ombor · Viloyat, Aralash"
   },
   "registrator": {
    "dashboard": "Bosh sahifa",

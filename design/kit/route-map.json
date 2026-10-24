@@ -422,7 +422,7 @@
         "src/pages/orders/create/ui/ExistingCustomerNotice.tsx"
       ],
       "views": {
-        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog", "neworders-create-ai-input-images"],
+        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog", "neworders-create-ai-input-images", "neworders-create-manual-source"],
         "admin": ["neworders-create-manual", "neworders-create-market-picker", "neworders-create-ai", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
         "manager": ["new-orders-create-manual-step1", "new-orders-create-manual-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-manual-step2-customer-suggest", "new-orders-create-manual-step2-existing-customer", "new-orders-create-manual-step2-customer-update-dialog"],
         "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-step2-customer-suggest", "new-orders-create-step2-existing-customer", "new-orders-create-step2-customer-update-dialog"],
@@ -1069,7 +1069,7 @@
         "src/pages/products/model/productErrors.ts"
       ],
       "views": {
-        "superadmin": ["products-list", "products-select-market-dialog", "products-edit-dialog", "products-delete-dialog"],
+        "superadmin": ["products-list", "products-select-market-dialog", "products-edit-dialog", "products-delete-dialog", "products-edit-dialog-barcode"],
         "admin": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "manager": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "registrator": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
@@ -1155,7 +1155,7 @@
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
       ],
       "views": {
-        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog", "users-edit-role", "users-role-confirm-dialog", "users-role-confirm-logist", "users-edit-role-error", "users-edit-role-branch", "users-edit-courier-district", "users-edit-courier-district-phone", "users-edit-market-ai", "users-edit-market-ai-phone", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog"],
+        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog", "users-edit-role", "users-role-confirm-dialog", "users-role-confirm-logist", "users-edit-role-error", "users-edit-role-branch", "users-edit-courier-district", "users-edit-courier-district-phone", "users-edit-market-ai", "users-edit-market-ai-phone", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog", "users-edit-market-warehouse"],
         "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
       },
@@ -1760,13 +1760,14 @@
     {"path": "(taklif) /payments/shift-settings", "section": "finance", "title": "Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)", "components": [], "views": {"superadmin": ["payments-shift-settings"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi."},
     {"path": "(taklif) /ai-assistant", "section": "finance", "title": "AI moliyaviy yordamchi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["ai-assistant", "ai-assistant-access-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi."},
     {"path": "(taklif) /warehouses", "section": "products", "title": "Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-list", "warehouse-create-dialog"], "admin": ["warehouse-list", "warehouse-create-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi."},
-    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, jo'natish (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-transfer-dialog"], "admin": ["warehouse-detail", "warehouse-transfer-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."}
+    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, kirim, to'xtatish (taklif — kodda yo'q; menejer — faqat ko'rish)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-stock-in-dialog"], "admin": ["warehouse-detail", "warehouse-stock-in-dialog"], "manager": ["warehouse-detail"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."}
   ],
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
     "logist": ["orders", "mails", "batches", "couriers"],
     "superadmin": ["aiAssistant", "warehouse"],
-    "admin": ["warehouse"]
+    "admin": ["warehouse"],
+    "manager": ["warehouse"]
   },
   "plannedBottomNav": {
     "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali to'liq bo'lmagan pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi). Yangi rollar (ROL-0): kataklar kodda yozilgan, lekin menyu bandlari hali yo'q — har band o'z sahifasi bilan keladi (logist — LG-5, market_operator — MO-3, investor — IN-2 oladi).",
@@ -1823,14 +1824,18 @@
     "superadmin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborlar ro'yxati — kodda yo'q.",
     "superadmin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor ochish — kodda yo'q.",
     "superadmin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: ombor tafsiloti — kodda yo'q.",
-    "superadmin-warehouse-transfer-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot jo'natish — kodda yo'q.",
+    "superadmin-warehouse-stock-in-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: omborga mahsulot qo'shish (kirim) — admin to'g'ridan qo'shadi, filial tasdig'i yo'q; kodda yo'q.",
     "admin-warehouse-list": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
     "admin-warehouse-create-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
     "admin-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
-    "admin-warehouse-transfer-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
+    "admin-warehouse-stock-in-dialog": "Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti).",
     "market-products-warehouse-stock": "Trello 2026-10-23 (ega topshirig'i), 8-band: market o'z mahsulotlari qoldig'ini omborlar bo'yicha ko'radi (faqat ko'rish) — kodda yo'q.",
     "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
-    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish."
+    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish.",
+    "superadmin-neworders-create-manual-source": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: manba avtomatik: tuman filialida faol ombor va hamma mahsulot yetarli → o'sha ombor, aks holda HQ; yaratuvchi o'zgartiradi (superadmin, admin, registrator; ruxsatli market).",
+    "superadmin-users-edit-market-warehouse": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: market bo'yicha «Ombordan buyurtma yaratish» kaliti (sukut o'chiq, SA/ADMIN).",
+    "superadmin-products-edit-dialog-barcode": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: mahsulot shtrix kodi (EAN-13) va Elchi kodi ELC-P-… + QR stiker chop etish.",
+    "manager-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: viloyat filiali menejeri o'z omborini va ombordan ketadigan buyurtmalarni faqat ko'radi."
   },
   "partialViews": {
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
@@ -2348,6 +2353,7 @@
     },
     "shift-report-messages": {"defines": "Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali.", "code": "taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed)"},
     "scan-feedback": {"defines": "Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari.", "code": "src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin)"},
-    "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin)"}
+    "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin)"},
+    "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "taklif — kodda yo'q (mahsulot kartochkasidan chop etish)"}
   }
 }

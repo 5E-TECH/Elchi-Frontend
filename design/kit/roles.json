@@ -443,6 +443,12 @@
      }
     },
     {
+     "key": "warehouse",
+     "label": "Ombor",
+     "icon": "Warehouse",
+     "group": "Ma'lumotnoma"
+    },
+    {
      "key": "users",
      "label": "Foydalanuvchilar",
      "icon": "i10",
