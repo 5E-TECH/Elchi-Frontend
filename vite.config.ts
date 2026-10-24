@@ -1,6 +1,9 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fillInlineScriptHashes, inlineScriptHashes } from "./scripts/csp-headers.mjs";
 
 const usePolling = process.env.VITE_USE_POLLING !== "false";
 
@@ -55,9 +58,34 @@ const firstPaintPreload = (): Plugin => {
   };
 };
 
+/**
+ * CSP xeshlari (KwodkKWY): `public/_headers` → `dist/_headers` nusxasidagi `{{INLINE_SCRIPT_HASHES}}` o'rniga
+ * yakuniy `dist/index.html` ichki skriptlarining `'sha256-…'` xeshlari yoziladi (preload skripti har build'da
+ * o'zgaradi). Hisoblanmasa build yiqiladi (`scripts/csp-headers.mjs`).
+ */
+const cspInlineScriptHashes = (): Plugin => {
+  let outDir = "dist";
+  return {
+    name: "elchi-csp-inline-script-hashes",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    writeBundle() {
+      const headersPath = resolve(outDir, "_headers");
+      const htmlPath = resolve(outDir, "index.html");
+      if (!existsSync(headersPath) || !existsSync(htmlPath)) {
+        throw new Error("elchi-csp-inline-script-hashes: dist/_headers yoki dist/index.html topilmadi");
+      }
+      const hashes = inlineScriptHashes(readFileSync(htmlPath, "utf8"));
+      writeFileSync(headersPath, fillInlineScriptHashes(readFileSync(headersPath, "utf8"), hashes));
+    },
+  };
+};
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), firstPaintPreload()],
+  plugins: [react(), tailwindcss(), firstPaintPreload(), cspInlineScriptHashes()],
   server: {
     watch: {
       ignored: [
