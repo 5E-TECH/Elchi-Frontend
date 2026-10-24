@@ -55,7 +55,10 @@
         "name": "Product name",
         "market": "Market",
         "price": "Price",
-        "actions": "Actions"
+        "actions": "Actions",
+        "weight": "Weight",
+        "dimensions": "Dimensions, cm",
+        "billable": "Billable weight"
       },
       "sortByName": "Sort by name",
       "editAria": "{{name}} — edit",
@@ -129,7 +132,10 @@
       "empty": "This market has no products yet",
       "emptyDescription": "Add the first product using the form on this page.",
       "loadFailed": "Could not load market products",
-      "editing": "Editing"
+      "editing": "Editing",
+      "columns": {
+        "nameWithBillable": "Product name · billable weight"
+      }
     },
     "form": {
       "price": "Price",
@@ -144,6 +150,41 @@
       "notFound": "Product not found — it may have been deleted. Refresh the list.",
       "server": "Server error. Please try again a bit later.",
       "duplicateName": "This market already has a product with this name — enter a different name."
+    },
+    "measure": {
+      "title": "Weight and dimensions",
+      "subtitle": "The delivery price is calculated from this data",
+      "weight": "Weight",
+      "weightHint": "Packed, to the nearest 0.1 kg",
+      "weightPlaceholder": "0.0",
+      "dimensions": "Dimensions (L × W × H)",
+      "length": "Length",
+      "width": "Width",
+      "height": "Height",
+      "dimensionsHint": "Packed, in centimetres, whole number",
+      "dimensionsHintOff": "Required even when volume is ignored · packed, in centimetres, whole number",
+      "unitKg": "kg",
+      "unitCm": "cm",
+      "kg": "{{value}} kg",
+      "dims": "{{length}} × {{width}} × {{height}}",
+      "notEntered": "Not entered",
+      "basis": {
+        "weight": "by weight",
+        "volume": "by volume",
+        "volumeOff": "volume ignored"
+      },
+      "errors": {
+        "weightRequired": "Enter the weight — at least 0.1 kg",
+        "weightMin": "Weight must be at least 0.1 kg",
+        "weightMax": "Weight must be at most 1,000 kg",
+        "weightPrecision": "At most 3 decimal places (e.g. 0.125)",
+        "notNumber": "Enter digits only",
+        "lengthRequired": "Enter the length",
+        "widthRequired": "Enter the width",
+        "heightRequired": "Enter the height",
+        "dimensionInteger": "Enter a positive whole number",
+        "dimensionMax": "At most 1,000 cm"
+      }
     }
   }
 }

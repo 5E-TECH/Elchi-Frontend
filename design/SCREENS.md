@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **66** · qisman: **130** · v2 ga ko'chirilgan route: **81 / 81**
+**82 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **62** · qisman: **130** · v2 ga ko'chirilgan route: **82 / 82**
 
 ## Qanday ishlatiladi
 
@@ -105,7 +105,7 @@
 | `/regions/districts` | Hududlar | `src/pages/region/pages/districts/index.tsx` | superadmin, admin | 20 | v2 |
 | `/regions/sato-management` | Hududlar | `src/pages/region/pages/sato-management/index.tsx` | superadmin, admin | 12 | v2 |
 | `/regions/logist-assignment` | Hududlar | `src/pages/region/pages/logist-assignment/index.tsx` | superadmin, admin | 6 | v2 |
-| `(taklif) /delivery-tariffs` | Hududlar | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 4 | eski |
+| `/delivery-tariffs` | Hududlar | `src/pages/delivery-tariffs/index.tsx` | superadmin, admin | 4 | v2 |
 | `/branches` | Filiallar | `src/pages/branches/ui/BranchesPage.tsx` | superadmin | 3 | v2 |
 | `/branches/:id` | Filiallar | `src/pages/branches/ui/BranchDetailPage.tsx` | superadmin | 2 | v2 |
 | `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 29 | v2 |
@@ -1184,12 +1184,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/products` — Mahsulotlar ro'yxati (xodim: tahrirlash, o'chirish, yaratish uchun market tanlash; market va market operatori — faqat ko'rish; dizayn v2)
 
-- **Fayllar:** `src/pages/products/list/index.tsx` · `src/pages/products/list/ui/SelectMarketDialog.tsx` · `src/pages/products/list/ui/EditProductDialog.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/entities/product/ui/ProductThumb.tsx` · `src/pages/products/model/productView.ts` · `src/pages/products/model/productErrors.ts`
+- **Fayllar:** `src/pages/products/list/index.tsx` · `src/pages/products/list/ui/SelectMarketDialog.tsx` · `src/pages/products/list/ui/EditProductDialog.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/ProductMeasureFields.tsx` · `src/pages/products/ui/ProductMeasureCells.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/entities/product/ui/ProductThumb.tsx` · `src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx` · `src/entities/delivery-pricing/ui/MeasureWeights.tsx` · `src/entities/delivery-pricing/ui/VolumetricSwitch.tsx` · `src/pages/products/model/productView.ts` · `src/pages/products/model/productMeasure.ts` · `src/pages/products/model/productErrors.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewProducts` (access.ts → canViewProducts)
 - **Rollar:** superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish)
 - **Menyuda:** «Mahsulotlar» (`products`) — superadmin, admin, manager, registrator, market, market_operator
 - **Holat:** v2
-- **Izoh:** Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). Og'irlik, O'lcham, Hisob vazni ustunlari — maket taklifi (backend kerak, 9fHyFp3y → MH-2), chizilmaydi; «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi.
+- **Izoh:** Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). O'lchov ustunlari (6FLyjO6j, backend MH-3 / 9fHyFp3y): «Og'irlik» va «O'lcham, sm» (planshetda yashirin), «Hisob vazni» (qalin + og'irlik bo'yicha / hajm bo'yicha / hajm hisobga olinmaydi; formula — U×K×B/5000, 0,1 kg yuqoriga), o'lchovsiz eski mahsulot — «Kiritilmagan» (warning); telefon kartasida narx ostida; market va operatorda ham. Tahrirlash oynasi — yaratish sahifasi bilan AYNI o'lchov maydonlari (ProductMeasureFields), narx — uchta katak; PATCH faqat o'zgargan o'lchovni yuboradi (U/K/B uchalasi birga). «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi. products-edit-dialog-barcode (shtrix kod, QR stiker) — alohida karta, kodda yo'q.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1217,12 +1217,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/products/create-product/:id` — Mahsulot yaratish (:id — market; dizayn v2)
 
-- **Fayllar:** `src/pages/products/create/index.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/entities/product/ui/ProductThumb.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/model/productErrors.ts`
+- **Fayllar:** `src/pages/products/create/index.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductPriceField.tsx` · `src/pages/products/ui/ProductMeasureFields.tsx` · `src/pages/products/ui/ProductMeasureCells.tsx` · `src/pages/products/model/productMeasure.ts` · `src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx` · `src/entities/delivery-pricing/ui/MeasureWeights.tsx` · `src/entities/delivery-pricing/ui/VolumetricSwitch.tsx` · `src/pages/products/ui/FormErrorSummary.tsx` · `src/entities/product/ui/ProductThumb.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/model/productErrors.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canCreateProducts` (access.ts → canCreateProducts)
 - **Rollar:** superadmin, admin, manager, registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. Maket taklifi (2026-10-19, backend kerak — MH-2): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
+- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. «Og'irlik va o'lcham» (6FLyjO6j, backend MH-3): og'irlik (kg, 0,1…1000, ≤ 3 kasr) + U × K × B (butun sm, 1…1000) MAJBURIY, forma darajasida tekshiriladi (backend 400 ga tushmaydi; xato matni i18n kaliti — til almashsa yangilanadi); «Hajmga qarab hisoblash» sukut yoqiq (o'chiq — maydonlar bloklanmaydi, izoh); jonli «Hajmli vazn» / «Hisob vazni»; «Taxminiy yetkazish narxi» — POST /delivery/quote/by-tariff (~400 ms kutish, faqat o'lchov to'g'ri bo'lsa; xato — «Narxni hisoblab bo'lmadi», forma ishlaydi); izohdagi chegara va yaxlitlash — superadmin/admin'da GET /delivery/pricing-settings dan, boshqa rolda qisqa izoh. Ro'yxat «Mahsulot nomi · hisob vazni». Maketdagi «Taklif» belgisi kodga ko'chirilmaydi. products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1476,26 +1476,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash<br>↳ `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | v2 |
 | `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | v2 |
 
-#### `(taklif) /delivery-tariffs` — Yetkazish tariflari — har kg narxi va qo'shimcha haq chegarasi UI'dan (taklif — kodda yo'q)
+#### `/delivery-tariffs` — Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator, tarix (superadmin, admin; dizayn v2)
 
-- **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Holat:** eski
-- **Izoh:** Trello DAqXPeSy (backend: GET/POST /delivery/tariffs — yangi versiya valid_from bilan; GET/PATCH /delivery/pricing-settings — first_kg_included (qo'shimcha haq chegarasi), min_billable_kg, billable_step_kg, round_to, express_multiplier, pickup_fee, pickup_free_from_count; volumetric_divisor 5000 doimiy). Kalkulyator — POST /delivery/quote/by-tariff. SUPERADMIN/ADMIN.
+- **Fayllar:** `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/TariffsCard.tsx` · `src/pages/delivery-tariffs/ui/TariffEditDialog.tsx` · `src/pages/delivery-tariffs/ui/PricingRulesCard.tsx` · `src/pages/delivery-tariffs/ui/PriceCalculatorCard.tsx` · `src/pages/delivery-tariffs/ui/TariffHistoryCard.tsx` · `src/pages/delivery-tariffs/ui/CardHead.tsx` · `src/pages/delivery-tariffs/model/tariffForm.ts` · `src/pages/delivery-tariffs/model/rulesForm.ts` · `src/pages/delivery-tariffs/model/history.ts` · `src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx` · `src/entities/delivery-pricing/ui/MeasureWeights.tsx` · `src/entities/delivery-pricing/ui/VolumetricSwitch.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canManageDeliveryTariffs` (access.ts → canManageDeliveryTariffs)
+- **Rollar:** superadmin, admin
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** 47WFHzlx (backend DAqXPeSy). Guard canManageDeliveryTariffs — superadmin, admin (boshqa rol — 403; backend ham faqat SA/ADMIN). Kirish — «Hududlar» sarlavhasidagi «Yetkazish tariflari» tugmasi (regions-map maketida yo'q — karta talabi, qo'shni tugmalar naqshi). Tariflar: GET /delivery/tariffs (current + versions); «O'zgartirish» — POST /delivery/tariffs (yangi versiya; bugun — darhol, keyingi kun — valid_from 00:00 +05:00, rejalashtirilgan; namunaviy posilkalar 1,0 / 3,4 / 7,0 kg hozir → yangi — sozlama bilan klientda). Hisob qoidalari: GET/PATCH /delivery/pricing-settings (faqat o'zgargan maydonlar; first_kg_included — qo'shimcha haq chegarasi, jonli misol 3,4 kg «Markazgacha»; volumetric_divisor — faqat ko'rsatiladi). Kalkulyator: POST /delivery/quote/by-tariff. Tarix: versiyalar o'zaro solishtiriladi; muallif ismi (faqat created_by ID) va hisob qoidalari tarixi backend javobida yo'q — chizilmaydi (maketdagi «Asosiy narxga kiradigan og'irlik · 1,0 kg» qatori — faoliyat jurnalida). Saqlangach deliveryPricing keshi yangilanadi (jadval, tarix, kalkulyator).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `(taklif) /delivery-tariffs` | superadmin | `superadmin-regions-delivery-tariffs` — Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | [design/fragments/superadmin--regions-delivery-tariffs.html](fragments/superadmin--regions-delivery-tariffs.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /delivery-tariffs` | superadmin | `superadmin-regions-delivery-tariff-edit-dialog` — Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | [design/fragments/superadmin--regions-delivery-tariff-edit-dialog.html](fragments/superadmin--regions-delivery-tariff-edit-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /delivery-tariffs` | admin | `admin-regions-delivery-tariffs` — Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | [design/fragments/superadmin--regions-delivery-tariffs.html](fragments/superadmin--regions-delivery-tariffs.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /delivery-tariffs` | admin | `admin-regions-delivery-tariff-edit-dialog` — Tarifni o'zgartirish (popup) | [design/fragments/superadmin--regions-delivery-tariff-edit-dialog.html](fragments/superadmin--regions-delivery-tariff-edit-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /delivery-tariffs` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /delivery-tariffs` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `/delivery-tariffs` | superadmin | `superadmin-regions-delivery-tariffs` — Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | [design/fragments/superadmin--regions-delivery-tariffs.html](fragments/superadmin--regions-delivery-tariffs.html) | sahifa | v2 |
+| `/delivery-tariffs` | superadmin | `superadmin-regions-delivery-tariff-edit-dialog` — Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | [design/fragments/superadmin--regions-delivery-tariff-edit-dialog.html](fragments/superadmin--regions-delivery-tariff-edit-dialog.html) | oyna | v2 |
+| `/delivery-tariffs` | admin | `admin-regions-delivery-tariffs` — Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | [design/fragments/superadmin--regions-delivery-tariffs.html](fragments/superadmin--regions-delivery-tariffs.html) | sahifa | v2 |
+| `/delivery-tariffs` | admin | `admin-regions-delivery-tariff-edit-dialog` — Tarifni o'zgartirish (popup) | [design/fragments/superadmin--regions-delivery-tariff-edit-dialog.html](fragments/superadmin--regions-delivery-tariff-edit-dialog.html) | oyna | v2 |
 
 ### Filiallar
 
@@ -2056,7 +2051,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 212 · kodda yo'q: 30
+242 ta maket · kodda bor: 214 · kodda yo'q: 28
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2300,12 +2295,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-neworders-create-manual-source` | Buyurtma yaratish — manba: viloyat ombori yoki HQ | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: manba avtomatik: tuman filialida faol ombor va hamma mahsulot yetarli → o'sha ombor, aks holda HQ; yaratuvchi o'zgartiradi (superadmin, admin, registrator; ruxsatli market). |
 | `superadmin-users-edit-market-warehouse` | Marketni tahrirlash — «Ombordan buyurtma yaratish» kaliti (popup) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: market bo'yicha «Ombordan buyurtma yaratish» kaliti (sukut o'chiq, SA/ADMIN). |
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: mahsulot shtrix kodi (EAN-13) va Elchi kodi ELC-P-… + QR stiker chop etish. |
-| `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `(taklif) /delivery-tariffs` | — | yangi (kodda yo'q) — DAqXPeSy: tariflar (asosiy narx, har qo'shimcha kg), qo'shimcha haq chegarasi (first_kg_included), hisob qoidalari, kalkulyator, tarix — kodda yo'q. |
-| `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `(taklif) /delivery-tariffs` | — | yangi (kodda yo'q) — DAqXPeSy: tarifning yangi versiyasi (kuchga kirish sanasi bilan) — kodda yo'q. |
+| `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 
 ### admin — Admin
 
-158 ta maket · kodda bor: 148 · kodda yo'q: 10
+158 ta maket · kodda bor: 150 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2465,8 +2460,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `(taklif) /warehouses` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
 | `admin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
 | `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `(taklif) /warehouses/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 8-band: adminda ham (superadmin fragmenti). |
-| `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `(taklif) /delivery-tariffs` | — | yangi (kodda yo'q) — DAqXPeSy: adminda ham (superadmin fragmenti). |
-| `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `(taklif) /delivery-tariffs` | — | yangi (kodda yo'q) — DAqXPeSy: adminda ham. |
+| `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 
 ### manager — Menejer
 
@@ -2837,6 +2832,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
 | `src/entities/batch/model/batchStatus.ts` | `/batches` |
+| `src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
+| `src/entities/delivery-pricing/ui/MeasureWeights.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
+| `src/entities/delivery-pricing/ui/VolumetricSwitch.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
 | `src/entities/notification-campaign/ui/AudienceBuilder.tsx` | `/notifications/send` |
 | `src/entities/notification-campaign/ui/AudienceSampleDialog.tsx` | `/notifications/send` |
 | `src/entities/notification-campaign/ui/AudienceSummary.tsx` | `/notifications/send` |
@@ -2937,6 +2935,16 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/dashboard/ui/LogistRegionsTable.tsx` | `/` |
 | `src/pages/dashboard/ui/MarketSalesCard.tsx` | `/` |
 | `src/pages/dashboard/ui/QuickActions.tsx` | `/` |
+| `src/pages/delivery-tariffs/index.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/model/history.ts` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/model/rulesForm.ts` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/model/tariffForm.ts` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/CardHead.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/PriceCalculatorCard.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/PricingRulesCard.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/TariffEditDialog.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/TariffHistoryCard.tsx` | `/delivery-tariffs` |
+| `src/pages/delivery-tariffs/ui/TariffsCard.tsx` | `/delivery-tariffs` |
 | `src/pages/dispatch/index.tsx` | `/dispatch` |
 | `src/pages/dispatch/model/dispatchModel.ts` | `/dispatch` |
 | `src/pages/dispatch/ui/CourierPickerDialog.tsx` | `/dispatch` |
@@ -3179,9 +3187,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/products/list/ui/EditProductDialog.tsx` | `/products` |
 | `src/pages/products/list/ui/SelectMarketDialog.tsx` | `/products` |
 | `src/pages/products/model/productErrors.ts` | `/products`, `/products/create-product/:id` |
+| `src/pages/products/model/productMeasure.ts` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/model/productView.ts` | `/products` |
 | `src/pages/products/ui/FormErrorSummary.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/ProductImageField.tsx` | `/products`, `/products/create-product/:id` |
+| `src/pages/products/ui/ProductMeasureCells.tsx` | `/products`, `/products/create-product/:id` |
+| `src/pages/products/ui/ProductMeasureFields.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/ProductPriceField.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/useDeleteProductConfirm.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/profile/lib/profileView.ts` | `/profile` |

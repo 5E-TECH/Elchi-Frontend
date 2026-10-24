@@ -32,7 +32,8 @@
       "actions": {
         "sato": "Tumanlarni o'tkazish",
         "districts": "Tumanlar",
-        "logist": "Logist biriktirish"
+        "logist": "Logist biriktirish",
+        "tariffs": "Yetkazish tariflari"
       }
     },
     "period": {

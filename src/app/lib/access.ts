@@ -292,3 +292,10 @@ export const canViewRegionStats: Predicate = hasRole("superadmin", "admin", "man
  * (E6iEOAVs, MO-6) kelgach; operator boshqa moliya sahifalarini ko'rmaydi.
  */
 export const canViewMyEarnings: Predicate = hasRole("market_operator");
+
+/**
+ * «Yetkazish tariflari» (`/delivery-tariffs`, 47WFHzlx) — tariflar, hisob qoidalari, kalkulyator, tarix. Backend
+ * `GET/POST /delivery/tariffs` va `GET/PATCH /delivery/pricing-settings` faqat SUPERADMIN, ADMIN (boshqa rol — 403).
+ * Mahsulot formasidagi narx izohi ham chegara va yaxlitlashni shu rollarda sozlamadan oladi (6FLyjO6j).
+ */
+export const canManageDeliveryTariffs: Predicate = hasRole("superadmin", "admin");

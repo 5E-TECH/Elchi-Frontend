@@ -1,0 +1,199 @@
+{
+  "tariffs": {
+    "city": "Within the city",
+    "center": "To the centre",
+    "address": "To the door"
+  },
+  "tariffScope": {
+    "city": "Within Tashkent city",
+    "center": "To the regional branch",
+    "address": "To the customer's address"
+  },
+  "units": {
+    "kg": "{{value}} kg"
+  },
+  "volumetric": {
+    "label": "Account for volume",
+    "on": "Delivery price uses the larger of the actual and volumetric weight",
+    "off": "Delivery price uses the actual weight only. Dimensions are still entered and saved."
+  },
+  "weights": {
+    "volumetric": "Volumetric weight",
+    "billable": "Billable weight",
+    "formula": "{{length}} × {{width}} × {{height}} / {{divisor}}",
+    "basisVolume": "the larger is used: by volume",
+    "basisWeight": "the larger is used: by weight",
+    "volumeOff": "volume is ignored — weight only",
+    "invalidTitle": "Cannot calculate",
+    "invalidDescription": "Enter a valid weight and all three dimensions — the volumetric and billable weight appear here right away."
+  },
+  "quote": {
+    "title": "Estimated delivery price",
+    "breakdown": "{{base}} + {{extraKg}} kg × {{perKg}}",
+    "baseOnly": "base price only",
+    "noTariff": "no active tariff",
+    "failed": "Could not calculate the price",
+    "failedHint": "You can still save the product — the price will show later.",
+    "retry": "Try again",
+    "hintExtra": "Billable weight {{billable}} kg: the first {{first}} kg are in the base price, the remaining {{extra}} kg are charged extra.",
+    "hintExtraShort": "Billable weight {{billable}} kg: {{extra}} kg are charged extra.",
+    "hintBase": "Billable weight {{billable}} kg — up to {{first}} kg, base price only.",
+    "hintBaseShort": "Billable weight {{billable}} kg — base price only.",
+    "hintRound": "The price is rounded to {{roundTo}}; the final price is fixed when the order is sold.",
+    "hintFinal": "The final price is fixed when the order is sold.",
+    "hintTariffs": "Tariffs — Regions → Delivery tariffs."
+  },
+  "page": {
+    "back": "Regions",
+    "title": "Delivery tariffs",
+    "subtitle": "The website calculator and the CRM use these prices · superadmins and admins can change them",
+    "tableScope": {
+      "city": "Both ends in Tashkent city",
+      "center": "To the regional branch",
+      "address": "To the customer's address"
+    },
+    "editScope": {
+      "city": "both ends in Tashkent city",
+      "center": "to the regional branch",
+      "address": "to the customer's address"
+    },
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "daysRange_one": "{{min}}–{{max}} day",
+    "daysRange_other": "{{min}}–{{max}} days",
+    "tariffs": {
+      "title": "Tariffs — base price and price per kg",
+      "description": "A change creates a new version: it applies to orders after the chosen date",
+      "columns": {
+        "direction": "Route",
+        "base": "Base price",
+        "baseUpTo": "Base price · up to {{first}} kg",
+        "perKg": "Each extra kg",
+        "days": "Delivery time",
+        "validFrom": "In effect since",
+        "actions": "Actions"
+      },
+      "perKgSub": "per extra kg",
+      "edit": "Change",
+      "editAria": "Change the {{name}} tariff",
+      "noTariff": "No active tariff",
+      "scheduled": "Scheduled: {{name}} — {{changes}}, from {{date}}.",
+      "loading": "Loading tariffs",
+      "loadFailed": "Could not load tariffs"
+    },
+    "changes": {
+      "base": "base price {{from}} → {{to}}",
+      "perKg": "each extra kg {{from}} → {{to}}",
+      "perKgShort": "per kg {{from}} → {{to}}",
+      "days": "delivery time {{from}} → {{to}}",
+      "none": "price unchanged"
+    },
+    "edit": {
+      "title": "Change tariff",
+      "description": "{{name}} · {{scope}}",
+      "base": "Base price",
+      "baseHint": "Up to {{first}} kg (threshold from the rules)",
+      "baseHintPlain": "Up to the threshold from the rules",
+      "perKg": "Each extra kg",
+      "perKgHint": "For every started kg above the threshold",
+      "daysMin": "Delivery time (min)",
+      "daysMax": "Delivery time (max)",
+      "daysUnit": "days",
+      "validFrom": "Effective date",
+      "validFromHint": "Tashkent time, from 00:00; default — tomorrow, today — immediately",
+      "samples": "Sample parcels: now → new",
+      "sampleWeight": "{{value}} kg",
+      "sampleRow": "{{now}} → {{next}}",
+      "warning": "The new price applies to orders created after {{date}}; the website calculator updates too. Prices of existing orders do not change.",
+      "warningNow": "The new price applies right away to orders created after saving; the website calculator updates too. Prices of existing orders do not change.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "success": "Tariff updated",
+      "successScheduled": "{{name}}: the new price takes effect on {{date}}",
+      "successNow": "{{name}}: the new price is in effect",
+      "error": "Could not save the tariff",
+      "errors": {
+        "required": "Enter a value",
+        "tooLarge": "The value is too large",
+        "daysMax": "At most 365 days",
+        "daysOrder": "The maximum time cannot be less than the minimum",
+        "dateRequired": "Choose a date",
+        "datePast": "A past date cannot be chosen"
+      }
+    },
+    "rules": {
+      "title": "Calculation rules — when the extra charge starts",
+      "description": "Applied to all tariffs equally",
+      "firstKg": "Weight included in the base price",
+      "firstKgHint": "Up to this weight only the base price is charged. Every started kg above it adds the tariff's «each extra kg» price.",
+      "minKg": "Minimum billable weight",
+      "minKgHint": "A lighter parcel is billed at this weight too",
+      "exampleTitle": "Example: billable weight {{billable}} kg, «{{tariff}}»",
+      "exampleExtra": "{{first}} kg are in the base price → the remaining {{rest}} kg round up to {{extra}} kg → {{formula}}.",
+      "exampleIncluded": "{{billable}} kg are fully in the base price → {{formula}}.",
+      "exampleAlt": "With a {{first}} kg threshold: {{formula}}.",
+      "exampleSaved": "With the current {{first}} kg threshold: {{formula}}.",
+      "formula": "{{base}} + {{extra}} × {{perKg}} = {{total}}",
+      "step": "Billable weight step",
+      "roundTo": "Price rounding",
+      "roundToHint": "The total is a multiple of this number",
+      "express": "Express delivery",
+      "expressHint": "The base price is multiplied by this number",
+      "pickup": "Courier pickup",
+      "pickupHint": "Per visit; not added to the order price",
+      "pickupFree": "Free pickup",
+      "pickupFreeUnit": "or more",
+      "pickupFreeHint": "From this many parcels; empty — never free",
+      "divisor": "Volumetric divisor",
+      "divisorHint": "L × W × H / {{divisor}} — fixed (owner's decision)",
+      "unitKg": "kg",
+      "unitTimes": "×",
+      "cancel": "Cancel",
+      "save": "Save rules",
+      "saving": "Saving...",
+      "success": "Rules saved",
+      "successDescription": "The new calculation rules apply to upcoming orders",
+      "error": "Could not save the rules",
+      "loading": "Loading calculation rules",
+      "loadFailed": "Could not load the calculation rules",
+      "errors": {
+        "required": "Enter a value",
+        "notNumber": "Enter digits only",
+        "range": "Enter from {{min}} to {{max}}",
+        "min": "At least {{min}}",
+        "integer": "Enter a whole number",
+        "precision": "At most 3 decimal places"
+      },
+      "noChanges": "No changes to the rules"
+    },
+    "calculator": {
+      "title": "Price calculator",
+      "description": "Try it with the current tariffs and rules",
+      "weight": "Weight",
+      "length": "Length",
+      "width": "Width",
+      "height": "Height",
+      "unitKg": "kg",
+      "unitCm": "cm",
+      "billableExtra": "{{first}} kg base + {{extra}} kg extra",
+      "billableBase": "up to {{first}} kg — base price only"
+    },
+    "history": {
+      "title": "Change history",
+      "description": "Every version is kept",
+      "scheduled": "Scheduled",
+      "initial": "{{name}} · initial tariff — {{base}}, per kg {{perKg}}",
+      "line": "{{name}} · {{changes}}",
+      "from": "from {{date}}",
+      "empty": "No changes yet",
+      "emptyDescription": "Each tariff version appears here once it is changed.",
+      "loadFailed": "Could not load the history"
+    },
+    "saveErrors": {
+      "invalid": "Check the data — a value is invalid or the date has already passed.",
+      "forbidden": "Only superadmins and admins can do this.",
+      "conflict": "No active settings found — refresh the page and try again."
+    }
+  }
+}

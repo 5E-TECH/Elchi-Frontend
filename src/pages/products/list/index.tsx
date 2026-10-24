@@ -46,6 +46,7 @@ import {
   type Product,
   type ProductMarket,
 } from "../model/productView";
+import { ProductBillable, ProductDimensions, ProductWeight } from "../ui/ProductMeasureCells";
 import { ProductPrice } from "../ui/ProductPrice";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 import { EditProductDialog } from "./ui/EditProductDialog";
@@ -67,12 +68,15 @@ const priceCell = (product: Product) => <ProductPrice product={product} />;
  * Xodim: sarlavha «Mahsulotlar» + «Jami N ta mahsulot», asosiy amal «Mahsulot yaratish» (`canCreateProducts`) —
  * «Marketni tanlang» oynasi → `/products/create-product/:marketId`; karta: qidiruv (URL `product_search`, 1 s kutish,
  * sahifa 1) + «Market: Barchasi» (URL `market_id`, sahifa 1); jadval «# · Mahsulot nomi · Market · Narx · amallar»
- * (planshetda < 1024 «Market» ustuni yashirin — market nomi mahsulot nomi ostida `Store` bilan), telefonda kartalar.
+ * (planshetda < 1024 «Market» ustuni yashirin — market nomi mahsulot nomi ostida `Store` bilan) + o'lchov ustunlari,
+ * telefonda kartalar.
  * Market va market operatori (MH-1, ega qarori 2026-10-15): yaratish, «Amallar», tahrirlash va o'chirish yo'q;
  * qidiruv yonida «Faqat ko'rish…» izohi; sarlavhada «Jami N ta mahsulot · <market>» (market — profil nomi, operatorda
  * qatordagi `market.name`); jadval «# · Mahsulot nomi · Narx». Operator marketga biriktirilmagan bo'lsa
  * (`GET product/my-products` → 400) — «Siz hali marketga biriktirilmagansiz» + «Qayta tekshirish».
- * «Og'irlik», «O'lcham», «Hisob vazni» ustunlari — maket taklifi (backend kerak, MH-2), chizilmaydi.
+ * O'lchov ustunlari (6FLyjO6j, backend MH-3): «Og'irlik» va «O'lcham, sm» (planshetda yashirin), «Hisob vazni»
+ * (qalin + «og'irlik bo'yicha» / «hajm bo'yicha» / «hajm hisobga olinmaydi»); o'lchovsiz eski mahsulot —
+ * «Kiritilmagan» (`warning`). Telefon kartasida narx ostida «0,2 kg · og'irlik bo'yicha».
  *
  * So'rovlar: xodim — `GET product?page&limit&search&market_id`, faol marketlar `GET markets?status=active&limit=100`
  * (filtr va tanlash oynasi uchun); market va operator — `GET product/my-products?page&limit&search`. Tahrirlash —
@@ -277,7 +281,6 @@ const ProductTable = () => {
         id: "market",
         header: t("v2.list.columns.market"),
         hideBelow: "lg",
-        className: "w-[28%]",
         cell: (product) => {
           const name = getProductMarketName(product);
           return (
@@ -289,13 +292,35 @@ const ProductTable = () => {
         },
       });
     }
-    list.push({
-      id: "price",
-      header: t("v2.list.columns.price"),
-      align: "end",
-      className: "w-[160px]",
-      cell: priceCell,
-    });
+    list.push(
+      {
+        id: "price",
+        header: t("v2.list.columns.price"),
+        align: "end",
+        className: "w-[160px]",
+        cell: priceCell,
+      },
+      {
+        id: "weight",
+        header: t("v2.list.columns.weight"),
+        align: "end",
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (product) => <ProductWeight product={product} />,
+      },
+      {
+        id: "dimensions",
+        header: t("v2.list.columns.dimensions"),
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (product) => <ProductDimensions product={product} />,
+      },
+      {
+        id: "billable",
+        header: t("v2.list.columns.billable"),
+        cell: (product) => <ProductBillable product={product} />,
+      },
+    );
     if (canManage) {
       list.push({
         id: "actions",
@@ -323,8 +348,11 @@ const ProductTable = () => {
                 <span className="truncate">{marketName}</span>
               </span>
             ) : null}
-            <span className="text-[13px] text-text-muted">
-              <ProductPrice product={product} />
+            <span className="flex flex-col items-start gap-1 text-[13px] text-text-muted">
+              <span className="whitespace-nowrap">
+                <ProductPrice product={product} />
+              </span>
+              <ProductBillable product={product} layout="inline" />
             </span>
           </span>
           {canManage ? actions(product) : null}
@@ -471,12 +499,18 @@ const ProductTable = () => {
               framed={false}
               columns={
                 isMarketSide
-                  ? [t("v2.list.columns.index"), t("v2.list.columns.name"), t("v2.list.columns.price")]
+                  ? [
+                      t("v2.list.columns.index"),
+                      t("v2.list.columns.name"),
+                      t("v2.list.columns.price"),
+                      t("v2.list.columns.billable"),
+                    ]
                   : [
                       t("v2.list.columns.index"),
                       t("v2.list.columns.name"),
                       t("v2.list.columns.market"),
                       t("v2.list.columns.price"),
+                      t("v2.list.columns.billable"),
                     ]
               }
               rows={8}

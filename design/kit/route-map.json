@@ -39,6 +39,7 @@
     "canViewOpsPages": { "source": "routes.tsx → canViewOpsPages", "roles": { "superadmin": "" } },
     "canViewAdminNewOrderTabs": { "source": "routes.tsx → canViewAdminNewOrderTabs", "roles": { "superadmin": "", "admin": "" } },
     "canViewRegionStats": { "source": "routes.tsx → canViewRegionStats", "roles": { "superadmin": "", "admin": "", "manager": "", "courier": "", "logist": "taklif — o'z viloyatlari (LG-S3), kodda yo'q" } },
+    "canManageDeliveryTariffs": { "source": "access.ts → canManageDeliveryTariffs", "roles": { "superadmin": "", "admin": "" } },
     "hasSelfCashboxAccess": { "source": "routes.tsx → hasSelfCashboxAccess", "roles": { "manager": "", "market": "", "courier": "" } },
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} },
     "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } },
@@ -1062,9 +1063,15 @@
         "src/pages/products/ui/useDeleteProductConfirm.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
         "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/ProductMeasureFields.tsx",
+        "src/pages/products/ui/ProductMeasureCells.tsx",
         "src/pages/products/ui/FormErrorSummary.tsx",
         "src/entities/product/ui/ProductThumb.tsx",
+        "src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx",
+        "src/entities/delivery-pricing/ui/MeasureWeights.tsx",
+        "src/entities/delivery-pricing/ui/VolumetricSwitch.tsx",
         "src/pages/products/model/productView.ts",
+        "src/pages/products/model/productMeasure.ts",
         "src/pages/products/model/productErrors.ts"
       ],
       "views": {
@@ -1079,7 +1086,7 @@
         "market": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): yaratish, tahrirlash, o'chirish va «Amallar» ustuni yo'q; qidiruv yonida «Faqat ko'rish…» izohi, sarlavhada «Jami N ta mahsulot · <market>».",
         "market_operator": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): tahrirlash, o'chirish, yaratish yo'q, garchi backend POST product va PATCH product/my/:id ni MARKET_OPERATOR'ga ochsa ham. Ma'lumot — GET product/my-products, market nomi qatordan (market.name). Market biriktirilmagan bo'lsa (my-products → 400) — products-unassigned («Qayta tekshirish» qayta so'raydi). Menyu bandi «Mahsulotlar» — MO-2 da qo'shildi."
       },
-      "note": "Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). Og'irlik, O'lcham, Hisob vazni ustunlari — maket taklifi (backend kerak, 9fHyFp3y → MH-2), chizilmaydi; «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi."
+      "note": "Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). O'lchov ustunlari (6FLyjO6j, backend MH-3 / 9fHyFp3y): «Og'irlik» va «O'lcham, sm» (planshetda yashirin), «Hisob vazni» (qalin + og'irlik bo'yicha / hajm bo'yicha / hajm hisobga olinmaydi; formula — U×K×B/5000, 0,1 kg yuqoriga), o'lchovsiz eski mahsulot — «Kiritilmagan» (warning); telefon kartasida narx ostida; market va operatorda ham. Tahrirlash oynasi — yaratish sahifasi bilan AYNI o'lchov maydonlari (ProductMeasureFields), narx — uchta katak; PATCH faqat o'zgargan o'lchovni yuboradi (U/K/B uchalasi birga). «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi. products-edit-dialog-barcode (shtrix kod, QR stiker) — alohida karta, kodda yo'q."
     },
     {
       "path": "/products/create-product/:id",
@@ -1089,6 +1096,12 @@
         "src/pages/products/create/index.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
         "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/ProductMeasureFields.tsx",
+        "src/pages/products/ui/ProductMeasureCells.tsx",
+        "src/pages/products/model/productMeasure.ts",
+        "src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx",
+        "src/entities/delivery-pricing/ui/MeasureWeights.tsx",
+        "src/entities/delivery-pricing/ui/VolumetricSwitch.tsx",
         "src/pages/products/ui/FormErrorSummary.tsx",
         "src/entities/product/ui/ProductThumb.tsx",
         "src/pages/products/ui/useDeleteProductConfirm.tsx",
@@ -1100,7 +1113,7 @@
         "manager": ["products-create", "products-create-errors"],
         "registrator": ["products-create", "products-create-errors"]
       },
-      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. Maket taklifi (2026-10-19, backend kerak — MH-2): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. «Og'irlik va o'lcham» (6FLyjO6j, backend MH-3): og'irlik (kg, 0,1…1000, ≤ 3 kasr) + U × K × B (butun sm, 1…1000) MAJBURIY, forma darajasida tekshiriladi (backend 400 ga tushmaydi; xato matni i18n kaliti — til almashsa yangilanadi); «Hajmga qarab hisoblash» sukut yoqiq (o'chiq — maydonlar bloklanmaydi, izoh); jonli «Hajmli vazn» / «Hisob vazni»; «Taxminiy yetkazish narxi» — POST /delivery/quote/by-tariff (~400 ms kutish, faqat o'lchov to'g'ri bo'lsa; xato — «Narxni hisoblab bo'lmadi», forma ishlaydi); izohdagi chegara va yaxlitlash — superadmin/admin'da GET /delivery/pricing-settings dan, boshqa rolda qisqa izoh. Ro'yxat «Mahsulot nomi · hisob vazni». Maketdagi «Taklif» belgisi kodga ko'chirilmaydi. products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
       "roleNotes": {
         "market": "Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1)."
       }
@@ -1263,6 +1276,31 @@
         "admin": ["regions-logist-assignment", "regions-logist-assignment-confirm-dialog", "regions-logist-assignment-empty"]
       },
       "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlandi (LG-2). LG-2 sukutlari: «Logist yaratish» → /all-users/create-user?role=logist; ro'yxat tartibi — faollari avval, so'ng ism; ?logist= yo'q yoki noma'lum — birinchi logist; viloyatlar — Toshkent sh., Toshkent vil., so'ng alifbo; «Logistsiz · N» — serverdagi holat, «Belgilangan · N» — joriy belgilar; saqlash xatosi — notify.error «Saqlab bo'lmadi» (400 → logist nofaol, 404 → topilmadi, qolgani — umumiy), qoralama sahifada qoladi; telefonda Select maydonida avatar yo'q (primitiv ikonka oladi, avatar emas)."
+    },
+    {
+      "path": "/delivery-tariffs",
+      "section": "regions",
+      "title": "Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator, tarix (superadmin, admin; dizayn v2)",
+      "components": [
+        "src/pages/delivery-tariffs/index.tsx",
+        "src/pages/delivery-tariffs/ui/TariffsCard.tsx",
+        "src/pages/delivery-tariffs/ui/TariffEditDialog.tsx",
+        "src/pages/delivery-tariffs/ui/PricingRulesCard.tsx",
+        "src/pages/delivery-tariffs/ui/PriceCalculatorCard.tsx",
+        "src/pages/delivery-tariffs/ui/TariffHistoryCard.tsx",
+        "src/pages/delivery-tariffs/ui/CardHead.tsx",
+        "src/pages/delivery-tariffs/model/tariffForm.ts",
+        "src/pages/delivery-tariffs/model/rulesForm.ts",
+        "src/pages/delivery-tariffs/model/history.ts",
+        "src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx",
+        "src/entities/delivery-pricing/ui/MeasureWeights.tsx",
+        "src/entities/delivery-pricing/ui/VolumetricSwitch.tsx"
+      ],
+      "views": {
+        "superadmin": ["regions-delivery-tariffs", "regions-delivery-tariff-edit-dialog"],
+        "admin": ["regions-delivery-tariffs", "regions-delivery-tariff-edit-dialog"]
+      },
+      "note": "47WFHzlx (backend DAqXPeSy). Guard canManageDeliveryTariffs — superadmin, admin (boshqa rol — 403; backend ham faqat SA/ADMIN). Kirish — «Hududlar» sarlavhasidagi «Yetkazish tariflari» tugmasi (regions-map maketida yo'q — karta talabi, qo'shni tugmalar naqshi). Tariflar: GET /delivery/tariffs (current + versions); «O'zgartirish» — POST /delivery/tariffs (yangi versiya; bugun — darhol, keyingi kun — valid_from 00:00 +05:00, rejalashtirilgan; namunaviy posilkalar 1,0 / 3,4 / 7,0 kg hozir → yangi — sozlama bilan klientda). Hisob qoidalari: GET/PATCH /delivery/pricing-settings (faqat o'zgargan maydonlar; first_kg_included — qo'shimcha haq chegarasi, jonli misol 3,4 kg «Markazgacha»; volumetric_divisor — faqat ko'rsatiladi). Kalkulyator: POST /delivery/quote/by-tariff. Tarix: versiyalar o'zaro solishtiriladi; muallif ismi (faqat created_by ID) va hisob qoidalari tarixi backend javobida yo'q — chizilmaydi (maketdagi «Asosiy narxga kiradigan og'irlik · 1,0 kg» qatori — faoliyat jurnalida). Saqlangach deliveryPricing keshi yangilanadi (jadval, tarix, kalkulyator)."
     },
     {
       "path": "/branches",
@@ -1766,8 +1804,7 @@
     {"path": "(taklif) /payments/shift-settings", "section": "finance", "title": "Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)", "components": [], "views": {"superadmin": ["payments-shift-settings"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi."},
     {"path": "(taklif) /ai-assistant", "section": "finance", "title": "AI moliyaviy yordamchi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["ai-assistant", "ai-assistant-access-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi."},
     {"path": "(taklif) /warehouses", "section": "products", "title": "Omborlar — vaqtinchalik ombor tizimi (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["warehouse-list", "warehouse-create-dialog"], "admin": ["warehouse-list", "warehouse-create-dialog"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band. Marketplace tugaguncha vaqtinchalik. Biznes qoidalari — ega qarori kartasi."},
-    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, kirim, to'xtatish (taklif — kodda yo'q; menejer — faqat ko'rish)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-stock-in-dialog"], "admin": ["warehouse-detail", "warehouse-stock-in-dialog"], "manager": ["warehouse-detail"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."},
-    {"path": "(taklif) /delivery-tariffs", "section": "regions", "title": "Yetkazish tariflari — har kg narxi va qo'shimcha haq chegarasi UI'dan (taklif — kodda yo'q)", "components": [], "views": {"superadmin": ["regions-delivery-tariffs", "regions-delivery-tariff-edit-dialog"], "admin": ["regions-delivery-tariffs", "regions-delivery-tariff-edit-dialog"]}, "note": "Trello DAqXPeSy (backend: GET/POST /delivery/tariffs — yangi versiya valid_from bilan; GET/PATCH /delivery/pricing-settings — first_kg_included (qo'shimcha haq chegarasi), min_billable_kg, billable_step_kg, round_to, express_multiplier, pickup_fee, pickup_free_from_count; volumetric_divisor 5000 doimiy). Kalkulyator — POST /delivery/quote/by-tariff. SUPERADMIN/ADMIN."}
+    {"path": "(taklif) /warehouses/:id", "section": "products", "title": "Ombor tafsiloti — qoldiq, harakatlar, kirim, to'xtatish (taklif — kodda yo'q; menejer — faqat ko'rish)", "components": [], "views": {"superadmin": ["warehouse-detail", "warehouse-stock-in-dialog"], "admin": ["warehouse-detail", "warehouse-stock-in-dialog"], "manager": ["warehouse-detail"]}, "note": "Trello 2026-10-23 (ega topshirig'i): 8-band."}
   ],
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
@@ -1842,11 +1879,7 @@
     "superadmin-neworders-create-manual-source": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: manba avtomatik: tuman filialida faol ombor va hamma mahsulot yetarli → o'sha ombor, aks holda HQ; yaratuvchi o'zgartiradi (superadmin, admin, registrator; ruxsatli market).",
     "superadmin-users-edit-market-warehouse": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: market bo'yicha «Ombordan buyurtma yaratish» kaliti (sukut o'chiq, SA/ADMIN).",
     "superadmin-products-edit-dialog-barcode": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: mahsulot shtrix kodi (EAN-13) va Elchi kodi ELC-P-… + QR stiker chop etish.",
-    "manager-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: viloyat filiali menejeri o'z omborini va ombordan ketadigan buyurtmalarni faqat ko'radi.",
-    "superadmin-regions-delivery-tariffs": "DAqXPeSy: tariflar (asosiy narx, har qo'shimcha kg), qo'shimcha haq chegarasi (first_kg_included), hisob qoidalari, kalkulyator, tarix — kodda yo'q.",
-    "superadmin-regions-delivery-tariff-edit-dialog": "DAqXPeSy: tarifning yangi versiyasi (kuchga kirish sanasi bilan) — kodda yo'q.",
-    "admin-regions-delivery-tariffs": "DAqXPeSy: adminda ham (superadmin fragmenti).",
-    "admin-regions-delivery-tariff-edit-dialog": "DAqXPeSy: adminda ham."
+    "manager-warehouse-detail": "Trello 2026-10-23 (ega topshirig'i), 8-band, ega qarorlari TafZHzCD: viloyat filiali menejeri o'z omborini va ombordan ketadigan buyurtmalarni faqat ko'radi."
   },
   "partialViews": {
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
