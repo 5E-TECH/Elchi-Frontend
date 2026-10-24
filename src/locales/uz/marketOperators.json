@@ -28,7 +28,8 @@
     "commission": "Komissiya",
     "status": "Holat",
     "createdAt": "Qo'shilgan",
-    "actions": "Amallar"
+    "actions": "Amallar",
+    "warehouse": "Ombordagi qoldiq"
   },
   "status": {
     "active": "Faol",
@@ -154,5 +155,16 @@
     "deleted": "Operator o'chirildi",
     "failed": "Operatorni o'chirib bo'lmadi. Qaytadan urinib ko'ring.",
     "notFound": "Operator topilmadi — u allaqachon o'chirilgan bo'lishi mumkin."
+  },
+  "warehouseAccess": {
+    "label": "Ombordagi qoldiqni ko'radi",
+    "labelFor": "{{name}} — ombordagi qoldiqni ko'radi",
+    "on": "Ko'radi",
+    "off": "Ko'rmaydi",
+    "enabled": "Ombordagi qoldiq ochildi",
+    "disabled": "Ombordagi qoldiq yopildi",
+    "failedTitle": "Kalit saqlanmadi",
+    "failed": "Kalit avvalgi holatida qoldi. Qayta urinib ko'ring.",
+    "notFound": "Operator topilmadi — ro'yxat yangilandi."
   }
 }

@@ -83,6 +83,8 @@ export const queryKeys = {
     stock: (id: string, params: object) => ["warehouses", "stock", id, params] as const,
     movements: (id: string, params: object) => ["warehouses", "movements", id, params] as const,
     marketStock: (params: object) => ["warehouses", "market-stock", params] as const,
+    /** 6kHnNH9j: buyurtma formasidagi manba (`POST /warehouses/resolve-source`, faqat hisoblaydi). */
+    resolveSource: (body: object) => ["warehouses", "resolve-source", body] as const,
   },
   /** O'z hisobining faol sessiyalari (`GET /auth/sessions`, Elchi Pochta #3). */
   accountSessions: {

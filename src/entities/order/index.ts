@@ -12,6 +12,9 @@ export { default as ProofGallery } from "./ui/ProofGallery";
 export { readReturnRequest } from "./model/returnRequest";
 export type { ReturnRequest } from "./model/returnRequest";
 export { ReturnRequestedTag } from "./ui/ReturnRequestedTag";
+export { readFulfillmentSource } from "./model/fulfillment";
+export type { FulfillmentInfo } from "./model/fulfillment";
+export { FulfillmentSourceTag } from "./ui/FulfillmentSourceTag";
 export {
   ORDER_STATUSES,
   ORDER_STATUS_NS,

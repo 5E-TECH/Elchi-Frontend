@@ -121,7 +121,7 @@
     "nameHint": "Filial nomidan avtomatik taklif qilindi — o'zgartirish mumkin",
     "suggestedName": "{{branch}} ombori",
     "manager": "Mas'ul xodim",
-    "managerHint": "Filial menejeri — omborni ko'radi, o'zgartirmaydi",
+    "managerHint": "Tanlanmasa — filial menejeri avtomatik",
     "managerPlaceholder": "Filial tanlangach ko'rinadi",
     "noManager": "Menejer biriktirilmagan",
     "threshold": "Kam qoldiq chegarasi",
@@ -145,7 +145,10 @@
       "nameRequired": "Ombor nomini kiriting",
       "nameTooLong": "Nom {{max}} belgidan oshmasin",
       "threshold": "0 dan {{max}} gacha butun son kiriting"
-    }
+    },
+    "managerAuto": "Avtomatik — {{name}}",
+    "managerAutoNone": "Avtomatik — filial menejeri",
+    "managersLoadFailed": "Filial menejerlarini yuklab bo'lmadi — tanlanmasa, menejer avtomatik biriktiriladi"
   },
   "detail": {
     "kpiLabel": "Ombor ko'rsatkichlari",
@@ -340,8 +343,10 @@
       "qty": "Har mahsulot miqdori kamida 1 dona bo'lsin.",
       "unresolved": "Ba'zi qatorlar hal qilinmadi (mahsulot topilmadi yoki boshqa marketniki) — hech narsa qo'shilmadi. Ro'yxatni tekshiring.",
       "conflict": "Bu kirim avval boshqa tarkib bilan yuborilgan. Ro'yxatni tekshirib, qayta yuboring.",
-      "uncertain": "Javob kelmadi — kirim saqlangan bo'lishi mumkin. Qoldiq yangilandi; qayta yuborish xavfsiz (ikki marta qo'shilmaydi)."
-    }
+      "uncertain": "Javob kelmadi — kirim saqlangan bo'lishi mumkin. Qoldiq yangilandi; qayta yuborish xavfsiz (ikki marta qo'shilmaydi).",
+      "paused": "To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing"
+    },
+    "pausedHint": "To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing"
   },
   "inventory": {
     "title": "Inventarizatsiya",
@@ -494,7 +499,9 @@
     "loading": "Ombordagi qoldiq yuklanmoqda",
     "loadFailed": "Ombordagi qoldiqni yuklab bo'lmadi",
     "emptyTitle": "Mahsulotlaringiz hali omborda yo'q",
-    "emptyDescription": "Elchi administratori mahsulotni viloyat omboriga qo'shgach, qoldiq shu yerda ko'rinadi."
+    "emptyDescription": "Elchi administratori mahsulotni viloyat omboriga qo'shgach, qoldiq shu yerda ko'rinadi.",
+    "forbiddenTitle": "Ombordagi qoldiq siz uchun yopiq",
+    "forbiddenDescription": "Market bu ruxsatni sizga bermagan. Kerak bo'lsa, market egasidan «Ombordagi qoldiqni ko'radi» kalitini yoqishni so'rang."
   },
   "marketOrder": {
     "section": "Ombor",
@@ -537,5 +544,47 @@
       "checksum": "Shtrix kod noto'g'ri — nazorat raqami mos emas",
       "duplicate": "Bu shtrix kod shu marketning boshqa mahsulotiga biriktirilgan"
     }
+  },
+  "registrator": {
+    "noteTitle": "Faqat ko'rish",
+    "noteText": "Kirim, inventarizatsiya va omborni to'xtatishni admin bajaradi. Siz qoldiq va harakatlarni ko'rasiz."
+  },
+  "outgoing": {
+    "title": "Ombordan ketadigan buyurtmalar",
+    "description": "HQ va pochtasiz — buyurtma filialda «Qabul qilindi» bo'lib turadi. Mahsulotni terib kuryerga bering, skanerlash shart emas.",
+    "assign": "Kuryerga biriktirish",
+    "searchPlaceholder": "Buyurtma raqami, mijoz yoki mahsulot",
+    "searchLabel": "Ombordan ketadigan buyurtmalarni qidirish",
+    "filtersLabel": "Holat bo'yicha",
+    "chips": {
+      "all": "Barchasi",
+      "pending": "Kuryerga berilmagan",
+      "courier": "Kuryerda"
+    },
+    "columns": {
+      "id": "№",
+      "customer": "Mijoz",
+      "product": "Mahsulot",
+      "district": "Tuman",
+      "created": "Yaratilgan",
+      "status": "Holat"
+    },
+    "tableLabel": "Ombordan ketadigan buyurtmalar",
+    "orderNumber": "№{{id}}",
+    "itemLine": "{{name}} × {{qty}}",
+    "courierLine": "Kuryer: {{name}}",
+    "count_one": "{{value}} ta buyurtma",
+    "count_other": "{{value}} ta buyurtma",
+    "pendingCount_one": "{{value}} tasi kuryerga berilmagan",
+    "pendingCount_other": "{{value}} tasi kuryerga berilmagan",
+    "footer": "{{total}} · {{pending}}",
+    "pagination": "{{from}}–{{to}} / {{total}} ta buyurtma",
+    "loading": "Ombordan ketadigan buyurtmalar yuklanmoqda",
+    "loadFailed": "Buyurtmalarni yuklab bo'lmadi",
+    "emptyTitle": "Ombordan ketadigan buyurtma yo'q",
+    "emptyDescription": "Ombordan yaratilgan buyurtma shu yerda ko'rinadi — mahsulotni terib, kuryerga bering.",
+    "notFoundTitle": "Buyurtma topilmadi",
+    "notFoundDescription": "Qidiruv yoki holat filtrini o'zgartirib ko'ring.",
+    "clearFilters": "Filtrlarni tozalash"
   }
 }

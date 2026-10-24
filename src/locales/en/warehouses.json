@@ -121,7 +121,7 @@
     "nameHint": "Suggested from the branch name — you can change it",
     "suggestedName": "{{branch}} warehouse",
     "manager": "Manager",
-    "managerHint": "Branch manager — sees the warehouse, can't change it",
+    "managerHint": "If not selected, the branch manager is assigned automatically",
     "managerPlaceholder": "Shown after selecting a branch",
     "noManager": "No manager assigned",
     "threshold": "Low stock threshold",
@@ -145,7 +145,10 @@
       "nameRequired": "Enter the warehouse name",
       "nameTooLong": "No more than {{max}} characters",
       "threshold": "Enter a whole number from 0 to {{max}}"
-    }
+    },
+    "managerAuto": "Automatic — {{name}}",
+    "managerAutoNone": "Automatic — branch manager",
+    "managersLoadFailed": "Couldn't load branch managers — if none is selected, the manager is assigned automatically"
   },
   "detail": {
     "kpiLabel": "Warehouse indicators",
@@ -340,8 +343,10 @@
       "qty": "Each product quantity must be at least 1.",
       "unresolved": "Some lines couldn't be resolved (product not found or belongs to another shop) — nothing was added. Check the list.",
       "conflict": "This receipt was already sent with different contents. Check the list and send again.",
-      "uncertain": "No response — the receipt may have been saved. Stock was refreshed; sending again is safe (it won't be added twice)."
-    }
+      "uncertain": "No response — the receipt may have been saved. Stock was refreshed; sending again is safe (it won't be added twice).",
+      "paused": "A paused warehouse can't receive stock — resume it first"
+    },
+    "pausedHint": "A paused warehouse can't receive stock — resume it first"
   },
   "inventory": {
     "title": "Stocktaking",
@@ -494,7 +499,9 @@
     "loading": "Loading warehouse stock",
     "loadFailed": "Couldn't load warehouse stock",
     "emptyTitle": "Your products aren't in any warehouse yet",
-    "emptyDescription": "Once an Elchi admin adds a product to a regional warehouse, its stock appears here."
+    "emptyDescription": "Once an Elchi admin adds a product to a regional warehouse, its stock appears here.",
+    "forbiddenTitle": "Warehouse stock is closed for you",
+    "forbiddenDescription": "The shop hasn't given you this permission. If you need it, ask the shop owner to turn on “Sees warehouse stock”."
   },
   "marketOrder": {
     "section": "Warehouse",
@@ -537,5 +544,47 @@
       "checksum": "Invalid barcode — check digit doesn't match",
       "duplicate": "This barcode is already linked to another product of this shop"
     }
+  },
+  "registrator": {
+    "noteTitle": "View only",
+    "noteText": "Stock-in, inventory and pausing are done by an admin. You can see stock and movements."
+  },
+  "outgoing": {
+    "title": "Orders shipped from the warehouse",
+    "description": "No HQ or mail — the order waits at the branch as “Received”. Pick the items and hand them to a courier; scanning is optional.",
+    "assign": "Assign to courier",
+    "searchPlaceholder": "Order number, customer or product",
+    "searchLabel": "Search orders shipped from the warehouse",
+    "filtersLabel": "By status",
+    "chips": {
+      "all": "All",
+      "pending": "Not with a courier",
+      "courier": "With courier"
+    },
+    "columns": {
+      "id": "No.",
+      "customer": "Customer",
+      "product": "Product",
+      "district": "District",
+      "created": "Created",
+      "status": "Status"
+    },
+    "tableLabel": "Orders shipped from the warehouse",
+    "orderNumber": "No. {{id}}",
+    "itemLine": "{{name}} × {{qty}}",
+    "courierLine": "Courier: {{name}}",
+    "count_one": "{{value}} order",
+    "count_other": "{{value}} orders",
+    "pendingCount_one": "{{value}} not with a courier",
+    "pendingCount_other": "{{value}} not with a courier",
+    "footer": "{{total}} · {{pending}}",
+    "pagination": "{{from}}–{{to}} of {{total}} orders",
+    "loading": "Loading orders shipped from the warehouse",
+    "loadFailed": "Couldn't load orders",
+    "emptyTitle": "No orders from the warehouse",
+    "emptyDescription": "Orders created from the warehouse appear here — pick the items and hand them to a courier.",
+    "notFoundTitle": "No orders found",
+    "notFoundDescription": "Try changing the search or the status filter.",
+    "clearFilters": "Clear filters"
   }
 }

@@ -5,6 +5,7 @@ import {
   deleteMarketOperator,
   getMarketOperators,
   updateMarketOperatorCommission,
+  updateMarketOperatorWarehouseAccess,
 } from "./marketOperatorApi";
 
 /** So'rov kalitlari — shu entity ichida (`shared/config/queryKeys.ts` boshqa PR'lar egaligida). */
@@ -50,3 +51,15 @@ export const useDeleteMarketOperator = () => {
 
 /** Yaratish oqimi tugagach (PATCH muvaffaqiyatli yoki yiqilgan) ro'yxatni yangilash. */
 export const useRefreshMarketOperators = useInvalidateOperators;
+
+/**
+ * XtcEyQjb: «Ombordagi qoldiqni ko'radi» kaliti. OPTIMISTIK EMAS: kalit server javobigacha eski holatda turadi;
+ * muvaffaqiyatda ro'yxat yangilanadi, xatoda o'zgarmaydi (xabarni chaqiruvchi ko'rsatadi).
+ */
+export const useUpdateMarketOperatorWarehouseAccess = () => {
+  const invalidate = useInvalidateOperators();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => updateMarketOperatorWarehouseAccess(id, enabled),
+    onSuccess: invalidate,
+  });
+};

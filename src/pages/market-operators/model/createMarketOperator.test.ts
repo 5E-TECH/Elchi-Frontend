@@ -45,6 +45,7 @@ describe("komissiya belgilanmagan operatorlar", () => {
     commission_type: null,
     commission_value: null,
     created_at: null,
+    can_view_warehouse_stock: false,
     ...extra,
   });
 

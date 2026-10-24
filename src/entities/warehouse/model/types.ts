@@ -391,3 +391,65 @@ export type InventoryRequest = {
   reason: string;
   market_id?: string;
 };
+
+// ── Buyurtma manbasi (6kHnNH9j, `POST /warehouses/resolve-source`) ────────────────────────────
+
+/** Buyurtma qayerdan ketadi: `HQ` — odatiy oqim (HQ qabuli, pochta), `WAREHOUSE` — viloyat filiali omboridan. */
+export type FulfillmentSource = "HQ" | "WAREHOUSE";
+
+/**
+ * Manba sababi (backend `WAREHOUSE_SOURCE_REASONS`): `OK` — ombor; qolgani — HQ: `NO_ITEMS`, `NO_REGION` (tuman hududi
+ * aniqlanmadi), `NO_WAREHOUSE` (hududda ombor yo'q), `WAREHOUSE_PAUSED`, `INSUFFICIENT_STOCK` (yetmaydi — butun
+ * buyurtma HQ'dan), `MARKET_NOT_ALLOWED` (market kaliti o'chiq), `PRODUCT_INVALID`.
+ */
+export const SOURCE_REASONS = [
+  "OK",
+  "NO_ITEMS",
+  "NO_REGION",
+  "NO_WAREHOUSE",
+  "WAREHOUSE_PAUSED",
+  "INSUFFICIENT_STOCK",
+  "MARKET_NOT_ALLOWED",
+  "PRODUCT_INVALID",
+] as const;
+export type SourceReason = (typeof SOURCE_REASONS)[number];
+
+export type SourceWarehouse = {
+  id: string;
+  name: string;
+  status: WarehouseStatus;
+  branchId: string;
+  branchName: string | null;
+  regionId: string | null;
+  regionName: string | null;
+};
+
+export type SourceLine = {
+  productId: string;
+  name: string | null;
+  /** Kerak (buyurtmadagi soni). */
+  required: number;
+  /** Omborda mavjud («Omborda: N»). */
+  available: number;
+  enough: boolean;
+};
+
+export type OrderSourcePreview = {
+  source: FulfillmentSource;
+  reason: SourceReason;
+  regionId: string | null;
+  /** Hudud ombori (`WAREHOUSE_PAUSED` da ham — to'xtatilgan ombor); yo'q — `null`. */
+  warehouse: SourceWarehouse | null;
+  /** Har mahsulot bo'yicha (ombor tekshirilgan bo'lsa). */
+  items: SourceLine[];
+  /** Yetmayotganlar (`INSUFFICIENT_STOCK`). */
+  shortages: SourceLine[];
+};
+
+export type ResolveSourceRequest = {
+  district_id?: string;
+  region_id?: string;
+  /** Xodim — buyurtma marketi; market tomoni — e'tiborsiz (token). */
+  market_id?: string;
+  items: { product_id: string; quantity: number }[];
+};

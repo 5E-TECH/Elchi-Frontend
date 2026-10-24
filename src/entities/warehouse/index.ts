@@ -11,6 +11,7 @@ export {
   lookupWarehouseCode,
   normalizeInventoryResult,
   normalizeMarketStock,
+  normalizeOrderSource,
   normalizeStockInResult,
   normalizeWarehouse,
   normalizeWarehouseList,
@@ -19,6 +20,7 @@ export {
   normalizeWarehouseProduct,
   normalizeWarehouseStock,
   pauseWarehouse,
+  resolveOrderSource,
   resumeWarehouse,
   setMarketWarehouseOrder,
   setStockThreshold,
@@ -27,8 +29,10 @@ export {
 } from "./api/warehouseApi";
 export {
   useCreateWarehouse,
+  useHasOwnWarehouse,
   useInventory,
   useMarketWarehouseStock,
+  useOrderSourcePreview,
   useSetMarketWarehouseOrder,
   useSetStockThreshold,
   useSetWarehousePaused,
@@ -40,6 +44,12 @@ export {
   useWarehouseStock,
 } from "./api/useWarehouses";
 export { createIdempotencyKey, isUncertainWriteError, useIdempotencyKeys } from "./lib/idempotency";
+export {
+  getApiErrorCode,
+  isWarehousePausedError,
+  isWarehouseStockForbidden,
+  WAREHOUSE_ERROR_CODES,
+} from "./lib/errorCode";
 export { classifyScanCode, isScanCode, normalizeScanCode, splitElchiCode, type ScanCodeKind } from "./lib/scanCode";
 export { ProductCodeTag } from "./ui/ProductCodeTag";
 export { STOCK_LEVEL_TONE } from "./lib/levelTone";
