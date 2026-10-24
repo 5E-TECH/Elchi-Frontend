@@ -29,7 +29,10 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # `ubuntu-latest` 2026-10 dan Ubuntu 26.04 (runner image 20261021): Playwright 1.59 unda Chromium o'rnatmaydi
+    # («Playwright does not support chromium on ubuntu26.04-x64») — PR'dagi e2e qadami yiqiladi. Playwright yangi
+    # OS'ni qo'llamaguncha 24.04 da qotirilgan. «Visual» o'z konteynerida (noble) yuradi — unga ta'sir yo'q.
+    runs-on: ubuntu-24.04
     # PR'da e2e ham yuradi (~5 daqiqa brauzer o'rnatish bilan) — zaxira bilan 30.
     timeout-minutes: 30
     permissions:
