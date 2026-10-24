@@ -63,7 +63,7 @@ describe("public/_headers — xavfsizlik sarlavhalari (KwodkKWY)", () => {
     expect(all.set.get("x-content-type-options")).toBe("nosniff");
     expect(all.set.get("x-frame-options")).toBe("DENY");
     expect(all.set.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
-    expect(all.set.get("strict-transport-security")).toMatch(/^max-age=(\d{8,}); includeSubDomains$/);
+    expect(all.set.get("strict-transport-security")).toMatch(/^max-age=(\d{8,})$/);
   });
 
   it("majburiy CSP: frame-ancestors 'none' (clickjacking) — boshqa direktiva ilovani buzmasin", () => {
