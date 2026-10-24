@@ -15,6 +15,9 @@ import {
   unreadCountPollInterval,
 } from "../../shared/lib/realtime";
 import RealtimeSync from "./RealtimeSync";
+import { authClient, resetRevokedLogoutForTests } from "../../auth/authService";
+import { peekLoginNoticeDetails } from "../../auth/loginNotice";
+import tokenStorage from "../../auth/tokenStorage";
 
 type Handler = (...args: unknown[]) => void;
 
@@ -244,5 +247,113 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     expect(isRealtimeConnected()).toBe(false);
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(socketMock.state.sockets).toHaveLength(1);
+  });
+
+  describe("sessiya boshqa qurilmadan yopildi — `auth:session_revoked` (Elchi Pochta #3)", () => {
+    const SID = "7f3c2a10-5b6d-4e8f-9a01-23456789abcd";
+    const base64url = (value: unknown) =>
+      window.btoa(JSON.stringify(value)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const tokenWithSid = (sid: string) =>
+      `${base64url({ alg: "HS256" })}.${base64url({ sub: "1", roles: ["superadmin"], sid })}.sig`;
+    let replace: ReturnType<typeof vi.fn>;
+    let post: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      window.sessionStorage.clear();
+      resetRevokedLogoutForTests();
+      replace = vi.fn();
+      vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+      post = vi.spyOn(authClient, "post").mockResolvedValue({ data: {} });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      resetRevokedLogoutForTests();
+      tokenStorage.clear();
+      window.sessionStorage.clear();
+    });
+
+    const renderSignedIn = async () => {
+      const token = tokenWithSid(SID);
+      tokenStorage.setAccessToken(token);
+      const rendered = renderSync(token);
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      act(() => lastSocket().fire("connect"));
+      return rendered;
+    };
+
+    it("⭐ mos sessiya — kanal shu zahoti yopiladi (qayta ulanmaydi), qurilma /login ga, POST auth/logout yo'q", async () => {
+      const { queryClient } = await renderSignedIn();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      const socket = lastSocket();
+
+      act(() => socket.fire("auth:session_revoked", { session_id: SID, reason: "revoked_by_owner" }));
+
+      expect(socket.disconnected).toBe(true);
+      expect(isRealtimeConnected()).toBe(false);
+      expect(tokenStorage.getAccessToken()).toBeNull();
+      expect(peekLoginNoticeDetails()).toMatchObject({ notice: "sessionExpired", revoked: true });
+      await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+      expect(post).not.toHaveBeenCalled();
+
+      // ~250 ms dan keyin server ham uzadi («io server disconnect») — tinglovchi yo'q: yopilgan token bilan sanoq
+      // so'rovi ketmaydi, yangi ulanish yaratilmaydi.
+      act(() => socket.fire("disconnect", "io server disconnect"));
+      expect(invalidate).not.toHaveBeenCalled();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(socketMock.state.sockets).toHaveLength(1);
+      expect(replace).toHaveBeenCalledTimes(1);
+    });
+
+    it("⭐ boshqa sessiya hodisasi — e'tiborsiz: kanal ochiq, chiqish yo'q", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+
+      act(() =>
+        socket.fire("auth:session_revoked", { session_id: "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", reason: "logout" }),
+      );
+
+      expect(socket.disconnected).toBe(false);
+      expect(isRealtimeConnected()).toBe(true);
+      expect(tokenStorage.getAccessToken()).not.toBeNull();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    it("⭐ yopilgan sessiya tokeni bilan ulanish rad etildi (`error` SESSION_REVOKED) — chiqish, qayta urinish yo'q", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+
+      act(() => socket.fire("error", { message: "Session revoked", code: "SESSION_REVOKED" }));
+
+      expect(socket.disconnected).toBe(true);
+      await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+      expect(post).not.toHaveBeenCalled();
+    });
+
+    it("`connect_error` «Session revoked» (socket qayta urinmoqchi, `active=true`) — urinish to'xtaydi, chiqish", async () => {
+      const token = tokenWithSid(SID);
+      tokenStorage.setAccessToken(token);
+      renderSync(token);
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      const socket = lastSocket();
+
+      act(() => socket.fire("connect_error", Object.assign(new Error("Session revoked"), { data: { code: "SESSION_REVOKED" } })));
+
+      expect(socket.disconnected).toBe(true);
+      await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    });
+
+    it("oddiy server uzilishi (hodisasiz «io server disconnect») — avvalgidek: sanoq so'raladi, chiqish yo'q", async () => {
+      const { queryClient } = await renderSignedIn();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+      act(() => lastSocket().fire("disconnect", "io server disconnect"));
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.unreadCount });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(replace).not.toHaveBeenCalled();
+      expect(tokenStorage.getAccessToken()).not.toBeNull();
+    });
   });
 });
