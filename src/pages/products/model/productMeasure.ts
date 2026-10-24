@@ -65,9 +65,20 @@ export const validateWeight = (value: string): true | string => {
   return issue ? WEIGHT_ERROR_KEY[issue] : true;
 };
 
+/** Ixtiyoriy rejim (o'lchovsiz eski mahsulot tahriri, ega qarori 2026-10-24): bo'sh og'irlik — xato emas. */
+export const validateOptionalWeight = (value: string): true | string =>
+  value.trim() === "" ? true : validateWeight(value);
+
+const isBlank = (value: string | undefined) => (value ?? "").trim() === "";
+
+/**
+ * `optional` — o'lchovsiz eski mahsulot tahriri: uchala o'lcham bo'sh bo'lsa xato yo'q; bittasi kiritilsa qolganlari
+ * majburiy (backend U / K / B ni faqat birga qabul qiladi).
+ */
 export const validateDimension =
-  (field: DimensionField) =>
-  (value: string): true | string => {
+  (field: DimensionField, options?: { optional?: boolean }) =>
+  (value: string, values?: Partial<MeasureInputValues>): true | string => {
+    if (options?.optional && isBlank(value) && DIMENSION_FIELDS.every((name) => isBlank(values?.[name]))) return true;
     const issue = checkDimensionInput(value);
     if (!issue) return true;
     return issue === "empty" ? DIMENSION_REQUIRED_KEY[field] : DIMENSION_ERROR_KEY[issue];
@@ -84,8 +95,9 @@ export const appendProductMeasure = (
   dirty?: Partial<Record<MeasureField, boolean | undefined>>,
 ): void => {
   const all = !dirty;
-  if (all || dirty.weight) formData.append("weight_kg", toWeightPayload(values.weight));
-  if (all || DIMENSION_FIELDS.some((field) => dirty[field])) {
+  // Tahrirda bo'sh qoldirilgan maydon yuborilmaydi (o'lchovsiz eski mahsulot — ixtiyoriy; backend bo'sh qiymatga 400).
+  if (all || (dirty.weight && !isBlank(values.weight))) formData.append("weight_kg", toWeightPayload(values.weight));
+  if (all || (DIMENSION_FIELDS.some((field) => dirty[field]) && !DIMENSION_FIELDS.every((field) => isBlank(values[field])))) {
     formData.append("length_cm", toDimensionPayload(values.length));
     formData.append("width_cm", toDimensionPayload(values.width));
     formData.append("height_cm", toDimensionPayload(values.height));

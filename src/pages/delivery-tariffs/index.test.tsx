@@ -30,6 +30,7 @@ type TariffRow = {
   days_max: number;
   valid_from: string;
   createdAt: string;
+  created_by_name?: string | null;
 };
 
 const SEED: TariffRow[] = [
@@ -40,6 +41,7 @@ const SEED: TariffRow[] = [
 
 let rows: TariffRow[] = [];
 let settings = { id: "1", volumetric_divisor: 5000, first_kg_included: 1, min_billable_kg: 0.1, billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4 };
+let settingsHistory: Record<string, unknown>[] = [];
 const now = () => Date.now();
 
 const tariffsResponse = () => {
@@ -98,6 +100,8 @@ const respond = () => {
   mocks.get.mockImplementation((url: string) => {
     if (url === "delivery/tariffs") return Promise.resolve({ data: tariffsResponse() });
     if (url === "delivery/pricing-settings") return Promise.resolve({ data: { statusCode: 200, data: settings } });
+    if (url === "delivery/pricing-settings/history")
+      return Promise.resolve({ data: { statusCode: 200, data: { versions: settingsHistory } } });
     return Promise.reject(new Error(`kutilmagan so'rov: ${url}`));
   });
   mocks.post.mockImplementation((url: string, body: Record<string, unknown>) => {
@@ -146,6 +150,7 @@ beforeEach(() => {
     { id: "9", tariff_id: "center", base_price: 40000, extra_per_kg: 4500, days_min: 1, days_max: 2, valid_from: "2099-10-25T00:00:00+05:00", createdAt: new Date().toISOString() },
   ];
   settings = { ...settings, first_kg_included: 1, round_to: 500 };
+  settingsHistory = [];
   respond();
 });
 
@@ -309,6 +314,22 @@ describe("DeliveryTariffsPage — hisob qoidalari va kalkulyator", () => {
     expect(prices).toHaveTextContent(/64\s000 so'm/);
     expect(prices).toHaveTextContent(/90\s000 so'm/);
     expect(within(prices).getAllByRole("listitem")[0]).toHaveTextContent(/35\s000 \+ 6 kg × 4\s000/);
+  });
+
+  it("tarix: kim o'zgartirgani va hisob qoidalari o'zgarishlari (47WFHzlx)", async () => {
+    rows = [{ ...SEED[0], created_by_name: "Dilshodbek Urozov" }, SEED[1], SEED[2]];
+    settingsHistory = [
+      { ...settings, id: "2", is_active: true, created_by: "1", created_by_name: "Shodiyor Ergashev", createdAt: "2026-10-20T10:00:00.000Z" },
+      { ...settings, id: "1", round_to: 1000, is_active: false, created_by: null, createdAt: "2026-10-08T04:00:00.000Z" },
+    ];
+    renderPage();
+    const history = await screen.findByRole("list", { name: "O'zgarishlar tarixi" });
+    expect(await within(history).findByText(/^Hisob qoidalari · yaxlitlash 1\s000 → 500 so'm$/)).toBeInTheDocument();
+    expect(within(history).getByText("Hisob qoidalari · dastlabki: asosiy narxga 1 kg kiradi")).toBeInTheDocument();
+    expect(within(history).getByText(/ · Shodiyor Ergashev$/)).toBeInTheDocument();
+    expect(within(history).getByText(/^08\.10\.2026 dan · .* · Dilshodbek Urozov$/)).toBeInTheDocument();
+    // Qoidalar o'zgarishi (20.10) tariflardan (08.10) yangiroq — tepada.
+    expect(within(history).getAllByRole("listitem")[0]).toHaveTextContent("yaxlitlash");
   });
 
   it("tarix: dastlabki tariflar va rejalashtirilgan versiya", async () => {

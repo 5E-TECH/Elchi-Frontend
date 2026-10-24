@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useDeliveryPricingSettings,
+  useDeliveryPricingSettingsHistory,
   useDeliveryTariffs,
   type DeliveryTariffId,
 } from "../../entities/delivery-pricing";
@@ -26,6 +27,7 @@ const DeliveryTariffsPage = () => {
   const { t } = useTranslation("deliveryPricing");
   const tariffsQuery = useDeliveryTariffs();
   const settingsQuery = useDeliveryPricingSettings();
+  const settingsHistoryQuery = useDeliveryPricingSettingsHistory();
   const settings = settingsQuery.data ?? null;
   const [editing, setEditing] = useState<DeliveryTariffId | null>(null);
   // Har ochilish — oynaning yangi nusxasi (forma o'sha paytdagi tarif bilan to'ladi).
@@ -43,7 +45,11 @@ const DeliveryTariffsPage = () => {
       <PricingRulesCard query={settingsQuery} tariffs={tariffsQuery.data} />
       <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
         <PriceCalculatorCard settings={settings} className="flex-[1_1_420px]" />
-        <TariffHistoryCard query={tariffsQuery} className="flex-[1_1_360px]" />
+        <TariffHistoryCard
+          query={tariffsQuery}
+          settingsVersions={settingsHistoryQuery.data}
+          className="flex-[1_1_360px]"
+        />
       </div>
       <TariffEditDialog
         key={session}

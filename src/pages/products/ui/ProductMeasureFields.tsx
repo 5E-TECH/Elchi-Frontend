@@ -16,6 +16,7 @@ import { Field, TextInput } from "../../../shared/ui/primitives";
 import {
   DIMENSION_FIELDS,
   validateDimension,
+  validateOptionalWeight,
   validateWeight,
   type DimensionField,
   type ProductFormValues,
@@ -30,6 +31,8 @@ export type ProductMeasureFieldsProps = {
   quoteVariant: "list" | "tiles";
   disabled?: boolean;
   readOnly?: boolean;
+  /** O'lchovsiz eski mahsulot tahriri — o'lchov ixtiyoriy (ega qarori 2026-10-24): yulduzcha yo'q, bo'sh saqlanadi. */
+  optional?: boolean;
 };
 
 /**
@@ -47,6 +50,7 @@ export const ProductMeasureFields = ({
   quoteVariant,
   disabled,
   readOnly,
+  optional = false,
 }: ProductMeasureFieldsProps) => {
   const { t } = useTranslation(["products", "deliveryPricing"]);
   const dimensionsHintId = `${idPrefix}-dimensions-hint`;
@@ -84,12 +88,12 @@ export const ProductMeasureFields = ({
       <Controller
         control={control}
         name="weight"
-        rules={{ validate: validateWeight }}
+        rules={{ validate: optional ? validateOptionalWeight : validateWeight }}
         render={({ field }) => (
           <Field
             id={`${idPrefix}-weight`}
             label={t("v2.measure.weight")}
-            required
+            required={!optional}
             hint={t("v2.measure.weightHint")}
             error={errorText(errors.weight?.message)}
           >
@@ -113,9 +117,11 @@ export const ProductMeasureFields = ({
       <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
         <legend className="mb-2 p-0 text-[13px] font-semibold text-text">
           {t("v2.measure.dimensions")}
-          <span aria-hidden="true" className="text-danger-fg">
-            {" *"}
-          </span>
+          {optional ? null : (
+            <span aria-hidden="true" className="text-danger-fg">
+              {" *"}
+            </span>
+          )}
         </legend>
         <div className="grid grid-cols-3 items-start gap-2">
           {DIMENSION_FIELDS.map((dimension) => (
@@ -123,7 +129,7 @@ export const ProductMeasureFields = ({
               key={dimension}
               control={control}
               name={dimension}
-              rules={{ validate: validateDimension(dimension) }}
+              rules={{ validate: validateDimension(dimension, { optional }) }}
               render={({ field }) => (
                 <Field
                   id={`${idPrefix}-${dimension}`}

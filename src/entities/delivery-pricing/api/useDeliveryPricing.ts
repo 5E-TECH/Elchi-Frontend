@@ -12,6 +12,7 @@ import {
   createDeliveryTariff,
   getDeliveryTariffs,
   getPricingSettings,
+  getPricingSettingsHistory,
   getQuotesByTariff,
   updatePricingSettings,
 } from "./deliveryPricingApi";
@@ -95,6 +96,15 @@ export const useDeliveryPricingSettings = ({ enabled = true }: { enabled?: boole
     queryFn: getPricingSettings,
     enabled,
     staleTime: STALE_TIME_MS,
+    meta: { silentError: true },
+  });
+
+/** `GET /delivery/pricing-settings/history` — hisob qoidalari versiyalari (faqat superadmin, admin). */
+export const useDeliveryPricingSettingsHistory = ({ enabled = true }: { enabled?: boolean } = {}) =>
+  useQuery({
+    queryKey: queryKeys.deliveryPricing.settingsHistory,
+    queryFn: getPricingSettingsHistory,
+    enabled,
     meta: { silentError: true },
   });
 

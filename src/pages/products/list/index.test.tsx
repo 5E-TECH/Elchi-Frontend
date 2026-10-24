@@ -794,21 +794,46 @@ describe("ProductTable — og'irlik va o'lcham (6FLyjO6j)", () => {
     expect(body.has("length_cm")).toBe(false);
   });
 
-  it("o'lchovsiz eski mahsulot: o'lchovni kiritmasdan saqlab bo'lmaydi (forma xatosi, PATCH yo'q); kiritilsa — to'rttalasi", async () => {
+  it("o'lchovsiz eski mahsulot: o'lchov ixtiyoriy (ega qarori 2026-10-24) — bo'sh saqlanadi, chala o'lcham — xato", async () => {
     productRows = [NOK];
     const user = userEvent.setup();
     renderPage();
 
     await user.click(await screen.findByRole("button", { name: "Nok — tahrirlash" }));
     const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
-    expect(within(dialog).getByRole("textbox", { name: "Og'irlik" })).toHaveValue("");
+    const weight = within(dialog).getByRole("textbox", { name: "Og'irlik" });
+    expect(weight).toHaveValue("");
+    expect(weight).not.toHaveAttribute("aria-required", "true");
     expect(within(dialog).getByText("Hisoblab bo'lmadi")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
 
-    expect(await within(dialog).findByText("Og'irlikni kiriting — kamida 0,1 kg")).toBeInTheDocument();
-    expect(within(dialog).getByRole("alert")).toHaveTextContent("4 ta maydonda xato bor");
+    // Faqat uzunlik — kenglik va balandlik majburiy bo'ladi (backend U / K / B ni faqat birga oladi).
+    await user.type(within(dialog).getByRole("textbox", { name: "Uzunlik" }), "18");
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(await within(dialog).findByText("Kenglikni kiriting")).toBeInTheDocument();
+    expect(within(dialog).getByText("Balandlikni kiriting")).toBeInTheDocument();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("2 ta maydonda xato bor");
     expect(mocks.patch).not.toHaveBeenCalled();
 
+    // Uzunlik tozalansa — o'lchovsiz saqlanadi, o'lchov maydonlari yuborilmaydi.
+    await user.clear(within(dialog).getByRole("textbox", { name: "Uzunlik" }));
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    const [, blankBody] = mocks.patch.mock.calls[0] as [string, FormData];
+    expect(["weight_kg", "length_cm", "width_cm", "height_cm"].map((key) => blankBody.has(key))).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it("o'lchovsiz eski mahsulot: o'lchov kiritilsa — to'rttalasi yuboriladi", async () => {
+    productRows = [NOK];
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Nok — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
     for (const [name, value] of [
       ["Og'irlik", "0,4"],
       ["Uzunlik", "18"],
