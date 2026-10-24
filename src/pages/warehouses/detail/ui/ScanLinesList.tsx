@@ -54,6 +54,10 @@ const QtyStepper = ({
           mode="number"
           value={String(value)}
           onValueChange={(next) => onChange(next === "" ? 0 : Number(next))}
+          // Enter (yoki fokus shu yerda qolganda USB skaner yuborgan Enter) oynani yuborib yubormasin.
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.preventDefault();
+          }}
           aria-label={t(`scan.${variant}.qtyInput`, { name })}
           inputClassName="text-center"
           maxLength={6}
