@@ -1,6 +1,7 @@
 import {
   Banknote,
   House,
+  Warehouse,
   Plug,
   Wrench,
   ShoppingBag,
@@ -90,6 +91,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
     { to: "/products", icon: Tag, label: "products" },
+    // yXC91RRx: «Ombor» — viloyat filiallaridagi omborlar (maket `roles.json`, «Ma'lumotnoma», Mahsulotlardan keyin).
+    { to: "/warehouses", icon: Warehouse, label: "warehouse" },
     { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
@@ -111,6 +114,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
     { to: "/products", icon: Tag, label: "products" },
+    // yXC91RRx: «Ombor» (maket `roles.json`).
+    { to: "/warehouses", icon: Warehouse, label: "warehouse" },
     { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
@@ -224,14 +229,19 @@ export type ManagerCapability =
   /** Kassa. */
   | 'finance'
   /** Filial xodimlari. */
-  | 'staff';
+  | 'staff'
+  /**
+   * yXC91RRx: o'z filiali omborini ko'rish (faqat o'qish). Ombor faqat viloyat filialida (REGIONAL, HYBRID) ochiladi
+   * (backend `POST /warehouses` boshqa turni rad etadi) — HQ va PICKUP menejerida band yo'q.
+   */
+  | 'warehouse';
 
 export const MANAGER_CAPABILITIES: Record<BranchType, ManagerCapability[]> = {
-  REGIONAL: ['dispatch', 'mails', 'finance', 'staff'],
+  REGIONAL: ['dispatch', 'mails', 'finance', 'staff', 'warehouse'],
   // `staff` 2026-10-06 da QO'SHILDI (pastdagi HQ izohiga qarang).
   PICKUP: ['intake', 'staff'],
   // HYBRID = REGIONAL ∪ PICKUP — qo'lda emas, hisoblab chiqariladi.
-  HYBRID: ['dispatch', 'intake', 'mails', 'finance', 'staff'],
+  HYBRID: ['dispatch', 'intake', 'mails', 'finance', 'staff', 'warehouse'],
   /**
    * HQ markaziy filial: pochta va kassa avvaldan bor edi; `intake` 2026-09-10
    * da QO'SHILDI — hamkordan (BeePost) kelgan posilkalarni aynan HQ qabul
@@ -266,6 +276,8 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
   // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
   { item: { to: "/products", icon: Tag, label: "products" }, capability: null },
+  // yXC91RRx: o'z filiali ombori — faqat ko'rish (`/warehouses` menejerni o'z omboriga olib boradi).
+  { item: { to: "/warehouses", icon: Warehouse, label: "warehouse" }, capability: 'warehouse' },
   { item: { to: "/all-users", icon: Users, label: "users" }, capability: 'staff' },
   { item: { to: "/payments", icon: CreditCard, label: "payments" }, capability: 'finance' },
   { item: { to: "/regions", icon: MapIcon, label: "regions" }, capability: null },
@@ -425,6 +437,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/my-earnings": 'finance',
   // Ma'lumotnoma
   "/products": 'directory',
+  // yXC91RRx: «Ombor» — maketda «Ma'lumotnoma» guruhida, Mahsulotlardan keyin.
+  "/warehouses": 'directory',
   "/all-users": 'directory',
   "/branches": 'directory',
   "/regions": 'directory',

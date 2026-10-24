@@ -532,6 +532,28 @@ export const API_ENDPOINTS = {
     SHIPMENTS: (id: string | number) => `admin/partners/${id}/shipments`, // GET
   },
 
+  // ── Ombor (vaqtinchalik ombor tizimi; yXC91RRx, backend hY7uacJu / Elchi-Backend#566) ──────────
+  // Javoblar o'ramsiz: ro'yxat `{ data, total, page, limit, … }`. Yozish — SUPERADMIN, ADMIN; o'qish — + MANAGER (o'z
+  // filiali). Kirim va inventarizatsiya — `Idempotency-Key` MAJBURIY (8–128 `[A-Za-z0-9._:-]`).
+  WAREHOUSES: {
+    BASE: "warehouses", // GET ?status&region_id&search&page&limit → { data, total, page, limit, counts, summary } · POST ochish
+    BY_ID: (id: string | number) => `warehouses/${id}`, // GET (+ movements_count) · PATCH (name, manager_user_id, address, low_stock_default, note)
+    PAUSE: (id: string | number) => `warehouses/${id}/pause`, // POST { note? }
+    RESUME: (id: string | number) => `warehouses/${id}/resume`, // POST { note? }
+    STOCK: (id: string | number) => `warehouses/${id}/stock`, // GET ?market_id&level=ok,low,out&search&page&limit → { data, facets }
+    STOCK_THRESHOLD: (id: string | number, productId: string | number) =>
+      `warehouses/${id}/stock/${productId}`, // PATCH { low_stock_threshold: number | null }
+    MOVEMENTS: (id: string | number) => `warehouses/${id}/movements`, // GET ?type&product_id&market_id&ref_type&ref_id&from&to&page&limit
+    LOOKUP: (id: string | number) => `warehouses/${id}/lookup`, // GET ?code&market_id → { matched_by, data: [{ product, market, stock }] }
+    STOCK_IN: (id: string | number) => `warehouses/${id}/stock-in`, // POST { lines: [{ product_id | code, qty }], market_id?, note? }
+    INVENTORY: (id: string | number) => `warehouses/${id}/inventory`, // POST { lines: [{ product_id | code, counted }], reason, market_id? }
+    EXPORT: (id: string | number) => `warehouses/${id}/export`, // GET ?market_id&level&search → .xlsx
+    // «Ombordagi qoldiq» — market (faqat o'zi), market operatori, SUPERADMIN/ADMIN (`market_id` majburiy)
+    MARKET_STOCK: "market/warehouse-stock", // GET ?market_id&search&low_only&page&limit
+    // Market «Ombordan buyurtma yaratish» kaliti — SUPERADMIN, ADMIN
+    MARKET_WAREHOUSE_ORDER: (marketId: string | number) => `markets/${marketId}/warehouse-order`, // PATCH { can_order_from_warehouse }
+  },
+
   // ── Activity logs / audit trail (admin) — merged across services ─────────
   ACTIVITY_LOGS: {
     BASE: "activity-logs", // GET audit feed (filters: service/entity/action/user/date/search)

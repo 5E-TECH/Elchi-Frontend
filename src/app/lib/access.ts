@@ -299,3 +299,12 @@ export const canViewMyEarnings: Predicate = hasRole("market_operator");
  * Mahsulot formasidagi narx izohi ham chegara va yaxlitlashni shu rollarda sozlamadan oladi (6FLyjO6j).
  */
 export const canManageDeliveryTariffs: Predicate = hasRole("superadmin", "admin");
+
+/**
+ * «Ombor» (`/warehouses`, `/warehouses/:id`; yXC91RRx, backend hY7uacJu): superadmin va admin — hamma omborlar,
+ * ochish, kirim, inventarizatsiya, to'xtatish (backend yozish faqat SUPERADMIN, ADMIN). Filial menejeri — faqat o'z
+ * filiali omborini KO'RADI (ega qarori 10; backend `GET /warehouses*` menejerni o'z filialiga cheklaydi, begonasi
+ * 404). Ombor faqat viloyat filialida (REGIONAL, HYBRID) ochiladi — boshqa turdagi filial menejeriga band yo'q.
+ */
+export const canManageWarehouses: Predicate = hasRole("superadmin", "admin");
+export const canViewWarehouses: Predicate = anyOf(canManageWarehouses, managerCan("warehouse"));

@@ -21,6 +21,7 @@ import {
   Truck,
   Users,
   Wallet,
+  Warehouse,
   Wrench,
   Zap,
   type LucideIcon,
@@ -62,6 +63,7 @@ describe("sidebar menu config", () => {
 
     // /courier-bulk faqat REGIONAL va HYBRID menejerlarga ochiq —
     // routes.tsx dagi canViewCourierBulk guardi bilan bir xil chegara.
+    // yXC91RRx: «Ombor» (`warehouse` qobiliyati) — faqat viloyat filiali menejerida (REGIONAL, HYBRID).
     expect(getSidebarConfigForUser("manager", userWithBranchType("REGIONAL")).map((item) => item.to)).toEqual([
       "/branch-dashboard",
       "/dispatch",
@@ -69,6 +71,7 @@ describe("sidebar menu config", () => {
       "/courier-bulk",
       "/mails",
       "/products",
+      "/warehouses",
       "/all-users",
       "/payments",
       "/regions",
@@ -84,6 +87,7 @@ describe("sidebar menu config", () => {
       "/batches",
       "/returns",
       "/products",
+      "/warehouses",
       "/all-users",
       "/payments",
       "/regions",
@@ -313,6 +317,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     MapPinned,
     // Market operatori «Daromadim» (MO-2) — maketda lucide nomi bilan.
     Banknote,
+    // yXC91RRx: «Ombor» — maketda lucide nomi bilan.
+    Warehouse,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
