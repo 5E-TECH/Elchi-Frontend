@@ -298,6 +298,16 @@ export const LegacyOrderCreateRedirect = () => {
   return <Navigate replace to="/new-orders/create" state={location.state} />;
 };
 
+/**
+ * Bildirishnoma havolasi `/orders/:id` (backend `link`; toast «Ochish», qo'ng'iroqcha, Inbox, push) — buyurtma
+ * tafsiloti `/orders/edit/:id` da. Yo'naltirishsiz «Ochish» 404 berardi (uRkw6lk0).
+ */
+const LegacyOrderDetailRedirect = () => {
+  const { orderId } = useParams();
+
+  return <Navigate replace to={`/orders/edit/${orderId ?? ""}`} />;
+};
+
 const LegacyBranchBatchRedirect = () => {
   const { branchId, batchId } = useParams();
 
@@ -734,6 +744,14 @@ const AppRouter = () => {
                   ),
                 },
                 { path: "add", element: <LegacyOrderCreateRedirect /> },
+                {
+                  path: ":orderId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewOrders}>
+                      <LegacyOrderDetailRedirect />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {

@@ -91,6 +91,13 @@ const RealtimeSync = () => {
     };
   }, [navigate, queryClient, t]);
 
+  // rWdLuoP3: smena hodisasi — ochiq kassa sahifalari yangilanadi; avtomatik yopilganda kassirga xabar.
+  // Ishlovchi modul socket bilan birga dinamik yuklanadi (`realtimeFinance`) — eng so'nggi `t` ref orqali.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
   const handleNotification = useRef((payload: RealtimePayload) => {
     // Rol/broadcast signali (`id` yo'q) — faqat yangilash; qatorli hodisa — xabar uchun (bir xil `id` bir marta).
     if (payload.id && payload.title) pendingRef.current.set(payload.id, payload);
@@ -112,8 +119,8 @@ const RealtimeSync = () => {
 
     // Kutubxona faqat kirgandan keyin yuklanadi — kirish sahifasi va birinchi yuklanish og'irlashmaydi.
     // Token `auth` da ketadi (cookie kerak emas — `withCredentials` yo'q).
-    void import("socket.io-client")
-      .then(({ io }) => {
+    void Promise.all([import("socket.io-client"), import("./realtimeFinance")])
+      .then(([{ io }, finance]) => {
         if (cancelled) return;
         // WebSocket birinchi (kam so'rov, Cloudflare qo'llaydi); to'silgan tarmoqda polling'ga o'tadi.
         const client = io(realtimeUrl(BASE_URL), {
@@ -167,6 +174,9 @@ const RealtimeSync = () => {
         client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
         );
+        for (const event of finance.FINANCE_SHIFT_EVENTS) {
+          client.on(event, (payload: unknown) => finance.handleShiftEvent(queryClient, tRef.current, event, payload));
+        }
       })
       // Bo'lak yuklanmasa (tarmoq, eski deploy) — jonli kanal o'chiq qoladi, 60 s polling ishlayveradi.
       .catch((error: unknown) => logRealtime("kutubxona yuklanmadi", error));

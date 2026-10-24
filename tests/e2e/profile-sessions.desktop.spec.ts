@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { formatLockTime, lockAvailableAt, openProfileWithSessions, SESSIONS } from "./support/profileSessions";
-import { expectToast } from "./support/toast";
+import { expectToast, toast } from "./support/toast";
 
 /**
  * EP-3 (Elchi Pochta #3) — /profile «Sessiyalar» (desktop): FAQAT o'z hisobining sessiyalari — faollar soni,
@@ -91,6 +91,10 @@ test("⭐ qatordagi «Chiqarish»: tasdiqda qurilma → DELETE → xabar, qator 
   await expect(rows).toHaveCount(3);
   await expect(card.getByText("2 ta faol")).toBeVisible();
   await expect(card.getByRole("heading", { name: "Kompyuter · Windows · Edge" })).toHaveCount(0);
+  // Birinchi xabar yopiladi — aks holda ikkinchi «Qurilma chiqarildi» bilan ekranda ikkita bir xil karta turadi
+  // (xabar o'z vaqtida yopilishiga bog'liq tasodifiy yiqilish).
+  await toast(page, "Qurilma chiqarildi").getByRole("button", { name: "Xabarni yopish" }).click();
+  await expect(toast(page, "Qurilma chiqarildi")).toHaveCount(0);
 
   // Qayta kirishi kerak bo'lgan qurilma: o'z izohi bilan tasdiq; faollar soni o'zgarmaydi.
   await card.getByRole("button", { name: "Chiqarish: iPhone · iOS 17 · Safari" }).click();
