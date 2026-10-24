@@ -1,5 +1,5 @@
 // dizayn-v2: manager-warehouse-detail
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PackageOpen, SearchX, Truck } from "lucide-react";
@@ -69,6 +69,7 @@ export const OutgoingOrdersCard = () => {
   const text = useWarehouseText();
   const { t } = text;
   const canDispatch = useSelector(canViewDispatchPage);
+  const titleId = useId();
   const { useGetOrders } = useOrders();
   const [chip, setChip] = useState<Chip>("all");
   const [searchText, setSearchText] = useState("");
@@ -252,20 +253,23 @@ export const OutgoingOrdersCard = () => {
   };
 
   return (
-    <Card
-      padding="none"
-      title={t("outgoing.title")}
-      description={t("outgoing.description")}
-      actions={
-        canDispatch ? (
-          <Link to="/dispatch" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+    <Card padding="none" aria-labelledby={titleId} footer={footer}>
+      {/* `.el-card-head` maketdagidek: sarlavha bloki `flex: 1 1 320px` — telefonda «Kuryerga biriktirish» pastga o'tadi
+          (`Card title/actions` sarlavhani tor ustunga siqardi). */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-5 py-4">
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-0.5">
+          <h2 id={titleId} className="text-base font-bold text-text">
+            {t("outgoing.title")}
+          </h2>
+          <p className="text-[13px] leading-[18px] text-text-muted">{t("outgoing.description")}</p>
+        </div>
+        {canDispatch ? (
+          <Link to="/dispatch" className={buttonClasses({ variant: "secondary", size: "sm", className: "flex-none" })}>
             <Truck size={16} aria-hidden="true" />
             {t("outgoing.assign")}
           </Link>
-        ) : undefined
-      }
-      footer={footer}
-    >
+        ) : null}
+      </div>
       <div className="flex flex-wrap items-center gap-3 px-5 py-4 max-md:px-4">
         <TextInput
           mode="search"

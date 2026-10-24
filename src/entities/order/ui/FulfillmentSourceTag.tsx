@@ -15,14 +15,15 @@ export const FulfillmentSourceTag = memo(({ order, className }: { order: unknown
   const { fromWarehouse, warehouseName } = readFulfillmentSource(order);
   if (!fromWarehouse) return null;
   const label = warehouseName ? t("fulfillment.tagNamed", { name: warehouseName }) : t("fulfillment.tag");
+  // Jadvalda holat ustunini kengaytirib, mijoz/market ustunlarini siqmasin — uzun nom `…` bilan, to'liq matn `title` da.
   return (
     <Badge
       icon={Warehouse}
       data-testid="fulfillment-source-badge"
-      title={t("fulfillment.tagTitle")}
+      title={`${label}. ${t("fulfillment.tagTitle")}`}
       className={className}
     >
-      <span className="max-w-[240px] truncate">{label}</span>
+      <span className="max-w-44 truncate">{label}</span>
     </Badge>
   );
 });

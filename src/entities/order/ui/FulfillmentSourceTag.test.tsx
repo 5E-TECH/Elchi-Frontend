@@ -11,7 +11,10 @@ describe("FulfillmentSourceTag", () => {
       <FulfillmentSourceTag order={{ fulfillment_source: "WAREHOUSE", warehouse: { id: 3, name: "Samarqand filiali ombori" } }} />,
     );
     expect(screen.getByTestId("fulfillment-source-badge")).toHaveTextContent("Ombordan · Samarqand filiali ombori");
-    expect(screen.getByTestId("fulfillment-source-badge")).toHaveAttribute("title", "Buyurtma viloyat omboridan ketadi — HQ va pochtasiz");
+    expect(screen.getByTestId("fulfillment-source-badge")).toHaveAttribute(
+      "title",
+      "Ombordan · Samarqand filiali ombori. Buyurtma viloyat omboridan ketadi — HQ va pochtasiz",
+    );
     view.unmount();
 
     const unnamed = renderWithProviders(<FulfillmentSourceTag order={{ fulfillment_source: "warehouse", warehouse: null }} />);
