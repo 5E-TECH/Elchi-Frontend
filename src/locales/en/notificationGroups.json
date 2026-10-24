@@ -33,7 +33,14 @@
   "status": {
     "active": "Active",
     "inactive": "Inactive",
-    "inactiveHint": "Messages are not being sent to this group"
+    "inactiveHint": "Messages are not being sent to this group",
+    "inactiveSince": "Inactive since: {{date}}",
+    "reason": {
+      "botRemoved": "Bot was removed from the group — add it again and activate",
+      "sendBlocked": "Bot could not send to the group — add the bot again and activate",
+      "chatNotFound": "Group not found — delete the connection and connect again",
+      "manual": "Deactivated manually"
+    }
   },
   "rowMenu": {
     "label": "{{market}} — {{group}}: actions",
@@ -78,6 +85,12 @@
     "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — to connect another group, first delete the old one from the list.",
     "existsInactiveTitle": "A group of this type is connected but inactive",
     "existsInactive": "{{market}} has an inactive group of this type (ID: {{groupId}}) — messages are not sent to it. Add the bot to the group again and activate it, or delete the connection and connect again.",
+    "existsInactiveReason": {
+      "botRemoved": "{{market}} has an inactive group of this type — the bot was removed from the group (ID: {{groupId}}). Add the bot to the group again and activate it, or delete the connection and connect again.",
+      "sendBlocked": "{{market}} has an inactive group of this type — the bot could not send to it (ID: {{groupId}}). Add the bot to the group again and activate it, or delete the connection and connect again.",
+      "chatNotFound": "{{market}} has an inactive group of this type — the group was not found (ID: {{groupId}}). Try activating it, or delete the connection and connect again.",
+      "manual": "{{market}} has a group of this type that was deactivated manually (ID: {{groupId}}). Activate it, or delete the connection and connect again."
+    },
     "linkError": "Could not get the link",
     "linkErrorRetry": "Please try again a bit later.",
     "linkErrorForbidden": "You are not allowed to connect a group for this market.",
@@ -116,6 +129,11 @@
       },
       "warningTitle": "Check that the bot is in the group",
       "warning": "Before activating, make sure the bot is a member of this group. If the bot is not in the group, messages will not arrive and the connection will become inactive again.",
+      "reason": {
+        "botRemoved": { "title": "Bot was removed from the group", "text": "First add the bot to this group again, then activate. If the bot is not in the group, messages will not arrive and the connection will become inactive again." },
+        "sendBlocked": { "title": "Bot could not send to the group", "text": "First add the bot to this group again and allow it to post messages, then activate. Otherwise messages will not arrive and the connection will become inactive again." },
+        "chatNotFound": { "title": "Group not found", "text": "The group was deleted or the bot cannot reach it. If activating does not help, delete the connection and connect the group again via the bot link." }
+      },
       "confirm": "Activate",
       "loading": "Activating…",
       "done": "Group activated",

@@ -1,19 +1,22 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
+import { parseInactiveReason } from "../lib/inactiveReason";
 import type { Notification, NotificationParams } from "../model/types";
 
 /**
- * Backend qatori (`toPublicTelegramMarket`): `{ id, createdAt, updatedAt, market_id, group_id, group_type,
- * bot_slug, is_active }`. Market obyekti javobda yo'q — nom marketlar ro'yxatidan olinadi.
+ * Backend qatori (`TelegramMarketPublicDto`): `{ id, createdAt, updatedAt, market_id, group_id, group_type,
+ * bot_slug, is_active, inactive_reason, inactive_at }` (G085w5Qr). Market obyekti javobda yo'q — nom marketlar
+ * ro'yxatidan olinadi.
  */
 const normalizeNotification = (value: unknown): Notification => {
-  const item = value as Partial<Omit<Notification, "is_active">> & {
+  const item = value as Partial<Omit<Notification, "is_active" | "inactive_reason">> & {
     id?: string | number;
     market_id?: string | number;
     group_id?: string | number;
     group_type?: string;
     is_active?: boolean | string | null;
+    inactive_reason?: unknown;
     market?: {
       id?: string | number;
       name?: string;
@@ -26,6 +29,8 @@ const normalizeNotification = (value: unknown): Notification => {
   const market = item.market ?? null;
   const marketId = String(item.market_id ?? market?.id ?? "");
   const marketName = market?.name ?? market?.username ?? market?.phone_number ?? null;
+  // Maydon yo'q bo'lsa (eski javob) — faol; faqat aniq `false` nofaol.
+  const isActive = item.is_active !== false && item.is_active !== "false";
 
   return {
     id: String(item.id),
@@ -33,8 +38,10 @@ const normalizeNotification = (value: unknown): Notification => {
     market_name: marketName,
     group_id: String(item.group_id ?? ""),
     group_type: item.group_type === "cancel" ? "cancel" : "create",
-    // Maydon yo'q bo'lsa (eski javob) — faol; faqat aniq `false` nofaol.
-    is_active: item.is_active !== false && item.is_active !== "false",
+    is_active: isActive,
+    // Sabab va sana faqat nofaol qatorda ma'noli; noma'lum sabab — `null` (umumiy izoh).
+    inactive_reason: isActive ? null : parseInactiveReason(item.inactive_reason),
+    inactive_at: isActive ? null : (item.inactive_at ?? null),
     // Sana kelmasa — `null` («hozir» deb to'qilmaydi; ko'rsatuvchi «—» yoki sanasiz matn chizadi).
     created_at: item.created_at ?? item.createdAt ?? item.updatedAt ?? null,
   };
