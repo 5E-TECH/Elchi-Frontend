@@ -52,7 +52,8 @@ export type MarketTelegramGroupsCardProps = {
  * Holat (`staff`): ulangan — «Ulangan» + «{sana} dan» (sana kelmasa — sanasiz); nofaol — «Nofaol» + sabab izohi
  * (`inactive_reason`, G085w5Qr — NG-C: `/notifications` jadvalidagi bilan bir xil matn va ton, sabab noma'lum —
  * umumiy izoh; maket yo'q — eng yaqini `superadmin-notifications-telegram-groups`; faollashtirish «Bildirishnomalar»
- * bo'limida — «Barcha guruhlar …» havolasi); ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash». Bot mavjud ulanishni almashtirmaydi — ulangan turda «Ulash» yo'q. Yuklanishda belgi
+ * bo'limida — «Barcha guruhlar …» havolasi); ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash». Bot mavjud
+ * ulanishni almashtirmaydi — ulangan turda «Ulash» yo'q. Yuklanishda belgi
  * o'rnida skelet, xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi).
  * Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi.
  */
