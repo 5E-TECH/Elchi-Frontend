@@ -495,5 +495,14 @@
     "loadFailed": "Ombordagi qoldiqni yuklab bo'lmadi",
     "emptyTitle": "Mahsulotlaringiz hali omborda yo'q",
     "emptyDescription": "Elchi administratori mahsulotni viloyat omboriga qo'shgach, qoldiq shu yerda ko'rinadi."
+  },
+  "marketOrder": {
+    "section": "Ombor",
+    "label": "Ombordan buyurtma yaratish",
+    "description": "Yoqilsa, market yaratgan buyurtma tuman filialidagi ombordan avtomatik ketadi (mahsulot yetarli bo'lsa)",
+    "hint": "Sukut — o'chiq. Mahsulot yetmasa yoki ombor to'xtatilgan bo'lsa, buyurtma odatdagidek HQ'dan ketadi.",
+    "enabled": "«Ombordan buyurtma yaratish» yoqildi",
+    "disabled": "«Ombordan buyurtma yaratish» o'chirildi",
+    "failed": "Ombor kaliti saqlanmadi"
   }
 }

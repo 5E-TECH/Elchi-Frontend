@@ -97,6 +97,11 @@ export interface User {
   default_tariff: "home" | "center";
   /** NFiXfmq6: market AI buyurtma narxi (so'm). `null` / yo'q — global narx (sukut ko'rsatilmaydi, FY-S5). */
   ai_price_per_order?: number | string | null;
+  /**
+   * yXC91RRx: market «Ombordan buyurtma yaratish» kaliti (sukut `false`; faqat superadmin/admin o'zgartiradi —
+   * `PATCH /markets/:id/warehouse-order`). Faqat market qatorida.
+   */
+  can_order_from_warehouse?: boolean;
   region_id?: string | null;
   region?: Region | null;
   /**

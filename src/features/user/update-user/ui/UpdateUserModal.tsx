@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district, superadmin-users-edit-role, superadmin-users-role-confirm-dialog, superadmin-users-role-confirm-logist, superadmin-users-edit-role-error
+// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, superadmin-users-edit-market-warehouse, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district, superadmin-users-edit-role, superadmin-users-role-confirm-dialog, superadmin-users-role-confirm-logist, superadmin-users-edit-role-error
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
@@ -8,11 +8,13 @@ import { Building2, Eye, EyeOff, Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { useUser } from "../../../../entities/user/api/userApi";
+import { useSetMarketWarehouseOrder } from "../../../../entities/warehouse";
 import type { ChangeableUserRole, UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
+import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
@@ -37,6 +39,7 @@ import {
   useChangeUserRole,
   type RoleChangeErrorKind,
 } from "../../change-role";
+import { WarehouseOrderSection } from "./WarehouseOrderSection";
 
 /** «Logist biriktirish» sahifasi (logist boshqa rolga o'tgach — bo'shagan viloyatlarni berish). */
 const LOGIST_ASSIGNMENT_PATH = "/regions/logist-assignment";
@@ -188,6 +191,9 @@ export const UpdateUserModal = memo(({
   );
   const { useGetUserById, updateUser, updateMyProfile } = useUser();
   const changeRole = useChangeUserRole();
+  const setWarehouseOrder = useSetMarketWarehouseOrder();
+  // yXC91RRx: «Ombordan buyurtma yaratish» — tegilmagan bo'lsa `null` (saqlangan qiymat ko'rinadi).
+  const [warehouseOrderDraft, setWarehouseOrderDraft] = useState<boolean | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -257,6 +263,11 @@ export const UpdateUserModal = memo(({
   const isCustomer = role === "customer";
   // NFiXfmq6: AI narxini faqat superadmin/admin o'zgartiradi (menejerda maydon yashirin).
   const canEditAiPrice = isMarket && (authRole === "admin" || authRole === "superadmin");
+  // yXC91RRx: market «Ombordan buyurtma yaratish» kaliti — faqat superadmin/admin (`PATCH /markets/:id/warehouse-order`).
+  const canEditWarehouseOrder = isMarket && (authRole === "admin" || authRole === "superadmin");
+  const initialWarehouseOrder = userData?.can_order_from_warehouse === true;
+  const warehouseOrder = warehouseOrderDraft ?? initialWarehouseOrder;
+  const warehouseOrderChanged = canEditWarehouseOrder && warehouseOrder !== initialWarehouseOrder;
   const fetchedUser = needsCourierRegion ? unwrapUserResponse(rawUser) : null;
   const courierRegion = userData?.region ?? fetchedUser?.region ?? null;
   const courierRegionLoading = needsCourierRegion && isUserLoading;
@@ -300,6 +311,7 @@ export const UpdateUserModal = memo(({
   useEffect(() => {
     setRoleError(null);
     setCommittedRole(null);
+    setWarehouseOrderDraft(null);
     if (!userId) {
       setShowPassword(false);
       filledForUserRef.current = null;
@@ -435,6 +447,26 @@ export const UpdateUserModal = memo(({
     }
   };
 
+  /**
+   * yXC91RRx: ombor kaliti alohida endpoint orqali (`PATCH /markets/:id/warehouse-order`) — asosiy maydonlar
+   * saqlangach (yoki ular o'zgarmagan bo'lsa). Yiqilsa — oyna ochiq, kalit holati joyida (qayta «Saqlash»).
+   */
+  const saveWarehouseOrder = async () => {
+    if (!userId) return;
+    try {
+      await setWarehouseOrder.mutateAsync({ marketId: userId, enabled: warehouseOrder });
+      notify.success(t(warehouseOrder ? "marketOrder.enabled" : "marketOrder.disabled", { ns: "warehouses" }), {
+        description: userData?.name ?? undefined,
+      });
+      setWarehouseOrderDraft(null);
+      onClose();
+    } catch (error) {
+      notify.error(t("marketOrder.failed", { ns: "warehouses" }), {
+        description: getBackendErrorMessage(error) ?? t("editUserError"),
+      });
+    }
+  };
+
   const onSubmit = (values: UpdateUserFormValues) => submitForm(values, false);
 
   /** `skipRoleConfirm` — «Qayta urinish» (rol tasdig'i olingan, tanlov o'zgarmagan). */
@@ -527,7 +559,8 @@ export const UpdateUserModal = memo(({
     }
 
     if (!targetRole && Object.keys(payload).length === 0) {
-      onClose();
+      if (warehouseOrderChanged) await saveWarehouseOrder();
+      else onClose();
       return;
     }
 
@@ -570,7 +603,7 @@ export const UpdateUserModal = memo(({
           : t("userUpdatedPasswordReset", { name: userData.name }),
       errorMessage: t("editUserError"),
       onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-      onSuccess: () => onClose(),
+      onSuccess: () => (warehouseOrderChanged ? void saveWarehouseOrder() : onClose()),
     });
   };
 
@@ -604,7 +637,8 @@ export const UpdateUserModal = memo(({
     />
   );
 
-  const isPending = (isOwnProfile ? updateMyProfile.isPending : updateUser.isPending) || roleBusy;
+  const isPending =
+    (isOwnProfile ? updateMyProfile.isPending : updateUser.isPending) || roleBusy || setWarehouseOrder.isPending;
   const description = userData
     ? t("v2.edit.description", { name: userData.name, role: t(getUserRoleLabelKey(role)) })
     : undefined;
@@ -845,6 +879,10 @@ export const UpdateUserModal = memo(({
                 />
               ) : null}
             </FormSection>
+          ) : null}
+
+          {canEditWarehouseOrder ? (
+            <WarehouseOrderSection checked={warehouseOrder} onChange={setWarehouseOrderDraft} disabled={isPending} />
           ) : null}
         </div>
       )}

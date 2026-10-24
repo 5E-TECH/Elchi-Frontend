@@ -495,5 +495,14 @@
     "loadFailed": "Couldn't load warehouse stock",
     "emptyTitle": "Your products aren't in any warehouse yet",
     "emptyDescription": "Once an Elchi admin adds a product to a regional warehouse, its stock appears here."
+  },
+  "marketOrder": {
+    "section": "Warehouse",
+    "label": "Orders from warehouse",
+    "description": "When on, the shop's orders automatically ship from the district branch warehouse (if products are in stock)",
+    "hint": "Off by default. If products are short or the warehouse is paused, the order ships from HQ as usual.",
+    "enabled": "«Orders from warehouse» turned on",
+    "disabled": "«Orders from warehouse» turned off",
+    "failed": "Couldn't save the warehouse setting"
   }
 }
