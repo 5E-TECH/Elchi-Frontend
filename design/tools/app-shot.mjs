@@ -273,12 +273,25 @@ const notificationGroupsMock = (query) => {
   return { statusCode: 200, data: { items, meta: { page: 1, limit: 10, total: items.length, totalPages: 1 } } };
 };
 
+/**
+ * TG-C (KJNHAlGW): `GET /notifications/me/telegram-groups` — market `/profile` «Telegram guruhi» kartasi maket
+ * `market-profile-telegram-status` dagidek: «Yangi buyurtmalar» ulangan (19 kun oldin), «Bekor qilinganlar» — yo'q.
+ */
+const myTelegramGroupsMock = () => ({
+  statusCode: 200,
+  data: [
+    { group_type: 'create', linked: true, is_active: true, linked_at: new Date(Date.now() - 19 * 86_400_000).toISOString(), inactive_reason: null },
+    { group_type: 'cancel', linked: false, is_active: null, linked_at: null, inactive_reason: null },
+  ],
+});
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
   if (path === 'notifications') return notificationGroupsMock(query);
+  if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };
