@@ -192,7 +192,21 @@
       "from": "с {{date}}",
       "empty": "Изменений пока нет",
       "emptyDescription": "Каждая версия тарифа появится здесь после изменения.",
-      "loadFailed": "Не удалось загрузить историю"
+      "loadFailed": "Не удалось загрузить историю",
+      "rules": "Правила расчёта · {{changes}}",
+      "rulesInitial": "Правила расчёта · исходные: в базовую цену входит {{firstKg}} кг",
+      "by": "{{name}}",
+      "settings": {
+        "firstKg": "вес в базовой цене {{from}} → {{to}} кг",
+        "minBillable": "минимальный расчётный вес {{from}} → {{to}} кг",
+        "step": "шаг расчётного веса {{from}} → {{to}} кг",
+        "roundTo": "округление {{from}} → {{to}}",
+        "pickupFee": "pickup {{from}} → {{to}}",
+        "pickupFree": "бесплатный pickup {{from}} → {{to}}",
+        "express": "коэффициент срочности ×{{from}} → ×{{to}}",
+        "pickupNever": "никогда",
+        "pickupFrom": "от {{count}} шт."
+      }
     },
     "saveErrors": {
       "invalid": "Проверьте данные — значение неверно или дата уже прошла.",

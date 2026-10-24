@@ -69,6 +69,7 @@ export const queryKeys = {
     all: ["delivery-pricing"] as const,
     quoteByTariff: (body: object) => ["delivery-pricing", "quote-by-tariff", body] as const,
     settings: ["delivery-pricing", "settings"] as const,
+    settingsHistory: ["delivery-pricing", "settings-history"] as const,
     tariffs: ["delivery-pricing", "tariffs"] as const,
   },
   /**

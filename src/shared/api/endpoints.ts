@@ -297,6 +297,8 @@ export const API_ENDPOINTS = {
     // { tariff_id, base_price, extra_per_kg, days_min, days_max, valid_from? } — SUPERADMIN, ADMIN (47WFHzlx)
     TARIFFS: "delivery/tariffs",
     SETTINGS: "delivery/pricing-settings", // GET faol versiya · PATCH qisman (yangi versiya) — SUPERADMIN, ADMIN
+    // GET → data.versions (yangisi tepada, is_active, created_by_name) — SUPERADMIN, ADMIN (47WFHzlx)
+    SETTINGS_HISTORY: "delivery/pricing-settings/history",
   },
 
   // ── Integrations (admin/registrator) ─────────────────────────────────────

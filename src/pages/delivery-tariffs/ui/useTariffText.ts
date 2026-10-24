@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { DeliveryTariffId } from "../../../entities/delivery-pricing";
 import { getErrorKind, getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import type { TariffChange } from "../model/history";
+import type { SettingsChange, TariffChange } from "../model/history";
 
 /** Sahifa matnlari: tarif nomi, muddat («1–2 kun»), o'zgarish («har kg 4 000 → 4 500 so'm»), pul va son. */
 export const useTariffText = () => {
@@ -22,6 +22,16 @@ export const useTariffText = () => {
   };
   const changes = (items: readonly TariffChange[], short = false) =>
     items.length ? items.map((item) => change(item, short)).join(", ") : t("page.changes.none");
+  const pickupFree = (value: number | null) =>
+    value === null ? t("page.history.settings.pickupNever") : t("page.history.settings.pickupFrom", { count: value });
+  /** Hisob qoidasi o'zgarishi: «asosiy narxga kiradigan og'irlik 1 → 2 kg», «yaxlitlash 500 → 1 000 so'm». */
+  const settingsChange = (item: SettingsChange) => {
+    const key = `page.history.settings.${item.kind}`;
+    if (item.kind === "pickupFree") return t(key, { from: pickupFree(item.from), to: pickupFree(item.to) });
+    if (item.kind === "roundTo" || item.kind === "pickupFee") return t(key, { from: number(item.from), to: money(item.to) });
+    return t(key, { from: number(item.from), to: number(item.to) });
+  };
+  const settingsChanges = (items: readonly SettingsChange[]) => items.map(settingsChange).join(", ");
   /** Saqlash xatosining izohi — faqat i18n (xom backend matni ko'rsatilmaydi). */
   const saveError = (error: unknown) => {
     const kind = getErrorKind(error);
@@ -41,6 +51,7 @@ export const useTariffText = () => {
     number,
     days,
     changes,
+    settingsChanges,
     name: (id: DeliveryTariffId) => t(`tariffs.${id}`),
   };
 };

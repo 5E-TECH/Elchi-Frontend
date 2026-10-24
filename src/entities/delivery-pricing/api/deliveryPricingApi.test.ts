@@ -3,6 +3,7 @@ import {
   createDeliveryTariff,
   getDeliveryTariffs,
   getPricingSettings,
+  getPricingSettingsHistory,
   getQuotesByTariff,
   hasAnyQuote,
   normalizePricingSettings,
@@ -137,7 +138,7 @@ describe("tariflar (47WFHzlx)", () => {
         versions: [row("9", "center", { extra_per_kg: "4500", is_scheduled: true }), row("2", "center", { is_current: true }), { tariff_id: "nope" }],
       },
     });
-    expect(data.current.city).toMatchObject({ id: "1", tariffId: "city", basePrice: 40000, extraPerKg: 4000, createdBy: "7" });
+    expect(data.current.city).toMatchObject({ id: "1", tariffId: "city", basePrice: 40000, extraPerKg: 4000, createdBy: "7", createdByName: null });
     expect(data.current.address).toBeNull();
     expect(data.versions).toHaveLength(2);
     expect(data.versions[0]).toMatchObject({ id: "9", extraPerKg: 4500, isScheduled: true, isCurrent: false });
@@ -157,5 +158,54 @@ describe("tariflar (47WFHzlx)", () => {
     mocks.patch.mockResolvedValue({ data: { data: { id: "2", first_kg_included: 2, round_to: 500 } } });
     await expect(updatePricingSettings({ first_kg_included: 2 })).resolves.toMatchObject({ firstKgIncluded: 2 });
     expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", { first_kg_included: 2 });
+  });
+});
+
+describe("hisob qoidalari tarixi va muallif ismi (47WFHzlx)", () => {
+  it("GET delivery/pricing-settings/history → versiyalar, buzuq qator tashlanadi", async () => {
+    mocks.get.mockResolvedValueOnce({
+      data: {
+        statusCode: 200,
+        data: {
+          versions: [
+            {
+              id: "2",
+              first_kg_included: "2.000",
+              round_to: 500,
+              is_active: true,
+              created_by: "1",
+              created_by_name: "Shodiyor Ergashev",
+              createdAt: "2026-10-20T10:00:00.000Z",
+            },
+            { id: "1", first_kg_included: 1, round_to: 500, is_active: false, created_by: null },
+            { id: "0" },
+          ],
+        },
+      },
+    });
+    const versions = await getPricingSettingsHistory();
+    expect(mocks.get).toHaveBeenCalledWith("delivery/pricing-settings/history");
+    expect(versions).toHaveLength(2);
+    expect(versions[0]).toMatchObject({
+      id: "2",
+      firstKgIncluded: 2,
+      isActive: true,
+      createdBy: "1",
+      createdByName: "Shodiyor Ergashev",
+      createdAt: "2026-10-20T10:00:00.000Z",
+    });
+    expect(versions[1]).toMatchObject({ id: "1", isActive: false, createdBy: null, createdByName: null });
+  });
+
+  it("normalizeTariffsData: created_by_name → createdByName", () => {
+    const data = normalizeTariffsData({
+      data: {
+        current: {},
+        versions: [
+          { id: "3", tariff_id: "city", base_price: 35000, extra_per_kg: 4000, valid_from: "2026-10-08T00:00:00Z", created_by: "1", created_by_name: "Shodiyor Ergashev" },
+        ],
+      },
+    });
+    expect(data.versions[0]).toMatchObject({ createdBy: "1", createdByName: "Shodiyor Ergashev" });
   });
 });
