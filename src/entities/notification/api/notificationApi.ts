@@ -2,7 +2,12 @@ import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
 import { parseInactiveReason } from "../lib/inactiveReason";
-import type { Notification, NotificationParams } from "../model/types";
+import type {
+  MyTelegramGroupStatus,
+  Notification,
+  NotificationGroupType,
+  NotificationParams,
+} from "../model/types";
 
 /**
  * Backend qatori (`TelegramMarketPublicDto`): `{ id, createdAt, updatedAt, market_id, group_id, group_type,
@@ -91,4 +96,40 @@ export const getNotifications = async (params: NotificationParams): Promise<Pagi
 export const getNotificationById = async (id: string): Promise<Notification> => {
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.BY_ID(id));
   return normalizeNotification((response.data as { data?: Notification }).data ?? response.data);
+};
+
+const MY_GROUP_TYPES: readonly NotificationGroupType[] = ["create", "cancel"];
+
+/**
+ * `GET /notifications/me/telegram-groups` javobi (`{ data: [{ group_type, linked, is_active, linked_at,
+ * inactive_reason }] }`) → har doim ikkala tur, `create` birinchi. Tur kelmasa yoki javob boshqa shaklda bo'lsa —
+ * ulanmagan (bo'sh holat to'qilmaydi: ulanmagan qator «Ulash» bilan chiziladi). Faol bo'lmagan qatorda
+ * `is_active: false`, faol qatorda sabab `null`.
+ */
+export const normalizeMyTelegramGroups = (value: unknown): MyTelegramGroupStatus[] => {
+  const payload = (value ?? {}) as { data?: unknown };
+  const list = Array.isArray(payload.data) ? payload.data : Array.isArray(value) ? value : [];
+  const rows = list.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
+
+  return MY_GROUP_TYPES.map((groupType) => {
+    const item = rows.find((row) => row.group_type === groupType);
+    const linked = item?.linked === true || item?.linked === "true";
+    if (!item || !linked) {
+      return { group_type: groupType, linked: false, is_active: false, linked_at: null, inactive_reason: null };
+    }
+    // Maydon yo'q bo'lsa — faol; faqat aniq `false` nofaol (`GET /notifications` bilan bir xil qoida).
+    const isActive = item.is_active !== false && item.is_active !== "false";
+    return {
+      group_type: groupType,
+      linked: true,
+      is_active: isActive,
+      linked_at: typeof item.linked_at === "string" && item.linked_at ? item.linked_at : null,
+      inactive_reason: isActive ? null : parseInactiveReason(item.inactive_reason),
+    };
+  });
+};
+
+export const getMyTelegramGroups = async (): Promise<MyTelegramGroupStatus[]> => {
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.MY_TELEGRAM_GROUPS);
+  return normalizeMyTelegramGroups(response.data);
 };

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getNotifications } from "./notificationApi";
+import { getMyTelegramGroups, getNotifications } from "./notificationApi";
 
 /** `GET /notifications` normallashtirish — tarmoqsiz (`api` mock). TG-B: sana kelmasa `null` («hozir» to'qilmaydi). */
 
@@ -66,6 +66,49 @@ describe("getNotifications", () => {
       { inactive_reason: null, inactive_at: null },
       { inactive_reason: null, inactive_at: null },
       { inactive_reason: null, inactive_at: null },
+    ]);
+  });
+});
+
+describe("getMyTelegramGroups (KJNHAlGW, TG-C)", () => {
+  it("`GET notifications/me/telegram-groups` → ikkala tur: ulangan, nofaol + sabab; ulanmaganda `is_active: false`", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: [
+          { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked" },
+          { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null },
+        ],
+      },
+    });
+
+    const result = await getMyTelegramGroups();
+
+    expect(mocks.get).toHaveBeenCalledWith("notifications/me/telegram-groups");
+    expect(result).toEqual([
+      { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null },
+      { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked" },
+    ]);
+  });
+
+  it("tur kelmasa, `linked: false` yoki javob boshqa shaklda — ulanmagan; noma'lum sabab — `null`", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: [
+          { group_type: "create", linked: false, is_active: null, linked_at: null, inactive_reason: null },
+          { group_type: "cancel", linked: true, is_active: false, linked_at: null, inactive_reason: "new_reason" },
+        ],
+      },
+    });
+    expect(await getMyTelegramGroups()).toEqual([
+      { group_type: "create", linked: false, is_active: false, linked_at: null, inactive_reason: null },
+      { group_type: "cancel", linked: true, is_active: false, linked_at: null, inactive_reason: null },
+    ]);
+
+    mocks.get.mockResolvedValue({ data: { data: {} } });
+    expect((await getMyTelegramGroups()).map((row) => [row.group_type, row.linked])).toEqual([
+      ["create", false],
+      ["cancel", false],
     ]);
   });
 });

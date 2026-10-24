@@ -27,6 +27,22 @@ export interface Notification {
   created_at: string | null;
 }
 
+/**
+ * Market o'z guruhi holati (`GET /notifications/me/telegram-groups`, KJNHAlGW; market va market_operator, market
+ * tokendan). Javobda har doim ikkala tur; guruh ID'si va bot nomi qaytmaydi.
+ */
+export interface MyTelegramGroupStatus {
+  group_type: NotificationGroupType;
+  /** Shu tur uchun guruh ulanganmi. */
+  linked: boolean;
+  /** Ulangan guruh faolmi; ulanmagan bo'lsa `false` (javobdagi `null`). */
+  is_active: boolean;
+  /** Qachon ulangan (ISO); ulanmagan yoki sana kelmasa — `null`. */
+  linked_at: string | null;
+  /** Nofaol sababi (G085w5Qr); faol, ulanmagan yoki sababi noma'lum bo'lsa — `null`. */
+  inactive_reason: NotificationInactiveReason | null;
+}
+
 /** `GET /notifications` query (OpenAPI: market_id, group_type, is_active, page, limit). */
 export interface NotificationParams {
   page?: number;

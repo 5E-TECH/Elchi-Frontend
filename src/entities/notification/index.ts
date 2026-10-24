@@ -1,11 +1,17 @@
 export type {
+  MyTelegramGroupStatus,
   Notification,
   NotificationGroupType,
   NotificationParams,
 } from "./model/types";
-export { useNotifications, useNotificationDetail } from "./api/useNotifications";
+export { useMyTelegramGroups, useNotifications, useNotificationDetail } from "./api/useNotifications";
 export type { UseNotificationsOptions } from "./api/useNotifications";
-export { getNotifications, getNotificationById } from "./api/notificationApi";
+export {
+  getMyTelegramGroups,
+  getNotifications,
+  getNotificationById,
+  normalizeMyTelegramGroups,
+} from "./api/notificationApi";
 export { useNotificationMarkets } from "./lib/useNotificationMarkets";
 export {
   NOTIFICATION_INACTIVE_REASONS,
