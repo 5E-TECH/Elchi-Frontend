@@ -24,6 +24,13 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
+// XtcEyQjb: menejerning «Ombor» bandi — faqat o'z filialida ombor bo'lsa (`GET /warehouses` bo'sh emas). Sukut — bor
+// (maket personasi); haqiqiy so'rov ketmaydi.
+const ownWarehouse = vi.hoisted(() => ({ exists: true as boolean | undefined }));
+vi.mock("../../../entities/warehouse/api/ownWarehouse", () => ({
+  useHasOwnWarehouse: (enabled: boolean) => (enabled ? ownWarehouse.exists : undefined),
+}));
+
 const logoutSpy = vi.hoisted(() => vi.fn());
 vi.mock("../../../shared/lib/useLogout", () => ({
   useLogout: () => ({ logout: logoutSpy }),
@@ -130,6 +137,7 @@ beforeAll(async () => {
 afterEach(() => {
   pending.path = null;
   unread.count = 0;
+  ownWarehouse.exists = true;
   logoutSpy.mockReset();
   vi.restoreAllMocks();
 });

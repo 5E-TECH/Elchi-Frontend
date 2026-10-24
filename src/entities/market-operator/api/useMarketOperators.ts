@@ -1,10 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { MarketOperatorCommission, MarketOperatorListParams } from "../model/types";
+import type { MarketOperatorCommission, MarketOperatorList, MarketOperatorListParams } from "../model/types";
 import {
   createMarketOperator,
   deleteMarketOperator,
   getMarketOperators,
   updateMarketOperatorCommission,
+  updateMarketOperatorWarehouseAccess,
 } from "./marketOperatorApi";
 
 /** So'rov kalitlari — shu entity ichida (`shared/config/queryKeys.ts` boshqa PR'lar egaligida). */
@@ -50,3 +51,31 @@ export const useDeleteMarketOperator = () => {
 
 /** Yaratish oqimi tugagach (PATCH muvaffaqiyatli yoki yiqilgan) ro'yxatni yangilash. */
 export const useRefreshMarketOperators = useInvalidateOperators;
+
+/**
+ * XtcEyQjb: «Ombordagi qoldiqni ko'radi» kaliti. OPTIMISTIK EMAS: kalit server javobigacha eski holatda turadi;
+ * muvaffaqiyatda ro'yxat yangilanadi, xatoda o'zgarmaydi (xabarni chaqiruvchi ko'rsatadi).
+ */
+export const useUpdateMarketOperatorWarehouseAccess = () => {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateOperators();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => updateMarketOperatorWarehouseAccess(id, enabled),
+    onSuccess: (operator) => {
+      // Server tasdiqlagan qiymat darhol ro'yxatda (qayta so'rov kelguncha kalit eski holatga qaytib turmasin).
+      queryClient.setQueriesData<MarketOperatorList>({ queryKey: marketOperatorKeys.all }, (list) =>
+        list
+          ? {
+              ...list,
+              items: list.items.map((item) =>
+                item.id === operator.id ? { ...item, can_view_warehouse_stock: operator.can_view_warehouse_stock } : item,
+              ),
+            }
+          : list,
+      );
+      return invalidate();
+    },
+    // Xatoda kalit o'zgarmaydi; ro'yxat serverdagi haqiqiy holat bilan qayta o'qiladi (404 — operator o'chirilgan).
+    onError: () => invalidate(),
+  });
+};

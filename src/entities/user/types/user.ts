@@ -97,6 +97,11 @@ export interface User {
   default_tariff: "home" | "center";
   /** NFiXfmq6: market AI buyurtma narxi (so'm). `null` / yo'q — global narx (sukut ko'rsatilmaydi, FY-S5). */
   ai_price_per_order?: number | string | null;
+  /**
+   * yXC91RRx: market «Ombordan buyurtma yaratish» kaliti (sukut `false`; faqat superadmin/admin o'zgartiradi —
+   * `PATCH /markets/:id/warehouse-order`). Faqat market qatorida.
+   */
+  can_order_from_warehouse?: boolean;
   region_id?: string | null;
   region?: Region | null;
   /**
@@ -111,6 +116,11 @@ export interface User {
    */
   commission_type?: "percent" | "fixed" | null;
   commission_value?: number | string | null;
+  /**
+   * XtcEyQjb: market operatori «Ombordagi qoldiq» ni ko'radimi (`GET /auth/my-profile`; market har operatorga alohida
+   * yoqadi, sukut `false`). Boshqa rollarda yo'q.
+   */
+  can_view_warehouse_stock?: boolean;
   avatar?: string;
   balance?: number;
   orders?: Order[];

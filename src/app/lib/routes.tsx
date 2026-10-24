@@ -29,6 +29,7 @@ import {
   canViewRegionStats,
   canViewMyEarnings,
   canManageDeliveryTariffs,
+  canViewWarehouses,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -156,6 +157,9 @@ const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sat
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 // 47WFHzlx: «Yetkazish tariflari» (superadmin, admin) — «Hududlar» sarlavhasidan havola.
 const DeliveryTariffsPage = lazy(() => import("../../pages/delivery-tariffs"));
+// yXC91RRx: «Ombor» — ro'yxat (superadmin, admin; menejer — o'z omboriga) va tafsilot.
+const WarehousesPage = lazy(() => import("../../pages/warehouses"));
+const WarehouseDetailPage = lazy(() => import("../../pages/warehouses/detail"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const NotificationSendPage = lazy(() => import("../../pages/notification-send"));
 // NS-2: «Yuborilganlar» — qo'lda yuborilgan xabarlar tarixi (menyusiz, «Xabar yuborish» sarlavhasidan).
@@ -1078,6 +1082,23 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canManageDeliveryTariffs}>
                   <DeliveryTariffsPage />
+                </ProtectedRoute>
+              ),
+            },
+            // yXC91RRx: «Ombor» — superadmin, admin (to'liq); filial menejeri (REGIONAL/HYBRID) — o'z ombori, faqat ko'rish.
+            {
+              path: "warehouses",
+              element: (
+                <ProtectedRoute canActivate={canViewWarehouses}>
+                  <WarehousesPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "warehouses/:id",
+              element: (
+                <ProtectedRoute canActivate={canViewWarehouses}>
+                  <WarehouseDetailPage />
                 </ProtectedRoute>
               ),
             },

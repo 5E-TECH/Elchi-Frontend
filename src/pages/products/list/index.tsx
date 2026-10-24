@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-list, admin-products-list, manager-products-list, registrator-products-list, market-products-list, market_operator-products-list, market_operator-products-unassigned, superadmin-products-select-market-dialog, admin-products-market-select-dialog, manager-products-market-select-dialog, registrator-products-market-select-dialog, superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog, superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog
+// dizayn-v2: superadmin-products-list, admin-products-list, manager-products-list, registrator-products-list, market-products-list, market-products-warehouse-stock, market_operator-products-list, market_operator-products-unassigned, superadmin-products-select-market-dialog, admin-products-market-select-dialog, manager-products-market-select-dialog, registrator-products-market-select-dialog, superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog, superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, Pencil, Plus, RefreshCw, SearchX, Store, Tag, Trash2, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +49,9 @@ import {
 import { ProductBillable, ProductDimensions, ProductWeight } from "../ui/ProductMeasureCells";
 import { ProductPrice } from "../ui/ProductPrice";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
+import { MarketProductsTabs } from "../warehouse-stock/MarketProductsTabs";
+import { MarketWarehouseStock } from "../warehouse-stock/MarketWarehouseStock";
+import { MARKET_WAREHOUSE_VIEW } from "../warehouse-stock/marketStockView";
 import { EditProductDialog } from "./ui/EditProductDialog";
 import { SelectMarketDialog } from "./ui/SelectMarketDialog";
 
@@ -388,12 +391,20 @@ const ProductTable = () => {
     <Skeleton width={128} height={14} className="inline-block align-middle" />
   ) : null;
   const hasFilters = Boolean(searchFromUrl) || (!isMarketSide && Boolean(marketIdFromUrl));
+  // yXC91RRx: market — «Mahsulotlar | Ombordagi qoldiq» tablari (maket `market-products-warehouse-stock`).
+  // XtcEyQjb: market operatori — faqat market unga «Ombordagi qoldiqni ko'radi» kalitini yoqqan bo'lsa (`my-profile`).
+  const showWarehouseTabs =
+    roleState.role === "market" || (isOperator && profile?.can_view_warehouse_stock === true);
+  if (showWarehouseTabs && allParams.view === MARKET_WAREHOUSE_VIEW) {
+    return <MarketWarehouseStock description={description} productsTotal={total} />;
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
       <PageHeader
         title={t("title")}
         description={description}
+        children={showWarehouseTabs ? <MarketProductsTabs value="list" productsTotal={total} /> : undefined}
         actions={
           canManage ? (
             <Button leftIcon={Plus} onClick={handleCreate}>

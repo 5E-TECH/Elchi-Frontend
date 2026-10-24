@@ -185,19 +185,26 @@ describe("LoginForm (dizayn v2: common-login, common-login-error)", () => {
     expect(alert.compareDocumentPosition(phoneInput())).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it("a network failure (no response) shows «Tarmoq xatoligi» without the credentials hint", async () => {
-    const user = userEvent.setup();
-    loginFn.mockRejectedValue(new AxiosError("Network Error", "ERR_NETWORK"));
+  it.each([
+    ["ERR_NETWORK", "Network Error", "Internet aloqasi yo'q"],
+    ["ECONNABORTED", "timeout of 15000ms exceeded", "Server javob bermadi"],
+  ])(
+    "no response (%s) shows its own text (h0AM0kDL) without the credentials hint",
+    async (code, axiosMessage, expected) => {
+      const user = userEvent.setup();
+      loginFn.mockRejectedValue(new AxiosError(axiosMessage, code));
 
-    renderWithProviders(<LoginForm />);
+      renderWithProviders(<LoginForm />);
 
-    await fillAndSubmit(user);
+      await fillAndSubmit(user);
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Tarmoq xatoligi");
-    expect(alert).not.toHaveTextContent("Network Error");
-    expect(alert).not.toHaveTextContent("Telefon raqam va parolni tekshirib");
-  });
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(expected);
+      expect(alert).not.toHaveTextContent(axiosMessage);
+      expect(alert).not.toHaveTextContent("Tarmoq xatoligi");
+      expect(alert).not.toHaveTextContent("Telefon raqam va parolni tekshirib");
+    },
+  );
 
   it("maps 500 to the server error text", async () => {
     const user = userEvent.setup();

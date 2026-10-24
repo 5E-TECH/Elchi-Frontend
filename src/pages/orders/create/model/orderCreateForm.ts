@@ -1,5 +1,10 @@
 import * as yup from "yup";
-import type { CreateOrderRequest, DeliveryType, OrderItem } from "../../../../entities/order/types/order";
+import type {
+  CreateOrderRequest,
+  DeliveryType,
+  OrderFulfillmentChoice,
+  OrderItem,
+} from "../../../../entities/order/types/order";
 import i18n from "../../../../i18n";
 
 export interface MarketOption {
@@ -43,6 +48,11 @@ export interface OrderCreateFormValues {
    * «Mahsulotlar bo'yicha: … · Qo'llash» qatorida turadi, maydon ustidan yozilmaydi. Payload'ga kirmaydi.
    */
   totalPriceAuto: boolean;
+  /**
+   * 6kHnNH9j: «Qayerdan yuboriladi» — `auto` (sukut: ombor yetsa ombordan, aks holda HQ) yoki `hq` (yaratuvchi HQ'ni
+   * tanladi). Faqat manba bloki ko'rinadigan rollarda payload'ga kiradi (`includeFulfillment`).
+   */
+  fulfillment: OrderFulfillmentChoice;
   customer: {
     phone: string;
     extra_phone: string;
@@ -65,6 +75,7 @@ export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   existingCustomer: null,
   deliveryTypeTouched: false,
   totalPriceAuto: true,
+  fulfillment: "auto",
   customer: {
     phone: "",
     extra_phone: "",
@@ -103,6 +114,7 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
       // Forma holati (tekshirilmaydi, payload'ga kirmaydi) — CS-B.
       deliveryTypeTouched: yup.boolean().default(false),
       totalPriceAuto: yup.boolean().default(true),
+      fulfillment: yup.mixed<OrderFulfillmentChoice>().oneOf(["auto", "hq"]).default("auto"),
       customer: yup.object({
         phone: yup
           .string()
@@ -211,9 +223,12 @@ export const buildCreateOrderPayload = (
   values: OrderCreateFormValues,
   options?: {
     includeMarketId?: boolean;
+    /** 6kHnNH9j: manba bloki ko'rinadi — `fulfillment` yuboriladi (aks holda backend sukuti `auto`). */
+    includeFulfillment?: boolean;
   },
 ): CreateOrderRequest => {
   const includeMarketId = options?.includeMarketId ?? true;
+  const includeFulfillment = options?.includeFulfillment ?? false;
   const market = values.market;
   const address = values.customer.address.trim();
   const comment = values.details.comment.trim();
@@ -243,6 +258,7 @@ export const buildCreateOrderPayload = (
     ...(address && { address }),
     ...(comment && { comment }),
     ...(operator && { operator }),
+    ...(includeFulfillment ? { fulfillment: values.fulfillment === "hq" ? "hq" : "auto" } : {}),
   };
 };
 

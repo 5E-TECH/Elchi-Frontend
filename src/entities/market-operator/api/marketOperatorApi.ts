@@ -35,6 +35,7 @@ export const normalizeMarketOperator = (value: unknown): MarketOperator => {
     commission_type: toCommissionType(item.commission_type),
     commission_value: toNumberOrNull(item.commission_value),
     created_at: typeof createdAt === "string" ? createdAt : null,
+    can_view_warehouse_stock: item.can_view_warehouse_stock === true,
   };
 };
 
@@ -82,4 +83,24 @@ export const updateMarketOperatorCommission = async (
 
 export const deleteMarketOperator = async (id: string): Promise<void> => {
   await api.delete(API_ENDPOINTS.MARKET_OPERATORS.BY_ID(id));
+};
+
+/**
+ * XtcEyQjb: «Ombordagi qoldiqni ko'radi» kaliti (`PATCH /market-operators/:id/warehouse-access`, faqat MARKET — o'z
+ * operatori, begona — 404). Javob — yangilangan operator qatori.
+ */
+export const updateMarketOperatorWarehouseAccess = async (id: string, enabled: boolean): Promise<MarketOperator> => {
+  const response = await api.patch(API_ENDPOINTS.MARKET_OPERATORS.WAREHOUSE_ACCESS(id), {
+    can_view_warehouse_stock: enabled,
+  });
+  const body = asRecord(response.data) ?? {};
+  const row = asRecord(body.data) ?? body;
+  const operator = normalizeMarketOperator(row);
+  // Javobda maydon bo'lmasa (qisqa javob) — so'ralgan qiymat: server 2xx bilan qabul qildi.
+  return {
+    ...operator,
+    id: operator.id || id,
+    can_view_warehouse_stock:
+      typeof row.can_view_warehouse_stock === "boolean" ? row.can_view_warehouse_stock : enabled,
+  };
 };

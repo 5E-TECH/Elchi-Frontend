@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { StatusBadge, type StatusBadgeProps } from "../../../shared/ui/primitives/StatusBadge";
 import {
-  CANCEL_RETURN_STAGES,
+  cancelStageMetaFor,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
   type CancelReturnStage,
@@ -39,7 +39,7 @@ export type OrderStatusBadgeProps = Omit<
  *
  * Bekor bosqichi (`order` berilganda, maket `tizim-states-data` §09) — nuqtasiz, ikonkali
  * belgi: «Bekor · kuryerda / yo'lda / filialda / HQ'da» (danger) va «Marketga topshirildi»
- * (neytral, `PackageCheck`).
+ * (neytral, `PackageCheck`); ombor buyurtmasi (`fulfillment_source: WAREHOUSE`) uchun — «Omborga qaytdi» (`Warehouse`).
  *
  * Noma'lum holat yiqitmaydi va bo'sh qolmaydi: neytral ton + o'qiladigan xom
  * qiymat (`lost_in_transit` → «Lost in transit»), bo'sh qiymat — «Noma'lum».
@@ -61,7 +61,9 @@ export const OrderStatusBadge = ({
         : null;
 
   if (stage) {
-    const meta = CANCEL_RETURN_STAGES[stage];
+    // 6kHnNH9j: ombor buyurtmasi omborga qaytgan bo'lsa — «Omborga qaytdi» (`market` bosqichi o'rnida).
+    const meta = cancelStageMetaFor({ ...(order && typeof order === "object" ? order : {}), status }, stage);
+    const warehouseReturn = meta.labelKey === "cancelStage.warehouse";
     const badge = (
       <StatusBadge
         tone={meta.tone}
@@ -69,7 +71,7 @@ export const OrderStatusBadge = ({
         icon={meta.icon}
         label={t(meta.labelKey)}
         data-order-status={resolved ? ORDER_STATUS_REGISTRY[resolved].key : undefined}
-        data-cancel-stage={stage}
+        data-cancel-stage={warehouseReturn ? "warehouse" : stage}
         className={withPlace ? undefined : className}
         {...rest}
       />

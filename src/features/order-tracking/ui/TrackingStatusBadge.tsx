@@ -14,8 +14,12 @@ const EXTRA_TONES: Record<string, Tone> = {
   completed: "info",
 };
 
-export const TrackingStatusBadge = ({ status }: { status: string }) => {
+export const TrackingStatusBadge = ({ status, warehouseReturn = false }: { status: string; warehouseReturn?: boolean }) => {
   const label = useTrackingStatusLabel();
+  // 6kHnNH9j: `warehouse_returned` hodisasida `returned_to_market` — «Omborga qaytdi».
+  if (warehouseReturn && normalizeOrderStatus(status) === "returned_to_market") {
+    return <OrderStatusBadge status={status} order={{ status, fulfillment_source: "WAREHOUSE" }} />;
+  }
   if (normalizeOrderStatus(status)) return <OrderStatusBadge status={status} />;
   const tone = EXTRA_TONES[normalizeKey(status)];
   if (!tone) return <OrderStatusBadge status={status} />;

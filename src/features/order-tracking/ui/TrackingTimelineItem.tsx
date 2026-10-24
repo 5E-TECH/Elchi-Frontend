@@ -42,11 +42,13 @@ export const TrackingTimelineItem = ({ event, isLast = false, currentUser, conte
           <span className="text-[13px] text-text-muted">{statusLabel(view.oldStatus)}</span>
           <ChevronRight size={14} aria-hidden="true" className="shrink-0 text-text-subtle" />
           <span className="sr-only">→</span>
-          <TrackingStatusBadge status={view.newStatus} />
+          <TrackingStatusBadge status={view.newStatus} warehouseReturn={view.warehouseReturn} />
         </div>
       );
     }
-    if (view.newStatus && !oldKey) return <TrackingStatusBadge status={view.newStatus} />;
+    if (view.newStatus && !oldKey) {
+      return <TrackingStatusBadge status={view.newStatus} warehouseReturn={view.warehouseReturn} />;
+    }
     return (
       <Badge variant="outline" tone="neutral">
         {view.actionName}

@@ -4,7 +4,7 @@ import { Copy, Inbox, RotateCcw } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { OrderReturnPlace, OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
+import { FulfillmentSourceTag, OrderReturnPlace, OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { ExtraCostApprovalTag } from "../../../entities/orders/ui/ExtraCostApprovalTag";
 import type { RootState } from "../../../app/config/store";
@@ -205,6 +205,8 @@ const OrdersTable = ({
                 <OrderStatusBadge status={getDisplayStatus(order)} order={order} />
                 <ReturnRequestedTag order={order} />
                 <ExtraCostApprovalTag orderId={order.id} status={order.status} />
+                {/* 6kHnNH9j: «Ombordan · <ombor>» — viloyat omboridan ketadigan buyurtma. */}
+                <FulfillmentSourceTag order={order} />
             </>
         ),
         [],

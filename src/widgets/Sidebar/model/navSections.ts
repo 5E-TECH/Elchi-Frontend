@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import type { LucideIcon } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import type { User } from "../../../entities/user/model/types";
+// Yengil modul (barrel emas) — asosiy chunkka to'liq ombor API'si tushmasin.
+import { useHasOwnWarehouse } from "../../../entities/warehouse/api/ownWarehouse";
 import {
   getSidebarGroupsForUser,
   hasUnknownBranchType,
@@ -215,13 +217,33 @@ export const getNavPersona = (
   return { name, initials: getInitials(name), branchName };
 };
 
+/**
+ * XtcEyQjb (ega 2026-10-24): filial xodimining «Ombor» bandi — faqat o'z filialida ombor bo'lsa (`GET /warehouses`
+ * bo'sh emas; backend xodimga faqat o'z filiali omborini qaytaradi). Bu — shu fayldagi yagona ma'lumotga bog'liq
+ * istisno: band to'plami `menuConfig.tsx` da (menejer `warehouse` qobiliyati — REGIONAL, HYBRID), bu yerda faqat
+ * omborsiz filialda yashiriladi (javob kelguncha ham — bandi bo'lmagan menejerga «Filialingizda ombor yo'q» ko'rinmasin).
+ */
+const OWN_WAREHOUSE_PATH = "/warehouses";
+
+const withoutPath = (sections: NavSection[], path: string): NavSection[] =>
+  sections
+    .map((section) => ({ ...section, items: section.items.filter((item) => item.to !== path) }))
+    .filter((section) => section.items.length > 0);
+
 /** Joriy foydalanuvchi menyusi (redux `role` + `user`). */
 export const useNavSections = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const userRole = normalizeSidebarRole(role, user);
 
-  const sections = useMemo(() => getNavSections(userRole, user), [userRole, user]);
+  const baseSections = useMemo(() => getNavSections(userRole, user), [userRole, user]);
+  const gateWarehouse =
+    userRole === "manager" && baseSections.some((section) => section.items.some((item) => item.to === OWN_WAREHOUSE_PATH));
+  const hasOwnWarehouse = useHasOwnWarehouse(gateWarehouse);
+  const sections = useMemo(
+    () => (gateWarehouse && hasOwnWarehouse !== true ? withoutPath(baseSections, OWN_WAREHOUSE_PATH) : baseSections),
+    [baseSections, gateWarehouse, hasOwnWarehouse],
+  );
   const items = useMemo(() => sections.flatMap((section) => section.items), [sections]);
   const branchTypeMissing = hasUnknownBranchType(userRole, user);
 

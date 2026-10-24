@@ -20,7 +20,8 @@
     "in_transit": "Cancelled · in transit",
     "branch": "Cancelled · at branch",
     "hq": "Cancelled · at HQ",
-    "market": "Handed to market"
+    "market": "Handed to market",
+    "warehouse": "Returned to warehouse"
   },
   "cancelReturn": {
     "towards": "→ {{name}}",

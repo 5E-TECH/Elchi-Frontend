@@ -11,6 +11,7 @@ import {
   Send,
   ShieldCheck,
   TriangleAlert,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import { useCancelHandoverMethodLabel, type CancelHandoverMethod } from "../../../entities/order";
@@ -24,6 +25,7 @@ const STEP_ICON: Record<ReturnPathStepKind, LucideIcon> = {
   sent: Send,
   received: Inbox,
   handed: PackageCheck,
+  warehouse: Warehouse,
 };
 
 /** Usul belgisi ikonkasi — `tizim-states-data` §09 «Topshirish usuli». */
@@ -126,7 +128,7 @@ export const OrderReturnPathCard = ({
   };
 
   const subtitle = path.closed
-    ? t("returnPath.subtitleClosed")
+    ? t(path.closedToWarehouse ? "returnPath.subtitleClosedWarehouse" : "returnPath.subtitleClosed")
     : marketView && path.currentPlace
       ? t("returnPath.subtitleMarketReady", { place: path.currentPlace })
       : t("returnPath.subtitleOpen");
@@ -163,6 +165,7 @@ export const OrderReturnPathCard = ({
           </>
         );
       case "received":
+      case "warehouse":
         return (
           <p className="m-0 text-[13px] text-text-muted">
             {join([step.place, <Actor key="a" role={step.role} name={step.actor} />])}

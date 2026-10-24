@@ -67,7 +67,7 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     await expect(p.getByRole("button", { name: "Mahsulot yaratish" })).toHaveCount(0);
     await expect(p.getByRole("button", { name: /— tahrirlash$/ })).toHaveCount(0);
     await expect(p.getByRole("button", { name: /— o'chirish$/ })).toHaveCount(0);
-    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Narx"]);
+    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Narx", "Og'irlik", "O'lcham, sm", "Hisob vazni"]);
     const first = p.getByRole("row").filter({ hasText: "Mahsulot 01" });
     await expect(first.getByRole("cell").nth(2)).toHaveText(/^10\s000 so'm$/);
     const fifth = p.getByRole("row").filter({ hasText: "Mahsulot 05" });
@@ -111,7 +111,7 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     await p.goto("/products");
 
     await expect(p.getByText("Mahsulot 01", { exact: true }).first()).toBeVisible({ timeout: 90_000 });
-    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Market", "Narx", "Amallar"]);
+    await expect(p.getByRole("columnheader")).toHaveText(["#", "Mahsulot nomi", "Market", "Narx", "Og'irlik", "O'lcham, sm", "Hisob vazni", "Amallar"]);
     await p.getByRole("button", { name: "Mahsulot 01 — tahrirlash" }).first().click();
     const dialog = p.getByRole("dialog", { name: "Mahsulotni tahrirlash" });
     await expect(dialog.getByText("Mahsulot rasmi")).toBeVisible();
@@ -119,6 +119,11 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     await expect(price).toHaveValue(/^10\s000$/);
     await price.fill("");
     await price.pressSequentially("125000");
+    // 6FLyjO6j: og'irlik va o'lcham majburiy — o'lchovsiz eski mahsulotda avval to'ldiriladi.
+    await dialog.getByRole("textbox", { name: "Og'irlik" }).fill("1,2");
+    await dialog.getByRole("textbox", { name: "Uzunlik" }).fill("30");
+    await dialog.getByRole("textbox", { name: "Kenglik" }).fill("22");
+    await dialog.getByRole("textbox", { name: "Balandlik" }).fill("15");
     await dialog.getByRole("button", { name: "Saqlash" }).click();
 
     await expect.poll(() => patches.length).toBe(1);

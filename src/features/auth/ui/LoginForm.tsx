@@ -109,8 +109,9 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
           if (status === 500) message = t("serverError");
           credentials = status === 400 || status === 401 || status === 404;
         } else if (isNetworkFailure(error)) {
-          // Javob kelmadi (internet yo'q / vaqt tugadi) — axios'ning inglizcha matni emas.
-          message = t("networkError");
+          // Javob kelmadi — axios'ning inglizcha matni emas (h0AM0kDL: tashxis uchun ikki holat alohida):
+          // vaqt tugadi (`ECONNABORTED`, 15 s) — «Server javob bermadi»; darhol uzilish — «Internet aloqasi yo'q».
+          message = err.code === "ECONNABORTED" ? t("networkTimeout") : t("networkOffline");
         } else {
           message = err.message || t("networkError");
         }

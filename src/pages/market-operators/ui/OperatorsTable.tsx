@@ -10,6 +10,7 @@ import { Badge, DataTable, Skeleton, type DataTableColumn } from "../../../share
 import { useCommissionText } from "../model/useCommissionText";
 import { operatorInitials } from "../model/operatorInitials";
 import { OperatorRowMenu, type OperatorRowMenuItem } from "./OperatorRowMenu";
+import { WarehouseAccessSwitch } from "./WarehouseAccessSwitch";
 
 /** `.el-avatar` (maketda `background: var(--sunken); color: var(--text-muted)`). */
 const AVATAR = "inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-text-muted";
@@ -34,8 +35,9 @@ type OperatorsTableProps = {
 /**
  * Operatorlar jadvali (maket `market-operators-list`): Operator (avatar + ism; planshetda ostida telefon) · Telefon
  * (< 1024 yashirin) · Komissiya (qiymat + izoh yoki «Belgilanmagan» + «Daromad yozilmaydi») · Holat (Faol / Nofaol +
- * «Tizimga kira olmaydi») · Qo'shilgan (< 1024 yashirin) · kebab. Telefonda (< 768) kartalar: avatar 40, ism, telefon,
- * komissiya va holat belgilari, kebab 44 px. Nofaol operator ismi kulrang.
+ * «Tizimga kira olmaydi») · Ombordagi qoldiq (XtcEyQjb: kalit «Ko'radi / Ko'rmaydi» — maketda yo'q) · Qo'shilgan
+ * (< 1024 yashirin) · kebab. Telefonda (< 768) kartalar: avatar 40, ism, telefon, komissiya va holat belgilari,
+ * ostida «Ombordagi qoldiqni ko'radi» qatori, kebab 44 px. Nofaol operator ismi kulrang.
  */
 export const OperatorsTable = memo(({ rows, busy, onCommission, onDelete }: OperatorsTableProps) => {
   const { t, i18n } = useTranslation("marketOperators");
@@ -135,6 +137,11 @@ export const OperatorsTable = memo(({ rows, busy, onCommission, onDelete }: Oper
         ),
       },
       {
+        id: "warehouse",
+        header: t("columns.warehouse"),
+        cell: (row) => <WarehouseAccessSwitch operator={row} layout="table" />,
+      },
+      {
         id: "createdAt",
         header: t("columns.createdAt"),
         hideBelow: "lg",
@@ -173,6 +180,9 @@ export const OperatorsTable = memo(({ rows, busy, onCommission, onDelete }: Oper
             )}
             {statusBadge(row)}
           </span>
+          <div className="mt-1.5">
+            <WarehouseAccessSwitch operator={row} layout="card" />
+          </div>
         </div>
         <span className="-my-1 shrink-0">{rowMenu(row)}</span>
       </div>
@@ -234,6 +244,11 @@ export const OperatorsSkeleton = memo(() => {
         id: "status",
         header: t("columns.status"),
         cell: () => <Skeleton tone="border" width={56} height={22} />,
+      },
+      {
+        id: "warehouse",
+        header: t("columns.warehouse"),
+        cell: () => <Skeleton tone="border" width={72} height={20} />,
       },
       {
         id: "createdAt",
