@@ -409,6 +409,7 @@ const rememberSessionExpired = (revoked = false, revokedReason: RevokedReason | 
  *     tugadi» ekrani;
  *   - sababsiz (profil menyusidagi «Chiqish», parol o'zgargach) — oddiy kirish formasi; qolib ketgan «Sessiya
  *     tugadi» xabari o'chiriladi, `passwordChanged` saqlanadi.
+ * Xabar sahifa qayta yuklanguncha o'chirilmaydi (`holdLoginNoticeUntilReload`).
  */
 export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) => {
   // Sessiya jonli kanal orqali allaqachon yopildi (`logoutRevokedSession`) — o'sha chiqish kutiladi: yopilgan
@@ -419,6 +420,9 @@ export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) 
   } else if (peekLoginNotice() === "sessionExpired") {
     clearLoginNotice();
   }
+  // `logout()` holatni tozalagach React `/login` ga o'zi o'tadi; kirish sahifasi xabarni o'qib o'chirib qo'ysa,
+  // `location.replace` dan keyingi yangi hujjat sababni ko'rmasdi — xabar qayta yuklanguncha ushlab turiladi.
+  holdLoginNoticeUntilReload();
   await logout();
   window.location.replace("/login");
 };
