@@ -7,6 +7,7 @@ export {
   type UpdateDeliveryPricingSettingsRequest,
   type DeliveryMeasureItem,
   type DeliveryPricingSettings,
+  type DeliveryPricingSettingsVersion,
   type DeliveryQuote,
   type DeliveryQuoteByTariffRequest,
   type DeliveryQuotesByTariff,
@@ -52,6 +53,8 @@ export {
   hasAnyQuote,
   normalizeDeliveryQuote,
   normalizePricingSettings,
+  normalizeSettingsHistory,
+  getPricingSettingsHistory,
   normalizeQuotesByTariff,
 } from "./api/deliveryPricingApi";
 export {
@@ -60,6 +63,7 @@ export {
   useDeliveryTariffs,
   useUpdatePricingSettings,
   useDeliveryPricingSettings,
+  useDeliveryPricingSettingsHistory,
   useDeliveryQuoteByTariff,
   type DeliveryQuoteState,
 } from "./api/useDeliveryPricing";

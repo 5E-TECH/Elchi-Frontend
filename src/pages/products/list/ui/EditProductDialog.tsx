@@ -7,7 +7,12 @@ import { useProducts } from "../../../../entities/product";
 import { notify } from "../../../../shared/lib/notify";
 import { Button, Dialog, Field, TextInput } from "../../../../shared/ui/primitives";
 import { describeProductError, isDuplicateNameError } from "../../model/productErrors";
-import { appendProductMeasure, toProductMeasureForm, type ProductFormValues } from "../../model/productMeasure";
+import {
+  appendProductMeasure,
+  getProductMeasureView,
+  toProductMeasureForm,
+  type ProductFormValues,
+} from "../../model/productMeasure";
 import {
   getProductImageUrl,
   getProductMarketName,
@@ -44,7 +49,7 @@ export type EditProductDialogProps = {
  *
  * Xulq: ochilganda `GET product/:id` (yangi rasm manzili), FormData `name` (+ `price` — faqat o'zgargan bo'lsa:
  * bo'sh — narx tozalanadi, backend `null`; + o'lchov — faqat o'zgargan maydonlar, U / K / B uchalasi birga, shuning
- * uchun saqlangan o'lchov o'chib ketmaydi; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
+ * uchun saqlangan o'lchov o'chib ketmaydi; o'lchovsiz eski mahsulotda o'lchov ixtiyoriy — bo'sh maydon yuborilmaydi; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
  * «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — i18n izoh bilan (xom backend matni emas), 409 (nom band) —
  * «Mahsulot nomi» maydoni ostida. Market va market operatori mahsulotni tahrirlamaydi (MH-1) — `PATCH product/my/:id` ishlatilmaydi.
  */
@@ -101,6 +106,8 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
   });
 
   const busy = updateProduct.isPending;
+  // O'lchovsiz (yoki chala o'lchovli) eski mahsulot — o'lchov ixtiyoriy, bo'sh qoldirib saqlanadi (ega qarori 2026-10-24).
+  const measureOptional = target ? !getProductMeasureView(target).complete : false;
   const errorCount = isSubmitted ? Object.keys(errors).length : 0;
 
   return (
@@ -169,6 +176,7 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
         idPrefix="product-edit"
         quoteVariant="tiles"
         readOnly={busy}
+        optional={measureOptional}
       />
       <ProductImageField
         label={t("v2.edit.image")}

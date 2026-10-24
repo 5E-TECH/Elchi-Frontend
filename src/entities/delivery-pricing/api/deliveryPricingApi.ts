@@ -4,6 +4,7 @@ import {
   DELIVERY_TARIFF_IDS,
   type CreateDeliveryTariffRequest,
   type DeliveryPricingSettings,
+  type DeliveryPricingSettingsVersion,
   type DeliveryQuote,
   type DeliveryQuoteByTariffRequest,
   type DeliveryQuotesByTariff,
@@ -133,7 +134,33 @@ export const normalizeTariff = (value: unknown): DeliveryTariff | null => {
     validFrom,
     createdAt: textOf(row.createdAt ?? row.created_at),
     createdBy: row.created_by === undefined || row.created_by === null ? null : String(row.created_by),
+    createdByName: textOf(row.created_by_name),
   };
+};
+
+/** `GET /delivery/pricing-settings/history` → versiyalar (yangisi tepada); buzuq qator tashlanadi. */
+export const normalizeSettingsHistory = (value: unknown): DeliveryPricingSettingsVersion[] => {
+  const data = payloadOf(value);
+  const versions = Array.isArray(data?.versions) ? data.versions : [];
+  return versions.flatMap((raw): DeliveryPricingSettingsVersion[] => {
+    const settings = normalizePricingSettings(raw);
+    const row = asRecord(raw);
+    if (!settings || !row) return [];
+    return [
+      {
+        ...settings,
+        isActive: row.is_active === true,
+        createdAt: textOf(row.createdAt ?? row.created_at),
+        createdBy: row.created_by === undefined || row.created_by === null ? null : String(row.created_by),
+        createdByName: textOf(row.created_by_name),
+      },
+    ];
+  });
+};
+
+export const getPricingSettingsHistory = async (): Promise<DeliveryPricingSettingsVersion[]> => {
+  const response = await api.get(API_ENDPOINTS.DELIVERY_PRICING.SETTINGS_HISTORY);
+  return normalizeSettingsHistory(response.data);
 };
 
 /** `GET /delivery/tariffs` → joriy versiyalar + tarix (yangisi tepada). */

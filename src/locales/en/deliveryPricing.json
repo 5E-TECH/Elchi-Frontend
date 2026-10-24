@@ -188,7 +188,21 @@
       "from": "from {{date}}",
       "empty": "No changes yet",
       "emptyDescription": "Each tariff version appears here once it is changed.",
-      "loadFailed": "Could not load the history"
+      "loadFailed": "Could not load the history",
+      "rules": "Pricing rules · {{changes}}",
+      "rulesInitial": "Pricing rules · initial: base price includes {{firstKg}} kg",
+      "by": "{{name}}",
+      "settings": {
+        "firstKg": "weight in base price {{from}} → {{to}} kg",
+        "minBillable": "minimum billable weight {{from}} → {{to}} kg",
+        "step": "billable weight step {{from}} → {{to}} kg",
+        "roundTo": "rounding {{from}} → {{to}}",
+        "pickupFee": "pickup {{from}} → {{to}}",
+        "pickupFree": "free pickup {{from}} → {{to}}",
+        "express": "express multiplier ×{{from}} → ×{{to}}",
+        "pickupNever": "never",
+        "pickupFrom": "from {{count}} parcels"
+      }
     },
     "saveErrors": {
       "invalid": "Check the data — a value is invalid or the date has already passed.",
