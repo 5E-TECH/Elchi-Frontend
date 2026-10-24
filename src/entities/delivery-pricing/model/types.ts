@@ -65,6 +65,14 @@ export type DeliveryPricingSettings = {
   expressMultiplier: number;
 };
 
+/** `GET /delivery/pricing-settings/history` — sozlama versiyasi (yangisi tepada, faoli ham). */
+export type DeliveryPricingSettingsVersion = DeliveryPricingSettings & {
+  isActive: boolean;
+  createdAt: string | null;
+  createdBy: string | null;
+  createdByName: string | null;
+};
+
 /** Tarif versiyasi (`GET /delivery/tariffs` → `data.current` / `data.versions`). */
 export type DeliveryTariff = {
   id: string;
@@ -77,8 +85,10 @@ export type DeliveryTariff = {
   validFrom: string;
   /** Yozilgan vaqt (`createdAt`) — bo'lmasligi mumkin. */
   createdAt: string | null;
-  /** Kim yaratdi — foydalanuvchi ID (ism backenddan kelmaydi). */
+  /** Kim yaratdi — foydalanuvchi ID. */
   createdBy: string | null;
+  /** Kim yaratdi — ism (`created_by_name`, gateway qo'shadi); topilmasa `null`. */
+  createdByName: string | null;
 };
 
 export type DeliveryTariffVersion = DeliveryTariff & {

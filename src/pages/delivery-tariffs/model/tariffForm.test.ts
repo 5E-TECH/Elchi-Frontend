@@ -20,6 +20,7 @@ const CENTER = {
   validFrom: "2026-10-08T00:00:00+05:00",
   createdAt: null,
   createdBy: null,
+  createdByName: null,
 };
 
 describe("tarif oynasi — forma va tana", () => {

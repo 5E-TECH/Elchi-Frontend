@@ -188,7 +188,21 @@
       "from": "{{date}} dan",
       "empty": "Hali o'zgarish yo'q",
       "emptyDescription": "Tarif o'zgartirilganda har versiya shu yerda chiqadi.",
-      "loadFailed": "Tarixni yuklab bo'lmadi"
+      "loadFailed": "Tarixni yuklab bo'lmadi",
+      "rules": "Hisob qoidalari · {{changes}}",
+      "rulesInitial": "Hisob qoidalari · dastlabki: asosiy narxga {{firstKg}} kg kiradi",
+      "by": "{{name}}",
+      "settings": {
+        "firstKg": "asosiy narxga kiradigan og'irlik {{from}} → {{to}} kg",
+        "minBillable": "minimal hisob vazni {{from}} → {{to}} kg",
+        "step": "hisob vazni qadami {{from}} → {{to}} kg",
+        "roundTo": "yaxlitlash {{from}} → {{to}}",
+        "pickupFee": "pickup {{from}} → {{to}}",
+        "pickupFree": "pickup tekin {{from}} → {{to}}",
+        "express": "tezkor koeffitsiyent ×{{from}} → ×{{to}}",
+        "pickupNever": "hech qachon",
+        "pickupFrom": "{{count}} tadan"
+      }
     },
     "saveErrors": {
       "invalid": "Ma'lumotni tekshiring — qiymat noto'g'ri yoki sana o'tib ketgan bo'lishi mumkin.",
