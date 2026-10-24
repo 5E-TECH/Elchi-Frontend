@@ -42,6 +42,8 @@ export const mockRealtime = async (page: Page, options: MockRealtimeOptions = {}
     socketUrls: [] as string[],
     auth: [] as unknown[],
     closed: 0,
+    /** Barcha API so'rovlari yo'li (masalan smena holati qayta so'raldimi). */
+    requests: [] as string[],
     /** `POST auth/logout` / `POST auth/refresh` so'rovlari soni. */
     logoutRequests: 0,
     refreshRequests: 0,
@@ -58,6 +60,7 @@ export const mockRealtime = async (page: Page, options: MockRealtimeOptions = {}
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
+    state.requests.push(path);
     if (path === "auth/logout") state.logoutRequests += 1;
     if (path === "auth/refresh") state.refreshRequests += 1;
     if (state.revoked && path !== "auth/logout") {
@@ -132,6 +135,10 @@ export const mockRealtime = async (page: Page, options: MockRealtimeOptions = {}
     state.sockets.at(-1)!.send(`42/realtime,${JSON.stringify(["notification:new", { ...row, priority: "normal", is_read: false }])}`);
   };
 
+  /** Ixtiyoriy jonli hodisa (masalan `finance.shift.auto_closed`) — oxirgi socket orqali. */
+  const emit = (event: string, payload: unknown = {}) =>
+    state.sockets.at(-1)!.send(`42/realtime,${JSON.stringify([event, payload])}`);
+
   /**
    * Backend sessiyani yopgandek (Elchi Pochta #3, `SessionRevocationService.kickSessions`): oxirgi socketga
    * `auth:session_revoked` `{ session_id, reason }`, 250 ms dan keyin server uzadi («io server disconnect»).
@@ -152,5 +159,5 @@ export const mockRealtime = async (page: Page, options: MockRealtimeOptions = {}
     }
   };
 
-  return { state, dispatch, kick };
+  return { state, dispatch, emit, kick };
 };

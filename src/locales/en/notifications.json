@@ -323,7 +323,8 @@
     "howToStep3": "Reload the page and turn it on here."
   },
   "realtime": {
-    "manyNew": "{{count}} new notifications"
+    "manyNew": "{{count}} new notifications",
+    "shiftAutoClosed": "Shift closed automatically — {{time}}"
   },
   "sent": {
     "pageTitle": "Sent",
