@@ -93,5 +93,14 @@ export const updateMarketOperatorWarehouseAccess = async (id: string, enabled: b
   const response = await api.patch(API_ENDPOINTS.MARKET_OPERATORS.WAREHOUSE_ACCESS(id), {
     can_view_warehouse_stock: enabled,
   });
-  return unwrapOperator(response.data);
+  const body = asRecord(response.data) ?? {};
+  const row = asRecord(body.data) ?? body;
+  const operator = normalizeMarketOperator(row);
+  // Javobda maydon bo'lmasa (qisqa javob) — so'ralgan qiymat: server 2xx bilan qabul qildi.
+  return {
+    ...operator,
+    id: operator.id || id,
+    can_view_warehouse_stock:
+      typeof row.can_view_warehouse_stock === "boolean" ? row.can_view_warehouse_stock : enabled,
+  };
 };

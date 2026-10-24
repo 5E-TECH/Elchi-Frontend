@@ -44,18 +44,6 @@ export const useWarehouseList = (params: WarehouseListParams, { enabled = true }
   });
 
 /**
- * XtcEyQjb: filial xodimining o'z filialida ombor bormi (`GET /warehouses?limit=1` bo'sh emas). `undefined` — hali
- * noma'lum (yuklanmoqda yoki o'chiq). Menejer `/warehouses` sahifasi (`ManagerWarehouseRedirect`) bilan bir xil kalit —
- * bitta so'rov.
- */
-export const useHasOwnWarehouse = (enabled: boolean): boolean | undefined => {
-  const query = useWarehouseList({ limit: 1 }, { enabled });
-  if (!enabled) return undefined;
-  if (query.data) return query.data.items.length > 0 || query.data.total > 0;
-  return query.isError ? false : undefined;
-};
-
-/**
  * 6kHnNH9j: buyurtma formasidagi manba oldindan ko'rinishi. So'rov tanasi — kalit (chaqiruvchi kechiktiradi); xato
  * global xabarsiz — blok o'zi «aniqlab bo'lmadi» deydi. Yangi tana javobigacha eski natija turadi.
  */

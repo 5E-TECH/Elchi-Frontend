@@ -43,6 +43,8 @@ export type StockPanelProps = {
   onHandTotal: number | undefined;
   onEditThreshold: (row: WarehouseStockRow) => void;
   onAddStock: () => void;
+  /** XtcEyQjb: to'xtatilgan ombor — bo'sh holatdagi «Mahsulot qo'shish» ham o'chiq. */
+  addStockDisabled?: boolean;
   /** Joriy filtrlar (Excel eksporti shu filtrlar bilan). */
   onFiltersChange?: (filters: StockFilters) => void;
 };
@@ -60,6 +62,7 @@ export const StockPanel = ({
   onHandTotal,
   onEditThreshold,
   onAddStock,
+  addStockDisabled = false,
   onFiltersChange,
 }: StockPanelProps) => {
   const text = useWarehouseText();
@@ -379,7 +382,7 @@ export const StockPanel = ({
               description={t(canManage ? "detail.stock.emptyDescription" : "detail.stock.emptyDescriptionManager")}
               action={
                 canManage ? (
-                  <Button leftIcon={PackagePlus} aria-haspopup="dialog" onClick={onAddStock}>
+                  <Button leftIcon={PackagePlus} aria-haspopup="dialog" disabled={addStockDisabled} onClick={onAddStock}>
                     {t("stockIn.open")}
                   </Button>
                 ) : undefined

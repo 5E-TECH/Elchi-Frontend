@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-warehouse-detail, admin-warehouse-detail, manager-warehouse-detail, superadmin-warehouse-stock-in-dialog, admin-warehouse-stock-in-dialog
-import { memo, useRef, useState } from "react";
+import { memo, useId, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Building2, Calendar, CirclePause, CirclePlay, Download, PackagePlus, User, Warehouse as WarehouseIcon } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
-import { canManageWarehouses } from "../../../app/lib/access";
+import { canManageWarehouses, canViewAllWarehouses } from "../../../app/lib/access";
 import {
   exportWarehouseStock,
   useSetWarehousePaused,
@@ -31,6 +31,7 @@ import {
 import { WAREHOUSES_PATH } from "../model/paths";
 import { useWarehouseText } from "../model/useWarehouseText";
 import { NoteAlert } from "../ui/NoteAlert";
+import { OutgoingOrdersCard } from "./ui/OutgoingOrdersCard";
 import { InventoryDialog } from "./ui/InventoryDialog";
 import { MovementsPanel } from "./ui/MovementsPanel";
 import { RecentMovementsCard } from "./ui/RecentMovementsCard";
@@ -58,9 +59,12 @@ const MetaItem = ({ icon: Icon, children }: { icon: typeof Building2; children: 
  * Ochilgan: …»; amallar «Excelga yuklash» (telefonda yashirin), «Mahsulot qo'shish» (kirim oynasi), ⋯
  * (Inventarizatsiya, To'xtatish / Qayta yoqish — tasdiq bilan); KPI; «Qoldiq | Harakatlar» tablari; «Oxirgi
  * harakatlar».
+ * To'xtatilgan omborda «Mahsulot qo'shish» o'chiq, sababi sarlavha ostida («To'xtatilgan omborga kirim qilinmaydi —
+ * avval qayta yoqing»; XtcEyQjb — backend ham 409 `WAREHOUSE_PAUSED`).
+ * Registrator (XtcEyQjb): admin ko'rinishi amallarsiz — «← Omborlar», «Excelga yuklash» (o'qish), «Faqat ko'rish»
+ * izohi; kirim, inventarizatsiya, chegara va to'xtatish yo'q (maket yo'q — eng yaqini `superadmin-warehouse-detail`).
  * Filial menejeri (maket `manager-warehouse-detail`): faqat ko'rish — «Qoldiqni admin boshqaradi» izohi, amallarsiz,
- * «Mas'ul: … (siz)». Maketdagi «Ombordan ketadigan buyurtmalar» kartasi chizilmagan — buyurtma ↔ ombor bog'lanishi
- * (band/chiqim) backendda hali yo'q (keyingi order-service PR'i).
+ * «Mas'ul: … (siz)», «Ombordan ketadigan buyurtmalar» kartasi (`OutgoingOrdersCard`, 6kHnNH9j).
  */
 const WarehouseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +72,9 @@ const WarehouseDetailPage = () => {
   const text = useWarehouseText();
   const { t } = text;
   const canManage = useSelector(canManageWarehouses);
+  // Registrator — hamma omborlar ro'yxati bor (orqaga havola), lekin yozish yo'q.
+  const canViewAll = useSelector(canViewAllWarehouses);
+  const pausedHintId = useId();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id ?? state.role.id ?? null);
   const confirm = useConfirm();
   const togglePause = useSetWarehousePaused();
@@ -98,7 +105,7 @@ const WarehouseDetailPage = () => {
   if (!id || notFound || (query.isSuccess && !warehouse)) {
     return (
       <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
-        {canManage ? <PageHeader back={WAREHOUSES_PATH} backLabel={t("list.title")} title={t("detail.notFoundTitle")} /> : null}
+        {canViewAll ? <PageHeader back={WAREHOUSES_PATH} backLabel={t("list.title")} title={t("detail.notFoundTitle")} /> : null}
         <EmptyState
           framed
           size="page"
@@ -113,7 +120,7 @@ const WarehouseDetailPage = () => {
   if (query.isError) {
     return (
       <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
-        {canManage ? <PageHeader back={WAREHOUSES_PATH} backLabel={t("list.title")} title={t("list.title")} /> : null}
+        {canViewAll ? <PageHeader back={WAREHOUSES_PATH} backLabel={t("list.title")} title={t("list.title")} /> : null}
         <ErrorState error={query.error} title={t("detail.loadFailed")} onRetry={() => void query.refetch()} size="page" />
       </div>
     );
@@ -161,13 +168,13 @@ const WarehouseDetailPage = () => {
   const description = warehouse ? (
     <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
       <MetaItem icon={Building2}>
-        {canManage
+        {canViewAll
           ? (warehouse.branch?.name ?? "")
           : [warehouse.branch?.name, warehouse.region?.name].filter(Boolean).join(" · ")}
       </MetaItem>
       {managerName ? (
         <MetaItem icon={User}>
-          {isOwnManager && !canManage
+          {isOwnManager && !canViewAll
             ? t("detail.managerYou", { name: managerName })
             : t("detail.managerOf", { name: managerName })}
         </MetaItem>
@@ -176,20 +183,30 @@ const WarehouseDetailPage = () => {
     </span>
   ) : undefined;
 
+  const exportButton = warehouse ? (
+    <Button
+      variant="secondary"
+      leftIcon={Download}
+      loading={exporting}
+      loadingText={t("detail.exporting")}
+      onClick={() => void runExport(warehouse)}
+      className="max-md:hidden"
+    >
+      {t("detail.export")}
+    </Button>
+  ) : null;
   const actions =
     canManage && warehouse ? (
       <>
+        {exportButton}
+        {/* XtcEyQjb: to'xtatilgan omborga kirim yo'q — tugma o'chiq, sababi sarlavha ostidagi izohda. */}
         <Button
-          variant="secondary"
-          leftIcon={Download}
-          loading={exporting}
-          loadingText={t("detail.exporting")}
-          onClick={() => void runExport(warehouse)}
-          className="max-md:hidden"
+          leftIcon={PackagePlus}
+          aria-haspopup="dialog"
+          disabled={paused}
+          aria-describedby={paused ? pausedHintId : undefined}
+          onClick={() => setStockInOpen(true)}
         >
-          {t("detail.export")}
-        </Button>
-        <Button leftIcon={PackagePlus} aria-haspopup="dialog" onClick={() => setStockInOpen(true)}>
           {t("stockIn.open")}
         </Button>
         <WarehouseActionsMenu
@@ -198,6 +215,8 @@ const WarehouseDetailPage = () => {
           onTogglePause={() => void askTogglePause(warehouse)}
         />
       </>
+    ) : canViewAll && warehouse ? (
+      exportButton
     ) : undefined;
 
   const showAllMovements = () => {
@@ -207,7 +226,7 @@ const WarehouseDetailPage = () => {
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
-      {canManage ? (
+      {canViewAll ? (
         <PageHeader
           back={WAREHOUSES_PATH}
           backLabel={t("list.title")}
@@ -224,9 +243,19 @@ const WarehouseDetailPage = () => {
         />
       )}
 
-      {!canManage ? <NoteAlert title={t("manager.noteTitle")}>{t("manager.noteText")}</NoteAlert> : null}
+      {canManage && paused ? (
+        <NoteAlert id={pausedHintId} icon={CirclePause}>
+          {t("stockIn.pausedHint")}
+        </NoteAlert>
+      ) : null}
+      {canViewAll && !canManage ? (
+        <NoteAlert title={t("registrator.noteTitle")}>{t("registrator.noteText")}</NoteAlert>
+      ) : null}
+      {!canViewAll ? <NoteAlert title={t("manager.noteTitle")}>{t("manager.noteText")}</NoteAlert> : null}
 
-      <WarehouseKpis warehouse={warehouse} managerView={!canManage} />
+      <WarehouseKpis warehouse={warehouse} managerView={!canViewAll} />
+
+      {!canViewAll && warehouse ? <OutgoingOrdersCard /> : null}
 
       {!id || !warehouse ? (
         <Card padding="none">
@@ -256,6 +285,7 @@ const WarehouseDetailPage = () => {
                 <StockPanel
                   warehouseId={warehouse.id}
                   canManage={canManage}
+                  addStockDisabled={paused}
                   onHandTotal={warehouse.summary.onHand}
                   onEditThreshold={setThresholdRow}
                   onAddStock={() => setStockInOpen(true)}

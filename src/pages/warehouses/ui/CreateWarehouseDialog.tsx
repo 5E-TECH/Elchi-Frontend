@@ -1,8 +1,8 @@
 // dizayn-v2: superadmin-warehouse-create-dialog, admin-warehouse-create-dialog
 import { useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Lock, Warehouse as WarehouseIcon } from "lucide-react";
-import { getDispatchDestinations, type Branch } from "../../../entities/branch";
+import { Building2, User, Warehouse as WarehouseIcon } from "lucide-react";
+import { getDispatchDestinations, useBranchEmployees, type Branch } from "../../../entities/branch";
 import { useCreateWarehouse, useWarehouseList, type Warehouse } from "../../../entities/warehouse";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { notify } from "../../../shared/lib/notify";
@@ -35,7 +35,9 @@ export type CreateWarehouseDialogProps = {
  * OMBOR OCHISH (maket `superadmin-warehouse-create-dialog` = admin): «Filial *» — faqat ombori yo'q faol viloyat
  * filiallari (REGIONAL, HYBRID; ro'yxat `GET /branches/dispatch-destinations` minus `GET /warehouses` dagi
  * `branch_id`), «Ombor nomi *» (filial tanlanganda «<filial> ombori» taklif qilinadi, qo'lda o'zgartirilgan bo'lsa —
- * tegilmaydi), «Mas'ul xodim» (filial menejeri, faqat o'qish), «Kam qoldiq chegarasi *» (sukut 5, dona), «Manzil»
+ * tegilmaydi), «Mas'ul xodim» (XtcEyQjb: ixtiyoriy tanlov — filial menejerlari `GET /branches/:id/users`, rol MANAGER;
+ * tanlanmasa `manager_user_id` yuborilmaydi va backend filialning birinchi faol menejerini o'zi biriktiradi; maketda
+ * faqat o'qiladigan maydon edi), «Kam qoldiq chegarasi *» (sukut 5, dona), «Manzil»
  * (bo'sh — filial manzili), «Izoh», «Ombor qanday ishlaydi» izohi. `POST /warehouses`; 409 — filialda ombor bor
  * («Filial» ostida), 400 — umumiy izoh.
  */
@@ -49,6 +51,7 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [managerUserId, setManagerUserId] = useState("");
   const [errors, setErrors] = useState<Errors>({});
 
   const destinations = useQuery({
@@ -86,6 +89,20 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
   );
   const selectedBranch = branches.find((branch) => String(branch.id) === branchId) ?? null;
   const manager = managerName(selectedBranch);
+  // Mas'ul tanlovi — faqat filial MENEJERLARI (backend boshqa xodimni 400 bilan rad etadi).
+  const employees = useBranchEmployees(branchId || undefined, open && Boolean(branchId), { silentError: true });
+  const managerOptions = useMemo<SelectOption[]>(
+    () =>
+      (employees.data ?? [])
+        .filter((employee) => String(employee.position ?? "").toUpperCase() === "MANAGER" && employee.user.id)
+        .map((employee) => ({
+          value: String(employee.user.id),
+          label: employee.user.fullName,
+          icon: User,
+          ...(employee.user.phone && employee.user.phone !== "—" ? { searchText: employee.user.phone } : {}),
+        })),
+    [employees.data],
+  );
 
   const reset = () => {
     setBranchId("");
@@ -94,12 +111,14 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
     setThreshold(DEFAULT_THRESHOLD);
     setAddress("");
     setNote("");
+    setManagerUserId("");
     setErrors({});
     create.reset();
   };
 
   const selectBranch = (value: string | null) => {
     const next = value ?? "";
+    if (next !== branchId) setManagerUserId("");
     setBranchId(next);
     setErrors((previous) => ({ ...previous, branch: undefined }));
     const branch = branches.find((item) => String(item.id) === next);
@@ -129,7 +148,8 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
         branch_id: branchId,
         name: name.trim(),
         low_stock_default: Number(threshold),
-        ...(selectedBranch?.manager?.id ? { manager_user_id: String(selectedBranch.manager.id) } : {}),
+        // Tanlanmasa — yuborilmaydi: backend filialning birinchi faol menejerini o'zi biriktiradi (XtcEyQjb).
+        ...(managerUserId ? { manager_user_id: managerUserId } : {}),
         ...(address.trim() ? { address: address.trim() } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
@@ -209,12 +229,28 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
             readOnly={busy}
           />
         </Field>
-        <Field label={t("create.manager")} hint={t("create.managerHint")} readOnly>
-          <TextInput
-            value={manager ?? ""}
-            placeholder={selectedBranch ? t("create.noManager") : t("create.managerPlaceholder")}
-            readOnly
-            suffix={<Lock size={16} aria-hidden="true" className="text-text-subtle" />}
+        <Field
+          label={t("create.manager")}
+          labelAs="span"
+          optional
+          hint={employees.isError ? t("create.managersLoadFailed") : t("create.managerHint")}
+        >
+          <Select
+            options={managerOptions}
+            value={managerUserId || null}
+            onChange={(next) => setManagerUserId(next ?? "")}
+            clearable
+            icon={User}
+            placeholder={
+              selectedBranch
+                ? manager
+                  ? t("create.managerAuto", { name: manager })
+                  : t("create.managerAutoNone")
+                : t("create.managerPlaceholder")
+            }
+            loading={employees.isLoading && Boolean(branchId)}
+            noOptionsText={t("create.noManager")}
+            disabled={busy || !selectedBranch}
           />
         </Field>
         <Field label={t("create.threshold")} required hint={t("create.thresholdHint")} error={errors.threshold}>

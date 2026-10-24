@@ -29,7 +29,6 @@ export {
 } from "./api/warehouseApi";
 export {
   useCreateWarehouse,
-  useHasOwnWarehouse,
   useInventory,
   useMarketWarehouseStock,
   useOrderSourcePreview,
@@ -43,6 +42,7 @@ export {
   useWarehouseMovements,
   useWarehouseStock,
 } from "./api/useWarehouses";
+export { hasWarehousesInPayload, useHasOwnWarehouse } from "./api/ownWarehouse";
 export { createIdempotencyKey, isUncertainWriteError, useIdempotencyKeys } from "./lib/idempotency";
 export {
   getApiErrorCode,

@@ -105,7 +105,8 @@
     "warehousesCount_one": "{{value}} ta ombor",
     "warehousesCount_other": "{{value}} ta ombor",
     "footer": "{{total}} · {{active}} ta faol · {{paused}} ta to'xtatilgan",
-    "pagination": "{{from}}–{{to}} / {{total}} ta ombor"
+    "pagination": "{{from}}–{{to}} / {{total}} ta ombor",
+    "emptyDescriptionReadOnly": "Ombor viloyat filialida admin tomonidan ochiladi — ochilgach shu yerda ko'rinadi."
   },
   "create": {
     "open": "Ombor ochish",

@@ -307,4 +307,11 @@ export const canManageDeliveryTariffs: Predicate = hasRole("superadmin", "admin"
  * 404). Ombor faqat viloyat filialida (REGIONAL, HYBRID) ochiladi — boshqa turdagi filial menejeriga band yo'q.
  */
 export const canManageWarehouses: Predicate = hasRole("superadmin", "admin");
-export const canViewWarehouses: Predicate = anyOf(canManageWarehouses, managerCan("warehouse"));
+/**
+ * XtcEyQjb (ega 2026-10-24): HAMMA omborlar ro'yxati — superadmin, admin va REGISTRATOR (registrator faqat ko'radi:
+ * yozish tugmalari `canManageWarehouses` bilan). Filial xodimi (menejer) — faqat o'z filiali ombori: menyuda band
+ * `GET /warehouses` bo'sh bo'lmasagina (`navSections.ts`), `/warehouses` uni o'z omboriga olib boradi. Kuryer,
+ * market, market operatori, mijoz, investor — yo'q (backend `WAREHOUSE_READ_ROLES`).
+ */
+export const canViewAllWarehouses: Predicate = hasRole("superadmin", "admin", "registrator");
+export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerCan("warehouse"));

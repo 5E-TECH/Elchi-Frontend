@@ -105,7 +105,8 @@
     "warehousesCount_one": "{{value}} warehouse",
     "warehousesCount_other": "{{value}} warehouses",
     "footer": "{{total}} · {{active}} active · {{paused}} paused",
-    "pagination": "{{from}}–{{to}} of {{total}} warehouses"
+    "pagination": "{{from}}–{{to}} of {{total}} warehouses",
+    "emptyDescriptionReadOnly": "An admin opens a warehouse at a regional branch — it will appear here once opened."
   },
   "create": {
     "open": "Open warehouse",

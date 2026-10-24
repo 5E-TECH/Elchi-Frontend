@@ -127,7 +127,8 @@
     "warehousesCount_many": "{{value}} складов",
     "warehousesCount_other": "{{value}} складов",
     "footer": "{{total}} · {{active}} активных · {{paused}} приостановлено",
-    "pagination": "{{from}}–{{to}} из {{total}} складов"
+    "pagination": "{{from}}–{{to}} из {{total}} складов",
+    "emptyDescriptionReadOnly": "Склад открывает администратор в региональном филиале — после открытия он появится здесь."
   },
   "create": {
     "open": "Открыть склад",

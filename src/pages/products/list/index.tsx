@@ -392,7 +392,9 @@ const ProductTable = () => {
   ) : null;
   const hasFilters = Boolean(searchFromUrl) || (!isMarketSide && Boolean(marketIdFromUrl));
   // yXC91RRx: market — «Mahsulotlar | Ombordagi qoldiq» tablari (maket `market-products-warehouse-stock`).
-  const showWarehouseTabs = roleState.role === "market";
+  // XtcEyQjb: market operatori — faqat market unga «Ombordagi qoldiqni ko'radi» kalitini yoqqan bo'lsa (`my-profile`).
+  const showWarehouseTabs =
+    roleState.role === "market" || (isOperator && profile?.can_view_warehouse_stock === true);
   if (showWarehouseTabs && allParams.view === MARKET_WAREHOUSE_VIEW) {
     return <MarketWarehouseStock description={description} productsTotal={total} />;
   }
