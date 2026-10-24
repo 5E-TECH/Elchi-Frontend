@@ -1,4 +1,4 @@
-// dizayn-v2: common-profile, common-profile-password-dialog, market-profile
+// dizayn-v2: common-profile, common-profile-password-dialog, market-profile, market-profile-telegram-status
 import { memo, useState } from "react";
 import { Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,8 @@ import { ProfileSessionsCard } from "./ProfileSessionsCard";
  * Ostida (maket yo'q — eng yaqini «Xavfsizlik» kartasi) o'z Telegram'ini botga ulash/uzish
  * (`TelegramLinkCard`, faqat xodimlarga — mijoz/investor emas).
  * Market (maket `market-profile`, TG-B): «Xavfsizlik» va «Telegram» bir qatorda, ostida «Telegram guruhi»
- * (`MarketTelegramGroupsCard mode="self"`: holatsiz qatorlar va «Ulash» — guruhlar holati endpointi TG-C da;
+ * (`MarketTelegramGroupsCard mode="self"`, TG-C — maket `market-profile-telegram-status`: har tur holati
+ * `GET /notifications/me/telegram-groups` dan, ulanmagan turda «Ulash», oyna ulanishni kuzatib o'zi yopiladi;
  * «Guruhda mijoz ismi va telefoni» kaliti shu kartada). Sarlavhadagi kontakt shaxs ismi uchun backend maydoni yo'q.
  * Eng pastda «Sessiyalar» (`ProfileSessionsCard`, barcha rollar; maket yo'q — eng yaqini `market-profile` «Telegram guruhi»
  * kartasi): shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`);
