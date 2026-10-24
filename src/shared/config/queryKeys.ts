@@ -71,6 +71,18 @@ export const queryKeys = {
     settings: ["delivery-pricing", "settings"] as const,
     tariffs: ["delivery-pricing", "tariffs"] as const,
   },
+  /**
+   * Ombor (yXC91RRx): ro'yxat, tafsilot, qoldiq, harakatlar, market «Ombordagi qoldiq». Har yozish (kirim,
+   * inventarizatsiya, chegara, to'xtatish …) butun `all` ni yangilaydi — KPI, jadval va jurnal birga.
+   */
+  warehouses: {
+    all: ["warehouses"] as const,
+    list: (params: object) => ["warehouses", "list", params] as const,
+    detail: (id: string) => ["warehouses", "detail", id] as const,
+    stock: (id: string, params: object) => ["warehouses", "stock", id, params] as const,
+    movements: (id: string, params: object) => ["warehouses", "movements", id, params] as const,
+    marketStock: (params: object) => ["warehouses", "market-stock", params] as const,
+  },
   /** O'z hisobining faol sessiyalari (`GET /auth/sessions`, Elchi Pochta #3). */
   accountSessions: {
     all: ["account-sessions"] as const,
