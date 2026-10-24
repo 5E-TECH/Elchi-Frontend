@@ -6223,24 +6223,6 @@
    "fragment": "tizim--product-labels",
    "order": 17,
    "kind": "standalone"
-  },
-  {
-   "role": "superadmin",
-   "viewId": "regions-delivery-tariffs",
-   "menuKey": "regions",
-   "title": "Yetkazish tariflari — tarif, hajm bo'yicha hisob, sozlamalar, narx kalkulyatori",
-   "fragment": "superadmin--regions-delivery-tariffs",
-   "order": 90.5,
-   "kind": "page"
-  },
-  {
-   "role": "superadmin",
-   "viewId": "regions-delivery-tariff-edit-dialog",
-   "menuKey": "regions",
-   "title": "Tarifni o'zgartirish — yangi versiya va kuchga kirish sanasi (popup)",
-   "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
-   "order": 90.6,
-   "kind": "dialog"
   }
  ],
  "groupTitles": {
