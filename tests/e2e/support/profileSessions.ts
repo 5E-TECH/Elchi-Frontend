@@ -117,7 +117,16 @@ export const formatLockTime = (iso: string) => {
 export const openProfileWithSessions = async (
   page: Page,
   role = "courier",
-  { revoke = false, locked = false }: { revoke?: boolean; locked?: boolean } = {},
+  {
+    revoke = false,
+    locked = false,
+    initial,
+  }: {
+    revoke?: boolean;
+    locked?: boolean;
+    /** `revoke` holatini sahifa ochilishidan OLDIN sozlash (masalan faqat joriy sessiya + cheklov). */
+    initial?: (state: Awaited<ReturnType<typeof mockSessionRevoke>>) => void;
+  } = {},
 ) => {
   const state = { sessionRequests: 0 };
   page.on("request", (request) => {
@@ -133,6 +142,7 @@ export const openProfileWithSessions = async (
     { phone_number: "+998901234567", createdAt: "2026-01-14T09:00:00.000Z", updatedAt: "2026-10-02T09:00:00.000Z" },
   );
   const revokeState = revoke ? await mockSessionRevoke(page) : null;
+  if (revokeState) initial?.(revokeState);
   await page.goto("/profile");
   return { leaked, state, revoke: revokeState, availableAt };
 };

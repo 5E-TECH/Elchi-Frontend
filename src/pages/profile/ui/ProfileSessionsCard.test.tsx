@@ -545,7 +545,6 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
   /** Vaqt — to'liq sana («Bugun» siz), Toshkent vaqtida (`formatDateTimeLocalized(…, { relative: false })`). */
   const fullTime = (iso: string) => formatDateTimeLocalized(iso, { language: "uz", relative: false });
   const REASON = "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.";
-  const URGENT = "Shoshilinch bo'lsa — parolni almashtiring: boshqa barcha qurilmalar darhol chiqadi.";
   const two = (extra: { can_revoke_others?: boolean; revoke_available_at?: string | null } = {}) =>
     reply({
       active_count: 3,
@@ -557,9 +556,8 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
       ...extra,
     });
 
-  it("`can_revoke_others: false` — ogohlantirish (sabab, vaqt, «parolni almashtiring»); amallar o'chirilgan, sababi bilan", async () => {
+  it("`can_revoke_others: false` — ogohlantirish (faqat sabab: vaqt va parol maslahati yo'q); amallar o'chirilgan, sababi bilan", async () => {
     const availableAt = hoursFromNow(30);
-    const when = fullTime(availableAt);
     sessionsResponse = two({ can_revoke_others: false, revoke_available_at: availableAt });
     const user = userEvent.setup();
     renderWithProviders(<ProfileSessionsCard />);
@@ -568,14 +566,14 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     const alert = within(card()).getByTestId("sessions-revoke-lock");
     expect(alert).toHaveAttribute("role", "status");
     expect(within(alert).getByText(REASON)).toBeInTheDocument();
-    expect(alert).toHaveTextContent(`${when} dan keyin mumkin bo'ladi. ${URGENT}`);
-    // To'liq sana: «25.10.2026, 14:30» (nisbiy «Bugun/Ertaga» emas).
-    expect(when).toMatch(/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/);
-    // Parol oynasi havolasi faqat `onChangePassword` berilsa (profil sahifasi).
+    // Faqat sabab — qachon mumkin bo'lishi ko'rsatilmaydi (Dilshod), parol maslahati ham yo'q.
+    expect(alert).toHaveTextContent(new RegExp(`^${REASON}$`));
+    expect(alert).not.toHaveTextContent(fullTime(availableAt));
+    // Ogohlantirishda havola yoki tugma yo'q (Dilshod: «parolni almashtiring» maslahati kerak emas).
     expect(within(alert).queryByRole("button")).not.toBeInTheDocument();
 
-    // Yashirilmaydi — o'chirilgan, sababi (sabab + vaqt) ekran o'quvchiga va `title` da.
-    const description = `${REASON} ${when} dan keyin mumkin bo'ladi.`;
+    // Yashirilmaydi — o'chirilgan, sababi (vaqtsiz) ekran o'quvchiga va `title` da.
+    const description = REASON;
     for (const button of [
       within(win).getByRole("button", { name: "Chiqarish: Kompyuter · Windows · Edge" }),
       within(old).getByRole("button", { name: "Chiqarish: iPhone · iOS 17 · Safari" }),
@@ -591,20 +589,43 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     expect(mocks.post).not.toHaveBeenCalled();
   });
 
-  it("vaqt noma'lum (`revoke_available_at: null`) — «48 soat o'tgach»; «Parolni o'zgartirish» → `onChangePassword`", async () => {
+  it("vaqt noma'lum (`revoke_available_at: null`) — cheklov amalda, matn o'sha (faqat sabab)", async () => {
     sessionsResponse = two({ can_revoke_others: false, revoke_available_at: null });
-    const onChangePassword = vi.fn();
-    const user = userEvent.setup();
-    renderWithProviders(<ProfileSessionsCard onChangePassword={onChangePassword} />);
+    renderWithProviders(<ProfileSessionsCard />);
     await rows();
 
     const alert = within(card()).getByTestId("sessions-revoke-lock");
-    expect(alert).toHaveTextContent(
-      `Shu qurilmadan birinchi kirganingizdan 48 soat o'tgach mumkin bo'ladi. ${URGENT}`,
-    );
+    expect(alert).toHaveTextContent(new RegExp(`^${REASON}$`));
     expect(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
-    await user.click(within(alert).getByRole("button", { name: "Parolni o'zgartirish" }));
-    expect(onChangePassword).toHaveBeenCalledTimes(1);
+  });
+
+  it("faqat shu qurilma — ogohlantirish yo'q (chiqaradigan narsa yo'q); boshqa sessiya kelsa (qayta so'rov) — chiqadi", async () => {
+    const availableAt = hoursFromNow(30);
+    sessionsResponse = reply({
+      active_count: 1,
+      sessions: [session({ id: "me", device_name: "Telefon · Android · Chrome", current: true })],
+      can_revoke_others: false,
+      revoke_available_at: availableAt,
+    });
+    renderWithProviders(<ProfileSessionsCard />);
+
+    expect(await rows()).toHaveLength(1);
+    expect(within(card()).queryByTestId("sessions-revoke-lock")).not.toBeInTheDocument();
+    expect(within(card()).queryByText(REASON)).not.toBeInTheDocument();
+    expect(within(card()).queryByRole("button")).not.toBeInTheDocument();
+
+    // Boshqa qurilmadan kirildi — oynaga qaytilganda ro'yxat qayta so'raladi.
+    sessionsResponse = two({ can_revoke_others: false, revoke_available_at: availableAt });
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    focusManager.setFocused(undefined);
+
+    await waitFor(async () => expect(await rows()).toHaveLength(3));
+    expect(within(card()).getByTestId("sessions-revoke-lock")).toHaveTextContent(REASON);
+    expect(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
+    expect(sessionCalls()).toBe(2);
   });
 
   it("ruxsat vaqti o'tib bo'lgan yoki `can_revoke_others: true` — cheklov yo'q", async () => {
@@ -634,7 +655,7 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     expect(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).not.toHaveAccessibleDescription();
   });
 
-  it("baribir 403 SESSION_TOO_NEW (qatordagi «Chiqarish»): oyna yopiladi, server matni ogohlantirishda, ro'yxat qayta so'raladi", async () => {
+  it("baribir 403 SESSION_TOO_NEW (qatordagi «Chiqarish»): oyna yopiladi, sabab (vaqtsiz) ogohlantirishda, ro'yxat qayta so'raladi", async () => {
     sessionsResponse = two();
     const availableAt = hoursFromNow(20);
     const serverMessage = `Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — ${fullTime(availableAt)} dan keyin mumkin`;
@@ -651,19 +672,19 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     await user.click(within(confirm).getByRole("button", { name: "Chiqarish" }));
 
     expect(await screen.findByText("Hozircha chiqarib bo'lmaydi")).toBeInTheDocument();
-    expect(screen.getByText(serverMessage)).toBeInTheDocument();
+    // Server matnidagi sana ko'rsatilmaydi — o'z sababimiz.
+    expect(screen.queryByText(serverMessage)).not.toBeInTheDocument();
+    expect(within(screen.getByText("Hozircha chiqarib bo'lmaydi").closest("[role]") ?? document.body).getAllByText(REASON).length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(screen.queryByText("Qurilma chiqarildi")).not.toBeInTheDocument();
     expect(mocks.delete).toHaveBeenCalledWith("auth/sessions/win");
     await waitFor(() => expect(sessionCalls()).toBe(2));
     // Endi kartada cheklov: ogohlantirish va o'chirilgan amallar.
-    expect(await within(card()).findByTestId("sessions-revoke-lock")).toHaveTextContent(
-      `${fullTime(availableAt)} dan keyin mumkin bo'ladi.`,
-    );
+    expect(await within(card()).findByTestId("sessions-revoke-lock")).toHaveTextContent(REASON);
     expect(within(card()).getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
   });
 
-  it("baribir 403 (revoke-others, maydonlar `details` ichida, server matnisiz) — o'z matnimiz xatodagi vaqt bilan", async () => {
+  it("baribir 403 (revoke-others, maydonlar `details` ichida, server matnisiz) — o'z sababimiz, vaqtsiz", async () => {
     sessionsResponse = two();
     const availableAt = hoursFromNow(5);
     mocks.post.mockImplementation(async () => {
@@ -682,7 +703,7 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     await user.click(within(confirm).getByRole("button", { name: "Hammasini chiqarish" }));
 
     expect(await screen.findByText("Hozircha chiqarib bo'lmaydi")).toBeInTheDocument();
-    expect(screen.getByText(`${REASON} ${fullTime(availableAt)} dan keyin mumkin bo'ladi.`)).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(fullTime(availableAt)))).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(screen.queryByText("Boshqa qurilmalardan chiqildi")).not.toBeInTheDocument();
     expect(sessionCalls()).toBe(2);
@@ -704,7 +725,7 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
     expect(screen.queryByText("Hozircha chiqarib bo'lmaydi")).not.toBeInTheDocument();
   });
 
-  it("profil sahifasida: ogohlantirishdagi «Parolni o'zgartirish» parol oynasini ochadi", async () => {
+  it("profil sahifasida: ogohlantirishda parol havolasi yo'q", async () => {
     mocks.get.mockImplementation((url: string) => {
       if (url === "auth/sessions") return two({ can_revoke_others: false, revoke_available_at: hoursFromNow(10) })();
       if (url === "auth/my-profile") {
@@ -714,12 +735,10 @@ describe("Sessiyalar — yangi qurilma cheklovi (48 soat, Telegram kabi)", () =>
       }
       return Promise.resolve({ data: { data: {} } });
     });
-    const user = userEvent.setup();
     renderWithProviders(<ProfilePage />, { route: "/profile" });
     await rows();
 
     const alert = within(card()).getByTestId("sessions-revoke-lock");
-    await user.click(within(alert).getByRole("button", { name: "Parolni o'zgartirish" }));
-    expect(await screen.findByRole("dialog", { name: "Parolni o'zgartirish" })).toBeInTheDocument();
+    expect(within(alert).queryByRole("button", { name: "Parolni o'zgartirish" })).not.toBeInTheDocument();
   });
 });

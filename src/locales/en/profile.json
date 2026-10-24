@@ -72,10 +72,6 @@
     },
     "lock": {
       "title": "For security, other sessions can't be signed out from a new device.",
-      "until": "You can do this after {{when}}.",
-      "untilUnknown": "You can do this 48 hours after your first sign-in on this device.",
-      "urgent": "If it's urgent, change your password: all other devices will be signed out immediately.",
-      "changePassword": "Change password",
       "toastTitle": "Can't sign out devices yet"
     }
   },

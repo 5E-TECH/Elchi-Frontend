@@ -63,12 +63,12 @@ import { cx } from "../../../shared/lib/cx";
  *    `notify.info`; 400 — oyna ichida sabab (joriy sessiya / eski token — qayta kirish).
  *    Yopilgan qurilma keyingi so'rovida 401 → refresh ham rad → kirish sahifasi (`setupInterceptors`).
  *  - Yangi qurilma (Telegram kabi qoida): shu qurilmadan birinchi kirganiga 48 soat to'lmagan sessiya boshqalarni
- *    chiqara olmaydi — `can_revoke_others: false` bo'lsa kartada `.el-alert` (info, `ShieldCheck`): sabab,
- *    «{sana, vaqt} dan keyin mumkin bo'ladi» (`revoke_available_at`, to'liq sana — «Bugun» siz) va «Shoshilinch
- *    bo'lsa — parolni almashtiring» + «Parolni o'zgartirish» havolasi (`onChangePassword` berilsa — profil parol
- *    oynasi). Ikkala chiqarish amali yashirilmaydi — `disabled` + `aria-describedby` (sabab va vaqt) + `title`.
- *    Vaqt o'tib ketsa (sahifa ochiq turganda) — cheklov o'zi olinadi. Maydon yo'q (eski backend) — ruxsat.
- *    Shunga qaramay 403 `SESSION_TOO_NEW` kelsa: tasdiq oynasi yopiladi, server matni `notify.warning` da,
+ *    chiqara olmaydi — `can_revoke_others: false` va ro'yxatda kamida bitta boshqa sessiya bo'lsa (faqat shu qurilma
+ *    bo'lsa — chiqaradigan narsa yo'q, ogohlantirish ham yo'q) kartada `.el-alert` (info, `ShieldCheck`): faqat
+ *    sabab — qachon mumkin bo'lishi ko'rsatilmaydi (Dilshod). Ikkala chiqarish amali yashirilmaydi — `disabled` +
+ *    `aria-describedby` (sabab) + `title`. `revoke_available_at` o'tib ketsa (sahifa ochiq turganda) — cheklov o'zi
+ *    olinadi. Maydon yo'q (eski backend) — ruxsat.
+ *    Shunga qaramay 403 `SESSION_TOO_NEW` kelsa: tasdiq oynasi yopiladi, sabab (vaqtsiz) `notify.warning` da,
  *    ro'yxat qayta so'raladi (`useRevokeSessions` → yangi ro'yxat cheklovni olib keladi).
  */
 
@@ -124,10 +124,6 @@ type RevokeOutcome =
   | { kind: "gone" }
   | { kind: "tooNew"; error: SessionTooNewError };
 
-/** Cheklov vaqti — har doim to'liq sana («25.10.2026, 14:30»; «Bugun/Kecha» siz), brauzer (Toshkent) vaqtida. */
-const lockTimeOf = (value: string | null, language: string) =>
-  toValidDate(value) ? formatDateTimeLocalized(value, { language, relative: false }) : null;
-
 /** Cheklov amalda: `can_revoke_others === false` va ruxsat vaqti hali kelmagan (vaqt noma'lum — kelmagan). */
 const isRevokeLocked = (list: AccountSessionList | undefined, now: number) => {
   if (!list || list.can_revoke_others !== false) return false;
@@ -136,21 +132,10 @@ const isRevokeLocked = (list: AccountSessionList | undefined, now: number) => {
 };
 
 /**
- * «Yangi qurilma» ogohlantirishi — `.el-alert` (CODE-MAP 2.7, info): qalin sabab, vaqt va «shoshilinch bo'lsa»
- * maslahati, ixtiyoriy «Parolni o'zgartirish» havolasi. `reasonId` / `whenId` — o'chirilgan tugmalarning
- * `aria-describedby` manbasi.
+ * «Yangi qurilma» ogohlantirishi — `.el-alert` (CODE-MAP 2.7, info): faqat sabab (qachon mumkinligi ko'rsatilmaydi).
+ * `reasonId` — o'chirilgan tugmalarning `aria-describedby` manbasi.
  */
-const RevokeLockNotice = ({
-  when,
-  reasonId,
-  whenId,
-  onChangePassword,
-}: {
-  when: string | null;
-  reasonId: string;
-  whenId: string;
-  onChangePassword?: () => void;
-}) => {
+const RevokeLockNotice = ({ reasonId }: { reasonId: string }) => {
   const { t } = useTranslation("profile");
   return (
     <div
@@ -163,17 +148,6 @@ const RevokeLockNotice = ({
         <p id={reasonId} className="font-bold wrap-break-word">
           {t("sessions.lock.title")}
         </p>
-        <p className="text-[13px] leading-[18px] wrap-break-word">
-          <span id={whenId}>{when ? t("sessions.lock.until", { when }) : t("sessions.lock.untilUnknown")}</span>{" "}
-          {t("sessions.lock.urgent")}
-        </p>
-        {onChangePassword ? (
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="link" size="sm" aria-haspopup="dialog" onClick={onChangePassword} className="-ml-1">
-              {t("sessions.lock.changePassword")}
-            </Button>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -291,18 +265,10 @@ const SessionRow = ({
   );
 };
 
-export const ProfileSessionsCard = ({
-  className,
-  onChangePassword,
-}: {
-  className?: string;
-  /** Cheklov ogohlantirishidagi «Parolni o'zgartirish» — profil parol oynasini ochadi (berilmasa havola yo'q). */
-  onChangePassword?: () => void;
-}) => {
+export const ProfileSessionsCard = ({ className }: { className?: string }) => {
   const { t, i18n } = useTranslation("profile");
   const language = i18n.language;
   const reasonId = useId();
-  const whenId = useId();
   const query = useMySessions();
   const revokeOne = useRevokeSession();
   const revokeOthers = useRevokeOtherSessions();
@@ -315,29 +281,19 @@ export const ProfileSessionsCard = ({
   const hiddenActive = list ? Math.max(0, list.active_count - activeInList) : 0;
   // Tasdiqdagi son — barcha boshqa qurilmalar: faol va qayta kirishi kerak bo'lganlar.
   const otherCount = others.length + hiddenActive;
-  // Yangi qurilma: boshqalarni chiqarish vaqtincha yopiq (tugmalar o'chirilgan, sababi ogohlantirishda).
-  const locked = isRevokeLocked(list, now);
-  const lockWhen = lockTimeOf(list?.revoke_available_at ?? null, language);
+  // Yangi qurilma: boshqalarni chiqarish vaqtincha yopiq (tugmalar o'chirilgan, sababi ogohlantirishda). Boshqa
+  // sessiya yo'q bo'lsa — chiqaradigan narsa yo'q, ogohlantirish ham yo'q (ro'yxat yangilanib boshqasi kelsa — chiqadi).
+  const locked = others.length > 0 && isRevokeLocked(list, now);
   const lock = locked
     ? {
-        describedBy: `${reasonId} ${whenId}`,
-        title: [
-          t("sessions.lock.title"),
-          lockWhen ? t("sessions.lock.until", { when: lockWhen }) : t("sessions.lock.untilUnknown"),
-        ].join(" "),
+        describedBy: reasonId,
+        title: t("sessions.lock.title"),
       }
     : undefined;
 
-  /** 403 `SESSION_TOO_NEW`: server matni (bo'lmasa — o'zimizniki vaqt bilan) ogohlantirish xabarida. */
-  const notifyTooNew = (error: SessionTooNewError) => {
-    const when = lockTimeOf(error.available_at, language);
-    notify.warning(t("sessions.lock.toastTitle"), {
-      description:
-        error.message ??
-        [t("sessions.lock.title"), when ? t("sessions.lock.until", { when }) : t("sessions.lock.untilUnknown")].join(
-          " ",
-        ),
-    });
+  /** 403 `SESSION_TOO_NEW`: sabab ogohlantirish xabarida — vaqtsiz (server matnidagi sana ko'rsatilmaydi). */
+  const notifyTooNew = () => {
+    notify.warning(t("sessions.lock.toastTitle"), { description: t("sessions.lock.title") });
   };
 
   const handleRevoke = async (session: AccountSession) => {
@@ -387,7 +343,7 @@ export const ProfileSessionsCard = ({
     });
     if (!ok || !result.outcome) return;
     if (result.outcome.kind === "tooNew") {
-      notifyTooNew(result.outcome.error);
+      notifyTooNew();
     } else if (result.outcome.kind === "gone") {
       notify.info(t("sessions.revoke.goneTitle"), { description: t("sessions.listRefreshed") });
     } else {
@@ -425,7 +381,7 @@ export const ProfileSessionsCard = ({
     });
     if (!ok) return;
     if (result.tooNew) {
-      notifyTooNew(result.tooNew);
+      notifyTooNew();
       return;
     }
     if (result.revoked === undefined) return;
@@ -492,12 +448,7 @@ export const ProfileSessionsCard = ({
           <>
             {lock ? (
               <div className="px-5 pt-4">
-                <RevokeLockNotice
-                  when={lockWhen}
-                  reasonId={reasonId}
-                  whenId={whenId}
-                  onChangePassword={onChangePassword}
-                />
+                <RevokeLockNotice reasonId={reasonId} />
               </div>
             ) : null}
             <ul aria-label={t("sessions.listLabel")} className="flex flex-col">

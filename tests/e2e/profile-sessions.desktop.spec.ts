@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { formatLockTime, openProfileWithSessions } from "./support/profileSessions";
+import { formatLockTime, lockAvailableAt, openProfileWithSessions, SESSIONS } from "./support/profileSessions";
 import { expectToast } from "./support/toast";
 
 /**
@@ -17,7 +17,6 @@ test.describe.configure({ timeout: 120_000 });
 test.use({ timezoneId: "Asia/Tashkent" });
 
 const LOCK_REASON = "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.";
-const LOCK_URGENT = "Shoshilinch bo'lsa — parolni almashtiring: boshqa barcha qurilmalar darhol chiqadi.";
 
 test("⭐ sessiyalar soni, qurilmalar va vaqtlar; «Shu qurilma» tepada, `expired` oxirida", async ({ page }) => {
   const { leaked, state } = await openProfileWithSessions(page, "superadmin");
@@ -164,7 +163,7 @@ test("yopilgan qurilma: keyingi so'rov 401 → refresh 401 → kirish sahifasida
   expect(refreshes).toBeLessThanOrEqual(3);
 });
 
-test("⭐ yangi qurilma: ogohlantirish va vaqt, amallar o'chirilgan (sababi bilan), «Parolni o'zgartirish» — parol oynasi", async ({ page }) => {
+test("⭐ yangi qurilma: ogohlantirish (faqat sabab — vaqt va parol maslahatisiz), amallar o'chirilgan (sababi bilan)", async ({ page }) => {
   const { leaked, availableAt } = await openProfileWithSessions(page, "superadmin", { locked: true });
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
@@ -176,14 +175,16 @@ test("⭐ yangi qurilma: ogohlantirish va vaqt, amallar o'chirilgan (sababi bila
   await expect(notice).toBeVisible();
   await expect(notice).toHaveAttribute("role", "status");
   await expect(notice.getByText(LOCK_REASON)).toBeVisible();
-  await expect(notice).toContainText(`${when} dan keyin mumkin bo'ladi. ${LOCK_URGENT}`);
+  await expect(notice).toHaveText(LOCK_REASON);
+  await expect(notice).not.toContainText(when);
+  await expect(notice.getByRole("button")).toHaveCount(0);
   // Ogohlantirish sarlavha ostida, ro'yxat ustida.
   const noticeBox = (await notice.boundingBox())!;
   const firstRow = (await rows.nth(0).boundingBox())!;
   expect(noticeBox.y + noticeBox.height).toBeLessThanOrEqual(firstRow.y + 1);
 
-  // Amallar yashirilmaydi — o'chirilgan, sababi (sabab + vaqt) yordamchi texnologiyaga va sichqoncha izohida.
-  const reason = `${LOCK_REASON} ${when} dan keyin mumkin bo'ladi.`;
+  // Amallar yashirilmaydi — o'chirilgan, sababi (vaqtsiz) yordamchi texnologiyaga va sichqoncha izohida.
+  const reason = LOCK_REASON;
   const all = card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" });
   const actions = card.getByRole("button", { name: /^Chiqarish:/ });
   await expect(actions).toHaveCount(3);
@@ -195,17 +196,10 @@ test("⭐ yangi qurilma: ogohlantirish va vaqt, amallar o'chirilgan (sababi bila
   await actions.nth(0).click({ force: true });
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
 
-  // Shoshilinch yo'l: parolni almashtirish — profil parol oynasi.
-  await notice.getByRole("button", { name: "Parolni o'zgartirish" }).click();
-  const dialog = page.getByRole("dialog", { name: "Parolni o'zgartirish" });
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByText("Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi."),
-  ).toBeVisible();
   expect(leaked).toEqual([]);
 });
 
-test("baribir 403 SESSION_TOO_NEW: tasdiq yopiladi, server matni ogohlantirish xabarida, ro'yxat cheklov bilan qaytadi", async ({ page }) => {
+test("baribir 403 SESSION_TOO_NEW: tasdiq yopiladi, sabab (vaqtsiz) ogohlantirish xabarida, ro'yxat cheklov bilan qaytadi", async ({ page }) => {
   const { leaked, revoke, state } = await openProfileWithSessions(page, "admin", { revoke: true });
   const card = page.getByRole("region", { name: "Sessiyalar" });
   await expect(card).toBeVisible({ timeout: 90_000 });
@@ -222,19 +216,43 @@ test("baribir 403 SESSION_TOO_NEW: tasdiq yopiladi, server matni ogohlantirish x
 
   const when = formatLockTime(revoke!.lockedUntil!);
   await expectToast(page, "Hozircha chiqarib bo'lmaydi", { tone: "warning" });
-  await expectToast(
-    page,
-    `Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi — ${when} dan keyin mumkin`,
-    { tone: "warning" },
-  );
+  await expectToast(page, LOCK_REASON, { tone: "warning" });
+  // Server matnidagi sana ko'rsatilmaydi.
+  await expect(page.getByText(`${when} dan keyin mumkin`)).toHaveCount(0);
   await expect(confirm).toBeHidden();
   await expect(page.getByText("Boshqa qurilmalardan chiqildi")).toHaveCount(0);
   await expect.poll(() => state.sessionRequests).toBeGreaterThan(requestsBefore);
   // Yangi ro'yxat — cheklov bilan: ogohlantirish va o'chirilgan amallar; qatorlar joyida.
-  await expect(card.getByTestId("sessions-revoke-lock")).toContainText(`${when} dan keyin mumkin bo'ladi.`);
+  await expect(card.getByTestId("sessions-revoke-lock")).toHaveText(LOCK_REASON);
   await expect(card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
   await expect(rows).toHaveCount(4);
   expect(revoke!.tooNewReplies).toBe(1);
   expect(revoke!.revokeOthers).toBe(1);
+  expect(leaked).toEqual([]);
+});
+
+test("faqat shu qurilma — cheklov ogohlantirishi yo'q; boshqa qurilma kirib, oynaga qaytilsa — chiqadi", async ({ page }) => {
+  const { leaked, revoke } = await openProfileWithSessions(page, "superadmin", {
+    revoke: true,
+    initial: (state) => {
+      state.sessions = state.sessions.filter((row) => row.current);
+      state.lockedUntil = lockAvailableAt();
+    },
+  });
+  const card = page.getByRole("region", { name: "Sessiyalar" });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  const rows = card.getByRole("list", { name: "Sessiyalar ro'yxati" }).getByRole("listitem");
+  await expect(rows).toHaveCount(1);
+  // Chiqaradigan narsa yo'q — ogohlantirish ham, amal ham yo'q.
+  await expect(card.getByTestId("sessions-revoke-lock")).toHaveCount(0);
+  await expect(card.getByRole("button")).toHaveCount(0);
+
+  // Boshqa qurilmalardan kirildi; foydalanuvchi oynaga qaytadi — ro'yxat qayta so'raladi.
+  revoke!.sessions = SESSIONS.sessions.map((row) => ({ ...row }));
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange", { bubbles: true })));
+  await expect(rows).toHaveCount(4);
+  await expect(card.getByTestId("sessions-revoke-lock")).toHaveText(LOCK_REASON);
+  await expect(card.getByRole("button", { name: "Boshqa barcha qurilmalardan chiqish" })).toBeDisabled();
+  await expect(card.getByRole("button", { name: /^Chiqarish:/ })).toHaveCount(3);
   expect(leaked).toEqual([]);
 });

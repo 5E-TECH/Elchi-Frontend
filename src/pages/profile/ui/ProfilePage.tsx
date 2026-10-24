@@ -33,7 +33,7 @@ import { ProfileSessionsCard } from "./ProfileSessionsCard";
  * «Guruhda mijoz ismi va telefoni» kaliti shu kartada). Sarlavhadagi kontakt shaxs ismi uchun backend maydoni yo'q.
  * Eng pastda «Sessiyalar» (`ProfileSessionsCard`, barcha rollar; maket yo'q — eng yaqini `market-profile` «Telegram guruhi»
  * kartasi): shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`);
- * yangi qurilmada (48 soat) chiqarish cheklovi ogohlantirishidagi «Parolni o'zgartirish» — shu sahifaning parol oynasi.
+ * yangi qurilmada (48 soat) boshqa sessiyalarni chiqarish cheklovi ogohlantirishi shu kartada.
  * Ma'lumot — `GET /auth/my-profile` (`useGetMyProfile`), holatlar `QueryBoundary size="page"`.
  *
  * `UpdateUserModal` (`/all-users/:id` ishlatadi) bu sahifada ishlatilmaydi — profil o'z v2 komponentlari bilan
@@ -135,7 +135,7 @@ const ProfilePage = () => {
                 ) : null}
               </>
             )}
-            <ProfileSessionsCard onChangePassword={() => setPasswordOpen(true)} />
+            <ProfileSessionsCard />
             <EditProfileDialog open={editOpen} onClose={() => setEditOpen(false)} user={profile} />
             <ChangePasswordDialog
               open={passwordOpen}

@@ -72,10 +72,6 @@
     },
     "lock": {
       "title": "Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.",
-      "until": "{{when}} dan keyin mumkin bo'ladi.",
-      "untilUnknown": "Shu qurilmadan birinchi kirganingizdan 48 soat o'tgach mumkin bo'ladi.",
-      "urgent": "Shoshilinch bo'lsa — parolni almashtiring: boshqa barcha qurilmalar darhol chiqadi.",
-      "changePassword": "Parolni o'zgartirish",
       "toastTitle": "Hozircha chiqarib bo'lmaydi"
     }
   },
