@@ -3,10 +3,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { Check, Eye, EyeOff, Lock, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../../../entities/user/api/userApi";
-import { rememberLoginNotice } from "../../../auth/loginNotice";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
-import { useLogout } from "../../../shared/lib/useLogout";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import {
   extractBackendFieldErrors,
@@ -29,15 +27,15 @@ type Errors = { password?: string; repeat?: string };
 /**
  * «PAROLNI O'ZGARTIRISH» — maket `common-profile-password-dialog` (telefonda pastki varaqa — `Dialog` o'zi).
  *
- * Xulq eski `UpdateUserModal` (o'z profili, faqat parol) bilan bir xil: `PATCH /auth/my-profile { password }` →
- * «Parol o'zgardi — qayta kiring» → login sahifasida sabab (`rememberLoginNotice`) → `logout()` (backend shu hisob
- * sessiyasini yopadi, keyingi refresh baribir 401 bo'lardi). Ikki marta yuborilmaydi (`submittingRef`).
+ * `PATCH /auth/my-profile { password }` → backend BOSHQA barcha qurilmalarni darhol chiqaradi, shu qurilma tizimda
+ * qoladi (2026-10-23; avval hamma sessiya yopilib, shu yerdan ham chiqarilardi) → «Parol almashtirildi — boshqa
+ * qurilmalardan chiqildi», oyna yopiladi; «Sessiyalar» ro'yxati qayta so'raladi (`updateMyProfile` →
+ * `queryKeys.accountSessions`). Ikki marta yuborilmaydi (`submittingRef`).
  * Tekshiruv: bo'sh emas, kamida 4 belgi, takrori mos (mos kelsa — yashil «Parollar mos keladi»).
  */
 export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePasswordDialogProps) => {
-  const { t } = useTranslation(["profile", "auth", "users", "common"]);
+  const { t } = useTranslation(["profile", "users", "common"]);
   const { updateMyProfile } = useUser();
-  const { logout } = useLogout();
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -85,10 +83,8 @@ export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePassw
     setBusy(true);
     try {
       await updateMyProfile.mutateAsync({ password });
-      notify.success(t("auth:passwordChangedRelogin"));
+      notify.success(t("profile:password.changedOthersSignedOut"));
       onClose();
-      rememberLoginNotice("passwordChanged");
-      void logout();
     } catch (error) {
       const fieldMessage = normalizeBackendFieldMessage(extractBackendFieldErrors(error).password);
       if (fieldMessage) setErrors({ password: fieldMessage });

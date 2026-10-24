@@ -10,6 +10,11 @@ import { queryKeys } from "../../shared/config/queryKeys";
 import { BASE_URL } from "../../shared/const";
 import { notify } from "../../shared/lib/notify";
 import { logRealtime, realtimeUrl, setRealtimeConnected } from "../../shared/lib/realtime";
+import {
+  handleSessionRevokedEvent,
+  handleSessionRevokedSocketError,
+  SESSION_REVOKED_EVENT,
+} from "../../auth/sessionRevoked";
 
 /**
  * RealtimeSync (uRkw6lk0) — bildirishnomalar 60 s kutmasdan, darhol ko'rinsin.
@@ -27,6 +32,11 @@ import { logRealtime, realtimeUrl, setRealtimeConnected } from "../../shared/lib
  *   `elchi-push-<id>` — push va socket orqali kelsa ham ikki marta chiqmaydi), bir nechta — «N ta yangi bildirishnoma».
  * - Har ulanishda (birinchi ham) inbox yangilanadi — ulanmagan oraliqdagi xabarlar yo'qolmaydi.
  * - Polling zaxira: ulanganda sanoq 5 daqiqada, uzilganda 60 s da (`useUnreadCount`).
+ * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
+ *   token `sid` iga mos bo'lsa — yoki yopilgan sessiya tokeni bilan ulanish rad etilsa (`error` / `connect_error`
+ *   «SESSION_REVOKED») — qurilma joyida chiqadi (`auth/sessionRevoked` → `logoutRevokedSession`, `POST auth/logout`
+ *   siz). Socket shu zahoti tinglovchilarsiz uziladi va qayta ulanmaydi (server keyin «io server disconnect» qilsa
+ *   ham); boshqa uzilishlar avvalgidek.
  */
 
 type RealtimePayload = Partial<
@@ -113,20 +123,34 @@ const RealtimeSync = () => {
       .then(([{ io }, finance]) => {
         if (cancelled) return;
         // WebSocket birinchi (kam so'rov, Cloudflare qo'llaydi); to'silgan tarmoqda polling'ga o'tadi.
-        socket = io(realtimeUrl(BASE_URL), {
+        const client = io(realtimeUrl(BASE_URL), {
           auth: { token: accessToken },
           transports: ["websocket", "polling"],
           tryAllTransports: true,
         });
-        socket.on("connect", () => {
+        socket = client;
+        // Shu socketning sessiyasi yopildi — kanal shu zahoti yopiladi (chiqish — `auth/sessionRevoked`):
+        // tinglovchilarsiz (keyingi «io server disconnect» yopilgan token bilan sanoq so'rovini yubormaydi) va
+        // qayta urinishsiz (`disconnect()` — socket.io qayta ulanmaydi).
+        const closeRevoked = () => {
+          setRealtimeConnected(false);
+          logRealtime("sessiya yopildi — kanal yopiladi");
+          client.removeAllListeners();
+          client.disconnect();
+        };
+        client.on(SESSION_REVOKED_EVENT, (payload: unknown) => {
+          if (handleSessionRevokedEvent(payload)) closeRevoked();
+          else logRealtime("boshqa sessiya hodisasi — e'tiborsiz", payload);
+        });
+        client.on("connect", () => {
           setRealtimeConnected(true);
           logRealtime("ulandi");
           // Har ulanishda (birinchi, token yangilangach, tarmoq qaytgach): ulanmagan oraliqda kelgan xabarlar ro'yxat
           // va badge'ga tushsin; so'rov yangilangach polling oralig'i ham darhol 5 daqiqaga o'tadi.
           void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all });
         });
-        socket.on("connected", (info: unknown) => logRealtime("server tasdiqladi", info));
-        socket.on("disconnect", (reason) => {
+        client.on("connected", (info: unknown) => logRealtime("server tasdiqladi", info));
+        client.on("disconnect", (reason) => {
           setRealtimeConnected(false);
           logRealtime("uzildi", reason);
           // Uzilish oralig'ida kelgan xabarlar o'tib ketmasin — sanoq darhol so'raladi, keyin 60 s polling.
@@ -134,19 +158,24 @@ const RealtimeSync = () => {
             queryKey: queryKeys.notificationsInbox.unreadCount,
           });
         });
-        socket.on("connect_error", (error) => {
+        client.on("connect_error", (error) => {
           setRealtimeConnected(false);
           logRealtime(
-            socket?.active ? "ulanib bo'lmadi, qayta urinadi" : "ulanish rad etildi",
+            client.active ? "ulanib bo'lmadi, qayta urinadi" : "ulanish rad etildi",
             error.message,
           );
+          // Yopilgan sessiya tokeni bilan qayta ulanish rad etildi — qayta urinish emas, chiqish.
+          if (handleSessionRevokedSocketError(error)) closeRevoked();
         });
-        socket.on("error", (error: unknown) => logRealtime("server xatosi", error));
-        socket.on("notification:new", (payload: RealtimePayload) =>
+        client.on("error", (error: unknown) => {
+          logRealtime("server xatosi", error);
+          if (handleSessionRevokedSocketError(error)) closeRevoked();
+        });
+        client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
         );
         for (const event of finance.FINANCE_SHIFT_EVENTS) {
-          socket.on(event, (payload: unknown) => finance.handleShiftEvent(queryClient, tRef.current, event, payload));
+          client.on(event, (payload: unknown) => finance.handleShiftEvent(queryClient, tRef.current, event, payload));
         }
       })
       // Bo'lak yuklanmasa (tarmoq, eski deploy) — jonli kanal o'chiq qoladi, 60 s polling ishlayveradi.

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import MarkWhite from "../../../shared/assets/brand/elchi-mark-white.png";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { Button } from "../../../shared/ui/primitives";
+import type { RevokedReason } from "../../../auth/loginNotice";
 
 /**
  * «Sessiya tugadi» ekrani — `/login` da, sessiya tugagani sababli chiqarilganda (maket `common-session-expired`).
@@ -21,10 +22,22 @@ type SessionExpiredScreenProps = {
    * sababni aytadi (maket yo'q — o'sha kartaning matni almashadi, tuzilma bir xil).
    */
   revoked?: boolean;
+  /**
+   * `revoked`: server aytgan sabab (jonli kanal `auth:session_revoked`). `password_changed` — «Parol
+   * almashtirildi …» matni; qolganlari — `revoked` matni.
+   */
+  revokedReason?: RevokedReason;
   onContinue: () => void;
 };
 
-const SessionExpiredScreen = ({ expiredAt, revoked = false, onContinue }: SessionExpiredScreenProps) => {
+const textKey = (revoked: boolean, revokedReason?: RevokedReason) => {
+  if (!revoked) return "sessionExpiredScreen.text";
+  return revokedReason === "password_changed"
+    ? "sessionExpiredScreen.passwordChangedText"
+    : "sessionExpiredScreen.revokedText";
+};
+
+const SessionExpiredScreen = ({ expiredAt, revoked = false, revokedReason, onContinue }: SessionExpiredScreenProps) => {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const textId = useId();
@@ -56,7 +69,7 @@ const SessionExpiredScreen = ({ expiredAt, revoked = false, onContinue }: Sessio
               {t("sessionExpiredScreen.title")}
             </h1>
             <p id={textId} className="max-w-[300px] text-sm text-text-muted">
-              {t(revoked ? "sessionExpiredScreen.revokedText" : "sessionExpiredScreen.text")}
+              {t(textKey(revoked, revokedReason))}
             </p>
           </div>
 

@@ -17,7 +17,23 @@ const reply = (route: Route, body: unknown) =>
 
 export type InboxRow = { id: string; title: string; body: string | null; category: string; link: string | null };
 
-export const mockRealtime = async (page: Page) => {
+/** Gateway access token shakli (imzo tekshirilmaydi — ilova faqat payload'ni o'qiydi): `{ sub, roles, sid }`. */
+export const e2eAccessToken = (claims: { sub?: string; role?: string; sid?: string } = {}) => {
+  const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const { sub = "1", role = "superadmin", sid } = claims;
+  return `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub, roles: [role], ...(sid ? { sid } : {}) })}.e2e`;
+};
+
+export type MockRealtimeOptions = {
+  /** Access token (sukut — `e2e.local.token`, `sid` siz). */
+  token?: string;
+  /** Profil roli (sukut — superadmin). */
+  role?: string;
+};
+
+export const mockRealtime = async (page: Page, options: MockRealtimeOptions = {}) => {
+  const token = options.token ?? "e2e.local.token";
+  const role = options.role ?? "superadmin";
   const state = {
     unread: 2,
     inbox: [{ id: "n-1", title: "Kun yakuni eslatmasi", body: "Kassani yoping", category: "finance", link: "/cash-box" }] as InboxRow[],
@@ -28,6 +44,13 @@ export const mockRealtime = async (page: Page) => {
     closed: 0,
     /** Barcha API so'rovlari yo'li (masalan smena holati qayta so'raldimi). */
     requests: [] as string[],
+    /** `POST auth/logout` / `POST auth/refresh` so'rovlari soni. */
+    logoutRequests: 0,
+    refreshRequests: 0,
+    /** Yopilgan sessiya: keyingi ulanish rad etiladi (`error` SESSION_REVOKED + server uzadi), HTTP — 401. */
+    revoked: false,
+    /** Faqat socket ulanishi rad etiladi (HTTP javob beraveradi) — jonli kanal yo'lini alohida sinash uchun. */
+    socketRevoked: false,
   };
 
   await page.context().route("**/*", async (route) => {
@@ -38,8 +61,19 @@ export const mockRealtime = async (page: Page) => {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
     state.requests.push(path);
+    if (path === "auth/logout") state.logoutRequests += 1;
+    if (path === "auth/refresh") state.refreshRequests += 1;
+    if (state.revoked && path !== "auth/logout") {
+      const message = path === "auth/refresh" ? "Invalid refresh token" : "Session revoked";
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        headers: cors,
+        body: JSON.stringify({ statusCode: 401, message }),
+      });
+    }
     if (path === "auth/my-profile") {
-      return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "E2E", status: "active" } });
+      return reply(route, { statusCode: 200, data: { id: "1", role, name: "E2E", status: "active" } });
     }
     if (path === "notifications/inbox/unread-count") {
       state.unreadRequests += 1;
@@ -74,19 +108,25 @@ export const mockRealtime = async (page: Page) => {
       if (text.startsWith("40/realtime")) {
         state.auth.push(JSON.parse(text.slice(text.indexOf("{"))));
         ws.send(`40/realtime,${JSON.stringify({ sid: `ns-${state.sockets.length}` })}`);
-        ws.send(`42/realtime,${JSON.stringify(["connected", { user_id: "1", roles: ["superadmin"] }])}`);
+        if (state.revoked || state.socketRevoked) {
+          // Backend (RealtimeGateway.handleConnection): yopilgan sessiya — `error` hodisasi, keyin server uzadi.
+          ws.send(`42/realtime,${JSON.stringify(["error", { message: "Session revoked", code: "SESSION_REVOKED" }])}`);
+          ws.send("41/realtime,");
+          return;
+        }
+        ws.send(`42/realtime,${JSON.stringify(["connected", { user_id: "1", roles: [role] }])}`);
       }
     });
   });
 
-  await page.addInitScript(() => {
+  await page.addInitScript((accessToken) => {
     const far = Date.now() + 86_400_000;
-    window.sessionStorage.setItem("accessToken", "e2e.local.token");
+    window.sessionStorage.setItem("accessToken", accessToken);
     window.sessionStorage.setItem(
       "authSessionMetadata",
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
-  });
+  }, token);
 
   /** Backend dispatch qilgandek: qatorni inboxga qo'shadi va socket orqali `notification:new` yuboradi. */
   const dispatch = (row: InboxRow) => {
@@ -99,5 +139,25 @@ export const mockRealtime = async (page: Page) => {
   const emit = (event: string, payload: unknown = {}) =>
     state.sockets.at(-1)!.send(`42/realtime,${JSON.stringify([event, payload])}`);
 
-  return { state, dispatch, emit };
+  /**
+   * Backend sessiyani yopgandek (Elchi Pochta #3, `SessionRevocationService.kickSessions`): oxirgi socketga
+   * `auth:session_revoked` `{ session_id, reason }`, 250 ms dan keyin server uzadi («io server disconnect»).
+   * `revoke: true` — sessiya haqiqatan yopilgan: keyingi HTTP so'rovlar 401, qayta ulanish rad etiladi.
+   */
+  const kick = (payload: { session_id: string; reason: string }, { revoke = true } = {}) => {
+    if (revoke) state.revoked = true;
+    const ws = state.sockets.at(-1)!;
+    ws.send(`42/realtime,${JSON.stringify(["auth:session_revoked", payload])}`);
+    if (revoke) {
+      setTimeout(() => {
+        try {
+          ws.send("41/realtime,");
+        } catch {
+          // Mijoz socketni allaqachon o'zi yopgan.
+        }
+      }, 250);
+    }
+  };
+
+  return { state, dispatch, emit, kick };
 };

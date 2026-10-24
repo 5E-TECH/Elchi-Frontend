@@ -1,20 +1,23 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import type { AccountSessionList, RevokeSessionsResult } from "../model/types";
+import type { AccountSession, AccountSessionList, RevokeSessionsResult } from "../model/types";
 import { revokeOtherSessions, revokeSession } from "./accountSessionApi";
 
 /**
  * Yopilgan sessiyalar «Sessiyalar» keshidan darhol olinadi (qator ro'yxat qayta kelguncha osilib turmaydi), so'ng
- * ro'yxat qayta so'raladi — xatoda ham (404: boshqa qurilmadan allaqachon yopilgan bo'lishi mumkin).
+ * ro'yxat qayta so'raladi — xatoda ham (404: boshqa qurilmadan allaqachon yopilgan bo'lishi mumkin; 403
+ * `SESSION_TOO_NEW`: yangi ro'yxat cheklovni — `can_revoke_others: false` — olib keladi).
+ * `active_count` faqat yopilgan FAOL sessiyalar soniga kamayadi (`expired` unda sanalmagan).
  */
 const dropFromCache = (queryClient: QueryClient, ids: readonly string[]) => {
   if (ids.length === 0) return;
   const gone = new Set(ids);
   queryClient.setQueryData<AccountSessionList>(queryKeys.accountSessions.mine, (list) => {
     if (!list) return list;
+    const activeIn = (rows: AccountSession[]) => rows.filter((session) => session.status !== "expired").length;
     const sessions = list.sessions.filter((session) => !gone.has(session.id));
-    const removed = list.sessions.length - sessions.length;
-    return { active_count: Math.max(sessions.length, list.active_count - removed), sessions };
+    const removedActive = activeIn(list.sessions) - activeIn(sessions);
+    return { ...list, active_count: Math.max(activeIn(sessions), list.active_count - removedActive), sessions };
   });
 };
 

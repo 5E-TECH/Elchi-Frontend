@@ -32,7 +32,8 @@ import { ProfileSessionsCard } from "./ProfileSessionsCard";
  * (`MarketTelegramGroupsCard mode="self"`: holatsiz qatorlar va «Ulash» — guruhlar holati endpointi TG-C da;
  * «Guruhda mijoz ismi va telefoni» kaliti shu kartada). Sarlavhadagi kontakt shaxs ismi uchun backend maydoni yo'q.
  * Eng pastda «Sessiyalar» (`ProfileSessionsCard`, barcha rollar; maket yo'q — eng yaqini `market-profile` «Telegram guruhi»
- * kartasi): shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`).
+ * kartasi): shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`);
+ * yangi qurilmada (48 soat) boshqa sessiyalarni chiqarish cheklovi ogohlantirishi shu kartada.
  * Ma'lumot — `GET /auth/my-profile` (`useGetMyProfile`), holatlar `QueryBoundary size="page"`.
  *
  * `UpdateUserModal` (`/all-users/:id` ishlatadi) bu sahifada ishlatilmaydi — profil o'z v2 komponentlari bilan

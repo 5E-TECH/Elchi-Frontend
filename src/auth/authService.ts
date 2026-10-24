@@ -8,9 +8,18 @@ import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
-import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
+import {
+  clearLoginNotice,
+  holdLoginNoticeUntilReload,
+  peekLoginNotice,
+  peekLoginNoticeDetails,
+  rememberLoginNotice,
+  resetLoginNoticeHoldForTests,
+  type RevokedReason,
+} from "./loginNotice";
 import { loadAppLocales } from "../i18n";
 import { deviceIdHeaders } from "./deviceId";
+import { deviceNameHeaders } from "./deviceName";
 
 type LoginCredentials = {
   phone_number: string;
@@ -207,6 +216,12 @@ const keepSessionWhileOffline = (error: unknown) => {
  * urinilmaydi (har biri 15 s kutardi) — u baribir vaqtinchalik hisoblanadi.
  */
 export const REFRESH_RETRY_DELAYS_MS = [1_000, 3_000, 7_000];
+
+/**
+ * Sessiya qurilmasi sarlavhalari (Elchi Pochta #3): `X-Device-Id` (shu brauzer) va `X-Device-Name` (aniq nom —
+ * «Samsung SM-A515F · Android 13 · Chrome 155»; saqlangan yoki User-Agent'dan, so'rov uni kutmaydi).
+ */
+const deviceHeaders = (): Record<string, string> => ({ ...deviceIdHeaders(), ...deviceNameHeaders() });
 const REFRESH_RETRY_JITTER_MS = 500;
 
 const isRetryableRefreshError = (error: unknown) => {
@@ -218,8 +233,9 @@ const isRetryableRefreshError = (error: unknown) => {
 const postRefreshWithRetry = async () => {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      // `X-Device-Id` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu bilan yoziladi).
-      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceIdHeaders() });
+      // `X-Device-Id` / `X-Device-Name` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu
+      // bilan yoziladi; nom o'zgarsa — yangilanadi).
+      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceHeaders() });
     } catch (error) {
       if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
       await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
@@ -251,9 +267,10 @@ export const login = async (credentials: LoginCredentials) => {
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    // Har login — alohida sessiya (Elchi Pochta #3); `X-Device-Id` uni shu brauzerga bog'laydi.
+    // Elchi Pochta #3: `X-Device-Id` sessiyani shu brauzerga bog'laydi (shu qurilmadagi ochiq sessiya qayta
+    // ishlatiladi), `X-Device-Name` — ro'yxatdagi aniq qurilma nomi.
     const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
-      headers: deviceIdHeaders(),
+      headers: deviceHeaders(),
     });
     const accessToken = response.data?.accessToken;
 
@@ -295,19 +312,33 @@ export const registerBeforeLogout = (hook: BeforeLogoutHook) => {
   };
 };
 
-const runBeforeLogoutHooks = async (accessToken: string | null) => {
+const runBeforeLogoutHooks = async (accessToken: string | null, timeoutMs = BEFORE_LOGOUT_TIMEOUT_MS) => {
   if (!beforeLogoutHooks.size) return;
   let timer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
     Promise.allSettled([...beforeLogoutHooks].map((hook) => hook(accessToken))),
     new Promise((resolve) => {
-      timer = setTimeout(resolve, BEFORE_LOGOUT_TIMEOUT_MS);
+      timer = setTimeout(resolve, timeoutMs);
     }),
   ]);
   if (timer) clearTimeout(timer);
 };
 
+/**
+ * Shu tab o'zi chiqyapti (`logout()` — «Chiqish», sessiya tugadi). Shu payt jonli kanaldan kelgan
+ * `auth:session_revoked` (masalan shu tabning `POST auth/logout` i sessiyani yopgani haqida) e'tiborsiz qoladi —
+ * aks holda o'z chiqishi «boshqa qurilmadan yopildi» deb ko'rinardi.
+ */
+let logoutsInFlight = 0;
+
+/** Boshqa qurilmadan yopilgan sessiya uchun majburiy chiqish (bitta; hodisa va ulanish xatosi birga kelsa ham). */
+let revokedLogout: Promise<void> | null = null;
+
+/** `logoutRevokedSession` dagi hooklar (push obunasini qurilmadan o'chirish) chegarasi — chiqish kechikmasin. */
+export const REVOKED_LOGOUT_HOOKS_TIMEOUT_MS = 1_500;
+
 export const logout = async () => {
+  logoutsInFlight += 1;
   markLogoutSkipRefresh();
   if (reinitTimer) {
     clearTimeout(reinitTimer);
@@ -329,6 +360,7 @@ export const logout = async () => {
   } finally {
     resetClientAuthState();
     store.dispatch(setAppInitializing(false));
+    logoutsInFlight = Math.max(0, logoutsInFlight - 1);
   }
 };
 
@@ -346,7 +378,7 @@ export type LogoutAndRedirectOptions = {
  * Refresh token muddati hali o'tmagan bo'lsa (server sessiyani oldinroq rad etdi) — hozirgi vaqt.
  * `passwordChanged` ustun: parol o'zgargach chiqarilgan foydalanuvchiga o'sha sabab ko'rinadi.
  */
-const rememberSessionExpired = (revoked = false) => {
+const rememberSessionExpired = (revoked = false, revokedReason: RevokedReason | null = null) => {
   const existing = peekLoginNoticeDetails();
   if (existing?.notice === "passwordChanged") return;
   const now = Date.now();
@@ -354,11 +386,21 @@ const rememberSessionExpired = (revoked = false) => {
   const at = refreshTokenExpiresAt && refreshTokenExpiresAt <= now ? refreshTokenExpiresAt : now;
   // Bir vaqtdagi bir nechta chaqiruv (parallel so'rovlar): `logout()` metama'lumotni tozalagach kelgani
   // birinchisi yozgan haqiqiy tugash vaqtini «hozir» bilan almashtirmasin — eng erta vaqt qoladi.
-  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at && (existing.revoked || !revoked)) {
+  if (
+    existing?.notice === "sessionExpired" &&
+    existing.at &&
+    existing.at <= at &&
+    (existing.revoked || !revoked) &&
+    (!revokedReason || existing.revokedReason === revokedReason)
+  ) {
     return;
   }
   const earliest = existing?.notice === "sessionExpired" && existing.at && existing.at <= at ? existing.at : at;
-  rememberLoginNotice("sessionExpired", { at: earliest, revoked: revoked || existing?.revoked === true });
+  rememberLoginNotice("sessionExpired", {
+    at: earliest,
+    revoked: revoked || existing?.revoked === true,
+    revokedReason: revokedReason ?? existing?.revokedReason ?? null,
+  });
 };
 
 /**
@@ -367,15 +409,63 @@ const rememberSessionExpired = (revoked = false) => {
  *     tugadi» ekrani;
  *   - sababsiz (profil menyusidagi «Chiqish», parol o'zgargach) — oddiy kirish formasi; qolib ketgan «Sessiya
  *     tugadi» xabari o'chiriladi, `passwordChanged` saqlanadi.
+ * Xabar sahifa qayta yuklanguncha o'chirilmaydi (`holdLoginNoticeUntilReload`).
  */
 export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) => {
+  // Sessiya jonli kanal orqali allaqachon yopildi (`logoutRevokedSession`) — o'sha chiqish kutiladi: yopilgan
+  // sessiya uchun `POST auth/logout` (yana 401) va ikkinchi yo'naltirish yo'q.
+  if (revokedLogout) return revokedLogout;
   if (options?.reason === "sessionExpired") {
     rememberSessionExpired(options.revoked === true);
   } else if (peekLoginNotice() === "sessionExpired") {
     clearLoginNotice();
   }
+  // `logout()` holatni tozalagach React `/login` ga o'zi o'tadi; kirish sahifasi xabarni o'qib o'chirib qo'ysa,
+  // `location.replace` dan keyingi yangi hujjat sababni ko'rmasdi — xabar qayta yuklanguncha ushlab turiladi.
+  holdLoginNoticeUntilReload();
   await logout();
   window.location.replace("/login");
+};
+
+/**
+ * Sessiya BOSHQA qurilmadan yopildi (Elchi Pochta #3: «Chiqarish», «Boshqa barcha qurilmalardan chiqish», parol
+ * almashishi, admin parolni tiklashi, shu brauzerning boshqa tabida «Chiqish») — jonli kanal `auth:session_revoked`
+ * (yoki yopilgan sessiya tokeni bilan ulanish rad etildi). Qurilma joyida chiqadi, keyingi HTTP so'rovni kutmaydi:
+ *   - `POST auth/logout` YO'Q (sessiya serverda allaqachon yopilgan — ortiqcha 401 va aylanma bo'lmasin);
+ *   - xabar — «Sessiya tugadi» ekrani, sababi bilan (`revoked`; `password_changed` — «Parol almashtirildi»);
+ *     xabar sahifa qayta yuklanguncha o'chirilmaydi (`holdLoginNoticeUntilReload`);
+ *   - token, sessiya metama'lumoti, rol tozalanadi (React o'zi `/login` ga o'tadi, socket uziladi), so'ng push
+ *     obunasi qurilmadan o'chiriladi (hooklar `null` token bilan — serverga so'rov yo'q, ko'pi bilan 1,5 s) va
+ *     `location.replace("/login")` — so'rovlar keshi va modul holati ham tozalanadi; qayta yuklangach token
+ *     yangilanmaydi (`markLogoutSkipRefresh`).
+ * Bir marta: takroriy chaqiruv o'sha va'dani qaytaradi; shu tab o'zi chiqayotgan bo'lsa (`logout()`) — `null`
+ * (hodisa e'tiborsiz).
+ */
+export const logoutRevokedSession = (reason: RevokedReason | null = null): Promise<void> | null => {
+  if (revokedLogout) return revokedLogout;
+  if (logoutsInFlight > 0) return null;
+
+  revokedLogout = (async () => {
+    markLogoutSkipRefresh();
+    if (reinitTimer) {
+      clearTimeout(reinitTimer);
+      reinitTimer = null;
+    }
+    rememberSessionExpired(true, reason);
+    holdLoginNoticeUntilReload();
+    resetClientAuthState();
+    store.dispatch(setAppInitializing(false));
+    await runBeforeLogoutHooks(null, REVOKED_LOGOUT_HOOKS_TIMEOUT_MS);
+    window.location.replace("/login");
+  })();
+  return revokedLogout;
+};
+
+/** Testlar uchun: modul holati (majburiy chiqish, xabarni ushlash) boshlang'ich holatga. */
+export const resetRevokedLogoutForTests = () => {
+  revokedLogout = null;
+  logoutsInFlight = 0;
+  resetLoginNoticeHoldForTests();
 };
 
 export const initAuth = async () => {

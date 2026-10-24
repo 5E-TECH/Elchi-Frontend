@@ -13,9 +13,7 @@ import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser"
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
-import { useLogout } from "../../../../shared/lib/useLogout";
 import { notify } from "../../../../shared/lib/notify";
-import { rememberLoginNotice } from "../../../../auth/loginNotice";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
   Button,
@@ -193,7 +191,6 @@ export const UpdateUserModal = memo(({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();
-  const { logout } = useLogout();
   const [showPassword, setShowPassword] = useState(false);
   // FY-2: rol so'rovi (va undan oldingi viloyatlar so'rovi) ketmoqda; oxirgi rol xatosi; serverda o'zgargan rol
   // (qolgan maydonlar saqlanmay qolsa — oyna ochiq, keyingi saqlashda rol qayta yuborilmaydi).
@@ -555,28 +552,25 @@ export const UpdateUserModal = memo(({
       return;
     }
 
-    // fix3b RBAC-09: parol o'zgarsa backend o'sha hisobning sessiyasini
-    // yopadi (saqlangan refresh o'chiriladi) — keyingi refreshda baribir 401
-    // bo'lardi. O'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi va
-    // login sahifasida sababi ko'rsatiladi.
-    const ownPasswordChanged = isSelf && Boolean(payload.password);
+    // Parol o'zgarsa backend sessiyalarni yopadi (2026-10-23): O'Z parolida — boshqa barcha qurilmalar darhol
+    // chiqadi, shu qurilma qoladi (avval hammasi yopilib, shu yerdan ham chiqarilardi — fix3b RBAC-09); BOSHQA
+    // xodimning paroli almashsa — o'sha xodimning barcha qurilmalari chiqadi. Matn shuni aytadi; o'z sessiyalari
+    // ro'yxati `useUser` mutatsiyasida yangilanadi (`queryKeys.accountSessions`).
+    const passwordChanged = Boolean(payload.password);
     await runUserRequest({
       t,
       request: () =>
         isOwnProfile
           ? updateMyProfile.mutateAsync(payload)
           : updateUser.mutateAsync({ id: userId, data: payload }),
-      successMessage: ownPasswordChanged
-        ? t("passwordChangedRelogin", { ns: "auth" })
-        : t("userUpdatedSuccess", { name: userData.name }),
+      successMessage: !passwordChanged
+        ? t("userUpdatedSuccess", { name: userData.name })
+        : isSelf
+          ? t("ownPasswordChangedOthersSignedOut")
+          : t("userUpdatedPasswordReset", { name: userData.name }),
       errorMessage: t("editUserError"),
       onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-      onSuccess: () => {
-        onClose();
-        if (!ownPasswordChanged) return;
-        rememberLoginNotice("passwordChanged");
-        void logout();
-      },
+      onSuccess: () => onClose(),
     });
   };
 

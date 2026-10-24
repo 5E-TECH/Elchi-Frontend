@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Card, getPanelId, getTabId, PageHeader, Select, SkeletonLines, Tabs } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { OPS_TABS } from "./tabs";
+import { EXPENSE_CATEGORIES_TAB, OPS_TABS } from "./tabs";
 import { OpsTabBoundary } from "./ui/OpsToolPage";
 
 /**
@@ -17,15 +17,17 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  *
  * Eski `/finance-operators`, `/system-ops` va h.k. marshrutlari SAQLANADI — o'sha sahifa o'z sarlavhasi va
  * «← Ops vositalari» havolasi bilan chiziladi; hub esa o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
+ * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
  *
- * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»), telefon — `Select`
- * («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
+ * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»; eski yo'li yo'q tabda — yo'q), telefon —
+ * `Select` («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
  * Har tab o'z `Suspense` + xato chegarasida: bittasi yiqilsa, qolgani ishlaydi.
  */
 
 type OpsPanel = ComponentType<{ embedded?: boolean }>;
 
 const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
+const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
 const IntegrationsOpsPage = lazy(() => import("../integrations-ops"));
 const InvestorsOpsPage = lazy(() => import("../investors-ops"));
 const LogisticsOpsPage = lazy(() => import("../logistics-ops"));
@@ -37,6 +39,7 @@ const AuthDiagnosticsPage = lazy(() => import("../logs"));
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, OpsPanel> = {
   finance: FinanceOperatorsPage,
+  [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
   integrations: IntegrationsOpsPage,
   investors: InvestorsOpsPage,
   logistics: LogisticsOpsPage,
@@ -77,7 +80,7 @@ const OpsPage = () => {
   const items = TABS.map((tab) => ({
     value: tab.key,
     label: t(tab.labelKey),
-    title: t("hub.legacyPath", { path: tab.legacyPath }),
+    title: tab.legacyPath ? t("hub.legacyPath", { path: tab.legacyPath }) : undefined,
   }));
 
   return (

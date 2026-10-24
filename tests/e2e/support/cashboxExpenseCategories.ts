@@ -1,7 +1,9 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 /**
- * Elchi Pochta №1 — «Asosiy kassa»: xarajat kategoriyalari. Soxta gateway backend kabi QAT'IY:
+ * Elchi Pochta №1 — kassa xarajati kategoriyalari: tanlov «Asosiy kassa» → «Kassadan xarajat» oynasida, boshqaruv
+ * (superadmin) — Ops vositalari → «Xarajat kategoriyalari» (`/ops?tab=expense-categories`). Soxta gateway backend
+ * kabi QAT'IY:
  *
  * - `GET finance/cashbox/expense-categories` — faol kategoriyalar (`sort_order`, `id`); `include_deleted` faqat
  *   superadminga;
@@ -338,11 +340,33 @@ export const mockCashboxCategoriesApi = async (
   return { state, calls, leaked };
 };
 
+/** «Asosiy kassa» chizilgan va smena ochiq (tezkor amallar qulfsiz) — `goto` yoki «Orqaga» dan keyin. */
+export const expectMainCashbox = async (page: Page) => {
+  await expect(page.getByRole("heading", { level: 1, name: "Asosiy kassa" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("button", { name: /Kassadan xarajat/ })).toBeEnabled();
+};
+
 export const openMainCashbox = async (page: Page) => {
   await page.goto("/payments/main-cashbox");
-  await expect(page.getByRole("heading", { level: 1, name: "Asosiy kassa" })).toBeVisible({ timeout: 60_000 });
-  // Smena ochiq — tezkor amallar qulfsiz.
-  await expect(page.getByRole("button", { name: /Kassadan xarajat/ })).toBeEnabled();
+  await expectMainCashbox(page);
+};
+
+/** Ops → «Xarajat kategoriyalari» kartasi (sarlavha «Kategoriyalar») va undagi ro'yxat. */
+export const opsCategoriesCard = (page: Page) => page.getByRole("region", { name: "Kategoriyalar", exact: true });
+export const opsCategoriesList = (page: Page) =>
+  opsCategoriesCard(page).getByRole("list", { name: "Xarajat kategoriyalari" });
+
+/** Ops tabi chizilgan: hub sarlavhasi va kategoriyalar kartasi (ro'yxat, bo'sh yoki xato holati). */
+export const expectOpsExpenseCategories = async (page: Page) => {
+  await expect(page).toHaveURL(/\/ops\?tab=expense-categories$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Ops vositalari" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { level: 2, name: "Kassa xarajatlari kategoriyalari" })).toBeVisible();
+  await expect(opsCategoriesCard(page)).toBeVisible();
+};
+
+export const openOpsExpenseCategories = async (page: Page) => {
+  await page.goto("/ops?tab=expense-categories");
+  await expectOpsExpenseCategories(page);
 };
 
 /**

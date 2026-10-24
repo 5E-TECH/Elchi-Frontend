@@ -1,10 +1,20 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
+import {
+  clearLoginNotice,
+  holdLoginNoticeUntilReload,
+  peekLoginNotice,
+  peekLoginNoticeDetails,
+  rememberLoginNotice,
+  resetLoginNoticeHoldForTests,
+} from "./loginNotice";
 
 const KEY = "elchi_login_notice";
 
 describe("loginNotice", () => {
-  afterEach(() => window.sessionStorage.clear());
+  afterEach(() => {
+    resetLoginNoticeHoldForTests();
+    window.sessionStorage.clear();
+  });
 
   it("stores the notice as JSON and peeks it without clearing", () => {
     rememberLoginNotice("passwordChanged");
@@ -67,5 +77,44 @@ describe("loginNotice", () => {
 
     expect(peekLoginNotice()).toBeNull();
     expect(window.sessionStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("revoked + sabab (`auth:session_revoked` → `reason`) — faqat ma'lum sabab va faqat revoked bilan saqlanadi", () => {
+    rememberLoginNotice("sessionExpired", { at: 1_000, revoked: true, revokedReason: "password_changed" });
+    expect(JSON.parse(window.sessionStorage.getItem(KEY) ?? "null")).toEqual({
+      notice: "sessionExpired",
+      at: 1_000,
+      revoked: true,
+      revokedReason: "password_changed",
+    });
+    expect(peekLoginNoticeDetails()).toEqual({
+      notice: "sessionExpired",
+      at: 1_000,
+      revoked: true,
+      revokedReason: "password_changed",
+    });
+
+    // revoked siz sabab yozilmaydi.
+    rememberLoginNotice("sessionExpired", { at: 1_000, revokedReason: "password_changed" });
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: 1_000 });
+
+    // Noma'lum sabab o'qilmaydi.
+    window.sessionStorage.setItem(
+      KEY,
+      JSON.stringify({ notice: "sessionExpired", at: 1_000, revoked: true, revokedReason: "hacked" }),
+    );
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: 1_000, revoked: true });
+  });
+
+  it("holdLoginNoticeUntilReload — majburiy chiqishdan keyin shu hujjatda xabar o'chirilmaydi", () => {
+    rememberLoginNotice("sessionExpired", { at: 1_000, revoked: true });
+    holdLoginNoticeUntilReload();
+
+    clearLoginNotice();
+    expect(peekLoginNotice()).toBe("sessionExpired");
+
+    resetLoginNoticeHoldForTests();
+    clearLoginNotice();
+    expect(peekLoginNotice()).toBeNull();
   });
 });

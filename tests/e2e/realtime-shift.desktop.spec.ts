@@ -41,7 +41,8 @@ test("⭐ finance.shift.auto_closed: «Smena avtomatik yopildi — 18:00» (Tosh
 
   emit("finance.shift.auto_closed", { shift_id: "s-1", closed_at: "2026-10-23T13:00:00.000Z" });
 
+  // «2 s ichida» mezoni yuqoridagi testlarda; bu yerda — xabar va qayta so'rov (sekin CI'da ham barqaror).
   const toasts = page.getByRole("region", { name: "Bildirishnomalar", exact: true });
-  await expect(toasts.getByText("Smena avtomatik yopildi — 18:00")).toBeVisible();
-  await expect.poll(() => shiftRequests(state.requests), { timeout: 2_000 }).toBeGreaterThan(before);
+  await expect(toasts.getByText("Smena avtomatik yopildi — 18:00")).toBeVisible({ timeout: 10_000 });
+  await expect.poll(() => shiftRequests(state.requests), { timeout: 10_000 }).toBeGreaterThan(before);
 });

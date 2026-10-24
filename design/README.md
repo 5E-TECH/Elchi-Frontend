@@ -78,13 +78,15 @@ npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone --theme dark
 npm run app:shot -- /orders --role manager --lang ru --split 1200
 npm run app:shot -- / /orders --role manager --branch-type REGIONAL  # menejer menyusi filial turiga bog'liq
 npm run app:shot -- /orders --device phone --width 375             # 375 telefon; --device desktop --width 1024 — chegara
+npm run app:shot -- /profile --sessions locked                    # «Sessiyalar»: yangi qurilma cheklovi (48 soat)
 ```
 
 Bayroqlar (bir nechta route bitta buyruqda): `--device desktop|tablet|phone` (sukut — uchalasi: 1440 / 768 / 390) ·
 `--theme light|dark` (sukut — ikkalasi) · `--role superadmin|admin|manager|registrator|market|courier` (sukut
 `superadmin`) · `--branch-type …` · `--lang uz|ru|en` (sukut `uz`) · `--width <px>` · `--split <px>` (uzun sahifa
 bo'laklarga: `-1.png`, `-2.png` …) · `--wait <css-selektor>` (shu element chiqquncha kutadi; sukut — `<main>` ichida
-kontent).
+kontent) · `--sessions locked` (profil «Sessiyalar» yangi qurilma cheklovi bilan: `can_revoke_others: false`, vaqt —
+30 soatdan keyin; fayl nomiga `-sessions-locked`).
 
 - `--width <px>` — tanlangan qurilma oynasining kengligi (320…3840). Balandlik va sensorli rejim `--device` dan qoladi
   (`phone` — 844, sensorli; `tablet` — 1024; `desktop` — 900). Qobiq chegaralarini (375 / 1024) tekshirish uchun.

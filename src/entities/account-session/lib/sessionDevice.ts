@@ -50,8 +50,12 @@ export const describeSessionDevice = (
   return { kind: null, detail: shortUserAgent(session.user_agent) };
 };
 
-/** «Shu qurilma» tepada, qolgani server tartibida (oxirgi faollik bo'yicha yangisi tepada). */
+/**
+ * «Shu qurilma» tepada, so'ng faollar, oxirida qayta kirishi kerak bo'lganlar (`expired`); har guruh ichida server
+ * tartibi (backend ham shunday beradi — eski yoki aralash javobda ham tartib bir xil bo'lsin).
+ */
 export const currentSessionFirst = (sessions: readonly AccountSession[]): AccountSession[] => [
   ...sessions.filter((session) => session.current),
-  ...sessions.filter((session) => !session.current),
+  ...sessions.filter((session) => !session.current && session.status !== "expired"),
+  ...sessions.filter((session) => !session.current && session.status === "expired"),
 ];

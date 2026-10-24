@@ -1,8 +1,8 @@
 import { AxiosError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import store from "../app/config/store";
-import { authClient, initAuth, logoutAndRedirect } from "./authService";
-import { peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
+import { authClient, initAuth, logoutAndRedirect, resetRevokedLogoutForTests } from "./authService";
+import { clearLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
 import tokenStorage from "./tokenStorage";
 
 const networkError = () => new AxiosError("Network Error", "ERR_NETWORK");
@@ -83,10 +83,14 @@ describe("logoutAndRedirect — «Sessiya tugadi» xabari (dizayn v2 common-sess
   const NOW = new Date("2026-10-17T14:20:00").getTime();
   let replace: ReturnType<typeof vi.fn>;
 
+  /** Har `location.replace("/login")` — yangi hujjat: xabarni ushlash bayrog'i unda yo'q. */
+  const reload = () => resetRevokedLogoutForTests();
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     window.sessionStorage.clear();
+    reload();
     tokenStorage.setAccessToken("token-123");
     replace = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
@@ -96,6 +100,7 @@ describe("logoutAndRedirect — «Sessiya tugadi» xabari (dizayn v2 common-sess
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    reload();
     window.sessionStorage.clear();
   });
 
@@ -157,12 +162,27 @@ describe("logoutAndRedirect — «Sessiya tugadi» xabari (dizayn v2 common-sess
     expect(peekLoginNoticeDetails()).toBeNull();
     expect(replace).toHaveBeenCalledWith("/login");
 
+    reload();
     rememberLoginNotice("sessionExpired", { at: NOW - 1_000 });
     await logoutAndRedirect();
     expect(peekLoginNoticeDetails()).toBeNull();
 
+    reload();
     rememberLoginNotice("passwordChanged");
     await logoutAndRedirect();
     expect(peekLoginNoticeDetails()).toEqual({ notice: "passwordChanged", at: null });
+  });
+
+  it("the notice survives until the reload: the login page (React navigates there first) cannot clear it", async () => {
+    await logoutAndRedirect({ reason: "sessionExpired", revoked: true });
+
+    // `logout()` holatni tozaladi → React `/login` ni chizadi → kirish sahifasi xabarni o'chirmoqchi bo'ladi.
+    clearLoginNotice();
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: NOW, revoked: true });
+
+    // Yangi hujjatda (qayta yuklangach) kirish sahifasi uni bir marta ko'rsatib o'chiradi.
+    reload();
+    clearLoginNotice();
+    expect(peekLoginNoticeDetails()).toBeNull();
   });
 });
