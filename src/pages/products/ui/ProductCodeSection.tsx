@@ -35,7 +35,15 @@ export type ProductCodeSectionProps = {
 };
 
 /** Stiker ko'rinishi 40×30 mm, haqiqiy o'lchamda (1 mm = 5 px; qog'oz har ikki mavzuda oq). */
-const LabelPreview = ({ name, market, code }: { name: string; market: string | null; code: string }) => {
+const LabelPreview = ({
+  name,
+  market,
+  code,
+}: {
+  name: string;
+  market: string | null;
+  code: string;
+}) => {
   const { t } = useTranslation("warehouses");
   const qr = useMemo(() => qrPath(code), [code]);
   const match = /^(ELC-P-?)(\d+)$/i.exec(code);
@@ -45,7 +53,9 @@ const LabelPreview = ({ name, market, code }: { name: string; market: string | n
       aria-label={t("productCode.previewLabel", { name, code })}
       className="relative h-[152px] w-[202px] shrink-0 overflow-hidden rounded-lg border border-border-strong bg-on-nav text-nav"
     >
-      <span className="absolute left-[7.5px] top-[6px] w-[185px] truncate text-[13.2px] font-bold leading-[14.5px]">{name}</span>
+      <span className="absolute left-[7.5px] top-[6px] w-[185px] truncate text-[13.2px] font-bold leading-[14.5px]">
+        {name}
+      </span>
       {qr ? (
         <svg
           aria-hidden="true"
@@ -72,7 +82,13 @@ const LabelPreview = ({ name, market, code }: { name: string; market: string | n
 };
 
 /** «QR stiker chop etish» menyusi: 40×30 mm · 58×40 mm. */
-const PrintMenu = ({ onPrint, disabled }: { onPrint: (size: LabelSize) => void; disabled?: boolean }) => {
+const PrintMenu = ({
+  onPrint,
+  disabled,
+}: {
+  onPrint: (size: LabelSize) => void;
+  disabled?: boolean;
+}) => {
   const { t } = useTranslation("warehouses");
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -84,7 +100,9 @@ const PrintMenu = ({ onPrint, disabled }: { onPrint: (size: LabelSize) => void; 
   useDismiss({ open, refs: [anchorRef, floatingRef], onDismiss: () => setOpen(false) });
   useEffect(() => {
     if (!open) return;
-    const frame = requestAnimationFrame(() => floatingRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus());
+    const frame = requestAnimationFrame(() =>
+      floatingRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus(),
+    );
     return () => cancelAnimationFrame(frame);
   }, [floatingRef, open]);
   return (
@@ -167,7 +185,10 @@ export const ProductCodeSection = ({
       copies,
       t("productCode.printTitle", { code: skuCode }),
     );
-    if (!opened) notify.error(t("productCode.printBlocked"), { description: t("productCode.printBlockedText") });
+    if (!opened)
+      notify.error(t("productCode.printBlocked"), {
+        description: t("productCode.printBlockedText"),
+      });
   };
 
   // USB skaner kodni yozib Enter bosadi — u formani (oynani) saqlab yubormasin.
@@ -176,76 +197,96 @@ export const ProductCodeSection = ({
   };
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 border-t border-border pt-4">
-      <div className="flex flex-col gap-1">
-        <h3 className="m-0 text-sm font-semibold text-text">{t("productCode.title")}</h3>
-        <p className="m-0 text-[13px] text-text-muted">{t("productCode.description")}</p>
-      </div>
-      <Field label={t("productCode.barcode")} hint={t("productCode.barcodeHint")} error={barcodeError ?? undefined}>
-        <TextInput
-          icon={ScanLine}
-          value={barcode}
-          onValueChange={onBarcodeChange}
-          onKeyDown={swallowEnter}
-          inputMode="numeric"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={t("productCode.barcodePlaceholder")}
-          maxLength={512}
-          readOnly={readOnly}
-          data-scanner-ignore=""
-        />
-      </Field>
-      {skuCode ? (
-        <>
-          <Field label={t("productCode.sku")} hint={t("productCode.skuHint")} readOnly>
-            <div className="flex min-w-0 items-center gap-2">
-              <TextInput value={skuCode} readOnly className="min-w-0 flex-1" />
-              <Button variant="secondary" leftIcon={Copy} aria-label={t("productCode.copyAria")} onClick={() => void copy()}>
-                {t("productCode.copy")}
-              </Button>
-            </div>
-          </Field>
-          <div className="flex flex-wrap items-center gap-4 rounded-xl bg-sunken p-4">
-            <LabelPreview name={productName} market={marketName} code={skuCode} />
-            <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-text">{t("productCode.stickerTitle")}</span>
-                <span className="text-[13px] text-text-muted">{t("productCode.stickerHint")}</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="text-[13px] text-text-muted" id={copiesLabelId}>
-                  {t("productCode.copies")}
-                </span>
-                <div
-                  role="group"
-                  aria-labelledby={copiesLabelId}
-                  className="inline-flex items-center rounded-xl border border-border-strong bg-surface"
+    // Oldingi bo'lim (o'lcham) o'z chizig'i bilan tugaydi; bu bo'lim ham chiziq bilan yopiladi (maket: rasm oldidan).
+    <>
+      <section className="flex min-w-0 flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="m-0 text-sm font-semibold text-text">{t("productCode.title")}</h3>
+          <p className="m-0 text-[13px] text-text-muted">{t("productCode.description")}</p>
+        </div>
+        <Field
+          label={t("productCode.barcode")}
+          hint={t("productCode.barcodeHint")}
+          error={barcodeError ?? undefined}
+        >
+          <TextInput
+            icon={ScanLine}
+            value={barcode}
+            onValueChange={onBarcodeChange}
+            onKeyDown={swallowEnter}
+            inputMode="numeric"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={t("productCode.barcodePlaceholder")}
+            maxLength={512}
+            readOnly={readOnly}
+            data-scanner-ignore=""
+          />
+        </Field>
+        {skuCode ? (
+          <>
+            <Field label={t("productCode.sku")} hint={t("productCode.skuHint")} readOnly>
+              <div className="flex min-w-0 items-center gap-2">
+                <TextInput value={skuCode} readOnly className="min-w-0 flex-1" />
+                <Button
+                  variant="secondary"
+                  leftIcon={Copy}
+                  aria-label={t("productCode.copyAria")}
+                  onClick={() => void copy()}
                 >
-                  <IconButton
-                    icon={Minus}
-                    variant="ghost"
-                    label={t("productCode.copiesDecrease")}
-                    disabled={copies <= 1}
-                    onClick={() => setCopies((value) => Math.max(1, value - 1))}
-                  />
-                  <span className="min-w-9 text-center font-semibold tabular-nums text-text" aria-live="polite">
-                    {copies}
-                  </span>
-                  <IconButton
-                    icon={Plus}
-                    variant="ghost"
-                    label={t("productCode.copiesIncrease")}
-                    disabled={copies >= MAX_COPIES}
-                    onClick={() => setCopies((value) => Math.min(MAX_COPIES, value + 1))}
-                  />
-                </div>
+                  {t("productCode.copy")}
+                </Button>
               </div>
-              <PrintMenu onPrint={print} />
+            </Field>
+            <div className="flex flex-wrap items-center gap-4 rounded-xl bg-sunken p-4">
+              <LabelPreview name={productName} market={marketName} code={skuCode} />
+              <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold text-text">
+                    {t("productCode.stickerTitle")}
+                  </span>
+                  <span className="text-[13px] text-text-muted">
+                    {t("productCode.stickerHint")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="text-[13px] text-text-muted" id={copiesLabelId}>
+                    {t("productCode.copies")}
+                  </span>
+                  <div
+                    role="group"
+                    aria-labelledby={copiesLabelId}
+                    className="inline-flex items-center rounded-xl border border-border-strong bg-surface"
+                  >
+                    <IconButton
+                      icon={Minus}
+                      variant="ghost"
+                      label={t("productCode.copiesDecrease")}
+                      disabled={copies <= 1}
+                      onClick={() => setCopies((value) => Math.max(1, value - 1))}
+                    />
+                    <span
+                      className="min-w-9 text-center font-semibold tabular-nums text-text"
+                      aria-live="polite"
+                    >
+                      {copies}
+                    </span>
+                    <IconButton
+                      icon={Plus}
+                      variant="ghost"
+                      label={t("productCode.copiesIncrease")}
+                      disabled={copies >= MAX_COPIES}
+                      onClick={() => setCopies((value) => Math.min(MAX_COPIES, value + 1))}
+                    />
+                  </div>
+                </div>
+                <PrintMenu onPrint={print} />
+              </div>
             </div>
-          </div>
-        </>
-      ) : null}
-    </section>
+          </>
+        ) : null}
+      </section>
+      <hr className="m-0 h-px border-0 bg-border" />
+    </>
   );
 };
