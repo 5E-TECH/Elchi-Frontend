@@ -62,6 +62,8 @@ const row = (overrides: Partial<Notification> = {}): Notification => ({
   group_id: "-100123",
   group_type: "create",
   is_active: true,
+  inactive_reason: null,
+  inactive_at: null,
   created_at: "2026-10-06T09:00:00.000Z",
   ...overrides,
 });
@@ -133,6 +135,30 @@ describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detai
     expect(screen.getByText("Ulangan")).toBeInTheDocument();
     expect(screen.queryByText(/ dan$/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
+  });
+
+  it("NG-C: nofaol sababi — «Nofaol» (bot chiqarilgan — qizil) + `/notifications` dagi matn va sana; qo'lda — neytral", async () => {
+    mocks.getNotifications.mockResolvedValue(
+      page([
+        row({ is_active: false, inactive_reason: "kicked", inactive_at: "2026-10-21T08:00:00.000Z" }),
+        row({ id: "n2", group_type: "cancel", is_active: false, inactive_reason: "manual" }),
+      ]),
+    );
+    renderCard("staff", "admin");
+
+    const create = await screen.findByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(
+      await within(create).findByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring"),
+    ).toBeInTheDocument();
+    expect(within(create).getByText("Nofaol bo'lgan: 21.10.2026, 13:00")).toBeInTheDocument();
+    expect(within(create).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).getByText("Qo'lda nofaol qilingan")).toBeInTheDocument();
+    expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(screen.queryByText("Xabarlar bu guruhga yuborilmayapti")).not.toBeInTheDocument();
+    // Faollashtirish — «Bildirishnomalar» bo'limida.
+    expect(screen.getByRole("link", { name: /Barcha guruhlar/ })).toHaveAttribute("href", "/notifications");
   });
 
   it("holat yuklanmasa — xato holati va «Qayta urinish» (backend matnisiz), PII kaliti ishlayveradi", async () => {

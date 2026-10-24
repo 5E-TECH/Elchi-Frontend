@@ -5,7 +5,13 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Link as LinkIcon, Send, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { canViewNotifications } from "../../../app/lib/access";
-import { useNotifications, type Notification, type NotificationGroupType } from "../../../entities/notification";
+import {
+  inactiveReasonTone,
+  NotificationInactiveNote,
+  useNotifications,
+  type Notification,
+  type NotificationGroupType,
+} from "../../../entities/notification";
 import type { User } from "../../../entities/user/types/user";
 import { useMarketGroupLink } from "../../../features/telegram-link";
 import { cx } from "../../../shared/lib/cx";
@@ -43,9 +49,10 @@ export type MarketTelegramGroupsCardProps = {
  * to'g'ridan-to'g'ri «Ulash» (S5) → `MarketGroupLinkDialog`; ostida «Guruhda mijoz ismi va telefoni» kaliti (S3,
  * «Ruxsatlar» kartasidan ko'chdi; tahrir qoidalari `useMarketTelegramGroupPiiToggle`).
  *
- * Holat (`staff`): ulangan — «Ulangan» + «{sana} dan» (sana kelmasa — sanasiz); nofaol — «Nofaol» + umumiy izoh
- * (sababi API'da yo'q — G085w5Qr/NG-C; faollashtirish «Bildirishnomalar» bo'limida); ulanmagan — «Ulanmagan» + nima
- * kelmasligi va «Ulash». Bot mavjud ulanishni almashtirmaydi — ulangan turda «Ulash» yo'q. Yuklanishda belgi
+ * Holat (`staff`): ulangan — «Ulangan» + «{sana} dan» (sana kelmasa — sanasiz); nofaol — «Nofaol» + sabab izohi
+ * (`inactive_reason`, G085w5Qr — NG-C: `/notifications` jadvalidagi bilan bir xil matn va ton, sabab noma'lum —
+ * umumiy izoh; maket yo'q — eng yaqini `superadmin-notifications-telegram-groups`; faollashtirish «Bildirishnomalar»
+ * bo'limida — «Barcha guruhlar …» havolasi); ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash». Bot mavjud ulanishni almashtirmaydi — ulangan turda «Ulash» yo'q. Yuklanishda belgi
  * o'rnida skelet, xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi).
  * Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi.
  */
@@ -111,8 +118,8 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
     if (!connection.is_active) {
       return (
         <>
-          <StatusBadge tone="neutral" label={t("tgGroup.inactive")} />
-          <span className={MUTED}>{t("tgGroup.inactiveHint")}</span>
+          <StatusBadge tone={inactiveReasonTone(connection.inactive_reason)} label={t("tgGroup.inactive")} />
+          <NotificationInactiveNote row={connection} className={MUTED} />
         </>
       );
     }

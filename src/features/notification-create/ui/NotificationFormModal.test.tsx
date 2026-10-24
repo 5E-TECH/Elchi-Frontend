@@ -20,7 +20,14 @@ vi.mock("../../../shared/api/api", () => ({ api: { get: mocks.get, post: mocks.p
 
 const DEEP_LINK = "https://t.me/elchi_bot?startgroup=c0de42";
 
-type Row = { id: string; market_id: string; group_id: string; group_type: "create" | "cancel"; is_active: boolean };
+type Row = {
+  id: string;
+  market_id: string;
+  group_id: string;
+  group_type: "create" | "cancel";
+  is_active: boolean;
+  inactive_reason?: string | null;
+};
 
 let connections: Row[] = [];
 
@@ -199,7 +206,7 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Bu turdagi guruh ulangan, lekin nofaol");
     expect(alert).toHaveTextContent("Nur Elektronika uchun bu turdagi guruh nofaol (ID: -1001937420815)");
-    // Nofaollik sababi backendda yo'q — «bot chiqarilgan» deb yozilmaydi (D1, NG-C).
+    // Sabab kelmadi (`inactive_reason` yo'q / null) — umumiy matn, «bot chiqarilgan» deb yozilmaydi (D1, NG-C).
     expect(alert).not.toHaveTextContent(/chiqarilgan/);
     expect(screen.queryByRole("button", { name: "Ulash havolasini olish" })).not.toBeInTheDocument();
 
@@ -229,6 +236,40 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     expect(await screen.findByText("Guruh faollashtirildi")).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
     expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "kicked",
+      "Nur Elektronika uchun bu turdagi guruh nofaol — bot guruhdan chiqarilgan (ID: -1001937420815). Botni guruhga qayta qo'shib, faollashtiring yoki ulanishni o'chirib, qayta ulang.",
+      "Bot guruhdan chiqarilgan",
+    ],
+    [
+      "chat_not_found",
+      "Nur Elektronika uchun bu turdagi guruh nofaol — guruh topilmadi (ID: -1001937420815). Faollashtirib ko'ring yoki ulanishni o'chirib, qayta ulang.",
+      "Guruh topilmadi",
+    ],
+    [
+      "manual",
+      "Nur Elektronika uchun bu turdagi guruh qo'lda nofaol qilingan (ID: -1001937420815). Uni faollashtiring yoki ulanishni o'chirib, qayta ulang.",
+      "Bot guruhda ekanini tekshiring",
+    ],
+  ])("NG-C: nofaol ulanish sababi %s — oynada sababga xos matn, tasdiqda mos ogohlantirish", async (reason, text, warningTitle) => {
+    const user = userEvent.setup();
+    connections = [
+      { id: "5", market_id: "27", group_id: "-1001937420815", group_type: "create", is_active: false, inactive_reason: reason },
+    ];
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Nur Elektronika/);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Bu turdagi guruh ulangan, lekin nofaol");
+    expect(alert).toHaveTextContent(text);
+
+    await user.click(screen.getByRole("button", { name: "Faollashtirish" }));
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+    expect(within(confirmDialog).getByRole("note")).toHaveTextContent(warningTitle);
   });
 
   it("faollashtirish xatosi — tasdiq oynasi ichida i18n matn, qo'shish oynasi ochiq qoladi", async () => {
