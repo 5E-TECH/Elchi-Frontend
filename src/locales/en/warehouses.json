@@ -458,5 +458,42 @@
     "noteText": "Adding products, stocktaking and pausing the warehouse are done by an admin. You see the stock and orders shipping from the warehouse — pick the products and hand them to a courier.",
     "emptyTitle": "Your branch has no warehouse",
     "emptyDescription": "A warehouse in a regional branch is opened by an admin. Once opened, its stock appears here."
+  },
+  "market": {
+    "tabsLabel": "Products section",
+    "tabs": {
+      "list": "Products",
+      "warehouse": "Warehouse stock"
+    },
+    "kpiLabel": "Warehouse stock indicators",
+    "kpi": {
+      "available": "Total units in warehouses",
+      "availableHint": "available for sale · in {{value}} active warehouses",
+      "warehouses": "Warehouses"
+    },
+    "noteTitle": "View only",
+    "noteText": "Products are added to regional warehouses by an Elchi admin. A paused warehouse keeps its stock but receives no new orders.",
+    "cardLabel": "Products by warehouse",
+    "tableLabel": "Products by warehouse",
+    "searchPlaceholder": "Search products...",
+    "searchLabel": "Search products by name",
+    "lowOnly": "Only running low",
+    "hint": "Numbers are units available for sale: reserved for active orders are subtracted. «Total» counts active warehouses only.",
+    "columns": {
+      "product": "Product",
+      "total": "Total",
+      "totalTitle": "Across active warehouses"
+    },
+    "totalsRow": "Total, pcs",
+    "notCounted": "Not counted in the total",
+    "notInWarehouse": "Not in this warehouse",
+    "cellLow": "{{value}} · low",
+    "cellOut": "{{value}} · out of stock",
+    "footer": "{{stocked}} of {{total}} products are in warehouses",
+    "pagination": "{{from}}–{{to}} of {{total}} products",
+    "loading": "Loading warehouse stock",
+    "loadFailed": "Couldn't load warehouse stock",
+    "emptyTitle": "Your products aren't in any warehouse yet",
+    "emptyDescription": "Once an Elchi admin adds a product to a regional warehouse, its stock appears here."
   }
 }

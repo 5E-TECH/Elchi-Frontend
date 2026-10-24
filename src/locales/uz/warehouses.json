@@ -458,5 +458,42 @@
     "noteText": "Mahsulot qo'shish, inventarizatsiya va omborni to'xtatishni admin bajaradi. Siz qoldiqni va ombordan ketadigan buyurtmalarni ko'rasiz — mahsulotni terib, kuryerga berasiz.",
     "emptyTitle": "Filialingizda ombor yo'q",
     "emptyDescription": "Ombor viloyat filialida admin tomonidan ochiladi. Ochilgach shu yerda qoldiq ko'rinadi."
+  },
+  "market": {
+    "tabsLabel": "Mahsulotlar bo'limi",
+    "tabs": {
+      "list": "Mahsulotlar",
+      "warehouse": "Ombordagi qoldiq"
+    },
+    "kpiLabel": "Omborlardagi qoldiq ko'rsatkichlari",
+    "kpi": {
+      "available": "Omborlardagi jami dona",
+      "availableHint": "sotish uchun mavjud · {{value}} ta faol omborda",
+      "warehouses": "Omborlar soni"
+    },
+    "noteTitle": "Faqat ko'rish",
+    "noteText": "Mahsulotni viloyat omboriga Elchi administratori qo'shadi. To'xtatilgan omborda qoldiq saqlanadi, lekin unga yangi buyurtma tushmaydi.",
+    "cardLabel": "Mahsulotlar omborlar bo'yicha",
+    "tableLabel": "Mahsulotlar omborlar bo'yicha",
+    "searchPlaceholder": "Mahsulot qidiring...",
+    "searchLabel": "Mahsulotlarni nomi bo'yicha qidirish",
+    "lowOnly": "Faqat kam qolganlar",
+    "hint": "Raqamlar — sotish uchun mavjud dona: faol buyurtmalarga band qilinganlar ayirilgan. «Jami» faqat faol omborlarni qo'shadi.",
+    "columns": {
+      "product": "Mahsulot",
+      "total": "Jami",
+      "totalTitle": "Faol omborlar bo'yicha"
+    },
+    "totalsRow": "Jami, dona",
+    "notCounted": "Jamiga kirmaydi",
+    "notInWarehouse": "Bu omborda yo'q",
+    "cellLow": "{{value}} · kam qoldi",
+    "cellOut": "{{value}} · tugagan",
+    "footer": "{{total}} ta mahsulotdan {{stocked}} tasi omborlarda",
+    "pagination": "{{from}}–{{to}} / {{total}} ta mahsulot",
+    "loading": "Ombordagi qoldiq yuklanmoqda",
+    "loadFailed": "Ombordagi qoldiqni yuklab bo'lmadi",
+    "emptyTitle": "Mahsulotlaringiz hali omborda yo'q",
+    "emptyDescription": "Elchi administratori mahsulotni viloyat omboriga qo'shgach, qoldiq shu yerda ko'rinadi."
   }
 }
