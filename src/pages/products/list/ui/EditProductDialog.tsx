@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog
+// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog, superadmin-products-edit-dialog-barcode
 import { useEffect, useState } from "react";
 import { Pencil } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
@@ -17,7 +17,9 @@ import {
   type Product,
 } from "../../model/productView";
 import { usePickedImage } from "../../model/usePickedImage";
+import { appendProductBarcode, checkBarcodeInput, isDuplicateBarcodeError } from "../../model/productCode";
 import { FormErrorSummary } from "../../ui/FormErrorSummary";
+import { ProductCodeSection } from "../../ui/ProductCodeSection";
 import { ProductImageField } from "../../ui/ProductImageField";
 import { ProductMeasureFields } from "../../ui/ProductMeasureFields";
 import { ProductPriceField } from "../../ui/ProductPriceField";
@@ -60,6 +62,15 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
   const { data: detailResponse } = useGetProductById(product?.id, Boolean(product));
   const detail = getProductPayload(detailResponse);
   const [picked, pick] = usePickedImage();
+  // yXC91RRx: «Mahsulot kodi» — zavod shtrix kodi (forma tashqarisida; har ochilishda mahsulotdagi qiymat).
+  const [barcode, setBarcode] = useState("");
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const [barcodeFor, setBarcodeFor] = useState<number | null>(null);
+  if (product && barcodeFor !== product.id) {
+    setBarcodeFor(product.id);
+    setBarcode(product.barcode ?? "");
+    setBarcodeError(null);
+  }
   const {
     control,
     handleSubmit,
@@ -78,12 +89,18 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
     const { name, price } = values;
     // Enter bilan takroriy yuborish (tugma `loading` bo'lsa ham) — ikkinchi PATCH ketmasin.
     if (!product || updateProduct.isPending) return;
+    const barcodeIssue = checkBarcodeInput(barcode);
+    if (barcodeIssue) {
+      setBarcodeError(t(`productCode.errors.${barcodeIssue}`, { ns: "warehouses" }));
+      return;
+    }
     const formData = new FormData();
     formData.append("name", name.trim());
     // Narx faqat o'zgargan bo'lsa yuboriladi: kasrli eski narx (125000.50) bekorga yaxlitlanmasin.
     if (dirtyFields.price) formData.append("price", price);
     // O'lchov — faqat o'zgargani (o'zgarmagan / bo'sh maydon yuborilmaydi — backend 400 bermasin, qiymat o'chmasin).
     appendProductMeasure(formData, values, dirtyFields);
+    appendProductBarcode(formData, barcode, product.barcode);
     if (picked) formData.append("image", picked.file);
 
     try {
@@ -91,6 +108,11 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
       notify.success(t("updateSuccess"));
       onClose();
     } catch (error) {
+      // 409 «… shtrix kod … biriktirilgan» — kod shu marketning boshqa mahsulotida (nom dublikati emas).
+      if (isDuplicateBarcodeError(error)) {
+        setBarcodeError(t("productCode.errors.duplicate", { ns: "warehouses" }));
+        return;
+      }
       // 409 — shu marketda shu nomli mahsulot bor: «Mahsulot nomi» qizil + tepadagi xulosa (qayta urinish foydasiz).
       if (isDuplicateNameError(error)) {
         setError("name", { type: "server", message: t("v2.errors.duplicateName") }, { shouldFocus: true });
@@ -168,6 +190,18 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
         errors={errors}
         idPrefix="product-edit"
         quoteVariant="tiles"
+        readOnly={busy}
+      />
+      <ProductCodeSection
+        barcode={barcode}
+        onBarcodeChange={(value) => {
+          setBarcode(value);
+          setBarcodeError(null);
+        }}
+        barcodeError={barcodeError}
+        skuCode={(detail ?? target)?.sku_code ?? null}
+        productName={(detail ?? target)?.name ?? ""}
+        marketName={getProductMarketName(detail ?? target) ?? null}
         readOnly={busy}
       />
       <ProductImageField

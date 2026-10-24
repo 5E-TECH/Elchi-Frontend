@@ -504,5 +504,38 @@
     "enabled": "«Orders from warehouse» turned on",
     "disabled": "«Orders from warehouse» turned off",
     "failed": "Couldn't save the warehouse setting"
+  },
+  "productCode": {
+    "title": "Product code",
+    "description": "Scanned during warehouse receipts and stocktaking · one code per product type",
+    "barcode": "Barcode (EAN-13)",
+    "barcodePlaceholder": "13 digits",
+    "barcodeHint": "The barcode on the factory box. Click the field and scan with a USB scanner — the digits are typed in. If set, no QR sticker is needed.",
+    "sku": "Elchi code",
+    "skuHint": "Assigned automatically and never changes. A product without a barcode is printed with this code on a QR sticker.",
+    "copy": "Copy",
+    "copyAria": "Copy Elchi code",
+    "copied": "Elchi code copied",
+    "copyFailed": "Couldn't copy",
+    "previewLabel": "Sticker preview: {{name}}, {{code}}, 40×30 mm",
+    "stickerTitle": "QR sticker",
+    "stickerHint": "Thermal 40×30 mm · actual size",
+    "copies": "Copies",
+    "copiesDecrease": "Fewer stickers",
+    "copiesIncrease": "More stickers",
+    "print": "Print QR sticker",
+    "printSize": "Sticker size",
+    "size": {
+      "40x30": "Thermal 40×30 mm",
+      "58x40": "Thermal 58×40 mm"
+    },
+    "printTitle": "Sticker {{code}}",
+    "printBlocked": "The print window didn't open",
+    "printBlockedText": "Allow pop-ups in the browser and try again.",
+    "errors": {
+      "length": "A barcode has 8, 12, 13 or 14 digits",
+      "checksum": "Invalid barcode — check digit doesn't match",
+      "duplicate": "This barcode is already linked to another product of this shop"
+    }
   }
 }

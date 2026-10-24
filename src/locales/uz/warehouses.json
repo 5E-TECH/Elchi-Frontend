@@ -504,5 +504,38 @@
     "enabled": "«Ombordan buyurtma yaratish» yoqildi",
     "disabled": "«Ombordan buyurtma yaratish» o'chirildi",
     "failed": "Ombor kaliti saqlanmadi"
+  },
+  "productCode": {
+    "title": "Mahsulot kodi",
+    "description": "Omborga kirim va inventarizatsiyada skanerlanadi · har mahsulot turiga bitta kod",
+    "barcode": "Shtrix kod (EAN-13)",
+    "barcodePlaceholder": "13 ta raqam",
+    "barcodeHint": "Zavod qutisidagi shtrix kod. Maydonni bosib USB skaner bilan skanerlang — raqam o'zi yoziladi. Kiritilsa, QR stiker kerak emas.",
+    "sku": "Elchi kodi",
+    "skuHint": "Avtomatik beriladi, o'zgarmaydi. Shtrix kodi yo'q mahsulot shu kod bilan QR stikerda chop etiladi.",
+    "copy": "Nusxalash",
+    "copyAria": "Elchi kodini nusxalash",
+    "copied": "Elchi kodi nusxalandi",
+    "copyFailed": "Nusxalab bo'lmadi",
+    "previewLabel": "Stiker ko'rinishi: {{name}}, {{code}}, 40×30 mm",
+    "stickerTitle": "QR stiker",
+    "stickerHint": "Termal 40×30 mm · haqiqiy o'lchamda",
+    "copies": "Soni",
+    "copiesDecrease": "Stikerlar sonini kamaytirish",
+    "copiesIncrease": "Stikerlar sonini oshirish",
+    "print": "QR stiker chop etish",
+    "printSize": "Stiker o'lchami",
+    "size": {
+      "40x30": "Termal 40×30 mm",
+      "58x40": "Termal 58×40 mm"
+    },
+    "printTitle": "Stiker {{code}}",
+    "printBlocked": "Chop etish oynasi ochilmadi",
+    "printBlockedText": "Brauzerda qalqib chiquvchi oynalarga ruxsat bering va qayta urinib ko'ring.",
+    "errors": {
+      "length": "Shtrix kod 8, 12, 13 yoki 14 ta raqam bo'lsin",
+      "checksum": "Shtrix kod noto'g'ri — nazorat raqami mos emas",
+      "duplicate": "Bu shtrix kod shu marketning boshqa mahsulotiga biriktirilgan"
+    }
   }
 }
