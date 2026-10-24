@@ -76,7 +76,7 @@ beforeEach(() => {
   mocks.saveBlob.mockReset();
 });
 
-const renderAs = (role: string, userId = "1") =>
+const renderAs = (role: string, userId = "1", branchType?: string) =>
   renderWithProviders(
     <Routes>
       <Route path="/warehouses/:id" element={<WarehouseDetailPage />} />
@@ -85,7 +85,14 @@ const renderAs = (role: string, userId = "1") =>
       route: "/warehouses/3",
       preloadedState: {
         role: { id: userId, role, region: null, name: role },
-        user: { user: { id: userId, role }, isAuthenticated: true, accessToken: null, loading: false, isAppInitializing: false, error: null },
+        user: {
+          user: { id: userId, role, ...(branchType ? { branch: { id: "11", type: branchType } } : {}) },
+          isAuthenticated: true,
+          accessToken: null,
+          loading: false,
+          isAppInitializing: false,
+          error: null,
+        },
       } as never,
     },
   );
@@ -153,6 +160,15 @@ describe("Ombor tafsiloti — superadmin, admin", () => {
     await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("warehouses/3/resume", {}));
   });
 
+  it("XtcEyQjb: to'xtatilgan omborda «Mahsulot qo'shish» o'chiq, sababi izohda", async () => {
+    detail = rawWarehouse({ status: "PAUSED", paused_at: "2026-10-20T12:30:00Z" });
+    renderAs("admin");
+    const add = await screen.findByRole("button", { name: "Mahsulot qo'shish" });
+    expect(add).toBeDisabled();
+    const hint = screen.getByText("To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing");
+    expect(add).toHaveAttribute("aria-describedby", hint.closest("[role=note]")?.id);
+  });
+
   it("«Chegara» — oyna, PATCH stock/:productId", async () => {
     const user = userEvent.setup();
     renderAs("superadmin");
@@ -201,5 +217,91 @@ describe("Ombor tafsiloti — filial menejeri (faqat ko'rish)", () => {
     expect(screen.queryByRole("button", { name: "Excelga yuklash" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /kam qoldiq chegarasini o'zgartirish/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Omborlar/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("Ombor tafsiloti — registrator (XtcEyQjb, faqat ko'rish)", () => {
+  it("«← Omborlar» va «Excelga yuklash» bor; kirim, ⋯ va chegara yo'q; «Faqat ko'rish» izohi", async () => {
+    renderAs("registrator");
+    expect(await screen.findByRole("heading", { level: 1, name: "Samarqand filiali ombori" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Omborlar/ })).toHaveAttribute("href", "/warehouses");
+    expect(screen.getByText("Faqat ko'rish")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+    await screen.findByRole("table", { name: "Ombordagi mahsulotlar" });
+    expect(screen.queryByRole("button", { name: "Mahsulot qo'shish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ombor amallari/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /kam qoldiq chegarasini o'zgartirish/ })).not.toBeInTheDocument();
+    // Menejer kartasi registratorda yo'q.
+    expect(screen.queryByRole("heading", { name: "Ombordan ketadigan buyurtmalar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Ombor tafsiloti — «Ombordan ketadigan buyurtmalar» (6kHnNH9j, menejer)", () => {
+  const order = (id: string, status: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    status,
+    fulfillment_source: "WAREHOUSE",
+    warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
+    createdAt: "2026-10-24T09:05:00Z",
+    customer: { id: "c" + id, name: `Mijoz ${id}`, phone_number: "+998901234567" },
+    market: { id: "121", name: "Baraka Shop" },
+    district: { id: "45", name: "Urgut tumani" },
+    items: [{ id: "i" + id, product_id: "142", quantity: 1, product: { id: "142", name: "Simsiz quloqchin" } }],
+    ...extra,
+  });
+  const PENDING = [order("10244", "received"), order("10243", "received")];
+  const COURIER = [order("10237", "waiting", { courier: { id: "77", name: "Jasur Tursunov" } })];
+
+  beforeEach(() => {
+    const base = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url: string, config?: { params?: Record<string, unknown> }) => {
+      if (url !== "orders") return base(url, config);
+      const status = config?.params?.status as string[];
+      const rows = status.length === 2 ? [...PENDING, ...COURIER] : status[0] === "received" ? PENDING : COURIER;
+      return Promise.resolve({ data: { data: rows, total: rows.length, page: 1, limit: 10 } });
+    });
+  });
+
+  const ordersCalls = () =>
+    mocks.get.mock.calls.filter(([url]) => url === "orders").map(([, config]) => (config as { params: Record<string, unknown> }).params);
+
+  it("fulfillment_source=WAREHOUSE bilan so'raladi; chip sonlari, holat belgilari, kuryer va pastki xulosa", async () => {
+    renderAs("manager", "31", "REGIONAL");
+    const card = (await screen.findByRole("heading", { name: "Ombordan ketadigan buyurtmalar" })).closest("section") as HTMLElement;
+    const table = await within(card).findByRole("table", { name: "Ombordan ketadigan buyurtmalar" });
+    expect(ordersCalls()).toContainEqual({ fulfillment_source: "WAREHOUSE", status: ["received", "waiting"], page: 1, limit: 10 });
+    expect(within(table).getByRole("link", { name: "№10244" })).toHaveAttribute("href", "/orders/edit/10244");
+    expect(within(table).getAllByText("Kuryerga berilmagan")).toHaveLength(2);
+    expect(within(table).getByText("Jasur Tursunov")).toBeInTheDocument();
+    expect(within(table).getAllByText("Simsiz quloqchin × 1").length).toBe(3);
+    expect(await within(card).findByRole("button", { name: /Barchasi\s*3/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(card).getByRole("button", { name: /Kuryerda\s*1/ })).toBeInTheDocument();
+    expect(within(card).getByText("3 ta buyurtma · 2 tasi kuryerga berilmagan")).toBeInTheDocument();
+    // REGIONAL menejer — «Kuryerga biriktirish» (`/dispatch`).
+    expect(within(card).getByRole("link", { name: "Kuryerga biriktirish" })).toHaveAttribute("href", "/dispatch");
+  });
+
+  it("«Kuryerda» chipi — status=waiting; qidiruv `search` bilan", async () => {
+    const user = userEvent.setup();
+    renderAs("manager", "31", "REGIONAL");
+    const card = (await screen.findByRole("heading", { name: "Ombordan ketadigan buyurtmalar" })).closest("section") as HTMLElement;
+    await user.click(await within(card).findByRole("button", { name: /Kuryerda/ }));
+    await waitFor(() =>
+      expect(ordersCalls()).toContainEqual({ fulfillment_source: "WAREHOUSE", status: ["waiting"], page: 1, limit: 10 }),
+    );
+    await user.type(within(card).getByRole("searchbox", { name: "Ombordan ketadigan buyurtmalarni qidirish" }), "№10237{Enter}");
+    await waitFor(() =>
+      expect(ordersCalls()).toContainEqual({ fulfillment_source: "WAREHOUSE", search: "10237", status: ["waiting"], page: 1, limit: 10 }),
+    );
+  });
+
+  it("bo'sh — «Ombordan ketadigan buyurtma yo'q»; dispatch qobiliyatisiz filialda «Kuryerga biriktirish» yo'q", async () => {
+    const base = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url: string, config?: unknown) =>
+      url === "orders" ? Promise.resolve({ data: { data: [], total: 0 } }) : base(url, config),
+    );
+    renderAs("manager", "31");
+    expect(await screen.findByText("Ombordan ketadigan buyurtma yo'q")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Kuryerga biriktirish" })).not.toBeInTheDocument();
   });
 });

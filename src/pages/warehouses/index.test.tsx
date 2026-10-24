@@ -49,6 +49,16 @@ const DESTINATIONS = {
   ],
 };
 
+/** `GET /branches/:id/users` (branch.user.find_by_branch): mas'ul tanlovida faqat MANAGER rolidagilar. */
+const BRANCH_USERS = {
+  statusCode: 200,
+  data: [
+    { id: "500", user_id: "40", role: "MANAGER", user: { id: "40", name: "Javlon Hamroyev", phone_number: "+998915071244" } },
+    { id: "501", user_id: "41", role: "MANAGER", user: { id: "41", name: "Sardor Nazarov", phone_number: "+998935071255" } },
+    { id: "502", user_id: "52", role: "COURIER", user: { id: "52", name: "Kuryer Ali", phone_number: "+998905550011" } },
+  ],
+};
+
 let list: unknown = LIST;
 
 beforeEach(() => {
@@ -57,6 +67,7 @@ beforeEach(() => {
     if (url === "warehouses") return Promise.resolve({ data: list });
     if (url === "region") return Promise.resolve({ data: { data: [{ id: "7", name: "Samarqand viloyati" }] } });
     if (url === "branches/dispatch-destinations") return Promise.resolve({ data: DESTINATIONS });
+    if (url === "branches/20/users") return Promise.resolve({ data: BRANCH_USERS });
     return Promise.reject(new Error(`kutilmagan: ${url}`));
   });
   mocks.post.mockReset().mockResolvedValue({ data: rawWarehouse({ id: "9", name: "Qarshi filiali ombori" }) });
@@ -118,7 +129,7 @@ describe("Omborlar ro'yxati (superadmin, admin)", () => {
 });
 
 describe("«Ombor ochish» oynasi", () => {
-  it("faqat ombori yo'q filiallar; nom taklifi, mas'ul — menejer; POST va tafsilotga o'tish", async () => {
+  it("faqat ombori yo'q filiallar; nom taklifi; mas'ul tanlanmasa — yuborilmaydi (avtomatik); POST va tafsilotga o'tish", async () => {
     const user = userEvent.setup();
     renderAs("superadmin");
     await screen.findByRole("table", { name: "Omborlar" });
@@ -129,7 +140,10 @@ describe("«Ombor ochish» oynasi", () => {
     expect(options.map((option) => option.textContent)).toEqual(["Qarshi filiali · Qashqadaryo viloyati"]);
     await user.click(options[0]);
     expect(within(dialog).getByRole("textbox", { name: /Ombor nomi/ })).toHaveValue("Qarshi filiali ombori");
-    expect(within(dialog).getByRole("textbox", { name: /Mas'ul xodim/ })).toHaveValue("Javlon Hamroyev");
+    // XtcEyQjb: «Mas'ul xodim» ixtiyoriy — izoh «Tanlanmasa — filial menejeri avtomatik», namunada avtomatik menejer.
+    const manager = within(dialog).getByRole("combobox", { name: /Mas'ul xodim/ });
+    expect(manager).toHaveTextContent("Avtomatik — Javlon Hamroyev");
+    expect(within(dialog).getByText("Tanlanmasa — filial menejeri avtomatik")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Ombor ochish" }));
 
     await waitFor(() =>
@@ -137,11 +151,28 @@ describe("«Ombor ochish» oynasi", () => {
         branch_id: "20",
         name: "Qarshi filiali ombori",
         low_stock_default: 5,
-        manager_user_id: "40",
       }),
     );
     expect(await screen.findByText("Tafsilot sahifasi")).toBeInTheDocument();
     expect(await screen.findByText("Ombor ochildi")).toBeInTheDocument();
+  });
+
+  it("XtcEyQjb: mas'ul — faqat filial menejerlari; tanlangani manager_user_id bilan ketadi", async () => {
+    const user = userEvent.setup();
+    renderAs("admin");
+    await screen.findByRole("table", { name: "Omborlar" });
+    await user.click(screen.getByRole("button", { name: "Ombor ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ombor ochish" });
+    await user.click(within(dialog).getByRole("combobox", { name: /Filial/ }));
+    await user.click(await screen.findByRole("option", { name: /Qarshi filiali/ }));
+    await user.click(within(dialog).getByRole("combobox", { name: /Mas'ul xodim/ }));
+    const managers = await screen.findAllByRole("option");
+    expect(managers.map((option) => option.textContent)).toEqual(["Javlon Hamroyev", "Sardor Nazarov"]);
+    await user.click(screen.getByRole("option", { name: "Sardor Nazarov" }));
+    await user.click(within(dialog).getByRole("button", { name: "Ombor ochish" }));
+    await waitFor(() =>
+      expect(mocks.post).toHaveBeenCalledWith("warehouses", expect.objectContaining({ branch_id: "20", manager_user_id: "41" })),
+    );
   });
 
   it("filialsiz yuborilmaydi; 409 — «Bu filialda ombor allaqachon bor»", async () => {
@@ -159,6 +190,25 @@ describe("«Ombor ochish» oynasi", () => {
     await user.click(await screen.findByRole("option", { name: /Qarshi filiali/ }));
     await user.click(within(dialog).getByRole("button", { name: "Ombor ochish" }));
     expect(await within(dialog).findByText("Bu filialda ombor allaqachon bor")).toBeInTheDocument();
+  });
+});
+
+describe("registrator — faqat ko'rish (XtcEyQjb)", () => {
+  it("hamma omborlar ro'yxati, «Ombor ochish» yo'q", async () => {
+    renderAs("registrator");
+    const table = await screen.findByRole("table", { name: "Omborlar" });
+    expect(within(table).getByRole("link", { name: "Samarqand filiali ombori" })).toHaveAttribute("href", "/warehouses/3");
+    expect(screen.queryByRole("button", { name: "Ombor ochish" })).not.toBeInTheDocument();
+    // Menejer yo'naltiruvi emas — ro'yxat so'rovi sahifalash bilan.
+    expect(lastListParams()).toMatchObject({ page: 1, limit: 20 });
+  });
+
+  it("ombor yo'q — bo'sh holatda ham «Ombor ochish» yo'q", async () => {
+    list = { ...LIST, data: [], total: 0, counts: { all: 0, active: 0, paused: 0 }, summary: { ...LIST.summary, warehouses: 0 } };
+    renderAs("registrator");
+    expect(await screen.findByText("Hali ombor yo'q")).toBeInTheDocument();
+    expect(screen.getByText(/admin tomonidan ochiladi/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ombor ochish" })).not.toBeInTheDocument();
   });
 });
 

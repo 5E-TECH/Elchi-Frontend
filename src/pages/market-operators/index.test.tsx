@@ -179,6 +179,68 @@ describe("MarketOperatorsPage — ro'yxat", () => {
   });
 });
 
+describe("MarketOperatorsPage — «Ombordagi qoldiqni ko'radi» kaliti (XtcEyQjb)", () => {
+  const withAccess = () => {
+    rows = OPERATORS.map((row) => ({ ...row, can_view_warehouse_stock: row.id === "42" }));
+  };
+  const switchOf = (name: string) => screen.getByRole("switch", { name: `${name} — ombordagi qoldiqni ko'radi` });
+
+  it("ustun va kalit holati qatordan (sukut — o'chiq)", async () => {
+    withAccess();
+    renderPage();
+    const table = await screen.findByRole("table", { name: "Operatorlar ro'yxati" });
+    expect(within(table).getByRole("columnheader", { name: "Ombordagi qoldiq" })).toBeInTheDocument();
+    expect(switchOf("Sevara Usmonova")).toHaveAttribute("aria-checked", "true");
+    expect(switchOf("Madina Xoliqova")).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("yoqish — PATCH :id/warehouse-access; optimistik emas: javobgacha eski holat, so'ng yangi + xabar", async () => {
+    withAccess();
+    let resolve: (value: unknown) => void = () => {};
+    api.patch.mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole("table", { name: "Operatorlar ro'yxati" });
+    await user.click(switchOf("Madina Xoliqova"));
+    expect(api.patch).toHaveBeenCalledWith("market-operators/41/warehouse-access", { can_view_warehouse_stock: true });
+    // Server javobigacha — eski holat, kalit band.
+    expect(switchOf("Madina Xoliqova")).toHaveAttribute("aria-checked", "false");
+    expect(switchOf("Madina Xoliqova")).toBeDisabled();
+
+    rows = (rows as { id: string }[]).map((row) => (row.id === "41" ? { ...row, can_view_warehouse_stock: true } : row));
+    resolve({ data: { statusCode: 200, data: { ...OPERATORS[0], can_view_warehouse_stock: true } } });
+    await waitFor(() => expect(switchOf("Madina Xoliqova")).toHaveAttribute("aria-checked", "true"));
+    expect(await screen.findByText("Ombordagi qoldiq ochildi")).toBeInTheDocument();
+  });
+
+  it("xato — kalit qaytadi (o'zgarmaydi) va i18n xabar, xom backend matni yo'q", async () => {
+    withAccess();
+    api.patch.mockRejectedValueOnce(axiosError(500, "QueryFailedError: boom"));
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole("table", { name: "Operatorlar ro'yxati" });
+    await user.click(switchOf("Sevara Usmonova"));
+    expect(api.patch).toHaveBeenCalledWith("market-operators/42/warehouse-access", { can_view_warehouse_stock: false });
+    expect(await screen.findByText("Kalit saqlanmadi")).toBeInTheDocument();
+    expect(screen.getByText("Kalit avvalgi holatida qoldi. Qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText(/QueryFailedError/)).not.toBeInTheDocument();
+    await waitFor(() => expect(switchOf("Sevara Usmonova")).not.toBeDisabled());
+    expect(switchOf("Sevara Usmonova")).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("404 — «Operator topilmadi — ro'yxat yangilandi.»", async () => {
+    withAccess();
+    api.patch.mockRejectedValueOnce(axiosError(404, "Operator not found"));
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole("table", { name: "Operatorlar ro'yxati" });
+    const before = api.get.mock.calls.length;
+    await user.click(switchOf("Madina Xoliqova"));
+    expect(await screen.findByText("Operator topilmadi — ro'yxat yangilandi.")).toBeInTheDocument();
+    await waitFor(() => expect(api.get.mock.calls.length).toBeGreaterThan(before));
+  });
+});
+
 describe("MarketOperatorsPage — operator qo'shish", () => {
   const fill = async (user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) => {
     await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");

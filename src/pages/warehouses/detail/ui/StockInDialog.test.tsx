@@ -218,6 +218,43 @@ describe("Kirim oynasi — yuborish va Idempotency-Key", () => {
   });
 });
 
+describe("Kirim oynasi — to'xtatilgan ombor (XtcEyQjb)", () => {
+  const PAUSED_TEXT = "To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing";
+
+  it("server 409 WAREHOUSE_PAUSED — «To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing»", async () => {
+    mocks.post.mockRejectedValueOnce(
+      Object.assign(new Error("Conflict"), {
+        response: { status: 409, data: { statusCode: 409, code: "WAREHOUSE_PAUSED", message: "Ombor to'xtatilgan" } },
+      }),
+    );
+    const user = userEvent.setup();
+    openStockIn();
+    await scanIntoField(user, "4780123450017");
+    await screen.findByText("Quvvatlagich 20 W");
+    await user.click(screen.getByRole("button", { name: "Qoldiqqa qo'shish — 1 dona" }));
+    expect(await screen.findByText(PAUSED_TEXT)).toBeInTheDocument();
+    // Xom backend matni ko'rsatilmaydi; «boshqa tarkib» (409 conflict) matni ham emas.
+    expect(screen.queryByText("Ombor to'xtatilgan")).not.toBeInTheDocument();
+    expect(screen.queryByText(/boshqa tarkib bilan yuborilgan/)).not.toBeInTheDocument();
+  });
+
+  it("tanlangan ombor PAUSED — «Qoldiqqa qo'shish» o'chiq, izoh «Darhol qoldiqqa qo'shiladi» o'rnida", async () => {
+    const paused = rawWarehouse({ status: "PAUSED", paused_at: "2026-10-20T12:30:00Z" });
+    const base = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url: string, config?: unknown) =>
+      url === "warehouses" ? Promise.resolve({ data: { data: [paused], total: 1 } }) : base(url, config),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<StockInDialog open warehouse={normalizeWarehouse(paused)} onClose={vi.fn()} />);
+    expect(await screen.findByText(PAUSED_TEXT)).toBeInTheDocument();
+    expect(screen.queryByText("Darhol qoldiqqa qo'shiladi")).not.toBeInTheDocument();
+    await scanIntoField(user, "4780123450017");
+    await screen.findByText("Quvvatlagich 20 W");
+    expect(screen.getByRole("button", { name: "Qoldiqqa qo'shish — 1 dona" })).toBeDisabled();
+    expect(stockInCalls()).toHaveLength(0);
+  });
+});
+
 describe("Inventarizatsiya", () => {
   it("sabab majburiy; POST inventory { lines: [{ product_id, counted }], reason } + Idempotency-Key", async () => {
     mocks.post.mockResolvedValueOnce({ data: { replayed: false, reason: "Oylik", changed: 1, unchanged: 0, lines: [] } });
