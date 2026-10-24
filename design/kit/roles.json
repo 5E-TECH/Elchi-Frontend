@@ -544,6 +544,11 @@
       "ru": "Товары",
       "en": "Products"
      }
+    },
+    {
+     "key": "warehouse",
+     "label": "Ombor",
+     "icon": "Warehouse"
     }
    ],
    "bottomNav": [

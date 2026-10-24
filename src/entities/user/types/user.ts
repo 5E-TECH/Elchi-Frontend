@@ -116,6 +116,11 @@ export interface User {
    */
   commission_type?: "percent" | "fixed" | null;
   commission_value?: number | string | null;
+  /**
+   * XtcEyQjb: market operatori «Ombordagi qoldiq» ni ko'radimi (`GET /auth/my-profile`; market har operatorga alohida
+   * yoqadi, sukut `false`). Boshqa rollarda yo'q.
+   */
+  can_view_warehouse_stock?: boolean;
   avatar?: string;
   balance?: number;
   orders?: Order[];

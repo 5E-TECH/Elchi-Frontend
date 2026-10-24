@@ -25,6 +25,8 @@ type Operator = {
   market_id: string;
   commission_type: "percent" | "fixed" | null;
   commission_value: number | null;
+  /** XtcEyQjb: «Ombordagi qoldiqni ko'radi» (sukut `false`). */
+  can_view_warehouse_stock: boolean;
   createdAt: string;
 };
 
@@ -37,6 +39,7 @@ const operator = (id: string, name: string, phone: string, extra: Partial<Operat
   market_id: "12",
   commission_type: null,
   commission_value: null,
+  can_view_warehouse_stock: false,
   createdAt: "2026-09-02T09:05:00+05:00",
   ...extra,
 });
@@ -107,6 +110,15 @@ export const mockMarketOperators = async (page: Page, { empty = false, theme }: 
       const body = request.postDataJSON() as Pick<Operator, "commission_type" | "commission_value">;
       mock.patches.push({ id: commission[1], body });
       const target = operators.find((item) => item.id === commission[1]);
+      if (target) Object.assign(target, body);
+      return reply(route, wrap(target ?? {}));
+    }
+    // XtcEyQjb: «Ombordagi qoldiqni ko'radi» kaliti — `{ can_view_warehouse_stock }`, javob — yangilangan qator.
+    const access = /^market-operators\/(\d+)\/warehouse-access$/.exec(path);
+    if (access && method === "PATCH") {
+      const body = request.postDataJSON() as Pick<Operator, "can_view_warehouse_stock">;
+      mock.patches.push({ id: access[1], body });
+      const target = operators.find((item) => item.id === access[1]);
       if (target) Object.assign(target, body);
       return reply(route, wrap(target ?? {}));
     }

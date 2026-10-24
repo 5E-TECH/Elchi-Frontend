@@ -1,8 +1,9 @@
 // dizayn-v2: market-products-warehouse-stock
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { Info, Package, SearchX, Tag, TriangleAlert, Warehouse as WarehouseIcon } from "lucide-react";
+import { Info, Lock, Package, SearchX, Tag, TriangleAlert, Warehouse as WarehouseIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  isWarehouseStockForbidden,
   STOCK_LEVEL_TONE,
   useMarketWarehouseStock,
   type MarketStockCell,
@@ -54,6 +55,8 @@ const isTotals = (row: Row): row is { totals: true } => "totals" in row;
  * mavjud dona, kam qolgan — «7 · kam qoldi», tugagan — «0 · tugagan», omborda yo'q — «—»; «Jami» faqat faol
  * omborlar), pastda «Jami, dona» qatori (ro'yxat bitta sahifaga sig'sa); telefonda kartalar (har ombor — qator).
  * So'rov: `GET /market/warehouse-stock?search&low_only&page&limit` (market — token bo'yicha o'zi).
+ * Market operatori (XtcEyQjb) — tab faqat `my-profile.can_view_warehouse_stock` bilan; market kalitni keyin o'chirsa,
+ * server 403 (`WAREHOUSE_STOCK_FORBIDDEN`) — KPI va jadval o'rnida «Ombordagi qoldiq siz uchun yopiq» (qayta urinishsiz).
  */
 export const MarketWarehouseStock = ({
   description,
@@ -199,6 +202,23 @@ export const MarketWarehouseStock = ({
       </div>
     );
   };
+
+  if (query.isError && isWarehouseStockForbidden(query.error)) {
+    return (
+      <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+        <PageHeader title={t("title", { ns: "products" })} description={description}>
+          <MarketProductsTabs value={MARKET_WAREHOUSE_VIEW} productsTotal={productsTotal} />
+        </PageHeader>
+        <EmptyState
+          framed
+          size="page"
+          icon={Lock}
+          title={t("market.forbiddenTitle")}
+          description={t("market.forbiddenDescription")}
+        />
+      </div>
+    );
+  }
 
   const rows: Row[] | undefined = data ? (complete ? [...data.items, { totals: true }] : data.items) : undefined;
   const total = data?.total ?? 0;

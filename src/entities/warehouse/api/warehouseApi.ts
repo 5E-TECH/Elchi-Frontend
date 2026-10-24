@@ -16,8 +16,15 @@ import {
   type MarketStockWarehouse,
   type MovementRefType,
   type MovementType,
+  type AvailabilityParams,
+  type OrderSourcePreview,
   type ProductCode,
   type ProductCodeFormat,
+  type ResolveSourceRequest,
+  SOURCE_REASONS,
+  type SourceLine,
+  type SourceReason,
+  type SourceWarehouse,
   type StockInRequest,
   type StockInResult,
   type StockLevel,
@@ -36,6 +43,7 @@ import {
   type WarehouseStatus,
   type WarehouseStockData,
   type WarehouseStockParams,
+  type WarehouseAvailability,
   type WarehouseStockRow,
 } from "../model/types";
 
@@ -646,4 +654,85 @@ export const setMarketWarehouseOrder = async (marketId: string, enabled: boolean
   });
   const payload = payloadOf(response.data);
   return typeof payload?.can_order_from_warehouse === "boolean" ? payload.can_order_from_warehouse : enabled;
+};
+
+// ── Buyurtma manbasi (6kHnNH9j) ───────────────────────────────────────────────────────────────
+
+const toSourceWarehouse = (value: unknown): SourceWarehouse | null => {
+  const record = asRecord(value);
+  const id = idOf(record?.id);
+  if (!record || !id) return null;
+  return {
+    id,
+    name: textOrNull(record.name) ?? "",
+    status: toStatus(record.status),
+    branchId: idOf(record.branch_id) ?? "",
+    branchName: textOrNull(record.branch_name),
+    regionId: idOf(record.region_id),
+    regionName: textOrNull(record.region_name),
+  };
+};
+
+const toSourceLines = (value: unknown, enoughFallback: boolean): SourceLine[] =>
+  listOf(value).flatMap((raw): SourceLine[] => {
+    const record = asRecord(raw);
+    const productId = idOf(record?.product_id);
+    if (!record || !productId) return [];
+    const required = numberOf(record.required);
+    const available = numberOf(record.available);
+    return [
+      {
+        productId,
+        name: textOrNull(record.name),
+        required,
+        available,
+        enough: typeof record.enough === "boolean" ? record.enough : enoughFallback && available >= required,
+      },
+    ];
+  });
+
+/**
+ * `POST /warehouses/resolve-source` javobi. Noma'lum `source` — `HQ` (xavfsiz tomoni: omborga band qilinmaydi);
+ * noma'lum sabab — `WAREHOUSE` bo'lsa `OK`, aks holda `NO_WAREHOUSE`.
+ */
+export const normalizeOrderSource = (value: unknown): OrderSourcePreview => {
+  const payload = payloadOf(value) ?? {};
+  const source = String(payload.source ?? "").toUpperCase() === "WAREHOUSE" ? "WAREHOUSE" : "HQ";
+  const rawReason = String(payload.reason ?? "").toUpperCase();
+  const reason: SourceReason = (SOURCE_REASONS as readonly string[]).includes(rawReason)
+    ? (rawReason as SourceReason)
+    : source === "WAREHOUSE"
+      ? "OK"
+      : "NO_WAREHOUSE";
+  return {
+    source,
+    reason,
+    regionId: idOf(payload.region_id),
+    warehouse: toSourceWarehouse(payload.warehouse),
+    items: toSourceLines(payload.items, true),
+    shortages: toSourceLines(payload.shortages, false).map((line) => ({ ...line, enough: false })),
+  };
+};
+
+/** Manba oldindan ko'rinishi — faqat hisoblaydi, hech narsa band qilinmaydi (band — `POST /orders` da). */
+export const resolveOrderSource = async (body: ResolveSourceRequest): Promise<OrderSourcePreview> => {
+  const response = await api.post(API_ENDPOINTS.WAREHOUSES.RESOLVE_SOURCE, body);
+  return normalizeOrderSource(response.data);
+};
+
+/** `GET /warehouses/availability` javobi → mahsulot bo'yicha mavjud dona. */
+export const normalizeAvailability = (value: unknown): WarehouseAvailability => {
+  const payload = payloadOf(value) ?? {};
+  const available: Record<string, number> = {};
+  for (const raw of listOf(payload.items)) {
+    const record = asRecord(raw);
+    const productId = idOf(record?.product_id);
+    if (record && productId) available[productId] = numberOf(record.available);
+  }
+  return { warehouse: toSourceWarehouse(payload.warehouse), available };
+};
+
+export const getWarehouseAvailability = async (params: AvailabilityParams): Promise<WarehouseAvailability> => {
+  const response = await api.get(API_ENDPOINTS.WAREHOUSES.AVAILABILITY, { params: compactParams(params) });
+  return normalizeAvailability(response.data);
 };

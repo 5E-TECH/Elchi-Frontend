@@ -1,9 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import type {
+  AvailabilityParams,
   CreateWarehouseRequest,
   InventoryRequest,
   MarketStockParams,
+  ResolveSourceRequest,
   StockInRequest,
   UpdateWarehouseRequest,
   WarehouseListParams,
@@ -13,12 +15,14 @@ import type {
 import {
   createWarehouse,
   getMarketWarehouseStock,
+  getWarehouseAvailability,
   getWarehouse,
   getWarehouseMovements,
   getWarehouses,
   getWarehouseStock,
   inventoryWarehouse,
   pauseWarehouse,
+  resolveOrderSource,
   resumeWarehouse,
   setMarketWarehouseOrder,
   setStockThreshold,
@@ -38,6 +42,33 @@ export const useWarehouseList = (params: WarehouseListParams, { enabled = true }
     queryKey: queryKeys.warehouses.list(params),
     queryFn: () => getWarehouses(params),
     enabled,
+    ...READ_OPTIONS,
+  });
+
+/**
+ * 6kHnNH9j: buyurtma formasidagi manba oldindan ko'rinishi. So'rov tanasi — kalit (chaqiruvchi kechiktiradi); xato
+ * global xabarsiz — blok o'zi «aniqlab bo'lmadi» deydi. Yangi tana javobigacha eski natija turadi.
+ */
+export const useOrderSourcePreview = (body: ResolveSourceRequest | null) =>
+  useQuery({
+    queryKey: queryKeys.warehouses.resolveSource(body ?? {}),
+    queryFn: () => resolveOrderSource(body as ResolveSourceRequest),
+    enabled: body !== null,
+    staleTime: 15_000,
+    retry: false,
+    ...READ_OPTIONS,
+  });
+
+/**
+ * 6kHnNH9j: katalogdagi «Omborda: N» — tuman hududi ombori bo'yicha (tuman tanlangach; `null` — so'rov yo'q).
+ */
+export const useWarehouseAvailability = (params: AvailabilityParams | null) =>
+  useQuery({
+    queryKey: queryKeys.warehouses.availability(params ?? {}),
+    queryFn: () => getWarehouseAvailability(params as AvailabilityParams),
+    enabled: params !== null,
+    staleTime: 30_000,
+    retry: false,
     ...READ_OPTIONS,
   });
 

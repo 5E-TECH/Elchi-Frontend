@@ -32,8 +32,16 @@ const SEARCH_DEBOUNCE_MS = 400;
 
 type StatusFilter = "" | WarehouseStatus;
 
+export type WarehouseListViewProps = {
+  /**
+   * XtcEyQjb: faqat ko'rish (registrator) — «Ombor ochish» (sarlavhada va bo'sh holatda) va ochish oynasi yo'q. Maket
+   * yo'q — eng yaqini `superadmin-warehouse-list` (amallarsiz).
+   */
+  readOnly?: boolean;
+};
+
 /**
- * OMBORLAR — `/warehouses` (superadmin, admin; maket `superadmin-warehouse-list` = admin).
+ * OMBORLAR — `/warehouses` (superadmin, admin; maket `superadmin-warehouse-list` = admin; registrator — `readOnly`).
  *
  * Sarlavha «Omborlar» + «Ombor ochish» (oyna `CreateWarehouseDialog`); 4 KPI (`summary` — filtrsiz hamma omborlar):
  * Omborlar · Jami dona · Band · Kam qolgan («N tasi tugagan»); karta: qidiruv (ombor, filial, mas'ul — `search`),
@@ -41,7 +49,7 @@ type StatusFilter = "" | WarehouseStatus;
  * jadval (telefonda kartalar), pastda «N ta ombor · N ta faol · N ta to'xtatilgan» yoki sahifalash.
  * Maketdagi «Ombor ↑↓» saralash tugmasi chizilmagan — `GET /warehouses` da saralash parametri yo'q.
  */
-export const WarehouseListView = () => {
+export const WarehouseListView = ({ readOnly = false }: WarehouseListViewProps) => {
   const text = useWarehouseText();
   const { t } = text;
   const navigate = useNavigate();
@@ -145,7 +153,7 @@ export const WarehouseListView = () => {
         title={t("list.title")}
         description={t("list.description")}
         actions={
-          noWarehouses ? undefined : (
+          noWarehouses || readOnly ? undefined : (
             <Button leftIcon={Plus} aria-haspopup="dialog" onClick={openCreate}>
               {t("create.open")}
             </Button>
@@ -281,11 +289,13 @@ export const WarehouseListView = () => {
               <EmptyState
                 icon={WarehouseIcon}
                 title={t("list.emptyTitle")}
-                description={t("list.emptyDescription")}
+                description={t(readOnly ? "list.emptyDescriptionReadOnly" : "list.emptyDescription")}
                 action={
-                  <Button leftIcon={Plus} aria-haspopup="dialog" onClick={openCreate}>
-                    {t("create.open")}
-                  </Button>
+                  readOnly ? undefined : (
+                    <Button leftIcon={Plus} aria-haspopup="dialog" onClick={openCreate}>
+                      {t("create.open")}
+                    </Button>
+                  )
                 }
               />
             ) : isPlaceholderData ? (
@@ -315,14 +325,16 @@ export const WarehouseListView = () => {
         </QueryBoundary>
       </Card>
 
-      <CreateWarehouseDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={(warehouse) => {
-          setCreateOpen(false);
-          if (warehouse) navigate(warehousePath(warehouse.id));
-        }}
-      />
+      {readOnly ? null : (
+        <CreateWarehouseDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(warehouse) => {
+            setCreateOpen(false);
+            if (warehouse) navigate(warehousePath(warehouse.id));
+          }}
+        />
+      )}
     </div>
   );
 };

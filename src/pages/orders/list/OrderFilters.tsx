@@ -28,6 +28,7 @@ import {
   getOrderFilterScope,
   hasDateRange,
   isDeliveryType,
+  isFulfillmentSource,
   LEGACY_DATE_FROM_KEY,
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
@@ -53,7 +54,7 @@ import { isMarketSideRole } from "../../../entities/user/lib/role";
  *   1. asboblar qatori — qidiruv · sana oralig'i · «Filtrlar N» (desktop/planshetda panelni ochadi-yopadi,
  *      telefonda pastki varaqani ochadi);
  *   2. «Qo'shimcha filtrlar» paneli (desktop/planshet) — market, filial, viloyat/tuman, kuryer, yetkazish turi,
- *      holat (rolga qarab); o'zgarish darhol qo'llanadi;
+ *      manba (6kHnNH9j: Ombordan · HQ orqali; xodimlarda), holat (rolga qarab); o'zgarish darhol qo'llanadi;
  *   3. faol filtr chiplari + «Filtrlarni tozalash».
  *
  * URL — yagona manba (Redux ko'zgusi avvalgidek yoziladi): kalitlar `ORDER_FILTER_KEYS`, holat — `status`.
@@ -158,6 +159,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
   const urlStatus = getParam(ORDER_STATUS_URL_KEY) ?? getParam(LEGACY_ORDER_STATUS_URL_KEY) ?? "";
   const values = useMemo<OrderFilterValues>(() => {
     const deliveryType = getParam(ORDER_FILTER_KEYS.deliveryType) ?? "";
+    const fulfillmentSource = getParam(ORDER_FILTER_KEYS.fulfillmentSource) ?? "";
     return {
       marketId: getParam(ORDER_FILTER_KEYS.marketId) ?? "",
       branchId: getParam(ORDER_FILTER_KEYS.branchId) ?? "",
@@ -165,6 +167,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       districtId: getParam(ORDER_FILTER_KEYS.districtId) ?? "",
       courierId: getParam(ORDER_FILTER_KEYS.courierId) ?? "",
       deliveryType: isDeliveryType(deliveryType) ? deliveryType : "",
+      fulfillmentSource: isFulfillmentSource(fulfillmentSource) ? fulfillmentSource : "",
       statuses: parseStatusValues(urlStatus),
       // Noto'g'ri sana (`?startDay=falonchi`) — filtr yo'q (sahifa API'ga ham yubormaydi, D-08).
       dateFrom: sanitizeDayParam(getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam(LEGACY_DATE_FROM_KEY)),
@@ -214,7 +217,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
     setMultipleParams(params);
   };
 
-  const updateField = (key: "marketId" | "branchId" | "courierId" | "deliveryType", value: string) =>
+  const updateField = (key: "marketId" | "branchId" | "courierId" | "deliveryType" | "fulfillmentSource", value: string) =>
     write({ [ORDER_FILTER_KEYS[key]]: value }, { [key]: value });
 
   // Viloyat (menejerda tuman) o'zgarsa kuryer tanlovi tozalanadi — kuryerlar ro'yxati shunga bog'liq.
@@ -284,6 +287,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.districtId]: "",
       [ORDER_FILTER_KEYS.courierId]: "",
       [ORDER_FILTER_KEYS.deliveryType]: "",
+      [ORDER_FILTER_KEYS.fulfillmentSource]: "",
       ...(statusFromTab ? {} : { [ORDER_STATUS_URL_KEY]: "" }),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
       [ORDER_FILTER_KEYS.dateFrom]: "",
@@ -304,6 +308,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.districtId]: draft.districtId,
       [ORDER_FILTER_KEYS.courierId]: draft.courierId,
       [ORDER_FILTER_KEYS.deliveryType]: draft.deliveryType,
+      [ORDER_FILTER_KEYS.fulfillmentSource]: scope.source ? (draft.fulfillmentSource ?? "") : "",
       [ORDER_STATUS_URL_KEY]: draft.statuses.join(","),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
     };
@@ -314,6 +319,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       districtId: draft.districtId,
       courierId: draft.courierId,
       deliveryType: draft.deliveryType,
+      fulfillmentSource: scope.source ? (draft.fulfillmentSource ?? "") : "",
       status: draft.statuses,
     };
     if (dateInSheet) {
@@ -340,6 +346,13 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
     { value: "center", label: t("deliveryToCenter") },
   ];
   const deliveryLabel = (value: string) => deliveryOptions.find((item) => item.value === value)?.label ?? value;
+  // 6kHnNH9j: «Manba» — maket yo'q (eng yaqini «Yetkazish turi» filtri).
+  const sourceOptions = [
+    { value: "", label: all },
+    { value: "WAREHOUSE", label: t("fulfillment.filterWarehouse") },
+    { value: "HQ", label: t("fulfillment.filterHq") },
+  ];
+  const sourceLabel = (value: string) => sourceOptions.find((item) => item.value === value)?.label ?? value;
 
   // ─── Chiplar (maket tartibi: sana · market · filial · viloyat/tuman · kuryer · yetkazish · holat · qidiruv) ───
   const chip = (label: string, value: string) => t("filters.chip", { ns: "ui", label, value });
@@ -404,6 +417,14 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       label: chip(t("deliveryType"), deliveryLabel(values.deliveryType)),
       removeLabel: removeLabel(t("deliveryType")),
       onRemove: () => updateField("deliveryType", ""),
+    });
+  }
+  if (scope.source && values.fulfillmentSource) {
+    chips.push({
+      key: "source",
+      label: chip(t("fulfillment.filter"), sourceLabel(values.fulfillmentSource)),
+      removeLabel: removeLabel(t("fulfillment.filter")),
+      onRemove: () => updateField("fulfillmentSource", ""),
     });
   }
   if (statusIsFilter) {
@@ -570,6 +591,16 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
                 placeholder={all}
               />
             </Field>
+            {scope.source ? (
+              <Field label={t("fulfillment.filter")} labelAs="span">
+                <Select
+                  options={sourceOptions}
+                  value={values.fulfillmentSource ?? ""}
+                  onChange={(next) => updateField("fulfillmentSource", next && isFulfillmentSource(next) ? next : "")}
+                  placeholder={all}
+                />
+              </Field>
+            ) : null}
             <Field label={t("filterStatus")} labelAs="span">
               {/* Bitta holat — nomi; bir nechta — «N ta tanlangan» (tor ustunda belgilar ikki qatorga o'tib panelni
                   cho'zardi; nomlari pastdagi chiplarda). */}

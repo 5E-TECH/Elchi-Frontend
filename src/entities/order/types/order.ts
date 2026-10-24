@@ -8,6 +8,22 @@ export interface OrderItem {
 
 export type DeliveryType = "center" | "address";
 
+/**
+ * 6kHnNH9j: buyurtma qayerdan ketadi — `HQ` (odatiy oqim: HQ qabuli, pochta) yoki `WAREHOUSE` (viloyat filiali
+ * omboridan, HQ va pochtasiz — darhol filialda «qabul qilingan»).
+ */
+export type OrderFulfillmentSource = "HQ" | "WAREHOUSE";
+
+/** Yaratishda manba: `auto` (sukut — ombor yetsa ombordan, aks holda HQ), `hq` — har doim HQ. */
+export type OrderFulfillmentChoice = "auto" | "hq";
+
+/** Buyurtma ombori (ro'yxat va tafsilot javobida; HQ buyurtmasida `null`). */
+export interface OrderWarehouseRef {
+    id: string;
+    name: string;
+    branch_id?: string | null;
+}
+
 export type OrderStatus =
     | "created"
     | "new"
@@ -74,6 +90,9 @@ export interface OrderListItem {
     return_requested?: boolean;
     /** Qaytarish sababi (initiate-return `reason`). */
     return_reason?: string | null;
+    /** 6kHnNH9j: manba (eski javobda yo'q — HQ). */
+    fulfillment_source?: OrderFulfillmentSource | null;
+    warehouse?: OrderWarehouseRef | null;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -154,6 +173,8 @@ export interface OrderListParams {
     fetch_all?: boolean | string;
     sort_by?: "created_at" | "total_price" | "status";
     sort_dir?: "asc" | "desc";
+    /** 6kHnNH9j: `WAREHOUSE` — faqat ombordan ketganlar, `HQ` — odatiy oqim. */
+    fulfillment_source?: OrderFulfillmentSource;
 }
 
 export interface ExternalOrderItem {
@@ -238,4 +259,6 @@ export interface CreateOrderRequest {
     qr_code_token?: string;
     sell_requires_media?: boolean;
     cancel_requires_media?: boolean;
+    /** 6kHnNH9j: manba tanlovi (yuborilmasa — `auto`). Faqat manba bloki ko'rinadigan rollarda yuboriladi. */
+    fulfillment?: OrderFulfillmentChoice;
 }

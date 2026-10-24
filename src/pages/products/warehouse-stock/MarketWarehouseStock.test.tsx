@@ -58,12 +58,19 @@ beforeEach(() => {
   });
 });
 
-const renderAs = (role: string, route = "/products?view=warehouse") =>
+const renderAs = (role: string, route = "/products?view=warehouse", profile: Record<string, unknown> = {}) =>
   renderWithProviders(<ProductTable />, {
     route,
     preloadedState: {
       role: { id: "121", role, region: null, name: role },
-      user: { user: { id: "121", role, name: "Baraka Shop" }, isAuthenticated: true, accessToken: null, loading: false, isAppInitializing: false, error: null },
+      user: {
+        user: { id: "121", role, name: "Baraka Shop", ...profile },
+        isAuthenticated: true,
+        accessToken: null,
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      },
     } as never,
   });
 
@@ -100,6 +107,36 @@ describe("market «Ombordagi qoldiq» (yXC91RRx)", () => {
     const operator = renderAs("market_operator", "/products?view=warehouse");
     await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("product/my-products", expect.anything()));
     expect(within(operator.container).queryByRole("link", { name: /Ombordagi qoldiq/ })).not.toBeInTheDocument();
+  });
+
+  it("XtcEyQjb: market operatori — kalit yoqilgan bo'lsa (`my-profile.can_view_warehouse_stock`) tablar va qoldiq", async () => {
+    renderAs("market_operator", "/products?view=warehouse", { can_view_warehouse_stock: true, market_id: "121" });
+    expect(await screen.findByRole("link", { name: /Ombordagi qoldiq/ })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("table", { name: "Mahsulotlar omborlar bo'yicha" })).toBeInTheDocument();
+    const call = mocks.get.mock.calls.find(([url, config]) => url === "market/warehouse-stock" && config?.params?.limit === 50);
+    expect(call?.[1].params).not.toHaveProperty("market_id");
+  });
+
+  it("XtcEyQjb: kalit keyin o'chirilgan — 403 WAREHOUSE_STOCK_FORBIDDEN → «Ombordagi qoldiq siz uchun yopiq»", async () => {
+    mocks.get.mockImplementation((url: string) => {
+      if (url === "market/warehouse-stock") {
+        return Promise.reject(
+          Object.assign(new Error("Forbidden"), {
+            isAxiosError: true,
+            response: { status: 403, data: { statusCode: 403, code: "WAREHOUSE_STOCK_FORBIDDEN", message: "Forbidden resource" } },
+          }),
+        );
+      }
+      if (url === "product/my-products") return Promise.resolve({ data: { data: [], total: 12, page: 1, limit: 10 } });
+      return Promise.reject(new Error(`kutilmagan: ${url}`));
+    });
+    renderAs("market_operator", "/products?view=warehouse", { can_view_warehouse_stock: true });
+    expect(await screen.findByRole("heading", { name: "Ombordagi qoldiq siz uchun yopiq" })).toBeInTheDocument();
+    expect(screen.getByText(/market egasidan «Ombordagi qoldiqni ko'radi» kalitini yoqishni so'rang/)).toBeInTheDocument();
+    // Qayta urinish va xom backend matni yo'q, KPI chizilmaydi.
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Forbidden resource")).not.toBeInTheDocument();
+    expect(screen.queryByText("Omborlardagi jami dona")).not.toBeInTheDocument();
   });
 
   it("qisqa ombor nomi", () => {

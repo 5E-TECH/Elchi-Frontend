@@ -7,8 +7,9 @@ import AppRouter from "./routes";
 
 /**
  * yXC91RRx: «Ombor» — `/warehouses`, `/warehouses/:id` (`canViewWarehouses`): superadmin va admin; filial menejeri —
- * faqat viloyat filiali (REGIONAL, HYBRID; ombor faqat shu turdagi filialda ochiladi). Qolgan rollar — shell
- * ichida 403 (backend ham `GET /warehouses*` ni faqat SUPERADMIN, ADMIN, MANAGER, BRANCH ga ochadi).
+ * faqat viloyat filiali (REGIONAL, HYBRID; ombor faqat shu turdagi filialda ochiladi). XtcEyQjb (ega 2026-10-24):
+ * registrator — hamma omborlar, faqat ko'rish (filial turidan qat'i nazar). Qolgan rollar (kuryer, market, market
+ * operatori, logist, investor) — shell ichida 403 (backend `WAREHOUSE_READ_ROLES` bilan bir xil).
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
@@ -50,12 +51,15 @@ const renderAt = (route: string, role: string, branchType?: string) =>
 const forbidden = () =>
   screen.findByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" }, { timeout: 5000 });
 
-describe("/warehouses — route guard (yXC91RRx)", () => {
+describe("/warehouses — route guard (yXC91RRx, XtcEyQjb)", () => {
   it.each([
     ["superadmin", undefined],
     ["admin", undefined],
     ["manager", "REGIONAL"],
     ["manager", "HYBRID"],
+    ["registrator", "HQ"],
+    ["registrator", "REGIONAL"],
+    ["registrator", undefined],
   ])("%s %s: ro'yxat va tafsilot ochiladi", async (role, branchType) => {
     renderAt("/warehouses", role, branchType);
     expect(await screen.findByText("Omborlar sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
@@ -64,6 +68,7 @@ describe("/warehouses — route guard (yXC91RRx)", () => {
   it.each([
     ["superadmin", undefined],
     ["manager", "REGIONAL"],
+    ["registrator", "HQ"],
   ])("%s %s: /warehouses/:id", async (role, branchType) => {
     renderAt("/warehouses/3", role, branchType);
     expect(await screen.findByText("Ombor tafsiloti sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
@@ -73,11 +78,11 @@ describe("/warehouses — route guard (yXC91RRx)", () => {
     ["manager", "HQ"],
     ["manager", "PICKUP"],
     ["manager", undefined],
-    ["registrator", "HQ"],
     ["market", undefined],
     ["market_operator", undefined],
     ["courier", "REGIONAL"],
     ["logist", undefined],
+    ["investor", undefined],
   ])("%s %s: shell ichida 403", async (role, branchType) => {
     renderAt("/warehouses", role, branchType);
     expect(await forbidden()).toBeInTheDocument();

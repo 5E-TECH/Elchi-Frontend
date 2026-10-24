@@ -512,7 +512,8 @@
       "returnInitiated": "{{actor}} buyurtmani marketga qaytarishni boshladi. Sabab: {{reason}}",
       "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga topshirdi — {{method}}",
       "createdByActor": "{{actor}} buyurtmani yaratdi",
-      "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}"
+      "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}",
+      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -566,7 +567,8 @@
       "cancelledPostCreated": "Bekor buyurtma jo'natildi",
       "cancelledPostReceived": "Bekor buyurtma qabul qilindi",
       "returnRequested": "Qaytarish so'raldi",
-      "returnedToMarket": "Marketga topshirildi"
+      "returnedToMarket": "Marketga topshirildi",
+      "warehouseReturned": "Omborga qaytdi"
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",
@@ -801,7 +803,8 @@
       "cancelled": "Bekor qilindi",
       "sent": "Jo'natildi",
       "received": "Qabul qilindi",
-      "handed": "Marketga topshirildi"
+      "handed": "Marketga topshirildi",
+      "warehouse": "Omborga qaytdi"
     },
     "pending": {
       "send": "Qaytarish pochtasiga jo'natish",
@@ -822,7 +825,8 @@
     "qrOpen": "QR kodni ochish",
     "loading": "Qaytarish yo'li yuklanmoqda",
     "error": "Qaytarish yo'lini yuklab bo'lmadi",
-    "empty": "Qaytarish yo'li hali yozilmagan"
+    "empty": "Qaytarish yo'li hali yozilmagan",
+    "subtitleClosedWarehouse": "Zanjir yopildi — mahsulot omborga qaytdi"
   },
   "createCustomer": {
     "cardSubtitle": "Telefon raqamni kiriting — mavjud mijoz topilsa, ma'lumotlari o'zi to'ladi",
@@ -889,5 +893,45 @@
     "districtChip": "Tuman aniqlanmadi",
     "operatorYou": "Siz",
     "operatorAuto": "Siz — avtomatik yoziladi"
+  },
+  "fulfillment": {
+    "tag": "Ombordan",
+    "tagNamed": "Ombordan · {{name}}",
+    "tagTitle": "Buyurtma viloyat omboridan ketadi — HQ va pochtasiz",
+    "filter": "Manba",
+    "filterWarehouse": "Ombordan",
+    "filterHq": "HQ orqali",
+    "source": {
+      "title": "Qayerdan yuboriladi",
+      "subtitle": "{{district}} · {{branch}} hududi",
+      "idle": "Tuman va mahsulot tanlangach, ombor yoki HQ avtomatik aniqlanadi",
+      "legend": "Buyurtma manbasi",
+      "auto": "Avtomatik tanlandi",
+      "warehouseHint": "Hamma mahsulot yetarli · HQ va pochtasiz, darhol kuryerga",
+      "hq": "Toshkent HQ",
+      "hqHint": "Odatiy oqim: HQ qabuli, pochta, filial, kuryer",
+      "reserveNote": "Yaratilganda {{pcs}} omborda band qilinadi, kuryerga berilganda qoldiqdan chiqadi. Bekor qilinsa yoki qaytsa — shu omborga qaytadi.",
+      "hqNote": "Omborda band qilinmaydi — buyurtma odatiy oqim bilan HQ orqali ketadi.",
+      "pcs_one": "{{value}} dona",
+      "pcs_other": "{{value}} dona",
+      "shortTitle": "Omborda yetmaydi — butun buyurtma HQ'dan ketadi",
+      "shortLine": "{{name}}: kerak {{required}}, bor {{available}}",
+      "shortBody": "{{lines}}. Buyurtma bo'linmaydi — bitta posilka {{hq}} orqali yuboriladi.",
+      "paused": "To'xtatilgan",
+      "pausedHint": "Yangi buyurtma tushmaydi — buyurtma HQ'dan ketadi",
+      "noWarehouse": "Tuman hududida faol ombor yo'q — buyurtma odatiy oqim bilan ketadi",
+      "noRegion": "Tuman hududi aniqlanmadi — buyurtma HQ'dan ketadi",
+      "invalid": "Mahsulotlar omborda tekshirilmadi — buyurtma HQ'dan ketadi",
+      "notAllowed": "Market uchun ombordan buyurtma yoqilmagan — buyurtma HQ'dan ketadi",
+      "custom": "Katalogda yo'q mahsulot bor — butun buyurtma HQ'dan ketadi",
+      "customHint": "Omborda yo'q mahsulot qo'shilsa, butun buyurtma HQ'dan ketadi",
+      "failed": "Manbani aniqlab bo'lmadi — yaratishda avtomatik tanlanadi",
+      "retry": "Qayta urinish",
+      "loading": "Manba aniqlanmoqda",
+      "inStock": "Omborda: {{value}}",
+      "inStockTitle": "Mavjud dona — {{name}}",
+      "summary": "Qayerdan",
+      "notInStock": "Omborda yo'q"
+    }
   }
 }

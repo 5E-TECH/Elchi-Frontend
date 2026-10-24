@@ -16,4 +16,6 @@ export const actionLabelMap: Record<string, string> = {
   waiting: "tracking.action.waiting",
   returned_to_market: "tracking.action.returnedToMarket",
   cancelled_market_handover_manual: "tracking.action.returnedToMarket",
+  // 6kHnNH9j: ombor buyurtmasi bekor — posilka ombor filialida qabul qilinib, mahsulot o'sha omborga qaytdi.
+  warehouse_returned: "tracking.action.warehouseReturned",
 };

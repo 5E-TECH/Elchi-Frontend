@@ -28,7 +28,8 @@
     "commission": "Commission",
     "status": "Status",
     "createdAt": "Added",
-    "actions": "Actions"
+    "actions": "Actions",
+    "warehouse": "Warehouse stock"
   },
   "status": {
     "active": "Active",
@@ -154,5 +155,16 @@
     "deleted": "Operator deleted",
     "failed": "Couldn't delete the operator. Please try again.",
     "notFound": "Operator not found — it may have been deleted already."
+  },
+  "warehouseAccess": {
+    "label": "Sees warehouse stock",
+    "labelFor": "{{name}} — sees warehouse stock",
+    "on": "Sees",
+    "off": "Doesn't see",
+    "enabled": "Warehouse stock opened",
+    "disabled": "Warehouse stock closed",
+    "failedTitle": "Switch not saved",
+    "failed": "The switch kept its previous position. Please try again.",
+    "notFound": "Operator not found — the list was refreshed."
   }
 }

@@ -118,7 +118,7 @@ describe("OrderFilters — desktop/planshet (superadmin-orders-list)", () => {
     const toggle = screen.getByRole("button", { name: "Filtrlar 2" });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(document.getElementById(toggle.getAttribute("aria-controls") ?? "")).toBe(panel().parentElement);
-    expect(fieldLabels()).toEqual(["Market", "Filial", "Viloyat", "Kuryer", "Yetkazish turi", "Holat"]);
+    expect(fieldLabels()).toEqual(["Market", "Filial", "Viloyat", "Kuryer", "Yetkazish turi", "Manba", "Holat"]);
 
     const active = screen.getByRole("group", { name: "Faol filtrlar" });
     expect(within(active).getByText("Filial: Toshkent HQ")).toBeInTheDocument();
@@ -126,6 +126,24 @@ describe("OrderFilters — desktop/planshet (superadmin-orders-list)", () => {
     // Desktopda sana chipi yo'q — sana maydoni qatorda ko'rinib turibdi.
     expect(within(active).queryByText(/01\.10/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sana oralig'i: 01\.10\.2026 dan 08\.10\.2026 gacha/ })).toBeInTheDocument();
+  });
+
+  // 6kHnNH9j: «Manba» (Ombordan · HQ orqali) — URL `fulfillment_source`, chip va «Filtrlar N» soni.
+  it("«Manba» filtri: URL'dan chip, tanlash va olib tashlash", async () => {
+    const user = userEvent.setup();
+    open("admin", "/orders?fulfillment_source=WAREHOUSE");
+
+    expect(screen.getByRole("button", { name: "Filtrlar 1" })).toHaveAttribute("aria-expanded", "true");
+    const active = screen.getByRole("group", { name: "Faol filtrlar" });
+    expect(within(active).getByText("Manba: Ombordan")).toBeInTheDocument();
+
+    await user.click(within(active).getByRole("button", { name: /Manba/ }));
+    expect(currentParams().get("fulfillment_source")).toBeNull();
+
+    const field = within(panel()).getByText("Manba").closest("[data-field]") as HTMLElement;
+    await user.click(within(field).getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: "HQ orqali" }));
+    expect(currentParams().get("fulfillment_source")).toBe("HQ");
   });
 
   it("starts collapsed without panel filters and toggles the panel", async () => {
@@ -307,7 +325,7 @@ describe("OrderFilters — rollar", () => {
 
     expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "Ism, telefon yoki buyurtma raqami");
     await user.click(screen.getByRole("button", { name: "Filtrlar" }));
-    expect(fieldLabels()).toEqual(["Viloyat", "Kuryer", "Yetkazish turi", "Holat"]);
+    expect(fieldLabels()).toEqual(["Viloyat", "Kuryer", "Yetkazish turi", "Manba", "Holat"]);
   });
 
   it("market: only region, delivery type and status", async () => {
@@ -324,7 +342,7 @@ describe("OrderFilters — rollar", () => {
     const user = userEvent.setup();
     open("manager", "/orders?orderDistrictId=d1&orderCourierId=c1");
 
-    expect(fieldLabels()).toEqual(["Tuman", "Kuryer", "Yetkazish turi", "Holat"]);
+    expect(fieldLabels()).toEqual(["Tuman", "Kuryer", "Yetkazish turi", "Manba", "Holat"]);
     expect(screen.getByText("Tuman: Urgut tumani")).toBeInTheDocument();
     // Kuryerlar menejer filiali viloyati bo'yicha.
     expect(getCouriersMock).toHaveBeenLastCalledWith(expect.objectContaining({ region_id: "r9" }), true);

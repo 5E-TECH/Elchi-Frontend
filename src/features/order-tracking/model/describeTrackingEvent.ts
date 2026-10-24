@@ -9,6 +9,7 @@ import {
   Store,
   Truck,
   Undo2,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -423,6 +424,9 @@ const formatNoteWithNames = (note: string, event: TrackingEvent, t: T, actor: st
 
 type Template = { key: string; params: Record<string, string> };
 
+/** 6kHnNH9j: `action: warehouse_returned` — ombor buyurtmasi bekor bo'lib, mahsulot omborga qaytdi. */
+export const isWarehouseReturnedEvent = (event: TrackingEvent) => normalizeKey(event.action) === "warehouse_returned";
+
 /**
  * Jumla shabloni (`tracking.dynamic.*`) yoki — mos shablon bo'lmasa — `null` (izoh alohida).
  * Shablonlar `{{actor}}` bilan; sahifa aktyorni qalin va rol nomi bilan chizadi.
@@ -446,6 +450,8 @@ const getSentenceTemplate = (
   });
 
   if (isBulkCourierAssignEvent(event)) return dynamic("assignedToCourier");
+  // 6kHnNH9j: ombor buyurtmasining omborga qaytishi (`→ returned_to_market`, lekin marketga topshirish emas).
+  if (isWarehouseReturnedEvent(event)) return dynamic("warehouseReturnedByActor");
   const returnReason = getReturnInitiatedReason(event);
   if (returnReason !== null) return dynamic("returnInitiated", { reason: returnReason || "—" });
   // Usul hodisadan («QR orqali», «qo'lda tasdiq — sabab», «QR'siz») — endi «QR tasdiq bilan» qotirib yozilmaydi.
@@ -498,6 +504,8 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
     case "tracking.dynamic.returnedToMarketByActor":
     case "tracking.dynamic.cancelledOrderHandedToMarket":
       return Store;
+    case "tracking.dynamic.warehouseReturnedByActor":
+      return Warehouse;
     case "tracking.dynamic.assignedToCourier":
     case "tracking.dynamic.sentToCourier":
       return Truck;
@@ -540,6 +548,8 @@ export interface TrackingEventView {
   oldStatus: string | null;
   newStatus: string | null;
   icon: LucideIcon;
+  /** 6kHnNH9j: omborga qaytish — yangi holat belgisi «Omborga qaytdi» («Marketga topshirildi» emas). */
+  warehouseReturn: boolean;
 }
 
 export const describeTrackingEvent = (
@@ -618,5 +628,6 @@ export const describeTrackingEvent = (
     oldStatus: event.old_value?.status ?? event.from_status ?? null,
     newStatus: event.new_value?.status ?? event.to_status ?? null,
     icon: getEventIcon(event, template?.key ?? null),
+    warehouseReturn: isWarehouseReturnedEvent(event),
   };
 };

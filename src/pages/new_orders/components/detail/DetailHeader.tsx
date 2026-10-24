@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  FulfillmentSourceTag,
   ReturnRequestedTag,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
@@ -33,7 +34,7 @@ type DetailHeaderProps = {
 };
 
 /**
- * Sarlavha (`.el-pagehead`): «← Buyurtmalar», «№10241» + nusxalash, holat va «Qaytarish so'ralgan»,
+ * Sarlavha (`.el-pagehead`): «← Buyurtmalar», «№10241» + nusxalash, holat, «Qaytarish so'ralgan» va «Ombordan · …»,
  * ostida «Yaratilgan: Bugun, 14:15 · Baraka Shop» (marketda faqat sana). Kuryerda (maket
  * `courier-orders-detail`) desktopda holat + yetkazish turi va «Market · sana», telefonda esa
  * badge'lar To'lov kartasiga tushadi, izoh — «Buyurtma tafsilotlari».
@@ -88,6 +89,8 @@ export const DetailHeader = ({
       ) : null}
       {isCourier && deliveryKey ? <Badge className="max-md:hidden">{t(deliveryKey)}</Badge> : null}
       <ReturnRequestedTag order={order} />
+      {/* 6kHnNH9j: «Ombordan · <ombor>» (kuryer tafsilotida ham — u qaysi filial omboridan olganini biladi). */}
+      <FulfillmentSourceTag order={order} />
     </>
   ) : null;
 

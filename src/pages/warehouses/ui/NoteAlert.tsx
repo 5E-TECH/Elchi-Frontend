@@ -14,16 +14,19 @@ export const NoteAlert = ({
   children,
   icon,
   className,
+  id,
 }: {
   tone?: "info" | "warning";
   title?: ReactNode;
   children?: ReactNode;
   icon?: LucideIcon;
   className?: string;
+  /** Tugma `aria-describedby` si uchun (masalan o'chiq «Mahsulot qo'shish» sababi). */
+  id?: string;
 }) => {
   const Icon = icon ?? (tone === "warning" ? TriangleAlert : Info);
   return (
-    <div role="note" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT[tone], className)}>
+    <div id={id} role="note" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT[tone], className)}>
       <Icon size={18} aria-hidden="true" className={cx("mt-px shrink-0", TONE_FG[tone])} />
       <div className="flex min-w-0 flex-1 flex-col gap-1 text-text">
         {title ? <p className="m-0 font-bold">{title}</p> : null}

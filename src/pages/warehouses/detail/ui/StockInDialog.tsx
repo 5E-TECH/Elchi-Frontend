@@ -1,8 +1,9 @@
 // dizayn-v2: superadmin-warehouse-stock-in-dialog, admin-warehouse-stock-in-dialog
 import { useMemo, useState } from "react";
-import { PackagePlus, Store, TriangleAlert, Warehouse as WarehouseIcon } from "lucide-react";
+import { CirclePause, PackagePlus, Store, TriangleAlert, Warehouse as WarehouseIcon } from "lucide-react";
 import {
   isUncertainWriteError,
+  isWarehousePausedError,
   useIdempotencyKeys,
   useStockIn,
   useWarehouseList,
@@ -50,6 +51,9 @@ export type StockInDialogProps = {
  * `POST /warehouses/:id/stock-in { lines: [{ product_id, qty }], note? }` + `Idempotency-Key` (tarkib barmoq iziga
  * bog'langan: javobsiz urinishni qayta yuborish ikki marta qo'shmaydi — `replayed`). Natijasi noma'lum xatoda oyna
  * ochiq qoladi va ogohlantiriladi (qoldiq qayta o'qiladi).
+ *
+ * XtcEyQjb: tanlangan ombor TO'XTATILGAN bo'lsa — «Qoldiqqa qo'shish» o'chiq, «Darhol qoldiqqa qo'shiladi» o'rnida
+ * «To'xtatilgan omborga kirim qilinmaydi — avval qayta yoqing»; server 409 `WAREHOUSE_PAUSED` qaytarsa ham shu matn.
  */
 export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) => {
   const text = useWarehouseText();
@@ -116,6 +120,7 @@ export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) 
     },
   });
 
+  const selectedPaused = selectedWarehouse?.status === "PAUSED";
   const items = itemLines(session.lines);
   const issues = issueLines(session.lines);
   const qtyTotal = totalQty(session.lines);
@@ -166,7 +171,7 @@ export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) 
   };
 
   const submit = async () => {
-    if (!warehouseId || stockIn.isPending) return;
+    if (!warehouseId || stockIn.isPending || selectedPaused) return;
     setSubmitError(null);
     if (items.length === 0) {
       setSubmitError(t("stockIn.errors.empty"));
@@ -199,6 +204,11 @@ export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) 
       }
       const status = getErrorStatus(error);
       if (status === 409) keys.reset();
+      // Ombor oyna ochiq turganda boshqa joyda to'xtatilgan — qoldiq va omborlar ro'yxati qayta o'qiladi (`onSettled`).
+      if (isWarehousePausedError(error)) {
+        setSubmitError(t("stockIn.errors.paused"));
+        return;
+      }
       setSubmitError(status === 400 ? t("stockIn.errors.unresolved") : status === 409 ? t("stockIn.errors.conflict") : text.writeError(error));
     }
   };
@@ -227,7 +237,7 @@ export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) 
             <Button variant="secondary" onClick={() => void close()} disabled={busy}>
               {t("actions.cancel")}
             </Button>
-            <Button type="submit" leftIcon={PackagePlus} loading={busy} disabled={items.length === 0}>
+            <Button type="submit" leftIcon={PackagePlus} loading={busy} disabled={items.length === 0 || selectedPaused}>
               {qtyTotal > 0 ? t("stockIn.submitWithQty", { value: text.pcs(qtyTotal) }) : t("stockIn.submit")}
             </Button>
           </>
@@ -331,9 +341,16 @@ export const StockInDialog = ({ open, warehouse, onClose }: StockInDialogProps) 
           />
         </Field>
 
-        <NoteAlert title={t("stockIn.infoTitle")}>{t("stockIn.infoText", { warehouse: warehouseName })}</NoteAlert>
+        {selectedPaused ? (
+          <NoteAlert tone="warning" icon={CirclePause}>
+            {t("stockIn.pausedHint")}
+          </NoteAlert>
+        ) : (
+          <NoteAlert title={t("stockIn.infoTitle")}>{t("stockIn.infoText", { warehouse: warehouseName })}</NoteAlert>
+        )}
 
-        {submitError ? (
+        {/* Server 409 `WAREHOUSE_PAUSED` dan keyin ombor qayta o'qilib to'xtatilgani ko'rinsa — sabab izohda, takrorlanmaydi. */}
+        {submitError && !(selectedPaused && submitError === t("stockIn.errors.paused")) ? (
           <p role="alert" className="m-0 text-[13px] font-semibold text-danger-fg">
             {submitError}
           </p>

@@ -142,6 +142,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/products", icon: Tag, label: "products" },
+    // Ombor — faqat ko'rish (ega qarori 2026-10-24, XtcEyQjb): registrator hamma omborlarni ko'radi.
+    { to: "/warehouses", icon: Warehouse, label: "warehouse" },
   ],
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
