@@ -512,7 +512,8 @@
       "returnInitiated": "{{actor}} начал(а) возврат заказа в маркет. Причина: {{reason}}",
       "returnedToMarketByActor": "{{actor}} передал(а) заказ маркету {{market}} — {{method}}",
       "createdByActor": "{{actor}} создал заказ",
-      "cancelledPostReceivedAtPlace": "{{actor}} принял(а) отменённый заказ — {{place}}"
+      "cancelledPostReceivedAtPlace": "{{actor}} принял(а) отменённый заказ — {{place}}",
+      "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -566,7 +567,8 @@
       "cancelledPostCreated": "Отмененный заказ отправлен",
       "cancelledPostReceived": "Отмененный заказ принят",
       "returnRequested": "Запрошен возврат",
-      "returnedToMarket": "Передан маркету"
+      "returnedToMarket": "Передан маркету",
+      "warehouseReturned": "Возвращён на склад"
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",
@@ -801,7 +803,8 @@
       "cancelled": "Отменён",
       "sent": "Отправлен",
       "received": "Принят",
-      "handed": "Передан маркету"
+      "handed": "Передан маркету",
+      "warehouse": "Возвращён на склад"
     },
     "pending": {
       "send": "Отправка возвратной почтой",
@@ -822,7 +825,8 @@
     "qrOpen": "Открыть QR-код",
     "loading": "Путь возврата загружается",
     "error": "Не удалось загрузить путь возврата",
-    "empty": "Путь возврата ещё не записан"
+    "empty": "Путь возврата ещё не записан",
+    "subtitleClosedWarehouse": "Цепочка закрыта — товар вернулся на склад"
   },
   "createCustomer": {
     "cardSubtitle": "Введите номер телефона — если клиент уже есть, его данные заполнятся сами",

@@ -23,7 +23,7 @@ import { notify } from "../../../shared/lib/notify";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { formatTrackingDate } from "../../../features/order-tracking";
 import {
-  CANCEL_RETURN_STAGES,
+  cancelStageMetaFor,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
   useCancelReturnPlaceText,
@@ -198,7 +198,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
   const stage = resolveCancelReturnStage(order);
   const holderValue = (() => {
     if (!stage) return holderText;
-    const label = t(CANCEL_RETURN_STAGES[stage].labelKey, { ns: "status" });
+    const label = t(cancelStageMetaFor(order, stage).labelKey, { ns: "status" });
     const place = placeText(resolveCancelReturnPlace(order, stage, { handoverAt }));
     const fallbackName = stage === "branch" || stage === "courier" ? holderName : null;
     const where = [place?.name ?? fallbackName, place?.extra].filter(Boolean).join(" · ");

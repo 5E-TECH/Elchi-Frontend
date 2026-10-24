@@ -512,7 +512,8 @@
       "returnInitiated": "{{actor}} buyurtmani marketga qaytarishni boshladi. Sabab: {{reason}}",
       "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga topshirdi — {{method}}",
       "createdByActor": "{{actor}} buyurtmani yaratdi",
-      "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}"
+      "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}",
+      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -566,7 +567,8 @@
       "cancelledPostCreated": "Bekor buyurtma jo'natildi",
       "cancelledPostReceived": "Bekor buyurtma qabul qilindi",
       "returnRequested": "Qaytarish so'raldi",
-      "returnedToMarket": "Marketga topshirildi"
+      "returnedToMarket": "Marketga topshirildi",
+      "warehouseReturned": "Omborga qaytdi"
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",
@@ -801,7 +803,8 @@
       "cancelled": "Bekor qilindi",
       "sent": "Jo'natildi",
       "received": "Qabul qilindi",
-      "handed": "Marketga topshirildi"
+      "handed": "Marketga topshirildi",
+      "warehouse": "Omborga qaytdi"
     },
     "pending": {
       "send": "Qaytarish pochtasiga jo'natish",
@@ -822,7 +825,8 @@
     "qrOpen": "QR kodni ochish",
     "loading": "Qaytarish yo'li yuklanmoqda",
     "error": "Qaytarish yo'lini yuklab bo'lmadi",
-    "empty": "Qaytarish yo'li hali yozilmagan"
+    "empty": "Qaytarish yo'li hali yozilmagan",
+    "subtitleClosedWarehouse": "Zanjir yopildi — mahsulot omborga qaytdi"
   },
   "createCustomer": {
     "cardSubtitle": "Telefon raqamni kiriting — mavjud mijoz topilsa, ma'lumotlari o'zi to'ladi",

@@ -1,5 +1,6 @@
 import {
   cleanBranchLabel,
+  isWarehouseReturn,
   normalizeOrderStatus,
   readCancelHandoverInfo,
   resolveCancelReturnPlace,
@@ -20,13 +21,15 @@ import {
  *                          `metadata.canceled_post_id`;
  *   3. «Qabul qilindi»   — `action: cancelled_post_received`; joy — `metadata.destination_branch`
  *                          (HQ'da — `received_by_hq`); filial → HQ zanjirida 2–3 qadam ikki marta;
- *   4. «Marketga topshirildi» — `to_status: returned_to_market`; usul — `readCancelHandoverInfo`.
+ *   4. «Marketga topshirildi» — `to_status: returned_to_market`; usul — `readCancelHandoverInfo`;
+ *      ombor buyurtmasida (6kHnNH9j) o'rniga «Omborga qaytdi» — `action: warehouse_returned` (zanjir shu bilan yopiladi).
  * Yopilmagan zanjirda oxirida «kutilmoqda» qadami (bosqichdan: jo'natish / qabul / topshirish).
  *
  * Sof funksiya: taxmin yo'q — yo'q nom `null` qoladi va UI uni chizmaydi.
  */
 
-export type ReturnPathStepKind = "cancelled" | "sent" | "received" | "handed";
+/** `warehouse` — 6kHnNH9j: ombor buyurtmasi omborga qaytdi (`action: warehouse_returned`, «Omborga qaytdi»). */
+export type ReturnPathStepKind = "cancelled" | "sent" | "received" | "handed" | "warehouse";
 
 export interface ReturnPathStep {
   id: string;
@@ -63,6 +66,8 @@ export interface ReturnPath {
   steps: ReturnPathStep[];
   pending: ReturnPathPending | null;
   closed: boolean;
+  /** 6kHnNH9j: zanjir ombor bilan yopildi (posilka omborga qaytdi, marketga emas). */
+  closedToWarehouse?: boolean;
   /** Posilka hozir turgan joy (marketga «olib ketishingiz mumkin» matni uchun). */
   currentPlace: string | null;
   /** Buyurtma marketining nomi («Nur Elektronika olib ketishi kutilmoqda»). */
@@ -129,12 +134,14 @@ const isCancelEvent = (event: TrackingEvent) => {
 /** Bekor oqimidagi holatlar — ulardan tashqariga o'tish eski bekor zanjirini uzadi. */
 const CANCEL_FLOW_STATUSES = new Set<string>(["cancelled", "cancelled (sent)", "returned_to_market", "closed"]);
 
+const isWarehouseReturnEvent = (event: TrackingEvent) => key(event.action) === "warehouse_returned";
+
 const isHandoverEvent = (event: TrackingEvent) =>
   readCancelHandoverInfo(event) !== null ||
   (fromStatusOf(event) === "cancelled (sent)" && toStatusOf(event) === "closed");
 
 const isFlowBreak = (event: TrackingEvent) => {
-  if (isReceiveEvent(event) || isHandoverEvent(event)) return false;
+  if (isReceiveEvent(event) || isHandoverEvent(event) || isWarehouseReturnEvent(event)) return false;
   const to = toStatusOf(event);
   return to !== null && !CANCEL_FLOW_STATUSES.has(to);
 };
@@ -271,6 +278,11 @@ export const buildReturnPath = (
       steps.push({ ...base(event, "received"), place });
       return;
     }
+    if (isWarehouseReturnEvent(event)) {
+      const place = lastPlace ?? (text(asRecord(record.branch).name) || null);
+      steps.push({ ...base(event, "warehouse"), place });
+      return;
+    }
     if (isHandoverEvent(event)) {
       const handover = readCancelHandoverInfo(event) ?? { method: "qr", reason: null };
       const place = lastPlace ?? (text(asRecord(record.branch).name) || null);
@@ -316,6 +328,7 @@ export const buildReturnPath = (
     steps,
     pending,
     closed,
+    closedToWarehouse: closed && (isWarehouseReturn(order) || steps.some((step) => step.kind === "warehouse")),
     currentPlace: stage === "branch" || stage === "hq" ? (pending?.place ?? null) : null,
     market: marketName,
     hqName: hq === HQ_FALLBACK ? null : hq,

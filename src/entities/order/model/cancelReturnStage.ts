@@ -122,6 +122,33 @@ export const resolveCancelReturnStage = (order: unknown): CancelReturnStage | nu
   }
 };
 
+/**
+ * 6kHnNH9j (backend Elchi-Backend#568): ombor buyurtmasi bekor bo'lib, posilka ombor filialiga qaytib qabul qilinganda
+ * backend uni `status: returned_to_market`, `holder_type: MARKET` bilan yopadi (tracking `action: warehouse_returned`) —
+ * mahsulot marketga emas, O'SHA OMBORGA qaytgan. Shunday buyurtmada «Marketga topshirildi» o'rniga «Omborga qaytdi».
+ */
+export const isWarehouseReturn = (order: unknown): boolean => {
+  const record = asRecord(order);
+  return (
+    text(record.fulfillment_source).toUpperCase() === "WAREHOUSE" && resolveCancelReturnStage(record) === "market"
+  );
+};
+
+/** «Omborga qaytdi» — yakuniy bosqich (`market` o'rnida): neytral, `Warehouse` ikonkasi. */
+export const WAREHOUSE_RETURN_META = {
+  tone: "neutral" as Tone,
+  variant: "soft" as const,
+  icon: Warehouse as LucideIcon,
+  labelKey: "cancelStage.warehouse" as const,
+};
+
+/** Bosqich belgisi (ton, ikonka, yorliq) — ombor buyurtmasining qaytishi hisobga olingan. */
+export const cancelStageMetaFor = (
+  order: unknown,
+  stage: CancelReturnStage,
+): Pick<CancelReturnStageMeta, "tone" | "variant" | "icon"> & { labelKey: string } =>
+  stage === "market" && isWarehouseReturn(order) ? WAREHOUSE_RETURN_META : CANCEL_RETURN_STAGES[stage];
+
 /** «Bekor · …» bosqichlari (1–4) — zanjir hali yopilmagan. */
 export const isOpenCancelReturnStage = (stage: CancelReturnStage | null): boolean =>
   stage !== null && stage !== "market";
@@ -260,6 +287,8 @@ export const readCancelHandoverInfo = (event: unknown): CancelHandoverInfo | nul
   const toStatus = normalizeOrderStatus(newValue.status ?? record.to_status);
   const action = text(record.action).toLowerCase();
   const isManualAction = action === "cancelled_market_handover_manual";
+  // 6kHnNH9j: ombor buyurtmasining omborga qaytishi ham `→ returned_to_market`, lekin marketga topshirish EMAS.
+  if (action === "warehouse_returned") return null;
   if (toStatus !== "returned_to_market" && !isManualAction) return null;
 
   const declared = text(metadata.method).toLowerCase();
