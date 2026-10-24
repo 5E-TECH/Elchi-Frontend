@@ -103,6 +103,7 @@ const COLOUR_RULE_SET = new Set(COLOUR_RULES);
 export const V2_SCOPES = Object.freeze([
   "src/auth",
   "src/entities/activity-log",
+  "src/entities/delivery-pricing",
   "src/entities/integrations",
   "src/entities/market-operator",
   "src/entities/notification",

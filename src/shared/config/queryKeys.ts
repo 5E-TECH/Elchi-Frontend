@@ -64,6 +64,12 @@ export const queryKeys = {
     user: (userId: string, params: object) =>
       ["activity-logs", "user", userId, params] as const,
   },
+  /** Yetkazish narxi (DAqXPeSy): uchala tarif bo'yicha taxmin, formula sozlamalari. */
+  deliveryPricing: {
+    all: ["delivery-pricing"] as const,
+    quoteByTariff: (body: object) => ["delivery-pricing", "quote-by-tariff", body] as const,
+    settings: ["delivery-pricing", "settings"] as const,
+  },
   /** O'z hisobining faol sessiyalari (`GET /auth/sessions`, Elchi Pochta #3). */
   accountSessions: {
     all: ["account-sessions"] as const,

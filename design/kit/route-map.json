@@ -1062,9 +1062,15 @@
         "src/pages/products/ui/useDeleteProductConfirm.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
         "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/ProductMeasureFields.tsx",
+        "src/pages/products/ui/ProductMeasureCells.tsx",
         "src/pages/products/ui/FormErrorSummary.tsx",
         "src/entities/product/ui/ProductThumb.tsx",
+        "src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx",
+        "src/entities/delivery-pricing/ui/MeasureWeights.tsx",
+        "src/entities/delivery-pricing/ui/VolumetricSwitch.tsx",
         "src/pages/products/model/productView.ts",
+        "src/pages/products/model/productMeasure.ts",
         "src/pages/products/model/productErrors.ts"
       ],
       "views": {
@@ -1079,7 +1085,7 @@
         "market": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): yaratish, tahrirlash, o'chirish va «Amallar» ustuni yo'q; qidiruv yonida «Faqat ko'rish…» izohi, sarlavhada «Jami N ta mahsulot · <market>».",
         "market_operator": "Faqat ko'rish (ega qarori 2026-10-15, MH-1): tahrirlash, o'chirish, yaratish yo'q, garchi backend POST product va PATCH product/my/:id ni MARKET_OPERATOR'ga ochsa ham. Ma'lumot — GET product/my-products, market nomi qatordan (market.name). Market biriktirilmagan bo'lsa (my-products → 400) — products-unassigned («Qayta tekshirish» qayta so'raydi). Menyu bandi «Mahsulotlar» — MO-2 da qo'shildi."
       },
-      "note": "Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). Og'irlik, O'lcham, Hisob vazni ustunlari — maket taklifi (backend kerak, 9fHyFp3y → MH-2), chizilmaydi; «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi."
+      "note": "Market va market operatorida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). «Narx» ustuni (price, zRqDRLAZ; narxsiz — «—»), planshetda (< 1024) «Market» ustuni yashirin — market nomi mahsulot nomi ostida Store bilan (MH-1). O'lchov ustunlari (6FLyjO6j, backend MH-3 / 9fHyFp3y): «Og'irlik» va «O'lcham, sm» (planshetda yashirin), «Hisob vazni» (qalin + og'irlik bo'yicha / hajm bo'yicha / hajm hisobga olinmaydi; formula — U×K×B/5000, 0,1 kg yuqoriga), o'lchovsiz eski mahsulot — «Kiritilmagan» (warning); telefon kartasida narx ostida; market va operatorda ham. Tahrirlash oynasi — yaratish sahifasi bilan AYNI o'lchov maydonlari (ProductMeasureFields), narx — uchta katak; PATCH faqat o'zgargan o'lchovni yuboradi (U/K/B uchalasi birga). «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi. products-edit-dialog-barcode (shtrix kod, QR stiker) — alohida karta, kodda yo'q."
     },
     {
       "path": "/products/create-product/:id",
@@ -1089,6 +1095,12 @@
         "src/pages/products/create/index.tsx",
         "src/pages/products/ui/ProductImageField.tsx",
         "src/pages/products/ui/ProductPriceField.tsx",
+        "src/pages/products/ui/ProductMeasureFields.tsx",
+        "src/pages/products/ui/ProductMeasureCells.tsx",
+        "src/pages/products/model/productMeasure.ts",
+        "src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx",
+        "src/entities/delivery-pricing/ui/MeasureWeights.tsx",
+        "src/entities/delivery-pricing/ui/VolumetricSwitch.tsx",
         "src/pages/products/ui/FormErrorSummary.tsx",
         "src/entities/product/ui/ProductThumb.tsx",
         "src/pages/products/ui/useDeleteProductConfirm.tsx",
@@ -1100,7 +1112,7 @@
         "manager": ["products-create", "products-create-errors"],
         "registrator": ["products-create", "products-create-errors"]
       },
-      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. Maket taklifi (2026-10-19, backend kerak — MH-2): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT), «Narx» ustuni bilan; qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. «Narx» maydoni (MH-1): ixtiyoriy, TextInput mode=money, bo'sh — null; tahrirda faqat o'zgargan bo'lsa yuboriladi. «Og'irlik va o'lcham» (6FLyjO6j, backend MH-3): og'irlik (kg, 0,1…1000, ≤ 3 kasr) + U × K × B (butun sm, 1…1000) MAJBURIY, forma darajasida tekshiriladi (backend 400 ga tushmaydi; xato matni i18n kaliti — til almashsa yangilanadi); «Hajmga qarab hisoblash» sukut yoqiq (o'chiq — maydonlar bloklanmaydi, izoh); jonli «Hajmli vazn» / «Hisob vazni»; «Taxminiy yetkazish narxi» — POST /delivery/quote/by-tariff (~400 ms kutish, faqat o'lchov to'g'ri bo'lsa; xato — «Narxni hisoblab bo'lmadi», forma ishlaydi); izohdagi chegara va yaxlitlash — superadmin/admin'da GET /delivery/pricing-settings dan, boshqa rolda qisqa izoh. Ro'yxat «Mahsulot nomi · hisob vazni». Maketdagi «Taklif» belgisi kodga ko'chirilmaydi. products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
       "roleNotes": {
         "market": "Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15); guard canCreateProducts marketni o'tkazmaydi (MH-1)."
       }

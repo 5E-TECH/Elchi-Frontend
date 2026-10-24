@@ -1,0 +1,46 @@
+{
+  "tariffs": {
+    "city": "Shahar ichida",
+    "center": "Markazgacha",
+    "address": "Uygacha"
+  },
+  "tariffScope": {
+    "city": "Toshkent shahri ichida",
+    "center": "Viloyat filialigacha",
+    "address": "Mijoz manziligacha"
+  },
+  "units": {
+    "kg": "{{value}} kg"
+  },
+  "volumetric": {
+    "label": "Hajmga qarab hisoblash",
+    "on": "Yetkazish narxi real og'irlik va hajmli vaznning kattasidan hisoblanadi",
+    "off": "Yetkazish narxi faqat real og'irlikdan hisoblanadi. O'lchamlar baribir kiritiladi va saqlanadi."
+  },
+  "weights": {
+    "volumetric": "Hajmli vazn",
+    "billable": "Hisob vazni",
+    "formula": "{{length}} × {{width}} × {{height}} / {{divisor}}",
+    "basisVolume": "kattasi olinadi: hajm bo'yicha",
+    "basisWeight": "kattasi olinadi: og'irlik bo'yicha",
+    "volumeOff": "hajm hisobga olinmaydi — faqat og'irlik",
+    "invalidTitle": "Hisoblab bo'lmadi",
+    "invalidDescription": "Og'irlik va uchala o'lchamni to'g'ri kiriting — hajmli vazn va hisob vazni shu yerda darhol chiqadi."
+  },
+  "quote": {
+    "title": "Taxminiy yetkazish narxi",
+    "breakdown": "{{base}} + {{extraKg}} kg × {{perKg}}",
+    "baseOnly": "faqat asosiy narx",
+    "noTariff": "faol tarif yo'q",
+    "failed": "Narxni hisoblab bo'lmadi",
+    "failedHint": "Mahsulotni saqlash mumkin — narx keyinroq ko'rinadi.",
+    "retry": "Qayta urinish",
+    "hintExtra": "Hisob vazni {{billable}} kg: birinchi {{first}} kg asosiy narxga kiradi, qolgan {{extra}} kg uchun qo'shimcha haq.",
+    "hintExtraShort": "Hisob vazni {{billable}} kg: {{extra}} kg uchun qo'shimcha haq.",
+    "hintBase": "Hisob vazni {{billable}} kg — {{first}} kg gacha, faqat asosiy narx.",
+    "hintBaseShort": "Hisob vazni {{billable}} kg — faqat asosiy narx.",
+    "hintRound": "Narx {{roundTo}}ga yaxlitlanadi; yakuniy narx buyurtma sotilganda qotiriladi.",
+    "hintFinal": "Yakuniy narx buyurtma sotilganda qotiriladi.",
+    "hintTariffs": "Tariflar — Hududlar → Yetkazish tariflari."
+  }
+}

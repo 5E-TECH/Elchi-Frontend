@@ -10,6 +10,17 @@ export type Product = {
   id: number;
   name: string;
   price?: number | string | null;
+  /**
+   * O'lchov (MH-3, 9fHyFp3y): og'irlik kg (`numeric`, satr bo'lib kelishi mumkin), o'lchamlar butun sm,
+   * «Hajmga qarab hisoblash» (sukut `true`). Eski va hamkor yaratgan mahsulotda `null` — «Kiritilmagan».
+   */
+  weight_kg?: number | string | null;
+  length_cm?: number | string | null;
+  width_cm?: number | string | null;
+  height_cm?: number | string | null;
+  volumetric_enabled?: boolean | null;
+  barcode?: string | null;
+  sku_code?: string | null;
   image?: string | null;
   image_url?: string | null;
   imageUrl?: string | null;

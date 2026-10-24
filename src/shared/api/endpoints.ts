@@ -288,6 +288,14 @@ export const API_ENDPOINTS = {
     BY_MARKET_ID: (id: string | number) => `product/market/${id}`,
   },
 
+  // ── Yetkazish narxi (logistics, DAqXPeSy) — hisoblash xodim + market; tarif va qoidalar — superadmin, admin ──
+  DELIVERY_PRICING: {
+    // POST { items: [{ weight_kg, length_cm, width_cm, height_cm, volumetric_enabled } | { product_id }], express? }
+    // → data.quotes { city, center, address } (faol tarifi yo'q — null); hududsiz (mahsulot formasi, 6FLyjO6j)
+    QUOTE_BY_TARIFF: "delivery/quote/by-tariff",
+    SETTINGS: "delivery/pricing-settings", // GET faol versiya · PATCH qisman (yangi versiya) — SUPERADMIN, ADMIN
+  },
+
   // ── Integrations (admin/registrator) ─────────────────────────────────────
   INTEGRATIONS: {
     BASE: "integrations", // GET list / POST create

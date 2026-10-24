@@ -1,0 +1,46 @@
+{
+  "tariffs": {
+    "city": "Within the city",
+    "center": "To the centre",
+    "address": "To the door"
+  },
+  "tariffScope": {
+    "city": "Within Tashkent city",
+    "center": "To the regional branch",
+    "address": "To the customer's address"
+  },
+  "units": {
+    "kg": "{{value}} kg"
+  },
+  "volumetric": {
+    "label": "Account for volume",
+    "on": "Delivery price uses the larger of the actual and volumetric weight",
+    "off": "Delivery price uses the actual weight only. Dimensions are still entered and saved."
+  },
+  "weights": {
+    "volumetric": "Volumetric weight",
+    "billable": "Billable weight",
+    "formula": "{{length}} × {{width}} × {{height}} / {{divisor}}",
+    "basisVolume": "the larger is used: by volume",
+    "basisWeight": "the larger is used: by weight",
+    "volumeOff": "volume is ignored — weight only",
+    "invalidTitle": "Cannot calculate",
+    "invalidDescription": "Enter a valid weight and all three dimensions — the volumetric and billable weight appear here right away."
+  },
+  "quote": {
+    "title": "Estimated delivery price",
+    "breakdown": "{{base}} + {{extraKg}} kg × {{perKg}}",
+    "baseOnly": "base price only",
+    "noTariff": "no active tariff",
+    "failed": "Could not calculate the price",
+    "failedHint": "You can still save the product — the price will show later.",
+    "retry": "Try again",
+    "hintExtra": "Billable weight {{billable}} kg: the first {{first}} kg are in the base price, the remaining {{extra}} kg are charged extra.",
+    "hintExtraShort": "Billable weight {{billable}} kg: {{extra}} kg are charged extra.",
+    "hintBase": "Billable weight {{billable}} kg — up to {{first}} kg, base price only.",
+    "hintBaseShort": "Billable weight {{billable}} kg — base price only.",
+    "hintRound": "The price is rounded to {{roundTo}}; the final price is fixed when the order is sold.",
+    "hintFinal": "The final price is fixed when the order is sold.",
+    "hintTariffs": "Tariffs — Regions → Delivery tariffs."
+  }
+}

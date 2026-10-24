@@ -7,6 +7,7 @@ import { useProducts } from "../../../../entities/product";
 import { notify } from "../../../../shared/lib/notify";
 import { Button, Dialog, Field, TextInput } from "../../../../shared/ui/primitives";
 import { describeProductError, isDuplicateNameError } from "../../model/productErrors";
+import { appendProductMeasure, toProductMeasureForm, type ProductFormValues } from "../../model/productMeasure";
 import {
   getProductImageUrl,
   getProductMarketName,
@@ -18,9 +19,15 @@ import {
 import { usePickedImage } from "../../model/usePickedImage";
 import { FormErrorSummary } from "../../ui/FormErrorSummary";
 import { ProductImageField } from "../../ui/ProductImageField";
+import { ProductMeasureFields } from "../../ui/ProductMeasureFields";
 import { ProductPriceField } from "../../ui/ProductPriceField";
 
-type EditFormValues = { name: string; price: string };
+/** Forma qiymatlari — mahsulot qatoridan (ro'yxat javobida o'lchov ham bor, MH-3). */
+const toFormValues = (product: Product | null, language?: string | null): ProductFormValues => ({
+  name: product?.name ?? "",
+  price: toPriceInput(product),
+  ...toProductMeasureForm(product, language),
+});
 
 export type EditProductDialogProps = {
   /** Tahrirlanayotgan mahsulot (`null` — oyna yopiq). */
@@ -31,17 +38,19 @@ export type EditProductDialogProps = {
 /**
  * MAHSULOTNI TAHRIRLASH — maket `*-products-edit-dialog` (faqat xodim: superadmin, admin, menejer, registrator):
  * `Dialog` md (telefonda pastki varaqa), `Pencil`, izoh — market nomi; «Mahsulot nomi *», «Narx» (ixtiyoriy,
- * `mode="money"`), «Mahsulot rasmi» (zona + oldindan ko'rish), «Bekor qilish» / «Saqlash». «Saqlash» bosilganda
- * xato maydon bo'lsa — tepada «Saqlab bo'lmadi · N ta maydonda xato» (maket `*-products-create-errors`).
- * «Og'irlik va o'lcham» bo'limi — maket taklifi (backend kerak, MH-2), chizilmaydi.
+ * `mode="money"`), «Og'irlik va o'lcham» (yaratish sahifasi bilan AYNI maydonlar — 6FLyjO6j; narx — uchta katak),
+ * «Mahsulot rasmi» (zona + oldindan ko'rish), «Bekor qilish» / «Saqlash». «Saqlash» bosilganda xato maydon bo'lsa —
+ * tepada «Saqlab bo'lmadi · N ta maydonda xato» (maket `*-products-create-errors`).
  *
  * Xulq: ochilganda `GET product/:id` (yangi rasm manzili), FormData `name` (+ `price` — faqat o'zgargan bo'lsa:
- * bo'sh — narx tozalanadi, backend `null`; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
+ * bo'sh — narx tozalanadi, backend `null`; + o'lchov — faqat o'zgargan maydonlar, U / K / B uchalasi birga, shuning
+ * uchun saqlangan o'lchov o'chib ketmaydi; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
  * «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — i18n izoh bilan (xom backend matni emas), 409 (nom band) —
  * «Mahsulot nomi» maydoni ostida. Market va market operatori mahsulotni tahrirlamaydi (MH-1) — `PATCH product/my/:id` ishlatilmaydi.
  */
 export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) => {
-  const { t } = useTranslation("products");
+  const { t, i18n } = useTranslation("products");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   // Yopilish harakati paytida ham oxirgi mahsulot ko'rinib tursin (oyna bo'shab qolmasin).
   const [shown, setShown] = useState(product);
   if (product && product !== shown) setShown(product);
@@ -57,20 +66,24 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
     reset,
     setError,
     formState: { errors, isSubmitted, dirtyFields },
-  } = useForm<EditFormValues>({ defaultValues: { name: product?.name ?? "", price: toPriceInput(product) } });
+  } = useForm<ProductFormValues>({ defaultValues: toFormValues(product, language) });
 
   // Har ochilishda forma shu mahsulot qiymatlari bilan qayta to'ladi (oldingi yozilgan, saqlanmagan matn qolmaydi).
+  // Til almashsa qayta to'ldirilmaydi (yozilgan matn yo'qolmasin) — til ochilish paytidagisi.
   useEffect(() => {
-    if (product) reset({ name: product.name, price: toPriceInput(product) });
-  }, [product, reset]);
+    if (product) reset(toFormValues(product, i18n.resolvedLanguage ?? i18n.language));
+  }, [i18n, product, reset]);
 
-  const submit = handleSubmit(async ({ name, price }) => {
+  const submit = handleSubmit(async (values) => {
+    const { name, price } = values;
     // Enter bilan takroriy yuborish (tugma `loading` bo'lsa ham) — ikkinchi PATCH ketmasin.
     if (!product || updateProduct.isPending) return;
     const formData = new FormData();
     formData.append("name", name.trim());
     // Narx faqat o'zgargan bo'lsa yuboriladi: kasrli eski narx (125000.50) bekorga yaxlitlanmasin.
     if (dirtyFields.price) formData.append("price", price);
+    // O'lchov — faqat o'zgargani (o'zgarmagan / bo'sh maydon yuborilmaydi — backend 400 bermasin, qiymat o'chmasin).
+    appendProductMeasure(formData, values, dirtyFields);
     if (picked) formData.append("image", picked.file);
 
     try {
@@ -97,6 +110,7 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
       onExited={() => pick(null)}
       busy={busy}
       icon={Pencil}
+      size="lg"
       title={t("v2.edit.title")}
       description={getProductMarketName(detail ?? target) ?? undefined}
       onSubmit={submit}
@@ -148,6 +162,13 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
             readOnly={busy}
           />
         )}
+      />
+      <ProductMeasureFields
+        control={control}
+        errors={errors}
+        idPrefix="product-edit"
+        quoteVariant="tiles"
+        readOnly={busy}
       />
       <ProductImageField
         label={t("v2.edit.image")}
