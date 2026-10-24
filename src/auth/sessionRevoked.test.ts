@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import store from "../app/config/store";
 import { loginSuccess } from "../entities/user/model/slice";
 import {
@@ -31,8 +31,8 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("auth:session_revoked — boshqa qurilmadan yopilgan sessiya joyida chiqadi (Elchi Pochta #3)", () => {
   let replace: ReturnType<typeof vi.fn>;
-  let post: ReturnType<typeof vi.spyOn>;
-  let hook: ReturnType<typeof vi.fn>;
+  let post: MockInstance<typeof authClient.post>;
+  let hook: ReturnType<typeof vi.fn<(accessToken: string | null) => Promise<unknown>>>;
   let unregisterHook: () => void;
 
   const signIn = (token: string) => {
@@ -48,7 +48,7 @@ describe("auth:session_revoked — boshqa qurilmadan yopilgan sessiya joyida chi
     replace = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
     post = vi.spyOn(authClient, "post").mockResolvedValue({ data: {} });
-    hook = vi.fn().mockResolvedValue(undefined);
+    hook = vi.fn<(accessToken: string | null) => Promise<unknown>>().mockResolvedValue(undefined);
     unregisterHook = registerBeforeLogout(hook);
     signIn(tokenWith({ sid: SID }));
   });

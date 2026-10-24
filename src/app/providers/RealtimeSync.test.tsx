@@ -1,7 +1,7 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import { loginSuccess, logout } from "../../entities/user/model/slice";
 import { queryKeys } from "../../shared/config/queryKeys";
@@ -256,7 +256,7 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     const tokenWithSid = (sid: string) =>
       `${base64url({ alg: "HS256" })}.${base64url({ sub: "1", roles: ["superadmin"], sid })}.sig`;
     let replace: ReturnType<typeof vi.fn>;
-    let post: ReturnType<typeof vi.spyOn>;
+    let post: MockInstance<typeof authClient.post>;
 
     beforeEach(() => {
       window.sessionStorage.clear();
