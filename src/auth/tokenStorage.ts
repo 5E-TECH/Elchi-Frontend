@@ -162,6 +162,17 @@ export const tokenStorage = {
     return typeof sid === "string" && sid.trim() ? sid.trim().toLowerCase() : null;
   },
 
+  /**
+   * Token ichidagi foydalanuvchi (JWT `id`/`sub`, `role`) — profil so'rovi javobsiz qolganda kirishni saqlab
+   * qolish uchun (h0AM0kDL). Imzo tekshirilmaydi: faqat UI yo'naltirish uchun, huquqni server tekshiradi.
+   */
+  getTokenIdentity(token: string | null = accessToken): { id: string | null; role: string | null } | null {
+    if (!token) return null;
+    const payload = decodeJwtPayload(token);
+    if (!payload?.role) return null;
+    return { id: payload.id ? String(payload.id) : null, role: String(payload.role) };
+  },
+
   clear() {
     this.setAccessToken(null);
     this.clearSessionMetadata();

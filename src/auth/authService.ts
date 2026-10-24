@@ -187,7 +187,11 @@ let reinitTimer: ReturnType<typeof setTimeout> | null = null;
 const keepSessionWhileOffline = (error: unknown) => {
   // Profil kelmadi — oxirgi ma'lum rol bilan ilova ochiladi, so'rovlar tarmoq
   // qaytgach (refetchOnReconnect) o'zi tiklanadi, profil ham qayta olinadi.
-  const { id, role } = tokenStorage.getAuthIdentity();
+  // Tab identifikatori yo'q (cookie bilan tiklangan yangi tab) — token'dagi rol/id (h0AM0kDL).
+  const stored = tokenStorage.getAuthIdentity();
+  const fromToken = stored.role ? null : tokenStorage.getTokenIdentity();
+  const id = stored.id ?? fromToken?.id;
+  const role = stored.role ?? fromToken?.role;
   if (role) store.dispatch(setRole(role));
   if (id) store.dispatch(setId(id));
   if (axios.isAxiosError(error)) emitNetworkError(error);
@@ -262,16 +266,81 @@ export const refreshAccessToken = async () => {
   return nextAccessToken;
 };
 
+/**
+ * POST /auth/login qayta urinishi (h0AM0kDL): FAQAT darhol uzilishda (`ERR_NETWORK` — so'rov serverga yetmadi:
+ * Wi-Fi ↔ mobil almashuvi, tunnel/Cloudflare uzilishi) bir marta, 400–800 ms dan keyin. Vaqt tugashi
+ * (`ECONNABORTED`, 15 s) qayta urinilmaydi — foydalanuvchi yana 15 s kutib qolmasin; server javobi (4xx/5xx) ham.
+ */
+export const LOGIN_RETRY_DELAY_MS = 400;
+export const LOGIN_RETRY_JITTER_MS = 400;
+
+const isImmediateNetworkError = (error: unknown) =>
+  axios.isAxiosError(error) && !error.response && error.code === "ERR_NETWORK";
+
+const postLoginWithRetry = async (credentials: LoginCredentials) => {
+  // Elchi Pochta #3: `X-Device-Id` sessiyani shu brauzerga bog'laydi (shu qurilmadagi ochiq sessiya qayta
+  // ishlatiladi), `X-Device-Name` — ro'yxatdagi aniq qurilma nomi.
+  const send = () => authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, { headers: deviceHeaders() });
+  try {
+    return await send();
+  } catch (error) {
+    if (!isImmediateNetworkError(error)) throw error;
+    await wait(LOGIN_RETRY_DELAY_MS + Math.floor(Math.random() * LOGIN_RETRY_JITTER_MS));
+    return send();
+  }
+};
+
+/**
+ * Kirishdan keyin profil kelmasa (tarmoq / 429 / 5xx) — profil FONDA qayta so'raladi (h0AM0kDL): shu oraliqlar
+ * bilan, internet qaytsa darhol. Bootstrap yuklash ekrani (`appInitializing`) qayta yoqilmaydi.
+ */
+export const PROFILE_BACKGROUND_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
+
+const loadProfileInBackground = () => {
+  if (typeof window === "undefined") return;
+  let attempt = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const stop = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    window.removeEventListener("online", run);
+  };
+  function run() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    // Chiqildi yoki boshqa foydalanuvchi kirdi — to'xtaydi.
+    if (!tokenStorage.getAccessToken()) return stop();
+    fetchMyProfile()
+      .then(stop)
+      .catch((error: unknown) => {
+        if (!isTransientAuthFailure(error) || attempt >= PROFILE_BACKGROUND_DELAYS_MS.length) return stop();
+        timer = setTimeout(run, PROFILE_BACKGROUND_DELAYS_MS[attempt++]);
+      });
+  }
+  window.addEventListener("online", run);
+  timer = setTimeout(run, PROFILE_BACKGROUND_DELAYS_MS[attempt++]);
+};
+
+/**
+ * Server login'ni QABUL QILGAN, lekin profil kelmadi (javobsiz yoki 429/5xx) — kirish bekor qilinmaydi
+ * (h0AM0kDL): rol va id token'dan olinadi, profil fonda so'raladi. Token'da rol bo'lmasa — `false` (eski oqim).
+ */
+const keepLoginWithoutProfile = (accessToken: string) => {
+  const identity = tokenStorage.getTokenIdentity(accessToken);
+  if (!identity?.role) return false;
+  tokenStorage.setAuthIdentity(identity);
+  store.dispatch(setRole(identity.role));
+  if (identity.id) store.dispatch(setId(identity.id));
+  loadProfileInBackground();
+  return true;
+};
+
 export const login = async (credentials: LoginCredentials) => {
   // Kirishdan keyingi sahifalar tarjimasi — so'rov bilan parallel (to'g'ridan-to'g'ri `/login` da kechiktirilgan,
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    // Elchi Pochta #3: `X-Device-Id` sessiyani shu brauzerga bog'laydi (shu qurilmadagi ochiq sessiya qayta
-    // ishlatiladi), `X-Device-Name` — ro'yxatdagi aniq qurilma nomi.
-    const response = await authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
-      headers: deviceHeaders(),
-    });
+    const response = await postLoginWithRetry(credentials);
     const accessToken = response.data?.accessToken;
 
     if (!accessToken) {
@@ -282,7 +351,12 @@ export const login = async (credentials: LoginCredentials) => {
     persistSessionMetadata(response.data);
     store.dispatch(loginSuccess({ accessToken }));
 
-    const user = await fetchMyProfile(accessToken);
+    let user: AuthenticatedUser | null = null;
+    try {
+      user = await fetchMyProfileWithRetry(accessToken);
+    } catch (error) {
+      if (!isTransientAuthFailure(error) || !keepLoginWithoutProfile(accessToken)) throw error;
+    }
     await appLocales;
     store.dispatch(setAppInitializing(false));
 
@@ -468,6 +542,17 @@ export const resetRevokedLogoutForTests = () => {
   resetLoginNoticeHoldForTests();
 };
 
+/**
+ * Token yo'q ochilishda refresh cookie bilan tiklash (h0AM0kDL) — `/login` (foydalanuvchi ataylab kirish
+ * sahifasini ochgan: boshqa hisob bilan kirishi mumkin) va Telegram Mini App (`/tg/…` — o'z `init_data`
+ * kirishi bor) dan TASHQARI. Chiqishdan keyingi 10 s (`elchi_skip_refresh_once`) yuqorida alohida tekshiriladi.
+ */
+const shouldRestoreSessionFromCookie = () => {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return path !== "/login" && path !== "/tg" && !path.startsWith("/tg/");
+};
+
 export const initAuth = async () => {
   if (initPromise) {
     return initPromise;
@@ -486,12 +571,25 @@ export const initAuth = async () => {
       let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
-        resetClientAuthState();
-        return;
+        // Yangi tab / telefon tashrifi (token sessionStorage'da — tabga xos): refresh cookie bilan sessiya
+        // tiklanadi, har tashrifda qayta kirish talab qilinmaydi (h0AM0kDL). Cookie yo'q/yaroqsiz yoki tarmoq
+        // yo'q — jim, kirish sahifasi (xato xabarisiz).
+        if (!shouldRestoreSessionFromCookie()) {
+          resetClientAuthState();
+          return;
+        }
+        store.dispatch(setAppInitializing(true));
+        appLocales = loadAppLocales().catch(() => undefined);
+        try {
+          accessToken = await refreshAccessToken();
+        } catch {
+          resetClientAuthState();
+          return;
+        }
+      } else {
+        store.dispatch(setAppInitializing(true));
+        appLocales = loadAppLocales().catch(() => undefined);
       }
-
-      store.dispatch(setAppInitializing(true));
-      appLocales = loadAppLocales().catch(() => undefined);
 
       const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
       if (accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {

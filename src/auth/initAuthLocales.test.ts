@@ -49,7 +49,10 @@ describe("initAuth — tarjimalar chizishdan oldin", () => {
 
   it("tokensiz (login sahifasi) — tarjimalar kutilmaydi", async () => {
     tokenStorage.clear();
+    // `/login` da refresh cookie bilan tiklash yo'q (h0AM0kDL) — so'rovsiz darhol kirish sahifasi.
+    window.history.pushState({}, "", "/login");
     await initAuth();
+    window.history.pushState({}, "", "/");
     expect(locales.load).not.toHaveBeenCalled();
     expect(store.getState().user.isAppInitializing).toBe(false);
   });
