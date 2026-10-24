@@ -290,6 +290,17 @@ describe("Region page — superadmin / admin", () => {
     expect(sectionOrder()).toEqual(["Tumanlar", "Tumanlarni o'tkazish", "Logist biriktirish"]);
   });
 
+  it("«Yetkazish tariflari» (47WFHzlx) — superadmin va admin sarlavhasida, /delivery-tariffs ga olib boradi", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderRegion("superadmin");
+    expect(screen.getByRole("button", { name: "Yetkazish tariflari" })).toBeInTheDocument();
+    unmount();
+
+    renderRegion("admin");
+    await user.click(screen.getByRole("button", { name: "Yetkazish tariflari" }));
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/delivery-tariffs"));
+  });
+
   it("keeps the period in the URL and sends the matching date range", async () => {
     const user = userEvent.setup();
     renderRegion("admin", "/regions?period=week");

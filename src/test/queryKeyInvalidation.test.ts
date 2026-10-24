@@ -61,8 +61,6 @@ const READ_ONLY: Record<string, string> = {
   "queryKeys.activityLogs.list":
     "Amallar jurnali ro'yxati — faqat o'qiladi (yuqoridagi sabab); filtr/sahifa almashganda yangi kalit bilan so'raladi.",
   "SMS_KEYS.tariffs": "SMS tariflari — faqat o'qiladi (provayder narxlari), ilovada o'zgartiruvchi mutatsiya yo'q.",
-  "queryKeys.deliveryPricing.all":
-    "Yetkazish narxi — hozircha faqat o'qiladi (mahsulot formasidagi taxmin va sozlama, 6FLyjO6j); tarif va qoidalarni o'zgartiruvchi mutatsiyalar «Yetkazish tariflari» sahifasi (47WFHzlx) bilan keladi.",
 };
 
 // ── Manba fayllar ──────────────────────────────────────────────────────────────────────────────────────────

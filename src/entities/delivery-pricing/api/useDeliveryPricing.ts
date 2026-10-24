@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import type { DeliveryMeasureItem, DeliveryQuoteByTariffRequest, DeliveryQuotesByTariff } from "../model/types";
-import { getPricingSettings, getQuotesByTariff } from "./deliveryPricingApi";
+import type {
+  CreateDeliveryTariffRequest,
+  DeliveryMeasureItem,
+  DeliveryQuoteByTariffRequest,
+  DeliveryQuotesByTariff,
+  UpdateDeliveryPricingSettingsRequest,
+} from "../model/types";
+import {
+  createDeliveryTariff,
+  getDeliveryTariffs,
+  getPricingSettings,
+  getQuotesByTariff,
+  updatePricingSettings,
+} from "./deliveryPricingApi";
 
 /** Maydon o'zgargandan keyin so'rovgacha kutish — har harfga so'rov ketmasin. */
 export const QUOTE_DEBOUNCE_MS = 400;
@@ -85,3 +97,36 @@ export const useDeliveryPricingSettings = ({ enabled = true }: { enabled?: boole
     staleTime: STALE_TIME_MS,
     meta: { silentError: true },
   });
+
+/** `GET /delivery/tariffs` — joriy versiyalar + tarix (faqat superadmin, admin). */
+export const useDeliveryTariffs = ({ enabled = true }: { enabled?: boolean } = {}) =>
+  useQuery({
+    queryKey: queryKeys.deliveryPricing.tariffs,
+    queryFn: getDeliveryTariffs,
+    enabled,
+    meta: { silentError: true },
+  });
+
+/**
+ * `POST /delivery/tariffs` — yangi versiya. Muvaffaqiyatdan keyin butun `deliveryPricing` keshi yangilanadi:
+ * jadval, tarix va kalkulyator (narx yangi tarif bilan qayta so'raladi).
+ */
+export const useCreateDeliveryTariff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateDeliveryTariffRequest) => createDeliveryTariff(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.all }),
+  });
+};
+
+/** `PATCH /delivery/pricing-settings` — javob darhol keshga, so'ng tariflar va narx taxminlari qayta so'raladi. */
+export const useUpdatePricingSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateDeliveryPricingSettingsRequest) => updatePricingSettings(body),
+    onSuccess: (settings) => {
+      if (settings) queryClient.setQueryData(queryKeys.deliveryPricing.settings, settings);
+      return queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.all });
+    },
+  });
+};

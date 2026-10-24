@@ -293,6 +293,9 @@ export const API_ENDPOINTS = {
     // POST { items: [{ weight_kg, length_cm, width_cm, height_cm, volumetric_enabled } | { product_id }], express? }
     // → data.quotes { city, center, address } (faol tarifi yo'q — null); hududsiz (mahsulot formasi, 6FLyjO6j)
     QUOTE_BY_TARIFF: "delivery/quote/by-tariff",
+    // GET → data.current { city, center, address } + data.versions (is_current, is_scheduled) · POST yangi versiya
+    // { tariff_id, base_price, extra_per_kg, days_min, days_max, valid_from? } — SUPERADMIN, ADMIN (47WFHzlx)
+    TARIFFS: "delivery/tariffs",
     SETTINGS: "delivery/pricing-settings", // GET faol versiya · PATCH qisman (yangi versiya) — SUPERADMIN, ADMIN
   },
 

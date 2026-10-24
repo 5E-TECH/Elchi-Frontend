@@ -64,3 +64,53 @@ export type DeliveryPricingSettings = {
   pickupFreeFromCount: number | null;
   expressMultiplier: number;
 };
+
+/** Tarif versiyasi (`GET /delivery/tariffs` → `data.current` / `data.versions`). */
+export type DeliveryTariff = {
+  id: string;
+  tariffId: DeliveryTariffId;
+  basePrice: number;
+  extraPerKg: number;
+  daysMin: number;
+  daysMax: number;
+  /** Qachondan amal qiladi (ISO). */
+  validFrom: string;
+  /** Yozilgan vaqt (`createdAt`) — bo'lmasligi mumkin. */
+  createdAt: string | null;
+  /** Kim yaratdi — foydalanuvchi ID (ism backenddan kelmaydi). */
+  createdBy: string | null;
+};
+
+export type DeliveryTariffVersion = DeliveryTariff & {
+  /** Hozir amaldagi versiya. */
+  isCurrent: boolean;
+  /** Kelajakda kuchga kiradi. */
+  isScheduled: boolean;
+};
+
+export type DeliveryTariffsData = {
+  current: Record<DeliveryTariffId, DeliveryTariff | null>;
+  /** Yangisi tepada (`valid_from` bo'yicha). */
+  versions: DeliveryTariffVersion[];
+};
+
+/** `POST /delivery/tariffs` — yangi versiya (eski o'chirilmaydi); `valid_from` berilmasa — hozir. */
+export type CreateDeliveryTariffRequest = {
+  tariff_id: DeliveryTariffId;
+  base_price: number;
+  extra_per_kg: number;
+  days_min: number;
+  days_max: number;
+  valid_from?: string;
+};
+
+/** `PATCH /delivery/pricing-settings` — qisman (faqat o'zgargan maydonlar); `volumetric_divisor` UI'dan yuborilmaydi. */
+export type UpdateDeliveryPricingSettingsRequest = Partial<{
+  first_kg_included: number;
+  min_billable_kg: number;
+  billable_step_kg: number;
+  round_to: number;
+  pickup_fee: number;
+  pickup_free_from_count: number | null;
+  express_multiplier: number;
+}>;

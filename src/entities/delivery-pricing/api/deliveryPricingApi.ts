@@ -2,11 +2,16 @@ import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import {
   DELIVERY_TARIFF_IDS,
+  type CreateDeliveryTariffRequest,
   type DeliveryPricingSettings,
   type DeliveryQuote,
   type DeliveryQuoteByTariffRequest,
   type DeliveryQuotesByTariff,
+  type DeliveryTariff,
   type DeliveryTariffId,
+  type DeliveryTariffsData,
+  type DeliveryTariffVersion,
+  type UpdateDeliveryPricingSettingsRequest,
 } from "../model/types";
 
 type Raw = Record<string, unknown>;
@@ -95,4 +100,65 @@ export const normalizePricingSettings = (value: unknown): DeliveryPricingSetting
 export const getPricingSettings = async (): Promise<DeliveryPricingSettings | null> => {
   const response = await api.get(API_ENDPOINTS.DELIVERY_PRICING.SETTINGS);
   return normalizePricingSettings(response.data);
+};
+
+export const updatePricingSettings = async (
+  body: UpdateDeliveryPricingSettingsRequest,
+): Promise<DeliveryPricingSettings | null> => {
+  const response = await api.patch(API_ENDPOINTS.DELIVERY_PRICING.SETTINGS, body);
+  return normalizePricingSettings(response.data);
+};
+
+const textOf = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim()) return value;
+  if (value instanceof Date) return value.toISOString();
+  return null;
+};
+
+/** Tarif qatori (`DeliveryTariffRowDto`); kod yoki narx yo'q bo'lsa — `null`. */
+export const normalizeTariff = (value: unknown): DeliveryTariff | null => {
+  const row = asRecord(value);
+  if (!row || !isTariffId(row.tariff_id)) return null;
+  const basePrice = numberOf(row.base_price);
+  const extraPerKg = numberOf(row.extra_per_kg);
+  const validFrom = textOf(row.valid_from);
+  if (basePrice === null || extraPerKg === null || !validFrom) return null;
+  return {
+    id: row.id === undefined || row.id === null ? "" : String(row.id),
+    tariffId: row.tariff_id,
+    basePrice,
+    extraPerKg,
+    daysMin: numberOf(row.days_min) ?? 0,
+    daysMax: numberOf(row.days_max) ?? numberOf(row.days_min) ?? 0,
+    validFrom,
+    createdAt: textOf(row.createdAt ?? row.created_at),
+    createdBy: row.created_by === undefined || row.created_by === null ? null : String(row.created_by),
+  };
+};
+
+/** `GET /delivery/tariffs` → joriy versiyalar + tarix (yangisi tepada). */
+export const normalizeTariffsData = (value: unknown): DeliveryTariffsData => {
+  const data = payloadOf(value);
+  const current = asRecord(data?.current);
+  const versions = Array.isArray(data?.versions) ? data.versions : [];
+  return {
+    current: Object.fromEntries(
+      DELIVERY_TARIFF_IDS.map((id) => [id, normalizeTariff(current?.[id])]),
+    ) as DeliveryTariffsData["current"],
+    versions: versions.flatMap((raw): DeliveryTariffVersion[] => {
+      const tariff = normalizeTariff(raw);
+      const row = asRecord(raw);
+      return tariff ? [{ ...tariff, isCurrent: row?.is_current === true, isScheduled: row?.is_scheduled === true }] : [];
+    }),
+  };
+};
+
+export const getDeliveryTariffs = async (): Promise<DeliveryTariffsData> => {
+  const response = await api.get(API_ENDPOINTS.DELIVERY_PRICING.TARIFFS);
+  return normalizeTariffsData(response.data);
+};
+
+export const createDeliveryTariff = async (body: CreateDeliveryTariffRequest) => {
+  const response = await api.post(API_ENDPOINTS.DELIVERY_PRICING.TARIFFS, body);
+  return response.data as unknown;
 };

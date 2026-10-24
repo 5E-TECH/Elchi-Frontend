@@ -3,19 +3,25 @@ import uz from "../../locales/uz/deliveryPricing.json";
 import ru from "../../locales/ru/deliveryPricing.json";
 import en from "../../locales/en/deliveryPricing.json";
 
-const flatten = (value: unknown, prefix = ""): string[] =>
+const flattenRaw = (value: unknown, prefix = ""): string[] =>
   value && typeof value === "object"
     ? Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
-        flatten(child, prefix ? `${prefix}.${key}` : key),
+        flattenRaw(child, prefix ? `${prefix}.${key}` : key),
       )
     : [prefix];
+/** Ko'plik qo'shimchalari (_one, _few …) tilga qarab farq qiladi — asosiy kalit bo'yicha solishtiriladi. */
+const flatten = (value: unknown) => [
+  ...new Set(flattenRaw(value).map((key) => key.replace(/_(zero|one|two|few|many|other)$/, ""))),
+];
 
 const placeholders = (dict: unknown) =>
   Object.fromEntries(
-    flatten(dict).map((key) => {
+    flattenRaw(dict)
+      .filter((key) => !/_(zero|one|two|few|many|other)$/.test(key) || key.endsWith("_other"))
+      .map((key) => {
       const text = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], dict);
       return [key, [...String(text).matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort()];
-    }),
+      }),
   );
 
 describe("deliveryPricing — uz/ru/en", () => {
@@ -38,5 +44,9 @@ describe("deliveryPricing — uz/ru/en", () => {
     expect(uz.weights.invalidTitle).toBe("Hisoblab bo'lmadi");
     expect(uz.quote.title).toBe("Taxminiy yetkazish narxi");
     expect(uz.quote.failed).toBe("Narxni hisoblab bo'lmadi");
+    expect(uz.page.title).toBe("Yetkazish tariflari");
+    expect(uz.page.rules.firstKg).toBe("Asosiy narxga kiradigan og'irlik");
+    expect(uz.page.edit.title).toBe("Tarifni o'zgartirish");
+    expect(uz.page.history.title).toBe("O'zgarishlar tarixi");
   });
 });

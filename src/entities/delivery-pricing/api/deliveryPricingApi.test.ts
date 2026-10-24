@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createDeliveryTariff,
+  getDeliveryTariffs,
   getPricingSettings,
   getQuotesByTariff,
   hasAnyQuote,
   normalizePricingSettings,
   normalizeQuotesByTariff,
+  normalizeTariffsData,
+  updatePricingSettings,
 } from "./deliveryPricingApi";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
 
 vi.mock("../../../shared/api/api", () => ({
-  api: { get: mocks.get, post: mocks.post, patch: vi.fn(), put: vi.fn(), delete: vi.fn() },
+  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: vi.fn() },
   API_TIMEOUT_MS: 20_000,
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
@@ -107,5 +111,51 @@ describe("so'rovlar", () => {
     mocks.get.mockResolvedValue({ data: { data: { id: "1", first_kg_included: 1, round_to: 500 } } });
     await expect(getPricingSettings()).resolves.toMatchObject({ firstKgIncluded: 1, roundTo: 500 });
     expect(mocks.get).toHaveBeenCalledWith("delivery/pricing-settings");
+  });
+});
+
+describe("tariflar (47WFHzlx)", () => {
+  const row = (id: string, tariff_id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    tariff_id,
+    base_price: "40000.00",
+    extra_per_kg: 4000,
+    days_min: 1,
+    days_max: 2,
+    valid_from: "2026-10-08T00:00:00.000Z",
+    is_active: true,
+    created_by: "7",
+    createdAt: "2026-10-08T04:00:00.000Z",
+    ...extra,
+  });
+
+  it("normalizeTariffsData: joriy versiyalar (yo'q — null) + tarix bayroqlari", () => {
+    const data = normalizeTariffsData({
+      statusCode: 200,
+      data: {
+        current: { city: row("1", "city"), center: row("2", "center"), address: null },
+        versions: [row("9", "center", { extra_per_kg: "4500", is_scheduled: true }), row("2", "center", { is_current: true }), { tariff_id: "nope" }],
+      },
+    });
+    expect(data.current.city).toMatchObject({ id: "1", tariffId: "city", basePrice: 40000, extraPerKg: 4000, createdBy: "7" });
+    expect(data.current.address).toBeNull();
+    expect(data.versions).toHaveLength(2);
+    expect(data.versions[0]).toMatchObject({ id: "9", extraPerKg: 4500, isScheduled: true, isCurrent: false });
+    expect(data.versions[1]).toMatchObject({ isCurrent: true, createdAt: "2026-10-08T04:00:00.000Z" });
+  });
+
+  it("GET / POST delivery/tariffs, PATCH delivery/pricing-settings", async () => {
+    mocks.get.mockResolvedValue({ data: { data: { current: {}, versions: [] } } });
+    await expect(getDeliveryTariffs()).resolves.toEqual({ current: { city: null, center: null, address: null }, versions: [] });
+    expect(mocks.get).toHaveBeenCalledWith("delivery/tariffs");
+
+    mocks.post.mockResolvedValue({ data: { statusCode: 201 } });
+    const body = { tariff_id: "center" as const, base_price: 40000, extra_per_kg: 4500, days_min: 1, days_max: 2 };
+    await createDeliveryTariff(body);
+    expect(mocks.post).toHaveBeenCalledWith("delivery/tariffs", body);
+
+    mocks.patch.mockResolvedValue({ data: { data: { id: "2", first_kg_included: 2, round_to: 500 } } });
+    await expect(updatePricingSettings({ first_kg_included: 2 })).resolves.toMatchObject({ firstKgIncluded: 2 });
+    expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", { first_kg_included: 2 });
   });
 });

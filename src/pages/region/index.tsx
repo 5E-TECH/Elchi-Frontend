@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-regions-map, admin-regions-map, manager-regions-scoped, courier-regions-scoped, logist-regions-detail
 import { memo, useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, Headset, Map as MapIcon } from "lucide-react";
+import { ArrowLeftRight, Headset, Map as MapIcon, Truck } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,8 @@ const CHILD_ROUTES = [
  * «HUDUDLAR» (`/regions`, guard `canViewRegionStats`: superadmin, admin, menejer, kuryer, logist).
  *  - superadmin/admin — butun kompaniya xaritasi (`GET region/stats/all`), sarlavhada bola sahifalar
  *    (maketlar bo'yicha tartib: superadmin — Tumanlarni o'tkazish · Tumanlar · Logist biriktirish;
- *    admin — Tumanlar · Tumanlarni o'tkazish · Logist biriktirish, ega S1 / DM-1);
+ *    admin — Tumanlar · Tumanlarni o'tkazish · Logist biriktirish, ega S1 / DM-1) + «Yetkazish tariflari»
+ *    (`/delivery-tariffs`, 47WFHzlx; maketda tugma yo'q — karta talabi, qo'shni tugmalar naqshi);
  *  - menejer/kuryer — o'z viloyati tumanlar kesimida (`GET region/my/district-stats`);
  *  - logist (LG-3) — o'z viloyatlaridan biri (`?region=`), tumanlar va kuryerlar kesimida, pulsiz (`GET region/stats/:id`).
  * Davr URL'da: `period=today|week|month|all|custom` + `startDate/endDate` (bola route'da yozilmaydi).
@@ -146,6 +147,9 @@ const RegionPage = () => {
               onClick={() => navigate("logist-assignment")}
             >
               {t("v2.page.actions.logist")}
+            </Button>
+            <Button variant="secondary" leftIcon={Truck} onClick={() => navigate("/delivery-tariffs")}>
+              {t("v2.page.actions.tariffs")}
             </Button>
           </>
         }

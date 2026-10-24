@@ -1,5 +1,10 @@
 export {
   DELIVERY_TARIFF_IDS,
+  type CreateDeliveryTariffRequest,
+  type DeliveryTariff,
+  type DeliveryTariffsData,
+  type DeliveryTariffVersion,
+  type UpdateDeliveryPricingSettingsRequest,
   type DeliveryMeasureItem,
   type DeliveryPricingSettings,
   type DeliveryQuote,
@@ -37,6 +42,11 @@ export {
   type WeightIssue,
 } from "./lib/measureInput";
 export {
+  createDeliveryTariff,
+  getDeliveryTariffs,
+  normalizeTariff,
+  normalizeTariffsData,
+  updatePricingSettings,
   getPricingSettings,
   getQuotesByTariff,
   hasAnyQuote,
@@ -46,6 +56,9 @@ export {
 } from "./api/deliveryPricingApi";
 export {
   QUOTE_DEBOUNCE_MS,
+  useCreateDeliveryTariff,
+  useDeliveryTariffs,
+  useUpdatePricingSettings,
   useDeliveryPricingSettings,
   useDeliveryQuoteByTariff,
   type DeliveryQuoteState,

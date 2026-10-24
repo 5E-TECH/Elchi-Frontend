@@ -32,7 +32,8 @@
       "actions": {
         "sato": "Move districts",
         "districts": "Districts",
-        "logist": "Assign logisticians"
+        "logist": "Assign logisticians",
+        "tariffs": "Delivery tariffs"
       }
     },
     "period": {
