@@ -272,6 +272,15 @@ describe("ExtraCostApprovals — market dashboardidagi tasdiqlar bloki", () => {
     expect(screen.queryByRole("button", { name: "Rad etish" })).not.toBeInTheDocument();
   });
 
+  it("G6F68ti6 (15-band): ro'yxat 503 — karta o'zi xato holatini chizadi, global xabar (toast) chiqmaydi", async () => {
+    http.get.mockRejectedValue(httpError(503, "Service Unavailable"));
+    renderBlock();
+
+    expect(await screen.findByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(document.querySelector("[data-toast-id]")).toBeNull();
+  });
+
   it("ro'yxat yuklanmasa — xato holati va «Qayta urinish»", async () => {
     const user = userEvent.setup();
     http.get.mockRejectedValueOnce(httpError(500, "Server xatosi")).mockResolvedValue(listResponse([]));

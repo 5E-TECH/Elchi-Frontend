@@ -86,6 +86,8 @@ export const useRecountAudience = () => {
       queryFn: () => previewAudience(JSON.parse(key) as PreviewTarget),
       staleTime: 0,
       retry: false,
+      // Xatoni forma o'zi ko'rsatadi (inline) — global xabar ikkinchi marta chiqmasin (G6F68ti6, 14-band).
+      meta: { silentError: true },
     });
   };
 };

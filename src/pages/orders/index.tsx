@@ -797,7 +797,8 @@ const Orders = () => {
         return;
       }
 
-      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
+      // Skaner oqimi: xato qisqa turadi (kuryer ro'yxatidagi kelishuv — 3 s), keyingi skanni to'smaydi (G6F68ti6, 16).
+      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
       rejectScannedCode(
         extractScannerToken(rawValue) ?? rawValue.trim(),
         t("ordersList.cameraReasonMissing"),
@@ -805,7 +806,7 @@ const Orders = () => {
       );
     } catch (error) {
       const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
-      scanNotify.error(t("scanNotFoundTitle"), { description: message });
+      scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
       void playScanFeedback("error", message);
     }
   }, [items, rejectScannedCode, selectScannedCancelledOrder, t]);

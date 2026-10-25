@@ -172,6 +172,9 @@ export const useOrders = () => {
       // yangilanish EMAS — aks holda xato kartasi har 30 s da skeletga aylanib qaytadi.
       refetchInterval: (query) => (status === "pending" && query.state.status !== "error" ? 30000 : false),
       refetchOnWindowFocus: status === "pending" ? "always" : false,
+      // Karta xatoni o'zi chizadi (`ErrorState`) — global xabar takrorlanmasin va har fokusda qaytmasin
+      // (G6F68ti6, 15-band).
+      meta: { silentError: true },
     });
 
   /**
