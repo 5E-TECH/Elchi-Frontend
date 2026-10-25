@@ -139,6 +139,42 @@ describe("market «Ombordagi qoldiq» (yXC91RRx)", () => {
     expect(screen.queryByText("Omborlardagi jami dona")).not.toBeInTheDocument();
   });
 
+  it("Pa1KaXmj: Markaziy ombor ustuni birinchi, nomi «Markaziy ombor» (backend tartibidan qat'i nazar)", async () => {
+    const withHq = {
+      ...STOCK,
+      warehouses: [
+        ...STOCK.warehouses,
+        { id: "12", name: "Markaziy ombor", status: "ACTIVE", kind: "HQ", branch: { id: "1", name: "Toshkent HQ" }, region: null },
+      ],
+      data: [
+        {
+          ...STOCK.data[1],
+          cells: [
+            ...STOCK.data[1].cells,
+            { warehouse_id: "12", warehouse_status: "ACTIVE", on_hand: 40, reserved: 0, available: 40, threshold: 5, level: "ok" },
+          ],
+          total_available: 62,
+        },
+      ],
+      total: 1,
+    };
+    mocks.get.mockImplementation((url: string) => {
+      if (url === "market/warehouse-stock") return Promise.resolve({ data: withHq });
+      if (url === "product/my-products") return Promise.resolve({ data: { data: [], total: 12, page: 1, limit: 10 } });
+      return Promise.reject(new Error(`kutilmagan: ${url}`));
+    });
+    renderAs("market");
+    const table = await screen.findByRole("table", { name: "Mahsulotlar omborlar bo'yicha" });
+    const headers = within(table)
+      .getAllByRole("columnheader")
+      .map((header) => header.textContent);
+    expect(headers).toEqual(["Mahsulot", "Markaziy ombor", "Samarqand", "UrgutTo'xtatilgan", "Jami"]);
+    // Katak tartibi ustunlarga mos: Markaziy — 40, Samarqand — 22, Urgut — «—».
+    const cells = within(within(table).getAllByRole("row")[1]).getAllByRole("cell").map((cell) => cell.textContent);
+    expect(cells.slice(1, 3)).toEqual(["40", "22"]);
+    expect(screen.getByText(/markaziy yoki viloyat omboriga Elchi administratori qo'shadi/)).toBeInTheDocument();
+  });
+
   it("qisqa ombor nomi", () => {
     expect(shortWarehouseName({ name: "Samarqand filiali ombori", branch: null })).toBe("Samarqand");
     expect(shortWarehouseName({ name: "X", branch: { id: "1", name: "Urgut filiali" } })).toBe("Urgut");

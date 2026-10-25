@@ -451,6 +451,8 @@ export const API_ENDPOINTS = {
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
     // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
     DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
+    // Markaziy ombor (Pa1KaXmj): HQ filiali — «Ombor ochish» oynasi uchun (SUPERADMIN/ADMIN, pul maydonlarisiz; 404 — HQ yo'q)
+    HQ: "branches/hq",
     BY_ID: (id: string | number) => `branches/${id}`, // GET / PATCH / DELETE
     DESCENDANTS: (id: string | number) => `branches/${id}/descendants`,
     ANALYTICS_MARKETS: (id: string | number) => `branches/${id}/analytics/markets`,

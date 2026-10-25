@@ -12,6 +12,13 @@
 export const WAREHOUSE_STATUSES = ["ACTIVE", "PAUSED"] as const;
 export type WarehouseStatus = (typeof WAREHOUSE_STATUSES)[number];
 
+/**
+ * Ombor turi (Pa1KaXmj, backend `WAREHOUSE_KINDS`): `HQ` — Markaziy ombor (HQ filialida, ko'pi bilan bitta; viloyat
+ * manba nomzodi EMAS), `REGIONAL` — viloyat (REGIONAL/HYBRID) filiali ombori. Noma'lum / yo'q — `REGIONAL`.
+ */
+export const WAREHOUSE_KINDS = ["REGIONAL", "HQ"] as const;
+export type WarehouseKind = (typeof WAREHOUSE_KINDS)[number];
+
 export const STOCK_LEVELS = ["ok", "low", "out"] as const;
 export type StockLevel = (typeof STOCK_LEVELS)[number];
 
@@ -72,6 +79,10 @@ export type Warehouse = {
   id: string;
   name: string;
   status: WarehouseStatus;
+  /** Backend `kind` (noma'lum — `REGIONAL`). Ekranda — `isHq`. */
+  kind: WarehouseKind;
+  /** Markaziy ombor: `kind === "HQ"` yoki filial turi HQ (Pa1KaXmj). */
+  isHq: boolean;
   branchId: string;
   branch: WarehouseBranch | null;
   /** Viloyat (logistika hududi). */
@@ -270,6 +281,9 @@ export type MarketStockWarehouse = {
   id: string;
   name: string;
   status: WarehouseStatus;
+  kind: WarehouseKind;
+  /** Markaziy ombor — ustun birinchi, nomi «Markaziy ombor» (Pa1KaXmj). */
+  isHq: boolean;
   branch: WarehouseRef | null;
   region: WarehouseRef | null;
 };

@@ -1,7 +1,8 @@
 // dizayn-v2: superadmin-warehouse-list, admin-warehouse-list
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { WarehouseStatusBadge, type Warehouse } from "../../../entities/warehouse";
+import { hqFirst, HqWarehouseBadge, WarehouseStatusBadge, type Warehouse } from "../../../entities/warehouse";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { DataTable, StatusBadge, type DataTableColumn } from "../../../shared/ui/primitives";
 import { warehousePath } from "../model/paths";
@@ -21,6 +22,8 @@ const Dash = ({ label }: { label: string }) => (
  * Band · Kam qolgan (tugagan) · Oxirgi harakat · Holat». Planshetda (< 1024) viloyat, mas'ul, band va oxirgi harakat
  * yashirin — viloyat filial nomi yonida; telefonda kartalar (nom + holat, filial · viloyat · mas'ul, «486 dona · 12
  * tur · 38 band» + «3 ta kam» + sana; to'xtatilganda «Qoldiq saqlanadi · yangi buyurtma tushmaydi»).
+ * Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini `superadmin-warehouse-list`): qatori tepada (joriy sahifada),
+ * nom yonida «Markaziy» belgisi, «Viloyat» ustunida «—» (viloyatga bog'lanmagan); telefon kartasida ham.
  */
 export const WarehousesTable = ({
   rows,
@@ -33,6 +36,7 @@ export const WarehousesTable = ({
 }) => {
   const { t } = useTranslation("warehouses");
   const text = useWarehouseText();
+  const ordered = useMemo(() => hqFirst(rows), [rows]);
 
   const lastMovement = (row: Warehouse) => {
     if (row.status === "PAUSED" && row.pausedAt) {
@@ -54,16 +58,19 @@ export const WarehousesTable = ({
       header: t("list.columns.warehouse"),
       cell: (row) => (
         <span className="flex min-w-0 flex-col gap-0.5">
-          <Link
-            to={warehousePath(row.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="whitespace-nowrap font-semibold text-text no-underline hover:text-action-hover"
-          >
-            {row.name}
-          </Link>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <Link
+              to={warehousePath(row.id)}
+              onClick={(event) => event.stopPropagation()}
+              className="whitespace-nowrap font-semibold text-text no-underline hover:text-action-hover"
+            >
+              {row.name}
+            </Link>
+            {row.isHq ? <HqWarehouseBadge /> : null}
+          </span>
           <span className="text-[13px] text-text-muted">
             {row.branch?.name ?? ""}
-            {row.region ? <span className="lg:hidden">{` · ${row.region.name}`}</span> : null}
+            {row.region && !row.isHq ? <span className="lg:hidden">{` · ${row.region.name}`}</span> : null}
           </span>
         </span>
       ),
@@ -73,7 +80,8 @@ export const WarehousesTable = ({
       header: t("list.columns.region"),
       hideBelow: "lg",
       className: "whitespace-nowrap",
-      cell: (row) => row.region?.name ?? <Dash label={t("list.noRegion")} />,
+      cell: (row) =>
+        row.isHq ? <Dash label={t("list.hqRegion")} /> : (row.region?.name ?? <Dash label={t("list.noRegion")} />),
     },
     {
       id: "manager",
@@ -160,14 +168,17 @@ export const WarehousesTable = ({
 
   const renderCard = (row: Warehouse) => {
     const last = lastMovement(row);
-    const meta = [row.branch?.name, row.region?.name, row.manager?.name].filter(Boolean).join(" · ");
+    const meta = [row.branch?.name, row.isHq ? null : row.region?.name, row.manager?.name].filter(Boolean).join(" · ");
     return (
       <Link
         to={warehousePath(row.id)}
         className="flex min-w-0 flex-col gap-1.5 px-4 py-3 text-text no-underline"
       >
         <span className="flex items-start justify-between gap-2">
-          <span className="min-w-0 font-semibold text-text">{row.name}</span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="min-w-0 font-semibold text-text">{row.name}</span>
+            {row.isHq ? <HqWarehouseBadge /> : null}
+          </span>
           <WarehouseStatusBadge status={row.status} className="shrink-0" />
         </span>
         {meta ? <span className="text-[13px] text-text-muted">{meta}</span> : null}
@@ -191,7 +202,7 @@ export const WarehousesTable = ({
 
   return (
     <DataTable
-      rows={rows}
+      rows={ordered}
       columns={columns}
       getRowKey={(row) => row.id}
       label={t("list.tableLabel")}

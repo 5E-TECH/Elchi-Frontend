@@ -3,11 +3,13 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Info, Lock, Package, SearchX, Tag, TriangleAlert, Warehouse as WarehouseIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  hqFirst,
   isWarehouseStockForbidden,
   STOCK_LEVEL_TONE,
   useMarketWarehouseStock,
   type MarketStockCell,
   type MarketStockRow,
+  type MarketStockWarehouse,
 } from "../../../entities/warehouse";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -57,6 +59,8 @@ const isTotals = (row: Row): row is { totals: true } => "totals" in row;
  * So'rov: `GET /market/warehouse-stock?search&low_only&page&limit` (market — token bo'yicha o'zi).
  * Market operatori (XtcEyQjb) — tab faqat `my-profile.can_view_warehouse_stock` bilan; market kalitni keyin o'chirsa,
  * server 403 (`WAREHOUSE_STOCK_FORBIDDEN`) — KPI va jadval o'rnida «Ombordagi qoldiq siz uchun yopiq» (qayta urinishsiz).
+ * Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini `market-products-warehouse-stock`): ustuni birinchi, nomi
+ * «Markaziy ombor» (telefon kartasida ham birinchi qator).
  */
 export const MarketWarehouseStock = ({
   description,
@@ -88,7 +92,10 @@ export const MarketWarehouseStock = ({
   const query = useMarketWarehouseStock({ page, limit, ...(search ? { search } : {}), ...(lowOnly ? { low_only: true } : {}) });
   const { data, isFetching, isPlaceholderData } = query;
   const summary = data?.summary;
-  const warehouses = useMemo(() => data?.warehouses ?? [], [data?.warehouses]);
+  // Markaziy ombor — birinchi ustun (Pa1KaXmj).
+  const warehouses = useMemo(() => hqFirst(data?.warehouses ?? []), [data?.warehouses]);
+  const columnName = (warehouse: MarketStockWarehouse) =>
+    warehouse.isHq ? t("kind.hqWarehouse") : shortWarehouseName(warehouse);
   const filtersActive = Boolean(search || lowOnly);
   /** «Jami, dona» qatori — faqat butun ro'yxat shu sahifada bo'lsa (aks holda yolg'on yig'indi). */
   const complete = Boolean(data && data.items.length > 0 && data.total <= data.items.length && !isPhone);
@@ -140,7 +147,7 @@ export const MarketWarehouseStock = ({
           id: `wh-${warehouse.id}`,
           header: (
             <span title={warehouse.name} className="inline-flex flex-col items-end gap-1">
-              {shortWarehouseName(warehouse)}
+              {columnName(warehouse)}
               {paused ? (
                 <StatusBadge tone="neutral" label={t("status.paused")} className="normal-case tracking-normal" />
               ) : null}
@@ -190,7 +197,7 @@ export const MarketWarehouseStock = ({
           {warehouses.map((warehouse) => (
             <div key={warehouse.id} className="contents">
               <dt className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-muted">
-                {shortWarehouseName(warehouse)}
+                {columnName(warehouse)}
                 {warehouse.status === "PAUSED" ? <StatusBadge tone="neutral" label={t("status.paused")} /> : null}
               </dt>
               <dd className="m-0 text-right text-[13px] font-semibold">
