@@ -15,6 +15,7 @@
     "integrations": "Integrations",
     "investors": "Investors",
     "logistics": "Logistics",
+    "deliveryPricing": "Delivery pricing",
     "branches": "Branches",
     "identity": "Staff",
     "system": "System",
@@ -151,6 +152,12 @@
       "saveError": "Couldn't save the category",
       "notFound": "Category not found",
       "notFoundDescription": "It may have been deleted — the list was refreshed"
+    }
+  },
+  "deliveryPricing": {
+    "intro": {
+      "title": "Delivery pricing — tariffs and calculation rules",
+      "description": "Tariffs, calculation rules (including the volumetric pricing threshold), price calculator and change history. The same section: Regions → Delivery tariffs (admins see it too)."
     }
   },
   "integrations": {

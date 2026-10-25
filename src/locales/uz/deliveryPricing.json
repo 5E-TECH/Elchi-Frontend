@@ -15,6 +15,7 @@
   "volumetric": {
     "label": "Hajmga qarab hisoblash",
     "on": "Yetkazish narxi real og'irlik va hajmli vaznning kattasidan hisoblanadi",
+    "onFrom": "Yetkazish narxi real og'irlik va hajmli vaznning kattasidan hisoblanadi — hajmli vazn {{threshold}} kg dan boshlab. Undan kichigida faqat og'irlik.",
     "off": "Yetkazish narxi faqat real og'irlikdan hisoblanadi. O'lchamlar baribir kiritiladi va saqlanadi."
   },
   "weights": {
@@ -24,6 +25,7 @@
     "basisVolume": "kattasi olinadi: hajm bo'yicha",
     "basisWeight": "kattasi olinadi: og'irlik bo'yicha",
     "volumeOff": "hajm hisobga olinmaydi — faqat og'irlik",
+    "belowThreshold": "Chegara {{threshold}} kg dan kichik — narx og'irlik bo'yicha",
     "invalidTitle": "Hisoblab bo'lmadi",
     "invalidDescription": "Og'irlik va uchala o'lchamni to'g'ri kiriting — hajmli vazn va hisob vazni shu yerda darhol chiqadi."
   },
@@ -147,6 +149,14 @@
       "pickupFreeHint": "Shuncha va undan ko'p posilkada; bo'sh — hech qachon tekin emas",
       "divisor": "Hajmli vazn bo'luvchisi",
       "divisorHint": "U × K × B / {{divisor}} — doimiy (ega qarori)",
+      "volumetricFrom": "Hajm bo'yicha hisoblash chegarasi",
+      "volumetricFromHint": "Hajmli vazn shu chegaradan kichik bo'lsa — standart narx (faqat og'irlik); chegaradan boshlab — hajm bo'yicha. 0 — har doim hajm bo'yicha.",
+      "volumetricExampleTitle": "Misol: chegara {{threshold}} kg",
+      "volumetricExampleAlways": "Misol: chegara 0 — hajm har doim hisobga olinadi",
+      "volumetricExampleLine": "{{size}} sm, {{weight}} kg → hajmli vazn {{volumetric}} kg → hisob {{billable}} kg ({{basis}})",
+      "volumetricBasisVolume": "hajm bo'yicha",
+      "volumetricBasisWeight": "og'irlik bo'yicha",
+      "volumetricBasisBelow": "chegaradan kichik — og'irlik bo'yicha",
       "unitKg": "kg",
       "unitTimes": "×",
       "cancel": "Bekor qilish",
@@ -194,6 +204,7 @@
       "by": "{{name}}",
       "settings": {
         "firstKg": "asosiy narxga kiradigan og'irlik {{from}} → {{to}} kg",
+        "volumetricFrom": "hajm bo'yicha hisoblash chegarasi {{from}} → {{to}} kg",
         "minBillable": "minimal hisob vazni {{from}} → {{to}} kg",
         "step": "hisob vazni qadami {{from}} → {{to}} kg",
         "roundTo": "yaxlitlash {{from}} → {{to}}",

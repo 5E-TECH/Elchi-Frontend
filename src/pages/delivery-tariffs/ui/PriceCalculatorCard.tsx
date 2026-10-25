@@ -9,6 +9,7 @@ import {
   formatKgValue,
   MeasureWeights,
   toMeasureItem,
+  toWeightRules,
   useDeliveryQuoteByTariff,
   VolumetricSwitch,
   type DeliveryPricingSettings,
@@ -26,8 +27,9 @@ type DimensionKey = "length" | "width" | "height";
 
 /**
  * «NARX KALKULYATORI» (maket `superadmin-regions-delivery-tariffs`): og'irlik + U / K / B, «Hajmga qarab hisoblash»
- * kaliti, jonli «Hajmli vazn» / «Hisob vazni» («1,0 kg asosiy + 6 kg qo'shimcha») va uchala tarif narxi —
- * `POST /delivery/quote/by-tariff` (joriy tarif va qoidalar bilan; saqlangach kesh yangilanadi — narx qayta so'raladi).
+ * kaliti, jonli «Hajmli vazn» / «Hisob vazni» («1,0 kg asosiy + 6 kg qo'shimcha»; hajmli vazn chegaradan kichik —
+ * «Chegara 3,0 kg dan kichik — narx og'irlik bo'yicha») va uchala tarif narxi — `POST /delivery/quote/by-tariff`
+ * (joriy tarif va qoidalar bilan; saqlangach kesh yangilanadi — narx va hisob vazni qayta so'raladi).
  */
 export const PriceCalculatorCard = ({
   settings,
@@ -44,13 +46,7 @@ export const PriceCalculatorCard = ({
   const set = (key: keyof MeasureInputValues) => (value: string | boolean) =>
     setValues((previous) => ({ ...previous, [key]: value }));
 
-  const rules = settings
-    ? {
-        volumetricDivisor: settings.volumetricDivisor,
-        billableStepKg: settings.billableStepKg,
-        minBillableKg: settings.minBillableKg,
-      }
-    : undefined;
+  const rules = settings ? toWeightRules(settings) : undefined;
 
   const billableNote = (billableKg: number) => {
     if (!settings) return null;
@@ -108,7 +104,13 @@ export const PriceCalculatorCard = ({
           {(["length", "width", "height"] as const).map(dimension)}
         </div>
         <VolumetricSwitch id="calc-volumetric" checked={values.volumetric} onChange={set("volumetric")} />
-        <MeasureWeights item={item} rules={rules} showFormula={false} billableNote={settings ? billableNote : undefined} />
+        <MeasureWeights
+          item={item}
+          rules={rules}
+          quote={quote}
+          showFormula={false}
+          billableNote={settings ? billableNote : undefined}
+        />
         <DeliveryQuoteList state={quote} variant="list" />
       </div>
     </Card>

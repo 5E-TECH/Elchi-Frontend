@@ -10,10 +10,10 @@ import {
   DELIVERY_TARIFF_IDS,
   type DeliveryPricingSettings,
   type DeliveryQuote,
-  type DeliveryQuotesByTariff,
   type DeliveryTariffId,
 } from "../model/types";
 import { formatKgValue } from "../lib/formatKg";
+import { firstDeliveryQuote } from "../lib/resolveWeights";
 
 export type DeliveryQuoteListProps = {
   state: DeliveryQuoteState;
@@ -34,10 +34,6 @@ export type DeliveryQuoteListProps = {
   hintSuffix?: ReactNode;
   className?: string;
 };
-
-/** Hisob vazni va qo'shimcha kg — uchala tarifda bir xil (sozlama umumiy): birinchi mavjud natijadan. */
-const firstQuote = (quotes: DeliveryQuotesByTariff | undefined): DeliveryQuote | null =>
-  DELIVERY_TARIFF_IDS.map((id) => quotes?.[id] ?? null).find(Boolean) ?? null;
 
 /**
  * «TAXMINIY YETKAZISH NARXI» — `POST /delivery/quote/by-tariff` natijasi (maket `superadmin-products-create`,
@@ -123,7 +119,7 @@ export const DeliveryQuoteList = ({
 
   const loading = state.status === "loading";
   const quotes = state.quotes;
-  const summary = firstQuote(quotes);
+  const summary = firstDeliveryQuote(quotes);
   const hintText =
     hint && summary
       ? [

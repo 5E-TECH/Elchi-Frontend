@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { computeExtraKg, computeMeasureWeights, computeTariffTotal } from "./billableWeight";
+import {
+  computeExtraKg,
+  computeMeasureWeights,
+  computeTariffTotal,
+  DEFAULT_WEIGHT_RULES,
+  meetsVolumetricThreshold,
+  toWeightRules,
+} from "./billableWeight";
 
 const item = (weight: number, l: number, w: number, h: number, volumetric = true) => ({
   weight_kg: weight,
@@ -66,5 +73,73 @@ describe("computeExtraKg / computeTariffTotal (47WFHzlx qabul mezoni)", () => {
   it("jami `round_to` ga yaxlitlanadi", () => {
     expect(computeTariffTotal({ basePrice: 35100, extraPerKg: 0, roundTo: 500, billableKg: 1, firstKgIncluded: 1 })).toBe(35000);
     expect(computeTariffTotal({ basePrice: 35300, extraPerKg: 0, roundTo: 500, billableKg: 1, firstKgIncluded: 1 })).toBe(35500);
+  });
+});
+
+/**
+ * «Hajm bo'yicha hisoblash chegarasi» (`volumetric_from_kg`, ega 2026-10-25): hajmli vazn < chegara — faqat og'irlik
+ * (asos `weight`); ≥ chegara — avvalgidek kattasi; 0 — avvalgi xulq (yuqoridagi vektorlar o'zgarmaydi).
+ */
+describe("hajm chegarasi (volumetricFromKg)", () => {
+  const rules = (volumetricFromKg: number) => ({ ...DEFAULT_WEIGHT_RULES, volumetricFromKg });
+
+  it("chegara 0 (sukut) — avvalgi natija bilan aynan bir xil", () => {
+    for (const sample of [item(1.2, 30, 22, 15), item(0.8, 50, 35, 20), item(0.84, 15, 10, 6), item(0.9, 40, 30, 15, false)]) {
+      expect(computeMeasureWeights(sample, rules(0))).toEqual(computeMeasureWeights(sample));
+    }
+    expect(DEFAULT_WEIGHT_RULES.volumetricFromKg).toBe(0);
+    expect(meetsVolumetricThreshold(item(0.5, 20, 20, 20), rules(0))).toBe(true);
+  });
+
+  it("chegara 3: 20 × 20 × 20, 0,5 kg → hajmli 1,6 < 3 → hisob 0,5 kg (og'irlik bo'yicha)", () => {
+    expect(computeMeasureWeights(item(0.5, 20, 20, 20), rules(3))).toEqual({
+      actualKg: 0.5,
+      volumetricKg: 1.6,
+      billableKg: 0.5,
+      basis: "weight",
+    });
+    expect(meetsVolumetricThreshold(item(0.5, 20, 20, 20), rules(3))).toBe(false);
+    // Chegarasiz — hajm bo'yicha 1,6 kg.
+    expect(computeMeasureWeights(item(0.5, 20, 20, 20), rules(0))).toMatchObject({ billableKg: 1.6, basis: "volume" });
+  });
+
+  it("chegara 3: 50 × 35 × 20, 0,8 kg → hajmli 7,0 ≥ 3 → hisob 7,0 kg (hajm bo'yicha)", () => {
+    expect(computeMeasureWeights(item(0.8, 50, 35, 20), rules(3))).toEqual({
+      actualKg: 0.8,
+      volumetricKg: 7,
+      billableKg: 7,
+      basis: "volume",
+    });
+    expect(meetsVolumetricThreshold(item(0.8, 50, 35, 20), rules(3))).toBe(true);
+  });
+
+  it("aynan chegarada (30 × 25 × 20 = 3,0 kg, chegara 3) — hajm qo'llanadi (≥); 1 g kam — qo'llanmaydi", () => {
+    expect(computeMeasureWeights(item(0.4, 30, 25, 20), rules(3))).toMatchObject({ volumetricKg: 3, billableKg: 3, basis: "volume" });
+    expect(meetsVolumetricThreshold(item(0.4, 30, 25, 20), rules(3))).toBe(true);
+    expect(meetsVolumetricThreshold(item(0.4, 30, 25, 20), rules(3.001))).toBe(false);
+    expect(computeMeasureWeights(item(0.4, 30, 25, 20), rules(3.001))).toMatchObject({ billableKg: 0.4, basis: "weight" });
+  });
+
+  it("chegaradan kichik, og'irlik baribir katta — og'irlik; kalit o'chiq — chegaradan qat'i nazar faqat og'irlik", () => {
+    expect(computeMeasureWeights(item(2.34, 20, 20, 20), rules(3))).toMatchObject({ billableKg: 2.4, basis: "weight" });
+    expect(computeMeasureWeights(item(0.8, 50, 35, 20, false), rules(3))).toMatchObject({ billableKg: 0.8, basis: "weight" });
+    expect(meetsVolumetricThreshold(item(0.8, 50, 35, 20, false), rules(0))).toBe(false);
+  });
+
+  it("toWeightRules — sozlamadan (chegara ham)", () => {
+    expect(
+      toWeightRules({
+        id: "1",
+        volumetricDivisor: 5000,
+        volumetricFromKg: 3,
+        firstKgIncluded: 1,
+        minBillableKg: 0.1,
+        billableStepKg: 0.1,
+        roundTo: 500,
+        pickupFee: 20000,
+        pickupFreeFromCount: 10,
+        expressMultiplier: 1.4,
+      }),
+    ).toEqual({ volumetricDivisor: 5000, billableStepKg: 0.1, minBillableKg: 0.1, volumetricFromKg: 3 });
   });
 });
