@@ -1,6 +1,8 @@
 // dizayn-v2: superadmin-regions-map, admin-regions-map
 import { memo, useEffect, useMemo, useState } from "react";
 import Highcharts from "highcharts/highmaps";
+// Klaviatura va skrin-rider (fYgDe3MW). Tartib muhim: modul `highmaps` nusxasiga (`window._Highcharts`) ulanadi.
+import "highcharts/modules/accessibility";
 import HighchartsReact from "highcharts-react-official";
 import uzTopology from "@highcharts/map-collection/countries/uz/uz-all.topo.json";
 import { mapStepOf, STEP_VAR, type RegionMetric, type RegionRow } from "../model/regionsModel";
@@ -14,8 +16,16 @@ export interface UzbekistanRegionMapProps {
   /** Tooltip HTML'i (matnlar chaqiruvchida, foydalanuvchi matni `escapeHtml` bilan). */
   tooltipHtml: (row: RegionRow) => string;
   onSelect: (row: RegionRow) => void;
-  /** Xaritaning matnli tavsifi (ekran o'quvchi; bosish — yonidagi reyting orqali ham). */
+  /** Xaritaning matnli tavsifi (skrin-rider: `accessibility.description`; bosish — yonidagi reyting orqali ham). */
   ariaLabel: string;
+  /** Skrin-rider va klaviatura (fYgDe3MW): sarlavha, `lang.accessibility` (til bo'yicha), har viloyat tavsifi. */
+  a11y: {
+    title: string;
+    locale: string;
+    lang: Highcharts.LangAccessibilityOptions;
+    /** «Andijon viloyati: 21 ta buyurtma, 71,4% muvaffaqiyat, 3,0 mln so'm tushum». */
+    pointDescription: (row: RegionRow) => string;
+  };
 }
 
 type MapPointOptions = Highcharts.SeriesMapDataOptions & { rowId: string };
@@ -69,9 +79,11 @@ const buildMapOptions = (
     valueLabels,
     tooltipHtml,
     onSelect,
+    ariaLabel,
+    a11y,
   }: Pick<
     UzbekistanRegionMapProps,
-    "rows" | "metric" | "maxRevenue" | "valueLabels" | "tooltipHtml" | "onSelect"
+    "rows" | "metric" | "maxRevenue" | "valueLabels" | "tooltipHtml" | "onSelect" | "ariaLabel" | "a11y"
   >,
   theme: string,
 ): Highcharts.Options => {
@@ -89,6 +101,7 @@ const buildMapOptions = (
         value: row.orders,
         name: row.short,
         color: color(STEP_VAR[step]),
+        accessibility: { description: a11y.pointDescription(row) },
         // Eng to'q pog'onada yorliq yuza rangida (kontrast), qolganida `region-map-label`.
         dataLabels: {
           ...LABEL_OFFSET[row.hcKey as string],
@@ -111,6 +124,15 @@ const buildMapOptions = (
     title: { text: undefined },
     credits: { enabled: false },
     legend: { enabled: false },
+    // Tab — xaritaga, strelkalar — viloyatlar orasida, Enter — viloyat oynasi (`point.events.click`). Fokus belgisi —
+    // viloyatning hover holati (`action` chegara) va tooltip; Highcharts'ning to'rtburchak ramkasi kerak emas.
+    accessibility: {
+      enabled: true,
+      description: ariaLabel,
+      typeDescription: a11y.title,
+      landmarkVerbosity: "one",
+      keyboardNavigation: { enabled: true, focusBorder: { enabled: false } },
+    },
     mapNavigation: { enabled: false },
     tooltip: {
       useHTML: true,
@@ -129,6 +151,7 @@ const buildMapOptions = (
     series: [
       {
         type: "map",
+        name: a11y.title,
         data,
         joinBy: "hc-key",
         nullColor: color("--color-sunken"),
@@ -190,18 +213,23 @@ const UzbekistanRegionMap = ({
   tooltipHtml,
   onSelect,
   ariaLabel,
+  a11y,
 }: UzbekistanRegionMapProps) => {
   const theme = useThemeKey();
+  // `lang` Highcharts'da global (xaritaga emas) — til almashsa qayta yoziladi, xarita qayta quriladi (`key`).
+  useMemo(() => Highcharts.setOptions({ lang: { accessibility: a11y.lang } }), [a11y.lang]);
   // `tooltipHtml` / `onSelect` chaqiruvchida barqaror (`useCallback`) — `options` faqat ma'lumot, mavzu
   // yoki matn o'zgarganda qayta quriladi.
   const options = useMemo(
-    () => buildMapOptions({ rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect }, theme),
-    [rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect, theme],
+    () =>
+      buildMapOptions({ rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect, ariaLabel, a11y }, theme),
+    [rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect, ariaLabel, a11y, theme],
   );
 
+  // `role="img"` yo'q — u viloyatlarni klaviatura va skrin-riderdan yashirardi; mintaqa va tavsifni Highcharts beradi.
   return (
-    <div role="img" aria-label={ariaLabel} className="min-w-0">
-      <HighchartsReact highcharts={Highcharts} constructorType="mapChart" options={options} />
+    <div className="min-w-0">
+      <HighchartsReact key={a11y.locale} highcharts={Highcharts} constructorType="mapChart" options={options} />
     </div>
   );
 };
