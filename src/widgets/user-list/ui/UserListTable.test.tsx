@@ -80,6 +80,7 @@ describe("UserListTable (dizayn v2)", () => {
     const withBranch = [
       { ...users[0] },
       { ...users[1], branch_id: "3", branch: { id: "3", name: "Farg'ona filiali" } },
+      { id: "3", name: "Kamola", phone_number: "+998901112233", role: "market_operator", status: "active", market: { id: "37", name: "Baraka Shop" } },
     ];
     const { unmount } = renderWithProviders(<UserListTable users={withBranch as never} canManage />);
 
@@ -87,6 +88,8 @@ describe("UserListTable (dizayn v2)", () => {
     expect(within(table).getByRole("columnheader", { name: "Filial" })).toBeInTheDocument();
     const courierRow = within(table).getByText("Vali").closest("tr") as HTMLElement;
     expect(within(courierRow).getByText("Farg'ona filiali")).toBeInTheDocument();
+    const operatorRow = within(table).getByText("Kamola").closest("tr") as HTMLElement;
+    expect(within(operatorRow).getByText("Baraka Shop")).toBeInTheDocument();
     const adminRow = within(table).getByText("Ali Valiyev").closest("tr") as HTMLElement;
     expect(within(adminRow).getAllByText("—").length).toBeGreaterThan(0);
     expect(adminRow).not.toHaveTextContent("filiali");

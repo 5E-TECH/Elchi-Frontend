@@ -127,6 +127,8 @@ export interface User {
    */
   branch_id?: string | number | null;
   branch?: { id: string | number; name: string } | null;
+  /** x6IO746K: market operatori marketi (`GET /users`, `/users/:id`); boshqa rollarda yo'q. */
+  market?: { id: string | number; name: string; add_order?: boolean } | null;
   avatar?: string;
   balance?: number;
   orders?: Order[];

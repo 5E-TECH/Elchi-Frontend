@@ -93,7 +93,7 @@ const telegramBotState = (user: User): TelegramBotState => {
  * «Bot ulanmagan». «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmaydi — backend `telegram_linked`
  * parametri yo'q (yA31z7Rr, TG-D). Menejerda ustun yo'q.
  * «Filial» (kGIjOciz, backend 914ff57): superadmin/admin jadvalida «Rol» dan keyin (planshetda ham), filialsiz rol —
- * «—»; telefon kartasida «telefon · filial». Menejerda (`manager-users-list`) ustun yo'q — u faqat o'z filialini
+ * «—», market operatorida — uning marketi (x6IO746K); telefon kartasida «telefon · filial». Menejerda (`manager-users-list`) ustun yo'q — u faqat o'z filialini
  * ko'radi.
  *
  * Xulq (o'zgarmagan): nofaol qilish — tasdiq oynasi (`useConfirm`), so'ng `updateUserStatus.mutate`, xabarlar
@@ -114,7 +114,12 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
 
   const roleLabel = useCallback((user: User) => t(getUserRoleLabelKey(user.role)), [t]);
   const phone = useCallback((user: User) => formatPhone(user.phone_number), []);
-  const branchName = useCallback((user: User) => user.branch?.name?.trim() || null, []);
+  // Market operatori qatorida filial o'rnida uning marketi (x6IO746K: `market: { id, name }`).
+  const branchName = useCallback(
+    (user: User) =>
+      user.branch?.name?.trim() || (user.role === "market_operator" ? user.market?.name?.trim() || null : null),
+    [],
+  );
   const joined = useCallback(
     (user: User) => (user.createdAt ? formatDateTimeLocalized(user.createdAt, { language }) : "—"),
     [language],
