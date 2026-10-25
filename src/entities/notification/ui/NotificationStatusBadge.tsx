@@ -2,22 +2,27 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { StatusBadge } from "../../../shared/ui/primitives";
+import { inactiveReasonTone, type NotificationInactiveReason } from "../lib/inactiveReason";
 
 /**
- * Guruh ulanishi holati: «Faol» — `success`; «Nofaol» — `neutral`.
- *
- * Ton (DESIGN_SYSTEM §8, NG-A): nofaollik sababi API'da yo'q (`inactive_reason` — backend G085w5Qr, NG-C). Ulanish
- * endi qo'lda ham nofaol qilinadi (`PATCH {is_active: false}`) — maketda bu holat neytral, «bot chiqarilgan» esa
- * qizil. Sabab noma'lum ekan, belgi neytral va izoh umumiy (D1: «bot chiqarilgan» deb yozilmaydi); sababga qarab
- * ton NG-C da (`inactive_reason` kelgach) qo'shiladi.
+ * Guruh ulanishi holati: «Faol» — `success`; «Nofaol» — ton sababga qarab (G085w5Qr, NG-C; maket
+ * `*-notifications-telegram-groups`): bot guruhga yetolmaydi (`kicked`, `left`, `blocked_on_send`, `chat_not_found`) —
+ * `danger`, qo'lda nofaol qilingan (`manual`) yoki sabab noma'lum (`null`) — `neutral` (D1). Rang har doim so'z va
+ * yonidagi sabab matni (`NotificationInactiveNote`) bilan (DESIGN_SYSTEM §8).
  */
-const NotificationStatusBadge = ({ active }: { active: boolean }) => {
+const NotificationStatusBadge = ({
+  active,
+  reason = null,
+}: {
+  active: boolean;
+  reason?: NotificationInactiveReason | null;
+}) => {
   const { t } = useTranslation("notificationGroups");
 
   return active ? (
     <StatusBadge tone="success" label={t("status.active")} />
   ) : (
-    <StatusBadge tone="neutral" label={t("status.inactive")} />
+    <StatusBadge tone={inactiveReasonTone(reason)} label={t("status.inactive")} />
   );
 };
 

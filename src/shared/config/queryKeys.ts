@@ -3,6 +3,8 @@ export const queryKeys = {
     all: ["notifications"] as const,
     list: (params: object) => ["notifications", "list", params] as const,
     detail: (id: string) => ["notifications", "detail", id] as const,
+    /** Market o'z guruhlari holati (`GET /notifications/me/telegram-groups`, TG-C) — `all` prefiksi ostida. */
+    myTelegramGroups: ["notifications", "me-telegram-groups"] as const,
   },
   notificationsInbox: {
     all: ["notifications-inbox"] as const,

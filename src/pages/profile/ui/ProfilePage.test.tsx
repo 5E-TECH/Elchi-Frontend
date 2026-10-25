@@ -432,7 +432,7 @@ describe("Profil — market: «Guruhda mijoz ismi va telefoni» (ysBqD9Nx)", () 
     expect(mocks.get.mock.calls.some(([url]) => String(url).endsWith("/tg-token"))).toBe(false);
   });
 
-  it("market (maket `market-profile`, TG-B): «Xavfsizlik» va «Telegram» bir qatorda, ostida «Telegram guruhi» — holatsiz, ikkala turda «Ulash», kalit shu kartada", async () => {
+  it("market (maket `market-profile`, TG-B): «Xavfsizlik» va «Telegram» bir qatorda, ostida «Telegram guruhi», kalit shu kartada", async () => {
     serveProfile(() => makeUser("market", { id: "201", name: "Baraka Shop" }));
     renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
 
@@ -442,11 +442,37 @@ describe("Profil — market: «Guruhda mijoz ismi va telefoni» (ysBqD9Nx)", () 
     // Bir qator: ikkala karta bitta o'ramda, «Telegram guruhi» — undan keyin.
     expect(security.parentElement).toBe(telegram.parentElement?.parentElement);
     expect(security.compareDocumentPosition(groups) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(groups).getAllByRole("button", { name: /guruhini ulash/ })).toHaveLength(2);
-    expect(within(groups).queryByText("Ulanmagan")).not.toBeInTheDocument();
     expect(within(groups).getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toBeEnabled();
-    // Guruhlar holati endpointi market uchun yo'q (TG-C) — so'ralmaydi.
-    expect(mocks.get.mock.calls.some(([url]) => String(url).startsWith("notifications"))).toBe(false);
+  });
+
+  it("TG-C (`market-profile-telegram-status`): holat `GET notifications/me/telegram-groups` dan — ulangan turda «Ulash» yo'q", async () => {
+    const market = makeUser("market", { id: "201", name: "Baraka Shop" });
+    mocks.get.mockImplementation((url: string) => {
+      if (url === "auth/my-profile") return Promise.resolve({ data: { statusCode: 200, data: market } });
+      if (url === "notifications/me/telegram-groups") {
+        return Promise.resolve({
+          data: {
+            statusCode: 200,
+            data: [
+              { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null },
+              { group_type: "cancel", linked: false, is_active: null, linked_at: null, inactive_reason: null },
+            ],
+          },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    const groups = await screen.findByRole("region", { name: "Telegram guruhi" });
+    expect(await within(groups).findByText("06.10.2026 dan")).toBeInTheDocument();
+    expect(within(groups).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(groups).getByText("Ulanmagan")).toBeInTheDocument();
+    expect(within(groups).getAllByRole("button", { name: /guruhini ulash/ }).map((b) => b.getAttribute("aria-label"))).toEqual([
+      "Bekor qilinganlar guruhini ulash",
+    ]);
+    // Xodim ro'yxati (`GET /notifications`) marketga yopiq — so'ralmaydi.
+    expect(mocks.get.mock.calls.some(([url]) => url === "notifications")).toBe(false);
   });
 
   it("market bo'lmagan rolda kalit yo'q", async () => {
