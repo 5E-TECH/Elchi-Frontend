@@ -118,7 +118,8 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
       className: "min-w-[112px]",
       cell: (item) => (
         <>
-          <div>{audience(item)}</div>
+          {/* Uzun ism («Abdurahmonov Muhammadali · Курьер») ustunni kengaytirmasin — tor kartada so'z ichidan o'raladi. */}
+          <div className="[overflow-wrap:anywhere]">{audience(item)}</div>
           {recipientsText(item) ? <div className={SUB}>{recipientsText(item)}</div> : null}
         </>
       ),
