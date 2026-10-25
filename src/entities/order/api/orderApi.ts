@@ -11,6 +11,12 @@ import type {
 
 export const ORDER_KEY = "orders";
 
+export interface CreateOrderMutationInput {
+    data: CreateOrderRequest;
+    /** Shu tarkibning kaliti — `useCreateOrderIdempotencyKeys().take(data)`. */
+    idempotencyKey: string;
+}
+
 export interface AssignCourierRequest {
     courier_id: string;
     order_ids: string[];
@@ -19,9 +25,16 @@ export interface AssignCourierRequest {
 export const useOrders = () => {
     const client = useQueryClient();
 
+    /**
+     * `POST /orders` + `Idempotency-Key` (gpCIsGjH): kalit bitta tarkibga bitta — javobi kelmagan urinish (20 s
+     * timeout, tarmoq) qayta yuborilsa AYNI kalit ketadi va backend ikkinchi buyurtma yaratmaydi
+     * (`useCreateOrderIdempotencyKeys`). `retry` yo'q (mutatsiya sukuti) — qayta urinish faqat qo'lda.
+     */
     const createOrder = useMutation({
-        mutationFn: (data: CreateOrderRequest) =>
-            api.post(API_ENDPOINTS.ORDERS.BASE, data).then((res) => res.data),
+        mutationFn: ({ data, idempotencyKey }: CreateOrderMutationInput) =>
+            api
+                .post(API_ENDPOINTS.ORDERS.BASE, data, { headers: { "Idempotency-Key": idempotencyKey } })
+                .then((res) => res.data),
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),

@@ -26,6 +26,7 @@ import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { useOrders } from "../../../entities/order/api/orderApi";
+import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
 import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
@@ -150,6 +151,12 @@ const OrderCreateFormContent = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { createOrder } = useOrders();
+  // gpCIsGjH: `Idempotency-Key` tarkibga bog'langan — javobi kelmagan urinishni (20 s timeout, tarmoq) qayta bosish
+  // AYNI kalit bilan ketadi va ikkinchi buyurtma yaratilmaydi; forma o'zgarsa — yangi kalit, muvaffaqiyatdan keyin —
+  // hammasi yangilanadi.
+  const createKeys = useCreateOrderIdempotencyKeys();
+  // Ikki marta tez bosish: tugma `isPending` bilan o'chguncha (qayta chizilish) ikkinchi yuborish ketmasin.
+  const submittingRef = useRef(false);
   const role = useSelector((state: RootState) => state.role.role);
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
@@ -314,12 +321,21 @@ const OrderCreateFormContent = () => {
       return;
     }
 
+    if (submittingRef.current) return;
+
     const payload = buildCreateOrderPayload(values, {
       includeMarketId: !isMarketRole,
       includeFulfillment: canChooseSource,
     });
-    createOrder.mutate(payload, {
+    submittingRef.current = true;
+    createOrder.mutate({ data: payload, idempotencyKey: createKeys.take(payload) }, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
       onSuccess: () => {
+        // Takroriy kalit javobi (`idempotent_replay`) ham shu yerga keladi: buyurtma avvalgi (javobi yo'qolgan)
+        // urinishda yaratilgan — bitta, forma tozalanadi. Keyingi buyurtma — yangi kalit.
+        createKeys.reset();
         void queryClient.invalidateQueries({ queryKey: ["orders"] });
         reset({
           ...ORDER_CREATE_DEFAULT_VALUES,
