@@ -12,6 +12,7 @@ import {
   resolveOrderActionResponse,
 } from "../../entities/orders/extraCostApproval";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
+import { toOrderSearchTerm } from "../../entities/order/model/orderNumber";
 import OrderFilters from "./list/OrderFilters";
 import {
   buildOrderListParams,
@@ -473,7 +474,9 @@ const Orders = () => {
    * takrorlanmaydi). Ruxsatni backend tekshiradi: begona buyurtma 403/404 —
    * hech narsa qo'shilmaydi.
    */
-  const exactOrderId = /^\d{1,12}$/.test(urlSearch.trim()) ? urlSearch.trim() : "";
+  // rwAy8Qyk: «EL-100081» (ro'yxatdagi raqam) ham — ichki id'ga aylantiriladi.
+  const exactSearch = toOrderSearchTerm(urlSearch.trim());
+  const exactOrderId = /^\d{1,12}$/.test(exactSearch) ? exactSearch : "";
   const exactOrderQuery = useQuery({
     queryKey: ["orders", "exact-number", exactOrderId],
     queryFn: () =>
@@ -797,7 +800,8 @@ const Orders = () => {
         return;
       }
 
-      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
+      // Skaner oqimi: xato qisqa turadi (kuryer ro'yxatidagi kelishuv — 3 s), keyingi skanni to'smaydi (G6F68ti6, 16).
+      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
       rejectScannedCode(
         extractScannerToken(rawValue) ?? rawValue.trim(),
         t("ordersList.cameraReasonMissing"),
@@ -805,7 +809,7 @@ const Orders = () => {
       );
     } catch (error) {
       const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
-      scanNotify.error(t("scanNotFoundTitle"), { description: message });
+      scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
       void playScanFeedback("error", message);
     }
   }, [items, rejectScannedCode, selectScannedCancelledOrder, t]);

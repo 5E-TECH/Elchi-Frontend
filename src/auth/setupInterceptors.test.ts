@@ -29,6 +29,7 @@ type Handler = (value: unknown) => unknown;
 const wireInterceptors = () => {
   let requestHandler: Handler = (c) => c;
   let responseError: Handler = (e) => Promise.reject(e);
+  let responseOk: Handler = (r) => r;
 
   const api = vi.fn(async (config: unknown) => ({ data: "retried", config })) as unknown as {
     (config: unknown): Promise<unknown>;
@@ -39,11 +40,16 @@ const wireInterceptors = () => {
   };
   api.interceptors = {
     request: { use: (fn) => { requestHandler = fn; } },
-    response: { use: (_ok, err) => { responseError = err; } },
+    response: { use: (ok, err) => { responseOk = ok; responseError = err; } },
   };
 
   setupAuthInterceptors(api as never);
-  return { api, runRequest: (c: unknown) => requestHandler(c), runResponseError: (e: unknown) => responseError(e) };
+  return {
+    api,
+    runRequest: (c: unknown) => requestHandler(c),
+    runResponseOk: (r: unknown) => responseOk(r),
+    runResponseError: (e: unknown) => responseError(e),
+  };
 };
 
 describe("setupAuthInterceptors", () => {
@@ -102,16 +108,44 @@ describe("setupAuthInterceptors", () => {
       const { runResponseError } = wireInterceptors();
 
       await expect(
-        runResponseError({ code: "ERR_CANCELED", message: "canceled", config: { url: "orders/ai-parse" } }),
+        runResponseError({ isAxiosError: true, code: "ERR_CANCELED", message: "canceled", config: { url: "orders/ai-parse" } }),
       ).rejects.toBeDefined();
       expect(listener).not.toHaveBeenCalled();
 
       await expect(
-        runResponseError({ code: "ERR_NETWORK", message: "Network Error", config: { url: "/orders" } }),
+        runResponseError({ isAxiosError: true, code: "ERR_NETWORK", message: "Network Error", config: { url: "/orders" } }),
       ).rejects.toBeDefined();
       expect(listener).toHaveBeenCalledTimes(1);
 
       window.removeEventListener("elchi:network-error", listener);
+    });
+  });
+
+  describe("aloqa tiklanishi (G6F68ti6)", () => {
+    it("uzilishdan keyingi birinchi javob `elchi:network-restored` ni bir marta chiqaradi; fon so'rovi xabarsiz", async () => {
+      const errorsSeen = vi.fn();
+      const restoredSeen = vi.fn();
+      window.addEventListener("elchi:network-error", errorsSeen);
+      window.addEventListener("elchi:network-restored", restoredSeen);
+      const { runResponseOk, runResponseError } = wireInterceptors();
+
+      await expect(
+        runResponseError({
+          isAxiosError: true,
+          code: "ERR_NETWORK",
+          message: "Network Error",
+          config: { url: "notifications/inbox/unread-count", silentNetworkError: true },
+        }),
+      ).rejects.toBeDefined();
+      expect(errorsSeen).not.toHaveBeenCalled();
+
+      runResponseOk({ data: {}, status: 200 });
+      runResponseOk({ data: {}, status: 200 });
+      expect(restoredSeen).toHaveBeenCalledTimes(1);
+      expect((restoredSeen.mock.calls[0][0] as CustomEvent).detail).toEqual({ kind: "offline" });
+
+      window.removeEventListener("elchi:network-error", errorsSeen);
+      window.removeEventListener("elchi:network-restored", restoredSeen);
     });
   });
 

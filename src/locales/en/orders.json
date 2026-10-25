@@ -888,7 +888,8 @@
     "applyLabel": "Apply the products total: {{amount}}"
   },
   "operatorCreate": {
-    "description": "Orders are created on behalf of your market with AI",
+    "description": "Orders are created on behalf of the market you work for",
+    "onBehalf": "On behalf of {{market}}",
     "aiOffTitle": "Creating with AI is turned off",
     "aiOffText": "To create an order, contact the market owner or an administrator.",
     "aiDisabled": "AI is not enabled for this market — contact the market owner or an administrator.",

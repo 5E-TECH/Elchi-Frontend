@@ -233,6 +233,41 @@
       "MANAGER": "Menejer",
       "REGISTRATOR": "Ro'yxatchi",
       "COURIER": "Kuryer"
+    },
+    "metrics": {
+      "title": "Filial ko'rsatkichlari",
+      "scope": "{{branch}} buyurtmalari",
+      "periodLabel": "Davr",
+      "kpi": {
+        "accepted": "Qabul qilingan",
+        "sold": "Sotilgan",
+        "revenue": "Daromad",
+        "profit": "Sof foyda"
+      },
+      "sparkAria": "{{label}}, oxirgi {{days}} kun: kuniga {{min}} – {{max}}, oxirgi kun {{last}}",
+      "revenue": {
+        "title": "Kunlik daromad",
+        "viewLabel": "Kunlik daromad ko'rinishi",
+        "amount": "Daromad"
+      },
+      "status": {
+        "sold": "Sotilgan",
+        "road": "Yo'lda",
+        "new": "Yangi",
+        "cancelled": "Bekor qilingan",
+        "empty": "Bu davrda qabul qilingan buyurtma yo'q"
+      },
+      "couriers": {
+        "title": "Kuryerlar reytingi",
+        "sub": "Sotuv foizi · sotilgan / biriktirilgan",
+        "active": "{{active}} / {{total}} faol",
+        "scope": "Shu filial kuryerlari",
+        "unassigned": "{{value}} ta yangi (biriktirilmagan) buyurtma kirmaydi"
+      },
+      "loadError": "Filial ko'rsatkichlarini yuklab bo'lmadi",
+      "unavailable": "Filial ko'rsatkichlari hozircha mavjud emas — server filial kesimini qaytarmadi",
+      "empty": "Bu davrda filial buyurtmalari yo'q",
+      "emptyHint": "Boshqa davrni tanlang — qabul qilingan va sotilgan buyurtmalar shu yerda ko'rinadi."
     }
   }
 }

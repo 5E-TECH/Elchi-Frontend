@@ -125,6 +125,34 @@ describe("Toaster", () => {
     expect(toastStore.isPaused()).toBe(false);
   });
 
+  it("G6F68ti6 (11-band): fokusdagi xabar koddan yopilsa pauza qotmaydi — qolgan xabar o'z vaqtida yopiladi", async () => {
+    const user = setup();
+    render(
+      <>
+        <button type="button">Saqlash</button>
+        <Toaster />
+      </>,
+    );
+    let errorId = "";
+    act(() => {
+      errorId = notify.error("Internet aloqasi yo'q", { action: { label: "Qayta urinish", onClick: () => {}, keepOpen: true } });
+      notify.success("Saqlandi");
+    });
+    document.body.appendChild(getPortalRoot());
+    screen.getByRole("button", { name: "Saqlash" }).focus();
+    await user.tab();
+    expect(toastStore.isPaused()).toBe(true);
+
+    // Koddan yopiladi (masalan aloqa qaytdi) — fokusdagi tugun DOM'dan chiqadi, `blur` kelmaydi.
+    act(() => notify.dismiss(errorId));
+    flushExit();
+    act(() => vi.advanceTimersByTime(200));
+    expect(toastStore.isPaused()).toBe(false);
+    act(() => vi.advanceTimersByTime(4000));
+    flushExit();
+    expect(document.querySelector("[data-toast-id]")).toBeNull();
+  });
+
   it("kursor ustida — vaqt to'xtaydi, chiqsa — davom etadi", async () => {
     const user = setup();
     render(<Toaster />);

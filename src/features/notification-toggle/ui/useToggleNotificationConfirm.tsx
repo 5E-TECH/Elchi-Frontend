@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { BellOff, BellRing } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  inactiveReasonKey,
   NoticeAlert,
   NotificationGroupSummary,
   type Notification,
@@ -17,8 +18,10 @@ import { useToggleNotification } from "../api/useToggleNotification";
  * - faol guruh → «Nofaol qilishni tasdiqlang» (maket `*-deactivate-dialog`): buzuvchi (`danger`), `BellOff`;
  *   «… xabarlar bu guruhga yuborilmaydi. Ulanish o'chirilmaydi — …qayta faollashtirish mumkin.»
  * - nofaol guruh → «Faollashtirishni tasdiqlang» (maket `*-activate-dialog`): asosiy tugma, `BellRing`, ogohlantirish
- *   qutisi (`warning`). Maketdagi «Bot guruhdan chiqarilgan» sarlavhasi nofaollik sababiga bog'liq (`inactive_reason`
- *   — backend kerak, NG-C) — hozir sababdan qat'i nazar umumiy matn: «Bot guruhda ekanini tekshiring».
+ *   qutisi (`warning`), matni nofaollik sababiga qarab (`inactive_reason`, G085w5Qr — NG-C): bot chiqarilgan
+ *   (`kicked`/`left`) — maketdagi «Bot guruhdan chiqarilgan» + «Avval botni shu guruhga qayta qo'shing…»;
+ *   `blocked_on_send`, `chat_not_found` — o'z matni (maket yo'q, eng yaqini `*-activate-dialog`); qo'lda nofaol
+ *   qilingan yoki sabab noma'lum — umumiy «Bot guruhda ekanini tekshiring».
  *
  * Ikkalasi `PATCH /notifications/:id { is_active }`. So'rov ketayotganda oyna qulflanadi; xato — oyna ichida, faqat
  * i18n matn (backend `message` ko'rsatilmaydi); muvaffaqiyat — toast.
@@ -36,6 +39,8 @@ export const useToggleNotificationConfirm = () => {
       const activate = !row.is_active;
       const scope = activate ? "toggle.activate" : "toggle.deactivate";
       const icon = activate ? BellRing : BellOff;
+      const reason = inactiveReasonKey(row.inactive_reason);
+      const reasonWarning = reason === "manual" || reason === "unknown" ? null : `toggle.activate.reason.${reason}`;
 
       const ok = await confirm({
         tone: activate ? "primary" : "danger",
@@ -49,8 +54,12 @@ export const useToggleNotificationConfirm = () => {
         cancelLabel: t("form.cancel"),
         details: <NotificationGroupSummary row={row} marketName={marketName} />,
         children: activate ? (
-          <NoticeAlert tone="warning" role="note" title={t("toggle.activate.warningTitle")}>
-            {t("toggle.activate.warning")}
+          <NoticeAlert
+            tone="warning"
+            role="note"
+            title={t(reasonWarning ? `${reasonWarning}.title` : "toggle.activate.warningTitle")}
+          >
+            {t(reasonWarning ? `${reasonWarning}.text` : "toggle.activate.warning")}
           </NoticeAlert>
         ) : undefined,
         errorMessage: () => t(`${scope}.failed`),

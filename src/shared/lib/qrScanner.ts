@@ -1,4 +1,5 @@
 import BrowserQrScanner from "qr-scanner";
+import type { ScanFormats } from "./scanner/barcodeCodes";
 
 export interface ScanResult {
   data: string;
@@ -84,7 +85,67 @@ interface QrScannerOptions {
   highlightScanRegion?: boolean;
   highlightCodeOutline?: boolean;
   onDecodeError?: (error: unknown) => void;
+  /** `barcodes` — QR + zavod shtrix kodlari (`scanner/barcodeEngine.ts`); sukut `qr` — kutubxonaning QR dvigateli. */
+  formats?: ScanFormats;
 }
+
+/**
+ * Shtrix kod rejimida sekundiga skanlar (QR rejimi — kutubxona sukuti 25): ZXing kadrni asosiy oqimda o'qiydi
+ * (kod yo'q kadr ~10 ms, telefonda 2–4 barobar ko'p) — 10 marta yetarli va interfeys qotmaydi.
+ */
+export const BARCODE_SCANS_PER_SECOND = 10;
+
+type EngineInternals = { _qrEnginePromise?: Promise<unknown> };
+type ScannerStatics = { _disableBarcodeDetector?: boolean };
+
+const terminateWorker = (engine: unknown) => {
+  if (typeof Worker !== "undefined" && engine instanceof Worker) engine.terminate();
+};
+
+/**
+ * SHTRIX KOD DVIGATELI (Trello CO66kcoB). `qr-scanner` (1.4.2) kamerani boshqaradi (oqim, chiroq, kamera
+ * almashtirish, skan hududi, skan tezligi), lekin faqat QR o'qiydi va dvigatelni tashqaridan berish usuli yo'q.
+ * Kutubxona har kadrda `scanImage(video, { qrEngine: this._qrEnginePromise, … })` ni chaqiradi; dvigatel `Worker`
+ * bo'lmasa — oddiy `await qrEngine.detect(canvas)` va `[0].rawValue` / `cornerPoints` ni oladi. Shuning uchun
+ * YASHIRIN `_qrEnginePromise` maydoni bizning dvigatel bilan almashtiriladi (yagona yo'l; kamera kodi takrorlanmaydi):
+ *
+ *   - maydon getter/setter bilan qotiriladi: kutubxona native dvigatel buzilganda (global
+ *     `_disableBarcodeDetector`) uni har kadrda QR dvigateliga almashtiradi — shtrix kod o'qilmay qolardi. Setter
+ *     berilgan dvigatelni yopadi va bayroqni tushiradi (aks holda har kadrda yangi worker yaratilardi);
+ *   - kutubxona konstruktorda yaratgan QR dvigateli (worker) bizniki tayyor bo'lgach yopiladi; `destroy()` dagi
+ *     `close` xabari `Worker` bo'lmagan dvigatelga yuborilmaydi (kutubxona o'zi tekshiradi);
+ *   - bizning bo'lak yuklanmasa (oflayn) — QR dvigateli bilan davom etadi (kamera ishlaydi, faqat QR).
+ *
+ * Kutubxona versiyasi yoki maydon nomlari o'zgarsa — `qrScanner.barcodes.test.ts` yiqiladi.
+ */
+const installBarcodeEngine = (scanner: BrowserQrScanner) => {
+  const internals = scanner as unknown as EngineInternals;
+  const original = internals._qrEnginePromise;
+  if (!original) return;
+  // Kutubxona dvigateli (worker) yaratilmasa — jim (bizniki ishlaydi); rad etilgan va'da konsolga chiqmasin.
+  original.catch(() => undefined);
+  const engine: Promise<unknown> = import("./scanner/barcodeEngine")
+    .then(({ createBarcodeEngine }) => createBarcodeEngine())
+    .then(
+      (created) => {
+        void original.then(terminateWorker, () => undefined);
+        return created;
+      },
+      () => original,
+    );
+  Object.defineProperty(scanner, "_qrEnginePromise", {
+    configurable: true,
+    enumerable: true,
+    get: () => engine,
+    set: (replacement: unknown) => {
+      void Promise.resolve(replacement).then(terminateWorker, () => undefined);
+      (BrowserQrScanner as unknown as ScannerStatics)._disableBarcodeDetector = false;
+    },
+  });
+  // ZXing kadrni har skanda `getImageData` bilan o'qiydi: kontekst shu bayroq bilan birinchi yaratilsa — tezroq
+  // (kutubxonaning keyingi `getContext("2d", { alpha: false })` chaqiruvi shu kontekstni qaytaradi).
+  scanner.$canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+};
 
 export default class QrScanner {
   private readonly scanner: BrowserQrScanner;
@@ -96,6 +157,7 @@ export default class QrScanner {
     options?: QrScannerOptions,
   ) {
     this.video = video;
+    const barcodes = options?.formats === "barcodes";
     this.scanner = new BrowserQrScanner(
       video,
       (result) => {
@@ -113,8 +175,10 @@ export default class QrScanner {
         ...(options?.calculateScanRegion ? { calculateScanRegion: options.calculateScanRegion } : {}),
         highlightCodeOutline: options?.highlightCodeOutline,
         onDecodeError: options?.onDecodeError as ((error: Error | string) => void) | undefined,
+        ...(barcodes ? { maxScansPerSecond: BARCODE_SCANS_PER_SECOND } : {}),
       },
     );
+    if (barcodes) installBarcodeEngine(this.scanner);
   }
 
   /**

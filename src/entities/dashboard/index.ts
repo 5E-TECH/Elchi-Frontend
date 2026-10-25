@@ -231,6 +231,11 @@ export interface KpiResponse {
     averageOrderValue: number;
     averageFulfillmentHours: number;
     onTimeRate: number;
+    /**
+     * Davrda yetkazilgan buyurtmalar soni (yrLt5oMi). `0` — SLA o'lchanmagan (yetkazish yo'q: «0% · past» emas);
+     * `null` — backend bermadi (eski javob), `onTimeRate` avvalgidek.
+     */
+    deliveryCount?: number | null;
     cancellationRate: number;
     courierEfficiency: number;
     marketRating: unknown[];
@@ -406,7 +411,12 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
   const visibility = asRecord(item.visibility);
   const markets = cards.markets;
 
+  // fix3 C9: belgi normalizatsiyada YO'QOLMASIN — panel nollar o'rniga xato holatini shundan biladi
+  // (ilgari obyekt qayta qurilib, `stats_unavailable` tushib qolardi va belgi hech qachon ishlamasdi).
+  const statsUnavailable = toOptionalBoolean(item.stats_unavailable ?? item.statsUnavailable);
+
   return {
+    ...(statsUnavailable === undefined ? {} : { stats_unavailable: statsUnavailable }),
     today_orders_count: toNumber(item.today_orders_count ?? item.todayOrdersCount),
     week_orders_count: toNumber(item.week_orders_count ?? item.weekOrdersCount),
     active_batches_count: toNumber(item.active_batches_count ?? item.activeBatchesCount),
@@ -638,6 +648,13 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
   };
 };
 
+/** Son (0 ham) yoki `null` — maydon yo'q / son emas. */
+const toCountOrNull = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : null;
+};
+
 export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
   const response = asRecord(payload);
   const data = asRecord(response.data);
@@ -652,6 +669,7 @@ export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
         data.averageFulfillmentHours ?? data.average_fulfillment_hours,
       ),
       onTimeRate: toNumber(data.onTimeRate ?? data.on_time_rate),
+      deliveryCount: toCountOrNull(data.deliveryCount ?? data.delivery_count),
       cancellationRate: toNumber(data.cancellationRate ?? data.cancellation_rate),
       courierEfficiency: toNumber(data.courierEfficiency ?? data.courier_efficiency),
       marketRating: Array.isArray(marketRating) ? marketRating : [],

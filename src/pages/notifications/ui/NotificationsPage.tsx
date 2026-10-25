@@ -4,6 +4,7 @@ import { Bell, BellOff, Plus, Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   NotificationGroupTypeBadge,
+  NotificationInactiveNote,
   NotificationStatusBadge,
   useNotificationMarkets,
   useNotifications,
@@ -140,10 +141,11 @@ NotificationsSkeleton.displayName = "NotificationsSkeleton";
  * «Nofaol qilish», nofaolida «Faollashtirish», so'ng «O'chirish» — har biri tasdiq oynasi orqali
  * (`features/notification-toggle`, `features/notification-delete`).
  *
- * «Holat» ustuni: Faol / Nofaol + umumiy neytral izoh (D1). Nofaollik sababi (`inactive_reason`) API'da yo'q —
- * «bot chiqarilgan» deb yozilmaydi (sababga qarab matn — NG-C). Market nomi `GET /markets` dan (`GET /notifications`
- * qatorida faqat `market_id` — nom topilmasa sarlavhada `#id`, ostida takrorlanmaydi); qo'shish — bir martalik
- * havola oynasi (6jXw0DDr).
+ * «Holat» ustuni: Faol / Nofaol + nofaollik sababi (`inactive_reason`, G085w5Qr — NG-C; maketdagidek): bot guruhga
+ * yetolmaydi — `danger` belgi va «Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring» / «Guruh topilmadi — …»,
+ * qo'lda — neytral «Qo'lda nofaol qilingan», sabab noma'lum — neytral umumiy izoh (D1); `inactive_at` bo'lsa ostida
+ * «Nofaol bo'lgan: {sana}». Market nomi `GET /markets` dan (`GET /notifications` qatorida faqat `market_id` — nom
+ * topilmasa sarlavhada `#id`, ostida takrorlanmaydi); qo'shish — bir martalik havola oynasi (6jXw0DDr).
  */
 const NotificationsPage = () => {
   const { t, i18n } = useTranslation("notificationGroups");
@@ -186,23 +188,21 @@ const NotificationsPage = () => {
     [],
   );
 
-  /** «Nofaol» ostidagi umumiy neytral izoh (D1) — sabab API'da yo'q, «bot chiqarilgan» deb yozilmaydi. */
-  const inactiveHint = useCallback(
-    (row: Notification) =>
-      row.is_active ? null : (
-        <span className="text-xs text-text-muted">{t("status.inactiveHint")}</span>
-      ),
-    [t],
+  /** «Nofaol» belgisi — ton sababga qarab (bot guruhga yetolmaydi — `danger`, qo'lda / noma'lum — `neutral`). */
+  const statusBadge = useCallback(
+    (row: Notification) => <NotificationStatusBadge active={row.is_active} reason={row.inactive_reason} />,
+    [],
   );
 
+  /** Qator menyusi sarlavhasidagi holat (maket `*-row-menu-inactive`): belgi, ostida sabab izohi. */
   const statusLine = useCallback(
     (row: Notification) => (
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <NotificationStatusBadge active={row.is_active} />
-        {inactiveHint(row)}
+      <span className="flex flex-col items-start gap-1">
+        {statusBadge(row)}
+        <NotificationInactiveNote row={row} />
       </span>
     ),
-    [inactiveHint],
+    [statusBadge],
   );
 
   const rowMenu = useCallback(
@@ -285,12 +285,7 @@ const NotificationsPage = () => {
         id: "status",
         header: t("columns.status"),
         className: "min-w-[120px] max-w-[260px]",
-        cell: (row) => (
-          <span className="flex flex-col items-start gap-1">
-            <NotificationStatusBadge active={row.is_active} />
-            {inactiveHint(row)}
-          </span>
-        ),
+        cell: statusLine,
       },
       {
         id: "date",
@@ -307,10 +302,10 @@ const NotificationsPage = () => {
         cell: rowMenu,
       },
     ],
-    [dateTime, inactiveHint, marketCell, rowMenu, t, typeBadge],
+    [dateTime, marketCell, rowMenu, statusLine, t, typeBadge],
   );
 
-  // Telefon kartasi (maket `.el-list-item`): belgi, «Market #id», guruh ID, turi + holat + sana, nofaolda izoh;
+  // Telefon kartasi (maket `.el-list-item`): belgi, «Market #id», guruh ID, turi + holat + sana, nofaolda sabab izohi;
   // o'ngda kebab (44 px) — pastki varaqa.
   const renderCard = useCallback(
     (row: Notification) => (
@@ -330,15 +325,15 @@ const NotificationsPage = () => {
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {typeBadge(row)}
-            <NotificationStatusBadge active={row.is_active} />
+            {statusBadge(row)}
             <span className="text-xs text-text-muted tabular-nums">{dateTime(row.created_at)}</span>
           </span>
-          {inactiveHint(row)}
+          <NotificationInactiveNote row={row} />
         </div>
         <span className="-my-1 shrink-0">{rowMenu(row)}</span>
       </div>
     ),
-    [dateTime, hasName, inactiveHint, marketName, rowMenu, typeBadge],
+    [dateTime, hasName, marketName, rowMenu, statusBadge, typeBadge],
   );
 
   const changeLimit = (next: number) => {

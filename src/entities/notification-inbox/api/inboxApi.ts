@@ -94,13 +94,17 @@ export const normalizeInboxCounts = (payload: unknown): InboxCounts | null => {
   };
 };
 
+// Fon so'rovlari (har daqiqada / fokusda): tarmoq xatosi yopilgan «Internet aloqasi yo'q» ni qayta ochmasin
+// (G6F68ti6, 9-band).
+const BACKGROUND = { silentNetworkError: true } as const;
+
 export const getInboxCounts = async (): Promise<InboxCounts | null> => {
-  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_COUNTS);
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_COUNTS, BACKGROUND);
   return normalizeInboxCounts(response.data);
 };
 
 export const getInboxUnreadCount = async (): Promise<number> => {
-  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_UNREAD_COUNT);
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_UNREAD_COUNT, BACKGROUND);
   const data = asRecord(unwrap(response.data));
   return Number(data.unread ?? 0);
 };

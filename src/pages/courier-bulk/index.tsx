@@ -193,7 +193,8 @@ const CourierBulkPage = () => {
 
   const handleScanMissing = useCallback(() => {
     setScanError(t("scanMissing"));
-    scanNotify.error(t("scanMissingTitle"), { description: t("scanMissing") });
+    // Qisqa (3 s) — keyingi to'g'ri skandan keyin «Topilmadi» qaytib chiqmasin (G6F68ti6, 16-band).
+    scanNotify.error(t("scanMissingTitle"), { description: t("scanMissing"), duration: 3000 });
     void playScanFeedback("missing", t("scanMissing"));
   }, [t]);
 

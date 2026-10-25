@@ -1,11 +1,18 @@
-// dizayn-v2: superadmin-users-detail-telegram, admin-users-detail-telegram, market-profile
+// dizayn-v2: superadmin-users-detail-telegram, admin-users-detail-telegram, market-profile, market-profile-telegram-status
 import { memo, useId, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { ChevronRight, Link as LinkIcon, Send, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { canViewNotifications } from "../../../app/lib/access";
-import { useNotifications, type Notification, type NotificationGroupType } from "../../../entities/notification";
+import {
+  inactiveReasonTone,
+  NotificationInactiveNote,
+  useMyTelegramGroups,
+  useNotifications,
+  type Notification,
+  type NotificationGroupType,
+} from "../../../entities/notification";
 import type { User } from "../../../entities/user/types/user";
 import { useMarketGroupLink } from "../../../features/telegram-link";
 import { cx } from "../../../shared/lib/cx";
@@ -26,13 +33,20 @@ const STAT_ICON = "inline-flex size-9 shrink-0 items-center justify-center round
 const ROW = "flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-border px-5 py-3.5 max-md:px-4";
 const MUTED = "text-[13px] leading-[18px] text-text-muted";
 
+/** Bir tur holati — ikkala manbadan (`staff`: `GET /notifications`, `self`: `GET /notifications/me/telegram-groups`). */
+type GroupState =
+  | { kind: "none" }
+  | { kind: "active"; since: string | null }
+  | { kind: "inactive"; row: Pick<Notification, "is_active" | "inactive_reason" | "inactive_at"> };
+
 export type MarketTelegramGroupsCardProps = {
   /** Market (`role: market`). */
   user: User;
   /**
    * `staff` — superadmin/admin market tafsilotida (`/all-users/:id`, `/new-orders/userDetail/:id`): har tur holati
    * (`GET /notifications?market_id`), ulanmaganida «Ulash», «Barcha guruhlar …» havolasi; oyna ulanishni kuzatadi.
-   * `self` — market o'z profilida (`/profile`): holatsiz qatorlar va «Ulash» (holat endpointi — TG-C, KJNHAlGW).
+   * `self` — market o'z profilida (`/profile`, TG-C): har tur holati (`GET /notifications/me/telegram-groups`,
+   * KJNHAlGW), ulanmaganida «Ulash»; oyna ulanishni shu endpoint bilan kuzatadi.
    */
   mode: "staff" | "self";
 };
@@ -43,10 +57,14 @@ export type MarketTelegramGroupsCardProps = {
  * to'g'ridan-to'g'ri «Ulash» (S5) → `MarketGroupLinkDialog`; ostida «Guruhda mijoz ismi va telefoni» kaliti (S3,
  * «Ruxsatlar» kartasidan ko'chdi; tahrir qoidalari `useMarketTelegramGroupPiiToggle`).
  *
- * Holat (`staff`): ulangan — «Ulangan» + «{sana} dan» (sana kelmasa — sanasiz); nofaol — «Nofaol» + umumiy izoh
- * (sababi API'da yo'q — G085w5Qr/NG-C; faollashtirish «Bildirishnomalar» bo'limida); ulanmagan — «Ulanmagan» + nima
- * kelmasligi va «Ulash». Bot mavjud ulanishni almashtirmaydi — ulangan turda «Ulash» yo'q. Yuklanishda belgi
- * o'rnida skelet, xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi).
+ * Holat (ikkala rejimda; market — maket `market-profile-telegram-status`, TG-C): ulangan — «Ulangan» + «{sana} dan»
+ * (sana kelmasa — sanasiz); nofaol — «Nofaol» + sabab izohi (`inactive_reason`, G085w5Qr — NG-C: `/notifications`
+ * jadvalidagi bilan bir xil matn va ton, sabab noma'lum — umumiy izoh; maket yo'q — eng yaqini
+ * `superadmin-notifications-telegram-groups`; faollashtirish «Bildirishnomalar» bo'limida — xodimga «Barcha guruhlar …»
+ * havolasi; marketga `inactive_at` kelmaydi — sanasiz); ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash». Bot
+ * mavjud ulanishni almashtirmaydi — ulangan (nofaol ham) turda «Ulash» yo'q. Yuklanishda belgi o'rnida skelet,
+ * xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi). «Ulash» oynasi ikkala rejimda
+ * ulanishni kuzatadi: guruh ulansa o'zi yopiladi, «Guruh ulandi».
  * Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi.
  */
 export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGroupsCardProps) => {
@@ -68,16 +86,30 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
     { market_id: marketId, page: 1, limit: 10 },
     { enabled: isStaff, silentError: true },
   );
+  const myGroupsQuery = useMyTelegramGroups({ enabled: !isStaff, silentError: true });
+  const statusQuery = isStaff ? groupsQuery : myGroupsQuery;
   const link = useMarketGroupLink({
+    // Market o'zi — `market_id` siz: server o'z marketini tokendan oladi (havola ham, holat ham).
     marketId: isStaff ? marketId : undefined,
     marketName: user.name,
-    watch: isStaff,
-    returnFocusRefs: isStaff ? rowRefs : undefined,
+    watch: true,
+    returnFocusRefs: rowRefs,
   });
 
-  const connectionOf = (type: NotificationGroupType): Notification | null => {
+  const stateOf = (type: NotificationGroupType): GroupState => {
+    if (!isStaff) {
+      const own = myGroupsQuery.data?.find((row) => row.group_type === type);
+      if (!own?.linked) return { kind: "none" };
+      return own.is_active
+        ? { kind: "active", since: own.linked_at }
+        : { kind: "inactive", row: { is_active: false, inactive_reason: own.inactive_reason, inactive_at: null } };
+    }
     const rows = (groupsQuery.data?.data ?? []).filter((row) => row.group_type === type);
-    return rows.find((row) => row.is_active) ?? rows[0] ?? null;
+    const connection = rows.find((row) => row.is_active) ?? rows[0] ?? null;
+    if (!connection) return { kind: "none" };
+    return connection.is_active
+      ? { kind: "active", since: connection.created_at }
+      : { kind: "inactive", row: connection };
   };
 
   const linkButton = (type: NotificationGroupType) => (
@@ -97,10 +129,9 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
   );
 
   const statusLine = (type: NotificationGroupType) => {
-    if (!isStaff) return null;
-    if (groupsQuery.isLoading) return <Skeleton width={120} height={20} />;
-    const connection = connectionOf(type);
-    if (!connection) {
+    if (statusQuery.isLoading) return <Skeleton width={120} height={20} />;
+    const state = stateOf(type);
+    if (state.kind === "none") {
       return (
         <>
           <StatusBadge tone="neutral" label={t("tgGroup.notConnected")} />
@@ -108,46 +139,42 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
         </>
       );
     }
-    if (!connection.is_active) {
+    if (state.kind === "inactive") {
       return (
         <>
-          <StatusBadge tone="neutral" label={t("tgGroup.inactive")} />
-          <span className={MUTED}>{t("tgGroup.inactiveHint")}</span>
+          <StatusBadge tone={inactiveReasonTone(state.row.inactive_reason)} label={t("tgGroup.inactive")} />
+          <NotificationInactiveNote row={state.row} className={MUTED} />
         </>
       );
     }
     return (
       <>
         <StatusBadge tone="success" label={t("tgGroup.connected")} />
-        {toValidDate(connection.created_at) ? (
-          <span className={MUTED}>
-            {t("tgGroup.since", { date: formatDateLocalized(connection.created_at, { language }) })}
-          </span>
+        {toValidDate(state.since) ? (
+          <span className={MUTED}>{t("tgGroup.since", { date: formatDateLocalized(state.since, { language }) })}</span>
         ) : null}
       </>
     );
   };
 
-  // Ulash faqat ulanmagan turda (`self` — holat noma'lum: har doim; xato yoki yuklanishda — yo'q).
-  const canLink = (type: NotificationGroupType) =>
-    !isStaff || (groupsQuery.isSuccess && connectionOf(type) === null);
+  // Ulash faqat ulanmagan turda (xato yoki yuklanishda — yo'q).
+  const canLink = (type: NotificationGroupType) => statusQuery.isSuccess && stateOf(type).kind === "none";
 
   const rows =
-    isStaff && groupsQuery.isError ? (
+    statusQuery.isError ? (
       <div className="border-b border-border px-5 py-4 max-md:px-4">
         <ErrorState
           size="chart"
-          error={groupsQuery.error}
+          error={statusQuery.error}
           title={t("tgGroup.loadError")}
           description={t("tgGroup.loadErrorText")}
-          onRetry={() => void groupsQuery.refetch()}
-          retrying={groupsQuery.isFetching}
+          onRetry={() => void statusQuery.refetch()}
+          retrying={statusQuery.isFetching}
           className="min-h-0"
         />
       </div>
     ) : (
       GROUP_TYPES.map((type) => {
-        const status = statusLine(type);
         return (
           <div
             key={type}
@@ -161,11 +188,11 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
               <span aria-hidden="true" className={STAT_ICON}>
                 <Users size={18} strokeWidth={2} />
               </span>
-              <div className={cx("flex min-w-0 flex-col gap-1", !status && "self-center")}>
+              <div className="flex min-w-0 flex-col gap-1">
                 <h3 id={`${headingId}-${type}`} className="m-0 text-sm font-semibold text-text">
                   {t(TYPE_KEYS[type].title)}
                 </h3>
-                {status ? <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{status}</div> : null}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{statusLine(type)}</div>
               </div>
             </div>
             {canLink(type) ? linkButton(type) : null}

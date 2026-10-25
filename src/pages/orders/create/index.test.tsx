@@ -62,6 +62,9 @@ const chooseMarket = async (user: ReturnType<typeof userEvent.setup>, name = "Ba
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "Market tanlash" })).not.toBeInTheDocument());
 };
 
+/** gpCIsGjH: `POST /orders` har doim `Idempotency-Key` bilan. */
+const IDEMPOTENT = { headers: { "Idempotency-Key": expect.any(String) } };
+
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   mocks.get.mockReset();
@@ -621,7 +624,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     expect(submit).toHaveAttribute("type", "submit");
     await user.click(submit);
 
-    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.anything()));
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.anything(), IDEMPOTENT));
     expect(mocks.post.mock.calls.find(([url]) => url === "orders")?.[1]).toEqual({
       customer: {
         name: "Aliyev Vali",
@@ -711,6 +714,93 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     expect(alert).toHaveTextContent("Telefon noto'g'ri");
     expect(alert).toHaveClass("bg-danger-soft");
     expect(screen.getByRole("combobox", { name: /^Telefon/ })).toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+describe("OrderCreate — Idempotency-Key (gpCIsGjH): takroriy so'rov ikkinchi buyurtma yaratmaydi", () => {
+  /** Market roli: to'liq (yuborishga tayyor) buyurtma. */
+  const fillOrder = async (user: ReturnType<typeof userEvent.setup>, total = "150000") => {
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
+    await user.type(screen.getByLabelText(/^Umumiy summa/), total);
+  };
+  const submitButton = () =>
+    within(screen.getByRole("complementary", { name: "Buyurtma xulosasi" })).getByRole("button", {
+      name: "Buyurtma yaratish",
+    });
+  const orderPosts = () => mocks.post.mock.calls.filter(([url]) => url === "orders");
+  const keyOf = (call: unknown[] | undefined) =>
+    (call?.[2] as { headers?: Record<string, string> } | undefined)?.headers?.["Idempotency-Key"];
+
+  it("javob kelmasa (timeout) qayta bosish AYNI kalit bilan; muvaffaqiyatdan keyingi buyurtma — yangi kalit", async () => {
+    mocks.post
+      .mockRejectedValueOnce(Object.assign(new Error("So'rov vaqti tugadi"), { code: "ECONNABORTED" }))
+      .mockResolvedValueOnce({ data: { statusCode: 201, data: { id: "o1" }, idempotent_replay: true } })
+      .mockResolvedValueOnce({ data: { statusCode: 201, data: { id: "o2" } } });
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fillOrder(user);
+    await user.click(submitButton());
+    expect(await within(manualPanel()).findByRole("alert")).toHaveTextContent("So'rov vaqti tugadi");
+    const first = keyOf(orderPosts()[0]);
+    expect(first).toEqual(expect.any(String));
+
+    // Forma o'zgarmagan — AYNI kalit (backend avvalgi buyurtmani qaytaradi, ikkinchisi yaratilmaydi).
+    await user.click(submitButton());
+    await waitFor(() => expect(orderPosts()).toHaveLength(2));
+    expect(keyOf(orderPosts()[1])).toBe(first);
+    await waitFor(() => expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue(""));
+
+    // Keyingi buyurtma (hatto tarkibi ayni bo'lsa ham) — yangi kalit.
+    await fillOrder(user);
+    await user.click(submitButton());
+    await waitFor(() => expect(orderPosts()).toHaveLength(3));
+    expect(keyOf(orderPosts()[2])).toEqual(expect.any(String));
+    expect(keyOf(orderPosts()[2])).not.toBe(first);
+  });
+
+  it("xatodan keyin forma o'zgarsa — yangi kalit (eski kalit boshqa tarkibga ishlatilmaydi)", async () => {
+    mocks.post.mockRejectedValue({ response: { status: 504, data: { message: "Gateway Timeout" } } });
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fillOrder(user);
+    await user.click(submitButton());
+    await waitFor(() => expect(orderPosts()).toHaveLength(1));
+    await within(manualPanel()).findByRole("alert");
+
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
+    await user.type(screen.getByLabelText(/^Umumiy summa/), "160000");
+    await user.click(submitButton());
+    await waitFor(() => expect(orderPosts()).toHaveLength(2));
+    expect(keyOf(orderPosts()[1])).not.toBe(keyOf(orderPosts()[0]));
+  });
+
+  it("tez ikki marta bosish — bitta POST /orders", async () => {
+    let resolvePost: (value: unknown) => void = () => {};
+    mocks.post.mockImplementation((url: string) =>
+      url === "orders"
+        ? new Promise((resolve) => {
+            resolvePost = resolve;
+          })
+        : Promise.resolve({ data: { statusCode: 200, data: {} } }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fillOrder(user);
+    const form = screen.getByRole("form", { name: "Buyurtma yaratish formasi" });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await waitFor(() => expect(orderPosts()).toHaveLength(1));
+    resolvePost({ data: { statusCode: 201, data: { id: "o1" } } });
+    await waitFor(() => expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue(""));
+    expect(orderPosts()).toHaveLength(1);
   });
 });
 
@@ -977,18 +1067,89 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(title.closest("[data-tone]")).toHaveTextContent("Standart narxni market kartasida belgilang.");
   });
 
-  it("menejer: tarif so'ralmaydi, narx, izoh va «Yetkazish narxi» chizilmaydi", async () => {
-    mocks.get.mockImplementation((url: string) => (url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url)));
+  it("menejer (N3, yiFTzkzH): qatorsiz market — tariflar `GET markets?search=` dan; `users/:id` so'ralmaydi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets"
+        ? ok({ items: [{ ...MARKETS[1], ...TARIFFS }, { ...MARKETS[0], ...TARIFFS }] })
+        : url.startsWith("product/")
+          ? ok(CATALOG)
+          : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: managerState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(card(/Markazgacha/)).toHaveTextContent("25 000 so'm");
+    expect(radio(/Uygacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("35 000 so'm");
+    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 20 } });
+    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
+    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("menejer: market qidiruvida topilmasa yoki so'rov yiqilsa — narx jim ko'rsatilmaydi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? Promise.reject(new Error("500")) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
     renderWithProviders(<OrderCreate />, {
       preloadedState: managerState,
       route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
     });
 
     await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q|standart/);
     expect(deliveryPrice()).not.toBeInTheDocument();
-    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
-    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("⭐ IT1YpboR: forma boshlangan, tur qo'lda tanlanmagan — market almashsa yangi marketning sukuti qo'llanadi", async () => {
+    const user = userEvent.setup();
+    const marketsWithDefaults = [
+      { ...MARKETS[0], ...TARIFFS, default_tariff: "address" },
+      { ...MARKETS[1], ...TARIFFS, default_tariff: "center" },
+    ];
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? ok(marketsWithDefaults) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await chooseMarket(user, "Baraka Shop");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    // Forma boshlandi (faqat telefon), tur qo'lda tanlanmadi.
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+
+    const nav = screen.getByRole("navigation", { name: "Qadamlar" });
+    await user.click(within(nav).getByRole("button", { name: "Marketni o'zgartirish" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Markazgacha/)).toBeChecked());
+  });
+
+  it("IT1YpboR: tur qo'lda tanlangan bo'lsa market almashganda ham o'zgarmaydi", async () => {
+    const user = userEvent.setup();
+    const marketsWithDefaults = [
+      { ...MARKETS[0], ...TARIFFS, default_tariff: "address" },
+      { ...MARKETS[1], ...TARIFFS, default_tariff: "address" },
+    ];
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? ok(marketsWithDefaults) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await chooseMarket(user, "Baraka Shop");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    await user.click(radio(/Markazgacha/));
+
+    const nav = screen.getByRole("navigation", { name: "Qadamlar" });
+    await user.click(within(nav).getByRole("button", { name: "Marketni o'zgartirish" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(radio(/Markazgacha/)).toBeChecked();
   });
 
   it("mahsulot rasmi (40 px) va narx matni: «2 × 45 000 so'm», «Narxi kiritilmagan», «Katalogdan tashqari · narxsiz»", async () => {
@@ -1119,7 +1280,7 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
     await user.click(within(aside()).getByRole("button", { name: "Buyurtma yaratish" }));
 
-    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.anything()));
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.anything(), IDEMPOTENT));
     const payload = mocks.post.mock.calls.find(([url]) => url === "orders")?.[1] as Record<string, unknown>;
     expect(payload).toMatchObject({ total_price: 45000, where_deliver: "center" });
     expect(payload).not.toHaveProperty("totalPriceAuto");

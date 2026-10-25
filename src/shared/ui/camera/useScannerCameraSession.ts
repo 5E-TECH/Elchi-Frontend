@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { playScanSignal, SCAN_FEEDBACK_EVENT, type ScanFeedbackDetail } from "../../lib/scanner/feedback";
+import type { ScanFormats } from "../../lib/scanner/barcodeCodes";
 import type { ScanSource } from "../../lib/scanner/scanTargets";
 import type { CameraFacing, QrScanRegion } from "../../lib/qrScanner";
 import { useCameraQrScanner } from "../../lib/useCameraQrScanner";
@@ -67,6 +68,8 @@ type Options = {
   preferredCamera?: CameraFacing;
   /** Skan hududi — ekrandagi ramka (`scanRegion.ts`). */
   calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
+  /** O'qiladigan kodlar (sukut `qr`; `barcodes` — QR + zavod shtrix kodlari, `ScanTarget.formats`). */
+  formats?: ScanFormats;
 };
 
 export const useScannerCameraSession = ({
@@ -77,6 +80,7 @@ export const useScannerCameraSession = ({
   onScan,
   preferredCamera,
   calculateScanRegion,
+  formats,
 }: Options) => {
   const { t } = useTranslation("ui");
   const [gate, setGate] = useState<CameraGate>("checking");
@@ -202,6 +206,7 @@ export const useScannerCameraSession = ({
     startErrorMessage: t("camera.failed.text"),
     preferredCamera,
     calculateScanRegion,
+    formats,
     // Chiroq yoqilmadi — kamera ishlayveradi, «Kamera ochilmadi» kartasi emas, qisqa xabar.
     onTorchError: () => {
       playScanSignal("error");

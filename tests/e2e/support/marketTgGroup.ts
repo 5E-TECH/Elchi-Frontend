@@ -5,10 +5,13 @@ import type { Page, Route } from "@playwright/test";
  * - `GET notifications?market_id[&group_type]` — `state.rows` (market 201 guruhlari);
  * - `POST telegram/link-code` — tana yoziladi; `connectAfterPolls` berilsa, kod olingach kuzatuv (`group_type` li)
  *   so'rovlari shuncha bo'lgach shu turdagi guruh «ulanadi» (qator qo'shiladi);
+ * - `GET notifications/me/telegram-groups` (TG-C, market o'zi) — `state.rows` dan ikkala tur holati; kod olingach
+ *   har so'rov kuzatuv hisoblanadi (`connectAfterPolls` — o'sha qoida), `myGroupsRequests` — so'rovlar soni;
  * - `GET users/201` — market, `GET users` — ro'yxat (`telegram_linked`), `PATCH markets/201/telegram-group-pii`;
  * - `GET markets/:id/tg-token` hech qachon so'ralmasligi kerak (`tokenRequests`).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -49,7 +52,15 @@ const LIST = [
   { id: "309", name: "Sherzod Umarov", phone_number: "+998953307146", role: "investor", status: "active", telegram_linked: false, createdAt: "2026-08-14T07:30:00.000Z" },
 ];
 
-type GroupRow = { id: string; market_id: string; group_id: string; group_type: "create" | "cancel"; is_active: boolean; createdAt: string };
+type GroupRow = {
+  id: string;
+  market_id: string;
+  group_id: string;
+  group_type: "create" | "cancel";
+  is_active: boolean;
+  createdAt: string;
+  inactive_reason?: string | null;
+};
 
 export type MarketTgGroupOptions = {
   role: "superadmin" | "admin" | "manager" | "market";
@@ -79,6 +90,7 @@ export const mockMarketTgGroupApi = async (
     linkRequests: [] as unknown[],
     tokenRequests: 0,
     notificationRequests: 0,
+    myGroupsRequests: 0,
     watchPolls: 0,
     pendingType: null as "create" | "cancel" | null,
     pii: [] as unknown[],
@@ -119,15 +131,37 @@ export const mockMarketTgGroupApi = async (
       state.tokenRequests += 1;
       return reply(route, wrap({}));
     }
+    // Kod olingach kuzatuv so'rovi — `connectAfterPolls` dan keyin shu turdagi guruh «ulanadi».
+    const watchPoll = (groupType: "create" | "cancel") => {
+      if (state.pendingType !== groupType || connectAfterPolls == null) return;
+      state.watchPolls += 1;
+      if (state.watchPolls > connectAfterPolls && !state.rows.some((row) => row.group_type === groupType)) {
+        state.rows.push({ ...marketGroupRow(groupType), createdAt: new Date().toISOString() });
+      }
+    };
+    if (path === "notifications/me/telegram-groups" && request.method() === "GET") {
+      state.myGroupsRequests += 1;
+      if (state.pendingType) watchPoll(state.pendingType);
+      return reply(
+        route,
+        wrap(
+          (["create", "cancel"] as const).map((groupType) => {
+            const row = state.rows.find((item) => item.group_type === groupType);
+            return {
+              group_type: groupType,
+              linked: Boolean(row),
+              is_active: row ? row.is_active : null,
+              linked_at: row ? row.createdAt : null,
+              inactive_reason: row && !row.is_active ? (row.inactive_reason ?? null) : null,
+            };
+          }),
+        ),
+      );
+    }
     if (path === "notifications" && request.method() === "GET") {
       state.notificationRequests += 1;
       const groupType = url.searchParams.get("group_type");
-      if (groupType && state.pendingType === groupType && connectAfterPolls != null) {
-        state.watchPolls += 1;
-        if (state.watchPolls > connectAfterPolls && !state.rows.some((row) => row.group_type === groupType)) {
-          state.rows.push({ ...marketGroupRow(groupType as "create" | "cancel"), createdAt: new Date().toISOString() });
-        }
-      }
+      if (groupType === "create" || groupType === "cancel") watchPoll(groupType);
       const items = state.rows.filter((row) => !groupType || row.group_type === groupType);
       return reply(route, wrap({ items, meta: { total: items.length, page: 1, limit: 10 } }));
     }

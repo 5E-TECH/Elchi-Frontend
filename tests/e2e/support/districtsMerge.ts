@@ -1,9 +1,10 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * `/regions/districts` e2e (DM-1, admin) uchun soxta backend: viloyatlar va tumanlar, `DELETE district/:id` → 400
- * (bog'langan yozuvlar bor), `POST district/:id/merge` — testdagi javob. Hech qanday so'rov serverga ketmaydi;
- * kutilmagan yozuvchi so'rov `leaked` ga tushadi.
+ * `/regions/districts` e2e (DM-1, DM-2, admin) uchun soxta backend: viloyatlar va tumanlar, `DELETE district/:id` →
+ * 400 (`data.usage` — bog'langan yozuvlar), `GET district/:id/usage`, `POST district/:id/merge` — testdagi javob
+ * (har so'rovda qayta chaqiriladi — «Qayta urinish» uchun ketma-ket javoblar). Hech qanday so'rov serverga
+ * ketmaydi; kutilmagan yozuvchi so'rov `leaked` ga tushadi.
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -39,20 +40,69 @@ export const REGIONS = [
 
 const deletedZero = { orders: 0, users: 0, branches: 0, transfer_batches: 0 };
 
-/** 200 javobi — maketdagi sonlar (Izboskan: 1 126 → 1 254 buyurtma). */
+/** Bo'z tumaniga bog'langan tirik yozuvlar (DELETE 400 `data.usage`, `GET district/23/usage`). */
+export const USAGE = { orders: 128, users: 6, branches: 1 };
+
+/** 200 javobi — maketdagi sonlar (Izboskan: 1 126 → 1 254 buyurtma); `moved` — o'chirilganlar bilan (130). */
 export const MERGED = {
   statusCode: 200,
   message: "District merged",
   data: {
     from_district_id: "23",
     to_district_id: "24",
-    moved: { orders: 128, users: 6, branches: 1 },
+    moved: { orders: 130, users: 6, branches: 1 },
+    moved_live: { orders: 128, users: 6, branches: 1 },
     target_before: { orders: 1126, users: 13, branches: 1, transfer_batches: 0, deleted: deletedZero },
     target_after: { orders: 1254, users: 19, branches: 2, transfer_batches: 0, deleted: deletedZero },
   },
 };
 
 export type MergeReply = { status: number; body: unknown; delayMs?: number };
+
+/** tf324cXN — 409: sonlar mos kelmadi (ko'chirilganlar qaytarildi). Server matni foydalanuvchiga chiqmasligi kerak. */
+export const COUNT_MISMATCH: MergeReply = {
+  status: 409,
+  body: {
+    statusCode: 409,
+    message: "Birlashtirish bekor qilindi: tekshiruv mos kelmadi — B tumandagi buyurtmalar soni 1255",
+    data: {
+      reason: "count_mismatch",
+      details: {
+        reason: "count_mismatch",
+        kind: "orders",
+        mismatches: [{ kind: "orders", district: "target", expected: 1254, actual: 1255 }],
+        from_district_id: "23",
+        to_district_id: "24",
+        manual_fix: false,
+      },
+    },
+    trace_id: "e2e-trace-1",
+  },
+};
+
+/** tf324cXN — 503: foydalanuvchilar qadami vaqtida javob bermadi, kompensatsiya chala (`manual_fix`). */
+export const MANUAL_FIX: MergeReply = {
+  status: 503,
+  body: {
+    statusCode: 503,
+    message: "Birlashtirish bekor qilindi, lekin kompensatsiya to'liq bo'lmadi: …",
+    data: {
+      reason: "timeout",
+      details: {
+        reason: "timeout",
+        kind: "users",
+        timeout_ms: 15000,
+        from_district_id: "23",
+        to_district_id: "24",
+        manual_fix: true,
+        stranded: [
+          { kind: "orders", district_id: "24", count: 14 },
+          { kind: "users", district_id: null, count: null },
+        ],
+      },
+    },
+  },
+};
 
 export const mockDistrictsApi = async (
   page: Page,
@@ -95,9 +145,16 @@ export const mockDistrictsApi = async (
       deletes.push(del[1]);
       return reply(
         route,
-        { statusCode: 400, message: "Bu tumanda 128 ta buyurtma bor, shuning uchun uni o'chirib bo'lmaydi.", data: null },
+        {
+          statusCode: 400,
+          message: "Bu tumanda 128 ta buyurtma bor, shuning uchun uni o'chirib bo'lmaydi.",
+          data: { reason: "district_in_use", usage: { ...USAGE, transfer_batches: 0 } },
+        },
         400,
       );
+    }
+    if (/^district\/\w+\/usage$/.test(path) && request.method() === "GET") {
+      return reply(route, { statusCode: 200, message: "ok", data: USAGE });
     }
     if (/^district\/\w+\/merge$/.test(path) && request.method() === "POST") {
       mergeBodies.push({ path, body: request.postDataJSON() });

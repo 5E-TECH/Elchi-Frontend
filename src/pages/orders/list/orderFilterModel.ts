@@ -1,4 +1,4 @@
-import { ORDER_STATUSES } from "../../../entities/order";
+import { ORDER_STATUSES, toOrderSearchTerm } from "../../../entities/order";
 import type {
   DeliveryType,
   OrderFulfillmentSource,
@@ -247,7 +247,8 @@ export const buildOrderListParams = (
   }
   if (values.dateFrom) params.start_day = values.dateFrom;
   if (values.dateTo) params.end_day = values.dateTo;
-  if (values.search) params.search = values.search;
+  // rwAy8Qyk: ro'yxatdagi raqam («EL-100081») bilan qidirish — backend hozircha faqat ichki id'ni oladi.
+  if (values.search) params.search = toOrderSearchTerm(values.search);
 
   return params;
 };

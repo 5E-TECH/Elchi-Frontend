@@ -40,6 +40,7 @@ export {
   withoutScannerArrival,
 } from "./scannerHost";
 export type { OpenScannerResult, ScannerArrival } from "./scannerHost";
+export type { ScanFormats } from "./barcodeCodes";
 export {
   playScanFeedback,
   playScanSignal,
