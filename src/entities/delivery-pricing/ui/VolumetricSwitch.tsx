@@ -3,6 +3,7 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { Pressable } from "../../../shared/ui/primitives";
+import { formatKgValue } from "../lib/formatKg";
 
 export type VolumetricSwitchProps = {
   checked: boolean;
@@ -11,6 +12,11 @@ export type VolumetricSwitchProps = {
   withDescription?: boolean;
   disabled?: boolean;
   id?: string;
+  /**
+   * «Hajm bo'yicha hisoblash chegarasi», kg (sozlama yoki narx javobidan): > 0 bo'lsa yoqiq holat izohida «hajmli vazn
+   * N kg dan boshlab»; 0 / noma'lum — avvalgi izoh.
+   */
+  volumetricFromKg?: number | null;
 };
 
 /**
@@ -18,8 +24,16 @@ export type VolumetricSwitchProps = {
  * `action`, o'chiq `border-strong`), bosish maydoni 44 px. Yorliq (`<label for>`) bosilsa ham almashadi. O'chiq —
  * «Yetkazish narxi faqat real og'irlikdan hisoblanadi. O'lchamlar baribir kiritiladi va saqlanadi.»
  */
-export const VolumetricSwitch = ({ checked, onChange, withDescription = false, disabled, id }: VolumetricSwitchProps) => {
-  const { t } = useTranslation("deliveryPricing");
+export const VolumetricSwitch = ({
+  checked,
+  onChange,
+  withDescription = false,
+  disabled,
+  id,
+  volumetricFromKg,
+}: VolumetricSwitchProps) => {
+  const { t, i18n } = useTranslation("deliveryPricing");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const autoId = useId();
   const switchId = id ?? `volumetric-${autoId}`;
   const descriptionId = `${switchId}-description`;
@@ -31,7 +45,11 @@ export const VolumetricSwitch = ({ checked, onChange, withDescription = false, d
         </label>
         {withDescription ? (
           <span id={descriptionId} aria-live="polite" className="text-[13px] leading-[18px] text-text-muted">
-            {checked ? t("volumetric.on") : t("volumetric.off")}
+            {!checked
+              ? t("volumetric.off")
+              : volumetricFromKg && volumetricFromKg > 0
+                ? t("volumetric.onFrom", { threshold: formatKgValue(volumetricFromKg, language) })
+                : t("volumetric.on")}
           </span>
         ) : null}
       </div>

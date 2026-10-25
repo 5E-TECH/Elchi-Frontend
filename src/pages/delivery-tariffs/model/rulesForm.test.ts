@@ -4,6 +4,7 @@ import { parseRuleValue, toRulesForm, toSettingsPatch, validateRule } from "./ru
 const SETTINGS = {
   id: "1",
   volumetricDivisor: 5000,
+  volumetricFromKg: 0,
   firstKgIncluded: 1,
   minBillableKg: 0.1,
   billableStepKg: 0.1,
@@ -17,6 +18,7 @@ describe("hisob qoidalari — forma", () => {
   it("sozlama → maydonlar (maket: «1,0», «0,1», «500», «1,4», «20000», «10»)", () => {
     expect(toRulesForm(SETTINGS, "uz")).toEqual({
       firstKg: "1,0",
+      volumetricFrom: "0,0",
       minKg: "0,1",
       step: "0,1",
       roundTo: "500",
@@ -50,5 +52,23 @@ describe("hisob qoidalari — forma", () => {
     expect(validateRule("pickupFree")("2,5")).toBe("page.rules.errors.integer");
     expect(parseRuleValue("1 000,5")).toBe(1000.5);
     expect(parseRuleValue("x")).toBeNull();
+  });
+
+  it("«Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg): sozlama → maydon, PATCH, tekshiruv 0..1000, 3 kasr", () => {
+    expect(toRulesForm({ ...SETTINGS, volumetricFromKg: 3 }, "uz").volumetricFrom).toBe("3,0");
+    expect(toRulesForm({ ...SETTINGS, volumetricFromKg: 2.5 }, "en").volumetricFrom).toBe("2.5");
+    const values = { ...toRulesForm(SETTINGS, "uz"), volumetricFrom: "3" };
+    expect(toSettingsPatch(values, { volumetricFrom: true })).toEqual({ volumetric_from_kg: 3 });
+    expect(toSettingsPatch({ ...values, volumetricFrom: "0" }, { volumetricFrom: true })).toEqual({ volumetric_from_kg: 0 });
+    // O'zgarmagan bo'lsa yuborilmaydi.
+    expect(toSettingsPatch(values, { firstKg: true })).toEqual({ first_kg_included: 1 });
+
+    expect(validateRule("volumetricFrom")("0")).toBe(true);
+    expect(validateRule("volumetricFrom")("1,5")).toBe(true);
+    expect(validateRule("volumetricFrom")("1000")).toBe(true);
+    expect(validateRule("volumetricFrom")("1000,001")).toBe("page.rules.errors.range");
+    expect(validateRule("volumetricFrom")("2,1255")).toBe("page.rules.errors.precision");
+    expect(validateRule("volumetricFrom")("-1")).toBe("page.rules.errors.notNumber");
+    expect(validateRule("volumetricFrom")("")).toBe("page.rules.errors.required");
   });
 });

@@ -21,6 +21,9 @@ export interface OpsTabMeta {
 /** «Xarajat kategoriyalari» tabi kaliti — `/ops?tab=expense-categories` («Kassadan xarajat» havolasi ham shu). */
 export const EXPENSE_CATEGORIES_TAB = "expense-categories";
 
+/** «Yetkazish narxi» tabi kaliti — `/ops?tab=delivery-pricing` (tariflar, hisob qoidalari, hajm chegarasi). */
+export const DELIVERY_PRICING_TAB = "delivery-pricing";
+
 export const OPS_TABS: OpsTabMeta[] = [
   {
     key: "finance",
@@ -55,6 +58,17 @@ export const OPS_TABS: OpsTabMeta[] = [
     labelKey: "tabs.logistics",
     legacyPath: "/logistics-ops",
     pageDir: "logistics-ops",
+  },
+  {
+    /**
+     * Yetkazish narxi (ega 2026-10-25): tariflar, hisob qoidalari — «Hajm bo'yicha hisoblash chegarasi»
+     * (`volumetric_from_kg`) ham, kalkulyator, tarix. Mazmuni `/delivery-tariffs` bilan AYNI (`DeliveryTariffsContent`).
+     * `legacyPath` yo'q: `/delivery-tariffs` eski ops manzili emas — «Hududlar» bo'limining o'z sahifasi (admin ham,
+     * «← Hududlar»), hub esa uni `embedded` bilan chizadi.
+     */
+    key: DELIVERY_PRICING_TAB,
+    labelKey: "tabs.deliveryPricing",
+    pageDir: "delivery-tariffs",
   },
   {
     key: "branches",

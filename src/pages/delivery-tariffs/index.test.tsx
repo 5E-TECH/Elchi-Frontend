@@ -2,7 +2,13 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DeliveryTariffsPage from "./index";
-import { computeMeasureWeights, computeTariffTotal } from "../../entities/delivery-pricing";
+import OpsPage from "../ops";
+import {
+  computeMeasureWeights,
+  computeTariffTotal,
+  DEFAULT_WEIGHT_RULES,
+  meetsVolumetricThreshold,
+} from "../../entities/delivery-pricing";
 import { formatDateLocalized } from "../../shared/lib/formatDateTime";
 import { renderWithProviders } from "../../test/test-utils";
 import { addDays, toIsoDay } from "./model/tariffForm";
@@ -40,7 +46,7 @@ const SEED: TariffRow[] = [
 ];
 
 let rows: TariffRow[] = [];
-let settings = { id: "1", volumetric_divisor: 5000, first_kg_included: 1, min_billable_kg: 0.1, billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4 };
+let settings = { id: "1", volumetric_divisor: 5000, volumetric_from_kg: 0, first_kg_included: 1, min_billable_kg: 0.1, billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4 };
 let settingsHistory: Record<string, unknown>[] = [];
 const now = () => Date.now();
 
@@ -69,7 +75,10 @@ type QuoteBody = { items: { weight_kg: number; length_cm: number; width_cm: numb
 
 const quoteResponse = (body: QuoteBody) => {
   const { current } = tariffsResponse().data as { current: Record<string, TariffRow | null> };
-  const weights = computeMeasureWeights(body.items[0]);
+  // Server kabi: hajm chegarasi (`volumetric_from_kg`) bilan; javobda qo'llangan chegara va «hajm qo'llandi».
+  const rules = { ...DEFAULT_WEIGHT_RULES, volumetricFromKg: settings.volumetric_from_kg };
+  const weights = computeMeasureWeights(body.items[0], rules);
+  const volumetricApplied = meetsVolumetricThreshold(body.items[0], rules);
   const quotes = Object.fromEntries(
     Object.entries(current).map(([id, tariff]) => {
       if (!tariff) return [id, null];
@@ -80,7 +89,12 @@ const quoteResponse = (body: QuoteBody) => {
           tariffId: id,
           base: tariff.base_price,
           perExtraKg: tariff.extra_per_kg,
+          actualKg: weights.actualKg,
+          volumetricKg: weights.volumetricKg,
           billableKg: weights.billableKg,
+          basis: weights.basis,
+          volumetricFromKg: settings.volumetric_from_kg,
+          volumetricApplied,
           extraKg,
           total: computeTariffTotal({
             billableKg: weights.billableKg,
@@ -126,6 +140,13 @@ const respond = () => {
   });
   mocks.patch.mockImplementation((_url: string, body: Record<string, unknown>) => {
     settings = { ...settings, ...body };
+    // Tarix yuritilayotgan bo'lsa (BE #565) — yangi faol versiya tepaga.
+    if (settingsHistory.length > 0) {
+      settingsHistory = [
+        { ...settings, id: String(settingsHistory.length + 1), is_active: true, createdAt: new Date().toISOString() },
+        ...settingsHistory.map((version) => ({ ...version, is_active: false })),
+      ];
+    }
     return Promise.resolve({ data: { statusCode: 200, data: settings } });
   });
 };
@@ -149,7 +170,7 @@ beforeEach(() => {
     // Rejalashtirilgan: Markazgacha — har kg 4 000 → 4 500, kelajakda.
     { id: "9", tariff_id: "center", base_price: 40000, extra_per_kg: 4500, days_min: 1, days_max: 2, valid_from: "2099-10-25T00:00:00+05:00", createdAt: new Date().toISOString() },
   ];
-  settings = { ...settings, first_kg_included: 1, round_to: 500 };
+  settings = { ...settings, first_kg_included: 1, round_to: 500, volumetric_from_kg: 0 };
   settingsHistory = [];
   respond();
 });
@@ -343,3 +364,103 @@ describe("DeliveryTariffsPage — hisob qoidalari va kalkulyator", () => {
 });
 
 const table = () => screen.getByRole("table", { name: "Tariflar — asosiy narx va har kg narxi" });
+
+describe("DeliveryTariffsPage — hajm bo'yicha hisoblash chegarasi (ega 2026-10-25)", () => {
+  it("chegara 0 → 3 saqlansa: PATCH faqat `volumetric_from_kg`; misol jonli; kalkulyator 20 × 20 × 20, 0,5 kg → 0,5 kg; tarixda", async () => {
+    settingsHistory = [{ ...settings, id: "1", is_active: true, created_by: null, createdAt: "2026-10-08T04:00:00.000Z" }];
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    const calculator = await screen.findByRole("region", { name: "Narx kalkulyatori" });
+    await fill(user, within(calculator).getByRole("textbox", { name: "Og'irlik" }), "0,5");
+    for (const name of ["Uzunlik", "Kenglik", "Balandlik"]) {
+      await fill(user, within(calculator).getByRole("textbox", { name }), "20");
+    }
+    const prices = await within(calculator).findByRole("list", { name: "Taxminiy yetkazish narxi" });
+    // Chegara 0 — hajm bo'yicha: 1,6 kg → 1 kg qo'shimcha.
+    await waitFor(() => expect(within(prices).getAllByRole("listitem")[0]).toHaveTextContent(/39\s000 so'm/));
+    expect(within(calculator).getAllByText("1,6 kg")).toHaveLength(2);
+    expect(within(calculator).queryByText(/dan kichik — narx og'irlik bo'yicha/)).not.toBeInTheDocument();
+
+    const rules = screen.getByRole("region", { name: "Hisob qoidalari — qo'shimcha haq qachon boshlanadi" });
+    const threshold = within(rules).getByRole("textbox", { name: "Hajm bo'yicha hisoblash chegarasi" });
+    expect(threshold).toHaveValue("0,0");
+    expect(within(rules).getByText("Misol: chegara 0 — hajm har doim hisobga olinadi")).toBeInTheDocument();
+    expect(
+      within(rules).getByText("20 × 20 × 20 sm, 0,5 kg → hajmli vazn 1,6 kg → hisob 1,6 kg (hajm bo'yicha)"),
+    ).toBeInTheDocument();
+
+    await fill(user, threshold, "3");
+    expect(within(rules).getByText("Misol: chegara 3,0 kg")).toBeInTheDocument();
+    expect(
+      within(rules).getByText("20 × 20 × 20 sm, 0,5 kg → hajmli vazn 1,6 kg → hisob 0,5 kg (chegaradan kichik — og'irlik bo'yicha)"),
+    ).toBeInTheDocument();
+    expect(
+      within(rules).getByText("50 × 35 × 20 sm, 0,8 kg → hajmli vazn 7,0 kg → hisob 7,0 kg (hajm bo'yicha)"),
+    ).toBeInTheDocument();
+    await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", { volumetric_from_kg: 3 });
+    expect(await screen.findByText("Qoidalar saqlandi")).toBeInTheDocument();
+
+    // Narx qayta so'raladi — hajm chegaradan kichik: faqat og'irlik (0,5 kg), asosiy narx.
+    await waitFor(() => expect(within(prices).getAllByRole("listitem")[0]).toHaveTextContent(/35\s000 so'm/));
+    expect(await within(calculator).findByText("Chegara 3,0 kg dan kichik — narx og'irlik bo'yicha")).toBeInTheDocument();
+    expect(within(calculator).getByText("1,6 kg")).toHaveClass("line-through");
+    expect(within(calculator).getByText("0,5 kg")).toBeInTheDocument();
+
+    const history = screen.getByRole("list", { name: "O'zgarishlar tarixi" });
+    expect(
+      await within(history).findByText("Hisob qoidalari · hajm bo'yicha hisoblash chegarasi 0 → 3 kg"),
+    ).toBeInTheDocument();
+  });
+
+  it("chegara 3, kalkulyator 50 × 35 × 20, 0,8 kg → hajmli 7,0 ≥ 3: hajm bo'yicha, izohsiz; noto'g'ri qiymat — xato, so'rov yo'q", async () => {
+    settings = { ...settings, volumetric_from_kg: 3 };
+    const user = userEvent.setup();
+    renderPage();
+    const calculator = await screen.findByRole("region", { name: "Narx kalkulyatori" });
+    const prices = await within(calculator).findByRole("list", { name: "Taxminiy yetkazish narxi" });
+    await waitFor(() => expect(prices).toHaveTextContent(/59\s000 so'm/));
+    expect(within(calculator).getAllByText("7,0 kg")).toHaveLength(2);
+    expect(within(calculator).queryByText(/dan kichik — narx og'irlik bo'yicha/)).not.toBeInTheDocument();
+
+    const rules = screen.getByRole("region", { name: "Hisob qoidalari — qo'shimcha haq qachon boshlanadi" });
+    const threshold = within(rules).getByRole("textbox", { name: "Hajm bo'yicha hisoblash chegarasi" });
+    expect(threshold).toHaveValue("3,0");
+    await fill(user, threshold, "1001");
+    await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+    expect(await within(rules).findByText(/^0 dan 1\s000 gacha kiriting$/)).toBeInTheDocument();
+    expect(mocks.patch).not.toHaveBeenCalled();
+  });
+});
+
+describe("Ops vositalari → «Yetkazish narxi» (`/ops?tab=delivery-pricing`)", () => {
+  it("hub ichida (`embedded`): sarlavha va «← Hududlar» o'rniga kirish kartasi; tanasi — o'sha bloklar", async () => {
+    renderWithProviders(<OpsPage />, {
+      route: "/ops?tab=delivery-pricing",
+      preloadedState: { role: { id: "superadmin-1", role: "superadmin", region: null, name: "superadmin" } } as never,
+    });
+
+    const panel = await screen.findByRole("tabpanel", { name: "Yetkazish narxi" });
+    expect(screen.getByRole("heading", { level: 1, name: "Ops vositalari" })).toBeInTheDocument();
+    expect(await within(panel).findByRole("heading", { name: "Yetkazish narxi — tariflar va hisob qoidalari" })).toBeInTheDocument();
+    expect(within(panel).queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+    expect(within(panel).queryByRole("link", { name: "Hududlar" })).not.toBeInTheDocument();
+
+    expect(await within(panel).findByRole("table", { name: "Tariflar — asosiy narx va har kg narxi" })).toBeInTheDocument();
+    const rules = within(panel).getByRole("region", { name: "Hisob qoidalari — qo'shimcha haq qachon boshlanadi" });
+    expect(await within(rules).findByRole("textbox", { name: "Hajm bo'yicha hisoblash chegarasi" })).toHaveValue("0,0");
+    expect(within(panel).getByRole("region", { name: "Narx kalkulyatori" })).toBeInTheDocument();
+    expect(within(panel).getByRole("list", { name: "O'zgarishlar tarixi" })).toBeInTheDocument();
+  });
+
+  it("`/delivery-tariffs` o'zgarmagan: sarlavha, «← Hududlar», kirish kartasi yo'q", async () => {
+    renderPage();
+    expect(screen.getByRole("heading", { level: 1, name: "Yetkazish tariflari" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Hududlar" })).toHaveAttribute("href", "/regions");
+    expect(screen.queryByRole("heading", { name: "Yetkazish narxi — tariflar va hisob qoidalari" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Hajm bo'yicha hisoblash chegarasi" })).toBeInTheDocument();
+  });
+});

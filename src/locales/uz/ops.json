@@ -15,6 +15,7 @@
     "integrations": "Integratsiyalar",
     "investors": "Investorlar",
     "logistics": "Logistika",
+    "deliveryPricing": "Yetkazish narxi",
     "branches": "Filiallar",
     "identity": "Xodimlar",
     "system": "Tizim",
@@ -151,6 +152,12 @@
       "saveError": "Kategoriyani saqlab bo'lmadi",
       "notFound": "Kategoriya topilmadi",
       "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
+    }
+  },
+  "deliveryPricing": {
+    "intro": {
+      "title": "Yetkazish narxi — tariflar va hisob qoidalari",
+      "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
     }
   },
   "integrations": {
