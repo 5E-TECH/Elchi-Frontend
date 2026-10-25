@@ -59,7 +59,12 @@
     "assign": "Take it",
     "assigning": "Assigning…",
     "assignSuccess": "The order is assigned to you",
-    "assignError": "Could not take the order"
+    "assignError": "Could not take the order",
+    "alreadyMine": "This order is already yours",
+    "alreadyMineText": "No need to take it again — it is in your orders list.",
+    "otherCourier": "Assigned to another courier: {{name}}",
+    "otherCourierUnknown": "Assigned to another courier",
+    "otherCourierText": "You can't take this order. If the parcel is with you, tell the manager — they will reassign it to you."
   },
   "history": {
     "title": "Status history",

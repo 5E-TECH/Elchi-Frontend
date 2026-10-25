@@ -57,7 +57,12 @@
     "assign": "O'zimga olish",
     "assigning": "Biriktirilmoqda…",
     "assignSuccess": "Buyurtma sizga biriktirildi",
-    "assignError": "Buyurtmani o'zingizga olishda xatolik yuz berdi"
+    "assignError": "Buyurtmani o'zingizga olishda xatolik yuz berdi",
+    "alreadyMine": "Bu buyurtma allaqachon sizda",
+    "alreadyMineText": "Qayta olish shart emas — u buyurtmalaringiz ro'yxatida.",
+    "otherCourier": "Boshqa kuryerga biriktirilgan: {{name}}",
+    "otherCourierUnknown": "Boshqa kuryerga biriktirilgan",
+    "otherCourierText": "Bu buyurtmani o'zingizga ololmaysiz. Posilka sizda bo'lsa, menejerga xabar bering — u buyurtmani sizga qayta biriktiradi."
   },
   "history": {
     "title": "Holat tarixi",

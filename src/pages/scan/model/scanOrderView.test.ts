@@ -3,6 +3,7 @@ import { normalizeOrderDetail } from "../../new_orders/components/detail/orderDe
 import {
   buildScanOrderView,
   getInitials,
+  getCourierTakeState,
   getManagerScanActions,
   getScanDeliveryKind,
   getScanRoleKind,
@@ -158,5 +159,25 @@ describe("getManagerScanActions", () => {
     });
     expect(hasAnyManagerAction(actions)).toBe(false);
     expect(actions.hasSellPermission).toBe(false);
+  });
+});
+
+describe("getCourierTakeState (6qypMFeT — backend scanAssignOrder bilan bir xil)", () => {
+  it("mine — courier_id = me and on the road (snake / space / camelCase)", () => {
+    expect(getCourierTakeState({ courier_id: "31", status: "on_the_road" }, "31")).toBe("mine");
+    expect(getCourierTakeState({ courierId: 31, status: "on the road" }, 31)).toBe("mine");
+  });
+
+  it("other — courier_id belongs to another courier, whatever the status", () => {
+    expect(getCourierTakeState({ courier_id: "93", status: "on_the_road" }, "31")).toBe("other");
+    expect(getCourierTakeState({ courier_id: "93", status: "received" }, "31")).toBe("other");
+  });
+
+  it("free — no courier, «0» sentinel, mine but not on the road, or user unknown", () => {
+    expect(getCourierTakeState({ courier_id: null, status: "received" }, "31")).toBe("free");
+    expect(getCourierTakeState({ courier_id: "0", status: "on_the_road" }, "31")).toBe("free");
+    expect(getCourierTakeState({ courier_id: "31", status: "waiting" }, "31")).toBe("free");
+    expect(getCourierTakeState({ courier_id: "31", status: "on_the_road" }, null)).toBe("free");
+    expect(getCourierTakeState(null, "31")).toBe("free");
   });
 });
