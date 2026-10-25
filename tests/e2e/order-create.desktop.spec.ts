@@ -101,7 +101,7 @@ test.describe("Qo'lda buyurtma yaratish — mijoz taklifi (CS-A), 1440px", () =>
   test.describe.configure({ timeout: 90_000 });
 
   test("telefon ostida taklif ro'yxati; ↓ Enter bilan tanlanadi, «Mavjud mijoz» bloki va `customer_id`", async ({ page }) => {
-    const { leaked, createdOrders } = await mockOrderCreateApi(page, { suggestions: [SUGGESTED_CUSTOMER] });
+    const { leaked, createdOrders, createKeys } = await mockOrderCreateApi(page, { suggestions: [SUGGESTED_CUSTOMER] });
     await openManualCreate(page);
 
     const phone = page.getByRole("combobox", { name: /^Telefon/ });
@@ -140,6 +140,8 @@ test.describe("Qo'lda buyurtma yaratish — mijoz taklifi (CS-A), 1440px", () =>
 
     await expect.poll(() => createdOrders.length).toBe(1);
     expect(createdOrders[0]).toMatchObject({ customer_id: "55", district_id: "101", region_id: "11" });
+    // gpCIsGjH: `POST /orders` `Idempotency-Key` bilan (takroriy so'rov ikkinchi buyurtma yaratmaydi).
+    expect(createKeys[0]).toMatch(/^[\w.:-]{8,255}$/);
     expect(leaked).toEqual([]);
   });
 });

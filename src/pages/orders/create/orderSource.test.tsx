@@ -64,6 +64,9 @@ const staffGet = (url: string) =>
       ? Promise.resolve({ data: AVAILABILITY })
       : aiApiGet(url);
 
+/** gpCIsGjH: `POST /orders` har doim `Idempotency-Key` bilan. */
+const IDEMPOTENT = { headers: { "Idempotency-Key": expect.any(String) } };
+
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   resolveReply = OK;
@@ -146,7 +149,7 @@ describe("«Qayerdan yuboriladi» — superadmin", () => {
     await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
     await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
     await user.click(screen.getByRole("button", { name: "Buyurtma yaratish" }));
-    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.objectContaining({ fulfillment: "hq" })));
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.objectContaining({ fulfillment: "hq" }), IDEMPOTENT));
   });
 
   it("katalogda «Omborda: 30» / «Omborda yo'q» — GET /warehouses/availability (tuman, market)", async () => {
@@ -173,7 +176,7 @@ describe("«Qayerdan yuboriladi» — superadmin", () => {
     await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
     await user.click(screen.getByRole("button", { name: "Buyurtma yaratish" }));
     await waitFor(() =>
-      expect(mocks.post).toHaveBeenCalledWith("orders", expect.objectContaining({ fulfillment: "auto", market_id: "3" })),
+      expect(mocks.post).toHaveBeenCalledWith("orders", expect.objectContaining({ fulfillment: "auto", market_id: "3" }), IDEMPOTENT),
     );
   });
 
