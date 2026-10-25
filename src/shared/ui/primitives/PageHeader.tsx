@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { cx } from "../../lib/cx";
+import { useDocumentTitle } from "../../lib/documentTitle";
 
 /**
  * «Orqaga» havolasining manzili:
@@ -150,6 +151,8 @@ export const PageHeader = ({
   ...rest
 }: PageHeaderProps) => {
   const { t } = useTranslation("ui");
+  // Brauzer sarlavhasi va shell e'loni — shu `<h1>` matni (WuVeVZqo); matn bo'lmasa (yuklanish skeleti) — kutadi.
+  useDocumentTitle(typeof title === "string" || typeof title === "number" ? String(title) : null);
 
   const h1 = (
     <h1 className="min-w-0 text-2xl/8 font-bold tracking-[-.01em] wrap-break-word text-text max-md:text-xl/7">
