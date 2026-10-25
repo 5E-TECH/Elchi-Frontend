@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-scan-camera, courier-scan-camera, courier-scan-starting, courier-scan-permission-denied, courier-scan-active, courier-scan-success-flash, courier-scan-invalid, courier-scan-too-fast, courier-scan-manual-entry, courier-scan-not-found, courier-scan-other-courier
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -8,8 +8,11 @@ import {
   History,
   House,
   ListChecks,
+  Mail,
   PackageCheck,
+  RotateCcw,
   ScanLine,
+  Send,
   Store,
   Truck,
   Volume2,
@@ -18,10 +21,17 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
+import { getCurrentBranchId } from "../../shared/lib/currentBranch";
 import { cx } from "../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
-import { playScanFeedback, scannerArrivalState, type ScanSource, type ScanTarget } from "../../shared/lib/scanner";
+import {
+  playScanFeedback,
+  SCAN_TARGET_SEGMENT_MAX_MODES,
+  scannerArrivalState,
+  type ScanSource,
+  type ScanTarget,
+} from "../../shared/lib/scanner";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { CameraLastScan } from "../../shared/ui/camera";
@@ -30,11 +40,35 @@ import { ScannerCamera } from "../../shared/ui/camera/ScannerCamera";
 import { Button, Dialog, EmptyState, Spinner, buttonClasses } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { extractTodayMarkets } from "../new_orders/model/todayMarkets";
-import { fetchNewOrderMarkets, getScanResourceType, normalizeScanToken } from "./lib/scanResource";
-import { requestedScanMode, useScanMode, useScanModes } from "./model/scanModes";
+import {
+  fetchCancelledMarkets,
+  fetchNewOrderMarkets,
+  fetchRefusedMails,
+  fetchSendableMails,
+  getScanResourceType,
+  normalizeScanToken,
+} from "./lib/scanResource";
+import {
+  PICKER_SCAN_MODES,
+  requestedScanMode,
+  useScanMode,
+  useScanModes,
+} from "./model/scanModes";
+import {
+  cancelledHandoverArrivalState,
+  cancelledHandoverPath,
+  mailArrivalState,
+  mailDetailPath,
+  newOrdersMarketTargetId,
+  toScanCancelledMarketRows,
+  toScanMailRows,
+  type ScanMailKind,
+  type ScanMailRow,
+} from "./model/scanPickers";
 import { useScanHistory } from "./model/scanHistory";
 import { scanHistoryTitle } from "./model/scanHistoryText";
 import { useCourierTake } from "./model/useCourierTake";
+import { useMailModeScan } from "./model/useMailModeScan";
 import { useUniversalScan } from "./model/useUniversalScan";
 import { useIsBelowLg } from "./model/useViewport";
 import { ScanModeCard, ScanTakeCard, type ScanModeOption } from "./ui/ScanModeCards";
@@ -46,8 +80,6 @@ const HOME_ROUTE = "/";
 /** «Kuryerga biriktirish» sahifasi va uning skan maqsadi (`pages/dispatch` — `useScanTarget({ id: "dispatch" })`). */
 const DISPATCH_ROUTE = "/dispatch";
 const DISPATCH_TARGET_ID = "dispatch";
-/** Market yangi buyurtmalari sahifasining maqsadi: `new-orders:market:<id>` (`new_orderDetail`). */
-const NEW_ORDERS_TARGET_PREFIX = "new-orders:market:";
 /** Kuryer xulosasidan keyin — o'z buyurtmalari. */
 const ORDERS_ROUTE = "/orders";
 
@@ -70,7 +102,15 @@ const MIN_KEYBOARD_SCAN_LENGTH = 4;
  *     `/dispatch`, kamera ochiq; bu rejimda `/scan` da o'qilgan buyurtma kodi `/dispatch` ga olib o'tiladi va
  *     savatga o'sha sahifa handler'i bilan qo'shiladi;
  *   - kuryer «O'zimga olish» (kuryerda sukut) — ketma-ket `POST orders/scan-assign`, natija ro'yxati,
- *     «Tugatish» → kesh yangilanadi va xulosa (`model/useCourierTake.ts`).
+ *     «Tugatish» → kesh yangilanadi va xulosa (`model/useCourierTake.ts`);
+ *   - «Pochtani jo'natish» / «Rad etilgan pochta» (Trello vNcGDnNh 2-band) — pochta varag'i (`GET post/new` /
+ *     `GET post/rejected`) YOKI pochta QR'i (`POST-…`, `model/useMailModeScan.ts`) → `/mails/:id`, kamera o'sha
+ *     sahifaning «jo'natish» / «rad etilganni qabul» maqsadida ochiq (buyurtma skani = tanlov; jo'natish va qabul —
+ *     sahifaning o'z tugmasi va oynasi);
+ *   - «Marketga topshirish» — bekorlari bor market varag'i (`GET orders/markets/cancelled`, majburiy — market QR
+ *     o'sha sahifada skanerlanadi) → `/new-orders/cancelled/:id`, kamera ochiq.
+ *   Rejim 3 tadan ko'p bo'lsa (superadmin, admin, HQ registratori) — segment o'rniga «Rejim: … ▾» varag'i
+ *   (telefon) / ochiladigan ro'yxat (yon panel). Maket yo'q — eng yaqini `superadmin-scan-camera`.
  *
  * Ko'rinish:
  *   - telefon (< 768) — `ScannerCamera presentation="page"`: to'liq ekran, tepada «Skanerni yopish» + sarlavha,
@@ -122,10 +162,13 @@ const UniversalScanner = () => {
   const isBelowLg = useIsBelowLg();
   const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
   const { entries } = useScanHistory(userId);
+  const role = useSelector((state: RootState) => state.role.role);
+  const branchId = useSelector(getCurrentBranchId);
+  const mailsScope = useMemo(() => ({ role, branchId }), [branchId, role]);
   const modes = useScanModes();
   // Router state'dagi rejim (Sozlamalar «Kamerani sinash» — «Ma'lumot») faqat shu ochilish uchun.
   const [mode, setMode] = useScanMode(modes, userId, requestedScanMode(location.state));
-  // «Qabul qilish»: market varag'ini ochish so'rovi (rejim tanlandi, «Marketni tanlang», market tanlanmay skan).
+  // Tanlov varag'ini ochish so'rovi (market / pochta): rejim tanlandi, «… tanlang» bosildi yoki tanlovsiz skan.
   const [switcherKey, setSwitcherKey] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -134,7 +177,15 @@ const UniversalScanner = () => {
   const handleTakeScan = take.handleScan;
   const finishTakeFlow = take.finish;
 
-  const openMarketPicker = useCallback(() => setSwitcherKey((key) => key + 1), []);
+  const openPicker = useCallback(() => setSwitcherKey((key) => key + 1), []);
+
+  /** Pochta sahifasi — ro'yxatdagi havola bilan bir xil holat + kamera o'sha sahifa maqsadida ochiq. */
+  const openMail = useCallback(
+    (mail: Pick<ScanMailRow, "id"> & Partial<ScanMailRow>, kind: ScanMailKind) =>
+      navigate(mailDetailPath(mail.id), { state: mailArrivalState(mail, kind) }),
+    [navigate],
+  );
+  const { handleScan: handleMailScan, opening: mailOpening } = useMailModeScan({ onOpen: openMail });
 
   /** «Kuryerga biriktirish» — `/dispatch`, kamera ochiq; `/scan` da o'qilgan kod savatga o'sha sahifa handler'i bilan. */
   const openDispatch = useCallback(
@@ -149,10 +200,16 @@ const UniversalScanner = () => {
         handleTakeScan(raw, source);
         return;
       }
-      if (mode === "receive") {
-        // Qabul market sahifasida (F1): market tanlanmaguncha kod hech qayerga ketmaydi.
-        void playScanFeedback("error", t("scanner.receive.pickFirst"), source);
-        openMarketPicker();
+      if (mode === "receive" || mode === "handover") {
+        // Qabul / topshirish market sahifasida (F1; market QR — o'sha sahifada): market tanlanmaguncha kod hech
+        // qayerga ketmaydi.
+        void playScanFeedback("error", t(`scanner.${mode}.pickFirst`), source);
+        openPicker();
+        return;
+      }
+      if (mode === "sendMail" || mode === "refusedMail") {
+        // Pochta QR'i → o'sha pochta (kamera ochiq); boshqa kod — «Bu pochta QR kodi emas».
+        void handleMailScan(raw, source, mode === "sendMail" ? "send" : "refused");
         return;
       }
       if (mode === "dispatch") {
@@ -167,7 +224,7 @@ const UniversalScanner = () => {
       }
       void handleInfoScan(raw, source);
     },
-    [handleInfoScan, handleTakeScan, mode, openDispatch, openMarketPicker, t],
+    [handleInfoScan, handleMailScan, handleTakeScan, mode, openDispatch, openPicker, t],
   );
 
   useKeyboardScanner({
@@ -187,10 +244,10 @@ const UniversalScanner = () => {
       const next = modes.find((item) => item === value);
       if (!next || next === mode) return;
       setMode(next);
-      if (next === "receive") openMarketPicker();
+      if (PICKER_SCAN_MODES.has(next)) openPicker();
       if (next === "dispatch") openDispatch();
     },
-    [mode, modes, openDispatch, openMarketPicker, setMode],
+    [mode, modes, openDispatch, openPicker, setMode],
   );
 
   const finishTake = useCallback(async () => {
@@ -218,14 +275,67 @@ const UniversalScanner = () => {
   const goToMarket = useCallback(
     (marketId: string) =>
       navigate(`/new-orders/${encodeURIComponent(marketId)}`, {
-        state: scannerArrivalState({ targetId: `${NEW_ORDERS_TARGET_PREFIX}${marketId}` }),
+        state: scannerArrivalState({ targetId: newOrdersMarketTargetId(marketId) }),
       }),
     [navigate],
   );
 
+  // Pochta varag'i: tanlangan qatorning viloyati va soni sahifaga zaxira sifatida beriladi (ro'yxatdagidek).
+  const mailRowsRef = useRef(new Map<string, ScanMailRow>());
+  const loadMails = useCallback(
+    async (kind: ScanMailKind) => {
+      const response = await (kind === "send" ? fetchSendableMails : fetchRefusedMails)(queryClient, mailsScope);
+      const rows = toScanMailRows(response);
+      mailRowsRef.current = new Map(rows.map((row) => [row.id, row]));
+      return rows.map((row) => ({
+        value: row.id,
+        label: t("scanner.mail.pickLabel", { id: row.id }),
+        meta: [
+          row.regionName,
+          kind === "refused" ? row.courierName : null,
+          t("ordersCount", { count: row.orders, value: formatNumberLocalized(row.orders, { language }) }),
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      }));
+    },
+    [language, mailsScope, queryClient, t],
+  );
+  const loadSendableMails = useCallback(() => loadMails("send"), [loadMails]);
+  const loadRefusedMails = useCallback(() => loadMails("refused"), [loadMails]);
+  const selectMail = useCallback(
+    (id: string, kind: ScanMailKind) => openMail(mailRowsRef.current.get(id) ?? { id }, kind),
+    [openMail],
+  );
+  const selectSendMail = useCallback((id: string) => selectMail(id, "send"), [selectMail]);
+  const selectRefusedMail = useCallback((id: string) => selectMail(id, "refused"), [selectMail]);
+
+  const loadCancelledMarkets = useCallback(async () => {
+    const response = await fetchCancelledMarkets(queryClient);
+    return toScanCancelledMarketRows(response).map((row) => ({
+      value: row.market_id,
+      label: row.name,
+      meta: t("scanner.handover.pickMeta", {
+        count: row.orders_count,
+        value: formatNumberLocalized(row.orders_count, { language }),
+      }),
+    }));
+  }, [language, queryClient, t]);
+  const goToHandover = useCallback(
+    (marketId: string) =>
+      navigate(cancelledHandoverPath(marketId), { state: cancelledHandoverArrivalState(marketId) }),
+    [navigate],
+  );
+
+  // Segmentda (3 tagacha rejim) qisqa yorliq — «Rad etilgan» (telefonda 390 px ga sig'adi); varaq va ro'yxatda to'liq.
+  const segmented = modes.length <= SCAN_TARGET_SEGMENT_MAX_MODES;
   const modeOptions = useMemo<ScanModeOption[]>(
-    () => modes.map((value) => ({ value, label: t(`scanner.modes.${value}`) })),
-    [modes, t],
+    () =>
+      modes.map((value) => ({
+        value,
+        label: t(segmented && value === "refusedMail" ? "scanner.modes.refusedMailShort" : `scanner.modes.${value}`),
+      })),
+    [modes, segmented, t],
   );
   const showModes = modeOptions.length > 1;
 
@@ -250,6 +360,41 @@ const UniversalScanner = () => {
           title: t("scanner.receive.pick"),
           options: loadMarkets,
           onSelect: goToMarket,
+        },
+      };
+    }
+    if (mode === "sendMail" || mode === "refusedMail") {
+      const send = mode === "sendMail";
+      return {
+        ...base,
+        title: t(`scanner.${mode}.title`),
+        context: t(`scanner.${mode}.context`),
+        hint: t(`scanner.${mode}.hint`),
+        icon: send ? Send : Mail,
+        switcher: {
+          label: t("scanner.mail.pick"),
+          value: "",
+          title: t("scanner.mail.pick"),
+          options: send ? loadSendableMails : loadRefusedMails,
+          onSelect: send ? selectSendMail : selectRefusedMail,
+          emptyText: t(`scanner.${mode}.empty`),
+        },
+      };
+    }
+    if (mode === "handover") {
+      return {
+        ...base,
+        title: t("scanner.handover.title"),
+        context: t("scanner.handover.context"),
+        hint: t("scanner.handover.hint"),
+        icon: RotateCcw,
+        switcher: {
+          label: t("scanner.handover.pick"),
+          value: "",
+          title: t("scanner.handover.pick"),
+          options: loadCancelledMarkets,
+          onSelect: goToHandover,
+          emptyText: t("scanner.handover.empty"),
         },
       };
     }
@@ -283,12 +428,18 @@ const UniversalScanner = () => {
     return { ...base, title: t("scanner.title"), context: t("scanner.context") };
   }, [
     finishTake,
+    goToHandover,
     goToMarket,
     handleModeChange,
     language,
+    loadCancelledMarkets,
     loadMarkets,
+    loadRefusedMails,
+    loadSendableMails,
     mode,
     modeOptions,
+    selectRefusedMail,
+    selectSendMail,
     showModes,
     submit,
     t,
@@ -298,9 +449,19 @@ const UniversalScanner = () => {
 
   const dispatchLinkState = scannerArrivalState({ targetId: DISPATCH_TARGET_ID });
   const latest = entries[0];
+  const isMailMode = mode === "sendMail" || mode === "refusedMail";
   let lastScan: ReactNode;
-  if (mode === "receive") {
-    // Market tanlovi — sarlavhadagi almashtirish chipida (pastda takror «Marketni tanlang» qatori yo'q).
+  if (isMailMode && mailOpening) {
+    lastScan = (
+      <CameraLastScan
+        icon={<Spinner />}
+        tone="success"
+        title={t("scanner.opening")}
+        subtitle={mailOpening.title ?? t("scanner.searching")}
+      />
+    );
+  } else if (PICKER_SCAN_MODES.has(mode)) {
+    // Market / pochta tanlovi — sarlavhadagi almashtirish chipida (pastda takror «… tanlang» qatori yo'q).
     lastScan = null;
   } else if (mode === "dispatch") {
     lastScan = (
@@ -349,7 +510,7 @@ const UniversalScanner = () => {
       ? t("scanner.take.manualSubmit")
       : mode === "dispatch"
         ? t("scanner.dispatch.manualSubmit")
-        : mode === "info"
+        : mode === "info" || isMailMode
           ? t("scanner.manualSubmit")
           : undefined;
   const manualText = {
@@ -368,9 +529,10 @@ const UniversalScanner = () => {
       phoneSecondary={mode === "take" ? "primary" : "torch"}
       manual={manualText}
       switcherOpenKey={switcherKey}
-      // Kamera to'xtaydi: «Qabul qilish» — market tanlanmaguncha skan hech qayerga ketmaydi (kamera market
-      // sahifasida ochiladi); kuryer xulosasi / «Tugatish» — skanlar qabul qilinmaydi, «Skanerlash faol» yolg'on.
-      paused={mode === "receive" || (mode === "take" && (summaryOpen || finishing))}
+      // Kamera to'xtaydi: «Qabul qilish» / «Marketga topshirish» — market tanlanmaguncha skan hech qayerga ketmaydi
+      // (kamera market sahifasida ochiladi); kuryer xulosasi / «Tugatish» — skanlar qabul qilinmaydi, «Skanerlash
+      // faol» yolg'on. Pochta rejimlarida kamera ishlaydi — pochta QR'i o'qiladi.
+      paused={mode === "receive" || mode === "handover" || (mode === "take" && (summaryOpen || finishing))}
     />
   );
 
@@ -428,10 +590,16 @@ const UniversalScanner = () => {
   }
 
   let modeAction: ReactNode = null;
-  if (mode === "receive") {
+  if (mode === "receive" || mode === "handover") {
     modeAction = (
-      <Button fullWidth leftIcon={Store} aria-haspopup="dialog" onClick={openMarketPicker}>
-        {t("scanner.receive.pick")}
+      <Button fullWidth leftIcon={Store} aria-haspopup="dialog" onClick={openPicker}>
+        {t(`scanner.${mode}.pick`)}
+      </Button>
+    );
+  } else if (isMailMode) {
+    modeAction = (
+      <Button fullWidth leftIcon={Mail} aria-haspopup="dialog" onClick={openPicker}>
+        {t("scanner.mail.pick")}
       </Button>
     );
   } else if (mode === "dispatch") {
@@ -499,8 +667,8 @@ const UniversalScanner = () => {
               />
             </div>
           ) : null}
-          {/* «Qabul qilish»: market tanlanmaguncha kod hech qayerga ketmaydi — qo'lda kiritish ham yo'q. */}
-          {mode !== "receive" ? (
+          {/* «Qabul qilish» / «Marketga topshirish»: market tanlanmaguncha kod hech qayerga ketmaydi — qo'lda kiritish ham yo'q. */}
+          {mode !== "receive" && mode !== "handover" ? (
             <ScanUsbCard
               onSubmit={(code) => submit(code, "manual")}
               showTips={!isBelowLg && !(mode === "info" && outcome) && !showModes}

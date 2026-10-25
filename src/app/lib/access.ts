@@ -154,6 +154,20 @@ export const canDispatchPostToBranch: Predicate = anyOf(
 );
 
 /**
+ * Rad etilgan (kuryer qaytargan, `canceled`) pochtani qabul qilish — `/mails/:id` (`type: "refused"`) dagi
+ * «Rad etilgan pochtani qabul qilish» (`POST post/cancel/receive/:id`, backend
+ * `@Roles(MANAGER, REGISTRATOR, ADMIN, SUPERADMIN)`). Pochta sahifasining o'z shartini AYNAN takrorlaydi
+ * (`canReceiveRefusedPost`: superadmin/admin, filial turi aniq menejer, HQ registratori; kuryerda bu sahifa faqat
+ * o'qish) va `/mails` marshrutiga kirish bilan (`canViewMails` — PICKUP menejerida pochta yo'q). Universal skaner
+ * «Rad etilgan pochta» rejimi (Trello vNcGDnNh) shu bilan ko'rsatiladi; boshqa rollarda sahifa tugmasi o'chiq.
+ */
+export const canReceiveRefusedMail: Predicate = (state) =>
+  canViewMails(state) &&
+  (hasRole("superadmin", "admin")(state) ||
+    (roleOf(state) === "manager" && branchTypeOf(state) !== null) ||
+    (roleOf(state) === "registrator" && branchTypeOf(state) === "HQ"));
+
+/**
  * Bekor qilingan mollarni marketga QR orqali topshirish ("Yangi buyurtmalar"
  * → "Bekor qilinganlar" tabi va market bo'yicha topshirish sahifasi).
  *

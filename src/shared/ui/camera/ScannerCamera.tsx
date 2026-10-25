@@ -1,5 +1,14 @@
 // dizayn-v2: tizim-scanner, superadmin-neworders-market-orders-camera, manager-dispatch-camera-dialog, courier-scan-permission-denied, courier-courier-bulk-scanner-camera-list
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import {
   Camera,
   CameraOff,
@@ -28,14 +37,16 @@ import { cx } from "../../lib/cx";
 import { formatNumberLocalized } from "../../lib/formatMoney";
 import { readStoredScannerCameraPrefs } from "../../lib/preferencesStorage";
 import { markScannerCameraMounted } from "../../lib/scanner/scannerHost";
-import type {
-  ScanSource,
-  ScanTarget,
-  ScanTargetListItem,
-  ScanTargetStat,
-  ScanTargetSwitcher,
-  ScanTargetSwitcherOption,
-  ScanTargetTone,
+import {
+  SCAN_TARGET_SEGMENT_MAX_MODES,
+  type ScanSource,
+  type ScanTarget,
+  type ScanTargetListItem,
+  type ScanTargetMode,
+  type ScanTargetStat,
+  type ScanTargetSwitcher,
+  type ScanTargetSwitcherOption,
+  type ScanTargetTone,
 } from "../../lib/scanner/scanTargets";
 import {
   Badge,
@@ -195,7 +206,7 @@ export const ScannerCamera = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const finderRef = useRef<HTMLDivElement | null>(null);
-  const [sheet, setSheet] = useState<"manual" | "list" | "switcher" | null>(null);
+  const [sheet, setSheet] = useState<"manual" | "list" | "switcher" | "modes" | null>(null);
   // Sozlamalar → Skaner → «Kamera»: ochilishda bir marta (kamera ochiq turganda sozlama o'zgarmaydi).
   const [prefs] = useState(readStoredScannerCameraPrefs);
   /**
@@ -580,16 +591,31 @@ export const ScannerCamera = ({
     />
   );
 
-  const modes =
-    target.modes && target.modes.length > 0 && target.onModeChange ? (
+  // Rejimlar: ko'pi bilan `SCAN_TARGET_SEGMENT_MAX_MODES` — segment; ko'p bo'lsa (universal skaner, 5–6 rejim) —
+  // «Rejim: <nomi> ▾» qatori → rejimlar varag'i (segmentda yorliqlar telefonda kesilib qolardi). Maket yo'q —
+  // eng yaqini `superadmin-scan-camera` (segment) va `courier-courier-bulk-scanner-camera-list` (varaq).
+  const modeOptions = target.modes && target.modes.length > 0 && target.onModeChange ? target.modes : null;
+  const modeValue = target.mode ?? modeOptions?.[0]?.value ?? "";
+  const modeSheet = modeOptions !== null && modeOptions.length > SCAN_TARGET_SEGMENT_MAX_MODES;
+  const currentMode = modeOptions?.find((option) => option.value === modeValue) ?? modeOptions?.[0];
+  let modes: ReactNode = null;
+  if (modeOptions && modeSheet) {
+    modes = (
+      <Button variant="secondary" fullWidth rightIcon={ChevronDown} aria-haspopup="dialog" onClick={() => setSheet("modes")}>
+        <span className="min-w-0 truncate">{t("camera.modes.current", { label: currentMode?.label ?? "" })}</span>
+      </Button>
+    );
+  } else if (modeOptions) {
+    modes = (
       <SegmentedControl
         ariaLabel={target.title}
-        options={target.modes}
-        value={target.mode ?? target.modes[0].value}
+        options={modeOptions}
+        value={modeValue}
         onValueChange={(value) => target.onModeChange?.(value)}
         fullWidth
       />
-    ) : null;
+    );
+  }
 
   const counter = progress ? <CameraCount done={progress.done} total={progress.total} label={meterLabel} /> : null;
   const stats = target.stats && target.stats.length > 0 ? <StatsLine stats={target.stats} /> : null;
@@ -867,6 +893,19 @@ export const ScannerCamera = ({
 
   const sheets = (
     <>
+      {modeOptions && modeSheet ? (
+        <ModesDialog
+          open={sheet === "modes"}
+          dark={isPhone}
+          modes={modeOptions}
+          value={modeValue}
+          onClose={() => setSheet(null)}
+          onSelect={(value) => {
+            setSheet(null);
+            if (value !== modeValue) target.onModeChange?.(value);
+          }}
+        />
+      ) : null}
       {switcher ? (
         <SwitcherDialog
           open={sheet === "switcher"}
@@ -1106,7 +1145,9 @@ const SwitcherDialog = ({
           </Button>
         </div>
       ) : visible.length === 0 ? (
-        <p className="py-3 text-sm text-text-muted">{t("camera.switcher.empty")}</p>
+        <p className="py-3 text-sm text-text-muted">
+          {!needle && switcher.emptyText ? switcher.emptyText : t("camera.switcher.empty")}
+        </p>
       ) : (
         <ul className="-mx-1 flex flex-col">
           {visible.map((option) => {
@@ -1137,6 +1178,75 @@ const SwitcherDialog = ({
           })}
         </ul>
       )}
+    </Dialog>
+  );
+};
+
+/**
+ * Rejimlar varag'i (rejim `SCAN_TARGET_SEGMENT_MAX_MODES` dan ko'p bo'lsa): radio guruhi, joriy rejim belgilangan;
+ * tanlansa varaq yopiladi va `onModeChange` (kamera yopilmaydi). Ko'rinish — almashtirish varag'i qatorlari.
+ * Klaviatura radio guruhi kabi: Tab — tanlangan rejimga, ↑ ↓ Home End — fokus qatorlar bo'ylab, Enter / Probel — tanlash.
+ */
+const ModesDialog = ({
+  open,
+  dark,
+  modes,
+  value,
+  onClose,
+  onSelect,
+}: {
+  open: boolean;
+  dark: boolean;
+  modes: ReadonlyArray<ScanTargetMode>;
+  value: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+}) => {
+  const { t } = useTranslation("ui");
+  const title = t("camera.modes.title");
+  const hasChecked = modes.some((mode) => mode.value === value);
+  const moveFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]'));
+    const current = radios.indexOf(event.target as HTMLElement);
+    if (current === -1 || radios.length === 0) return;
+    const last = radios.length - 1;
+    const next =
+      event.key === "ArrowDown" || event.key === "ArrowRight"
+        ? (current + 1) % radios.length
+        : event.key === "ArrowUp" || event.key === "ArrowLeft"
+          ? (current - 1 + radios.length) % radios.length
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : null;
+    if (next === null) return;
+    event.preventDefault();
+    radios[next]?.focus();
+  };
+  return (
+    <Dialog open={open} onClose={onClose} size="md" className={dark ? "dark" : undefined} title={title}>
+      <div role="radiogroup" aria-label={title} onKeyDown={moveFocus} className="-mx-1 flex flex-col">
+        {modes.map((mode, index) => {
+          const checked = mode.value === value;
+          return (
+            <Pressable
+              key={mode.value}
+              role="radio"
+              aria-checked={checked}
+              tabIndex={checked || (!hasChecked && index === 0) ? 0 : -1}
+              onClick={() => onSelect(mode.value)}
+              className={cx(
+                "flex min-h-12 w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors duration-150 hover:bg-sunken motion-reduce:transition-none",
+                checked && "bg-action-soft",
+              )}
+            >
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{mode.label}</span>
+              {checked ? <Check aria-hidden="true" size={18} strokeWidth={2} className="shrink-0 text-action-fg" /> : null}
+            </Pressable>
+          );
+        })}
+      </div>
     </Dialog>
   );
 };

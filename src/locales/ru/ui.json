@@ -1279,6 +1279,10 @@
       "retry": "Повторить",
       "current": "Выбрано"
     },
+    "modes": {
+      "title": "Режим сканера",
+      "current": "Режим: {{label}}"
+    },
     "torchFailed": "Не удалось включить фонарик",
     "switchCamera": "Сменить камеру",
     "lowLight": {

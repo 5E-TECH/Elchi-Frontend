@@ -1279,6 +1279,10 @@
       "retry": "Try again",
       "current": "Selected"
     },
+    "modes": {
+      "title": "Scanner mode",
+      "current": "Mode: {{label}}"
+    },
     "torchFailed": "Couldn't switch the flashlight",
     "switchCamera": "Switch camera",
     "lowLight": {
