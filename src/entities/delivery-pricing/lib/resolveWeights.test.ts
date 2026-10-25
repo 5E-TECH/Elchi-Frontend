@@ -69,6 +69,20 @@ describe("resolveMeasureWeights — server natijasi ustun, chegara javobdan", ()
     });
   });
 
+  it("klient hisobi backend bilan bir xil: 14 × 17 × 21, 0,3 kg, chegara 1 — hajmli «1,0 kg» qo'llanadi (999,6 g → 1 000 g)", () => {
+    const item = { weight_kg: 0.3, length_cm: 14, width_cm: 17, height_cm: 21, volumetric_enabled: true };
+    // Javob kutilmoqda (lokal rejim) — «1,0 kg» ostida «Chegara 1,0 kg dan kichik» degan ziddiyat bo'lmaydi.
+    expect(resolveMeasureWeights(item, { ...DEFAULT_WEIGHT_RULES, volumetricFromKg: 1 })).toEqual({
+      actualKg: 0.3,
+      volumetricKg: 1,
+      billableKg: 1,
+      basis: "volume",
+      volumetricFromKg: 1,
+      volumetricApplied: true,
+      source: "local",
+    });
+  });
+
   it("firstDeliveryQuote — birinchi mavjud tarif natijasi", () => {
     const center = quote({ tariffId: "center" });
     expect(firstDeliveryQuote({ city: null, center, address: null })).toBe(center);

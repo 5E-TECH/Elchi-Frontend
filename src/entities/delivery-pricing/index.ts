@@ -68,7 +68,9 @@ export {
   useDeliveryPricingSettings,
   useDeliveryPricingSettingsHistory,
   useDeliveryQuoteByTariff,
+  useWeightRules,
   type DeliveryQuoteState,
+  type WeightRulesState,
 } from "./api/useDeliveryPricing";
 export { DeliveryQuoteList, type DeliveryQuoteListProps } from "./ui/DeliveryQuoteList";
 export { formatKgValue } from "./lib/formatKg";

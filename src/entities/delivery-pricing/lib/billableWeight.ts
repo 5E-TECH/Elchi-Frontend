@@ -6,8 +6,9 @@ import type { DeliveryMeasureItem, DeliveryPricingSettings } from "../model/type
  *   hajmli vazn = U × K × B / bo'luvchi (5000);
  *   hisob vazni = max( yuqoriga(max(og'irlik, hajmli), qadam 0,1 kg), minimal 0,1 kg );
  *   «Hajmga qarab hisoblash» o'chiq — faqat og'irlik (hajm baribir ko'rsatiladi, chizilgan holda);
- *   hajmli vazn «Hajm bo'yicha hisoblash chegarasi» (`volumetric_from_kg`) dan kichik — ham faqat og'irlik
- *   (chegara 3 kg: 20×20×20, 0,5 kg → 1,6 < 3 → 0,5 kg; aynan 3,0 — hajm qo'llanadi); chegara 0 — avvalgi xulq.
+ *   hajmli vazn (grammgacha yaxlitlangan) «Hajm bo'yicha hisoblash chegarasi» (`volumetric_from_kg`) dan kichik —
+ *   ham faqat og'irlik (chegara 3 kg: 20×20×20, 0,5 kg → 1,6 < 3 → 0,5 kg; aynan 3,0 — hajm qo'llanadi); chegara 0 —
+ *   avvalgi xulq.
  * Forma jonli ko'rsatkichi va ro'yxatdagi «Hisob vazni» shu yerdan; NARX esa serverdan (`total`).
  */
 
@@ -54,16 +55,19 @@ const toTiyin = (som: number): number => Math.round(som * 100);
 const divisorOf = (rules: WeightRules) => (rules.volumetricDivisor > 0 ? rules.volumetricDivisor : VOLUMETRIC_DIVISOR);
 
 /**
- * Hajm hisobga olinadimi: kalit yoqiq VA hajmli vazn ≥ chegara (`volumetricFromKg`; 0 — har doim). Taqqoslash butun
- * sonlarda: U × K × B × 1000 ≥ chegara (g) × bo'luvchi — aynan chegarada (30×25×20 = 3,0 kg, chegara 3) qo'llanadi.
+ * Hajm hisobga olinadimi: kalit yoqiq, hajm bor VA hajmli vazn ≥ chegara (`volumetricFromKg`; 0 — har doim). Backend
+ * (`volumeCm3 > 0 && Math.round(volumeG) >= volumetricFromG`, ombor `round3(hajmli) >= chegara`) kabi GRAMMGACHA
+ * YAXLITLANGAN hajmli vazn solishtiriladi — ekrandagi son va qaror bir xil: 14×17×21 = 999,6 g → 1,0 kg, chegara 1 —
+ * qo'llanadi; aynan chegarada (30×25×20 = 3,0 kg, chegara 3) ham qo'llanadi.
  */
 export const meetsVolumetricThreshold = (
   item: DeliveryMeasureItem,
   rules: WeightRules = DEFAULT_WEIGHT_RULES,
 ): boolean => {
   if (!item.volumetric_enabled) return false;
+  const volumeCm3 = item.length_cm * item.width_cm * item.height_cm;
   const thresholdG = Math.max(0, toGrams(rules.volumetricFromKg ?? 0));
-  return item.length_cm * item.width_cm * item.height_cm * 1000 >= thresholdG * divisorOf(rules);
+  return volumeCm3 > 0 && Math.round((volumeCm3 * 1000) / divisorOf(rules)) >= thresholdG;
 };
 
 export const computeMeasureWeights = (

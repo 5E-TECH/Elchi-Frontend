@@ -742,7 +742,8 @@ describe("ProductTable — og'irlik va o'lcham (6FLyjO6j)", () => {
     expect(screen.getByRole("columnheader", { name: "Hisob vazni" })).not.toHaveClass("max-lg:hidden");
     const [, olma, nok, kurtka] = screen.getAllByRole("row");
     const cells = (row: HTMLElement) => within(row).getAllByRole("cell").map((cell) => cell.textContent);
-    expect(cells(olma).slice(4, 7)).toEqual(["1,2 kg", "30 × 22 × 15", "2,0 kghajm bo'yicha"]);
+    // Hajm og'irlikdan katta — natija chegaraga bog'liq: admin uchun sozlamadan (bu yerda chegara yo'q — 0).
+    await waitFor(() => expect(cells(olma).slice(4, 7)).toEqual(["1,2 kg", "30 × 22 × 15", "2,0 kghajm bo'yicha"]));
     expect(cells(kurtka).slice(4, 7)).toEqual(["0,9 kg", "40 × 30 × 15", "0,9 kghajm hisobga olinmaydi"]);
     expect(within(nok).getAllByRole("cell")[6]).toHaveTextContent("Kiritilmagan");
     expect(within(within(nok).getAllByRole("cell")[4]).getByText("Kiritilmagan")).toHaveClass("sr-only");
@@ -752,8 +753,105 @@ describe("ProductTable — og'irlik va o'lcham (6FLyjO6j)", () => {
     productRows = [OLMA];
     renderPage("/products", "market", "77");
     await screen.findByText("Olma");
-    expect(screen.getByText("2,0 kg")).toBeInTheDocument();
+    // Chegara narx javobidan (bu javobda yo'q — eski backend, 0: avvalgi xulq).
+    expect(await screen.findByText("2,0 kg")).toBeInTheDocument();
     expect(screen.getByText("hajm bo'yicha")).toBeInTheDocument();
+  });
+
+  /** «Hajm bo'yicha hisoblash chegarasi» 3 kg (AQ9lkgVB): ro'yxat forma va server bilan bir xil son ko'rsatadi. */
+  describe("hajm chegarasi (volumetric_from_kg)", () => {
+    /** 20 × 20 × 20, 0,5 kg — hajmli 1,6 < 3: hisob 0,5 kg (chegarasiz 1,6 kg «hajm bo'yicha» bo'lardi). */
+    const KICHIK = { ...OLMA, id: 11, name: "Kichik quti", weight_kg: "0.500", length_cm: 20, width_cm: 20, height_cm: 20 };
+    /** 50 × 35 × 20, 0,8 kg — hajmli 7,0 ≥ 3: hisob 7,0 kg. */
+    const KATTA = { ...OLMA, id: 12, name: "Katta quti", weight_kg: "0.800", length_cm: 50, width_cm: 35, height_cm: 20 };
+    /** Hajm og'irlikdan kichik — chegara ahamiyatsiz (so'rov kerak emas). */
+    const OGIR = { ...OLMA, id: 13, name: "Og'ir quti", weight_kg: "0.840", length_cm: 15, width_cm: 10, height_cm: 6 };
+
+    const rowOf = (name: string) => screen.getAllByRole("row").find((row) => within(row).queryByText(name)) as HTMLElement;
+    /** «Hisob vazni» katagi — ustun o'rni roldan (xodimda «Market» va «Amallar» bor). */
+    const billableCell = (name: string) => {
+      const column = screen.getAllByRole("columnheader").findIndex((header) => header.textContent === "Hisob vazni");
+      return within(rowOf(name)).getAllByRole("cell")[column];
+    };
+    const quotePosts = () => mocks.post.mock.calls.filter(([url]) => url === "delivery/quote/by-tariff");
+    const probeQuotes = (volumetricFromKg: number) => ({
+      data: {
+        quotes: {
+          city: { tariffId: "city", base: 35000, perExtraKg: 4000, billableKg: 1, extraKg: 0, total: 35000, volumetricFromKg, volumetricApplied: true },
+          center: null,
+          address: null,
+        },
+      },
+    });
+
+    it("admin: chegara sozlamadan — 0,5 kg «og'irlik bo'yicha», 7,0 kg «hajm bo'yicha»; narx so'rovi yo'q", async () => {
+      productRows = [KICHIK, KATTA, OGIR];
+      const base = mocks.get.getMockImplementation() as (url: string, config?: { params?: Params }) => Promise<unknown>;
+      mocks.get.mockImplementation((url: string, config?: { params?: Params }) =>
+        url === "delivery/pricing-settings"
+          ? Promise.resolve({ data: { data: { first_kg_included: 1, round_to: 500, volumetric_from_kg: "3.000" } } })
+          : base(url, config),
+      );
+      renderPage();
+      await screen.findByText("Kichik quti");
+
+      await waitFor(() => expect(billableCell("Kichik quti")).toHaveTextContent("0,5 kgog'irlik bo'yicha"));
+      expect(billableCell("Katta quti")).toHaveTextContent("7,0 kghajm bo'yicha");
+      expect(billableCell("Og'ir quti")).toHaveTextContent("0,9 kgog'irlik bo'yicha");
+      expect(quotePosts()).toHaveLength(0);
+    });
+
+    it("market (sozlamasiz): chegara narx javobidan — bitta so'rov barcha qatorlarga; sozlama so'ralmaydi", async () => {
+      productRows = [KICHIK, KATTA, OGIR];
+      let release: (value: unknown) => void = () => undefined;
+      mocks.post.mockImplementation((url: string) =>
+        url === "delivery/quote/by-tariff"
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.reject(new Error(`kutilmagan: ${url}`)),
+      );
+      renderPage("/products", "market", "77");
+      await screen.findByText("Kichik quti");
+
+      // Javob kelguncha chegaraga bog'liq qatorda taxminiy son yo'q — skelet; bog'liq bo'lmagani darhol.
+      await waitFor(() => expect(quotePosts()).toHaveLength(1));
+      expect(within(billableCell("Kichik quti")).getByText("Hisob vazni hisoblanmoqda")).toHaveClass("sr-only");
+      expect(billableCell("Kichik quti")).not.toHaveTextContent("1,6 kg");
+      expect(billableCell("Og'ir quti")).toHaveTextContent("0,9 kgog'irlik bo'yicha");
+
+      release(probeQuotes(3));
+      await waitFor(() => expect(billableCell("Kichik quti")).toHaveTextContent("0,5 kgog'irlik bo'yicha"));
+      expect(billableCell("Katta quti")).toHaveTextContent("7,0 kghajm bo'yicha");
+      expect(billableCell("Og'ir quti")).toHaveTextContent("0,9 kgog'irlik bo'yicha");
+      expect(quotePosts()).toHaveLength(1);
+      expect(quotePosts()[0][1]).toEqual({
+        items: [{ weight_kg: 1, length_cm: 10, width_cm: 10, height_cm: 10, volumetric_enabled: true }],
+      });
+      expect(listCalls("delivery/pricing-settings")).toHaveLength(0);
+    });
+
+    it("market: chegarani bilib bo'lmadi (narx xatosi) — chegaraga bog'liq qatorda taxminiy son yo'q, «—»", async () => {
+      productRows = [KICHIK, OGIR];
+      mocks.post.mockImplementation(() => Promise.reject(Object.assign(new Error("Conflict"), { isAxiosError: true, response: { status: 409 } })));
+      renderPage("/products", "market", "77");
+      await screen.findByText("Kichik quti");
+
+      await waitFor(() => expect(within(billableCell("Kichik quti")).getByText("Hisob vazni aniqlanmadi")).toHaveClass("sr-only"));
+      expect(billableCell("Kichik quti")).not.toHaveTextContent("1,6 kg");
+      expect(billableCell("Kichik quti")).not.toHaveTextContent("hajm bo'yicha");
+      expect(billableCell("Og'ir quti")).toHaveTextContent("0,9 kgog'irlik bo'yicha");
+    });
+
+    it("market: chegaraga bog'liq qator yo'q — narx so'rovi ketmaydi", async () => {
+      productRows = [OGIR, KURTKA];
+      renderPage("/products", "market", "77");
+      await screen.findByText("Og'ir quti");
+
+      expect(billableCell("Og'ir quti")).toHaveTextContent("0,9 kgog'irlik bo'yicha");
+      expect(billableCell("Kurtka")).toHaveTextContent("0,9 kghajm hisobga olinmaydi");
+      expect(quotePosts()).toHaveLength(0);
+    });
   });
 
   it("tahrirlash oynasi: o'lchov to'ldirilgan, kalit, jonli hisob vazni, uchta tarif katagi", async () => {

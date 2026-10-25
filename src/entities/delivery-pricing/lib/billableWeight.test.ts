@@ -120,6 +120,25 @@ describe("hajm chegarasi (volumetricFromKg)", () => {
     expect(computeMeasureWeights(item(0.4, 30, 25, 20), rules(3.001))).toMatchObject({ billableKg: 0.4, basis: "weight" });
   });
 
+  it("backend vektori: grammgacha yaxlitlangan hajmli vazn solishtiriladi — 14 × 17 × 21 (999,6 g → 1,0 kg), chegara 1 — qo'llanadi", () => {
+    // Backend: `Math.round(volumeG) >= volumetricFromG` (999,6 → 1000 ≥ 1000) — ekranda «1,0 kg», qaror ham shu son.
+    expect(meetsVolumetricThreshold(item(0.3, 14, 17, 21), rules(1))).toBe(true);
+    expect(computeMeasureWeights(item(0.3, 14, 17, 21), rules(1))).toEqual({
+      actualKg: 0.3,
+      volumetricKg: 1,
+      billableKg: 1,
+      basis: "volume",
+    });
+    // 5 × 27 × 37 = 4995 sm³ = 999 g («0,999 kg») — chegara 1 dan kichik, qo'llanmaydi.
+    expect(meetsVolumetricThreshold(item(0.3, 5, 27, 37), rules(1))).toBe(false);
+    expect(computeMeasureWeights(item(0.3, 5, 27, 37), rules(1))).toMatchObject({ volumetricKg: 0.999, billableKg: 0.3, basis: "weight" });
+  });
+
+  it("hajm yo'q (o'lcham 0) — chegara 0 bo'lsa ham hajm qo'llanmaydi (backend `volumeCm3 > 0`)", () => {
+    expect(meetsVolumetricThreshold(item(0.3, 0, 10, 10), rules(0))).toBe(false);
+    expect(computeMeasureWeights(item(0.3, 0, 10, 10), rules(0))).toMatchObject({ billableKg: 0.3, basis: "weight" });
+  });
+
   it("chegaradan kichik, og'irlik baribir katta — og'irlik; kalit o'chiq — chegaradan qat'i nazar faqat og'irlik", () => {
     expect(computeMeasureWeights(item(2.34, 20, 20, 20), rules(3))).toMatchObject({ billableKg: 2.4, basis: "weight" });
     expect(computeMeasureWeights(item(0.8, 50, 35, 20, false), rules(3))).toMatchObject({ billableKg: 0.8, basis: "weight" });
