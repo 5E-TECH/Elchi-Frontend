@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,11 +7,13 @@ import BranchDetailPage from "./BranchDetailPage";
 
 /**
  * `/branches/:id` (dizayn v2, maket `superadmin-branches-detail`): sarlavha (holat, «kod · tur · Yuqori filial»),
- * ma'lumot kartasi, xodimlar, «Tahrirlash» va «Xodim qo'shish» oynalari; topilmadi / xato holatlari.
- * «Filial ko'rsatkichlari» bo'limi chizilmaydi (analytics `branch_id` ni qabul qilmaydi).
+ * ma'lumot kartasi, «Filial ko'rsatkichlari» (6CYRjoZG — batafsil: `BranchMetricsSection.test.tsx`), xodimlar,
+ * «Tahrirlash» va «Xodim qo'shish» oynalari; topilmadi / xato holatlari.
  */
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
 vi.mock("../../../shared/api/instance", () => ({ api }));
+// `entities/dashboard` so'rovi `shared/api/api` dan (instance shu modulni qayta eksport qiladi).
+vi.mock("../../../shared/api/api", async (importOriginal) => ({ ...(await importOriginal<object>()), api }));
 
 const URGUT = {
   id: 15,
@@ -35,6 +37,19 @@ const EMPLOYEES = [
   { id: 2, user_id: 209, role: "COURIER", createdAt: "2025-07-12T12:00:00.000Z", user: { id: 209, name: "Bahodir Karimov", phone_number: "+998975142683" } },
 ];
 
+/** `GET analytics/dashboard?branch_id=15` (6CYRjoZG) — filial kesimi. */
+const METRICS = {
+  branch_id: "15",
+  orders: { acceptedCount: 186, soldAndPaid: 141, cancelled: 17, totalRevenue: 26_400_000, profit: 2_900_000 },
+  previous: null,
+  series: null,
+  dailyRevenue: { data: [{ period: "2026-10-05", label: "05.10", ordersCount: 30, revenue: 6_217_000 }] },
+  statusDistribution: { distribution: { new: 6, "on the road": 22, sold: 141, cancelled: 17 }, total: 186 },
+  topCouriers: [],
+  branchDashboard: null,
+  failed_parts: [],
+};
+
 const renderPage = (id = "15") =>
   renderWithProviders(
     <Routes>
@@ -51,6 +66,7 @@ describe("BranchDetailPage (v2)", () => {
       if (url === "branches/15/users") return Promise.resolve({ data: { statusCode: 200, data: EMPLOYEES } });
       if (url === "branches/404") return Promise.reject({ isAxiosError: true, response: { status: 404, data: { message: "Not found" } } });
       if (url === "branches/500") return Promise.reject({ isAxiosError: true, response: { status: 500, data: { message: "boom" } } });
+      if (url === "analytics/dashboard") return Promise.resolve({ data: { statusCode: 200, data: METRICS } });
       return Promise.resolve({ data: { statusCode: 200, data: [] } });
     });
   });
@@ -79,8 +95,12 @@ describe("BranchDetailPage (v2)", () => {
     expect(within(employees).getByRole("button", { name: "Madina Sobirovani filialdan olib tashlash" })).toBeInTheDocument();
     expect(within(employees).getByRole("button", { name: "Bahodir Karimovni boshqa filialga o'tkazish" })).toBeInTheDocument();
 
-    // Analytics filial kesimini bermaydi — bo'lim yo'q.
-    expect(screen.queryByText("Filial ko'rsatkichlari")).not.toBeInTheDocument();
+    // «Filial ko'rsatkichlari» — ma'lumot kartasi va xodimlar orasida, filial kesimi so'rovi bilan.
+    const metrics = await screen.findByRole("region", { name: "Filial ko'rsatkichlari" });
+    expect(api.get).toHaveBeenCalledWith("analytics/dashboard", { params: expect.objectContaining({ branch_id: "15" }) });
+    await waitFor(() => expect(within(metrics).getByText("Qabul qilingan").closest("[data-kpi]")).toHaveTextContent("186 ta"));
+    expect(info.compareDocumentPosition(metrics) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(metrics.compareDocumentPosition(employees) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("«Xodim qo'shish» — oyna filial nomi bilan; «Tahrirlash» — filial tahriri oynasi", async () => {

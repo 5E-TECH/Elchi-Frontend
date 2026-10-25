@@ -364,6 +364,20 @@ describe("dashboard response normalization", () => {
     expect(result.data.branchDashboard?.cards?.orders?.returned).toBe(4);
   });
 
+  it("fix3 C9: `stats_unavailable` normalizatsiyada saqlanadi (nollar haqiqiy emas belgisi)", () => {
+    const unavailable = normalizeDashboardResponse({
+      data: { branchDashboard: { stats_unavailable: true, today_orders_count: 0, cards: { orders: { total: 0 } } } },
+    });
+    expect(unavailable.data.branchDashboard?.stats_unavailable).toBe(true);
+
+    const healthy = normalizeDashboardResponse({ data: { branchDashboard: { stats_unavailable: false, today_orders_count: 3 } } });
+    expect(healthy.data.branchDashboard?.stats_unavailable).toBe(false);
+
+    // Eski backend (belgisiz) — kalit qo'shilmaydi.
+    const legacy = normalizeDashboardResponse({ data: { branchDashboard: { today_orders_count: 3 } } });
+    expect(legacy.data.branchDashboard).not.toHaveProperty("stats_unavailable");
+  });
+
   it("falls back to couriers_count when branch_couriers is missing", () => {
     const result = normalizeDashboardResponse({
       data: {

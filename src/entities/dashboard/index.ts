@@ -406,7 +406,12 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
   const visibility = asRecord(item.visibility);
   const markets = cards.markets;
 
+  // fix3 C9: belgi normalizatsiyada YO'QOLMASIN — panel nollar o'rniga xato holatini shundan biladi
+  // (ilgari obyekt qayta qurilib, `stats_unavailable` tushib qolardi va belgi hech qachon ishlamasdi).
+  const statsUnavailable = toOptionalBoolean(item.stats_unavailable ?? item.statsUnavailable);
+
   return {
+    ...(statsUnavailable === undefined ? {} : { stats_unavailable: statsUnavailable }),
     today_orders_count: toNumber(item.today_orders_count ?? item.todayOrdersCount),
     week_orders_count: toNumber(item.week_orders_count ?? item.weekOrdersCount),
     active_batches_count: toNumber(item.active_batches_count ?? item.activeBatchesCount),
