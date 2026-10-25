@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   useEffect,
   useId,
   useLayoutEffect,
@@ -16,7 +17,7 @@ import { cx } from "../../lib/cx";
 import { useBackdropPress } from "./dialog/useBackdropPress";
 import { ButtonIcon, type IconSlot } from "./Button";
 import { IconButton } from "./IconButton";
-import { getFocusableElements, Portal, useFocusTrap, useMergedRefs, useScrollLock } from "./overlay";
+import { getFocusableElements, Portal, useFocusTrap, useMergedRefs, useScrollLock, useVisualViewportFit } from "./overlay";
 import { TONE_SOFT, type Tone } from "./tone";
 import { usePresence, type Presence } from "./usePresence";
 
@@ -81,7 +82,7 @@ const PANEL_LAYOUT: Record<DialogLayout, string> = {
   // Telefonda `.el-overlay > .el-dialog` → `.el-sheet` (maket `@container el (max-width:767px)`).
   auto:
     "max-h-full rounded-[20px] border border-border p-6 " +
-    "max-md:max-h-[92dvh] max-md:max-w-none max-md:rounded-b-none max-md:border-b-0 max-md:px-4 max-md:pt-2 " +
+    "max-md:max-h-[min(92dvh,calc(var(--dialog-viewport-h,100dvh)-12px))] max-md:max-w-none max-md:rounded-b-none max-md:border-b-0 max-md:px-4 max-md:pt-2 " +
     "max-md:pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
   sheet: "max-h-[92dvh] rounded-t-[20px] border-x border-t border-border px-4 pt-2 pb-6",
 };
@@ -106,6 +107,21 @@ const BACKDROP =
   "data-[state=closed]:ease-[cubic-bezier(0.4,0,1,1)] motion-reduce:transition-none";
 
 const ROOT = "fixed inset-0 flex items-center justify-center overflow-hidden p-6 max-md:items-end max-md:p-0";
+
+/** Klaviatura ochiq paytdagi ko'rinadigan oyna balandligi — telefon varaqasi `max-h` shundan oshmaydi. */
+const VIEWPORT_HEIGHT_VAR = "--dialog-viewport-h";
+
+/** Sensorli asosiy kiritish (telefon, planshet) — ekran klaviaturasi bor. */
+const isCoarsePointer = () =>
+  typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+
+const TEXT_INPUT_TYPES = new Set(["", "text", "search", "email", "tel", "url", "number", "password"]);
+
+/** Fokus ekran klaviaturasini ochadigan maydon. */
+const isTextEntry = (element: HTMLElement) =>
+  element instanceof HTMLTextAreaElement ||
+  (element instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(element.type.toLowerCase())) ||
+  element.isContentEditable;
 
 /**
  * `.el-sheet-grip` — faqat varaqada. Modal oynada (`Dialog`) tutqichni pastga tortib yopish mumkin
@@ -360,7 +376,8 @@ export type DialogProps = Omit<
   busy?: boolean;
   /**
    * Ochilganda fokus: `"auto"` (sukut) — tanadagi birinchi maydon/tugma, bo'lmasa panelning o'zi
-   * (ekran o'quvchi sarlavhani o'qiydi); `"panel"`; yoki aniq element (`ref`).
+   * (ekran o'quvchi sarlavhani o'qiydi); sensorli qurilmada (`pointer: coarse`) matn maydoni o'tkazib yuboriladi —
+   * klaviatura o'zi ochilib, ro'yxatni yopmasin (vNcGDnNh); `"panel"`; yoki aniq element (`ref`).
    */
   initialFocus?: "auto" | "panel" | RefObject<HTMLElement | null>;
   /** Yopilgach fokus: `true` (sukut) — ochgan tugmaga; `false`; yoki aniq element. */
@@ -407,11 +424,20 @@ const DialogModal = ({
   });
   useScrollLock(open);
 
-  // «auto» fokus: tanadagi birinchi fokuslanuvchi element (sarlavhadagi «Yopish» emas), bo'lmasa panel.
+  // «auto» fokus: tanadagi birinchi fokuslanuvchi element (sarlavhadagi «Yopish» emas), bo'lmasa panel. Sensorli
+  // qurilmada matn kiritish maydoni (qidiruv, matn) olinmaydi — fokus ekran klaviaturasini darhol ochib, telefonda
+  // pastdan chiqqan ro'yxatni yopardi (vNcGDnNh: «Qabul qilish» → market tanlash); klaviatura faqat bosilganda.
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    autoFocusRef.current = (body ? getFocusableElements(body)[0] : undefined) ?? trapRef.current;
+    const touch = isCoarsePointer();
+    const first = body
+      ? getFocusableElements(body).find((element) => !(touch && isTextEntry(element)))
+      : undefined;
+    autoFocusRef.current = first ?? trapRef.current;
   }, [trapRef]);
+
+  // Telefon klaviaturasi ochiq — qatlam ko'rinadigan oynaga joylashadi: varaqa klaviatura ustida, ichida skroll.
+  const viewportFit = useVisualViewportFit(open && !exiting);
 
   const state = exiting ? "closed" : "open";
 
@@ -473,6 +499,16 @@ const DialogModal = ({
         onPointerDown={backdrop.onPointerDown}
         onClick={backdrop.onClick}
         className={cx(ROOT, exiting && "pointer-events-none")}
+        style={
+          viewportFit
+            ? ({
+                top: viewportFit.top,
+                bottom: "auto",
+                height: viewportFit.height,
+                [VIEWPORT_HEIGHT_VAR]: `${viewportFit.height}px`,
+              } as CSSProperties)
+            : undefined
+        }
       >
         <div aria-hidden="true" data-state={state} className={BACKDROP} />
         <DialogPanel

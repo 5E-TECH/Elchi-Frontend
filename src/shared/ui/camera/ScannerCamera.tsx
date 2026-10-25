@@ -1158,6 +1158,9 @@ const ManualEntryDialog = ({
   const { t } = useTranslation("ui");
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
+  // Qo'lda kiritishni foydalanuvchi o'zi tanladi — telefonda ham klaviatura darhol ochiladi (Dialog sensorli
+  // qurilmada matn maydoniga avtomatik fokus bermaydi, shuning uchun aniq ko'rsatiladi).
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setValue("");
@@ -1187,6 +1190,7 @@ const ManualEntryDialog = ({
       size="sm"
       className={dark ? "dark" : undefined}
       title={t("camera.manual.title")}
+      initialFocus={inputRef}
       onSubmit={submit}
       formProps={{ noValidate: true }}
       footer={
@@ -1208,6 +1212,7 @@ const ManualEntryDialog = ({
         error={error ? t("camera.manual.required") : undefined}
       >
         <TextInput
+          ref={inputRef}
           size="lg"
           value={value}
           autoComplete="off"
