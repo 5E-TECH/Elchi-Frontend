@@ -31,8 +31,13 @@ import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
   createOrderSchema,
+  ORDER_CREATE_BLOCKER_FIELD,
   ORDER_CREATE_DEFAULT_VALUES,
+  orderCreateBlockersFromMessage,
+  orderCreatePayloadBlockers,
+  pendingOrderCreateBlockers,
   type MarketOption,
+  type OrderCreateBlocker,
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
@@ -110,11 +115,37 @@ const orderCreateFieldErrorMap: Record<string, Path<OrderCreateFormValues>> = {
   order_item_info: "details.items",
 };
 
+/** IR2OHIiN: to'siq → maydon ostidagi (lokal tildagi) matn kaliti. */
+const ORDER_CREATE_BLOCKER_MESSAGE_KEY: Record<OrderCreateBlocker, string> = {
+  items: "validationSelectProduct",
+  district: "validationDistrict",
+};
+
+/** IR2OHIiN: mahsulot / tuman maydonini xato bilan belgilaydi (yuborishdan oldin yoki backend 400 dan keyin). */
+const markOrderCreateBlockers = (
+  blockers: readonly OrderCreateBlocker[],
+  setError: UseFormSetError<OrderCreateFormValues>,
+  t: (key: string) => string,
+) => {
+  blockers.forEach((blocker) => {
+    setError(ORDER_CREATE_BLOCKER_FIELD[blocker], {
+      type: "server",
+      message: t(ORDER_CREATE_BLOCKER_MESSAGE_KEY[blocker]),
+    });
+  });
+};
+
 const applyOrderCreateFieldErrors = (
   error: unknown,
   setError: UseFormSetError<OrderCreateFormValues>,
+  t: (key: string) => string,
 ) => {
   const data = getBackendPayload(error);
+  // IR2OHIiN: backend «Buyurtmada kamida bitta mahsulot …» / «Buyurtma uchun tuman tanlanmagan» (400) — matnning
+  // o'zi forma tepasida, maydon esa shu yerda belgilanadi.
+  const message =
+    normalizeBackendMessage(data?.message) || normalizeBackendMessage(data?.data?.message) || "";
+  markOrderCreateBlockers(orderCreateBlockersFromMessage(message), setError, t);
   const errors = data?.errors ?? data?.data?.errors;
 
   if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
@@ -249,6 +280,16 @@ const OrderCreateFormContent = () => {
     return createSchema.isValidSync({ market: isMarketRole ? null : market, customer, details });
   }, [createSchema, customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
 
+  // IR2OHIiN: «tayyor» emas va faqat mahsulot / tuman yetishmaydi — xulosa holat qatori aniq sababni yozadi.
+  // Nofaol market — o'z ogohlantirishi bor, bu yerda sabab yozilmaydi.
+  const pendingBlockers = useMemo(
+    () =>
+      canNext || mode !== "manual" || step !== 2 || isInactiveSelectedMarket
+        ? []
+        : pendingOrderCreateBlockers(createSchema, { market: isMarketRole ? null : market, customer, details }),
+    [canNext, createSchema, customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step],
+  );
+
   const handleNext = async () => {
     setServerError("");
 
@@ -328,6 +369,12 @@ const OrderCreateFormContent = () => {
       includeMarketId: !isMarketRole,
       includeFulfillment: canChooseSource,
     });
+    // IR2OHIiN: mahsulotsiz / tumansiz buyurtma hech qachon yuborilmaydi (sxemadan keyingi oxirgi himoya).
+    const blockers = orderCreatePayloadBlockers(payload);
+    if (blockers.length > 0) {
+      markOrderCreateBlockers(blockers, setError, t);
+      return;
+    }
     submittingRef.current = true;
     createOrder.mutate({ data: payload, idempotencyKey: createKeys.take(payload) }, {
       onSettled: () => {
@@ -355,7 +402,7 @@ const OrderCreateFormContent = () => {
           t("orderCreateErrorFallback"),
         );
 
-        applyOrderCreateFieldErrors(error, setError);
+        applyOrderCreateFieldErrors(error, setError, t);
         setServerError(message);
         notify.error(t("orderCreateErrorTitle"), { description: message });
       },
@@ -517,6 +564,7 @@ const OrderCreateFormContent = () => {
                   onPrevious={handlePrevious}
                   backTo={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}
                   selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
+                  blockers={pendingBlockers}
                 />
               ) : null}
               {showToday && selectedMarketId ? (

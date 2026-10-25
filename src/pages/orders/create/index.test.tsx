@@ -717,6 +717,103 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
   });
 });
 
+describe("OrderCreate — IR2OHIiN: mahsulotsiz va tumansiz buyurtma yuborilmaydi", () => {
+  const aside = () => screen.getByRole("complementary", { name: "Buyurtma xulosasi" });
+  const status = () => within(aside()).getByRole("status");
+  const submit = () => within(aside()).getByRole("button", { name: "Buyurtma yaratish" });
+  const orderPosts = () => mocks.post.mock.calls.filter(([url]) => url === "orders");
+
+  /** Mijoz, viloyat va summa; tuman va mahsulot — ixtiyoriy. */
+  const fill = async (
+    user: ReturnType<typeof userEvent.setup>,
+    { district = true, product = true }: { district?: boolean; product?: boolean } = {},
+  ) => {
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    if (district) await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    if (product) await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
+    await user.type(screen.getByLabelText(/^Umumiy summa/), "150000");
+  };
+
+  it("faqat mahsulot yetishmaydi — holat «Kamida bitta mahsulot tanlang», tugma o'chiq, so'rov ketmaydi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    // Bo'sh forma — umumiy matn (boshqa majburiy maydonlar ham bo'sh).
+    expect(status()).toHaveTextContent("Majburiy maydonlarni to'ldirib, mahsulot tanlang");
+
+    await fill(user, { product: false });
+
+    expect(status()).toHaveTextContent("Kamida bitta mahsulot tanlang");
+    expect(submit()).toBeDisabled();
+    fireEvent.submit(screen.getByRole("form", { name: "Buyurtma yaratish formasi" }));
+    expect(await within(manualPanel()).findByText("Kamida bitta mahsulot tanlang")).toBeInTheDocument();
+    expect(orderPosts()).toHaveLength(0);
+  });
+
+  it("faqat tuman yetishmaydi — holat «Tumanni tanlang», Enter bilan yuborilsa ham so'rov ketmaydi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fill(user, { district: false });
+
+    expect(status()).toHaveTextContent("Tumanni tanlang");
+    expect(submit()).toBeDisabled();
+    fireEvent.submit(screen.getByRole("form", { name: "Buyurtma yaratish formasi" }));
+    await waitFor(() =>
+      expect(document.getElementById("customer.district_id")).toHaveAttribute("aria-invalid", "true"),
+    );
+    expect(orderPosts()).toHaveLength(0);
+  });
+
+  it("mahsulot ham, tuman ham yo'q — «Kamida bitta mahsulot va tumanni tanlang»", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fill(user, { district: false, product: false });
+
+    expect(status()).toHaveTextContent("Kamida bitta mahsulot va tumanni tanlang");
+    expect(submit()).toBeDisabled();
+    expect(orderPosts()).toHaveLength(0);
+  });
+
+  it("backend 400 «Buyurtma uchun tuman tanlanmagan» — matn forma tepasida, tuman maydoni belgilanadi", async () => {
+    mocks.post.mockRejectedValue({
+      response: { status: 400, data: { statusCode: 400, message: "Buyurtma uchun tuman tanlanmagan" } },
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fill(user);
+    await user.click(submit());
+
+    const alert = await within(manualPanel()).findByRole("alert");
+    expect(alert).toHaveTextContent("Buyurtma yaratilmadi");
+    expect(alert).toHaveTextContent("Buyurtma uchun tuman tanlanmagan");
+    expect(document.getElementById("customer.district_id")).toHaveAttribute("aria-invalid", "true");
+    expect(within(manualPanel()).getByText("Tumanni tanlang")).toBeInTheDocument();
+  });
+
+  it("backend 400 (DTO massivi) «Buyurtmada kamida bitta mahsulot bo‘lishi kerak» — matn va mahsulotlar xatosi", async () => {
+    mocks.post.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { statusCode: 400, message: ["Buyurtmada kamida bitta mahsulot bo‘lishi kerak"] },
+      },
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fill(user);
+    await user.click(submit());
+
+    const alert = await within(manualPanel()).findByRole("alert");
+    expect(alert).toHaveTextContent("Buyurtmada kamida bitta mahsulot bo‘lishi kerak");
+    expect(within(manualPanel()).getByText("Kamida bitta mahsulot tanlang")).toBeInTheDocument();
+  });
+});
+
 describe("OrderCreate — Idempotency-Key (gpCIsGjH): takroriy so'rov ikkinchi buyurtma yaratmaydi", () => {
   /** Market roli: to'liq (yuborishga tayyor) buyurtma. */
   const fillOrder = async (user: ReturnType<typeof userEvent.setup>, total = "150000") => {

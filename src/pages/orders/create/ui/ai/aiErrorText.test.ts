@@ -78,6 +78,12 @@ describe("aiErrorText", () => {
     expect(confirmFailureText({ index: 0, ok: false }, t)).toBe("Buyurtma yaratilmadi.");
   });
 
+  it("IR2OHIiN: mahsulotsiz / tumansiz buyurtmaning backend 400 sababi kartada ko'rinadi", () => {
+    for (const reason of ["Buyurtmada kamida bitta mahsulot bo‘lishi kerak", "Buyurtma uchun tuman tanlanmagan"]) {
+      expect(confirmFailureText({ index: 0, ok: false, code: "create_failed", reason }, t)).toContain(reason);
+    }
+  });
+
   it("create_failed: server aniq sabab bersa sarlavhaga ulanadi, umumiy matn takrorlanmaydi", () => {
     expect(
       confirmFailureText(

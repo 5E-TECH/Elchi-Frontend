@@ -94,6 +94,24 @@ describe("AiCreatePanel", () => {
     expect(confirmCalls()[0].orders.map((o) => o.customer.name)).toEqual(["Mijoz 2"]);
   });
 
+  it("IR2OHIiN: mahsulotsiz karta yaratishga yuborilmaydi; backend 400 sababi («tuman tanlanmagan») kartada ko'rinadi", async () => {
+    parseOrders = [order(1), order(2, { items: [] })];
+    confirmResponse = () => ({
+      results: [{ index: 0, ok: false, code: "create_failed", reason: "Buyurtma uchun tuman tanlanmagan" }],
+    });
+    renderPanel();
+    await parse(2);
+
+    const bar = screen.getByTestId("ai-confirm-bar");
+    expect(bar).toHaveTextContent("1 ta tayyor · 1 ta to'ldirilmagan");
+    fireEvent.click(within(bar).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
+
+    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
+    expect(confirmCalls()[0].orders.map((o) => o.customer.name)).toEqual(["Mijoz 1"]);
+    expect(confirmCalls()[0].orders.every((o) => o.items.length > 0 && o.district_id)).toBe(true);
+    expect(await screen.findByText(/Buyurtma uchun tuman tanlanmagan/)).toBeInTheDocument();
+  });
+
   it("tayyor karta bo'lmasa tugma disabled (\"Hammasini yaratish\" yo'q)", async () => {
     parseOrders = [order(1, { total_price: null })];
     renderPanel();
