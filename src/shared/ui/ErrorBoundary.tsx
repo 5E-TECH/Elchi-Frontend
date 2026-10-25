@@ -1,5 +1,6 @@
 import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { isBrowserOffline, isChunkLoadError, reloadForNewVersion } from "../lib/chunkError";
+import { reportClientError } from "../lib/clientErrorReport";
 import { ErrorState } from "./primitives";
 import {
   getCurrentAppPath,
@@ -108,9 +109,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       }
     }
 
-    // Xato sahifasining o'zida yiqildi — zaxira (shell'siz nusxa) chiziladi, boshqa joyga o'tilmaydi.
-    if (this.props.fallback !== undefined && !this.props.fallbackRender) return;
-
     const payload: RuntimeErrorPayload = {
       message: error.message,
       stack: error.stack,
@@ -119,6 +117,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       occurredAt: new Date().toISOString(),
     };
     const record = this.props.record !== false;
+    // QKCeGZ3N (4-band): backend jurnaliga (jim, bir kod — sessiyada bir marta) — shell yiqilgani ham.
+    reportClientError(payload, !this.props.fallbackRender ? "app" : record ? "page" : "section");
+
+    // Xato sahifasining o'zida yiqildi — zaxira (shell'siz nusxa) chiziladi, boshqa joyga o'tilmaydi.
+    if (this.props.fallback !== undefined && !this.props.fallbackRender) return;
+
     if (record) {
       try {
         saveRuntimeError(payload);
