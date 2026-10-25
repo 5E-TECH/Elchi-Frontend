@@ -49,11 +49,16 @@ export const scheduledChanges = (data: DeliveryTariffsData): HistoryEntry[] =>
 
 /** Hisob qoidalari (sozlama) o'zgarishi: kg / so'm / koeffitsiyent; pickup tekin chegarasi `null` — hech qachon. */
 export type SettingsChange =
-  | { kind: "firstKg" | "minBillable" | "step" | "roundTo" | "pickupFee" | "express"; from: number; to: number }
+  | {
+      kind: "firstKg" | "volumetricFrom" | "minBillable" | "step" | "roundTo" | "pickupFee" | "express";
+      from: number;
+      to: number;
+    }
   | { kind: "pickupFree"; from: number | null; to: number | null };
 
 const SETTINGS_NUMBER_FIELDS = [
   ["firstKg", "firstKgIncluded"],
+  ["volumetricFrom", "volumetricFromKg"],
   ["minBillable", "minBillableKg"],
   ["step", "billableStepKg"],
   ["roundTo", "roundTo"],

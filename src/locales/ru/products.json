@@ -172,6 +172,8 @@
       "kg": "{{value}} кг",
       "dims": "{{length}} × {{width}} × {{height}}",
       "notEntered": "Не указано",
+      "billablePending": "Расчётный вес вычисляется",
+      "billableUnknown": "Расчётный вес не определён",
       "basis": {
         "weight": "по весу",
         "volume": "по объёму",

@@ -56,6 +56,8 @@ export const normalizeDeliveryQuote = (value: unknown, fallbackId?: DeliveryTari
     extra: numberOf(item.extra) ?? 0,
     total,
     basis: item.basis === "volume" || item.basis === "weight" ? item.basis : null,
+    volumetricFromKg: numberOf(item.volumetricFromKg),
+    volumetricApplied: typeof item.volumetricApplied === "boolean" ? item.volumetricApplied : null,
     daysMin: numberOf(item.daysMin) ?? numberOf(tariff?.days_min),
     daysMax: numberOf(item.daysMax) ?? numberOf(tariff?.days_max),
   };
@@ -88,6 +90,8 @@ export const normalizePricingSettings = (value: unknown): DeliveryPricingSetting
   return {
     id: row.id === undefined || row.id === null ? "" : String(row.id),
     volumetricDivisor: numberOf(row.volumetric_divisor) ?? 5000,
+    // Eski javobda maydon yo'q — 0 (har doim hajm bo'yicha, avvalgi xulq).
+    volumetricFromKg: numberOf(row.volumetric_from_kg) ?? 0,
     firstKgIncluded,
     minBillableKg: numberOf(row.min_billable_kg) ?? 0.1,
     billableStepKg: numberOf(row.billable_step_kg) ?? 0.1,

@@ -166,6 +166,8 @@
       "kg": "{{value}} kg",
       "dims": "{{length}} × {{width}} × {{height}}",
       "notEntered": "Kiritilmagan",
+      "billablePending": "Hisob vazni hisoblanmoqda",
+      "billableUnknown": "Hisob vazni aniqlanmadi",
       "basis": {
         "weight": "og'irlik bo'yicha",
         "volume": "hajm bo'yicha",
