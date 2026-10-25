@@ -2,10 +2,11 @@
 import type { ReactNode } from "react";
 import { cx } from "../../../shared/lib/cx";
 import { Card, SkeletonChart } from "../../../shared/ui/primitives";
+import { withSectionBoundaries } from "../../../shared/ui/sectionBoundaries";
 
 /**
  * KPI QATORI (`.el-kpi-row`): 4 ustun (3 ta bo'lsa — 3), < 1024 — 2, telefonda 2 (oraliq 12).
- * «Taklif» KPI chizilmaydi — qolganlari qatorni to'ldiradi.
+ * «Taklif» KPI chizilmaydi — qolganlari qatorni to'ldiradi. Har KPI — o'z xato chegarasida (QKCeGZ3N).
  */
 export const KpiRow = ({ count, label, children }: { count: number; label: string; children: ReactNode }) => (
   <section
@@ -17,13 +18,14 @@ export const KpiRow = ({ count, label, children }: { count: number; label: strin
       count === 3 && "max-lg:[&>*:last-child]:col-span-2",
     )}
   >
-    {children}
+    {withSectionBoundaries(children)}
   </section>
 );
 
 /**
  * KARTALAR TO'RI: desktopda 3 ustun (sozlamada yashirilgan karta o'rni yopiladi — `auto-fit`),
- * planshetda 2 (toq sonli bo'lsa oxirgisi butun qator), telefonda 1.
+ * planshetda 2 (toq sonli bo'lsa oxirgisi butun qator), telefonda 1. Har karta — o'z xato chegarasida (QKCeGZ3N):
+ * bittasi yiqilsa faqat uning o'rnida «Bo'lim xatosi».
  */
 export const CardRow = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div
@@ -34,7 +36,7 @@ export const CardRow = ({ children, className }: { children: ReactNode; classNam
       className,
     )}
   >
-    {children}
+    {withSectionBoundaries(children)}
   </div>
 );
 
