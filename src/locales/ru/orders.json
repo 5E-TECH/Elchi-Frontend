@@ -377,6 +377,7 @@
   "orderReadyMessage": "Заказ готов к отправке",
   "selectMarketFirst": "Сначала выберите маркет",
   "fillRequiredFields": "Заполните обязательные поля и выберите товары",
+  "createBlockedItemsDistrict": "Выберите хотя бы один товар и район",
   "stepOneLabel": "Шаг 1",
   "stepOneDescription": "Выберите маркет",
   "stepTwoLabel": "Шаг 2",

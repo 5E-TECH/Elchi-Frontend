@@ -9,7 +9,7 @@ import { cx } from "../../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../../shared/ui/primitives";
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
-import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { toApiList, type OrderCreateBlocker, type OrderCreateFormValues } from "../model/orderCreateForm";
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
 import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import { useMarketTariffs } from "./useMarketTariffs";
@@ -31,6 +31,12 @@ type Step2SummaryProps = {
    * yuborilmaydi (backend operator ismini o'zi yozadi). Maket `market_operator-new-orders-create-manual`.
    */
   selfOperator?: { name: string | null };
+  /**
+   * IR2OHIiN: boshqa majburiy maydonlar to'liq, faqat shular yetishmaydi (`pendingOrderCreateBlockers`) — holat
+   * qatori umumiy «Majburiy maydonlarni …» o'rniga aniq sababni yozadi: «Kamida bitta mahsulot tanlang» /
+   * «Tumanni tanlang».
+   */
+  blockers?: readonly OrderCreateBlocker[];
 };
 
 /** `.el-divider`. */
@@ -54,6 +60,7 @@ const Step2Summary = ({
   onPrevious,
   backTo = "/new-orders",
   selfOperator,
+  blockers = [],
 }: Step2SummaryProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const statusId = useId();
@@ -146,7 +153,16 @@ const Step2Summary = ({
   const tariffState = useMarketTariffs(control);
   const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : null;
 
-  const statusText = submitting ? t("createSubmitting") : ready ? t("orderReadyMessage") : t("fillRequiredFields");
+  // IR2OHIiN: faqat mahsulot va/yoki tuman yetishmasa — tugma nega o'chiqligi aniq yoziladi (backend ham 400 beradi).
+  const blockedText =
+    blockers.length === 2
+      ? t("createBlockedItemsDistrict")
+      : blockers[0] === "items"
+        ? t("validationSelectProduct")
+        : blockers[0] === "district"
+          ? t("validationDistrict")
+          : t("fillRequiredFields");
+  const statusText = submitting ? t("createSubmitting") : ready ? t("orderReadyMessage") : blockedText;
 
   return (
     <Card title={t("createSummaryTitle")} bodyClassName="flex flex-col gap-4">

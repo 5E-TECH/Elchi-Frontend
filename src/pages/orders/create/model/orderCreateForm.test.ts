@@ -4,6 +4,10 @@ import {
   createOrderSchema,
   isExistingCustomerUnchanged,
   ORDER_CREATE_DEFAULT_VALUES,
+  orderCreateBlockers,
+  orderCreateBlockersFromMessage,
+  orderCreatePayloadBlockers,
+  pendingOrderCreateBlockers,
   type OrderCreateFormValues,
 } from "./orderCreateForm";
 
@@ -181,5 +185,67 @@ describe("buildCreateOrderPayload — mavjud mijoz (CS-A, hiqRNhkI)", () => {
 
   it("sxema bog'lanish holatini tekshirmaydi (yuborishga tayyorlikka ta'sir qilmaydi)", async () => {
     await expect(createOrderSchema(false).validate(linked(), { abortEarly: false })).resolves.toBeTruthy();
+  });
+});
+
+describe("IR2OHIiN — mahsulotsiz va tumansiz buyurtma to'siqlari", () => {
+  const complete: OrderCreateFormValues = validBaseValues("center");
+  const withItems = (items: OrderCreateFormValues["details"]["items"]): OrderCreateFormValues => ({
+    ...complete,
+    details: { ...complete.details, items },
+  });
+  const withDistrict = (district_id: string): OrderCreateFormValues => ({
+    ...complete,
+    customer: { ...complete.customer, district_id },
+  });
+
+  it("orderCreateBlockers: to'liq forma — to'siq yo'q; mahsulot / tuman / miqdor 0 — to'siq", () => {
+    expect(orderCreateBlockers(complete)).toEqual([]);
+    expect(orderCreateBlockers(withItems([]))).toEqual(["items"]);
+    expect(orderCreateBlockers(withItems([{ product_id: "p1", quantity: 0 }]))).toEqual(["items"]);
+    expect(orderCreateBlockers(withItems([{ product_id: null, product_name: "  ", quantity: 1 }]))).toEqual(["items"]);
+    expect(orderCreateBlockers(withItems([{ product_id: null, product_name: "Kitob", quantity: 2 }]))).toEqual([]);
+    expect(orderCreateBlockers(withDistrict(""))).toEqual(["district"]);
+    expect(orderCreateBlockers({ ...withItems([]), customer: { ...complete.customer, district_id: "" } })).toEqual([
+      "items",
+      "district",
+    ]);
+  });
+
+  it("pendingOrderCreateBlockers: faqat mahsulot / tuman yetishmasa qaytadi, boshqa maydon ham bo'sh bo'lsa — []", () => {
+    const schema = createOrderSchema(false);
+    const values = (v: OrderCreateFormValues) => ({ ...v, market: null });
+    expect(pendingOrderCreateBlockers(schema, values(complete))).toEqual([]);
+    expect(pendingOrderCreateBlockers(schema, values(withItems([])))).toEqual(["items"]);
+    expect(pendingOrderCreateBlockers(schema, values(withDistrict("")))).toEqual(["district"]);
+    // Telefon ham yo'q — umumiy matn qoladi.
+    expect(
+      pendingOrderCreateBlockers(schema, values({ ...withItems([]), customer: { ...complete.customer, phone: "" } })),
+    ).toEqual([]);
+    expect(pendingOrderCreateBlockers(schema, values(ORDER_CREATE_DEFAULT_VALUES))).toEqual([]);
+  });
+
+  it("orderCreatePayloadBlockers: payload'da mahsulot va tuman (buyurtma yoki mijozdagi) shart", () => {
+    const payload = buildCreateOrderPayload(complete, { includeMarketId: false });
+    expect(orderCreatePayloadBlockers(payload)).toEqual([]);
+    expect(orderCreatePayloadBlockers({ ...payload, items: [] })).toEqual(["items"]);
+    expect(orderCreatePayloadBlockers({ ...payload, items: [{ product_id: "p1", quantity: 0 }] })).toEqual(["items"]);
+    expect(orderCreatePayloadBlockers({ ...payload, district_id: "" })).toEqual([]);
+    expect(
+      orderCreatePayloadBlockers({ ...payload, district_id: "", customer: { ...payload.customer, district_id: "" } }),
+    ).toEqual(["district"]);
+  });
+
+  it("orderCreateBlockersFromMessage: backend 400 matnlari (apostrof turidan qat'i nazar)", () => {
+    expect(orderCreateBlockersFromMessage("Buyurtmada kamida bitta mahsulot bo‘lishi kerak")).toEqual(["items"]);
+    expect(orderCreateBlockersFromMessage("Buyurtmada kamida bitta mahsulot bo'lishi kerak")).toEqual(["items"]);
+    expect(
+      orderCreateBlockersFromMessage("Mahsulot miqdori (quantity) kamida 1 va butun son bo‘lishi kerak"),
+    ).toEqual(["items"]);
+    expect(orderCreateBlockersFromMessage("Buyurtma uchun tuman tanlanmagan")).toEqual(["district"]);
+    expect(
+      orderCreateBlockersFromMessage("Buyurtmada kamida bitta mahsulot bo‘lishi kerak, Buyurtma uchun tuman tanlanmagan"),
+    ).toEqual(["items", "district"]);
+    expect(orderCreateBlockersFromMessage("Telefon noto'g'ri")).toEqual([]);
   });
 });

@@ -377,6 +377,7 @@
   "orderReadyMessage": "Buyurtma yuborishga tayyor",
   "selectMarketFirst": "Avval market tanlang",
   "fillRequiredFields": "Majburiy maydonlarni to'ldirib, mahsulot tanlang",
+  "createBlockedItemsDistrict": "Kamida bitta mahsulot va tumanni tanlang",
   "stepOneLabel": "1-qadam",
   "stepOneDescription": "Market tanlang",
   "stepTwoLabel": "2-qadam",

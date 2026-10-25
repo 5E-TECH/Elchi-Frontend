@@ -270,6 +270,86 @@ export const buildCreateOrderPayload = (
   };
 };
 
+/**
+ * IR2OHIiN — mahsulotsiz yoki tumansiz buyurtma yaratilmaydi (ega qarori 2026-10-25). Backend ham rad etadi
+ * (`POST /orders` 400), forma esa yuborishni o'zi to'xtatadi va sababini aniq aytadi.
+ */
+export type OrderCreateBlocker = "items" | "district";
+
+/** To'siq → forma maydoni (xato matni shu maydon ostida chiqadi). */
+export const ORDER_CREATE_BLOCKER_FIELD = {
+  items: "details.items",
+  district: "customer.district_id",
+} as const satisfies Record<OrderCreateBlocker, string>;
+
+const isOrderItemFilled = (item: Partial<OrderItem> | null | undefined): boolean => {
+  if (!item) return false;
+  const quantity = Number(item.quantity);
+  return Boolean(item.product_id || item.product_name?.trim()) && Number.isInteger(quantity) && quantity >= 1;
+};
+
+/** Kamida bitta mahsulot va har qatorda miqdor ≥ 1 (butun) — backend qoidasi bilan bir xil. */
+const hasOrderItems = (items: ReadonlyArray<Partial<OrderItem>> | null | undefined): boolean =>
+  Array.isArray(items) && items.length > 0 && items.every(isOrderItemFilled);
+
+/** Formadagi to'siqlar (mahsulot, tuman) — «Buyurtma xulosasi» holat qatori shu bo'yicha aniq sababni yozadi. */
+export const orderCreateBlockers = (values: {
+  customer: Pick<OrderCreateFormValues["customer"], "district_id">;
+  details: Pick<OrderCreateFormValues["details"], "items">;
+}): OrderCreateBlocker[] => {
+  const blockers: OrderCreateBlocker[] = [];
+  if (!hasOrderItems(values.details?.items)) blockers.push("items");
+  if (!String(values.customer?.district_id ?? "").trim()) blockers.push("district");
+  return blockers;
+};
+
+/**
+ * Faqat mahsulot va/yoki tuman yetishmaydimi — qolgan majburiy maydonlar (telefon, ism, viloyat, summa, manzil …)
+ * sxema bo'yicha to'liq bo'lsa to'siqlar qaytadi, aks holda `[]` (holat qatori umumiy «Majburiy maydonlarni …»
+ * matnida qoladi — u yerda mahsulot ham aytilgan).
+ */
+export const pendingOrderCreateBlockers = (
+  schema: { isValidSync: (value: unknown) => boolean },
+  values: Pick<OrderCreateFormValues, "customer" | "details"> & { market: MarketOption | null },
+): OrderCreateBlocker[] => {
+  const blockers = orderCreateBlockers(values);
+  if (blockers.length === 0) return [];
+  const filled = {
+    ...values,
+    customer: blockers.includes("district") ? { ...values.customer, district_id: "_" } : values.customer,
+    details: blockers.includes("items")
+      ? { ...values.details, items: [{ product_id: "_", quantity: 1 }] }
+      : values.details,
+  };
+  return schema.isValidSync(filled) ? blockers : [];
+};
+
+/**
+ * Yuboriladigan payload'dagi to'siqlar — so'rov ketishidan oldingi oxirgi himoya (sxema allaqachon tekshirgan
+ * bo'lsa ham). Tuman: buyurtmaniki yoki mijozniki (backend ikkinchisini buyurtmaga yozadi).
+ */
+export const orderCreatePayloadBlockers = (
+  payload: Pick<CreateOrderRequest, "items" | "district_id"> & { customer?: { district_id?: string } | null },
+): OrderCreateBlocker[] => {
+  const blockers: OrderCreateBlocker[] = [];
+  if (!hasOrderItems(payload.items)) blockers.push("items");
+  const district = String(payload.district_id ?? "").trim() || String(payload.customer?.district_id ?? "").trim();
+  if (!district) blockers.push("district");
+  return blockers;
+};
+
+/**
+ * Backend 400 matnidan to'siq (o'zbekcha, `Elchi-Backend` `libs/common/src/order/order-create-content.ts`):
+ * «Buyurtmada kamida bitta mahsulot bo‘lishi kerak», «Mahsulot miqdori (quantity) kamida 1 …», «Buyurtma uchun
+ * tuman tanlanmagan». Matnning o'zi forma tepasidagi xatoda o'zgarmasdan ko'rsatiladi; bu — maydonni belgilash uchun.
+ */
+export const orderCreateBlockersFromMessage = (message: string): OrderCreateBlocker[] => {
+  const blockers: OrderCreateBlocker[] = [];
+  if (/kamida bitta mahsulot|mahsulot miqdori/i.test(message)) blockers.push("items");
+  if (/tuman tanlanmagan/i.test(message)) blockers.push("district");
+  return blockers;
+};
+
 /** API javobidan ro'yxat: `[]` · `{ data: [] }` · `{ items: [] }` · `{ results: [] }`. */
 export const toApiList = <T>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[];

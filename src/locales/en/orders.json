@@ -377,6 +377,7 @@
   "orderReadyMessage": "Order is ready to submit",
   "selectMarketFirst": "Select a market first",
   "fillRequiredFields": "Fill required fields and select products",
+  "createBlockedItemsDistrict": "Select at least one product and a district",
   "stepOneLabel": "Step 1",
   "stepOneDescription": "Choose market",
   "stepTwoLabel": "Step 2",
