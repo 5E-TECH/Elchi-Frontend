@@ -13,13 +13,6 @@ export const useLogisticsCoverage = () => {
 
   // ── POSTS ──────────────────────────────────────────────────────────────────
 
-  const useGetPosts = (params?: any) =>
-    useQuery({
-      queryKey: [logiCov, "posts", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.POSTS.BASE, { params }).then((res) => res.data),
-    });
-
   const useGetPostById = (postId: string | number, enabled: boolean = true) =>
     useQuery({
       queryKey: [logiCov, "posts", postId],
@@ -50,13 +43,6 @@ export const useLogisticsCoverage = () => {
     mutationFn: ({ id, data }: { id: string | number; data?: any }) =>
       api.post(API_ENDPOINTS.POSTS.COURIERS_BY_POST(id), data),
   });
-
-  const useGetCourierOldPosts = (params?: any) =>
-    useQuery({
-      queryKey: [logiCov, "posts", "courier-old", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.POSTS.COURIER_OLD, { params }).then((res) => res.data),
-    });
 
   const reassignPost = useMutation({
     mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
@@ -107,14 +93,6 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
-  const useGetPostByScan = (id: string | number, enabled: boolean = true) =>
-    useQuery({
-      queryKey: [logiCov, "posts", "scan", id],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.POSTS.SCAN(id)).then((res) => res.data),
-      enabled,
-    });
-
   // ── REGIONS ────────────────────────────────────────────────────────────────
 
   const createRegion = useMutation({
@@ -136,20 +114,17 @@ export const useLogisticsCoverage = () => {
 
   return {
     // Posts
-    useGetPosts,
     useGetPostById,
     deletePost,
     checkPost,
     checkCancelPost,
     getCouriersByPost,
-    useGetCourierOldPosts,
     reassignPost,
     receivePostOrder,
     receivePostScan,
     approveReturnRequest,
     useGetReturnRequestsList,
     rejectReturnRequest,
-    useGetPostByScan,
     // Regions
     createRegion,
     updateRegion,

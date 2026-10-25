@@ -9,6 +9,7 @@ import type { RootState } from "../../app/config/store";
 import { BATCH_STATUS_TONE, type BatchStatus } from "../../entities/batch";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api } from "../../shared/api/api";
+import { queryKeys } from "../../shared/config/queryKeys";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
 import type { ISODateRange } from "../../shared/lib/dateRange";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
@@ -51,7 +52,6 @@ import {
   type ReturnBatchesResponse,
 } from "./model/returnBatches";
 
-const RETURNS_KEY = "return-batches";
 const PAGE_SIZES = [10, 20, 50, 100] as const;
 const BATCH_STATUSES: readonly BatchStatus[] = ["new", "on_the_way", "received", "cancelled"];
 const SORT_KEYS: readonly ReturnBatchSortKey[] = ["batch", "from", "to", "status", "orders", "amount"];
@@ -108,7 +108,7 @@ const ReturnsPage = () => {
   );
 
   const returnsQuery = useQuery({
-    queryKey: [RETURNS_KEY, branchId, params],
+    queryKey: queryKeys.batches.returns(branchId, params),
     queryFn: async (): Promise<ReturnBatchesResponse> => {
       const response = await api.get(API_ENDPOINTS.BATCHES.BASE, { params }).then((res) => res.data);
       return toReturnBatchesResponse(response, params);

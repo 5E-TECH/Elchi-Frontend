@@ -25,6 +25,7 @@
     "design:preview": "node design/tools/preview.mjs",
     "design:screens": "node design/tools/screens.mjs",
     "design:guard": "node scripts/design-guard.mjs",
+    "query-keys:check": "node scripts/query-key-roots.mjs",
     "app:shot": "node design/tools/app-shot.mjs"
   },
   "browserslist": [

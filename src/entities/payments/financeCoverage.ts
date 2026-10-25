@@ -21,15 +21,6 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const useGetCashboxAllInfo = (enabled: boolean = true, params?: any) =>
-    useQuery({
-      queryKey: ["finance-cov", "cashbox-all-info", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.CASHBOX_ALL_INFO, { params })
-          .then((res) => res.data),
-      enabled,
-    });
-
   const updateCashboxBalance = useMutation({
     mutationFn: (data: unknown) =>
       api.patch(API_ENDPOINTS.FINANCE.CASHBOX_BALANCE, data).then((res) => res.data),
@@ -59,15 +50,6 @@ export const useFinanceCoverage = () => {
       queryKey: ["finance-cov", "cashbox-user-main", id, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.CASHBOX_USER_MAIN(id), { params })
-          .then((res) => res.data),
-      enabled,
-    });
-
-  const useGetCashboxByUser = (id: string, enabled: boolean = true, params?: any) =>
-    useQuery({
-      queryKey: ["finance-cov", "cashbox-by-user", id, params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id), { params })
           .then((res) => res.data),
       enabled,
     });
@@ -213,12 +195,10 @@ export const useFinanceCoverage = () => {
   return {
     // Cashbox
     createCashbox,
-    useGetCashboxAllInfo,
     updateCashboxBalance,
     useGetManagerPayableToHq,
     useGetManagerSettlement,
     useGetCashboxUserMain,
-    useGetCashboxByUser,
     // Financial ledger
     createFinancialBalanceEntry,
     useGetFinancialBalanceHistory,
