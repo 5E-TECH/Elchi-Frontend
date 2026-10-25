@@ -121,6 +121,27 @@ describe("UserDetailView — sarlavha va kartalar (maket `superadmin-users-detai
     expect(screen.queryByText("Faoliyat")).not.toBeInTheDocument();
   });
 
+  it("kGIjOciz: superadmin kuryer tafsilotida — kuryerning o'z filiali sarlavhada va «Profil ma'lumotlari» da", () => {
+    renderView(
+      makeUser("courier", { id: "26", username: "kuryer26", branch_id: "3", branch: { id: "3", name: "QA Filial" } }),
+      "superadmin",
+    );
+
+    expect(screen.getByText("Kuryer · QA Filial · Login: kuryer26")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Profil ma'lumotlari" })).toHaveTextContent("QA Filial");
+  });
+
+  it("kGIjOciz: menejer ko'rinishida filial — foydalanuvchiniki (ko'ruvchiniki emas)", () => {
+    renderView(
+      makeUser("courier", { name: "Jasur", branch_id: "9", branch: { id: "9", name: "Kattaqo'rg'on filiali" } }),
+      "manager",
+      "Urgut filiali",
+    );
+
+    expect(screen.getByText("Kattaqo'rg'on filiali · +998 90 315 22 41")).toBeInTheDocument();
+    expect(screen.queryByText(/Urgut filiali/)).not.toBeInTheDocument();
+  });
+
   it("menejer ko'rinishi: rol va holat badge'lari, «{filial} · {telefon}», «Profil ma'lumotlari»", () => {
     renderView(
       makeUser("registrator", { name: "Kamola Rustamova", salary: 4200000, payment_day: "25" }),
