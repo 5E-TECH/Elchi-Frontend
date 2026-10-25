@@ -56,4 +56,5 @@ export {
 export { classifyScanCode, isScanCode, normalizeScanCode, splitElchiCode, type ScanCodeKind } from "./lib/scanCode";
 export { ProductCodeTag } from "./ui/ProductCodeTag";
 export { STOCK_LEVEL_TONE } from "./lib/levelTone";
-export { StockLevelBadge, WarehouseStatusBadge } from "./ui/WarehouseBadges";
+export { hqFirst } from "./lib/hqFirst";
+export { HqWarehouseBadge, StockLevelBadge, WarehouseStatusBadge } from "./ui/WarehouseBadges";
