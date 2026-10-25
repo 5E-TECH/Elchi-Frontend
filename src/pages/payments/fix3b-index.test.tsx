@@ -7,7 +7,7 @@ import { renderWithProviders } from "../../test/test-utils";
 
 /**
  * FIX3B — /payments: FE-PAY-01 QAYTARILDI (foydalanuvchi qarori #7) — menejer filial pulini o'zi topshirmaydi.
- * Menejerning "Berilishi kerak" kartasi va «HQ'ga o'tkazish» filial kassasini HAQIQIY filial id bilan ochadi
+ * Menejerning "Berilishi kerak" kartasi HQ kassasi sahifasini (faqat ko'rish, IjqTYQks) HAQIQIY filial id bilan ochadi
  * (IjqTYQks, prod: branch_users qatori id'si bilan POST 403 olardi): `all-info.branch_id` → `profile.branch.branch_id`
  * → ichki `profile.branch.branch.id` → `profile.branch_id`; profildagi qatorning o'z `id` si hech qachon.
  */
@@ -105,7 +105,7 @@ beforeEach(() => {
   };
 });
 
-describe("IjqTYQks — manager 'Berilishi kerak' / «HQ'ga o'tkazish» — real branch id, not the branch_users row id", () => {
+describe("IjqTYQks — manager 'Berilishi kerak' opens the HQ cashbox (read-only) with the real branch id, not the branch_users row id", () => {
   it("opens /payments/cash-detail/<profile.branch.branch_id>?type=branch (16, not the row id 3)", async () => {
     open();
 
@@ -138,13 +138,11 @@ describe("IjqTYQks — manager 'Berilishi kerak' / «HQ'ga o'tkazish» — real 
     expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/16");
   });
 
-  it("the header «HQ'ga o'tkazish» action opens the same branch cashbox page", async () => {
+  it("ega qarori (#7, 2026-10-25): menejer sarlavhasida «HQ'ga o'tkazish» yo'q — HQ filial pulini o'zi oladi", () => {
     open();
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "HQ'ga o'tkazish" }));
-
-    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/16");
-    expect(screen.getByTestId("search").textContent).toBe("?type=branch");
+    expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
   });
 
   it("a cashbox `branch` entity (not a branch_users row) keeps its own id", async () => {

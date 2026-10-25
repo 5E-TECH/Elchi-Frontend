@@ -11,7 +11,12 @@ import {
     type NetworkRestoredDetail,
 } from '../../../auth/networkError';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import { QUERY_ERROR_EVENT, type QueryErrorDetail } from '../../../shared/lib/queryErrorEvents';
+import {
+    QUERY_ERROR_EVENT,
+    QUERY_RECOVERED_EVENT,
+    type QueryErrorDetail,
+    type QueryRecoveredDetail,
+} from '../../../shared/lib/queryErrorEvents';
 import { notify } from '../../../shared/lib/notify';
 import { getErrorKind } from '../../../shared/lib/errorKind';
 
@@ -20,6 +25,8 @@ export const NETWORK_TOAST_ID = 'network-error';
 /** «Aloqa tiklandi» (taxta `tizim-feedback` §04 — 3 s da yopiladi). */
 export const NETWORK_RESTORED_TOAST_ID = 'network-restored';
 export const NETWORK_RESTORED_DURATION_MS = 3000;
+/** «Ma'lumotni yuklab bo'lmadi» xabari `id` si: prefiks + `status:matn` (bitta sabab — bitta xabar). */
+export const QUERY_ERROR_TOAST_PREFIX = 'query-error:';
 /** Bir xil sababli tarmoq xabari shu oraliqda qayta chiqmaydi (§01 dedupe). */
 const NETWORK_TOAST_THROTTLE_MS = 4000;
 
@@ -148,19 +155,47 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     const lastQueryErrorRef = useRef<{ key: string; at: number }>({ key: "", at: 0 });
     useEffect(() => {
+        /**
+         * G6F68ti6 (5-band, ega roziligi 2026-10-25): «Ma'lumotni yuklab bo'lmadi» — bitta sabab uchun bitta xabar
+         * (`id` sabab bo'yicha), unga bog'langan so'rovlar (`queryHash`) hammasi tiklansa yoki keshdan olinsa —
+         * xabar o'zi yopiladi. `queryHash` siz xato (testlar, eski chaqiruv) — avvalgidek, foydalanuvchi yopguncha.
+         */
+        const openErrors = new Map<string, Set<string>>();
         const handleQueryError = (event: Event) => {
-            const { status, message } = (event as CustomEvent<QueryErrorDetail>).detail;
+            const { status, message, queryHash } = (event as CustomEvent<QueryErrorDetail>).detail;
             const description =
                 status === 403 ? t('queryErrorForbidden') : status >= 500 ? t('queryErrorServer', { status }) : message ?? t('queryErrorGeneric', { status });
-            // Bir sahifadagi bir nechta so'rov bir xil sabab bilan yiqilsa — bitta bildirishnoma.
             const key = `${status}:${description}`;
+            const id = `${QUERY_ERROR_TOAST_PREFIX}${key}`;
+            if (queryHash) {
+                const hashes = openErrors.get(id) ?? new Set<string>();
+                hashes.add(queryHash);
+                openErrors.set(id, hashes);
+            }
+            // Bir sahifadagi bir nechta so'rov bir xil sabab bilan yiqilsa — bitta bildirishnoma.
             const now = Date.now();
             if (lastQueryErrorRef.current.key === key && now - lastQueryErrorRef.current.at < 4000) return;
             lastQueryErrorRef.current = { key, at: now };
-            notify.error(t('queryErrorTitle'), { description });
+            notify.error(t('queryErrorTitle'), { id, description });
+        };
+        const handleQueryRecovered = (event: Event) => {
+            const { queryHash } = (event as CustomEvent<QueryRecoveredDetail>).detail;
+            for (const [id, hashes] of openErrors) {
+                if (!hashes.delete(queryHash) || hashes.size > 0) continue;
+                openErrors.delete(id);
+                notify.dismiss(id);
+                // Xuddi shu sabab qayta yiqilsa — darhol yangi xabar (4 s dedupe yopilgan xabarni ushlab qolmasin).
+                if (`${QUERY_ERROR_TOAST_PREFIX}${lastQueryErrorRef.current.key}` === id) {
+                    lastQueryErrorRef.current = { key: "", at: 0 };
+                }
+            }
         };
         window.addEventListener(QUERY_ERROR_EVENT, handleQueryError);
-        return () => window.removeEventListener(QUERY_ERROR_EVENT, handleQueryError);
+        window.addEventListener(QUERY_RECOVERED_EVENT, handleQueryRecovered);
+        return () => {
+            window.removeEventListener(QUERY_ERROR_EVENT, handleQueryError);
+            window.removeEventListener(QUERY_RECOVERED_EVENT, handleQueryRecovered);
+        };
     }, [t]);
 
     /**

@@ -21,6 +21,12 @@ vi.mock("../system-ops", () => ({
   default: () => <p>Tizim tabi</p>,
 }));
 
+vi.mock("../delivery-tariffs", () => ({
+  default: ({ embedded }: { embedded?: boolean }) => (
+    <p>Yetkazish narxi tabi{embedded ? " (hub ichida)" : ""}</p>
+  ),
+}));
+
 vi.mock("../expense-categories", () => ({
   default: ({ embedded }: { embedded?: boolean }) => (
     <p>Xarajat kategoriyalari tabi{embedded ? " (hub ichida)" : ""}</p>
@@ -82,7 +88,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
     vi.restoreAllMocks();
   });
 
-  it("9 ta tab: maket tartibi + «Xarajat kategoriyalari» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
+  it("10 ta tab: maket tartibi + «Xarajat kategoriyalari» moliya guruhida, «Yetkazish narxi» logistikadan keyin; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
     renderWithProviders(<OpsPage />, { route: "/ops?tab=system" });
 
     const tablist = screen.getByRole("tablist", { name: "Ops bo'limlari" });
@@ -93,6 +99,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
       "Integratsiyalar",
       "Investorlar",
       "Logistika",
+      "Yetkazish narxi",
       "Filiallar",
       "Xodimlar",
       "Tizim",
@@ -131,6 +138,28 @@ describe("Ops page — tablar (dizayn v2)", () => {
     await user.click(screen.getByRole("tab", { name: "Xarajat kategoriyalari" }));
     expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=expense-categories");
     expect(await screen.findByText(/Xarajat kategoriyalari tabi/)).toBeInTheDocument();
+  });
+
+  it("«Yetkazish narxi» — `?tab=delivery-pricing` tariflar sahifasini hub ichida (`embedded`) ochadi; tab bosilsa URL'da", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <OpsPage />
+        <LocationProbe />
+      </>,
+      { route: "/ops?tab=delivery-pricing" },
+    );
+
+    const tab = screen.getByRole("tab", { name: "Yetkazish narxi" });
+    expect(tab).toHaveAttribute("aria-selected", "true");
+    // `/delivery-tariffs` eski ops manzili emas — maslahat yo'q.
+    expect(tab).not.toHaveAttribute("title");
+    expect(await screen.findByText("Yetkazish narxi tabi (hub ichida)")).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel", { name: "Yetkazish narxi" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tizim" }));
+    await user.click(screen.getByRole("tab", { name: "Yetkazish narxi" }));
+    expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=delivery-pricing");
   });
 
   it("tab bosilsa URL `?tab=` almashadi (replace)", async () => {

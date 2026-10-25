@@ -497,7 +497,7 @@ describe("Payments — header and KPI cards", () => {
     expect(within(card).getByRole("button", { name: "Barcha kuryerlar · 4 ta" })).toBeInTheDocument();
   });
 
-  it("manager: without a branch id the «HQ'ga o'tkazish» action is not shown", () => {
+  it("manager: «HQ'ga o'tkazish» is never shown (ega qarori #7 — HQ takes the branch money itself)", () => {
     open(manager);
     expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
@@ -662,7 +662,7 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
       { route: "/payments", preloadedState },
     );
   const withBranch = () => {
-    // `branch_id` — «HQ'ga o'tkazish» tugmasi chiqishi uchun (smena ochiq bo'lsa).
+    // `branch_id` bor bo'lsa ham «HQ'ga o'tkazish» chiqmaydi (ega qarori #7: HQ filial pulini o'zi oladi).
     pageState.cashboxInfo = { data: { kassadagi_summa: 3_785_000, berilishi_kerak: 3_460_000, branch_id: "15" } };
   };
 
@@ -682,7 +682,7 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
     const banner = screen.getByTestId("shift-banner");
     expect(banner).toHaveTextContent("Smena boshlanmagan");
     expect(banner).toHaveTextContent(
-      "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "Kuryerdan qabul qilish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
     );
     expect(screen.getByRole("link", { name: /Kassadagi summa/ })).toBeInTheDocument();
     expect(screen.getByTestId("payment-history-table")).toBeInTheDocument();
@@ -717,8 +717,8 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
     };
     open(manager);
 
-    expect(screen.getByRole("button", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
     expect(screen.getByText("Kassa va to'lovlarni boshqarish")).toBeInTheDocument();
   });
@@ -741,7 +741,7 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
     expect(screen.queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
   });
-  // «HQ'ga o'tkazish» bo'lmaganda React tugma DOM ini qayta ishlatmaydi — fokus <body> ga tushardi.
+  // Tugma yangi DOM — fokus <body> ga tushmasin.
   it("smena shu ekrandan ochildi: oyna yopiladi, fokus tiklangan birinchi amalga («Kuryerdan qabul qilish»)", async () => {
     pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
     openShiftMutation.mutateAsync.mockImplementation(async () => {

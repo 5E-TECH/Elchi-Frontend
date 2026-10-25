@@ -65,6 +65,7 @@ const settingsVersion = (
 ): DeliveryPricingSettingsVersion => ({
   id,
   volumetricDivisor: 5000,
+  volumetricFromKg: 0,
   firstKgIncluded: 1,
   minBillableKg: 0.1,
   billableStepKg: 0.1,
@@ -87,6 +88,18 @@ describe("hisob qoidalari tarixi (47WFHzlx)", () => {
       { kind: "firstKg", from: 1, to: 2 },
       { kind: "roundTo", from: 500, to: 1000 },
       { kind: "pickupFree", from: 10, to: null },
+    ]);
+  });
+
+  it("diffSettings: «Hajm bo'yicha hisoblash chegarasi» 0 → 3 kg (chegara birinchi kg dan keyin)", () => {
+    const before = settingsVersion("1", "2026-10-08T04:00:00Z");
+    const after = settingsVersion("2", "2026-10-25T10:00:00Z", { volumetricFromKg: 3, firstKgIncluded: 2 });
+    expect(diffSettings(before, after)).toEqual([
+      { kind: "firstKg", from: 1, to: 2 },
+      { kind: "volumetricFrom", from: 0, to: 3 },
+    ]);
+    expect(diffSettings(after, settingsVersion("3", "2026-10-26T10:00:00Z", { volumetricFromKg: 2, firstKgIncluded: 2 }))).toEqual([
+      { kind: "volumetricFrom", from: 3, to: 2 },
     ]);
   });
 

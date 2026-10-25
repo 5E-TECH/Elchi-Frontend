@@ -274,6 +274,7 @@
       "audienceAll": "Hamma",
       "audienceRoles": "Rol: {{roles}}",
       "audienceSingle": "Bitta odam",
+      "audiencePerson": "{{name}} · {{role}}",
       "audienceList": "Tanlangan ro'yxat",
       "resend": "Qayta yuborish"
     },

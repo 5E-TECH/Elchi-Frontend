@@ -144,14 +144,11 @@ const branchCourierCashbox = {
 };
 
 const paymentAccepted = { data: { statusCode: 200, message: "success", data: {} } };
-const OUTCOME_UNKNOWN =
-  "Server javob bermadi — to'lov o'tgan bo'lishi mumkin. Kassa yangilandi, summani tekshiring: aynan shu to'lovni qayta yuborsangiz, u ikki marta yozilmaydi";
-const BRANCH_SUCCESS = "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi";
 const RECEIVE_SUCCESS = "Kuryerdan to'lov muvaffaqiyatli qabul qilindi";
 // Dizayn v2 (maket): «Do'konga o'tkazma» → «Marketga o'tkazma».
 const TO_MARKET = "Marketga o'tkazma";
 const CONFIRM_TITLE = "To'lovni tasdiqlang";
-/** Menejer → HQ: «{summa} HQ'ga o'tkazish» (summa yo'q bo'lsa «HQ'ga o'tkazish»). */
+/** Menejer → HQ tugmasi endi yo'q (ega qarori #7) — qaytmasligini tekshirish uchun. */
 const TRANSFER_TO_HQ = /HQ'ga o'tkazish$/;
 const RECEIVE = /qabul qilish$/i;
 const CARD_PICKER = "Kartani tanlang";
@@ -198,7 +195,7 @@ beforeEach(() => {
   courierPayment.mutateAsync.mockReset();
 });
 
-describe("FE-PAY-01 reverted — the manager's own HQ handover screen is as before fix3", () => {
+describe("Ega qarori #7 (IjqTYQks, 2026-10-25) — menejer HQ'ga pul o'tkazmaydi: HQ kassasi sahifasi faqat ko'rish uchun", () => {
   beforeEach(() => {
     state.managerPayable = {
       data: {
@@ -210,77 +207,19 @@ describe("FE-PAY-01 reverted — the manager's own HQ handover screen is as befo
     };
   });
 
-  it("sends the URL id as branch_id (not the profile branch 16), still with an Idempotency-Key", async () => {
-    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
-    renderAt("/payments/cash-detail/3?type=branch", manager);
-
-    setAmount("100000");
-    await chooseMethod("Naqd");
-    await submit(TRANSFER_TO_HQ);
-
-    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
-    const [call] = callsOf(branchPayment);
-    expect(call.data).toEqual({
-      branch_id: "3",
-      amount: 100_000,
-      payment_method: "cash",
-      payment_date: expect.any(String),
-      comment: "",
-    });
-    expect(call.idempotencyKey).toEqual(expect.any(String));
-    expect(call.idempotencyKey).not.toBe("");
-    expect(await screen.findByText(BRANCH_SUCCESS)).toBeInTheDocument();
-    // Tarix ham URL'dagi ID bo'yicha (fix3 dan oldingidek).
-    expect(
-      state.historyCalls.some(
-        (entry) =>
-          entry.enabled && entry.params.user_id === "3" && entry.params.cashbox_type === "branch",
-      ),
-    ).toBe(true);
-    expect(state.historyCalls.some((entry) => entry.params.user_id === "16")).toBe(false);
-  });
-
-  it("IjqTYQks: /payments now opens the real branch (16) — POST branch_id and history use 16, not the row id 3", async () => {
-    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+  it("forma, «HQ'ga o'tkazish» tugmasi va POST yo'q — «HQ o'zi qabul qiladi» izohi; tarix haqiqiy filial (16) bo'yicha", () => {
     renderAt("/payments/cash-detail/16?type=branch", manager);
 
-    setAmount("100000");
-    await chooseMethod("Naqd");
-    await submit(TRANSFER_TO_HQ);
-
-    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
-    expect(callsOf(branchPayment)[0].data).toEqual(expect.objectContaining({ branch_id: "16", amount: 100_000 }));
+    expect(screen.getByText(/Filial pulini HQ o'zi qabul qiladi/)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("0")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: TRANSFER_TO_HQ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Naqd" })).not.toBeInTheDocument();
+    expect(branchPayment.mutateAsync).not.toHaveBeenCalled();
     expect(
       state.historyCalls.some(
         (entry) => entry.enabled && entry.params.user_id === "16" && entry.params.cashbox_type === "branch",
       ),
     ).toBe(true);
-  });
-
-  it("the gateway's 403 is shown as a definite error (no 'outcome unknown' warning, no success)", async () => {
-    branchPayment.mutateAsync.mockRejectedValueOnce(
-      Object.assign(new Error("Request failed with status code 403"), {
-        response: {
-          status: 403,
-          data: {
-            statusCode: 403,
-            message: "Siz faqat o'z branch'ingiz pulini HQ ga topshira olasiz",
-          },
-        },
-      }),
-    );
-    renderAt("/payments/cash-detail/3?type=branch", manager);
-
-    setAmount("100000");
-    await chooseMethod("Naqd");
-    await submit(TRANSFER_TO_HQ);
-
-    expect(
-      await screen.findByText("Siz faqat o'z branch'ingiz pulini HQ ga topshira olasiz"),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(OUTCOME_UNKNOWN)).not.toBeInTheDocument();
-    expect(screen.queryByText(BRANCH_SUCCESS)).not.toBeInTheDocument();
-    expect(callsOf(branchPayment)[0].data).toEqual(expect.objectContaining({ branch_id: "3" }));
   });
 });
 
@@ -371,8 +310,7 @@ describe("Dizayn v2 — menejer → HQ sahifasi", () => {
     };
   });
 
-  it("sarlavha, kassa yetarliligi, ko'rsatma va tasdiq yo'nalishi; Excel yo'q", async () => {
-    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+  it("sarlavha, kassa yetarliligi va tarix; forma o'rnida «HQ o'zi qabul qiladi»; Excel yo'q", () => {
     renderAt(
       {
         pathname: "/payments/cash-detail/3",
@@ -384,7 +322,7 @@ describe("Dizayn v2 — menejer → HQ sahifasi", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Toshkent HQ" })).toBeInTheDocument();
     expect(screen.getByText("HQ kassasi")).toBeInTheDocument();
-    expect(screen.getByText("E2E REGIONAL Samarqand kassasidan HQ'ga pul o'tkazish")).toBeInTheDocument();
+    expect(screen.getByText("E2E REGIONAL Samarqand kassasidan HQ oladigan pul")).toBeInTheDocument();
     expect(screen.getByText("Qarshi tomon: Toshkent HQ")).toBeInTheDocument();
     expect(screen.getByText("Kassa yetarli")).toBeInTheDocument();
     expect(screen.getByRole("meter", { name: "Berilishi kerak summa kassadagi summaga nisbatan" })).toHaveAttribute(
@@ -392,23 +330,11 @@ describe("Dizayn v2 — menejer → HQ sahifasi", () => {
       "91.4",
     );
     expect(screen.getByText(/^Kassada qoladi · 325\D000 so'm$/)).toBeInTheDocument();
-    expect(screen.getByText(/^Berilishi kerak: 3\D460\D000 so'm · kassada 3\D785\D000 so'm$/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
+    expect(screen.getByText(/Filial pulini HQ o'zi qabul qiladi/)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: TRANSFER_TO_HQ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Excel/ })).not.toBeInTheDocument();
     expect(screen.getByText("E2E REGIONAL Samarqand kassasidagi kirim va chiqimlar")).toBeInTheDocument();
-
-    setAmount("100000");
-    await chooseMethod("Naqd");
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /^100\D000 so'm HQ'ga o'tkazish$/ }));
-    const dialog = await screen.findByRole("alertdialog", { name: CONFIRM_TITLE });
-    expect(dialog).toHaveTextContent(/Qayerdan\s*Filial kassasi\s*E2E REGIONAL Samarqand/);
-    expect(dialog).toHaveTextContent(/Qayerga\s*HQ kassasi\s*Toshkent HQ/);
-    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
-    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
-    expect(callsOf(branchPayment)[0].data).toEqual(
-      expect.objectContaining({ branch_id: "3", amount: 100_000, payment_method: "cash" }),
-    );
   });
 
   it("berilishi kerak kassadan ko'p bo'lsa — «Kassa yetarli emas»", () => {

@@ -40,12 +40,16 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * `expense-categories` — kassa xarajati kategoriyalari sozlamasi («Asosiy
  *                      kassa» oynasidan ko'chirilgan). Hub ichida tug'ilgan —
  *                      to'g'ridan-to'g'ri eski yo'li yo'q.
+ * `delivery-tariffs` — «Yetkazish narxi» (tariflar, hisob qoidalari, hajm
+ *                      chegarasi). «Hududlar» bo'limining sahifasi
+ *                      (`/delivery-tariffs`, admin ham) — hub uni `embedded`
+ *                      bilan chizadi; eski ops manzili emas.
  *
  * ⚠️ Bu ro'yxat QO'LDA to'ldiriladi, `*-ops` esa avtomatik sanaladi. Ya'ni
  * yangi `*-ops` papka qo'shilsa va unga tab berilmasa, test HAMON yiqiladi —
  * yetim sahifa kafolati buzilmaydi.
  */
-const extraOpsPages = ["finance-operators", "logs", "expense-categories"];
+const extraOpsPages = ["finance-operators", "logs", "expense-categories", "delivery-tariffs"];
 
 const discoveredDirs = [
   ...Object.keys(opsPageModules).map(
@@ -81,9 +85,10 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     }
   });
 
-  it("eski yo'lsiz tab faqat hub ichida tug'ilganlar — «Xarajat kategoriyalari» (moliya guruhida, «Moliya operatorlari» dan keyin)", () => {
+  it("eski yo'lsiz tablar — «Xarajat kategoriyalari» (hub ichida tug'ilgan, moliya guruhida) va «Yetkazish narxi» (Hududlar sahifasi)", () => {
     expect(OPS_TABS.filter((tab) => tab.legacyPath === undefined).map((tab) => tab.key)).toEqual([
       "expense-categories",
+      "delivery-pricing",
     ]);
     expect(OPS_TABS.map((tab) => tab.key).slice(0, 2)).toEqual(["finance", "expense-categories"]);
   });
