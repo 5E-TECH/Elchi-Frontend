@@ -198,8 +198,14 @@ export const ScannerCamera = ({
   const [sheet, setSheet] = useState<"manual" | "list" | "switcher" | null>(null);
   // Sozlamalar → Skaner → «Kamera»: ochilishda bir marta (kamera ochiq turganda sozlama o'zgarmaydi).
   const [prefs] = useState(readStoredScannerCameraPrefs);
-  /** «Uzluksiz skanerlash» o'chiq — oqim oynasi birinchi muvaffaqiyatli koddan keyin yopiladi. */
-  const singleShot = overlay && !prefs.continuous && Boolean(onClose);
+  /**
+   * «Uzluksiz skanerlash» o'chiq (yoki maqsad bitta qiymat kutadi — `closeOnSuccess`, masalan «Shtrix kod» maydoni) —
+   * oqim oynasi birinchi muvaffaqiyatli koddan keyin yopiladi.
+   */
+  const singleShot = overlay && (!prefs.continuous || Boolean(target.closeOnSuccess)) && Boolean(onClose);
+  /** Shtrix kod rejimi (Trello CO66kcoB): QR + zavod kodlari, keng ramka va kattaroq tahlil kadri. */
+  const barcodes = target.formats === "barcodes";
+  const shape = barcodes ? "wide" : "square";
   /**
    * Shu kamera yuborgan skan (kamera yoki qo'lda) natijasi kutilmoqda — USB skan natijasi yopmasin. Vaqt
    * belgisi: sahifa javobsiz qolsa (masalan skanni jim tashladi), belgi `AWAIT_RESULT_MS` dan keyin eskiradi —
@@ -220,8 +226,9 @@ export const ScannerCamera = ({
         videoRect: video.getBoundingClientRect(),
         finderRect: finderRef.current?.getBoundingClientRect() ?? null,
         mirrored: video.style.transform.includes("scaleX(-1)"),
+        shape,
       }),
-    [],
+    [shape],
   );
 
   const session = useScannerCameraSession({
@@ -233,6 +240,7 @@ export const ScannerCamera = ({
     onScan: forwardScan,
     preferredCamera: prefs.facing,
     calculateScanRegion,
+    formats: barcodes ? "barcodes" : "qr",
   });
 
   // «Chiroq — avtomatik»: chiroqli qurilmada yorug'lik kam bo'lsa — yoqish taklifi (o'zi yoqilmaydi). Chiroq bir
@@ -446,37 +454,47 @@ export const ScannerCamera = ({
     stage = card;
   } else if (suspended) {
     headChip = <CameraChip dot="info">{t("camera.chip.switching")}</CameraChip>;
-    stage = <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={<Spinner size="lg" />} />;
+    stage = <ScanFinder paused frame={prefs.frame} shape={shape} finderRef={finderRef} mark={<Spinner size="lg" />} />;
   } else if (paused || waiting) {
     headChip = paused ? <CameraChip>{t("camera.chip.paused")}</CameraChip> : null;
     stage = (
-      <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={waiting ? <Spinner size="lg" /> : undefined} />
+      <ScanFinder
+        paused
+        frame={prefs.frame}
+        shape={shape}
+        finderRef={finderRef}
+        mark={waiting ? <Spinner size="lg" /> : undefined}
+      />
     );
   } else if (session.starting) {
     headChip = <CameraChip dot="info">{t("camera.chip.starting")}</CameraChip>;
     stage = (
       <>
-        <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={<Spinner size="lg" />} />
-        <CameraHint live frame={prefs.frame}>
+        <ScanFinder paused frame={prefs.frame} shape={shape} finderRef={finderRef} mark={<Spinner size="lg" />} />
+        <CameraHint live frame={prefs.frame} shape={shape}>
           {t("camera.hint.starting")}
         </CameraHint>
       </>
     );
   } else {
     headChip = (
-      <CameraChip dot="live">{session.flash === "success" ? t("camera.chip.found") : t("camera.chip.live")}</CameraChip>
+      <CameraChip dot="live">
+        {session.flash === "success" ? t(barcodes ? "camera.chip.foundCode" : "camera.chip.found") : t("camera.chip.live")}
+      </CameraChip>
     );
     stage = (
       <>
         <ScanFinder
           tone={resultTone}
           frame={prefs.frame}
+          shape={shape}
           finderRef={finderRef}
           mark={FlashIcon ? <FlashIcon aria-hidden="true" focusable="false" size={24} strokeWidth={2.5} /> : null}
         />
         {session.result ? null : lowLight ? (
           <CameraSuggestion
             frame={prefs.frame}
+            shape={shape}
             text={t("camera.lowLight.text")}
             action={
               <Button variant="secondary" leftIcon={Flashlight} onClick={toggleTorch}>
@@ -485,7 +503,9 @@ export const ScannerCamera = ({
             }
           />
         ) : (
-          <CameraHint frame={prefs.frame}>{target.hint ?? t("camera.hint.aim")}</CameraHint>
+          <CameraHint frame={prefs.frame} shape={shape}>
+            {target.hint ?? t(barcodes ? "camera.hint.aimBarcode" : "camera.hint.aim")}
+          </CameraHint>
         )}
       </>
     );

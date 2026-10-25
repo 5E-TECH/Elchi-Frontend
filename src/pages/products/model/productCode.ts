@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { getBackendMessage, getErrorStatus } from "../../../shared/lib/errorKind";
+import { isValidGtin } from "../../../shared/lib/scanner/barcodeCodes";
 
 /**
  * MAHSULOT KODI (ega qarori 11, maket `superadmin-products-edit-dialog-barcode`): zavod shtrix kodi (EAN-13/8,
@@ -7,17 +8,6 @@ import { getBackendMessage, getErrorStatus } from "../../../shared/lib/errorKind
  */
 
 export type BarcodeIssue = "length" | "checksum";
-
-/** GTIN nazorat raqami (EAN-13, UPC-A 12, GTIN-14): o'ngdan og'irlik 3, 1, 3 … */
-const gtinCheckDigitValid = (digits: string) => {
-  const body = digits.slice(0, -1);
-  let sum = 0;
-  for (let index = 0; index < body.length; index += 1) {
-    const digit = Number(body[body.length - 1 - index]);
-    sum += digit * (index % 2 === 0 ? 3 : 1);
-  }
-  return (10 - (sum % 10)) % 10 === Number(digits[digits.length - 1]);
-};
 
 /**
  * Forma tekshiruvi (yengil): bo'sh — kodsiz; faqat raqamlar bo'lsa — 8, 12, 13 yoki 14 xona va (12–14 xonada)
@@ -29,7 +19,8 @@ export const checkBarcodeInput = (raw: string): BarcodeIssue | null => {
   if (!value || !/^\d+$/.test(value)) return null;
   if (![8, 12, 13, 14].includes(value.length)) return "length";
   if (value.length === 8) return null;
-  return gtinCheckDigitValid(value) ? null : "checksum";
+  // GTIN nazorat raqami (EAN-13, UPC-A 12, GTIN-14) — kamera skaneri bilan bitta qoida (`barcodeCodes.ts`).
+  return isValidGtin(value) ? null : "checksum";
 };
 
 /**

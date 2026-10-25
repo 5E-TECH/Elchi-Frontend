@@ -247,13 +247,21 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   };
 
   // ─── Sarlavha ──────────────────────────────────────────────────────────────
+  // Foydalanuvchining O'Z filiali (kGIjOciz, `GET /users/:id` → `branch`); ilgari ko'ruvchining (menejer) filiali
+  // olinardi. Eski javobda `branch` yo'q bo'lsa — menejer ko'ruvchida o'z filiali (u faqat o'z filiali
+  // xodimlarini ko'radi).
+  const branchName = user.branch?.name?.trim() || (isManagerViewer ? viewerBranchName : null) || null;
   const description = isManagerViewer
-    ? viewerBranchName
-      ? t("v2.detail.descriptionBranch", { branch: viewerBranchName, phone })
+    ? branchName
+      ? t("v2.detail.descriptionBranch", { branch: branchName, phone })
       : phone
     : user.username && !isCustomer
-      ? t("v2.detail.description", { role: roleLabel, login: user.username })
-      : t("v2.detail.descriptionNoLogin", { role: roleLabel });
+      ? branchName
+        ? t("v2.detail.descriptionWithBranch", { role: roleLabel, branch: branchName, login: user.username })
+        : t("v2.detail.description", { role: roleLabel, login: user.username })
+      : branchName
+        ? t("v2.detail.descriptionNoLoginBranch", { role: roleLabel, branch: branchName })
+        : t("v2.detail.descriptionNoLogin", { role: roleLabel });
 
   const headerMeta = (
     <span className="inline-flex flex-wrap items-center gap-2">
@@ -398,12 +406,10 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const isStaff =
     user.role === "admin" || user.role === "manager" || user.role === "registrator" || user.role === "logist";
   const profileCard =
-    !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || (isManagerViewer && viewerBranchName)) ? (
+    !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || branchName) ? (
       <Card as="section" title={t("v2.detail.profile")} divided>
         <dl className="m-0 flex flex-col">
-          {isManagerViewer && viewerBranchName ? (
-            <InfoRow label={t("v2.detail.branch")} value={viewerBranchName} />
-          ) : null}
+          {branchName ? <InfoRow label={t("v2.detail.branch")} value={branchName} /> : null}
           {isStaff || hasSalary ? <InfoRow label={t("v2.detail.salary")} value={money(user.salary)} /> : null}
           {hasPaymentDay ? (
             <InfoRow

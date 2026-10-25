@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { useOrders, type ExtraCostApproval, type ExtraCostApprovalsResponse } from "../../../entities/orders";
+import { extraCostOrderNumber, extraCostRequesterName } from "../../../entities/orders/extraCostApprovalView";
 import { canDecideExtraCost, isExtraCostAlreadyDecidedError } from "../../../entities/orders/extraCostDecision";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -37,8 +38,9 @@ import { ExtraCostRejectDialog, type ExtraCostRejectPayload } from "./ExtraCostR
  * yuklanish — 400 ms dan keyin skelet; xato — karta ichida `ErrorState` + «Qayta urinish».
  * `market_operator` (qaror huquqi yo'q) ro'yxatni faqat ko'radi.
  *
- * Maketdan farqlar: so'rovchining ISMI backend javobida yo'q — `#id · rol`; «Rad etish» sabab
- * oynasini ochadi (`ExtraCostRejectDialog`).
+ * Raqam — `order_number` («№EL-100076», yorliqdagi; havola ichki `order_id` bo'yicha), so'rovchi — ismi va roli
+ * («Jasur Tursunov · Kuryer», 0Ngp09FG). Eski javobda yoki ism olinmasa zaxira: `№order_id`, `#user_id · rol`.
+ * Maketdan farq: «Rad etish» sabab oynasini ochadi (`ExtraCostRejectDialog`).
  */
 
 const ACTION_LABEL_KEYS: Record<ExtraCostApproval["action"], string> = {
@@ -124,11 +126,13 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
   const actionLabel = t(ACTION_LABEL_KEYS[approval.action] ?? ACTION_LABEL_KEYS.sell);
   const proofCount = approval.proof_file_keys?.length ?? 0;
   const role = approval.requested_by_role ? String(approval.requested_by_role).toLowerCase() : "";
+  const orderNumber = extraCostOrderNumber(approval);
+  const requesterName = extraCostRequesterName(approval);
   const busy = approving || rejecting;
 
   return (
     <li
-      aria-label={t("market.extra_cost_item_label", { action: actionLabel, id: approval.order_id })}
+      aria-label={t("market.extra_cost_item_label", { action: actionLabel, id: orderNumber })}
       className="flex min-w-0 flex-col gap-3 rounded-xl bg-sunken p-4 max-md:rounded-none max-md:bg-transparent max-md:not-first:border-t max-md:not-first:border-border"
     >
       {/* Desktop: chapda amal + №/vaqt, o'ngda summa. Telefon: amal alohida qatorda, ostida №/vaqt + summa. */}
@@ -142,7 +146,7 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
             to={`/orders/edit/${approval.order_id}`}
             className="text-sm font-semibold text-action-fg hover:underline max-md:-my-3 max-md:flex max-md:min-h-11 max-md:items-center"
           >
-            №{approval.order_id}
+            №{orderNumber}
           </Link>
           {approval.createdAt ? (
             <span className="whitespace-nowrap text-xs text-text-muted">
@@ -182,7 +186,7 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
         <dl className="m-0 grid min-w-0 grid-cols-[auto_auto] gap-x-2.5 gap-y-0.5 text-[13px] max-md:grid-cols-[auto_minmax(0,1fr)] max-md:gap-x-3 max-md:gap-y-1">
           <dt className="text-text-muted">{t("market.extra_cost_requester")}</dt>
           <dd className="m-0">
-            <span className="font-semibold text-text">#{approval.requested_by_user_id}</span>
+            <span className="font-semibold text-text">{requesterName ?? `#${approval.requested_by_user_id}`}</span>
             {role ? (
               <span className="text-text-muted"> · {t(`market.extra_cost_role.${role}`, { defaultValue: role })}</span>
             ) : null}
@@ -258,7 +262,7 @@ export const ExtraCostApprovals = memo(() => {
     const ok = await confirm({
       tone: "success",
       title: t("market.extra_cost_confirm_title"),
-      description: t("market.extra_cost_confirm_description", { id: approval.order_id }),
+      description: t("market.extra_cost_confirm_description", { id: extraCostOrderNumber(approval) }),
       amount: { value: approval.amount, label: t("market.extra_cost_requested_amount") },
       consequences: [{ text: t(CONSEQUENCE_KEYS[approval.action] ?? CONSEQUENCE_KEYS.sell), tone: "warning" }],
       confirmLabel: t("market.extra_cost_approve"),
@@ -268,7 +272,8 @@ export const ExtraCostApprovals = memo(() => {
     approveExtraCostApproval.mutate(
       { id: approval.id },
       {
-        onSuccess: () => notify.success(t("market.extra_cost_approved"), { description: `№${approval.order_id}` }),
+        onSuccess: () =>
+          notify.success(t("market.extra_cost_approved"), { description: `№${extraCostOrderNumber(approval)}` }),
         onError: handleDecisionError,
       },
     );
@@ -280,7 +285,7 @@ export const ExtraCostApprovals = memo(() => {
       {
         onSuccess: () => {
           setReject((current) => (current ? { ...current, open: false } : current));
-          notify.success(t("market.extra_cost_rejected"), { description: `№${approval.order_id}` });
+          notify.success(t("market.extra_cost_rejected"), { description: `№${extraCostOrderNumber(approval)}` });
         },
         onError: (error) => {
           if (handleDecisionError(error)) setReject((current) => (current ? { ...current, open: false } : current));

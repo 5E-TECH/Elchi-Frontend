@@ -80,4 +80,44 @@ describe("scanRegionFromFinder", () => {
       }),
     ).toEqual(defaultScanRegion(0, 0));
   });
+
+  it("shtrix kod rejimi (`wide`, CO66kcoB): telefonda 312 × 168 ramka — keng hudud, tahlil kadri uzun tomoni 640", () => {
+    const region = scanRegionFromFinder({
+      videoWidth: 720,
+      videoHeight: 1280,
+      videoRect: { left: 0, top: 0, width: 390, height: 844 },
+      finderRect: { left: 39, top: 338, width: 312, height: 168 },
+      shape: "wide",
+    });
+    expect(region.width).toBeGreaterThan(region.height * 1.4);
+    expect(region.x + region.width / 2).toBeCloseTo(360, -1);
+    // 312 px ramka ≈ 568 tasvir pikseli (zaxira bilan) — kichraytirilmaydi; QR rejimida 400 ga tushardi.
+    expect(region.downScaledWidth).toBe(region.width);
+    expect(region.downScaledWidth).toBeLessThanOrEqual(640);
+    const square = scanRegionFromFinder({
+      videoWidth: 1920,
+      videoHeight: 1080,
+      videoRect: { left: 0, top: 0, width: 1920, height: 1080 },
+      finderRect: { left: 760, top: 340, width: 400, height: 216 },
+    });
+    const wide = scanRegionFromFinder({
+      videoWidth: 1920,
+      videoHeight: 1080,
+      videoRect: { left: 0, top: 0, width: 1920, height: 1080 },
+      finderRect: { left: 760, top: 340, width: 400, height: 216 },
+      shape: "wide",
+    });
+    expect(square.downScaledWidth).toBe(400);
+    expect(wide.downScaledWidth).toBe(480);
+  });
+
+  it("shtrix kod rejimi sukuti: kadr enining 80 % i, bo'yi enining 55 % i, markazda", () => {
+    expect(defaultScanRegion(1280, 720, "wide")).toMatchObject({
+      x: 128,
+      width: 1024,
+      height: 563,
+      downScaledWidth: 640,
+      downScaledHeight: 352,
+    });
+  });
 });

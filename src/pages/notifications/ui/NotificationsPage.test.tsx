@@ -34,7 +34,7 @@ const pickFromMenu = async (
 /**
  * «Bildirishnomalar» — marketlarning Telegram guruhlari (dizayn v2, maketlar `superadmin-notifications-telegram-groups`,
  * `-row-menu`, `-row-menu-inactive`, `-create-dialog`, `-deactivate-dialog`, `-activate-dialog`, `-delete-dialog`).
- * Haqiqiy UI orqali: jadval (holat ustuni — umumiy neytral izoh, D1), sahifalash, qo'shish oynasi (bir martalik havola —
+ * Haqiqiy UI orqali: jadval (holat ustuni — sabab kelmasa umumiy neytral izoh D1, sababi bilan — NG-C bloki), sahifalash, qo'shish oynasi (bir martalik havola —
  * oqimning o'zi `NotificationFormModal.test.tsx` da), qator menyusi (desktop popover, telefonda pastki varaqa),
  * nofaol qilish / faollashtirish (`PATCH {is_active}`) va o'chirish tasdiqlari. «Tahrirlash» yo'q (NG-S4).
  */
@@ -300,7 +300,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     );
     const warning = within(dialog).getByRole("note");
     expect(warning).toHaveTextContent("Bot guruhda ekanini tekshiring");
-    // Sabab API'da yo'q — «Bot guruhdan chiqarilgan» deb yozilmaydi (D1, NG-C).
+    // Sabab kelmadi (`inactive_reason` yo'q) — «Bot guruhdan chiqarilgan» deb yozilmaydi (D1; sababli holat — NG-C bloki).
     expect(dialog).not.toHaveTextContent("Bot guruhdan chiqarilgan");
 
     expect(within(dialog).getByRole("button", { name: "Faollashtirish" })).toHaveAttribute(
@@ -386,7 +386,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     expect(within(inactive).getByText("Nofaol").closest(".bg-danger-soft")).toBeNull();
     expect(within(active).getByText("Faol").closest(".bg-success-soft")).not.toBeNull();
     expect(within(inactive).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
-    // Sabab API'da yo'q — «bot chiqarilgan» deb yozilmaydi.
+    // Sabab kelmadi — «bot chiqarilgan» deb yozilmaydi (sababli holat — NG-C bloki).
     expect(within(inactive).queryByText(/Bot guruhdan chiqarilgan/)).not.toBeInTheDocument();
   });
 
@@ -521,5 +521,116 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     renderWithProviders(<NotificationsPage />);
     expect(await screen.findByText("Guruhlar ro'yxatini olib bo'lmadi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Qayta urinish/ })).toBeInTheDocument();
+  });
+});
+
+/**
+ * NG-C (G085w5Qr): `inactive_reason` + `inactive_at` — maket `superadmin-notifications-telegram-groups` /
+ * `-row-menu-inactive` / `-activate-dialog`: bot guruhga yetolmaydi — qizil «Nofaol» + sababga xos izoh, qo'lda —
+ * neytral «Qo'lda nofaol qilingan», `null` yoki noma'lum qiymat — neytral umumiy izoh (D1).
+ */
+describe("NotificationsPage — nofaollik sababi (NG-C)", () => {
+  const REASON_GROUPS = [
+    { id: "21", market_id: "27", group_id: "-1001", group_type: "create", is_active: false, inactive_reason: "kicked", inactive_at: "2026-09-28T17:45:00+05:00", createdAt: "2026-09-01T10:00:00+05:00" },
+    { id: "22", market_id: "12", group_id: "-1002", group_type: "create", is_active: false, inactive_reason: "manual", inactive_at: null, createdAt: "2026-09-01T10:00:00+05:00" },
+    { id: "23", market_id: "52", group_id: "-1003", group_type: "cancel", is_active: false, inactive_reason: "chat_not_found", inactive_at: null, createdAt: "2026-09-01T10:00:00+05:00" },
+    { id: "24", market_id: "12", group_id: "-1004", group_type: "cancel", is_active: false, inactive_reason: "blocked_on_send", inactive_at: null, createdAt: "2026-09-01T10:00:00+05:00" },
+    // Frontend bilmagan yangi qiymat — umumiy izoh (sabab sifatida ko'rsatilmaydi).
+    { id: "25", market_id: "52", group_id: "-1005", group_type: "create", is_active: false, inactive_reason: "archived", inactive_at: null, createdAt: "2026-09-01T10:00:00+05:00" },
+  ];
+
+  beforeEach(() => {
+    api.get.mockImplementation((url: string) => {
+      if (url === "notifications") {
+        return Promise.resolve({
+          data: { data: { items: REASON_GROUPS, meta: { total: REASON_GROUPS.length, page: 1, limit: 10 } } },
+        });
+      }
+      if (url === "markets") return Promise.resolve({ data: { data: { items: MARKETS } } });
+      return Promise.resolve({ data: {} });
+    });
+  });
+
+  const rowOf = (table: HTMLElement, groupId: string) =>
+    within(table).getAllByRole("row").find((row) => row.textContent?.includes(groupId)) as HTMLElement;
+
+  it("status column: reason text, danger tone when the bot cannot reach the group, inactive_at line", async () => {
+    renderWithProviders(<NotificationsPage />);
+    const table = await screen.findByRole("table", { name: "Ulangan Telegram guruhlari" });
+
+    const kicked = rowOf(table, "-1001");
+    expect(within(kicked).getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeInTheDocument();
+    expect(within(kicked).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+    const since = within(kicked).getByText(/^Nofaol bo'lgan: /);
+    expect(since.tagName).toBe("TIME");
+    expect(since).toHaveTextContent("Nofaol bo'lgan: 28.09.2026, 17:45");
+    expect(within(kicked).queryByText("Xabarlar bu guruhga yuborilmayapti")).not.toBeInTheDocument();
+
+    const manual = rowOf(table, "-1002");
+    expect(within(manual).getByText("Qo'lda nofaol qilingan")).toBeInTheDocument();
+    expect(within(manual).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(within(manual).queryByText(/^Nofaol bo'lgan: /)).not.toBeInTheDocument();
+
+    const notFound = rowOf(table, "-1003");
+    expect(within(notFound).getByText("Guruh topilmadi — ulanishni o'chirib, qayta ulang")).toBeInTheDocument();
+    expect(within(notFound).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+
+    const blocked = rowOf(table, "-1004");
+    expect(
+      within(blocked).getByText("Bot guruhga xabar yubora olmadi — botni qayta qo'shing va faollashtiring"),
+    ).toBeInTheDocument();
+    expect(within(blocked).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+
+    const unknown = rowOf(table, "-1005");
+    expect(within(unknown).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
+    expect(within(unknown).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(unknown).not.toHaveTextContent("archived");
+  });
+
+  it("activate dialog: bot removed → mockup warning «Bot guruhdan chiqarilgan»; manual → generic warning", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NotificationsPage />);
+
+    await pickFromMenu(user, "Nur Elektronika — yangi buyurtma guruhi: amallar", "Faollashtirish");
+    let dialog = await screen.findByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+    let warning = within(dialog).getByRole("note");
+    expect(warning).toHaveTextContent("Bot guruhdan chiqarilgan");
+    expect(warning).toHaveTextContent(
+      "Avval botni shu guruhga qayta qo'shing, so'ng faollashtiring. Bot guruhda bo'lmasa, xabar yetmaydi va ulanish yana nofaol bo'ladi.",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    await pickFromMenu(user, "Baraka Shop — yangi buyurtma guruhi: amallar", "Faollashtirish");
+    dialog = await screen.findByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+    warning = within(dialog).getByRole("note");
+    expect(warning).toHaveTextContent("Bot guruhda ekanini tekshiring");
+    expect(dialog).not.toHaveTextContent("Bot guruhdan chiqarilgan");
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    await pickFromMenu(user, "Bahor Kiyim — bekor qilingan guruhi: amallar", "Faollashtirish");
+    dialog = await screen.findByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+    expect(within(dialog).getByRole("note")).toHaveTextContent("Guruh topilmadi");
+    await user.click(within(dialog).getByRole("button", { name: "Faollashtirish" }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledWith("notifications/23", { is_active: true }));
+  });
+
+  it("phone: card and bottom sheet show the reason under «Nofaol»", async () => {
+    asPhone();
+    const user = userEvent.setup();
+    renderWithProviders(<NotificationsPage />);
+
+    const list = await screen.findByRole("list", { name: "Telegram guruhlari" });
+    const card = within(list)
+      .getAllByRole("listitem")
+      .find((item) => item.textContent?.includes("-1001")) as HTMLElement;
+    expect(within(card).getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeInTheDocument();
+    expect(within(card).getByText("Nofaol bo'lgan: 28.09.2026, 17:45")).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Nur Elektronika — yangi buyurtma guruhi: amallar" }));
+    const sheet = await screen.findByRole("dialog", { name: "Nur Elektronika #27" });
+    expect(within(sheet).getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeInTheDocument();
+    expect(within(sheet).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
   });
 });

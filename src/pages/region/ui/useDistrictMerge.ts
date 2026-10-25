@@ -1,9 +1,12 @@
 import { useCallback, useReducer } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notify } from "../../../shared/lib/notify";
 import {
   classifyMergeError,
+  districtUsageKey,
+  fetchDistrictUsage,
   mergeDistrictRequest,
   mergeReducer,
   MERGE_IDLE,
@@ -30,6 +33,8 @@ export type DistrictMergeController = {
   open: (source: MergeDistrict, targetId?: string | null) => void;
   select: (targetId: string | null) => void;
   submit: (target: MergeDistrict) => void;
+  /** Xato oynasidagi «Qayta urinish» (ko'chirilganlar qaytarilgan bo'lsa) — o'sha juftlik bilan yangi so'rov. */
+  retry: () => void;
   close: () => void;
   refresh: () => void;
 };
@@ -47,15 +52,15 @@ export const useDistrictMerge = (onRefresh: () => unknown): DistrictMergeControl
     void onRefresh();
   }, [onRefresh]);
 
-  /** So'rov natijasi → oyna holati (har ochilgan oyna o'zi ulanadi; yon ta'sirlar — `submit` da bir marta). */
+  /** So'rov natijasi → oyna holati (har ochilgan oyna o'zi ulanadi; yon ta'sirlar — `start` da bir marta). */
   const track = useCallback((request: Promise<MergeOutcome>) => {
     request.then(
       (outcome) => dispatch({ type: "succeed", outcome }),
       (error: unknown) => {
         const failure = classifyMergeError(error);
         dispatch({ type: "fail", failure });
-        // Xato oynalari (409 / 503 / chala qoldi) backend N1 dan keyin (DM-2) — hozircha umumiy xabar.
-        if (failure.kind === "error") dispatch({ type: "close" });
+        // Mashina o'qiydigan sababsiz rad (400/403/404, eski javob) — oyna yopiladi, umumiy xabar (`start`).
+        if (failure.kind === "error" && !failure.details) dispatch({ type: "close" });
       },
     );
   }, []);
@@ -66,6 +71,34 @@ export const useDistrictMerge = (onRefresh: () => unknown): DistrictMergeControl
       track(running.request);
     },
     [track],
+  );
+
+  /** So'rovni yuboradi (holat allaqachon `progress` da). Yon ta'sirlar (ro'yxatni yangilash, xabar) — shu yerda. */
+  const start = useCallback(
+    (source: MergeDistrict, target: MergeDistrict, startedAt: number) => {
+      const request = mergeDistrictRequest(source.id, target.id);
+      IN_FLIGHT.set(source.id, { target, startedAt, request });
+      request.then(
+        () => {
+          IN_FLIGHT.delete(source.id);
+          refresh();
+        },
+        (error: unknown) => {
+          IN_FLIGHT.delete(source.id);
+          const failure = classifyMergeError(error);
+          if (failure.kind === "error" && !failure.details) {
+            // Sababsiz rad: «qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi.
+            notify.error(t("v2.districts.error.title"), {
+              description: t("v2.districts.error.text", { from: source.name }),
+              action: { label: t("v2.districts.error.journal"), onClick: () => navigate(ACTIVITY_LOGS_PATH) },
+            });
+          }
+          refresh();
+        },
+      );
+      track(request);
+    },
+    [navigate, refresh, t, track],
   );
 
   const submit = useCallback(
@@ -80,29 +113,23 @@ export const useDistrictMerge = (onRefresh: () => unknown): DistrictMergeControl
       }
       const startedAt = Date.now();
       dispatch({ type: "submit", target, at: startedAt });
-      const request = mergeDistrictRequest(source.id, target.id);
-      IN_FLIGHT.set(source.id, { target, startedAt, request });
-      request.then(
-        () => {
-          IN_FLIGHT.delete(source.id);
-          refresh();
-        },
-        (error: unknown) => {
-          IN_FLIGHT.delete(source.id);
-          if (classifyMergeError(error).kind === "error") {
-            // «Qaytarildi» deb da'vo qilinmaydi, server matni ko'rsatilmaydi.
-            notify.error(t("v2.districts.error.title"), {
-              description: t("v2.districts.error.text", { from: source.name }),
-              action: { label: t("v2.districts.error.journal"), onClick: () => navigate(ACTIVITY_LOGS_PATH) },
-            });
-          }
-          refresh();
-        },
-      );
-      track(request);
+      start(source, target, startedAt);
     },
-    [navigate, refresh, resume, state, t, track],
+    [resume, start, state],
   );
+
+  const retry = useCallback(() => {
+    if (state.phase !== "error" || !state.details || state.details.manualFix) return;
+    const { source, target } = state;
+    const running = IN_FLIGHT.get(source.id);
+    if (running) {
+      resume(source, running);
+      return;
+    }
+    const startedAt = Date.now();
+    dispatch({ type: "retry", at: startedAt });
+    start(source, target, startedAt);
+  }, [resume, start, state]);
 
   const open = useCallback(
     (source: MergeDistrict, targetId?: string | null) => {
@@ -115,5 +142,21 @@ export const useDistrictMerge = (onRefresh: () => unknown): DistrictMergeControl
   const select = useCallback((targetId: string | null) => dispatch({ type: "select", targetId }), []);
   const close = useCallback(() => dispatch({ type: "close" }), []);
 
-  return { state, open, select, submit, close, refresh };
+  return { state, open, select, submit, retry, close, refresh };
 };
+
+/**
+ * Manba tumanning tirik sonlari (`GET district/:id/usage`) — «… ko'chadi» (tanlash) va «Ko'chirilayotganlar»
+ * (jarayon). Faqat tanlash oynasida so'raladi; jarayonda keshdagi son ko'rsatiladi (ko'chish davomida kamayib
+ * bormasin). Xato (503 — servis javob bermadi) — blok chizilmaydi, sonlar taxmin qilinmaydi.
+ */
+export const useDistrictUsage = (districtId: string | null, fetchEnabled: boolean) =>
+  useQuery({
+    queryKey: districtUsageKey(districtId ?? ""),
+    queryFn: () => fetchDistrictUsage(districtId ?? ""),
+    enabled: districtId != null && fetchEnabled,
+    staleTime: 0,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });

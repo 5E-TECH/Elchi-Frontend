@@ -83,6 +83,15 @@ describe("orderFilterModel", () => {
     expect(buildOrderListParams(EMPTY_ORDER_FILTERS, "admin", { page: 2, limit: 10 })).toEqual({ page: 2, limit: 10 });
   });
 
+  it("rwAy8Qyk: ro'yxatdagi raqam «EL-100081» bilan qidiruv — backendga ichki id «81» ketadi", () => {
+    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "EL-100081" }, "admin", { page: 1, limit: 10 })).toEqual({
+      page: 1,
+      limit: 10,
+      search: "81",
+    });
+    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "Ali" }, "admin", { page: 1, limit: 10 }).search).toBe("Ali");
+  });
+
   it("counts panel filters per role, with several statuses as one filter", () => {
     expect(countPanelFilters(filled, getOrderFilterScope("superadmin"))).toBe(6);
     expect(countPanelFilters(filled, getOrderFilterScope("registrator"))).toBe(5);

@@ -32,8 +32,9 @@ export type ScanSessionOptions = {
 
 /**
  * KIRIM / INVENTARIZATSIYA SKAN SESSIYASI — bitta yo'l: USB skaner (klaviatura kabi, `useKeyboardScanner` — fokus
- * maydonda bo'lmasa), «Mahsulot» maydoni (Enter) va kamera (markaziy skaner oynasi `layer: "dialog"` maqsadi — kamera
- * faqat QR o'qiydi, ya'ni `ELC-P-…` stikerlari; zavod EAN — USB skaner yoki qo'lda). Har kod
+ * maydonda bo'lmasa), «Mahsulot» maydoni (Enter) va kamera (markaziy skaner oynasi `layer: "dialog"` maqsadi,
+ * `formats: "barcodes"` — Trello CO66kcoB: `ELC-P-…` QR stikerlari VA zavod shtrix kodlari — EAN-13, EAN-8, UPC-A,
+ * Code128; EAN/UPC nazorat raqami xato bo'lsa kamera kodni qabul qilmaydi). Har kod
  * `GET /warehouses/:id/lookup` ga boradi: bitta mahsulot — qator (+1), bir nechta marketda — tanlov, topilmadi —
  * zavod kodi bo'lsa «Mahsulotga bog'lash», aks holda «topilmadi».
  */
@@ -108,6 +109,7 @@ export const useScanSession = ({ open, warehouseId, marketId, camera, messages }
       ? {
           id: camera.id,
           layer: "dialog",
+          formats: "barcodes",
           title: camera.title,
           context: camera.context,
           hint: camera.hint,

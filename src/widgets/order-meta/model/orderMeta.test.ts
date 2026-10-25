@@ -26,6 +26,9 @@ describe("readOrderMeta", () => {
   it("⭐ #95 javobi to'liq o'qiladi", () => {
     const meta = readOrderMeta(ORDER_95)!;
     expect(meta.id).toBe("95");
+    // rwAy8Qyk: `order_number` yo'q — zaxira ichki id; bor bo'lsa — yorliqdagi raqam.
+    expect(meta.orderNumber).toBe("95");
+    expect(readOrderMeta({ ...ORDER_95, order_number: "EL-100095" })!.orderNumber).toBe("EL-100095");
     expect(meta.market).toEqual({ id: "m7", name: "Kimdur Kimdur", phone: "+998992222222" });
     expect(meta.branch).toEqual({ id: "1", name: "HQ Toshkent" });
     expect(meta.postId).toBe("78");

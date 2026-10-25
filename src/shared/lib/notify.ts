@@ -33,6 +33,11 @@ export type NotifyAction = {
   label: string;
   /** Bosilganda chaqiriladi; xabar shundan keyin yopiladi. */
   onClick: () => void;
+  /**
+   * `true` — bosilganda xabar YOPILMAYDI (holat xabari: masalan «Internet aloqasi yo'q» → «Qayta urinish» oflaynda
+   * yopilmaydi, aloqa qaytgach o'zi yopiladi — G6F68ti6, 1-band).
+   */
+  keepOpen?: boolean;
 };
 
 export type NotifyOptions = {
