@@ -11,6 +11,9 @@ import { renderWithProviders } from "../../test/test-utils";
 import InvestmentsPage from "./InvestmentsPage";
 import ProfitsPage from "./ProfitsPage";
 
+/** Sahifa holati (global «Internet aloqasi yo'q» toast'i emas — G6F68ti6: brauzer oflaynida ikkalasi ham chiqadi). */
+const PAGE_ONLY = { ignore: "script, style, [data-toast-id] *" };
+
 /**
  * IN-2 — «Investitsiyalar» (`/investments`) va «Foyda tarixi» (`/profits`): maketlar `investor-investments-list`,
  * `-loading`, `-filtered-empty`, `investor-profits-list`, `-filtered-empty`. API — `api.get` soxta; xom backend matni
@@ -339,7 +342,7 @@ describe("InvestmentsPage — /investments (investor-investments-list)", () => {
     onlineManager.setOnline(false);
     const get = mockApi(() => investmentsBody());
     const view = renderAt("investments");
-    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(await screen.findByText("Internet aloqasi yo'q", PAGE_ONLY)).toBeInTheDocument();
     expect(loadingState()).not.toBeInTheDocument();
     expect(document.querySelector('[data-skeleton]')).not.toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();
@@ -355,7 +358,7 @@ describe("InvestmentsPage — /investments (investor-investments-list)", () => {
     onlineManager.setOnline(false);
     await user.click(screen.getByRole("button", { name: "Filtrni tozalash" }));
     expect(location()).toBe("/investments");
-    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(await screen.findByText("Internet aloqasi yo'q", PAGE_ONLY)).toBeInTheDocument();
     expect(loadingState()).not.toBeInTheDocument();
     expect(paramsOf(get, "investors/me/investments")).toHaveLength(1);
     goOnlineAfter(view);
@@ -502,7 +505,7 @@ describe("ProfitsPage — /profits (investor-profits-list)", () => {
     onlineManager.setOnline(false);
     const get = mockApi(() => profitsBody());
     const view = renderAt("profits");
-    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(await screen.findByText("Internet aloqasi yo'q", PAGE_ONLY)).toBeInTheDocument();
     expect(loadingState()).not.toBeInTheDocument();
     expect(document.querySelector('[data-skeleton]')).not.toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();

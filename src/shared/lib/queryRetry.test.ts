@@ -35,8 +35,14 @@ describe("shouldRetryQuery", () => {
     expect(shouldRetryQuery(1, new Error("boom"))).toBe(false);
   });
 
-  it("vaqt chegarasi (ECONNABORTED) — qayta so'ralmaydi", () => {
+  it("vaqt chegarasi (ECONNABORTED / ETIMEDOUT) — qayta so'ralmaydi", () => {
     expect(shouldRetryQuery(0, new AxiosError("So'rov vaqti tugadi", AxiosError.ECONNABORTED, config, request))).toBe(false);
+    expect(shouldRetryQuery(0, new AxiosError("timeout of 20000ms exceeded", AxiosError.ETIMEDOUT, config, request))).toBe(false);
+  });
+
+  it("G6F68ti6 (12-band): brauzer bekor qilgan so'rov («Request aborted») — vaqt emas, 1 marta qayta so'raladi", () => {
+    expect(shouldRetryQuery(0, new AxiosError("Request aborted", AxiosError.ECONNABORTED, config, request))).toBe(true);
+    expect(shouldRetryQuery(1, new AxiosError("Request aborted", AxiosError.ECONNABORTED, config, request))).toBe(false);
   });
 });
 
