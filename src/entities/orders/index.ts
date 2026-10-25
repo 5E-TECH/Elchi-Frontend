@@ -61,9 +61,13 @@ export const todayMarketsQueryOptions = (params?: unknown) => ({
 export type ExtraCostApproval = {
   id: string;
   order_id: string;
+  /** (0Ngp09FG) mijozga ko'rinadigan raqam («EL-100076»), ichki `order_id` emas — `extraCostOrderNumber`. */
+  order_number?: string | null;
   market_id: string;
   requested_by_user_id: string;
   requested_by_role?: string | null;
+  /** (0Ngp09FG) so'rovchi: `name` identity'dan, olinmasa `null` — `extraCostRequesterName`. */
+  requested_by?: { id?: string | null; name?: string | null } | null;
   requester_branch_id?: string | null;
   action: "sell" | "cancel" | "partly_sell";
   amount: number;

@@ -100,6 +100,48 @@ describe("ExtraCostApprovals — market dashboardidagi tasdiqlar bloki", () => {
     expect(within(sell).getByRole("button", { name: "Rad etish" })).toBeInTheDocument();
   });
 
+  it("0Ngp09FG: `order_number` va `requested_by.name` — «№EL-100053» (havola id bo'yicha), «Jasur Tursunov · Kuryer»", async () => {
+    http.get.mockResolvedValue(
+      listResponse([
+        approval("ap-1", "sell", "53", {
+          order_number: "EL-100053",
+          requested_by: { id: "26", name: "Jasur Tursunov" },
+        }),
+        // Ism olinmagan (identity javob bermadi) — zaxira «#id · rol»; raqam bor.
+        approval("ap-2", "cancel", "54", { order_number: "EL-100054", requested_by: { id: "26", name: null } }),
+      ]),
+    );
+    renderBlock();
+
+    await screen.findByRole("list", { name: "Kutilayotgan so'rovlar" });
+    const sell = screen.getByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №EL-100053" });
+    expect(within(sell).getByRole("link", { name: "№EL-100053" })).toHaveAttribute("href", "/orders/edit/53");
+    expect(within(sell).queryByText("№53")).not.toBeInTheDocument();
+    expect(within(sell).getByText("Jasur Tursunov")).toBeInTheDocument();
+    expect(within(sell).getByText(/· Kuryer/)).toBeInTheDocument();
+    expect(within(sell).queryByText("#26")).not.toBeInTheDocument();
+
+    const cancel = screen.getByRole("listitem", { name: "Bekor qilishdagi qo'shimcha xarajat, buyurtma №EL-100054" });
+    expect(within(cancel).getByText("#26")).toBeInTheDocument();
+  });
+
+  it("0Ngp09FG: tasdiq oynasi, rad etish oynasi va xabar — `order_number`", async () => {
+    const user = userEvent.setup();
+    http.get.mockResolvedValue(listResponse([approval("ap-1", "sell", "53", { order_number: "EL-100053" })]));
+    http.post.mockResolvedValue({ data: { statusCode: 200, data: {} } });
+    renderBlock();
+
+    await user.click(await screen.findByRole("button", { name: "Tasdiqlash" }));
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Qo'shimcha xarajatni tasdiqlang" });
+    expect(within(confirmDialog).getByText(/№EL-100053 buyurtmaga qo'shimcha xarajat yoziladi/)).toBeInTheDocument();
+    await user.click(within(confirmDialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: "Rad etish" }));
+    const rejectDialog = await screen.findByRole("dialog", { name: "So'rovni rad etish" });
+    expect(rejectDialog).toHaveTextContent("№EL-100053 · 2 000 so'm · Sotishdagi qo'shimcha xarajat");
+  });
+
   it("1tnpaIqd: muddat (auto_approve_at) bo'lsa — «… gacha javob berilmasa — avtomatik tasdiqlanadi»; yo'q bo'lsa qator yo'q", async () => {
     http.get.mockResolvedValue(
       listResponse([
