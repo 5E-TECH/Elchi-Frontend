@@ -180,6 +180,7 @@
       "title": "Yetkazish sifati",
       "onTime": "O'z vaqtida (SLA)",
       "onTimeHint": "24 soat ichida",
+      "onTimeUnmeasured": "O'lchanmagan — bu davrda yetkazish yo'q",
       "cancelRate": "Bekor qilish darajasi",
       "duration": "Yetkazish vaqti",
       "durationHint": "qabuldan sotuvgacha",

@@ -182,6 +182,7 @@
       "title": "Delivery quality",
       "onTime": "On time (SLA)",
       "onTimeHint": "within 24 hours",
+      "onTimeUnmeasured": "Not measured — no deliveries in this period",
       "cancelRate": "Cancellation rate",
       "duration": "Delivery time",
       "durationHint": "from acceptance to sale",

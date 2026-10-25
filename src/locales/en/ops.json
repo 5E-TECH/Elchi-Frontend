@@ -600,6 +600,8 @@
       "label": "Delivered within 24 hours",
       "good": "Good · 70% and above",
       "low": "Low · below 70%",
+      "unmeasured": "Not measured · no deliveries",
+      "ariaUnmeasured": "On-time delivery (SLA): not measured — no orders delivered in this period",
       "aria": "On-time delivery (SLA): {{value}} — share of orders delivered within 24 hours",
       "note": "Share of orders sold within 24 hours of intake"
     },

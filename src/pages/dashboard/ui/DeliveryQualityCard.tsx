@@ -23,7 +23,8 @@ export interface DeliveryQualityCardProps {
 
 /**
  * «YETKAZISH SIFATI» (faqat SA/admin, `GET analytics/kpi`): O'z vaqtida (SLA) · Bekor qilish darajasi ·
- * Yetkazish vaqti. Delta — oldingi teng davrning kpi'siga nisbatan (bo'lsa).
+ * Yetkazish vaqti. Delta — oldingi teng davrning kpi'siga nisbatan (bo'lsa). Davrda yetkazish yo'q (`deliveryCount`
+ * 0) — SLA «—» va «O'lchanmagan» (yrLt5oMi).
  */
 const DeliveryQualityCard = ({ description, kpi, previous, loading, allTime, accepted, cancelled }: DeliveryQualityCardProps) => {
   const { t, i18n } = useTranslation("dashboard");
@@ -41,7 +42,10 @@ const DeliveryQualityCard = ({ description, kpi, previous, loading, allTime, acc
       );
     }
     if (loading || !kpi) return <SkeletonLines lines={6} />;
-    const onTimeDelta = previous ? kpi.onTimeRate - previous.onTimeRate : null;
+    // yrLt5oMi: davrda yetkazish yo'q — SLA o'lchanmagan («0%» emas, delta ham yo'q). Ishga tushirishning birinchi
+    // kunlari aynan shunday.
+    const unmeasured = kpi.deliveryCount === 0;
+    const onTimeDelta = previous && !unmeasured && previous.deliveryCount !== 0 ? kpi.onTimeRate - previous.onTimeRate : null;
     const cancelDelta = previous ? kpi.cancellationRate - previous.cancellationRate : null;
     const durationDelta =
       previous && previous.averageFulfillmentHours > 0 && kpi.averageFulfillmentHours > 0
@@ -54,12 +58,16 @@ const DeliveryQualityCard = ({ description, kpi, previous, loading, allTime, acc
           value={kpi.onTimeRate}
           tone="action"
           label={t("v2Dashboard.quality.onTime")}
-          valueText={formatPercentLocalized(kpi.onTimeRate, { language })}
+          valueText={unmeasured ? "—" : formatPercentLocalized(kpi.onTimeRate, { language })}
           meta={
-            <>
-              {onTimeDelta != null ? <DeltaChip value={onTimeDelta} text={formatPointDelta(t, onTimeDelta, language)} /> : null}
-              {t("v2Dashboard.quality.onTimeHint")}
-            </>
+            unmeasured ? (
+              t("v2Dashboard.quality.onTimeUnmeasured")
+            ) : (
+              <>
+                {onTimeDelta != null ? <DeltaChip value={onTimeDelta} text={formatPointDelta(t, onTimeDelta, language)} /> : null}
+                {t("v2Dashboard.quality.onTimeHint")}
+              </>
+            )
           }
         />
         <RingStat
