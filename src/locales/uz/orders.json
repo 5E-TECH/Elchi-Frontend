@@ -880,7 +880,8 @@
     "applyLabel": "Mahsulotlar bo'yicha summani qo'llash: {{amount}}"
   },
   "operatorCreate": {
-    "description": "Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi",
+    "description": "Buyurtmalar siz ishlaydigan market nomidan yaratiladi",
+    "onBehalf": "{{market}} nomidan",
     "aiOffTitle": "AI bilan yaratish hozir o'chiq",
     "aiOffText": "Buyurtma yaratish uchun market egasi yoki administratorga murojaat qiling.",
     "aiDisabled": "Bu market uchun AI yoqilmagan — market egasi yoki administratorga murojaat qiling.",

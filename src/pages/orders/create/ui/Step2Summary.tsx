@@ -26,6 +26,11 @@ type Step2SummaryProps = {
   onPrevious?: () => void;
   /** Market rolidagi «Orqaga» manzili. */
   backTo?: string;
+  /**
+   * MO-7 (OfRSoRUX): market operatori — «Operator» maydoni o'zi (`Siz — avtomatik yoziladi`), tahrirlanmaydi va
+   * yuborilmaydi (backend operator ismini o'zi yozadi). Maket `market_operator-new-orders-create-manual`.
+   */
+  selfOperator?: { name: string | null };
 };
 
 /** `.el-divider`. */
@@ -42,7 +47,14 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
  *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
  */
-const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/new-orders" }: Step2SummaryProps) => {
+const Step2Summary = ({
+  isMarketRole,
+  ready,
+  submitting,
+  onPrevious,
+  backTo = "/new-orders",
+  selfOperator,
+}: Step2SummaryProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const statusId = useId();
   /** Rad etilgan belgi sababi (kasr, minus, 12 xonadan uzun — D-17); o'chirilguncha yoki maydondan chiqilguncha. */
@@ -241,22 +253,28 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         )}
       />
 
-      <Controller
-        control={control}
-        name="details.operator"
-        render={({ field }) => (
-          <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
-            <TextInput
-              name={field.name}
-              placeholder={t("operatorPlaceholder")}
-              value={field.value}
-              onValueChange={field.onChange}
-              onBlur={field.onBlur}
-              ref={field.ref}
-            />
-          </Field>
-        )}
-      />
+      {selfOperator ? (
+        <Field id="details.operator" label={t("operator")} hint={t("operatorCreate.operatorAuto")}>
+          <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
+        </Field>
+      ) : (
+        <Controller
+          control={control}
+          name="details.operator"
+          render={({ field }) => (
+            <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
+              <TextInput
+                name={field.name}
+                placeholder={t("operatorPlaceholder")}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            </Field>
+          )}
+        />
+      )}
 
       <Divider />
 

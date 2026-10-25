@@ -213,7 +213,13 @@ const Step2Combined = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
   const roleId = useSelector((state: RootState) => state.role.id);
-  const isMarketRole = role === "market";
+  const operatorMarket = useSelector((state: RootState) => state.user.user?.market ?? null);
+  // MO-7 (OfRSoRUX): market operatori ham market tomoni — katalog `my-products`, mijoz takliflari o'z marketi
+  // doirasida; market id va nomi — `my-profile.market` (N13), operatorning o'zi emas.
+  const isMarketOperator = role === "market_operator";
+  const isMarketRole = role === "market" || isMarketOperator;
+  const ownMarketId = isMarketOperator ? (operatorMarket?.id != null ? String(operatorMarket.id) : null) : roleId;
+  const ownMarketName = isMarketOperator ? (operatorMarket?.name ?? undefined) : roleName;
   const productSourceMarketId = market ? String(market.id) : "";
 
   const { useGetRegions, useGetDistricts } = useLogistics();
@@ -347,7 +353,7 @@ const Step2Combined = () => {
         : deliveryOwner
       : null;
 
-  const catalogOwner = isMarketRole ? roleName : market?.name;
+  const catalogOwner = isMarketRole ? ownMarketName : market?.name;
   // Taklif doirasi backend bilan bir xil: admin — barcha mijozlar, market — o'zi, qolganlar — tanlangan market.
   const suggestScope: CustomerSuggestScope =
     role === "superadmin" || role === "admin" ? "all" : isMarketRole ? "own" : "market";
@@ -398,7 +404,7 @@ const Step2Combined = () => {
           />
           <ExistingCustomerNotice
             isMarketRole={isMarketRole}
-            marketId={isMarketRole ? roleId : productSourceMarketId || null}
+            marketId={isMarketRole ? ownMarketId : productSourceMarketId || null}
             marketName={catalogOwner}
           />
         </div>

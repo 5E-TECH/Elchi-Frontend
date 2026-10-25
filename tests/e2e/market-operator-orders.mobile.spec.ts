@@ -43,28 +43,31 @@ test("⭐ 390: ro'yxat kartalari, filtr varaqasi, tafsilot; 44px va toshishsiz",
   expectNoForbiddenRequests(mock);
 });
 
-test("⭐ 390: «Yaratish» katagi → AI bilan yaratish (tanlovsiz), kartalar va tasdiq paneli sig'adi", async ({ page }) => {
+test("⭐ 390: «Yaratish» katagi → «Qo'lda · AI bilan» (MO-7), AI kartalari va tasdiq paneli sig'adi", async ({ page }) => {
   const mock = await openOperatorOrders(page);
 
   await bottomNav(page).getByRole("link", { name: "Yaratish" }).click();
   await expect(page).toHaveURL(/\/new-orders\/create$/);
   await expect(page.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeVisible();
   await expect(bottomNav(page).getByRole("link", { name: "Yaratish" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("create-mode-tabs")).toHaveCount(0);
+  // Qo'lda forma telefonda sig'adi, keyin «AI bilan».
+  await expect(page.getByLabel(/^Mijoz ismi/)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.getByTestId("create-mode-tabs").getByRole("radio", { name: /AI bilan/ }).click();
 
   await page.getByRole("textbox", { name: "Buyurtma matni" }).fill("Sevara 90 214 55 08\nMansur 93 627 18 40");
   await page.getByRole("button", { name: "Tahlil qilish" }).click();
   await expect(page.getByTestId("ai-preview-card")).toHaveCount(2);
-  await expect(page.getByText("Viloyat", { exact: true })).toHaveCount(0);
   await expect(page.getByTestId("ai-confirm-bar")).toBeVisible();
   expect(tooSmall(await tapTargets(page))).toEqual([]);
   await expectNoHorizontalOverflow(page);
   expectNoForbiddenRequests(mock);
 });
 
-test("390: AI o'chiq — ogohlantirish, qo'lda forma yo'q", async ({ page }) => {
+test("390: AI o'chiq — tablarsiz qo'lda forma (MO-7)", async ({ page }) => {
   const mock = await openOperatorCreate(page, { aiEnabled: false });
-  await expect(page.getByText("AI bilan yaratish hozir o'chiq")).toBeVisible();
+  await expect(page.getByLabel(/^Mijoz ismi/)).toBeVisible();
+  await expect(page.getByText("AI bilan yaratish hozir o'chiq")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Buyurtma matni" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expectNoForbiddenRequests(mock);

@@ -50,23 +50,25 @@ test("⭐ ro'yxat: market jadvali, market/kuryer/viloyat filtrlari yo'q, so'rovd
   expectNoForbiddenRequests(mock);
 });
 
-test("⭐ «Buyurtma yaratish» menyudan: /new-orders → /new-orders/create, faqat «AI bilan»; ikki buyurtma yaratiladi", async ({
+test("⭐ «Buyurtma yaratish» menyudan: /new-orders → /new-orders/create, «Qo'lda · AI bilan»; AI bilan ikki buyurtma", async ({
   page,
 }) => {
   const mock = await openOperatorOrders(page);
   await page.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("link", { name: "Buyurtma yaratish" }).click();
   await expect(page).toHaveURL(/\/new-orders\/create$/);
   await expect(page.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeVisible();
-  await expect(page.getByText("Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi")).toBeVisible();
-  await expect(page.getByTestId("create-mode-tabs")).toHaveCount(0);
+  await expect(page.getByText("Baraka Shop nomidan")).toBeVisible();
   await expect(page.getByRole("link", { name: /Buyurtmalar/ }).first()).toHaveAttribute("href", "/orders");
+
+  // MO-7: sukut — «Qo'lda»; «AI bilan» tabga o'tiladi.
+  const tabs = page.getByTestId("create-mode-tabs");
+  await expect(tabs.getByRole("radio", { name: /Qo'lda/ })).toBeChecked();
+  await tabs.getByRole("radio", { name: /AI bilan/ }).click();
 
   await page.getByRole("textbox", { name: "Buyurtma matni" }).fill("Sevara 90 214 55 08 Yunusobod 185 000\nMansur 93 627 18 40");
   await page.getByRole("button", { name: "Tahlil qilish" }).click();
   const cards = page.getByTestId("ai-preview-card");
   await expect(cards).toHaveCount(2);
-  // Viloyat maydoni yo'q; birinchi karta tayyor, ikkinchisida tuman — AI taklifidan tanlanadi.
-  await expect(page.getByText("Viloyat", { exact: true })).toHaveCount(0);
   await expect(cards.nth(0)).toHaveAttribute("data-ready", "true");
   await expect(cards.nth(1)).toHaveAttribute("data-ready", "false");
   await cards.nth(1).getByRole("combobox", { name: "Tuman" }).click();
@@ -83,11 +85,39 @@ test("⭐ «Buyurtma yaratish» menyudan: /new-orders → /new-orders/create, fa
   expectNoForbiddenRequests(mock);
 });
 
-test("qobiqning boshqa yo'llari — 403; AI o'chiq bo'lsa ogohlantirish (qo'lda forma yo'q)", async ({ page }) => {
+test("⭐ MO-7: qo'lda yaratish — viloyat/tuman, katalog; POST /orders market_id va operator'siz, Idempotency-Key; «Operator: Siz»", async ({
+  page,
+}) => {
+  const mock = await openOperatorCreate(page);
+  await expect(page.getByTestId("manual-mode-panel")).toBeVisible();
+  const aside = page.getByRole("complementary", { name: "Buyurtma xulosasi" });
+  await expect(aside.getByRole("textbox", { name: "Operator" })).toHaveValue("Dilnoza Karimova");
+  await expect(aside.getByText("Siz — avtomatik yoziladi")).toBeVisible();
+
+  await page.getByRole("combobox", { name: /^Telefon/ }).fill("901234567");
+  await page.getByLabel(/^Mijoz ismi/).fill("Aliyev Vali");
+  await page.locator("#customer\\.region_id").click();
+  await page.getByRole("option", { name: /Toshkent shahri/ }).click();
+  await page.locator("#customer\\.district_id").click();
+  await page.getByRole("option", { name: /Chilonzor/ }).click();
+  await page.getByRole("button", { name: /Telefon ushlagich/ }).click();
+  await page.getByLabel(/^Umumiy summa/).fill("150000");
+  await aside.getByRole("button", { name: "Buyurtma yaratish" }).click();
+
+  await expect.poll(() => mock.orderBodies.length).toBe(1);
+  expect(mock.orderBodies[0]).not.toHaveProperty("market_id");
+  expect(mock.orderBodies[0]).not.toHaveProperty("operator");
+  expect(mock.orderBodies[0]).toMatchObject({ district_id: "101", total_price: 150000 });
+  expect(mock.orderKeys[0]).toEqual(expect.any(String));
+  expectNoForbiddenRequests(mock);
+});
+
+test("qobiqning boshqa yo'llari — 403; AI o'chiq bo'lsa tablarsiz qo'lda forma (MO-7)", async ({ page }) => {
   const mock = await openOperatorCreate(page, { aiEnabled: false });
-  await expect(page.getByText("AI bilan yaratish hozir o'chiq")).toBeVisible();
+  await expect(page.getByLabel(/^Mijoz ismi/)).toBeVisible();
+  await expect(page.getByTestId("create-mode-tabs")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Buyurtma matni" })).toHaveCount(0);
-  await expect(page.getByLabel(/^Mijoz ismi/)).toHaveCount(0);
+  await expect(page.getByText("AI bilan yaratish hozir o'chiq")).toHaveCount(0);
 
   for (const path of [`/new-orders/${OPERATOR_MARKET_ID}`, `/new-orders/cancelled/${OPERATOR_MARKET_ID}`, "/new-orders/incoming"]) {
     await page.goto(path);
