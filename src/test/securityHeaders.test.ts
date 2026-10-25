@@ -100,6 +100,10 @@ describe("public/_headers — xavfsizlik sarlavhalari (KwodkKWY)", () => {
     expect(reportOnly.get("manifest-src")).toEqual(["'self'"]);
   });
 
+  it("Report-Only CSP: buzilishlar backend POST /csp-report ga yuboriladi (KwodkKWY)", () => {
+    expect(reportOnly.get("report-uri")).toEqual([`https://${apiHost}/csp-report`]);
+  });
+
   it("/tg/scan — Telegram Web iframe'i uchun frame-ancestors faqat web.telegram.org ga ochiladi", () => {
     const tg = rule("/tg/scan*")!;
     expect(rules.indexOf(tg)).toBeGreaterThan(rules.indexOf(all));
