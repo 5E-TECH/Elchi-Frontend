@@ -165,9 +165,9 @@ describe("Kuryer buyurtmalari — sarlavha, tablar va so'rov (v2)", () => {
     await waitFor(() => expect(lastCall()).toMatchObject({ search: "9021" }), { timeout: 2000 });
   });
 
-  it("rwAy8Qyk: ro'yxatdagi raqam «EL-100081» bilan qidiruv — so'rovga ichki id «81»", () => {
-    renderPage("/orders?status=waiting&orderSearch=EL-100081");
-    expect(lastCall()).toMatchObject({ search: "81" });
+  it("rwAy8Qyk / FoCaUF10: «#EL-100081» bilan qidiruv — so'rovga kanonik «EL-100081» (backend faqat ID bo'yicha)", () => {
+    renderPage("/orders?status=waiting&orderSearch=%23EL-100081");
+    expect(lastCall()).toMatchObject({ search: "EL-100081" });
   });
 
   it("sana oralig'i URL'dan `startDate` / `endDate` bo'lib ketadi; bekor qilinganlarda qidiruv va sana yuborilmaydi", async () => {
