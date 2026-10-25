@@ -1,4 +1,6 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
+import { isBrowserOffline, isChunkLoadError, reloadForNewVersion } from "../lib/chunkError";
+import { ErrorState } from "./primitives";
 import {
   getCurrentAppPath,
   RUNTIME_ERROR_PATH,
@@ -24,8 +26,22 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  /** Oflaynda bo'lim fayli yuklanmadi (G6F68ti6, 6-band) — «Internet aloqasi yo'q», aloqa qaytgach qayta yuklash. */
+  chunkOffline?: boolean;
+  /** Onlayn chunk xatosi — yangi versiya uchun sahifa qayta yuklanmoqda (bo'sh ekran bir lahza). */
+  reloading?: boolean;
   resetKey?: string;
 }
+
+/** Bo'lim fayli oflaynda yuklanmadi: butun ekran holati; aloqa qaytsa (yoki «Qayta urinish») — sahifa qayta yuklanadi. */
+const ChunkOfflineState = () => {
+  useEffect(() => {
+    const reload = () => window.location.reload();
+    window.addEventListener("online", reload);
+    return () => window.removeEventListener("online", reload);
+  }, []);
+  return <ErrorState size="page" kind="offline" onRetry={() => window.location.reload()} />;
+};
 
 /**
  * Ilova xato chegarasi. Ikki joyda turadi: `App.tsx` (provayderlar atrofida, global) va `routes.tsx` → `AppRouter`
@@ -37,20 +53,34 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     resetKey: this.props.resetKey,
   };
 
-  public static getDerivedStateFromError(): Partial<ErrorBoundaryState> {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: unknown): Partial<ErrorBoundaryState> {
+    const chunk = isChunkLoadError(error);
+    return { hasError: true, chunkOffline: chunk && isBrowserOffline(), reloading: false };
   }
 
   public static getDerivedStateFromProps(
     props: ErrorBoundaryProps,
     state: ErrorBoundaryState,
   ): Partial<ErrorBoundaryState> | null {
-    return props.resetKey === state.resetKey ? null : { hasError: false, resetKey: props.resetKey };
+    return props.resetKey === state.resetKey
+      ? null
+      : { hasError: false, chunkOffline: false, reloading: false, resetKey: props.resetKey };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     if (import.meta.env.DEV) {
       console.error("ErrorBoundary xatoligi:", error, errorInfo);
+    }
+
+    // Bo'lim fayli yuklanmadi (deploy'dan keyingi eski tab yoki internet yo'q) — kod xatosi emas: «Ilova xatosi»
+    // yozilmaydi. Oflayn — «Internet aloqasi yo'q» (render), onlayn — yangi versiya uchun bir marta qayta yuklash;
+    // yaqinda allaqachon qayta yuklangan bo'lsa — odatdagi yo'l (G6F68ti6, 6-band).
+    if (isChunkLoadError(error)) {
+      if (this.state.chunkOffline) return;
+      if (reloadForNewVersion()) {
+        this.setState({ reloading: true });
+        return;
+      }
     }
 
     // Xato sahifasining o'zida yiqildi — zaxira (shell'siz nusxa) chiziladi, boshqa joyga o'tilmaydi.
@@ -75,6 +105,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   public render() {
     if (this.state.hasError) {
+      if (this.state.chunkOffline) return <ChunkOfflineState />;
+      if (this.state.reloading) return null;
       return this.props.fallback ?? null;
     }
 
