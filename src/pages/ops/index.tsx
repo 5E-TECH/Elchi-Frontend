@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Card, getPanelId, getTabId, PageHeader, Select, SkeletonLines, Tabs } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { EXPENSE_CATEGORIES_TAB, OPS_TABS } from "./tabs";
+import { DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, OPS_TABS } from "./tabs";
 import { OpsTabBoundary } from "./ui/OpsToolPage";
 
 /**
@@ -18,6 +18,7 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * Eski `/finance-operators`, `/system-ops` va h.k. marshrutlari SAQLANADI — o'sha sahifa o'z sarlavhasi va
  * «← Ops vositalari» havolasi bilan chiziladi; hub esa o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
  * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
+ * «Yetkazish narxi» (`pages/delivery-tariffs`) — «Hududlar» bo'limining sahifasi, hub uni ham `embedded` bilan chizadi.
  *
  * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»; eski yo'li yo'q tabda — yo'q), telefon —
  * `Select` («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
@@ -35,6 +36,7 @@ const BranchOpsPage = lazy(() => import("../branch-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
 const AuthDiagnosticsPage = lazy(() => import("../logs"));
+const DeliveryPricingPage = lazy(() => import("../delivery-tariffs"));
 
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, OpsPanel> = {
@@ -43,6 +45,7 @@ const CONTENT: Record<string, OpsPanel> = {
   integrations: IntegrationsOpsPage,
   investors: InvestorsOpsPage,
   logistics: LogisticsOpsPage,
+  [DELIVERY_PRICING_TAB]: DeliveryPricingPage,
   branches: BranchOpsPage,
   identity: IdentityOpsPage,
   system: SystemOpsPage,

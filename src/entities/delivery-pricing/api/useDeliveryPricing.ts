@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
+import { DEFAULT_WEIGHT_RULES, toWeightRules, type WeightRules } from "../lib/billableWeight";
+import { firstDeliveryQuote } from "../lib/resolveWeights";
 import type {
   CreateDeliveryTariffRequest,
   DeliveryMeasureItem,
@@ -98,6 +100,62 @@ export const useDeliveryPricingSettings = ({ enabled = true }: { enabled?: boole
     staleTime: STALE_TIME_MS,
     meta: { silentError: true },
   });
+
+/**
+ * Chegarani bilish uchun o'zgarmas namunaviy o'lchov (`POST /delivery/quote/by-tariff` hech narsa yozmaydi; tana bitta —
+ * kesh barcha ro'yxat va sahifalarga umumiy). Javobdagi `volumetricFromKg` — serverda qo'llangan chegara.
+ */
+export const THRESHOLD_PROBE_REQUEST: DeliveryQuoteByTariffRequest = {
+  items: [{ weight_kg: 1, length_cm: 10, width_cm: 10, height_cm: 10, volumetric_enabled: true }],
+};
+
+export type WeightRulesState = {
+  /** `ready` — `rules` bor; `loading` — kutilmoqda; `unknown` — aniqlab bo'lmadi (xato, sozlama yoki tarif yo'q) yoki so'ralmagan. */
+  status: "ready" | "loading" | "unknown";
+  rules: WeightRules | null;
+};
+
+const UNKNOWN_RULES: WeightRulesState = { status: "unknown", rules: null };
+const LOADING_RULES: WeightRulesState = { status: "loading", rules: null };
+
+/**
+ * RO'YXATDAGI «HISOB VAZNI» QOIDALARI (AQ9lkgVB; mahsulot javobida server hisob vazni yo'q):
+ *  - `canReadSettings` (superadmin, admin) — `GET /delivery/pricing-settings` (qadam, minimum, chegara);
+ *  - boshqa rol (sozlama 403) — chegara narx javobidan (`THRESHOLD_PROBE_REQUEST`), qadam va minimum — sukut; javobda
+ *    chegara yo'q (eski backend) — 0, avvalgi xulq.
+ * `enabled: false` — so'rov yo'q (`unknown`).
+ */
+export const useWeightRules = ({
+  canReadSettings,
+  enabled = true,
+}: {
+  canReadSettings: boolean;
+  enabled?: boolean;
+}): WeightRulesState => {
+  const settingsQuery = useDeliveryPricingSettings({ enabled: enabled && canReadSettings });
+  const probeQuery = useQuery({
+    queryKey: queryKeys.deliveryPricing.quoteByTariff(THRESHOLD_PROBE_REQUEST),
+    queryFn: () => getQuotesByTariff(THRESHOLD_PROBE_REQUEST),
+    enabled: enabled && !canReadSettings,
+    staleTime: STALE_TIME_MS,
+    retry: false,
+    meta: { silentError: true },
+  });
+  const settings = settingsQuery.data;
+  const probe = probeQuery.data;
+  const pending = canReadSettings ? settingsQuery.isPending : probeQuery.isPending;
+  return useMemo<WeightRulesState>(() => {
+    if (!enabled) return UNKNOWN_RULES;
+    if (canReadSettings) {
+      if (settings) return { status: "ready", rules: toWeightRules(settings) };
+    } else {
+      // Faol tarif yo'q (uchala natija `null`) — chegarani bilib bo'lmaydi.
+      const quote = firstDeliveryQuote(probe);
+      if (quote) return { status: "ready", rules: { ...DEFAULT_WEIGHT_RULES, volumetricFromKg: quote.volumetricFromKg ?? 0 } };
+    }
+    return pending ? LOADING_RULES : UNKNOWN_RULES;
+  }, [canReadSettings, enabled, pending, probe, settings]);
+};
 
 /** `GET /delivery/pricing-settings/history` — hisob qoidalari versiyalari (faqat superadmin, admin). */
 export const useDeliveryPricingSettingsHistory = ({ enabled = true }: { enabled?: boolean } = {}) =>

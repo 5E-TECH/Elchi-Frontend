@@ -18,10 +18,13 @@ export {
   computeMeasureWeights,
   computeTariffTotal,
   DEFAULT_WEIGHT_RULES,
+  meetsVolumetricThreshold,
+  toWeightRules,
   VOLUMETRIC_DIVISOR,
   type MeasureWeights as MeasureWeightsResult,
   type WeightRules,
 } from "./lib/billableWeight";
+export { firstDeliveryQuote, resolveMeasureWeights, type ResolvedMeasureWeights } from "./lib/resolveWeights";
 export {
   checkDimensionInput,
   checkWeightInput,
@@ -65,7 +68,9 @@ export {
   useDeliveryPricingSettings,
   useDeliveryPricingSettingsHistory,
   useDeliveryQuoteByTariff,
+  useWeightRules,
   type DeliveryQuoteState,
+  type WeightRulesState,
 } from "./api/useDeliveryPricing";
 export { DeliveryQuoteList, type DeliveryQuoteListProps } from "./ui/DeliveryQuoteList";
 export { formatKgValue } from "./lib/formatKg";

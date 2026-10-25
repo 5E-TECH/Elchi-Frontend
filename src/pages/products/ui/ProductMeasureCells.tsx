@@ -1,8 +1,10 @@
 // dizayn-v2: superadmin-products-list, admin-products-list, market-products-list, superadmin-products-create, admin-products-create
 import { useTranslation } from "react-i18next";
-import { formatKgValue } from "../../../entities/delivery-pricing";
+import { useSelector } from "react-redux";
+import { canManageDeliveryTariffs } from "../../../app/lib/access";
+import { formatKgValue, useWeightRules } from "../../../entities/delivery-pricing";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Badge } from "../../../shared/ui/primitives";
+import { Badge, Skeleton } from "../../../shared/ui/primitives";
 import { getProductMeasureView, type ProductMeasureView } from "../model/productMeasure";
 import type { Product } from "../model/productView";
 
@@ -61,8 +63,25 @@ export const ProductDimensions = ({ product }: { product: Product }) => {
 };
 
 /**
+ * Hisob vazni «Hajm bo'yicha hisoblash chegarasi» bilan (AQ9lkgVB) — forma va server bilan bir xil son: superadmin/admin
+ * qoidalari sozlamadan (har doim), boshqa rolda chegara narx javobidan — faqat natija chegaraga bog'liq bo'lsa
+ * (`thresholdPending`). So'rovlar kesh orqali bitta, qatorlar soniga bog'liq emas.
+ */
+const useBillableView = (product: Product) => {
+  const canReadSettings = useSelector(canManageDeliveryTariffs);
+  const base = getProductMeasureView(product);
+  const weightRules = useWeightRules({
+    canReadSettings,
+    enabled: base.complete && (canReadSettings || base.thresholdPending),
+  });
+  const view = weightRules.rules ? getProductMeasureView(product, weightRules.rules) : base;
+  return { view, loading: view.thresholdPending && weightRules.status === "loading" };
+};
+
+/**
  * Hisob vazni: `stack` — jadval ustuni («2,4 kg» qalin, ostida «hajm bo'yicha»); `inline` — nom ostida / telefon
- * kartasida («**0,2 kg** · og'irlik bo'yicha»). O'lchov to'liq emas — «Kiritilmagan».
+ * kartasida («**0,2 kg** · og'irlik bo'yicha»). O'lchov to'liq emas — «Kiritilmagan». Chegara kerak, lekin hali
+ * kelmagan — skelet; aniqlab bo'lmadi — «—» (taxminiy son ko'rsatilmaydi).
  */
 export const ProductBillable = ({
   product,
@@ -74,9 +93,19 @@ export const ProductBillable = ({
   /** `inline` da og'irlik qalin (telefon kartasi); jadval katagi ostida — oddiy (maket `.el-cell-sub`). */
   emphasis?: boolean;
 }) => {
-  const { kg, basis } = useMeasureText();
-  const view = getProductMeasureView(product);
-  if (!view.complete || view.billableKg === null) return <NotEntered />;
+  const { t, kg, basis } = useMeasureText();
+  const { view, loading } = useBillableView(product);
+  if (!view.complete) return <NotEntered />;
+  if (view.thresholdPending || view.billableKg === null) {
+    return loading ? (
+      <span className="flex min-h-5 items-center">
+        <Skeleton width={layout === "inline" ? 120 : 56} height={14} />
+        <span className="sr-only">{t("v2.measure.billablePending")}</span>
+      </span>
+    ) : (
+      <Dash label={t("v2.measure.billableUnknown")} />
+    );
+  }
   if (layout === "inline") {
     return (
       <span className="whitespace-nowrap">

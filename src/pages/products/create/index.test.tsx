@@ -609,6 +609,43 @@ describe("CreateProductPage — og'irlik va o'lcham (6FLyjO6j)", () => {
     expect(callsTo("delivery/pricing-settings")).toHaveLength(0);
   });
 
+  it("menejer (sozlamasiz) — hajm chegarasi narx javobidan: 20 × 20 × 20, 0,5 kg → hajmli 1,6 < 3 → hisob 0,5 kg, izoh", async () => {
+    // Server: `volumetricFromKg` 3, `volumetricApplied: false` — hisob vazni og'irlikdan (BE volumetric_from_kg).
+    const quote = (tariffId: string, base: number, perExtraKg: number) => ({
+      tariffId,
+      base,
+      perExtraKg,
+      actualKg: 0.5,
+      volumetricKg: 1.6,
+      billableKg: 0.5,
+      extraKg: 0,
+      total: base,
+      basis: "weight",
+      volumetricFromKg: 3,
+      volumetricApplied: false,
+    });
+    mocks.post.mockImplementation((url: string) =>
+      url === "delivery/quote/by-tariff"
+        ? Promise.resolve({
+            data: { data: { quotes: { city: quote("city", 35000, 4000), center: quote("center", 40000, 4000), address: quote("address", 60000, 5000) } } },
+          })
+        : Promise.resolve({ data: { data: { id: 9 } } }),
+    );
+    const user = userEvent.setup();
+    renderPage("manager", "manager-1");
+    await screen.findByText("Simsiz quloqchin");
+
+    await fillMeasure(user, { weight: "0,5", length: "20", width: "20", height: "20" });
+    expect(await screen.findByText("Chegara 3,0 kg dan kichik — narx og'irlik bo'yicha")).toBeInTheDocument();
+    expect(screen.getByText("1,6 kg")).toHaveClass("line-through");
+    expect(screen.getByText("0,5 kg")).toBeInTheDocument();
+    expect(screen.getByText("hajm hisobga olinmaydi — faqat og'irlik")).toBeInTheDocument();
+    expect(screen.getByText(/hajmli vazn 3,0 kg dan boshlab\. Undan kichigida faqat og'irlik\./)).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Taxminiy yetkazish narxi" });
+    expect(within(list).getByText(/^35\s000 so'm$/)).toBeInTheDocument();
+    expect(callsTo("delivery/pricing-settings")).toHaveLength(0);
+  });
+
   it("narx API xatosi (hali deploy qilinmagan) — «Narxni hisoblab bo'lmadi», forma saqlashda davom etadi", async () => {
     mocks.post.mockImplementation((url: string) =>
       url === "delivery/quote/by-tariff"

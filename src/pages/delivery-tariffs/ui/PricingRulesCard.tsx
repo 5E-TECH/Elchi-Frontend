@@ -5,9 +5,13 @@ import { Controller, useForm, useWatch, type Control, type FieldErrors } from "r
 import type { UseQueryResult } from "@tanstack/react-query";
 import {
   computeExtraKg,
+  computeMeasureWeights,
   computeTariffTotal,
   formatKgValue,
+  meetsVolumetricThreshold,
+  toWeightRules,
   useUpdatePricingSettings,
+  type DeliveryMeasureItem,
   type DeliveryPricingSettings,
   type DeliveryTariffsData,
 } from "../../../entities/delivery-pricing";
@@ -39,6 +43,15 @@ import { useTariffText } from "./useTariffText";
 const EXAMPLE_KG = 3.4;
 const EXAMPLE_TARIFF = "center" as const;
 
+/**
+ * Hajm chegarasi misoli (ega, 2026-10-25): kichik quti 20 × 20 × 20 sm, 0,5 kg (hajmli 1,6 kg) va kalkulyator
+ * namunasi 50 × 35 × 20 sm, 0,8 kg (hajmli 7,0 kg) — chegara 3 kg da birinchisi og'irlik, ikkinchisi hajm bo'yicha.
+ */
+const VOLUMETRIC_SAMPLES: readonly DeliveryMeasureItem[] = [
+  { weight_kg: 0.5, length_cm: 20, width_cm: 20, height_cm: 20, volumetric_enabled: true },
+  { weight_kg: 0.8, length_cm: 50, width_cm: 35, height_cm: 20, volumetric_enabled: true },
+];
+
 export type PricingRulesCardProps = {
   query: Pick<UseQueryResult<DeliveryPricingSettings | null>, "data" | "isLoading" | "isError" | "error" | "refetch">;
   tariffs: DeliveryTariffsData | undefined;
@@ -48,8 +61,10 @@ export type PricingRulesCardProps = {
  * «HISOB QOIDALARI — QO'SHIMCHA HAQ QACHON BOSHLANADI» (maket `superadmin-regions-delivery-tariffs`): birinchi
  * navbatda «Asosiy narxga kiradigan og'irlik» (`first_kg_included` — qo'shimcha haq chegarasi) va «Minimal hisob
  * vazni», jonli misol (3,4 kg «Markazgacha»: hozirgi qiymat va taqqoslash), so'ng qadam, yaxlitlash, tezkor
- * ko'paytiruvchi, pickup va «Hajmli vazn bo'luvchisi» (doimiy, faqat ko'rsatiladi). «Qoidalarni saqlash» —
- * `PATCH /delivery/pricing-settings`, faqat o'zgargan maydonlar; «Bekor qilish» — saqlangan qiymatlarga qaytaradi.
+ * ko'paytiruvchi, pickup va «Hajmli vazn bo'luvchisi» (doimiy, faqat ko'rsatiladi), oxirida «Hajm bo'yicha hisoblash
+ * chegarasi» (`volumetric_from_kg`, ega 2026-10-25; maketda yo'q — eng yaqini shu kartaning maydon + misol naqshi)
+ * jonli misol bilan. «Qoidalarni saqlash» — `PATCH /delivery/pricing-settings`, faqat o'zgargan maydonlar; «Bekor
+ * qilish» — saqlangan qiymatlarga qaytaradi.
  */
 export const PricingRulesCard = ({ query, tariffs }: PricingRulesCardProps) => {
   const { t } = useTariffText();
@@ -134,6 +149,10 @@ const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; t
               {t("page.rules.divisorHint", { divisor: number(settings.volumetricDivisor) })}
             </span>
           </div>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-start gap-4">
+          <RuleField control={control} errors={errors} field="volumetricFrom" label={t("page.rules.volumetricFrom")} hint={t("page.rules.volumetricFromHint")} suffix={t("page.rules.unitKg")} readOnly={busy} className="flex-[1_1_260px]" />
+          <VolumetricExample control={control} settings={settings} className="flex-[2_1_360px]" />
         </div>
       </div>
       <div className="flex flex-wrap justify-end gap-3 border-t border-border px-5 py-4 max-md:px-4">
@@ -254,6 +273,60 @@ const RulesExample = ({
       <div className="flex min-w-0 flex-col gap-0.5 text-text">
         <span className="font-bold">{t("page.rules.exampleTitle", { billable: kg(EXAMPLE_KG), tariff: name(EXAMPLE_TARIFF) })}</span>
         <span>{`${lead} ${tail}`}</span>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Hajm chegarasi jonli misoli (`.el-alert.el-tone-info`): formadagi chegara bilan ikki namunaviy posilka —
+ * «20 × 20 × 20 sm, 0,5 kg → hajmli vazn 1,6 kg → hisob 0,5 kg (chegaradan kichik — og'irlik bo'yicha)».
+ */
+const VolumetricExample = ({
+  control,
+  settings,
+  className,
+}: {
+  control: Control<RulesFormValues>;
+  settings: DeliveryPricingSettings;
+  className?: string;
+}) => {
+  const { t, language, number } = useTariffText();
+  const input = useWatch({ control, name: "volumetricFrom" });
+  const threshold = parseRuleValue(input);
+  // Noto'g'ri qiymatda misol yo'q (xato maydon ostida).
+  if (threshold === null || validateRule("volumetricFrom")(input) !== true) return null;
+
+  const rules = { ...toWeightRules(settings), volumetricFromKg: threshold };
+  const kg = (value: number) => formatKgValue(value, language);
+  const lines = VOLUMETRIC_SAMPLES.map((item) => {
+    const weights = computeMeasureWeights(item, rules);
+    const basis = !meetsVolumetricThreshold(item, rules)
+      ? "page.rules.volumetricBasisBelow"
+      : weights.basis === "volume"
+        ? "page.rules.volumetricBasisVolume"
+        : "page.rules.volumetricBasisWeight";
+    return t("page.rules.volumetricExampleLine", {
+      size: [item.length_cm, item.width_cm, item.height_cm].map(number).join(" × "),
+      weight: kg(item.weight_kg),
+      volumetric: kg(weights.volumetricKg),
+      billable: kg(weights.billableKg),
+      basis: t(basis),
+    });
+  });
+
+  return (
+    <div role="status" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.info, className)}>
+      <Info size={18} aria-hidden="true" className="mt-px shrink-0" />
+      <div className="flex min-w-0 flex-col gap-0.5 text-text">
+        <span className="font-bold">
+          {threshold > 0
+            ? t("page.rules.volumetricExampleTitle", { threshold: kg(threshold) })
+            : t("page.rules.volumetricExampleAlways")}
+        </span>
+        {lines.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
       </div>
     </div>
   );
