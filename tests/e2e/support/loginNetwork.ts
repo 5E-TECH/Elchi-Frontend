@@ -3,9 +3,10 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 /**
  * «Tarmoq xatoligi» (h0AM0kDL) e2e: soxta gateway, `POST auth/login` / `GET auth/my-profile` / `POST auth/refresh`
  * har biri ssenariy bo'yicha — `ok`, `abort` (darhol uzilish — brauzerda ERR_NETWORK), `hang` (javob yo'q —
- * 15 s dan keyin vaqt tugaydi) yoki `401`. Navbatdagi urinish ro'yxatdan olinadi, oxirgisi takrorlanadi.
+ * 15 s dan keyin vaqt tugaydi), `401`, `403` yoki `429` (hQqymheT — gateway'ning inglizcha matni bilan, `Retry-After`
+ * yo'q: CORS uni ochmaydi). Navbatdagi urinish ro'yxatdan olinadi, oxirgisi takrorlanadi.
  */
-type Outcome = "ok" | "abort" | "hang" | "401";
+type Outcome = "ok" | "abort" | "hang" | "401" | "403" | "429";
 
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const b64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -31,6 +32,10 @@ export const mockAuthNetwork = async (
     if (outcome === "abort") return route.abort("internetdisconnected");
     if (outcome === "hang") return; // javob berilmaydi — axios 15 s dan keyin ECONNABORTED
     if (outcome === "401") return reply(route, { statusCode: 401, message: "Unauthorized" }, 401);
+    if (outcome === "403") return reply(route, { statusCode: 403, message: "Forbidden resource" }, 403);
+    if (outcome === "429") {
+      return reply(route, { statusCode: 429, message: "ThrottlerException: Too Many Requests" }, 429);
+    }
     return reply(route, body, 200);
   };
 

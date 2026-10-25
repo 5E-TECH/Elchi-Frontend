@@ -41,6 +41,15 @@ export type DeliveryQuote = {
   /** Buyurtmaga yoziladigan narx — `round_to` ga karrali (UI qayta yaxlitlamaydi). */
   total: number;
   basis: "weight" | "volume" | null;
+  /**
+   * Qo'llangan «Hajm bo'yicha hisoblash chegarasi», kg (`volumetricFromKg`); `null` — server bermadi (eski javob).
+   */
+  volumetricFromKg: number | null;
+  /**
+   * Hajm hisobga olindimi: o'lchamli hajmli element bor VA hajmli vazn ≥ chegara (`volumetricApplied`); `null` —
+   * server bermadi (UI o'zi hisoblaydi).
+   */
+  volumetricApplied: boolean | null;
   daysMin: number | null;
   daysMax: number | null;
 };
@@ -53,6 +62,11 @@ export type DeliveryPricingSettings = {
   id: string;
   /** Hajmli vazn bo'luvchisi — doimiy (ega qarori, 5000), UI faqat ko'rsatadi. */
   volumetricDivisor: number;
+  /**
+   * «Hajm bo'yicha hisoblash chegarasi», kg (`volumetric_from_kg`, sukut 0): hajmli vazn shundan kichik bo'lsa hajm
+   * hisobga olinmaydi (faqat og'irlik); 0 — har doim hajm bo'yicha (avvalgi xulq).
+   */
+  volumetricFromKg: number;
   /** Asosiy narxga kiradigan og'irlik (qo'shimcha haq chegarasi), kg. */
   firstKgIncluded: number;
   minBillableKg: number;
@@ -117,6 +131,7 @@ export type CreateDeliveryTariffRequest = {
 /** `PATCH /delivery/pricing-settings` — qisman (faqat o'zgargan maydonlar); `volumetric_divisor` UI'dan yuborilmaydi. */
 export type UpdateDeliveryPricingSettingsRequest = Partial<{
   first_kg_included: number;
+  volumetric_from_kg: number;
   min_billable_kg: number;
   billable_step_kg: number;
   round_to: number;

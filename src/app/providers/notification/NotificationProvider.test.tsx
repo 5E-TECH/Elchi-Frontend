@@ -1,5 +1,6 @@
 import { act, render as rtlRender, screen, waitFor } from "@testing-library/react";
-import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { AxiosError, AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
@@ -7,6 +8,7 @@ import { vi } from "vitest";
 import i18n from "../../../i18n";
 import { notify } from "../../../shared/lib/notify";
 import { Toaster } from "../../../shared/ui/primitives";
+import { createAppQueryClient } from "../../lib/provider";
 import {
   NotificationProvider,
   useAppNotification,
@@ -303,6 +305,90 @@ describe("NotificationProvider", () => {
       await user.click(screen.getByRole("button", { name: "network-case" }));
       expect(errorMock).not.toHaveBeenCalled();
       expect(screen.queryByText("Network Error")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("«Ma'lumotni yuklab bo'lmadi» (G6F68ti6, 5-band)", () => {
+    const config = { headers: new AxiosHeaders() } as InternalAxiosRequestConfig;
+    const badGateway = () =>
+      new AxiosError("Request failed with status code 502", AxiosError.ERR_BAD_RESPONSE, config, {}, {
+        status: 502,
+        statusText: "",
+        headers: {},
+        config,
+        data: {},
+      } as AxiosResponse);
+    const TITLE = "Ma'lumotni yuklab bo'lmadi";
+
+    const Reader = ({ id, fetcher }: { id: string; fetcher: () => Promise<string> }) => {
+      const query = useQuery({ queryKey: ["g6-5", id], queryFn: fetcher, retry: false });
+      return (
+        <button type="button" onClick={() => void query.refetch()}>
+          {`refetch-${id}`}
+        </button>
+      );
+    };
+
+    beforeEach(() => {
+      // Ilovadagi `QueryClient` — global xato va «tiklandi» hodisalari shu yerda ulanadi.
+      queryClient = createAppQueryClient();
+    });
+    afterEach(() => {
+      act(() => notify.dismiss());
+      queryClient.clear();
+    });
+
+    it("so'rov tiklansa xabar o'zi yopiladi", async () => {
+      const user = userEvent.setup();
+      const fetcher = vi.fn<() => Promise<string>>().mockRejectedValueOnce(badGateway()).mockResolvedValue("ok");
+      render(
+        <NotificationProvider>
+          <Reader id="a" fetcher={fetcher} />
+        </NotificationProvider>,
+      );
+
+      expect(await screen.findByText(TITLE)).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "refetch-a" }));
+
+      await waitFor(() => expect(screen.queryByText(TITLE)).not.toBeInTheDocument());
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it("bir sabab bilan ikki so'rov yiqilsa — bitta xabar, ikkalasi tiklanguncha turadi", async () => {
+      const user = userEvent.setup();
+      const first = vi.fn<() => Promise<string>>().mockRejectedValueOnce(badGateway()).mockResolvedValue("ok");
+      const second = vi.fn<() => Promise<string>>().mockRejectedValueOnce(badGateway()).mockResolvedValue("ok");
+      render(
+        <NotificationProvider>
+          <Reader id="a" fetcher={first} />
+          <Reader id="b" fetcher={second} />
+        </NotificationProvider>,
+      );
+
+      await waitFor(() => expect(second).toHaveBeenCalledTimes(1));
+      expect(await screen.findAllByText(TITLE)).toHaveLength(1);
+
+      await user.click(screen.getByRole("button", { name: "refetch-a" }));
+      await waitFor(() => expect(first).toHaveBeenCalledTimes(2));
+      expect(screen.getByText(TITLE)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "refetch-b" }));
+      await waitFor(() => expect(screen.queryByText(TITLE)).not.toBeInTheDocument());
+    });
+
+    it("ochiq sahifa kuzatmayotgan so'rov (prefetch) xatosi xabar bermaydi", async () => {
+      render(
+        <NotificationProvider>
+          <div>page</div>
+        </NotificationProvider>,
+      );
+
+      await act(() =>
+        queryClient.prefetchQuery({ queryKey: ["g6-5", "prefetch"], queryFn: () => Promise.reject(badGateway()), retry: false }),
+      );
+
+      expect(errorMock).not.toHaveBeenCalled();
+      expect(screen.queryByText(TITLE)).not.toBeInTheDocument();
     });
   });
 

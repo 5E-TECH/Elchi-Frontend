@@ -1,8 +1,8 @@
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { I18nextProvider } from "react-i18next";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMemoryRouter, Link, RouterProvider } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryRouter, Link, MemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router-dom";
 import i18n from "../../i18n";
 import { createTestStore } from "../../test/test-utils";
 import DashboardLayout, { SHELL_DESKTOP_QUERY } from "./dashboardLayout";
@@ -209,3 +209,77 @@ describe("DashboardLayout (shell)", () => {
     expect(store.getState().sidebar.isMobileMenuOpen).toBe(false);
   });
 });
+
+/**
+ * QKCeGZ3N — sahifa yiqilsa xato shell ichida (taxta `tizim-errors` 01): yon menyu va yuqori panel joyida, manzil
+ * o'zgarmaydi, `/runtime-error` ga o'tilmaydi. Ilova `useRoutes` (data router emas) — test ham `Routes` bilan.
+ */
+describe("DashboardLayout — sahifa xatosi shell ichida (QKCeGZ3N)", () => {
+  const crash = { current: true };
+  const CrashingOrders = () => {
+    if (crash.current) throw new TypeError("r.forEach is not a function");
+    return <h1>Buyurtmalar</h1>;
+  };
+  const renderCrash = () => {
+    const store = createTestStore();
+    return render(
+      <I18nextProvider i18n={i18n}>
+        <Provider store={store}>
+          <MemoryRouter initialEntries={["/orders"]}>
+            <Routes>
+              <Route path="/" element={<DashboardLayout />}>
+                <Route path="orders" element={<CrashingOrders />} />
+                <Route path="mails" element={<h1>Pochta</h1>} />
+              </Route>
+            </Routes>
+            <LocationProbe />
+          </MemoryRouter>
+        </Provider>
+      </I18nextProvider>,
+    );
+  };
+  const replace = vi.fn();
+
+  beforeEach(() => {
+    crash.current = true;
+    window.sessionStorage.clear();
+    replace.mockReset();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("⭐ yon menyu va yuqori panel joyida, kontentda «Sahifani ko'rsatib bo'lmadi», manzil /orders", async () => {
+    const { container } = renderCrash();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Sahifani ko'rsatib bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(screen.getByTestId("topbar")).toBeInTheDocument();
+    const content = container.querySelector('[data-shell-slot="content"]') as HTMLElement;
+    expect(content).toContainElement(screen.getByRole("heading", { level: 1 }));
+    expect(screen.getByTestId("location")).toHaveTextContent("/orders");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("«Qayta urinish» — sahifa qayta chiziladi (yo'l o'zgarmaydi)", async () => {
+    renderCrash();
+    await screen.findByRole("heading", { level: 1, name: "Sahifani ko'rsatib bo'lmadi" });
+
+    crash.current = false;
+    fireEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Buyurtmalar" })).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/orders");
+  });
+
+  it("takroriy yiqilish — «Qayta urinish» yo'q, «Bosh sahifaga qaytish» asosiy", async () => {
+    renderCrash();
+    await screen.findByRole("heading", { level: 1, name: "Sahifani ko'rsatib bo'lmadi" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Bu sahifa takroran xato bermoqda. Administratorga murojaat qiling.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Bosh sahifaga qaytish" })).toHaveAttribute("data-variant", "primary");
+  });
+});
+
+const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;

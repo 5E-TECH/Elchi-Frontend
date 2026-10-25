@@ -2,6 +2,7 @@ import {
   checkDimensionInput,
   checkWeightInput,
   computeMeasureWeights,
+  DEFAULT_WEIGHT_RULES,
   EMPTY_MEASURE_INPUT,
   parseDimensionInput,
   toDimensionInput,
@@ -11,6 +12,7 @@ import {
   type DimensionIssue,
   type MeasureInputValues,
   type WeightIssue,
+  type WeightRules,
 } from "../../../entities/delivery-pricing";
 import type { Product } from "./productView";
 
@@ -114,6 +116,11 @@ export type ProductMeasureView = {
   billableKg: number | null;
   /** `volumeOff` — kalit o'chiq («hajm hisobga olinmaydi»). */
   basis: "weight" | "volume" | "volumeOff" | null;
+  /**
+   * Hisob vazni «Hajm bo'yicha hisoblash chegarasi» ga bog'liq (kalit yoqiq, hajm og'irlikdan katta), chegara esa
+   * noma'lum (`rules` berilmagan) — `billableKg` / `basis` yo'q: taxminiy son ko'rsatilmaydi.
+   */
+  thresholdPending: boolean;
 };
 
 const positiveNumber = (value: unknown): number | null => {
@@ -122,7 +129,13 @@ const positiveNumber = (value: unknown): number | null => {
   return Number.isFinite(number) && number > 0 ? number : null;
 };
 
-export const getProductMeasureView = (product: Product): ProductMeasureView => {
+/**
+ * `rules` — hisob vazni qoidalari (chegara bilan: superadmin/admin — sozlamadan, boshqa rol — narx javobidan,
+ * `useWeightRules`). Berilmasa (`null`) natija chegaraga bog'liq bo'lmagan mahsulotda (kalit o'chiq yoki hajm
+ * og'irlikdan katta emas) — sukut qoidalari bilan; bog'liq bo'lsa — `thresholdPending` (chegara 3 kg da 20×20×20,
+ * 0,5 kg — 0,5 kg, chegarasiz — 1,6 kg: qaysi biri to'g'ri ekani noma'lum).
+ */
+export const getProductMeasureView = (product: Product, rules: WeightRules | null = null): ProductMeasureView => {
   const weightKg = positiveNumber(product.weight_kg);
   const length = parseDimensionInput(String(product.length_cm ?? ""));
   const width = parseDimensionInput(String(product.width_cm ?? ""));
@@ -130,20 +143,27 @@ export const getProductMeasureView = (product: Product): ProductMeasureView => {
   const dimensions = length !== null && width !== null && height !== null ? { length, width, height } : null;
   const volumetric = product.volumetric_enabled !== false;
   if (weightKg === null || dimensions === null) {
-    return { weightKg, dimensions, complete: false, billableKg: null, basis: null };
+    return { weightKg, dimensions, complete: false, billableKg: null, basis: null, thresholdPending: false };
   }
-  const weights = computeMeasureWeights({
+  const item = {
     weight_kg: weightKg,
     length_cm: dimensions.length,
     width_cm: dimensions.width,
     height_cm: dimensions.height,
     volumetric_enabled: volumetric,
-  });
-  return {
+  };
+  const known = (weights: { billableKg: number; basis: "weight" | "volume" }): ProductMeasureView => ({
     weightKg,
     dimensions,
     complete: true,
     billableKg: weights.billableKg,
     basis: volumetric ? weights.basis : "volumeOff",
-  };
+    thresholdPending: false,
+  });
+  if (rules || !volumetric) return known(computeMeasureWeights(item, rules ?? DEFAULT_WEIGHT_RULES));
+  // Chegara noma'lum: hajm qo'llansa ham, qo'llanmasa ham natija bir xil bo'lsagina ko'rsatiladi.
+  const withVolume = computeMeasureWeights(item, { ...DEFAULT_WEIGHT_RULES, volumetricFromKg: 0 });
+  const weightOnly = computeMeasureWeights({ ...item, volumetric_enabled: false }, DEFAULT_WEIGHT_RULES);
+  if (withVolume.billableKg === weightOnly.billableKg && withVolume.basis === weightOnly.basis) return known(withVolume);
+  return { weightKg, dimensions, complete: true, billableKg: null, basis: null, thresholdPending: true };
 };

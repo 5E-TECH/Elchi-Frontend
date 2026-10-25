@@ -46,7 +46,7 @@ const row = (index: number, overrides: Record<string, unknown>): Row => ({
   ...overrides,
 });
 
-/** Maket `superadmin-notifications-sent` qatorlari + 2-sahifa uchun yana 4 ta (jami 14). */
+/** Maket `superadmin-notifications-sent` qatorlari («Kimga» — NS-3 `audience`) + bitta odamga xabar + 2-sahifa uchun (jami 14). */
 export const SENT_ROWS: Row[] = [
   row(1, {
     status: "running",
@@ -58,6 +58,7 @@ export const SENT_ROWS: Row[] = [
     channel_status: null,
     created_at: minutesAgo(3),
     finished_at: null,
+    audience: { roles: ["market"] },
   }),
   row(2, {
     status: "partial",
@@ -69,6 +70,7 @@ export const SENT_ROWS: Row[] = [
     channel_status: { in_app: { sent: 148 }, telegram: { queued: 131, skipped: 17 }, sms: { queued: 139, skipped: 9 } },
     message: "Partially dispatched",
     created_at: minutesAgo(8),
+    audience: { roles: ["courier", "market"] },
   }),
   row(3, {
     title: "Kunni yakunlashni 19:00 gacha tugating",
@@ -78,6 +80,7 @@ export const SENT_ROWS: Row[] = [
     dispatched: 62,
     created_by: NILUFAR,
     created_at: minutesAgo(30),
+    audience: { roles: ["courier"] },
   }),
   row(4, {
     status: "inbox_only",
@@ -89,12 +92,14 @@ export const SENT_ROWS: Row[] = [
     no_provider: ["sms"],
     channel_status: { in_app: { sent: 1312 }, sms: { no_provider: 1312 } },
     created_at: daysAgo(1),
+    audience: { broadcast: true },
   }),
   row(5, {
     title: "Yangi kuryerlar uchun qo'llanma",
     recipients: 14,
     dispatched: 14,
     created_by: NILUFAR,
+    audience: { recipient_ids: 14 },
   }),
   row(6, {
     status: "skipped",
@@ -104,6 +109,7 @@ export const SENT_ROWS: Row[] = [
     dispatched: 0,
     skipped_by_preference: 3,
     created_by: NILUFAR,
+    audience: { roles: ["registrator"] },
   }),
   row(7, {
     status: "failed",
@@ -114,8 +120,16 @@ export const SENT_ROWS: Row[] = [
     by_channel: {},
     channel_status: null,
     message: "connect ECONNREFUSED 10.0.0.3:5672",
+    audience: { roles: ["courier"] },
   }),
-  ...Array.from({ length: 7 }, (_, index) => row(8 + index, { title: `Eski xabar ${8 + index}` })),
+  // NS-3 (NwlmrcMf): bitta qabul qiluvchi — ism · rol (uzun ism telefonda o'raladi).
+  row(8, {
+    title: "Shaxsiy eslatma",
+    recipients: 1,
+    dispatched: 1,
+    audience: { recipient_ids: 1, recipient: { id: "41", name: "Abdurahmonov Muhammadali", role: "courier" } },
+  }),
+  ...Array.from({ length: 6 }, (_, index) => row(9 + index, { title: `Eski xabar ${9 + index}` })),
 ];
 
 export const FAILED_ID = SENT_ROWS[6].dispatch_id;

@@ -168,6 +168,8 @@
       "kg": "{{value}} kg",
       "dims": "{{length}} × {{width}} × {{height}}",
       "notEntered": "Not entered",
+      "billablePending": "Calculating billable weight",
+      "billableUnknown": "Billable weight unavailable",
       "basis": {
         "weight": "by weight",
         "volume": "by volume",

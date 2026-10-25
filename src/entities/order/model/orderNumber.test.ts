@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatOrderRef, orderNumberOf, toOrderSearchTerm } from "./orderNumber";
+import { formatOrderRef, orderIdFromSearch, orderNumberOf, toOrderSearchTerm } from "./orderNumber";
 
 describe("buyurtma raqami — order_number (rwAy8Qyk)", () => {
   it("order_number bor — «№EL-100081», nusxa «EL-100081»", () => {
@@ -25,12 +25,21 @@ describe("buyurtma raqami — order_number (rwAy8Qyk)", () => {
   });
 });
 
-describe("qidiruv — ko'rinadigan raqam ichki id'ga (rwAy8Qyk, FoCaUF10 gacha)", () => {
-  it("«EL-100081», «#EL-100081», «№EL-100081», «el100081» — «81»", () => {
-    expect(toOrderSearchTerm("EL-100081")).toBe("81");
-    expect(toOrderSearchTerm(" #EL-1351138 ")).toBe("1251138");
-    expect(toOrderSearchTerm("№EL-100081")).toBe("81");
-    expect(toOrderSearchTerm("el100081")).toBe("81");
+describe("qidiruv — «EL-…» faqat ID bo'yicha (ega qarori 2026-10-25, FoCaUF10)", () => {
+  it("ro'yxatga kanonik «EL-N» o'zgarmay ketadi (backend uni id'ga aylantiradi, mijoz qidiruvisiz)", () => {
+    expect(toOrderSearchTerm("EL-100081")).toBe("EL-100081");
+    expect(toOrderSearchTerm(" #EL-1351138 ")).toBe("EL-1351138");
+    expect(toOrderSearchTerm("№EL-100081")).toBe("EL-100081");
+    expect(toOrderSearchTerm("el100081")).toBe("EL-100081");
+    expect(toOrderSearchTerm("el 100081")).toBe("EL-100081");
+  });
+
+  it("qadaladigan aniq buyurtma uchun ichki id (`GET orders/:id`)", () => {
+    expect(orderIdFromSearch("EL-100081")).toBe("81");
+    expect(orderIdFromSearch(" #EL-1351138 ")).toBe("1251138");
+    expect(orderIdFromSearch("№EL-100081")).toBe("81");
+    expect(orderIdFromSearch("Ali")).toBeNull();
+    expect(orderIdFromSearch("EL-100000")).toBeNull();
   });
 
   it("boshqa matn o'zgarmaydi: ism, telefon, oddiy raqam, noto'g'ri raqam", () => {

@@ -22,12 +22,17 @@ export type DispatchHistoryStatus = (typeof DISPATCH_HISTORY_STATUSES)[number];
 export type ChannelStatusCounts = Record<string, Record<string, number>>;
 
 /** Tarixdagi nishon sharti — ism/telefon emas (`audienceSummary`). */
+/** NS-3 (NwlmrcMf): bitta qabul qiluvchi — `recipient_ids = 1` bo'lsa backend ism va rolni beradi. */
+export type DispatchAudienceRecipient = { id: string; name: string | null; role: string | null };
+
 export type DispatchAudience = {
   /** `recipient_id` + `recipient_ids` soni. */
   recipient_ids?: number;
   roles?: string[];
   broadcast?: boolean;
   include_customers?: boolean;
+  /** Faqat `recipient_ids = 1` da; eski yozuvlarda yo'q. */
+  recipient?: DispatchAudienceRecipient;
 };
 
 export type UndeliveredFailure = {

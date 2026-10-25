@@ -17,7 +17,11 @@ test.describe("Yuborilganlar — 390px", () => {
       await expect(list.getByRole("listitem")).toHaveCount(10, { timeout: 60_000 });
       await expect(page.getByRole("table")).toHaveCount(0);
       const partial = list.getByRole("listitem").filter({ hasText: "Ertaga qabul punkti" });
-      await expect(partial).toContainText("Kimga: — · 148 ta qabul qiluvchi");
+      await expect(partial).toContainText("Kimga: Rol: Kuryer, Market · 148 ta qabul qiluvchi");
+      // NS-3: bitta qabul qiluvchi — ism · rol; uzun ism kartadan chiqmaydi (pastda gorizontal skroll tekshiruvi).
+      await expect(list.getByRole("listitem").filter({ hasText: "Shaxsiy eslatma" })).toContainText(
+        "Kimga: Abdurahmonov Muhammadali · Kuryer · 1 ta qabul qiluvchi",
+      );
       await expect(partial).toContainText("Darhol, Telegram, SMS · Shodiyor Ergashev");
       // Telefonda desktop filtrlari yo'q — «Filtrlar» tugmasi.
       await expect(page.getByRole("combobox", { name: "Natija" })).toHaveCount(0);

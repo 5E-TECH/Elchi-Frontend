@@ -15,6 +15,7 @@
   "volumetric": {
     "label": "Account for volume",
     "on": "Delivery price uses the larger of the actual and volumetric weight",
+    "onFrom": "Delivery price uses the larger of the actual and volumetric weight — when the volumetric weight is {{threshold}} kg or more. Below that, actual weight only.",
     "off": "Delivery price uses the actual weight only. Dimensions are still entered and saved."
   },
   "weights": {
@@ -24,6 +25,7 @@
     "basisVolume": "the larger is used: by volume",
     "basisWeight": "the larger is used: by weight",
     "volumeOff": "volume is ignored — weight only",
+    "belowThreshold": "Below the {{threshold}} kg threshold — priced by weight",
     "invalidTitle": "Cannot calculate",
     "invalidDescription": "Enter a valid weight and all three dimensions — the volumetric and billable weight appear here right away."
   },
@@ -147,6 +149,14 @@
       "pickupFreeHint": "From this many parcels; empty — never free",
       "divisor": "Volumetric divisor",
       "divisorHint": "L × W × H / {{divisor}} — fixed (owner's decision)",
+      "volumetricFrom": "Volumetric pricing threshold",
+      "volumetricFromHint": "If the volumetric weight is below this threshold — standard price (actual weight only); from the threshold on — by volume. 0 — always by volume.",
+      "volumetricExampleTitle": "Example: threshold {{threshold}} kg",
+      "volumetricExampleAlways": "Example: threshold 0 — volume always counts",
+      "volumetricExampleLine": "{{size}} cm, {{weight}} kg → volumetric {{volumetric}} kg → billable {{billable}} kg ({{basis}})",
+      "volumetricBasisVolume": "by volume",
+      "volumetricBasisWeight": "by weight",
+      "volumetricBasisBelow": "below the threshold — by weight",
       "unitKg": "kg",
       "unitTimes": "×",
       "cancel": "Cancel",
@@ -194,6 +204,7 @@
       "by": "{{name}}",
       "settings": {
         "firstKg": "weight in base price {{from}} → {{to}} kg",
+        "volumetricFrom": "volumetric pricing threshold {{from}} → {{to}} kg",
         "minBillable": "minimum billable weight {{from}} → {{to}} kg",
         "step": "billable weight step {{from}} → {{to}} kg",
         "roundTo": "rounding {{from}} → {{to}}",

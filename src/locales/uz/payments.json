@@ -786,7 +786,6 @@
   ,"v2Overview": {
     "receive": "Pul qabul qilish",
     "payMarket": "Marketga to'lov",
-    "transferToHq": "HQ'ga o'tkazish",
     "receiveFromCourier": "Kuryerdan qabul qilish",
     "kpiLabel": "Kassa ko'rsatkichlari",
     "cashboxAmount": "Kassadagi summa",
@@ -860,8 +859,8 @@
       "hqCourier": "HQ kuryeri",
       "branchCourier": "{{branch}} kuryeri",
       "manager": "Menejer: {{name}}",
-      "hqTransfer": "{{branch}} kassasidan HQ'ga pul o'tkazish",
-      "hqTransferFallback": "Filial kassasidan HQ'ga pul o'tkazish"
+      "hqTransfer": "{{branch}} kassasidan HQ oladigan pul",
+      "hqTransferFallback": "Filial kassasidan HQ oladigan pul"
     },
     "settlement": {
       "title": "Hisob-kitob holati",
@@ -885,13 +884,10 @@
       "marketInfo": "To'lov avval eng eski buyurtmalarni yopadi, keyin yangilarini.",
       "branchTitle": "Filialdan qabul qilish",
       "branchSubtitle": "Pul filial kassasidan asosiy kassaga tushadi",
-      "hqTitle": "HQ'ga o'tkazish",
-      "hqSubtitle": "Filial kassasidan HQ kassasiga pul o'tkazish",
       "amount": "Summa",
       "limitHint": "Ko'pi bilan {{amount}} — qabul qilinishi kerak bo'lgan summa",
       "receivableHint": "Qabul qilinishi kerak: {{amount}}",
       "payableHint": "Berilishi kerak: {{amount}}",
-      "payableCashboxHint": "Berilishi kerak: {{amount}} · kassada {{cashbox}}",
       "paymentType": "To'lov turi",
       "paymentTypeRequired": "To'lov turini tanlang",
       "market": "Market",
@@ -902,9 +898,8 @@
       "receive": "Qabul qilish",
       "receiveAmount": "{{amount}} qabul qilish",
       "pay": "To'lash",
-      "hq": "HQ'ga o'tkazish",
-      "hqAmount": "{{amount}} HQ'ga o'tkazish",
-      "loading": "Yuklanmoqda…"
+      "loading": "Yuklanmoqda…",
+      "hqReceives": "Filial pulini HQ o'zi qabul qiladi: superadmin yoki admin «To'lovlar» sahifasida «Pul qabul qilish» orqali oladi. Menejer HQ'ga pul o'tkazmaydi."
     },
     "confirm": {
       "title": "To'lovni tasdiqlang",
@@ -963,12 +958,11 @@
   ,"cashDetail": {
     "shift": {
       "overviewSubtitle": "Kassa va to'lovlarni boshqarish · smena yopiq",
-      "overviewBanner": "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "overviewBanner": "Kuryerdan qabul qilish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
       "formLocked": "Smena ochilgach ishlaydi",
       "visibleHint": "Balans va operatsiyalar tarixi ko'rinib turadi.",
       "banner": {
         "courierBranch": "Filial kassasida smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
-        "hqTransfer": "Filial kassasida smena ochilgandan keyin HQ'ga pul o'tkazish ishlaydi.",
         "courierMain": "Asosiy kassada smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
         "market": "Asosiy kassada smena ochilgandan keyin marketga to'lov ishlaydi.",
         "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."

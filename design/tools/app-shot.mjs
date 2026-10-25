@@ -285,11 +285,54 @@ const myTelegramGroupsMock = () => ({
   ],
 });
 
+/**
+ * Yetkazish narxi (`/delivery-tariffs`, Ops → «Yetkazish narxi»): joriy tariflar, hisob qoidalari (hajm chegarasi
+ * 3 kg — ega misoli), qoidalar tarixi va kalkulyator namunasi (0,8 kg, 50 × 35 × 20 → 7,0 kg ≥ 3 — hajm bo'yicha).
+ */
+const DELIVERY_TARIFF_ROWS = [
+  ['city', 35000, 4000, 1, 1],
+  ['center', 40000, 4000, 1, 2],
+  ['address', 60000, 5000, 2, 3],
+].map(([tariff_id, base_price, extra_per_kg, days_min, days_max], index) => ({
+  id: String(index + 1), tariff_id, base_price, extra_per_kg, days_min, days_max,
+  valid_from: '2026-10-08T00:00:00+05:00', createdAt: '2026-10-08T09:00:00+05:00', is_current: true, is_scheduled: false,
+}));
+const DELIVERY_SETTINGS = {
+  id: '2', volumetric_divisor: 5000, volumetric_from_kg: 3, first_kg_included: 1, min_billable_kg: 0.1,
+  billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4,
+};
+const deliveryPricingMock = (path) => {
+  if (path === 'delivery/tariffs') {
+    return { statusCode: 200, data: { current: Object.fromEntries(DELIVERY_TARIFF_ROWS.map((row) => [row.tariff_id, row])), versions: DELIVERY_TARIFF_ROWS } };
+  }
+  if (path === 'delivery/pricing-settings') return { statusCode: 200, data: DELIVERY_SETTINGS };
+  if (path === 'delivery/pricing-settings/history') {
+    return {
+      statusCode: 200,
+      data: {
+        versions: [
+          { ...DELIVERY_SETTINGS, is_active: true, created_by: '1', created_by_name: 'Ilova skrinshoti', createdAt: '2026-10-25T09:00:00.000Z' },
+          { ...DELIVERY_SETTINGS, id: '1', volumetric_from_kg: 0, is_active: false, created_by: null, createdAt: '2026-10-08T04:00:00.000Z' },
+        ],
+      },
+    };
+  }
+  if (path === 'delivery/quote/by-tariff') {
+    const quote = ([tariffId, base, perExtraKg, daysMin, daysMax]) => ({
+      tariffId, base, perExtraKg, daysMin, daysMax, actualKg: 0.8, volumetricKg: 7, billableKg: 7, extraKg: 6,
+      extra: 6 * perExtraKg, total: base + 6 * perExtraKg, basis: 'volume', volumetricFromKg: 3, volumetricApplied: true,
+    });
+    return { statusCode: 200, data: { quotes: { city: quote(['city', 35000, 4000, 1, 1]), center: quote(['center', 40000, 4000, 1, 2]), address: quote(['address', 60000, 5000, 2, 3]) } } };
+  }
+  return null;
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
+  if (path.startsWith('delivery/')) return deliveryPricingMock(path) ?? { statusCode: 200, data: {} };
   if (path === 'notifications') return notificationGroupsMock(query);
   if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
