@@ -11,6 +11,7 @@ import type {
   SentBatchBranchRow,
 } from "../model/types";
 import { extractPaginationMeta } from "../../../shared/lib/paginationMeta";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 
 const normalizeBranchType = (value: unknown): BranchType | undefined => {
   const normalized = String(value ?? "").toUpperCase();
@@ -261,6 +262,35 @@ export const getDispatchDestinations = async (
   const items = extractArray<Record<string, unknown>>(payload).map(withRegionIdFallback);
 
   return normalizeBranchList({ data: { items, total: payload?.data?.total ?? items.length } });
+};
+
+const asPlainRecord = (value: unknown) =>
+  typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+/**
+ * Markaziy ombor (Pa1KaXmj) — HQ filiali: `GET /branches/hq` (SUPERADMIN, ADMIN; `branch.find_hq` ustida, pul
+ * maydonlarisiz: `{ id, name, code, type, status, address, region_id, region }`). Javob o'ramli
+ * (`{ statusCode, data: {…} }`) yoki o'ramsiz bo'lishi mumkin — ikkalasi o'qiladi.
+ * `null` — Markaziy ombor ochib bo'lmaydi, oyna avvalgidek (faqat viloyat filiallari):
+ * - 404 — tizimda HQ yo'q (yangi backend);
+ * - 400 — eski backend: `/branches/hq` yo'li yo'q, so'rov `GET /branches/:id` ga tushadi va `ParseBigintIdPipe` uni
+ *   «id musbat butun son bo'lishi kerak, keldi: hq» bilan rad etadi (yangi endpointda parametr yo'q — 400 bo'lmaydi).
+ * Boshqa xato (403, 5xx, tarmoq, vaqt) chaqiruvchiga uzatiladi — oyna «Markaziy ombor filialini yuklab bo'lmadi» +
+ * «Qayta urinish» ni ko'rsatadi.
+ */
+export const getHqBranch = async (): Promise<Branch | null> => {
+  try {
+    const response = await api.get(API_ENDPOINTS.BRANCHES.HQ);
+    const root = asPlainRecord(response.data);
+    const item = asPlainRecord(root?.data) ?? root;
+    if (!item || item.id === null || item.id === undefined || String(item.id).trim() === "") return null;
+    // Endpoint faqat HQ ni qaytaradi — tur kelmasa ham HQ.
+    return { ...normalizeBranch(withRegionIdFallback(item)), type: "HQ" };
+  } catch (error) {
+    const status = getErrorStatus(error);
+    if (status === 404 || status === 400) return null;
+    throw error;
+  }
 };
 
 const extractManagerBranchId = (value: unknown): string => {

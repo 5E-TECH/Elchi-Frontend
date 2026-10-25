@@ -305,3 +305,50 @@ describe("Ombor tafsiloti — «Ombordan ketadigan buyurtmalar» (6kHnNH9j, mene
     expect(screen.queryByRole("link", { name: "Kuryerga biriktirish" })).not.toBeInTheDocument();
   });
 });
+
+describe("Ombor tafsiloti — Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini superadmin-warehouse-detail)", () => {
+  const hqDetail = () =>
+    rawWarehouse({
+      name: "Markaziy ombor",
+      kind: "HQ",
+      branch_id: "1",
+      branch: { id: "1", name: "Toshkent HQ", type: "HQ", status: "active", address: null },
+      region: null,
+      manager_user_id: null,
+      manager: null,
+      movements_count: 86,
+    });
+
+  it("«Markaziy» belgisi, «Markaziy ombor · HQ», «Mas'ul: belgilanmagan», vaqtinchalik izoh; kirim ishlaydi", async () => {
+    detail = hqDetail();
+    renderAs("superadmin");
+    const heading = await screen.findByRole("heading", { level: 1, name: "Markaziy ombor" });
+    const header = heading.closest("header")!;
+    expect(within(header).getByText("Markaziy")).toBeInTheDocument();
+    expect(within(header).getByText("Faol")).toBeInTheDocument();
+    expect(within(header).getByText("Markaziy ombor · HQ")).toBeInTheDocument();
+    expect(within(header).getByText("Mas'ul: belgilanmagan")).toBeInTheDocument();
+    expect(within(header).queryByText(/filial menejeri/)).not.toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent("Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi");
+    // Kirim, inventarizatsiya, to'xtatish — o'zgarishsiz (SA/ADMIN).
+    expect(screen.getByRole("button", { name: "Mahsulot qo'shish" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Ombor amallari/ })).toBeInTheDocument();
+  });
+
+  it("registratorda ham belgi va izoh (faqat ko'rish)", async () => {
+    detail = hqDetail();
+    renderAs("registrator");
+    expect(await screen.findByRole("heading", { level: 1, name: "Markaziy ombor" })).toBeInTheDocument();
+    expect(screen.getByText("Markaziy ombor · HQ")).toBeInTheDocument();
+    expect(screen.getByText(/Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mahsulot qo'shish" })).not.toBeInTheDocument();
+  });
+
+  it("viloyat omborida «Markaziy» belgisi va izoh yo'q", async () => {
+    renderAs("admin");
+    const heading = await screen.findByRole("heading", { level: 1, name: "Samarqand filiali ombori" });
+    expect(within(heading.closest("header")!).queryByText("Markaziy")).not.toBeInTheDocument();
+    expect(screen.queryByText(/keyingi bosqichda ulanadi/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Mas'ul: belgilanmagan")).not.toBeInTheDocument();
+  });
+});
