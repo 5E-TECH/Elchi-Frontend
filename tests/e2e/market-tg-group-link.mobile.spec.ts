@@ -4,7 +4,8 @@ import { TG_GROUP_DEEP_LINK, mockMarketTgGroupApi } from "./support/marketTgGrou
 /**
  * TG-B — telefon (390px): market tafsilotidagi «Telegram guruhi» kartasi (`*-users-detail-telegram` telefon
  * ko'rinishi: «Ulash» to'liq enli, ≥ 44px), havola oynasi pastki varaqa (telefon qadamlari, yig'ilgan «Boshqa
- * telefondan — QR kod»), market profili va `/all-users` kartalarida «Bot ulangan / ulanmagan». Gorizontal skroll yo'q.
+ * telefondan — QR kod»), market profili (TG-C — holatlar va o'z oynasi kuzatuvi) va `/all-users` kartalarida
+ * «Bot ulangan / ulanmagan». Gorizontal skroll yo'q.
  */
 const noHorizontalScroll = async (page: import("@playwright/test").Page) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -56,18 +57,37 @@ test.describe("Market Telegram guruhi (TG-B) — telefon 390px", () => {
     await noHorizontalScroll(page);
   });
 
-  test("⭐ market /profile: «Telegram guruhi» kartasi, ikkala «Ulash» ≥ 44px, gorizontal skroll yo'q", async ({ page }) => {
-    await mockMarketTgGroupApi(page, { role: "market" });
+  test("⭐ market /profile (TG-C): holatlar, ulanmagan turda to'liq enli «Ulash» ≥ 44px → pastki varaqa kutadi, guruh ulanadi", async ({
+    page,
+  }) => {
+    await mockMarketTgGroupApi(page, { role: "market", connectAfterPolls: 1 });
     await page.goto("/profile");
 
     const groups = page.getByRole("region", { name: "Telegram guruhi" });
     await expect(groups).toBeVisible({ timeout: 90_000 });
-    for (const name of ["Yangi buyurtmalar guruhini ulash", "Bekor qilinganlar guruhini ulash"]) {
-      const button = groups.getByRole("button", { name });
-      await button.scrollIntoViewIfNeeded();
-      expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-    }
+    await expect(groups.getByRole("group", { name: "Yangi buyurtmalar guruhi" }).getByText("Ulangan")).toBeVisible();
+    await expect(groups.getByRole("button", { name: "Yangi buyurtmalar guruhini ulash" })).toHaveCount(0);
+    const link = groups.getByRole("button", { name: "Bekor qilinganlar guruhini ulash" });
+    await link.scrollIntoViewIfNeeded();
+    const linkBox = await link.boundingBox();
+    expect(linkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect((linkBox?.width ?? 0) / ((await groups.boundingBox())?.width ?? 1)).toBeGreaterThan(0.8);
     await noHorizontalScroll(page);
+
+    await link.click();
+    const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
+    await expect(dialog.getByText("Guruh ulanishi kutilmoqda…")).toBeVisible();
+    await expect
+      .poll(async () => {
+        const sheet = await dialog.boundingBox();
+        return Math.round((sheet?.y ?? 0) + (sheet?.height ?? 0));
+      })
+      .toBe(844);
+    await noHorizontalScroll(page);
+
+    await expect(page.getByText("Guruh ulandi", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(dialog).toHaveCount(0);
+    await expect(groups.getByText("Ulangan")).toHaveCount(2);
   });
 
   test("⭐ /all-users kartalari: «Bot ulangan» / «Bot ulanmagan»", async ({ page }) => {

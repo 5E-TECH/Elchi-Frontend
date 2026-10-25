@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useNotifications, type NotificationGroupType, type NotificationParams } from "../../../entities/notification";
+import {
+  useMyTelegramGroups,
+  useNotifications,
+  type NotificationGroupType,
+  type NotificationParams,
+} from "../../../entities/notification";
 import { isNetworkFailure } from "../../../auth/networkError";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { notify } from "../../../shared/lib/notify";
@@ -30,8 +35,9 @@ export type UseMarketGroupLinkOptions = {
   /** Oyna sarlavhasi ostida ko'rinadigan market nomi. */
   marketName: string;
   /**
-   * Ulanishni oynada kuzatish (har 4 s `GET /notifications?market_id&group_type`; endpoint faqat superadmin/admin).
-   * Qator paydo bo'lsa — oyna yopiladi, «Guruh ulandi». `marketId` siz e'tiborga olinmaydi.
+   * Ulanishni oynada kuzatish (oyna ochiq va havola amalda ekan har 4 s): `marketId` bilan (superadmin/admin) —
+   * `GET /notifications?market_id&group_type`, qator paydo bo'lsa; `marketId` siz (market o'zi, TG-C) —
+   * `GET /notifications/me/telegram-groups`, shu tur `linked` bo'lsa. Ikkalasida oyna o'zi yopiladi, «Guruh ulandi».
    */
   watch?: boolean;
   /**
@@ -43,8 +49,9 @@ export type UseMarketGroupLinkOptions = {
 
 /**
  * Market guruhini bir martalik havola bilan ulash oqimi (TG-B): `start(tur)` — havola so'raladi (tugmada kutish),
- * kelgach `MarketGroupLinkDialog` ochiladi; muddat tugasa — «Havola muddati tugadi» + «Yangi havola olish»;
- * kuzatilsa — guruh ulanganda oyna o'zi yopiladi va `notifications` so'rovlari yangilanadi.
+ * kelgach `MarketGroupLinkDialog` ochiladi; muddat tugasa — «Havola muddati tugadi» + «Yangi havola olish» (kuzatuv
+ * to'xtaydi); kuzatilsa — guruh ulanganda oyna o'zi yopiladi, «Guruh ulandi» va `notifications` so'rovlari (market
+ * o'z holati ham — `notifications.all` ostida) yangilanadi. Oyna yopilsa kuzatuv to'xtaydi.
  * Xato matni — faqat i18n (backend matni foydalanuvchiga chiqmaydi); javob kelmasa — interceptor xabari yetarli.
  */
 export const useMarketGroupLink = ({
@@ -64,7 +71,9 @@ export const useMarketGroupLink = ({
 
   const open = session?.open === true;
   const expired = session != null && expiredToken === session.code.token;
-  const watching = watch && Boolean(marketId);
+  const watchingStaff = watch && Boolean(marketId);
+  const watchingSelf = watch && !marketId;
+  const watching = watchingStaff || watchingSelf;
 
   // Havola muddati tugaganda — «Havola muddati tugadi».
   useEffect(() => {
@@ -81,25 +90,27 @@ export const useMarketGroupLink = ({
     page: 1,
     limit: 1,
   });
-  const connectionQuery = useNotifications(
-    watchParams(session?.groupType),
-    {
-      enabled: watching && open && !expired,
-      refetchInterval: GROUP_LINK_POLL_MS,
-      refetchIntervalInBackground: true,
-      silentError: true,
-    },
-  );
+  const polling = open && !expired;
+  const pollOptions = { refetchInterval: GROUP_LINK_POLL_MS, refetchIntervalInBackground: true, silentError: true };
+  const connectionQuery = useNotifications(watchParams(session?.groupType), {
+    ...pollOptions,
+    enabled: watchingStaff && polling,
+  });
+  // Market o'zi — kartadagi holat so'rovi bilan bir kalit: oyna ochiq paytda u ham shu oraliqda yangilanadi.
+  const myGroupsQuery = useMyTelegramGroups({ ...pollOptions, enabled: watchingSelf && polling });
+  const watchedQuery = watchingSelf ? myGroupsQuery : connectionQuery;
   const connected =
     watching &&
     open &&
     session != null &&
-    // Kesh (oldingi sessiya, «Bildirishnomalar» oynasi — xuddi shu kalit) eski qatorni darhol qaytaradi: faqat shu
-    // sessiyada olingan javob hisoblanadi.
-    connectionQuery.dataUpdatedAt >= session.openedAt &&
-    (connectionQuery.data?.data ?? []).some(
-      (row) => row.market_id === String(marketId) && row.group_type === session.groupType,
-    );
+    // Kesh (oldingi sessiya, «Bildirishnomalar» oynasi, karta — xuddi shu kalit) eski javobni darhol qaytaradi: faqat
+    // shu sessiyada olingan javob hisoblanadi.
+    watchedQuery.dataUpdatedAt >= session.openedAt &&
+    (watchingSelf
+      ? (myGroupsQuery.data ?? []).some((row) => row.group_type === session.groupType && row.linked)
+      : (connectionQuery.data?.data ?? []).some(
+          (row) => row.market_id === String(marketId) && row.group_type === session.groupType,
+        ));
 
   // Guruh paydo bo'ldi — oyna yopiladi (holat render paytida moslanadi), xabar va yangilash — effektda bir marta.
   const [notice, setNotice] = useState<{ seq: number; groupType: NotificationGroupType } | null>(null);
@@ -131,7 +142,7 @@ export const useMarketGroupLink = ({
         group_type: groupType,
         ...(marketId ? { market_id: marketId } : {}),
       });
-      if (watching) {
+      if (watchingStaff) {
         queryClient.removeQueries({ queryKey: queryKeys.notifications.list(watchParams(groupType)), exact: true });
       }
       setSession({ open: true, groupType, code, openedAt: Date.now(), ...toLinkWindow(code.expires_at) });

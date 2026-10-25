@@ -32,7 +32,14 @@
   "status": {
     "active": "Faol",
     "inactive": "Nofaol",
-    "inactiveHint": "Xabarlar bu guruhga yuborilmayapti"
+    "inactiveHint": "Xabarlar bu guruhga yuborilmayapti",
+    "inactiveSince": "Nofaol bo'lgan: {{date}}",
+    "reason": {
+      "botRemoved": "Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring",
+      "sendBlocked": "Bot guruhga xabar yubora olmadi — botni qayta qo'shing va faollashtiring",
+      "chatNotFound": "Guruh topilmadi — ulanishni o'chirib, qayta ulang",
+      "manual": "Qo'lda nofaol qilingan"
+    }
   },
   "rowMenu": {
     "label": "{{market}} — {{group}}: amallar",
@@ -77,6 +84,12 @@
     "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — boshqa guruh ulash uchun avval eskisini ro'yxatdan o'chiring.",
     "existsInactiveTitle": "Bu turdagi guruh ulangan, lekin nofaol",
     "existsInactive": "{{market}} uchun bu turdagi guruh nofaol (ID: {{groupId}}) — xabarlar unga yuborilmayapti. Botni guruhga qayta qo'shib, faollashtiring yoki ulanishni o'chirib, qayta ulang.",
+    "existsInactiveReason": {
+      "botRemoved": "{{market}} uchun bu turdagi guruh nofaol — bot guruhdan chiqarilgan (ID: {{groupId}}). Botni guruhga qayta qo'shib, faollashtiring yoki ulanishni o'chirib, qayta ulang.",
+      "sendBlocked": "{{market}} uchun bu turdagi guruh nofaol — bot guruhga xabar yubora olmadi (ID: {{groupId}}). Botni guruhga qayta qo'shib, faollashtiring yoki ulanishni o'chirib, qayta ulang.",
+      "chatNotFound": "{{market}} uchun bu turdagi guruh nofaol — guruh topilmadi (ID: {{groupId}}). Faollashtirib ko'ring yoki ulanishni o'chirib, qayta ulang.",
+      "manual": "{{market}} uchun bu turdagi guruh qo'lda nofaol qilingan (ID: {{groupId}}). Uni faollashtiring yoki ulanishni o'chirib, qayta ulang."
+    },
     "linkError": "Havolani olib bo'lmadi",
     "linkErrorRetry": "Birozdan keyin qayta urinib ko'ring.",
     "linkErrorForbidden": "Bu market uchun guruh ulash huquqingiz yo'q.",
@@ -115,6 +128,11 @@
       },
       "warningTitle": "Bot guruhda ekanini tekshiring",
       "warning": "Faollashtirishdan oldin bot shu guruhda ekaniga ishonch hosil qiling. Bot guruhda bo'lmasa, xabar yetmaydi va ulanish yana nofaol bo'ladi.",
+      "reason": {
+        "botRemoved": { "title": "Bot guruhdan chiqarilgan", "text": "Avval botni shu guruhga qayta qo'shing, so'ng faollashtiring. Bot guruhda bo'lmasa, xabar yetmaydi va ulanish yana nofaol bo'ladi." },
+        "sendBlocked": { "title": "Bot guruhga xabar yubora olmadi", "text": "Avval botni shu guruhga qayta qo'shing va unga xabar yozishga ruxsat bering, so'ng faollashtiring. Aks holda xabar yetmaydi va ulanish yana nofaol bo'ladi." },
+        "chatNotFound": { "title": "Guruh topilmadi", "text": "Guruh o'chirilgan yoki bot unga kira olmaydi. Faollashtirish yordam bermasa, ulanishni o'chirib, bot havolasi orqali qayta ulang." }
+      },
       "confirm": "Faollashtirish",
       "loading": "Faollashtirilmoqda…",
       "done": "Guruh faollashtirildi",

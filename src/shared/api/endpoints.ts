@@ -392,6 +392,9 @@ export const API_ENDPOINTS = {
     SEND: "notifications/send", // POST send to telegram group(s)
     // POST { purpose: "market_group", group_type, market_id } → { token, expires_at, deep_link, command } — bir martalik, 10 daqiqa
     TELEGRAM_LINK_CODE: "telegram/link-code",
+    // GET o'z marketining guruhlari holati (KJNHAlGW, market va market_operator; market_id faqat tokendan):
+    // data — har doim 2 element [{ group_type, linked, is_active, linked_at, inactive_reason }]
+    MY_TELEGRAM_GROUPS: "notifications/me/telegram-groups",
     // In-app inbox (current user, per-recipient rows) ──────────────────────
     INBOX: "notifications/inbox", // GET my inbox (is_read/type/category/priority/page/limit)
     INBOX_UNREAD_COUNT: "notifications/inbox/unread-count", // GET my unread count
