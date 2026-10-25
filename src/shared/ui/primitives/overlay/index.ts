@@ -9,6 +9,7 @@
  *   inertOthers     — oynadan tashqarini `inert` qilish (hisoblagichli); `useInertOthers` — hook
  *   shellInset      — telefon pastki menyusi balandligi `:root` da (`--shell-bottom-inset`), popover uni chetlaydi
  *   isInUiLayer     — hodisa v2 qatlamida bo'ldimi (eski sahifa «tashqariga bosish» tinglovchilari uchun)
+ *   useVisualViewportFit — telefon klaviaturasi ochiqligida ko'rinadigan oyna (varaqa klaviatura ustida turishi uchun)
  */
 export { Portal } from "./Portal";
 export type { PortalProps } from "./Portal";
@@ -40,3 +41,5 @@ export type {
   UsePopoverResult,
 } from "./usePopover";
 export { assignRefs, useMergedRefs } from "./mergeRefs";
+export { useVisualViewportFit } from "./useVisualViewportFit";
+export type { VisualViewportFit } from "./useVisualViewportFit";
