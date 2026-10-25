@@ -259,6 +259,12 @@ describe("dashboard response normalization", () => {
     });
   });
 
+  it("yrLt5oMi: KPI `deliveryCount` — 0 saqlanadi (o'lchanmagan), yo'q bo'lsa null", () => {
+    expect(normalizeKpiResponse({ data: { onTimeRate: 0, deliveryCount: 0 } }).data.deliveryCount).toBe(0);
+    expect(normalizeKpiResponse({ data: { onTimeRate: 80, delivery_count: "12" } }).data.deliveryCount).toBe(12);
+    expect(normalizeKpiResponse({ data: { onTimeRate: 80 } }).data.deliveryCount).toBeNull();
+  });
+
   it("normalizes branch dashboard cards without requiring every nested object", () => {
     const result = normalizeDashboardResponse({
       data: {
