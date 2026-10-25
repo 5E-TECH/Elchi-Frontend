@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Biznes qoida: marketga jo'natish FAQAT market QR skanerlangach (skanerlansa — barcha bekorlar tanlanadi va
  * topshirish tokeni olinadi); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — enum kodi).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -17,6 +17,8 @@ const reply = (route: Route, body: unknown, status = 200) =>
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const MARKET_QR = "MCR-201-e2e-0001";
+/** zkRab9M2 (BG6): market QR oynasidagi 6 xonali kod (boshidagi nol — kod qismi). */
+export const MARKET_PIN = "042917";
 export const CANCELLED_ORDERS = [
   ["10235", "Malika Yusupova", 96000],
   ["10220", "Dilfuza Hasanova", 245000],
@@ -43,6 +45,7 @@ export type HandoverBody = { order_ids: string[]; authorization_token?: string; 
 export const mockCancelledApi = async (page: Page) => {
   const leaked: string[] = [];
   const scanned: string[] = [];
+  const pins: Array<{ market_id: string; pin: string }> = [];
   const handovers: HandoverBody[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -56,8 +59,29 @@ export const mockCancelledApi = async (page: Page) => {
     }
     if (path === "orders/markets/201/cancelled") return reply(route, wrap(CANCELLED_ORDERS));
     if (path === "scan/market-cancelled" && request.method() === "POST") {
-      scanned.push((request.postDataJSON() as { qr_token: string }).qr_token);
-      return reply(route, wrap({ authorization_token: "auth-e2e", remaining_seconds: 300 }));
+      const body = request.postDataJSON() as { qr_token?: string; market_id?: string; pin?: string };
+      // Kod yo'li (`{ market_id, pin }`): to'g'ri kod — QR bilan bir xil ruxsat; noto'g'ri — 400 + qolgan urinishlar.
+      if (body.pin !== undefined) {
+        pins.push({ market_id: String(body.market_id), pin: body.pin });
+        if (body.pin !== MARKET_PIN) {
+          const remaining = Math.max(0, 5 - pins.filter((item) => item.pin !== MARKET_PIN).length);
+          return reply(
+            route,
+            {
+              statusCode: 400,
+              message: `Kod noto‘g‘ri — yana ${remaining} ta urinish qoldi`,
+              data: {
+                reason: remaining === 0 ? "market_cancelled_pin_blocked" : "market_cancelled_pin_invalid",
+                details: { remaining_attempts: remaining, max_attempts: 5 },
+              },
+            },
+            400,
+          );
+        }
+        return reply(route, wrap({ authorization_token: "auth-pin-e2e", remaining_seconds: 300, method: "pin" }));
+      }
+      scanned.push(String(body.qr_token));
+      return reply(route, wrap({ authorization_token: "auth-e2e", remaining_seconds: 300, method: "qr" }));
     }
     if (path === "orders/markets/201/cancelled/handover" && request.method() === "POST") {
       handovers.push(request.postDataJSON() as HandoverBody);
@@ -77,7 +101,7 @@ export const mockCancelledApi = async (page: Page) => {
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, scanned, handovers };
+  return { leaked, scanned, pins, handovers };
 };
 
 export const openHandover = async (page: Page) => {

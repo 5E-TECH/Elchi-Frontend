@@ -6,8 +6,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `GET /integrations/7` quyi kalitlarni beradi; `PATCH` ularni saqlaydi;
  * `POST /integrations/7/reconcile-now` — `reconcile` rejimiga qarab 200 / 409 / 400.
  */
-// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4173).
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
+// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4194).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

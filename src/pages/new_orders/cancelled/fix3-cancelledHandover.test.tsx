@@ -51,6 +51,7 @@ vi.mock("../../../entities/orders", () => ({
     }),
     generateCancelledMarketQr: { mutate: vi.fn(), isPending: false },
     scanMarketCancelledQr: { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false },
+    verifyMarketCancelledPin: { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false },
     handoverCancelledOrders: { mutate: mocks.handoverMutate, isPending: false },
   }),
 }));

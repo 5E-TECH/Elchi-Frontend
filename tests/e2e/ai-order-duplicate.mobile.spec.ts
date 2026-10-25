@@ -5,7 +5,7 @@ import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../src
  * j3WEDIpt — AI buyurtma: ai-confirm `duplicate_recent` (`{ ok: false, code, order_id }`) dan keyin karta «Mavjud (#N)»,
  * «Bu kartani yaratish» o'chiq, mavjud buyurtmaga havola; xulosa warning tonida. 390px, soxta backend.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

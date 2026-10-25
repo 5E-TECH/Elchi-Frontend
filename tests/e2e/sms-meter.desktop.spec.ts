@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * Prod'da tarif sozlanmagan (hammasi null) — shu yerda tarif `GET notifications/sms/tariffs`
  * dan keladi: xizmat 95, reklama 175 so'm / bo'lak. Hech narsa yuborilmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const TARIFFS = { transactional: 95, promo: 175, security: 95 };
 const cors = {
   "access-control-allow-origin": ORIGIN,

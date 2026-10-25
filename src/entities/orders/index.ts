@@ -433,6 +433,14 @@ export const useOrders = () => {
       api.post(API_ENDPOINTS.SCAN.MARKET_CANCELLED, { qr_token: qrToken }).then((res) => res.data),
   });
 
+  // zkRab9M2 (BG6): QR o'rniga market ekranidagi 6 xonali kod — javob QR skani bilan bir xil (topshirish ruxsati).
+  const verifyMarketCancelledPin = useMutation({
+    mutationFn: ({ marketId, pin }: { marketId: string | number; pin: string }) =>
+      api
+        .post(API_ENDPOINTS.SCAN.MARKET_CANCELLED, { market_id: String(marketId), pin })
+        .then((res) => res.data),
+  });
+
   const CancelOrder = useMutation({
     mutationFn: ({
       orderId,
@@ -472,6 +480,7 @@ export const useOrders = () => {
     SendToPost,
     generateCancelledMarketQr,
     scanMarketCancelledQr,
+    verifyMarketCancelledPin,
     handoverCancelledOrders,
     RollbackOrder,
     updateNewOrder,

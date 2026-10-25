@@ -7,7 +7,7 @@ import { test, type Page, type Route } from "@playwright/test";
  *  - `GET finance/cashbox/main` — ochish oynasidagi jonli qoldiq (naqd 1 200 000, karta 300 000);
  *  - boshqa yozish so'rovlari taqiqlangan (`leaked`), qolgan GET'lar bo'sh ro'yxat.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const REGIONAL_MANAGER_PROFILE = {

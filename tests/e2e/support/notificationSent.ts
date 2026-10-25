@@ -4,7 +4,7 @@ import { type Locator, type Page, type Route } from "@playwright/test";
  * NS-2 — «Yuborilganlar» (`/notifications/sent`) uchun API soxtasi. Faqat GET; har yozish so'rovi `leaked` ga
  * tushadi. Worktree serverlari boshqa portda — `E2E_ORIGIN`.
  */
-export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
+export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 
 const cors = {
   "access-control-allow-origin": ORIGIN,

@@ -795,6 +795,12 @@
   },
   "returnHandoverQrAccepted": "Market QR accepted — handing over",
   "returnHandoverCameraNote": "Scan the QR code shown in the market app — the permission lasts 5 minutes",
+  "returnHandoverHintPin": "Scan the QR code the market owner shows in their app, or enter the 6-digit PIN below it (Cancelled → Receive). The permission is valid for 5 minutes.",
+  "returnHandoverManualLabelPin": "Or enter the 6-digit PIN",
+  "returnHandoverPinHint": "The code from the market's QR window. A USB scanner can also enter the QR code here.",
+  "returnHandoverInvalidCode": "Enter the 6-digit PIN or the market QR code (starts with MCR-)",
+  "returnHandoverPinAccepted": "PIN accepted — handing over",
+  "returnHandoverAuthorizedPin": "Market PIN accepted. Confirm the handover again.",
   "returnPath": {
     "title": "Return path",
     "subtitleClosed": "Chain closed — the parcel is back with the market",

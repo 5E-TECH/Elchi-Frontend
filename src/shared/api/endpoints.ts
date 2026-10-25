@@ -469,7 +469,7 @@ export const API_ENDPOINTS = {
   // ── Scan / QR (any-auth) ─────────────────────────────────────────────────
   SCAN: {
     BY_TOKEN: (token: string | number) => `scan/${token}`, // resolve QR → order/batch/post
-    MARKET_CANCELLED: "scan/market-cancelled",
+    MARKET_CANCELLED: "scan/market-cancelled", // POST { qr_token } yoki { market_id, pin } (zkRab9M2) → topshirish ruxsati
   },
 
   // ── Telegram scan Mini App (courier; `/tg/scan`, MWYaqprw) ───────────────

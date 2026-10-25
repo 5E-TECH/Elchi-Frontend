@@ -56,10 +56,10 @@ test("«Daromadim» — foiz stavkasi: qiymat, turi, belgilovchi, namuna; Taklif
 test("«Daromadim» — boshqa rolga 403 (market egasi o'z operatorlarini «Operatorlar» da ko'radi)", async ({ page }) => {
   await page.context().route("**/*", async (route) => {
     const url = new URL(route.request().url());
-    if (url.origin === "http://127.0.0.1:4173") return route.continue();
+    if (url.origin === "http://127.0.0.1:4194") return route.continue();
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     const headers = {
-      "access-control-allow-origin": "http://127.0.0.1:4173",
+      "access-control-allow-origin": "http://127.0.0.1:4194",
       "access-control-allow-credentials": "true",
       "access-control-allow-headers": "*",
       "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",

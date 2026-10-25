@@ -6,7 +6,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Soxta backend: superadmin; `PATCH users/41/role` javoblari `roleStatuses` navbatidan (sukut 200), tanalari
  * yig'iladi; `GET roles` → `changeable_roles`; `GET region` → logist viloyatlari. Serverga so'rov ketmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

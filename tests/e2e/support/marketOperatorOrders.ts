@@ -8,7 +8,7 @@ import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../../
  * yoziladi va 403 qaytadi (haqiqiy backend kabi); test oxirida ro'yxat bo'sh bo'lishi shart.
  */
 // Worktree serverlari boshqa portda — `E2E_ORIGIN`.
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

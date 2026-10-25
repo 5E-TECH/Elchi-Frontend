@@ -6,7 +6,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * «Yangi» ham, boshqa holat ham emas; «Holat» filtrida bor; `?status=returned_to_market` backend'ga uzatiladi;
  * noma'lum holat — neytral, xom nomi bilan. 1440px, soxta backend.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

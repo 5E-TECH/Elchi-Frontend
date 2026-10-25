@@ -132,6 +132,93 @@ describe("MarkReturnedModal — market QR → ruxsat → mark-returned-to-market
   });
 });
 
+const pinError = (reason: string, remaining?: number) =>
+  Object.assign(new Error(reason), {
+    isAxiosError: true,
+    response: {
+      status: 400,
+      data: {
+        message: "Kod",
+        data: { reason, ...(remaining === undefined ? {} : { details: { remaining_attempts: remaining, max_attempts: 5 } }) },
+      },
+    },
+  });
+
+describe("MarkReturnedModal — QR o'rniga market PIN kodi (zkRab9M2, BG6)", () => {
+  beforeEach(() => {
+    apiPost.mockReset();
+  });
+
+  const enterCode = (value: string) => {
+    fireEvent.change(screen.getByTestId("mark-returned-qr-input"), { target: { value } });
+    fireEvent.click(screen.getByTestId("mark-returned-submit"));
+  };
+
+  it("⭐ market ma'lum: «042 917» → { market_id, pin } (boshidagi nol saqlanadi) → ruxsat → topshirish", async () => {
+    apiPost.mockImplementation((url: string) => {
+      if (url === "scan/market-cancelled") {
+        return Promise.resolve({ data: { data: { authorization_token: "MHA-pin", method: "pin" } } });
+      }
+      if (url === "orders/95/mark-returned-to-market") {
+        return Promise.resolve({ data: { statusCode: 200, data: { id: "95" } } });
+      }
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" marketId="16" onClose={onClose} />);
+    expect(screen.getByText("Yoki 6 xonali PIN kodni kiriting")).toBeInTheDocument();
+    enterCode("042 917");
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls).toEqual([
+      ["scan/market-cancelled", { market_id: "16", pin: "042917" }],
+      ["orders/95/mark-returned-to-market", { authorization_token: "MHA-pin" }],
+    ]);
+  });
+
+  it("market ma'lum bo'lsa ham QR kodi avvalgidek ishlaydi", async () => {
+    apiPost.mockImplementation((url: string) =>
+      url === "scan/market-cancelled"
+        ? Promise.resolve({ data: { data: { authorization_token: "MHA-qr" } } })
+        : Promise.resolve({ data: { statusCode: 200, data: {} } }),
+    );
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" marketId="16" onClose={onClose} />);
+    enterCode("MCR-AbC");
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls[0]).toEqual(["scan/market-cancelled", { qr_token: "MCR-AbC" }]);
+  });
+
+  it("noto'g'ri kod — qolgan urinishlar ko'rinadi, topshirish so'rovi KETMAYDI", async () => {
+    apiPost.mockRejectedValue(pinError("market_cancelled_pin_invalid", 3));
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" marketId="16" onClose={onClose} />);
+    enterCode("123456");
+
+    await waitFor(() => expect(screen.getByTestId("mark-returned-error")).toHaveTextContent("Kod noto'g'ri — yana 3 ta urinish qoldi"));
+    expect(apiPost).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("5 marta xato — blok xabari: market yangi QR chiqarsin", async () => {
+    apiPost.mockRejectedValue(pinError("market_cancelled_pin_blocked", 0));
+    renderWithProviders(<MarkReturnedModal open orderId="95" marketId="16" onClose={vi.fn()} />);
+    enterCode("123456");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("mark-returned-error")).toHaveTextContent("5 marta xato kiritildi — market yangi QR chiqarsin"),
+    );
+  });
+
+  it("market noma'lum — 6 raqam kod sifatida yuborilmaydi (avvalgidek faqat QR)", () => {
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={vi.fn()} />);
+    enterCode("042917");
+    expect(screen.getByTestId("mark-returned-error")).toHaveTextContent("MCR-");
+    expect(apiPost).not.toHaveBeenCalled();
+  });
+});
+
 describe("MarkReturnedModal — kamera (oynaning o'z tugmasi, v2 ScannerCamera)", () => {
   beforeEach(() => {
     apiPost.mockReset();

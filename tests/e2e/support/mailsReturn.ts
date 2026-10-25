@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Javob shakli backend bilan bir xil: `data: { total, scope, groups: [{ courier, courier_id, orders[] }] }`.
  * Tasdiqlash/rad etish serverdagi ro'yxatdan buyurtmani olib tashlaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

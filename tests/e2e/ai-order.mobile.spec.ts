@@ -10,7 +10,7 @@ import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../src
  * oxirida `leaked` bo'sh bo'lishi shart.
  */
 
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 
 /** 12 ta buyurtma: 3 tasi to'ldirilmagan (tuman / narx / mahsulot yo'q). */
 const parsedOrders = Array.from({ length: 12 }, (_, i) =>

@@ -7,7 +7,7 @@ import { expect, test, type Route } from "@playwright/test";
  * `superadmin-users-edit-courier-district` qisman): «Ish hududi» — viloyat faqat o'qish + o'tkazish izohi; «Tuman»
  * tanlovi (backend kerak) yo'q. Soxta backend, serverga so'rov ketmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

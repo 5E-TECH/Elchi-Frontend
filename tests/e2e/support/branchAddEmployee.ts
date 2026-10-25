@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * Soxta gateway (superadmin): `GET users?role=…` — joriy foydalanuvchilar, `POST couriers` — yangi kuryer qo'shadi.
  * Ilova manzili `playwright.config.ts` dagi `baseURL` dan.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const BRANCH = { id: "12", name: "Urganch filiali", type: "REGIONAL", level: 1, code: "URG", status: "active" };

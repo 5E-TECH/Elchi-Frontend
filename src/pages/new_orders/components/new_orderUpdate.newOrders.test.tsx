@@ -36,6 +36,7 @@ vi.mock("../../../entities/orders", () => ({
     CancelOrder: idleMutation,
     RollbackOrder: idleMutation,
     scanMarketCancelledQr: idleMutation,
+    verifyMarketCancelledPin: idleMutation,
   }),
 }));
 

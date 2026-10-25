@@ -7,7 +7,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * LG-3 — `region/stats/:id` (logist `/regions`): o'z viloyatlari uchun tumanlar va kuryerlar (tushum va kuryer
  * daromadi bilan — sahifa ko'rsatmaydi), boshqasiga 403 (backend iOnGbEqi'dan keyingi xulq).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
