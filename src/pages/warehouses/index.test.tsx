@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
 import { rawWarehouse } from "../../test/warehouseFixtures";
 import WarehousesPage from "./index";
@@ -312,7 +313,7 @@ describe("Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini superadmin-warehou
     expect(options.map((option) => option.textContent)).toEqual(["Qarshi filiali · Qashqadaryo viloyati"]);
   });
 
-  it("`GET /branches/hq` 404 (yoki xato) — oyna avvalgidek, faqat viloyat filiallari", async () => {
+  it("`GET /branches/hq` 404 (tizimda HQ yo'q) — oyna avvalgidek, faqat viloyat filiallari", async () => {
     hqResponse = () => Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404, data: {} } }));
     const { user, dialog } = await openDialog();
     const options = await screen.findAllByRole("option");
@@ -324,15 +325,87 @@ describe("Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini superadmin-warehou
     );
   });
 
-  it("jadvalda Markaziy ombor qatori tepada, «Markaziy» belgisi, viloyati «—»", async () => {
-    list = { ...LIST, data: [rawWarehouse(), PAUSED, HQ_WAREHOUSE], total: 3 };
+  it("`GET /branches/hq` 400 — eski backend (`branches/:id` + ParseBigintIdPipe): oyna avvalgidek, xabarsiz", async () => {
+    hqResponse = () =>
+      Promise.reject(
+        Object.assign(new Error("Bad Request"), {
+          response: { status: 400, data: { statusCode: 400, message: "id musbat butun son bo'lishi kerak, keldi: hq" } },
+        }),
+      );
+    const { user, dialog } = await openDialog();
+    const options = await screen.findAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["Qarshi filiali · Qashqadaryo viloyati"]);
+    // Xato emas — «HQ yo'q»: izoh odatdagi, «Qayta urinish» va xabar (toast) yo'q.
+    expect(within(dialog).getByText("Ro'yxatda faqat ombori yo'q filiallar: HQ (markaziy ombor) va viloyat filiallari")).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Markaziy ombor filialini \(HQ\) yuklab bo'lmadi/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(document.querySelector("[data-toast-id]")).toBeNull();
+    await user.click(options[0]);
+    await user.click(within(dialog).getByRole("button", { name: "Ombor ochish" }));
+    await waitFor(() =>
+      expect(mocks.post).toHaveBeenCalledWith("warehouses", { branch_id: "20", name: "Qarshi filiali ombori", low_stock_default: 5 }),
+    );
+  });
+
+  it("`GET /branches/hq` 5xx — HQ jim yo'qolmaydi: izohda sababi + «Qayta urinish» → HQ qaytadi", async () => {
+    hqResponse = () => Promise.reject(Object.assign(new Error("Bad Gateway"), { response: { status: 502, data: {} } }));
+    const { user, dialog } = await openDialog();
+    const options = await screen.findAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["Qarshi filiali · Qashqadaryo viloyati"]);
+    expect(
+      within(dialog).getByText("Markaziy ombor filialini (HQ) yuklab bo'lmadi — hozir ro'yxatda faqat viloyat filiallari."),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Ro'yxatda faqat ombori yo'q filiallar/)).not.toBeInTheDocument();
+    expect(document.querySelector("[data-toast-id]")).toBeNull();
+
+    hqResponse = () => Promise.resolve({ data: HQ_BRANCH });
+    await user.click(within(dialog).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() =>
+      expect(within(dialog).queryByText(/Markaziy ombor filialini \(HQ\) yuklab bo'lmadi/)).not.toBeInTheDocument(),
+    );
+    expect(within(dialog).getByText("Ro'yxatda faqat ombori yo'q filiallar: HQ (markaziy ombor) va viloyat filiallari")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("combobox", { name: /Filial/ }));
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
+      "Markaziy ombor · Toshkent HQ",
+      "Qarshi filiali · Qashqadaryo viloyati",
+    ]);
+  });
+
+  it("ru interfeysda ham HQ nomi «Markaziy ombor» (saqlanadigan nom — tarjima emas, backend sukuti)", async () => {
+    await i18n.changeLanguage("ru");
+    try {
+      const user = userEvent.setup();
+      renderAs("superadmin");
+      await screen.findByRole("table", { name: "Склады" });
+      await user.click(screen.getByRole("button", { name: "Открыть склад" }));
+      const dialog = await screen.findByRole("dialog", { name: "Открыть склад" });
+      await user.click(within(dialog).getByRole("combobox", { name: /Филиал/ }));
+      await user.click(await screen.findByRole("option", { name: "Центральный склад · Toshkent HQ" }));
+      expect(within(dialog).getByRole("textbox", { name: /Название склада/ })).toHaveValue("Markaziy ombor");
+      await user.click(within(dialog).getByRole("button", { name: "Открыть склад" }));
+      await waitFor(() =>
+        expect(mocks.post).toHaveBeenCalledWith("warehouses", { branch_id: "1", name: "Markaziy ombor", low_stock_default: 5 }),
+      );
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
+
+  it("jadvalda Markaziy ombor qatori tepada, «Markaziy» belgisi, viloyati — HQ filialiniki (filtr bilan bir xil)", async () => {
+    // Backend ro'yxat ko'rinishi HQ'ga ham filial viloyatini beradi (`region: branch.region`) va «Viloyat:» filtri shu
+    // bo'yicha — ekran ham shuni ko'rsatadi.
+    list = {
+      ...LIST,
+      data: [rawWarehouse(), PAUSED, { ...HQ_WAREHOUSE, region: { id: "14", name: "Toshkent shahri" } }],
+      total: 3,
+    };
     renderAs("admin");
     const table = await screen.findByRole("table", { name: "Omborlar" });
     const rows = within(table).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(3);
     expect(within(rows[0]).getByRole("link", { name: "Markaziy ombor" })).toHaveAttribute("href", "/warehouses/12");
     expect(within(rows[0]).getByText("Markaziy")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("Markaziy ombor — viloyatga bog'lanmagan")).toBeInTheDocument();
+    expect(within(rows[0]).getByRole("cell", { name: "Toshkent shahri" })).toBeInTheDocument();
     expect(within(rows[0]).queryByText(/Samarqand viloyati/)).not.toBeInTheDocument();
     // Viloyat omborlari — backend tartibida, belgisiz.
     expect(within(rows[1]).getByRole("link", { name: "Samarqand filiali ombori" })).toBeInTheDocument();

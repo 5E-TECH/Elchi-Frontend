@@ -80,6 +80,8 @@ describe("market «Ombordagi qoldiq» (yXC91RRx)", () => {
     expect(await screen.findByRole("link", { name: /Ombordagi qoldiq/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText("Faqat ko'rish")).toBeInTheDocument();
     const table = await screen.findByRole("table", { name: "Mahsulotlar omborlar bo'yicha" });
+    // Markaziy ombor yo'q — vaqtinchalik Pa1KaXmj qatori ham yo'q.
+    expect(screen.queryByText(/Markaziy ombor qoldig'i buyurtmalarga/)).not.toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: /Samarqand/ })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: /Urgut.*To'xtatilgan/ })).toBeInTheDocument();
     expect(within(table).getByText("0 · tugagan")).toBeInTheDocument();
@@ -173,6 +175,12 @@ describe("market «Ombordagi qoldiq» (yXC91RRx)", () => {
     const cells = within(within(table).getAllByRole("row")[1]).getAllByRole("cell").map((cell) => cell.textContent);
     expect(cells.slice(1, 3)).toEqual(["40", "22"]);
     expect(screen.getByText(/markaziy yoki viloyat omboriga Elchi administratori qo'shadi/)).toBeInTheDocument();
+    // 1-bosqich: Markaziy ombor qoldig'i (ustun va «Omborlardagi jami dona») buyurtmaga hali ishlatilmaydi — izohda
+    // aytiladi (FE-2 da olinadi).
+    const note = screen.getByRole("note");
+    expect(
+      within(note).getByText("Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi — hozircha undan buyurtma ketmaydi."),
+    ).toBeInTheDocument();
   });
 
   it("qisqa ombor nomi", () => {

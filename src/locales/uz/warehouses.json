@@ -29,7 +29,8 @@
   },
   "actions": {
     "cancel": "Bekor qilish",
-    "save": "Saqlash"
+    "save": "Saqlash",
+    "retry": "Qayta urinish"
   },
   "errors": {
     "forbidden": "Bu amalga ruxsatingiz yo'q.",
@@ -101,7 +102,6 @@
     "noLow": "Kam qolgan yo'q",
     "noManager": "Mas'ul biriktirilmagan",
     "noRegion": "Viloyat ko'rsatilmagan",
-    "hqRegion": "Markaziy ombor — viloyatga bog'lanmagan",
     "noMovements": "Hali harakat yo'q",
     "pausedAt": "Ombor to'xtatildi",
     "pausedHint": "Qoldiq saqlanadi · yangi buyurtma tushmaydi",
@@ -121,6 +121,7 @@
     "branchPlaceholder": "Filialni tanlang",
     "branchHint": "Ro'yxatda faqat ombori yo'q filiallar: HQ (markaziy ombor) va viloyat filiallari",
     "branchLoadFailed": "Filiallarni yuklab bo'lmadi — oynani yopib, qayta oching.",
+    "hqLoadFailed": "Markaziy ombor filialini (HQ) yuklab bo'lmadi — hozir ro'yxatda faqat viloyat filiallari.",
     "noBranches": "Ombori yo'q faol filial qolmadi",
     "name": "Ombor nomi",
     "namePlaceholder": "Ombor nomini kiriting",
@@ -491,6 +492,7 @@
     },
     "noteTitle": "Faqat ko'rish",
     "noteText": "Mahsulotni markaziy yoki viloyat omboriga Elchi administratori qo'shadi. To'xtatilgan omborda qoldiq saqlanadi, lekin unga yangi buyurtma tushmaydi.",
+    "hqNote": "Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi — hozircha undan buyurtma ketmaydi.",
     "cardLabel": "Mahsulotlar omborlar bo'yicha",
     "tableLabel": "Mahsulotlar omborlar bo'yicha",
     "searchPlaceholder": "Mahsulot qidiring...",

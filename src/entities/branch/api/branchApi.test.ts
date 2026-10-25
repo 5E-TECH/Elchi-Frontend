@@ -153,19 +153,29 @@ describe("getHqBranch (GET /branches/hq) — Markaziy ombor, Pa1KaXmj", () => {
     expect(await getHqBranch()).toMatchObject({ id: "7", name: "Bosh ofis", type: "HQ" });
   });
 
-  it("404 (tizimda HQ yo'q / eski backend) yoki bo'sh javob — null", async () => {
-    getMock.mockRejectedValueOnce({ response: { status: 404, data: { message: "HQ topilmadi" } } });
+  it("404 (tizimda HQ yo'q) yoki bo'sh javob — null", async () => {
+    getMock.mockRejectedValueOnce({ response: { status: 404, data: { message: "HQ filial topilmadi" } } });
     expect(await getHqBranch()).toBeNull();
 
     getMock.mockResolvedValueOnce({ data: { statusCode: 200, data: null } });
     expect(await getHqBranch()).toBeNull();
   });
 
-  it("boshqa xato (403, 5xx) chaqiruvchiga uzatiladi", async () => {
-    const error = { response: { status: 403, data: { message: "Ruxsat yo'q" } } };
-    getMock.mockRejectedValue(error);
+  it("400 — eski backend (`branches/:id` + ParseBigintIdPipe) — null", async () => {
+    getMock.mockRejectedValueOnce({
+      response: { status: 400, data: { statusCode: 400, message: "id musbat butun son bo'lishi kerak, keldi: hq" } },
+    });
+    expect(await getHqBranch()).toBeNull();
+  });
 
-    await expect(getHqBranch()).rejects.toBe(error);
+  it("boshqa xato (403, 5xx) chaqiruvchiga uzatiladi", async () => {
+    const forbidden = { response: { status: 403, data: { message: "Ruxsat yo'q" } } };
+    getMock.mockRejectedValueOnce(forbidden);
+    await expect(getHqBranch()).rejects.toBe(forbidden);
+
+    const server = { response: { status: 502, data: { message: "Bad Gateway" } } };
+    getMock.mockRejectedValueOnce(server);
+    await expect(getHqBranch()).rejects.toBe(server);
   });
 });
 

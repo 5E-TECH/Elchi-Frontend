@@ -29,7 +29,8 @@
   },
   "actions": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "retry": "Retry"
   },
   "errors": {
     "forbidden": "You don't have permission for this action.",
@@ -101,7 +102,6 @@
     "noLow": "Nothing running low",
     "noManager": "No manager assigned",
     "noRegion": "Region not set",
-    "hqRegion": "Central warehouse — not tied to a region",
     "noMovements": "No movements yet",
     "pausedAt": "Warehouse paused",
     "pausedHint": "Stock is kept · new orders don't come in",
@@ -121,6 +121,7 @@
     "branchPlaceholder": "Select a branch",
     "branchHint": "Only branches without a warehouse are listed: HQ (central warehouse) and regional branches",
     "branchLoadFailed": "Couldn't load branches — close the window and open it again.",
+    "hqLoadFailed": "Couldn't load the central warehouse branch (HQ) — only regional branches are listed for now.",
     "noBranches": "No active branch without a warehouse left",
     "name": "Warehouse name",
     "namePlaceholder": "Enter the warehouse name",
@@ -491,6 +492,7 @@
     },
     "noteTitle": "View only",
     "noteText": "Products are added to the central or regional warehouses by an Elchi admin. A paused warehouse keeps its stock but receives no new orders.",
+    "hqNote": "Central warehouse stock will be connected to orders in the next stage — orders don't ship from it yet.",
     "cardLabel": "Products by warehouse",
     "tableLabel": "Products by warehouse",
     "searchPlaceholder": "Search products...",

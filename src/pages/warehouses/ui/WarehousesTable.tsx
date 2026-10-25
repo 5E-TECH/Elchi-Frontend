@@ -23,7 +23,9 @@ const Dash = ({ label }: { label: string }) => (
  * yashirin — viloyat filial nomi yonida; telefonda kartalar (nom + holat, filial · viloyat · mas'ul, «486 dona · 12
  * tur · 38 band» + «3 ta kam» + sana; to'xtatilganda «Qoldiq saqlanadi · yangi buyurtma tushmaydi»).
  * Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini `superadmin-warehouse-list`): qatori tepada (joriy sahifada),
- * nom yonida «Markaziy» belgisi, «Viloyat» ustunida «—» (viloyatga bog'lanmagan); telefon kartasida ham.
+ * nom yonida «Markaziy» belgisi (telefon kartasida ham). «Viloyat» — HQ filialining viloyati, viloyat omborlaridagidek:
+ * backend ro'yxatning «Viloyat:» filtri va qidiruvi ham shu `region` bo'yicha (HQ'da viloyat bo'lmasa — «—»), ekran
+ * filtrga zid bo'lmasin.
  */
 export const WarehousesTable = ({
   rows,
@@ -70,7 +72,7 @@ export const WarehousesTable = ({
           </span>
           <span className="text-[13px] text-text-muted">
             {row.branch?.name ?? ""}
-            {row.region && !row.isHq ? <span className="lg:hidden">{` · ${row.region.name}`}</span> : null}
+            {row.region ? <span className="lg:hidden">{` · ${row.region.name}`}</span> : null}
           </span>
         </span>
       ),
@@ -80,8 +82,7 @@ export const WarehousesTable = ({
       header: t("list.columns.region"),
       hideBelow: "lg",
       className: "whitespace-nowrap",
-      cell: (row) =>
-        row.isHq ? <Dash label={t("list.hqRegion")} /> : (row.region?.name ?? <Dash label={t("list.noRegion")} />),
+      cell: (row) => row.region?.name ?? <Dash label={t("list.noRegion")} />,
     },
     {
       id: "manager",
@@ -168,7 +169,7 @@ export const WarehousesTable = ({
 
   const renderCard = (row: Warehouse) => {
     const last = lastMovement(row);
-    const meta = [row.branch?.name, row.isHq ? null : row.region?.name, row.manager?.name].filter(Boolean).join(" · ");
+    const meta = [row.branch?.name, row.region?.name, row.manager?.name].filter(Boolean).join(" · ");
     return (
       <Link
         to={warehousePath(row.id)}

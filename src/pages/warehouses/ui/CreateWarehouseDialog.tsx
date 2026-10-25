@@ -3,7 +3,12 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Lock, User, Warehouse as WarehouseIcon } from "lucide-react";
 import { getDispatchDestinations, getHqBranch, useBranchEmployees, type Branch } from "../../../entities/branch";
-import { useCreateWarehouse, useWarehouseList, type Warehouse } from "../../../entities/warehouse";
+import {
+  HQ_WAREHOUSE_DEFAULT_NAME,
+  useCreateWarehouse,
+  useWarehouseList,
+  type Warehouse,
+} from "../../../entities/warehouse";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { notify } from "../../../shared/lib/notify";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
@@ -19,7 +24,10 @@ const DEFAULT_THRESHOLD = "5";
 
 /** Ombor ochiladigan filiallar: faol REGIONAL/HYBRID (`GET /branches/dispatch-destinations`, menejeri bilan). */
 const DESTINATIONS_KEY = ["branches", "dispatch-destinations", "warehouse-create"] as const;
-/** Markaziy ombor (Pa1KaXmj): HQ filiali — `GET /branches/hq` (404 / xato — ro'yxatda HQ yo'q, oyna eski xulqda). */
+/**
+ * Markaziy ombor (Pa1KaXmj): HQ filiali — `GET /branches/hq`. 404 (HQ yo'q) va 400 (eski backend) — `null`, oyna eski
+ * xulqda; boshqa xato — izohda «Markaziy ombor filialini yuklab bo'lmadi» + «Qayta urinish».
+ */
 const HQ_KEY = ["branches", "hq", "warehouse-create"] as const;
 
 const managerName = (branch: Branch | null) => branch?.manager?.fullName ?? branch?.manager?.name ?? null;
@@ -44,9 +52,11 @@ export type CreateWarehouseDialogProps = {
  * menejerini o'zi biriktiradi; maketda faqat o'qiladigan maydon edi), «Kam qoldiq chegarasi *» (sukut 5, dona),
  * «Manzil» (bo'sh — filial manzili), «Izoh», «Ombor qanday ishlaydi» izohi. `POST /warehouses`; 409 — filialda ombor bor
  * («Filial» ostida), 400 — umumiy izoh.
- * HQ tanlansa: nom taklifi «Markaziy ombor», «Mas'ul xodim» — faqat o'qiladigan «Belgilanmaydi» (maketdagi qulf
- * maydoni) + «Markaziy omborda menejer yo'q — mas'ul belgilanmaydi», `manager_user_id` yuborilmaydi (backend uni 400
- * bilan rad etadi); «Ombor qanday ishlaydi» ning 2-bandi — buyurtmalarga keyingi bosqichda ulanishi.
+ * HQ tanlansa: nom taklifi «Markaziy ombor» (`HQ_WAREHOUSE_DEFAULT_NAME` — interfeys tilidan qat'i nazar, backend
+ * sukuti bilan bir xil), «Mas'ul xodim» — faqat o'qiladigan «Belgilanmaydi» (maketdagi qulf maydoni) + «Markaziy
+ * omborda menejer yo'q — mas'ul belgilanmaydi», `manager_user_id` yuborilmaydi (backend uni 400 bilan rad etadi);
+ * «Ombor qanday ishlaydi» ning 2-bandi — buyurtmalarga keyingi bosqichda ulanishi. `GET /branches/hq` yiqilsa (403,
+ * 5xx, tarmoq) — HQ ro'yxatda yo'q, «Filial» izohida sababi va «Qayta urinish» (jim yo'qolmaydi).
  */
 export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWarehouseDialogProps) => {
   const text = useWarehouseText();
@@ -68,7 +78,7 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
     staleTime: 60_000,
     meta: { silentError: true },
   });
-  // Xato ham (403, 5xx) — «HQ yo'q»: viloyat filiallari odatdagidek tanlanadi.
+  // Xato (403, 5xx, tarmoq) — HQ ro'yxatda yo'q, viloyat filiallari odatdagidek tanlanadi; izohda «Qayta urinish».
   const hqQuery = useQuery({
     queryKey: HQ_KEY,
     queryFn: getHqBranch,
@@ -150,7 +160,8 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
     setErrors((previous) => ({ ...previous, branch: undefined }));
     const branch = branches.find((item) => String(item.id) === next);
     if (branch && !nameEdited) {
-      setName(isHqBranch(branch) ? t("kind.hqWarehouse") : t("create.suggestedName", { branch: branch.name }));
+      // Markaziy ombor nomi — saqlanadigan ma'lumot, tarjima emas (ru/en admin ham «Markaziy ombor» saqlaydi).
+      setName(isHqBranch(branch) ? HQ_WAREHOUSE_DEFAULT_NAME : t("create.suggestedName", { branch: branch.name }));
     }
   };
 
@@ -202,13 +213,24 @@ export const CreateWarehouseDialog = ({ open, onClose, onCreated }: CreateWareho
   };
 
   const busy = create.isPending;
-  // HQ so'rovi kutiladi (ro'yxat birinchi bandi), lekin uning xatosi «HQ yo'q» — viloyat filiallari yetadi.
+  // HQ so'rovi kutiladi (ro'yxat birinchi bandi); u yiqilsa ham viloyat filiallari tanlanadi.
   const branchesLoading = destinations.isLoading || hqQuery.isLoading || existing.isLoading;
-  const branchHint = destinations.isError
-    ? t("create.branchLoadFailed")
-    : !branchesLoading && branchOptions.length === 0
-      ? t("create.noBranches")
-      : t("create.branchHint");
+  // `GET /branches/hq` xatosi «HQ yo'q» emas (u — `null`): admin HQ nega yo'qligini ko'radi va qayta so'raydi.
+  // «Ombori yo'q filial qolmadi» dan oldin — HQ xatoda bo'lsa, bu da'vo noto'g'ri bo'lishi mumkin.
+  const branchHint = destinations.isError ? (
+    t("create.branchLoadFailed")
+  ) : hqQuery.isError ? (
+    <span className="inline-flex flex-wrap items-center gap-x-2">
+      <span>{t("create.hqLoadFailed")}</span>
+      <Button variant="link" size="sm" loading={hqQuery.isFetching} onClick={() => void hqQuery.refetch()} disabled={busy}>
+        {t("actions.retry")}
+      </Button>
+    </span>
+  ) : !branchesLoading && branchOptions.length === 0 ? (
+    t("create.noBranches")
+  ) : (
+    t("create.branchHint")
+  );
 
   return (
     <Dialog

@@ -47,7 +47,8 @@ const hqWarehouse = (qty: number) =>
     kind: "HQ",
     branch_id: "1",
     branch: { id: "1", name: "Toshkent HQ", type: "HQ", status: "active", address: HQ_BRANCH.address },
-    region: null,
+    // Backend ro'yxat/tafsilot ko'rinishi HQ'ga ham filial viloyatini beradi (`region: branch.region`).
+    region: HQ_BRANCH.region,
     manager_user_id: null,
     manager: null,
     effective_address: HQ_BRANCH.address,
@@ -75,8 +76,9 @@ export type WarehouseHqMock = {
 };
 
 /**
- * `hq: "found"` — `GET /branches/hq` HQ ni qaytaradi; `"missing"` — 404 (tizimda HQ yo'q yoki eski backend: oyna
- * avvalgidek faqat viloyat filiallari bilan ishlaydi).
+ * `hq: "found"` — `GET /branches/hq` HQ ni qaytaradi; `"missing"` — 404 (tizimda HQ yo'q: oyna avvalgidek faqat
+ * viloyat filiallari bilan ishlaydi). Eski backend (400 — `branches/:id` + ParseBigintIdPipe) va 5xx («Qayta urinish»)
+ * — unit testlarda (`src/pages/warehouses/index.test.tsx`, `branchApi.test.ts`).
  */
 export const mockWarehouseHqApi = async (page: Page, { hq = "found" }: { hq?: "found" | "missing" } = {}) => {
   const { leaked } = await setupShellSession(page, "superadmin", "E2E Superadmin");

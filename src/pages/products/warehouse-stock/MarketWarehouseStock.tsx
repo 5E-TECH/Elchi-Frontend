@@ -60,7 +60,8 @@ const isTotals = (row: Row): row is { totals: true } => "totals" in row;
  * Market operatori (XtcEyQjb) — tab faqat `my-profile.can_view_warehouse_stock` bilan; market kalitni keyin o'chirsa,
  * server 403 (`WAREHOUSE_STOCK_FORBIDDEN`) — KPI va jadval o'rnida «Ombordagi qoldiq siz uchun yopiq» (qayta urinishsiz).
  * Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini `market-products-warehouse-stock`): ustuni birinchi, nomi
- * «Markaziy ombor» (telefon kartasida ham birinchi qator).
+ * «Markaziy ombor» (telefon kartasida ham birinchi qator); «Faqat ko'rish» izohida vaqtinchalik qator «Markaziy ombor
+ * qoldig'i buyurtmalarga keyingi bosqichda ulanadi» (1-bosqich — manba faqat viloyat ombori; FE-2 da olinadi).
  */
 export const MarketWarehouseStock = ({
   description,
@@ -94,6 +95,7 @@ export const MarketWarehouseStock = ({
   const summary = data?.summary;
   // Markaziy ombor — birinchi ustun (Pa1KaXmj).
   const warehouses = useMemo(() => hqFirst(data?.warehouses ?? []), [data?.warehouses]);
+  const hasHq = warehouses.some((warehouse) => warehouse.isHq);
   const columnName = (warehouse: MarketStockWarehouse) =>
     warehouse.isHq ? t("kind.hqWarehouse") : shortWarehouseName(warehouse);
   const filtersActive = Boolean(search || lowOnly);
@@ -286,6 +288,9 @@ export const MarketWarehouseStock = ({
         <span className="flex min-w-0 flex-col gap-1 text-text">
           <span className="font-bold">{t("market.noteTitle")}</span>
           <span className="text-[13px] leading-[18px]">{t("market.noteText")}</span>
+          {/* Pa1KaXmj 1-bosqich (vaqtinchalik — FE-2 da olinadi): Markaziy ombor ustuni va «Omborlardagi jami dona»
+              qoldiqni ko'rsatadi, lekin buyurtma manbasi hali faqat viloyat ombori — market buni bilsin. */}
+          {hasHq ? <span className="text-[13px] leading-[18px]">{t("market.hqNote")}</span> : null}
         </span>
       </div>
 

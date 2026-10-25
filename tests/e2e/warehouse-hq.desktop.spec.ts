@@ -29,18 +29,18 @@ test.describe("Markaziy ombor — ochish va kirim (superadmin, desktop)", () => 
     expect(mock.stockIns[0].key).toBeTruthy();
     await expect(page.getByRole("table", { name: "Ombordagi mahsulotlar" }).getByText("Simsiz quloqchin")).toBeVisible();
 
-    // «← Omborlar»: Markaziy ombor qatori tepada, «Markaziy» belgisi bilan, viloyati «—».
+    // «← Omborlar»: Markaziy ombor qatori tepada, «Markaziy» belgisi bilan, viloyati — HQ filialiniki (filtr bilan bir xil).
     await page.getByRole("link", { name: /Omborlar/ }).first().click();
     const table = page.getByRole("table", { name: "Omborlar" });
     const firstRow = table.getByRole("row").nth(1);
     await expect(firstRow.getByRole("link", { name: "Markaziy ombor" })).toBeVisible();
     await expect(firstRow.getByText("Markaziy", { exact: true })).toBeVisible();
-    await expect(firstRow.getByText("Markaziy ombor — viloyatga bog'lanmagan")).toBeAttached();
+    await expect(firstRow.getByRole("cell", { name: "Toshkent shahri", exact: true })).toBeVisible();
     await expect(table.getByRole("row").nth(2).getByRole("link", { name: "Samarqand filiali ombori" })).toBeVisible();
     expect(mock.leaked).toEqual([]);
   });
 
-  test("`GET /branches/hq` 404 — oyna avvalgidek, faqat viloyat filiallari", async ({ page }) => {
+  test("`GET /branches/hq` 404 (tizimda HQ yo'q) — oyna avvalgidek, faqat viloyat filiallari", async ({ page }) => {
     const mock = await mockWarehouseHqApi(page, { hq: "missing" });
     await openCreateDialog(page);
     await expect(page.getByRole("option")).toHaveText(["Qarshi filiali · Qashqadaryo viloyati"]);

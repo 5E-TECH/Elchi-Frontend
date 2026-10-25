@@ -19,6 +19,14 @@ export type WarehouseStatus = (typeof WAREHOUSE_STATUSES)[number];
 export const WAREHOUSE_KINDS = ["REGIONAL", "HQ"] as const;
 export type WarehouseKind = (typeof WAREHOUSE_KINDS)[number];
 
+/**
+ * Markaziy ombor nomi (Pa1KaXmj) — backend sukuti (`POST /warehouses` nomsiz HQ'da) va kelishilgan atama. Bu
+ * SAQLANADIGAN ma'lumot, ekran matni emas: «Ombor ochish» oynasi HQ uchun uni interfeys tilidan qat'i nazar taklif
+ * qiladi (ru/en admin ham «Центральный склад» / «Central warehouse» ni saqlab qo'ymasin — ro'yxat, tafsilot, kirim
+ * oynasi xom nomni ko'rsatadi). Ekrandagi tarjima — `warehouses:kind.hqWarehouse`.
+ */
+export const HQ_WAREHOUSE_DEFAULT_NAME = "Markaziy ombor";
+
 export const STOCK_LEVELS = ["ok", "low", "out"] as const;
 export type StockLevel = (typeof STOCK_LEVELS)[number];
 
