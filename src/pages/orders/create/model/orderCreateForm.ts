@@ -44,6 +44,12 @@ export interface OrderCreateFormValues {
    */
   deliveryTypeTouched: boolean;
   /**
+   * Sukut turi qaysi market uchun qo'llangan (yoki forma boshlangani uchun ataylab qo'llanmagan) — market id'si.
+   * Boshqa market tanlansa (qadamlar orasida ham saqlanadi) yangi marketning sukuti forma boshlangan bo'lsa ham
+   * qo'llanadi (IT1YpboR). Payload'ga kirmaydi.
+   */
+  deliveryDefaultFor: string | null;
+  /**
    * «Umumiy summa» mahsulotlar narxidan avtomatik to'ldiriladimi (CS-B). Qo'lda yozilsa `false` — taklif faqat
    * «Mahsulotlar bo'yicha: … · Qo'llash» qatorida turadi, maydon ustidan yozilmaydi. Payload'ga kirmaydi.
    */
@@ -74,6 +80,7 @@ export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   market: null,
   existingCustomer: null,
   deliveryTypeTouched: false,
+  deliveryDefaultFor: null,
   totalPriceAuto: true,
   fulfillment: "auto",
   customer: {
@@ -113,6 +120,7 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
       existingCustomer: yup.mixed<ExistingCustomerLink>().nullable().default(null),
       // Forma holati (tekshirilmaydi, payload'ga kirmaydi) — CS-B.
       deliveryTypeTouched: yup.boolean().default(false),
+      deliveryDefaultFor: yup.string().nullable().default(null),
       totalPriceAuto: yup.boolean().default(true),
       fulfillment: yup.mixed<OrderFulfillmentChoice>().oneOf(["auto", "hq"]).default("auto"),
       customer: yup.object({

@@ -246,14 +246,24 @@ const Step2Combined = () => {
   const defaultDeliveryType = tariffs?.defaultType ?? null;
 
   // Sukut turi — market kartasidagi `default_tariff` (CS-B): tariflar shu market uchun kelgach, tur qo'lda
-  // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi; yaratishdan keyingi `reset` da yana sukut.
-  // Tariflar kech kelsa (sekin `GET users/:id`, qayta urinish) va operator formani to'ldira boshlagan bo'lsa —
-  // ko'rinib turgan tur o'z-o'zidan almashmaydi (manzil birdan majburiy bo'lib qolmasin).
+  // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi (market almashsa ham); yaratishdan keyingi
+  // `reset` da yana sukut. Tariflar kech kelsa (sekin so'rov, qayta urinish) va operator formani to'ldira boshlagan
+  // bo'lsa — ko'rinib turgan tur o'z-o'zidan almashmaydi (manzil birdan majburiy bo'lib qolmasin). Market
+  // almashtirish esa ongli amal (IT1YpboR TC: 37 «Markazgacha» → 36 «Uygacha», mijoz ismi yozilgan) — yangi
+  // marketning sukuti forma boshlangan bo'lsa ham qo'llanadi. Qaysi market uchun ko'rib chiqilgani forma holatida
+  // (`deliveryDefaultFor`): «O'zgartirish» 1-qadamga qaytaradi va bu komponent qayta o'rnatiladi.
+  // Market rolida forma `market` siz — o'z kartasi (bitta, o'zgarmaydi).
+  const marketKey = isMarketRole ? "self" : market?.id != null ? String(market.id) : null;
   useEffect(() => {
-    if (deliveryTypeTouched || !defaultDeliveryType || whereDeliver === defaultDeliveryType) return;
-    if (isFormStarted(getValues())) return;
+    if (deliveryTypeTouched || !defaultDeliveryType || !marketKey) return;
+    const decidedFor = getValues("deliveryDefaultFor");
+    if (decidedFor === marketKey) return;
+    const marketSwitched = decidedFor !== null;
+    setValue("deliveryDefaultFor", marketKey);
+    if (whereDeliver === defaultDeliveryType) return;
+    if (!marketSwitched && isFormStarted(getValues())) return;
     setValue("details.where_deliver", defaultDeliveryType);
-  }, [defaultDeliveryType, deliveryTypeTouched, getValues, setValue, whereDeliver]);
+  }, [defaultDeliveryType, deliveryTypeTouched, getValues, marketKey, setValue, whereDeliver]);
 
   const regionOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(regions)), [regions]);
   const districtOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(districts)), [districts]);
