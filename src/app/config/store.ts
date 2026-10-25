@@ -9,7 +9,6 @@ import userReducer from "../../entities/user/model/slice";
 import filterslice from "../../shared/model/filterSlice";
 import searchSlice from "../../shared/model/searchSlice";
 import roleReducer from "../../shared/model/roleSlice";
-import paginationReducer from "../../shared/model/paginationSlice";
 import { writeStoredSidebar } from "../../shared/lib/preferencesStorage";
 
 const sidebarStorageListener = createListenerMiddleware();
@@ -29,7 +28,6 @@ export const store = configureStore({
     filter: filterslice,
     search: searchSlice,
     role: roleReducer,
-    pagination: paginationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(sidebarStorageListener.middleware),
