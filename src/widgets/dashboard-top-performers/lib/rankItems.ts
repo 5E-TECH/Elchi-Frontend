@@ -50,13 +50,25 @@ export interface RankItemOptions {
   /** O'z qatori meter rangi (kuryer: boshqalar kulrang, o'zi — `action`). */
   selfMeterTone?: RankItem["meterTone"];
   othersMeterTone?: RankItem["meterTone"];
+  /** Qatorning o'z rangi (masalan past sotuv foizi — `lowRateTone`); `undefined` — `othersMeterTone`. */
+  meterToneFor?: (row: PerformerRow) => RankItem["meterTone"] | undefined;
   /** O'rin raqami boshlanishi (pinned qator uchun). */
   startRank?: number;
 }
 
+/** Sotuv foizi shundan past qator ajralib turadi (PMa5dgYQ; market rolidagi «Past · 50% dan kam» bilan bir xil). */
+export const LOW_RATE_THRESHOLD = 50;
+
+/**
+ * Past sotuv foizi — qizil (`danger`) meter; qolganlari o'z rangida (maket superadmin-dashboard-main — ko'k).
+ * Foiz matni qatorda yozilgan — rang yolg'iz ma'no tashimaydi.
+ */
+export const lowRateTone = (row: PerformerRow): RankItem["meterTone"] | undefined =>
+  row.rate < LOW_RATE_THRESHOLD ? "danger" : undefined;
+
 /** Reyting qatori → `RankItem`: «84,4%» + «38 / 45 ta» + meter. */
 export const toRankItems = (rows: readonly PerformerRow[], options: RankItemOptions): RankItem[] => {
-  const { t, language, selfId, selfBadge, selfMeterTone, othersMeterTone, startRank } = options;
+  const { t, language, selfId, selfBadge, selfMeterTone, othersMeterTone, meterToneFor, startRank } = options;
   const self = selfId == null || selfId === "" ? null : String(selfId);
   return rows.map((item, index) => {
     const isSelf = self != null && item.id === self;
@@ -71,7 +83,7 @@ export const toRankItems = (rows: readonly PerformerRow[], options: RankItemOpti
       share: item.rate,
       highlight: isSelf,
       badge: isSelf && selfBadge ? selfBadge : undefined,
-      meterTone: isSelf ? selfMeterTone : othersMeterTone,
+      meterTone: isSelf ? selfMeterTone : (meterToneFor?.(item) ?? othersMeterTone),
       rank: startRank != null ? startRank + index : undefined,
       ariaLabel: isSelf && selfBadge ? `${(startRank ?? 1) + index}. ${item.name} (${selfBadge.label})` : undefined,
     };

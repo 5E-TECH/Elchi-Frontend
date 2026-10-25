@@ -35,6 +35,7 @@ import SuccessRateCard from "../../widgets/dashboard-statistics/ui/SuccessRateCa
 import {
   branchRows,
   courierRows,
+  lowRateTone,
   marketRows,
   sortByRate,
   toRankItems,
@@ -336,7 +337,8 @@ const DashboardPage = () => {
     const sub = t("v2Dashboard.top.sub");
     const lastDays = (count: number) => t("v2Dashboard.top.periodLastDays", { count });
     const limitedNote = t("v2Dashboard.top.limited");
-    const rankOptions = { t, language };
+    // PMa5dgYQ: sotuv foizi 50% dan past qator — qizil meter (market rolidagi «Past» bilan bir xil chegara).
+    const rankOptions = { t, language, meterToneFor: lowRateTone };
     // «Top marketlar» — backend reytingi (chegara bilan); «Yana ko'rsatish» — to'liq `markets` statistikasi
     // (`markets` bo'lagi olinmagan bo'lsa — faqat reyting, ro'yxat ochilmaydi).
     const topMarketRows = marketRows(data?.data?.topMarkets);
