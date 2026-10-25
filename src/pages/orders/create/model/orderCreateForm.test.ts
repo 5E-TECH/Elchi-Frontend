@@ -54,6 +54,7 @@ describe("buildCreateOrderPayload", () => {
     },
     existingCustomer: null,
     deliveryTypeTouched: true,
+    deliveryDefaultFor: null,
     totalPriceAuto: false,
     fulfillment: "auto",
     customer: {

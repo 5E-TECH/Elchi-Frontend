@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeWarehouse } from "../../../../entities/warehouse";
+import { getActiveScanTarget, resetScanTargets } from "../../../../shared/lib/scanner/scanTargets";
 import { renderWithProviders } from "../../../../test/test-utils";
 import { rawProduct, rawWarehouse } from "../../../../test/warehouseFixtures";
 import { InventoryDialog } from "./InventoryDialog";
@@ -280,5 +281,30 @@ describe("Inventarizatsiya", () => {
       ),
     );
     expect(await screen.findByText("Inventarizatsiya saqlandi")).toBeInTheDocument();
+  });
+});
+
+describe("Kamera — zavod shtrix kodlari (CO66kcoB)", () => {
+  it("kirim: oyna maqsadi shtrix kod rejimida; kamera o'qigan EAN-13 — lookup va qator", async () => {
+    openStockIn();
+    await screen.findByRole("dialog", { name: "Omborga mahsulot qo'shish" });
+    const target = getActiveScanTarget();
+    expect(target).toMatchObject({
+      layer: "dialog",
+      formats: "barcodes",
+      hint: "Zavod shtrix kodi yoki QR stikerni (ELC-P-…) ramka ichiga oling.",
+    });
+    await act(async () => target?.onScan("4780123450017", "camera"));
+    const list = await screen.findByRole("list", { name: "Skanerlangan mahsulotlar" });
+    expect(await within(list).findByText("Quvvatlagich 20 W")).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith("warehouses/3/lookup", { params: { code: "4780123450017" } });
+    resetScanTargets();
+  });
+
+  it("inventarizatsiya ham shtrix kod rejimida", async () => {
+    renderWithProviders(<InventoryDialog open warehouse={WAREHOUSE} onClose={vi.fn()} />);
+    await screen.findByRole("combobox", { name: /Mahsulot/ });
+    expect(getActiveScanTarget()).toMatchObject({ layer: "dialog", formats: "barcodes" });
+    resetScanTargets();
   });
 });

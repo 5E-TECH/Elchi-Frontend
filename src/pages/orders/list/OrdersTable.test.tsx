@@ -226,6 +226,35 @@ describe("OrdersTable", () => {
     expect(screen.getByRole("link", { name: "№o-1" })).toHaveAttribute("href", "/edit/o-1");
   });
 
+  it("rwAy8Qyk: `order_number` bor — yorliqdagi raqam «№EL-100081» (havola id bo'yicha), nusxa «EL-100081»", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderWithProviders(
+      <OrdersTable data={[{ ...orders[0], id: "81", order_number: "EL-100081" }] as never} isLoading={false} />,
+    );
+
+    expect(screen.getByRole("link", { name: "№EL-100081" })).toHaveAttribute("href", "/edit/81");
+    expect(screen.queryByText("№81")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "№EL-100081 raqamini nusxalash" }));
+    expect(writeText).toHaveBeenCalledWith("EL-100081");
+  });
+
+  it("rwAy8Qyk: telefon kartasida ham «№EL-100081 · tuman · market»", () => {
+    mockPhone();
+    renderWithProviders(
+      <OrdersTable
+        data={[{ ...orders[0], id: "81", order_number: "EL-100081" }] as never}
+        isLoading={false}
+        label="Buyurtmalar ro'yxati"
+      />,
+    );
+
+    const card = within(screen.getByRole("list", { name: "Buyurtmalar ro'yxati" })).getByRole("link");
+    expect(card).toHaveAttribute("href", "/edit/81");
+    expect(card).toHaveTextContent("№EL-100081 · Yunusobod · Fresh Market");
+  });
+
   it("copies the order id to the clipboard without triggering the row click", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();

@@ -8,6 +8,7 @@ import { unsubscribePushOnLogout } from "./features/push-notifications/lib/pushC
 import { captureInstallPrompt } from "./features/pwa-install/lib/installPrompt";
 import { preloadLoginPage } from "./app/lib/loginPagePreload";
 import { i18nReady, startsOnLogin } from "./i18n";
+import { reloadForNewVersion } from "./shared/lib/chunkError";
 
 // «Brauzeringiz eskirgan» zaxira bloki (index.html, js9ndYwA): ilova kodi ishga tushdi — brauzer uni o'qiy oldi, blok
 // kerak emas. Chizishni (tarjimalar, sekin tarmoqda 8 s dan ko'p bo'lishi mumkin) KUTMASDAN olib tashlanadi —
@@ -17,6 +18,12 @@ document.getElementById("legacy-fallback")?.remove();
 // «Ilovani o'rnatish» (KI-2): `beforeinstallprompt` sahifa yuklanishi bilan bir marta keladi — tarjimalar va birinchi
 // chizishni KUTMASDAN ushlanadi (aks holda hodisa o'tib ketadi va «O'rnatish» tugmasi chiqmaydi).
 captureInstallPrompt();
+
+// Yangi versiya chiqqach ochiq tab eski bo'lim faylini topa olmaydi (`vite:preloadError`) — «Ilova xatosi» o'rniga
+// sahifa bir marta qayta yuklanadi (G6F68ti6, 6-band; oflaynda yo'q — `shared/lib/chunkError.ts`).
+window.addEventListener("vite:preloadError", (event) => {
+  if (reloadForNewVersion()) event.preventDefault();
+});
 
 // «Sessiyalar» (Elchi Pochta #3): aniq qurilma nomi (Client Hints — model, OT va brauzer versiyasi) fonda bir marta
 // hisoblanib saqlanadi; kirish va refresh so'rovlari uni kutmaydi (`auth/deviceName.ts`).

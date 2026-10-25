@@ -468,7 +468,6 @@
     "offCreate": "New order cards are not delivered",
     "offCancel": "Cancelled order messages are not delivered",
     "inactive": "Inactive",
-    "inactiveHint": "Messages are not sent to this group",
     "link": "Connect",
     "linkCreate": "Connect the new orders group",
     "linkCancel": "Connect the cancelled orders group",

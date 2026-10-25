@@ -165,6 +165,11 @@ describe("Kuryer buyurtmalari — sarlavha, tablar va so'rov (v2)", () => {
     await waitFor(() => expect(lastCall()).toMatchObject({ search: "9021" }), { timeout: 2000 });
   });
 
+  it("rwAy8Qyk: ro'yxatdagi raqam «EL-100081» bilan qidiruv — so'rovga ichki id «81»", () => {
+    renderPage("/orders?status=waiting&orderSearch=EL-100081");
+    expect(lastCall()).toMatchObject({ search: "81" });
+  });
+
   it("sana oralig'i URL'dan `startDate` / `endDate` bo'lib ketadi; bekor qilinganlarda qidiruv va sana yuborilmaydi", async () => {
     const user = userEvent.setup();
     state.rows = [order("1001", "Laylo Hasanova", { status: "cancelled" })];
@@ -329,6 +334,17 @@ describe("Kuryer buyurtmalari — jadval qatori (v2)", () => {
     await expect(navigator.clipboard.readText()).resolves.toBe("1001");
   });
 
+  it("rwAy8Qyk: `order_number` bor — «№EL-100081» (havola id bo'yicha), nusxa «EL-100081»", async () => {
+    const user = userEvent.setup();
+    state.rows = [order("81", "Laylo Hasanova", { order_number: "EL-100081" })];
+    renderPage();
+
+    const row = screen.getAllByRole("row")[1];
+    expect(within(row).getByRole("link", { name: "№EL-100081" })).toHaveAttribute("href", expect.stringMatching(/edit\/81$/));
+    await user.click(screen.getByRole("button", { name: "№EL-100081 raqamini nusxalash" }));
+    await expect(navigator.clipboard.readText()).resolves.toBe("EL-100081");
+  });
+
   it("market tasdig'ini kutayotgan buyurtma — «Tasdiq kutilmoqda», maslahatda amal, summa va vaqt", () => {
     const requestedAt = new Date();
     requestedAt.setHours(10, 52, 0, 0);
@@ -458,6 +474,16 @@ describe("Kuryer buyurtmalari — telefon (< 768)", () => {
     expect(within(item).getByRole("link", { name: /qo'ng'iroq qilish/ })).toHaveAttribute("href", "tel:+998902146631");
     expect(within(item).getByRole("button", { name: "Laylo Hasanova: sotish" })).toBeInTheDocument();
     expect(within(item).getByRole("button", { name: "Laylo Hasanova: bekor qilish" })).toBeInTheDocument();
+  });
+
+  it("rwAy8Qyk: kartada «№EL-100081 · tuman · market»", () => {
+    state.rows = [order("81", "Laylo Hasanova", { order_number: "EL-100081" })];
+    renderPage();
+
+    const item = screen.getByRole("list", { name: "Kutilayotgan buyurtmalar" });
+    const link = within(item).getByRole("link", { name: /№EL-100081/ });
+    expect(link).toHaveAttribute("href", expect.stringMatching(/edit\/81$/));
+    expect(link).toHaveTextContent("№EL-100081 · Qibray tumani · Baraka Shop");
   });
 
   it("bekor qilinganlar: «Barchasini tanlash» → pastki panelda yuborish tugmasi", async () => {

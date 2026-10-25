@@ -600,6 +600,8 @@
       "label": "24 soat ichida yetkazilganlar",
       "good": "Yaxshi · 70% va undan yuqori",
       "low": "Past · 70% dan kam",
+      "unmeasured": "O'lchanmagan · yetkazish yo'q",
+      "ariaUnmeasured": "O'z vaqtida yetkazish (SLA): o'lchanmagan — bu davrda yetkazilgan buyurtma yo'q",
       "aria": "O'z vaqtida yetkazish (SLA): {{value}} — 24 soat ichida yetkazilgan buyurtmalar ulushi",
       "note": "Qabuldan sotuvgacha 24 soatdan oshmagan buyurtmalar ulushi"
     },

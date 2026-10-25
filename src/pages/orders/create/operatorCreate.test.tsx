@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import { aiApiGet, aiPreview } from "../../../test/aiOrderFixtures";
@@ -13,13 +14,22 @@ vi.mock("../../../shared/api/api", () => ({
 import OrderCreate from "./index";
 
 /**
- * MO-3 — market operatori `/new-orders/create` da: faqat «AI bilan» (maket `market_operator-new-orders-create-manual`,
- * AI qismi; holatlar `market-new-orders-create-ai-*`). Qo'lda forma, «Qo'lda · AI bilan» tanlovi, market tanlash,
- * «Yangi buyurtmalar» yon kartasi va viloyat/tuman ro'yxatlari yo'q — ularning backend yo'llari operatorga 403.
+ * MO-3 / MO-7 (OfRSoRUX) — market operatori `/new-orders/create` da: «Qo'lda · AI bilan» (maket
+ * `market_operator-new-orders-create-manual`; AI holatlari `market-new-orders-create-ai-*`). Backend 6cb2340:
+ * `POST /orders` va `GET /region`, `/district` operatorga ochiq; `market_id` tokendan, `operator` — operatorning o'zi.
+ * Market qadami va «Yangi buyurtmalar» yon kartasi yo'q (`orders/markets/:id/new` operatorga yopiq — N12).
  */
 
 const operatorState = {
   role: { id: "42", role: "market_operator", region: null, name: "Dilnoza Karimova" },
+  user: {
+    user: { id: "42", role: "market_operator", name: "Dilnoza Karimova", market: { id: "37", name: "Baraka Shop", add_order: true } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
 } as never;
 
 let parseOrders: AiPreviewOrder[];
@@ -27,8 +37,19 @@ let parseResponse: () => unknown;
 
 const confirmCalls = () =>
   mocks.post.mock.calls.filter(([url]) => url === "orders/ai-confirm").map(([, body]) => body as AiConfirmRequest);
+const orderPosts = () => mocks.post.mock.calls.filter(([url]) => url === "orders");
 const parseCalls = () => mocks.post.mock.calls.filter(([url]) => url === "orders/ai-parse");
 const getUrls = () => mocks.get.mock.calls.map(([url]) => String(url));
+
+/** v2 `Select` (qidiruvli combobox): ochiladi va portaldagi ro'yxatdan variant tanlanadi. */
+const pickOption = async (user: ReturnType<typeof userEvent.setup>, comboboxId: string, option: string) => {
+  const combobox = document.getElementById(comboboxId) as HTMLElement;
+  await waitFor(() => expect(combobox).toBeEnabled());
+  await user.click(combobox);
+  await user.click(await screen.findByRole("option", { name: option }));
+};
+
+const openAi = () => fireEvent.click(within(screen.getByTestId("create-mode-tabs")).getByRole("radio", { name: /AI bilan/ }));
 
 const analyse = async () => {
   fireEvent.change(screen.getByRole("textbox", { name: "Buyurtma matni" }), { target: { value: "Vali 90 123 45 67" } });
@@ -51,105 +72,83 @@ beforeEach(() => {
         data: { statusCode: 200, data: { results: request.orders.map((_, index) => ({ index, ok: true, order_id: "901" })) } },
       });
     }
+    if (url === "orders") return Promise.resolve({ data: { statusCode: 201, data: { id: "905" } } });
     return Promise.reject(new Error(`kutilmagan POST ${url}`));
   });
 });
 
-describe("OrderCreate — market operatori (MO-3)", () => {
-  it("darhol AI paneli: tanlov, qo'lda forma, market qadami va yon karta yo'q; orqaga — «Buyurtmalar»", async () => {
+describe("OrderCreate — market operatori (MO-3, MO-7)", () => {
+  it("sukut — «Qo'lda», «Qo'lda · AI bilan» tablari; sarlavhada «Baraka Shop nomidan»; market qadami va yon karta yo'q", async () => {
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
     expect(screen.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeInTheDocument();
-    expect(screen.getByText("Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi")).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Buyurtma matni" })).toBeInTheDocument();
-    expect(screen.getByTestId("ai-mode-panel")).not.toHaveClass("hidden");
-
-    expect(screen.queryByTestId("create-mode-tabs")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("manual-mode-panel")).not.toBeInTheDocument();
+    expect(screen.getByText("Baraka Shop nomidan")).toBeInTheDocument();
+    expect(screen.getByTestId("create-mode-tabs")).toBeInTheDocument();
+    expect(screen.getByTestId("manual-mode-panel")).not.toHaveClass("hidden");
     expect(screen.queryByText(/Avval marketni tanlang/)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Yangi buyurtmalar" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Buyurtmalar/ })).toHaveAttribute("href", "/orders");
 
-    await waitFor(() => expect(getUrls()).toContain("orders/ai-availability"));
-    // Operatorga yopiq yo'llar so'ralmaydi (global 403 xabari chiqmasin).
-    expect(getUrls().filter((url) => url === "region" || /^region\/|^orders\/markets\/|^markets/.test(url))).toEqual([]);
+    // Viloyat ro'yxati operatorga ochiq (N11); market yangi buyurtmalari (`orders/markets/…`) so'ralmaydi.
+    await waitFor(() => expect(getUrls()).toContain("region"));
+    expect(getUrls().filter((url) => /^orders\/markets\/|^markets/.test(url))).toEqual([]);
   });
 
-  it("AI aniqlagan tuman bilan karta tayyor (viloyat maydoni yo'q); market_id yuborilmaydi, katalog — my-products", async () => {
-    parseOrders = [aiPreview({ region_id: null, region_name: null, region_given: false })];
+  it("xulosada «Operator» — o'zi, faqat o'qish («Siz — avtomatik yoziladi»)", async () => {
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
-    await analyse();
 
-    const card = await screen.findByTestId("ai-preview-card");
-    expect(within(card).queryByText("Viloyat")).not.toBeInTheDocument();
-    expect(card).toHaveAttribute("data-ready", "true");
+    const aside = await screen.findByRole("complementary", { name: "Buyurtma xulosasi" });
+    const field = within(aside).getByRole("textbox", { name: "Operator" });
+    expect(field).toHaveValue("Dilnoza Karimova");
+    expect(field).toHaveAttribute("readonly");
+    expect(within(aside).getByText("Siz — avtomatik yoziladi")).toBeInTheDocument();
+  });
 
-    const parseBody = parseCalls()[0][1] as FormData;
-    expect(parseBody.has("market_id")).toBe(false);
+  it("qo'lda yaratish — POST /orders: market_id va operator yo'q, Idempotency-Key bilan; katalog — my-products", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
-    fireEvent.click(within(screen.getByTestId("ai-confirm-bar")).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
-    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
-    expect(confirmCalls()[0]).not.toHaveProperty("market_id");
-    expect(confirmCalls()[0].orders[0].district_id).toBe("101");
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
+    await user.type(screen.getByLabelText(/^Umumiy summa/), "150000");
+    await user.click(
+      within(screen.getByRole("complementary", { name: "Buyurtma xulosasi" })).getByRole("button", { name: "Buyurtma yaratish" }),
+    );
 
+    await waitFor(() => expect(orderPosts()).toHaveLength(1));
+    const [, body, config] = orderPosts()[0] as [string, Record<string, unknown>, { headers?: Record<string, string> }];
+    expect(body).not.toHaveProperty("market_id");
+    expect(body).not.toHaveProperty("operator");
+    expect(body).toMatchObject({ district_id: "101", total_price: 150000 });
+    expect(config?.headers?.["Idempotency-Key"]).toEqual(expect.any(String));
     expect(getUrls().some((url) => url.startsWith("product/my-products"))).toBe(true);
-    expect(getUrls().filter((url) => url === "region" || url.startsWith("region/"))).toEqual([]);
   });
 
-  it("Operator maydoni — o'zi, faqat o'qish («Siz — avtomatik yoziladi»); AI o'qigan operator matni yuborilmaydi", async () => {
-    parseOrders = [aiPreview({ region_id: null, region_name: null, region_given: false, operator: "sevinch" })];
+  it("AI bilan: market_id yuborilmaydi, Operator maydoni — o'zi; AI o'qigan operator matni yuborilmaydi", async () => {
+    parseOrders = [aiPreview({ operator: "sevinch" })];
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
+    openAi();
     await analyse();
 
     const card = await screen.findByTestId("ai-preview-card");
     const field = within(card).getByRole("textbox", { name: "Operator" });
     expect(field).toHaveValue("Dilnoza Karimova");
     expect(field).toHaveAttribute("readonly");
-    expect(within(card).getByText("Siz — avtomatik yoziladi")).toBeInTheDocument();
     expect(within(card).queryByDisplayValue("sevinch")).not.toBeInTheDocument();
+    const parseBody = parseCalls()[0][1] as FormData;
+    expect(parseBody.has("market_id")).toBe(false);
 
     fireEvent.click(within(screen.getByTestId("ai-confirm-bar")).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
     await waitFor(() => expect(confirmCalls()).toHaveLength(1));
-    // Backend bo'sh `operator` ga so'rovchi ismini o'zi yozadi (`operator_id` — tokendan).
+    expect(confirmCalls()[0]).not.toHaveProperty("market_id");
     expect(confirmCalls()[0].orders[0]).not.toHaveProperty("operator");
   });
 
-  it("tuman topilmagan va taklif yo'q — tuman maydoni o'chiq, «matnda tumanni yozing» izohi; karta tayyor emas", async () => {
-    parseOrders = [aiPreview({ region_id: null, region_name: null, district_id: null, district_name: null })];
-    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
-    await analyse();
-
-    const card = await screen.findByTestId("ai-preview-card");
-    expect(card).toHaveAttribute("data-ready", "false");
-    expect(within(card).getByText("Tuman aniqlanmadi — matnda tumanni yozib, qayta tahlil qiling.")).toBeInTheDocument();
-    // Kamchilik belgisi tanlab bo'lmaydigan amalni («Tuman tanlang») so'ramaydi.
-    const chips = within(card).getByTestId("ai-issues");
-    expect(within(chips).getByText("Tuman aniqlanmadi")).toBeInTheDocument();
-    expect(within(chips).queryByText("Tuman tanlang")).not.toBeInTheDocument();
-  });
-
-  it("AI o'chiq (`reason: disabled`) — «Qo'lda yaratish» tugmasi yo'q, kimga murojaat qilish aytiladi", async () => {
-    parseResponse = () => ({ ok: false, reason: "disabled" });
-    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
-    await analyse();
-
-    const block = await screen.findByTestId("ai-block");
-    expect(block).toHaveTextContent("Bu market uchun AI yoqilmagan — market egasi yoki administratorga murojaat qiling.");
-    expect(within(block).queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("manual-mode-panel")).not.toBeInTheDocument();
-  });
-
-  it("AI rad etdi (`refused`) — «Matnni tahrirlash» (qo'lda emas)", async () => {
-    parseResponse = () => ({ ok: false, reason: "refused" });
-    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
-    await analyse();
-
-    expect(await screen.findByText("Matnni boshqacha yozib, qayta urinib ko'ring.")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Matnni tahrirlash" }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: /Qo'lda/ })).not.toBeInTheDocument();
-  });
-
-  it("ai-availability o'chiq — AI paneli o'rniga ogohlantirish, qo'lda forma chizilmaydi", async () => {
+  it("AI o'chiq (ai-availability) — tablar yo'q, qo'lda forma ochiq (ogohlantirishsiz)", async () => {
     mocks.get.mockImplementation((url: string) =>
       url === "orders/ai-availability"
         ? Promise.resolve({ data: { statusCode: 200, data: { enabled: false, state: "disabled" } } })
@@ -157,12 +156,18 @@ describe("OrderCreate — market operatori (MO-3)", () => {
     );
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
-    expect(await screen.findByText("AI bilan yaratish hozir o'chiq")).toBeInTheDocument();
-    // Sarlavha izohi «AI bilan yaratiladi» ogohlantirishga zid — AI o'chiqda chiqmaydi.
-    expect(screen.queryByText(/nomidan AI bilan yaratiladi/)).not.toBeInTheDocument();
-    expect(screen.getByText("Buyurtma yaratish uchun market egasi yoki administratorga murojaat qiling.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("create-mode-tabs")).not.toBeInTheDocument());
+    expect(screen.getByTestId("manual-mode-panel")).not.toHaveClass("hidden");
     expect(screen.queryByTestId("ai-mode-panel")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("manual-mode-panel")).not.toBeInTheDocument();
-    expect(mocks.post).not.toHaveBeenCalled();
+    expect(screen.queryByText("AI bilan yaratish hozir o'chiq")).not.toBeInTheDocument();
+  });
+
+  it("market nomi profilda bo'lmasa — umumiy izoh", () => {
+    const noMarket = {
+      ...(operatorState as Record<string, unknown>),
+      user: { ...(operatorState as { user: Record<string, unknown> }).user, user: { id: "42", role: "market_operator", name: "Dilnoza Karimova" } },
+    } as never;
+    renderWithProviders(<OrderCreate />, { preloadedState: noMarket });
+    expect(screen.getByText("Buyurtmalar siz ishlaydigan market nomidan yaratiladi")).toBeInTheDocument();
   });
 });

@@ -11,7 +11,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * keyin `proofFileKeys`; har biri `X-Request-Source: courier-bulk`); «Ertaga» so'rov yubormaydi.
  * Boshqa yozish so'rovi — `leaked` (403).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+// Worktree serverlari boshqa portda — `E2E_ORIGIN`.
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -4,7 +4,14 @@ import { Copy, Inbox, RotateCcw } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FulfillmentSourceTag, OrderReturnPlace, OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
+import {
+    formatOrderRef,
+    FulfillmentSourceTag,
+    orderNumberOf,
+    OrderReturnPlace,
+    OrderStatusBadge,
+    ReturnRequestedTag,
+} from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { ExtraCostApprovalTag } from "../../../entities/orders/ui/ExtraCostApprovalTag";
 import type { RootState } from "../../../app/config/store";
@@ -319,15 +326,16 @@ const OrdersTable = ({
                                 to={getOrderHref(order)}
                                 className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
                             >
-                                №{order.id}
+                                {/* rwAy8Qyk: yorliqdagi raqam (`order_number`, «№EL-100081»), zaxira — `№id`. */}
+                                {formatOrderRef(order)}
                             </Link>
                             <IconButton
                                 size="sm"
                                 icon={Copy}
-                                label={t("ordersList.copyNumber", { id: order.id })}
+                                label={t("ordersList.copyNumber", { id: orderNumberOf(order) })}
                                 // Market jadvali planshetda 736 px ga sig'sin: maket `market-orders-list` da nusxalash yo'q.
                                 className={cx("-my-1", isMarket && "max-lg:hidden")}
-                                onClick={() => handleCopyOrderId(String(order.id))}
+                                onClick={() => handleCopyOrderId(orderNumberOf(order))}
                             />
                             {isPinned(order, index) ? exactBadge : null}
                         </div>
@@ -462,8 +470,8 @@ const OrdersTable = ({
         (order: OrderListItem, index: number) => {
             const selectable = hasSelection;
             const meta = isMarket
-                ? [`№${order.id}`, order.district?.name ?? "—"]
-                : [`№${order.id}`, order.district?.name ?? "—", order.market?.name ?? "—"];
+                ? [formatOrderRef(order), order.district?.name ?? "—"]
+                : [formatOrderRef(order), order.district?.name ?? "—", order.market?.name ?? "—"];
             const actions = renderActions(order, "card");
             const showCourierHeldNote =
                 hasActions &&

@@ -1,10 +1,27 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import {
+    isNetworkFailure,
+    markNetworkDown,
+    NETWORK_ERROR_EVENT,
+    NETWORK_RESTORED_EVENT,
+    type NetworkDownKind,
+    type NetworkErrorDetail,
+    type NetworkRestoredDetail,
+} from '../../../auth/networkError';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 import { QUERY_ERROR_EVENT, type QueryErrorDetail } from '../../../shared/lib/queryErrorEvents';
 import { notify } from '../../../shared/lib/notify';
 import { getErrorKind } from '../../../shared/lib/errorKind';
+
+/** Tarmoq holati xabari (bitta, barqaror `id`). */
+export const NETWORK_TOAST_ID = 'network-error';
+/** «Aloqa tiklandi» (taxta `tizim-feedback` §04 — 3 s da yopiladi). */
+export const NETWORK_RESTORED_TOAST_ID = 'network-restored';
+export const NETWORK_RESTORED_DURATION_MS = 3000;
+/** Bir xil sababli tarmoq xabari shu oraliqda qayta chiqmaydi (§01 dedupe). */
+const NETWORK_TOAST_THROTTLE_MS = 4000;
 
 /**
  * Ilova darajasidagi xabarlar (dizayn v2, 3-bosqich): tarmoq va so'rov xatolari hamda `apiRequest`
@@ -44,34 +61,89 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const queryClient = useQueryClient();
     const { t } = useTranslation('common');
-    const lastNetworkToastAtRef = useRef(0);
+    const lastNetworkToastRef = useRef<{ kind: NetworkDownKind | null; at: number }>({ kind: null, at: 0 });
 
+    /**
+     * TARMOQ HOLATI (G6F68ti6, 1/3/8-bandlar; taxta `tizim-feedback` §04, `tizim-errors` 03):
+     *  - javob kelmadi → «Internet aloqasi yo'q», vaqt tugadi (20 s, internet bor) → «Server javob bermadi» —
+     *    bitta `id`; bir xil sabab 4 s ichida qayta chiqmaydi, boshqa sabab o'sha xabarni yangilaydi;
+     *  - aloqa holat: «Internet aloqasi yo'q» foydalanuvchi yopguncha emas, aloqa qaytguncha turadi («Qayta urinish»
+     *    uni yopmaydi) va uzilishdan keyingi birinchi javobda o'zi yopiladi + «Aloqa tiklandi» (3 s);
+     *  - «Server javob bermadi» fon javobidan yopilmaydi — yiqilgan amalning yagona xabari bo'lishi mumkin;
+     *  - tiklanganda javobsiz yiqilgan faol so'rovlar «Qayta urinish»siz o'zi qayta so'raladi;
+     *  - brauzer oflayn bo'lishi bilan (so'rov bo'lmasa ham) xabar darhol chiqadi; `online` da faol so'rovlar
+     *    qayta yuboriladi, «tiklandi» esa faqat haqiqiy javobdan (captive portal — `auth/networkError.ts`).
+     */
     useEffect(() => {
-        const handleNetworkError = (event: Event) => {
+        const showNetworkToast = (kind: NetworkDownKind) => {
             const now = Date.now();
-            if (now - lastNetworkToastAtRef.current < 4000) {
+            const last = lastNetworkToastRef.current;
+            if (last.kind === kind && now - last.at < NETWORK_TOAST_THROTTLE_MS) {
                 return;
             }
 
-            lastNetworkToastAtRef.current = now;
-            // Matn — taxta `tizim-errors` 03: javob kelmadi → «Internet aloqasi yo'q» (barcha sahifalarda shu nom);
-            // vaqt tugadi (20 s, internet bor) → «Server javob bermadi» — foydalanuvchiga internetni tekshir demaymiz.
-            const code = (event as CustomEvent<{ code?: string } | null>).detail?.code;
-            const timedOut = getErrorKind({ code }) === 'timeout';
-            // Barqaror `id`: takroriy tarmoq xatosi bitta xabarga qo'shiladi (yangisi qo'shilmaydi).
+            lastNetworkToastRef.current = { kind, at: now };
+            notify.dismiss(NETWORK_RESTORED_TOAST_ID);
+            const timedOut = kind === 'timeout';
             notify.error(timedOut ? t('toast.timeoutTitle', { ns: 'ui' }) : t('states.error.offline.title', { ns: 'ui' }), {
-                id: 'network-error',
+                id: NETWORK_TOAST_ID,
                 description: timedOut
                     ? t('states.error.generic.descriptionNoStatus', { ns: 'ui' })
                     : t('states.error.offline.description', { ns: 'ui' }),
                 // ⚠️ `window.location.reload()` EMAS: internet hali qaytmagan bo'lsa
                 // to'liq qayta yuklash sessiyani xavf ostiga qo'yardi (9w5Fq94s).
-                action: { label: t('retry'), onClick: () => void queryClient.refetchQueries({ type: "active" }) },
+                action: {
+                    label: t('retry'),
+                    onClick: () => void queryClient.refetchQueries({ type: 'active' }),
+                    keepOpen: !timedOut,
+                },
             });
         };
 
-        window.addEventListener("elchi:network-error", handleNetworkError);
-        return () => window.removeEventListener("elchi:network-error", handleNetworkError);
+        const handleNetworkError = (event: Event) => {
+            const detail = (event as CustomEvent<Partial<NetworkErrorDetail> | null>).detail;
+            // Eski shakl (`kind` siz) — kod bo'yicha.
+            const kind: NetworkDownKind =
+                detail?.kind ?? (getErrorKind({ code: detail?.code }) === 'timeout' ? 'timeout' : 'offline');
+            showNetworkToast(kind);
+        };
+
+        const handleNetworkRestored = (event: Event) => {
+            const { kind } = (event as CustomEvent<NetworkRestoredDetail>).detail;
+            lastNetworkToastRef.current = { kind: null, at: 0 };
+            void queryClient.refetchQueries({
+                type: 'active',
+                predicate: (query) => query.state.status === 'error' && isNetworkFailure(query.state.error),
+            });
+            if (kind !== 'offline') {
+                return;
+            }
+
+            notify.dismiss(NETWORK_TOAST_ID);
+            notify.success(t('toast.restoredTitle', { ns: 'ui' }), {
+                id: NETWORK_RESTORED_TOAST_ID,
+                description: t('toast.restoredDescription', { ns: 'ui' }),
+                duration: NETWORK_RESTORED_DURATION_MS,
+            });
+        };
+
+        const unsubscribeOnline = onlineManager.subscribe((online) => {
+            if (!online) {
+                markNetworkDown('offline');
+                showNetworkToast('offline');
+                return;
+            }
+            // `refetchOnReconnect` 30 s `staleTime` ichidagilarni so'ramaydi — ochiq sahifa to'liq yangilansin.
+            void queryClient.refetchQueries({ type: 'active' });
+        });
+
+        window.addEventListener(NETWORK_ERROR_EVENT, handleNetworkError);
+        window.addEventListener(NETWORK_RESTORED_EVENT, handleNetworkRestored);
+        return () => {
+            unsubscribeOnline();
+            window.removeEventListener(NETWORK_ERROR_EVENT, handleNetworkError);
+            window.removeEventListener(NETWORK_RESTORED_EVENT, handleNetworkRestored);
+        };
     }, [queryClient, t]);
 
     const lastQueryErrorRef = useRef<{ key: string; at: number }>({ key: "", at: 0 });
@@ -119,11 +191,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             onSuccess?.(data);
             return data;
         } catch (error: unknown) {
-            const backendMessage = getBackendErrorMessage(error);
-
-            notify.error(t('error'), {
-                description: backendMessage ?? errorMessage ?? t('serverRequestError'),
-            });
+            // Javobsiz xato (G6F68ti6, 4-band): interceptor bitta «Internet aloqasi yo'q» / «Server javob bermadi»
+            // xabarini ko'rsatgan — ikkinchi «Xatolik» chiqmaydi.
+            if (!isNetworkFailure(error)) {
+                notify.error(t('error'), {
+                    description: getBackendErrorMessage(error) ?? errorMessage ?? t('serverRequestError'),
+                });
+            }
 
             onError?.(error);
             return undefined;

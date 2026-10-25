@@ -7,7 +7,7 @@ import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, s
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
-import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
+import { emitNetworkError, isNetworkFailure, isTransientAuthFailure, NETWORK_RESTORED_EVENT } from "./networkError";
 import {
   clearLoginNotice,
   holdLoginNoticeUntilReload,
@@ -198,7 +198,16 @@ const keepSessionWhileOffline = (error: unknown) => {
   if (typeof window === "undefined") return;
 
   if (isNetworkFailure(error)) {
-    window.addEventListener("online", () => void initAuth(), { once: true });
+    // Aloqa qaytdi: brauzer `online` yoki (Wi-Fi bor, internet yo'q holatida `online` kelmaydi) uzilishdan keyingi
+    // birinchi javob — `elchi:network-restored` (G6F68ti6, 3/10-bandlar). Qaysi biri oldin kelsa, bir marta; profil
+    // orqa fonda olinadi — ilova yuklanish ekrani ostiga yashirilmaydi (rol tiklangan, sahifa ishlab turibdi).
+    const retry = () => {
+      window.removeEventListener("online", retry);
+      window.removeEventListener(NETWORK_RESTORED_EVENT, retry);
+      void initAuth({ background: true });
+    };
+    window.addEventListener("online", retry);
+    window.addEventListener(NETWORK_RESTORED_EVENT, retry);
     return;
   }
 
@@ -207,7 +216,7 @@ const keepSessionWhileOffline = (error: unknown) => {
   if (reinitTimer) clearTimeout(reinitTimer);
   reinitTimer = setTimeout(() => {
     reinitTimer = null;
-    void initAuth();
+    void initAuth({ background: true });
   }, AUTH_REINIT_DELAY_MS);
 };
 
@@ -553,10 +562,22 @@ const shouldRestoreSessionFromCookie = () => {
   return path !== "/login" && path !== "/tg" && !path.startsWith("/tg/");
 };
 
-export const initAuth = async () => {
+export type InitAuthOptions = {
+  /**
+   * Aloqa qaytgandan keyingi qayta urinish (G6F68ti6, 10-band): rol saqlangan bo'lsa yuklanish ekrani
+   * (`setAppInitializing`) ko'rsatilmaydi — foydalanuvchi ochiq sahifada ishlashda davom etadi.
+   */
+  background?: boolean;
+};
+
+export const initAuth = async (options: InitAuthOptions = {}) => {
   if (initPromise) {
     return initPromise;
   }
+  const showLoader = () => {
+    if (options.background && store.getState().role.role) return;
+    store.dispatch(setAppInitializing(true));
+  };
 
   initPromise = (async () => {
     // Sessiyali ochilish: tarjimalarning qolgan qismi ham chizishdan oldin (to'g'ridan-to'g'ri `/login` da ham —
@@ -578,7 +599,7 @@ export const initAuth = async () => {
           resetClientAuthState();
           return;
         }
-        store.dispatch(setAppInitializing(true));
+        showLoader();
         appLocales = loadAppLocales().catch(() => undefined);
         try {
           accessToken = await refreshAccessToken();
@@ -587,7 +608,7 @@ export const initAuth = async () => {
           return;
         }
       } else {
-        store.dispatch(setAppInitializing(true));
+        showLoader();
         appLocales = loadAppLocales().catch(() => undefined);
       }
 

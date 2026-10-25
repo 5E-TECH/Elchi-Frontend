@@ -6,6 +6,7 @@ import { toast } from "./support/toast";
  * NG-A — `/notifications` adminda (ega NG-S2): yon menyuda «Bildirishnomalar» («Tizim» guruhi), qator menyusi
  * (popover: «Nofaol qilish» / «Faollashtirish», «O'chirish»; «Tahrirlash» yo'q — NG-S4), tasdiq oynalari va
  * `PATCH /notifications/:id` tanasida faqat `{ is_active }`. Planshetda (768) «Xabar turi» ustuni yashirin.
+ * NG-C (G085w5Qr): nofaollik sababi — «Holat» ustunida matn va ton, faollashtirish ogohlantirishi sababga qarab.
  * 390 — `notification-groups.mobile.spec.ts`.
  */
 test.describe.configure({ timeout: 180_000 });
@@ -34,7 +35,8 @@ test("⭐ admin: menyuda «Bildirishnomalar», nofaol qilish → PATCH {is_activ
   expect(mock.patches).toEqual([{ id: "7", body: { is_active: false } }]);
   const row = page.getByRole("row").filter({ hasText: "-1002184736577" });
   await expect(row.getByText("Nofaol", { exact: true })).toBeVisible();
-  await expect(row.getByText("Xabarlar bu guruhga yuborilmayapti")).toBeVisible();
+  // Backend `PATCH {is_active:false}` → `inactive_reason: 'manual'` (G085w5Qr) — neytral «Qo'lda nofaol qilingan».
+  await expect(row.getByText("Qo'lda nofaol qilingan")).toBeVisible();
   await expect(trigger).toBeFocused();
 });
 
@@ -79,3 +81,33 @@ for (const [width, typeColumnVisible] of [
     ).toHaveCount(1);
   });
 }
+
+test("⭐ NG-C: bot chiqarilgan — qizil «Nofaol» + sabab va sana, faollashtirishda «Bot guruhdan chiqarilgan»", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const mock = await openNotificationGroups(page, {
+    inactiveReason: "kicked",
+    inactiveAt: "2026-09-28T17:45:00+05:00",
+  });
+
+  const row = page.getByRole("row").filter({ hasText: "-1001937420815" });
+  const badge = row.getByText("Nofaol", { exact: true });
+  await expect(badge).toBeVisible();
+  await expect(badge).toHaveClass(/bg-danger-soft/);
+  await expect(row.getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeVisible();
+  await expect(row.locator("time")).toHaveText("Nofaol bo'lgan: 28.09.2026, 17:45");
+  await expect(row.getByText("Xabarlar bu guruhga yuborilmayapti")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "Nur Elektronika — yangi buyurtma guruhi: amallar" }).click();
+  await page.getByRole("menuitem", { name: "Faollashtirish" }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+  const note = dialog.getByRole("note");
+  await expect(note).toContainText("Bot guruhdan chiqarilgan");
+  await expect(note).toContainText("Avval botni shu guruhga qayta qo'shing, so'ng faollashtiring.");
+  await dialog.getByRole("button", { name: "Faollashtirish" }).click();
+
+  await expect(toast(page, "Guruh faollashtirildi", { tone: "success" })).toBeVisible();
+  expect(mock.patches).toEqual([{ id: "8", body: { is_active: true } }]);
+  await expect(row.getByText("Faol", { exact: true })).toBeVisible();
+  await expect(row.getByText(/Bot guruhdan chiqarilgan/)).toHaveCount(0);
+});

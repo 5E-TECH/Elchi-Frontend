@@ -57,9 +57,9 @@ export type MarketGroupLinkDialogProps = {
   expired: boolean;
   renewing: boolean;
   /**
-   * Ulanish shu oynada kuzatiladimi (`GET /notifications?market_id&group_type`, faqat superadmin/admin):
-   * `true` — «Guruh ulanishi kutilmoqda…» va «holat shu yerda yangilanadi»; `false` (market o'zi — holat
-   * endpointi TG-C da) — kutish qatori yo'q, 3-qadam «ulanganda sizga bildirishnoma keladi».
+   * Ulanish shu oynada kuzatiladimi (superadmin/admin — `GET /notifications?market_id&group_type`, market o'zi —
+   * `GET /notifications/me/telegram-groups`, TG-C): `true` — «Guruh ulanishi kutilmoqda…» va «holat shu yerda
+   * yangilanadi»; `false` (kuzatuvsiz iste'molchi) — kutish qatori yo'q, 3-qadam «ulanganda sizga bildirishnoma keladi».
    */
   watching: boolean;
   /** Yopilgach fokus shu elementga (sukut — oynani ochgan element). */

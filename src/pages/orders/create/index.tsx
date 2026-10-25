@@ -26,6 +26,7 @@ import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { useOrders } from "../../../entities/order/api/orderApi";
+import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
 import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
@@ -150,12 +151,18 @@ const OrderCreateFormContent = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { createOrder } = useOrders();
+  // gpCIsGjH: `Idempotency-Key` tarkibga bog'langan — javobi kelmagan urinishni (20 s timeout, tarmoq) qayta bosish
+  // AYNI kalit bilan ketadi va ikkinchi buyurtma yaratilmaydi; forma o'zgarsa — yangi kalit, muvaffaqiyatdan keyin —
+  // hammasi yangilanadi.
+  const createKeys = useCreateOrderIdempotencyKeys();
+  // Ikki marta tez bosish: tugma `isPending` bilan o'chguncha (qayta chizilish) ikkinchi yuborish ketmasin.
+  const submittingRef = useRef(false);
   const role = useSelector((state: RootState) => state.role.role);
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
-  // MO-3: market operatori — market tomoni (1-qadamsiz, market serverda tokendan, katalog `my-products`), faqat
-  // «AI bilan»: `POST /orders` unga hali yopiq (qo'lda — MO-7, OfRSoRUX). Maket `market_operator-new-orders-create-manual`
-  // (faqat AI qismi; holatlar `market-new-orders-create-ai-*`).
+  // MO-3 / MO-7 (OfRSoRUX): market operatori — market tomoni (1-qadamsiz, market serverda tokendan, katalog
+  // `my-products`), «Qo'lda · AI bilan» (backend 6cb2340: `POST /orders` va `GET /region`, `/district` operatorga ochiq;
+  // `operator` — operatorning o'zi, tanadagi `market_id` e'tiborsiz). Maket `market_operator-new-orders-create-manual`.
   const isMarketOperator = role === "market_operator";
   const isMarketRole = isMarketSideRole(role);
   // 6kHnNH9j: «Qayerdan yuboriladi» bloki (superadmin, admin, registrator; market — kalit bilan) va `fulfillment`.
@@ -173,9 +180,9 @@ const OrderCreateFormContent = () => {
   // `cap_exceeded` va so'rov xatosida tab qoladi — panel sababini o'zi tushuntiradi.
   const aiAvailability = useAiAvailability();
   const aiHidden = isAiTabHidden(aiAvailability.data);
-  const mode: CreateMode = isMarketOperator ? "ai" : aiHidden ? "manual" : selectedMode;
-  // Operatorda AI o'chiq bo'lsa yaratish usuli umuman yo'q — sabab ogohlantirishda (qo'lda rejim chizilmaydi).
-  const operatorAiOff = isMarketOperator && aiHidden;
+  const mode: CreateMode = aiHidden ? "manual" : selectedMode;
+  // MO-7: operator ishlaydigan market nomi (`my-profile.market`, N13) — sarlavhada «<market> nomidan».
+  const operatorMarketName = isMarketOperator ? profile?.market?.name?.trim() || null : null;
 
   // Bitta sxema — formaning tekshiruvi ham, «Buyurtma yuborishga tayyor» holati ham shundan (D-06).
   const createSchema = useMemo(() => createOrderSchema(!isMarketRole), [isMarketRole]);
@@ -209,7 +216,8 @@ const OrderCreateFormContent = () => {
   const details = useWatch({ control, name: "details" });
   const marketRoleId = roleState.id ?? profile?.id;
   const marketRoleName = roleState.name ?? profile?.name;
-  // Operatorning `id`/`name` i — o'zi, market emas (market nomi `my-profile` da yo'q, N13): market ma'lum emas.
+  // Operatorning `id`/`name` i — o'zi, market emas: «Bugungi buyurtmalar» kartasi yo'q (`orders/markets/:id/new`
+  // operatorga yopiq — N12); market nomi faqat sarlavhada (`my-profile.market`, N13).
   const selectedMarketId = isMarketOperator
     ? undefined
     : isMarketRole
@@ -314,12 +322,21 @@ const OrderCreateFormContent = () => {
       return;
     }
 
+    if (submittingRef.current) return;
+
     const payload = buildCreateOrderPayload(values, {
       includeMarketId: !isMarketRole,
       includeFulfillment: canChooseSource,
     });
-    createOrder.mutate(payload, {
+    submittingRef.current = true;
+    createOrder.mutate({ data: payload, idempotencyKey: createKeys.take(payload) }, {
+      onSettled: () => {
+        submittingRef.current = false;
+      },
       onSuccess: () => {
+        // Takroriy kalit javobi (`idempotent_replay`) ham shu yerga keladi: buyurtma avvalgi (javobi yo'qolgan)
+        // urinishda yaratilgan — bitta, forma tozalanadi. Keyingi buyurtma — yangi kalit.
+        createKeys.reset();
         void queryClient.invalidateQueries({ queryKey: ["orders"] });
         reset({
           ...ORDER_CREATE_DEFAULT_VALUES,
@@ -377,9 +394,9 @@ const OrderCreateFormContent = () => {
 
   // Sarlavha izohi: market ma'lum bo'lsa (market roli yoki AI) — «Tanlangan market: …»; 2-qadamda — majburiy
   // maydonlar belgisi; qolganida — «Buyurtma yaratish uchun qadamlarni bajaring».
-  // Operator: AI o'chiq bo'lsa izoh yo'q — «AI bilan yaratiladi» ogohlantirish «AI o'chiq» ga zid.
+  // Operator: «<market> nomidan» (maket), nomi kelmasa — umumiy izoh.
   const description = isMarketOperator ? (
-    operatorAiOff ? undefined : t("operatorCreate.description")
+    operatorMarketName ? t("operatorCreate.onBehalf", { market: operatorMarketName }) : t("operatorCreate.description")
   ) : selectedMarketName && (isMarketRole || !isManual) ? (
       <Trans
         t={t}
@@ -413,7 +430,7 @@ const OrderCreateFormContent = () => {
           backLabel={isMarketOperator ? t("title") : t("pageTitle", { ns: "newOrders" })}
           title={t("createPageTitle")}
           description={description}
-          actions={aiHidden || isMarketOperator ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
+          actions={aiHidden ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
         />
 
         <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
@@ -423,46 +440,38 @@ const OrderCreateFormContent = () => {
               almashganda qo'lda forma qiymatlari ham, AI matni/rasmlari ham
               yo'qolmaydi.
             */}
-            {operatorAiOff ? (
-              <CreateAlert tone="warning" title={t("operatorCreate.aiOffTitle")}>
-                {t("operatorCreate.aiOffText")}
-              </CreateAlert>
-            ) : null}
-            {/* Operatorda qo'lda forma umuman yo'q (yashirin holda ham): u viloyatlarni so'raydi — `GET /region` 403. */}
-            {isMarketOperator ? null : (
-              <div
-                data-testid="manual-mode-panel"
-                className={isManual ? "flex min-w-0 flex-col gap-6 max-md:gap-4" : "hidden"}
-              >
-                {!isMarketRole ? (
-                  <div ref={stepsRef} tabIndex={-1} className="min-w-0 scroll-mt-6 outline-none">
-                    <OrderStepper
-                      step={step}
-                      marketName={selectedMarketName}
-                      onChangeMarket={handlePrevious}
-                    />
-                  </div>
-                ) : null}
-
-                {serverError ? (
-                  <CreateAlert tone="danger" title={t("orderCreateErrorTitle")}>
-                    {serverError}
-                  </CreateAlert>
-                ) : null}
-
-                {showStep1 ? (
-                  <Step1Market
-                    canNext={canNext}
-                    backTo={BACK_TO}
-                    onNext={() => {
-                      void handleNext();
-                    }}
+            <div
+              data-testid="manual-mode-panel"
+              className={isManual ? "flex min-w-0 flex-col gap-6 max-md:gap-4" : "hidden"}
+            >
+              {!isMarketRole ? (
+                <div ref={stepsRef} tabIndex={-1} className="min-w-0 scroll-mt-6 outline-none">
+                  <OrderStepper
+                    step={step}
+                    marketName={selectedMarketName}
+                    onChangeMarket={handlePrevious}
                   />
-                ) : null}
-                {step === 2 ? <Step2Combined /> : null}
-                {step === 2 && canChooseSource ? <OrderSourceCard /> : null}
-              </div>
-            )}
+                </div>
+              ) : null}
+
+              {serverError ? (
+                <CreateAlert tone="danger" title={t("orderCreateErrorTitle")}>
+                  {serverError}
+                </CreateAlert>
+              ) : null}
+
+              {showStep1 ? (
+                <Step1Market
+                  canNext={canNext}
+                  backTo={BACK_TO}
+                  onNext={() => {
+                    void handleNext();
+                  }}
+                />
+              ) : null}
+              {step === 2 ? <Step2Combined /> : null}
+              {step === 2 && canChooseSource ? <OrderSourceCard /> : null}
+            </div>
 
             {!aiHidden ? (
               <div data-testid="ai-mode-panel" className={isManual ? "hidden" : "flex min-w-0 flex-col gap-4"}>
@@ -471,7 +480,9 @@ const OrderCreateFormContent = () => {
                   active={mode === "ai"}
                   isMarketRole={isMarketRole}
                   market={isMarketRole ? null : market}
-                  onSwitchToManual={isMarketOperator ? undefined : () => setMode("manual")}
+                  onSwitchToManual={() => setMode("manual")}
+                  // Operatorning AI oqimi avvalgidek viloyat/tuman ro'yxatlarisiz: tuman AI taklifidan, viloyatni
+                  // ai-confirm tumandan oladi (MO-3; qo'lda forma ro'yxatlarni o'zi so'raydi — N11).
                   areaLists={!isMarketOperator}
                   // Operator maydoni — o'zi (maket «Siz — avtomatik yoziladi»); matn yuborilmaydi, backend ismni o'zi yozadi.
                   selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
@@ -504,7 +515,8 @@ const OrderCreateFormContent = () => {
                   ready={canNext}
                   submitting={createOrder.isPending}
                   onPrevious={handlePrevious}
-                  backTo={BACK_TO}
+                  backTo={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}
+                  selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
                 />
               ) : null}
               {showToday && selectedMarketId ? (

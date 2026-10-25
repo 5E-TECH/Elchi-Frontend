@@ -13,7 +13,9 @@ import { ORDER_AMOUNT_MAX_DIGITS } from "../../lib/orderAmountInput";
 
 /** Yetkazish narxlari qaysi rollarga ko'rinadi (backend shu rollarga tariflarni beradi). */
 export const canSeeMarketTariffs = (role: string | null | undefined) =>
-  role === "superadmin" || role === "admin" || role === "market";
+  // Menejer va registrator — N3 (yiFTzkzH, backend 3b23c75): `GET /markets` ularga ham `tariff_home`,
+  // `tariff_center`, `default_tariff` beradi.
+  role === "superadmin" || role === "admin" || role === "market" || role === "manager" || role === "registrator";
 
 export type MarketTariffs = {
   /** «Uygacha» standart narxi; `null` — belgilanmagan. */

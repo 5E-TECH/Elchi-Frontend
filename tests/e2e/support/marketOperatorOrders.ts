@@ -1,5 +1,5 @@
 import { expect, type Page, type Route } from "@playwright/test";
-import { aiPreview, aiProducts } from "../../../src/test/aiOrderFixtures";
+import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../../src/test/aiOrderFixtures";
 
 /**
  * MO-3 — market operatori buyurtmalari (`/orders`, `/orders/edit/:id`) va «AI bilan» yaratish (`/new-orders/create`)
@@ -7,7 +7,8 @@ import { aiPreview, aiProducts } from "../../../src/test/aiOrderFixtures";
  * `orders/:id/tracking`, `orders/extra-cost-approvals`, kuryerlar, foydalanuvchilar) so'ralsa — `forbidden` ga
  * yoziladi va 403 qaytadi (haqiqiy backend kabi); test oxirida ro'yxat bo'sh bo'lishi shart.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+// Worktree serverlari boshqa portda — `E2E_ORIGIN`.
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -46,9 +47,12 @@ export const OPERATOR_ORDERS = [
   order("10235", "Malika Yusupova", "cancelled", 96000, "Sergeli tumani"),
 ];
 
-/** Operatorga backendda yopiq (403) yo'llar — frontend ularni umuman so'ramasligi kerak. */
+/**
+ * Operatorga backendda yopiq (403) yo'llar — frontend ularni umuman so'ramasligi kerak. `region`, `district` —
+ * MO-7 dan ochiq (backend 6cb2340, N11).
+ */
 const FORBIDDEN_GET =
-  /^(region($|\/)|district($|\/)|markets?($|\/)|orders\/markets\/|orders\/[^/]+\/tracking$|orders\/extra-cost-approvals|users($|\/)|couriers|branches|market-operators)/;
+  /^(markets?($|\/)|orders\/markets\/|orders\/[^/]+\/tracking$|orders\/extra-cost-approvals|users($|\/)|couriers|branches|market-operators)/;
 
 export type MarketOperatorOrdersMock = {
   /** Barcha so'rovlar (`GET orders`, `POST orders/ai-parse` …). */
@@ -57,6 +61,9 @@ export type MarketOperatorOrdersMock = {
   listQueries: URLSearchParams[];
   /** `POST orders/ai-confirm` tanalari. */
   confirmBodies: Record<string, unknown>[];
+  /** `POST orders` (qo'lda, MO-7) tanalari va `Idempotency-Key` sarlavhalari. */
+  orderBodies: Record<string, unknown>[];
+  orderKeys: Array<string | undefined>;
   /** Operatorga yopiq yo'llar so'ralgan bo'lsa — shu yerda. */
   forbidden: string[];
   /** Kutilmagan yozuvchi so'rovlar. */
@@ -87,7 +94,7 @@ export const PARSED_DEFAULT = [
 ];
 
 export const mockMarketOperatorOrders = async (page: Page, { aiEnabled = true, parsed = PARSED_DEFAULT, theme }: Options = {}) => {
-  const mock: MarketOperatorOrdersMock = { requests: [], listQueries: [], confirmBodies: [], forbidden: [], leaked: [] };
+  const mock: MarketOperatorOrdersMock = { requests: [], listQueries: [], confirmBodies: [], orderBodies: [], orderKeys: [], forbidden: [], leaked: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -109,6 +116,8 @@ export const mockMarketOperatorOrders = async (page: Page, { aiEnabled = true, p
           phone_number: "+998901234567",
           status: "active",
           market_id: OPERATOR_MARKET_ID,
+          // N13: operator marketi (sarlavhada «Baraka Shop nomidan»).
+          market: { id: OPERATOR_MARKET_ID, name: "Baraka Shop", add_order: true },
           commission_type: "percent",
           commission_value: "5.00",
           ...(theme ? { settings: { appearance: { theme, themeChosen: true } } } : {}),
@@ -132,6 +141,16 @@ export const mockMarketOperatorOrders = async (page: Page, { aiEnabled = true, p
       return reply(route, wrap(aiEnabled ? { enabled: true, state: "enabled" } : { enabled: false, state: "disabled" }));
     }
     if (path.startsWith("product/my-products")) return reply(route, wrap(aiProducts));
+    if (path === "region" && method === "GET") return reply(route, wrap(aiRegions));
+    const regionDistricts = /^region\/(\d+)$/.exec(path);
+    if (regionDistricts && method === "GET") {
+      return reply(route, { districts: aiDistrictsByRegion[regionDistricts[1]] ?? [] });
+    }
+    if (path === "orders" && method === "POST") {
+      mock.orderBodies.push((request.postDataJSON() ?? {}) as Record<string, unknown>);
+      mock.orderKeys.push(request.headers()["idempotency-key"]);
+      return reply(route, { statusCode: 201, message: "created", data: { id: "10310" } }, 201);
+    }
     if (path === "orders/ai-parse" && method === "POST") return reply(route, wrap({ ok: true, orders: parsed }));
     if (path === "orders/ai-confirm" && method === "POST") {
       const body = (request.postDataJSON() ?? {}) as { orders?: unknown[] };

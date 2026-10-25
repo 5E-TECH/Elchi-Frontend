@@ -211,10 +211,10 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
   });
 });
 
-const httpError = (status: number, message = "server matni") =>
+const httpError = (status: number, message = "server matni", data?: unknown) =>
   Object.assign(new Error(message), {
     isAxiosError: true,
-    response: { status, data: { statusCode: status, message } },
+    response: { status, data: { statusCode: status, message, ...(data === undefined ? {} : { data }) } },
   });
 
 const MERGED = {
@@ -224,7 +224,8 @@ const MERGED = {
     data: {
       from_district_id: "2",
       to_district_id: "3",
-      moved: { orders: 128, users: 6, branches: 1 },
+      moved: { orders: 130, users: 6, branches: 1 },
+      moved_live: { orders: 128, users: 6, branches: 1 },
       target_before: { orders: 1126, users: 13, branches: 1, transfer_batches: 0, deleted: { orders: 0, users: 0, branches: 0, transfer_batches: 0 } },
       target_after: { orders: 1254, users: 19, branches: 2, transfer_batches: 0, deleted: { orders: 0, users: 0, branches: 0, transfer_batches: 0 } },
     },
@@ -254,7 +255,7 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
   });
   afterEach(() => vi.clearAllMocks());
 
-  it("DELETE 400 opens «Tumanni o'chirib bo'lmaydi» by status only — no counts, no server text", async () => {
+  it("DELETE 400 without data.usage opens «Tumanni o'chirib bo'lmaydi» by status only — no counts, no server text", async () => {
     const user = userEvent.setup();
     api.delete.mockRejectedValue(httpError(400, "Bu tumanda 128 ta buyurtma bor"));
     open("admin");
@@ -377,8 +378,10 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     expect(within(now).getByText("oldin 1 126 ta")).toBeInTheDocument();
     expect(within(now).getByText("19 ta")).toBeInTheDocument();
     expect(within(now).getByText("2 ta")).toBeInTheDocument();
-    // «Ko'chirildi» bloki yo'q (backend o'chirilganlarni ham sanaydi — vsmpTweI kutiladi).
-    expect(within(result).queryByText("Ko'chirildi")).not.toBeInTheDocument();
+    // «Ko'chirildi» — faqat tirik (`moved_live` 128, vsmpTweI), jami `moved` (130) emas.
+    const moved = within(result).getByRole("list", { name: "Ko'chirildi" });
+    expect(within(moved).getByText("128 ta")).toBeInTheDocument();
+    expect(within(moved).queryByText("130 ta")).not.toBeInTheDocument();
     expect(within(result).getByText("O'chirilgan yozuvlar sanalmaydi.")).toBeInTheDocument();
     await waitFor(() => expect(api.get.mock.calls.length).toBeGreaterThan(getsBefore));
 
@@ -476,7 +479,7 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     expect(screen.queryByText(/Yuqori oqim/)).not.toBeInTheDocument();
   });
 
-  it("409/503 close the dialog with a general error (no «returned» claim, no server text) and refetch", async () => {
+  it("409/503 without machine-readable data close the dialog with a general error (no «returned» claim, no server text) and refetch", async () => {
     const user = userEvent.setup();
     api.post.mockRejectedValue(httpError(409, "Birlashtirish bekor qilindi: tekshiruv mos kelmadi — ..."));
     open();
@@ -496,5 +499,63 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
       expect(screen.queryByRole("dialog", { name: "Tumanni birlashtirish" })).not.toBeInTheDocument(),
     );
     await waitFor(() => expect(api.get.mock.calls.length).toBeGreaterThan(getsBefore));
+  });
+
+  it("DELETE 400 data.usage → «Bog'langan» counts; the merge dialog starts from them", async () => {
+    const user = userEvent.setup();
+    api.delete.mockRejectedValue(
+      httpError(400, "Bu tumanda 128 ta buyurtma bor", {
+        reason: "district_in_use",
+        usage: { orders: 128, users: 6, branches: 0, transfer_batches: 0 },
+      }),
+    );
+    open("admin");
+    await screen.findByText("Chilonzor");
+    await user.click(screen.getByRole("button", { name: "Chilonzorni o'chirish" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: "Chilonzor o'chirilsinmi?" })).getByRole("button", {
+        name: "O'chirish",
+      }),
+    );
+    const blocked = await screen.findByRole("alertdialog", { name: "Chilonzorni o'chirib bo'lmaydi" });
+    const linked = within(blocked).getByRole("list", { name: "Tumanga bog'langanlar" });
+    expect(within(linked).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
+      "Buyurtmalar128 ta",
+      "FoydalanuvchilarMijoz, kuryer va market6 ta",
+    ]);
+    expect(screen.queryByText(/Bu tumanda 128 ta buyurtma bor/)).not.toBeInTheDocument();
+  });
+
+  it("409 with data.reason → «Birlashtirib bo'lmadi» dialog with «Sabab»; «Qayta urinish» resends the same pair", async () => {
+    const user = userEvent.setup();
+    api.post.mockRejectedValueOnce(
+      httpError(409, "Birlashtirish bekor qilindi: tekshiruv mos kelmadi — ...", {
+        reason: "count_mismatch",
+        details: {
+          reason: "count_mismatch",
+          kind: "orders",
+          mismatches: [{ kind: "orders", district: "target", expected: 1254, actual: 1255 }],
+          from_district_id: "2",
+          to_district_id: "3",
+          manual_fix: false,
+        },
+      }),
+    );
+    open();
+    const dialog = await openMergeForChilonzor(user);
+    await user.click(within(dialog).getByRole("button", { name: "Birlashtirish" }));
+
+    const error = await screen.findByRole("alertdialog", { name: "Birlashtirib bo'lmadi" });
+    expect(error).toHaveTextContent("Ko'chirilganlar Chilonzorga qaytarildi, tuman o'chirilmadi.");
+    expect(error.textContent?.replace(/\s/g, " ")).toContain(
+      "Sonlar mos kelmadi — Mirobodda buyurtmalar 1 255 ta, kutilgan 1 254 ta.",
+    );
+    expect(screen.queryByText(/tekshiruv mos kelmadi/)).not.toBeInTheDocument();
+
+    api.post.mockResolvedValueOnce(MERGED);
+    await user.click(within(error).getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByRole("dialog", { name: "Tumanlar birlashtirildi" })).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(api.post).toHaveBeenLastCalledWith("district/2/merge", { target_district_id: "3" }, { timeout: 125_000 });
   });
 });

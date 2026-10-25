@@ -6,9 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   GroupTypeChoice,
+  inactiveReasonKey,
   NoticeAlert,
   useNotificationMarkets,
   useNotifications,
+  type Notification,
   type NotificationGroupType,
 } from "../../../entities/notification";
 import { isNetworkFailure } from "../../../auth/networkError";
@@ -39,6 +41,12 @@ interface NotificationFormModalProps {
  */
 type ActiveGroupLink = GroupLinkCode & ReturnType<typeof toLinkWindow>;
 
+/** «Shu tur ulangan, lekin nofaol» matni — sababga qarab; sabab noma'lum bo'lsa umumiy (`create.existsInactive`). */
+const existsInactiveKey = (row: Pick<Notification, "inactive_reason">) => {
+  const reason = inactiveReasonKey(row.inactive_reason);
+  return reason === "unknown" ? "create.existsInactive" : `create.existsInactiveReason.${reason}`;
+};
+
 /**
  * «Bildirishnoma qo'shish» — market guruhini bir martalik havola bilan ulash (Trello 6jXw0DDr, 4TfLyTrL).
  *
@@ -52,7 +60,8 @@ type ActiveGroupLink = GroupLinkCode & ReturnType<typeof toLinkWindow>;
  * - nofaol ulanish (`*-create-exists-inactive-dialog`, NG-S3) — asosiy tugma «Faollashtirish»: ochiq oyna
  *   ustida faollashtirish tasdig'i (`features/notification-toggle`, faqat `PATCH {is_active: true}`);
  *   muvaffaqiyatda oyna yopiladi, bekor qilinsa fokus «Faollashtirish» ga qaytadi. Nofaollik sababi
- *   (`inactive_reason`) backendda yo'q — matn umumiy (maketdagi «bot guruhdan chiqarilgan» yozilmaydi, NG-C).
+ *   (`inactive_reason`, G085w5Qr — NG-C) bo'yicha matn: bot chiqarilgan — maketdagi «… nofaol — bot guruhdan
+ *   chiqarilgan (ID: …)»; boshqa ma'lum sabab — o'z matni; noma'lum — umumiy «xabarlar unga yuborilmayapti».
  *
  * Havola tayyor (`*-create-link-dialog`): QR oq ramkada (desktopda chapda, telefonda qadamlardan keyin),
  * qadamlar, ajratgich ostida teskari sanoq (`LinkCountdown` `inline`, `role="timer"`) va kutish holati. Muddat —
@@ -254,7 +263,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
 
       {inactiveConnection ? (
         <NoticeAlert tone="warning" role="alert" title={t("create.existsInactiveTitle")}>
-          {t("create.existsInactive", { market: marketName, groupId: inactiveConnection.group_id })}
+          {t(existsInactiveKey(inactiveConnection), { market: marketName, groupId: inactiveConnection.group_id })}
         </NoticeAlert>
       ) : connection && !link ? (
         <NoticeAlert tone="warning" role="alert" title={t("create.existsTitle")}>

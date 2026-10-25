@@ -25,6 +25,10 @@ describe("getErrorKind", () => {
     expect(getErrorKind(new AxiosError("timeout", AxiosError.ETIMEDOUT, config, request))).toBe("timeout");
   });
 
+  it("G6F68ti6 (12-band): brauzer bekor qilgan so'rov («Request aborted») — vaqt chegarasi emas", () => {
+    expect(getErrorKind(new AxiosError("Request aborted", AxiosError.ECONNABORTED, config, request))).toBe("generic");
+  });
+
   it("javob umuman kelmadi — offline; brauzer oflayn bo'lsa har doim offline", () => {
     expect(getErrorKind(new AxiosError("Network Error", AxiosError.ERR_NETWORK, config, request))).toBe("offline");
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
