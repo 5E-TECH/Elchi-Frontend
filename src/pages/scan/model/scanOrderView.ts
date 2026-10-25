@@ -125,6 +125,32 @@ export const buildScanOrderView = (order: OrderDetail): ScanOrderView => {
 };
 
 /**
+ * Kuryer uchun «O'zimga olish» holati (Trello 6qypMFeT) — backend `scanAssignOrder` (logistics) bilan AYNAN bir xil:
+ *  - `mine`  — `courier_id` shu kuryer va holat «yo'lda» (backend qayta skanda idempotent javob beradi — olish shart emas);
+ *  - `other` — `courier_id` boshqa kuryer (backend 400 «boshqa kuryerga biriktirilgan»);
+ *  - `free`  — qolgan hammasi: tugma faol (holat noto'g'ri bo'lsa backend sababini o'zi aytadi).
+ * `courier_id = '0'` — tayinlanmagan pochta sentineli, kuryer emas.
+ */
+export type CourierTakeState = "free" | "mine" | "other";
+
+const idText = (value: unknown) => {
+  const id = typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+  return id === "0" ? "" : id;
+};
+
+export const getCourierTakeState = (
+  order: { courier_id?: unknown; courierId?: unknown; status?: unknown } | null | undefined,
+  currentUserId: string | number | null | undefined,
+): CourierTakeState => {
+  const courierId = idText(order?.courier_id ?? order?.courierId);
+  const me = idText(currentUserId);
+  if (!courierId) return "free";
+  if (me && courierId !== me) return "other";
+  const status = String(order?.status ?? "").trim().toLowerCase().replaceAll("_", " ");
+  return me && status === "on the road" ? "mine" : "free";
+};
+
+/**
  * Menejer amallari (`manager-scan-result`). Sotish / bekor — buyurtma tafsilotidagi AYNI qoida
  * (`getOrderDetailAccess`: REGIONAL · HYBRID menejeri, `can_sell_cancel`, WAITING + pochta).
  * Kuryer qo'lidagi buyurtma — maketdagi «Buyurtma kuryerda» holati: amal tugmalari umuman yo'q, faqat

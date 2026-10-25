@@ -56,6 +56,7 @@ import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { DISPATCH_ROUTE, orderDetailRoute } from "../model/routes";
 import {
   buildScanOrderView,
+  getCourierTakeState,
   getManagerScanActions,
   hasAnyManagerAction,
   type ManagerScanActions,
@@ -92,6 +93,30 @@ type ResultMessage = { tone: "success" | "error"; text: string };
 const LIST_ITEM = "flex min-h-14 items-center gap-3 border-b border-border px-4 py-3 last:border-b-0";
 const STAT_ICON =
   "inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted";
+
+/**
+ * Buyurtma allaqachon shu kuryerda yoki boshqa kuryerda (6qypMFeT) — «O'zimga olish» faol emas, sababi yonida.
+ * Matnlar maket `courier-scan-other-courier` dan («Boshqa kuryerga biriktirilgan», «Bu buyurtmani o'zingizga
+ * ololmaysiz…»); «Allaqachon sizda» — universal skanerning «O'zimga olish» natijasi bilan bir xil ma'no.
+ */
+const CourierTakeNotice = ({ state, courierName }: { state: "mine" | "other"; courierName: string | null }) => {
+  const { t } = useTranslation("scan");
+  return state === "mine" ? (
+    <ScanAlert tone="success" icon={CircleCheck} title={t("courier.alreadyMine")} role="status" data-testid="courier-take-mine">
+      {t("courier.alreadyMineText")}
+    </ScanAlert>
+  ) : (
+    <ScanAlert
+      tone="danger"
+      icon={TriangleAlert}
+      title={courierName ? t("courier.otherCourier", { name: courierName }) : t("courier.otherCourierUnknown")}
+      role="status"
+      data-testid="courier-take-other"
+    >
+      {t("courier.otherCourierText")}
+    </ScanAlert>
+  );
+};
 
 const ResultAlert = ({ result }: { result: ResultMessage }) => (
   <ScanAlert
@@ -510,6 +535,8 @@ export const ScanOrderResult = ({
   const trackingContext = useMemo(() => (showTracking ? buildTrackingContext(order) : undefined), [order, showTracking]);
 
   const { mutation: assignMutation, result: assignResult } = useCourierAssign(token);
+  // Qayta skanda (6qypMFeT): buyurtma allaqachon shu kuryerda yoki boshqa kuryerda — tugma faol emas, sababi yonida.
+  const courierTake = roleKind === "courier" ? getCourierTakeState(order, user?.id) : "free";
 
   const [dialog, setDialog] = useState<"sell" | "cancel" | null>(null);
   useEffect(() => {
@@ -578,7 +605,7 @@ export const ScanOrderResult = ({
       leftIcon={Check}
       loading={assignMutation.isPending}
       loadingText={t("courier.assigning")}
-      disabled={assignResult?.tone === "success"}
+      disabled={assignResult?.tone === "success" || courierTake !== "free"}
       onClick={() => assignMutation.mutate()}
     >
       {t("courier.assign")}
@@ -592,14 +619,27 @@ export const ScanOrderResult = ({
   if (layout === "courier") {
     if (isBelowLg) {
       sticky = (
-        <ScanStickyBar summary={stickySummary} notice={assignResult ? <ResultAlert result={assignResult} /> : null}>
+        <ScanStickyBar
+          summary={stickySummary}
+          notice={
+            assignResult ? (
+              <ResultAlert result={assignResult} />
+            ) : courierTake !== "free" ? (
+              <CourierTakeNotice state={courierTake} courierName={view.courierName} />
+            ) : null
+          }
+        >
           {assignButton(false)}
         </ScanStickyBar>
       );
     } else {
       aside = (
         <ScanActionCard title={t("courier.title")} text={t("courier.text")}>
-          {assignResult ? <ResultAlert result={assignResult} /> : null}
+          {assignResult ? (
+            <ResultAlert result={assignResult} />
+          ) : courierTake !== "free" ? (
+            <CourierTakeNotice state={courierTake} courierName={view.courierName} />
+          ) : null}
           {assignButton(true)}
         </ScanActionCard>
       );
