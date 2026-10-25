@@ -113,7 +113,7 @@ describe("Dialog — tuzilma va ARIA", () => {
     const { dialog } = await renderOpen();
     expect(dialog).toHaveAttribute("data-layout", "auto");
     expect(dialog.className).toContain("max-md:rounded-b-none");
-    expect(dialog.className).toContain("max-md:max-h-[92dvh]");
+    expect(dialog.className).toContain("max-md:max-h-[min(92dvh,calc(var(--dialog-viewport-h,100dvh)-12px))]");
     expect(dialog.className).toContain("env(safe-area-inset-bottom)");
     const grip = dialog.firstElementChild as HTMLElement;
     expect(grip).toHaveAttribute("aria-hidden", "true");
@@ -525,5 +525,92 @@ describe("Dialog — yopilish harakati (usePresence)", () => {
     expect(dialog).toHaveAttribute("data-state", "open");
     expect(dialog.closest("[data-dialog-root]")).not.toHaveAttribute("inert");
     expect(screen.getByRole("dialog", { name: "Smenani yopish" })).toBe(dialog);
+  });
+});
+
+/**
+ * vNcGDnNh (1-band): telefonda «Qabul qilish» → market tanlash oynasi ochilganda qidiruvga avtomatik fokus ekran
+ * klaviaturasini ochib, pastdan chiqqan ro'yxatni yopardi. Sensorli qurilmada `auto` fokus matn maydonini o'tkazib
+ * yuboradi; klaviatura ochiq bo'lsa qatlam ko'rinadigan oynaga (`visualViewport`) joylashadi — varaqa klaviatura ustida.
+ */
+describe("Dialog — telefon klaviaturasi (vNcGDnNh)", () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalViewport = Object.getOwnPropertyDescriptor(window, "visualViewport");
+  const setCoarse = (coarse: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches: coarse && query.includes("pointer: coarse"),
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+  };
+  const listOptions = (
+    <>
+      <label>
+        Qidirish
+        <input type="search" />
+      </label>
+      <button type="button">Baraka Shop</button>
+      <button type="button">Mehr Kosmetika</button>
+    </>
+  );
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    if (originalViewport) Object.defineProperty(window, "visualViewport", originalViewport);
+    else delete (window as { visualViewport?: unknown }).visualViewport;
+  });
+
+  it("⭐ sensorli qurilmada qidiruvga avtomatik fokus yo'q — birinchi bosiladigan qatorga (klaviatura ochilmaydi)", async () => {
+    setCoarse(true);
+    await renderOpen({ children: listOptions });
+    expect(screen.getByRole("searchbox", { name: "Qidirish" })).not.toHaveFocus();
+    expect(screen.getByRole("button", { name: "Baraka Shop" })).toHaveFocus();
+  });
+
+  it("sensorli qurilmada faqat matn maydoni bo'lsa — fokus panelda", async () => {
+    setCoarse(true);
+    const { dialog } = await renderOpen({ children: <label>Izoh<textarea /></label>, footer: undefined });
+    expect(dialog).toHaveFocus();
+  });
+
+  it("sichqonchali qurilmada (desktop) avvalgidek — qidiruvga fokus", async () => {
+    setCoarse(false);
+    await renderOpen({ children: listOptions });
+    expect(screen.getByRole("searchbox", { name: "Qidirish" })).toHaveFocus();
+  });
+
+  it("klaviatura ochiq (ko'rinadigan oyna 300 px kichraygan) — qatlam ko'rinadigan oynaga joylashadi; yopilsa qaytadi", async () => {
+    const listeners = new Set<() => void>();
+    const viewport = {
+      height: window.innerHeight,
+      offsetTop: 0,
+      addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+    };
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
+    const { dialog } = await renderOpen({ children: listOptions });
+    const root = dialog.closest("[data-dialog-root]") as HTMLElement;
+    expect(root.style.height).toBe("");
+
+    act(() => {
+      viewport.height = window.innerHeight - 300;
+      viewport.offsetTop = 40;
+      listeners.forEach((fn) => fn());
+    });
+    expect(root.style.top).toBe("40px");
+    expect(root.style.height).toBe(`${window.innerHeight - 300}px`);
+    expect(root.style.getPropertyValue("--dialog-viewport-h")).toBe(`${window.innerHeight - 300}px`);
+
+    act(() => {
+      viewport.height = window.innerHeight;
+      viewport.offsetTop = 0;
+      listeners.forEach((fn) => fn());
+    });
+    expect(root.style.height).toBe("");
   });
 });
