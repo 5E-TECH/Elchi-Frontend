@@ -415,6 +415,27 @@ describe("SystemOps page", () => {
     await waitFor(() => expect(calls()).toBe(2));
   });
 
+  it("yrLt5oMi: davrda yetkazish yo'q (`deliveryCount: 0`) — SLA «—» va neytral «O'lchanmagan», «Past» emas", async () => {
+    mockApi({
+      kpi: () =>
+        Promise.resolve(
+          mockEnvelope(
+            { averageOrderValue: 0, averageFulfillmentHours: 0, onTimeRate: 0, deliveryCount: 0, cancellationRate: 0, courierEfficiency: 0, marketRating: [] },
+            { message: "KPI stats" },
+          ),
+        ),
+    });
+    renderWithProviders(<SystemOpsPage />);
+
+    expect(
+      await screen.findByRole("img", {
+        name: "O'z vaqtida yetkazish (SLA): o'lchanmagan — bu davrda yetkazilgan buyurtma yo'q",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("O'lchanmagan · yetkazish yo'q")).toBeInTheDocument();
+    expect(screen.queryByText("Past · 70% dan kam")).toBeNull();
+  });
+
   it("KPI: SLA gauge, bekor qilish darajasi, o'rtacha qiymat va vaqt; kuryer — o'rtacha buyurtma soni (D3)", async () => {
     renderWithProviders(<SystemOpsPage />);
 

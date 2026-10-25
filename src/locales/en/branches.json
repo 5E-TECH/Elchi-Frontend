@@ -237,6 +237,41 @@
       "MANAGER": "Manager",
       "REGISTRATOR": "Registrar",
       "COURIER": "Courier"
+    },
+    "metrics": {
+      "title": "Branch metrics",
+      "scope": "{{branch}} orders",
+      "periodLabel": "Period",
+      "kpi": {
+        "accepted": "Accepted",
+        "sold": "Sold",
+        "revenue": "Revenue",
+        "profit": "Net profit"
+      },
+      "sparkAria": "{{label}}, last {{days}} days: {{min}} – {{max}} per day, last day {{last}}",
+      "revenue": {
+        "title": "Daily revenue",
+        "viewLabel": "Daily revenue view",
+        "amount": "Revenue"
+      },
+      "status": {
+        "sold": "Sold",
+        "road": "On the way",
+        "new": "New",
+        "cancelled": "Cancelled",
+        "empty": "No orders accepted in this period"
+      },
+      "couriers": {
+        "title": "Courier ranking",
+        "sub": "Sell-through · sold / assigned",
+        "active": "{{active}} / {{total}} active",
+        "scope": "Couriers of this branch",
+        "unassigned": "{{value}} new (unassigned) orders not included"
+      },
+      "loadError": "Couldn't load branch metrics",
+      "unavailable": "Branch metrics aren't available yet — the server didn't return the branch breakdown",
+      "empty": "No branch orders in this period",
+      "emptyHint": "Pick another period — accepted and sold orders will show up here."
     }
   }
 }

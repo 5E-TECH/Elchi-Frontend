@@ -1,6 +1,9 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isScannerOverlayOpen, resetScannerHost } from "../../../../shared/lib/scanner/scannerHost";
+import { getActiveScanTarget, resetScanTargets } from "../../../../shared/lib/scanner/scanTargets";
 import { renderWithProviders } from "../../../../test/test-utils";
 import { EditProductDialog } from "./EditProductDialog";
 
@@ -105,5 +108,57 @@ describe("EditProductDialog — «Mahsulot kodi» (yXC91RRx)", () => {
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(await screen.findByText("Bu shtrix kod shu marketning boshqa mahsulotiga biriktirilgan")).toBeInTheDocument();
     expect(screen.queryByText(/nomli mahsulot/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("EditProductDialog — «Shtrix kod» kamera bilan (CO66kcoB)", () => {
+  afterEach(() => {
+    resetScannerHost();
+    resetScanTargets();
+  });
+
+  it("«Kamera» → oyna maqsadi (shtrix kod rejimi, bitta qiymat); o'qilgan kod maydonga yoziladi va saqlanadi", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    const field = await screen.findByRole("textbox", { name: "Shtrix kod (EAN-13)" });
+    await user.click(screen.getByRole("button", { name: "Shtrix kodni kamera bilan skanerlash" }));
+    expect(isScannerOverlayOpen()).toBe(true);
+    const target = getActiveScanTarget();
+    expect(target).toMatchObject({
+      id: "product-barcode",
+      layer: "dialog",
+      formats: "barcodes",
+      closeOnSuccess: true,
+      title: "Shtrix kodni skanerlash",
+      context: "Bolalar kurtkasi, 110 sm",
+    });
+    await act(async () => target?.onScan(" 4780123450017\n", "camera"));
+    expect(field).toHaveValue("4780123450017");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    expect(sentForm().get("barcode")).toBe("4780123450017");
+  });
+
+  it("Elchi stikeri (`ELC-P-…`) shtrix kod sifatida yozilmaydi", async () => {
+    renderDialog({ ...KURTKA, barcode: "8806095467894" } as never);
+    const field = await screen.findByRole("textbox", { name: "Shtrix kod (EAN-13)" });
+    await act(async () => getActiveScanTarget()?.onScan("ELC-P-000123", "camera"));
+    expect(field).toHaveValue("8806095467894");
+  });
+
+  it("oyna yopilsa — kamera ham yopiladi, maqsad olinadi", async () => {
+    const Harness = () => {
+      const [product, setProduct] = useState<typeof KURTKA | null>(KURTKA);
+      return <EditProductDialog product={product as never} onClose={() => setProduct(null)} />;
+    };
+    const user = userEvent.setup();
+    renderWithProviders(<Harness />, {
+      preloadedState: { role: { id: "1", role: "superadmin", region: null, name: "superadmin" } } as never,
+    });
+    await user.click(await screen.findByRole("button", { name: "Shtrix kodni kamera bilan skanerlash" }));
+    expect(isScannerOverlayOpen()).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(isScannerOverlayOpen()).toBe(false));
+    expect(getActiveScanTarget()).toBeNull();
   });
 });

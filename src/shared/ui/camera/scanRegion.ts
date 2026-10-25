@@ -19,14 +19,36 @@ export type ScanRegion = {
 
 type Rect = { left: number; top: number; width: number; height: number };
 
-/** Tahlil uchun kichraytirilgan kvadrat tomoni (`qr-scanner` sukuti — 400). */
-const DOWNSCALED = 400;
+/**
+ * Ramka shakli: `square` — QR (sukut); `wide` — shtrix kod rejimi (Trello CO66kcoB): keng past to'rtburchak, zavod
+ * kodining ingichka chiziqlari uchun tahlil kadri kattaroq (uzun tomon 640 — modul ~3 px, 400 da EAN-13 ~2 px edi).
+ */
+export type ScanRegionShape = "square" | "wide";
+
+/** Tahlil uchun kichraytirilgan kadrning uzun tomoni (`qr-scanner` sukuti — 400). */
+const DOWNSCALED: Record<ScanRegionShape, number> = { square: 400, wide: 640 };
 /** Ramka atrofidagi zaxira (har tomondan, ramka tomoniga nisbatan). */
 const MARGIN = 0.1;
+/** `wide` sukut hududi: kadr enining 80% i, bo'yi — enining 55% i. */
+const WIDE_WIDTH = 0.8;
+const WIDE_RATIO = 0.55;
 
-export const defaultScanRegion = (videoWidth: number, videoHeight: number): ScanRegion => {
+export const defaultScanRegion = (videoWidth: number, videoHeight: number, shape: ScanRegionShape = "square"): ScanRegion => {
+  if (shape === "wide") {
+    const width = Math.round(videoWidth * WIDE_WIDTH);
+    const height = Math.min(videoHeight, Math.round(width * WIDE_RATIO));
+    const ratio = Math.min(1, DOWNSCALED.wide / Math.max(width, height));
+    return {
+      x: Math.round((videoWidth - width) / 2),
+      y: Math.round((videoHeight - height) / 2),
+      width,
+      height,
+      downScaledWidth: Math.max(1, Math.round(width * ratio)),
+      downScaledHeight: Math.max(1, Math.round(height * ratio)),
+    };
+  }
   const size = Math.round((2 / 3) * Math.min(videoWidth, videoHeight));
-  const scaled = Math.min(DOWNSCALED, size);
+  const scaled = Math.min(DOWNSCALED.square, size);
   return {
     x: Math.round((videoWidth - size) / 2),
     y: Math.round((videoHeight - size) / 2),
@@ -44,6 +66,7 @@ export const scanRegionFromFinder = ({
   finderRect,
   mirrored = false,
   margin = MARGIN,
+  shape = "square",
 }: {
   videoWidth: number;
   videoHeight: number;
@@ -51,6 +74,7 @@ export const scanRegionFromFinder = ({
   finderRect: Rect | null;
   mirrored?: boolean;
   margin?: number;
+  shape?: ScanRegionShape;
 }): ScanRegion => {
   if (
     !finderRect ||
@@ -61,7 +85,7 @@ export const scanRegionFromFinder = ({
     finderRect.width <= 0 ||
     finderRect.height <= 0
   ) {
-    return defaultScanRegion(videoWidth, videoHeight);
+    return defaultScanRegion(videoWidth, videoHeight, shape);
   }
   // object-cover: ekran pikseli → tasvir pikseli.
   const scale = Math.max(videoRect.width / videoWidth, videoRect.height / videoHeight);
@@ -79,9 +103,9 @@ export const scanRegionFromFinder = ({
   const y = Math.max(0, Math.round(top));
   const w = Math.min(videoWidth - x, Math.round(width - (x - left)));
   const h = Math.min(videoHeight - y, Math.round(height - (y - top)));
-  if (w < 32 || h < 32) return defaultScanRegion(videoWidth, videoHeight);
-  // Tomonlar nisbati saqlanadi (kutubxona talabi), uzun tomon ≤ 400.
-  const ratio = Math.min(1, DOWNSCALED / Math.max(w, h));
+  if (w < 32 || h < 32) return defaultScanRegion(videoWidth, videoHeight, shape);
+  // Tomonlar nisbati saqlanadi (kutubxona talabi), uzun tomon ≤ 400 (`wide` — 640).
+  const ratio = Math.min(1, DOWNSCALED[shape] / Math.max(w, h));
   return {
     x,
     y,

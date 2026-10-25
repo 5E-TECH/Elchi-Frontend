@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-products-edit-dialog-barcode, tizim-product-labels
 import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
-import { Copy, Minus, Plus, Printer, ScanLine } from "lucide-react";
+import { Camera, Copy, Minus, Plus, Printer, ScanLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { notify } from "../../../shared/lib/notify";
@@ -32,6 +32,11 @@ export type ProductCodeSectionProps = {
   productName: string;
   marketName: string | null;
   readOnly?: boolean;
+  /**
+   * Kamera bilan skanerlash (Trello CO66kcoB, `useBarcodeCamera`): berilsa maydon yonida «Kamera» tugmasi —
+   * oyna ochiq turganda markaziy «Skaner» tugmasi bosilmaydi (ilova `inert`).
+   */
+  onCamera?: () => void;
 };
 
 /** Stiker ko'rinishi 40×30 mm, haqiqiy o'lchamda (1 mm = 5 px; qog'oz har ikki mavzuda oq). */
@@ -165,6 +170,7 @@ export const ProductCodeSection = ({
   productName,
   marketName,
   readOnly,
+  onCamera,
 }: ProductCodeSectionProps) => {
   const { t } = useTranslation("warehouses");
   const [copies, setCopies] = useState(1);
@@ -209,19 +215,34 @@ export const ProductCodeSection = ({
           hint={t("productCode.barcodeHint")}
           error={barcodeError ?? undefined}
         >
-          <TextInput
-            icon={ScanLine}
-            value={barcode}
-            onValueChange={onBarcodeChange}
-            onKeyDown={swallowEnter}
-            inputMode="numeric"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={t("productCode.barcodePlaceholder")}
-            maxLength={512}
-            readOnly={readOnly}
-            data-scanner-ignore=""
-          />
+          <div className="flex min-w-0 items-center gap-2">
+            <TextInput
+              icon={ScanLine}
+              value={barcode}
+              onValueChange={onBarcodeChange}
+              onKeyDown={swallowEnter}
+              inputMode="numeric"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={t("productCode.barcodePlaceholder")}
+              maxLength={512}
+              readOnly={readOnly}
+              data-scanner-ignore=""
+              className="min-w-0 flex-1"
+            />
+            {onCamera ? (
+              <Button
+                variant="secondary"
+                leftIcon={Camera}
+                aria-label={t("productCode.cameraAria")}
+                aria-haspopup="dialog"
+                disabled={readOnly}
+                onClick={onCamera}
+              >
+                {t("productCode.camera")}
+              </Button>
+            ) : null}
+          </div>
         </Field>
         {skuCode ? (
           <>

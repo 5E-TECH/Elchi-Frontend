@@ -20,7 +20,12 @@
         "status": "active",
         "telegram_linked": true,
         "createdAt": "2026-10-06T04:30:00.000Z",
-        "updatedAt": "2026-10-06T04:30:00.000Z"
+        "updatedAt": "2026-10-06T04:30:00.000Z",
+        "branch_id": "1",
+        "branch": {
+          "id": "1",
+          "name": "Toshkent HQ"
+        }
       },
       {
         "id": "303",
@@ -30,7 +35,12 @@
         "status": "inactive",
         "telegram_linked": false,
         "createdAt": "2026-10-03T10:20:00.000Z",
-        "updatedAt": "2026-10-03T10:20:00.000Z"
+        "updatedAt": "2026-10-03T10:20:00.000Z",
+        "branch_id": "3",
+        "branch": {
+          "id": "3",
+          "name": "Farg'ona filiali"
+        }
       },
       {
         "id": "304",
@@ -40,7 +50,12 @@
         "status": "active",
         "telegram_linked": true,
         "createdAt": "2026-10-02T06:05:00.000Z",
-        "updatedAt": "2026-10-02T06:05:00.000Z"
+        "updatedAt": "2026-10-02T06:05:00.000Z",
+        "branch_id": "5",
+        "branch": {
+          "id": "5",
+          "name": "Samarqand filiali"
+        }
       },
       {
         "id": "31",
@@ -60,7 +75,12 @@
         "status": "active",
         "telegram_linked": false,
         "createdAt": "2026-09-17T04:10:00.000Z",
-        "updatedAt": "2026-09-17T04:10:00.000Z"
+        "updatedAt": "2026-09-17T04:10:00.000Z",
+        "branch_id": "1",
+        "branch": {
+          "id": "1",
+          "name": "Toshkent HQ"
+        }
       },
       {
         "id": "306",

@@ -199,6 +199,7 @@
         "user": "Пользователь",
         "phone": "Телефон",
         "role": "Роль",
+        "branch": "Филиал",
         "status": "Статус",
         "joined": "Добавлен",
         "actions": "Действия",
@@ -206,6 +207,7 @@
       },
       "rowActions": "Действия: {{name}}",
       "rowOpen": "Подробнее: {{name}}",
+      "phoneBranch": "{{phone}} · {{branch}}",
       "menu": {
         "edit": "Редактировать",
         "deactivate": "Деактивировать",
@@ -302,6 +304,8 @@
     "detail": {
       "description": "{{role}} · Логин: {{login}}",
       "descriptionNoLogin": "{{role}}",
+      "descriptionWithBranch": "{{role}} · {{branch}} · Логин: {{login}}",
+      "descriptionNoLoginBranch": "{{role}} · {{branch}}",
       "descriptionBranch": "{{branch}} · {{phone}}",
       "contactLabel": "Контакты и даты",
       "phone": "Телефон",
@@ -464,7 +468,6 @@
     "offCreate": "Карточки новых заказов не приходят",
     "offCancel": "Сообщения об отменённых заказах не приходят",
     "inactive": "Неактивна",
-    "inactiveHint": "Сообщения в эту группу не отправляются",
     "link": "Подключить",
     "linkCreate": "Подключить группу новых заказов",
     "linkCancel": "Подключить группу отменённых",

@@ -14,11 +14,13 @@ import {
   SkeletonTable,
 } from "../../../shared/ui/primitives";
 import { BranchDetailWidget } from "../../../widgets/branch-detail";
+import BranchMetricsSection from "./BranchMetricsSection";
 
 /**
  * FILIAL TAFSILOTI — `/branches/:id` (faqat superadmin). Filial va uning xodimlari parallel so'raladi;
  * yuklanishda skelet (sarlavha, ma'lumot kartasi, xodimlar jadvali), topilmasa — «Filial topilmadi»,
- * boshqa xatoda — `ErrorState` + «Qayta urinish»; har holatda «← Filiallar».
+ * boshqa xatoda — `ErrorState` + «Qayta urinish»; har holatda «← Filiallar». Filial topilgach —
+ * «Filial ko'rsatkichlari» (`BranchMetricsSection`, o'z so'rovi va holatlari bilan).
  */
 const BranchDetailPage = () => {
   const { t } = useTranslation("branches");
@@ -71,7 +73,14 @@ const BranchDetailPage = () => {
     );
   }
 
-  return <BranchDetailWidget branchId={id} branch={branch} employeesQuery={employeesQuery} />;
+  return (
+    <BranchDetailWidget
+      branchId={id}
+      branch={branch}
+      employeesQuery={employeesQuery}
+      metrics={<BranchMetricsSection branchId={id} branchName={branch.name} />}
+    />
+  );
 };
 
 export default BranchDetailPage;

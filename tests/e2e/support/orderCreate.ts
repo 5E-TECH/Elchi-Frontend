@@ -10,7 +10,7 @@ import { aiDistrictsByRegion, aiProducts, aiRegions } from "../../../src/test/ai
  * tanasi `createdOrders` ga yoziladi.
  */
 
-export const ORIGIN = "http://127.0.0.1:4173";
+export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 
 const cors = {
   "access-control-allow-origin": ORIGIN,
@@ -62,6 +62,8 @@ export const mockOrderCreateApi = async (
 ) => {
   const leaked: string[] = [];
   const createdOrders: Record<string, unknown>[] = [];
+  /** gpCIsGjH: har `POST orders` ning `Idempotency-Key` sarlavhasi (`createdOrders` bilan bir tartibda). */
+  const createKeys: (string | undefined)[] = [];
   const suggestQueries: Record<string, string>[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -98,6 +100,7 @@ export const mockOrderCreateApi = async (
     if (district) return reply(route, wrap(districtById(district[1])));
     if (path === "orders" && request.method() === "POST") {
       createdOrders.push(request.postDataJSON() as Record<string, unknown>);
+      createKeys.push((await request.allHeaders())["idempotency-key"]);
       return reply(route, wrap({ id: "e2e-order-1", status: "new" }), 201);
     }
     if (request.method() !== "GET") {
@@ -106,7 +109,7 @@ export const mockOrderCreateApi = async (
     }
     return reply(route, wrap([]));
   });
-  return { leaked, createdOrders, suggestQueries };
+  return { leaked, createdOrders, createKeys, suggestQueries };
 };
 
 /**

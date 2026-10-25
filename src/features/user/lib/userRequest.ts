@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { isNetworkFailure } from "../../../auth/networkError";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
 
@@ -31,9 +32,12 @@ export const runUserRequest = async <T>({
   try {
     data = await request();
   } catch (error) {
-    notify.error(t("error", { ns: "common" }), {
-      description: getBackendErrorMessage(error) ?? errorMessage ?? t("serverRequestError", { ns: "common" }),
-    });
+    // Javobsiz xato — interceptor bitta tarmoq xabarini ko'rsatgan, ikkinchi «Xatolik» chiqmaydi (G6F68ti6, 4-band).
+    if (!isNetworkFailure(error)) {
+      notify.error(t("error", { ns: "common" }), {
+        description: getBackendErrorMessage(error) ?? errorMessage ?? t("serverRequestError", { ns: "common" }),
+      });
+    }
     onError?.(error);
     return undefined;
   }

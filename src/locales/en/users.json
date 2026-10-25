@@ -199,6 +199,7 @@
         "user": "User",
         "phone": "Phone",
         "role": "Role",
+        "branch": "Branch",
         "status": "Status",
         "joined": "Added",
         "actions": "Actions",
@@ -206,6 +207,7 @@
       },
       "rowActions": "{{name}} actions",
       "rowOpen": "{{name}} details",
+      "phoneBranch": "{{phone}} · {{branch}}",
       "menu": {
         "edit": "Edit",
         "deactivate": "Deactivate",
@@ -302,6 +304,8 @@
     "detail": {
       "description": "{{role}} · Login: {{login}}",
       "descriptionNoLogin": "{{role}}",
+      "descriptionWithBranch": "{{role}} · {{branch}} · Login: {{login}}",
+      "descriptionNoLoginBranch": "{{role}} · {{branch}}",
       "descriptionBranch": "{{branch}} · {{phone}}",
       "contactLabel": "Contacts and dates",
       "phone": "Phone",
@@ -464,7 +468,6 @@
     "offCreate": "New order cards are not delivered",
     "offCancel": "Cancelled order messages are not delivered",
     "inactive": "Inactive",
-    "inactiveHint": "Messages are not sent to this group",
     "link": "Connect",
     "linkCreate": "Connect the new orders group",
     "linkCancel": "Connect the cancelled orders group",

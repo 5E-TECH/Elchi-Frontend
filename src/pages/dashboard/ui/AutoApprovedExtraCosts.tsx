@@ -4,6 +4,7 @@ import { Receipt, TimerReset } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useOrders, type ExtraCostApproval, type ExtraCostApprovalsResponse } from "../../../entities/orders";
+import { extraCostOrderNumber } from "../../../entities/orders/extraCostApprovalView";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Card } from "../../../shared/ui/primitives";
@@ -68,7 +69,7 @@ export const AutoApprovedExtraCosts = memo(() => {
           return (
             <li
               key={approval.id}
-              aria-label={t("market.extra_cost_item_label", { action: actionLabel, id: approval.order_id })}
+              aria-label={t("market.extra_cost_item_label", { action: actionLabel, id: extraCostOrderNumber(approval) })}
               className="flex min-w-0 flex-col gap-3 rounded-xl bg-sunken p-4 max-md:rounded-none max-md:bg-transparent max-md:not-first:border-t max-md:not-first:border-border"
             >
               <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1">
@@ -81,7 +82,7 @@ export const AutoApprovedExtraCosts = memo(() => {
                     to={`/orders/edit/${approval.order_id}`}
                     className="text-sm font-semibold text-action-fg hover:underline"
                   >
-                    №{approval.order_id}
+                    №{extraCostOrderNumber(approval)}
                   </Link>
                   {decidedAt ? (
                     <span className="whitespace-nowrap text-xs text-text-muted">

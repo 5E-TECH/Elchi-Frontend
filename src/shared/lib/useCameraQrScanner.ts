@@ -6,6 +6,7 @@ import QrScanner, {
   type CameraFacing,
   type QrScanRegion,
 } from "./qrScanner";
+import type { ScanFormats } from "./scanner/barcodeCodes";
 
 /** Sabab → foydalanuvchiga ko'rinadigan matn (`ui:camera.error.*`); `unknown` — chaqiruvchining `startErrorMessage`. */
 const cameraErrorText = (kind: CameraErrorKind, fallback: string) =>
@@ -28,6 +29,11 @@ type CameraQrScannerOptions = {
   preferredCamera?: CameraFacing;
   /** Skan hududi (ekrandagi ramka, `shared/ui/camera/scanRegion`). Berilmasa — kutubxona sukuti. */
   calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
+  /**
+   * O'qiladigan kodlar (sukut `qr`): `barcodes` — QR + zavod shtrix kodlari (Trello CO66kcoB). O'zgarsa skaner
+   * qayta ishga tushadi (dvigatel skaner yaratilganda tanlanadi).
+   */
+  formats?: ScanFormats;
 };
 
 /** O'lcham o'zgarishlari to'xtagach skan hududi qayta hisoblanadi (burish animatsiyasi davomida emas). */
@@ -78,6 +84,7 @@ export const useCameraQrScanner = ({
   onTorchError,
   preferredCamera = "environment",
   calculateScanRegion,
+  formats = "qr",
 }: CameraQrScannerOptions) => {
   const scannerRef = useRef<QrScanner | null>(null);
   const onDecodeRef = useRef(onDecode);
@@ -216,6 +223,7 @@ export const useCameraQrScanner = ({
             highlightScanRegion: false,
             highlightCodeOutline: false,
             onDecodeError: () => undefined,
+            ...(formats === "barcodes" ? { formats } : {}),
           },
         );
 
@@ -279,7 +287,7 @@ export const useCameraQrScanner = ({
         window.clearTimeout(restartTimeout);
       }
     };
-  }, [isActive, session, startErrorMessage, stopScanner, videoRef]);
+  }, [formats, isActive, session, startErrorMessage, stopScanner, videoRef]);
 
   return {
     isStarting,

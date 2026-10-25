@@ -5,6 +5,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `PATCH /notifications/:id` tanasini yozib oladi va ro'yxatda holatni yangilaydi (`is_active`). Serverga so'rov
  * ketmaydi (jonli kanal WebSocket'i ham yopiladi).
  * NG-B: `POST /telegram/link-code` (bir martalik guruh havolasi, 10 daqiqa) tanalarini ham yozib oladi.
+ * NG-C (G085w5Qr): qatorlarda `inactive_reason` / `inactive_at` (backend kabi: `PATCH {is_active:false}` → `manual`,
+ * `true` → ikkalasi `null`); nofaol guruh (#8) sababi — `inactiveReason` opsiyasi (sukut `null` — eski qator).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -24,10 +26,22 @@ const MARKETS = [
   { id: 52, name: "Bahor Kiyim", phone_number: "+998904123675" },
 ];
 
-const initialGroups = () => [
-  { id: "7", market_id: "12", group_id: "-1002184736577", group_type: "cancel", bot_slug: null, is_active: true, createdAt: "2026-10-20T10:14:00+05:00" },
-  { id: "8", market_id: "27", group_id: "-1001937420815", group_type: "create", bot_slug: null, is_active: false, createdAt: "2026-10-19T17:45:00+05:00" },
-  { id: "9", market_id: "52", group_id: "-1002251846630", group_type: "cancel", bot_slug: null, is_active: true, createdAt: "2026-09-24T18:16:00+05:00" },
+type GroupRow = {
+  id: string;
+  market_id: string;
+  group_id: string;
+  group_type: string;
+  bot_slug: null;
+  is_active: boolean;
+  inactive_reason: string | null;
+  inactive_at: string | null;
+  createdAt: string;
+};
+
+const initialGroups = (inactiveReason: string | null, inactiveAt: string | null): GroupRow[] => [
+  { id: "7", market_id: "12", group_id: "-1002184736577", group_type: "cancel", bot_slug: null, is_active: true, inactive_reason: null, inactive_at: null, createdAt: "2026-10-20T10:14:00+05:00" },
+  { id: "8", market_id: "27", group_id: "-1001937420815", group_type: "create", bot_slug: null, is_active: false, inactive_reason: inactiveReason, inactive_at: inactiveAt, createdAt: "2026-10-19T17:45:00+05:00" },
+  { id: "9", market_id: "52", group_id: "-1002251846630", group_type: "cancel", bot_slug: null, is_active: true, inactive_reason: null, inactive_at: null, createdAt: "2026-09-24T18:16:00+05:00" },
 ];
 
 export type NotificationGroupsMock = {
@@ -44,13 +58,17 @@ export type NotificationGroupsOptions = {
    * `null` — server `expires_at` bermadi.
    */
   linkExpiresInMs?: number | null;
+  /** NG-C: nofaol guruh (#8, Nur Elektronika) sababi; sukut `null` — migratsiyadan oldingi qator (umumiy izoh). */
+  inactiveReason?: string | null;
+  /** NG-C: o'sha guruhning `inactive_at` i (ISO); sukut `null`. */
+  inactiveAt?: string | null;
 };
 
 export const openNotificationGroups = async (
   page: Page,
-  { linkExpiresInMs = 10 * 60_000 }: NotificationGroupsOptions = {},
+  { linkExpiresInMs = 10 * 60_000, inactiveReason = null, inactiveAt = null }: NotificationGroupsOptions = {},
 ): Promise<NotificationGroupsMock> => {
-  const groups = initialGroups();
+  const groups = initialGroups(inactiveReason, inactiveAt);
   const mock: NotificationGroupsMock = { patches: [], linkRequests: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
@@ -75,7 +93,11 @@ export const openNotificationGroups = async (
       const body = request.postDataJSON() as { is_active?: boolean };
       mock.patches.push({ id: byId[1], body });
       const group = groups.find((item) => item.id === byId[1]);
-      if (group && typeof body.is_active === "boolean") group.is_active = body.is_active;
+      if (group && typeof body.is_active === "boolean") {
+        group.is_active = body.is_active;
+        group.inactive_reason = body.is_active ? null : "manual";
+        group.inactive_at = body.is_active ? null : new Date().toISOString();
+      }
       return reply(route, { statusCode: 200, data: group ?? {} });
     }
     if (path === "telegram/link-code" && request.method() === "POST") {

@@ -175,16 +175,38 @@ export const CameraChip = ({ dot, icon: Icon, children }: { dot?: CameraChipDot;
  */
 export type ScanFrameSize = "sm" | "md" | "lg";
 
-const FINDER_SIZE: Record<ScanFrameSize, string> = {
-  sm: "size-[208px] md:size-[232px]",
-  md: "size-[248px] md:size-[280px]",
-  lg: "size-[288px] md:size-[320px]",
+/**
+ * Ramka shakli: `square` — QR (maket); `wide` — shtrix kod rejimi (Trello CO66kcoB; maket yo'q — eng yaqini
+ * `tizim-scanner` ramkasi): keng past to'rtburchak, zavod kodi chiziqlari ramkaga to'liq sig'sin. O'lcham sozlamasi
+ * ikkalasida ham amal qiladi.
+ */
+export type ScanFrameShape = "square" | "wide";
+
+const FINDER_SIZE: Record<ScanFrameShape, Record<ScanFrameSize, string>> = {
+  square: {
+    sm: "size-[208px] md:size-[232px]",
+    md: "size-[248px] md:size-[280px]",
+    lg: "size-[288px] md:size-[320px]",
+  },
+  wide: {
+    sm: "h-[144px] w-[264px] md:h-[160px] md:w-[300px]",
+    md: "h-[168px] w-[min(312px,calc(100%-32px))] md:h-[192px] md:w-[360px]",
+    lg: "h-[184px] w-[min(344px,calc(100%-32px))] md:h-[216px] md:w-[400px]",
+  },
 };
 
-const HINT_TOP: Record<ScanFrameSize, string> = {
-  sm: "top-[calc(50%+120px)] md:top-[calc(50%+132px)]",
-  md: "top-[calc(50%+140px)] md:top-[calc(50%+156px)]",
-  lg: "top-[calc(50%+160px)] md:top-[calc(50%+176px)]",
+/** Maslahat ramka ostidan 16 px pastda: `50% + ramka bo'yining yarmi + 16`. */
+const HINT_TOP: Record<ScanFrameShape, Record<ScanFrameSize, string>> = {
+  square: {
+    sm: "top-[calc(50%+120px)] md:top-[calc(50%+132px)]",
+    md: "top-[calc(50%+140px)] md:top-[calc(50%+156px)]",
+    lg: "top-[calc(50%+160px)] md:top-[calc(50%+176px)]",
+  },
+  wide: {
+    sm: "top-[calc(50%+88px)] md:top-[calc(50%+96px)]",
+    md: "top-[calc(50%+100px)] md:top-[calc(50%+112px)]",
+    lg: "top-[calc(50%+108px)] md:top-[calc(50%+124px)]",
+  },
 };
 
 /** `.el-cam-hint` — ramka ostidagi maslahat. */
@@ -192,16 +214,18 @@ export const CameraHint = ({
   children,
   live,
   frame = "md",
+  shape = "square",
 }: {
   children: ReactNode;
   live?: boolean;
   frame?: ScanFrameSize;
+  shape?: ScanFrameShape;
 }) => (
   <p
     role={live ? "status" : undefined}
     className={cx(
       "absolute left-1/2 z-2 w-max max-w-[min(380px,calc(100%-32px))] -translate-x-1/2 rounded-full border border-text/20 bg-bg/60 px-3.5 py-2 text-center text-sm leading-5 font-semibold backdrop-blur-md",
-      HINT_TOP[frame],
+      HINT_TOP[shape][frame],
     )}
   >
     {children}
@@ -216,16 +240,18 @@ export const CameraSuggestion = ({
   text,
   action,
   frame = "md",
+  shape = "square",
 }: {
   text: ReactNode;
   action: ReactNode;
   frame?: ScanFrameSize;
+  shape?: ScanFrameShape;
 }) => (
   <div
     role="status"
     className={cx(
       "absolute left-1/2 z-2 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2",
-      HINT_TOP[frame],
+      HINT_TOP[shape][frame],
     )}
   >
     <p className="rounded-full border border-text/20 bg-bg/60 px-3.5 py-2 text-center text-sm leading-5 font-semibold backdrop-blur-md">
@@ -251,6 +277,8 @@ type ScanFinderProps = {
   mark?: ReactNode;
   /** Ramka o'lchami (sukut — `md`, maketdagi 248 / 280 px). */
   frame?: ScanFrameSize;
+  /** Ramka shakli (sukut `square` — QR; `wide` — shtrix kod rejimi). */
+  shape?: ScanFrameShape;
   /** Ramka elementi — skan hududini ekrandagi ramkaga moslash uchun (`scanRegion.ts`). */
   finderRef?: Ref<HTMLDivElement>;
 };
@@ -259,15 +287,16 @@ type ScanFinderProps = {
  * `.el-cam-finder` — 248px (≥ 768: 280; `frame` bilan kichik / katta), radius 24, burchaklar 56/5px. Atrofdagi qorong'i parda — `overlay`.
  * Skanerlash chizig'i — `nav-accent` (to'q fon ustidagi urg'u, DESIGN_SYSTEM §2).
  */
-export const ScanFinder = ({ tone, paused, mark, frame = "md", finderRef }: ScanFinderProps) => (
+export const ScanFinder = ({ tone, paused, mark, frame = "md", shape = "square", finderRef }: ScanFinderProps) => (
   <div
     ref={finderRef}
     aria-hidden="true"
     data-finder-tone={tone ?? (paused ? "paused" : "idle")}
     data-finder-size={frame}
+    data-finder-shape={shape}
     className={cx(
       "absolute top-1/2 left-1/2 z-1 -translate-x-1/2 -translate-y-1/2 rounded-3xl",
-      FINDER_SIZE[frame],
+      FINDER_SIZE[shape][frame],
       "shadow-[0_0_0_2400px_var(--color-overlay)] ring-1 ring-text/20 ring-inset transition-colors duration-200 motion-reduce:transition-none",
       tone && TONE_TINT[tone],
     )}

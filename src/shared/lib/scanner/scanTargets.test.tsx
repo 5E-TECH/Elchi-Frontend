@@ -97,6 +97,20 @@ describe("scanTargets", () => {
     unsubscribe();
   });
 
+  it("`formats` va `closeOnSuccess` o'zgarsa — ko'rinish yangilanadi (kamera rejimi almashadi)", () => {
+    const listener = vi.fn();
+    const { rerender } = render(<Register value={target("dialog")} />);
+    const unsubscribe = subscribeScanTargets(listener);
+    rerender(<Register value={target("dialog", { formats: "qr" })} />);
+    expect(listener).not.toHaveBeenCalled();
+    rerender(<Register value={target("dialog", { formats: "barcodes" })} />);
+    expect(getActiveScanTarget()?.formats).toBe("barcodes");
+    rerender(<Register value={target("dialog", { formats: "barcodes", closeOnSuccess: true })} />);
+    expect(getActiveScanTarget()?.closeOnSuccess).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
+
   it("ro'yxat qatoridagi «Bekor qilish» va «Tugatish» eng oxirgi funksiyaga boradi", () => {
     const undoOld = vi.fn();
     const undoNew = vi.fn();

@@ -12,6 +12,8 @@ export type AnalyticsKpi = {
   averageOrderValue: number;
   averageFulfillmentHours: number;
   onTimeRate: number;
+  /** Davrda yetkazilganlar soni; `0` — SLA o\'lchanmagan, `null` — backend bermadi. */
+  deliveryCount?: number | null;
   cancellationRate: number;
   courierEfficiency: number;
   marketRating: Array<Record<string, unknown>>;
@@ -40,6 +42,9 @@ export const readAnalyticsKpi = (payload: unknown): AnalyticsKpi | null => {
     averageOrderValue: toNumber(data.averageOrderValue),
     averageFulfillmentHours: toNumber(data.averageFulfillmentHours),
     onTimeRate: toNumber(data.onTimeRate),
+    // yrLt5oMi: `0` — davrda yetkazish yo'q, SLA o'lchanmagan; maydon yo'q — `null`.
+    deliveryCount:
+      data.deliveryCount === undefined || data.deliveryCount === null ? null : Math.max(0, toNumber(data.deliveryCount)),
     cancellationRate: toNumber(data.cancellationRate),
     courierEfficiency: toNumber(data.courierEfficiency),
     marketRating: Array.isArray(data.marketRating) ? data.marketRating.map(asRecord) : [],

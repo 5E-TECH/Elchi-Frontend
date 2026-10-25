@@ -121,6 +121,14 @@ export interface User {
    * yoqadi, sukut `false`). Boshqa rollarda yo'q.
    */
   can_view_warehouse_stock?: boolean;
+  /**
+   * kGIjOciz (backend 914ff57, prod): foydalanuvchi biriktirilgan filial (`branch_users` dan) — kuryer, menejer,
+   * registrator, filial xodimi; boshqalarda yoki filial xizmati javob bermasa `null`.
+   */
+  branch_id?: string | number | null;
+  branch?: { id: string | number; name: string } | null;
+  /** x6IO746K: market operatori marketi (`GET /users`, `/users/:id`); boshqa rollarda yo'q. */
+  market?: { id: string | number; name: string; add_order?: boolean } | null;
   avatar?: string;
   balance?: number;
   orders?: Order[];
