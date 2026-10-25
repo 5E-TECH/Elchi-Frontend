@@ -24,6 +24,8 @@ interface BranchDetailWidgetProps {
   branch: Branch;
   /** `useBranchEmployees(branchId)` — sahifa filial bilan parallel so'raydi. */
   employeesQuery: QueryLike<Employee[]>;
+  /** «Filial ko'rsatkichlari» bo'limi (maketda ma'lumot kartasi va xodimlar orasida). */
+  metrics?: ReactNode;
 }
 
 /** `.el-stat-icon` — neytral, rangsiz (CODE-MAP 2.4). */
@@ -37,12 +39,11 @@ type InfoItem = { key: string; icon: LucideIcon; label: string; value: string; s
  * Sarlavha: «← Filiallar», nom + holat badge'i, «{kod} · {tur} · Yuqori filial: {nom}» (yuqori filial —
  * havola), amallar «Tahrirlash» (secondary) va «Xodim qo'shish» (asosiy). «Filial ma'lumotlari» kartasi:
  * Joylashuv (tuman; «viloyat, manzil») · Xodimlar «{n} ta» · Yaratilgan sana (telefonda ixcham: joylashuv
- * tepada, ikkalasi pastda yonma-yon). Keyin «Filial xodimlari».
- *
- * «Filial ko'rsatkichlari» bo'limi (KPI, muvaffaqiyat, kunlik daromad, holatlar, kuryerlar reytingi) CHIZILMAGAN:
- * `GET /analytics/dashboard` `branch_id` ni qabul qilmaydi — API yo'q (spec §6, ega savoli 10).
+ * tepada, ikkalasi pastda yonma-yon). Keyin «Filial ko'rsatkichlari» (`metrics` — sahifa beradi:
+ * `pages/branches/ui/BranchMetricsSection.tsx`, `GET /analytics/dashboard?branch_id=`, 6CYRjoZG) va
+ * «Filial xodimlari».
  */
-const BranchDetailWidget = ({ branchId, branch, employeesQuery }: BranchDetailWidgetProps) => {
+const BranchDetailWidget = ({ branchId, branch, employeesQuery, metrics }: BranchDetailWidgetProps) => {
   const { t, i18n } = useTranslation("branches");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isPhone = useIsPhone();
@@ -183,6 +184,8 @@ const BranchDetailWidget = ({ branchId, branch, employeesQuery }: BranchDetailWi
       />
 
       {infoCard}
+
+      {metrics}
 
       <BranchEmployeesSection branchId={branchId} query={employeesQuery} />
 
