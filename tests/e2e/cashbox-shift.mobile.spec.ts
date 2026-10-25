@@ -3,8 +3,9 @@ import { mockCashboxShift, REGIONAL_MANAGER_PROFILE } from "./support/cashboxShi
 
 /**
  * CB-2, telefon 390 (maketlar `manager-payments-overview-shift-closed`,
- * `manager-payments-cash-detail-branch-shift-closed`): gorizontal skroll yo'q, «Smenani ochish» ≥ 44px, ochish
- * oynasi pastki varaqa; smena ochilgach «HQ'ga o'tkazish» formasi qaytadi.
+ * `manager-payments-cash-detail-courier-shift-closed`): gorizontal skroll yo'q, «Smenani ochish» ≥ 44px, ochish
+ * oynasi pastki varaqa; smena ochilgach «Kuryerdan qabul qilish» formasi qaytadi. Menejerning HQ kassasi sahifasida
+ * forma ham, qulf ham yo'q (ega qarori #7, IjqTYQks: HQ filial pulini o'zi oladi).
  */
 test("menejer 390 «To'lovlar»: banner va bitta «Smenani ochish», toshish yo'q", async ({ page }) => {
   const mock = await mockCashboxShift(page, "manager", REGIONAL_MANAGER_PROFILE);
@@ -19,13 +20,25 @@ test("menejer 390 «To'lovlar»: banner va bitta «Smenani ochish», toshish yo'
   expect(mock.leaked).toEqual([]);
 });
 
-test("menejer 390 «HQ'ga o'tkazish»: qulf → pastki varaqa → smena ochiladi → forma", async ({ page }) => {
+test("menejer 390 HQ kassasi: forma va qulf yo'q — «HQ o'zi qabul qiladi», toshish yo'q", async ({ page }) => {
   const mock = await mockCashboxShift(page, "manager", REGIONAL_MANAGER_PROFILE);
   await page.goto("/payments/cash-detail/16?type=branch");
 
+  await expect(page.getByText(/Filial pulini HQ o'zi qabul qiladi/)).toBeVisible();
+  await expect(page.getByTestId("shift-locked-card")).toHaveCount(0);
+  await expect(page.getByPlaceholder("0")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /HQ'ga o'tkazish$/ })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(mock.leaked).toEqual([]);
+});
+
+test("menejer 390 kuryer kassasi: qulf → pastki varaqa → smena ochiladi → forma", async ({ page }) => {
+  const mock = await mockCashboxShift(page, "manager", REGIONAL_MANAGER_PROFILE);
+  await page.goto("/payments/cash-detail/209?type=courier");
+
   const locked = page.getByTestId("shift-locked-card");
-  await expect(locked.getByRole("heading", { name: "HQ'ga o'tkazish" })).toBeVisible();
-  await expect(locked).toContainText("Filial kassasida smena ochilgandan keyin HQ'ga pul o'tkazish ishlaydi.");
+  await expect(locked.getByRole("heading", { name: "Kuryerdan qabul qilish" })).toBeVisible();
+  await expect(locked).toContainText("Filial kassasida smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.");
   const openButton = locked.getByRole("button", { name: "Smenani ochish" });
   expect((await openButton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

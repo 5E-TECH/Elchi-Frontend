@@ -24,12 +24,17 @@ export const useTariffText = () => {
     items.length ? items.map((item) => change(item, short)).join(", ") : t("page.changes.none");
   const pickupFree = (value: number | null) =>
     value === null ? t("page.history.settings.pickupNever") : t("page.history.settings.pickupFrom", { count: value });
-  /** Hisob qoidasi o'zgarishi: «asosiy narxga kiradigan og'irlik 1 → 2 kg», «yaxlitlash 500 → 1 000 so'm». */
+  /** Kg / koeffitsiyent — kasri bilan (0,1; 1,5; 3), butun son kasrsiz. */
+  const decimal = (value: number) => formatNumberLocalized(value, { language, fractionDigits: 3 });
+  /**
+   * Hisob qoidasi o'zgarishi: «asosiy narxga kiradigan og'irlik 1 → 2 kg», «hajm bo'yicha hisoblash chegarasi
+   * 0 → 3 kg», «yaxlitlash 500 → 1 000 so'm».
+   */
   const settingsChange = (item: SettingsChange) => {
     const key = `page.history.settings.${item.kind}`;
     if (item.kind === "pickupFree") return t(key, { from: pickupFree(item.from), to: pickupFree(item.to) });
     if (item.kind === "roundTo" || item.kind === "pickupFee") return t(key, { from: number(item.from), to: money(item.to) });
-    return t(key, { from: number(item.from), to: number(item.to) });
+    return t(key, { from: decimal(item.from), to: decimal(item.to) });
   };
   const settingsChanges = (items: readonly SettingsChange[]) => items.map(settingsChange).join(", ");
   /** Saqlash xatosining izohi — faqat i18n (xom backend matni ko'rsatilmaydi). */

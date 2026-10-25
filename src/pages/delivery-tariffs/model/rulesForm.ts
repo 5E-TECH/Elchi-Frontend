@@ -7,10 +7,12 @@ import type {
  * «HISOB QOIDALARI» (`GET / PATCH /delivery/pricing-settings`) — forma qiymatlari matn ko'rinishida. Chegaralar
  * backend DTO bilan bir xil (`UpdateDeliveryPricingSettingsRequestDto`): o'nli kg maydonlari ko'pi bilan 3 kasr,
  * `round_to` butun ≥ 1, `pickup_fee` ≥ 0, `pickup_free_from_count` butun ≥ 1 yoki bo'sh (`null` — hech qachon tekin
- * emas), `express_multiplier` ≥ 1. `volumetric_divisor` — doimiy, faqat ko'rsatiladi (yuborilmaydi).
+ * emas), `express_multiplier` ≥ 1, `volumetric_from_kg` («Hajm bo'yicha hisoblash chegarasi») 0..1000, 3 kasr
+ * (0 — har doim hajm bo'yicha). `volumetric_divisor` — doimiy, faqat ko'rsatiladi (yuborilmaydi).
  */
 export type RulesFormValues = {
   firstKg: string;
+  volumetricFrom: string;
   minKg: string;
   step: string;
   roundTo: string;
@@ -32,6 +34,7 @@ type Rule = {
 
 export const RULES: Record<RulesField, Rule> = {
   firstKg: { kind: "decimal", min: 0, max: 1000, key: "first_kg_included" },
+  volumetricFrom: { kind: "decimal", min: 0, max: 1000, key: "volumetric_from_kg" },
   minKg: { kind: "decimal", min: 0.001, max: 1000, key: "min_billable_kg" },
   step: { kind: "decimal", min: 0.001, max: 1000, key: "billable_step_kg" },
   roundTo: { kind: "integer", min: 1, key: "round_to" },
@@ -75,6 +78,7 @@ const decimalInput = (value: number, language?: string | null) => {
 
 export const toRulesForm = (settings: DeliveryPricingSettings, language?: string | null): RulesFormValues => ({
   firstKg: decimalInput(settings.firstKgIncluded, language),
+  volumetricFrom: decimalInput(settings.volumetricFromKg, language),
   minKg: decimalInput(settings.minBillableKg, language),
   step: decimalInput(settings.billableStepKg, language),
   roundTo: String(Math.round(settings.roundTo)),

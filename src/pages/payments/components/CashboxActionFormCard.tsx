@@ -24,7 +24,7 @@ import { Button, Card, Field, Select, TextInput } from "../../../shared/ui/primi
 
 /**
  * KASSA AMALI FORMASI — dizayn v2 (maket `*-payments-cash-detail-*`: «Kuryerdan qabul qilish»,
- * «Marketga to'lov», «Filialdan qabul qilish», «HQ'ga o'tkazish»).
+ * «Marketga to'lov», «Filialdan qabul qilish»).
  *
  * Karta: sarlavha + izoh; «Summa *» (katta maydon, mingliklar bilan, o'ngda valyuta) + ko'rsatma;
  * ixtiyoriy info ogohlantirish (market: «To'lov avval eng eski buyurtmalarni yopadi…»); «To'lov turi *» —
@@ -59,7 +59,7 @@ interface CashboxActionFormCardProps {
   actionSubLabel: string;
   title?: string;
   subtitle?: string;
-  /** Tugma matni («1 155 000 so'm qabul qilish», «To'lash», «HQ'ga o'tkazish»). */
+  /** Tugma matni («1 155 000 so'm qabul qilish», «To'lash»). */
   submitLabel: string;
   /** Tugma ikonkasi (sukut: kuryer/filial — `ArrowDownLeft`, market — `ArrowUpRight`). */
   submitIcon?: LucideIcon;

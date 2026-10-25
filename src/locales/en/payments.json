@@ -786,7 +786,6 @@
   ,"v2Overview": {
     "receive": "Receive money",
     "payMarket": "Pay a market",
-    "transferToHq": "Transfer to HQ",
     "receiveFromCourier": "Receive from a courier",
     "kpiLabel": "Cashbox indicators",
     "cashboxAmount": "Amount in cashbox",
@@ -860,8 +859,8 @@
       "hqCourier": "HQ courier",
       "branchCourier": "{{branch}} courier",
       "manager": "Manager: {{name}}",
-      "hqTransfer": "Transfer money from the {{branch}} cashbox to HQ",
-      "hqTransferFallback": "Transfer money from the branch cashbox to HQ"
+      "hqTransfer": "Money HQ collects from the {{branch}} cashbox",
+      "hqTransferFallback": "Money HQ collects from the branch cashbox"
     },
     "settlement": {
       "title": "Settlement status",
@@ -885,13 +884,10 @@
       "marketInfo": "The payment closes the oldest orders first, then the newer ones.",
       "branchTitle": "Receive from branch",
       "branchSubtitle": "Money moves from the branch cashbox to the main cashbox",
-      "hqTitle": "Transfer to HQ",
-      "hqSubtitle": "Transfer money from the branch cashbox to the HQ cashbox",
       "amount": "Amount",
       "limitHint": "At most {{amount}} — the amount to be received",
       "receivableHint": "To be received: {{amount}}",
       "payableHint": "To be given: {{amount}}",
-      "payableCashboxHint": "To be given: {{amount}} · in cashbox {{cashbox}}",
       "paymentType": "Payment type",
       "paymentTypeRequired": "Choose a payment type",
       "market": "Market",
@@ -902,9 +898,8 @@
       "receive": "Receive",
       "receiveAmount": "Receive {{amount}}",
       "pay": "Pay",
-      "hq": "Transfer to HQ",
-      "hqAmount": "Transfer {{amount}} to HQ",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "hqReceives": "HQ collects the branch money itself: a superadmin or admin receives it on the Payments page via «Receive money». Managers don't transfer money to HQ."
     },
     "confirm": {
       "title": "Confirm the payment",
@@ -963,12 +958,11 @@
   ,"cashDetail": {
     "shift": {
       "overviewSubtitle": "Manage cashboxes and payments · shift closed",
-      "overviewBanner": "Receiving from couriers, transfers to HQ, expenses and cashbox top-ups work once a shift is open in the branch cashbox. The balance and operations history stay visible.",
+      "overviewBanner": "Receiving from couriers, expenses and cashbox top-ups work once a shift is open in the branch cashbox. The balance and operations history stay visible.",
       "formLocked": "Works once the shift is open",
       "visibleHint": "The balance and operations history stay visible.",
       "banner": {
         "courierBranch": "Receiving money from couriers works once a shift is open in the branch cashbox.",
-        "hqTransfer": "Transferring money to HQ works once a shift is open in the branch cashbox.",
         "courierMain": "Receiving money from couriers works once a shift is open in the main cashbox.",
         "market": "Market payouts work once a shift is open in the main cashbox.",
         "branchReceive": "Receiving money from branches works once a shift is open in the main cashbox."

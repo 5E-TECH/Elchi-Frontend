@@ -281,8 +281,8 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
  *
  * Maketlar: `superadmin-payments-overview` = `admin-payments-overview`, `manager-payments-overview`.
  *  - Sarlavha «To'lovlar» + amallar: superadmin/admin — «Marketga to'lov» (berilishi kerak oynasi) va asosiy
- *    «Pul qabul qilish» (qabul oynasi); menejer — «HQ'ga o'tkazish» (filial kassasi sahifasi, FE-PAY-01 — fix3
- *    dan oldingi filial ID si; ID bo'lmasa tugma yo'q) va asosiy «Kuryerdan qabul qilish» (kuryer oynasi).
+ *    «Pul qabul qilish» (qabul oynasi); menejer — faqat «Kuryerdan qabul qilish» (kuryer oynasi). Maketdagi
+ *    «HQ'ga o'tkazish» yo'q — ega qarori #7 (IjqTYQks, 2026-10-25): HQ filial pulini o'zi oladi.
  *  - Ko'rsatkichlar (`PaymentSummaryCards`) — manbalari o'zgarmagan: all-info, menejer settlement / payable-to-hq.
  *  - Menejer: «Kuryerlardagi pul» (o'z kuryerlari, `GET /couriers` — `status=active` YO'Q).
  *  - «Operatsiyalar tarixi»: tablar Barchasi / Kirim / Chiqim (`operation_type`), filtrlar — To'lov sanasi
@@ -387,10 +387,9 @@ const Payments = () => {
   const isShiftLocked = isManagerRole && shiftState.status === "closed";
   const isShiftOpen = shiftState.status === "open";
   const [isOpenShiftOpen, setIsOpenShiftOpen] = useState(false);
-  // Smena shu ekrandan ochildi — «Smenani ochish» tugmasi yo'qoladi; fokus <body> ga tushmasin: tiklangan birinchi
-  // sarlavha amaliga («HQ'ga o'tkazish», bo'lmasa «Kuryerdan qabul qilish»).
+  // Smena shu ekrandan ochildi — «Smenani ochish» tugmasi yo'qoladi; fokus <body> ga tushmasin: tiklangan sarlavha
+  // amaliga («Kuryerdan qabul qilish»).
   const focusActionsAfterShiftRef = useRef(false);
-  const hqActionRef = useRef<HTMLButtonElement>(null);
   const courierActionRef = useRef<HTMLButtonElement>(null);
   const closeOpenShift = useCallback(() => setIsOpenShiftOpen(false), []);
   const handleShiftOpened = useCallback(() => {
@@ -400,7 +399,7 @@ const Payments = () => {
   useEffect(() => {
     if (!focusActionsAfterShiftRef.current || isOpenShiftOpen || !isShiftOpen) return;
     focusActionsAfterShiftRef.current = false;
-    (hqActionRef.current ?? courierActionRef.current)?.focus();
+    courierActionRef.current?.focus();
   }, [isOpenShiftOpen, isShiftOpen]);
 
   // API response formatlari:
@@ -480,9 +479,9 @@ const Payments = () => {
       data.hq ?? data.main_branch ?? data.mainBranch ?? ownBranch.parent,
     );
     const region = asRecord(hqBranch.region ?? ownBranch.region ?? profile.region);
-    // FE-PAY-01 fix3 dan oldingi holatida qoldirilgan (foydalanuvchi qarori
-    // #7): filial puli HQ ga faqat superadmin/admin "Qabul qilinishi kerak"
-    // orqali qabul qilganda o'tadi — menejer o'zi topshirmaydi.
+    // Ega qarori (#7, IjqTYQks 2026-10-25 da qayta tasdiqlandi): menejer HQ'ga pul O'TKAZMAYDI — filial pulini
+    // HQ (superadmin/admin) «Pul qabul qilish» orqali o'zi oladi. Bu variant faqat «Berilishi kerak» kartasidan
+    // filialning HQ kassasi sahifasini ko'rish uchun ochadi (balans va tarix; forma yo'q).
     // Filial id (IjqTYQks): profildagi `branch` — branch_users QATORI, uning `id` si bog'lanish yozuvi; filial —
     // `branch_id` / ichki `branch.id`. `ownBranch.id` faqat kassa javobidagi filial obyektida olinadi.
     const branchId =
@@ -749,16 +748,9 @@ const Payments = () => {
       {t("v2MainCashbox.openShift")}
     </Button>
   ) : isManagerRole ? (
-    <>
-      {branchToMainOption ? (
-        <Button ref={hqActionRef} variant="secondary" leftIcon={ArrowUpRight} onClick={openBranchToMain}>
-          {t("v2Overview.transferToHq")}
-        </Button>
-      ) : null}
-      <Button ref={courierActionRef} leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
-        {t("v2Overview.receiveFromCourier")}
-      </Button>
-    </>
+    <Button ref={courierActionRef} leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
+      {t("v2Overview.receiveFromCourier")}
+    </Button>
   ) : (
     <>
       <Button variant="secondary" leftIcon={ArrowUpRight} onClick={() => openPicker("give")}>

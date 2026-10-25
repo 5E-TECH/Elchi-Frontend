@@ -206,15 +206,67 @@ describe("LoginForm (dizayn v2: common-login, common-login-error)", () => {
     },
   );
 
-  it("maps 500 to the server error text", async () => {
+  it.each([500, 502, 503])("maps %i to the server error text with a «try later» hint", async (status) => {
     const user = userEvent.setup();
-    loginFn.mockRejectedValue({ response: { status: 500 } });
+    loginFn.mockRejectedValue({ response: { status } });
 
     renderWithProviders(<LoginForm />);
 
     await fillAndSubmit(user);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Serverda xatolik yuz berdi");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Serverda xatolik yuz berdi");
+    expect(alert).toHaveTextContent("Birozdan keyin qayta urinib ko'ring.");
+    expect(alert).not.toHaveTextContent("Tizim xatoligi");
+  });
+
+  /** hQqymheT: 429 / 403 — «Tizim xatoligi» emas, sabab va nima qilish kerakligi; backend'ning inglizcha matni yo'q. */
+  it.each([
+    [
+      "429 (Retry-After yo'q)",
+      { status: 429, headers: {}, data: { message: "ThrottlerException: Too Many Requests" } },
+      "Juda ko'p urinish",
+      "Bir daqiqa kutib, qayta urinib ko'ring.",
+    ],
+    [
+      "429 (Retry-After: 42)",
+      { status: 429, headers: { "retry-after": "42" }, data: { message: "ThrottlerException: Too Many Requests" } },
+      "Juda ko'p urinish",
+      "42 soniyadan keyin qayta urinib ko'ring.",
+    ],
+    [
+      "403",
+      { status: 403, headers: {}, data: { message: "Forbidden resource" } },
+      "Kirishga ruxsat berilmadi",
+      "Administratorga murojaat qiling.",
+    ],
+  ])("%s → aniq sarlavha va izoh", async (_name, response, title, hint) => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue({ response });
+
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(title);
+    expect(alert).toHaveTextContent(hint);
+    expect(alert).not.toHaveTextContent("Tizim xatoligi");
+    expect(alert).not.toHaveTextContent(response.data.message);
+    expect(alert).not.toHaveTextContent("Telefon raqam va parolni tekshirib");
+  });
+
+  it("a non-network error without a response shows «Tizim xatoligi», never its raw English message", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue(new Error("Cannot read properties of undefined"));
+
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Tizim xatoligi");
+    expect(alert).not.toHaveTextContent("Cannot read properties");
   });
 
   it("while the request is pending the button shows «Kirilmoqda…» and a second submit sends nothing", async () => {
