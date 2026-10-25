@@ -5,7 +5,7 @@ import type { Page, Route, WebSocketRoute } from "@playwright/test";
  * protokoli, `page.routeWebSocket`). Kontrakt: FRONTEND_CHANGELOG 2026-10-14 (m9BOlEbE) — namespace `/realtime`,
  * `auth: { token }`, hodisa `notification:new` (to'liq inbox qatori). Serverga hech narsa ketmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

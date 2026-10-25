@@ -559,6 +559,7 @@ const NewOrderUpdate = () => {
         <MarkReturnedModal
           open
           orderId={order.id}
+          marketId={order.market_id != null ? String(order.market_id) : null}
           onClose={() => setIsMarkReturnedOpen(false)}
           onDone={refreshTracking}
         />

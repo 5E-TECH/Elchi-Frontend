@@ -386,7 +386,9 @@
       "notRequiredTitle": "Market QR not required",
       "notRequiredBody": "HQ staff can hand over cancelled orders without the market QR code. Select orders one by one with the scanner.",
       "timerLabel": "QR valid for",
-      "timerAria": "QR valid for: {{minutes}} min {{seconds}} s"
+      "timerAria": "QR valid for: {{minutes}} min {{seconds}} s",
+      "pinAction": "Enter PIN code",
+      "scannedTitlePin": "Market PIN confirmed"
     },
     "card": {
       "title": "Prepare cancelled orders",
@@ -453,7 +455,8 @@
       "sendSuccessDescription_one": "{{value}} order sent.",
       "sendSuccessDescription_other": "{{value}} orders sent.",
       "sendError": "Could not send orders to market",
-      "qrGenerateError": "Could not generate the QR code"
+      "qrGenerateError": "Could not generate the QR code",
+      "pinAccepted": "PIN code accepted"
     },
     "market": {
       "cardLabel": "Cancelled orders",
@@ -474,7 +477,29 @@
       "description": "Have this QR code scanned at the post to hand the orders over.",
       "imageLabel": "Cancelled orders handover QR code",
       "empty": "QR code data was not found.",
-      "close": "Close"
+      "close": "Close",
+      "pinLabel": "If the QR won't scan — PIN code",
+      "pinAria": "PIN code: {{digits}}",
+      "pinTimer": "Valid for {{time}}",
+      "pinTimerAria": "Code valid for: {{minutes}} min {{seconds}} s",
+      "pinExpired": "Expired"
+    },
+    "pin": {
+      "title": "Market PIN code",
+      "description": "{{market}} · If the QR won't scan, confirm with the PIN from the market's QR window.",
+      "label": "6-digit PIN",
+      "hint": "The code shown under the QR on the market representative's phone.",
+      "note": "After 5 wrong attempts the session is blocked — the market generates a new QR.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "incomplete": "Enter 6 digits",
+      "invalid_one": "Wrong code — {{value}} attempt left",
+      "invalid_other": "Wrong code — {{value}} attempts left",
+      "invalidPlain": "Wrong code",
+      "blocked": "5 wrong attempts — the market must generate a new QR",
+      "expired": "The code has expired — the market must generate a new QR",
+      "notFound": "The market has no active QR — ask them to reopen the QR window",
+      "error": "Could not check the code"
     },
     "camera": {
       "qrTitle": "Scan market QR",

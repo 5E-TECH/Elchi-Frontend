@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-handover-done, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
+// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-handover-done, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, superadmin-neworders-cancelled-pin-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -45,17 +45,21 @@ import {
   extractMarketCancelledQrToken,
   formatCountdown,
   getDecodedScannerText,
+  isHandoverPinComplete,
   normalizeCancelledAuthorization,
   normalizeCancelledMarketQr,
+  readHandoverPinError,
   resolveHandoverQrStage,
   scannerContainsMarketCancelledQr,
   toOrderCardData,
   type CancelledMarketQr,
+  type HandoverAuthMethod,
 } from "./cancelledModel";
 import { CancelledOrdersTable } from "./ui/CancelledOrdersTable";
 import { HandedOverCard, type HandedOverOrder } from "./ui/HandedOverCard";
 import { HandoverStatusAlert } from "./ui/HandoverStatusAlert";
 import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
+import { MarketPinDialog } from "./ui/MarketPinDialog";
 import { MarketQrDialog } from "./ui/MarketQrDialog";
 
 /**
@@ -72,6 +76,11 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  *    sahifaning skan maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → tanlov, `MCR-` → market QR
  *    tekshiruvi). Matn holatga qarab: avval «Market QR skanerlash», QR'dan keyin «Buyurtmalarni tanlash · QR 04:12
  *    amal qiladi» — kamera yopilmaydi.
+ *  - KOD (zkRab9M2, BG6; maket `superadmin-neworders-cancelled-pin-dialog`): «Market QR kerak» holatida «PIN kodni
+ *    kiritish» → `MarketPinDialog` — market QR oynasidagi 6 xonali kod `POST scan/market-cancelled { market_id, pin }`
+ *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token, taymer, hamma bekorlar tanlanadi),
+ *    topshirilganlarda usul «Parol orqali» (`pin`). Oyna ochiq paytda sahifa skaneri to'xtatiladi — 6 raqam + Enter
+ *    buyurtma skani deb olinmasin.
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
  *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
  *
@@ -92,6 +101,7 @@ const CancelledMarketDetail = () => {
     useCancelledOrdersByMarket,
     generateCancelledMarketQr,
     scanMarketCancelledQr,
+    verifyMarketCancelledPin,
     handoverCancelledOrders,
   } = useOrders();
   const query = useCancelledOrdersByMarket(marketId);
@@ -112,6 +122,11 @@ const CancelledMarketDetail = () => {
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
   const [authorizationRemainingSeconds, setAuthorizationRemainingSeconds] = useState(0);
+  // zkRab9M2: ruxsat qanday olingan (QR skani yoki 6 xonali kod) — sarlavha va «Topshirildi» usuli uchun.
+  const [authorizationMethod, setAuthorizationMethod] = useState<HandoverAuthMethod>("qr");
+  const [isPinOpen, setIsPinOpen] = useState(false);
+  const [pinValue, setPinValue] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
   // Market QR ruxsati hozir amaldami (token + skanerlandi) — skan callback'lari uchun sinxron nusxa: kamera QR'dan
   // keyin ochiq qoladi, shu market QR yana o'qilsa ikkinchi so'rov yuborilmaydi (backend «QR allaqachon
   // ishlatilgan» deydi va xato tirik ruxsatni o'chirib yubormasin).
@@ -211,6 +226,38 @@ const CancelledMarketDetail = () => {
       .some((value) => expectedValues.includes(value));
   }, [handoverQr]);
 
+  /**
+   * Market ruxsati olindi (QR skani yoki 6 xonali kod — javob bir xil): token va taymer, barcha bekorlar tanlanadi.
+   * Token yo'q javob — xato (`normalizeCancelledAuthorization` tashlaydi), holat o'zgarmaydi.
+   */
+  const applyAuthorization = useCallback((response: unknown, method: HandoverAuthMethod) => {
+    const authorization = normalizeCancelledAuthorization(response);
+
+    authorizationLiveRef.current = Boolean(authorization.authorizationToken);
+    setAuthorizationToken(authorization.authorizationToken);
+    setAuthorizationExpiresAt(authorization.expiresAt);
+    setAuthorizationMethod(method);
+    setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
+    setIsHandoverQrScanned(true);
+
+    const title = method === "pin" ? t("cancelled.notify.pinAccepted") : t("cancelled.notify.qrAccepted");
+    const options = {
+      description: t("cancelled.notify.qrAcceptedDescription", {
+        count: selectableOrders.length,
+        value: formatNumberLocalized(selectableOrders.length, { language }),
+      }),
+      duration: 3000,
+    };
+    if (method === "pin") {
+      // Kod oynada yozildi — kamera yo'q, oddiy xabar.
+      notify.success(title, options);
+      return;
+    }
+    // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
+    void playScanFeedback("success", title, undefined, { step: true });
+    scanNotify.success(title, options);
+  }, [language, selectableOrders, t]);
+
   const verifyHandoverQr = useCallback(async (rawValue: string) => {
     if (!marketId) return false;
 
@@ -231,23 +278,7 @@ const CancelledMarketDetail = () => {
 
     try {
       const response = await scanMarketCancelledQr.mutateAsync(qrToken);
-      const authorization = normalizeCancelledAuthorization(response);
-
-      authorizationLiveRef.current = Boolean(authorization.authorizationToken);
-      setAuthorizationToken(authorization.authorizationToken);
-      setAuthorizationExpiresAt(authorization.expiresAt);
-      setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
-      setIsHandoverQrScanned(true);
-      // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
-      void playScanFeedback("success", t("cancelled.notify.qrAccepted"), undefined, { step: true });
-      scanNotify.success(t("cancelled.notify.qrAccepted"), {
-        description: t("cancelled.notify.qrAcceptedDescription", {
-          count: selectableOrders.length,
-          value: formatNumberLocalized(selectableOrders.length, { language }),
-        }),
-        duration: 3000,
-      });
-
+      applyAuthorization(response, "qr");
       return true;
     } catch (error: unknown) {
       const message = getBackendErrorMessage(error) ?? t("cancelled.notify.scanMissing");
@@ -263,15 +294,69 @@ const CancelledMarketDetail = () => {
       return true;
     }
   }, [
+    applyAuthorization,
     handoverQr?.payload,
     handoverQr?.token,
     isGeneratedQrMatch,
-    language,
     marketId,
     scanMarketCancelledQr,
-    selectableOrders,
     t,
   ]);
+
+  const openPinDialog = useCallback(() => {
+    setPinValue("");
+    setPinError(null);
+    setIsPinOpen(true);
+  }, []);
+
+  const closePinDialog = useCallback(() => {
+    if (verifyMarketCancelledPin.isPending) return;
+    setIsPinOpen(false);
+  }, [verifyMarketCancelledPin.isPending]);
+
+  const changePin = useCallback((value: string) => {
+    setPinValue(value);
+    setPinError(null);
+  }, []);
+
+  /** Kod → QR skani bilan bir xil ruxsat; xato — maydon ostida (qolgan urinishlar, blok, muddat). */
+  const submitPin = useCallback(async () => {
+    if (!marketId || verifyMarketCancelledPin.isPending) return;
+    if (!isHandoverPinComplete(pinValue)) {
+      setPinError(t("cancelled.pin.incomplete"));
+      return;
+    }
+
+    let response: unknown;
+    try {
+      response = await verifyMarketCancelledPin.mutateAsync({ marketId, pin: pinValue });
+    } catch (error: unknown) {
+      const { kind, remainingAttempts } = readHandoverPinError(error);
+      setPinError(
+        kind === "invalid"
+          ? remainingAttempts === null
+            ? t("cancelled.pin.invalidPlain")
+            : t("cancelled.pin.invalid", {
+                count: remainingAttempts,
+                value: formatNumberLocalized(remainingAttempts, { language }),
+              })
+          : kind === "unknown"
+            ? (getBackendErrorMessage(error) ?? t("cancelled.pin.error"))
+            : t(`cancelled.pin.${kind}`),
+      );
+      return;
+    }
+
+    try {
+      applyAuthorization(response, "pin");
+    } catch {
+      setPinError(t("cancelled.pin.error"));
+      return;
+    }
+    setIsPinOpen(false);
+    setPinValue("");
+    setPinError(null);
+  }, [applyAuthorization, language, marketId, pinValue, t, verifyMarketCancelledPin]);
 
   const handleMissingOrder = useCallback((rawValue?: string) => {
     if (rawValue && extractMarketCancelledQrToken(rawValue)) {
@@ -393,7 +478,7 @@ const CancelledMarketDetail = () => {
             at: handedAt,
             handover: manualSelectedIds.has(order.id)
               ? { method: "manual", reason: toCancelledManualReason(manualOverrideReasons[order.id]) }
-              : { method: isCancelledHandoverQrRequired ? "qr" : "no_qr", reason: null },
+              : { method: isCancelledHandoverQrRequired ? authorizationMethod : "no_qr", reason: null },
           }));
         setHandedOver((previous) => [
           ...handedRows,
@@ -421,6 +506,7 @@ const CancelledMarketDetail = () => {
       },
     });
   }, [
+    authorizationMethod,
     authorizationToken,
     handoverCancelledOrders,
     isCancelledHandoverQrRequired,
@@ -501,8 +587,13 @@ const CancelledMarketDetail = () => {
   useOrderQrScanner({
     orders: selectableOrders,
     enabled: !isMarketRole,
-    // Server amali ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
-    paused: handoverCancelledOrders.isPending || scanMarketCancelledQr.isPending,
+    // Server amali ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi. Kod oynasi ochiq
+    // paytda ham — 6 raqam + Enter buyurtma skani deb olinmasin (oyna o'zi ham `data-scanner-ignore`).
+    paused:
+      handoverCancelledOrders.isPending ||
+      scanMarketCancelledQr.isPending ||
+      verifyMarketCancelledPin.isPending ||
+      isPinOpen,
     onMatch: selectOrder,
     onMissing: handleMissingOrder,
     camera: waitingForMarketQr
@@ -693,6 +784,8 @@ const CancelledMarketDetail = () => {
           readyCount={orders.length}
           remainingSeconds={authorizationRemainingSeconds}
           hintId={hintId}
+          method={authorizationMethod}
+          onPinClick={openPinDialog}
         />
       ) : null}
 
@@ -783,6 +876,16 @@ const CancelledMarketDetail = () => {
         onConfirm={confirmManualSelect}
       />
 
+      <MarketPinDialog
+        open={isPinOpen}
+        marketName={titleText}
+        value={pinValue}
+        onValueChange={changePin}
+        error={pinError}
+        pending={verifyMarketCancelledPin.isPending}
+        onSubmit={() => void submitPin()}
+        onClose={closePinDialog}
+      />
     </div>
   );
 };

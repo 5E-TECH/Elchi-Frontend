@@ -14,7 +14,17 @@ export type CancelledMarketQr = {
   image?: string;
   token?: string;
   payload?: string;
+  /**
+   * zkRab9M2 (BG6): QR yonidagi 6 xonali kod (`"042917"` — boshidagi nol saqlanadi). Xodim QR'ni skanerlay
+   * olmasa, uni yozadi. Eski backend bermaydi — `undefined`.
+   */
+  pin?: string;
+  /** Kod (va QR) amal qilish muddati (ms; `qr_ttl_seconds` dan — telefon soati noto'g'ri bo'lsa ham to'g'ri). */
+  pinExpiresAt?: number;
 };
+
+/** Market ruxsati qanday olingan: QR skani yoki 6 xonali kod (zkRab9M2). */
+export type HandoverAuthMethod = "qr" | "pin";
 
 export type CancelledHandoverAuthorization = {
   authorizationToken: string;
@@ -47,8 +57,24 @@ const normalizeQrImage = (value: string) => {
     : "";
 };
 
-/** `POST orders/markets/:id/cancelled/qr` javobi → QR rasm, token yoki matn (market roli). */
-export const normalizeCancelledMarketQr = (response: unknown): CancelledMarketQr => {
+const PIN_RE = /^\d{6}$/;
+
+/** Javobdagi kod → 6 raqamli satr (son kelsa — boshidagi nollar tiklanadi); boshqa qiymat — `""`. */
+const readHandoverPin = (value: unknown): string => {
+  const raw = typeof value === "number" && Number.isInteger(value) && value >= 0 ? String(value) : firstText(value);
+  return /^\d{1,6}$/.test(raw) ? raw.padStart(6, "0") : "";
+};
+
+/** Kod muddati: `qr_ttl_seconds` (qabul paytidan), bo'lmasa `pin_expires_at` / `qr_expires_at`. */
+const readPinExpiresAt = (data: Record<string, unknown>, now: number): number | undefined => {
+  const ttl = Number(data.qr_ttl_seconds ?? data.qrTtlSeconds);
+  if (Number.isFinite(ttl) && ttl > 0) return now + ttl * 1000;
+  const at = new Date(firstText(data.pin_expires_at, data.pinExpiresAt, data.qr_expires_at, data.qrExpiresAt)).getTime();
+  return Number.isFinite(at) ? at : undefined;
+};
+
+/** `POST orders/markets/:id/cancelled/qr` javobi → QR rasm, token yoki matn, 6 xonali kod (market roli). */
+export const normalizeCancelledMarketQr = (response: unknown, now: number = Date.now()): CancelledMarketQr => {
   const source = asRecord(response);
   const data = asRecord(source.data ?? source);
   const qr = asRecord(data.qr ?? data.qrCode ?? data.qr_code);
@@ -71,13 +97,28 @@ export const normalizeCancelledMarketQr = (response: unknown): CancelledMarketQr
     qr.qr_code_token,
   );
   const payload = firstText(data.payload, data.value, data.code, qr.payload, qr.value, token, image);
+  const pin = readHandoverPin(data.pin ?? qr.pin);
 
   return {
     image: normalizeQrImage(image),
     token,
     payload,
+    pin: pin || undefined,
+    pinExpiresAt: pin ? readPinExpiresAt(data, now) : undefined,
   };
 };
+
+/** «042917» → «042 917» (market ekranida o'qish oson). */
+export const formatHandoverPin = (pin: string) => (PIN_RE.test(pin) ? `${pin.slice(0, 3)} ${pin.slice(3)}` : pin);
+
+/** Ekran o'quvchi uchun raqamlar alohida: «0 4 2 9 1 7». */
+export const spellHandoverPin = (pin: string) => pin.split("").join(" ");
+
+/** Xodim yozgan kod to'liqmi (6 ta raqam). */
+export const isHandoverPinComplete = (value: string) => PIN_RE.test(value);
+
+// Kod xatosini o'qish — umumiy (qaytarilgan buyurtmani topshirish oynasi ham ishlatadi).
+export { readHandoverPinError, type HandoverPinErrorKind } from "../../../entities/orders/handoverPin";
 
 /** `POST scan/market-cancelled` javobi → topshirish tokeni va muddati (muddat yo'q bo'lsa — 300 s). */
 export const normalizeCancelledAuthorization = (

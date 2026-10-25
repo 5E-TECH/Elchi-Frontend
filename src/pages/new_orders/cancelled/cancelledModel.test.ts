@@ -4,9 +4,13 @@ import {
   canSendHandover,
   extractMarketCancelledQrToken,
   formatCountdown,
+  formatHandoverPin,
   getOrderProductNames,
+  isHandoverPinComplete,
   normalizeCancelledAuthorization,
   normalizeCancelledMarketQr,
+  readHandoverPinError,
+  spellHandoverPin,
   resolveHandoverQrStage,
   scannerContainsMarketCancelledQr,
   splitCountdown,
@@ -123,6 +127,82 @@ describe("market QR va topshirish tokeni", () => {
     const svg = normalizeCancelledMarketQr({ data: { qr: { image: "<svg></svg>" } } });
     expect(svg.image?.startsWith("data:image/svg+xml")).toBe(true);
     expect(normalizeCancelledMarketQr({ token: "MCR-2" })).toEqual({ image: "", token: "MCR-2", payload: "MCR-2" });
+  });
+
+  // zkRab9M2 (BG6): QR yonidagi 6 xonali kod.
+  it("QR javobidagi kod: `pin` o'qiladi (QR uchun `code` zaxirasi buzilmaydi), muddat — `qr_ttl_seconds` dan", () => {
+    const now = 1_000_000;
+    const qr = normalizeCancelledMarketQr(
+      {
+        data: {
+          market_id: "201",
+          qr_token: "MCR-201-abc",
+          qr_expires_at: "2026-10-25T10:02:00.000Z",
+          qr_ttl_seconds: 120,
+          pin: "042917",
+          pin_expires_at: "2026-10-25T10:02:00.000Z",
+          pin_max_attempts: 5,
+        },
+      },
+      now,
+    );
+    expect(qr).toEqual({
+      image: "",
+      token: "MCR-201-abc",
+      payload: "MCR-201-abc",
+      pin: "042917",
+      pinExpiresAt: now + 120_000,
+    });
+    // TTL yo'q — server vaqti.
+    expect(
+      normalizeCancelledMarketQr({ data: { qr_token: "MCR-1", pin: "123456", pin_expires_at: "2026-10-25T10:02:00.000Z" } })
+        .pinExpiresAt,
+    ).toBe(Date.parse("2026-10-25T10:02:00.000Z"));
+    // Son bo'lib kelsa — boshidagi nollar tiklanadi; noto'g'ri qiymat — kod yo'q.
+    expect(normalizeCancelledMarketQr({ data: { qr_token: "MCR-1", pin: 42917 } }).pin).toBe("042917");
+    expect(normalizeCancelledMarketQr({ data: { qr_token: "MCR-1", pin: "12a456" } }).pin).toBeUndefined();
+    expect(normalizeCancelledMarketQr({ data: { qr_token: "MCR-1", pin: "1234567" } }).pin).toBeUndefined();
+    // Eski backend — kod yo'q, `code` QR matni bo'lib qoladi.
+    expect(normalizeCancelledMarketQr({ data: { code: "MCR-legacy" } })).toEqual({
+      image: "",
+      token: "",
+      payload: "MCR-legacy",
+    });
+  });
+
+  it("kod ko'rinishi: «042 917», ekran o'quvchiga raqamlar alohida; to'liqlik — aniq 6 raqam", () => {
+    expect(formatHandoverPin("042917")).toBe("042 917");
+    expect(spellHandoverPin("042917")).toBe("0 4 2 9 1 7");
+    expect(isHandoverPinComplete("042917")).toBe(true);
+    expect(isHandoverPinComplete("04291")).toBe(false);
+    expect(isHandoverPinComplete("0429177")).toBe(false);
+    expect(isHandoverPinComplete("04 917")).toBe(false);
+  });
+
+  it("kod xatosi: backend `data.reason` + qolgan urinishlar; sababsiz xato — `unknown`", () => {
+    const axiosError = (reason: string, remaining?: number) => ({
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          message: "Kod noto‘g‘ri",
+          data: { reason, ...(remaining === undefined ? {} : { details: { remaining_attempts: remaining, max_attempts: 5 } }) },
+        },
+      },
+    });
+    expect(readHandoverPinError(axiosError("market_cancelled_pin_invalid", 3))).toEqual({
+      kind: "invalid",
+      remainingAttempts: 3,
+    });
+    expect(readHandoverPinError(axiosError("market_cancelled_pin_invalid", 0)).kind).toBe("blocked");
+    expect(readHandoverPinError(axiosError("market_cancelled_pin_blocked", 0))).toEqual({
+      kind: "blocked",
+      remainingAttempts: 0,
+    });
+    expect(readHandoverPinError(axiosError("market_cancelled_pin_expired")).kind).toBe("expired");
+    expect(readHandoverPinError(axiosError("market_cancelled_pin_not_found")).kind).toBe("notFound");
+    expect(readHandoverPinError(axiosError("district_in_use"))).toEqual({ kind: "unknown", remainingAttempts: null });
+    expect(readHandoverPinError(new Error("network"))).toEqual({ kind: "unknown", remainingAttempts: null });
   });
 });
 

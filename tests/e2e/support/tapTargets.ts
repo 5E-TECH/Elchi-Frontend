@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * to'liq chiziladigan ma'lumot bilan. Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi — WebKit'da
  * `--host-resolver-rules` yo'q).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

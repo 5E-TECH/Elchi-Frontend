@@ -10,7 +10,7 @@ import { expect, test, type Route } from "@playwright/test";
  * Excel esa BARCHA filtrlangan qatorlarni 100 talab oladi — soxta `GET /post` sahifani `page`/`limit` bo'yicha
  * kesadi (150 ta pochta → Excel uchun 2 sahifa).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

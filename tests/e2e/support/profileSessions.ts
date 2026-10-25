@@ -147,7 +147,7 @@ export const openProfileWithSessions = async (
   return { leaked, state, revoke: revokeState, availableAt };
 };
 
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 
 export const mockSessionRevoke = async (page: Page) => {
   const origin = appOrigin();

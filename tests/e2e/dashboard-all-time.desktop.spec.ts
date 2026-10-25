@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * Meta joyi: superadmin va menejer — javobning yuqori darajasi, market — `myStat.applied_range` (karta: market /
  * menejer javobida meta shu yerda edi). 1440 va 390px, soxta backend.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

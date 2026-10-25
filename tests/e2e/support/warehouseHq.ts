@@ -9,7 +9,7 @@ import { setupShellSession } from "./shellSession";
  * shu yerda ushlanadi va yoziladi; boshqa har yozish `leaked` ga tushadi (`setupShellSession`).
  */
 
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const HQ_BRANCH = {

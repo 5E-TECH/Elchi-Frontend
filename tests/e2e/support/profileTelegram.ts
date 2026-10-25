@@ -5,7 +5,7 @@ import type { Page, Route } from "@playwright/test";
  * `POST users/me/telegram/link-code` dan keyin `GET auth/my-profile` `linkAfterPolls` marta so'ralgach bot ulagan
  * bo'ladi (`telegram_linked: true`); `DELETE users/me/telegram` — uzadi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

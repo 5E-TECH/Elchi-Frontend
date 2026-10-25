@@ -7,8 +7,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * so'rov shu yerda yopiladi. Kutilmagan yozuvchi so'rov `leaked` ga tushadi.
  */
 
-// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4173).
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
+// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4194).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 
 const cors = {
   "access-control-allow-origin": ORIGIN,
