@@ -83,11 +83,11 @@ describe("orderFilterModel", () => {
     expect(buildOrderListParams(EMPTY_ORDER_FILTERS, "admin", { page: 2, limit: 10 })).toEqual({ page: 2, limit: 10 });
   });
 
-  it("rwAy8Qyk: ro'yxatdagi raqam «EL-100081» bilan qidiruv — backendga ichki id «81» ketadi", () => {
-    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "EL-100081" }, "admin", { page: 1, limit: 10 })).toEqual({
+  it("rwAy8Qyk / FoCaUF10: «№EL-100081» bilan qidiruv — backendga kanonik «EL-100081» ketadi (faqat ID bo'yicha)", () => {
+    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "№EL-100081" }, "admin", { page: 1, limit: 10 })).toEqual({
       page: 1,
       limit: 10,
-      search: "81",
+      search: "EL-100081",
     });
     expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "Ali" }, "admin", { page: 1, limit: 10 }).search).toBe("Ali");
   });

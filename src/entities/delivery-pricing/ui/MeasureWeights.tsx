@@ -4,14 +4,22 @@ import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { computeMeasureWeights, VOLUMETRIC_DIVISOR, type WeightRules } from "../lib/billableWeight";
+import type { DeliveryQuoteState } from "../api/useDeliveryPricing";
+import { VOLUMETRIC_DIVISOR, type WeightRules } from "../lib/billableWeight";
 import { formatKgValue } from "../lib/formatKg";
+import { firstDeliveryQuote, resolveMeasureWeights } from "../lib/resolveWeights";
 import type { DeliveryMeasureItem } from "../model/types";
 
 export type MeasureWeightsProps = {
   /** To'g'ri o'lchov yoki `null` — «Hisoblab bo'lmadi» (maket `*-products-create-errors`). */
   item: DeliveryMeasureItem | null;
+  /** Sozlamadagi qoidalar (faqat superadmin/admin oladi); yo'q — sukut (qadam 0,1, chegara serverdan yoki 0). */
   rules?: WeightRules;
+  /**
+   * Shu o'lchovning `POST /delivery/quote/by-tariff` holati: yangi javob bo'lsa hisob vazni, asos va «hajm
+   * qo'llandi» serverdan, chegara — javobdagi `volumetricFromKg` (rol sozlamani o'qiy olmasa ham to'g'ri).
+   */
+  quote?: DeliveryQuoteState;
   /** «Hajmli vazn» ostida formula («50 × 35 × 20 / 5000») — mahsulot formasi; kalkulyatorda yo'q. */
   showFormula?: boolean;
   /** «Hisob vazni» ostidagi izoh o'rniga (kalkulyator: «1,0 kg asosiy + 6 kg qo'shimcha»). */
@@ -22,9 +30,10 @@ export type MeasureWeightsProps = {
 /**
  * JONLI «HAJMLI VAZN» / «HISOB VAZNI» — maket `sunken` blok (`aria-live`): hajmli vazn = U × K × B / 5000, hisob
  * vazni = kattasi, 0,1 kg qadam bilan yuqoriga (30 × 22 × 15, 1,2 kg → 1,98 / 2,0 kg). Kalit o'chiq — hajmli vazn
- * chizilgan, hisob vazni faqat og'irlik («hajm hisobga olinmaydi — faqat og'irlik»).
+ * chizilgan, hisob vazni faqat og'irlik («hajm hisobga olinmaydi — faqat og'irlik»). Hajmli vazn «Hajm bo'yicha
+ * hisoblash chegarasi» dan kichik — ham chizilgan, ostida «Chegara 3,0 kg dan kichik — hisobga olinmaydi».
  */
-export const MeasureWeights = ({ item, rules, showFormula = true, billableNote, className }: MeasureWeightsProps) => {
+export const MeasureWeights = ({ item, rules, quote, showFormula = true, billableNote, className }: MeasureWeightsProps) => {
   const { t, i18n } = useTranslation("deliveryPricing");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const box = "flex min-w-0 rounded-[10px] bg-sunken";
@@ -41,10 +50,16 @@ export const MeasureWeights = ({ item, rules, showFormula = true, billableNote, 
     );
   }
 
-  const weights = computeMeasureWeights(item, rules);
+  const weights = resolveMeasureWeights(item, rules, {
+    quote: firstDeliveryQuote(quote?.quotes),
+    fresh: quote?.status === "success" && !quote.isUpdating,
+  });
   const kg = (value: number, max?: number) => t("units.kg", { value: formatKgValue(value, language, max) });
   const divisor = rules?.volumetricDivisor ?? VOLUMETRIC_DIVISOR;
-  const basisNote = !item.volumetric_enabled
+  // Kalit yoqiq, lekin hajmli vazn chegaradan kichik — hajm hisobga olinmaydi (standart narx, faqat og'irlik).
+  const belowThreshold = item.volumetric_enabled && !weights.volumetricApplied && weights.volumetricFromKg > 0;
+  const volumeIgnored = !item.volumetric_enabled || belowThreshold;
+  const basisNote = volumeIgnored
     ? t("weights.volumeOff")
     : weights.basis === "volume"
       ? t("weights.basisVolume")
@@ -57,7 +72,7 @@ export const MeasureWeights = ({ item, rules, showFormula = true, billableNote, 
         <span
           className={cx(
             "text-base font-bold",
-            item.volumetric_enabled ? "text-text" : "text-text-subtle line-through",
+            volumeIgnored ? "text-text-subtle line-through" : "text-text",
           )}
         >
           {kg(weights.volumetricKg, 2)}
@@ -70,6 +85,11 @@ export const MeasureWeights = ({ item, rules, showFormula = true, billableNote, 
               height: formatNumberLocalized(item.height_cm, { language }),
               divisor: String(divisor),
             })}
+          </span>
+        ) : null}
+        {belowThreshold ? (
+          <span className="text-xs text-text-muted">
+            {t("weights.belowThreshold", { threshold: formatKgValue(weights.volumetricFromKg, language) })}
           </span>
         ) : null}
       </div>

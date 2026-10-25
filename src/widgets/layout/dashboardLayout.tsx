@@ -11,6 +11,13 @@ import { useShellScroll } from "./model/useShellScroll";
 import { setShellBannerSlot } from "../../shared/lib/shellBannerSlot";
 import RouteProgress, { RouteSuspenseFallback } from "./ui/RouteProgress";
 import SkipLink, { MAIN_CONTENT_ID } from "./ui/SkipLink";
+import ErrorBoundary, { type ErrorBoundaryFallbackProps } from "../../shared/ui/ErrorBoundary";
+import ErrorBoundaryPage from "../../shared/ui/ErrorBoundaryPage";
+
+/** Sahifa yiqildi — «Kutilmagan xato» shell ichida (xato kodi, «Qayta urinish» — qayta chizish, «Bosh sahifaga»). */
+const renderContentError = ({ error, reset }: ErrorBoundaryFallbackProps) => (
+  <ErrorBoundaryPage error={error} onRetry={reset} />
+);
 
 /** Yon menyu ko'rinadigan kenglik (Tailwind `lg`). Undan torda — menyu tugmasi + suriluvchi menyu. */
 export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
@@ -100,9 +107,13 @@ const DashboardLayout = () => {
             data-shell-slot="content"
             className="mx-auto w-full max-w-[1440px] flex-1 px-8 pt-6 pb-12 outline-none max-lg:px-4 max-lg:pt-4 max-lg:pb-[88px]"
           >
-            <Suspense fallback={<RouteSuspenseFallback />}>
-              <Outlet />
-            </Suspense>
+            {/* QKCeGZ3N: sahifa yiqilsa — xato shu yerda (taxta `tizim-errors` 01: yon menyu va yuqori panel joyida),
+                to'liq qayta yuklash va `/runtime-error` ga o'tish yo'q; boshqa bo'limga o'tilsa chegara tozalanadi. */}
+            <ErrorBoundary resetKey={pathname} fallbackRender={renderContentError}>
+              <Suspense fallback={<RouteSuspenseFallback />}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

@@ -55,6 +55,19 @@ describe("normalizeQuotesByTariff", () => {
     expect(hasAnyQuote(result)).toBe(true);
   });
 
+  it("hajm chegarasi: `volumetricFromKg` va `volumetricApplied`; eski javobda — `null`", () => {
+    const result = normalizeQuotesByTariff({
+      data: {
+        quotes: {
+          city: quote("city", 35000, { volumetricKg: 1.6, billableKg: 0.5, basis: "weight", volumetricFromKg: "3", volumetricApplied: false }),
+          center: quote("center", 44000),
+        },
+      },
+    });
+    expect(result.city).toMatchObject({ volumetricKg: 1.6, billableKg: 0.5, basis: "weight", volumetricFromKg: 3, volumetricApplied: false });
+    expect(result.center).toMatchObject({ volumetricFromKg: null, volumetricApplied: null });
+  });
+
   it("bo'sh yoki buzuq javob — hammasi `null`, xato tashlanmaydi", () => {
     expect(normalizeQuotesByTariff({})).toEqual({ city: null, center: null, address: null });
     expect(normalizeQuotesByTariff(null)).toEqual({ city: null, center: null, address: null });
@@ -81,6 +94,8 @@ describe("normalizePricingSettings", () => {
     ).toEqual({
       id: "3",
       volumetricDivisor: 5000,
+      // Eski javobda `volumetric_from_kg` yo'q — 0 (har doim hajm bo'yicha).
+      volumetricFromKg: 0,
       firstKgIncluded: 2,
       minBillableKg: 0.1,
       billableStepKg: 0.1,
@@ -93,6 +108,15 @@ describe("normalizePricingSettings", () => {
 
   it("majburiy maydon yo'q — `null`", () => {
     expect(normalizePricingSettings({ data: {} })).toBeNull();
+  });
+
+  it("`volumetric_from_kg` (hajm chegarasi) — son satri ham", () => {
+    expect(
+      normalizePricingSettings({ data: { id: 4, first_kg_included: 1, round_to: 500, volumetric_from_kg: "3.000" } }),
+    ).toMatchObject({ volumetricFromKg: 3 });
+    expect(normalizePricingSettings({ first_kg_included: 1, round_to: 500, volumetric_from_kg: 0 })).toMatchObject({
+      volumetricFromKg: 0,
+    });
   });
 });
 

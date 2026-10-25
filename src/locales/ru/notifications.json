@@ -274,6 +274,7 @@
       "audienceAll": "Все",
       "audienceRoles": "Роль: {{roles}}",
       "audienceSingle": "Один человек",
+      "audiencePerson": "{{name}} · {{role}}",
       "audienceList": "Выбранный список",
       "resend": "Отправить снова"
     },

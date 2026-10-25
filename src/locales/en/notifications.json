@@ -278,6 +278,7 @@
       "audienceAll": "Everyone",
       "audienceRoles": "Role: {{roles}}",
       "audienceSingle": "One person",
+      "audiencePerson": "{{name}} · {{role}}",
       "audienceList": "Selected list",
       "resend": "Send again"
     },

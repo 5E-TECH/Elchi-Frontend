@@ -568,6 +568,10 @@ export const API_ENDPOINTS = {
     AVAILABILITY: "warehouses/availability",
   },
 
+  // QKCeGZ3N (4-band): ilova xato chegarasi hisoboti — POST { code, message, path, stack?, component_stack?, scope? } → 204
+  // (gateway jurnaliga `client_error`, bazaga emas). Har qanday kirgan foydalanuvchi.
+  CLIENT_ERRORS: "client-errors",
+
   // ── Activity logs / audit trail (admin) — merged across services ─────────
   ACTIVITY_LOGS: {
     BASE: "activity-logs", // GET audit feed (filters: service/entity/action/user/date/search)
