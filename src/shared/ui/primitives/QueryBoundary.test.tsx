@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import { onlineManager } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
@@ -158,6 +159,19 @@ describe("QueryBoundary", () => {
     expect(state(container)).toHaveAttribute("data-query-state", "loading");
     rerender(<List query={{ data: undefined, isPending: true, isFetching: false }} />);
     expect(state(container)).toHaveAttribute("data-query-state", "empty");
+  });
+
+  it("G6F68ti6 (7-band): `isPaused` bermaydigan sahifa — brauzer oflayn bo'lsa «bo'sh» emas, «Internet aloqasi yo'q»", () => {
+    try {
+      act(() => onlineManager.setOnline(false));
+      const { container } = render(<List query={{ data: undefined, isPending: true, isLoading: false, isFetching: false }} />);
+      expect(container.querySelector("[data-error-kind]")).toHaveAttribute("data-error-kind", "offline");
+      expect(screen.queryByText("Ma'lumot yo'q")).not.toBeInTheDocument();
+      act(() => onlineManager.setOnline(true));
+      expect(state(container)).toHaveAttribute("data-query-state", "empty");
+    } finally {
+      act(() => onlineManager.setOnline(true));
+    }
   });
 
   it("oflayn kutayotgan so'rov (isPaused) — «Internet aloqasi yo'q», «Ma'lumot yo'q» emas", async () => {
