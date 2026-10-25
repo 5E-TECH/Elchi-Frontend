@@ -481,7 +481,9 @@ const OrderCreateFormContent = () => {
                   isMarketRole={isMarketRole}
                   market={isMarketRole ? null : market}
                   onSwitchToManual={() => setMode("manual")}
-                  areaLists
+                  // Operatorning AI oqimi avvalgidek viloyat/tuman ro'yxatlarisiz: tuman AI taklifidan, viloyatni
+                  // ai-confirm tumandan oladi (MO-3; qo'lda forma ro'yxatlarni o'zi so'raydi — N11).
+                  areaLists={!isMarketOperator}
                   // Operator maydoni — o'zi (maket «Siz — avtomatik yoziladi»); matn yuborilmaydi, backend ismni o'zi yozadi.
                   selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
                   onChangeMarket={
