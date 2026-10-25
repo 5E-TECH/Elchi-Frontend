@@ -11,7 +11,8 @@ test.use(FAKE_CAMERA);
 
 const openStockInCamera = async (page: Page) => {
   await page.goto("/warehouses/3");
-  await page.getByRole("button", { name: "Mahsulot qo'shish" }).click();
+  // Sarlavhadagi asosiy amal (bo'sh qoldiq kartasida ham shu nomli tugma bor).
+  await page.getByRole("button", { name: "Mahsulot qo'shish" }).first().click();
   const stockIn = page.getByRole("dialog", { name: "Omborga mahsulot qo'shish" }).first();
   await expect(stockIn).toBeVisible();
   await stockIn.getByRole("button", { name: "Kamera bilan skanerlash" }).click();
