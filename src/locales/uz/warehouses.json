@@ -8,6 +8,10 @@
     "low": "Kam qoldi",
     "out": "Tugagan"
   },
+  "kind": {
+    "hq": "Markaziy",
+    "hqWarehouse": "Markaziy ombor"
+  },
   "units": {
     "ta": "ta",
     "pcs_one": "{{value}} dona",
@@ -25,7 +29,8 @@
   },
   "actions": {
     "cancel": "Bekor qilish",
-    "save": "Saqlash"
+    "save": "Saqlash",
+    "retry": "Qayta urinish"
   },
   "errors": {
     "forbidden": "Bu amalga ruxsatingiz yo'q.",
@@ -56,7 +61,7 @@
   },
   "list": {
     "title": "Omborlar",
-    "description": "Viloyat filiallaridagi omborlar: qoldiq, band va harakatlar",
+    "description": "Markaziy va viloyat omborlari: qoldiq, band va harakatlar",
     "kpiLabel": "Omborlar bo'yicha ko'rsatkichlar",
     "cardLabel": "Omborlar ro'yxati",
     "tableLabel": "Omborlar",
@@ -69,7 +74,7 @@
     "loading": "Omborlar yuklanmoqda",
     "loadFailed": "Omborlarni yuklab bo'lmadi",
     "emptyTitle": "Hali ombor yo'q",
-    "emptyDescription": "Viloyat filialida ombor oching — admin unga mahsulot qo'shadi, buyurtmalar shu ombordan ketadi.",
+    "emptyDescription": "Markaziy omborni (HQ) yoki viloyat filiali omborini oching — admin unga mahsulot qo'shadi, viloyat buyurtmalari shu ombordan ketadi.",
     "notFoundTitle": "Ombor topilmadi",
     "notFoundDescription": "Qidiruv yoki filtrlarni o'zgartirib ko'ring.",
     "clearFilters": "Filtrlarni tozalash",
@@ -106,21 +111,25 @@
     "warehousesCount_other": "{{value}} ta ombor",
     "footer": "{{total}} · {{active}} ta faol · {{paused}} ta to'xtatilgan",
     "pagination": "{{from}}–{{to}} / {{total}} ta ombor",
-    "emptyDescriptionReadOnly": "Ombor viloyat filialida admin tomonidan ochiladi — ochilgach shu yerda ko'rinadi."
+    "emptyDescriptionReadOnly": "Ombor admin tomonidan ochiladi — HQ'da (markaziy) yoki viloyat filialida. Ochilgach shu yerda ko'rinadi."
   },
   "create": {
     "open": "Ombor ochish",
     "title": "Ombor ochish",
-    "description": "Viloyat filialida ombor ochiladi — u shu filialga bog'lanadi",
+    "description": "Ombor HQ'da yoki viloyat filialida ochiladi — u shu filialga bog'lanadi",
     "branch": "Filial",
     "branchPlaceholder": "Filialni tanlang",
-    "branchHint": "Ro'yxatda faqat ombori yo'q viloyat filiallari",
+    "branchHint": "Ro'yxatda faqat ombori yo'q filiallar: HQ (markaziy ombor) va viloyat filiallari",
     "branchLoadFailed": "Filiallarni yuklab bo'lmadi — oynani yopib, qayta oching.",
-    "noBranches": "Ombori yo'q faol viloyat filiali qolmadi",
+    "hqLoadFailed": "Markaziy ombor filialini (HQ) yuklab bo'lmadi — hozir ro'yxatda faqat viloyat filiallari.",
+    "noBranches": "Ombori yo'q faol filial qolmadi",
     "name": "Ombor nomi",
     "namePlaceholder": "Ombor nomini kiriting",
     "nameHint": "Filial nomidan avtomatik taklif qilindi — o'zgartirish mumkin",
     "suggestedName": "{{branch}} ombori",
+    "hqOption": "Markaziy ombor · {{branch}}",
+    "hqManagerValue": "Belgilanmaydi",
+    "hqManagerHint": "Markaziy omborda menejer yo'q — mas'ul belgilanmaydi",
     "manager": "Mas'ul xodim",
     "managerHint": "Tanlanmasa — filial menejeri avtomatik",
     "managerPlaceholder": "Filial tanlangach ko'rinadi",
@@ -135,6 +144,7 @@
     "howTitle": "Ombor qanday ishlaydi",
     "how1": "Admin mahsulotni «Mahsulot qo'shish» orqali to'g'ridan qoldiqqa qo'shadi — filial tasdig'i kerak emas.",
     "how2": "Buyurtma tumani shu filialga tegishli va hamma mahsulot omborda yetarli bo'lsa, buyurtma avtomatik shu ombordan ketadi — HQ va pochtasiz, darhol kuryerga.",
+    "how2Hq": "Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi — hozircha kirim, inventarizatsiya va qoldiqni ko'rish ishlaydi.",
     "how3": "Omborni istalgan vaqtda to'xtatish mumkin: qoldiq saqlanadi, yangi buyurtma tushmaydi. Qayta yoqish ham mumkin.",
     "submit": "Ombor ochish",
     "submitting": "Ochilmoqda…",
@@ -160,6 +170,9 @@
     },
     "managerOf": "Mas'ul: {{name}}, filial menejeri",
     "managerYou": "Mas'ul: {{name}} (siz)",
+    "managerNone": "Mas'ul: belgilanmagan",
+    "hqMeta": "Markaziy ombor · HQ",
+    "hqNote": "Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi. Hozircha kirim, inventarizatsiya va qoldiqni ko'rish ishlaydi.",
     "openedAt": "Ochilgan: {{date}}",
     "export": "Excelga yuklash",
     "exporting": "Tayyorlanmoqda…",
@@ -478,7 +491,8 @@
       "warehouses": "Omborlar soni"
     },
     "noteTitle": "Faqat ko'rish",
-    "noteText": "Mahsulotni viloyat omboriga Elchi administratori qo'shadi. To'xtatilgan omborda qoldiq saqlanadi, lekin unga yangi buyurtma tushmaydi.",
+    "noteText": "Mahsulotni markaziy yoki viloyat omboriga Elchi administratori qo'shadi. To'xtatilgan omborda qoldiq saqlanadi, lekin unga yangi buyurtma tushmaydi.",
+    "hqNote": "Markaziy ombor qoldig'i buyurtmalarga keyingi bosqichda ulanadi — hozircha undan buyurtma ketmaydi.",
     "cardLabel": "Mahsulotlar omborlar bo'yicha",
     "tableLabel": "Mahsulotlar omborlar bo'yicha",
     "searchPlaceholder": "Mahsulot qidiring...",
@@ -500,7 +514,7 @@
     "loading": "Ombordagi qoldiq yuklanmoqda",
     "loadFailed": "Ombordagi qoldiqni yuklab bo'lmadi",
     "emptyTitle": "Mahsulotlaringiz hali omborda yo'q",
-    "emptyDescription": "Elchi administratori mahsulotni viloyat omboriga qo'shgach, qoldiq shu yerda ko'rinadi.",
+    "emptyDescription": "Elchi administratori mahsulotni omborga qo'shgach, qoldiq shu yerda ko'rinadi.",
     "forbiddenTitle": "Ombordagi qoldiq siz uchun yopiq",
     "forbiddenDescription": "Market bu ruxsatni sizga bermagan. Kerak bo'lsa, market egasidan «Ombordagi qoldiqni ko'radi» kalitini yoqishni so'rang."
   },

@@ -44,6 +44,7 @@ import {
   type WarehouseStockData,
   type WarehouseStockParams,
   type WarehouseAvailability,
+  type WarehouseKind,
   type WarehouseStockRow,
 } from "../model/types";
 
@@ -88,6 +89,13 @@ const payloadOf = (value: unknown): Raw | null => {
 };
 
 const toStatus = (value: unknown): WarehouseStatus => (String(value ?? "").toUpperCase() === "PAUSED" ? "PAUSED" : "ACTIVE");
+
+/** Ombor turi (Pa1KaXmj): faqat aniq `HQ` — Markaziy ombor; noma'lum / yo'q — `REGIONAL`. */
+const toKind = (value: unknown): WarehouseKind => (String(value ?? "").trim().toUpperCase() === "HQ" ? "HQ" : "REGIONAL");
+
+/** Markaziy ombormi: `kind` yoki filial turi HQ (eski / `kind` siz javobda ham). */
+const isHqWarehouse = (kind: WarehouseKind, branchType: unknown) =>
+  kind === "HQ" || String(branchType ?? "").trim().toUpperCase() === "HQ";
 
 const toLevel = (value: unknown): StockLevel => {
   const level = String(value ?? "").toLowerCase();
@@ -191,10 +199,13 @@ export const normalizeWarehouse = (value: unknown): Warehouse | null => {
   const lastRecord = asRecord(record.last_movement);
   const lastType = toMovementType(lastRecord?.type);
   const lastCreatedAt = textOrNull(lastRecord?.created_at);
+  const kind = toKind(record.kind);
   return {
     id,
     name: textOrNull(record.name) ?? "",
     status: toStatus(record.status),
+    kind,
+    isHq: isHqWarehouse(kind, branchRecord?.type),
     branchId,
     branch: branchRecord
       ? {
@@ -476,11 +487,14 @@ export const normalizeMarketStock = (value: unknown): MarketStockData => {
     const record = asRecord(raw);
     const id = idOf(record?.id);
     if (!record || !id) return [];
+    const kind = toKind(record.kind);
     return [
       {
         id,
         name: textOrNull(record.name) ?? "",
         status: toStatus(record.status),
+        kind,
+        isHq: isHqWarehouse(kind, asRecord(record.branch)?.type),
         branch: toRef(record.branch),
         region: toRef(record.region),
       },
