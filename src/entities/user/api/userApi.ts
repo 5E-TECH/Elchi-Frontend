@@ -19,6 +19,7 @@ import type {
 import { unwrapUserResponse } from "../lib/normalizeUser";
 import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 import { queryKeys } from "../../../shared/config/queryKeys";
+import { myProfileQuery } from "../../../shared/api/myProfile";
 
 export const user = "user";
 
@@ -241,13 +242,13 @@ export const useUser = () => {
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
-  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`QueryBoundary`), global xabar takrorlanmaydi. */
+  /**
+   * O'z profili — yagona profil keshidan (`myProfileQuery`, z87E6tdQ): auth bootstrap olgan javob qayta so'ralmaydi.
+   * `silentError` — sahifa xatoni o'zi ko'rsatadi (`QueryBoundary`), global xabar takrorlanmaydi.
+   */
   const useGetMyProfile = (options?: SilentErrorOption & { enabled?: boolean }) =>
     useQuery({
-      queryKey: [user, "profile"],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
-      staleTime: 60 * 1000,
+      ...myProfileQuery,
       // `enabled` — ixtiyoriy (sukut: so'raladi); buyurtma yaratishda faqat market rolida (CS-B).
       enabled: options?.enabled ?? true,
       ...silentErrorMeta(options),

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { myProfileQuery } from "../../shared/api/myProfile";
 import { tokenStorage } from "../../auth/tokenStorage";
 import {
   NOTIFICATION_CATEGORIES,
@@ -286,18 +287,20 @@ export const applySettingsPatch = (
 
 const SETTINGS_KEY = ["app-settings"];
 
-/** Joriy foydalanuvchi sozlamalarini oladi (my-profile.settings dan). */
+/**
+ * Joriy foydalanuvchi sozlamalari (my-profile.settings dan). O'z so'rovi yo'q — yagona profil keshidan
+ * (`myProfileQuery`, z87E6tdQ): auth bootstrap olgan javob qayta so'ralmaydi, ketayotgan so'rovga qo'shiladi.
+ */
 export const useSettings = () => {
   const enabled = Boolean(tokenStorage.getAccessToken());
   return useQuery<AppSettings>({
     queryKey: SETTINGS_KEY,
-    queryFn: async () => {
-      const res = await api.get(API_ENDPOINTS.AUTH.MY_PROFILE);
-      return mergeSettings(res.data?.data?.settings);
-    },
+    queryFn: async ({ client }) => mergeSettings((await client.fetchQuery(myProfileQuery))?.data?.settings),
     enabled,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Qayta urinish profil so'rovining o'zida — ikki qavat urinish so'rovlarni ko'paytirmasin.
+    retry: false,
   });
 };
 
