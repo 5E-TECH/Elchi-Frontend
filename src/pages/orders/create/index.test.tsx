@@ -1067,18 +1067,89 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(title.closest("[data-tone]")).toHaveTextContent("Standart narxni market kartasida belgilang.");
   });
 
-  it("menejer: tarif so'ralmaydi, narx, izoh va «Yetkazish narxi» chizilmaydi", async () => {
-    mocks.get.mockImplementation((url: string) => (url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url)));
+  it("menejer (N3, yiFTzkzH): qatorsiz market — tariflar `GET markets?search=` dan; `users/:id` so'ralmaydi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets"
+        ? ok({ items: [{ ...MARKETS[1], ...TARIFFS }, { ...MARKETS[0], ...TARIFFS }] })
+        : url.startsWith("product/")
+          ? ok(CATALOG)
+          : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: managerState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(card(/Markazgacha/)).toHaveTextContent("25 000 so'm");
+    expect(radio(/Uygacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("35 000 so'm");
+    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 20 } });
+    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
+    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("menejer: market qidiruvida topilmasa yoki so'rov yiqilsa — narx jim ko'rsatilmaydi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? Promise.reject(new Error("500")) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
     renderWithProviders(<OrderCreate />, {
       preloadedState: managerState,
       route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
     });
 
     await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q|standart/);
     expect(deliveryPrice()).not.toBeInTheDocument();
-    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
-    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("⭐ IT1YpboR: forma boshlangan, tur qo'lda tanlanmagan — market almashsa yangi marketning sukuti qo'llanadi", async () => {
+    const user = userEvent.setup();
+    const marketsWithDefaults = [
+      { ...MARKETS[0], ...TARIFFS, default_tariff: "address" },
+      { ...MARKETS[1], ...TARIFFS, default_tariff: "center" },
+    ];
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? ok(marketsWithDefaults) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await chooseMarket(user, "Baraka Shop");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    // Forma boshlandi (faqat telefon), tur qo'lda tanlanmadi.
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+
+    const nav = screen.getByRole("navigation", { name: "Qadamlar" });
+    await user.click(within(nav).getByRole("button", { name: "Marketni o'zgartirish" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Markazgacha/)).toBeChecked());
+  });
+
+  it("IT1YpboR: tur qo'lda tanlangan bo'lsa market almashganda ham o'zgarmaydi", async () => {
+    const user = userEvent.setup();
+    const marketsWithDefaults = [
+      { ...MARKETS[0], ...TARIFFS, default_tariff: "address" },
+      { ...MARKETS[1], ...TARIFFS, default_tariff: "address" },
+    ];
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? ok(marketsWithDefaults) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await chooseMarket(user, "Baraka Shop");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    await user.click(radio(/Markazgacha/));
+
+    const nav = screen.getByRole("navigation", { name: "Qadamlar" });
+    await user.click(within(nav).getByRole("button", { name: "Marketni o'zgartirish" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(radio(/Markazgacha/)).toBeChecked();
   });
 
   it("mahsulot rasmi (40 px) va narx matni: «2 × 45 000 so'm», «Narxi kiritilmagan», «Katalogdan tashqari · narxsiz»", async () => {
