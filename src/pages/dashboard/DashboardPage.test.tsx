@@ -243,6 +243,33 @@ describe("DashboardPage (v2)", () => {
     expect(couriers[1]).toHaveTextContent("Aziz");
   });
 
+  it("PMa5dgYQ: reytinglarda sotuv foizi 50% dan past qator — qizil meter, qolganlari maketdagidek ko'k", () => {
+    routeDashboard({
+      data: {
+        orders: ordersFixture,
+        topMarkets: [
+          { market_id: "m-1", market_name: "Yaxshi Market", total_orders: 50, successful_orders: 42, success_rate: 84 },
+          { market_id: "m-2", market_name: "Past Market", total_orders: 20, successful_orders: 7, success_rate: 35 },
+        ],
+        couriers: [
+          { courier_id: "c-1", courier_name: "Aziz", total_orders: 20, successful_orders: 19, success_rate: 95 },
+          { courier_id: "c-2", courier_name: "Bobur", total_orders: 20, successful_orders: 9, success_rate: 45 },
+        ],
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const fillOf = (section: string, name: string) =>
+      within(sectionOf(section))
+        .getAllByRole("listitem")
+        .find((item) => item.textContent?.includes(name))!
+        .querySelector("[aria-hidden] > span, [role=meter] > span");
+    expect(fillOf("Top marketlar", "Past Market")).toHaveClass("bg-danger");
+    expect(fillOf("Top marketlar", "Yaxshi Market")).toHaveClass("bg-chart-1");
+    expect(fillOf("Top kuryerlar", "Bobur")).toHaveClass("bg-danger");
+    expect(fillOf("Top kuryerlar", "Aziz")).toHaveClass("bg-chart-1");
+  });
+
   it("to'liq statistika bo'sh bo'lsa (Barchasi) — reyting top ro'yxatdan", () => {
     routeDashboard({
       data: {
