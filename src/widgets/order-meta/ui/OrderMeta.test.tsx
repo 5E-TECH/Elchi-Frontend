@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test/test-utils";
 import OrderMeta from "./OrderMeta";
 import OrderParentBanner from "./OrderParentBanner";
@@ -66,6 +67,15 @@ describe("OrderMeta", () => {
     expect(row("meta-courier").querySelector("a")).toHaveTextContent("+998 97 000 00 90");
     expect(row("meta-holder")).toHaveTextContent("Kuryerda: Xorazm Courier");
     expect(apiGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("rwAy8Qyk: `order_number` bor — «#EL-100095» (sarlavha bilan bir xil raqam), nusxa «EL-100095»", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderMeta order={{ ...ORDER_95, order_number: "EL-100095" }} role="admin" canOpenMails />);
+
+    expect(row("meta-id")).toHaveTextContent("#EL-100095");
+    await user.click(screen.getByRole("button", { name: "Buyurtma raqamini nusxalash" }));
+    await expect(navigator.clipboard.readText()).resolves.toBe("EL-100095");
   });
 
   it("⭐ tarif sukut bo'yicha XIRA, ko'z tugmasi ochadi va yopadi (admin — hammasi)", () => {

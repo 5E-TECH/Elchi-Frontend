@@ -52,6 +52,8 @@ export interface OrderCustomer {
 
 export interface OrderListItem {
     id: string;
+    /** Mijozga ko'rinadigan raqam («EL-100081», `enrichOrders`; yorliqdagi) — ro'yxatda shu ko'rsatiladi (rwAy8Qyk). */
+    order_number?: string | null;
     market_id: string;
     customer_id: string;
     product_quantity: number;

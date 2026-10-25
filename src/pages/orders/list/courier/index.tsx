@@ -22,6 +22,7 @@ import {
   type Order,
 } from "./list/ordertable/courierOrdersModel";
 import { useOrders } from "../../../../entities/orders";
+import { toOrderSearchTerm } from "../../../../entities/order/model/orderNumber";
 import {
   pollWhileApprovalPending,
   resolveOrderActionResponse,
@@ -458,7 +459,8 @@ const CourierOrders = () => {
     ...(statusParam ? { status: statusParam } : {}),
     page,
     limit,
-    ...(withFilters && urlSearch ? { search: urlSearch } : {}),
+    // rwAy8Qyk: ro'yxatdagi raqam («EL-100081») bilan qidirish — backend hozircha faqat ichki id'ni oladi.
+    ...(withFilters && urlSearch ? { search: toOrderSearchTerm(urlSearch) } : {}),
     ...(withFilters && dateFrom ? { startDate: dateFrom } : {}),
     ...(withFilters && dateTo ? { endDate: dateTo } : {}),
   };

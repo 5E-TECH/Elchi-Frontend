@@ -12,6 +12,7 @@ import {
   resolveOrderActionResponse,
 } from "../../entities/orders/extraCostApproval";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
+import { toOrderSearchTerm } from "../../entities/order/model/orderNumber";
 import OrderFilters from "./list/OrderFilters";
 import {
   buildOrderListParams,
@@ -473,7 +474,9 @@ const Orders = () => {
    * takrorlanmaydi). Ruxsatni backend tekshiradi: begona buyurtma 403/404 —
    * hech narsa qo'shilmaydi.
    */
-  const exactOrderId = /^\d{1,12}$/.test(urlSearch.trim()) ? urlSearch.trim() : "";
+  // rwAy8Qyk: «EL-100081» (ro'yxatdagi raqam) ham — ichki id'ga aylantiriladi.
+  const exactSearch = toOrderSearchTerm(urlSearch.trim());
+  const exactOrderId = /^\d{1,12}$/.test(exactSearch) ? exactSearch : "";
   const exactOrderQuery = useQuery({
     queryKey: ["orders", "exact-number", exactOrderId],
     queryFn: () =>
