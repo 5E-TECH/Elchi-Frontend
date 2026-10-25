@@ -375,7 +375,9 @@
       "notRequiredTitle": "Market QR talab qilinmaydi",
       "notRequiredBody": "HQ xodimlari bekor qilingan buyurtmalarni market QR kodisiz topshira oladi. Buyurtmalarni skaner bilan birma-bir tanlang.",
       "timerLabel": "QR amal qilish vaqti",
-      "timerAria": "QR amal qilish vaqti: {{minutes}} daqiqa {{seconds}} soniya"
+      "timerAria": "QR amal qilish vaqti: {{minutes}} daqiqa {{seconds}} soniya",
+      "pinAction": "PIN kodni kiritish",
+      "scannedTitlePin": "Market PIN kodi tasdiqlandi"
     },
     "card": {
       "title": "Bekor qilingan buyurtmalarni tayyorlash",
@@ -439,7 +441,8 @@
       "sendSuccess": "Buyurtmalar marketga jo'natildi",
       "sendSuccessDescription": "{{value}} ta buyurtma jo'natildi.",
       "sendError": "Buyurtmalarni marketga jo'natib bo'lmadi",
-      "qrGenerateError": "QR kodni yaratib bo'lmadi"
+      "qrGenerateError": "QR kodni yaratib bo'lmadi",
+      "pinAccepted": "PIN kod qabul qilindi"
     },
     "market": {
       "cardLabel": "Bekor qilingan buyurtmalar",
@@ -459,7 +462,28 @@
       "description": "Pochtaga topshirish uchun shu QR kodni skaner qildiring.",
       "imageLabel": "Bekor qilingan buyurtmalarni topshirish QR kodi",
       "empty": "QR kod ma'lumoti topilmadi.",
-      "close": "Yopish"
+      "close": "Yopish",
+      "pinLabel": "QR o'qilmasa — PIN kod",
+      "pinAria": "PIN kod: {{digits}}",
+      "pinTimer": "{{time}} amal qiladi",
+      "pinTimerAria": "Kod amal qilish vaqti: {{minutes}} daqiqa {{seconds}} soniya",
+      "pinExpired": "Muddati tugadi"
+    },
+    "pin": {
+      "title": "Market PIN kodi",
+      "description": "{{market}} · QR o'qilmasa, market QR oynasidagi PIN bilan tasdiqlang.",
+      "label": "6 xonali PIN",
+      "hint": "Market vakili telefonidagi QR ostida ko'rsatilgan kod.",
+      "note": "5 marta noto'g'ri kiritilsa, sessiya bloklanadi — market yangi QR chiqaradi.",
+      "cancel": "Bekor qilish",
+      "confirm": "Tasdiqlash",
+      "incomplete": "6 ta raqamni kiriting",
+      "invalid": "Kod noto'g'ri — yana {{value}} ta urinish qoldi",
+      "invalidPlain": "Kod noto'g'ri",
+      "blocked": "5 marta xato kiritildi — market yangi QR chiqarsin",
+      "expired": "Kod muddati tugagan — market yangi QR chiqarsin",
+      "notFound": "Marketda faol QR yo'q — market QR oynasini qayta ochsin",
+      "error": "Kodni tekshirib bo'lmadi"
     },
     "camera": {
       "qrTitle": "Market QR skanerlash",

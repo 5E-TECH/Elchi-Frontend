@@ -34,7 +34,13 @@ test("⭐ market, bekor buyurtma yo'q: «Qabul qilish» yoqiq → POST …/cance
     if (path === "orders/markets/201/cancelled") return reply(route, wrap([]));
     if (request.method() !== "GET") {
       writes.push(`${request.method()} ${path}`);
-      if (path === "orders/markets/201/cancelled/qr") return reply(route, wrap({ token: "MCR-201-e2e-0001", expires_in: 300 }));
+      if (path === "orders/markets/201/cancelled/qr") {
+        // zkRab9M2 (BG6): QR bilan birga 6 xonali kod.
+        return reply(
+          route,
+          wrap({ market_id: "201", qr_token: "MCR-201-e2e-0001", qr_ttl_seconds: 120, pin: "042917", pin_max_attempts: 5 }),
+        );
+      }
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
     }
     return reply(route, wrap([]));
@@ -59,5 +65,11 @@ test("⭐ market, bekor buyurtma yo'q: «Qabul qilish» yoqiq → POST …/cance
   const dialog = page.getByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("img", { name: "Bekor qilingan buyurtmalarni topshirish QR kodi" })).toBeVisible();
+  // QR ostida kod: «042 917» (boshidagi nol saqlanadi) va amal qilish vaqti.
+  const pin = dialog.getByTestId("market-qr-pin");
+  await expect(pin.getByText("QR o'qilmasa — PIN kod")).toBeVisible();
+  await expect(pin.getByTestId("market-qr-pin-value")).toHaveText("042 917");
+  await expect(pin.getByRole("timer")).toHaveText(/0[12]:[0-5]\d amal qiladi/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(writes).toEqual(["POST orders/markets/201/cancelled/qr"]);
 });

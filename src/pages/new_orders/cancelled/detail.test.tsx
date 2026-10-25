@@ -33,6 +33,7 @@ type ScannerOptions = {
 const mocks = vi.hoisted(() => ({
   handoverMutate: vi.fn(),
   scanMutateAsync: vi.fn(),
+  pinMutateAsync: vi.fn(),
   generateMutate: vi.fn(),
   playScanFeedback: vi.fn(),
   scanner: { current: null as ScannerOptions | null },
@@ -86,6 +87,7 @@ vi.mock("../../../entities/orders", () => ({
     }),
     generateCancelledMarketQr: { mutate: mocks.generateMutate, isPending: false },
     scanMarketCancelledQr: { mutate: vi.fn(), mutateAsync: mocks.scanMutateAsync, isPending: false },
+    verifyMarketCancelledPin: { mutate: vi.fn(), mutateAsync: mocks.pinMutateAsync, isPending: false },
     handoverCancelledOrders: { mutate: mocks.handoverMutate, isPending: false },
   }),
 }));
@@ -380,6 +382,155 @@ describe("Bekor qilinganlarni topshirish — «Topshirildi (N)» (maket superadm
   });
 });
 
+describe("Bekor qilinganlarni topshirish — 6 xonali kod (zkRab9M2, maket superadmin-neworders-cancelled-pin-dialog)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.qrRequired.current = true;
+    mocks.emptyList.current = false;
+    mocks.scanner.current = null;
+    mocks.handoverMutate.mockImplementation((_vars: unknown, options: { onSuccess: () => void }) => options.onSuccess());
+  });
+
+  /** Backend kod xatosi (axios shakli): 400 + `data.reason` (+ qolgan urinishlar). */
+  const pinError = (reason: string, remaining?: number) => ({
+    response: {
+      status: 400,
+      data: {
+        statusCode: 400,
+        message: "Kod noto‘g‘ri",
+        data: {
+          reason,
+          ...(remaining === undefined ? {} : { details: { remaining_attempts: remaining, max_attempts: 5 } }),
+        },
+      },
+    },
+  });
+
+  const openPin = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "PIN kodni kiritish" }));
+    return screen.findByRole("dialog", { name: "Market PIN kodi" });
+  };
+
+  it("«Market QR kerak» holatida «PIN kodni kiritish» → oyna: fokus maydonda, raqamli klaviatura, skaner to'xtaydi", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    expect(mocks.scanner.current!.paused).toBe(false);
+
+    const dialog = await openPin(user);
+    expect(dialog).toHaveAccessibleDescription(/Baraka Shop · QR o'qilmasa, market QR oynasidagi PIN bilan tasdiqlang\./);
+    // USB skaner (klaviatura) bu oynani tinglamaydi: 6 raqam + Enter buyurtma skani emas.
+    expect(dialog.closest("[data-scanner-ignore]")).not.toBeNull();
+    expect(mocks.scanner.current!.paused).toBe(true);
+
+    const input = within(dialog).getByRole("textbox", { name: /6 xonali PIN/ });
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute("inputmode", "numeric");
+    expect(input).toHaveAttribute("autocomplete", "one-time-code");
+    expect(input).toHaveAttribute("maxlength", "6");
+    expect(input).toHaveAccessibleDescription("Market vakili telefonidagi QR ostida ko'rsatilgan kod.");
+    expect(within(dialog).getByText("5 marta noto'g'ri kiritilsa, sessiya bloklanadi — market yangi QR chiqaradi.")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    expect(screen.queryByRole("dialog", { name: "Market PIN kodi" })).not.toBeInTheDocument();
+    expect(mocks.scanner.current!.paused).toBe(false);
+    expect(mocks.pinMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("to'g'ri kod — QR skani bilan bir xil: hamma bekorlar tanlanadi, taymer, token bilan jo'natiladi, usul «Parol orqali»", async () => {
+    mocks.pinMutateAsync.mockResolvedValue({
+      data: { market_id: "201", authorized: true, authorization_token: "auth-pin", remaining_seconds: 300, method: "pin" },
+    });
+    const user = userEvent.setup();
+    renderDetail();
+
+    const dialog = await openPin(user);
+    await user.type(within(dialog).getByRole("textbox", { name: /6 xonali PIN/ }), "04 29-17x9{Enter}");
+
+    expect(mocks.pinMutateAsync).toHaveBeenCalledTimes(1);
+    expect(mocks.pinMutateAsync).toHaveBeenCalledWith({ marketId: "201", pin: "042917" });
+    expect(mocks.scanMutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText("Market PIN kodi tasdiqlandi")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Market PIN kodi" })).not.toBeInTheDocument();
+    expect(await screen.findByText("PIN kod qabul qilindi")).toBeInTheDocument();
+    expect(screen.getByRole("timer", { name: /QR amal qilish vaqti: (5 daqiqa 0|4 daqiqa 59) soniya/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "№502 ni tanlovdan chiqarish" })).toBeChecked();
+    // Kod ruxsati olingach — «PIN kodni kiritish» yo'q (holat «skanerlandi»).
+    expect(screen.queryByRole("button", { name: "PIN kodni kiritish" })).not.toBeInTheDocument();
+    expect(mocks.scanner.current!.paused).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
+    expect(mocks.handoverMutate).toHaveBeenCalledWith(
+      { marketId: "201", orderIds: ["501", "502"], authorizationToken: "auth-pin", manualOverrides: [] },
+      expect.any(Object),
+    );
+    const table = within(await screen.findByTestId("handed-over-card")).getByRole("table");
+    expect(within(table).getAllByText("Parol orqali")).toHaveLength(2);
+  });
+
+  it("noto'g'ri kod — maydon ostida qolgan urinishlar, oyna ochiq, tanlov va ruxsat yo'q; yozilsa xato yo'qoladi", async () => {
+    mocks.pinMutateAsync.mockRejectedValue(pinError("market_cancelled_pin_invalid", 3));
+    const user = userEvent.setup();
+    renderDetail();
+
+    const dialog = await openPin(user);
+    const input = within(dialog).getByRole("textbox", { name: /6 xonali PIN/ });
+    await user.type(input, "111111");
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await within(dialog).findByText("Kod noto'g'ri — yana 3 ta urinish qoldi")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("dialog", { name: "Market PIN kodi" })).toBeInTheDocument();
+    expect(screen.getByText("Market QR kerak")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+
+    await user.type(input, "{Backspace}");
+    expect(within(dialog).queryByText(/Kod noto'g'ri/)).not.toBeInTheDocument();
+  });
+
+  it("5-xato / blok — «market yangi QR chiqarsin»; muddat tugagan va faol QR yo'q — o'z matni", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    const dialog = await openPin(user);
+    const input = within(dialog).getByRole("textbox", { name: /6 xonali PIN/ });
+    const submit = within(dialog).getByRole("button", { name: "Tasdiqlash" });
+
+    const cases: Array<[unknown, string]> = [
+      [pinError("market_cancelled_pin_blocked", 0), "5 marta xato kiritildi — market yangi QR chiqarsin"],
+      [pinError("market_cancelled_pin_invalid", 0), "5 marta xato kiritildi — market yangi QR chiqarsin"],
+      [pinError("market_cancelled_pin_expired"), "Kod muddati tugagan — market yangi QR chiqarsin"],
+      [pinError("market_cancelled_pin_not_found"), "Marketda faol QR yo'q — market QR oynasini qayta ochsin"],
+    ];
+    for (const [error, text] of cases) {
+      mocks.pinMutateAsync.mockRejectedValueOnce(error);
+      await user.clear(input);
+      await user.type(input, "123456");
+      await user.click(submit);
+      expect(await within(dialog).findByText(text)).toBeInTheDocument();
+    }
+    expect(screen.getByText("Market QR kerak")).toBeInTheDocument();
+  });
+
+  it("to'liq bo'lmagan kod — so'rov ketmaydi, «6 ta raqamni kiriting»", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    const dialog = await openPin(user);
+
+    await user.type(within(dialog).getByRole("textbox", { name: /6 xonali PIN/ }), "1234{Enter}");
+
+    expect(await within(dialog).findByText("6 ta raqamni kiriting")).toBeInTheDocument();
+    expect(mocks.pinMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("QR talab qilinmaydigan marketda — «PIN kodni kiritish» yo'q", () => {
+    mocks.qrRequired.current = false;
+    renderDetail();
+
+    expect(screen.getByText("Market QR talab qilinmaydi")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "PIN kodni kiritish" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Bekor qilinganlar — market roli", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -432,6 +583,47 @@ describe("Bekor qilinganlar — market roli", () => {
     await user.click(receive);
     expect(mocks.generateMutate).toHaveBeenCalledWith("201", expect.any(Object));
     expect(await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" })).toBeInTheDocument();
+  });
+
+  it("zkRab9M2: QR oynasida 6 xonali kod — «042 917», ekran o'quvchiga raqamlar alohida, amal qilish vaqti", async () => {
+    mocks.generateMutate.mockImplementation((_marketId: string, options: { onSuccess: (r: unknown) => void }) =>
+      options.onSuccess({
+        data: {
+          market_id: "201",
+          qr_token: "MCR-201-xyz",
+          qr_ttl_seconds: 120,
+          qr_expires_at: "2026-10-25T10:02:00.000Z",
+          pin: "042917",
+          pin_expires_at: "2026-10-25T10:02:00.000Z",
+          pin_max_attempts: 5,
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    renderDetail(marketState());
+
+    await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" });
+    expect(within(dialog).getByRole("img", { name: "Bekor qilingan buyurtmalarni topshirish QR kodi" })).toBeInTheDocument();
+    const block = within(dialog).getByTestId("market-qr-pin");
+    expect(within(block).getByText("QR o'qilmasa — PIN kod")).toBeInTheDocument();
+    expect(within(block).getByTestId("market-qr-pin-value")).toHaveTextContent("042 917");
+    expect(within(block).getByText("PIN kod: 0 4 2 9 1 7")).toBeInTheDocument();
+    expect(await within(block).findByRole("timer", { name: /Kod amal qilish vaqti: (2 daqiqa 0|1 daqiqa 59) soniya/ })).toHaveTextContent(
+      /0[12]:[0-5]\d amal qiladi/,
+    );
+  });
+
+  it("zkRab9M2: eski backend (kodsiz QR) — kod bloki yo'q", async () => {
+    mocks.generateMutate.mockImplementation((_marketId: string, options: { onSuccess: (r: unknown) => void }) =>
+      options.onSuccess({ data: { token: "MCR-201-xyz" } }),
+    );
+    const user = userEvent.setup();
+    renderDetail(marketState());
+
+    await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" });
+    expect(within(dialog).queryByTestId("market-qr-pin")).toBeNull();
   });
 
   it("marketda QR o'chirilgan bo'lsa — «Qabul qilish» yo'q", () => {
