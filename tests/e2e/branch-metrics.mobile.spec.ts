@@ -14,6 +14,17 @@ const expectPhoneLayout = async (page: Page, section: Locator) => {
     expect((await box(radio)).height).toBeGreaterThanOrEqual(44);
   }
 
+  // «Grafik | Jadval» — to'liq enli (yorliq qisqarmaydi), variantlar ≥ 44px.
+  const view = page.getByTestId("branch-metrics-revenue").getByRole("radiogroup", { name: "Kunlik daromad ko'rinishi" });
+  expect((await box(view)).width).toBeGreaterThan(300);
+  for (const radio of await view.getByRole("radio").all()) {
+    expect((await box(radio)).height).toBeGreaterThanOrEqual(44);
+    // Yorliq qirqilmagan (`truncate` — «Gra…» bo'lmasin).
+    expect(
+      await radio.evaluate((node) => [node, ...node.querySelectorAll("span")].every((el) => el.scrollWidth <= el.clientWidth + 1)),
+    ).toBe(true);
+  }
+
   // KPI: 2 ustun (1–2 bir qatorda, 3 pastda).
   const kpis = section.locator("[data-kpi]");
   await expect(kpis).toHaveCount(4);

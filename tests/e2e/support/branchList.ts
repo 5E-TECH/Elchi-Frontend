@@ -4,7 +4,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `/branches` e2e uchun soxta backend (superadmin). `GET branches` backend kabi
  * `page`/`limit` bo'yicha bo'laklaydi va `data: { items, meta }` qaytaradi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4173). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

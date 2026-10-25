@@ -146,7 +146,14 @@ export const BranchRevenueCard = memo(({ points, periodText, className }: Branch
       className={className}
       title={t("v2.metrics.revenue.title")}
       description={[periodText, rangeText].filter(Boolean).join(" · ")}
-      actions={hasRevenue ? <ViewToggle value={view} onChange={setView} ariaLabel={t("v2.metrics.revenue.viewLabel")} /> : undefined}
+      actions={
+        hasRevenue ? (
+          // Telefonda to'liq enli (maket: «Grafik | Jadval» teng yarmlar) — `FinancialAnalysis` boshqaruvlari kabi.
+          <div className="flex flex-wrap items-center gap-2 max-md:w-full">
+            <ViewToggle value={view} onChange={setView} ariaLabel={t("v2.metrics.revenue.viewLabel")} />
+          </div>
+        ) : undefined
+      }
       bodyClassName="flex flex-1 flex-col gap-4"
       data-testid="branch-metrics-revenue"
     >
