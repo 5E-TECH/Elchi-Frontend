@@ -833,7 +833,9 @@
   "toast": {
     "region": "Bildirishnomalar",
     "close": "Xabarni yopish",
-    "timeoutTitle": "Server javob bermadi"
+    "timeoutTitle": "Server javob bermadi",
+    "restoredTitle": "Aloqa tiklandi",
+    "restoredDescription": "Ochiq sahifadagi ma'lumotlar yangilandi."
   },
   "states": {
     "loading": "Yuklanmoqda…",

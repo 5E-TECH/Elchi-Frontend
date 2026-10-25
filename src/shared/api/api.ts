@@ -18,6 +18,16 @@ export const LONG_REQUEST_TIMEOUT_MS = 120_000;
  */
 export const MERGE_REQUEST_TIMEOUT_MS = 125_000;
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /**
+     * Fon so'rovi (G6F68ti6, 9-band): tarmoq xatosida «Internet aloqasi yo'q» xabari ochilmaydi — faqat holat
+     * belgilanadi (`auth/networkError.ts`). Har daqiqada yoki fokusda o'zi so'raladigan so'rovlar uchun.
+     */
+    silentNetworkError?: boolean;
+  }
+}
+
 export const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,

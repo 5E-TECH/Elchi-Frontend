@@ -216,7 +216,7 @@ const ToastRow = ({ toast, onDismiss }: ToastRowProps) => {
                   label: toast.action.label,
                   onClick: () => {
                     toast.action?.onClick();
-                    close();
+                    if (!toast.action?.keepOpen) close();
                   },
                 }
               : undefined

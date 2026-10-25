@@ -833,7 +833,9 @@
   "toast": {
     "region": "Notifications",
     "close": "Close message",
-    "timeoutTitle": "The server didn't respond"
+    "timeoutTitle": "The server didn't respond",
+    "restoredTitle": "Connection restored",
+    "restoredDescription": "Data on this page has been refreshed."
   },
   "states": {
     "loading": "Loading…",
