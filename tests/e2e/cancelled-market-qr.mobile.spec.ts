@@ -5,7 +5,7 @@ import { expect, test, type Route } from "@playwright/test";
  * «Marketga topshirildi» oynasiga kerak (qaytarilgan buyurtma → `returned_to_market`, `order-return.desktop.spec.ts`);
  * backend QR'ni bekor buyurtmasiz ham beradi. 390px, soxta backend.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

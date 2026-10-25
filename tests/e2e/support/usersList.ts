@@ -4,7 +4,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `/all-users` (84IDGRDp) — soxta backend: superadmin, 10 ta foydalanuvchi, 129 sahifa, KPI (1 286 · 342 · 118).
  * Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

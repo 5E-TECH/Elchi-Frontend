@@ -8,7 +8,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * javoblari avvalgidek. Holatlar: `empty`, `status` (dashboard va ro'yxatlar shu kod bilan yiqiladi — 403 / 404 /
  * 409 / 500). Yozish so'rovlari taqiqlangan. Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

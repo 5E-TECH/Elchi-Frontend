@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * `/login` a11y e2e (XsoWhKP5 «2368f6»): soxta gateway — `POST auth/login` 401 qaytaradi (parol noto'g'ri),
  * boshqa so'rov tarmoqqa chiqmaydi. Ilova manzili `playwright.config.ts` dagi `baseURL` dan.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 
 export const mockLoginApi = async (page: Page) => {
   const origin = appOrigin();

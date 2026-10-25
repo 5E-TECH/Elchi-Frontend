@@ -7,7 +7,7 @@ import type { Page, Route } from "@playwright/test";
  * serverdek sahifalanadi (`search` / `page` / `limit` ≤ 500, sukut 10); `PATCH product/:id` yoziladi (`patches`).
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

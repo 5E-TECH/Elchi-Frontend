@@ -4,7 +4,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Balans → Tahlil (`/financial-balance?tab=analysis`) e2e uchun soxta backend va kirish: superadmin, til va mavzu
  * profil sozlamasidan (`settings.appearance`) — ilova `localStorage` ni kirgach shu bilan almashtiradi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

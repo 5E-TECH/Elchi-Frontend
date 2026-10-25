@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Backend kabi: bir kunlik davrda (Bugun) reyting oxirgi 30 kun bo'yicha (`period_rule: last_30_days`),
  * 2+ kunlik davrda tanlangan oraliq (`selected_range`, `from` / `to`). Serverga so'rov ketmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

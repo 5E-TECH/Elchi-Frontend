@@ -8,7 +8,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * NG-C (G085w5Qr): qatorlarda `inactive_reason` / `inactive_at` (backend kabi: `PATCH {is_active:false}` → `manual`,
  * `true` → ikkalasi `null`); nofaol guruh (#8) sababi — `inactiveReason` opsiyasi (sukut `null` — eski qator).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

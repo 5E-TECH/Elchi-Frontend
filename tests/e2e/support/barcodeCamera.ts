@@ -48,7 +48,7 @@ export const mockBarcodeCamera = (page: Page, digits: string) =>
     };
   }, ean13Modules(digits));
 
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 
 const QUVVAT = rawProduct({
   id: "202",
