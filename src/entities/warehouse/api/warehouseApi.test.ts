@@ -21,6 +21,7 @@ import {
   stockInWarehouse,
 } from "./warehouseApi";
 import { rawProduct, rawWarehouse } from "../../../test/warehouseFixtures";
+import { hqFirst } from "../lib/hqFirst";
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), saveBlob: vi.fn() }));
 
@@ -79,6 +80,61 @@ describe("normalizeWarehouse / normalizeWarehouseList", () => {
     });
     expect(normalizeWarehouse({})).toBeNull();
     expect(normalizeWarehouseList(null).items).toEqual([]);
+  });
+});
+
+describe("Markaziy ombor — `kind` / `isHq` (Pa1KaXmj)", () => {
+  const HQ_RAW = rawWarehouse({
+    id: "12",
+    name: "Markaziy ombor",
+    kind: "HQ",
+    branch_id: "1",
+    branch: { id: "1", name: "Toshkent HQ", type: "HQ", status: "active", address: null },
+    region: null,
+    manager_user_id: null,
+    manager: null,
+  });
+
+  it("`kind: HQ` — Markaziy ombor, mas'ulsiz", () => {
+    expect(normalizeWarehouse(HQ_RAW)).toMatchObject({ kind: "HQ", isHq: true, manager: null, managerUserId: null, region: null });
+  });
+
+  it("`kind` siz, lekin filial turi HQ — `isHq` (tur `REGIONAL` qoladi)", () => {
+    expect(normalizeWarehouse({ ...HQ_RAW, kind: undefined })).toMatchObject({ kind: "REGIONAL", isHq: true });
+  });
+
+  it("viloyat ombori: `kind: REGIONAL`, `kind` siz yoki noma'lum — REGIONAL, isHq yo'q", () => {
+    expect(normalizeWarehouse(rawWarehouse({ kind: "REGIONAL" }))).toMatchObject({ kind: "REGIONAL", isHq: false });
+    expect(normalizeWarehouse(rawWarehouse())).toMatchObject({ kind: "REGIONAL", isHq: false });
+    expect(normalizeWarehouse(rawWarehouse({ kind: "SKLAD" }))).toMatchObject({ kind: "REGIONAL", isHq: false });
+    expect(normalizeWarehouse(rawWarehouse({ kind: "hq" }))).toMatchObject({ kind: "HQ", isHq: true });
+  });
+
+  it("ro'yxat va market qoldig'i ustunlarida ham", () => {
+    expect(normalizeWarehouseList({ data: [rawWarehouse(), HQ_RAW] }).items.map((item) => item.isHq)).toEqual([false, true]);
+    const stock = normalizeMarketStock({
+      warehouses: [
+        { id: "3", name: "Samarqand filiali ombori", status: "ACTIVE", kind: "REGIONAL", branch: { id: "11", name: "Samarqand filiali" } },
+        { id: "12", name: "Markaziy ombor", status: "ACTIVE", kind: "HQ", branch: { id: "1", name: "Toshkent HQ" } },
+        { id: "13", name: "Eski javob", status: "ACTIVE", branch: { id: "1", name: "Toshkent HQ", type: "HQ" } },
+      ],
+      data: [],
+    });
+    expect(stock.warehouses.map(({ kind, isHq }) => ({ kind, isHq }))).toEqual([
+      { kind: "REGIONAL", isHq: false },
+      { kind: "HQ", isHq: true },
+      { kind: "REGIONAL", isHq: true },
+    ]);
+  });
+
+  it("hqFirst — Markaziy ombor oldinga, qolganlarining tartibi saqlanadi", () => {
+    const items = [
+      { id: "a", isHq: false },
+      { id: "hq", isHq: true },
+      { id: "b", isHq: false },
+    ];
+    expect(hqFirst(items).map((item) => item.id)).toEqual(["hq", "a", "b"]);
+    expect(hqFirst([{ id: "a", isHq: false }]).map((item) => item.id)).toEqual(["a"]);
   });
 });
 
