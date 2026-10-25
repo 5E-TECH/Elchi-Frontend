@@ -48,7 +48,15 @@ const ROWS = [
     message: "connect ECONNREFUSED",
     created_by: { id: "7", name: "Nilufar Rashidova", role: "admin" },
   }),
-  ...Array.from({ length: 10 }, (_, index) => item(3 + index)),
+  // NS-3 (NwlmrcMf): ro'yxat javobida `audience` — rol, bitta odam (ism · rol), eski yozuv (ismsiz).
+  item(3, {
+    title: "Shaxsiy xabar",
+    dispatched: 1,
+    audience: { recipient_ids: 1, recipient: { id: 41, name: "Aziz Karimov", role: "courier" } },
+  }),
+  item(4, { title: "Eski shaxsiy xabar", dispatched: 1, audience: { recipient_ids: 1 } }),
+  item(5, { audience: { roles: ["courier", "market"] } }),
+  ...Array.from({ length: 7 }, (_, index) => item(6 + index)),
 ];
 
 let listCalls: Array<Record<string, unknown>>;
@@ -155,6 +163,14 @@ describe("NotificationSentPage («Yuborilganlar», NS-2)", () => {
     expect(within(failed).getByText("Qabul qiluvchi yo'q")).toBeInTheDocument();
     expect(within(failed).getByText("Admin")).toBeInTheDocument();
     expect(screen.queryByText(/ECONNREFUSED|dispatched/)).not.toBeInTheDocument();
+  });
+
+  it("NS-3: «Kimga» — rol, bitta qabul qiluvchining ismi va roli, ismsiz eski yozuvda «Bitta odam»", async () => {
+    renderPage();
+    const table = await screen.findByRole("table", { name: "Yuborilgan xabarlar" });
+    expect(within(within(table).getByRole("row", { name: /Shaxsiy xabar/ })).getByText("Aziz Karimov · Kuryer")).toBeInTheDocument();
+    expect(within(within(table).getByRole("row", { name: /Eski shaxsiy xabar/ })).getByText("Bitta odam")).toBeInTheDocument();
+    expect(within(within(table).getByRole("row", { name: /Xabar 5/ })).getByText("Rol: Kuryer, Market")).toBeInTheDocument();
   });
 
   it("filters and the page live in the URL; a filter change goes back to page 1", async () => {
