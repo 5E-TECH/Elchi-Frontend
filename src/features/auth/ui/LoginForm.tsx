@@ -23,7 +23,8 @@ import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
  *   - ikki marta yuborish himoyasi (`isSubmitting`; tugma `loading`, maydonlar shu payt faqat o'qish uchun),
  *     `setLoading` / `setAppInitializing` / `setError`;
  *   - so'rov `{ phone_number: "+998XXXXXXXXX", password }` (`POST /auth/login`), muvaffaqiyat → `/`;
- *   - xato matni: 400 / 401 / 404 / 500 / javobsiz (tarmoq) / boshqa — redux `user.error` da;
+ *   - xato matni: 400 / 401 / 404 / 403 / 429 / 5xx / javobsiz (tarmoq) / boshqa — redux `user.error` da, izohi
+ *     (`errorHint`) — sarlavha ostida (maket `common-login-error`: qalin sarlavha + bir jumla);
  *   - «Parol o'zgardi — qayta kiring» bir martalik xabari (`loginNotice`);
  *   - e2e tayanadigan nomlar: telefon `name="elchi-login-phone"`, parol `name="password"`.
  */
@@ -41,7 +42,7 @@ const ALERT_BASE = "flex items-start gap-3 rounded-xl px-4 py-3 text-sm";
 
 const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [credentialsHint, setCredentialsHint] = useState(false);
+  const [errorHint, setErrorHint] = useState<string | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation("auth");
@@ -85,7 +86,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
     dispatch(setError(null));
-    setCredentialsHint(false);
+    setErrorHint(null);
 
     // `TextInput mode="phone"` qiymati allaqachon `+998XXXXXXXXX` (bo'sh joysiz) — qayta formatlanmaydi.
     const payload = {
@@ -100,23 +101,40 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
       onError: (error) => {
         const err = error as AxiosError<ApiErrorResponse>;
         let message = t("systemError");
-        let credentials = false;
+        let hint: string | null = null;
         if (err.response) {
           const status = err.response.status;
           if (status === 400) message = t("invalidInput");
           if (status === 401) message = t("invalidCredentials");
           if (status === 404) message = t("userNotFound");
-          if (status === 500) message = t("serverError");
-          credentials = status === 400 || status === 401 || status === 404;
+          if (status === 400 || status === 401 || status === 404) hint = t("loginErrorHint");
+          // hQqymheT: backend matni inglizcha («ThrottlerException: Too Many Requests») — o'zbekcha matn va nima
+          // qilish kerakligi. Cheklov 1 daqiqalik oyna (gateway AUTH_THROTTLE); `Retry-After` o'qilsa — aniq soniya.
+          if (status === 429) {
+            const retryAfter = Math.ceil(Number(err.response.headers?.["retry-after"]));
+            message = t("tooManyAttempts");
+            hint =
+              Number.isFinite(retryAfter) && retryAfter > 0
+                ? t("tooManyAttemptsRetryIn", { count: retryAfter })
+                : t("tooManyAttemptsHint");
+          }
+          // Bloklangan akkaunt backend'da 401 oladi; 403 — kirish tarmoq yoki xavfsizlik qoidasi bilan yopilgan.
+          if (status === 403) {
+            message = t("accessDenied");
+            hint = t("accessDeniedHint");
+          }
+          if (status >= 500) {
+            message = t("serverError");
+            hint = t("serverErrorHint");
+          }
         } else if (isNetworkFailure(error)) {
           // Javob kelmadi — axios'ning inglizcha matni emas (h0AM0kDL: tashxis uchun ikki holat alohida):
           // vaqt tugadi (`ECONNABORTED`, 15 s) — «Server javob bermadi»; darhol uzilish — «Internet aloqasi yo'q».
           message = err.code === "ECONNABORTED" ? t("networkTimeout") : t("networkOffline");
-        } else {
-          message = err.message || t("networkError");
         }
+        // Boshqa (javobsiz, tarmoqsiz) xato — «Tizim xatoligi»: `err.message` hech qachon lokalizatsiya qilinmagan.
 
-        setCredentialsHint(credentials);
+        setErrorHint(hint);
         dispatch(setError(message));
         dispatch(setAppInitializing(false));
       },
@@ -145,7 +163,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
           <CircleX aria-hidden="true" focusable="false" size={20} className="mt-px shrink-0" />
           <div className="min-w-0 text-text">
             <p className="font-bold">{error}</p>
-            {credentialsHint ? <p className="text-[13px]">{t("loginErrorHint")}</p> : null}
+            {errorHint ? <p className="text-[13px]">{errorHint}</p> : null}
           </div>
         </div>
       ) : loginNotice === "passwordChanged" ? (

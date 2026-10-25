@@ -21,6 +21,18 @@ test.describe("/login — tarmoq uzilishlari (390px, tungi rejim)", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test("hQqymheT: 429 → sarlavha va izoh tungi rejimda ko'rinadi va sig'adi", async ({ page }) => {
+    await setTheme(page, "dark");
+    await mockAuthNetwork(page, { login: ["429"] });
+    await submitLogin(page);
+    const alert = loginAlert(page);
+    await expect(alert).toContainText("Juda ko'p urinish");
+    await expect(alert).toContainText("Bir daqiqa kutib, qayta urinib ko'ring.");
+    await expect(alert).toBeInViewport();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
   test("qisqa uzilish → qayta urinish bilan kirildi", async ({ page }) => {
     await setTheme(page, "dark");
     const { calls } = await mockAuthNetwork(page, { login: ["abort", "ok"] });
