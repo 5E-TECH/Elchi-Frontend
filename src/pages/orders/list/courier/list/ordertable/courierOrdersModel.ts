@@ -26,6 +26,8 @@ type OrderItem = { id: string; quantity: number; product: { name: string; image_
 
 export type Order = {
   id: string;
+  /** Mijozga ko'rinadigan raqam («EL-100081», yorliqdagi) — ro'yxatda shu ko'rsatiladi (rwAy8Qyk). */
+  order_number?: string | null;
   created_at: string;
   status: string;
   total_price: number;

@@ -50,3 +50,4 @@ export { OrderReturnPlace, OrderStatusBadge } from "./ui/OrderStatusBadge";
 export { useCancelReturnPlaceText } from "./ui/useCancelReturnPlaceText";
 export { useCancelHandoverMethodLabel } from "./ui/useCancelHandoverMethodLabel";
 export type { OrderStatusBadgeProps } from "./ui/OrderStatusBadge";
+export { formatOrderRef, orderNumberOf, toOrderSearchTerm } from "./model/orderNumber";
