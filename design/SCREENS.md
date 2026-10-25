@@ -1505,12 +1505,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/branches/:id` — Filial tafsiloti (dizayn v2)
 
-- **Fayllar:** `src/pages/branches/ui/BranchDetailPage.tsx` · `src/widgets/branch-detail/ui/BranchDetailWidget.tsx` · `src/widgets/branch-detail/ui/BranchEmployeesSection.tsx` · `src/features/branch-add-employee/ui/AddEmployeeModal.tsx` · `src/features/branch-remove-employee/ui/RemoveEmployeeButton.tsx` · `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx`
+- **Fayllar:** `src/pages/branches/ui/BranchDetailPage.tsx` · `src/pages/branches/ui/BranchMetricsSection.tsx` · `src/pages/branches/ui/BranchMetricsCards.tsx` · `src/widgets/branch-detail/ui/BranchDetailWidget.tsx` · `src/widgets/branch-detail/ui/BranchEmployeesSection.tsx` · `src/features/branch-add-employee/ui/AddEmployeeModal.tsx` · `src/features/branch-remove-employee/ui/RemoveEmployeeButton.tsx` · `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBranches` (access.ts → canViewBranches)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** 404 — sahifada «Filial topilmadi» (global xabar takrorlanmaydi). Ega savollari sukuti: Q10 «Filial ko'rsatkichlari» bo'limi (KPI, daromad trendi, holat, kuryerlar reytingi) chizilmaydi — analytics branch_id qabul qilmaydi (backend kartasi kerak); Q14 filial sozlamalari (config) — sahifada hech qachon chizilmagan, o'lik kod sifatida o'chirildi.
+- **Izoh:** 404 — sahifada «Filial topilmadi» (global xabar takrorlanmaydi). Q10 «Filial ko'rsatkichlari» (6CYRjoZG) — bitta GET analytics/dashboard?branch_id= so'rovidan: davr «Bugun · Bu hafta · Bu oy · Barchasi» (sukut «Bu hafta», ?period=), 4 KPI (Qabul qilingan, Sotilgan, Daromad, Sof foyda — oldingi teng davrga nisbatan delta «oldingi davrga / kechaga nisbatan», 14 kunlik sparkline — previous/series; «Barchasi»da yoki trend olinmasa chizilmaydi), «Muvaffaqiyat darajasi» (SuccessRateCard, oldingi davr nuqtasi), «Kunlik daromad» (dailyRevenue — tanlangan davr kunlari, Grafik | Jadval; oldingi davr chizig'i va «Kunlik · Haftalik · Oylik» chizilmaydi — filial kesimida API faqat joriy davr kunlarini beradi), «Buyurtmalar holati» (statusDistribution → Sotilgan · Yo'lda · Yangi · Bekor qilingan, «Ro'yxat ›» → /orders?orderBranchId=&startDay=&endDay=), «Kuryerlar reytingi» (topCouriers; «x / y faol» — branchDashboard bugun faol / filial kuryerlari; «Bugun»da reyting oxirgi 30 kun). Holatlar: skelet; xato yoki javobda branch_id yo'q — ErrorState + «Qayta urinish»; bo'sh davr — EmptyState; failed_parts — karta joyida xato; stats_unavailable — «x / y faol» yo'q. Q14 filial sozlamalari (config) — sahifada hech qachon chizilmagan, o'lik kod sifatida o'chirildi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2907,6 +2907,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` | `/branch-dashboard` |
 | `src/pages/branch-ops/index.tsx` | `/branch-ops` |
 | `src/pages/branches/ui/BranchDetailPage.tsx` | `/branches/:id` |
+| `src/pages/branches/ui/BranchMetricsCards.tsx` | `/branches/:id` |
+| `src/pages/branches/ui/BranchMetricsSection.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchesPage.tsx` | `/branches` |
 | `src/pages/courier-bulk/index.tsx` | `/courier-bulk` |
 | `src/pages/courier-bulk/model/courierBulk.ts` | `/courier-bulk` |
