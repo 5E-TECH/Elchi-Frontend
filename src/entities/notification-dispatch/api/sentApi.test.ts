@@ -115,6 +115,28 @@ describe("normalizeSentList (NS-2)", () => {
     expect(list.items[0]).not.toHaveProperty("message");
   });
 
+  it("NS-3: keeps a single recipient's id, name and role; drops a recipient without id", () => {
+    const list = normalizeSentList({
+      data: {
+        items: [
+          {
+            dispatch_id: "p1",
+            status: "sent",
+            audience: { recipient_ids: 1, recipient: { id: 41, name: "Aziz Karimov", role: "courier" } },
+          },
+          { dispatch_id: "p2", status: "sent", audience: { recipient_ids: 1, recipient: { name: "Ismsiz id" } } },
+          { dispatch_id: "p3", status: "sent", audience: { roles: ["market"], recipient: "x" } },
+        ],
+      },
+    });
+    expect(list.items[0].audience).toEqual({
+      recipient_ids: 1,
+      recipient: { id: "41", name: "Aziz Karimov", role: "courier" },
+    });
+    expect(list.items[1].audience).toEqual({ recipient_ids: 1 });
+    expect(list.items[2].audience).toEqual({ roles: ["market"] });
+  });
+
   it("is defensive about an empty or odd payload", () => {
     expect(normalizeSentList({ data: { items: "x" } }, { page: 3, limit: 10 })).toEqual({
       items: [],

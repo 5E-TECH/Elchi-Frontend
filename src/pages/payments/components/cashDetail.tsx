@@ -16,7 +16,6 @@ import {
   EyeOff,
   Info,
   List,
-  Send,
   Store,
   TriangleAlert,
   Truck,
@@ -396,7 +395,7 @@ const CashDetail = () => {
   const ownBranchName = readProfileBranchName(currentProfile);
   /**
    * SMENA QULFI (CB-2, ega javobi CB-S4 — hamma kassada majburiy). `useCashboxShift` — joriy foydalanuvchi
-   * kassasi: menejer — o'z filiali kassasi (kuryerdan qabul ham, HQ'ga o'tkazish ham shu kassada), superadmin/admin
+   * kassasi: menejer — o'z filiali kassasi (kuryerdan qabul shu kassada; HQ'ga o'tkazish yo'q — ega qarori #7), superadmin/admin
    * — asosiy kassa (kuryerdan / filialdan qabul va marketga to'lov shu kassa orqali). Smena yo'q (`closed`) —
    * forma o'rnida `ShiftLockedCard` (maket `manager-payments-cash-detail-{courier,branch}-shift-closed`;
    * superadmin/admin uchun maket yo'q — eng yaqini shu). Holat noma'lum yoki yuklanmoqda — forma (backend darvozasi
@@ -1166,7 +1165,7 @@ const CashDetail = () => {
   const stateEntityName = toMeaningfulString(state?.entity?.name);
   // Menejersiz filial qatorida `name` — filial nomining o'zi.
   const branchManagerName = stateEntityName && stateEntityName !== stateBranchName ? stateEntityName : undefined;
-  // Menejer → HQ: state'dagi HQ nomi (`/payments` dagi «HQ'ga o'tkazish»), aks holda «Asosiy filial».
+  // Menejer → HQ (faqat ko'rish): state'dagi HQ nomi (`/payments` dagi «Berilishi kerak»), aks holda «Asosiy filial».
   const hqName = stateEntityName ?? t("mainBranchFallback");
 
   const pageTitle = isTypeUnknown
@@ -1240,9 +1239,7 @@ const CashDetail = () => {
       ? t("v2CashDetail.form.courierTitle")
       : type === "market"
         ? t("v2CashDetail.form.marketTitle")
-        : isManagerBranchView
-          ? t("v2CashDetail.form.hqTitle")
-          : t("v2CashDetail.form.branchTitle");
+        : t("v2CashDetail.form.branchTitle");
   const formSubtitle =
     type === "courier"
       ? isCurrentManagerRole
@@ -1250,32 +1247,19 @@ const CashDetail = () => {
         : t("v2CashDetail.form.courierToMain")
       : type === "market"
         ? t("v2CashDetail.form.marketSubtitle")
-        : isManagerBranchView
-          ? t("v2CashDetail.form.hqSubtitle")
-          : t("v2CashDetail.form.branchSubtitle");
+        : t("v2CashDetail.form.branchSubtitle");
   const amountHint =
     type === "courier" && courierReceiveLimit !== null
       ? t("v2CashDetail.form.limitHint", { amount: money(courierReceiveLimit) })
       : type === "market"
         ? t("v2CashDetail.form.payableHint", { amount: money(displayBalance) })
-        : isManagerBranchView
-          ? managerKassaTotal !== undefined
-            ? t("v2CashDetail.form.payableCashboxHint", {
-                amount: money(displayBalance),
-                cashbox: money(managerKassaTotal),
-              })
-            : t("v2CashDetail.form.payableHint", { amount: money(displayBalance) })
-          : t("v2CashDetail.form.receivableHint", { amount: money(displayBalance) });
+        : t("v2CashDetail.form.receivableHint", { amount: money(displayBalance) });
   const submitLabel =
     type === "market"
       ? t("v2CashDetail.form.pay")
-      : isManagerBranchView
-        ? typedAmount > 0
-          ? t("v2CashDetail.form.hqAmount", { amount: formatMoneyLocalized(typedAmount) })
-          : t("v2CashDetail.form.hq")
-        : typedAmount > 0
-          ? t("v2CashDetail.form.receiveAmount", { amount: formatMoneyLocalized(typedAmount) })
-          : t("v2CashDetail.form.receive");
+      : typedAmount > 0
+        ? t("v2CashDetail.form.receiveAmount", { amount: formatMoneyLocalized(typedAmount) })
+        : t("v2CashDetail.form.receive");
 
   /** Tasdiq oynasidagi «Qayerdan → Qayerga» (maket matnlari). */
   const getPaymentTransfer = (): ConfirmTransfer => {
@@ -1289,12 +1273,6 @@ const CashDetail = () => {
     }
     if (type === "market") {
       return { from: { title: cashboxLabel("main") }, to: { title: cashboxLabel("market"), meta: entityName } };
-    }
-    if (isManagerBranchView) {
-      return {
-        from: { title: cashboxLabel("branch"), meta: ownBranchName },
-        to: { title: t("v2CashDetail.header.hqCashbox"), meta: hqName },
-      };
     }
     return { from: { title: cashboxLabel("branch"), meta: branchTitle }, to: { title: cashboxLabel("main") } };
   };
@@ -1324,7 +1302,7 @@ const CashDetail = () => {
       notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
       return;
     }
-    if (type === "branch" && !id) return;
+    if (type === "branch" && (!id || isCurrentManagerRole)) return;
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
     paymentLockRef.current = true;
@@ -1463,13 +1441,17 @@ const CashDetail = () => {
         : t("cashDetail.shift.banner.courierMain")
       : type === "market"
         ? t("cashDetail.shift.banner.market")
-        : isManagerBranchView
-          ? t("cashDetail.shift.banner.hqTransfer")
-          : t("cashDetail.shift.banner.branchReceive");
+        : t("cashDetail.shift.banner.branchReceive");
 
   const actionCard = isTypeUnknown ? (
     <Card>
       <PageAlert tone="warning">{t("cashDetailTypeUnknown")}</PageAlert>
+    </Card>
+  ) : isManagerBranchView ? (
+    // Ega qarori (#7, IjqTYQks 2026-10-25): menejer HQ'ga pul o'tkazmaydi — HQ filial pulini o'zi qabul qiladi.
+    // Sahifa faqat ko'rish uchun: hisob-kitob holati va tarix; forma (va smena qulfi) yo'q.
+    <Card>
+      <PageAlert tone="info">{t("v2CashDetail.form.hqReceives")}</PageAlert>
     </Card>
   ) : isCourierReceiveBlocked ? (
     <Card title={formTitle} description={formSubtitle}>
@@ -1488,7 +1470,6 @@ const CashDetail = () => {
       actionSubLabel={formSubtitle}
       alert={isCourierReceiveCheckFailed ? <PageAlert tone="info">{t("receiveCheckFailed")}</PageAlert> : null}
       submitLabel={submitLabel}
-      submitIcon={isManagerBranchView ? Send : undefined}
       amountLabel={t("v2CashDetail.form.amount")}
       amountHint={amountHint}
       infoAlert={type === "market" ? t("v2CashDetail.form.marketInfo") : null}

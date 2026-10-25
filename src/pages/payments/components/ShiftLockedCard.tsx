@@ -16,7 +16,7 @@ import ShiftBanner from "./ShiftBanner";
  */
 
 type ShiftLockedCardProps = {
-  /** Forma sarlavhasi («Kuryerdan qabul qilish», «HQ'ga o'tkazish» …). */
+  /** Forma sarlavhasi («Kuryerdan qabul qilish», «Marketga to'lov» …). */
   title: ReactNode;
   /** Banner izohi: qaysi amal smena ochilgach ishlaydi. */
   description: ReactNode;

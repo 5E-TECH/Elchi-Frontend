@@ -21,6 +21,11 @@ interface ErrorBoundaryPageProps {
    * foydalanuvchi uni shell ichida ko'radi, kirmagan yoki shell'ning o'zi yiqilgan bo'lsa — `standalone`.
    */
   standalone?: boolean;
+  /**
+   * «Qayta urinish» — shell kontent chegarasidan (QKCeGZ3N): sahifa yo'l o'zgarmasdan qayta chiziladi. Berilmasa —
+   * xato bo'lgan sahifaga o'tish (`/runtime-error` dan).
+   */
+  onRetry?: () => void;
 }
 
 /**
@@ -33,7 +38,7 @@ interface ErrorBoundaryPageProps {
  * sahifaga qaytish», ikkinchisi — «Orqaga», izoh — administratorga murojaat. Maketda bu holat yo'q — eng yaqini shu
  * taxtadagi 403 bloki (qayta urinishsiz, xuddi shu ikki tugma).
  */
-const ErrorBoundaryPage = ({ error, standalone = false }: ErrorBoundaryPageProps) => {
+const ErrorBoundaryPage = ({ error, standalone = false, onRetry }: ErrorBoundaryPageProps) => {
   const { t } = useTranslation("ui");
   const navigate = useNavigate();
   const runtimeError = useMemo(() => error ?? getRuntimeError(), [error]);
@@ -68,7 +73,7 @@ const ErrorBoundaryPage = ({ error, standalone = false }: ErrorBoundaryPageProps
         title={t("states.page.runtime.title")}
         description={t(repeated ? "states.page.runtime.repeatedDescription" : "states.page.runtime.description")}
         // Yozuv o'chirilmaydi: sahifa yana yiqilsa `ErrorBoundary` hisoblagichni oshiradi.
-        onRetry={repeated ? undefined : () => navigate(recoveryPath, { replace: true })}
+        onRetry={repeated ? undefined : (onRetry ?? (() => navigate(recoveryPath, { replace: true })))}
         actions={
           <>
             <Button

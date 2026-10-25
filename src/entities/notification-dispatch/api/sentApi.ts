@@ -4,6 +4,7 @@ import { isDispatchHistoryStatus } from "../model/status";
 import type {
   ChannelStatusCounts,
   DispatchAudience,
+  DispatchAudienceRecipient,
   SentDetail,
   SentDetailParams,
   SentListItem,
@@ -44,14 +45,24 @@ export const toChannelStatus = (value: unknown): ChannelStatusCounts | null => {
   return Object.fromEntries(keys.map((channel) => [channel, toCountMap(record[channel])]));
 };
 
+/** NS-3: `audience.recipient` — id'siz yoki obyekt bo'lmasa `null`. */
+const toRecipient = (value: unknown): DispatchAudienceRecipient | null => {
+  const record = asRecord(value);
+  const id = record.id;
+  if (id === undefined || id === null || id === "") return null;
+  return { id: String(id), name: toText(record.name), role: toText(record.role) };
+};
+
 const toAudience = (value: unknown): DispatchAudience | null => {
   const record = asRecord(value);
   if (!Object.keys(record).length) return null;
+  const recipient = toRecipient(record.recipient);
   return {
     ...(record.recipient_ids !== undefined ? { recipient_ids: toCount(record.recipient_ids) } : {}),
     ...(Array.isArray(record.roles) ? { roles: record.roles.map(String) } : {}),
     ...(record.broadcast === true ? { broadcast: true } : {}),
     ...(record.include_customers === true ? { include_customers: true } : {}),
+    ...(recipient ? { recipient } : {}),
   };
 };
 

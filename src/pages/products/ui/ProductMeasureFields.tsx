@@ -6,8 +6,10 @@ import { useSelector } from "react-redux";
 import { canManageDeliveryTariffs } from "../../../app/lib/access";
 import {
   DeliveryQuoteList,
+  firstDeliveryQuote,
   MeasureWeights,
   toMeasureItem,
+  toWeightRules,
   useDeliveryPricingSettings,
   useDeliveryQuoteByTariff,
   VolumetricSwitch,
@@ -67,6 +69,10 @@ export const ProductMeasureFields = ({
   // Chegara va yaxlitlash (izoh uchun) — sozlama faqat superadmin/admin'ga ochiq; boshqa rolda qisqa izoh.
   const canSeeSettings = useSelector(canManageDeliveryTariffs);
   const settingsQuery = useDeliveryPricingSettings({ enabled: canSeeSettings && item !== null });
+  const settings = settingsQuery.data ?? null;
+  const weightRules = useMemo(() => (settings ? toWeightRules(settings) : undefined), [settings]);
+  // «Hajm bo'yicha hisoblash chegarasi»: sozlamadan (superadmin/admin) yoki narx javobidan (har rol).
+  const volumetricFromKg = settings?.volumetricFromKg ?? firstDeliveryQuote(quote.quotes)?.volumetricFromKg ?? null;
 
   /** Xato kaliti (`products` fazosi) → joriy tildagi matn. */
   const errorText = (message: string | undefined) => (message ? t(message) : undefined);
@@ -170,11 +176,12 @@ export const ProductMeasureFields = ({
             onChange={field.onChange}
             withDescription
             disabled={disabled || readOnly}
+            volumetricFromKg={volumetricFromKg}
           />
         )}
       />
 
-      <MeasureWeights item={item} />
+      <MeasureWeights item={item} rules={weightRules} quote={quote} />
 
       <DeliveryQuoteList
         state={quote}
@@ -182,7 +189,7 @@ export const ProductMeasureFields = ({
         heading
         scope={quoteVariant === "list"}
         hint
-        settings={settingsQuery.data ?? null}
+        settings={settings}
         hintSuffix={canSeeSettings ? t("deliveryPricing:quote.hintTariffs") : null}
       />
       <hr className="m-0 h-px border-0 bg-border" />
