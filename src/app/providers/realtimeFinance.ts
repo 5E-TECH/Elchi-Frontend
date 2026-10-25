@@ -9,18 +9,21 @@ import { notify } from "../../shared/lib/notify";
  * «Smena yopilishi: karta qoldig'i» (kiZgTybn) kartalari bilan kelishiladi; nom o'zgarsa faqat shu ro'yxat.
  *  - `finance.shift.closed` — smena qo'lda yopildi (boshqa tab, boshqa kassir);
  *  - `finance.shift.auto_closed` — smena jadval bo'yicha avtomatik yopildi (kassirga xabar ham);
- *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi).
+ *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi);
+ *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
+ *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi.
  *
  * ⚠️ Modul `RealtimeSync` da socket.io bilan birga DINAMIK yuklanadi (kirgandan keyin): statik import moliya
  * modulini ilova kirish bo'lagiga qo'shib, /login ni og'irlashtirardi (login-performance byudjeti).
  */
-export const FINANCE_SHIFT_EVENTS = [
+export const FINANCE_EVENTS = [
   "finance.shift.closed",
   "finance.shift.auto_closed",
   "finance.shift.account_checked",
+  "finance.cashbox.card_changed",
 ] as const;
 
-export type FinanceShiftEvent = (typeof FINANCE_SHIFT_EVENTS)[number];
+export type FinanceEvent = (typeof FINANCE_EVENTS)[number];
 
 /** Avtomatik yopilish vaqti: backend `closed_at` (yoki `closedAt`), bo'lmasa — hodisa kelgan payt. */
 export const readClosedAt = (payload: unknown): Date => {
@@ -37,8 +40,15 @@ export const refreshShiftQueries = (client: QueryClient) =>
     refreshCashboxQueries(client),
   ]);
 
-/** Hodisa: so'rovlar yangilanadi; avtomatik yopilganda kassirga «Smena avtomatik yopildi — HH:MM». */
-export const handleShiftEvent = (client: QueryClient, t: TFunction, event: FinanceShiftEvent, payload: unknown) => {
+/**
+ * Hodisa: so'rovlar yangilanadi (karta hodisasida — faqat kassa, smena holati qayta so'ralmaydi); avtomatik
+ * yopilganda kassirga «Smena avtomatik yopildi — HH:MM».
+ */
+export const handleFinanceEvent = (client: QueryClient, t: TFunction, event: FinanceEvent, payload: unknown) => {
+  if (event === "finance.cashbox.card_changed") {
+    void refreshCashboxQueries(client);
+    return;
+  }
   void refreshShiftQueries(client);
   if (event !== "finance.shift.auto_closed") return;
   const closedAt = readClosedAt(payload);

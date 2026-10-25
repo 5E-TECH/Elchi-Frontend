@@ -91,7 +91,7 @@ const RealtimeSync = () => {
     };
   }, [navigate, queryClient, t]);
 
-  // rWdLuoP3: smena hodisasi — ochiq kassa sahifalari yangilanadi; avtomatik yopilganda kassirga xabar.
+  // rWdLuoP3: smena va kassa kartasi hodisasi — ochiq kassa sahifalari yangilanadi; avtomatik yopilganda xabar.
   // Ishlovchi modul socket bilan birga dinamik yuklanadi (`realtimeFinance`) — eng so'nggi `t` ref orqali.
   const tRef = useRef(t);
   useEffect(() => {
@@ -174,8 +174,8 @@ const RealtimeSync = () => {
         client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
         );
-        for (const event of finance.FINANCE_SHIFT_EVENTS) {
-          client.on(event, (payload: unknown) => finance.handleShiftEvent(queryClient, tRef.current, event, payload));
+        for (const event of finance.FINANCE_EVENTS) {
+          client.on(event, (payload: unknown) => finance.handleFinanceEvent(queryClient, tRef.current, event, payload));
         }
       })
       // Bo'lak yuklanmasa (tarmoq, eski deploy) — jonli kanal o'chiq qoladi, 60 s polling ishlayveradi.
