@@ -794,6 +794,12 @@
   },
   "returnHandoverQrAccepted": "Market QR qabul qilindi — topshirilmoqda",
   "returnHandoverCameraNote": "Market ilovasida ko'rsatgan QR kodni skanerlang — ruxsat 5 daqiqa amal qiladi",
+  "returnHandoverHintPin": "Market egasi ilovasida ko'rsatgan QR kodni skanerlang yoki uning ostidagi 6 xonali PIN kodni kiriting (Bekor qilinganlar → Qabul qilish). Ruxsat 5 daqiqa amal qiladi.",
+  "returnHandoverManualLabelPin": "Yoki 6 xonali PIN kodni kiriting",
+  "returnHandoverPinHint": "Market QR oynasidagi kod. QR kodni USB skaner bilan ham shu yerga kiritish mumkin.",
+  "returnHandoverInvalidCode": "6 xonali PIN kod yoki market QR kodini kiriting (MCR- bilan boshlanadi)",
+  "returnHandoverPinAccepted": "PIN kod qabul qilindi — topshirilmoqda",
+  "returnHandoverAuthorizedPin": "Market PIN kodi qabul qilindi. Topshirishni qayta tasdiqlang.",
   "returnPath": {
     "title": "Qaytarish yo'li",
     "subtitleClosed": "Zanjir yopildi — posilka marketga qaytdi",

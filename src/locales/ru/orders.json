@@ -794,6 +794,12 @@
   },
   "returnHandoverQrAccepted": "QR магазина принят — идёт передача",
   "returnHandoverCameraNote": "Сканируйте QR-код из приложения магазина — разрешение действует 5 минут",
+  "returnHandoverHintPin": "Отсканируйте QR-код, который владелец маркета показал в приложении, или введите 6-значный PIN-код под ним (Отменённые → Принять). Разрешение действует 5 минут.",
+  "returnHandoverManualLabelPin": "Или введите 6-значный PIN-код",
+  "returnHandoverPinHint": "Код из окна QR маркета. QR-код можно ввести сюда и USB-сканером.",
+  "returnHandoverInvalidCode": "Введите 6-значный PIN-код или QR-код маркета (начинается с MCR-)",
+  "returnHandoverPinAccepted": "PIN-код принят — идёт передача",
+  "returnHandoverAuthorizedPin": "PIN-код маркета принят. Повторите подтверждение передачи.",
   "returnPath": {
     "title": "Путь возврата",
     "subtitleClosed": "Цепочка закрыта — посылка вернулась маркету",

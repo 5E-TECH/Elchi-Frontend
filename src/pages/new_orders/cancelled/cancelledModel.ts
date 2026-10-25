@@ -117,36 +117,8 @@ export const spellHandoverPin = (pin: string) => pin.split("").join(" ");
 /** Xodim yozgan kod to'liqmi (6 ta raqam). */
 export const isHandoverPinComplete = (value: string) => PIN_RE.test(value);
 
-/**
- * `POST scan/market-cancelled { market_id, pin }` xatosi (backend `data.reason`, zkRab9M2):
- *  - `invalid`  — kod noto'g'ri, `remainingAttempts` — yana nechta urinish;
- *  - `blocked`  — 5 marta xato: sessiya bloklangan (QR ham ishlamaydi), market yangi QR chiqarsin;
- *  - `expired`  — kod (QR) muddati tugagan;
- *  - `notFound` — marketda faol QR yo'q;
- *  - `unknown`  — boshqa xato (tarmoq, ruxsat, eski backend) — server matni ko'rsatiladi.
- */
-export type HandoverPinErrorKind = "invalid" | "blocked" | "expired" | "notFound" | "unknown";
-
-const PIN_ERROR_REASONS: Readonly<Record<string, HandoverPinErrorKind>> = {
-  market_cancelled_pin_invalid: "invalid",
-  market_cancelled_pin_blocked: "blocked",
-  market_cancelled_pin_expired: "expired",
-  market_cancelled_pin_not_found: "notFound",
-};
-
-export const readHandoverPinError = (
-  error: unknown,
-): { kind: HandoverPinErrorKind; remainingAttempts: number | null } => {
-  const body = asRecord(asRecord(asRecord(error).response).data);
-  const data = asRecord(body.data);
-  const details = asRecord(data.details);
-  const kind = (typeof data.reason === "string" && PIN_ERROR_REASONS[data.reason]) || "unknown";
-  const remaining = Number(details.remaining_attempts);
-  return {
-    kind: kind === "invalid" && remaining === 0 ? "blocked" : kind,
-    remainingAttempts: Number.isInteger(remaining) && remaining >= 0 ? remaining : null,
-  };
-};
+// Kod xatosini o'qish — umumiy (qaytarilgan buyurtmani topshirish oynasi ham ishlatadi).
+export { readHandoverPinError, type HandoverPinErrorKind } from "../../../entities/orders/handoverPin";
 
 /** `POST scan/market-cancelled` javobi → topshirish tokeni va muddati (muddat yo'q bo'lsa — 300 s). */
 export const normalizeCancelledAuthorization = (

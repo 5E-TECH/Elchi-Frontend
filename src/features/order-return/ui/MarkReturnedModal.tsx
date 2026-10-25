@@ -9,13 +9,20 @@ import { useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
 import { useOrders } from "../../../entities/orders";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
+import { extractHandoverPin, readHandoverPinError } from "../../../entities/orders/handoverPin";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { extractMarketQrToken, readHandoverAuthorization } from "../model/orderReturnRules";
 import { notify } from "../../../shared/lib/notify";
 
 interface Props {
   open: boolean;
   orderId: string;
+  /**
+   * Buyurtma marketi (`order.market_id`). Bor bo'lsa — QR o'rniga market QR oynasidagi 6 xonali kod ham qabul
+   * qilinadi (zkRab9M2, BG6: `POST scan/market-cancelled { market_id, pin }`).
+   */
+  marketId?: string | null;
   onClose: () => void;
   /** Muvaffaqiyatdan keyin — sahifa buyurtma tarixini yangilaydi. */
   onDone?: () => void;
@@ -27,7 +34,8 @@ const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
 /**
  * Filial: qaytarilgan buyurtmani marketga topshirish. Backend market QR
  * ruxsatini MAJBURIY talab qiladi — market QR (`MCR-...`) skan qilinadi,
- * 5 daqiqalik `authorization_token` olinadi va topshirish tasdiqlanadi.
+ * 5 daqiqalik `authorization_token` olinadi va topshirish tasdiqlanadi. QR o'qilmasa — market QR oynasidagi
+ * 6 xonali kod (zkRab9M2, BG6) shu maydonga yoziladi: xuddi shu ruxsat, backend usulni `pin` deb yozadi.
  *
  * Dizayn v2: `Dialog` (telefonda pastki varaqa). Maket yo'q — eng yaqini
  * `admin-neworders-cancelled-scanner-dialog` (kamera tugmasi + qo'lda kiritish).
@@ -39,17 +47,18 @@ const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
  * `ScannerHost`; v1 `ScannerCameraModal` o'chirildi). Kamera skani qo'lda kiritish / USB bilan bitta yo'l
  * (`submitQr`); ruxsat olingach yoki oyna yopilsa kamera yopiladi.
  */
-const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
-  const { t } = useTranslation(["orders", "newOrders", "common"]);
+const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) => {
+  const { t, i18n } = useTranslation(["orders", "newOrders", "common"]);
   const queryClient = useQueryClient();
-  const { scanMarketCancelledQr } = useOrders();
+  const { scanMarketCancelledQr, verifyMarketCancelledPin } = useOrders();
+  const pinMarketId = String(marketId ?? "").trim();
   const { markReturnedToMarket } = useOrdersCoverage();
   const [qrInput, setQrInput] = useState("");
   const [error, setError] = useState("");
   // Kamerani shu oyna ochgan (oyna yopilsa yoki ruxsat olinsa — yopiladi).
   const cameraRequestedRef = useRef(false);
   // QR bir martalik: topshirish yiqilsa, ruxsat saqlanadi va qayta skan shart emas.
-  const [authorization, setAuthorization] = useState<{ token: string } | null>(null);
+  const [authorization, setAuthorization] = useState<{ token: string; method: "qr" | "pin" } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -65,7 +74,8 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
     return () => window.clearTimeout(timer);
   }, [authorization]);
 
-  const isPending = scanMarketCancelledQr.isPending || markReturnedToMarket.isPending;
+  const isPending =
+    scanMarketCancelledQr.isPending || verifyMarketCancelledPin.isPending || markReturnedToMarket.isPending;
 
   const markReturned = (authorizationToken: string) =>
     markReturnedToMarket.mutate(
@@ -87,25 +97,59 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
     void playScanFeedback("error", message);
   };
 
+  /** Ruxsat olindi (QR yoki kod) — darhol topshiriladi. */
+  const authorize = (response: unknown, method: "qr" | "pin") => {
+    const token = readHandoverAuthorization(response);
+    if (!token) {
+      fail(t("orderActionError"));
+      return;
+    }
+    void playScanFeedback("success", t(method === "pin" ? "returnHandoverPinAccepted" : "returnHandoverQrAccepted"));
+    setAuthorization({ token, method });
+    markReturned(token);
+  };
+
+  const submitPin = (pin: string) => {
+    setError("");
+    verifyMarketCancelledPin.mutate(
+      { marketId: pinMarketId, pin },
+      {
+        onSuccess: (response) => authorize(response, "pin"),
+        onError: (mutationError) => {
+          const { kind, remainingAttempts } = readHandoverPinError(mutationError);
+          fail(
+            kind === "invalid"
+              ? remainingAttempts === null
+                ? t("cancelled.pin.invalidPlain", { ns: "newOrders" })
+                : t("cancelled.pin.invalid", {
+                    ns: "newOrders",
+                    count: remainingAttempts,
+                    value: formatNumberLocalized(remainingAttempts, { language: i18n.language }),
+                  })
+              : kind === "unknown"
+                ? (getBackendErrorMessage(mutationError) ?? t("cancelled.pin.error", { ns: "newOrders" }))
+                : t(`cancelled.pin.${kind}`, { ns: "newOrders" }),
+          );
+        },
+      },
+    );
+  };
+
   const submitQr = (rawValue: string) => {
     if (isPending) return;
+    const pin = pinMarketId ? extractHandoverPin(rawValue) : "";
+    if (pin) {
+      submitPin(pin);
+      return;
+    }
     const qrToken = extractMarketQrToken(rawValue);
     if (!qrToken) {
-      fail(t("returnHandoverInvalidQr"));
+      fail(t(pinMarketId ? "returnHandoverInvalidCode" : "returnHandoverInvalidQr"));
       return;
     }
     setError("");
     scanMarketCancelledQr.mutate(qrToken, {
-      onSuccess: (response) => {
-        const token = readHandoverAuthorization(response);
-        if (!token) {
-          fail(t("orderActionError"));
-          return;
-        }
-        void playScanFeedback("success", t("returnHandoverQrAccepted"));
-        setAuthorization({ token });
-        markReturned(token);
-      },
+      onSuccess: (response) => authorize(response, "qr"),
       onError: (mutationError) => fail(getBackendErrorMessage(mutationError) ?? t("returnHandoverInvalidQr")),
     });
   };
@@ -160,7 +204,7 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
       size="sm"
       className="md:max-w-[460px]"
       title={t("returnHandoverTitle", { id: orderId })}
-      description={t("returnHandoverHint")}
+      description={t(pinMarketId ? "returnHandoverHintPin" : "returnHandoverHint")}
       icon={PackageCheck}
       iconTone="success"
       onSubmit={handleSubmit}
@@ -189,7 +233,9 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
           className="m-0 flex items-start gap-2 rounded-xl bg-success-soft px-3 py-2.5 text-[13px] text-success-fg"
         >
           <CircleCheck size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-          <span className="text-text">{t("returnHandoverAuthorized")}</span>
+          <span className="text-text">
+            {t(authorization?.method === "pin" ? "returnHandoverAuthorizedPin" : "returnHandoverAuthorized")}
+          </span>
         </p>
       ) : (
         <>
@@ -205,13 +251,16 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
           >
             {t("returnHandoverScan")}
           </Button>
-          <Field label={t("returnHandoverManualLabel")}>
+          <Field
+            label={t(pinMarketId ? "returnHandoverManualLabelPin" : "returnHandoverManualLabel")}
+            hint={pinMarketId ? t("returnHandoverPinHint") : undefined}
+          >
             <TextInput
               value={qrInput}
               onValueChange={setQrInput}
               autoComplete="off"
               spellCheck={false}
-              placeholder="MCR-..."
+              placeholder={pinMarketId ? "000000" : "MCR-..."}
               data-testid="mark-returned-qr-input"
             />
           </Field>
