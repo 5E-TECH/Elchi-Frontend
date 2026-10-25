@@ -35,6 +35,29 @@ test.describe("/login — tarmoq uzilishlari (1440px)", () => {
     expect(calls.login).toBe(1);
   });
 
+  test("hQqymheT: 429 → «Juda ko'p urinish» + kutish izohi, «Tizim xatoligi» va inglizcha matn yo'q, qayta urinilmaydi", async ({ page }) => {
+    await setTheme(page, "light");
+    const { calls } = await mockAuthNetwork(page, { login: ["429"] });
+    await submitLogin(page);
+    const alert = loginAlert(page);
+    await expect(alert).toContainText("Juda ko'p urinish");
+    await expect(alert).toContainText("Bir daqiqa kutib, qayta urinib ko'ring.");
+    await expect(alert).not.toContainText("Tizim xatoligi");
+    await expect(alert).not.toContainText("Too Many Requests");
+    expect(calls.login).toBe(1);
+  });
+
+  test("hQqymheT: 403 → «Kirishga ruxsat berilmadi» + «Administratorga murojaat qiling.»", async ({ page }) => {
+    await setTheme(page, "light");
+    const { calls } = await mockAuthNetwork(page, { login: ["403"] });
+    await submitLogin(page);
+    const alert = loginAlert(page);
+    await expect(alert).toContainText("Kirishga ruxsat berilmadi");
+    await expect(alert).toContainText("Administratorga murojaat qiling.");
+    await expect(alert).not.toContainText("Forbidden");
+    expect(calls.login).toBe(1);
+  });
+
   test("login qabul qilindi, profil kelmadi → kirish bekor qilinmaydi (rol token'dan), profil fonda keladi", async ({ page }) => {
     await setTheme(page, "light");
     const { calls } = await mockAuthNetwork(page, { profile: ["abort", "abort", "abort", "ok"] });
