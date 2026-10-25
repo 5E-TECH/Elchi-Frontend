@@ -1284,15 +1284,12 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
     expect(userByIdCalls).not.toContain("77");
   });
 
-  it("menejer, «HQ'ga o'tkazish» (filial kassasi), smena yo'q: «HQ'ga pul o'tkazish» qulfi", () => {
+  it("menejer, HQ kassasi (filial kassasi), smena yo'q: qulf emas — «HQ o'zi qabul qiladi» izohi (ega qarori #7)", () => {
     shiftState.shift = null;
     openWithoutState("/payments/cash-detail/16?type=branch", manager);
 
-    const card = screen.getByTestId("shift-locked-card");
-    expect(within(card).getByRole("heading", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
-    expect(within(card).getByRole("status")).toHaveTextContent(
-      "Filial kassasida smena ochilgandan keyin HQ'ga pul o'tkazish ishlaydi.",
-    );
+    expect(screen.queryByTestId("shift-locked-card")).not.toBeInTheDocument();
+    expect(screen.getByText(/Filial pulini HQ o'zi qabul qiladi/)).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("0")).not.toBeInTheDocument();
   });
 

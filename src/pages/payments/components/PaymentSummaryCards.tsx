@@ -33,7 +33,7 @@ import type { ReceiveOption } from "./lib/receiveOptions";
  * TO'LOVLAR — KO'RSATKICHLAR (dizayn v2, maketlar `*-payments-overview`).
  *
  * Tartib maketdagidek: «Kassadagi summa» (→ asosiy kassa) · «Qabul qilinishi kerak» (→ qabul oynasi) ·
- * «Berilishi kerak» (superadmin/admin — market oynasi; menejer — HQ'ga o'tkazish sahifasi).
+ * «Berilishi kerak» (superadmin/admin — market oynasi; menejer — HQ kassasi sahifasi, faqat ko'rish).
  *  - superadmin/admin: qiymatlar ixcham («24,6 mln so'm»); 1-kartada smena holati va naqd/karta chizig'i,
  *    2-kartada filiallar / HQ kuryerlari chizig'i (all-info); 3-karta — faqat summa (top marketlar «Taklif»
  *    emas, lekin sahifa ochilishida to'liq ro'yxat so'ralmaydi — spec §7).
@@ -53,7 +53,7 @@ type PaymentSummaryCardsProps = {
   mainTotal: number;
   courierTotal: number;
   loading: boolean;
-  /** `path` — asosiy kassa; `action` — qabul / berish oynasi (yoki menejerda HQ'ga o'tkazish). */
+  /** `path` — asosiy kassa; `action` — qabul / berish oynasi (menejerda — HQ kassasi, faqat ko'rish). */
   onCardClick: (path: string | null, action: CardAction) => void;
   /** Superadmin/admin: filial menejerlaridan / HQ kuryerlaridan (all-info). */
   receiveSplit?: { branches: number; hqCouriers: number } | null;
