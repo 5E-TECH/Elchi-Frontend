@@ -11,19 +11,41 @@ import { getBackendErrorMessage } from "./backendError";
  * so'rovlari (masalan har daqiqada so'raladigan o'qilmaganlar soni).
  */
 export const QUERY_ERROR_EVENT = "elchi:query-error";
+/** Xatoga uchragan so'rov keyin muvaffaqiyatli bo'ldi yoki keshdan olib tashlandi (G6F68ti6, 5-band). */
+export const QUERY_RECOVERED_EVENT = "elchi:query-recovered";
 
-export type QueryErrorDetail = { status: number; message?: string };
+export type QueryErrorDetail = { status: number; message?: string; queryHash?: string };
+export type QueryRecoveredDetail = { queryHash: string };
 
-export const emitQueryError = (error: unknown, meta?: Record<string, unknown>) => {
+/** `QueryCache` dagi so'rovning shu modulga kerak qismi (testda soxtasi oson). */
+export type QueryErrorSource = { queryHash: string; getObserversCount: () => number };
+
+/**
+ * `query` berilsa (ilova `QueryCache` i): ochiq sahifa kuzatmayotgan so'rov (`prefetchQuery`, tark etilgan
+ * sahifa, imperativ `fetchQuery` — xatoni chaqiruvchi o'zi ko'rsatadi) global xabar bermaydi; xabar
+ * `queryHash` bilan bog'lanadi va so'rov tiklanganda yopiladi (`emitQueryRecovered`).
+ */
+/** Global xabar bergan so'rovlar — `emitQueryRecovered` faqat ular uchun hodisa chiqaradi (har muvaffaqiyatda emas). */
+const reportedHashes = new Set<string>();
+
+export const emitQueryError = (error: unknown, meta?: Record<string, unknown>, query?: QueryErrorSource) => {
   if (typeof window === "undefined" || meta?.silentError) return;
   if (!axios.isAxiosError(error)) return;
   const status = error.response?.status;
   if (!status || status === 401) return;
+  if (query && query.getObserversCount() === 0) return;
+  if (query) reportedHashes.add(query.queryHash);
   window.dispatchEvent(
     new CustomEvent<QueryErrorDetail>(QUERY_ERROR_EVENT, {
-      detail: { status, message: getBackendErrorMessage(error) ?? undefined },
+      detail: { status, message: getBackendErrorMessage(error) ?? undefined, queryHash: query?.queryHash },
     }),
   );
+};
+
+/** So'rov muvaffaqiyatli bo'ldi yoki keshdan olindi — unga bog'langan «Ma'lumotni yuklab bo'lmadi» yopiladi. */
+export const emitQueryRecovered = (queryHash: string) => {
+  if (typeof window === "undefined" || !reportedHashes.delete(queryHash)) return;
+  window.dispatchEvent(new CustomEvent<QueryRecoveredDetail>(QUERY_RECOVERED_EVENT, { detail: { queryHash } }));
 };
 
 /**
