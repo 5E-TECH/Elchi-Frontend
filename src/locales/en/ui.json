@@ -1166,6 +1166,7 @@
       "live": "Scanning",
       "starting": "Starting camera",
       "found": "QR found",
+      "foundCode": "Code found",
       "torchOn": "Flashlight on",
       "paused": "Camera paused",
       "offline": "No internet",
@@ -1175,6 +1176,7 @@
     },
     "hint": {
       "aim": "Bring the QR code into the frame",
+      "aimBarcode": "Bring the barcode or QR code into the frame",
       "starting": "One moment — opening the camera"
     },
     "meter": {

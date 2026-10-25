@@ -308,7 +308,7 @@
     "looking": "Kod tekshirilmoqda",
     "camera": "Kamera",
     "cameraMobile": "Kamera bilan skanerlash",
-    "cameraHint": "QR stikerni (ELC-P-…) ramka ichiga oling. Zavod shtrix kodi — USB skaner bilan.",
+    "cameraHint": "Zavod shtrix kodi yoki QR stikerni (ELC-P-…) ramka ichiga oling.",
     "usbReady": "USB skaner tayyor",
     "scanHint": "USB skaner — maydonni bosing va skanerlang; telefonda — Kamera. Bir mahsulotni qayta skanerlash miqdorni +1 qiladi.",
     "suggestionsLabel": "Topilgan mahsulotlar",

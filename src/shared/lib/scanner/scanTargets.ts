@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { ScanFormats } from "./barcodeCodes";
 import type { ScanSource } from "./feedback";
 
 export type { ScanSource } from "./feedback";
@@ -65,6 +66,17 @@ export interface ScanTarget {
   id: string;
   /** Qatlam (sukut `"page"`): oyna (`Dialog`) ichidagi maqsad `"dialog"` — u sahifanikidan doim ustun. */
   layer?: ScanTargetLayer;
+  /**
+   * Kamera nimani o'qiydi (Trello CO66kcoB, ega qarori 2026-10-24): sukut `"qr"` — faqat QR (kuryer, qabul va
+   * boshqa barcha oqimlar); `"barcodes"` — QR + zavod shtrix kodlari (EAN-13, EAN-8, UPC-A, Code128; nazorat raqami
+   * tekshiriladi), keng ramka. Faqat ombor kirimi, inventarizatsiya va mahsulot «Shtrix kod» maydoni.
+   */
+  formats?: ScanFormats;
+  /**
+   * Bitta qiymat kutiladi (masalan forma maydoni): birinchi muvaffaqiyatli koddan keyin kamera yopiladi —
+   * «Uzluksiz skanerlash» sozlamasidan qat'i nazar.
+   */
+  closeOnSuccess?: boolean;
   /** Kamera sarlavhasi — maketdagi matn: «Qabul qilish». */
   title: string;
   /** Sarlavha ostidagi kontekst: «Urgut Savdo · 6 ta buyurtma». */
@@ -144,6 +156,8 @@ const sameSwitcher = (a: ScanTargetSwitcher | undefined, b: ScanTargetSwitcher |
 const sameData = (a: ScanTarget, b: ScanTarget) =>
   a.id === b.id &&
   (a.layer ?? "page") === (b.layer ?? "page") &&
+  (a.formats ?? "qr") === (b.formats ?? "qr") &&
+  Boolean(a.closeOnSuccess) === Boolean(b.closeOnSuccess) &&
   a.title === b.title &&
   a.context === b.context &&
   a.hint === b.hint &&

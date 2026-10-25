@@ -308,7 +308,7 @@
     "looking": "Checking the code",
     "camera": "Camera",
     "cameraMobile": "Scan with camera",
-    "cameraHint": "Fit the QR sticker (ELC-P-…) in the frame. Factory barcodes — with a USB scanner.",
+    "cameraHint": "Fit the factory barcode or QR sticker (ELC-P-…) in the frame.",
     "usbReady": "USB scanner ready",
     "scanHint": "USB scanner — click the field and scan; on a phone — Camera. Scanning a product again adds +1.",
     "suggestionsLabel": "Products found",

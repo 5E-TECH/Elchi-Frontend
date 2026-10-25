@@ -1166,6 +1166,7 @@
       "live": "Skanerlash faol",
       "starting": "Kamera ishga tushmoqda",
       "found": "QR topildi",
+      "foundCode": "Kod topildi",
       "torchOn": "Chiroq yoqilgan",
       "paused": "Kamera to'xtatildi",
       "offline": "Internet yo'q",
@@ -1175,6 +1176,7 @@
     },
     "hint": {
       "aim": "QR kodni ramka ichiga olib keling",
+      "aimBarcode": "Shtrix kod yoki QR kodni ramka ichiga olib keling",
       "starting": "Bir lahza — kamera ochilmoqda"
     },
     "meter": {
