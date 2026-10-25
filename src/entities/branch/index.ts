@@ -5,6 +5,7 @@ export {
   getBranchEmployees,
   getActiveManagerBranchIds,
   getDispatchDestinations,
+  getHqBranch,
   extractArray,
 } from "./api/branchApi";
 export type { DispatchDestinationParams } from "./api/branchApi";

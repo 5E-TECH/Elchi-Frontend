@@ -7,6 +7,7 @@ import type { RootState } from "../../../app/config/store";
 import { canManageWarehouses, canViewAllWarehouses } from "../../../app/lib/access";
 import {
   exportWarehouseStock,
+  HqWarehouseBadge,
   useSetWarehousePaused,
   useWarehouse,
   WarehouseStatusBadge,
@@ -65,6 +66,9 @@ const MetaItem = ({ icon: Icon, children }: { icon: typeof Building2; children: 
  * izohi; kirim, inventarizatsiya, chegara va to'xtatish yo'q (maket yo'q — eng yaqini `superadmin-warehouse-detail`).
  * Filial menejeri (maket `manager-warehouse-detail`): faqat ko'rish — «Qoldiqni admin boshqaradi» izohi, amallarsiz,
  * «Mas'ul: … (siz)», «Ombordan ketadigan buyurtmalar» kartasi (`OutgoingOrdersCard`, 6kHnNH9j).
+ * Markaziy ombor (Pa1KaXmj; maket yo'q — eng yaqini `superadmin-warehouse-detail`): holat yonida «Markaziy» belgisi,
+ * sarlavha ostida «Markaziy ombor · HQ» va «Mas'ul: belgilanmagan»; vaqtinchalik izoh «Markaziy ombor qoldig'i
+ * buyurtmalarga keyingi bosqichda ulanadi» (FE-2 da olinadi). Kirim, inventarizatsiya va to'xtatish — o'zgarishsiz.
  */
 const WarehouseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -168,9 +172,11 @@ const WarehouseDetailPage = () => {
   const description = warehouse ? (
     <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
       <MetaItem icon={Building2}>
-        {canViewAll
-          ? (warehouse.branch?.name ?? "")
-          : [warehouse.branch?.name, warehouse.region?.name].filter(Boolean).join(" · ")}
+        {warehouse.isHq
+          ? t("detail.hqMeta")
+          : canViewAll
+            ? (warehouse.branch?.name ?? "")
+            : [warehouse.branch?.name, warehouse.region?.name].filter(Boolean).join(" · ")}
       </MetaItem>
       {managerName ? (
         <MetaItem icon={User}>
@@ -178,6 +184,8 @@ const WarehouseDetailPage = () => {
             ? t("detail.managerYou", { name: managerName })
             : t("detail.managerOf", { name: managerName })}
         </MetaItem>
+      ) : warehouse.isHq ? (
+        <MetaItem icon={User}>{t("detail.managerNone")}</MetaItem>
       ) : null}
       {warehouse.createdAt ? <MetaItem icon={Calendar}>{t("detail.openedAt", { date: text.date(warehouse.createdAt) })}</MetaItem> : null}
     </span>
@@ -219,6 +227,14 @@ const WarehouseDetailPage = () => {
       exportButton
     ) : undefined;
 
+  // Holat + (Markaziy omborda) «Markaziy» belgisi — h1 yonida.
+  const headerMeta = warehouse ? (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <WarehouseStatusBadge status={warehouse.status} />
+      {warehouse.isHq ? <HqWarehouseBadge size="md" /> : null}
+    </span>
+  ) : undefined;
+
   const showAllMovements = () => {
     setTab("movements");
     window.requestAnimationFrame(() => tabsCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -231,14 +247,14 @@ const WarehouseDetailPage = () => {
           back={WAREHOUSES_PATH}
           backLabel={t("list.title")}
           title={warehouse?.name ?? t("list.title")}
-          meta={warehouse ? <WarehouseStatusBadge status={warehouse.status} /> : undefined}
+          meta={headerMeta}
           description={description}
           actions={actions}
         />
       ) : (
         <PageHeader
           title={warehouse?.name ?? t("manager.title")}
-          meta={warehouse ? <WarehouseStatusBadge status={warehouse.status} /> : undefined}
+          meta={headerMeta}
           description={description}
         />
       )}
@@ -252,6 +268,8 @@ const WarehouseDetailPage = () => {
         <NoteAlert title={t("registrator.noteTitle")}>{t("registrator.noteText")}</NoteAlert>
       ) : null}
       {!canViewAll ? <NoteAlert title={t("manager.noteTitle")}>{t("manager.noteText")}</NoteAlert> : null}
+      {/* Pa1KaXmj 1-bosqich: Markaziy ombor hali buyurtma manbasi emas — FE-2 (manba 2-bosqichi) da olinadi. */}
+      {canViewAll && warehouse?.isHq ? <NoteAlert>{t("detail.hqNote")}</NoteAlert> : null}
 
       <WarehouseKpis warehouse={warehouse} managerView={!canViewAll} />
 
