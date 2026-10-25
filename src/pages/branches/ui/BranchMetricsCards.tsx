@@ -133,6 +133,7 @@ export const BranchRevenueCard = memo(({ points, periodText, className }: Branch
   const last = points[points.length - 1]?.period;
   const rangeText = first && last ? (formatRangeShort({ from: first, to: last }) ?? "") : "";
   const hasRevenue = points.some((point) => point.revenue !== 0);
+  const viewToggle = <ViewToggle value={view} onChange={setView} ariaLabel={t("v2.metrics.revenue.viewLabel")} />;
   const plotPoints: TrendPoint[] = points.map((point) => ({
     label: point.label,
     current: point.revenue,
@@ -146,17 +147,13 @@ export const BranchRevenueCard = memo(({ points, periodText, className }: Branch
       className={className}
       title={t("v2.metrics.revenue.title")}
       description={[periodText, rangeText].filter(Boolean).join(" · ")}
-      actions={
-        hasRevenue ? (
-          // Telefonda to'liq enli (maket: «Grafik | Jadval» teng yarmlar) — `FinancialAnalysis` boshqaruvlari kabi.
-          <div className="flex flex-wrap items-center gap-2 max-md:w-full">
-            <ViewToggle value={view} onChange={setView} ariaLabel={t("v2.metrics.revenue.viewLabel")} />
-          </div>
-        ) : undefined
-      }
+      // Telefonda «Grafik | Jadval» to'liq enli (maket: teng yarmlar, izoh ostida) — `Card` amallar bloki tor
+      // tugmani o'z kengligida qoldiradi, shuning uchun telefonda u tana boshida.
+      actions={hasRevenue && !isPhone ? viewToggle : undefined}
       bodyClassName="flex flex-1 flex-col gap-4"
       data-testid="branch-metrics-revenue"
     >
+      {hasRevenue && isPhone ? viewToggle : null}
       {!hasRevenue ? (
         <EmptyState size="chart" title={tDash("v2Dashboard.finance.empty")} />
       ) : view === "chart" ? (
