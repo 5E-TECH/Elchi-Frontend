@@ -110,11 +110,6 @@ export interface User {
    */
   market_id?: string | number | null;
   /**
-   * x6IO746K / N13: market operatori marketi — `GET /users`, `/users/:id` (`{ id, name }`) va `GET /auth/my-profile`
-   * (`{ id, name, add_order }`). Boshqa rollarda yo'q; market o'chirilgan yoki biriktirilmagan bo'lsa `null`.
-   */
-  market?: { id: string | number; name: string; add_order?: boolean } | null;
-  /**
    * MO-2: market operatorining komissiyasi (`my-profile`, identity `User.commission_*`): `percent` — sotilgan
    * buyurtma narxidan foiz, `fixed` — har sotuvga so'm. Turi `null` yoki qiymati 0 — daromad yozilmaydi.
    * `numeric(14,2)` — qiymat son yoki matn bo'lib kelishi mumkin.
