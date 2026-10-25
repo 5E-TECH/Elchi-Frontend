@@ -6,7 +6,8 @@ import type { Page, Route } from "@playwright/test";
  * `GET product/my-products` (market / market operatori; `unassigned()` → 400), `GET product`, `GET product/market/3`
  * serverdek sahifalanadi (`search` / `page` / `limit` ≤ 500, sukut 10); `PATCH product/:id` yoziladi (`patches`).
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -16,5 +16,5 @@ export {
   CameraToasts,
   ScanFinder,
 } from "./CameraSurface";
-export type { CameraCardTone, CameraChipDot, CameraTone, ScanFrameSize } from "./CameraSurface";
+export type { CameraCardTone, CameraChipDot, CameraTone, ScanFrameShape, ScanFrameSize } from "./CameraSurface";
 export { loadScannerCamera, preloadScannerCamera } from "./loadScannerCamera";

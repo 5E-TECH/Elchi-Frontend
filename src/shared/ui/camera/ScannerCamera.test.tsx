@@ -34,6 +34,7 @@ const camera = vi.hoisted(() => ({
   toggleTorch: vi.fn(async () => undefined),
   preferredCamera: undefined as string | undefined,
   calculateScanRegion: undefined as unknown,
+  formats: undefined as string | undefined,
   canSwitchCamera: false,
   switchCamera: vi.fn(async () => undefined),
   lowLight: false,
@@ -61,9 +62,11 @@ vi.mock("../../lib/useCameraQrScanner", () => ({
     onTorchError?: () => void;
     preferredCamera?: string;
     calculateScanRegion?: unknown;
+    formats?: string;
   }) => {
     camera.isActive = options.isActive;
     camera.preferredCamera = options.preferredCamera;
+    camera.formats = options.formats;
     camera.calculateScanRegion = options.calculateScanRegion;
     camera.onDecode = options.onDecode;
     camera.onTorchError = options.onTorchError ?? null;
@@ -940,5 +943,62 @@ describe("ScannerCamera — Sozlamalar → Skaner → «Kamera» (4-bosqich)", (
     await screen.findByText("Skanerlash faol");
     expect(camera.lowLightEnabled).toBe(false);
     expect(screen.queryByText("Yorug'lik kam")).not.toBeInTheDocument();
+  });
+});
+
+describe("ScannerCamera — shtrix kod rejimi (CO66kcoB)", () => {
+  const finder = () => document.querySelector("[data-finder-size]");
+
+  it("sukut (`formats` yo'q) — QR: kvadrat ramka, QR yo'riqnomasi, kamera `qr` rejimida", async () => {
+    renderWithProviders(<ScannerCamera target={makeTarget({ hint: undefined })} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(camera.formats).toBe("qr");
+    expect(finder()).toHaveAttribute("data-finder-shape", "square");
+    expect(finder()).toHaveClass("size-[248px]");
+    feedPlaying();
+    expect(await screen.findByText("QR kodni ramka ichiga olib keling")).toBeInTheDocument();
+  });
+
+  it("`formats: \"barcodes\"` — keng ramka, shtrix kod yo'riqnomasi (ramka ostida), kamera `barcodes` rejimida", async () => {
+    renderWithProviders(<ScannerCamera target={makeTarget({ formats: "barcodes", hint: undefined })} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(camera.formats).toBe("barcodes");
+    expect(finder()).toHaveAttribute("data-finder-shape", "wide");
+    expect(finder()).toHaveClass("h-[168px]");
+    feedPlaying();
+    expect(await screen.findByText("Shtrix kod yoki QR kodni ramka ichiga olib keling")).toHaveClass(
+      "top-[calc(50%+100px)]",
+    );
+    // Skan hududi ham keng (jsdom'da ramka o'lchami 0 — keng sukut hudud, tahlil kadri 640).
+    const video = document.createElement("video");
+    Object.defineProperties(video, { videoWidth: { value: 1280 }, videoHeight: { value: 720 } });
+    const region = (camera.calculateScanRegion as (element: HTMLVideoElement) => Record<string, number>)(video);
+    expect(region).toMatchObject({ width: 1024, height: 563, downScaledWidth: 640 });
+  });
+
+  it("«Ramka o'lchami» shtrix kod rejimida ham: katta — keng ramka kattaroq", async () => {
+    window.localStorage.setItem("scanner-frame-size", "lg");
+    renderWithProviders(<ScannerCamera target={makeTarget({ formats: "barcodes" })} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(finder()).toHaveAttribute("data-finder-size", "lg");
+    expect(finder()).toHaveClass("h-[184px]");
+  });
+
+  it("`closeOnSuccess` — «Uzluksiz skanerlash» yoqiq bo'lsa ham birinchi muvaffaqiyatli koddan keyin yopiladi", async () => {
+    const onClose = vi.fn();
+    const target = makeTarget({ formats: "barcodes", closeOnSuccess: true });
+    renderWithProviders(<ScannerCamera target={target} onClose={onClose} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    act(() => camera.onDecode?.("4780123450017"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledWith("4780123450017", "camera"));
+    act(() => playScanFeedback("error", "Bu Elchi kodi"));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 1900));
+    act(() => camera.onDecode?.("8806095467894"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(2));
+    act(() => playScanFeedback("success", "Shtrix kod yozildi"));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 });

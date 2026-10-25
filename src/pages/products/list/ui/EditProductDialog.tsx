@@ -23,6 +23,7 @@ import {
 } from "../../model/productView";
 import { usePickedImage } from "../../model/usePickedImage";
 import { appendProductBarcode, checkBarcodeInput, isDuplicateBarcodeError } from "../../model/productCode";
+import { useBarcodeCamera } from "../../model/useBarcodeCamera";
 import { FormErrorSummary } from "../../ui/FormErrorSummary";
 import { ProductCodeSection } from "../../ui/ProductCodeSection";
 import { ProductImageField } from "../../ui/ProductImageField";
@@ -128,6 +129,16 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
   });
 
   const busy = updateProduct.isPending;
+  const changeBarcode = (value: string) => {
+    setBarcode(value);
+    setBarcodeError(null);
+  };
+  // CO66kcoB: «Shtrix kod» maydoni — kamera (zavod EAN/UPC/Code128 yoki QR), kod maydonga yoziladi.
+  const openBarcodeCamera = useBarcodeCamera({
+    enabled: Boolean(product) && !busy,
+    productName: (detail ?? target)?.name ?? "",
+    onCode: changeBarcode,
+  });
   // O'lchovsiz (yoki chala o'lchovli) eski mahsulot — o'lchov ixtiyoriy, bo'sh qoldirib saqlanadi (ega qarori 2026-10-24).
   const measureOptional = target ? !getProductMeasureView(target).complete : false;
   const errorCount = isSubmitted ? Object.keys(errors).length : 0;
@@ -202,15 +213,13 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
       />
       <ProductCodeSection
         barcode={barcode}
-        onBarcodeChange={(value) => {
-          setBarcode(value);
-          setBarcodeError(null);
-        }}
+        onBarcodeChange={changeBarcode}
         barcodeError={barcodeError}
         skuCode={(detail ?? target)?.sku_code ?? null}
         productName={(detail ?? target)?.name ?? ""}
         marketName={getProductMarketName(detail ?? target) ?? null}
         readOnly={busy}
+        onCamera={openBarcodeCamera}
       />
       <ProductImageField
         label={t("v2.edit.image")}

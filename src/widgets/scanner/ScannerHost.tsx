@@ -115,6 +115,8 @@ const ScannerHost = () => {
 /** Almashish oralig'i uchun maqsad nusxasi: faqat ko'rinish, hech bir handler eski sahifaga yetmaydi. */
 const freezeTarget = (target: ScanTarget): ScanTarget => ({
   id: target.id,
+  // Rejim saqlanadi — almashish oralig'ida kamera boshqa dvigatel bilan qayta ishga tushmasin.
+  formats: target.formats,
   title: target.title,
   context: target.context,
   hint: target.hint,
