@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   marketsRefetch: vi.fn(),
   couriers: { data: undefined, isLoading: false, isError: false } as Record<string, unknown>,
   couriersRefetch: vi.fn(),
+  managers: undefined as unknown,
+  hqCouriers: undefined as unknown,
 }));
 
 vi.mock("../../../entities/markets", () => ({
@@ -23,14 +25,14 @@ vi.mock("../../../entities/markets", () => ({
 
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
-    useGetManagers: () => ({ data: undefined, isLoading: false }),
+    useGetManagers: () => ({ data: state.managers, isLoading: false }),
     useGetCouriers: (_params: unknown, enabled: boolean) =>
       enabled ? { ...state.couriers, refetch: state.couriersRefetch } : { data: undefined, isLoading: false },
   }),
 }));
 
 vi.mock("../../../entities/payments", () => ({
-  useCashBox: () => ({ useGetHqCourierReceivables: () => ({ data: undefined, isLoading: false }) }),
+  useCashBox: () => ({ useGetHqCourierReceivables: () => ({ data: state.hqCouriers, isLoading: false }) }),
 }));
 
 vi.mock("../../../entities/branch/api/useBranches", () => ({
@@ -52,7 +54,15 @@ beforeEach(() => {
   state.marketsRefetch.mockClear();
   state.couriers = { data: undefined, isLoading: false, isError: false };
   state.couriersRefetch.mockClear();
+  state.managers = undefined;
+  state.hqCouriers = undefined;
 });
+
+/** Oynadagi qatorlar tartibi (nom bo'yicha). */
+const optionNames = (dialog: HTMLElement, names: readonly string[]) =>
+  within(dialog)
+    .getAllByRole("option")
+    .map((option) => names.find((name) => option.textContent?.includes(name)) ?? option.textContent);
 
 describe("SettlementPickerDialog", () => {
   it("give: mockup texts, list without status=active, negative amount with the minus sign, select → market cashbox", async () => {
@@ -157,6 +167,86 @@ describe("SettlementPickerDialog", () => {
       "placeholder",
       "Ism, telefon yoki tuman",
     );
+  });
+
+  describe("Spt8Cj7m: summa bo'yicha kamayish tartibida, manfiy oxirida (maketlar *-payments-to-*-dialog)", () => {
+    it("give: eng katta qarzdor tepada, «Nofaol» — summasiga qarab, 0 va manfiy pastda", async () => {
+      state.markets = {
+        data: {
+          data: [
+            { id: "1", name: "QA Market", status: "active", cashbox: { balance: 0 } },
+            { id: "2", name: "Grand Moda", status: "blocked", cashbox: { balance: 512_000 } },
+            { id: "3", name: "Qarzdor market", status: "active", cashbox: { balance: -85_000 } },
+            { id: "4", name: "Baraka Shop", status: "active", cashbox: { balance: 4_820_000 } },
+            { id: "5", name: "Ipak Yo'li Savdo", status: "active", cashbox: { balance: 1_784_000 } },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+      };
+      open("give");
+      const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+      expect(optionNames(dialog, ["Baraka Shop", "Ipak Yo'li Savdo", "Grand Moda", "QA Market", "Qarzdor market"])).toEqual([
+        "Baraka Shop",
+        "Ipak Yo'li Savdo",
+        "Grand Moda",
+        "QA Market",
+        "Qarzdor market",
+      ]);
+    });
+
+    it("courier (menejer): kuryerlar summa bo'yicha, manfiy oxirida", async () => {
+      state.couriers = {
+        data: {
+          data: {
+            items: [
+              { id: "1", name: "Bo'sh kuryer", cashbox: { balance: 0 } },
+              { id: "2", name: "Qarzdor kuryer", cashbox: { balance: -40_000 } },
+              { id: "3", name: "Bekzod", cashbox: { balance: 1_280_000 } },
+              { id: "4", name: "Jasur", cashbox: { balance: 2_100_000 } },
+            ],
+          },
+        },
+        isLoading: false,
+        isError: false,
+      };
+      open("courier");
+      const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
+      expect(optionNames(dialog, ["Jasur", "Bekzod", "Bo'sh kuryer", "Qarzdor kuryer"])).toEqual([
+        "Jasur",
+        "Bekzod",
+        "Bo'sh kuryer",
+        "Qarzdor kuryer",
+      ]);
+    });
+
+    it("receive: filiallar va HQ kuryerlari guruhlari o'z o'rnida, har biri ichida — summa bo'yicha", async () => {
+      const manager = (id: string, name: string, amount: number, status = "active") => ({
+        id,
+        name,
+        status,
+        branch: { id: `b${id}`, name: `${name} filiali`, type: "REGIONAL" },
+        berilishi_kerak: amount,
+      });
+      state.managers = {
+        data: [
+          manager("1", "Buxoro", 410_000),
+          manager("2", "Ravshan Ortiqov", 4_250_000),
+          manager("3", "Anvar Qodirov", 620_000, "blocked"),
+          manager("4", "Dilshod Yo'ldoshev", 1_340_000),
+        ],
+      };
+      state.hqCouriers = {
+        data: [
+          { id: "h1", name: "Rustam Qosimov", balance: -85_000 },
+          { id: "h2", name: "Jasur Tursunov", balance: 1_155_000 },
+        ],
+      };
+      open("receive");
+      const dialog = await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" });
+      const names = ["Ravshan Ortiqov", "Dilshod Yo'ldoshev", "Anvar Qodirov", "Buxoro", "Jasur Tursunov", "Rustam Qosimov"];
+      expect(optionNames(dialog, names)).toEqual(names);
+    });
   });
 
   it("courier without a branch name: «Kuryerlar · N ta»", async () => {

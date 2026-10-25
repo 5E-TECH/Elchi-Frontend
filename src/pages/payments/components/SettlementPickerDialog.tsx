@@ -159,6 +159,12 @@ const matchesQuery = (row: PickerRow, query: string) => {
     : false;
 };
 
+/**
+ * Summa bo'yicha kamayish tartibida (Spt8Cj7m; maketlar `*-payments-to-give-dialog`, `*-to-receive-dialog`): eng katta
+ * qarzdor tepada, «Nofaol» ham summasiga qarab, manfiy qoldiq oxirida. Teng summalar avvalgi tartibda qoladi.
+ */
+const byAmountDesc = (rows: readonly PickerRow[]) => [...rows].sort((left, right) => right.amount - left.amount);
+
 /** `.el-option` — tanlash oynasidagi qator (min 56 px, radio belgi, telefonda ikonka yashirin). */
 const ROW =
   "flex min-h-14 w-full cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text " +
@@ -232,12 +238,15 @@ const SettlementPickerDialog = ({
   }, [isMarketList, kind, marketsQuery.data, receive.options, t]);
 
   const visible = useMemo(() => rows.filter((row) => matchesQuery(row, query)), [query, rows]);
-  // Guruhlar tartibi: avval filiallar, so'ng HQ kuryerlari (ro'yxat allaqachon shu tartibda).
+  // Guruhlar tartibi: avval filiallar, so'ng HQ kuryerlari; har guruh ichida — summa bo'yicha kamayish.
   const ordered = useMemo(
     () =>
       kind === "receive"
-        ? [...visible.filter((row) => row.group === "branches"), ...visible.filter((row) => row.group === "hqCouriers")]
-        : visible,
+        ? [
+            ...byAmountDesc(visible.filter((row) => row.group === "branches")),
+            ...byAmountDesc(visible.filter((row) => row.group === "hqCouriers")),
+          ]
+        : byAmountDesc(visible),
     [kind, visible],
   );
 
