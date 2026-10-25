@@ -6,7 +6,8 @@ import { mockRealtime } from "./support/realtime";
  * holatini (`GET finance/shift/current`) va kassani qayta so'raydi (2 s ichida); avtomatik yopilganda kassirga
  * «Smena avtomatik yopildi — HH:MM». Soxta API + soxta socket.io (`support/realtime.ts`), 1440px.
  */
-test.use({ viewport: { width: 1440, height: 900 } });
+// Vaqt brauzer mintaqasida formatlanadi — foydalanuvchilar Toshkentda; CI runner UTC'da «13:00» chiqardi.
+test.use({ viewport: { width: 1440, height: 900 }, timezoneId: "Asia/Tashkent" });
 test.describe.configure({ timeout: 120_000 });
 
 const shiftRequests = (requests: string[]) => requests.filter((path) => path === "finance/shift/current").length;
