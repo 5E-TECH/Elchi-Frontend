@@ -346,14 +346,17 @@
         "orders": "Buyurtmalar",
         "users": "Foydalanuvchilar",
         "branches": "Filiallar",
-        "before": "oldin {{count}}"
+        "before": "oldin {{count}}",
+        "usersHint": "Mijoz, kuryer va market"
       },
       "deleteBlocked": {
         "title": "{{name}}ni o'chirib bo'lmaydi",
         "text": "Tumanga buyurtma, foydalanuvchi yoki filial bog'langan. O'chirilsa, ular hech qaysi tumanga tegishli bo'lmay qoladi.",
         "note": "Birlashtirsangiz, bularning hammasi siz tanlagan tumanga ko'chadi va {{name}} o'chiriladi. Yoki buyurtma, foydalanuvchi va filiallarni boshqa tumanga alohida ko'chiring.",
         "close": "Yopish",
-        "merge": "Birlashtirish"
+        "merge": "Birlashtirish",
+        "linked": "Bog'langan",
+        "linkedAria": "Tumanga bog'langanlar"
       },
       "merge": {
         "title": "Tumanni birlashtirish",
@@ -367,21 +370,26 @@
         "irreversibleTitle": "Bu amalni qaytarib bo'lmaydi",
         "irreversibleText": "{{name}} butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin.",
         "cancel": "Bekor qilish",
-        "submit": "Birlashtirish"
+        "submit": "Birlashtirish",
+        "movesTo": "{{name}}ga ko'chadi",
+        "movesAria": "Ko'chiriladiganlar",
+        "countsLoading": "Sonlar olinmoqda"
       },
       "progress": {
         "title": "Birlashtirilmoqda…",
         "text": "{{from}} → {{to}}. Buyurtmalar, foydalanuvchilar va filiallar ko'chirilib, sonlari qayta tekshirilmoqda.",
         "elapsed": "O'tgan vaqt {{time}}",
         "keepOpenTitle": "Oynani yopmang",
-        "keepOpenText": "2 daqiqagacha davom etishi mumkin. Sahifani yangilamang. Aloqa uzilsa, natijani «Faoliyat jurnali»da ko'ring."
+        "keepOpenText": "2 daqiqagacha davom etishi mumkin. Sahifani yangilamang. Aloqa uzilsa, natijani «Faoliyat jurnali»da ko'ring.",
+        "movingAria": "Ko'chirilayotganlar"
       },
       "result": {
         "title": "Tumanlar birlashtirildi",
         "text": "{{from}} o'chirildi. Uning buyurtma, foydalanuvchi va filiallari {{to}}ga ko'chirildi.",
         "nowIn": "{{name}}da endi",
         "note": "O'chirilgan yozuvlar sanalmaydi.",
-        "close": "Yopish"
+        "close": "Yopish",
+        "moved": "Ko'chirildi"
       },
       "unknown": {
         "title": "Natija noma'lum",
@@ -397,6 +405,57 @@
         "title": "Birlashtirib bo'lmadi",
         "text": "Tumanlar ro'yxati yangilandi: {{from}} ro'yxatda turgan bo'lsa, birlashtirilmagan.",
         "journal": "Faoliyat jurnali"
+      },
+      "mergeError": {
+        "title": {
+          "error": "Birlashtirib bo'lmadi",
+          "unavailable": "Servis javob bermadi",
+          "manual": "Birlashtirish chala qoldi"
+        },
+        "text": {
+          "error": "Birlashtirish bekor qilindi. Ko'chirilganlar {{from}}ga qaytarildi, tuman o'chirilmadi.",
+          "unavailable": "Birlashtirish to'xtatildi. Ko'chirilganlar {{from}}ga qaytarildi, tuman o'chirilmadi.",
+          "manual": "Birlashtirish bekor qilindi, lekin ma'lumotlarning bir qismini {{from}}ga qaytarib bo'lmadi. {{from}} o'chirilmadi."
+        },
+        "reasonLabel": "Sabab",
+        "kinds": {
+          "orders": "buyurtmalar",
+          "users": "foydalanuvchilar",
+          "branches": "filiallar",
+          "any": "Ma'lumotlar"
+        },
+        "reason": {
+          "countMismatchTarget": "Sonlar mos kelmadi — {{name}}da {{kind}} {{actual}} ta, kutilgan {{expected}} ta.",
+          "countMismatchSource": "Sonlar mos kelmadi — {{name}}da {{kind}} qoldi: {{actual}} ta, kutilgan {{expected}} ta.",
+          "countMismatch": "Sonlar mos kelmadi — ko'chirishdan keyingi sanoq kutilganidan farq qildi.",
+          "timeout": "{{kind}} ko'chirilmadi — servis {{seconds}} soniya ichida javob bermadi.",
+          "timeoutNoValue": "{{kind}} ko'chirilmadi — servis o'z vaqtida javob bermadi.",
+          "remoteRefused": "{{kind}} ko'chirilmadi — servis rad etdi yoki unga ulanib bo'lmadi.",
+          "invalidResponse": "{{kind}} ko'chirilmadi — servis noto'g'ri javob qaytardi.",
+          "deleteFailed": "Tumanni o'chirib yoki qayta sanab bo'lmadi."
+        },
+        "note": {
+          "countMismatch": "Odatda shu payt yangi buyurtma qo'shilganda bo'ladi. Qayta urinib ko'ring; takrorlansa, xabarni nusxalab texnik bo'limga yuboring.",
+          "error": "Qayta urinib ko'ring; takrorlansa, xabarni nusxalab texnik bo'limga yuboring.",
+          "unavailable": "Bir necha daqiqadan keyin qayta urinib ko'ring. Takrorlansa, xabarni nusxalab texnik bo'limga yuboring.",
+          "manual": "To'liq ro'yxat Faoliyat jurnalida: «Tuman birlashtirish chala qoldi» yozuvi, {{name}} (ID {{id}})."
+        },
+        "manualTitle": "Qo'lda tuzatish kerak",
+        "manualText": "Quyidagi yozuvlar {{from}}ga qaytmadi. Ularni tekshirib, qo'lda to'g'rilang, so'ng birlashtirishni qayta boshlang.",
+        "strandedTitle": "{{from}}ga qaytmadi",
+        "strandedAria": "{{from}}ga qaytmaganlar",
+        "strandedCount": "{{kind}} · {{count}}",
+        "strandedUnknown": "{{kind}} · ID'lar noma'lum",
+        "strandedIn": "{{name}}da qoldi",
+        "strandedInId": "ID {{id}} tumanida qoldi",
+        "strandedNowhere": "Joyi aniqlanmadi — jurnalda tekshiring",
+        "copy": "Xabarni nusxalash",
+        "copied": "Xabar nusxalandi",
+        "copyFailed": "Xabarni nusxalab bo'lmadi",
+        "copyCode": "Kod",
+        "copyTime": "Vaqt",
+        "retry": "Qayta urinish",
+        "journal": "Faoliyat jurnalini ochish"
       }
     },
     "sato": {
@@ -606,7 +665,8 @@
         "hint": "Faqat {{region}} tumanlari.",
         "hintKeeps": "Faqat {{region}} tumanlari. SATO kodi {{code}} saqlanadi.",
         "sourceCodeLost": "ID {{id}} yozuvidagi {{code}} kodi o'chadi.",
-        "irreversibleText": "ID {{id}} yozuvi butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin."
+        "irreversibleText": "ID {{id}} yozuvi butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin.",
+        "movesTo": "{{name}} (ID {{id}}) ga ko'chadi"
       }
     },
     "logist": {

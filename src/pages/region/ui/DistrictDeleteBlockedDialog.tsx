@@ -3,12 +3,14 @@ import { useState } from "react";
 import { Merge, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button, Dialog } from "../../../shared/ui/primitives";
-import type { MergeDistrict } from "../model/districtMerge";
-import { DialogNote, DistrictSummary } from "./DistrictMergeDialog";
+import type { MergeCounts, MergeDistrict } from "../model/districtMerge";
+import { CountBlock, DialogNote, DistrictSummary } from "./DistrictMergeDialog";
 
 export type DistrictDeleteBlockedDialogProps = {
   /** O'chirib bo'lmagan tuman (DELETE 400); `null` — yopiq. */
   district: MergeDistrict | null;
+  /** 400 javobidagi `data.usage` (tirik sonlar, AF0fvJbw); yo'q bo'lsa — «Bog'langan» bloki chizilmaydi. */
+  usage?: MergeCounts | null;
   onClose: () => void;
   /** «Birlashtirish» — shu tuman manba bo'lib birlashtirish oynasi ochiladi. */
   onMerge: (district: MergeDistrict) => void;
@@ -16,15 +18,21 @@ export type DistrictDeleteBlockedDialogProps = {
 
 /**
  * «TUMANNI O'CHIRIB BO'LMAYDI» (oNAE3LW9) — `DELETE district/:id` 400 (tumanga buyurtma, foydalanuvchi yoki
- * filial bog'langan). Oyna faqat holat kodi bo'yicha ochiladi: gateway xato `data` sini (`usage` sonlari)
- * uzatmaguncha (backend N1) maketdagi «Bog'langan» sonlar bloki chizilmaydi, server matni ko'rsatilmaydi.
+ * filial bog'langan). Oyna holat kodi bo'yicha ochiladi; «Bog'langan» sonlari — javobdagi `data.usage` dan
+ * (DM-2; yo'q yoki hammasi 0 bo'lsa blok chizilmaydi). Server matni ko'rsatilmaydi.
  */
-const DistrictDeleteBlockedDialog = ({ district, onClose, onMerge }: DistrictDeleteBlockedDialogProps) => {
+const DistrictDeleteBlockedDialog = ({
+  district,
+  usage = null,
+  onClose,
+  onMerge,
+}: DistrictDeleteBlockedDialogProps) => {
   const { t } = useTranslation("region");
-  // Yopilish harakati davomida oxirgi tuman ko'rinib turadi.
-  const [shown, setShown] = useState(district);
-  if (district && district !== shown) setShown(district);
-  const view = district ?? shown;
+  // Yopilish harakati davomida oxirgi tuman (va sonlari) ko'rinib turadi.
+  const [shown, setShown] = useState({ district, usage });
+  if (district && (district !== shown.district || usage !== shown.usage)) setShown({ district, usage });
+  const view = district ?? shown.district;
+  const counts = district ? usage : shown.usage;
   if (!view) return null;
 
   return (
@@ -50,6 +58,11 @@ const DistrictDeleteBlockedDialog = ({ district, onClose, onMerge }: DistrictDel
       }
     >
       <DistrictSummary title={view.name} subtitle={view.regionName} />
+      <CountBlock
+        title={t("v2.districts.deleteBlocked.linked")}
+        counts={counts}
+        label={t("v2.districts.deleteBlocked.linkedAria")}
+      />
       <DialogNote>{t("v2.districts.deleteBlocked.note", { name: view.name })}</DialogNote>
     </Dialog>
   );

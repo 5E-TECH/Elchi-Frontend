@@ -116,6 +116,8 @@ export const API_ENDPOINTS = {
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
     // POST {target_district_id} — tuman boshqasiga qo'shiladi va o'chadi (admin/superadmin; DM-1)
     MERGE: (districtId: string | number) => `district/${districtId}/merge`,
+    // GET — tumanga bog'langan tirik {orders, users, branches} (admin/superadmin; Is1zvHN7, DM-2)
+    USAGE: (districtId: string | number) => `district/${districtId}/usage`,
   },
 
   // ── Customers — buyurtma yaratishda mijoz taklifi (hiqRNhkI, CS-A) ─────────
