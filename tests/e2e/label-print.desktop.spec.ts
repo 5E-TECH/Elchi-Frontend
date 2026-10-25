@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
  * chop sahifasi. Yorliq HTML'i ilovaning o'z modulidan olinadi (`openOrdersLabelBrowserPrint`), haqiqiy
  * brauzerda chiziladi va o'lchanadi (jsdom maket chizmaydi). Tashqi so'rovlar (QR xizmati, API) yuborilmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 
 const LONG = {
   id: "53",

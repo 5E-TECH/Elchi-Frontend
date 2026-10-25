@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * - Market roli: «Marketlar bo'yicha sotuv foizi» TO'LIQ `markets` statistikasidan — o'z qatori
  *   (topMarkets bo'sh bo'lsa ham), kuryerlar bo'limi yo'q.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

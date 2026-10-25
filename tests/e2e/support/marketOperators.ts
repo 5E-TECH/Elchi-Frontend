@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * komissiyasiz). `POST` / `PATCH :id/commission` / `DELETE :id` tanalarini yozib oladi va ro'yxatni yangilaydi.
  * Serverga so'rov ketmaydi (jonli kanal WebSocket'i ham yopiladi).
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

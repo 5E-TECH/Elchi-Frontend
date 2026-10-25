@@ -55,7 +55,7 @@ const SEED: Array<[string, string]> = [
 const SPEND_FIELDS = new Set(["amount", "type", "comment", "card_id", "expense_category_id"]);
 const FILL_FIELDS = new Set(["amount", "type", "comment", "card_id"]);
 
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const wrap = (data: unknown, statusCode = 200, message = "ok") => ({ statusCode, message, data });
 
 /** Bugungi, lekin o'tgan vaqt (yarim tundan keyin ham «Bugun» bo'lib qoladi). */

@@ -4,7 +4,7 @@ import { expect, type Locator, type Page, type Route } from "@playwright/test";
  * Universal skaner (`/scan`) rejimlari — 3-bosqich (Trello v1eLN2tV) e2e, soxta backend. Kuryer «O'zimga olish»:
  * har kod → `POST orders/scan-assign`; javob `{ idempotent, order_id, order }`.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

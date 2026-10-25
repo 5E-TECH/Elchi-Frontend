@@ -11,7 +11,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * API — `route.fulfill` bilan soxta; yozish so'rovlari taqiqlangan.
  */
 
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
