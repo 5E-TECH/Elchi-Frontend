@@ -771,6 +771,94 @@ describe("ScannerCamera — universal skaner rejimlari (3-bosqich)", () => {
   });
 });
 
+describe("ScannerCamera — ko'p rejim va bo'sh tanlov (vNcGDnNh)", () => {
+  const MANY = [
+    { value: "info", label: "Ma'lumot" },
+    { value: "receive", label: "Qabul qilish" },
+    { value: "sendMail", label: "Pochtani jo'natish" },
+    { value: "refusedMail", label: "Rad etilgan pochta" },
+    { value: "handover", label: "Marketga topshirish" },
+  ];
+
+  it("telefon: 3 tadan ko'p rejim — segment o'rniga «Rejim: …» → varaq (radio), tanlansa onModeChange, kamera to'xtaydi", async () => {
+    setPhone(true);
+    const onModeChange = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ScannerCamera
+        presentation="page"
+        target={makeTarget({ title: "QR skaner", modes: MANY, mode: "info", onModeChange })}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("radiogroup", { name: "QR skaner" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Rejim: Ma'lumot" }));
+
+    const sheet = await screen.findByRole("dialog", { name: "Skaner rejimi" });
+    expect(camera.isActive).toBe(false);
+    const group = within(sheet).getByRole("radiogroup", { name: "Skaner rejimi" });
+    expect(within(group).getAllByRole("radio")).toHaveLength(5);
+    expect(within(group).getByRole("radio", { name: "Ma'lumot" })).toHaveAttribute("aria-checked", "true");
+
+    // Klaviatura: fokus tanlangan rejimda (yagona Tab to'xtash joyi), ↓ / End — keyingi qatorlar.
+    expect(within(group).getByRole("radio", { name: "Ma'lumot" })).toHaveAttribute("tabindex", "0");
+    expect(within(group).getByRole("radio", { name: "Qabul qilish" })).toHaveAttribute("tabindex", "-1");
+    within(group).getByRole("radio", { name: "Ma'lumot" }).focus();
+    await user.keyboard("{ArrowDown}");
+    expect(within(group).getByRole("radio", { name: "Qabul qilish" })).toHaveFocus();
+    await user.keyboard("{End}");
+    expect(within(group).getByRole("radio", { name: "Marketga topshirish" })).toHaveFocus();
+
+    // Joriy rejim — o'zgarish yo'q, varaq yopiladi.
+    await user.click(within(group).getByRole("radio", { name: "Ma'lumot" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Skaner rejimi" })).not.toBeInTheDocument());
+    expect(onModeChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Rejim: Ma'lumot" }));
+    const again = await screen.findByRole("dialog", { name: "Skaner rejimi" });
+    await user.click(within(again).getByRole("radio", { name: "Marketga topshirish" }));
+    expect(onModeChange).toHaveBeenCalledWith("handover");
+  });
+
+  it("3 ta rejim — segment o'zgarmagan", async () => {
+    setPhone(true);
+    renderWithProviders(
+      <ScannerCamera
+        presentation="page"
+        target={makeTarget({ title: "QR skaner", modes: MANY.slice(0, 3), mode: "info", onModeChange: vi.fn() })}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(within(screen.getByRole("radiogroup", { name: "QR skaner" })).getAllByRole("radio")).toHaveLength(3);
+    expect(screen.queryByRole("button", { name: /^Rejim:/ })).not.toBeInTheDocument();
+  });
+
+  it("tanlov ro'yxati bo'sh — `emptyText`; qidiruvda topilmasa — umumiy «Hech narsa topilmadi»", async () => {
+    setPhone(true);
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ScannerCamera
+        target={makeTarget({
+          switcher: {
+            label: "Pochtani tanlang",
+            value: "",
+            title: "Pochtani tanlang",
+            options: async () => [],
+            onSelect: vi.fn(),
+            emptyText: "Jo'natiladigan yangi pochta yo'q",
+          },
+        })}
+        onClose={vi.fn()}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: "Pochtani tanlang — almashtirish" }));
+    const sheet = await screen.findByRole("dialog", { name: "Pochtani tanlang" });
+    expect(await within(sheet).findByText("Jo'natiladigan yangi pochta yo'q")).toBeInTheDocument();
+    await user.type(within(sheet).getByRole("searchbox"), "abc");
+    expect(within(sheet).getByText("Hech narsa topilmadi")).toBeInTheDocument();
+  });
+});
+
 describe("ScannerCamera — Sozlamalar → Skaner → «Kamera» (4-bosqich)", () => {
   const finder = () => document.querySelector("[data-finder-size]");
 

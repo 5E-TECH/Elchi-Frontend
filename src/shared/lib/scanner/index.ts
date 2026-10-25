@@ -4,6 +4,7 @@ export {
   getActiveScanTarget,
   registerScanTarget,
   resetScanTargets,
+  SCAN_TARGET_SEGMENT_MAX_MODES,
   subscribeScanTargets,
   unregisterScanTarget,
   updateScanTarget,

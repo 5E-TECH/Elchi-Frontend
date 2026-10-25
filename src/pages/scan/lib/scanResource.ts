@@ -3,7 +3,8 @@ import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
-import { todayMarketsQueryOptions } from "../../../entities/orders";
+import { cancelledMarketsQueryOptions, todayMarketsQueryOptions } from "../../../entities/orders";
+import { newMailsQueryOptions, refusedMailsQueryOptions } from "../../../entities/mails";
 export { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 /**
@@ -157,6 +158,25 @@ export const scanAssignOrder = async (qrToken: string) =>
  */
 export const fetchNewOrderMarkets = (queryClient: QueryClient) =>
   queryClient.fetchQuery({ ...todayMarketsQueryOptions(), staleTime: 0, retry: false });
+
+/** Pochta ro'yxati kaliti — `useMails()` niki bilan bir (rol + filial). */
+export type ScanMailsScope = { role: string | null | undefined; branchId: string | null | undefined };
+
+/**
+ * Universal skaner «Pochtani jo'natish» varag'i (Trello vNcGDnNh): `GET post/new` — jo'natilmagan yangi pochtalar
+ * («Bugungi pochtalar» xodim ro'yxati bilan bitta kalit). Rejim faqat jo'nata oladiganlarda (superadmin, admin,
+ * HQ registratori) — menejerning boshqa so'rovi bu kalitga tushmaydi. Varaq har ochilganda yangi ro'yxat.
+ */
+export const fetchSendableMails = (queryClient: QueryClient, scope: ScanMailsScope) =>
+  queryClient.fetchQuery({ ...newMailsQueryOptions(scope), staleTime: 0, retry: false });
+
+/** «Rad etilgan pochta» varag'i: `GET post/rejected` (rol doirasidagi `canceled` pochtalar, son va kuryer bilan). */
+export const fetchRefusedMails = (queryClient: QueryClient, scope: ScanMailsScope) =>
+  queryClient.fetchQuery({ ...refusedMailsQueryOptions(scope), staleTime: 0, retry: false });
+
+/** «Marketga topshirish» varag'i: `GET orders/markets/cancelled` («Bekor qilinganlar» ro'yxati bilan bitta kalit). */
+export const fetchCancelledMarkets = (queryClient: QueryClient) =>
+  queryClient.fetchQuery({ ...cancelledMarketsQueryOptions(), staleTime: 0, retry: false });
 
 /**
  * Paketni qabul qilish — gateway `@Post('transfer-batches/:id/receive')`

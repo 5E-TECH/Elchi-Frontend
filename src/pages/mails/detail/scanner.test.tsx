@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import { getActiveScanTarget, resetScanTargets } from "../../../shared/lib/scanner/scanTargets";
+import { mailArrivalState, mailScanTargetId } from "../../scan/model/scanPickers";
 import MailDetailPage from "./index";
 
 /**
@@ -88,7 +89,10 @@ const stateFor = (role: string, branchType?: string) =>
     },
   }) as never;
 
-const renderPage = (preloadedState: never, route = `/mails/${POST_ID}`) =>
+const renderPage = (
+  preloadedState: never,
+  route: string | { pathname: string; state?: unknown } = `/mails/${POST_ID}`,
+) =>
   renderWithProviders(
     <Routes>
       <Route path="/mails/:id" element={<MailDetailPage />} />
@@ -181,5 +185,32 @@ describe("MailDetailPage — kamera maqsadi", () => {
     await screen.findByTestId("selected");
 
     expect(getActiveScanTarget()).toBeNull();
+  });
+});
+
+describe("MailDetailPage — universal skanerdan kelish (vNcGDnNh): maqsad id'si skaner kutgani bilan aynan", () => {
+  it("«Pochtani jo'natish» (superadmin) — `mail:<id>:send`", async () => {
+    renderPage(stateFor("superadmin"), {
+      pathname: `/mails/${POST_ID}`,
+      state: mailArrivalState({ id: POST_ID, regionId: "12", orders: 2 }, "send"),
+    });
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+    expect(target().id).toBe(mailScanTargetId(POST_ID, "send"));
+    expect(target().title).toBe("Pochtani jo'natish");
+  });
+
+  it("«Rad etilgan pochta» (HQ menejeri, `type: refused`) — `mail:<id>:refused`", async () => {
+    mocks.useRefusedByPostId.mockImplementation((postId: string) =>
+      postId
+        ? { data: { data: [order("10195", "aaaaaaaaaaaaaaaaaaaaaa95", "Nigora Xoliqova", "cancelled")] }, isLoading: false, isError: false }
+        : { data: undefined, isLoading: false, isError: false },
+    );
+    renderPage(stateFor("manager", "HQ"), {
+      pathname: `/mails/${POST_ID}`,
+      state: mailArrivalState({ id: POST_ID }, "refused"),
+    });
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+    expect(target().id).toBe(mailScanTargetId(POST_ID, "refused"));
+    expect(target().title).toBe("Rad etilgan pochtani qabul qilish");
   });
 });
