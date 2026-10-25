@@ -1,5 +1,10 @@
-import { ORDER_STATUSES } from "../../../entities/order";
-import type { DeliveryType, OrderListParams, OrderStatus } from "../../../entities/order/types/order";
+import { ORDER_STATUSES, toOrderSearchTerm } from "../../../entities/order";
+import type {
+  DeliveryType,
+  OrderFulfillmentSource,
+  OrderListParams,
+  OrderStatus,
+} from "../../../entities/order/types/order";
 import { getThisMonthRange, getThisWeekRange, getTodayRange } from "../../../shared/lib/dateRange";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
 
@@ -21,6 +26,8 @@ export const ORDER_FILTER_KEYS = {
   dateFrom: "startDay",
   dateTo: "endDay",
   search: "orderSearch",
+  /** 6kHnNH9j: manba — `WAREHOUSE` (ombordan) yoki `HQ` (API param bilan bir xil nom). */
+  fulfillmentSource: "fulfillment_source",
 } as const;
 
 export const ORDER_STATUS_URL_KEY = "status";
@@ -75,6 +82,9 @@ export const normalizeFilterStatuses = (values: readonly string[]): OrderStatus[
   FILTER_STATUSES.filter((status) => values.includes(status));
 
 export const isDeliveryType = (value: string): value is DeliveryType => value === "center" || value === "address";
+
+export const isFulfillmentSource = (value: string): value is OrderFulfillmentSource =>
+  value === "WAREHOUSE" || value === "HQ";
 
 /** `GET /orders` qabul qiladigan `limit` qiymatlari (gateway `DEFAULT_ALLOWED_LIMITS`, boshqasi — 400). */
 export const ORDER_LIST_LIMITS: readonly number[] = [10, 25, 50, 100];
@@ -148,6 +158,8 @@ export type OrderFilterValues = {
   statuses: OrderStatus[];
   dateFrom: string;
   dateTo: string;
+  /** 6kHnNH9j: «Manba» filtri (`scope.source` bo'lgan rollarda). */
+  fulfillmentSource?: "" | OrderFulfillmentSource;
 };
 
 export const EMPTY_ORDER_FILTERS: OrderFilterValues = {
@@ -160,6 +172,7 @@ export const EMPTY_ORDER_FILTERS: OrderFilterValues = {
   statuses: [],
   dateFrom: "",
   dateTo: "",
+  fulfillmentSource: "",
 };
 
 /** Rolga qarab qaysi filtrlar ishlaydi — `pages/orders/index.tsx` dagi API parametrlari bilan bir xil qoida. */
@@ -177,6 +190,11 @@ export type OrderFilterScope = {
   area: "region" | "district" | "none";
   /** Kuryer (market va market operatorida — yo'q). */
   courier: boolean;
+  /**
+   * 6kHnNH9j: «Manba» (Ombordan · HQ orqali) — buyurtmani yaratadigan / ombordan teradigan xodimlar: superadmin, admin,
+   * registrator, menejer (ega qarori 10). Market tomonida yo'q — u «Ombordan» belgisini ro'yxatda ko'radi.
+   */
+  source: boolean;
 };
 
 /**
@@ -192,6 +210,7 @@ export const getOrderFilterScope = (role: string | null): OrderFilterScope => {
     branch: isAdmin,
     area: role === "manager" ? "district" : role === "market_operator" ? "none" : "region",
     courier: !marketSide,
+    source: isAdmin || role === "registrator" || role === "manager",
   };
 };
 
@@ -223,15 +242,19 @@ export const buildOrderListParams = (
   const statuses = parseStatusValues(values.statuses);
   if (statuses.length > 0) params.status = statuses;
   if (isDeliveryType(values.deliveryType)) params.where_deliver = values.deliveryType;
+  if (scope.source && values.fulfillmentSource && isFulfillmentSource(values.fulfillmentSource)) {
+    params.fulfillment_source = values.fulfillmentSource;
+  }
   if (values.dateFrom) params.start_day = values.dateFrom;
   if (values.dateTo) params.end_day = values.dateTo;
-  if (values.search) params.search = values.search;
+  // rwAy8Qyk: ro'yxatdagi raqam («EL-100081») bilan qidirish — backend hozircha faqat ichki id'ni oladi.
+  if (values.search) params.search = toOrderSearchTerm(values.search);
 
   return params;
 };
 
 /**
- * Panel filtrlari soni («Filtrlar N»): market, filial, viloyat/tuman, kuryer, yetkazish turi va holat (bir nechta
+ * Panel filtrlari soni («Filtrlar N»): market, filial, viloyat/tuman, kuryer, yetkazish turi, manba va holat (bir nechta
  * holat — bitta filtr). `includeStatus=false` — holat tab bilan ko'rsatilgan (filtr emas). Sana va qidiruv bu
  * songa kirmaydi — ular asboblar qatorida ko'rinib turadi.
  */
@@ -245,6 +268,7 @@ export const countPanelFilters = (
   Number(Boolean(areaValueOf(values, scope))) +
   Number(scope.courier && Boolean(values.courierId)) +
   Number(Boolean(values.deliveryType)) +
+  Number(scope.source && Boolean(values.fulfillmentSource)) +
   Number(includeStatus && values.statuses.length > 0);
 
 export const hasDateRange = (values: Pick<OrderFilterValues, "dateFrom" | "dateTo">) =>

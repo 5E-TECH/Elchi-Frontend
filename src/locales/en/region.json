@@ -32,7 +32,8 @@
       "actions": {
         "sato": "Move districts",
         "districts": "Districts",
-        "logist": "Assign logisticians"
+        "logist": "Assign logisticians",
+        "tariffs": "Delivery tariffs"
       }
     },
     "period": {
@@ -345,14 +346,17 @@
         "orders": "Orders",
         "users": "Users",
         "branches": "Branches",
-        "before": "was {{count}}"
+        "before": "was {{count}}",
+        "usersHint": "Customers, couriers and markets"
       },
       "deleteBlocked": {
         "title": "{{name}} can't be deleted",
         "text": "Orders, users or branches are linked to this district. If it is deleted, they will be left without a district.",
         "note": "If you merge, all of them move to the district you choose and {{name}} is deleted. Or move the orders, users and branches to another district one by one.",
         "close": "Close",
-        "merge": "Merge"
+        "merge": "Merge",
+        "linked": "Linked",
+        "linkedAria": "Linked to the district"
       },
       "merge": {
         "title": "Merge district",
@@ -366,21 +370,26 @@
         "irreversibleTitle": "This can't be undone",
         "irreversibleText": "{{name}} will be deleted permanently. Merging can take up to 2 minutes.",
         "cancel": "Cancel",
-        "submit": "Merge"
+        "submit": "Merge",
+        "movesTo": "Moves to {{name}}",
+        "movesAria": "To be moved",
+        "countsLoading": "Loading counts"
       },
       "progress": {
         "title": "Merging…",
         "text": "{{from}} → {{to}}. Orders, users and branches are being moved and their counts re-checked.",
         "elapsed": "Elapsed {{time}}",
         "keepOpenTitle": "Don't close this window",
-        "keepOpenText": "It can take up to 2 minutes. Don't reload the page. If the connection drops, check the result in the Activity log."
+        "keepOpenText": "It can take up to 2 minutes. Don't reload the page. If the connection drops, check the result in the Activity log.",
+        "movingAria": "Being moved"
       },
       "result": {
         "title": "Districts merged",
         "text": "{{from}} was deleted. Its orders, users and branches were moved to {{to}}.",
         "nowIn": "Now in {{name}}",
         "note": "Deleted records are not counted.",
-        "close": "Close"
+        "close": "Close",
+        "moved": "Moved"
       },
       "unknown": {
         "title": "Result unknown",
@@ -396,6 +405,57 @@
         "title": "Could not merge",
         "text": "The district list was refreshed: if {{from}} is still listed, nothing was merged.",
         "journal": "Activity log"
+      },
+      "mergeError": {
+        "title": {
+          "error": "Could not merge",
+          "unavailable": "The service did not respond",
+          "manual": "Merge incomplete"
+        },
+        "text": {
+          "error": "The merge was cancelled. Everything moved was returned to {{from}}; the district was not deleted.",
+          "unavailable": "The merge was stopped. Everything moved was returned to {{from}}; the district was not deleted.",
+          "manual": "The merge was cancelled, but some data could not be returned to {{from}}. {{from}} was not deleted."
+        },
+        "reasonLabel": "Reason",
+        "kinds": {
+          "orders": "orders",
+          "users": "users",
+          "branches": "branches",
+          "any": "Data"
+        },
+        "reason": {
+          "countMismatchTarget": "Counts did not match — {{name}} has {{actual}} {{kind}}, expected {{expected}}.",
+          "countMismatchSource": "Counts did not match — {{actual}} {{kind}} left in {{name}}, expected {{expected}}.",
+          "countMismatch": "Counts did not match — the recount after moving differs from what was expected.",
+          "timeout": "{{kind}} were not moved — the service did not respond within {{seconds}} seconds.",
+          "timeoutNoValue": "{{kind}} were not moved — the service did not respond in time.",
+          "remoteRefused": "{{kind}} were not moved — the service refused or could not be reached.",
+          "invalidResponse": "{{kind}} were not moved — the service returned an invalid response.",
+          "deleteFailed": "The district could not be deleted or recounted."
+        },
+        "note": {
+          "countMismatch": "This usually happens when a new order is added at that moment. Try again; if it repeats, copy the message and send it to technical support.",
+          "error": "Try again; if it repeats, copy the message and send it to technical support.",
+          "unavailable": "Try again in a few minutes. If it repeats, copy the message and send it to technical support.",
+          "manual": "The full list is in the Activity log: the “District merge incomplete” entry, {{name}} (ID {{id}})."
+        },
+        "manualTitle": "Manual fix needed",
+        "manualText": "These records did not return to {{from}}. Check and fix them manually, then start the merge again.",
+        "strandedTitle": "Not returned to {{from}}",
+        "strandedAria": "Not returned to {{from}}",
+        "strandedCount": "{{kind}} · {{count}}",
+        "strandedUnknown": "{{kind}} · IDs unknown",
+        "strandedIn": "Left in {{name}}",
+        "strandedInId": "Left in district ID {{id}}",
+        "strandedNowhere": "Location unknown — check the log",
+        "copy": "Copy message",
+        "copied": "Message copied",
+        "copyFailed": "Could not copy the message",
+        "copyCode": "Code",
+        "copyTime": "Time",
+        "retry": "Try again",
+        "journal": "Open the activity log"
       }
     },
     "sato": {
@@ -617,7 +677,8 @@
         "hint": "Only districts of {{region}}.",
         "hintKeeps": "Only districts of {{region}}. SOATO code {{code}} is kept.",
         "sourceCodeLost": "Code {{code}} of record ID {{id}} will be lost.",
-        "irreversibleText": "Record ID {{id}} will be deleted permanently. Merging can take up to 2 minutes."
+        "irreversibleText": "Record ID {{id}} will be deleted permanently. Merging can take up to 2 minutes.",
+        "movesTo": "Moves to {{name}} (ID {{id}})"
       }
     },
     "logist": {

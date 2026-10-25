@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical, superadmin-ops-system-ai-config, superadmin-ops-system-ai-cap
 import { memo, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Banknote, CircleCheck, CircleX, Clock, Info, RefreshCw, Search, Trophy, Truck, TriangleAlert } from "lucide-react";
+import { Banknote, CircleCheck, CircleMinus, CircleX, Clock, Info, RefreshCw, Search, Trophy, Truck, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BATCH_STATUS_TONE } from "../../entities/batch";
 import { useMiscCoverage } from "../../entities/coverage/miscCoverage";
@@ -234,12 +234,21 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                   bodyClassName="flex flex-col items-center gap-4"
                 >
                   <SlaGauge
-                    value={kpi.onTimeRate}
-                    valueText={percent(kpi.onTimeRate)}
+                    value={kpi.deliveryCount === 0 ? 0 : kpi.onTimeRate}
+                    valueText={kpi.deliveryCount === 0 ? "—" : percent(kpi.onTimeRate)}
                     label={t("system.sla.label")}
-                    ariaLabel={t("system.sla.aria", { value: percent(kpi.onTimeRate) })}
+                    ariaLabel={
+                      kpi.deliveryCount === 0
+                        ? t("system.sla.ariaUnmeasured")
+                        : t("system.sla.aria", { value: percent(kpi.onTimeRate) })
+                    }
                     badge={
-                      kpi.onTimeRate >= 70 ? (
+                      // yrLt5oMi: yetkazish yo'q — «Past» emas, neytral «O'lchanmagan».
+                      kpi.deliveryCount === 0 ? (
+                        <Badge tone="neutral" icon={CircleMinus}>
+                          {t("system.sla.unmeasured")}
+                        </Badge>
+                      ) : kpi.onTimeRate >= 70 ? (
                         <Badge tone="success" icon={CircleCheck}>
                           {t("system.sla.good")}
                         </Badge>

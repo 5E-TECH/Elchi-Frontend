@@ -11,7 +11,8 @@ import { useResetInputsOnPathChange } from "../../../shared/lib/useResetInputsOn
  * `market_operator-products-unassigned` va oynalar): haqiqiy UI (`Dialog`, `useConfirm`, `notify`) orqali; API —
  * `shared/api/api` mock'i. Qidiruv va market filtri URL bilan sinxron (sahifa 1 ga qaytadi); market va market
  * operatori — `product/my-products`, faqat ko'rish (MH-1: yaratish, tahrirlash, o'chirish yo'q); tahrir — xodim
- * `PATCH product/:id` («Narx» bilan), o'chirish — tasdiq oynasi orqali `DELETE product/:id`.
+ * `PATCH product/:id` («Narx» bilan), o'chirish — tasdiq oynasi orqali `DELETE product/:id`. O'lchov (6FLyjO6j):
+ * «Og'irlik», «O'lcham, sm», «Hisob vazni» ustunlari, oynada yaratish sahifasi bilan AYNI maydonlar.
  */
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), patch: vi.fn(), delete: vi.fn(), post: vi.fn() }));
@@ -24,8 +25,42 @@ vi.mock("../../../shared/api/api", () => ({
 
 type Params = Record<string, unknown>;
 
-const OLMA = { id: 1, name: "Olma", image_url: "/uploads/olma.png", price: 189000, market: { id: 1, name: "Fresh" } };
-const NOK = { id: 2, name: "Nok", price: null, market: { id: 2, name: "Bozor" } };
+const OLMA = {
+  id: 1,
+  name: "Olma",
+  image_url: "/uploads/olma.png",
+  price: 189000,
+  weight_kg: "1.200",
+  length_cm: 30,
+  width_cm: 22,
+  height_cm: 15,
+  volumetric_enabled: true,
+  market: { id: 1, name: "Fresh" },
+};
+/** O'lchovsiz eski mahsulot (backend `null`) — «Kiritilmagan». */
+const NOK = { id: 2, name: "Nok", price: null, weight_kg: null, length_cm: null, width_cm: null, height_cm: null, market: { id: 2, name: "Bozor" } };
+/** Kalit o'chiq — «hajm hisobga olinmaydi». */
+const KURTKA = {
+  id: 3,
+  name: "Kurtka",
+  price: 320000,
+  weight_kg: 0.9,
+  length_cm: 40,
+  width_cm: 30,
+  height_cm: 15,
+  volumetric_enabled: false,
+  market: { id: 1, name: "Fresh" },
+};
+
+const QUOTES = {
+  data: {
+    quotes: {
+      city: { tariffId: "city", base: 35000, perExtraKg: 4000, billableKg: 2, extraKg: 1, total: 39000 },
+      center: { tariffId: "center", base: 40000, perExtraKg: 4000, billableKg: 2, extraKg: 1, total: 44000 },
+      address: null,
+    },
+  },
+};
 
 let productRows: unknown[] = [OLMA];
 
@@ -50,8 +85,13 @@ const respond = () => {
       });
     }
     if (url === "product/1") return Promise.resolve({ data: { data: OLMA } });
+    if (url === "product/2") return Promise.resolve({ data: { data: NOK } });
+    if (url === "delivery/pricing-settings") return Promise.resolve({ data: { data: { first_kg_included: 1, round_to: 500 } } });
     return Promise.reject(new Error(`kutilmagan so'rov: ${url}`));
   });
+  mocks.post.mockImplementation((url: string) =>
+    url === "delivery/quote/by-tariff" ? Promise.resolve({ data: QUOTES }) : Promise.reject(new Error(`kutilmagan: ${url}`)),
+  );
   mocks.patch.mockResolvedValue({ data: { data: OLMA } });
   mocks.delete.mockResolvedValue({ data: {} });
 };
@@ -125,7 +165,7 @@ describe("ProductTable — ro'yxat", () => {
     await screen.findByText("Nok");
 
     const headers = screen.getAllByRole("columnheader").map((th) => th.textContent);
-    expect(headers).toEqual(["#", "Mahsulot nomi", "Market", "Narx", "Amallar"]);
+    expect(headers).toEqual(["#", "Mahsulot nomi", "Market", "Narx", "Og'irlik", "O'lcham, sm", "Hisob vazni", "Amallar"]);
     expect(screen.getByRole("columnheader", { name: "Market" })).toHaveClass("max-lg:hidden");
     const [, olmaRow, nokRow] = screen.getAllByRole("row");
     expect(within(olmaRow).getAllByRole("cell")[3]).toHaveTextContent(/^189\s000 so'm$/);
@@ -345,6 +385,10 @@ describe("ProductTable — tahrirlash va o'chirish", () => {
     // Narx o'zgarmagan — yuborilmaydi (kasrli eski narx yaxlitlanib qolmasin).
     expect(body.has("price")).toBe(false);
     expect(body.has("image")).toBe(false);
+    // Saqlangan o'lchov o'zgarmagan — yuborilmaydi va o'chib ketmaydi.
+    for (const key of ["weight_kg", "length_cm", "width_cm", "height_cm", "volumetric_enabled"]) {
+      expect(body.has(key)).toBe(false);
+    }
     expect(await screen.findByText("Mahsulot muvaffaqiyatli yangilandi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
@@ -504,7 +548,14 @@ describe("ProductTable — market roli", () => {
     expect(screen.queryByRole("button", { name: "Mahsulot yaratish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Olma — tahrirlash" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Olma — o'chirish" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual(["#", "Mahsulot nomi", "Narx"]);
+    expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
+      "#",
+      "Mahsulot nomi",
+      "Narx",
+      "Og'irlik",
+      "O'lcham, sm",
+      "Hisob vazni",
+    ]);
     expect(
       screen.getByText("Faqat ko'rish. Mahsulotni Elchi xodimlari qo'shadi va o'zgartiradi."),
     ).toBeInTheDocument();
@@ -677,5 +728,129 @@ describe("ProductTable — market o'z mahsulotlarida sahifa va qidiruv (3qDsJpfW
       expect(lastListParams("product/my-products")).toEqual(expect.objectContaining({ search: "Nok", page: 1 })),
     );
     expect(lastListParams("product/my-products")).not.toHaveProperty("market_id");
+  });
+});
+
+describe("ProductTable — og'irlik va o'lcham (6FLyjO6j)", () => {
+  it("jadval: «Og'irlik», «O'lcham, sm» (planshetda yashirin), «Hisob vazni» + asos; o'lchovsiz — «Kiritilmagan»", async () => {
+    productRows = [OLMA, NOK, KURTKA];
+    renderPage();
+    await screen.findByText("Kurtka");
+
+    expect(screen.getByRole("columnheader", { name: "Og'irlik" })).toHaveClass("max-lg:hidden");
+    expect(screen.getByRole("columnheader", { name: "O'lcham, sm" })).toHaveClass("max-lg:hidden");
+    expect(screen.getByRole("columnheader", { name: "Hisob vazni" })).not.toHaveClass("max-lg:hidden");
+    const [, olma, nok, kurtka] = screen.getAllByRole("row");
+    const cells = (row: HTMLElement) => within(row).getAllByRole("cell").map((cell) => cell.textContent);
+    expect(cells(olma).slice(4, 7)).toEqual(["1,2 kg", "30 × 22 × 15", "2,0 kghajm bo'yicha"]);
+    expect(cells(kurtka).slice(4, 7)).toEqual(["0,9 kg", "40 × 30 × 15", "0,9 kghajm hisobga olinmaydi"]);
+    expect(within(nok).getAllByRole("cell")[6]).toHaveTextContent("Kiritilmagan");
+    expect(within(within(nok).getAllByRole("cell")[4]).getByText("Kiritilmagan")).toHaveClass("sr-only");
+  });
+
+  it("market (faqat ko'rish) ham o'lchov ustunlarini ko'radi", async () => {
+    productRows = [OLMA];
+    renderPage("/products", "market", "77");
+    await screen.findByText("Olma");
+    expect(screen.getByText("2,0 kg")).toBeInTheDocument();
+    expect(screen.getByText("hajm bo'yicha")).toBeInTheDocument();
+  });
+
+  it("tahrirlash oynasi: o'lchov to'ldirilgan, kalit, jonli hisob vazni, uchta tarif katagi", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Olma — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    expect(within(dialog).getByRole("textbox", { name: "Og'irlik" })).toHaveValue("1,2");
+    expect(within(dialog).getByRole("textbox", { name: "Uzunlik" })).toHaveValue("30");
+    expect(within(dialog).getByRole("switch", { name: "Hajmga qarab hisoblash" })).toHaveAttribute("aria-checked", "true");
+    expect(within(dialog).getByText("1,98 kg")).toBeInTheDocument();
+    expect(within(dialog).getByText("2,0 kg")).toBeInTheDocument();
+
+    const tiles = await within(dialog).findByRole("group", { name: "Taxminiy yetkazish narxi" });
+    await waitFor(() => expect(within(tiles).getByText(/^44\s000 so'm$/)).toBeInTheDocument());
+    expect(within(tiles).getByText("Markazgacha")).toBeInTheDocument();
+    // Faol tarifi yo'q yo'nalish — «—» (ekran o'quvchiga «faol tarif yo'q»).
+    expect(within(tiles).getByText("faol tarif yo'q")).toHaveClass("sr-only");
+  });
+
+  it("og'irlik o'zgartirilsa — faqat `weight_kg`; kalit o'chirilsa — `volumetric_enabled: false`", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Olma — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    const weight = within(dialog).getByRole("textbox", { name: "Og'irlik" });
+    await user.clear(weight);
+    await user.type(weight, "1,5");
+    await user.click(within(dialog).getByRole("switch", { name: "Hajmga qarab hisoblash" }));
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    const body = mocks.patch.mock.calls[0][1] as FormData;
+    expect(body.get("weight_kg")).toBe("1.5");
+    expect(body.get("volumetric_enabled")).toBe("false");
+    expect(body.has("length_cm")).toBe(false);
+  });
+
+  it("o'lchovsiz eski mahsulot: o'lchov ixtiyoriy (ega qarori 2026-10-24) — bo'sh saqlanadi, chala o'lcham — xato", async () => {
+    productRows = [NOK];
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Nok — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    const weight = within(dialog).getByRole("textbox", { name: "Og'irlik" });
+    expect(weight).toHaveValue("");
+    expect(weight).not.toHaveAttribute("aria-required", "true");
+    expect(within(dialog).getByText("Hisoblab bo'lmadi")).toBeInTheDocument();
+
+    // Faqat uzunlik — kenglik va balandlik majburiy bo'ladi (backend U / K / B ni faqat birga oladi).
+    await user.type(within(dialog).getByRole("textbox", { name: "Uzunlik" }), "18");
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(await within(dialog).findByText("Kenglikni kiriting")).toBeInTheDocument();
+    expect(within(dialog).getByText("Balandlikni kiriting")).toBeInTheDocument();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("2 ta maydonda xato bor");
+    expect(mocks.patch).not.toHaveBeenCalled();
+
+    // Uzunlik tozalansa — o'lchovsiz saqlanadi, o'lchov maydonlari yuborilmaydi.
+    await user.clear(within(dialog).getByRole("textbox", { name: "Uzunlik" }));
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    const [, blankBody] = mocks.patch.mock.calls[0] as [string, FormData];
+    expect(["weight_kg", "length_cm", "width_cm", "height_cm"].map((key) => blankBody.has(key))).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it("o'lchovsiz eski mahsulot: o'lchov kiritilsa — to'rttalasi yuboriladi", async () => {
+    productRows = [NOK];
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Nok — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    for (const [name, value] of [
+      ["Og'irlik", "0,4"],
+      ["Uzunlik", "18"],
+      ["Kenglik", "10"],
+      ["Balandlik", "6"],
+    ] as const) {
+      await user.type(within(dialog).getByRole("textbox", { name }), value);
+    }
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    const [url, body] = mocks.patch.mock.calls[0] as [string, FormData];
+    expect(url).toBe("product/2");
+    expect([body.get("weight_kg"), body.get("length_cm"), body.get("width_cm"), body.get("height_cm")]).toEqual([
+      "0.4",
+      "18",
+      "10",
+      "6",
+    ]);
   });
 });

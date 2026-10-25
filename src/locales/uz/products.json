@@ -54,7 +54,10 @@
         "name": "Mahsulot nomi",
         "market": "Market",
         "price": "Narx",
-        "actions": "Amallar"
+        "actions": "Amallar",
+        "weight": "Og'irlik",
+        "dimensions": "O'lcham, sm",
+        "billable": "Hisob vazni"
       },
       "sortByName": "Nom bo'yicha saralash",
       "editAria": "{{name}} — tahrirlash",
@@ -128,7 +131,10 @@
       "empty": "Bu marketda hali mahsulot yo'q",
       "emptyDescription": "Birinchi mahsulotni shu sahifadagi forma orqali qo'shing.",
       "loadFailed": "Market mahsulotlarini yuklab bo'lmadi",
-      "editing": "Tahrirlanmoqda"
+      "editing": "Tahrirlanmoqda",
+      "columns": {
+        "nameWithBillable": "Mahsulot nomi · hisob vazni"
+      }
     },
     "form": {
       "price": "Narx",
@@ -142,6 +148,41 @@
       "notFound": "Mahsulot topilmadi — u o'chirilgan bo'lishi mumkin. Ro'yxatni yangilang.",
       "server": "Serverda xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring.",
       "duplicateName": "Bu marketda shu nomli mahsulot allaqachon bor — boshqa nom kiriting."
+    },
+    "measure": {
+      "title": "Og'irlik va o'lcham",
+      "subtitle": "Yetkazish narxi shu ma'lumotdan hisoblanadi",
+      "weight": "Og'irlik",
+      "weightHint": "Qadoq bilan, 0,1 kg aniqlikda",
+      "weightPlaceholder": "0,0",
+      "dimensions": "O'lcham (U × K × B)",
+      "length": "Uzunlik",
+      "width": "Kenglik",
+      "height": "Balandlik",
+      "dimensionsHint": "Qadoqlangan holatda, santimetrda, butun son",
+      "dimensionsHintOff": "Majburiy, hajm hisobi o'chiq bo'lsa ham · qadoqlangan holatda, santimetrda, butun son",
+      "unitKg": "kg",
+      "unitCm": "sm",
+      "kg": "{{value}} kg",
+      "dims": "{{length}} × {{width}} × {{height}}",
+      "notEntered": "Kiritilmagan",
+      "basis": {
+        "weight": "og'irlik bo'yicha",
+        "volume": "hajm bo'yicha",
+        "volumeOff": "hajm hisobga olinmaydi"
+      },
+      "errors": {
+        "weightRequired": "Og'irlikni kiriting — kamida 0,1 kg",
+        "weightMin": "Og'irlik kamida 0,1 kg bo'lishi kerak",
+        "weightMax": "Og'irlik ko'pi bilan 1 000 kg",
+        "weightPrecision": "Ko'pi bilan 3 ta kasr xona (masalan, 0,125)",
+        "notNumber": "Faqat raqam kiriting",
+        "lengthRequired": "Uzunlikni kiriting",
+        "widthRequired": "Kenglikni kiriting",
+        "heightRequired": "Balandlikni kiriting",
+        "dimensionInteger": "Musbat butun son kiriting",
+        "dimensionMax": "Ko'pi bilan 1 000 sm"
+      }
     }
   }
 }

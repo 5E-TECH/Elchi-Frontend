@@ -3,6 +3,8 @@ export const queryKeys = {
     all: ["notifications"] as const,
     list: (params: object) => ["notifications", "list", params] as const,
     detail: (id: string) => ["notifications", "detail", id] as const,
+    /** Market o'z guruhlari holati (`GET /notifications/me/telegram-groups`, TG-C) — `all` prefiksi ostida. */
+    myTelegramGroups: ["notifications", "me-telegram-groups"] as const,
   },
   notificationsInbox: {
     all: ["notifications-inbox"] as const,
@@ -63,6 +65,32 @@ export const queryKeys = {
       ["activity-logs", "entity", entityType, entityId] as const,
     user: (userId: string, params: object) =>
       ["activity-logs", "user", userId, params] as const,
+  },
+  /** Yetkazish narxi (DAqXPeSy): uchala tarif bo'yicha taxmin, formula sozlamalari. */
+  deliveryPricing: {
+    all: ["delivery-pricing"] as const,
+    quoteByTariff: (body: object) => ["delivery-pricing", "quote-by-tariff", body] as const,
+    settings: ["delivery-pricing", "settings"] as const,
+    settingsHistory: ["delivery-pricing", "settings-history"] as const,
+    tariffs: ["delivery-pricing", "tariffs"] as const,
+  },
+  /**
+   * Ombor (yXC91RRx): ro'yxat, tafsilot, qoldiq, harakatlar, market «Ombordagi qoldiq». Har yozish (kirim,
+   * inventarizatsiya, chegara, to'xtatish …) butun `all` ni yangilaydi — KPI, jadval va jurnal birga.
+   */
+  warehouses: {
+    all: ["warehouses"] as const,
+    list: (params: object) => ["warehouses", "list", params] as const,
+    detail: (id: string) => ["warehouses", "detail", id] as const,
+    stock: (id: string, params: object) => ["warehouses", "stock", id, params] as const,
+    movements: (id: string, params: object) => ["warehouses", "movements", id, params] as const,
+    marketStock: (params: object) => ["warehouses", "market-stock", params] as const,
+    /** 6kHnNH9j: buyurtma formasidagi manba (`POST /warehouses/resolve-source`, faqat hisoblaydi). */
+    resolveSource: (body: object) => ["warehouses", "resolve-source", body] as const,
+    /** 6kHnNH9j: katalogdagi «Omborda: N» (`GET /warehouses/availability`). */
+    availability: (params: object) => ["warehouses", "availability", params] as const,
+    /** XtcEyQjb: filial xodimining o'z filialida ombor bormi (menyu bandi; `GET /warehouses?limit=1`). */
+    ownExists: ["warehouses", "own-exists"] as const,
   },
   /** O'z hisobining faol sessiyalari (`GET /auth/sessions`, Elchi Pochta #3). */
   accountSessions: {

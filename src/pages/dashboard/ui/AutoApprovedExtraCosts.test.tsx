@@ -63,6 +63,14 @@ describe("AutoApprovedExtraCosts", () => {
     expect(within(list).queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("0Ngp09FG: `order_number` bor — «№EL-100076» (havola id bo'yicha)", async () => {
+    http.get.mockResolvedValue(response([autoApproved("ap-9", "76", { order_number: "EL-100076" })]));
+    renderBlock();
+
+    const row = await screen.findByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №EL-100076" });
+    expect(within(row).getByRole("link", { name: "№EL-100076" })).toHaveAttribute("href", "/orders/edit/76");
+  });
+
   it("yozuv yo'q (avtomatik tasdiq o'chiq) — blok chizilmaydi", async () => {
     http.get.mockResolvedValue(response([]));
     const { container } = renderBlock();

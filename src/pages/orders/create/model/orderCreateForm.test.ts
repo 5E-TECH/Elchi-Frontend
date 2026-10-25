@@ -54,7 +54,9 @@ describe("buildCreateOrderPayload", () => {
     },
     existingCustomer: null,
     deliveryTypeTouched: true,
+    deliveryDefaultFor: null,
     totalPriceAuto: false,
+    fulfillment: "auto",
     customer: {
       phone: "901234567",
       extra_phone: "991112233",
@@ -125,6 +127,17 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("address");
     expect(payload).not.toHaveProperty("comment");
     expect(payload).not.toHaveProperty("operator");
+  });
+
+  // 6kHnNH9j: manba bloki ko'rinadigan rollarda `fulfillment` (auto | hq), qolganlarida — yuborilmaydi (backend `auto`).
+  it("fulfillment: faqat includeFulfillment bilan, tanlov — auto yoki hq", () => {
+    expect(buildCreateOrderPayload(formValues, { includeMarketId: true })).not.toHaveProperty("fulfillment");
+    expect(buildCreateOrderPayload(formValues, { includeMarketId: true, includeFulfillment: true })).toMatchObject({
+      fulfillment: "auto",
+    });
+    expect(
+      buildCreateOrderPayload({ ...formValues, fulfillment: "hq" }, { includeMarketId: true, includeFulfillment: true }),
+    ).toMatchObject({ fulfillment: "hq" });
   });
 });
 

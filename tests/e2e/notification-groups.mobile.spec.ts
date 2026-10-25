@@ -6,6 +6,7 @@ import { tapTargets, tooSmall } from "./support/tapTargets";
 /**
  * NG-A — `/notifications` telefonda (390, admin): kartalar, kebab ≥ 44 px, pastki varaqa (sarlavha, «turi · ID»,
  * nofaolda holat qatori, bandlar ≥ 52 px), varaqadan tasdiq oynasi va `PATCH {is_active}`; gorizontal oqish yo'q.
+ * NG-C (G085w5Qr): kartada va varaqada nofaollik sababi.
  */
 test.describe.configure({ timeout: 180_000 });
 
@@ -48,4 +49,22 @@ test("⭐ 390: pastki varaqa → «Faollashtirish» → tasdiq → PATCH {is_act
   await dialog.getByRole("button", { name: "Faollashtirish" }).click();
   await expect(toast(page, "Guruh faollashtirildi", { tone: "success" })).toBeVisible();
   expect(mock.patches).toEqual([{ id: "8", body: { is_active: true } }]);
+});
+
+test("⭐ 390 NG-C: guruh topilmadi — kartada va varaqada sabab, qizil «Nofaol», oqib ketish yo'q", async ({ page }) => {
+  await openNotificationGroups(page, { inactiveReason: "chat_not_found", inactiveAt: "2026-09-28T17:45:00+05:00" });
+
+  const card = page.getByRole("listitem").filter({ hasText: "-1001937420815" });
+  await expect(card.getByText("Guruh topilmadi — ulanishni o'chirib, qayta ulang")).toBeVisible();
+  await expect(card.getByText("Nofaol bo'lgan: 28.09.2026, 17:45")).toBeVisible();
+  await expect(card.getByText("Nofaol", { exact: true })).toHaveClass(/bg-danger-soft/);
+  await expectNoHorizontalOverflow(page);
+
+  await card.getByRole("button", { name: "Nur Elektronika — yangi buyurtma guruhi: amallar" }).click();
+  const sheet = page.getByRole("dialog", { name: "Nur Elektronika #27" });
+  await expect(sheet.getByText("Guruh topilmadi — ulanishni o'chirib, qayta ulang")).toBeVisible();
+  await sheet.getByRole("menuitem", { name: "Faollashtirish" }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" });
+  await expect(dialog.getByRole("note")).toContainText("Guruh topilmadi");
+  await expectNoHorizontalOverflow(page);
 });

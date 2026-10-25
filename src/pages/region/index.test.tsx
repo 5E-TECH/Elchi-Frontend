@@ -8,6 +8,9 @@ import { vi } from "vitest";
 import Region from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
+/** Sahifa holati (global «Internet aloqasi yo'q» toast'i emas — G6F68ti6: brauzer oflaynida ikkalasi ham chiqadi). */
+const PAGE_ONLY = { ignore: "script, style, [data-toast-id] *" };
+
 const apiGetMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../shared/api/api", () => ({
@@ -288,6 +291,17 @@ describe("Region page — superadmin / admin", () => {
 
     renderRegion("admin");
     expect(sectionOrder()).toEqual(["Tumanlar", "Tumanlarni o'tkazish", "Logist biriktirish"]);
+  });
+
+  it("«Yetkazish tariflari» (47WFHzlx) — superadmin va admin sarlavhasida, /delivery-tariffs ga olib boradi", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderRegion("superadmin");
+    expect(screen.getByRole("button", { name: "Yetkazish tariflari" })).toBeInTheDocument();
+    unmount();
+
+    renderRegion("admin");
+    await user.click(screen.getByRole("button", { name: "Yetkazish tariflari" }));
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/delivery-tariffs"));
   });
 
   it("keeps the period in the URL and sends the matching date range", async () => {
@@ -858,7 +872,7 @@ describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pul
       expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "leave" }));
       await user.click(screen.getByRole("button", { name: "back" }));
-      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(await screen.findByText("Internet aloqasi yo'q", PAGE_ONLY)).toBeInTheDocument();
       expect(screen.queryByTestId("logist-region-loading")).not.toBeInTheDocument();
     } finally {
       act(() => onlineManager.setOnline(true));
@@ -867,9 +881,13 @@ describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pul
   });
 
   it("offline region detail (list cached, stats/:id paused) — «Internet aloqasi yo'q», then recovers", async () => {
+    // Faqat birinchi yuklashda oflayn: `online` da faol so'rovlar qayta so'raladi (G6F68ti6) — mock yana oflayn
+    // qilmasin.
+    let firstLoad = true;
     apiGetMock.mockImplementation((url: string) => {
       if (url === "region/stats/all") {
-        onlineManager.setOnline(false);
+        if (firstLoad) onlineManager.setOnline(false);
+        firstLoad = false;
         return Promise.resolve({ data: LOGIST_STATS_ALL });
       }
       if (url === "region/stats/6") return Promise.resolve({ data: LOGIST_DETAIL });
@@ -877,7 +895,7 @@ describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pul
     });
     try {
       renderRegion("logist");
-      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(await screen.findByText("Internet aloqasi yo'q", PAGE_ONLY)).toBeInTheDocument();
       expect(calledUrls()).not.toContain("region/stats/6");
     } finally {
       act(() => onlineManager.setOnline(true));

@@ -27,6 +27,12 @@ export interface User {
     settings?: Record<string, unknown> | null;
     /** MO-2: market operatorining marketi (`my-profile` → `market_id`) — bosh sahifada o'z marketi qatorini belgilash uchun. */
     market_id?: string | number | null;
+    /** N13 (x6IO746K): market operatori marketi `{ id, name, add_order }` (`my-profile`); boshqa rollarda yo'q. */
+    market?: { id: string | number; name: string; add_order?: boolean } | null;
+    /** XtcEyQjb: market operatori «Ombordagi qoldiq» ni ko'radimi (`my-profile`; market yoqadi, sukut `false`). */
+    can_view_warehouse_stock?: boolean;
+    /** 6kHnNH9j: market «Ombordan buyurtma yaratish» kaliti (`my-profile`; superadmin/admin yoqadi, sukut `false`). */
+    can_order_from_warehouse?: boolean;
 }
 
 export interface UserState {

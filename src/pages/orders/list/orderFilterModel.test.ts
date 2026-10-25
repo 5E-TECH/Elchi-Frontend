@@ -83,6 +83,15 @@ describe("orderFilterModel", () => {
     expect(buildOrderListParams(EMPTY_ORDER_FILTERS, "admin", { page: 2, limit: 10 })).toEqual({ page: 2, limit: 10 });
   });
 
+  it("rwAy8Qyk: ro'yxatdagi raqam «EL-100081» bilan qidiruv — backendga ichki id «81» ketadi", () => {
+    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "EL-100081" }, "admin", { page: 1, limit: 10 })).toEqual({
+      page: 1,
+      limit: 10,
+      search: "81",
+    });
+    expect(buildOrderListParams({ ...EMPTY_ORDER_FILTERS, search: "Ali" }, "admin", { page: 1, limit: 10 }).search).toBe("Ali");
+  });
+
   it("counts panel filters per role, with several statuses as one filter", () => {
     expect(countPanelFilters(filled, getOrderFilterScope("superadmin"))).toBe(6);
     expect(countPanelFilters(filled, getOrderFilterScope("registrator"))).toBe(5);
@@ -93,7 +102,7 @@ describe("orderFilterModel", () => {
 
   it("MO-3: market operatori — o'z marketi; market, kuryer va viloyat (GET /region 403, N11) parametrlari ketmaydi", () => {
     const scope = getOrderFilterScope("market_operator");
-    expect(scope).toEqual({ marketSelect: false, market: false, branch: false, area: "none", courier: false });
+    expect(scope).toEqual({ marketSelect: false, market: false, branch: false, area: "none", courier: false, source: false });
     expect(buildOrderListParams({ ...filled, search: "Ali" }, "market_operator", { page: 1, limit: 10 })).toEqual({
       page: 1,
       limit: 10,
@@ -117,6 +126,24 @@ describe("orderFilterModel", () => {
     // Hafta/oy bugun bilan ustma-ust tushishi mumkin (dushanba, 1-sana) — birinchi mosi qaytadi.
     expect(["today", "week"]).toContain(matchQuickPeriod(week.from, week.to));
     expect(["today", "week", "month"]).toContain(matchQuickPeriod(month.from, month.to));
+  });
+
+  it("6kHnNH9j: «Manba» — superadmin, admin, registrator, menejer; market tomonida param ketmaydi", () => {
+    const withSource: OrderFilterValues = { ...EMPTY_ORDER_FILTERS, fulfillmentSource: "WAREHOUSE" };
+    for (const role of ["superadmin", "admin", "registrator", "manager"]) {
+      expect(getOrderFilterScope(role).source).toBe(true);
+      expect(buildOrderListParams(withSource, role, { page: 1, limit: 10 })).toMatchObject({ fulfillment_source: "WAREHOUSE" });
+      expect(countPanelFilters(withSource, getOrderFilterScope(role))).toBe(1);
+    }
+    for (const role of ["market", "market_operator"]) {
+      expect(getOrderFilterScope(role).source).toBe(false);
+      expect(buildOrderListParams(withSource, role, { page: 1, limit: 10 })).not.toHaveProperty("fulfillment_source");
+      expect(countPanelFilters(withSource, getOrderFilterScope(role))).toBe(0);
+    }
+    // Noma'lum qiymat (URL'dan) — yuborilmaydi.
+    expect(
+      buildOrderListParams({ ...EMPTY_ORDER_FILTERS, fulfillmentSource: "SKLAD" as never }, "admin", { page: 1, limit: 10 }),
+    ).not.toHaveProperty("fulfillment_source");
   });
 
   it("reads the total from the list response", () => {

@@ -20,7 +20,8 @@
     "in_transit": "Bekor · yo'lda",
     "branch": "Bekor · filialda",
     "hq": "Bekor · HQ'da",
-    "market": "Marketga topshirildi"
+    "market": "Marketga topshirildi",
+    "warehouse": "Omborga qaytdi"
   },
   "cancelReturn": {
     "towards": "→ {{name}}",

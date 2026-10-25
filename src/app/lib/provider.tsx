@@ -19,12 +19,17 @@ import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
 import { emitQueryError } from "../../shared/lib/queryErrorEvents";
 import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 
-const queryClient = new QueryClient({
+/** Ilovaning `QueryClient` i (test uchun eksport — `createAppQueryClient()` bilan bir xil sozlama). */
+export const createAppQueryClient = () => new QueryClient({
   // 4xx/5xx ham foydalanuvchiga ko'rinsin — sahifa `isError` o'qimasa ham.
   queryCache: new QueryCache({
     onError: (error, query) => emitQueryError(error, query.meta),
   }),
   defaultOptions: {
+    // G6F68ti6 (2-band): oflaynda amal (sotish, to'lov …) pauzaga tushib tugma to'xtamay aylanmasin va aloqa
+    // qaytgach o'zi jo'natilmasin — darhol tarmoq xatosi, global «Internet aloqasi yo'q», tugma to'xtaydi.
+    // Pul amallari `Idempotency-Key` bilan — qayta bosish ikki marta yozmaydi.
+    mutations: { networkMode: "always" },
     queries: {
       staleTime: 30_000,
       gcTime: 10 * 60 * 1000,
@@ -36,6 +41,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const queryClient = createAppQueryClient();
 
 const GlobalLoader = ({ children }: { children: ReactNode }) => {
   const isAppInitializing = useSelector((state: RootState) => state.user.isAppInitializing);

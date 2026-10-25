@@ -63,18 +63,21 @@ const groupDigits = (digits: string, group: string): string => digits.replace(/\
  * Son: mingliklar ajratkichi bilan, `fractionDigits` xonagacha (ortiqcha nollar olib tashlanadi).
  * `formatNumberLocalized(1545000)` → uz "1 545 000", en "1,545,000"; manfiy → "−1 545 000" (U+2212).
  * Yaxlitlanganda nolga teng bo'lsa (`-0,04` → "0") — minussiz.
+ * `minFractionDigits` — nollar olib tashlangandan keyin ham shuncha xona qoladi (og'irlik: `7` → "7,0" kg).
  */
 export const formatNumberLocalized = (
   value: unknown,
-  options: { language?: string | null; fractionDigits?: number } = {},
+  options: { language?: string | null; fractionDigits?: number; minFractionDigits?: number } = {},
 ): string => {
   const lang = resolveMoneyLanguage(options.language);
   const { group, decimal } = SEPARATORS[lang];
-  const fractionDigits = options.fractionDigits ?? 0;
+  const fractionDigits = Math.max(options.fractionDigits ?? 0, options.minFractionDigits ?? 0);
+  const minFractionDigits = Math.min(options.minFractionDigits ?? 0, fractionDigits);
   const num = toFiniteNumber(value);
   const fixed = Math.abs(num).toFixed(fractionDigits);
   const [intPart, fracPart] = fixed.split(".");
-  const trimmedFrac = fracPart?.replace(/0+$/, "");
+  const trimmed = fracPart?.replace(/0+$/, "") ?? "";
+  const trimmedFrac = trimmed.length >= minFractionDigits ? trimmed : fracPart?.slice(0, minFractionDigits);
   const body = groupDigits(intPart, group) + (trimmedFrac ? decimal + trimmedFrac : "");
   const isZero = Number(fixed) === 0;
   return num < 0 && !isZero ? `${MINUS_SIGN}${body}` : body;

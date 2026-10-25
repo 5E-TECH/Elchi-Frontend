@@ -1,28 +1,31 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
-import type { Notification, NotificationParams } from "../../../entities/notification";
+import type { MyTelegramGroupStatus, Notification, NotificationParams } from "../../../entities/notification";
 import type { User } from "../../../entities/user/types/user";
-import type { GroupLinkCodeRequest } from "../../../features/telegram-link";
+import { GROUP_LINK_POLL_MS, LINK_TTL_MS, type GroupLinkCodeRequest } from "../../../features/telegram-link";
 import { MarketTelegramGroupsCard } from "./MarketTelegramGroupsCard";
 
 /**
  * TG-B — «Telegram guruhi» kartasi (maketlar `{superadmin,admin}-users-detail-telegram`, `market-profile`):
  * har tur holati (`GET /notifications?market_id`), ulanmagan turda «Ulash» → bir martalik havola oynasi
  * (`POST /telegram/link-code`), ulanish kuzatuvi va «Guruh ulandi», «Barcha guruhlar …» havolasi, PII kaliti
- * (S3), market o'z profilida — holatsiz. Xato matnlari faqat i18n. Tarmoqqa chiqilmaydi (API funksiyalari mock).
+ * (S3); market o'z profilida (TG-C, `market-profile-telegram-status`) — `GET /notifications/me/telegram-groups`
+ * holati va o'z oynasining kuzatuvi. Xato matnlari faqat i18n. Tarmoqqa chiqilmaydi (API funksiyalari mock).
  */
 
 const mocks = vi.hoisted(() => ({
   getNotifications: vi.fn(),
+  getMyTelegramGroups: vi.fn(),
   requestGroupLinkCode: vi.fn(),
   updatePii: vi.fn(),
 }));
 
 vi.mock("../../../entities/notification/api/notificationApi", () => ({
   getNotifications: (params: NotificationParams) => mocks.getNotifications(params),
+  getMyTelegramGroups: () => mocks.getMyTelegramGroups(),
   getNotificationById: vi.fn(),
 }));
 
@@ -62,6 +65,8 @@ const row = (overrides: Partial<Notification> = {}): Notification => ({
   group_id: "-100123",
   group_type: "create",
   is_active: true,
+  inactive_reason: null,
+  inactive_at: null,
   created_at: "2026-10-06T09:00:00.000Z",
   ...overrides,
 });
@@ -85,10 +90,29 @@ const renderCard = (mode: "staff" | "self", viewerRole: string, viewerId?: strin
     preloadedState: stateFor(viewerRole, viewerId),
   });
 
+/** `GET /notifications/me/telegram-groups` elementi (normallashgan). */
+const own = (
+  groupType: "create" | "cancel",
+  overrides: Partial<MyTelegramGroupStatus> = {},
+): MyTelegramGroupStatus => ({
+  group_type: groupType,
+  linked: false,
+  is_active: false,
+  linked_at: null,
+  inactive_reason: null,
+  ...overrides,
+});
+const LINKED = { linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z" } as const;
+
 beforeEach(() => {
   mocks.getNotifications.mockReset();
+  mocks.getMyTelegramGroups.mockReset();
   mocks.requestGroupLinkCode.mockReset();
   mocks.updatePii.mockReset();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detail-telegram`)", () => {
@@ -133,6 +157,30 @@ describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detai
     expect(screen.getByText("Ulangan")).toBeInTheDocument();
     expect(screen.queryByText(/ dan$/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
+  });
+
+  it("NG-C: nofaol sababi — «Nofaol» (bot chiqarilgan — qizil) + `/notifications` dagi matn va sana; qo'lda — neytral", async () => {
+    mocks.getNotifications.mockResolvedValue(
+      page([
+        row({ is_active: false, inactive_reason: "kicked", inactive_at: "2026-10-21T08:00:00.000Z" }),
+        row({ id: "n2", group_type: "cancel", is_active: false, inactive_reason: "manual" }),
+      ]),
+    );
+    renderCard("staff", "admin");
+
+    const create = await screen.findByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(
+      await within(create).findByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring"),
+    ).toBeInTheDocument();
+    expect(within(create).getByText("Nofaol bo'lgan: 21.10.2026, 13:00")).toBeInTheDocument();
+    expect(within(create).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).getByText("Qo'lda nofaol qilingan")).toBeInTheDocument();
+    expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(screen.queryByText("Xabarlar bu guruhga yuborilmayapti")).not.toBeInTheDocument();
+    // Faollashtirish — «Bildirishnomalar» bo'limida.
+    expect(screen.getByRole("link", { name: /Barcha guruhlar/ })).toHaveAttribute("href", "/notifications");
   });
 
   it("holat yuklanmasa — xato holati va «Qayta urinish» (backend matnisiz), PII kaliti ishlayveradi", async () => {
@@ -257,37 +305,152 @@ describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detai
   });
 });
 
-describe("MarketTelegramGroupsCard — `self` (market o'z profilida, `market-profile`)", () => {
-  it("holatsiz qatorlar, ikkala turda «Ulash», holat so'ralmaydi, «Barcha guruhlar» havolasi yo'q", () => {
+describe("MarketTelegramGroupsCard — `self` (market o'z profilida, TG-C: `market-profile-telegram-status`)", () => {
+  it("holatlar `GET /notifications/me/telegram-groups` dan: ulangan — «Ulangan» + sana va «Ulash» yo'q, ulanmagan — «Ulash»", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([own("create", LINKED), own("cancel")]);
     renderCard("self", "market", "201");
 
     const card = screen.getByRole("region", { name: "Telegram guruhi" });
     expect(card).toHaveTextContent("Buyurtma xabarlari do'koningizning Telegram guruhiga keladi.");
-    expect(within(card).getByRole("heading", { name: "Yangi buyurtmalar guruhi" })).toBeInTheDocument();
-    expect(within(card).getByRole("heading", { name: "Bekor qilinganlar guruhi" })).toBeInTheDocument();
-    expect(within(card).queryByText("Ulanmagan")).not.toBeInTheDocument();
-    expect(within(card).getAllByRole("button", { name: /guruhini ulash/ })).toHaveLength(2);
+    const create = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(await within(create).findByText("06.10.2026 dan")).toBeInTheDocument();
+    expect(within(create).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(create).queryByRole("button")).not.toBeInTheDocument();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).getByText("Ulanmagan")).toBeInTheDocument();
+    expect(within(cancel).getByText("Bekor qilingan buyurtmalar xabari kelmaydi")).toBeInTheDocument();
+    expect(within(cancel).getByRole("button", { name: "Bekor qilinganlar guruhini ulash" })).toBeEnabled();
+
     expect(within(card).queryByRole("link", { name: /Barcha guruhlar/ })).not.toBeInTheDocument();
+    expect(mocks.getMyTelegramGroups).toHaveBeenCalledTimes(1);
     expect(mocks.getNotifications).not.toHaveBeenCalled();
   });
 
-  it("«Ulash» — `market_id` siz (server o'z marketini oladi); oynada kutish qatori yo'q, 3-qadam — bildirishnoma", async () => {
-    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("create"));
+  it("nofaol — «Nofaol» + `/notifications` dagi sabab matni va toni (sanasiz), «Ulash» yo'q; sabab noma'lum — umumiy izoh", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, is_active: false, inactive_reason: "kicked" }),
+      own("cancel", { ...LINKED, is_active: false }),
+    ]);
+    renderCard("self", "market", "201");
+
+    const create = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(
+      await within(create).findByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring"),
+    ).toBeInTheDocument();
+    expect(within(create).getByText("Nofaol").closest(".bg-danger-soft")).not.toBeNull();
+    expect(within(create).queryByText(/Nofaol bo'lgan/)).not.toBeInTheDocument();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
+    expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
+  });
+
+  it("yuklanishda — skelet, «Ulash» yo'q; xato — `ErrorState` + «Qayta urinish» (backend matnisiz), kalit ishlayveradi", async () => {
+    let fail: (error: unknown) => void = () => {};
+    mocks.getMyTelegramGroups.mockReturnValueOnce(new Promise((_, reject) => (fail = reject)));
     const user = userEvent.setup();
     renderCard("self", "market", "201");
 
-    await user.click(screen.getByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }));
+    const card = screen.getByRole("region", { name: "Telegram guruhi" });
+    expect(card.querySelectorAll("[data-skeleton]")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
 
-    expect(mocks.requestGroupLinkCode).toHaveBeenCalledWith({ purpose: "market_group", group_type: "create" });
+    fail(
+      new AxiosError("Request failed", "ERR_BAD_RESPONSE", undefined, undefined, {
+        status: 500,
+        data: { message: "notification-service timeout" },
+      } as AxiosResponse),
+    );
+    expect(await screen.findByText("Guruhlar holatini yuklab bo'lmadi")).toBeInTheDocument();
+    expect(screen.queryByText(/timeout/)).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toBeEnabled();
+
+    mocks.getMyTelegramGroups.mockResolvedValue([own("create"), own("cancel")]);
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findAllByRole("button", { name: /guruhini ulash/ })).toHaveLength(2);
+  });
+
+  it("«Ulash» (`market_id` siz) → oyna kutadi; har 4 s holat so'raladi, tur ulansa — oyna o'zi yopiladi, «Guruh ulandi», fokus qatorga", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let connected = false;
+    mocks.getMyTelegramGroups.mockImplementation(async () => [
+      own("create", LINKED),
+      own("cancel", connected ? LINKED : {}),
+    ]);
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("cancel"));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderCard("self", "market", "201");
+
+    await user.click(await screen.findByRole("button", { name: "Bekor qilinganlar guruhini ulash" }));
+
+    expect(mocks.requestGroupLinkCode).toHaveBeenCalledWith({ purpose: "market_group", group_type: "cancel" });
     const dialog = await screen.findByRole("dialog", { name: "Telegram guruhini ulash" });
-    expect(dialog).toHaveAccessibleDescription("Baraka Shop · Yangi buyurtmalar guruhi");
-    expect(within(dialog).getByText("Bot guruhni o'zi ulaydi — ulanganda sizga bildirishnoma keladi")).toBeInTheDocument();
-    expect(within(dialog).queryByText("Guruh ulanishi kutilmoqda…")).not.toBeInTheDocument();
-    expect(mocks.getNotifications).not.toHaveBeenCalled();
+    expect(dialog).toHaveAccessibleDescription("Baraka Shop · Bekor qilinganlar guruhi");
+    expect(within(dialog).getByText("Bot guruhni o'zi ulaydi, holat shu yerda yangilanadi")).toBeInTheDocument();
+    expect(within(dialog).getByText("Guruh ulanishi kutilmoqda…")).toBeInTheDocument();
 
+    // Hali ulanmagan — oyna ochiq qoladi.
+    const callsBefore = mocks.getMyTelegramGroups.mock.calls.length;
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS));
+    await waitFor(() => expect(mocks.getMyTelegramGroups.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(screen.getByRole("dialog", { name: "Telegram guruhini ulash" })).toBeInTheDocument();
+    expect(screen.queryByText("Guruh ulandi")).not.toBeInTheDocument();
+
+    connected = true;
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS));
+
+    expect(await screen.findByText("Guruh ulandi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Baraka Shop · Bekor qilinganlar guruhi: buyurtma xabarlari endi shu guruhga keladi."),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Telegram guruhini ulash" })).not.toBeInTheDocument());
+    const cancelRow = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancelRow).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(cancelRow).queryByRole("button", { name: "Bekor qilinganlar guruhini ulash" })).not.toBeInTheDocument();
+    expect(mocks.getNotifications).not.toHaveBeenCalled();
+  });
+
+  it("oyna yopilsa — kuzatuv to'xtaydi (ortiqcha so'rov yo'q)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mocks.getMyTelegramGroups.mockResolvedValue([own("create"), own("cancel")]);
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("create"));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderCard("self", "market", "201");
+
+    await user.click(await screen.findByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Telegram guruhini ulash" });
     // Footerdagi «Yopish» (sarlavhadagi «×» ham shu nomda).
     await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Telegram guruhini ulash" })).not.toBeInTheDocument());
+    // Yopilganda karta holati bir marta yangilanadi, keyin davriy so'rov yo'q.
+    await act(() => vi.advanceTimersByTimeAsync(100));
+    const callsAfterClose = mocks.getMyTelegramGroups.mock.calls.length;
+
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS * 3));
+    expect(mocks.getMyTelegramGroups.mock.calls.length).toBe(callsAfterClose);
+    expect(screen.queryByText("Guruh ulandi")).not.toBeInTheDocument();
+  });
+
+  it("havola muddati tugasa — «Havola muddati tugadi» + «Yangi havola olish», kuzatuv to'xtaydi", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mocks.getMyTelegramGroups.mockResolvedValue([own("create"), own("cancel")]);
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("create"));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderCard("self", "market", "201");
+
+    await user.click(await screen.findByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Telegram guruhini ulash" });
+
+    await act(() => vi.advanceTimersByTimeAsync(LINK_TTL_MS + 1_000));
+
+    expect(await within(dialog).findByText("Havola muddati tugadi")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Yangi havola olish" })).toBeInTheDocument();
+    expect(within(dialog).queryByText("Guruh ulanishi kutilmoqda…")).not.toBeInTheDocument();
+    const callsAtExpiry = mocks.getMyTelegramGroups.mock.calls.length;
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS * 3));
+    expect(mocks.getMyTelegramGroups.mock.calls.length).toBe(callsAtExpiry);
   });
 });
 

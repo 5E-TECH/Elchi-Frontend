@@ -12,10 +12,12 @@ import {
   resolveOrderActionResponse,
 } from "../../entities/orders/extraCostApproval";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
+import { toOrderSearchTerm } from "../../entities/order/model/orderNumber";
 import OrderFilters from "./list/OrderFilters";
 import {
   buildOrderListParams,
   isDeliveryType,
+  isFulfillmentSource,
   LEGACY_DATE_FROM_KEY,
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
@@ -316,6 +318,8 @@ const Orders = () => {
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
   const urlStatusRaw = urlParams[ORDER_STATUS_URL_KEY] ?? urlParams[LEGACY_ORDER_STATUS_URL_KEY] ?? "";
   const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
+  // 6kHnNH9j: «Manba» filtri (`?fulfillment_source=WAREHOUSE|HQ`).
+  const urlFulfillmentSource = urlParams[ORDER_FILTER_KEYS.fulfillmentSource] ?? "";
   // Noto'g'ri sana (`?startDay=falonchi`) va bo'sh / «№53» qidiruv API'ga xom ketmaydi (D-08, D-11).
   const urlDateFrom = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY]);
   const urlDateTo = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY]);
@@ -362,6 +366,7 @@ const Orders = () => {
       districtId: urlDistrictId,
       courierId: urlCourierId,
       deliveryType: isDeliveryType(urlDeliveryType) ? urlDeliveryType : "",
+      fulfillmentSource: isFulfillmentSource(urlFulfillmentSource) ? urlFulfillmentSource : "",
       statuses: urlStatuses,
       dateFrom: urlDateFrom,
       dateTo: urlDateTo,
@@ -374,6 +379,7 @@ const Orders = () => {
       urlDistrictId,
       urlCourierId,
       urlDeliveryType,
+      urlFulfillmentSource,
       urlStatuses,
       urlDateFrom,
       urlDateTo,
@@ -468,7 +474,9 @@ const Orders = () => {
    * takrorlanmaydi). Ruxsatni backend tekshiradi: begona buyurtma 403/404 —
    * hech narsa qo'shilmaydi.
    */
-  const exactOrderId = /^\d{1,12}$/.test(urlSearch.trim()) ? urlSearch.trim() : "";
+  // rwAy8Qyk: «EL-100081» (ro'yxatdagi raqam) ham — ichki id'ga aylantiriladi.
+  const exactSearch = toOrderSearchTerm(urlSearch.trim());
+  const exactOrderId = /^\d{1,12}$/.test(exactSearch) ? exactSearch : "";
   const exactOrderQuery = useQuery({
     queryKey: ["orders", "exact-number", exactOrderId],
     queryFn: () =>
@@ -792,7 +800,8 @@ const Orders = () => {
         return;
       }
 
-      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
+      // Skaner oqimi: xato qisqa turadi (kuryer ro'yxatidagi kelishuv — 3 s), keyingi skanni to'smaydi (G6F68ti6, 16).
+      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
       rejectScannedCode(
         extractScannerToken(rawValue) ?? rawValue.trim(),
         t("ordersList.cameraReasonMissing"),
@@ -800,7 +809,7 @@ const Orders = () => {
       );
     } catch (error) {
       const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
-      scanNotify.error(t("scanNotFoundTitle"), { description: message });
+      scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
       void playScanFeedback("error", message);
     }
   }, [items, rejectScannedCode, selectScannedCancelledOrder, t]);
@@ -887,6 +896,7 @@ const Orders = () => {
         urlDistrictId ||
         urlCourierId ||
         urlDeliveryType ||
+        isFulfillmentSource(urlFulfillmentSource) ||
         urlDateFrom ||
         urlDateTo ||
         urlSearch,
@@ -902,6 +912,7 @@ const Orders = () => {
       [ORDER_FILTER_KEYS.districtId]: "",
       [ORDER_FILTER_KEYS.courierId]: "",
       [ORDER_FILTER_KEYS.deliveryType]: "",
+      [ORDER_FILTER_KEYS.fulfillmentSource]: "",
       [ORDER_FILTER_KEYS.dateFrom]: "",
       [ORDER_FILTER_KEYS.dateTo]: "",
       [ORDER_FILTER_KEYS.search]: "",

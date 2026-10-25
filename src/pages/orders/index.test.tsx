@@ -409,6 +409,14 @@ describe("Orders list search by exact order number", () => {
     expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", `1,${pageIds}`);
   });
 
+  it("rwAy8Qyk: the visible number «EL-100001» finds and pins order 1 (backend search takes the internal id)", async () => {
+    open("/orders?orderSearch=EL-100001");
+
+    await waitFor(() => expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "1"));
+    expect(getSpy).toHaveBeenCalledWith("orders/1");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "1" }));
+  });
+
   it("does not show the exact order twice when the server already returned it on this page", async () => {
     ordersResponse.rows = [orderRows[0], { ...exactOrder }, orderRows[1]];
     open("/orders?orderSearch=1");

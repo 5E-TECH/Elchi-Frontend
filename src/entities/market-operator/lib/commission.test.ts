@@ -73,6 +73,7 @@ describe("market operatori komissiyasi", () => {
       commission_type: "fixed",
       commission_value: 3000,
       created_at: "2026-08-12T10:15:00Z",
+      can_view_warehouse_stock: false,
     });
     const list = normalizeMarketOperatorList(
       { statusCode: 200, data: { items: [{ id: "1", commission_type: "weird" }], meta: { page: 2, limit: 20, total: 21 } } },

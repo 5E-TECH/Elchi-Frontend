@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  formatOrderRef,
+  FulfillmentSourceTag,
+  orderNumberOf,
   ReturnRequestedTag,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
@@ -33,7 +36,7 @@ type DetailHeaderProps = {
 };
 
 /**
- * Sarlavha (`.el-pagehead`): «← Buyurtmalar», «№10241» + nusxalash, holat va «Qaytarish so'ralgan»,
+ * Sarlavha (`.el-pagehead`): «← Buyurtmalar», «№10241» + nusxalash, holat, «Qaytarish so'ralgan» va «Ombordan · …»,
  * ostida «Yaratilgan: Bugun, 14:15 · Baraka Shop» (marketda faqat sana). Kuryerda (maket
  * `courier-orders-detail`) desktopda holat + yetkazish turi va «Market · sana», telefonda esa
  * badge'lar To'lov kartasiga tushadi, izoh — «Buyurtma tafsilotlari».
@@ -51,7 +54,9 @@ export const DetailHeader = ({
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const placeText = useCancelReturnPlaceText();
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const id = order?.id ?? orderId;
+  // rwAy8Qyk: sarlavha va nusxa — yorliqdagi raqam (`order_number`, «№EL-100081»); hali yuklanmagan yoki eski
+  // javobda — `№id` (URL'dagi).
+  const id = orderNumberOf(order, orderId);
 
   const copy = () => {
     void copyToClipboard(id).then((copied) => {
@@ -88,6 +93,8 @@ export const DetailHeader = ({
       ) : null}
       {isCourier && deliveryKey ? <Badge className="max-md:hidden">{t(deliveryKey)}</Badge> : null}
       <ReturnRequestedTag order={order} />
+      {/* 6kHnNH9j: «Ombordan · <ombor>» (kuryer tafsilotida ham — u qaysi filial omboridan olganini biladi). */}
+      <FulfillmentSourceTag order={order} />
     </>
   ) : null;
 
@@ -124,7 +131,7 @@ export const DetailHeader = ({
     <PageHeader
       back={onBack}
       backLabel={backLabel ?? t("orders", { ns: "newOrders" })}
-      title={`№${id}`}
+      title={formatOrderRef(order, orderId)}
       // Nusxalash faqat mavjud buyurtmada (D-13): topilmagan / hali kelmagan raqamni nusxalash ma'nosiz.
       titleAction={order ? <IconButton size="sm" icon={Copy} label={t("copyOrderNumber")} onClick={copy} /> : undefined}
       meta={meta}

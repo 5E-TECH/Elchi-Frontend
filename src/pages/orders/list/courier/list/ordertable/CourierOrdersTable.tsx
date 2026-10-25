@@ -3,7 +3,7 @@ import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Clock, Copy, Phone, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { OrderStatusBadge } from "../../../../../../entities/order";
+import { formatOrderRef, orderNumberOf, OrderStatusBadge } from "../../../../../../entities/order";
 import {
   clearPendingExtraCostApproval,
   getActivePendingApproval,
@@ -268,14 +268,15 @@ const CourierOrdersTable = ({
         <>
           <div className="flex items-center gap-0.5">
             <Link to={`edit/${order.id}`} className="whitespace-nowrap font-semibold text-text">
-              №{order.id}
+              {/* rwAy8Qyk: yorliqdagi raqam (`order_number`), zaxira — `№id`. */}
+              {formatOrderRef(order)}
             </Link>
             <IconButton
               size="sm"
               icon={Copy}
-              label={t("courierList.copyNumber", { id: order.id })}
+              label={t("courierList.copyNumber", { id: orderNumberOf(order) })}
               className="-my-1 max-lg:hidden"
-              onClick={() => handleCopy(order.id)}
+              onClick={() => handleCopy(orderNumberOf(order))}
             />
           </div>
           <div className="whitespace-nowrap text-[13px] text-text-muted">
@@ -392,7 +393,7 @@ const CourierOrdersTable = ({
             <span className="whitespace-nowrap font-semibold">{money(order)}</span>
           </span>
           <span className="pr-14 text-[13px] text-text-muted">
-            №{order.id} · {order.district?.name || "—"} ·{" "}
+            {formatOrderRef(order)} · {order.district?.name || "—"} ·{" "}
             <span className="whitespace-nowrap">{order.market?.name || "—"}</span>
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-1.5">

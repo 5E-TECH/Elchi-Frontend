@@ -31,6 +31,12 @@ import {
 } from "../../../shared/ui/primitives";
 import { describeProductError, isDuplicateNameError } from "../model/productErrors";
 import {
+  appendProductMeasure,
+  EMPTY_PRODUCT_FORM,
+  toProductMeasureForm,
+  type ProductFormValues,
+} from "../model/productMeasure";
+import {
   getProductImageUrl,
   getProductList,
   getProductMarketName,
@@ -42,13 +48,13 @@ import {
 import { usePickedImage } from "../model/usePickedImage";
 import { FormErrorSummary } from "../ui/FormErrorSummary";
 import { ProductImageField } from "../ui/ProductImageField";
+import { ProductBillable } from "../ui/ProductMeasureCells";
+import { ProductMeasureFields } from "../ui/ProductMeasureFields";
 import { ProductPrice } from "../ui/ProductPrice";
 import { ProductPriceField } from "../ui/ProductPriceField";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 
-type CreateFormValues = { name: string; price: string };
-
-const EMPTY_FORM: CreateFormValues = { name: "", price: "" };
+const EMPTY_FORM: ProductFormValues = EMPTY_PRODUCT_FORM;
 
 /**
  * O'ng ro'yxat — sahifalashsiz (maket «Jami N ta»), bitta so'rovda hammasi: `limit` bermasak server 10 tasini
@@ -65,14 +71,16 @@ const priceCell = (product: Product) => <ProductPrice product={product} />;
  *
  * Maketlar: `superadmin-products-create` (= admin, menejer, registrator), `*-products-create-errors`.
  * «← Mahsulotlar», sarlavha «Yangi mahsulot» + market nomi. Ikki ustun (telefonda ustma-ust): chapda forma
- * («Mahsulot ma'lumotlari»: nom, «Narx» — ixtiyoriy, `mode="money"`, rasm «Mahsulot rasmi»; «Tozalash» / «Saqlash»;
- * «Saqlash» bosilganda xato maydon bo'lsa tepada «Saqlab bo'lmadi · N ta maydonda xato»), o'ngda ro'yxat («Market
- * mahsulotlari» + «N ta»; «# · Mahsulot nomi · Narx»): qalam — mahsulot formada tahrirlanadi («Bekor qilish»
- * tahrirdan chiqadi), savat — o'chirish tasdig'i. «Og'irlik va o'lcham» bo'limi va «hisob vazni» — maket taklifi
- * (backend kerak, MH-2), chizilmaydi.
+ * («Mahsulot ma'lumotlari»: nom, «Narx» — ixtiyoriy, `mode="money"`, «Og'irlik va o'lcham» — og'irlik + U × K × B
+ * majburiy, «Hajmga qarab hisoblash», jonli hisob vazni va «Taxminiy yetkazish narxi» (6FLyjO6j), rasm «Mahsulot
+ * rasmi»; «Tozalash» / «Saqlash»; «Saqlash» bosilganda xato maydon bo'lsa tepada «Saqlab bo'lmadi · N ta maydonda
+ * xato»), o'ngda ro'yxat («Market mahsulotlari» + «N ta»; «# · Mahsulot nomi · hisob vazni · Narx», o'lchovsiz —
+ * «Kiritilmagan»): qalam — mahsulot formada tahrirlanadi («Bekor qilish» tahrirdan chiqadi), savat — o'chirish tasdig'i.
  *
  * Xulq: FormData `name` + `market_id` (yangi mahsulotda) + `price` (yangi — kiritilgan bo'lsa; tahrir — o'zgargan
- * bo'lsa, bo'sh — narx tozalanadi) + tanlangan `image`; tahrir — `PATCH product/:id`; nofaol market — ogohlantirish,
+ * bo'lsa, bo'sh — narx tozalanadi) + o'lchov (yangi — `weight_kg`, `length_cm`, `width_cm`, `height_cm`,
+ * `volumetric_enabled`; tahrir — faqat o'zgarganlari, U / K / B uchalasi birga) + tanlangan `image`; tahrir —
+ * `PATCH product/:id`; nofaol market — ogohlantirish,
  * maydonlar va «Saqlash» o'chiq, yuborilsa `notify.warning`. Ro'yxat: `GET product/market/:id`. Xato — i18n izoh
  * (xom backend matni ko'rsatilmaydi); 409 (shu nomli mahsulot bor) — «Mahsulot nomi» maydoni ostida.
  */
@@ -115,7 +123,7 @@ const CreateProductPage = () => {
     setError,
     setFocus,
     formState: { errors, isSubmitted, dirtyFields },
-  } = useForm<CreateFormValues>({ defaultValues: EMPTY_FORM });
+  } = useForm<ProductFormValues>({ defaultValues: EMPTY_FORM });
 
   const isPending = createProduct.isPending || updateProduct.isPending;
   const blocked = isMarketStatusLoading || isInactiveMarket;
@@ -129,12 +137,12 @@ const CreateProductPage = () => {
   const handleEdit = useCallback(
     (product: Product) => {
       setEditTarget(product);
-      reset({ name: product.name, price: toPriceInput(product) });
+      reset({ name: product.name, price: toPriceInput(product), ...toProductMeasureForm(product, language) });
       pick(null);
       // Telefonda forma ro'yxatdan yuqorida — fokus nom maydoniga (ko'rinishga ham shu olib keladi).
       window.requestAnimationFrame(() => setFocus("name"));
     },
-    [pick, reset, setFocus],
+    [language, pick, reset, setFocus],
   );
 
   const handleDelete = useCallback(
@@ -148,7 +156,8 @@ const CreateProductPage = () => {
     [confirmDelete, editTarget?.id, marketName, queryClient, resetForm, t],
   );
 
-  const onSubmit = handleSubmit(async ({ name, price }) => {
+  const onSubmit = handleSubmit(async (values) => {
+    const { name, price } = values;
     if (isPending || isMarketStatusLoading) return;
 
     if (isInactiveMarket) {
@@ -161,6 +170,8 @@ const CreateProductPage = () => {
     if (!editTarget && effectiveMarketId) formData.append("market_id", effectiveMarketId);
     // Yangi mahsulot — narx kiritilgan bo'lsa; tahrir — o'zgargan bo'lsa (bo'sh satr — narxni tozalaydi).
     if (editTarget ? dirtyFields.price : price) formData.append("price", price);
+    // O'lchov: yangi mahsulot — hammasi (backend majburiy qiladi); tahrir — faqat o'zgarganlari.
+    appendProductMeasure(formData, values, editTarget ? dirtyFields : undefined);
     if (picked) formData.append("image", picked.file);
 
     try {
@@ -220,11 +231,17 @@ const CreateProductPage = () => {
     [editTarget?.id, t],
   );
 
+  // Jadval: nom ostida hisob vazni (maket «Mahsulot nomi · hisob vazni»: «0,2 kg · og'irlik bo'yicha» / «Kiritilmagan»).
   const nameCell = useCallback(
     (product: Product) => (
       <span className="flex min-w-0 items-center gap-3">
         <ProductThumb imageUrl={getProductImageUrl(product)} />
-        {nameLine(product)}
+        <span className="flex min-w-0 flex-col gap-0.5">
+          {nameLine(product)}
+          <span className="flex text-[13px] text-text-muted">
+            <ProductBillable product={product} layout="inline" emphasis={false} />
+          </span>
+        </span>
       </span>
     ),
     [nameLine],
@@ -238,7 +255,7 @@ const CreateProductPage = () => {
         className: "w-16",
         cell: (_product, index) => <span className="font-semibold text-text-subtle">{index + 1}</span>,
       },
-      { id: "name", header: t("v2.list.columns.name"), cell: nameCell },
+      { id: "name", header: t("v2.create.columns.nameWithBillable"), cell: nameCell },
       { id: "price", header: t("v2.list.columns.price"), align: "end", className: "w-[148px]", cell: priceCell },
       {
         id: "actions",
@@ -259,8 +276,11 @@ const CreateProductPage = () => {
         <ProductThumb imageUrl={getProductImageUrl(product)} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           {nameLine(product)}
-          <span className="text-[13px] text-text-muted">
-            <ProductPrice product={product} />
+          <span className="flex flex-col items-start gap-1 text-[13px] text-text-muted">
+            <span className="whitespace-nowrap">
+              <ProductPrice product={product} />
+            </span>
+            <ProductBillable product={product} layout="inline" />
           </span>
         </span>
         {actions(product)}
@@ -300,7 +320,7 @@ const CreateProductPage = () => {
       />
 
       <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
-        <form onSubmit={onSubmit} noValidate className="min-w-0 flex-[1_1_340px]">
+        <form onSubmit={onSubmit} noValidate className="min-w-0 flex-[1_1_400px]">
           <Card
             as="div"
             padding="none"
@@ -367,6 +387,14 @@ const CreateProductPage = () => {
                   />
                 )}
               />
+              <ProductMeasureFields
+                control={control}
+                errors={errors}
+                idPrefix="product"
+                quoteVariant="list"
+                disabled={blocked}
+                readOnly={isPending}
+              />
               <ProductImageField
                 label={t("v2.create.image")}
                 picked={picked}
@@ -383,7 +411,7 @@ const CreateProductPage = () => {
           padding="none"
           title={t("v2.create.listTitle")}
           actions={count ? <Badge>{count}</Badge> : undefined}
-          className="min-w-0 flex-[999_1_480px]"
+          className="min-w-0 flex-[1_1_440px]"
         >
           <QueryBoundary
             query={{
@@ -397,7 +425,7 @@ const CreateProductPage = () => {
             loading={
               <SkeletonTable
                 framed={false}
-                columns={[t("v2.list.columns.index"), t("v2.list.columns.name"), t("v2.list.columns.price")]}
+                columns={[t("v2.list.columns.index"), t("v2.create.columns.nameWithBillable"), t("v2.list.columns.price")]}
                 rows={6}
               />
             }

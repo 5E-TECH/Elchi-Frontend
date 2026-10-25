@@ -11,6 +11,7 @@ import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../.
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
+import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 
@@ -25,6 +26,11 @@ type Step2SummaryProps = {
   onPrevious?: () => void;
   /** Market rolidagi «Orqaga» manzili. */
   backTo?: string;
+  /**
+   * MO-7 (OfRSoRUX): market operatori — «Operator» maydoni o'zi (`Siz — avtomatik yoziladi`), tahrirlanmaydi va
+   * yuborilmaydi (backend operator ismini o'zi yozadi). Maket `market_operator-new-orders-create-manual`.
+   */
+  selfOperator?: { name: string | null };
 };
 
 /** `.el-divider`. */
@@ -41,7 +47,14 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
  *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
  */
-const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/new-orders" }: Step2SummaryProps) => {
+const Step2Summary = ({
+  isMarketRole,
+  ready,
+  submitting,
+  onPrevious,
+  backTo = "/new-orders",
+  selfOperator,
+}: Step2SummaryProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const statusId = useId();
   /** Rad etilgan belgi sababi (kasr, minus, 12 xonadan uzun — D-17); o'chirilguncha yoki maydondan chiqilguncha. */
@@ -72,6 +85,16 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
   );
 
   const units = items.reduce((total, item) => total + (Number(item.quantity) || 0), 0);
+
+  // 6kHnNH9j: «Qayerdan» — ombor nomi yoki «Toshkent HQ» (manba bloki bilan bir xil so'rov, keshdan).
+  const canChooseSource = useCanChooseOrderSource();
+  const source = useOrderSource(control, canChooseSource);
+  const sourceText =
+    source.effective === "WAREHOUSE"
+      ? (source.preview?.warehouse?.name ?? "—")
+      : source.effective === "HQ"
+        ? t("fulfillment.source.hq")
+        : "—";
 
   // «Umumiy summa» taklifi — mahsulotlar narxidan (katalog `Step2Combined` bilan bir xil so'rov, keshdan).
   const { findProduct } = useOrderCatalog(control);
@@ -144,6 +167,14 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         </dd>
         <dt className="text-text-muted">{t("createSummaryDistrict")}</dt>
         <dd className="m-0 min-w-0 truncate font-semibold text-text">{districtName ?? "—"}</dd>
+        {canChooseSource ? (
+          <>
+            <dt className="text-text-muted">{t("fulfillment.source.summary")}</dt>
+            <dd className="m-0 min-w-0 truncate font-semibold text-text" data-testid="summary-source">
+              {sourceText}
+            </dd>
+          </>
+        ) : null}
       </dl>
 
       {deliveryPrice != null ? (
@@ -222,22 +253,28 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         )}
       />
 
-      <Controller
-        control={control}
-        name="details.operator"
-        render={({ field }) => (
-          <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
-            <TextInput
-              name={field.name}
-              placeholder={t("operatorPlaceholder")}
-              value={field.value}
-              onValueChange={field.onChange}
-              onBlur={field.onBlur}
-              ref={field.ref}
-            />
-          </Field>
-        )}
-      />
+      {selfOperator ? (
+        <Field id="details.operator" label={t("operator")} hint={t("operatorCreate.operatorAuto")}>
+          <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
+        </Field>
+      ) : (
+        <Controller
+          control={control}
+          name="details.operator"
+          render={({ field }) => (
+            <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
+              <TextInput
+                name={field.name}
+                placeholder={t("operatorPlaceholder")}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            </Field>
+          )}
+        />
+      )}
 
       <Divider />
 

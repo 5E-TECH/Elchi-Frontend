@@ -16,7 +16,15 @@ test("⭐ yon menyuda «Operatorlar», jadval, ogohlantirish va «Faqat ularni k
   await expect(nav.getByRole("link", { name: "Operatorlar" })).toHaveAttribute("aria-current", "page");
 
   const table = page.getByRole("table", { name: "Operatorlar ro'yxati" });
-  await expect(table.getByRole("columnheader")).toHaveText(["Operator", "Telefon", "Komissiya", "Holat", "Qo'shilgan", "Amallar"]);
+  await expect(table.getByRole("columnheader")).toHaveText([
+    "Operator",
+    "Telefon",
+    "Komissiya",
+    "Holat",
+    "Ombordagi qoldiq",
+    "Qo'shilgan",
+    "Amallar",
+  ]);
   await expect(table.getByRole("row", { name: /Madina Xoliqova/ })).toContainText("5%");
   await expect(table.getByRole("row", { name: /Sevara Usmonova/ })).toContainText("3 000 so'm");
   await expect(table.getByRole("row", { name: /Kamola Rasulova/ })).toContainText("Tizimga kira olmaydi");
@@ -76,4 +84,15 @@ test("Komissiya oynasi: qat'iy summa chegarasi → xato, to'g'ri qiymat → PATC
   await expect(toast(page, "Operator o'chirildi", { tone: "success" })).toBeVisible();
   expect(mock.deletes).toEqual(["43"]);
   await expect(page.getByRole("row", { name: /Kamola Rasulova/ })).toHaveCount(0);
+});
+
+test("⭐ XtcEyQjb: «Ombordagi qoldiqni ko'radi» — PATCH :id/warehouse-access, javobdan keyin yoqilgan + xabar", async ({ page }) => {
+  const mock = await openMarketOperators(page);
+  const toggle = page.getByRole("switch", { name: "Madina Xoliqova — ombordagi qoldiqni ko'radi" });
+  await expect(toggle).toHaveAttribute("aria-checked", "false");
+  await toggle.click();
+  await expect(toast(page, "Ombordagi qoldiq ochildi", { tone: "success" })).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-checked", "true");
+  expect(mock.patches).toEqual([{ id: "41", body: { can_view_warehouse_stock: true } }]);
+  expect(mock.leaked).toEqual([]);
 });

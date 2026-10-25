@@ -136,6 +136,27 @@ describe("OrdersTable", () => {
     expect(screen.getByRole("columnheader", { name: "Yetkazish" })).not.toHaveClass("max-lg:hidden");
   });
 
+  // 6kHnNH9j: `fulfillment_source === "WAREHOUSE"` — holat yonida «Ombordan · <ombor>» (jadval va telefon kartasi).
+  it("ombordan ketadigan buyurtma — «Ombordan · Samarqand filiali ombori»; HQ buyurtmasida belgi yo'q", () => {
+    const fromWarehouse = {
+      ...orders[0],
+      id: "o-2",
+      status: "received",
+      fulfillment_source: "WAREHOUSE",
+      warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
+    };
+    const hq = { ...orders[0], id: "o-3", fulfillment_source: "HQ", warehouse: null };
+    const view = renderWithProviders(<OrdersTable data={[fromWarehouse, hq] as never} isLoading={false} />);
+    const [warehouseRow, hqRow] = bodyRows();
+    expect(within(warehouseRow).getByTestId("fulfillment-source-badge")).toHaveTextContent("Ombordan · Samarqand filiali ombori");
+    expect(within(hqRow).queryByTestId("fulfillment-source-badge")).not.toBeInTheDocument();
+    view.unmount();
+
+    mockPhone();
+    renderWithProviders(<OrdersTable data={[fromWarehouse] as never} isLoading={false} />);
+    expect(screen.getByTestId("fulfillment-source-badge")).toHaveTextContent("Ombordan · Samarqand filiali ombori");
+  });
+
   it("renders translated delivery badge", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
@@ -203,6 +224,35 @@ describe("OrdersTable", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
     expect(screen.getByRole("link", { name: "№o-1" })).toHaveAttribute("href", "/edit/o-1");
+  });
+
+  it("rwAy8Qyk: `order_number` bor — yorliqdagi raqam «№EL-100081» (havola id bo'yicha), nusxa «EL-100081»", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderWithProviders(
+      <OrdersTable data={[{ ...orders[0], id: "81", order_number: "EL-100081" }] as never} isLoading={false} />,
+    );
+
+    expect(screen.getByRole("link", { name: "№EL-100081" })).toHaveAttribute("href", "/edit/81");
+    expect(screen.queryByText("№81")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "№EL-100081 raqamini nusxalash" }));
+    expect(writeText).toHaveBeenCalledWith("EL-100081");
+  });
+
+  it("rwAy8Qyk: telefon kartasida ham «№EL-100081 · tuman · market»", () => {
+    mockPhone();
+    renderWithProviders(
+      <OrdersTable
+        data={[{ ...orders[0], id: "81", order_number: "EL-100081" }] as never}
+        isLoading={false}
+        label="Buyurtmalar ro'yxati"
+      />,
+    );
+
+    const card = within(screen.getByRole("list", { name: "Buyurtmalar ro'yxati" })).getByRole("link");
+    expect(card).toHaveAttribute("href", "/edit/81");
+    expect(card).toHaveTextContent("№EL-100081 · Yunusobod · Fresh Market");
   });
 
   it("copies the order id to the clipboard without triggering the row click", async () => {

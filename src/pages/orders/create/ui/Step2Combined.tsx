@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { ProductThumb } from "../../../../entities/product/ui/ProductThumb";
+import { useWarehouseAvailability } from "../../../../entities/warehouse";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
@@ -13,6 +14,7 @@ import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/
 import { getUzbekistanPhoneDigits } from "../../../../shared/lib/phone";
 import { useCatalogSearch } from "./useCatalogSearch";
 import {
+  Badge,
   Button,
   Card,
   EmptyState,
@@ -25,6 +27,7 @@ import {
   type SelectOption,
 } from "../../../../shared/ui/primitives";
 import { orderItemKey, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import { hasNoTariffs, readProductImageUrl, readProductPrice, tariffFor, type CatalogProduct } from "../model/orderPricing";
 import { CreateAlert } from "./CreateAlert";
 import { CustomerPhoneSuggest, type CustomerSuggestScope } from "./CustomerPhoneSuggest";
@@ -186,6 +189,9 @@ const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => 
  * market) va «Narx yo'q» holati, sukut tur — `default_tariff`; mahsulot rasmi (40 px, `ProductThumb`); narx matni
  * «2 × 45 000 so'm» · «Narxi kiritilmagan» · «Katalogdan tashqari · narxsiz».
  * Summa, operator va «Buyurtma yaratish» — yon ustundagi `Step2Summary` da.
+ * 6kHnNH9j (maket `superadmin-neworders-create-manual-source`): manba bloki ko'rinadigan rollarda tanlangan mahsulot
+ * ostida «Omborda: N» (hudud ombori tekshirilgan bo'lsa; yetmasa — ogohlantirish toni) va «Katalogda yo'q mahsulot»
+ * izohi «Omborda yo'q mahsulot qo'shilsa, butun buyurtma HQ'dan ketadi». Manbaning o'zi — `OrderSourceCard`.
  */
 const Step2Combined = () => {
   const { t, i18n } = useTranslation(["orders", "common"]);
@@ -207,7 +213,13 @@ const Step2Combined = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
   const roleId = useSelector((state: RootState) => state.role.id);
-  const isMarketRole = role === "market";
+  const operatorMarket = useSelector((state: RootState) => state.user.user?.market ?? null);
+  // MO-7 (OfRSoRUX): market operatori ham market tomoni — katalog `my-products`, mijoz takliflari o'z marketi
+  // doirasida; market id va nomi — `my-profile.market` (N13), operatorning o'zi emas.
+  const isMarketOperator = role === "market_operator";
+  const isMarketRole = role === "market" || isMarketOperator;
+  const ownMarketId = isMarketOperator ? (operatorMarket?.id != null ? String(operatorMarket.id) : null) : roleId;
+  const ownMarketName = isMarketOperator ? (operatorMarket?.name ?? undefined) : roleName;
   const productSourceMarketId = market ? String(market.id) : "";
 
   const { useGetRegions, useGetDistricts } = useLogistics();
@@ -215,19 +227,49 @@ const Step2Combined = () => {
   const { data: districts, isLoading: distLoading } = useGetDistricts(selectedRegionId);
 
   const { products: allProducts, findProduct, isLoading: prodLoading } = useOrderCatalog(control);
+  const canChooseSource = useCanChooseOrderSource();
+  const { stockOf } = useOrderSource(control, canChooseSource);
+  // Katalogdagi «Omborda: N» / «Omborda yo'q» (maket `*-create-manual-source`) — tuman hududi ombori bo'yicha.
+  const selectedDistrictId = useWatch({ control, name: "customer.district_id" }) ?? "";
+  const availabilityParams = useMemo(
+    () =>
+      canChooseSource && selectedDistrictId && (isMarketRole || productSourceMarketId)
+        ? {
+            district_id: selectedDistrictId,
+            ...(selectedRegionId ? { region_id: selectedRegionId } : {}),
+            ...(isMarketRole ? {} : { market_id: productSourceMarketId }),
+          }
+        : null,
+    [canChooseSource, isMarketRole, productSourceMarketId, selectedDistrictId, selectedRegionId],
+  );
+  const availability = useWarehouseAvailability(availabilityParams);
+  const activeAvailability =
+    availabilityParams && availability.data?.warehouse?.status === "ACTIVE" && !availability.isPlaceholderData
+      ? availability.data
+      : null;
   const tariffState = useMarketTariffs(control);
   const tariffs = tariffState.status === "ready" ? tariffState.tariffs : null;
   const defaultDeliveryType = tariffs?.defaultType ?? null;
 
   // Sukut turi — market kartasidagi `default_tariff` (CS-B): tariflar shu market uchun kelgach, tur qo'lda
-  // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi; yaratishdan keyingi `reset` da yana sukut.
-  // Tariflar kech kelsa (sekin `GET users/:id`, qayta urinish) va operator formani to'ldira boshlagan bo'lsa —
-  // ko'rinib turgan tur o'z-o'zidan almashmaydi (manzil birdan majburiy bo'lib qolmasin).
+  // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi (market almashsa ham); yaratishdan keyingi
+  // `reset` da yana sukut. Tariflar kech kelsa (sekin so'rov, qayta urinish) va operator formani to'ldira boshlagan
+  // bo'lsa — ko'rinib turgan tur o'z-o'zidan almashmaydi (manzil birdan majburiy bo'lib qolmasin). Market
+  // almashtirish esa ongli amal (IT1YpboR TC: 37 «Markazgacha» → 36 «Uygacha», mijoz ismi yozilgan) — yangi
+  // marketning sukuti forma boshlangan bo'lsa ham qo'llanadi. Qaysi market uchun ko'rib chiqilgani forma holatida
+  // (`deliveryDefaultFor`): «O'zgartirish» 1-qadamga qaytaradi va bu komponent qayta o'rnatiladi.
+  // Market rolida forma `market` siz — o'z kartasi (bitta, o'zgarmaydi).
+  const marketKey = isMarketRole ? "self" : market?.id != null ? String(market.id) : null;
   useEffect(() => {
-    if (deliveryTypeTouched || !defaultDeliveryType || whereDeliver === defaultDeliveryType) return;
-    if (isFormStarted(getValues())) return;
+    if (deliveryTypeTouched || !defaultDeliveryType || !marketKey) return;
+    const decidedFor = getValues("deliveryDefaultFor");
+    if (decidedFor === marketKey) return;
+    const marketSwitched = decidedFor !== null;
+    setValue("deliveryDefaultFor", marketKey);
+    if (whereDeliver === defaultDeliveryType) return;
+    if (!marketSwitched && isFormStarted(getValues())) return;
     setValue("details.where_deliver", defaultDeliveryType);
-  }, [defaultDeliveryType, deliveryTypeTouched, getValues, setValue, whereDeliver]);
+  }, [defaultDeliveryType, deliveryTypeTouched, getValues, marketKey, setValue, whereDeliver]);
 
   const regionOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(regions)), [regions]);
   const districtOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(districts)), [districts]);
@@ -311,7 +353,7 @@ const Step2Combined = () => {
         : deliveryOwner
       : null;
 
-  const catalogOwner = isMarketRole ? roleName : market?.name;
+  const catalogOwner = isMarketRole ? ownMarketName : market?.name;
   // Taklif doirasi backend bilan bir xil: admin — barcha mijozlar, market — o'zi, qolganlar — tanlangan market.
   const suggestScope: CustomerSuggestScope =
     role === "superadmin" || role === "admin" ? "all" : isMarketRole ? "own" : "market";
@@ -362,7 +404,7 @@ const Step2Combined = () => {
           />
           <ExistingCustomerNotice
             isMarketRole={isMarketRole}
-            marketId={isMarketRole ? roleId : productSourceMarketId || null}
+            marketId={isMarketRole ? ownMarketId : productSourceMarketId || null}
             marketName={catalogOwner}
           />
         </div>
@@ -612,6 +654,15 @@ const Step2Combined = () => {
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-semibold text-text">{product.name}</span>
                           {price != null ? <span className="text-[13px] text-text-muted">{money(price)}</span> : null}
+                          {activeAvailability ? (
+                            <span className="text-[13px] text-text-muted" data-testid="catalog-warehouse-stock">
+                              {activeAvailability.available[String(product.id)] !== undefined
+                                ? t("fulfillment.source.inStock", {
+                                    value: formatNumberLocalized(activeAvailability.available[String(product.id)], { language }),
+                                  })
+                                : t("fulfillment.source.notInStock")}
+                            </span>
+                          ) : null}
                         </span>
                         {isAdded ? (
                           <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-action-fg">
@@ -632,7 +683,11 @@ const Step2Combined = () => {
             </ul>
 
             {/* Katalogda yo'q («maxsus») mahsulot — katalog bo'sh bo'lsa ham buyurtma yaratiladi. */}
-            <Field id="create-custom-product" label={t("createCustomProductLabel")}>
+            <Field
+              id="create-custom-product"
+              label={t("createCustomProductLabel")}
+              hint={canChooseSource ? t("fulfillment.source.customHint") : undefined}
+            >
               <TextInput
                 placeholder={t("createCustomProductPlaceholder")}
                 value={customName}
@@ -679,6 +734,7 @@ const Step2Combined = () => {
                   const product = findProduct(item.product_id);
                   const isCustom = item.product_id == null;
                   const name = product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`;
+                  const stock = stockOf(item.product_id);
                   return (
                     <li
                       key={key}
@@ -699,7 +755,7 @@ const Step2Combined = () => {
                         label={t("createRemoveItem", { name })}
                         onClick={() => removeItem(key)}
                       />
-                      <div className="col-start-2 col-end-4">
+                      <div className="col-start-2 col-end-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                         <QuantityStepper
                           value={item.quantity}
                           groupLabel={t("itemQuantityGroup", { name })}
@@ -707,6 +763,16 @@ const Step2Combined = () => {
                           increaseLabel={t("increaseQuantity", { name })}
                           onChange={(next) => setQuantity(key, next)}
                         />
+                        {stock ? (
+                          <Badge
+                            tone={stock.enough ? "success" : "warning"}
+                            dot
+                            title={t("fulfillment.source.inStockTitle", { name: stock.warehouseName })}
+                            data-testid="item-warehouse-stock"
+                          >
+                            {t("fulfillment.source.inStock", { value: formatNumberLocalized(stock.available, { language }) })}
+                          </Badge>
+                        ) : null}
                       </div>
                     </li>
                   );

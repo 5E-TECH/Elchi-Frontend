@@ -16,6 +16,11 @@ export type MarketOperator = {
   commission_type: CommissionType | null;
   commission_value: number | null;
   created_at: string | null;
+  /**
+   * XtcEyQjb: «Ombordagi qoldiqni ko'radi» — market har operatorga alohida yoqadi (sukut `false`;
+   * `PATCH /market-operators/:id/warehouse-access`).
+   */
+  can_view_warehouse_stock: boolean;
 };
 
 export type MarketOperatorListParams = {

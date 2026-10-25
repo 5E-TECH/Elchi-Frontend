@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { CircleX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ExtraCostApproval } from "../../../entities/orders";
+import { extraCostOrderNumber } from "../../../entities/orders/extraCostApprovalView";
 import {
   EXTRA_COST_REJECT_REASONS,
   type ExtraCostRejectReason,
@@ -55,7 +56,7 @@ export const ExtraCostRejectDialog = ({ approval, actionLabel, open, pending, on
   };
 
   const description = [
-    `№${approval.order_id}`,
+    `№${extraCostOrderNumber(approval)}`,
     formatMoneyLocalized(approval.amount, { language }),
     actionLabel,
   ].join(" · ");

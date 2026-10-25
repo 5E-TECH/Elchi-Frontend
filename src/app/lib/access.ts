@@ -292,3 +292,26 @@ export const canViewRegionStats: Predicate = hasRole("superadmin", "admin", "man
  * (E6iEOAVs, MO-6) kelgach; operator boshqa moliya sahifalarini ko'rmaydi.
  */
 export const canViewMyEarnings: Predicate = hasRole("market_operator");
+
+/**
+ * «Yetkazish tariflari» (`/delivery-tariffs`, 47WFHzlx) — tariflar, hisob qoidalari, kalkulyator, tarix. Backend
+ * `GET/POST /delivery/tariffs` va `GET/PATCH /delivery/pricing-settings` faqat SUPERADMIN, ADMIN (boshqa rol — 403).
+ * Mahsulot formasidagi narx izohi ham chegara va yaxlitlashni shu rollarda sozlamadan oladi (6FLyjO6j).
+ */
+export const canManageDeliveryTariffs: Predicate = hasRole("superadmin", "admin");
+
+/**
+ * «Ombor» (`/warehouses`, `/warehouses/:id`; yXC91RRx, backend hY7uacJu): superadmin va admin — hamma omborlar,
+ * ochish, kirim, inventarizatsiya, to'xtatish (backend yozish faqat SUPERADMIN, ADMIN). Filial menejeri — faqat o'z
+ * filiali omborini KO'RADI (ega qarori 10; backend `GET /warehouses*` menejerni o'z filialiga cheklaydi, begonasi
+ * 404). Ombor faqat viloyat filialida (REGIONAL, HYBRID) ochiladi — boshqa turdagi filial menejeriga band yo'q.
+ */
+export const canManageWarehouses: Predicate = hasRole("superadmin", "admin");
+/**
+ * XtcEyQjb (ega 2026-10-24): HAMMA omborlar ro'yxati — superadmin, admin va REGISTRATOR (registrator faqat ko'radi:
+ * yozish tugmalari `canManageWarehouses` bilan). Filial xodimi (menejer) — faqat o'z filiali ombori: menyuda band
+ * `GET /warehouses` bo'sh bo'lmasagina (`navSections.ts`), `/warehouses` uni o'z omboriga olib boradi. Kuryer,
+ * market, market operatori, mijoz, investor — yo'q (backend `WAREHOUSE_READ_ROLES`).
+ */
+export const canViewAllWarehouses: Predicate = hasRole("superadmin", "admin", "registrator");
+export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerCan("warehouse"));

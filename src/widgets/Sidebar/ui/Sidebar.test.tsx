@@ -26,6 +26,13 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
+// XtcEyQjb: menejerning «Ombor» bandi — faqat o'z filialida ombor bo'lsa (`GET /warehouses` bo'sh emas). Sukut — bor
+// (maket personasi); haqiqiy so'rov ketmaydi.
+const ownWarehouse = vi.hoisted(() => ({ exists: true as boolean | undefined }));
+vi.mock("../../../entities/warehouse/api/ownWarehouse", () => ({
+  useHasOwnWarehouse: (enabled: boolean) => (enabled ? ownWarehouse.exists : undefined),
+}));
+
 type DesignRole =
   | "superadmin"
   | "admin"
@@ -104,6 +111,7 @@ beforeAll(async () => {
 afterEach(() => {
   pending.path = null;
   localStorage.removeItem("sidebar:collapsedGroups");
+  ownWarehouse.exists = true;
   vi.restoreAllMocks();
 });
 
@@ -284,6 +292,22 @@ describe("Sidebar — menejer filial turi", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Filial turi aniqlanmadi");
     expect(screen.getByRole("status")).toHaveTextContent("Menyuning bir qismi yashirin");
     expect(linkNames()).toEqual(["Bosh sahifa", "Buyurtmalar", "Mahsulotlar", "Hududlar"]);
+  });
+
+  it("XtcEyQjb: «Ombor» — faqat o'z filialida ombor bo'lsa (javob kelguncha ham yashirin)", () => {
+    ownWarehouse.exists = false;
+    const view = renderSidebar("manager", { branchType: "REGIONAL" });
+    expect(linkNames()).not.toContain("Ombor");
+    view.unmount();
+
+    ownWarehouse.exists = undefined;
+    const pendingView = renderSidebar("manager", { branchType: "HYBRID" });
+    expect(linkNames()).not.toContain("Ombor");
+    pendingView.unmount();
+
+    ownWarehouse.exists = true;
+    renderSidebar("manager", { branchType: "REGIONAL" });
+    expect(screen.getByRole("link", { name: "Ombor" })).toHaveAttribute("href", "/warehouses");
   });
 
   it("filial turi bor bo'lsa ogohlantirish yo'q", () => {

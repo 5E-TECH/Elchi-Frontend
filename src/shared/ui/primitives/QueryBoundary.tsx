@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { onlineManager } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
 import { EmptyState, type StateSize } from "./EmptyState";
@@ -97,6 +98,9 @@ const PRESET: Record<QueryBoundarySkeleton, (slow: boolean) => ReactNode> = {
   chart: () => <SkeletonChart />,
 };
 
+/** Brauzer onlaynmi (React Query `onlineManager` — `online` / `offline` hodisalari). */
+const isOnlineSnapshot = () => onlineManager.isOnline();
+
 /**
  * Dizayn v2 so'rov holatlari.
  *
@@ -120,6 +124,7 @@ export const QueryBoundary = <TData,>({
   className,
 }: QueryBoundaryProps<TData>) => {
   const { t } = useTranslation("ui");
+  const online = useSyncExternalStore(onlineManager.subscribe, isOnlineSnapshot, isOnlineSnapshot);
   const { data, isError = false, error, isFetching = false, isPaused = false, refetch } = query;
   const hasData = data !== undefined && data !== null;
   const isLoading = query.isLoading ?? (query.isPending === true && isFetching);
@@ -148,8 +153,10 @@ export const QueryBoundary = <TData,>({
       typeof errorSlot === "function"
         ? errorSlot(error, retry)
         : (errorSlot ?? <ErrorState error={error} size={size} onRetry={refetch ? retry : undefined} />);
-  } else if (shown === undefined && isPaused && !showLoading) {
-    // Oflayn: so'rov yuborilmadi, internet qaytganda React Query o'zi davom ettiradi.
+  } else if (shown === undefined && (isPaused || !online) && !showLoading) {
+    // Oflayn: so'rov yuborilmadi, internet qaytganda React Query o'zi davom ettiradi. `isPaused` ni bermaydigan
+    // sahifalar (qo'lda yig'ilgan `query`) ham — brauzer oflayn bo'lsa «bo'sh» emas, «Internet aloqasi yo'q»
+    // (G6F68ti6, 7-band).
     state = "error";
     content = <ErrorState kind="offline" size={size} onRetry={refetch ? retry : undefined} />;
   } else if (showLoading) {

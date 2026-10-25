@@ -1,5 +1,5 @@
 import { act, render as rtlRender, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
@@ -167,6 +167,143 @@ describe("NotificationProvider", () => {
     expect(await screen.findByText("Server javob bermadi")).toBeInTheDocument();
     expect(screen.getByText("Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
     expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
+  });
+
+  describe("tarmoq holati (G6F68ti6)", () => {
+    const restored = (kind: "offline" | "timeout") =>
+      act(() => {
+        window.dispatchEvent(new CustomEvent("elchi:network-restored", { detail: { kind } }));
+      });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      act(() => onlineManager.setOnline(true));
+    });
+
+    it("aloqa qaytsa «Internet aloqasi yo'q» yopiladi, «Aloqa tiklandi» 3 s ko'rinib yo'qoladi", () => {
+      vi.useFakeTimers();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent("elchi:network-error", { detail: { kind: "offline" } }));
+      });
+      expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      // Holat xabari: 20 s o'tsa ham o'zi yopilmaydi.
+      act(() => vi.advanceTimersByTime(20_000));
+      expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
+
+      restored("offline");
+      act(() => vi.advanceTimersByTime(300));
+      expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
+      expect(screen.getByText("Aloqa tiklandi")).toBeInTheDocument();
+      expect(screen.getByText("Ochiq sahifadagi ma'lumotlar yangilandi.")).toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(3_300));
+      expect(screen.queryByText("Aloqa tiklandi")).not.toBeInTheDocument();
+    });
+
+    it("«Server javob bermadi» fon javobidan yopilmaydi va «Aloqa tiklandi» chiqmaydi", () => {
+      vi.useFakeTimers();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent("elchi:network-error", { detail: { kind: "timeout" } }));
+      });
+      restored("timeout");
+      act(() => vi.advanceTimersByTime(4_000));
+      expect(screen.getByText("Server javob bermadi")).toBeInTheDocument();
+      expect(screen.queryByText("Aloqa tiklandi")).not.toBeInTheDocument();
+    });
+
+    it("tiklanganda faqat javobsiz yiqilgan faol so'rovlar qayta so'raladi", () => {
+      const refetch = vi.spyOn(queryClient, "refetchQueries").mockResolvedValue();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      restored("offline");
+      const call = refetch.mock.calls.find(([filters]) => typeof filters?.predicate === "function");
+      expect(call?.[0]).toMatchObject({ type: "active" });
+      const predicate = call![0]!.predicate!;
+      const query = (state: Record<string, unknown>) => ({ state }) as never;
+      const networkError = { isAxiosError: true, code: "ERR_NETWORK" };
+      expect(predicate(query({ status: "error", error: networkError }))).toBe(true);
+      expect(predicate(query({ status: "error", error: { isAxiosError: true, response: { status: 500 } } }))).toBe(false);
+      expect(predicate(query({ status: "success", error: null }))).toBe(false);
+    });
+
+    it("oflaynda «Qayta urinish» xabarni yopmaydi — aloqa qaytguncha turadi", async () => {
+      const user = userEvent.setup();
+      const refetch = vi.spyOn(queryClient, "refetchQueries").mockResolvedValue();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent("elchi:network-error", { detail: { kind: "offline" } }));
+      });
+      await user.click(await screen.findByRole("button", { name: "Qayta urinish" }));
+      expect(refetch).toHaveBeenCalledWith({ type: "active" });
+      expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    });
+
+    it("brauzer oflayn bo'lishi bilan (so'rovsiz ham) xabar chiqadi; onlayn — faol so'rovlar qayta yuboriladi", async () => {
+      const refetch = vi.spyOn(queryClient, "refetchQueries").mockResolvedValue();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => onlineManager.setOnline(false));
+      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      act(() => onlineManager.setOnline(true));
+      expect(refetch).toHaveBeenCalledWith({ type: "active" });
+      // «Tiklandi» — faqat haqiqiy javobdan (captive portal), brauzer `online` dan emas.
+      expect(screen.queryByText("Aloqa tiklandi")).not.toBeInTheDocument();
+    });
+
+    it("apiRequest: javobsiz xatoda ikkinchi «Xatolik» chiqmaydi (interceptor xabari yetarli)", async () => {
+      const user = userEvent.setup();
+      const NetworkConsumer = () => {
+        const { apiRequest } = useAppNotification();
+        return (
+          <button
+            onClick={() =>
+              apiRequest({
+                request: async () => {
+                  throw Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK" });
+                },
+                errorMessage: "Saqlanmadi",
+              })
+            }
+          >
+            network-case
+          </button>
+        );
+      };
+      render(
+        <NotificationProvider>
+          <NetworkConsumer />
+        </NotificationProvider>,
+      );
+
+      await user.click(screen.getByRole("button", { name: "network-case" }));
+      expect(errorMock).not.toHaveBeenCalled();
+      expect(screen.queryByText("Network Error")).not.toBeInTheDocument();
+    });
   });
 
   it("shows success notification for successful request", async () => {

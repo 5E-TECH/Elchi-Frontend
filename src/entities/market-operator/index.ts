@@ -14,6 +14,7 @@ export {
   normalizeMarketOperator,
   normalizeMarketOperatorList,
   updateMarketOperatorCommission,
+  updateMarketOperatorWarehouseAccess,
 } from "./api/marketOperatorApi";
 export {
   marketOperatorKeys,
@@ -22,6 +23,7 @@ export {
   useMarketOperators,
   useRefreshMarketOperators,
   useUpdateMarketOperatorCommission,
+  useUpdateMarketOperatorWarehouseAccess,
 } from "./api/useMarketOperators";
 export {
   COMMISSION_MAX,

@@ -512,7 +512,8 @@
       "returnInitiated": "{{actor}} started returning the order to the market. Reason: {{reason}}",
       "returnedToMarketByActor": "{{actor}} handed the order to {{market}} — {{method}}",
       "createdByActor": "{{actor}} created the order",
-      "cancelledPostReceivedAtPlace": "{{actor}} received the cancelled order — {{place}}"
+      "cancelledPostReceivedAtPlace": "{{actor}} received the cancelled order — {{place}}",
+      "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -566,7 +567,8 @@
       "cancelledPostCreated": "Cancelled order sent",
       "cancelledPostReceived": "Cancelled order received",
       "returnRequested": "Return requested",
-      "returnedToMarket": "Handed to market"
+      "returnedToMarket": "Handed to market",
+      "warehouseReturned": "Returned to warehouse"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",
@@ -801,7 +803,8 @@
       "cancelled": "Cancelled",
       "sent": "Sent",
       "received": "Received",
-      "handed": "Handed to market"
+      "handed": "Handed to market",
+      "warehouse": "Returned to warehouse"
     },
     "pending": {
       "send": "Sending by return post",
@@ -822,7 +825,8 @@
     "qrOpen": "Open QR code",
     "loading": "Loading the return path",
     "error": "Couldn't load the return path",
-    "empty": "The return path hasn't been recorded yet"
+    "empty": "The return path hasn't been recorded yet",
+    "subtitleClosedWarehouse": "Chain closed — the items went back to the warehouse"
   },
   "createCustomer": {
     "cardSubtitle": "Enter the phone number — if the customer already exists, their details fill in automatically",
@@ -884,7 +888,8 @@
     "applyLabel": "Apply the products total: {{amount}}"
   },
   "operatorCreate": {
-    "description": "Orders are created on behalf of your market with AI",
+    "description": "Orders are created on behalf of the market you work for",
+    "onBehalf": "On behalf of {{market}}",
     "aiOffTitle": "Creating with AI is turned off",
     "aiOffText": "To create an order, contact the market owner or an administrator.",
     "aiDisabled": "AI is not enabled for this market — contact the market owner or an administrator.",
@@ -897,5 +902,45 @@
     "districtChip": "District not found",
     "operatorYou": "You",
     "operatorAuto": "You — filled in automatically"
+  },
+  "fulfillment": {
+    "tag": "From warehouse",
+    "tagNamed": "From warehouse · {{name}}",
+    "tagTitle": "The order ships from a regional warehouse — no HQ or mail",
+    "filter": "Source",
+    "filterWarehouse": "From warehouse",
+    "filterHq": "Via HQ",
+    "source": {
+      "title": "Ships from",
+      "subtitle": "{{district}} · {{branch}} area",
+      "idle": "Once a district and products are chosen, the warehouse or HQ is picked automatically",
+      "legend": "Order source",
+      "auto": "Picked automatically",
+      "warehouseHint": "Everything is in stock · no HQ or mail, straight to a courier",
+      "hq": "Tashkent HQ",
+      "hqHint": "Usual route: HQ intake, mail, branch, courier",
+      "reserveNote": "On creation {{pcs}} is reserved at the warehouse and leaves stock when handed to a courier. If cancelled or returned, it goes back to this warehouse.",
+      "hqNote": "Nothing is reserved at the warehouse — the order takes the usual route via HQ.",
+      "pcs_one": "{{value}} pc",
+      "pcs_other": "{{value}} pcs",
+      "shortTitle": "Not enough in stock — the whole order ships from HQ",
+      "shortLine": "{{name}}: needs {{required}}, has {{available}}",
+      "shortBody": "{{lines}}. The order isn't split — one parcel ships via {{hq}}.",
+      "paused": "Paused",
+      "pausedHint": "No new orders — the order ships from HQ",
+      "noWarehouse": "No active warehouse in the district's area — the order takes the usual route",
+      "noRegion": "The district's area couldn't be determined — the order ships from HQ",
+      "invalid": "Products weren't checked at the warehouse — the order ships from HQ",
+      "notAllowed": "Warehouse orders aren't enabled for this shop — the order ships from HQ",
+      "custom": "There's a product outside the catalogue — the whole order ships from HQ",
+      "customHint": "Adding a product that isn't in the warehouse sends the whole order from HQ",
+      "failed": "Couldn't determine the source — it will be picked automatically on creation",
+      "retry": "Try again",
+      "loading": "Determining the source",
+      "inStock": "In stock: {{value}}",
+      "inStockTitle": "Available — {{name}}",
+      "summary": "Ships from",
+      "notInStock": "Not in stock"
+    }
   }
 }

@@ -218,3 +218,18 @@ describe("⭐ formatUsdLocalized — dollar (S4): doim 2 kasr, «12,40 $»", () 
     expect(formatNumberLocalized(12.4, { language: "uz", fractionDigits: 2 })).toBe("12,4");
   });
 });
+
+describe("formatNumberLocalized — minFractionDigits (og'irlik: «7,0 kg»)", () => {
+  it("nollar olib tashlangandan keyin ham kamida N xona qoladi", () => {
+    expect(formatNumberLocalized(7, { language: "uz", fractionDigits: 2, minFractionDigits: 1 })).toBe("7,0");
+    expect(formatNumberLocalized(1.98, { language: "uz", fractionDigits: 2, minFractionDigits: 1 })).toBe("1,98");
+    expect(formatNumberLocalized(3.6, { language: "ru", fractionDigits: 2, minFractionDigits: 1 })).toBe("3,6");
+    expect(formatNumberLocalized(2, { language: "en", fractionDigits: 1, minFractionDigits: 1 })).toBe("2.0");
+    expect(formatNumberLocalized(1250.5, { language: "uz", minFractionDigits: 1 })).toBe("1 250,5");
+  });
+
+  it("berilmasa — avvalgidek (ortiqcha nollarsiz)", () => {
+    expect(formatNumberLocalized(7, { language: "uz", fractionDigits: 2 })).toBe("7");
+    expect(formatNumberLocalized(-0.04, { language: "uz", fractionDigits: 1, minFractionDigits: 1 })).toBe("0,0");
+  });
+});

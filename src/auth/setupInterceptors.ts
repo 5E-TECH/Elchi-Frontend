@@ -1,7 +1,7 @@
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import tokenStorage from "./tokenStorage";
 import { logoutAndRedirect, refreshAccessToken } from "./authService";
-import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
+import { emitNetworkError, emitNetworkRestored, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -114,9 +114,18 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
   });
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // G6F68ti6 (1-band): uzilishdan keyingi birinchi javob — «Aloqa tiklandi» (`online` hodisasi «Wi-Fi bor,
+      // internet yo'q» holatida kelmaydi, shuning uchun signal haqiqiy javobdan).
+      emitNetworkRestored();
+      return response;
+    },
     async (error: AxiosError) => {
-      emitNetworkError(error);
+      // Javob kelgan xato (4xx/5xx) ham aloqa borligini bildiradi.
+      if (error.response) emitNetworkRestored();
+      // Fon so'rovi (`silentNetworkError`, masalan har daqiqadagi o'qilmaganlar soni) — holat belgilanadi, lekin
+      // foydalanuvchi yopgan tarmoq xabari qayta ochilmaydi (9-band).
+      emitNetworkError(error, { silent: error.config?.silentNetworkError === true });
 
       if (!shouldAttemptRefresh(error)) {
         return Promise.reject(error);

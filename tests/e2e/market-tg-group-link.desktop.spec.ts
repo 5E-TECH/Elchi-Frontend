@@ -5,8 +5,9 @@ import { TG_GROUP_DEEP_LINK, marketGroupRow, mockMarketTgGroupApi } from "./supp
  * TG-B (4TfLyTrL, 6jXw0DDr; ega javoblari tg-link S1–S5) — market tafsilotidagi «Telegram guruhi» kartasi
  * (`*-users-detail-telegram`): har tur holati, ulanmagan turda to'g'ridan-to'g'ri «Ulash» → bir martalik havola oynasi
  * (`*-users-detail-telegram-group-dialog`), guruh ulanganda oyna o'zi yopiladi va «Guruh ulandi»; muddati tugasa —
- * «Yangi havola olish»; admin ham ulaydi; menejer kartani ko'rmaydi; market o'z profilida — holatsiz qatorlar
- * (`market-profile`); `/all-users` da «Telegram boti» ustuni. `GET /markets/:id/tg-token` hech qachon so'ralmaydi.
+ * «Yangi havola olish»; admin ham ulaydi; menejer kartani ko'rmaydi; market o'z profilida (TG-C,
+ * `market-profile-telegram-status`) — `GET /notifications/me/telegram-groups` holati va o'z oynasi kuzatuvi;
+ * `/all-users` da «Telegram boti» ustuni. `GET /markets/:id/tg-token` hech qachon so'ralmaydi.
  * Soxta backend, 1440px.
  */
 test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
@@ -87,10 +88,10 @@ test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
     expect(state.notificationRequests).toBe(0);
   });
 
-  test("⭐ market /profile: «Xavfsizlik» va «Telegram» yonma-yon, «Telegram guruhi» — holatsiz, «Ulash» `market_id` siz", async ({
+  test("⭐ market /profile (TG-C): «Xavfsizlik» va «Telegram» yonma-yon, guruh holatlari, ulangan turda «Ulash» yo'q → o'z oynasi kutadi, guruh ulanadi — oyna o'zi yopiladi", async ({
     page,
   }) => {
-    const state = await mockMarketTgGroupApi(page, { role: "market" });
+    const state = await mockMarketTgGroupApi(page, { role: "market", connectAfterPolls: 1 });
     await page.goto("/profile");
 
     const groups = page.getByRole("region", { name: "Telegram guruhi" });
@@ -98,14 +99,44 @@ test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
     const security = await page.getByRole("region", { name: "Xavfsizlik" }).boundingBox();
     const telegram = await page.getByRole("region", { name: "Telegram", exact: true }).boundingBox();
     expect(Math.abs((security?.y ?? 0) - (telegram?.y ?? 1))).toBeLessThan(2);
-    await expect(groups.getByText("Ulanmagan")).toHaveCount(0);
+    const create = groups.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    const cancel = groups.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    await expect(create.getByText("Ulangan")).toBeVisible();
+    await expect(create.getByText("06.10.2026 dan")).toBeVisible();
+    await expect(create.getByRole("button")).toHaveCount(0);
+    await expect(cancel.getByText("Ulanmagan")).toBeVisible();
+    await expect(cancel.getByText("Bekor qilingan buyurtmalar xabari kelmaydi")).toBeVisible();
+    await expect(groups.getByRole("link", { name: /Barcha guruhlar/ })).toHaveCount(0);
 
-    await groups.getByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }).click();
+    await cancel.getByRole("button", { name: "Bekor qilinganlar guruhini ulash" }).click();
     const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
-    await expect(dialog.getByText("Bot guruhni o'zi ulaydi — ulanganda sizga bildirishnoma keladi")).toBeVisible();
-    await expect(dialog.getByText("Guruh ulanishi kutilmoqda…")).toHaveCount(0);
-    expect(state.linkRequests).toEqual([{ purpose: "market_group", group_type: "create" }]);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Baraka Shop · Bekor qilinganlar guruhi")).toBeVisible();
+    await expect(dialog.getByText("Bot guruhni o'zi ulaydi, holat shu yerda yangilanadi")).toBeVisible();
+    await expect(dialog.getByText("Guruh ulanishi kutilmoqda…")).toBeVisible();
+    expect(state.linkRequests).toEqual([{ purpose: "market_group", group_type: "cancel" }]);
+
+    // Bot guruhni uladi (2-kuzatuvda) — oyna o'zi yopiladi, «Guruh ulandi», ikkala tur «Ulangan».
+    await expect(page.getByText("Guruh ulandi", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(dialog).toHaveCount(0);
+    await expect(groups.getByText("Ulangan")).toHaveCount(2);
+    await expect(groups.getByRole("button", { name: /guruhini ulash/ })).toHaveCount(0);
+    expect(state.myGroupsRequests).toBeGreaterThanOrEqual(2);
+    // Xodim ro'yxati marketga yopiq — so'ralmaydi.
     expect(state.notificationRequests).toBe(0);
+  });
+
+  test("⭐ market /profile (TG-C): nofaol guruh — «Nofaol» + sabab, «Ulash» yo'q", async ({ page }) => {
+    await mockMarketTgGroupApi(page, {
+      role: "market",
+      rows: [{ ...marketGroupRow("create", false), inactive_reason: "kicked" }],
+    });
+    await page.goto("/profile");
+
+    const create = page.getByRole("region", { name: "Telegram guruhi" }).getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    await expect(create.getByText("Nofaol")).toBeVisible({ timeout: 90_000 });
+    await expect(create.getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeVisible();
+    await expect(create.getByRole("button")).toHaveCount(0);
   });
 
   test("⭐ /all-users: «Telegram boti» ustuni — «Ulangan» / «Ulanmagan», investor — «—»", async ({ page }) => {

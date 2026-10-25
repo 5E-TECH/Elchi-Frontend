@@ -1,8 +1,17 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { MERGED, deleteBoz, mockDistrictsApi, openDistricts, openMergeToIzboskan } from "./support/districtsMerge";
+import {
+  COUNT_MISMATCH,
+  MANUAL_FIX,
+  MERGED,
+  deleteBoz,
+  mockDistrictsApi,
+  openDistricts,
+  openMergeToIzboskan,
+} from "./support/districtsMerge";
 
 /**
- * DM-1 — `/regions/districts` telefonda (390, admin): oynalar pastki varaqa, tugmalar ≥ 44 px, gorizontal oqish yo'q.
+ * DM-1, DM-2 — `/regions/districts` telefonda (390, admin): oynalar (xato oynalari ham) pastki varaqa, tugmalar
+ * ≥ 44 px, gorizontal oqish yo'q.
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -40,4 +49,39 @@ test("⭐ 390: o'chirib bo'lmaydi va birlashtirish oynalari — pastki varaqa, �
   await expectSheet(page, result, ["Yopish"]);
   await expect(result.getByRole("list", { name: "Izboskan tumanida endi" })).toContainText("1 254 ta");
   expect(mock.leaked).toEqual([]);
+});
+
+test("⭐ 390: xato oynasi — pastki varaqa, «Sabab», «Qayta urinish» → natija", async ({ page }) => {
+  let calls = 0;
+  const mock = await mockDistrictsApi(page, () => {
+    calls += 1;
+    return calls === 1 ? COUNT_MISMATCH : { status: 200, body: MERGED, delayMs: 500 };
+  });
+  await openDistricts(page);
+  const dialog = await openMergeToIzboskan(page);
+  await expect(dialog.getByRole("list", { name: "Ko'chiriladiganlar" })).toContainText("128 ta");
+  await dialog.getByRole("button", { name: "Birlashtirish" }).click();
+
+  const error = page.getByRole("alertdialog", { name: "Birlashtirib bo'lmadi" });
+  await expect(error).toBeVisible();
+  await expectSheet(page, error, ["Xabarni nusxalash", "Qayta urinish"]);
+  await expect(error.getByTestId("merge-error-reason")).toContainText("Sonlar mos kelmadi");
+  await error.getByRole("button", { name: "Qayta urinish" }).click();
+
+  const result = page.getByRole("dialog", { name: "Tumanlar birlashtirildi" });
+  await expect(result).toBeVisible();
+  await expectSheet(page, result, ["Yopish"]);
+  await expect(result.getByRole("list", { name: "Ko'chirildi" })).toContainText("128 ta");
+  expect(mock.mergeBodies).toHaveLength(2);
+});
+
+test("390: «Birlashtirish chala qoldi» — pastki varaqa, ≥ 44 px", async ({ page }) => {
+  await mockDistrictsApi(page, () => MANUAL_FIX);
+  await openDistricts(page);
+  const dialog = await openMergeToIzboskan(page);
+  await dialog.getByRole("button", { name: "Birlashtirish" }).click();
+  const manual = page.getByRole("alertdialog", { name: "Birlashtirish chala qoldi" });
+  await expect(manual).toBeVisible();
+  await expectSheet(page, manual, ["Xabarni nusxalash", "Faoliyat jurnalini ochish"]);
+  await expect(manual.getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" }).getByRole("listitem")).toHaveCount(2);
 });

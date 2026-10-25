@@ -54,6 +54,7 @@ describe("getNavSections — maketdagi guruhlar (roles.json)", () => {
     expect(sections[0].items.map((item) => item.to)).toEqual(["/"]);
     expect(sections[3].items.map((item) => item.to)).toEqual([
       "/products",
+      "/warehouses",
       "/all-users",
       "/regions",
       "/branches",

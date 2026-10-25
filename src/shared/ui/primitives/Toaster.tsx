@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -216,7 +217,7 @@ const ToastRow = ({ toast, onDismiss }: ToastRowProps) => {
                   label: toast.action.label,
                   onClick: () => {
                     toast.action?.onClick();
-                    close();
+                    if (!toast.action?.keepOpen) close();
                   },
                 }
               : undefined
@@ -276,6 +277,12 @@ export const Toaster = () => {
   }, []);
 
   const hasToasts = toasts.length > 0;
+  // Fokusdagi xabar koddan yopilsa (`notify.dismiss`, masalan «Aloqa tiklandi» oflayn xabarni almashtirdi) o'chirilgan
+  // tugunda `blur` bo'lmaydi — «fokus» pauzasi qotib, qolgan xabarlar hech qachon yopilmasdi (G6F68ti6, 11-band).
+  useLayoutEffect(() => {
+    const active = document.activeElement;
+    if (!regionRef.current || !active || !regionRef.current.contains(active)) toastStore.resume("focus");
+  }, [toasts]);
   // Ro'yxat bo'shab qolsa — kursor/fokus sababi ham yo'q (aks holda keyingi xabar to'xtab qolardi).
   useEffect(() => {
     if (hasToasts) return;

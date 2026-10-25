@@ -1,4 +1,4 @@
-const SW_VERSION = "2026-10-06.1";
+const SW_VERSION = "2026-10-24.1";
 
 /*
  * Elchi Web Push Service Worker (QgqO0CdZ, davC9QOX).
@@ -62,14 +62,35 @@ self.addEventListener("push", (event) => {
   );
 });
 
+const isSameOrigin = (url) => {
+  try {
+    return new URL(url).origin === self.location.origin;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Bildirishnoma havolasi FAQAT o'z origin'imizda ochiladi (KwodkKWY P2): payload'dagi absolyut tashqi URL
+ * (`https://boshqa-sayt/...`, `//boshqa-sayt`, `javascript:`) — fishing/ochiq yo'naltirish o'rniga `/inbox`.
+ */
+const resolveLink = (link) => {
+  try {
+    const target = new URL(typeof link === "string" && link ? link : DEFAULT_LINK, self.location.origin);
+    if (target.origin === self.location.origin) return target.href;
+  } catch {
+    // Buzilgan havola — sukut.
+  }
+  return new URL(DEFAULT_LINK, self.location.origin).href;
+};
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = (event.notification.data && event.notification.data.link) || DEFAULT_LINK;
-  const target = new URL(link, self.location.origin).href;
+  const target = resolveLink(event.notification.data && event.notification.data.link);
 
   event.waitUntil(
     windowClients().then((clients) => {
-      const sameOrigin = clients.find((client) => client.url.startsWith(self.location.origin));
+      const sameOrigin = clients.find((client) => isSameOrigin(client.url));
       if (sameOrigin) {
         // navigate() faqat shu SW boshqarayotgan tabda ishlaydi — bo'lmasa yangi oyna.
         return sameOrigin

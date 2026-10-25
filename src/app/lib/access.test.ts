@@ -31,6 +31,8 @@ import { canViewMyEarnings, canViewRegionStats } from "./access";
 import { canHandoverCancelledToMarket } from "./access";
 // Elchi Pochta №1: xarajat kategoriyalari boshqaruvi — o'z describe bloki (pastda).
 import { canManageExpenseCategories } from "./access";
+// 47WFHzlx: «Yetkazish tariflari» — o'z describe bloki (pastda).
+import { canManageDeliveryTariffs } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -344,5 +346,14 @@ describe("canManageExpenseCategories — kassa xarajati kategoriyalari (Elchi Po
       expect(canManageExpenseCategories(s), caseName).toBe(caseName === "superadmin");
     }
     expect(canManageExpenseCategories(state(null))).toBe(false);
+  });
+});
+
+describe("canManageDeliveryTariffs — «Yetkazish tariflari» (/delivery-tariffs, 47WFHzlx)", () => {
+  it("faqat superadmin va admin; menejer (har filial turi), registrator va boshqa rollar — yo'q", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canManageDeliveryTariffs(s), caseName).toBe(caseName === "superadmin" || caseName === "admin");
+    }
+    expect(canManageDeliveryTariffs(state(null))).toBe(false);
   });
 });

@@ -108,6 +108,34 @@ describe("public/sw.js", () => {
     expect(self.clients.openWindow).toHaveBeenCalledWith("https://admin.elchipochta.uz/inbox");
   });
 
+  it.each([
+    "https://evil.example/phish",
+    "//evil.example/phish",
+    "javascript:alert(1)",
+    "https://admin.elchipochta.uz.evil.example/orders/7",
+  ])("click on a foreign link %s opens /inbox of our origin instead (KwodkKWY P2)", async (link) => {
+    const { self, dispatch } = loadWorker([]);
+    await dispatch("notificationclick", { notification: { close: vi.fn(), data: { link } } });
+    expect(self.clients.openWindow).toHaveBeenCalledWith("https://admin.elchipochta.uz/inbox");
+  });
+
+  it("an absolute link to our own origin is kept", async () => {
+    const { self, dispatch } = loadWorker([]);
+    await dispatch("notificationclick", {
+      notification: { close: vi.fn(), data: { link: "https://admin.elchipochta.uz/orders/7?tab=log" } },
+    });
+    expect(self.clients.openWindow).toHaveBeenCalledWith("https://admin.elchipochta.uz/orders/7?tab=log");
+  });
+
+  it("a tab of a look-alike origin is not reused — a new window of our origin is opened", async () => {
+    const navigate = vi.fn(() => Promise.resolve(null));
+    const lookAlike = { url: "https://admin.elchipochta.uz.evil.example/", focus: vi.fn(), navigate };
+    const { self, dispatch } = loadWorker([lookAlike]);
+    await dispatch("notificationclick", { notification: { close: vi.fn(), data: { link: "/orders/7" } } });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(self.clients.openWindow).toHaveBeenCalledWith("https://admin.elchipochta.uz/orders/7");
+  });
+
   it("pushsubscriptionchange re-subscribes with the old key and tells open tabs to sync", async () => {
     const tab = { postMessage: vi.fn(), url: "https://admin.elchipochta.uz/" };
     const { self, dispatch } = loadWorker([tab]);

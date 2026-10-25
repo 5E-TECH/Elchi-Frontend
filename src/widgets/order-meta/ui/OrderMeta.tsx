@@ -23,7 +23,7 @@ import { notify } from "../../../shared/lib/notify";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { formatTrackingDate } from "../../../features/order-tracking";
 import {
-  CANCEL_RETURN_STAGES,
+  cancelStageMetaFor,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
   useCancelReturnPlaceText,
@@ -198,7 +198,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
   const stage = resolveCancelReturnStage(order);
   const holderValue = (() => {
     if (!stage) return holderText;
-    const label = t(CANCEL_RETURN_STAGES[stage].labelKey, { ns: "status" });
+    const label = t(cancelStageMetaFor(order, stage).labelKey, { ns: "status" });
     const place = placeText(resolveCancelReturnPlace(order, stage, { handoverAt }));
     const fallbackName = stage === "branch" || stage === "courier" ? holderName : null;
     const where = [place?.name ?? fallbackName, place?.extra].filter(Boolean).join(" · ");
@@ -207,10 +207,11 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
 
   const tariffFields = visibleTariffs(role);
 
+  // rwAy8Qyk: sarlavha bilan bir xil raqam — `order_number` (yorliqdagi «#EL-100081»), zaxira — ichki id.
   const copyId = () => {
-    void copyToClipboard(meta.id).then((copied) => {
+    void copyToClipboard(meta.orderNumber).then((copied) => {
       if (copied) notify.success(t("orderNumberCopied"));
-      else notify.error(t("orderNumberCopyFailed", { id: meta.id }));
+      else notify.error(t("orderNumberCopyFailed", { id: meta.orderNumber }));
     });
   };
 
@@ -225,7 +226,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
       <div>
         <Row icon={<Hash size={15} aria-hidden="true" />} label={t("metaId")} testId="meta-id">
           <span className="inline-flex shrink-0 items-center gap-1">
-            <span className="tabular-nums">#{meta.id}</span>
+            <span className="tabular-nums">#{meta.orderNumber}</span>
             {/* Telefonda 44px nishon, lekin qator balandligi (bir qator) o'zgarmaydi — manfiy chekka. */}
             <IconButton
               size="sm"
