@@ -76,6 +76,27 @@ describe("UserListTable (dizayn v2)", () => {
     expect(within(table).getByText("Nofaol")).toBeInTheDocument();
   });
 
+  it("kGIjOciz: superadmin/admin jadvalida «Filial» ustuni — filial nomi yoki «—»; menejerda ustun yo'q", () => {
+    const withBranch = [
+      { ...users[0] },
+      { ...users[1], branch_id: "3", branch: { id: "3", name: "Farg'ona filiali" } },
+    ];
+    const { unmount } = renderWithProviders(<UserListTable users={withBranch as never} canManage />);
+
+    const table = screen.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    expect(within(table).getByRole("columnheader", { name: "Filial" })).toBeInTheDocument();
+    const courierRow = within(table).getByText("Vali").closest("tr") as HTMLElement;
+    expect(within(courierRow).getByText("Farg'ona filiali")).toBeInTheDocument();
+    const adminRow = within(table).getByText("Ali Valiyev").closest("tr") as HTMLElement;
+    expect(within(adminRow).getAllByText("—").length).toBeGreaterThan(0);
+    expect(adminRow).not.toHaveTextContent("filiali");
+    unmount();
+
+    renderWithProviders(<UserListTable users={withBranch as never} />);
+    const managerTable = screen.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    expect(within(managerTable).queryByRole("columnheader", { name: "Filial" })).not.toBeInTheDocument();
+  });
+
   it("qator bosilsa — foydalanuvchi tafsilotiga o'tadi", async () => {
     const user = userEvent.setup();
     renderWithProviders(<UserListTable users={users as never} />);

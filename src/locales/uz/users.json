@@ -199,6 +199,7 @@
         "user": "Foydalanuvchi",
         "phone": "Telefon",
         "role": "Rol",
+        "branch": "Filial",
         "status": "Holat",
         "joined": "Qo'shilgan",
         "actions": "Amallar",
@@ -206,6 +207,7 @@
       },
       "rowActions": "{{name}} amallari",
       "rowOpen": "{{name}} tafsilotlari",
+      "phoneBranch": "{{phone}} · {{branch}}",
       "menu": {
         "edit": "Tahrirlash",
         "deactivate": "Nofaol qilish",
@@ -302,6 +304,8 @@
     "detail": {
       "description": "{{role}} · Login: {{login}}",
       "descriptionNoLogin": "{{role}}",
+      "descriptionWithBranch": "{{role}} · {{branch}} · Login: {{login}}",
+      "descriptionNoLoginBranch": "{{role}} · {{branch}}",
       "descriptionBranch": "{{branch}} · {{phone}}",
       "contactLabel": "Aloqa va sanalar",
       "phone": "Telefon",

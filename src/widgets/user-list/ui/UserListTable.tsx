@@ -92,8 +92,9 @@ const telegramBotState = (user: User): TelegramBotState => {
  * (`telegram_linked`: «Ulangan» / «Ulanmagan», `Send` ikonkali belgi; planshetda ham), telefon kartasida «Bot ulangan» /
  * «Bot ulanmagan». «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmaydi — backend `telegram_linked`
  * parametri yo'q (yA31z7Rr, TG-D). Menejerda ustun yo'q.
- * «Filial» ustuni chizilmaydi: `GET /users` qatorlarida filial yo'q (backend `findAllAdmins` — faqat `users`
- * jadvali), har qator uchun alohida so'rov esa og'ir — spec §6 ma'lumot bo'shlig'i.
+ * «Filial» (kGIjOciz, backend 914ff57): superadmin/admin jadvalida «Rol» dan keyin (planshetda ham), filialsiz rol —
+ * «—»; telefon kartasida «telefon · filial». Menejerda (`manager-users-list`) ustun yo'q — u faqat o'z filialini
+ * ko'radi.
  *
  * Xulq (o'zgarmagan): nofaol qilish — tasdiq oynasi (`useConfirm`), so'ng `updateUserStatus.mutate`, xabarlar
  * va qatordagi kutish; faol qilish — tasdiqsiz; o'chirish — `ConfirmDialog` (maket `*-users-delete-dialog`),
@@ -113,6 +114,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
 
   const roleLabel = useCallback((user: User) => t(getUserRoleLabelKey(user.role)), [t]);
   const phone = useCallback((user: User) => formatPhone(user.phone_number), []);
+  const branchName = useCallback((user: User) => user.branch?.name?.trim() || null, []);
   const joined = useCallback(
     (user: User) => (user.createdAt ? formatDateTimeLocalized(user.createdAt, { language }) : "—"),
     [language],
@@ -307,6 +309,15 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         header: t("v2.list.columns.role"),
         cell: (user) => <Badge>{roleLabel(user)}</Badge>,
       },
+      ...(canManage
+        ? [
+            {
+              id: "branch",
+              header: t("v2.list.columns.branch"),
+              cell: (user: User) => branchName(user) ?? <span className="text-text-subtle">—</span>,
+            } satisfies DataTableColumn<User>,
+          ]
+        : []),
       { id: "status", header: t("v2.list.columns.status"), cell: statusBadge },
       ...(canManage
         ? [
@@ -337,10 +348,10 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         cell: renderActions,
       },
     ],
-    [canManage, joined, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
+    [branchName, canManage, joined, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
   );
 
-  // Telefon kartasi (maket `.el-list-item`): avatar, ism, «telefon», rol + holat, kebab yoki ›.
+  // Telefon kartasi (maket `.el-list-item`): avatar, ism, «telefon · filial» (superadmin/admin), rol + holat, kebab yoki ›.
   const renderCard = useCallback(
     (user: User) => (
       <div className="flex min-h-14 items-center gap-3 px-4 py-3 text-sm text-text">
@@ -351,7 +362,9 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
           <span className={cx("min-w-0 font-semibold", user.status === "active" ? "text-text" : "text-text-muted")}>
             {user.name}
           </span>
-          <span className={SUB}>{phone(user)}</span>
+          <span className={SUB}>
+            {canManage && branchName(user) ? t("v2.list.phoneBranch", { phone: phone(user), branch: branchName(user) }) : phone(user)}
+          </span>
           <span className="flex flex-wrap gap-1.5">
             <Badge>{roleLabel(user)}</Badge>
             {statusBadge(user)}
@@ -361,7 +374,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         {canManage ? renderActions(user) : <ChevronRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />}
       </div>
     ),
-    [canManage, phone, renderActions, roleLabel, statusBadge, telegramBadge],
+    [branchName, canManage, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
   );
 
   const deletePhone = deleteTarget ? phone(deleteTarget) : "";
