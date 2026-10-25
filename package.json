@@ -42,6 +42,7 @@
     "@svg-maps/uzbekistan": "^2.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-virtual": "3.14.14",
     "@zxing/library": "0.21.3",
     "antd": "^6.3.0",
     "axios": "^1.13.5",

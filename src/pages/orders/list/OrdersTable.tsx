@@ -78,6 +78,8 @@ const CELL_PAD_BELOW_1440 = "lg:max-[1439px]:px-2 lg:max-[1439px]:first:pl-4 lg:
 
 /** Server sukuti (OpenAPI `GET /orders`: «default created_at desc») — URL'da saralash yo'q bo'lsa shu ko'rinadi. */
 const DEFAULT_SORT: DataTableSort = { key: "createdAt", direction: "desc" };
+/** Shu sondan ko'p qatorda jadval/kartalar virtualizatsiya qilinadi (F4RSPBwx). */
+const ORDERS_VIRTUALIZE_FROM = 30;
 
 /** Menejer amallari: sotish / bekor qilish shu holatlarda, qaytarish — sotilgan va bekor qilinganda. */
 const ROLLBACK_STATUSES = new Set(["sold", "cancelled"]);
@@ -611,6 +613,8 @@ const OrdersTable = ({
                     renderCard={renderCard}
                     busy={busy}
                     className="border-t border-border"
+                    // F4RSPBwx: 50 / 100 qator tanlansa faqat ko'rinadiganlari DOM'da (100 da ~7 100 tugun edi).
+                    virtualizeFrom={ORDERS_VIRTUALIZE_FROM}
                 />
             )}
         </QueryBoundary>
