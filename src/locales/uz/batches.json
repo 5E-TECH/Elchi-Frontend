@@ -82,6 +82,8 @@
     "sendErrorDescription": "Tanlov saqlanadi — qayta urinib ko'ring",
     "historyCount": "{{value}} ta",
     "historyLabel": "Paket tarixi",
+    "historyLoading": "Tarix yuklanmoqda",
+    "historyError": "Tarixni yuklab bo'lmadi",
     "historyAction": {
       "created": "Paket yaratildi",
       "createdReturn": "Qaytarish paketi yaratildi",

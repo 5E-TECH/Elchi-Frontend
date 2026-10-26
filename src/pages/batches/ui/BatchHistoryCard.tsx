@@ -5,7 +5,7 @@ import type { BatchDirection, BatchHistoryItem } from "../../../entities/batch";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Badge, Card, EmptyState } from "../../../shared/ui/primitives";
+import { Badge, Card, EmptyState, ErrorState, SkeletonLines } from "../../../shared/ui/primitives";
 import { knownText, readBatchHistoryKind, type BatchHistoryKind } from "../model/batchView";
 
 const KIND_ICON: Record<BatchHistoryKind, LucideIcon> = {
@@ -16,18 +16,26 @@ const KIND_ICON: Record<BatchHistoryKind, LucideIcon> = {
 };
 
 type Props = {
+  /** Ko'rsatish tartibida (maket: eng yangisi tepada). */
   items: readonly BatchHistoryItem[];
   direction: BatchDirection;
   /** Qabul qiluvchi filial nomi («Paket Toshkent HQ'ga jo'natildi»); noma'lum bo'lsa — nomsiz matn. */
   targetName: string | null;
+  /** `GET transfer-batches/:id/history` yuklanmoqda — karta ichida skelet (sahifa kutmaydi). */
+  loading?: boolean;
+  /** Tarix so'rovi xatosi — karta ichida `ErrorState` + «Qayta urinish». */
+  error?: unknown;
+  onRetry?: () => void;
+  retrying?: boolean;
 };
 
 /**
  * «TARIX» kartasi (maket `*-batches-detail*`): vaqt chizig'i — ikonka (doira) va ulovchi chiziq, harakat, bajargan
- * xodim va vaqt (o'ngda). Backend harakati `CREATED | SENT | RECEIVED | CANCELLED` — o'zbekcha matnga, boshqasi
- * o'zicha. Bo'sh bo'lsa — «Tarix hozircha mavjud emas».
+ * xodim va vaqt (o'ngda). Backend harakati `CREATED | SENT | RECEIVED | CANCELLED` — tarjima qilingan matnga, boshqasi
+ * — backend `action_label` (bo'lmasa xom `action`). Bo'sh bo'lsa — «Tarix hozircha mavjud emas»; yuklanish — skelet;
+ * xato — «Qayta urinish» (3HKvAyhm: ma'lumot `GET transfer-batches/:id/history` dan).
  */
-const BatchHistoryCard = ({ items, direction, targetName }: Props) => {
+const BatchHistoryCard = ({ items, direction, targetName, loading = false, error, onRetry, retrying }: Props) => {
   const { t, i18n } = useTranslation("batches");
   const language = i18n.resolvedLanguage ?? i18n.language;
 
@@ -38,20 +46,33 @@ const BatchHistoryCard = ({ items, direction, targetName }: Props) => {
       return targetName ? t("detail.historyAction.receivedAt", { to: targetName }) : t("detail.historyAction.received");
     }
     if (kind === "cancelled") return t("detail.historyAction.cancelled");
-    return knownText(item.action) ?? "—";
+    return knownText(item.label) ?? knownText(item.action) ?? "—";
   };
+
+  const failed = !loading && error != null;
+  const hasItems = !loading && !failed && items.length > 0;
 
   return (
     <Card
       title={t("detail.history")}
       titleAddon={
-        items.length > 0 ? (
+        hasItems ? (
           <Badge>{t("detail.historyCount", { value: formatNumberLocalized(items.length, { language }) })}</Badge>
         ) : null
       }
-      padding={items.length > 0 ? "lg" : "none"}
+      padding={hasItems || loading ? "lg" : "none"}
+      aria-busy={loading || undefined}
     >
-      {items.length > 0 ? (
+      {loading ? (
+        <>
+          <span role="status" className="sr-only">
+            {t("detail.historyLoading")}
+          </span>
+          <SkeletonLines lines={3} />
+        </>
+      ) : failed ? (
+        <ErrorState error={error} title={t("detail.historyError")} onRetry={onRetry} retrying={retrying} />
+      ) : hasItems ? (
         <ol aria-label={t("detail.historyLabel")} className="flex flex-col">
           {items.map((item, index) => {
             const kind = readBatchHistoryKind(item.action);

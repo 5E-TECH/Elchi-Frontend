@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchAllTransferBatches, fetchTransferBatchesPage } from "./batchApi";
+import { fetchAllTransferBatches, fetchTransferBatchesPage, normalizeBatchHistory } from "./batchApi";
 
 /**
  * `fetchAllTransferBatches` — `GET transfer-batches` ning hamma sahifalari (limit 100): bo'sh sahifada to'xtaydi
@@ -127,5 +127,32 @@ describe("fetchAllTransferBatches", () => {
     });
     await expect(fetchAllTransferBatches()).rejects.toThrow("Server");
     expect(mocks.get).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("normalizeBatchHistory — GET transfer-batches/:id/history (3HKvAyhm)", () => {
+  it("harakat, `action_label`, bajargan (`user.name`; `null` — «—»), vaqt; tartib o'zgarmaydi", () => {
+    const items = normalizeBatchHistory({
+      statusCode: 200,
+      data: [
+        {
+          id: "5",
+          batch_id: "172",
+          user_id: "31",
+          action: "CREATED",
+          action_label: "Yaratildi",
+          notes: null,
+          created_at: "2026-10-06T07:02:00.000Z",
+          user: { id: "31", name: "Malika Yusupova" },
+        },
+        { id: "6", batch_id: "172", user_id: "0", action: "SENT", action_label: "Jo'natildi", created_at: "2026-10-06T11:10:00.000Z", user: null },
+      ],
+    });
+    expect(items).toEqual([
+      { id: "5", actor: "Malika Yusupova", action: "CREATED", label: "Yaratildi", created_at: "2026-10-06T07:02:00.000Z" },
+      { id: "6", actor: "—", action: "SENT", label: "Jo'natildi", created_at: "2026-10-06T11:10:00.000Z" },
+    ]);
+    expect(normalizeBatchHistory({ statusCode: 200, data: null })).toEqual([]);
+    expect(normalizeBatchHistory(undefined)).toEqual([]);
   });
 });

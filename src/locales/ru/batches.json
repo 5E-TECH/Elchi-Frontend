@@ -97,6 +97,8 @@
     "sendErrorDescription": "Выбор сохранён — попробуйте ещё раз",
     "historyCount": "{{value}}",
     "historyLabel": "История пакета",
+    "historyLoading": "История загружается",
+    "historyError": "Не удалось загрузить историю",
     "historyAction": {
       "created": "Пакет создан",
       "createdReturn": "Возвратный пакет создан",
