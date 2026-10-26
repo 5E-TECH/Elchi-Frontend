@@ -35,6 +35,7 @@ import {
   type RegionRow,
   type RegionsSummary,
 } from "../model/regionsModel";
+import { buildMapA11yLang } from "../lib/mapA11y";
 import { SummaryRow } from "./regionBlocks";
 
 // Highcharts (≈138 KB gzip) — faqat xarita chiziladigan paytda yuklanadi.
@@ -202,6 +203,23 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
     [language, t, totalOrders],
   );
 
+  // Skrin-rider va klaviatura (fYgDe3MW): har viloyat — «Andijon viloyati: 21 ta buyurtma, 71,4% muvaffaqiyat, …».
+  const mapA11y = useMemo(
+    () => ({
+      title: t("v2.map.title"),
+      locale: language,
+      lang: buildMapA11yLang(t),
+      pointDescription: (row: RegionRow) =>
+        t("v2.map.pointAria", {
+          name: row.name,
+          count: formatNumberLocalized(row.orders, { language }),
+          rate: row.orders > 0 ? formatPercentLocalized(row.rate, { language }) : "—",
+          revenue: formatCompactMoneyLocalized(row.revenue, { language }),
+        }),
+    }),
+    [language, t],
+  );
+
   const rankItems: RankItem[] = rows.map((row) => ({
     id: row.id,
     name: row.short,
@@ -303,6 +321,7 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
                 tooltipHtml={tooltipHtml}
                 onSelect={onSelect}
                 ariaLabel={mapAria}
+                a11y={mapA11y}
               />
             </Suspense>
             <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-6 gap-y-2">

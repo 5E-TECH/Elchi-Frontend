@@ -131,6 +131,14 @@
         "rowAria": "{{name}}: {{count}} ta buyurtma, {{rate}} sotildi",
         "sold": "{{rate}} sotildi",
         "showAll": "Barcha {{count}} viloyat"
+      },
+      "pointAria": "{{name}}: {{count}} ta buyurtma, {{rate}} muvaffaqiyat, {{revenue}} tushum",
+      "a11y": {
+        "chartContainerLabel": "{title}. Interaktiv xarita.",
+        "svgContainerLabel": "Interaktiv xarita",
+        "endOfChartMarker": "Xarita oxiri.",
+        "seriesSummary": "{series.name}, {series.points.length} ta viloyat.",
+        "nullPointValue": "Ma'lumot yo'q"
       }
     },
     "table": {
