@@ -55,13 +55,14 @@ const INVESTMENTS = [
 const investmentsBody = (
   items: unknown[] = INVESTMENTS,
   meta: Partial<{ page: number; limit: number; total: number; totalPages: number }> = {},
+  summary: Record<string, unknown> = {},
 ) => ({
   statusCode: 200,
   message: "success",
   data: {
     items,
     meta: { page: 1, limit: 10, total: items.length, totalPages: 1, ...meta },
-    summary: { total_amount: 450_000_000 },
+    summary: { total_amount: 450_000_000, ...summary },
   },
 });
 
@@ -230,7 +231,40 @@ describe("InvestmentsPage — /investments (investor-investments-list)", () => {
     expect(paramsOf(get, "investors/me/investments").at(-1)).toEqual({ page: 1, limit: 10 });
   });
 
-  it("oraliqda bitta sahifa — sahifa yig'indisi; bir necha sahifa — faqat son (N6 → IN-3)", async () => {
+  it("⭐ su4IYGCN (IN-3): oraliqda — «Tanlangan oraliqda: range_amount · N ta» (bir necha sahifada ham)", async () => {
+    // 3 sahifa: sahifadagi 5 ta yozuv yig'indisi emas — backend `summary.range_amount` (oraliqning barcha sahifalari).
+    mockApi(() => investmentsBody(INVESTMENTS, { total: 12, totalPages: 3 }, { range_amount: 612_500_000 }));
+    const first = renderAt("investments", "?from=2026-01-01&to=2026-08-31");
+    expect(await screen.findByText("Tanlangan oraliqda: 612 500 000 so'm · 12 ta")).toBeInTheDocument();
+    first.unmount();
+
+    // Oraliqda yozuv yo'q — `range_amount: 0`: «0 so'm · 0 ta» (bo'sh holat bilan).
+    vi.restoreAllMocks();
+    mockApi(() => investmentsBody([], { total: 0 }, { range_amount: 0 }));
+    const second = renderAt("investments", "?from=2025-01-01&to=2025-01-31");
+    expect(await screen.findByText("Tanlangan oraliqda: 0 so'm · 0 ta")).toBeInTheDocument();
+    second.unmount();
+
+    // Filtrsiz — avvalgidek `total_amount` (range_amount = total_amount).
+    vi.restoreAllMocks();
+    mockApi(() => investmentsBody(INVESTMENTS, { total: 5 }, { range_amount: 450_000_000 }));
+    renderAt("investments");
+    expect(await screen.findByText("Jami: 450 000 000 so'm · 5 ta")).toBeInTheDocument();
+  });
+
+  it("su4IYGCN: ru/en va 390px — oraliq summasi", async () => {
+    asPhone();
+    await i18n.changeLanguage("ru");
+    mockApi(() => investmentsBody(INVESTMENTS, { total: 12, totalPages: 3 }, { range_amount: 612_500_000 }));
+    const view = renderAt("investments", "?from=2026-01-01&to=2026-08-31");
+    expect(await screen.findByText("За выбранный период: 612 500 000 сум · 12 шт.")).toBeInTheDocument();
+    view.unmount();
+    await i18n.changeLanguage("en");
+    renderAt("investments", "?from=2026-01-01&to=2026-08-31");
+    expect(await screen.findByText("In selected period: 612,500,000 UZS · 12")).toBeInTheDocument();
+  });
+
+  it("eski javob (range_amount yo'q): oraliqda bitta sahifa — sahifa yig'indisi; bir necha sahifa — faqat son", async () => {
     mockApi(() => investmentsBody(INVESTMENTS.slice(0, 2)));
     const first = renderAt("investments", "?from=2026-06-01&to=2026-08-31");
     expect(await screen.findByText("Tanlangan oraliqda: 150 000 000 so'm · 2 ta")).toBeInTheDocument();

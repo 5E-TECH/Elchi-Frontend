@@ -93,7 +93,9 @@ const investments = (empty: boolean, query: URLSearchParams) => {
   const rows = empty
     ? []
     : INVESTMENTS.filter((row) => Date.parse(row.invested_at) >= from && Date.parse(row.invested_at) <= to);
-  return { ...pageOf(rows, query), summary: { total_amount: empty ? 0 : 450_000_000 } };
+  // su4IYGCN: `range_amount` — oraliqning barcha yozuvlari yig'indisi (oraliqsiz — `total_amount`).
+  const rangeAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+  return { ...pageOf(rows, query), summary: { total_amount: empty ? 0 : 450_000_000, range_amount: rangeAmount } };
 };
 
 const profit = (id: string, month: number, last: number, amount: number, paidAt: string | null, percentage = 12.5) => {
