@@ -21,6 +21,9 @@ const compareBranches = (left: Branch, right: Branch) => {
  *   bo'lmaydi, HQ ishlarini superadmin, admin va registratorlar bajaradi.
  *   Backend ham rad etadi (POST /managers → 400).
  * - `registrator`: HQ QOLADI — HQ registratorlari kerak.
+ * - `courier` (perqZ3oM / FY-6, superadmin/admin): faqat HQ, REGIONAL va HYBRID (PICKUP — backend `POST /couriers`
+ *   400 bilan rad etadi). Viloyat bo'yicha filtrlanmaydi: ro'yxatda viloyat nomi kelmay qolsa ham filial yo'qolmasin —
+ *   viloyatsiz filialni backend o'zi rad etadi.
  */
 export const getBranchOptionsForRole = (
   branches: readonly Branch[] | null | undefined,
@@ -29,7 +32,13 @@ export const getBranchOptionsForRole = (
   (branches ?? [])
     .filter((branch) => branch.status !== "inactive")
     .filter((branch) => role !== "manager" || !isHqBranch(branch))
+    .filter((branch) => role !== "courier" || isCourierBranch(branch))
     .sort(compareBranches);
+
+const COURIER_BRANCH_TYPES = new Set(["HQ", "REGIONAL", "HYBRID"]);
+
+/** Kuryer yaratiladigan filial turi: HQ / REGIONAL / HYBRID. */
+const isCourierBranch = (branch: Branch): boolean => COURIER_BRANCH_TYPES.has(String(branch.type ?? "").toUpperCase());
 
 /**
  * Himoya: menejer uchun HQ filiali tanlanganmi.

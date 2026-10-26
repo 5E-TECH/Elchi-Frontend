@@ -32,6 +32,10 @@ describe("getBranchOptionsForRole", () => {
     expect(ids(getBranchOptionsForRole(BRANCHES, "registrator"))).toEqual(["1", "16", "15", "17"]);
   });
 
+  it("perqZ3oM: kuryer — faqat HQ / REGIONAL / HYBRID (PICKUP va nofaol yo'q)", () => {
+    expect(ids(getBranchOptionsForRole(BRANCHES, "courier"))).toEqual(["1", "16", "15"]);
+  });
+
   it("nofaol filiallar hech qaysi rolda chiqmaydi", () => {
     for (const role of ["manager", "registrator", "admin", null]) {
       expect(ids(getBranchOptionsForRole(BRANCHES, role)), String(role)).not.toContain("18");

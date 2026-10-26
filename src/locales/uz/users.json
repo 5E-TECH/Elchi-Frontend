@@ -454,6 +454,27 @@
         "title": "Rol o'zgartirildi, qolgani saqlanmadi",
         "text": "{{name}} endi {{role}}. Boshqa o'zgarishlar saqlanmadi — tekshirib, qayta saqlang."
       }
+    },
+    "courierDistrict": {
+      "label": "Tuman",
+      "placeholder": "Tumanni tanlang",
+      "hint": "Ixtiyoriy · faqat {{region}} tumanlari, qidirib tanlanadi",
+      "hintNoRegionName": "Ixtiyoriy · faqat kuryer viloyati tumanlari, qidirib tanlanadi",
+      "listLabel": "{{region}} tumanlari",
+      "clear": "Tumanni tozalash",
+      "loadError": "Tumanlarni yuklab bo'lmadi",
+      "needBranch": "Avval filialni tanlang — tumanlar filial viloyatidan olinadi",
+      "branchNoRegion": "Filial viloyati aniqlanmadi — tuman tanlanmaydi",
+      "noRegion": "Kuryerga viloyat biriktirilmagan — tuman tanlanmaydi",
+      "branchHint": "Ixtiyoriy · tanlanmasa — bosh ofis (HQ); keyin filial sahifasidan ham biriktiriladi",
+      "regionHint": "Filial tanlangach, uning viloyati qo'yiladi",
+      "regionHintEdit": "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi — unda tuman tozalanadi",
+      "errors": {
+        "notFound": "Tuman topilmadi — ro'yxatdan qayta tanlang",
+        "wrongRegion": "Tuman kuryer viloyatiga tegishli emas — shu viloyat tumanini tanlang",
+        "invalid": "Tuman noto'g'ri tanlangan — ro'yxatdan qayta tanlang",
+        "unavailable": "Tumanni tekshirib bo'lmadi — birozdan keyin qayta urinib ko'ring"
+      }
     }
   },
   "tgGroup": {

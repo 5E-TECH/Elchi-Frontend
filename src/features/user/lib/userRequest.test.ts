@@ -30,4 +30,24 @@ describe("runUserRequest — tarmoq xatosi (G6F68ti6, 4-band)", () => {
     expect(error).toHaveBeenCalledWith("error", { description: "Telefon band" });
     error.mockRestore();
   });
+
+  it("DtKKY0V8: `describeError` matni backend matnidan ustun; `undefined` — odatiy tartib", async () => {
+    const error = vi.spyOn(notify, "error");
+    const badDistrict = Object.assign(new Error("Request failed with status code 400"), {
+      isAxiosError: true,
+      response: { status: 400, data: { message: "Tuman topilmadi" } },
+    });
+
+    await runUserRequest({
+      request: () => Promise.reject(badDistrict),
+      successMessage: "ok",
+      describeError: () => "District not found",
+      t,
+    });
+    expect(error).toHaveBeenLastCalledWith("error", { description: "District not found" });
+
+    await runUserRequest({ request: () => Promise.reject(badDistrict), successMessage: "ok", describeError: () => undefined, t });
+    expect(error).toHaveBeenLastCalledWith("error", { description: "Tuman topilmadi" });
+    error.mockRestore();
+  });
 });

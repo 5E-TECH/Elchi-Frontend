@@ -104,6 +104,8 @@ export interface User {
   can_order_from_warehouse?: boolean;
   region_id?: string | null;
   region?: Region | null;
+  /** DtKKY0V8 / YEThmZBn — kuryer tumani (`GET /users/:id`, `GET /users`); tumansiz — `null`. */
+  district_id?: string | number | null;
   /**
    * MO-2: market operatori qaysi marketga biriktirilgan (`GET auth/my-profile` → `market_id`; market nomi kelmaydi —
    * N13). Boshqa rollarda yo'q yoki `null`.
@@ -221,6 +223,8 @@ export interface CreateCourierRequest {
   payment_day?: number;
   tariff_home?: number; // Uyga tarif (so'm)
   tariff_center?: number; // Markazga tarif (so'm)
+  /** DtKKY0V8 — tuman (raqamli satr): mavjud va kuryer viloyatiga tegishli; yo'q / `null` — tumansiz. */
+  district_id?: string | null;
 }
 
 // ==================== CREATE LOGIST ====================
@@ -266,6 +270,11 @@ export interface UpdateUserRequest {
    * identity `updateUser` uni e'tiborsiz qoldiradi — kuryer hududi filial biriktiruvidan keladi.
    */
   ai_price_per_order?: number | null;
+  /**
+   * DtKKY0V8 / YEThmZBn — kuryer tumani (raqamli satr; `null` — tozalash). Tuman foydalanuvchi viloyatiga tegishli
+   * bo'lishi kerak (400), logistika javob bermasa — 503. O'zini tahrirlashda backend e'tiborsiz qoldiradi.
+   */
+  district_id?: string | null;
 }
 
 // ==================== CHANGE ROLE (FY-2) ====================
