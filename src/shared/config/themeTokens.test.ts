@@ -272,6 +272,33 @@ describe("dizayn v2: asosiy juftliklar WCAG kontrastida", () => {
 });
 
 /**
+ * HAR MATN TOKENI × HAR YUZA (OpzLWcqJ) — maket `tizim-motion` 07 «Token juftliklari»: matn kamida 4,5:1,
+ * yordamchi `text-subtle` (faqat ikonka, namuna matn, o'chirilgan) kamida 3:1. Matn faqat `surface` da emas —
+ * sahifa foni (`bg`), oyna/menyu (`raised`) va botiq maydon (`sunken`) ustida ham turadi.
+ */
+describe("dizayn v2: har matn tokeni har yuzada (tizim-motion 07)", () => {
+  const SURFACES = ["bg", "surface", "raised", "sunken"] as const;
+  const FG_TOKENS = ["action-fg", "success-fg", "warning-fg", "danger-fg", "info-fg"] as const;
+
+  for (const theme of ["light", "dark"] as const) {
+    const T = SEMANTIC_TOKENS[theme];
+    const texts: Array<[string, string, number]> = [
+      ["text", T.text, 4.5],
+      ["text-muted", TEXT_MUTED[theme], 4.5],
+      ["text-subtle", T["text-subtle"], 3],
+      ...FG_TOKENS.map((token): [string, string, number] => [token, T[token], 4.5]),
+    ];
+    for (const [name, fg, min] of texts) {
+      for (const surface of SURFACES) {
+        it(`${theme}: ${name} / ${surface} >= ${min}:1`, () => {
+          expect(contrast(fg, T[surface])).toBeGreaterThanOrEqual(min);
+        });
+      }
+    }
+  }
+});
+
+/**
  * YON MENYU (shell, 2-bosqich): `nav-*` tokenlari maketdagi `--sidebar-*`
  * (design/kit/helmet.html) nusxasi. Ular yarim shaffof — fon `nav` ustiga
  * aralashtirilib (hover/faol holat, son pilyulasi faol band ichida) o'lchanadi.

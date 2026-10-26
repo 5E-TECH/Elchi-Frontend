@@ -23,7 +23,8 @@ const files = Object.entries(sources)
 
 describe("palette guard", () => {
   it("scans the source tree (the guard must not run on an empty list)", () => {
-    expect(files.length).toBeGreaterThan(100);
+    // OpzLWcqJ: butun `src` (≈ 600 ta `.tsx`), faqat bitta papka emas — 300 dan kam bo'lsa glob torayib qolgan.
+    expect(files.length).toBeGreaterThan(300);
   });
 
   it("never uses var(--color-maindark) as an inline text colour", () => {
