@@ -129,6 +129,10 @@ const historyRows = () => {
       progress_pct: 0,
       created_at: new Date(E2E_NOW - 3_600_000).toISOString(),
       scheduled_at: at(tashkentDay(1), "09:00"),
+      // N10 (fb4qy6bd): bugun 18:40 ga so'ralgan — tungi taqiq tufayli ertangi 09:00 ga surilgan.
+      requested_at: at(tashkentDay(0), "18:40"),
+      requested_at_tashkent: at(tashkentDay(0), "18:40"),
+      quiet_hours_shifted: true,
       can_cancel: true,
       is_promo: true,
     }),
@@ -230,8 +234,18 @@ const undeliveredPage = (page: number, limit: number) => {
       recipient_id: String(300 + n),
       name: `${UNDELIVERED_NAMES[n % UNDELIVERED_NAMES.length]}${n >= UNDELIVERED_NAMES.length ? ` ${n}` : ""}`,
       role: "courier",
-      phone: null,
-      failures: [n < 2 ? { channel: "push", status: "failed", reason: "raw provider text" } : { channel: "push", status: "no_subscription", reason: null }],
+      // N9 (lkQiuyQu): telefon — faqat maska; sabab — `reason_code`.
+      phone: `***${7400 + n}`,
+      failures: [
+        n < 2
+          ? {
+              channel: "push",
+              status: "failed",
+              reason: "raw provider text",
+              reason_code: n === 0 ? "subscription_expired" : "push_failed",
+            }
+          : { channel: "push", status: "no_subscription", reason: null, reason_code: "no_subscription" },
+      ],
     };
   });
   return { kind: "notification", campaign_id: "14", items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) }, unlisted_failed: 0 };

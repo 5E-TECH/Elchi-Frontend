@@ -45,6 +45,7 @@ import {
 } from "../../../shared/ui/primitives";
 import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
+import { useSmsCampaignReport } from "./sms/useSmsCampaignReport";
 import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
 import { CampaignSendTime } from "./sms/CampaignSendTime";
 import { CardList } from "./sms/CardList";
@@ -432,6 +433,8 @@ const CampaignPage = () => {
     : [];
 
   const quiet = status.data?.quiet_hours;
+  // H7kpCman: tarix qatoridan SMS kampaniya hisoboti (bo'laklar, kodlash, operator hisoboti, narx).
+  const smsReport = useSmsCampaignReport();
 
   return (
     <>
@@ -603,22 +606,24 @@ const CampaignPage = () => {
                 rows={items}
                 getRowKey={(item) => item.id}
                 label={t("campaign.historyLabel")}
-                renderCard={renderHistoryCard}
+                renderCard={smsReport.renderCard(renderHistoryCard)}
                 busy={isRefetching}
               />
             ) : (
               <DataTable
                 rows={items}
-                columns={historyColumns}
+                columns={smsReport.columns(historyColumns)}
                 getRowKey={(item) => item.id}
                 label={t("campaign.historyLabel")}
-                renderCard={renderHistoryCard}
+                renderCard={smsReport.renderCard(renderHistoryCard)}
                 busy={isRefetching}
               />
             )
           }
         </QueryBoundary>
       </Card>
+
+      {smsReport.dialog}
 
       <Dialog
         open={Boolean(preview)}

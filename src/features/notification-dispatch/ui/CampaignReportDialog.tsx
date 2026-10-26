@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
   CampaignStatusBadge,
   campaignDisplayStatus,
+  campaignReportKey,
   draftFromSavedAudience,
   useAudienceDescription,
   useCampaignReport,
@@ -16,14 +17,22 @@ import {
   type Campaign,
   type CampaignReport,
   type CampaignReportChannel,
+  type CampaignReportKind,
+  type CampaignReportSms,
   type CampaignUndeliveredFailure,
   type CampaignUndeliveredItem,
 } from "../../../entities/notification-campaign";
-import { deliveryBucket, failureReasonKey } from "../../../entities/notification-dispatch";
+import { deliveryBucket, failureReasonKey, SMS_DLR_FAILED_STATUSES } from "../../../entities/notification-dispatch";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import { cx } from "../../../shared/lib/cx";
 import { saveBlob } from "../../../shared/lib/exportFile";
-import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import {
+  CURRENCY_LABEL,
+  formatCompactMoneyLocalized,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  resolveMoneyLanguage,
+} from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import {
   Badge,
@@ -36,37 +45,52 @@ import {
   QueryBoundary,
   SkeletonLines,
   SkeletonList,
+  StatCard,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 
 /** «Yetkazilmaganlar» bir sahifada. */
 export const CAMPAIGN_UNDELIVERED_PAGE_SIZE = 10;
 
+/**
+ * SMS kampaniyasi (`/notifications/sms` → «Kampaniyalar tarixi», H7kpCman) — hisobot
+ * `GET /notifications/sms/campaigns/:id/report` (javob shakli bir xil, `kind: 'sms'`).
+ */
+export type SmsCampaignReportTarget = { kind: "sms"; id: string; text: string; created_at: string | null };
+
 export type CampaignReportDialogProps = {
-  /** Tarix qatori (auditoriya sharti va sarlavha uchun); `null` — oyna yopiq. */
-  campaign: Campaign | null;
+  /** Tarix qatori (auditoriya sharti va sarlavha uchun) yoki SMS kampaniyasi; `null` — oyna yopiq. */
+  campaign: Campaign | SmsCampaignReportTarget | null;
   onClose: () => void;
 };
 
+const isSmsTarget = (campaign: Campaign | SmsCampaignReportTarget): campaign is SmsCampaignReportTarget =>
+  "kind" in campaign && campaign.kind === "sms";
+
 const BOX = "overflow-hidden rounded-xl border border-border";
 
-/** Statistika katagi (maket: `sunken` quti — kichik yorliq, `.el-h2` son, izoh). */
-const StatTile = ({ label, value, caption }: { label: string; value: string; caption: string }) => (
-  <div className="flex min-w-0 flex-col gap-0.5 rounded-xl bg-sunken p-3">
-    <span className="text-xs text-text-muted">{label}</span>
-    <span className="text-base font-bold text-text tabular-nums">{value}</span>
-    <span className="text-xs text-text-subtle">{caption}</span>
-  </div>
-);
+/** Telefon faqat maska bilan (`***7434`): backend maskalaydi; to'liq raqam kelib qolsa ham oxirgi 4 raqam. */
+const maskedPhone = (phone: string | null) => {
+  if (!phone) return null;
+  if (/^\*+\d{0,4}$/.test(phone.trim())) return phone.trim();
+  const digits = phone.replace(/\D/g, "");
+  return digits ? `***${digits.slice(-4)}` : null;
+};
+
+/** Xato guruhi: `failed` yoki SMS operator hisobotining yakuniy xatosi (`rejected`, `expired`, `not_delivered`). */
+const isFailedStatus = (status: string) =>
+  deliveryBucket(status) === "failed" || SMS_DLR_FAILED_STATUSES.includes(status);
 
 /**
  * KAMPANIYA HISOBOTI (KM-3, maket `superadmin-notifications-campaign-report-dialog`, ega KM-S1 — sahifa emas, oyna):
- * sarlavha «Kampaniya hisoboti» + «Nom · vaqt», holat belgisi va «Kategoriya · kanallar · auditoriya»; 4 katak —
- * Auditoriya · Yuborildi · Xato · O'tkazib yuborildi (Xato va O'tkazildi — kanal kesimi yig'indisi, izohida qaysi
- * kanal / sabab); «Kanallar bo'yicha» jadvali (telefonda — ro'yxat); «Yetkazilmaganlar» (ism, rol, maskalangan telefon,
- * «Push — xato» + sabab; sahifalab); «Yopish» · «CSV yuklab olish» (faqat `can_export` — superadmin; katta eksport fonda
- * tayyorlanadi). «Yetkazildi» (DLR) va narx bildirishnoma kanallarida o'lchanmaydi (`null` / bepul) — maketdagidek
- * chizilmaydi. Yuborilayotgan kampaniyada hisobot har 3 s yangilanadi.
+ * sarlavha «Kampaniya hisoboti» + «Nom · vaqt», holat belgisi va «Kategoriya · kanallar · auditoriya»; 6 ta `StatCard`
+ * (H7kpCman TC) — Auditoriya · Yuborildi · Yetkazildi · Xato · O'tkazib yuborildi · Narx (Xato va O'tkazildi — kanal
+ * kesimi yig'indisi, izohida qaysi kanal / sabab; «Yetkazildi» — DLR o'lchanmagan bo'lsa «—», HECH QACHON 0; narx
+ * yonida «taxminiy»); «Kanallar bo'yicha» jadvali (telefonda — ro'yxat); SMS bloki (bo'laklar, kodlash, operator
+ * hisoboti, tarif) — FAQAT `sms !== null`; «Yetkazilmaganlar» (ism, rol, maskalangan telefon — N9, «Push — xato» + sabab
+ * `reason_code` xaritasidan; sahifalab); «Yopish» · «CSV yuklab olish» (faqat `can_export` — superadmin; katta eksport
+ * fonda tayyorlanadi). SMS kampaniyasi (`kind: 'sms'`) ham shu oynada. Yuborilayotgan kampaniyada hisobot har 3 s
+ * yangilanadi. 390px: kataklar 2 ustun, jadval — kartalar.
  */
 export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: CampaignReportDialogProps) => {
   const { t, i18n } = useTranslation("notifications");
@@ -76,18 +100,23 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
   const now = useClock();
   const open = Boolean(openCampaign);
   // Yopilish animatsiyasida oxirgi kampaniya ko'rinib turadi («Sarlavhasiz» + skeletga sakramaydi; effektsiz).
-  const [lastCampaign, setLastCampaign] = useState<Campaign | null>(openCampaign);
+  const [lastCampaign, setLastCampaign] = useState<Campaign | SmsCampaignReportTarget | null>(openCampaign);
   if (openCampaign && openCampaign !== lastCampaign) setLastCampaign(openCampaign);
-  const campaign = openCampaign ?? lastCampaign;
-  const id = campaign?.id ?? null;
+  const target = openCampaign ?? lastCampaign;
+  const smsTarget = target && isSmsTarget(target) ? target : null;
+  /** Bildirishnoma kampaniyasi (tarix qatori) — SMS kampaniyasida `null`. */
+  const campaign = target && !isSmsTarget(target) ? target : null;
+  const kind: CampaignReportKind = smsTarget ? "sms" : "notification";
+  const id = target?.id ?? null;
+  const refKey = id ? campaignReportKey({ id, kind }) : null;
   // Sahifa kampaniyaga bog'langan: boshqa kampaniya ochilsa — yana 1-sahifa (effektsiz).
-  const [pageOf, setPageOf] = useState<{ id: string | null; page: number }>({ id: null, page: 1 });
-  const page = pageOf.id === id ? pageOf.page : 1;
-  const setPage = (next: number) => setPageOf({ id, page: next });
+  const [pageOf, setPageOf] = useState<{ key: string | null; page: number }>({ key: null, page: 1 });
+  const page = pageOf.key === refKey ? pageOf.page : 1;
+  const setPage = (next: number) => setPageOf({ key: refKey, page: next });
 
   // Oyna yopiq — so'rov va 3 s yangilanish yo'q (kesh yopilish animatsiyasi uchun qoladi).
-  const report = useCampaignReport(id, open);
-  const undelivered = useCampaignUndelivered(id, { page, limit: CAMPAIGN_UNDELIVERED_PAGE_SIZE }, open);
+  const report = useCampaignReport(id, open, kind);
+  const undelivered = useCampaignUndelivered(id, { page, limit: CAMPAIGN_UNDELIVERED_PAGE_SIZE }, open, kind);
   // Natija xabari mutatsiya darajasida — oyna yopilgan yoki boshqa kampaniya ochilgan bo'lsa ham chiqadi.
   const exporter = useExportCampaignUndelivered(saveBlob, {
     onOutcome: (outcome) => {
@@ -98,7 +127,13 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
     onError: () => notify.error(t("campaign.report.exportFailed")),
   });
   /** Eksport bitta (kuzatuvchi umumiy) — «tayyorlanmoqda» faqat o'sha kampaniyada. */
-  const exporting = exporter.isPending && exporter.variables === id;
+  const exportingVariables = exporter.variables;
+  const exporting =
+    exporter.isPending &&
+    exportingVariables !== undefined &&
+    campaignReportKey(
+      typeof exportingVariables === "string" ? { id: exportingVariables, kind: "notification" } : exportingVariables,
+    ) === refKey;
 
   const draft = useMemo(() => draftFromSavedAudience(campaign?.audience ?? {}), [campaign?.audience]);
   const audience = useAudienceDescription(draft, { enabled: Boolean(campaign?.audience) });
@@ -107,9 +142,15 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
     channel === "realtime" ? t("campaign.channel.realtime") : t(`dispatch.channel.${channel}`);
 
   const data = report.data;
-  const title = campaign?.title || data?.campaign.title || t("campaign.history.untitled");
-  const when = time.format(campaign?.scheduled_at ?? campaign?.created_at ?? data?.campaign.created_at, now);
-  const display = campaign ? campaignDisplayStatus(campaign) : (data?.campaign.display_status ?? null);
+  const title =
+    campaign?.title ||
+    data?.campaign.title ||
+    (smsTarget ? t("campaign.report.smsCampaign") : t("campaign.history.untitled"));
+  const when = time.format(
+    campaign?.scheduled_at ?? campaign?.created_at ?? smsTarget?.created_at ?? data?.campaign.created_at,
+    now,
+  );
+  const display = campaign ? campaignDisplayStatus(campaign) : smsTarget ? null : (data?.campaign.display_status ?? null);
   const metaLine = [
     campaign?.category ? t(`category.${campaign.category}`, { defaultValue: campaign.category }) : null,
     (campaign?.channels ?? data?.campaign.channels ?? []).map(channelLabel).join(", "),
@@ -117,10 +158,12 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
   ]
     .filter(Boolean)
     .join(" · ");
+  /** SMS kampaniyasida sarlavha yo'q — xabar matni (2 qator). */
+  const smsText = smsTarget?.text || data?.campaign.text || null;
 
   const exportFile = () => {
     if (!id || exporting) return;
-    exporter.mutate(id);
+    exporter.mutate(kind === "sms" ? { id, kind } : id);
   };
 
   return (
@@ -158,6 +201,9 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
             {metaLine ? <span className="min-w-0 text-xs text-text-muted">{metaLine}</span> : null}
           </div>
         ) : null}
+        {smsText ? (
+          <p className="m-0 line-clamp-2 text-[13px] text-text [overflow-wrap:anywhere]">{smsText}</p>
+        ) : null}
 
         <QueryBoundary
           query={report}
@@ -186,6 +232,7 @@ export const CampaignReportDialog = ({ campaign: openCampaign, onClose }: Campai
               report={loaded}
               channelLabel={channelLabel}
               num={num}
+              language={language}
               undelivered={
                 <UndeliveredSection
                   query={undelivered}
@@ -207,12 +254,29 @@ type ReportBodyProps = {
   report: CampaignReport;
   channelLabel: (channel: string) => string;
   num: (value: number) => string;
+  language: string;
   undelivered: ReactNode;
 };
 
-const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps) => {
+const ReportBody = ({ report, channelLabel, num, language, undelivered }: ReportBodyProps) => {
   const { t } = useTranslation("notifications");
   const rows = report.byChannel;
+  const { delivered } = report.stats;
+  const cost = report.cost.estimated;
+
+  /** «Yetkazildi» izohi: DLR kelgan — operator hisobotiga ko'ra; kutilmoqda; kanalda DLR yo'q. */
+  const deliveredCaption =
+    delivered !== null
+      ? t("campaign.report.deliveredByDlr")
+      : report.dlr.supported
+        ? t("campaign.report.deliveredAwaiting")
+        : t("campaign.report.deliveredNoDlr");
+  /** Narx doim TAXMIN: bepul kanallar · tarif sozlanmagan · tarif × bo'laklar. */
+  const costCaption = !report.cost.paidChannels.length
+    ? t("campaign.report.costFree")
+    : cost === null
+      ? t("campaign.report.costNoTariff")
+      : t("campaign.report.costEstimate");
   const failed = sumReportBucket(rows, "failed");
   const skipped = sumReportBucket(rows, "skipped");
 
@@ -249,23 +313,35 @@ const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps)
 
   return (
     <>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(120px,100%),1fr))] gap-2 max-md:grid-cols-2">
-        <StatTile
+      <div className="grid grid-cols-3 gap-2 max-md:grid-cols-2" data-testid="campaign-report-stats">
+        <StatCard
           label={t("campaign.report.audience")}
           value={num(report.stats.audience)}
-          caption={t("campaign.report.audienceCaption")}
+          hint={t("campaign.report.audienceCaption")}
         />
-        <StatTile
+        <StatCard
           label={t("campaign.report.sent")}
           value={num(report.stats.sent)}
-          caption={
+          hint={
             report.stats.pending
               ? t("campaign.report.pendingCaption", { value: num(report.stats.pending) })
               : t("campaign.report.sentCaption")
           }
         />
-        <StatTile label={t("campaign.report.failed")} value={num(failed)} caption={channelCaption("failed")} />
-        <StatTile label={t("campaign.report.skipped")} value={num(skipped)} caption={channelCaption("skipped")} />
+        <StatCard
+          label={t("campaign.report.delivered")}
+          // DLR hali kelmagan / kanalda yo'q — «—» (0 = «hammasi yiqildi» degan yolg'on signal).
+          value={delivered === null ? "—" : num(delivered)}
+          hint={deliveredCaption}
+        />
+        <StatCard label={t("campaign.report.failed")} value={num(failed)} hint={channelCaption("failed")} />
+        <StatCard label={t("campaign.report.skipped")} value={num(skipped)} hint={channelCaption("skipped")} />
+        <StatCard
+          label={t("campaign.report.cost")}
+          value={cost === null ? "—" : formatCompactMoneyLocalized(cost, { language, withCurrency: false })}
+          unit={cost === null ? undefined : CURRENCY_LABEL[resolveMoneyLanguage(language)]}
+          hint={costCaption}
+        />
       </div>
 
       {rows.length ? (
@@ -298,8 +374,75 @@ const ReportBody = ({ report, channelLabel, num, undelivered }: ReportBodyProps)
         </section>
       ) : null}
 
+      {report.sms ? <SmsBlock sms={report.sms} num={num} language={language} /> : null}
+
       {undelivered}
     </>
+  );
+};
+
+/**
+ * SMS bloki (H7kpCman): xabarlar, bo'laklar (bitta xabarda min–max), kodlash (GSM-7 / UCS-2 — SMS kampaniyasida),
+ * operator hisoboti (DLR: kelmagan bo'lsa — «hali kelmagan», 0 emas), bir bo'lak narxi va yuborilganlar narxi — doim
+ * TAXMIN. Bildirishnoma kanallarida (`sms: null`) blok umuman chizilmaydi.
+ */
+const SmsBlock = ({ sms, num, language }: { sms: CampaignReportSms; num: (value: number) => string; language: string }) => {
+  const { t } = useTranslation("notifications");
+  const money = (value: number | null) => (value === null ? null : formatMoneyLocalized(value, { language }));
+  const range = sms.partsPerMessage
+    ? sms.partsPerMessage.min === sms.partsPerMessage.max
+      ? num(sms.partsPerMessage.min)
+      : `${num(sms.partsPerMessage.min)}–${num(sms.partsPerMessage.max)}`
+    : null;
+  const dlr = sms.dlr;
+  const items: Array<[string, string]> = [
+    [t("campaign.report.sms.messages"), t("campaign.confirm.count", { value: num(sms.messages) })],
+    [
+      t("campaign.report.sms.parts"),
+      range
+        ? t("campaign.report.sms.partsValue", { total: num(sms.partsTotal), range })
+        : t("campaign.confirm.count", { value: num(sms.partsTotal) }),
+    ],
+    ...(sms.encoding
+      ? ([
+          [
+            t("campaign.report.sms.encoding"),
+            sms.encoding === "mixed" ? t("campaign.report.sms.encodingMixed") : sms.encoding,
+          ],
+        ] as Array<[string, string]>)
+      : []),
+    [
+      t("campaign.report.sms.dlr"),
+      dlr && dlr.final > 0
+        ? t("campaign.report.sms.dlrValue", {
+            delivered: num(dlr.delivered),
+            failed: num(dlr.failed),
+            awaiting: num(dlr.awaiting),
+          })
+        : t("campaign.report.sms.dlrNone", { value: num(dlr?.awaiting ?? 0) }),
+    ],
+    [t("campaign.report.sms.tariff"), money(sms.tariffPerPart) ?? t("campaign.report.sms.noTariff")],
+    [t("campaign.report.sms.costOfSent"), money(sms.costOfSent) ?? "—"],
+  ];
+
+  return (
+    <section className="flex min-w-0 flex-col gap-2" aria-labelledby="campaign-report-sms" data-testid="campaign-report-sms">
+      <span id="campaign-report-sms" className="text-[13px] font-semibold text-text">
+        {t("campaign.report.sms.title")}
+      </span>
+      <dl className={cx(BOX, "m-0 flex flex-col")}>
+        {items.map(([label, value]) => (
+          <div
+            key={label}
+            className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-t border-border px-3 py-2.5 first:border-t-0"
+          >
+            <dt className="text-[13px] text-text-muted">{label}</dt>
+            <dd className="m-0 text-right text-[13px] font-semibold text-text tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="m-0 text-xs text-text-muted">{t("campaign.report.sms.costNote")}</p>
+    </section>
   );
 };
 
@@ -316,17 +459,18 @@ const UndeliveredSection = ({ query, page, onPageChange, channelLabel, num }: Un
   const { t: tUsers } = useTranslation("users");
   const data = query.data;
   const items = data?.items ?? [];
-  const masked = items.some((item) => item.phone);
+  const masked = items.some((item) => maskedPhone(item.phone));
 
   const failureLabel = (failure: CampaignUndeliveredFailure) =>
-    t(deliveryBucket(failure.status) === "failed" ? "campaign.report.failureFailed" : "campaign.report.failureSkipped", {
+    t(isFailedStatus(failure.status) ? "campaign.report.failureFailed" : "campaign.report.failureSkipped", {
       channel: channelLabel(failure.channel),
     });
 
   const person = (item: CampaignUndeliveredItem) =>
     [
       item.role ? tUsers(getUserRoleLabelKey(item.role.split(",")[0]?.trim())) : null,
-      item.phone,
+      // N9 (lkQiuyQu): telefon faqat maskalangan (`***7434`).
+      maskedPhone(item.phone),
     ]
       .filter(Boolean)
       .join(" · ");
@@ -385,10 +529,15 @@ const UndeliveredSection = ({ query, page, onPageChange, channelLabel, num }: Un
                 </div>
                 <div className="flex min-w-0 flex-col items-end gap-1 text-right">
                   {item.failures.map((failure) => {
-                    const reasonKey = failureReasonKey(failure.channel, failure.status, failure.reason);
+                    // N9: sabab — `reason_code` xaritasidan (xom provayder matni hech qachon ko'rsatilmaydi).
+                    const reasonKey = failureReasonKey(
+                      failure.channel,
+                      failure.status,
+                      failure.reason_code ?? failure.reason,
+                    );
                     return (
                       <span key={`${failure.channel}-${failure.status}`} className="flex flex-col items-end gap-0.5">
-                        <Badge tone={deliveryBucket(failure.status) === "failed" ? "danger" : "neutral"}>
+                        <Badge tone={isFailedStatus(failure.status) ? "danger" : "neutral"}>
                           {failureLabel(failure)}
                         </Badge>
                         {reasonKey ? <span className="text-xs text-text-muted">{t(reasonKey)}</span> : null}

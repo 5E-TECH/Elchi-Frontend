@@ -55,3 +55,37 @@ describe("failureReasonKey — faqat kod xaritasi (ega S4)", () => {
     }
   });
 });
+
+describe("failureReasonKey — N9 (lkQiuyQu) `reason_code` kodlari", () => {
+  it("push xatosi tasnifi, SMS darvozasi va operator hisoboti — uchala tilda", () => {
+    expect(text("push", "failed", "subscription_expired")).toBe("Push obunasi eskirgan");
+    expect(text("push", "failed", "rate_limited")).toBe("Push xizmati so'rovlarni chekladi");
+    expect(text("push", "failed", "push_failed")).toBe("Push yetkazilmadi");
+    expect(text("push", "no_subscription", "no_subscription")).toBe("Push obunasi yo'q");
+    expect(text("sms", "blocked", "no_consent")).toBe("Reklama SMS'ga rozilik yo'q");
+    expect(text("sms", "skipped", "campaign_cancelled")).toBe("Kampaniya bekor qilindi");
+    expect(text("sms", "rejected", null)).toBe("Operator rad etdi");
+    expect(text("sms", "not_delivered", "provider raw")).toBe("SMS yetkazilmadi");
+    const codes = [
+      "subscription_expired",
+      "payload_too_large",
+      "rate_limited",
+      "push_rejected",
+      "push_service_error",
+      "network_error",
+      "push_failed",
+      "no_consent",
+      "fanout_exceeded",
+      "opt_out_not_configured",
+      "campaign_cancelled",
+    ];
+    const keys = new Set([
+      ...codes.map((code) => failureReasonKey("push", "failed", code)!),
+      failureReasonKey("sms", "rejected", null)!,
+      failureReasonKey("sms", "expired", null)!,
+    ]);
+    for (const lng of ["uz", "ru", "en"]) {
+      for (const key of keys) expect(i18n.exists(key, { ns: "notifications", lng })).toBe(true);
+    }
+  });
+});

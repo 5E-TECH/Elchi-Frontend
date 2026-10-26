@@ -362,3 +362,173 @@ describe("kampaniya qatori yordamchilari", () => {
     expect(campaignListRefetchInterval(page, at)).toBe(CAMPAIGN_SCHEDULED_INTERVAL_MS);
   });
 });
+
+/**
+ * H7kpCman (qolgan FE TC'lari), N9 (lkQiuyQu), N10 (fb4qy6bd) — `Elchi-Backend` `FRONTEND_CHANGELOG.md` 2026-10-24 /
+ * 2026-10-26 kontrakti.
+ */
+describe("hisobot: SMS bloki, narx, SMS kampaniyasi, reason_code, requested_at", () => {
+  it("N10: tarix qatori — requested_at(_tashkent), quiet_hours_shifted; eski qatorda null / false", () => {
+    expect(
+      normalizeCampaign({
+        id: 13,
+        requested_at: "2026-10-21T13:40:00.000Z",
+        requested_at_tashkent: "2026-10-21T18:40:00+05:00",
+        quiet_hours_shifted: true,
+      }),
+    ).toMatchObject({
+      requested_at: "2026-10-21T13:40:00.000Z",
+      requested_at_tashkent: "2026-10-21T18:40:00+05:00",
+      quiet_hours_shifted: true,
+    });
+    expect(normalizeCampaign({ id: 1 })).toMatchObject({
+      requested_at: null,
+      requested_at_tashkent: null,
+      quiet_hours_shifted: false,
+    });
+  });
+
+  it("bildirishnoma (SMS kanalisiz): sms — null, narx 0 (bepul kanallar), DLR qo'llanmaydi; narx bloki yo'q — «—»", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          kind: "notification",
+          campaign: { id: "14" },
+          stats: { audience: 1, sent: 1, delivered: null },
+          dlr: { supported: false, received: null, awaiting: null },
+          sms: null,
+          cost: { currency: "UZS", estimated: 0, cost_of_sent: 0, is_estimate: true, paid_channels: [] },
+        },
+      },
+    });
+    const report = await getCampaignReport("14");
+    expect(report).toMatchObject({
+      kind: "notification",
+      sms: null,
+      cost: { estimated: 0, costOfSent: 0, paidChannels: [] },
+      dlr: { supported: false, received: null, awaiting: null },
+    });
+    vi.spyOn(api, "get").mockResolvedValue({ data: { data: { campaign: { id: "1" } } } });
+    expect((await getCampaignReport("1")).cost).toEqual({ estimated: null, costOfSent: null, paidChannels: [] });
+  });
+
+  it("SMS kanalli bildirishnoma: sms bloki (kodlashsiz), tarif sozlanmagan — null (0 emas)", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          kind: "notification",
+          campaign: { id: "20", channels: ["in_app", "sms"] },
+          stats: { audience: 3, sent: 2, delivered: null },
+          sms: {
+            message_class: "promo",
+            messages: 2,
+            sent: 2,
+            delivered: null,
+            parts_total: 4,
+            dlr: { final: 0, delivered: 0, failed: 0, awaiting: 2 },
+            tariff_per_part: null,
+            estimated_cost: null,
+            cost_of_sent: null,
+          },
+          cost: { estimated: null, cost_of_sent: null, paid_channels: ["sms"] },
+        },
+      },
+    });
+    const report = await getCampaignReport("20");
+    expect(report.sms).toEqual({
+      messages: 2,
+      partsTotal: 4,
+      partsPerMessage: null,
+      encoding: null,
+      dlr: { final: 0, delivered: 0, failed: 0, awaiting: 2 },
+      tariffPerPart: null,
+      costOfSent: null,
+    });
+    expect(report.cost).toEqual({ estimated: null, costOfSent: null, paidChannels: ["sms"] });
+  });
+
+  it("SMS kampaniyasi: /notifications/sms/campaigns/:id/… manzillari, kodlash, bo'laklar, matn", async () => {
+    const get = vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          kind: "sms",
+          campaign: { id: "7", title: null, text: "Kuzgi chegirma", channels: ["sms"], created_at: "2026-10-20T06:00:00Z" },
+          stats: { audience: 5, sent: 4, delivered: 3, failed: 1, skipped: 1, pending: 0, undelivered: 1 },
+          dlr: { supported: true, received: 4, awaiting: 0, note: null },
+          by_channel: [{ channel: "sms", sent: 3, failed: 1, skipped: 1, pending: 0, other: 0, statuses: { delivered: 3 } }],
+          sms: {
+            messages: 4,
+            parts_total: 8,
+            parts_per_message: { min: 2, max: 2 },
+            encoding: "UCS-2",
+            encoding_breakdown: { "GSM-7": 0, "UCS-2": 4 },
+            source: "sms_outbox",
+            dlr: { final: 4, delivered: 3, failed: 1, awaiting: 0 },
+            tariff_per_part: 175,
+            cost_of_sent: 1400,
+          },
+          cost: { currency: "UZS", estimated: 1750, cost_of_sent: 1400, is_estimate: true, paid_channels: ["sms"], note: "raw" },
+          permissions: { can_export: true },
+        },
+      },
+    });
+    const report = await getCampaignReport("7", "sms");
+    expect(get).toHaveBeenCalledWith("notifications/sms/campaigns/7/report");
+    expect(report).toMatchObject({
+      kind: "sms",
+      campaign: { id: "7", title: "", text: "Kuzgi chegirma" },
+      stats: { delivered: 3 },
+      sms: { encoding: "UCS-2", partsPerMessage: { min: 2, max: 2 }, partsTotal: 8, tariffPerPart: 175, costOfSent: 1400 },
+      cost: { estimated: 1750, costOfSent: 1400, paidChannels: ["sms"] },
+    });
+    expect(JSON.stringify(report)).not.toContain("raw");
+
+    get.mockResolvedValue({ data: { data: { items: [], meta: { page: 1, limit: 10, total: 0 } } } });
+    await getCampaignUndelivered("7", { page: 1, limit: 10 }, "sms");
+    expect(get).toHaveBeenLastCalledWith("notifications/sms/campaigns/7/undelivered", { params: { page: 1, limit: 10 } });
+  });
+
+  it("N9: yetkazilmaganlar — maskalangan telefon va `reason_code`", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              ref_id: 1,
+              recipient_id: 300,
+              phone: "***7434",
+              failures: [{ channel: "push", status: "failed", reason: "Received 410", reason_code: "subscription_expired" }],
+            },
+            { ref_id: 2, recipient_id: 301, phone: null, failures: [{ channel: "push", status: "skipped", reason: null }] },
+          ],
+          meta: { page: 1, limit: 10, total: 2 },
+        },
+      },
+    });
+    const page = await getCampaignUndelivered("14", { page: 1, limit: 10 });
+    expect(page.items[0]).toMatchObject({
+      phone: "***7434",
+      failures: [{ channel: "push", status: "failed", reason: "Received 410", reason_code: "subscription_expired" }],
+    });
+    expect(page.items[1].failures[0].reason_code).toBeNull();
+  });
+
+  it("SMS kampaniyasi CSV — SMS eksport manzili; fon vazifasi kaliti bildirishnomanikidan alohida", async () => {
+    const blob = new Blob(["a,b"]);
+    const get = vi.spyOn(api, "get").mockResolvedValue({ status: 200, data: blob, headers: {} });
+    const save = vi.fn();
+    const { result } = renderHook(() => useExportCampaignUndelivered(save), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+      ),
+    });
+    await act(async () => {
+      await result.current.mutateAsync({ id: "7", kind: "sms" });
+    });
+    expect(get).toHaveBeenCalledWith("notifications/sms/campaigns/7/undelivered/export", {
+      responseType: "blob",
+      timeout: LONG_REQUEST_TIMEOUT_MS,
+    });
+    expect(save).toHaveBeenCalledWith(blob, "sms-kampaniya-7-yetkazilmaganlar.csv");
+  });
+});

@@ -30,7 +30,7 @@ export {
   isDispatchLive,
 } from "./model/status";
 export type { BucketCounts, DeliveryBucket, DispatchOutcome } from "./model/status";
-export { failureReasonKey } from "./model/reasons";
+export { failureReasonKey, SMS_DLR_FAILED_STATUSES } from "./model/reasons";
 export { useAudienceText } from "./model/useAudienceText";
 export {
   getSentDetail,
