@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
@@ -553,5 +553,115 @@ describe("DataTable — ochiladigan qator, tugma ustunda (`expandable.toggle: \"
     expect(item).toHaveAttribute("data-expanded");
     expect(item).toHaveClass("bg-sunken");
     expect(within(item).getByText("Dilnoza Karimova")).toBeInTheDocument();
+  });
+});
+
+/**
+ * FCdwcvEv — qayta chizish narxi: jadval `memo` (bir xil proplar — kataklar qayta hisoblanmaydi), oyna o'lchami
+ * o'zgarishi faqat telefon/desktop chegarasida (768 px, `matchMedia`) qayta chizdiradi, qator kalitlari `getRowKey` dan.
+ */
+describe("DataTable — qayta chizish va kalitlar (FCdwcvEv)", () => {
+  const getRowKey = (row: Row) => row.id;
+
+  it("⭐ bir xil proplar bilan qayta chizilsa kataklar qayta hisoblanmaydi (render spy); `rows` yangilansa — hisoblanadi", () => {
+    const cell = vi.fn((row: Row) => row.name);
+    const columns: DataTableColumn<Row>[] = [{ id: "customer", header: "Mijoz", cell }];
+    const Parent = ({ tick, rows }: { tick: number; rows: Row[] }) => (
+      <>
+        <output>tick {tick}</output>
+        <DataTable rows={rows} columns={columns} getRowKey={getRowKey} label="Buyurtmalar" />
+      </>
+    );
+    const { rerender } = render(<Parent tick={0} rows={ROWS} />);
+    const firstRender = cell.mock.calls.length;
+    expect(firstRender).toBe(ROWS.length);
+
+    // Ota qayta chizildi, jadval proplari o'sha-o'sha — kataklar hisoblanmaydi.
+    rerender(<Parent tick={1} rows={ROWS} />);
+    expect(screen.getByText("tick 1")).toBeInTheDocument();
+    expect(cell).toHaveBeenCalledTimes(firstRender);
+
+    // Yangi ma'lumot — kataklar qayta hisoblanadi.
+    rerender(<Parent tick={2} rows={[...ROWS]} />);
+    expect(cell).toHaveBeenCalledTimes(firstRender * 2);
+  });
+
+  it("⭐ 20 ta resize hodisasi qayta chizdirmaydi — faqat 768 px chegarasi kesilganda (matchMedia) kartalarga o'tadi", () => {
+    let phone = false;
+    const listeners = new Set<() => void>();
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query: string) =>
+        ({
+          get matches() {
+            return phone && query === "(max-width: 767px)";
+          },
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+          removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+    const cell = vi.fn((row: Row) => row.name);
+    render(
+      <DataTable
+        rows={ROWS}
+        columns={[{ id: "customer", header: "Mijoz", cell }]}
+        getRowKey={getRowKey}
+        label="Buyurtmalar"
+        renderCard={(row) => <span>Karta {row.name}</span>}
+      />,
+    );
+    const firstRender = cell.mock.calls.length;
+
+    act(() => {
+      for (let i = 0; i < 20; i += 1) window.dispatchEvent(new Event("resize"));
+    });
+    expect(cell).toHaveBeenCalledTimes(firstRender);
+    expect(screen.getByRole("table", { name: "Buyurtmalar" })).toBeInTheDocument();
+
+    // 768 px chegarasi kesildi — `matchMedia` o'zgarish hodisasi: kartalar.
+    act(() => {
+      phone = true;
+      for (const listener of listeners) listener();
+    });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByText("Karta Sevara Tursunova")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["jadval", false, "tr"],
+    ["telefon kartalari", true, "li"],
+  ] as const)(
+    "⭐ getRowKey kalitlari noyob (%s): boshiga qator qo'shilsa ham har qator o'z DOM elementida qoladi, React ogohlantirmaydi",
+    (_name, phone, rowTag) => {
+      mockPhone(phone);
+      const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const table = (rows: Row[]) => (
+        <DataTable
+          rows={rows}
+          columns={COLUMNS}
+          getRowKey={getRowKey}
+          label="Buyurtmalar"
+          renderCard={(row) => <span>{row.name}</span>}
+        />
+      );
+      const { rerender } = render(table(ROWS));
+      const before = screen.getByText("Dilnoza Karimova").closest(rowTag);
+      expect(before).not.toBeNull();
+
+      rerender(table([{ id: "10250", name: "Yangi mijoz", sum: 1 }, ...ROWS]));
+      expect(screen.getByText("Dilnoza Karimova").closest(rowTag)).toBe(before);
+      expect(screen.getByText("Yangi mijoz").closest(rowTag)).not.toBe(before);
+      expect(errors.mock.calls.flat().join(" ")).not.toMatch(/same key/);
+    },
+  );
+
+  it("takroriy kalit — React ogohlantiradi (yuqoridagi tekshiruv bo'sh ishlamaydi)", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(<DataTable rows={ROWS} columns={COLUMNS} getRowKey={() => "bir xil"} label="Buyurtmalar" />);
+    expect(errors.mock.calls.flat().join(" ")).toMatch(/same key/);
   });
 });
