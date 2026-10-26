@@ -882,3 +882,70 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
     expect(screen.queryByTestId("order-return-path")).toBeNull();
   });
 });
+
+describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari (hfkhYrGk №3, №4)", () => {
+  const WAREHOUSE = {
+    fulfillment_source: "WAREHOUSE",
+    warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
+    branch: { id: "11", name: "Samarqand filiali" },
+    holder_type: "BRANCH",
+    market: { id: "121", name: "Baraka Shop" },
+    district: { id: "45", name: "Urgut tumani" },
+  };
+
+  afterEach(() => {
+    orderState.extra = undefined;
+    orderState.status = undefined;
+    returnPathEvents.list = [];
+  });
+
+  it("№3: omborga qaytgan (returned_to_market + WAREHOUSE) — «Mahsulot omborga qaytarilgan», «marketga topshirilgan» emas", () => {
+    orderState.status = "returned_to_market";
+    orderState.extra = { ...WAREHOUSE, holder_type: "MARKET" };
+    renderPage("superadmin");
+
+    const lock = document.getElementById("edit-lock")!;
+    expect(lock).toHaveTextContent("Tahrirlash yopiq.");
+    expect(lock).toHaveTextContent(
+      "Mahsulot omborga qaytarilgan — mijoz, manzil, summa va mahsulotlarni o'zgartirib bo'lmaydi.",
+    );
+    expect(screen.queryByText(/Buyurtma marketga topshirilgan/)).toBeNull();
+  });
+
+  it("№3: HQ buyurtmasi marketga topshirilgan — matn avvalgidek", () => {
+    orderState.status = "returned_to_market";
+    orderState.extra = { holder_type: "MARKET", fulfillment_source: "HQ" };
+    renderPage("superadmin");
+    expect(screen.getByText(/Buyurtma marketga topshirilgan — mijoz, manzil/)).toBeInTheDocument();
+    expect(screen.queryByText(/omborga qaytarilgan/)).toBeNull();
+  });
+
+  it("№4: viloyat ombori buyurtmasi (received) — «omborda band qilingan», «HQ qabul qilgandan keyin» emas", () => {
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE };
+    renderPage("superadmin");
+
+    const lock = document.getElementById("products-lock")!;
+    expect(lock).toHaveTextContent("Mahsulotlar va summa qulflangan.");
+    expect(lock).toHaveTextContent("Mahsulotlar omborda band qilingan — ularni o'zgartirib bo'lmaydi.");
+    expect(screen.queryByText(/HQ qabul qilgandan keyin/)).toBeNull();
+    // O'chiq «Tahrirlash» izohi ham ombor sababini aytadi.
+    expect(screen.getByRole("button", { name: "Buyurtmani tahrirlash — qulflangan" })).toHaveAttribute(
+      "title",
+      "Mahsulotlar omborda band qilingan — summa va mahsulotlarni o'zgartirib bo'lmaydi.",
+    );
+  });
+
+  it("№4: Markaziy ombor (warehouse.kind HQ) va HQ buyurtmasi — «HQ qabul qilgandan keyin» qoladi", () => {
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE, warehouse: { id: "1", name: "Markaziy ombor", kind: "HQ" } };
+    const central = renderPage("superadmin");
+    expect(document.getElementById("products-lock")).toHaveTextContent("HQ qabul qilgandan keyin ularni o'zgartirib bo'lmaydi.");
+    central.unmount();
+
+    orderState.extra = { fulfillment_source: "HQ" };
+    renderPage("superadmin");
+    expect(document.getElementById("products-lock")).toHaveTextContent("HQ qabul qilgandan keyin ularni o'zgartirib bo'lmaydi.");
+    expect(screen.queryByText(/omborda band qilingan/)).toBeNull();
+  });
+});

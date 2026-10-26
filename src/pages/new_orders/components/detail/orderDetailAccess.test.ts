@@ -134,6 +134,31 @@ describe("market operatori (MO-3) — market ko'rinishi, faqat o'qish", () => {
   });
 });
 
+describe("getOrderDetailAccess — ombor buyurtmasi (hfkhYrGk №4)", () => {
+  const warehouseOrder = (fields: Record<string, unknown> = {}) =>
+    order({
+      status: "received",
+      holder_type: "BRANCH",
+      fulfillment_source: "WAREHOUSE",
+      warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
+      ...fields,
+    });
+
+  it("№4: mahsulot qulfi sababi — viloyat ombori «warehouse», Markaziy ombor (kind HQ) va HQ buyurtmasi «hq»", () => {
+    const reasonOf = (value: ReturnType<typeof order>) =>
+      getOrderDetailAccess({ role: "superadmin", branchType: null, order: value }).productsLockReason;
+    // `warehouse.kind` hali kelmasa — viloyat ombori deb olinadi.
+    expect(reasonOf(warehouseOrder())).toBe("warehouse");
+    expect(reasonOf(warehouseOrder({ warehouse: { id: "3", kind: "REGIONAL" } }))).toBe("warehouse");
+    expect(reasonOf(warehouseOrder({ warehouse: { id: "1", name: "Markaziy ombor", kind: "HQ" } }))).toBe("hq");
+    expect(reasonOf(order({ status: "received", fulfillment_source: "HQ" }))).toBe("hq");
+    expect(reasonOf(order({ status: "received" }))).toBe("hq");
+    // Qulfning o'zi o'zgarmagan — ombor buyurtmasi ham `received` dan qulf.
+    expect(getOrderDetailAccess({ role: "superadmin", branchType: null, order: warehouseOrder() }).productsLocked).toBe(true);
+  });
+
+});
+
 describe("getUserCanSellCancel", () => {
   it("faqat `can_sell_cancel === true` bo'lsa ruxsat", () => {
     expect(getUserCanSellCancel({ can_sell_cancel: true } as never)).toBe(true);

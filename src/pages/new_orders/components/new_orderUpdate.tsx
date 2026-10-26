@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import {
+  isWarehouseReturn,
   normalizeOrderStatus,
   readProofFiles,
   resolveCancelReturnStage,
@@ -153,9 +154,11 @@ const NewOrderUpdate = () => {
     return context.hqName || !returnPathHqName ? context : { ...context, hqName: returnPathHqName };
   }, [order, returnPathHqName]);
   // Qulf sababi holatdan ham: qabulgacha bekor qilingan (bosqichsiz) buyurtma «filialga jo'natilgan» emas.
+  // hfkhYrGk №3: ombor buyurtmasi omborga qaytgan (`returned_to_market` + WAREHOUSE) — marketga topshirilmagan.
   const normalizedStatus = normalizeOrderStatus(order?.status);
-  const lockReason =
-    cancelStage === "market" || normalizedStatus === "returned_to_market"
+  const lockReason = isWarehouseReturn(order)
+    ? "warehouse"
+    : cancelStage === "market" || normalizedStatus === "returned_to_market"
       ? "returned"
       : cancelStage || normalizedStatus === "cancelled" || normalizedStatus === "cancelled (sent)"
         ? "cancelled"
@@ -420,6 +423,7 @@ const NewOrderUpdate = () => {
           order={detail}
           editable={access.canEditOrderFull}
           locked={access.productsLocked}
+          lockReason={access.productsLockReason}
           lockDescribedBy={lockIds.products}
           onEdit={() => setEditing("order")}
         />
@@ -454,7 +458,7 @@ const NewOrderUpdate = () => {
         {meta("basis-full")}
       </div>
       <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-4">
-        <CourierProductsCard order={detail} locked={access.productsLocked} />
+        <CourierProductsCard order={detail} locked={access.productsLocked} lockReason={access.productsLockReason} />
         {proofs}
         {tracking(detail, "courier")}
       </div>
@@ -479,6 +483,7 @@ const NewOrderUpdate = () => {
           layout={access.layout}
           pendingApproval={pendingApproval}
           productsLocked={access.productsLocked}
+          productsLockReason={access.productsLockReason}
           destinationLocked={access.destinationLocked}
           canEditCustomer={access.canEditCustomer}
           parentOrderId={parentOrderId}

@@ -1,4 +1,5 @@
 import type { RootState } from "../../../../app/config/store";
+import { readFulfillmentSource } from "../../../../entities/order";
 import { isCourierHeldOrder } from "../../../../entities/orders/custody";
 import { canRollbackOrderStatus } from "../../../../entities/orders/rollbackTarget";
 import { canInitiateReturn, canMarkReturnedToMarket } from "../../../../features/order-return";
@@ -17,6 +18,8 @@ import type { OrderDetail } from "./orderDetailModel";
  *  - mijoz (PATCH /users/:id) — faqat superadmin / admin;
  *  - manzil va buyurtma/mahsulotlar (PATCH /orders/:id/full) — superadmin / admin / registrator / menejer;
  *  - HQ qabul qilgach mahsulot va summa qulflanadi; filialga jo'natilgach mijoz va manzil ham;
+ *    viloyat ombori buyurtmasi (hfkhYrGk №4) HQ'dan o'tmaydi — u yaratilishidanoq (RECEIVED) qulf, sababi «omborda
+ *    band qilingan» (`productsLockReason: "warehouse"`); Markaziy ombor (`warehouse.kind: HQ`) — HQ'da qabul, «hq»;
  *  - sotish / bekor qilish / qaytarish — faqat REGIONAL · HYBRID menejeri VA uning per-menejer
  *    `can_sell_cancel` bayrog'i yoqilgan bo'lsa (ro'yxatdagi `canUseManagerTableActions` bilan
  *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi).
@@ -89,6 +92,11 @@ export interface OrderDetailAccess {
   /** Mijoz kartasida «faqat admin yoki superadmin» izohi (registrator, menejer). */
   showCustomerLockHint: boolean;
   productsLocked: boolean;
+  /**
+   * Mahsulot qulfi sababi (matn uchun): `hq` — «HQ qabul qilgandan keyin …», `warehouse` — viloyat ombori buyurtmasi,
+   * mahsulot omborda band qilingan (hfkhYrGk №4; `warehouse.kind` yo'q bo'lsa ham viloyat deb olinadi).
+   */
+  productsLockReason: ProductsLockReason;
   destinationLocked: boolean;
   isRegionalManager: boolean;
   /** «Bekor qilish» (va «Sotish», agar `canSell`) — WAITING + post_id, `can_sell_cancel` yoqilgan. */
@@ -107,7 +115,15 @@ export interface OrderDetailAccess {
   canOpenCancelledQr: boolean;
 }
 
+export type ProductsLockReason = "hq" | "warehouse";
+
 const normalizeRole = (role: string | null | undefined) => (role ?? "").trim().toLowerCase();
+
+/** Viloyat ombori buyurtmasi (Markaziy ombor — faqat `warehouse.kind: HQ`). */
+const getProductsLockReason = (order: OrderDetail | null): ProductsLockReason => {
+  const { fromWarehouse, warehouseKind } = readFulfillmentSource(order);
+  return fromWarehouse && warehouseKind !== "HQ" ? "warehouse" : "hq";
+};
 
 export const getOrderDetailAccess = ({
   role: rawRole,
@@ -137,6 +153,7 @@ export const getOrderDetailAccess = ({
     customerEdit: canEditCustomer ? "button" : role === "registrator" ? "disabled" : "hidden",
     showCustomerLockHint: role === "registrator" || role === "manager",
     productsLocked: Boolean(order && isOrderReceivedOrLater(order.status)),
+    productsLockReason: getProductsLockReason(order),
     destinationLocked: Boolean(order && isOrderSentToBranch(order)),
     isRegionalManager,
     canUseCourierActions,
