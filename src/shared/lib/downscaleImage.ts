@@ -7,10 +7,12 @@
  * kichraytiriladi va JPEG ga o'giriladi.
  *
  * ⚠️ BeePost'dan farqi (ataylab): kichik fayl uchun "asl holida qoldirish"
- * istisnosi YO'Q — HAR DOIM canvas orqali JPEG chiqariladi. Elchi
- * file-service `image/webp` va `image/gif` ni qabul qilmaydi; canvas doim
- * `image/jpeg` bergani uchun format mos kelmasligi umuman tug'ilmaydi.
- * Kichik skrinshot matni buzilmasligi uchun sifat 0.92.
+ * istisnosi YO'Q — HAR DOIM canvas orqali JPEG chiqariladi. Gateway JPEG, PNG
+ * va WebP ni qabul qiladi (WHMAIqyo) — WebP KIRISH sifatida qabul qilinadi, lekin
+ * chiqish doim `image/jpeg`: Safari canvas'i WebP kodlay olmaydi (PNG qaytaradi),
+ * server esa rasmni baribir o'zi qayta kichraytiradi (1568 px, q80). Kichik
+ * skrinshot matni buzilmasligi uchun sifat 0.92; natija `maxBytes` (AI: 1,5 MB)
+ * dan katta bo'lsa sifat bosqichma-bosqich tushiriladi ({@link QUALITY_STEPS}).
  */
 
 /**
@@ -20,6 +22,11 @@
  */
 export const MAX_IMAGE_DIM = 1568;
 export const JPEG_QUALITY = 0.92;
+/**
+ * Natija `maxBytes` dan katta bo'lsa shu tartibda qayta kodlanadi (o'lcham o'zgarmaydi — faqat sifat).
+ * 1568 px JPEG 0.55 da 1,5 MB dan oshishi amalda yo'q; oshsa — `over_limit`.
+ */
+export const QUALITY_STEPS = [JPEG_QUALITY, 0.85, 0.75, 0.65, 0.55] as const;
 export const MAX_SOURCE_BYTES = 30 * 1024 * 1024;
 export const ACCEPTED_INPUT_TYPES = [
   "image/jpeg",
@@ -39,7 +46,18 @@ export type PreparedImage = {
   bytes: number;
 };
 
-export type PrepareImageErrorCode = "too_large" | "unsupported" | "decode_failed" | "heic_unsupported";
+export type PrepareImageErrorCode =
+  | "too_large"
+  | "unsupported"
+  | "decode_failed"
+  | "heic_unsupported"
+  /** Kichraytirilgan va eng past sifatda ham `maxBytes` dan katta. */
+  | "over_limit";
+
+export type PrepareImageOptions = {
+  /** Tayyor rasmning ruxsat etilgan hajmi (bayt); berilmasa — cheklanmaydi. */
+  maxBytes?: number;
+};
 
 /**
  * Chaqiruvchi foydalanuvchiga ANIQ sabab ko'rsata olishi uchun ("o'qib
@@ -112,24 +130,27 @@ const blobToDataUrl = (blob: Blob) =>
     reader.readAsDataURL(blob);
   });
 
+/** Bir marta chizilgan canvas — sifatni o'zgartirib qayta kodlash uchun (qayta dekodlashsiz). */
+type Encoder = (quality: number) => Promise<string>;
+
 /**
  * Tezkor yo'l: `createImageBitmap` + `OffscreenCanvas` asosiy oqimni kam
  * bloklaydi (`convertToBlob` asinxron). Muhit ularni bermasa `null`.
  */
-const encodeWithBitmap = async (file: File): Promise<string | null> => {
+const bitmapEncoder = async (file: File): Promise<Encoder | null> => {
   if (typeof createImageBitmap !== "function" || typeof OffscreenCanvas !== "function") return null;
   const bitmap = await createImageBitmap(file);
+  let canvas: OffscreenCanvas;
   try {
     const { width, height } = fitWithin(bitmap.width, bitmap.height);
-    const canvas = new OffscreenCanvas(width, height);
+    canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     paint(ctx, bitmap, width, height);
-    const blob = await canvas.convertToBlob({ type: OUTPUT_TYPE, quality: JPEG_QUALITY });
-    return blobToDataUrl(blob);
   } finally {
     bitmap.close();
   }
+  return async (quality) => blobToDataUrl(await canvas.convertToBlob({ type: OUTPUT_TYPE, quality }));
 };
 
 const loadImage = (url: string) =>
@@ -144,7 +165,7 @@ const loadImage = (url: string) =>
  * Zaxira yo'l: `new Image()` + `<canvas>`. ⚠️ `toDataURL` katta rasmda asosiy
  * oqimni 200–500ms bloklaydi — chaqiruvchi progress ko'rsatadi.
  */
-const encodeWithImageElement = async (file: File): Promise<string> => {
+const imageElementEncoder = async (file: File): Promise<Encoder> => {
   const url = URL.createObjectURL(file);
   try {
     const image = await loadImage(url);
@@ -155,7 +176,7 @@ const encodeWithImageElement = async (file: File): Promise<string> => {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d context");
     paint(ctx, image, width, height);
-    return canvas.toDataURL(OUTPUT_TYPE, JPEG_QUALITY);
+    return async (quality) => canvas.toDataURL(OUTPUT_TYPE, quality);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -172,13 +193,19 @@ const toJpegName = (name: string) => {
   return `${base}.jpg`;
 };
 
-export async function prepareImage(file: File): Promise<PreparedImage> {
+/** Canvas xotiraga sig'magan bo'lsa `toDataURL` "data:," qaytaradi — sof base64 yoki bo'sh satr. */
+const base64Of = (dataUrl: string) => (dataUrl.startsWith(`data:${OUTPUT_TYPE}`) ? dataUrl.split(",")[1] ?? "" : "");
+
+export async function prepareImage(file: File, { maxBytes }: PrepareImageOptions = {}): Promise<PreparedImage> {
   if (file.size > MAX_SOURCE_BYTES) throw new PrepareImageError("too_large");
   if (!isAccepted(file)) throw new PrepareImageError("unsupported");
+  const notDecoded = () => new PrepareImageError(isHeic(file) ? "heic_unsupported" : "decode_failed");
 
+  let encode: Encoder | null = null;
   let dataUrl: string | null = null;
   try {
-    dataUrl = await encodeWithBitmap(file);
+    encode = await bitmapEncoder(file);
+    dataUrl = encode ? await encode(JPEG_QUALITY) : null;
   } catch {
     // Tezkor yo'l ishlamadi (masalan brauzer bu formatni bitmap'ga
     // dekodlay olmadi) — zaxira yo'l bilan yana bir urinish.
@@ -186,15 +213,26 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
   if (!dataUrl) {
     try {
-      dataUrl = await encodeWithImageElement(file);
+      encode = await imageElementEncoder(file);
+      dataUrl = await encode(JPEG_QUALITY);
     } catch {
-      throw new PrepareImageError(isHeic(file) ? "heic_unsupported" : "decode_failed");
+      throw notDecoded();
     }
   }
 
-  // Canvas xotiraga sig'magan bo'lsa `toDataURL` "data:," qaytaradi.
-  const base64 = dataUrl.startsWith(`data:${OUTPUT_TYPE}`) ? dataUrl.split(",")[1] ?? "" : "";
-  if (!base64) throw new PrepareImageError(isHeic(file) ? "heic_unsupported" : "decode_failed");
+  let base64 = base64Of(dataUrl);
+  if (!base64) throw notDecoded();
+
+  // Hajm chegarasi (AI: 1,5 MB) — o'lcham o'sha, faqat sifat pasayadi.
+  for (const quality of QUALITY_STEPS.slice(1)) {
+    if (maxBytes === undefined || !encode || base64Bytes(base64) <= maxBytes) break;
+    const next = await encode(quality).catch(() => "");
+    const nextBase64 = base64Of(next);
+    if (!nextBase64) break;
+    dataUrl = next;
+    base64 = nextBase64;
+  }
+  if (maxBytes !== undefined && base64Bytes(base64) > maxBytes) throw new PrepareImageError("over_limit");
 
   return {
     media_type: OUTPUT_TYPE,
