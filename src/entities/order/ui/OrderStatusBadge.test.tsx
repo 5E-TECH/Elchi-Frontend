@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
@@ -211,3 +211,70 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
     expect(screen.getByTestId("cancel-return-place")).toHaveTextContent("Jasur Tursunov");
   });
 });
+
+describe("vOczoOUE 2-bosqich — joy qatori backend `cancel_return` dan, «N kun» ranglari, BG7 belgilari", () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000 - 3_600_000).toISOString();
+  const hqOrder = (days: number, extra: Record<string, unknown> = {}) => ({
+    status: "cancelled",
+    return_stage: "hq",
+    cancel_return: { stage: "hq", place_type: "HQ", place_name: "Toshkent HQ", received_at: daysAgo(days) },
+    ...extra,
+  });
+  const renderPlace = (order: unknown, withHandoverFlags = false) =>
+    render(
+      <I18nextProvider i18n={i18n}>
+        <OrderReturnPlace order={order} withHandoverFlags={withHandoverFlags} />
+      </I18nextProvider>,
+    );
+
+  it.each([
+    [2, undefined, "Toshkent HQ · 2 kun"],
+    [3, "warn", "Toshkent HQ · 3 kun"],
+    [8, "alert", "Toshkent HQ · 8 kun"],
+  ] as const)("%s kun → daraja %s", (days, level, text) => {
+    renderPlace(hqOrder(days));
+    expect(screen.getByTestId("cancel-return-place")).toHaveTextContent(text);
+    const age = screen.getByTestId("cancel-return-age");
+    expect(age.dataset.level).toBe(level);
+    if (level) expect(classesOf(age.className)).toEqual(expect.arrayContaining(["font-semibold", "text-warning-fg"]));
+    else expect(age.className).not.toContain("text-warning-fg");
+    // ≥ 7 — rang yolg'iz emas: ogohlantirish ikonkasi ham.
+    expect(age.querySelector("svg") !== null).toBe(level === "alert");
+  });
+
+  it("«Marketga topshirildi» — ro'yxatda vaqt va usul («… · Parol orqali»)", () => {
+    renderPlace({
+      status: "returned_to_market",
+      cancel_return: {
+        stage: "market",
+        place_name: "Samarqand filiali",
+        handed_over_at: "2026-10-03T10:20:00+05:00",
+        handover_method: "pin",
+      },
+    });
+    const place = screen.getByTestId("cancel-return-place");
+    expect(place).toHaveTextContent(/^Samarqand filiali · 03\.10\.2026, \d\d:\d\d · Parol orqali$/);
+  });
+
+  it("xodim ro'yxatida: «Eskalatsiya» (qizil) va «Marketga eslatildi (sana)»", () => {
+    renderPlace(
+      hqOrder(8, { handover_notified_at: "2026-10-21T10:05:00+05:00", handover_escalated_at: "2026-10-25T10:05:00+05:00" }),
+      true,
+    );
+    const badge = screen.getByTestId("cancel-return-escalated");
+    expect(badge).toHaveTextContent("Eskalatsiya");
+    expect(classesOf(badge.className)).toEqual(expect.arrayContaining(classesOf(TONE_SOFT.danger)));
+    expect(screen.getByTestId("cancel-return-notified")).toHaveTextContent("Marketga eslatildi (21.10.2026)");
+  });
+
+  it("market tomonida (`withHandoverFlags` yo'q) va filial/HQ'dan boshqa bosqichda — BG7 belgilari yo'q", () => {
+    const flags = { handover_notified_at: "2026-10-21T10:05:00+05:00", handover_escalated_at: "2026-10-25T10:05:00+05:00" };
+    renderPlace(hqOrder(8, flags));
+    expect(screen.queryByTestId("cancel-return-escalated")).toBeNull();
+    expect(screen.queryByTestId("cancel-return-notified")).toBeNull();
+    cleanup();
+    renderPlace({ status: "returned_to_market", cancel_return: { stage: "market", place_name: "Toshkent HQ" }, ...flags }, true);
+    expect(screen.queryByTestId("cancel-return-escalated")).toBeNull();
+  });
+});
+

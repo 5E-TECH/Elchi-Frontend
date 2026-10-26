@@ -472,6 +472,28 @@
       "summary_other": "<strong>{{value}}</strong> cancelled orders",
       "summaryTotal": "total <strong>{{sum}}</strong>"
     },
+    "returns": {
+      "tabsLabel": "Cancelled order stages",
+      "ready": "Ready for pickup",
+      "transit": "In transit",
+      "received": "Picked up",
+      "transitTitle": "Cancelled orders in transit",
+      "transitHint": "Once HQ receives an order, it moves to the «Ready for pickup» list.",
+      "receivedTitle": "Cancelled orders you picked up",
+      "summary_one": "<strong>{{value}}</strong> order",
+      "summary_other": "<strong>{{value}}</strong> orders",
+      "columns": {
+        "where": "Where",
+        "receivedAt": "Picked up",
+        "placeMethod": "Place and method"
+      },
+      "rangeLabel": "Pickup date range",
+      "transitEmptyTitle": "No cancelled orders in transit",
+      "transitEmptyDescription": "Orders cancelled by a courier appear here until they reach HQ.",
+      "receivedEmptyTitle": "No orders picked up in this period",
+      "receivedEmptyDescription": "Try changing the date range.",
+      "truncated": "The list is incomplete — narrow the date range."
+    },
     "qrDialog": {
       "title": "Cancelled orders QR code",
       "description": "Have this QR code scanned at the post to hand the orders over.",

@@ -15,9 +15,10 @@ import { normalizeOrderStatus } from "./statusRegistry";
  * ────────────────────────────────────────────────────────────────────────────
  *
  *  Buyurtma holati o'zgarmaydi (backend enum va holat mashinasi o'z holicha). Bekor
- *  qilingan buyurtmaga JOY BOSQICHI qo'shiladi va u holat + `transport_status` +
- *  `holder_*` + `canceled_post_id` dan hisoblanadi (BeePost `return_stage` ga o'xshash;
- *  backend `cancel_return.stage` bersa — BG1 — keyin shu o'qiladi, bu hisob zaxira):
+ *  qilingan buyurtmaga JOY BOSQICHI qo'shiladi. vOczoOUE 2-bosqich (BG1): backend har qatorda
+ *  `return_stage` va `cancel_return` ({stage, place_name, received_at, handed_over_at, handover_method …})
+ *  beradi — avval SHU o'qiladi; ular yo'q eski javobda bosqich holat + `transport_status` + `holder_*` +
+ *  `canceled_post_id` dan hisoblanadi (zaxira, backend bilan AYNAN bir xil qoida):
  *
  *    1 `courier`    «Bekor · kuryerda»   status=cancelled, holder COURIER
  *    2 `in_transit` «Bekor · yo'lda»     cancelled (sent) — detalda status, ro'yxatda `transport_status`
@@ -84,7 +85,55 @@ const courierId = (value: unknown): string => {
   return id === "0" ? "" : id;
 };
 
+const DAY_MS = 86_400_000;
+
+const toTime = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const raw = typeof value === "string" && /^\d+$/.test(value.trim()) ? Number(value) : value;
+  const time = new Date(raw as string | number).getTime();
+  return Number.isFinite(time) ? time : null;
+};
+
 const holderTypeOf = (order: Raw) => text(order.holder_type ?? order.holderType).toUpperCase();
+
+const STAGES = new Set<string>(CANCEL_RETURN_STAGE_ORDER);
+const asStage = (value: unknown): CancelReturnStage | null => {
+  const stage = text(value).toLowerCase();
+  return STAGES.has(stage) ? (stage as CancelReturnStage) : null;
+};
+
+const HANDOVER_METHODS = new Set<string>(["qr", "manual", "no_qr", "pin"]);
+const asHandoverMethod = (value: unknown): CancelHandoverMethod | null => {
+  const method = text(value).toLowerCase();
+  return HANDOVER_METHODS.has(method) ? (method as CancelHandoverMethod) : null;
+};
+
+/** BG1 `cancel_return` — faqat yaroqli bosqichli obyekt; aks holda `null` (zaxira hisob ishlaydi). */
+export interface CancelReturnInfo {
+  stage: CancelReturnStage;
+  placeName: string | null;
+  receivedAt: number | null;
+  sentAt: number | null;
+  handedOverAt: number | null;
+  handoverMethod: CancelHandoverMethod | null;
+}
+
+export const readCancelReturn = (order: unknown): CancelReturnInfo | null => {
+  const raw = asRecord(asRecord(order).cancel_return);
+  const stage = asStage(raw.stage);
+  if (!stage) return null;
+  return {
+    stage,
+    placeName: text(raw.place_name) || null,
+    receivedAt: toTime(raw.received_at),
+    sentAt: toTime(raw.sent_at),
+    handedOverAt: toTime(raw.handed_over_at),
+    handoverMethod: asHandoverMethod(raw.handover_method),
+  };
+};
+
+/** Bekor zanjiridagi holatlar — faqat shularda backend bosqichi o'qiladi (holat ustun). */
+const CANCEL_FAMILY = new Set<string>(["cancelled", "cancelled (sent)", "returned_to_market", "closed"]);
 
 /**
  * Buyurtmaning bekor bosqichi yoki `null` (bekor emas / bosqichni aniqlab bo'lmaydi).
@@ -98,6 +147,10 @@ export const resolveCancelReturnStage = (order: unknown): CancelReturnStage | nu
   const status = normalizeOrderStatus(record.status);
   const transport = normalizeOrderStatus(record.transport_status ?? record.transportStatus);
   const holder = holderTypeOf(record);
+
+  // BG1: backend bosqichi (qator `return_stage` yoki `cancel_return.stage`) — bekor zanjiridagi holatda ustun.
+  const backend = asStage(record.return_stage) ?? readCancelReturn(record)?.stage ?? null;
+  if (backend && status && CANCEL_FAMILY.has(status)) return backend;
 
   if (status === "returned_to_market") return "market";
   // F4 dan oldingi topshirishlar: `closed` + holder MARKET (holder MARKET ni faqat topshirish yo'llari yozadi).
@@ -153,14 +206,6 @@ export const cancelStageMetaFor = (
 export const isOpenCancelReturnStage = (stage: CancelReturnStage | null): boolean =>
   stage !== null && stage !== "market";
 
-const DAY_MS = 86_400_000;
-
-const toTime = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === "") return null;
-  const raw = typeof value === "string" && /^\d+$/.test(value.trim()) ? Number(value) : value;
-  const time = new Date(raw as string | number).getTime();
-  return Number.isFinite(time) ? time : null;
-};
 
 /**
  * Backend filial yorlig'i `Urgut filiali (UR, ID: 12)` / `branch ID: 12` ko'rinishida keladi
@@ -183,9 +228,30 @@ export interface CancelReturnPlace {
    * `last_handover_at` — kuryerga biriktirilgan vaqt (bekor qilish custody'ni o'zgartirmaydi) — `null`.
    */
   days: number | null;
-  /** «Marketga topshirildi» — topshirilgan vaqt; faqat `options.handoverAt` berilsa (tafsilot, tarixdan). */
+  /** «Marketga topshirildi» — topshirilgan vaqt: `cancel_return.handed_over_at` (BG1) yoki tarixdan (tafsilot). */
   at: number | null;
+  /** «Marketga topshirildi» — usul (BG2 `handover_method` / `market_handover_method`); yo'q — `null`. */
+  method: CancelHandoverMethod | null;
 }
+
+/** Ega qarori (2026-10-19, vNKGbg5q): 3 kunda — ogohlantirish, 7 kunda — eskalatsiya. */
+export const CANCEL_RETURN_WARN_DAYS = 3;
+export const CANCEL_RETURN_ALERT_DAYS = 7;
+
+/** «N kun» darajasi: `warn` (≥ 3) — sariq matn, `alert` (≥ 7) — sariq + ogohlantirish ikonkasi (maket). */
+export type CancelReturnAgeLevel = "warn" | "alert";
+
+export const cancelReturnAgeLevel = (days: number | null): CancelReturnAgeLevel | null => {
+  if (days === null) return null;
+  if (days >= CANCEL_RETURN_ALERT_DAYS) return "alert";
+  return days >= CANCEL_RETURN_WARN_DAYS ? "warn" : null;
+};
+
+/** BG7: marketga eslatma va admin eskalatsiyasi vaqtlari (takror yubormaslik belgisi). */
+export const readCancelHandoverFlags = (order: unknown): { notifiedAt: number | null; escalatedAt: number | null } => {
+  const record = asRecord(order);
+  return { notifiedAt: toTime(record.handover_notified_at), escalatedAt: toTime(record.handover_escalated_at) };
+};
 
 export interface ResolveCancelReturnPlaceOptions {
   now?: number;
@@ -197,8 +263,8 @@ export interface ResolveCancelReturnPlaceOptions {
 }
 
 /**
- * Bosqich ostidagi joy qatori uchun ma'lumot — FAQAT javobda bor maydonlardan (1-bosqich,
- * backendsiz): joy nomi `branch.name` (bekor oqimida `branch_id` har jo'natish va qabulda
+ * Bosqich ostidagi joy qatori uchun ma'lumot. Avval BG1 `cancel_return` (`place_name`, `received_at`,
+ * `handed_over_at`, `handover_method`); u yo'q eski javobda — 1-bosqich zaxirasi: joy nomi `branch.name` (bekor oqimida `branch_id` har jo'natish va qabulda
  * maqsad/joriy filialga almashadi; HQ ham filial — `findHqBranchId`), kuryer —
  * `courier.name`; muddat (filial / HQ) — `last_handover_at`. Nom yo'q bo'lsa `name: null` (taxmin yo'q).
  */
@@ -210,13 +276,33 @@ export const resolveCancelReturnPlace = (
   if (!stage) return null;
   const now = options.now ?? Date.now();
   const record = asRecord(order);
+  const daysSince = (time: number | null) => {
+    const elapsed = time !== null ? Math.floor((now - time) / DAY_MS) : null;
+    return elapsed !== null && elapsed >= 1 ? elapsed : null;
+  };
+  const marketMethod = asHandoverMethod(record.market_handover_method);
+  const marketAt = toTime(record.market_handover_at);
+
+  // BG1: backend joyi — hamma rolda nom, kunlar `received_at` dan, topshirish vaqti/usuli. Bosqich mos kelmasa
+  // (masalan ko'rsatilayotgan holat boshqacha) — zaxira hisob.
+  const backend = readCancelReturn(record);
+  if (backend && backend.stage === stage) {
+    const name =
+      stage === "courier" ? backend.placeName : (cleanBranchLabel(backend.placeName) ?? backend.placeName);
+    return {
+      name,
+      arrow: stage === "in_transit",
+      days: stage === "branch" || stage === "hq" ? daysSince(backend.receivedAt) : null,
+      at: stage === "market" ? (backend.handedOverAt ?? marketAt ?? toTime(options.handoverAt)) : null,
+      method: stage === "market" ? (backend.handoverMethod ?? marketMethod) : null,
+    };
+  }
+
   const branch = asRecord(record.branch);
   const branchId = text(branch.id);
   const branchName = text(branch.name) || null;
   const holderBranchId = text(record.holder_branch_id ?? record.holderBranchId);
-  const handoverAt = toTime(record.last_handover_at ?? record.lastHandoverAt);
-  const elapsed = handoverAt !== null ? Math.floor((now - handoverAt) / DAY_MS) : null;
-  const days = elapsed !== null && elapsed >= 1 ? elapsed : null;
+  const days = daysSince(toTime(record.last_handover_at ?? record.lastHandoverAt));
 
   switch (stage) {
     case "courier": {
@@ -228,10 +314,11 @@ export const resolveCancelReturnPlace = (
         arrow: false,
         days: null,
         at: null,
+        method: null,
       };
     }
     case "in_transit":
-      return { name: branchName, arrow: true, days: null, at: null };
+      return { name: branchName, arrow: true, days: null, at: null, method: null };
     case "branch":
       // Ro'yxatda faqat `branch` bor — u custody filiali bo'lsagina nom ko'rsatiladi.
       return {
@@ -239,11 +326,18 @@ export const resolveCancelReturnPlace = (
         arrow: false,
         days,
         at: null,
+        method: null,
       };
     case "hq":
-      return { name: branchName, arrow: false, days, at: null };
+      return { name: branchName, arrow: false, days, at: null, method: null };
     case "market":
-      return { name: branchName, arrow: false, days: null, at: toTime(options.handoverAt) };
+      return {
+        name: branchName,
+        arrow: false,
+        days: null,
+        at: toTime(options.handoverAt) ?? marketAt,
+        method: marketMethod,
+      };
     default:
       return null;
   }

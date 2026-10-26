@@ -1,4 +1,5 @@
-import { ORDER_STATUSES, toOrderSearchTerm } from "../../../entities/order";
+import { CANCEL_RETURN_STAGE_ORDER, ORDER_STATUSES, toOrderSearchTerm } from "../../../entities/order";
+import type { CancelReturnStage } from "../../../entities/order";
 import type {
   DeliveryType,
   OrderFulfillmentSource,
@@ -31,6 +32,15 @@ export const ORDER_FILTER_KEYS = {
 } as const;
 
 export const ORDER_STATUS_URL_KEY = "status";
+/** BG4 (vOczoOUE 2-bosqich): «Bekor qilingan» tabidagi bosqich chipi — API param bilan bir xil nom. */
+export const ORDER_CANCEL_STAGE_URL_KEY = "cancel_stage";
+
+const CANCEL_STAGES = new Set<string>(CANCEL_RETURN_STAGE_ORDER);
+/** URL'dagi `cancel_stage` — faqat ma'lum bosqich (backend noma'lumiga 400 beradi); boshqasi — bo'sh. */
+export const parseCancelStage = (value: unknown): CancelReturnStage | "" => {
+  const stage = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return CANCEL_STAGES.has(stage) ? (stage as CancelReturnStage) : "";
+};
 /** Eski holat kaliti (`orderStatus`) — o'qiladi, yozishda tozalanadi. */
 export const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 /** Eski sana kalitlari — o'qiladi, yozishda tozalanadi. */
@@ -160,6 +170,8 @@ export type OrderFilterValues = {
   dateTo: string;
   /** 6kHnNH9j: «Manba» filtri (`scope.source` bo'lgan rollarda). */
   fulfillmentSource?: "" | OrderFulfillmentSource;
+  /** BG4: bekor bosqichi chipi (faqat «Bekor qilingan» tabida). */
+  cancelStage?: "" | CancelReturnStage;
 };
 
 export const EMPTY_ORDER_FILTERS: OrderFilterValues = {
@@ -240,7 +252,14 @@ export const buildOrderListParams = (
   if (scope.courier && values.courierId) params.courier_id = values.courierId;
 
   const statuses = parseStatusValues(values.statuses);
-  if (statuses.length > 0) params.status = statuses;
+  const cancelStage = parseCancelStage(values.cancelStage);
+  // BG4: bosqich filtri holatni o'zi belgilaydi (`market` — `returned_to_market`, tabdagi `cancelled` bilan AND
+  // bo'lsa bo'sh chiqardi) — `cancel_stage` berilsa `status` yuborilmaydi. Faqat «Bekor qilingan» tabida.
+  if (cancelStage && statuses.length > 0 && statuses.every((status) => status === "cancelled" || status === "cancelled (sent)")) {
+    params.cancel_stage = cancelStage;
+  } else if (statuses.length > 0) {
+    params.status = statuses;
+  }
   if (isDeliveryType(values.deliveryType)) params.where_deliver = values.deliveryType;
   if (scope.source && values.fulfillmentSource && isFulfillmentSource(values.fulfillmentSource)) {
     params.fulfillment_source = values.fulfillmentSource;

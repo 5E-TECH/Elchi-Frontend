@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **43** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **40** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -301,7 +301,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/orders` | superadmin | `superadmin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/superadmin--orders-list.html](fragments/superadmin--orders-list.html) | sahifa | qisman |
-| `/orders` | superadmin | `superadmin-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | [design/fragments/superadmin--orders-list-cancelled.html](fragments/superadmin--orders-list-cancelled.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | superadmin | `superadmin-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | [design/fragments/superadmin--orders-list-cancelled.html](fragments/superadmin--orders-list-cancelled.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-list-refreshing` — Buyurtmalar ro'yxati — yangilanmoqda | [design/fragments/superadmin--orders-list-refreshing.html](fragments/superadmin--orders-list-refreshing.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-list-refresh-error` — Buyurtmalar ro'yxati — yangilanmadi | [design/fragments/superadmin--orders-list-refresh-error.html](fragments/superadmin--orders-list-refresh-error.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
@@ -574,9 +574,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-detail` — Bekor qilinganlarni marketga topshirish (HQ) | [design/fragments/registrator--new-orders-cancelled-detail.html](fragments/registrator--new-orders-cancelled-detail.html) | sahifa | v2 |
 | `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (HQ)<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/registrator--new-orders-cancelled-manual-dialog.html](fragments/registrator--new-orders-cancelled-manual-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-scanner-dialog` — Market QR skanerlash (HQ) | [design/fragments/registrator--new-orders-cancelled-scanner-dialog.html](fragments/registrator--new-orders-cancelled-scanner-dialog.html) | oyna | qisman |
-| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled` — Bekor qilinganlar | [design/fragments/market--new-orders-cancelled.html](fragments/market--new-orders-cancelled.html) | sahifa | qisman |
-| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-transit` — Bekor qilinganlar · Yo'lda (taklif) | [design/fragments/market--new-orders-cancelled-transit.html](fragments/market--new-orders-cancelled-transit.html) | sahifa | yangi (kodda yo'q) |
-| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-received` — Bekor qilinganlar · Olganlarim (taklif) | [design/fragments/market--new-orders-cancelled-received.html](fragments/market--new-orders-cancelled-received.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled` — Bekor qilinganlar | [design/fragments/market--new-orders-cancelled.html](fragments/market--new-orders-cancelled.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-transit` — Bekor qilinganlar · Yo'lda (taklif)<br>↳ `src/pages/new_orders/cancelled/ui/MarketReturns.tsx` | [design/fragments/market--new-orders-cancelled-transit.html](fragments/market--new-orders-cancelled-transit.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-received` — Bekor qilinganlar · Olganlarim (taklif)<br>↳ `src/pages/new_orders/cancelled/ui/MarketReturns.tsx` | [design/fragments/market--new-orders-cancelled-received.html](fragments/market--new-orders-cancelled-received.html) | sahifa | v2 |
 | `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-qr-dialog` — Bekor qilinganlar · QR kod<br>↳ `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | [design/fragments/market--new-orders-cancelled-qr-dialog.html](fragments/market--new-orders-cancelled-qr-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
@@ -2036,14 +2036,14 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 226 · kodda yo'q: 16
+242 ta maket · kodda bor: 227 · kodda yo'q: 15
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `superadmin-dashboard-main` | Dashboard — Bugungi statistika | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
 | `superadmin-dashboard-region-modal` | Dashboard — Viloyat tafsiloti (xarita) | oyna | `/` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
 | `superadmin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Bekor qatorlarida bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)) — kodda hali eski «Bekor qilingan» badge'i. |
-| `superadmin-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — «Bekor qilingan» tabi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7). Tab ichidagi chiplar «Barchasi · Kuryerda · Yo'lda · Filialda · HQ'da · Topshirilgan» — server filtri kerak (BG4), unga qadar chizilmaydi; tab «Marketga topshirildi» (status=returned_to_market) ni ham o'z ichiga oladi. 1-bosqich kodda: badge + joy (holder_* dan), joy nomi faqat superadmin/admin'da (BG1). |
+| `superadmin-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — «Bekor qilingan» tabi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): bosqich badge'i va ostida joy qatori — backend `cancel_return` (BG1: joy nomi hamma rolda, «N kun» — `received_at`; «Marketga topshirildi» — vaqt va usul, BG2), 3 kunda warning, 7 kunda + TriangleAlert, «Eskalatsiya» / «Marketga eslatildi (sana)» (BG7, xodim ro'yxatida). Chiplar «Barchasi · Kuryerda · Yo'lda · Filialda · HQ'da · Topshirilgan» → `GET /orders?cancel_stage=` (BG4; `status` yuborilmaydi; «Barchasi» — tabning o'zi). Qisman: chip sonlari — backend bosqich bo'yicha son bermaydi, sonsiz. |
 | `superadmin-orders-list-skip-link` | Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda | sahifa | `/orders` | `src/widgets/layout/ui/SkipLink.tsx` | v2 |
 | `superadmin-orders-list-refreshing` | Buyurtmalar ro'yxati — yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z). |
 | `superadmin-orders-list-refresh-error` | Buyurtmalar ro'yxati — yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z). |
@@ -2462,7 +2462,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-orders-list-all-refreshing` | Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z). |
 | `manager-orders-list-all-refresh-error` | Buyurtmalar — Hamma buyurtmalar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z). |
 | `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
-| `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)); tab ichidagi bosqich chiplari — Taklif · backend kerak (BG4), 1-bosqichda chizilmaydi. |
+| `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori — vOczoOUE 2-bosqich: backend `cancel_return` (joy nomi hamma rolda, «N kun» — `received_at`), 3 kunda warning, 7 kunda + TriangleAlert, «Eskalatsiya» / «Marketga eslatildi» (BG7); tab ichidagi bosqich chiplari «Barchasi · Kuryerda · Yo'lda · Filialda · HQ'da · Topshirilgan» → `GET /orders?cancel_stage=` (BG4; «Barchasi» — tabning o'zi: bekor + bekor — jo'natilgan). Qisman: chiplardagi sonlar — backend bosqich bo'yicha son bermaydi (`status-counts`), sonsiz. |
 | `manager-orders-sell-dialog` | Sotish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
 | `manager-orders-cancel-dialog` | Bekor qilish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/CancelModal.tsx` | v2 |
 | `manager-orders-rollback-dialog` | Buyurtmani qaytarish tasdig'i | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | v2 |
@@ -2605,7 +2605,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-36 ta maket · kodda bor: 29 · kodda yo'q: 7
+36 ta maket · kodda bor: 31 · kodda yo'q: 5
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2624,9 +2624,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-new-orders-create-ai-input` | Buyurtma yaratish · AI kiritish | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
 | `market-new-orders-create-ai-preview` | Buyurtma yaratish · AI natijalari | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
 | `market-new-orders-create-ai-confirm-dialog` | AI · Yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
-| `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — «Olib ketishga tayyor · Yo'lda · Olganlarim» chiplari (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 2) — 2- va 3-chip Taklif · backend kerak (BG3); ro'yxatning o'zi kodda bor. |
-| `market-new-orders-cancelled-transit` | Bekor qilinganlar · Yo'lda (taklif) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | yangi (kodda yo'q) — Market «Bekor qilinganlar» → «Yo'lda» chipi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 2): kuryerda / yo'lda / filialda bekorlari, «Qayerda» ustuni. Taklif · backend kerak — GET orders/markets/:id/cancelled market uchun holderType=HQ ga qotirilgan (BG3). |
-| `market-new-orders-cancelled-received` | Bekor qilinganlar · Olganlarim (taklif) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | yangi (kodda yo'q) — Market «Olganlarim» (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): topshirilganlar — sana, joy, usul, xodim, sana oralig'i filtri. Taklif · backend kerak (BG3 — returned_to_market ro'yxati; usul — BG2; «Parol orqali» — BG6). |
+| `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
+| `market-new-orders-cancelled-transit` | Bekor qilinganlar · Yo'lda (taklif) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/MarketReturns.tsx` | v2 |
+| `market-new-orders-cancelled-received` | Bekor qilinganlar · Olganlarim (taklif) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/MarketReturns.tsx` | v2 |
 | `market-new-orders-cancelled-qr-dialog` | Bekor qilinganlar · QR kod | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | v2 |
 | `market-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `market-cashbox-my` | Market kassasi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
@@ -3060,6 +3060,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/MarketReturns.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/utils.ts` | `/new-orders/cancelled`, `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/components/detail/AddressCard.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/detail/CourierCards.tsx` | `/orders/edit/:orderId` |

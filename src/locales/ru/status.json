@@ -29,6 +29,8 @@
     "days_few": "{{count}} дня",
     "days_many": "{{count}} дней",
     "days_other": "{{count}} дня",
+    "escalated": "Эскалация",
+    "notified": "Магазину напомнили ({{date}})",
     "hq": "HQ",
     "method": {
       "qr": "По QR",

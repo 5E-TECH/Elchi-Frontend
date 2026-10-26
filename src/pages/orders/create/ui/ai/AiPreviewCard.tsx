@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
-import { memo, useId, useState, type ReactNode } from "react";
+import { memo, useId, useMemo, useState, type ReactNode } from "react";
 import { Building2, ChevronDown, ChevronUp, MapPin, Minus, Package, Plus, Send, Trash2, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
-import { toLocalPhone, type AiPreviewItem } from "../../../../../entities/ai-order";
+import { toLocalPhone, type AiPreviewItem, type AiWarningField } from "../../../../../entities/ai-order";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
 import { cx } from "../../../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
@@ -23,7 +23,8 @@ import {
   type SelectOption,
 } from "../../../../../shared/ui/primitives";
 import { CreateAlert } from "../CreateAlert";
-import { toList, type AiDraft } from "./aiDraft";
+import { toDraft, toList, type AiDraft } from "./aiDraft";
+import { activeAiWarnings, sourceAiWarnings } from "./aiWarnings";
 import { evalPreview, isItemResolved, needsPriceConfirm, type AiDraftOrder, type AiIssue } from "./evalPreview";
 
 export type AiProductOption = { id: string; name: string };
@@ -51,6 +52,16 @@ const WarningHint = ({ children }: { children: ReactNode }) => (
   <span className="flex items-start gap-1.5 text-[13px] font-semibold text-warning-fg">
     <TriangleAlert size={16} aria-hidden="true" className="mt-px shrink-0" />
     <span className="min-w-0">{children}</span>
+  </span>
+);
+
+/**
+ * AI ogohlantirishi (J3hEDtFN `warnings[]`) — tegishli maydon ostida, `WarningHint` ko'rinishida. Matn faqat
+ * sabab enum'idan (`aiWarning.<reason>`), server matni yo'q.
+ */
+const FieldWarning = ({ field, children }: { field: AiWarningField; children: ReactNode }) => (
+  <span data-testid="ai-field-warning" data-field={field} className="flex">
+    <WarningHint>{children}</WarningHint>
   </span>
 );
 
@@ -151,6 +162,27 @@ const AiPreviewCard = ({
   const districtsQuery = useGetDistricts(order.region_id ?? undefined, areaLists);
   const districts = toList<AiAreaItem>(districtsQuery.data);
   const districtsLoading = areaLists && Boolean(order.region_id) && districtsQuery.isLoading;
+
+  // AI chiqishining tahrirgacha ko'rinishi: operator maydonni o'zgartirsa, uning ogohlantirishi yo'qoladi.
+  const initialOrder = useMemo(() => toDraft(source, draft.key).order, [source, draft.key]);
+  const warnings = activeAiWarnings(sourceAiWarnings(source), order, initialOrder);
+  const warningFor = (field: AiWarningField): ReactNode => {
+    const reason = warnings[field];
+    return reason ? (
+      <FieldWarning key={field} field={field}>
+        {t(`aiWarning.${reason}`)}
+      </FieldWarning>
+    ) : null;
+  };
+  /** Bir nechta izoh bitta `hint` da (ustma-ust); hammasi bo'sh bo'lsa — `undefined`. */
+  const hints = (...items: ReactNode[]): ReactNode => {
+    const shown = items.filter(Boolean);
+    return shown.length > 0 ? <>{shown}</> : undefined;
+  };
+  // Kartada o'z maydoni yo'q ogohlantirishlar (almashtirish; ro'yxatsiz rolda viloyat) — maydonlar ustida.
+  const cardWarnings = (["is_replacement", ...(areaLists ? [] : ["region_name"])] as AiWarningField[]).filter(
+    (field) => warnings[field],
+  );
 
   const update = (patch: Partial<AiDraftOrder>) => onChange({ ...order, ...patch });
   const updateItem = (itemIndex: number, patch: Partial<AiPreviewItem>) =>
@@ -374,8 +406,29 @@ const AiPreviewCard = ({
           </ul>
         ) : null}
 
+        {cardWarnings.length > 0 ? (
+          <ul aria-label={t("aiWarning.listLabel")} className="flex flex-col gap-1.5">
+            {cardWarnings.map((field) => (
+              <li key={field}>
+                <FieldWarning field={field}>
+                  {t("aiWarning.withField", {
+                    field: t(field === "is_replacement" ? "aiWarning.fieldReplacement" : "aiWarning.fieldRegion"),
+                    reason: t(`aiWarning.${warnings[field]}`),
+                  })}
+                </FieldWarning>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
         <div className={FIELD_GRID}>
-          <Field label={t("createCustomerName")} required id={`${idPrefix}-name`} invalid={issues.includes("name_missing")}>
+          <Field
+            label={t("createCustomerName")}
+            required
+            id={`${idPrefix}-name`}
+            invalid={issues.includes("name_missing")}
+            hint={hints(warningFor("customer_name"))}
+          >
             <TextInput
               value={order.customer_name}
               onValueChange={(value) => update({ customer_name: value })}
@@ -388,7 +441,10 @@ const AiPreviewCard = ({
             required
             id={`${idPrefix}-phone`}
             invalid={issues.includes("phone_invalid")}
-            hint={phoneUnreadable ? <WarningHint>{t("aiPhoneRead", { value: source.phone_number })}</WarningHint> : undefined}
+            hint={hints(
+              phoneUnreadable ? <WarningHint key="read">{t("aiPhoneRead", { value: source.phone_number })}</WarningHint> : null,
+              warningFor("phone_number"),
+            )}
           >
             <TextInput
               mode="phone"
@@ -397,7 +453,7 @@ const AiPreviewCard = ({
             />
           </Field>
 
-          <Field label={t("additionalPhone")} id={`${idPrefix}-extra`}>
+          <Field label={t("additionalPhone")} id={`${idPrefix}-extra`} hint={hints(warningFor("extra_number"))}>
             <TextInput
               mode="phone"
               value={toUzbekistanPhoneValue(order.extra_number ?? "")}
@@ -411,7 +467,10 @@ const AiPreviewCard = ({
               labelAs="span"
               required
               id={`${idPrefix}-region`}
-              hint={order.region_id && !order.region_given ? <WarningHint>{t("aiRegionGuessed")}</WarningHint> : undefined}
+              hint={hints(
+                order.region_id && !order.region_given ? <WarningHint key="guessed">{t("aiRegionGuessed")}</WarningHint> : null,
+                warningFor("region_name"),
+              )}
             >
               <Select
                 searchable
@@ -429,12 +488,11 @@ const AiPreviewCard = ({
             labelAs="span"
             required
             id={`${idPrefix}-district`}
-            hint={
+            hint={hints(
               // Ro'yxatsiz (market operatori): tuman AI matndan topmagan va taklif yo'q — matnni tuzatib qayta tahlil.
-              districtFromTextOnly ? (
-                <WarningHint>{t("operatorCreate.districtFromText")}</WarningHint>
-              ) : undefined
-            }
+              districtFromTextOnly ? <WarningHint key="text">{t("operatorCreate.districtFromText")}</WarningHint> : null,
+              warningFor("district_name"),
+            )}
           >
             <Select
               searchable
@@ -447,7 +505,7 @@ const AiPreviewCard = ({
             />
           </Field>
 
-          <Field label={t("address")} id={`${idPrefix}-address`}>
+          <Field label={t("address")} id={`${idPrefix}-address`} hint={hints(warningFor("address"))}>
             <TextInput
               value={order.address ?? ""}
               onValueChange={(value) => update({ address: value })}
@@ -462,6 +520,7 @@ const AiPreviewCard = ({
             {t("aiItems")}
           </h3>
           {order.items.length === 0 ? <WarningHint>{t("aiIssueItemsMissing")}</WarningHint> : null}
+          {warningFor("items")}
           {order.items.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {order.items.map((item, itemIndex) => {
@@ -560,6 +619,7 @@ const AiPreviewCard = ({
                 { value: "address", label: t("deliveryToHome"), icon: MapPin },
               ]}
             />
+            {warningFor("where_deliver")}
           </div>
 
           <Field
@@ -567,7 +627,10 @@ const AiPreviewCard = ({
             required
             id={`${idPrefix}-price`}
             invalid={priceInvalid}
-            hint={issues.includes("price_missing") ? <WarningHint>{t("aiIssuePriceMissing")}</WarningHint> : undefined}
+            hint={hints(
+              issues.includes("price_missing") ? <WarningHint key="missing">{t("aiIssuePriceMissing")}</WarningHint> : null,
+              warningFor("total_price"),
+            )}
           >
             <TextInput
               mode="money"
@@ -593,7 +656,7 @@ const AiPreviewCard = ({
               <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
             </Field>
           ) : (
-            <Field label={t("operator")} id={`${idPrefix}-operator`}>
+            <Field label={t("operator")} id={`${idPrefix}-operator`} hint={hints(warningFor("operator"))}>
               <TextInput
                 value={order.operator ?? ""}
                 onValueChange={(value) => update({ operator: value })}
@@ -602,7 +665,7 @@ const AiPreviewCard = ({
             </Field>
           )}
 
-          <Field label={t("note")} id={`${idPrefix}-comment`}>
+          <Field label={t("note")} id={`${idPrefix}-comment`} hint={hints(warningFor("comment"))}>
             <TextInput
               value={order.comment ?? ""}
               onValueChange={(value) => update({ comment: value })}

@@ -26,6 +26,8 @@
   "cancelReturn": {
     "towards": "→ {{name}}",
     "days": "{{count}} kun",
+    "escalated": "Eskalatsiya",
+    "notified": "Marketga eslatildi ({{date}})",
     "hq": "HQ",
     "method": {
       "qr": "QR orqali",

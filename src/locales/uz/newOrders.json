@@ -457,6 +457,27 @@
       "summary": "<strong>{{value}}</strong> ta bekor qilingan buyurtma",
       "summaryTotal": "jami <strong>{{sum}}</strong>"
     },
+    "returns": {
+      "tabsLabel": "Bekor qilinganlar bosqichi",
+      "ready": "Olib ketishga tayyor",
+      "transit": "Yo'lda",
+      "received": "Olganlarim",
+      "transitTitle": "Yo'ldagi bekor buyurtmalar",
+      "transitHint": "HQ qabul qilgach, buyurtma «Olib ketishga tayyor» ro'yxatiga o'tadi.",
+      "receivedTitle": "Olgan bekor buyurtmalaringiz",
+      "summary": "<strong>{{value}}</strong> ta buyurtma",
+      "columns": {
+        "where": "Qayerda",
+        "receivedAt": "Olingan",
+        "placeMethod": "Joy va usul"
+      },
+      "rangeLabel": "Olingan sana oralig'i",
+      "transitEmptyTitle": "Yo'lda bekor buyurtma yo'q",
+      "transitEmptyDescription": "Kuryer bekor qilgan buyurtmalaringiz HQ'ga yetib kelguncha shu yerda ko'rinadi.",
+      "receivedEmptyTitle": "Bu davrda olingan buyurtma yo'q",
+      "receivedEmptyDescription": "Sana oralig'ini o'zgartirib ko'ring.",
+      "truncated": "Ro'yxat to'liq emas — sana oralig'ini qisqartiring."
+    },
     "qrDialog": {
       "title": "Bekor qilingan buyurtmalar QR kodi",
       "description": "Pochtaga topshirish uchun shu QR kodni skaner qildiring.",

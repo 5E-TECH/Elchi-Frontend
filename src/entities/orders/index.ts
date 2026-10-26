@@ -323,13 +323,33 @@ export const useOrders = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const useCancelledOrdersByMarket = (marketId: string | number, options?: { enabled?: boolean }) =>
-    useQuery({
-      queryKey: [orders, "markets", marketId, "cancelled"],
+  /**
+   * `GET /orders/markets/:marketId/cancelled`. Parametrsiz — HQ'da turganlar (topshirish ro'yxati; kalit «Bekor
+   * qilinganlar» tab soni bilan umumiy). BG3 (vOczoOUE 2-bosqich, faqat MARKET roli): `stage` — `courier,in_transit,
+   * branch,hq,market` (vergul bilan), `start_day`/`end_day` — faqat `market` bosqichiga (topshirish vaqti); javob
+   * `{ data, total, truncated? }`.
+   */
+  const useCancelledOrdersByMarket = (
+    marketId: string | number,
+    options?: { enabled?: boolean; stage?: string; start_day?: string; end_day?: string },
+  ) => {
+    const params: Record<string, string> = {};
+    if (options?.stage) params.stage = options.stage;
+    if (options?.start_day) params.start_day = options.start_day;
+    if (options?.end_day) params.end_day = options.end_day;
+    const hasParams = Object.keys(params).length > 0;
+    return useQuery({
+      queryKey: hasParams
+        ? [orders, "markets", marketId, "cancelled", params]
+        : [orders, "markets", marketId, "cancelled"],
       queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId)).then((res) => res.data),
+        (hasParams
+          ? api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { params })
+          : api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId))
+        ).then((res) => res.data),
       enabled: (options?.enabled ?? true) && Boolean(marketId),
     });
+  };
 
   const updateNewOrder = useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: UpdateNewOrderPayload }) =>

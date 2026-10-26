@@ -399,7 +399,8 @@ const OrdersTable = ({
                 cell: (order) => (
                     <div className="flex flex-col items-start gap-1">
                         <div className="flex flex-wrap items-center gap-1">{statusBadges(order)}</div>
-                        <OrderReturnPlace order={order} />
+                        {/* BG7: «Eskalatsiya» / «Marketga eslatildi» — xodim ro'yxatida (market tomonida yo'q). */}
+                        <OrderReturnPlace order={order} withHandoverFlags={!isMarket} />
                     </div>
                 ),
             },
@@ -513,7 +514,7 @@ const OrdersTable = ({
                                 <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{dateTime(order.createdAt)}</span>
                             )}
                         </span>
-                        <OrderReturnPlace order={order} />
+                        <OrderReturnPlace order={order} withHandoverFlags={!isMarket} />
                     </Link>
                     {showCourierHeldNote ? (
                         <p className={cx("px-4 pb-2 text-xs text-text-muted", selectable && "pl-12")}>

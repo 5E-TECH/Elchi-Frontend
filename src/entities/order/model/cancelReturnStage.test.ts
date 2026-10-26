@@ -5,8 +5,10 @@ import uz from "../../../locales/uz/status.json";
 import {
   CANCEL_RETURN_STAGES,
   CANCEL_RETURN_STAGE_ORDER,
+  cancelReturnAgeLevel,
   cleanBranchLabel,
   isOpenCancelReturnStage,
+  readCancelHandoverFlags,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
   type CancelReturnStage,
@@ -180,7 +182,7 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
         undefined,
         { now },
       ),
-    ).toEqual({ name: "Toshkent HQ", arrow: false, days: 2, at: null });
+    ).toEqual({ name: "Toshkent HQ", arrow: false, days: 2, at: null, method: null });
   });
 
   it("yo'lda: maqsad nomi strelka bilan, kunsiz", () => {
@@ -195,7 +197,7 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
         undefined,
         { now },
       ),
-    ).toEqual({ name: "Toshkent HQ", arrow: true, days: null, at: null });
+    ).toEqual({ name: "Toshkent HQ", arrow: true, days: null, at: null, method: null });
   });
 
   it("filialda: `branch` custody filiali bo'lsagina nom", () => {
@@ -226,7 +228,7 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
         undefined,
         { now },
       ),
-    ).toEqual({ name: "Ali", arrow: false, days: null, at: null });
+    ).toEqual({ name: "Ali", arrow: false, days: null, at: null, method: null });
   });
 
   it("kuryerda: kuryer ismi (boshqa kuryer bo'lsa — yo'q)", () => {
@@ -253,7 +255,7 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
       undefined,
       { now },
     );
-    expect(place).toEqual({ name: "Toshkent HQ", arrow: false, days: null, at: null });
+    expect(place).toEqual({ name: "Toshkent HQ", arrow: false, days: null, at: null, method: null });
   });
 
   it("topshirilgan: vaqt faqat tarixdan berilsa (`handoverAt`), `last_handover_at` emas", () => {
@@ -301,3 +303,128 @@ describe("cleanBranchLabel — backend tracking yorlig'i", () => {
     expect(cleanBranchLabel(raw)).toBe(expected);
   });
 });
+
+describe("vOczoOUE 2-bosqich — backend `return_stage` / `cancel_return` (BG1/BG2) ustun", () => {
+  const now = Date.parse("2026-10-26T12:00:00+05:00");
+
+  it("backend bosqichi FE hisobidan ustun (holder ma'lumoti yo'q javobda ham)", () => {
+    expect(resolveCancelReturnStage({ status: "cancelled", return_stage: "hq" })).toBe("hq");
+    expect(resolveCancelReturnStage({ status: "cancelled", cancel_return: { stage: "branch" } })).toBe("branch");
+    // FE hisobi «kuryerda» deydi, backend — «filialda» (masalan qabul allaqachon yozilgan): backend.
+    expect(
+      resolveCancelReturnStage({ status: "cancelled", holder_type: "COURIER", return_stage: "branch" }),
+    ).toBe("branch");
+  });
+
+  it("bekor zanjiridan tashqari holatda backend bosqichi e'tiborsiz; noma'lum qiymat — zaxira hisob", () => {
+    expect(resolveCancelReturnStage({ status: "sold", return_stage: "hq" })).toBeNull();
+    expect(
+      resolveCancelReturnStage({ status: "cancelled", holder_type: "COURIER", return_stage: "warehouse" }),
+    ).toBe("courier");
+    expect(resolveCancelReturnStage({ status: "cancelled", return_stage: null, holder_type: "COURIER" })).toBe(
+      "courier",
+    );
+  });
+
+  it("joy nomi hamma rolda `place_name` dan, «N kun» — `received_at` dan (last_handover_at emas)", () => {
+    expect(
+      resolveCancelReturnPlace(
+        {
+          status: "cancelled",
+          return_stage: "branch",
+          last_handover_at: "2026-10-25T09:00:00+05:00",
+          cancel_return: {
+            stage: "branch",
+            place_type: "BRANCH",
+            place_id: 3,
+            place_name: "Urgut filiali",
+            received_at: "2026-10-22T10:00:00+05:00",
+            sent_at: null,
+            handed_over_at: null,
+            handover_method: null,
+          },
+        },
+        undefined,
+        { now },
+      ),
+    ).toEqual({ name: "Urgut filiali", arrow: false, days: 4, at: null, method: null });
+  });
+
+  it("kuryerda — kuryer ismi (kunsiz); yo'lda — maqsad strelka bilan", () => {
+    expect(
+      resolveCancelReturnPlace(
+        { status: "cancelled", cancel_return: { stage: "courier", place_name: "Akmal Rahimov" } },
+        undefined,
+        { now },
+      ),
+    ).toEqual({ name: "Akmal Rahimov", arrow: false, days: null, at: null, method: null });
+    expect(
+      resolveCancelReturnPlace(
+        { status: "cancelled (sent)", cancel_return: { stage: "in_transit", place_name: "Toshkent HQ" } },
+        undefined,
+        { now },
+      ),
+    ).toEqual({ name: "Toshkent HQ", arrow: true, days: null, at: null, method: null });
+  });
+
+  it("«Marketga topshirildi» — ro'yxatda ham vaqt (`handed_over_at`) va usul (`handover_method`)", () => {
+    expect(
+      resolveCancelReturnPlace(
+        {
+          status: "returned_to_market",
+          cancel_return: {
+            stage: "market",
+            place_name: "Samarqand filiali",
+            handed_over_at: "2026-10-25T17:05:00+05:00",
+            handover_method: "pin",
+          },
+        },
+        undefined,
+        { now },
+      ),
+    ).toEqual({
+      name: "Samarqand filiali",
+      arrow: false,
+      days: null,
+      at: Date.parse("2026-10-25T17:05:00+05:00"),
+      method: "pin",
+    });
+  });
+
+  it("`cancel_return` yo'q, lekin BG2 maydonlari bor — zaxirada `market_handover_at` / `_method`", () => {
+    const place = resolveCancelReturnPlace(
+      {
+        status: "returned_to_market",
+        branch: { id: "1", name: "Toshkent HQ" },
+        market_handover_at: "2026-10-25T11:20:00+05:00",
+        market_handover_method: "manual",
+      },
+      undefined,
+      { now },
+    );
+    expect(place).toMatchObject({ name: "Toshkent HQ", at: Date.parse("2026-10-25T11:20:00+05:00"), method: "manual" });
+  });
+
+  it("«N kun» darajasi: < 3 — yo'q, 3–6 — `warn`, ≥ 7 — `alert` (ega qarori 3 / 7)", () => {
+    expect([null, 1, 2, 3, 6, 7, 30].map(cancelReturnAgeLevel)).toEqual([
+      null,
+      null,
+      null,
+      "warn",
+      "warn",
+      "alert",
+      "alert",
+    ]);
+  });
+
+  it("BG7 belgilari: `handover_notified_at` / `handover_escalated_at`", () => {
+    expect(
+      readCancelHandoverFlags({
+        handover_notified_at: "2026-10-23T10:05:00+05:00",
+        handover_escalated_at: null,
+      }),
+    ).toEqual({ notifiedAt: Date.parse("2026-10-23T10:05:00+05:00"), escalatedAt: null });
+    expect(readCancelHandoverFlags({})).toEqual({ notifiedAt: null, escalatedAt: null });
+  });
+});
+

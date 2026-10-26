@@ -20,7 +20,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAiParse, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import {
+  AI_IMAGE_MAX_BYTES,
+  AI_IMAGES_TOTAL_MAX_BYTES,
+  AI_MAX_IMAGES,
+  useAiParse,
+  type AiPreviewOrder,
+} from "../../../../../entities/ai-order";
 import { cx } from "../../../../../shared/lib/cx";
 import {
   PrepareImageError,
@@ -35,11 +41,8 @@ import { parseFailureView, parseHttpErrorView, type AiErrorView } from "./aiErro
 
 /** Backend DTO bilan bir xil: matn ko'pi bilan 4000 belgi. */
 const AI_MAX_TEXT = 4000;
-/**
- * BeePost'dan QATTIQROQ (5 emas): har rasm ~1600–3300 vision tokeni va
- * rasmlar keshlanmaydi — har tahlil pul.
- */
-const AI_MAX_IMAGES = 3;
+/** 1 MB — xabarlardagi «1,5 MB» / «20 MB» (backend matni bilan bir xil son). */
+const MB = 1024 * 1024;
 /** Gateway 429 qaytarsa tugma shuncha soniya bloklanadi. */
 const AI_THROTTLE_SECONDS = 60;
 
@@ -48,6 +51,7 @@ const IMAGE_ERROR_KEYS: Record<PrepareImageErrorCode, string> = {
   unsupported: "aiImageUnsupported",
   decode_failed: "aiImageDecodeFailed",
   heic_unsupported: "aiImageHeic",
+  over_limit: "aiImageOverLimit",
 };
 
 /**
@@ -89,7 +93,8 @@ const ErrorText = ({ children }: { children: string }) => (
 
 /**
  * AI KIRISH PANELI (maket `*-create-ai-input`) — karta «Buyurtma matni»: matn maydoni + hisoblagich,
- * buyurtma varag'i suratlari (≥ 768 — «Surat qo'shish (N/3)», telefonda «Surat olish» / «Galereyadan»),
+ * buyurtma varag'i suratlari (≥ 768 — «Surat qo'shish (N/20)», telefonda «Surat olish» / «Galereyadan»),
+ * chegaralar backend bilan bir xil (`entities/ai-order/limits.ts`: 20 ta, har biri ≤ 1,5 MB, jami ≤ 20 MB; WHMAIqyo),
  * eskizlar, pastda «Tahlil qilish». Holatlar karta ichida: suratlar tayyorlanmoqda, matn chegaradan oshdi,
  * tahlil (spinner + «Bekor qilish»), juda ko'p so'rov (sanoq), AI ishlatib bo'lmadi (sariq) yoki shu urinish
  * bajarilmadi (qizil). Tahlildan keyin karta «Kiritilgan matn» ko'rinishiga yig'iladi.
@@ -116,6 +121,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [tooManyImages, setTooManyImages] = useState(false);
+  const [totalOverLimit, setTotalOverLimit] = useState(false);
   const [failure, setFailure] = useState<AiErrorView | null>(null);
   const [throttled, setThrottled] = useState(false);
   const [throttleUntil, setThrottleUntil] = useState(0);
@@ -129,6 +135,13 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
   const imagesLocked = isParsing || Boolean(progress) || images.length >= AI_MAX_IMAGES;
   const counterDanger = text.length >= AI_MAX_TEXT || overLimit;
   const number = (value: number) => formatNumberLocalized(value, { language });
+  const megabytes = (bytes: number) => formatNumberLocalized(bytes / MB, { language, fractionDigits: 1 });
+  /** Chegara xabarlari (o'z va server 400 matnlari) uchun umumiy qiymatlar: «20 ta», «1,5 MB», «20 MB». */
+  const limitValues = {
+    max: number(AI_MAX_IMAGES),
+    imageSize: megabytes(AI_IMAGE_MAX_BYTES),
+    totalSize: megabytes(AI_IMAGES_TOTAL_MAX_BYTES),
+  };
 
   useEffect(() => {
     if (throttleUntil <= Date.now()) return;
@@ -163,31 +176,43 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
     const free = Math.max(0, AI_MAX_IMAGES - images.length);
     const accepted = files.slice(0, free);
     setTooManyImages(files.length > free);
+    setTotalOverLimit(false);
     setFileErrors([]);
 
     const errors: string[] = [];
+    // Jami hajm (backend: ≤ 20 MB) — mavjud eskizlar + shu tanlovda qabul qilinganlar.
+    let totalBytes = images.reduce((sum, image) => sum + image.bytes, 0);
+    let overTotal = false;
     for (let index = 0; index < accepted.length; index += 1) {
       const file = accepted[index];
       setProgress({ current: index + 1, total: accepted.length });
       try {
-        const prepared = await prepareImage(file);
+        const prepared = await prepareImage(file, { maxBytes: AI_IMAGE_MAX_BYTES });
+        if (totalBytes + prepared.bytes > AI_IMAGES_TOTAL_MAX_BYTES) {
+          // Sig'maganlari qo'shilmaydi; keyingi kichikroq rasm hali sig'ishi mumkin.
+          overTotal = true;
+          continue;
+        }
+        totalBytes += prepared.bytes;
         nextImageId.current += 1;
         const id = `image-${nextImageId.current}`;
         // Tayyor bo'lgani darhol eskiz sifatida ko'rinadi.
         setImages((prev) => [...prev, { ...prepared, id }]);
       } catch (error) {
         const code = error instanceof PrepareImageError ? error.code : "decode_failed";
-        errors.push(`${file.name}: ${t(IMAGE_ERROR_KEYS[code])}`);
+        errors.push(`${file.name}: ${t(IMAGE_ERROR_KEYS[code], limitValues)}`);
       }
     }
 
     setProgress(null);
     setFileErrors(errors);
+    setTotalOverLimit(overTotal);
   };
 
   const removeImage = (id: string) => {
     setImages((prev) => prev.filter((image) => image.id !== id));
     setTooManyImages(false);
+    setTotalOverLimit(false);
   };
 
   const runParse = () => {
@@ -360,7 +385,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
           onChange={(event) => void handleFiles(event.target.files)}
         />
 
-        {/* ≥ 768 — bitta «Surat qo'shish (N/3)»; telefonda ikki tugma: «Surat olish» va «Galereyadan». */}
+        {/* ≥ 768 — bitta «Surat qo'shish (N/20)»; telefonda ikki tugma: «Surat olish» va «Galereyadan». */}
         <div className="flex flex-wrap items-center gap-3 max-md:hidden">
           <Button variant="secondary" leftIcon={ImagePlus} onClick={() => fileInputRef.current?.click()} disabled={imagesLocked}>
             {t("aiAddImage", { count: images.length, max: AI_MAX_IMAGES })}
@@ -408,10 +433,13 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
             </span>
           </div>
         ) : null}
-        {tooManyImages ? <ErrorText>{t("aiTooManyImages", { max: AI_MAX_IMAGES })}</ErrorText> : null}
+        {tooManyImages ? <ErrorText>{t("aiTooManyImages", limitValues)}</ErrorText> : null}
         {fileErrors.map((message) => (
           <ErrorText key={message}>{message}</ErrorText>
         ))}
+        {totalOverLimit ? (
+          <ErrorText>{t("aiImagesTotalOverLimit", limitValues)}</ErrorText>
+        ) : null}
 
         {images.length > 0 ? (
           <div role="list" aria-label={t("aiImagesLabel")} data-testid="ai-image-grid" className="flex flex-wrap gap-3">
@@ -459,7 +487,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
             ) : undefined
           }
         >
-          {t(failure.description)}
+          {t(failure.description, limitValues)}
           {failure.detail ? (
             <span className="mt-0.5 block text-text-muted [overflow-wrap:anywhere]">{failure.detail}</span>
           ) : null}
