@@ -21,6 +21,15 @@
       "paidHint": "Paid and partly paid orders",
       "cancelledHint": "Cancelled and cancelled — sent orders"
     },
+    "cancelStage": {
+      "label": "By return stage",
+      "all": "All",
+      "courier": "With courier",
+      "in_transit": "In transit",
+      "branch": "At branch",
+      "hq": "At HQ",
+      "market": "Handed over"
+    },
     "columns": {
       "order": "Order",
       "customer": "Customer",

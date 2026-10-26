@@ -8,6 +8,7 @@ import {
   matchOrderStatusTab,
   matchQuickPeriod,
   normalizeFilterStatuses,
+  parseCancelStage,
   parseStatusValues,
   readOrdersTotal,
   type OrderFilterValues,
@@ -170,3 +171,41 @@ describe("orderFilterModel", () => {
     expect(readOrdersTotal(undefined)).toBeNull();
   });
 });
+
+describe("BG4 `cancel_stage` — «Bekor qilingan» tabidagi bosqich chipi (vOczoOUE 2-bosqich)", () => {
+  const cancelledTab: OrderFilterValues = { ...EMPTY_ORDER_FILTERS, statuses: ["cancelled", "cancelled (sent)"] };
+  const paging = { page: 1, limit: 25 };
+
+  it.each(["courier", "in_transit", "branch", "hq", "market"] as const)(
+    "%s → `cancel_stage` yuboriladi, `status` yo'q (market — returned_to_market, AND bo'sh qilardi)",
+    (stage) => {
+      const params = buildOrderListParams({ ...cancelledTab, cancelStage: stage }, "superadmin", paging);
+      expect(params.cancel_stage).toBe(stage);
+      expect(params).not.toHaveProperty("status");
+    },
+  );
+
+  it("«Barchasi» (bo'sh) — avvalgidek `status=cancelled,cancelled (sent)`", () => {
+    const params = buildOrderListParams({ ...cancelledTab, cancelStage: "" }, "manager", paging);
+    expect(params.status).toEqual(["cancelled", "cancelled (sent)"]);
+    expect(params).not.toHaveProperty("cancel_stage");
+  });
+
+  it("boshqa holat tanlangan bo'lsa bosqich e'tiborsiz (faqat bekor tabida)", () => {
+    const params = buildOrderListParams(
+      { ...EMPTY_ORDER_FILTERS, statuses: ["sold"], cancelStage: "hq" },
+      "superadmin",
+      paging,
+    );
+    expect(params.status).toEqual(["sold"]);
+    expect(params).not.toHaveProperty("cancel_stage");
+  });
+
+  it("URL qiymati: ma'lum bosqich (harf farqsiz), boshqasi — bo'sh (backend 400 bermasin)", () => {
+    expect(parseCancelStage("HQ")).toBe("hq");
+    expect(parseCancelStage(" in_transit ")).toBe("in_transit");
+    expect(parseCancelStage("warehouse")).toBe("");
+    expect(parseCancelStage(undefined)).toBe("");
+  });
+});
+

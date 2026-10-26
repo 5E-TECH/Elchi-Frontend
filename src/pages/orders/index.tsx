@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled
+// dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, Info, Plus, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import {
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
 import { orderIdFromSearch } from "../../entities/order/model/orderNumber";
 import OrderFilters from "./list/OrderFilters";
+import CancelStageChips from "./list/CancelStageChips";
 import {
   buildOrderListParams,
   isDeliveryType,
@@ -25,9 +26,11 @@ import {
   matchOrderStatusTab,
   normalizeOrderSearch,
   ORDER_FILTER_KEYS,
+  ORDER_CANCEL_STAGE_URL_KEY,
   ORDER_LIST_LIMITS,
   ORDER_STATUS_TABS,
   ORDER_STATUS_URL_KEY,
+  parseCancelStage,
   parseStatusValues,
   sanitizeDayParam,
   type OrderFilterValues,
@@ -333,6 +336,8 @@ const Orders = () => {
       : null;
   const urlStatuses = useMemo(() => parseStatusValues(urlStatusRaw), [urlStatusRaw]);
   const activeStatusTab = getActiveStatusTab(urlStatuses);
+  // BG4: «Bekor qilingan» tabidagi bosqich chipi (`?cancel_stage=hq`); boshqa tabda e'tiborsiz.
+  const urlCancelStage = activeStatusTab === "cancelled" ? parseCancelStage(urlParams[ORDER_CANCEL_STAGE_URL_KEY]) : "";
 
   useEffect(() => {
     if (!urlParams[ORDER_STATUS_URL_KEY] && urlParams[LEGACY_ORDER_STATUS_URL_KEY]) {
@@ -353,10 +358,20 @@ const Orders = () => {
       setMultipleParams({
         [ORDER_STATUS_URL_KEY]: tab.statuses.join(","),
         [LEGACY_ORDER_STATUS_URL_KEY]: "",
+        [ORDER_CANCEL_STAGE_URL_KEY]: "",
         page: "1",
       });
     },
     [dispatch, setMultipleParams],
+  );
+
+  // Bosqich chipi: bosqich va 1-sahifa bitta URL yangilanishida; tanlov (HQ'ga yuborish) tozalanadi.
+  const handleCancelStageChange = useCallback(
+    (stage: string) => {
+      setSelectedCancelledIds(new Set());
+      setMultipleParams({ [ORDER_CANCEL_STAGE_URL_KEY]: stage, page: "1" });
+    },
+    [setMultipleParams],
   );
 
   const filterValues = useMemo(
@@ -369,6 +384,7 @@ const Orders = () => {
       deliveryType: isDeliveryType(urlDeliveryType) ? urlDeliveryType : "",
       fulfillmentSource: isFulfillmentSource(urlFulfillmentSource) ? urlFulfillmentSource : "",
       statuses: urlStatuses,
+      cancelStage: urlCancelStage,
       dateFrom: urlDateFrom,
       dateTo: urlDateTo,
       search: urlSearch,
@@ -382,6 +398,7 @@ const Orders = () => {
       urlDeliveryType,
       urlFulfillmentSource,
       urlStatuses,
+      urlCancelStage,
       urlDateFrom,
       urlDateTo,
       urlSearch,
@@ -465,7 +482,7 @@ const Orders = () => {
   // (60 s, ilovaga qaytganda, «Yangilash»; oyna ochiq bo'lsa to'xtaydi). Kuryer o'z ro'yxatini va sonlarini
   // (`/orders/courier/orders/counts` — kuryer ro'yxati `total` i bilan teng) `CourierOrders` da o'zi so'raydi.
   const statusCountsParams = useMemo(
-    () => buildOrderListParams({ ...filterValues, statuses: [] }, role, { page: 0, limit: 0 }),
+    () => buildOrderListParams({ ...filterValues, statuses: [], cancelStage: "" }, role, { page: 0, limit: 0 }),
     [filterValues, role],
   );
   const statusCountsQuery = useOrderStatusCounts(statusCountsParams, {
@@ -1125,6 +1142,10 @@ const Orders = () => {
 
         {/* Asboblar qatori (qidiruv, sana, «Filtrlar»), panel va chiplar. */}
         <OrderFilters />
+
+        {activeStatusTab === "cancelled" ? (
+          <CancelStageChips value={urlCancelStage} onChange={handleCancelStageChange} />
+        ) : null}
 
         {/* Backend 1000 tadan ortiq mos mijozni kesadi va buni `search_truncated`
             bilan bildiradi — aks holda "bunday buyurtma yo'q" deb o'ylanadi. */}

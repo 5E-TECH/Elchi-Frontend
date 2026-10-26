@@ -32,6 +32,7 @@ import {
   LEGACY_DATE_FROM_KEY,
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
+  ORDER_CANCEL_STAGE_URL_KEY,
   matchOrderStatusTab,
   normalizeFilterStatuses,
   normalizeOrderSearch,
@@ -236,7 +237,8 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
     const normalized = normalizeFilterStatuses(next);
     // Ikki ketma-ket URL yozuvi bir render ichida bir-birini bekor qilmasin — holat va eski kalit birga.
     write(
-      { [ORDER_STATUS_URL_KEY]: normalized.join(","), [LEGACY_ORDER_STATUS_URL_KEY]: "" },
+      // BG4: holat o'zgarsa «Bekor qilingan» tabidagi bosqich chipi ham tozalanadi.
+      { [ORDER_STATUS_URL_KEY]: normalized.join(","), [LEGACY_ORDER_STATUS_URL_KEY]: "", [ORDER_CANCEL_STAGE_URL_KEY]: "" },
       { status: normalized },
     );
   };
@@ -290,6 +292,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.fulfillmentSource]: "",
       ...(statusFromTab ? {} : { [ORDER_STATUS_URL_KEY]: "" }),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      [ORDER_CANCEL_STAGE_URL_KEY]: "",
       [ORDER_FILTER_KEYS.dateFrom]: "",
       [ORDER_FILTER_KEYS.dateTo]: "",
       [LEGACY_DATE_FROM_KEY]: "",
@@ -311,6 +314,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.fulfillmentSource]: scope.source ? (draft.fulfillmentSource ?? "") : "",
       [ORDER_STATUS_URL_KEY]: draft.statuses.join(","),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      [ORDER_CANCEL_STAGE_URL_KEY]: "",
     };
     const redux: Partial<Record<keyof typeof ORDER_FILTER_KEYS, string | string[]>> = {
       marketId: draft.marketId,
