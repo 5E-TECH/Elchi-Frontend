@@ -900,10 +900,15 @@ const MailDetailPage = () => {
   );
   const printOptions = useMailPrintOptions();
 
-  const handlePrintOrders = useCallback((mode: PrintMode, printTargets: PostOrder[]) => {
-    if (printTargets.length === 0) return;
-    printOrders(mode, printTargets);
-  }, []);
+  // 1mOjtOVC: chekda pochta kuryeri (`GET /post/:id` → `courier`, yo'q — `null`, qator chiqmaydi).
+  const postCourier = postMeta?.courier ?? null;
+  const handlePrintOrders = useCallback(
+    (mode: PrintMode, printTargets: PostOrder[]) => {
+      if (printTargets.length === 0) return;
+      printOrders(mode, printTargets, { postCourier });
+    },
+    [postCourier],
+  );
 
   const handlePrint = useCallback(
     (mode: PrintMode) => {
