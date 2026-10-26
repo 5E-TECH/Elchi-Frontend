@@ -990,10 +990,8 @@
       "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
       "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
       "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
-      "alert_one": "{{count}} ta kartada farq bor — izoh majburiy",
-      "alert_other": "{{count}} ta kartada farq bor — izoh majburiy",
-      "pending_one": "{{count}} ta karta rasmi hali tekshirilmoqda.",
-      "pending_other": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "alert": "{{count}} ta kartada farq bor — izoh majburiy",
+      "pending": "{{count}} ta karta rasmi hali tekshirilmoqda.",
       "errors": {
         "entered": "Ilovadagi qoldiqni kiriting",
         "photo": "Skrinshot majburiy — avval rasm yuklang",

@@ -990,10 +990,8 @@
       "empty": "This cashbox has no active cards — only cash is counted.",
       "loadError": "Card list did not load — the server checks it on close.",
       "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 30 seconds.",
-      "alert_one": "{{count}} card has a difference — comment required",
-      "alert_other": "{{count}} cards have a difference — comment required",
-      "pending_one": "{{count}} card image is still being checked.",
-      "pending_other": "{{count}} card images are still being checked.",
+      "alert": "Cards with a difference: {{count}} — comment required",
+      "pending": "Images still being checked: {{count}}.",
       "errors": {
         "entered": "Enter the balance from the app",
         "photo": "Screenshot required — upload an image first",

@@ -228,8 +228,9 @@ const open = (state: never = superadmin) =>
   renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: state });
 
 const openCloseDialog = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }));
-  return screen.findByRole("dialog", { name: CLOSE_SHIFT });
+  // Birinchi chizish (lazy modullar) yuklangan mashinada 1 s dan oshishi mumkin.
+  await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }, { timeout: 5000 }));
+  return screen.findByRole("dialog", { name: CLOSE_SHIFT }, { timeout: 5000 });
 };
 
 const row = (dialog: HTMLElement, cardId: string) => within(dialog).getByTestId(`shift-account-${cardId}`);
@@ -258,7 +259,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     const user = userEvent.setup();
     open();
     const dialog = await openCloseDialog(user);
-    const section = await within(dialog).findByTestId("shift-accounts-section");
+    const section = await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
     expect(within(dialog).queryByLabelText(/^Sanalgan karta/)).not.toBeInTheDocument();
     expect(within(section).getByText("Agrobank · ··1234")).toBeInTheDocument();
     // Tizim bo'yicha — jonli karta qoldig'i (GET finance/cashbox/cards).
@@ -282,7 +283,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     const user = userEvent.setup();
     const { queryClient } = open();
     const dialog = await openCloseDialog(user);
-    await within(dialog).findByTestId("shift-accounts-section");
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
 
     await user.type(within(row(dialog, "1")).getByLabelText(/^Ilovadagi qoldiq/), "2140000");
     await user.upload(within(dialog).getByTestId("shift-photo-input-1"), png());
@@ -315,7 +316,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     const user = userEvent.setup();
     open();
     const dialog = await openCloseDialog(user);
-    await within(dialog).findByTestId("shift-accounts-section");
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
     // Qoralamadagi kiritilgan qiymat tiklanadi.
     await waitFor(() => expect(within(row(dialog, "2")).getByLabelText(/^Ilovadagi qoldiq/)).toHaveValue("1 760 000"));
     const humo = row(dialog, "2");
@@ -354,7 +355,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     const user = userEvent.setup();
     open();
     const dialog = await openCloseDialog(user);
-    await within(dialog).findByTestId("shift-accounts-section");
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
     const main = row(dialog, "1");
     await user.type(within(main).getByLabelText(/^Ilovadagi qoldiq/), "2100000");
     expect(within(main).getByText("Kiritilgan qoldiq rasmdagidan (2 140 000 so'm) farq qiladi")).toBeInTheDocument();
@@ -373,7 +374,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     const user = userEvent.setup({ applyAccept: false });
     open(admin);
     const dialog = await openCloseDialog(user);
-    await within(dialog).findByTestId("shift-accounts-section");
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
     // Admin — «Sozlamalar» havolasi yo'q (faqat superadmin).
     expect(within(dialog).queryByRole("link", { name: /Sozlamalar/ })).not.toBeInTheDocument();
 
