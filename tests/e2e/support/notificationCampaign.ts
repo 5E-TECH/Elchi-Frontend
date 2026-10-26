@@ -254,9 +254,37 @@ export type CampaignMock = {
   /** `POST …/:id/cancel` — qaysi id'lar. */
   cancels: string[];
   exports: number;
+  /** KM-5: preview `sms` blokiga qo'shimcha (masalan `{ fanout_exceeded: true, max_fanout: 2 }`). */
+  smsPatch: Record<string, unknown>;
 };
 
-const previewBody = (body: Record<string, unknown>) => {
+/** KM-5: `channels` da `sms` bo'lsa — rozilik bo'yicha bo'linish (backend `audience-preview.service.ts` shakli). */
+const smsPreviewBlock = (body: Record<string, unknown>, total: number, patch: Record<string, unknown>) => {
+  const text = [body.title, body.body].filter(Boolean).join(": ");
+  const parts = text.length > 60 ? 2 : 1;
+  const recipients = Math.round(total * 0.6);
+  return {
+    exact: true,
+    message_class: "promo",
+    recipients,
+    blocked_no_consent: total - recipients - Math.round(total * 0.05),
+    skipped_invalid_phone: Math.round(total * 0.05),
+    with_valid_phone: total - Math.round(total * 0.05),
+    encoding: "GSM-7",
+    parts,
+    text_provided: Boolean(text),
+    tariff: 175,
+    estimated_cost: 175 * parts * recipients,
+    max_fanout: 20000,
+    fanout_exceeded: false,
+    sms_enabled: true,
+    opt_out_configured: true,
+    quiet_hours: { start: 1080, end: 540 },
+    ...patch,
+  };
+};
+
+const previewBody = (body: Record<string, unknown>, smsPatch: Record<string, unknown> = {}) => {
   const roles = Array.isArray(body.roles) ? (body.roles as string[]) : [];
   const byRole: Record<string, number> = {};
   if (body.include_customers) byRole.customer = CUSTOMERS;
@@ -281,6 +309,9 @@ const previewBody = (body: Record<string, unknown>) => {
       dispatch_allowed: total > 0 && total <= 5000,
       campaign_allowed: total > 0 && total <= 20000,
       warnings: [],
+      ...(Array.isArray(body.channels) && body.channels.includes("sms")
+        ? { sms: smsPreviewBlock(body, total, smsPatch) }
+        : {}),
       ...(body.with_sample
         ? {
             sample: Array.from({ length: Math.min(20, total) }, (_, index) => ({
@@ -312,6 +343,7 @@ export const mockCampaignApi = async (
     listQueries: [],
     cancels: [],
     exports: 0,
+    smsPatch: {},
   };
   let total = 0;
   let title = "";
@@ -346,7 +378,7 @@ export const mockCampaignApi = async (
       mock.previews.push(data);
       if (mock.previewOverride)
         return reply(route, mock.previewOverride.body, mock.previewOverride.status);
-      return reply(route, previewBody(data));
+      return reply(route, previewBody(data, mock.smsPatch));
     }
     if (path === "notifications/audience/segments") {
       if (method === "GET") return reply(route, { statusCode: 200, data: { items: SEGMENTS } });

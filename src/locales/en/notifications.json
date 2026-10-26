@@ -503,7 +503,9 @@
       "pushHint": "Enabled for {{value}} users",
       "pushHintUnknown": "To users with notifications on",
       "telegramOff": "Not in campaigns",
-      "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. Telegram is for market groups and is not in campaigns."
+      "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. SMS is always advertising: only to numbers with consent, within the daily limit. Telegram is for market groups and is not in campaigns.",
+      "smsHint": "{{value}} numbers have consent",
+      "smsHintUnknown": "Advertising — only to numbers with consent"
     },
     "previewNote_one": "Now · campaign · {{value}} recipient",
     "previewNote_other": "Now · campaign · {{value}} recipients",
@@ -549,7 +551,11 @@
       "forbidden": "You are not allowed to send campaigns.",
       "tooMany": "Too many requests — try again a bit later.",
       "server": "Server error — try again a bit later.",
-      "generic": "Could not create the campaign — try again a bit later."
+      "generic": "Could not create the campaign — try again a bit later.",
+      "smsDisabled": "SMS is off or not configured — the campaign was not created. Send without SMS. Nothing was sent.",
+      "smsOptOut": "The unsubscribe link for advertising SMS is not configured — the campaign was not created. Nothing was sent.",
+      "smsFanout": "For SMS the audience must not exceed {{max}} — narrow the target or send without SMS. Nothing was sent.",
+      "smsFanoutUnknown": "The audience exceeds the SMS limit — narrow the target or send without SMS. Nothing was sent."
     },
     "progress": {
       "title": "Campaign",
@@ -710,6 +716,25 @@
       "undeliveredPages": "Pages of undelivered",
       "failureFailed": "{{channel}} — failed",
       "failureSkipped": "{{channel}} — skipped"
+    },
+    "sms": {
+      "title": "SMS is sent as advertising",
+      "split": "With consent: {{recipients}} · Without consent: {{blocked}} · Invalid number: {{invalid}}",
+      "splitInexact": "The audience is large — the consent split was not counted exactly",
+      "quiet": "Goes only to numbers with consent. Not sent between {{start}} and {{end}} — moved to {{end}}.",
+      "quietUnknown": "Goes only to numbers with consent. Not sent during night-ban hours — moved to the morning.",
+      "costLater": "The cost is calculated in the confirmation window from the final text.",
+      "recipients": "SMS: with consent",
+      "blockedNoConsent": "SMS: no consent",
+      "invalidPhone": "SMS: invalid number",
+      "cost": "Estimated SMS cost",
+      "costValue": "{{value}} ({{parts}} parts)",
+      "blocked": {
+        "disabled": "SMS is off or not configured — remove the SMS channel.",
+        "optOut": "The unsubscribe link for advertising SMS is not configured — send without SMS.",
+        "fanout": "For SMS the audience must not exceed {{max}} — narrow the target or send without SMS.",
+        "fanoutUnknown": "The audience exceeds the SMS limit — narrow the target or send without SMS."
+      }
     }
   }
 }

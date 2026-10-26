@@ -11,6 +11,7 @@ import {
   getCampaigns,
   getSchedulePolicy,
   normalizeAudiencePreview,
+  normalizeAudienceSms,
   previewAudience,
 } from "./campaignApi";
 
@@ -238,5 +239,63 @@ describe("campaignApi (KM-2)", () => {
       data: new Blob([JSON.stringify({ data: { export_id: 3 } })]),
     });
     await expect(exportCampaignUndelivered("7")).resolves.toEqual({ kind: "job", exportId: "3" });
+  });
+});
+
+describe("normalizeAudienceSms (KM-5, 9D1Gl9MS)", () => {
+  it("parses the consent split, cost and gates; no block → null", () => {
+    expect(normalizeAudienceSms(undefined)).toBeNull();
+    expect(
+      normalizeAudienceSms({
+        exact: true,
+        message_class: "promo",
+        recipients: 1,
+        blocked_no_consent: 1,
+        skipped_invalid_phone: 1,
+        with_valid_phone: 2,
+        encoding: "GSM-7",
+        parts: 2,
+        text_provided: true,
+        tariff: 175,
+        estimated_cost: 350,
+        max_fanout: 2,
+        fanout_exceeded: false,
+        sms_enabled: true,
+        opt_out_configured: true,
+        quiet_hours: { start: 1080, end: 540 },
+      }),
+    ).toEqual({
+      exact: true,
+      recipients: 1,
+      blockedNoConsent: 1,
+      skippedInvalidPhone: 1,
+      withValidPhone: 2,
+      encoding: "GSM-7",
+      parts: 2,
+      textProvided: true,
+      tariff: 175,
+      estimatedCost: 350,
+      maxFanout: 2,
+      fanoutExceeded: false,
+      smsEnabled: true,
+      optOutConfigured: true,
+      quietHours: { start: 1080, end: 540 },
+    });
+  });
+
+  it("inexact (audience over the campaign cap) — counts and cost stay null; missing flags are not «on»", () => {
+    const sms = normalizeAudienceSms({ exact: false, recipients: null, estimated_cost: null, parts: 1 })!;
+    expect(sms).toMatchObject({
+      exact: false,
+      recipients: null,
+      estimatedCost: null,
+      smsEnabled: false,
+      optOutConfigured: false,
+      fanoutExceeded: false,
+      quietHours: null,
+    });
+    expect(normalizeAudiencePreview({ data: { total: 3, sms: { exact: true, recipients: 2 } } }).sms).toMatchObject({
+      recipients: 2,
+    });
   });
 });
