@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { BatchDetail } from "../../../entities/batch";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { formatBatchDisplayId } from "../lib/batchFormat";
 import BatchQrCode from "./BatchQrCode";
 
@@ -34,6 +35,9 @@ const BatchPrintSheet = ({ batch, fromName, regionName }: BatchPrintSheetProps) 
   const branchLabel = `${batch.from_branch.code ?? batch.from_branch.id} (${branchName})`;
   const region = regionName ?? batch.to_branch.region ?? batch.to_branch.name;
   const displayId = formatBatchDisplayId(batch.id);
+  const driverLine = [batch.driver?.trim(), batch.driver_phone ? formatPhone(batch.driver_phone) : ""]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="batch-print-root">
@@ -55,6 +59,19 @@ const BatchPrintSheet = ({ batch, fromName, regionName }: BatchPrintSheetProps) 
             <span>{t("print.total")}</span>
             <strong>{formatMoneyLocalized(batch.total_price, { language })}</strong>
           </div>
+          {/* 1mOjtOVC: haydovchi va avtomobil — jo'natishda yoziladi; yo'q bo'lsa qator chiqmaydi. */}
+          {driverLine ? (
+            <div style={PRINT_ROW}>
+              <span>{t("print.driver")}</span>
+              <strong>{driverLine}</strong>
+            </div>
+          ) : null}
+          {batch.vehicle_plate ? (
+            <div style={PRINT_ROW}>
+              <span>{t("print.vehicle")}</span>
+              <strong>{batch.vehicle_plate}</strong>
+            </div>
+          ) : null}
           <div style={PRINT_ROW}>
             <span>{t("print.date")}</span>
             <strong>{formatDateLocalized(batch.created_at, { language })}</strong>

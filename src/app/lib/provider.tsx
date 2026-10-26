@@ -12,6 +12,7 @@ import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
 import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
+import PasswordChangePrompt from "../providers/PasswordChangePrompt";
 import SettingsSync from "../providers/SettingsSync";
 import RealtimeSync from "../providers/RealtimeSync";
 import { PushSync } from "../../features/push-notifications";
@@ -84,6 +85,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
                   <PushSync />
                   <RealtimeSync />
                   <SessionExpiryCountdown />
+                  <PasswordChangePrompt />
                   <GlobalLoader>
                     <Suspense fallback={<PageLoader />}>{children}</Suspense>
                   </GlobalLoader>

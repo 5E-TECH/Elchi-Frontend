@@ -58,7 +58,7 @@ const openCourierForm = async () => {
   await user.click(screen.getByRole("radio", { name: /^Kuryer/ }));
   await fill(user, view.container, "fullName", "Yangi Kuryer");
   await fill(user, view.container, "phone", "901234567");
-  await fill(user, view.container, "password", "secret12");
+  await fill(user, view.container, "password", "Secret-2026x");
   return { user, container: view.container };
 };
 

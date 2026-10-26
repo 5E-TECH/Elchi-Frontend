@@ -269,7 +269,6 @@
         "phone": "Phone",
         "phonePlaceholder": "XX XXX XX XX",
         "password": "Password",
-        "passwordHint": "At least 4 characters",
         "showPassword": "Show password",
         "hidePassword": "Hide password",
         "login": "Login",
@@ -296,8 +295,7 @@
       },
       "errors": {
         "marketNameRequired": "Enter the market name",
-        "loginRequired": "Login is required",
-        "passwordMin": "Enter at least 4 characters"
+        "loginRequired": "Login is required"
       },
       "saving": "Saving…"
     },

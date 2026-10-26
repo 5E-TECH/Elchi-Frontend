@@ -1,5 +1,6 @@
 import type { CreateMarketOperatorRequest } from "../../../entities/market-operator";
 import { isCompleteUzbekistanPhone } from "../../../shared/lib/phone";
+import { checkPasswordPolicy } from "../../../shared/lib/passwordPolicy";
 
 export type MarketOperatorCreateFormValues = {
   name: string;
@@ -13,13 +14,18 @@ export type CreateOperatorErrorCode =
   | "phoneRequired"
   | "phoneTaken"
   | "passwordRequired"
-  | "passwordShort";
+  | "passwordShort"
+  | "passwordSpaces"
+  | "passwordLong";
 export type CreateOperatorErrors = Partial<Record<keyof MarketOperatorCreateFormValues, CreateOperatorErrorCode>>;
 
-/** Backend `CreateMarketOperatorDto`: ism 2..100, parol kamida 4 belgi, telefon — UZ. */
+/**
+ * Backend `CreateMarketOperatorDto`: ism 2..100, telefon — UZ; parol — NDmZMzCP siyosati (market operatori xodim
+ * emas — kamida 8 belgi, `shared/lib/passwordPolicy`).
+ */
 export const NAME_MIN = 2;
 export const NAME_MAX = 100;
-export const PASSWORD_MIN_LENGTH = 4;
+export const OPERATOR_ROLE = "market_operator";
 
 const normalizeName = (value: string) => value.trim().replace(/\s+/g, " ");
 
@@ -47,7 +53,10 @@ export const validateCreateOperator = (values: MarketOperatorCreateFormValues): 
   if (!name) errors.name = "nameRequired";
   else if (name.length < NAME_MIN || name.length > NAME_MAX) errors.name = "nameLength";
   if (!isCompleteUzbekistanPhone(values.phone_number)) errors.phone_number = "phoneRequired";
-  if (!values.password.trim()) errors.password = "passwordRequired";
-  else if (values.password.length < PASSWORD_MIN_LENGTH) errors.password = "passwordShort";
+  const passwordIssue = checkPasswordPolicy(values.password, OPERATOR_ROLE);
+  if (passwordIssue === "required") errors.password = "passwordRequired";
+  else if (passwordIssue === "tooShort") errors.password = "passwordShort";
+  else if (passwordIssue === "edgeSpaces") errors.password = "passwordSpaces";
+  else if (passwordIssue === "tooLong") errors.password = "passwordLong";
   return errors;
 };

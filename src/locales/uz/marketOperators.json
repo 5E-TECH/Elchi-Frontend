@@ -87,8 +87,8 @@
     "namePlaceholder": "Masalan, Nodira Aliyeva",
     "phone": "Telefon",
     "password": "Parol",
-    "passwordPlaceholder": "Kamida 4 belgi",
-    "passwordHint": "Kamida 4 belgi. Operator shu telefon va parol bilan tizimga kiradi.",
+    "passwordPlaceholder": "Kamida 8 belgi",
+    "passwordHint": "Kamida 8 belgi. Oddiy, ketma-ket yoki telefon raqamiga teng parol qabul qilinmaydi. Operator shu telefon va parol bilan tizimga kiradi.",
     "showPassword": "Parolni ko'rsatish",
     "hidePassword": "Parolni yashirish",
     "commission": "Komissiya",
@@ -103,7 +103,9 @@
       "phoneRequired": "Telefon raqamni to'liq kiriting",
       "phoneTaken": "Bu telefon raqam band — boshqa raqam kiriting",
       "passwordRequired": "Parolni kiriting",
-      "passwordShort": "Parol kamida 4 belgi bo'lsin"
+      "passwordShort": "Parol kamida 8 belgi bo'lsin",
+      "passwordSpaces": "Parol boshida yoki oxirida bo'shliq bo'lmasin",
+      "passwordLong": "Parol juda uzun — ko'pi bilan 72 belgi"
     },
     "failed": "Operator qo'shilmadi",
     "failedText": "Ma'lumotlarni tekshirib, qaytadan urinib ko'ring.",

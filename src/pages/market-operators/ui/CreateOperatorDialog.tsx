@@ -22,6 +22,7 @@ import {
 } from "../model/createMarketOperator";
 import { httpStatusOf } from "../model/httpStatus";
 import { useCommissionErrorText, useCommissionText } from "../model/useCommissionText";
+import { getPasswordPolicyServerMessage } from "../../../shared/lib/passwordPolicy";
 import { CommissionTypeSwitch, CommissionValueInput } from "./CommissionParts";
 
 const EMPTY: MarketOperatorCreateFormValues = { name: "", phone_number: UZBEKISTAN_PHONE_PREFIX, password: "" };
@@ -59,6 +60,8 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
   const [commissionCode, setCommissionCode] = useState<CommissionInputError | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** NDmZMzCP: server rad etgan parol matni (oddiy / ketma-ket / telefonga teng) — parol o'zgarguncha. */
+  const [serverPasswordError, setServerPasswordError] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
   // Har ochilishda toza forma (yopilgan oynada parol qolmasin) — render paytida, effektsiz.
@@ -72,6 +75,7 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
       setErrors({});
       setCommissionCode(null);
       setShowPassword(false);
+      setServerPasswordError(null);
     }
   }
 
@@ -83,6 +87,7 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
   const setField = (field: keyof MarketOperatorCreateFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (field === "password") setServerPasswordError(null);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,8 +106,11 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
       created = await createOperator.mutateAsync(buildCreateMarketOperatorPayload(values));
     } catch (error) {
       const status = httpStatusOf(error);
+      const passwordMessage = getPasswordPolicyServerMessage(error);
       if (status === 409) setErrors({ phone_number: "phoneTaken" });
       else if (status === 403) notify.error(t("create.blocked"));
+      // NDmZMzCP: parol siyosati 400 — server matni (o'zbekcha) parol maydoni ostida.
+      else if (passwordMessage) setServerPasswordError(passwordMessage);
       else notify.error(t("create.failed"), { description: t("create.failedText") });
       submittingRef.current = false;
       setBusy(false);
@@ -188,7 +196,7 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
         label={t("create.password")}
         required
         hint={t("create.passwordHint")}
-        error={errorText("password")}
+        error={errorText("password") ?? serverPasswordError ?? undefined}
       >
         <TextInput
           type={showPassword ? "text" : "password"}

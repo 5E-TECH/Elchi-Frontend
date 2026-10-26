@@ -269,7 +269,6 @@
         "phone": "Телефон",
         "phonePlaceholder": "XX XXX XX XX",
         "password": "Пароль",
-        "passwordHint": "Не менее 4 символов",
         "showPassword": "Показать пароль",
         "hidePassword": "Скрыть пароль",
         "login": "Логин",
@@ -296,8 +295,7 @@
       },
       "errors": {
         "marketNameRequired": "Введите название маркета",
-        "loginRequired": "Логин не указан",
-        "passwordMin": "Введите не менее 4 символов"
+        "loginRequired": "Логин не указан"
       },
       "saving": "Сохранение…"
     },

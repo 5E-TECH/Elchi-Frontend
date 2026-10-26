@@ -304,5 +304,9 @@
       "rowBadge": "Takroriy raqam",
       "rowBadgeTitle": "Shu raqamga yana: {{ids}}"
     }
+  },
+  "receipt": {
+    "contact": "Muammo bo'lsa",
+    "courier": "Kuryer"
   }
 }

@@ -1,10 +1,23 @@
 import type { PostOrder } from "../../../../entities/mails";
 import i18n from "../../../../i18n";
 import type { ApiOrder } from "../../../new_orders/model/apiOrder";
+import {
+  formatReceiptPerson,
+  getReceiptContactPhone,
+} from "../../../new_orders/components/lib/receiptContact";
 
 export type PrintMode = "browser" | "pdf_100x60" | "thermal_80mm";
 
-const toApiOrder = (order: PostOrder): ApiOrder => ({
+/** 1mOjtOVC: pochta kuryeri (`GET /post/:id` → `courier`) — chekda «Kuryer» qatori. */
+export interface PrintContext {
+  postCourier?: { name?: string | null; phone_number?: string | null } | null;
+}
+
+type PrintableOrder = ApiOrder & {
+  courier?: { name?: string | null; phone_number?: string | null } | null;
+};
+
+const toApiOrder = (order: PostOrder, context: PrintContext = {}): PrintableOrder => ({
   id: order.id,
   // `order_number` PostOrder tipida e'lon qilinmagan, ammo enrich qilingan
   // payloadда kelishi mumkin — chop etish uchun himoyalangan holda o'tkazamiz.
@@ -41,6 +54,10 @@ const toApiOrder = (order: PostOrder): ApiOrder => ({
   },
   district: order.district,
   region: order.region,
+  operator_phone: order.operator_phone ?? null,
+  secondary_operator_phone: order.secondary_operator_phone ?? null,
+  market: order.market ?? null,
+  courier: context.postCourier ?? null,
 });
 
 const escapeHtml = (value: string): string => {
@@ -90,7 +107,7 @@ const printScript = `
   window.onafterprint = () => window.close();
 `;
 
-const openThermalPrintWindow = (orders: PostOrder[]) => {
+const openThermalPrintWindow = (orders: PostOrder[], context: PrintContext = {}) => {
   const win = window.open("", "_blank", "noopener,width=520,height=720");
   if (!win) return;
 
@@ -105,6 +122,16 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
 
     const total = new Intl.NumberFormat(i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ").format(Number(o.total_price ?? 0));
     const fullAddress = [region, district ? `${district} tumani` : "", address].filter(Boolean).join(", ");
+    // 1mOjtOVC: «Muammo bo'lsa» — operator telefoni(lari), u bo'lmasa market; kuryer — pochta kuryeri.
+    // Qiymat yo'q — qator chiqmaydi.
+    const contact = getReceiptContactPhone(o);
+    const courier = formatReceiptPerson(context.postCourier);
+    const contactRow = contact
+      ? `<div class="row"><span>${escapeHtml(i18n.t("mails:receipt.contact"))}</span><strong>${escapeHtml(contact)}</strong></div>`
+      : "";
+    const courierRow = courier
+      ? `<div class="row"><span>${escapeHtml(i18n.t("mails:receipt.courier"))}</span><strong>${escapeHtml(courier)}</strong></div>`
+      : "";
 
     return `
       <section class="ticket">
@@ -116,6 +143,8 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
         <div class="row"><span>${escapeHtml(i18n.t("common:phone"))}</span><strong>${phone}</strong></div>
         <div class="row"><span>${escapeHtml(i18n.t("common:address"))}</span><strong>${escapeHtml(fullAddress || "—")}</strong></div>
         <div class="row"><span>${escapeHtml(i18n.t("orders:market"))}</span><strong>${market}</strong></div>
+        ${contactRow}
+        ${courierRow}
         <div class="hr"></div>
         <div class="row total"><span>${escapeHtml(i18n.t("common:total"))}</span><strong>${escapeHtml(total)} ${escapeHtml(i18n.t("orders:currency"))}</strong></div>
       </section>
@@ -157,15 +186,19 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
   win.document.close();
 };
 
-export const printOrders = async (mode: PrintMode, orders: PostOrder[]) => {
+export const printOrders = async (
+  mode: PrintMode,
+  orders: PostOrder[],
+  context: PrintContext = {},
+) => {
   if (orders.length === 0) return;
-  if (mode === "thermal_80mm") return openThermalPrintWindow(orders);
+  if (mode === "thermal_80mm") return openThermalPrintWindow(orders, context);
   // jsPDF (~128 KB gzip) faqat chop etish bosilganda yuklanadi — ilgari bu
   // statik import uni /mails orqali har sahifaga tortardi (z4uyw52T).
   const { openOrdersLabelBrowserPrint, openOrdersLabelPdf } = await import(
     "../../../new_orders/components/lib/printLabelPdf"
   );
-  const printableOrders = orders.map(toApiOrder);
+  const printableOrders = orders.map((order) => toApiOrder(order, context));
   if (mode === "pdf_100x60") return openOrdersLabelPdf(printableOrders);
   return openOrdersLabelBrowserPrint(printableOrders);
 };

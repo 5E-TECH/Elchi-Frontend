@@ -269,7 +269,6 @@
         "phone": "Telefon",
         "phonePlaceholder": "XX XXX XX XX",
         "password": "Parol",
-        "passwordHint": "Kamida 4 ta belgi",
         "showPassword": "Parolni ko'rsatish",
         "hidePassword": "Parolni yashirish",
         "login": "Login",
@@ -296,8 +295,7 @@
       },
       "errors": {
         "marketNameRequired": "Market nomini kiriting",
-        "loginRequired": "Login kiritilmadi",
-        "passwordMin": "Kamida 4 ta belgi kiriting"
+        "loginRequired": "Login kiritilmadi"
       },
       "saving": "Saqlanmoqda…"
     },

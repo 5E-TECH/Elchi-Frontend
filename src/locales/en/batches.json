@@ -111,6 +111,8 @@
     "region": "REGION:",
     "orders": "ORDERS:",
     "total": "TOTAL:",
-    "date": "DATE:"
+    "date": "DATE:",
+    "driver": "DRIVER:",
+    "vehicle": "VEHICLE:"
   }
 }
