@@ -14,7 +14,7 @@ const kpi = (overrides: Record<string, unknown> = {}) => ({
 
 const render = (data: ReturnType<typeof kpi>, previous?: ReturnType<typeof kpi>) =>
   renderWithProviders(
-    <DeliveryQualityCard description="Bugun" kpi={data} previous={previous} loading={false} allTime={false} accepted={0} cancelled={0} />,
+    <DeliveryQualityCard description="Bugun" kpi={data} previous={previous} loading={false} accepted={0} cancelled={0} />,
   );
 
 describe("DeliveryQualityCard — SLA (yrLt5oMi)", () => {

@@ -30,14 +30,16 @@ vi.mock("recharts", () => ({
   Tooltip: () => null,
 }));
 
+// l9NNdsCH: grafik va xulosa — «Sof foyda» (`chart.profitValues`, `summary.totalProfit`); daromad (`values`) — boshqa
+// sonlar, ular chizilmasligi tekshiriladi.
 const current = {
   data: {
-    summary: { totalRevenue: 150000, totalOrders: 3, avgRevenue: 10000 },
-    chart: { labels: ["01.09", "02.09"], values: [50000, 100000] },
+    summary: { totalRevenue: 1_500_000, totalOrders: 3, avgRevenue: 100000, totalProfit: 150000 },
+    chart: { labels: ["01.09", "02.09"], values: [500000, 1_000_000], profitValues: [50000, 100000] },
     // Backend bo'laklari (2Fj7iw1k): «Jadval»dagi buyurtmalar soni shu yerdan.
     data: [
-      { period: "2026-09-01", label: "01.09", revenue: 50000, ordersCount: 1 },
-      { period: "2026-09-02", label: "02.09", revenue: 100000, ordersCount: 2 },
+      { period: "2026-09-01", label: "01.09", revenue: 500000, profit: 50000, ordersCount: 1 },
+      { period: "2026-09-02", label: "02.09", revenue: 1_000_000, profit: 100000, ordersCount: 2 },
     ],
     finance: {
       currentSituation: 22_543_000,
@@ -50,12 +52,12 @@ const current = {
 };
 const previous = {
   data: {
-    summary: { totalRevenue: 100000, totalOrders: 2, avgRevenue: 5000 },
-    chart: { labels: ["17.08", "18.08"], values: [40000, 60000] },
+    summary: { totalRevenue: 1_000_000, totalOrders: 2, avgRevenue: 50000, totalProfit: 100000 },
+    chart: { labels: ["17.08", "18.08"], values: [400000, 600000], profitValues: [40000, 60000] },
   },
 };
 
-const revenueMetric = () => screen.getByText("Daromad · 15 kun").parentElement as HTMLElement;
+const revenueMetric = () => screen.getByText("Sof foyda · 15 kun").parentElement as HTMLElement;
 
 describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
   beforeEach(() => {
@@ -114,7 +116,7 @@ describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
       data:
         params.start_day === "2026-09-01"
           ? current
-          : { data: { ...previous.data, summary: { ...previous.data.summary, totalRevenue: 200000 } } },
+          : { data: { ...previous.data, summary: { ...previous.data.summary, totalProfit: 200000 } } },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
@@ -157,7 +159,7 @@ describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
       true,
       "admin:1",
     );
-    expect(screen.getByText("O'rtacha haftalik daromad")).toBeInTheDocument();
+    expect(screen.getByText("O'rtacha haftalik foyda")).toBeInTheDocument();
   });
 
   it("Y o'qi ixcham sonlarda (telefonda tor qoladi)", async () => {
@@ -173,8 +175,8 @@ describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
           ? current
           : {
               data: {
-                summary: { totalRevenue: 100000, totalOrders: 2, avgRevenue: 5000 },
-                chart: { labels: ["17.08"], values: [40000] },
+                summary: { totalRevenue: 100000, totalOrders: 2, avgRevenue: 5000, totalProfit: 40000 },
+                chart: { labels: ["17.08"], values: [400000], profitValues: [40000] },
               },
             },
       isLoading: false,
@@ -276,6 +278,84 @@ describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
     }));
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
     expect(screen.queryByTestId("revenue-chart")).not.toBeInTheDocument();
+  });
+});
+
+describe("FinancialAnalysis — «Sof foyda» trendi (l9NNdsCH) va «Barchasi» (XdKajqLe)", () => {
+  beforeEach(() => {
+    window.localStorage.removeItem("dashboard-comparison");
+    getRevenueMock.mockReset();
+  });
+
+  it("grafik va xulosa — «Sof foyda» (daromad emas), sarlavha izohi formula, o'rtacha — bandlar bo'yicha foyda", async () => {
+    getRevenueMock.mockImplementation((params: { start_day: string }) => ({
+      data: params.start_day === "2026-09-01" ? current : previous,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    const user = userEvent.setup();
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+
+    expect(screen.getByText("Sof foyda = market tarifi − kuryer va filial ulushi")).toBeInTheDocument();
+    expect(revenueMetric()).toHaveTextContent("150 ming so'm");
+    // 150 000 / 2 band = 75 000 («O'rtacha kunlik foyda»), oldingi 100 000 / 2 = 50 000 → +50%.
+    const average = screen.getByText("O'rtacha kunlik foyda").parentElement as HTMLElement;
+    expect(average).toHaveTextContent("75 ming so'm");
+    expect(within(average).getByText("+50%")).toBeInTheDocument();
+    expect(screen.queryByText(/1,5 mln/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    const table = screen.getByRole("table", { name: "Moliyaviy tahlil" });
+    expect(within(table).getByText("100 000 so'm")).toBeInTheDocument();
+    expect(within(table).queryByText("1 000 000 so'm")).not.toBeInTheDocument();
+  });
+
+  it("`chart.profitValues` yo'q — `data[].profit` dan; foyda umuman yo'q (eski javob) — daromad «Sof foyda» deb chizilmaydi", async () => {
+    getRevenueMock.mockImplementation(() => ({
+      data: { data: { ...current.data, summary: { ...current.data.summary, totalProfit: undefined }, chart: { labels: ["01.09", "02.09"], values: [500000, 1_000_000] } } },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    const view = renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    expect(revenueMetric()).toHaveTextContent("150 ming so'm");
+    expect(await screen.findByTestId("revenue-chart")).toBeInTheDocument();
+    view.unmount();
+
+    getRevenueMock.mockImplementation(() => ({
+      data: { data: { summary: { totalRevenue: 1_500_000, totalOrders: 3, avgRevenue: 100000 }, chart: { labels: ["01.09"], values: [1_500_000] } } },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    expect(screen.getByText("Bu davr uchun foyda ma'lumoti yo'q")).toBeInTheDocument();
+    expect(screen.queryByTestId("revenue-chart")).not.toBeInTheDocument();
+  });
+
+  it("«Barchasi» — `all: true` (sukut oylik), oldingi davr so'ralmaydi, «Solishtirish» yo'q; `clamped` — «oxirgi 366 kun» izohi", () => {
+    getRevenueMock.mockImplementation(() => ({
+      data: {
+        data: {
+          ...current.data,
+          appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-21" },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    renderWithProviders(<FinancialAnalysis startDate="1970-01-01" endDate="2026-10-21" allTime analyticsScope="admin:1" />);
+
+    expect(getRevenueMock).toHaveBeenCalledWith({ period: "monthly", all: true }, true, "admin:1");
+    expect(getRevenueMock.mock.calls.every(([params, enabled]) => !enabled || (params as { all?: boolean }).all === true)).toBe(true);
+    expect(screen.getByRole("radio", { name: "Oylik" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("switch", { name: "Oldingi davr bilan solishtirish" })).not.toBeInTheDocument();
+    expect(screen.getByText("Sof foyda · barcha davr")).toBeInTheDocument();
+    expect(screen.getByText("«Barchasi» — faqat oxirgi 366 kun hisobga olindi: 21.10.2025 – 21.10.2026")).toBeInTheDocument();
+    expect(screen.getByText("Joriy davr · 21.10.2025 – 21.10.2026")).toBeInTheDocument();
+    expect(screen.queryByText(/1970/)).not.toBeInTheDocument();
   });
 });
 

@@ -28,9 +28,6 @@
     "profit": "Sof foyda",
     "courier_profit": "Foyda"
   },
-  "performance": {
-    "couriers_all_time_unavailable": "«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang."
-  },
   "periods": {
     "daily": "Kunlik",
     "weekly": "Haftalik",
@@ -150,7 +147,9 @@
       "courierLabel": "Ko'rsatkichlar, {{period}}",
       "totalRevenue": "Jami daromad",
       "netProfit": "Sof foyda",
-      "avgOrder": "O'rtacha buyurtma"
+      "avgOrder": "O'rtacha buyurtma",
+      "lostRevenue": "Yo'qotilgan daromad",
+      "sparkAria": "{{label}}, oxirgi {{days}} kun: kuniga {{min}} – {{max}}, oxirgi kun {{last}}"
     },
     "success": {
       "title": "Muvaffaqiyat darajasi",
@@ -162,7 +161,10 @@
       "gaugeTotal": "Sotilgan / jami buyurtmalar",
       "threshold": "Yaxshi chegarasi · 70%",
       "zonesNote": "Zonalar: 40% dan kam — past · 40–70% — o'rtacha · 70% va undan yuqori — yaxshi",
-      "aria": "Muvaffaqiyat darajasi: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta"
+      "aria": "Muvaffaqiyat darajasi: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta",
+      "target": "Maqsad · {{value}}",
+      "subTarget": "{{period}} · maqsad {{target}}",
+      "ariaTarget": "Muvaffaqiyat darajasi: {{rate}}, maqsad {{target}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta"
     },
     "status": {
       "title": "Buyurtmalar holati",
@@ -183,9 +185,7 @@
       "onTimeUnmeasured": "O'lchanmagan — bu davrda yetkazish yo'q",
       "cancelRate": "Bekor qilish darajasi",
       "duration": "Yetkazish vaqti",
-      "durationHint": "qabuldan sotuvgacha",
-      "allTimeTitle": "Barcha davr uchun sifat ko'rsatkichlari hisoblanmaydi",
-      "allTimeHint": "Bugun, hafta yoki oyni tanlang"
+      "durationHint": "qabuldan sotuvgacha"
     },
     "results": {
       "title": "Yetkazish natijalari",
@@ -196,16 +196,15 @@
     },
     "finance": {
       "title": "Moliyaviy tahlil",
-      "subtitle": "Daromad · oldingi davr bilan solishtirish",
+      "subtitle": "Sof foyda = market tarifi − kuryer va filial ulushi",
       "periodLabel": "Grafik davri",
       "viewLabel": "Moliyaviy tahlil ko'rinishi",
-      "revenueDays": "Daromad · {{count}} kun",
       "orders": "Buyurtmalar",
       "average": {
-        "daily": "O'rtacha kunlik daromad",
-        "weekly": "O'rtacha haftalik daromad",
-        "monthly": "O'rtacha oylik daromad",
-        "yearly": "O'rtacha yillik daromad"
+        "daily": "O'rtacha kunlik foyda",
+        "weekly": "O'rtacha haftalik foyda",
+        "monthly": "O'rtacha oylik foyda",
+        "yearly": "O'rtacha yillik foyda"
       },
       "previousValue": "oldingi: {{value}}",
       "current": "Joriy",
@@ -216,7 +215,12 @@
       "compareAria": "Oldingi davr bilan solishtirish",
       "tableDate": "Sana",
       "chartAria": "Daromad, {{range}}",
-      "empty": "Bu davr uchun daromad ma'lumoti yo'q"
+      "empty": "Bu davr uchun daromad ma'lumoti yo'q",
+      "profitDays": "Sof foyda · {{count}} kun",
+      "profitAll": "Sof foyda · barcha davr",
+      "profitChartAria": "Sof foyda, {{range}}",
+      "profitEmpty": "Bu davr uchun foyda ma'lumoti yo'q",
+      "clampedNote": "«Barchasi» — faqat oxirgi {{days}} kun hisobga olindi: {{range}}"
     },
     "cash": {
       "title": "Kassa balansi",
@@ -243,7 +247,6 @@
       "limited": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin",
       "emptyTitle": "Reyting uchun ma'lumot hali kam",
       "emptyHint": "Buyurtmalar ko'paygach reyting shu yerda chiqadi",
-      "couriersAllTimeTitle": "Barcha davr uchun kuryerlar kesimi hisoblanmaydi",
       "you": "Siz",
       "yourPlace": "Sizning o'rningiz",
       "place": "{{rank}}-o'rin",
@@ -314,6 +317,9 @@
       "soldShare": "{{rate}} sotildi",
       "showAll": "Barcha {{count}} hudud",
       "empty": "Bu davrda hududlar bo'yicha buyurtma yo'q"
+    },
+    "allTime": {
+      "clamped": "oxirgi {{days}} kun"
     }
   },
   "v2Market": {

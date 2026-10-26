@@ -291,6 +291,12 @@ export const API_ENDPOINTS = {
     REPORT_ORDERS: "analytics/reports/orders",
   },
 
+  // ── AI xarajat paneli (Celz3rKJ; faqat SUPERADMIN / ADMIN) — «Balans → AI xarajat» ──
+  AI_USAGE: {
+    DASHBOARD: "ai-usage/dashboard", // GET ?fromDate&toDate (YYYY-MM-DD, Toshkent; sukut — oxirgi 30 kun)
+    AI_ORDERS: "ai-usage/ai-orders", // GET ?fromDate&toDate&limit (1..100)
+  },
+
   // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──
   PRODUCTS: {
     BASE: "product", // GET list / POST create

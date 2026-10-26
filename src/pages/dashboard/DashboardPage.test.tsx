@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import DashboardPage from "./DashboardPage";
+import { normalizeDashboardResponse } from "../../entities/dashboard";
 import { renderWithProviders } from "../../test/test-utils";
 import { getPreviousPeriodRange, getThisWeekRange, getTodayRange } from "../../shared/lib/dateRange";
 
@@ -118,7 +119,7 @@ describe("DashboardPage (v2)", () => {
     expect(screen.getByRole("combobox", { name: "Yilni tanlash" })).toBeInTheDocument();
   });
 
-  it("ko'rsatkichlar haqiqiy kartalarda: KPI, muvaffaqiyat, holat, sifat (Yo'qotilgan daromad yo'q)", () => {
+  it("ko'rsatkichlar haqiqiy kartalarda: KPI, muvaffaqiyat, holat, sifat (eski javobda «Yo'qotilgan daromad» — «—»)", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
@@ -127,7 +128,10 @@ describe("DashboardPage (v2)", () => {
     expect(kpis).toHaveTextContent("ming so'm");
     expect(kpis).toHaveTextContent("480");
     expect(kpis).toHaveTextContent("96 000");
-    expect(screen.queryByText("Yo'qotilgan daromad")).not.toBeInTheDocument();
+    // l9NNdsCH: 4-KPI — backend `lostRevenue` bermasa 0 emas, «—».
+    const lost = kpis.querySelector('[data-kpi="lostRevenue"]') as HTMLElement;
+    expect(within(lost).getByText("Yo'qotilgan daromad")).toBeInTheDocument();
+    expect(within(lost).getByText("—")).toBeInTheDocument();
     expect(screen.queryByText("Buyurtmalar vaqti")).not.toBeInTheDocument();
 
     // 5 / 12 = 41,7% — o'rtacha zona
@@ -153,32 +157,131 @@ describe("DashboardPage (v2)", () => {
     expect(screen.getByRole("heading", { name: "Moliyaviy tahlil" })).toBeInTheDocument();
   });
 
-  it("oldingi teng davr (kecha) joriy javobdan keyin so'raladi — delta «kechaga nisbatan»", () => {
-    routeDashboard({ data: { orders: ordersFixture } }, { data: { orders: { ...ordersFixture, totalRevenue: 800000 } } });
+  it("DwrMygfo: oldingi davr joriy javobning `previous` bo'lagidan — ikkinchi so'rov yo'q, delta «kechaga nisbatan»", () => {
+    routeDashboard({
+      data: {
+        orders: { ...ordersFixture, lostRevenue: 150000 },
+        previous: { ...ordersFixture, totalRevenue: 800000, profit: 400000, lostRevenue: 200000, from: null, to: null },
+        series: null,
+      },
+    });
+    getKpiMock.mockReturnValue(
+      query({
+        data: {
+          averageOrderValue: 96000,
+          averageFulfillmentHours: 5.6667,
+          onTimeRate: 80,
+          cancellationRate: 16.67,
+          courierEfficiency: 0,
+          marketRating: [],
+          previous: { averageOrderValue: 80000, averageFulfillmentHours: 6, onTimeRate: 75, deliveryCount: 4, cancellationRate: 20 },
+        },
+      }),
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
-    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: yesterday.from, end_day: yesterday.to }, true, "admin:unknown");
+    // Oldingi davr uchun ikkinchi og'ir so'rov yuborilmaydi (dashboard ham, kpi ham).
+    for (const mock of [getDashboardMock, getKpiMock]) {
+      expect(mock.mock.calls.some(([params, enabled]) => enabled && (params as { start_day?: string }).start_day === yesterday.from)).toBe(false);
+    }
     const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
-    // 960 000 / 800 000 → +20%
-    expect(within(kpis).getByText("+20%")).toBeInTheDocument();
-    expect(within(kpis).getAllByText("kechaga nisbatan").length).toBeGreaterThan(0);
+    // Daromad 960 000 / 800 000 → +20%; foyda 480 000 / 400 000 → +20%; o'rtacha 96 000 / 80 000 → +20%.
+    expect(within(kpis).getAllByText("+20%")).toHaveLength(3);
+    expect(within(kpis).getAllByText("kechaga nisbatan").length).toBe(4);
+    // Yo'qotilgan daromad 150 000 / 200 000 → −25%, kamayish — yaxshi (yashil).
+    const lost = kpis.querySelector('[data-kpi="lostRevenue"]') as HTMLElement;
+    expect(lost).toHaveTextContent("150");
+    const lostDelta = lost.querySelector("[data-stat-delta]") as HTMLElement;
+    expect(lostDelta).toHaveTextContent("−25%");
+    expect(lostDelta).toHaveAttribute("data-quality", "good");
+    // Muvaffaqiyat: kecha 5/12 = 41,7% (oldingi davr `previous` dan).
+    expect(within(sectionOf("Muvaffaqiyat darajasi")).getByText(/Kecha · 41,7%/)).toBeInTheDocument();
   });
 
-  it("«Barchasi» → `all: true`; kpi/revenue so'ralmaydi, sifat o'rnida izoh, kuryerlar kesimi yo'q", async () => {
+  it("DwrMygfo: 14 kunlik seriya — KPI kartalarida sparkline (o'rtacha buyurtma — kpi seriyasidan)", () => {
+    const days = Array.from({ length: 14 }, (_, index) => `2026-10-${String(index + 10).padStart(2, "0")}`);
+    routeDashboard({
+      data: {
+        orders: { ...ordersFixture, lostRevenue: 0 },
+        previous: null,
+        series: days.map((date, index) => ({
+          date,
+          acceptedCount: 10,
+          soldAndPaid: 5,
+          cancelled: 1,
+          totalRevenue: 100000 * (index + 1),
+          profit: 50000 * (index + 1),
+          lostRevenue: index % 2 ? 0 : 20000,
+        })),
+      },
+    });
+    getKpiMock.mockReturnValue(
+      query({
+        data: {
+          averageOrderValue: 96000,
+          averageFulfillmentHours: 0,
+          onTimeRate: 0,
+          cancellationRate: 0,
+          courierEfficiency: 0,
+          marketRating: [],
+          series: days.map((date, index) => ({ date, averageOrderValue: 90000 + index * 1000, averageFulfillmentHours: 0, onTimeRate: 0, deliveryCount: 0, cancellationRate: 0 })),
+        },
+      }),
+    );
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    const sparks = kpis.querySelectorAll("[data-sparkline]");
+    expect(sparks).toHaveLength(4);
+    expect(within(kpis).getByRole("img", { name: /^Jami daromad, oxirgi 14 kun: kuniga 100 ming so'm – 1,4 mln so'm, oxirgi kun 1,4 mln so'm$/ })).toBeInTheDocument();
+    expect(within(kpis).getByRole("img", { name: /^O'rtacha buyurtma, oxirgi 14 kun: kuniga 90 000 so'm – 103 000 so'm/ })).toBeInTheDocument();
+    // Oldingi davr yo'q — delta va «kechaga nisbatan» yo'q.
+    expect(within(kpis).queryByText("kechaga nisbatan")).not.toBeInTheDocument();
+  });
+
+  it("l9NNdsCH: maqsad `targets.successRate` — «Maqsad · 80%» va izohda «maqsad 80%» («Yaxshi chegarasi · 70%» o'rniga)", () => {
+    routeDashboard({ data: { orders: ordersFixture, targets: { successRate: 80 } } });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const success = sectionOf("Muvaffaqiyat darajasi");
+    expect(within(success).getByText("Bugun · maqsad 80%")).toBeInTheDocument();
+    expect(within(success).getByText("Maqsad · 80%")).toBeInTheDocument();
+    expect(within(success).queryByText("Yaxshi chegarasi · 70%")).not.toBeInTheDocument();
+    expect(success.querySelector("[data-gauge-target]")).not.toBeNull();
+  });
+
+  it("XdKajqLe: «Barchasi» → dashboard, kpi va revenue `all: true` bilan; sifat, moliyaviy tahlil va kassa chiziladi", async () => {
     const user = userEvent.setup();
+    getKpiMock.mockImplementation((params: { all?: boolean }) =>
+      query({
+        data: {
+          averageOrderValue: 96000,
+          averageFulfillmentHours: 5.6667,
+          onTimeRate: 80,
+          cancellationRate: 16.67,
+          courierEfficiency: 0,
+          marketRating: [],
+          ...(params?.all ? { appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-21" } } : {}),
+        },
+      }),
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
 
     expect(getDashboardMock).toHaveBeenCalledWith({ all: true }, true, "admin:unknown");
-    expect(getKpiMock).toHaveBeenLastCalledWith({ all: true }, false, "admin:unknown");
+    expect(getKpiMock).toHaveBeenLastCalledWith({ all: true }, true, "admin:unknown");
+    expect(getRevenueMock).toHaveBeenCalledWith({ period: "monthly", all: true }, true, "admin:unknown");
     expect(screen.getByText("Barcha davr ko'rsatkichlari · butun kompaniya bo'yicha")).toBeInTheDocument();
-    expect(screen.getByText("Barcha davr uchun sifat ko'rsatkichlari hisoblanmaydi")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
-    expect(screen.getByText("Barcha davr uchun kuryerlar kesimi hisoblanmaydi")).toBeInTheDocument();
-    expect(
-      screen.getByText("«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang."),
-    ).toBeInTheDocument();
+    const quality = sectionOf("Yetkazish sifati");
+    expect(quality).toHaveTextContent("Barcha davr · oxirgi 366 kun");
+    expect(quality).toHaveTextContent("80%");
+    expect(screen.getByRole("heading", { name: "Moliyaviy tahlil" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kassa balansi" })).toBeInTheDocument();
+    // O'rtacha buyurtma «—» emas — qiymat.
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(kpis.querySelector('[data-kpi="average"]')).toHaveTextContent("96 000");
+    expect(screen.queryByText(/kuryerlar kesimi hisoblanmaydi/)).not.toBeInTheDocument();
   });
 
   it("tya24blo: «Barchasi» va backend oraliqni qisqartirgan (`clamped`) — sana maydonida haqiqiy oraliq", async () => {
@@ -708,12 +811,30 @@ describe("DashboardPage (v2) — qisman nosozlik: bo'lak 0 emas, xato holati (Vk
     expect(refetchKpi).toHaveBeenCalledTimes(1);
   });
 
-  it("oldingi davr `orders` olinmagan bo'lsa — delta yo'q (0 bilan solishtirilmaydi)", () => {
+  it("oldingi davr bo'lagi olinmagan (`failed_parts: trend`) — delta va sparkline yo'q (0 bilan solishtirilmaydi)", () => {
     // Sog' javobda 960 000 / 800 000 → «+20%» bo'lardi (yuqoridagi test); bo'lak olinmagan — delta yo'q.
-    routeDashboard({ data: { orders: ordersFixture } }, { data: { orders: { ...ordersFixture, totalRevenue: 800000 }, degraded: true, failedParts: ["orders"] } });
+    // Haqiqiy normalizatsiya orqali: backend `trend` olinmasa `previous`/`series` ni `null` qiladi.
+    routeDashboard(
+      normalizeDashboardResponse({
+        statusCode: 200,
+        data: {
+          orders: ordersFixture,
+          previous: { ...ordersFixture, totalRevenue: 800000 },
+          series: [
+            { date: "2026-10-20", ...ordersFixture },
+            { date: "2026-10-21", ...ordersFixture },
+          ],
+          degraded: true,
+          failed_parts: ["trend"],
+        },
+      }),
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
     const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
     expect(within(kpis).queryByText("+20%")).not.toBeInTheDocument();
+    expect(kpis.querySelector("[data-sparkline]")).toBeNull();
+    // Statistika bloki yashirilmaydi (faqat trend bo'lagi olinmagan).
+    expect(within(kpis).getByText("Jami daromad")).toBeInTheDocument();
   });
 
   it("kuryer: `failed_parts: topCouriers` — reyting joyida xato kartasi (yashirilmaydi, 0 emas)", () => {

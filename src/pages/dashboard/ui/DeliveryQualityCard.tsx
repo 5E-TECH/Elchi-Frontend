@@ -1,22 +1,22 @@
 // dizayn-v2: superadmin-dashboard-main, admin-dashboard-main
-import { CalendarRange, Timer } from "lucide-react";
+import { Timer } from "lucide-react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { KpiResponse } from "../../../entities/dashboard";
 import { formatDuration, formatMinutesDelta, formatPartOfTotal, formatPointDelta } from "../../../entities/dashboard/lib/format";
 import { formatPercentLocalized } from "../../../shared/lib/formatMoney";
 import { DeltaChip, RingStat } from "../../../shared/ui/charts";
-import { Card, EmptyState, SkeletonLines, TONE_SOFT } from "../../../shared/ui/primitives";
+import { Card, SkeletonLines, TONE_SOFT } from "../../../shared/ui/primitives";
 
 type Kpi = KpiResponse["data"];
+/** Oldingi davr — kpi javobining `previous` bo'lagi (DwrMygfo) yoki to'liq kpi. */
+type KpiComparable = Pick<Kpi, "onTimeRate" | "cancellationRate" | "averageFulfillmentHours" | "deliveryCount">;
 
 export interface DeliveryQualityCardProps {
   description: string;
   kpi?: Kpi;
-  previous?: Kpi;
+  previous?: KpiComparable;
   loading: boolean;
-  /** «Barchasi»: kpi so'ralmaydi — karta o'rnida izoh (ega savoli 7 sukuti). */
-  allTime: boolean;
   accepted: number;
   cancelled: number;
 }
@@ -24,23 +24,14 @@ export interface DeliveryQualityCardProps {
 /**
  * «YETKAZISH SIFATI» (faqat SA/admin, `GET analytics/kpi`): O'z vaqtida (SLA) · Bekor qilish darajasi ·
  * Yetkazish vaqti. Delta — oldingi teng davrning kpi'siga nisbatan (bo'lsa). Davrda yetkazish yo'q (`deliveryCount`
- * 0) — SLA «—» va «O'lchanmagan» (yrLt5oMi).
+ * 0) — SLA «—» va «O'lchanmagan» (yrLt5oMi). «Barchasi»da ham chiziladi — kpi `all=true` bilan (XdKajqLe; ilgari
+ * karta o'rnida izoh edi), delta yo'q (oldingi davr yo'q).
  */
-const DeliveryQualityCard = ({ description, kpi, previous, loading, allTime, accepted, cancelled }: DeliveryQualityCardProps) => {
+const DeliveryQualityCard = ({ description, kpi, previous, loading, accepted, cancelled }: DeliveryQualityCardProps) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
 
   const body = () => {
-    if (allTime) {
-      return (
-        <EmptyState
-          size="chart"
-          icon={CalendarRange}
-          title={t("v2Dashboard.quality.allTimeTitle")}
-          description={t("v2Dashboard.quality.allTimeHint")}
-        />
-      );
-    }
     if (loading || !kpi) return <SkeletonLines lines={6} />;
     // yrLt5oMi: davrda yetkazish yo'q — SLA o'lchanmagan («0%» emas, delta ham yo'q). Ishga tushirishning birinchi
     // kunlari aynan shunday.

@@ -3,8 +3,28 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { readPartialFailure } from "./lib/partialFailure";
 import { readAppliedRange, type AppliedRange } from "./lib/allTime";
+import {
+  readDashboardPrevious,
+  readDashboardSeries,
+  readDashboardTargets,
+  readKpiPrevious,
+  readKpiSeries,
+  toNullableNumber,
+  type DashboardPrevious,
+  type DashboardSeriesPoint,
+  type DashboardTargets,
+  type KpiPrevious,
+  type KpiSeriesPoint,
+} from "./lib/trend";
 
 export { hasFailedPart } from "./lib/partialFailure";
+export type {
+  DashboardPrevious,
+  DashboardSeriesPoint,
+  DashboardTargets,
+  KpiPrevious,
+  KpiSeriesPoint,
+} from "./lib/trend";
 
 const dashboard = "dashboard";
 
@@ -29,6 +49,11 @@ export interface DashboardOrdersSummary {
   inProgress?: number;
   profit: number;
   totalRevenue: number;
+  /**
+   * «Yo'qotilgan daromad» (l9NNdsCH): davrda bekor qilingan buyurtmalar `total_price` yig'indisi (`cancelled` bilan
+   * ayni to'plam). Registratorda va eski javobda yo'q — `null`.
+   */
+  lostRevenue?: number | null;
   from?: number;
   to?: number;
 }
@@ -179,6 +204,12 @@ export interface DashboardResponse {
     failedParts?: string[];
     /** «Barchasi» (`all=true`): backend oraliqni qisqartirgan bo'lsa — haqiqiy oraliq (tya24blo). */
     appliedRange?: AppliedRange | null;
+    /** Oldingi teng davr (DwrMygfo); «Barchasi», market/kuryer yoki `failed_parts: trend` — `null`. */
+    previous?: DashboardPrevious | null;
+    /** 14 kunlik seriya (sparkline); yo'q / olinmagan — `null`. */
+    series?: DashboardSeriesPoint[] | null;
+    /** Maqsad qiymatlari (l9NNdsCH): `successRate` — muvaffaqiyat ulushi maqsadi, %. */
+    targets?: DashboardTargets | null;
   };
 }
 
@@ -187,6 +218,8 @@ export interface RevenuePoint {
   label: string;
   ordersCount?: number;
   revenue: number;
+  /** «Sof foyda» (l9NNdsCH) — overview `profit` bilan ayni formula. */
+  profit?: number;
 }
 
 export interface RevenueResponse {
@@ -197,10 +230,14 @@ export interface RevenueResponse {
       totalRevenue: number;
       totalOrders: number;
       avgRevenue: number;
+      /** Davr «Sof foyda»si (l9NNdsCH); eski javobda yo'q — `null`. */
+      totalProfit?: number | null;
     };
     chart?: {
       labels?: string[];
       values?: number[];
+      /** Har banddagi «Sof foyda» (l9NNdsCH); eski javobda yo'q — `null`. */
+      profitValues?: number[] | null;
     };
     finance?: {
       currentSituation?: number;
@@ -220,6 +257,8 @@ export interface RevenueResponse {
     };
     degraded?: boolean;
     failedParts?: string[];
+    /** «Barchasi» (`all=true`, XdKajqLe): backend oraliqni 366 kunga qisqartirgan bo'lsa — haqiqiy oraliq. */
+    appliedRange?: AppliedRange | null;
     [key: string]: unknown;
   };
 }
@@ -242,6 +281,12 @@ export interface KpiResponse {
     degraded?: boolean;
     /** Masalan `fulfillment` — yetkazish vaqti / SLA olinmadi (mKS1mjNr). */
     failedParts?: string[];
+    /** Oldingi teng davr KPI'si (DwrMygfo); «Barchasi» yoki `failed_parts: trend` — `null`. */
+    previous?: KpiPrevious | null;
+    /** 14 kunlik KPI seriyasi (sparkline). */
+    series?: KpiSeriesPoint[] | null;
+    /** «Barchasi» (`all=true`, XdKajqLe): backend qisqartirgan oraliq. */
+    appliedRange?: AppliedRange | null;
   };
 }
 
@@ -614,6 +659,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
             orders.total_amount,
           ),
         ),
+        lostRevenue: toNullableNumber(firstDefined(orders.lostRevenue, orders.lost_revenue)),
         from: orders.from === undefined ? undefined : toNumber(orders.from),
         to: orders.to === undefined ? undefined : toNumber(orders.to),
       },
@@ -643,8 +689,19 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       // Xom `data` dan: `orders` va `myStat` yuqorida qayta quriladi, ulardagi `applied_range` yo'qolardi.
       // Meta javob ildizida (`data` yonida) kelsa ham o'qiladi (tya24blo).
       appliedRange: readAppliedRange(data) ?? readAppliedRange(response),
-      ...readPartialFailure(response, data, DASHBOARD_PARTS),
+      ...dashboardTrend(response, data),
     },
+  };
+};
+
+/** `previous`, `series`, `targets` + qisman nosozlik (`failedParts`) — bitta joyda (trend bo'lagi ham hisobga olinadi). */
+const dashboardTrend = (response: UnknownRecord, data: UnknownRecord) => {
+  const partial = readPartialFailure(response, data, DASHBOARD_PARTS);
+  return {
+    ...partial,
+    previous: readDashboardPrevious(data, partial.failedParts),
+    series: readDashboardSeries(data, partial.failedParts),
+    targets: readDashboardTargets(data),
   };
 };
 
@@ -673,8 +730,18 @@ export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
       cancellationRate: toNumber(data.cancellationRate ?? data.cancellation_rate),
       courierEfficiency: toNumber(data.courierEfficiency ?? data.courier_efficiency),
       marketRating: Array.isArray(marketRating) ? marketRating : [],
-      ...readPartialFailure(response, data),
+      appliedRange: readAppliedRange(data) ?? readAppliedRange(response),
+      ...kpiTrend(response, data),
     },
+  };
+};
+
+const kpiTrend = (response: UnknownRecord, data: UnknownRecord) => {
+  const partial = readPartialFailure(response, data);
+  return {
+    ...partial,
+    previous: readKpiPrevious(data, partial.failedParts),
+    series: readKpiSeries(data, partial.failedParts),
   };
 };
 
@@ -699,11 +766,15 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
             totalRevenue: toNumber(summary.totalRevenue ?? summary.total_revenue),
             totalOrders: toNumber(summary.totalOrders ?? summary.total_orders),
             avgRevenue: toNumber(summary.avgRevenue ?? summary.avg_revenue),
+            totalProfit: toNullableNumber(summary.totalProfit ?? summary.total_profit),
           }
         : undefined,
       chart: {
         labels: Array.isArray(chart.labels) ? chart.labels.map(String) : [],
         values: Array.isArray(chart.values) ? chart.values.map(toNumber) : [],
+        profitValues: Array.isArray(chart.profitValues ?? chart.profit_values)
+          ? ((chart.profitValues ?? chart.profit_values) as unknown[]).map(toNumber)
+          : null,
       },
       finance: Object.keys(finance).length
         ? {
@@ -738,6 +809,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
             difference: toNumber(finance.difference),
           }
         : undefined,
+      appliedRange: readAppliedRange(data) ?? readAppliedRange(response),
       ...readPartialFailure(response, data, { finance: [], summary: [], chart: [] }),
     },
   };
