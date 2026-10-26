@@ -219,9 +219,30 @@ const SENTENCE_METADATA_KEYS = new Set([
   "received_by_hq",
   "destination_branch",
   "source_branch",
+  // Bekor buyurtmani marketga topshirish usuli — jumlaning o'zida («QR orqali», «qo'lda tasdiq»), xom «Method: qr» emas.
+  "method",
 ]);
 
-const getAdditionalDetails = (event: TrackingEvent, context?: TrackingContext) => {
+/**
+ * vbu7Wr3o: ichki identifikatorlar — «Received By: 101» kabi xom qator chiqmasin. `*_by` (kim qabul qildi / yaratdi)
+ * — foydalanuvchi id'si; kim bajargani jumlada aktyor sifatida bor.
+ */
+const isInternalUserRefKey = (normalizedKey: string) => normalizedKey.endsWith("_by");
+
+/** Saqlovchi / jo'natuvchi turi (`HQ` · `BRANCH` · `COURIER` · `MARKET`) qiymati — o'zbekcha nom (`tracking.holderValue.*`). */
+const HOLDER_TYPE_VALUE_KEYS = new Set(["from_holder_type", "to_holder_type", "holder_type", "source_type"]);
+/** Rol qiymati («manager») — `tracking.roleValue.*` («Menejer»). */
+const ROLE_VALUE_KEYS = new Set(["source_user_role", "changed_by_role", "requester_role"]);
+
+const formatMetadataValue = (t: T, normalizedKey: string, value: string) => {
+  if (HOLDER_TYPE_VALUE_KEYS.has(normalizedKey)) {
+    return t(`tracking.holderValue.${normalizeKey(value)}`, { defaultValue: "" }) || humanize(value.toLowerCase());
+  }
+  if (ROLE_VALUE_KEYS.has(normalizedKey)) return getRoleLabel(t, value);
+  return value;
+};
+
+const getAdditionalDetails = (event: TrackingEvent, t: T, context?: TrackingContext) => {
   const details: Array<{ key: string; label: string; value: string }> = [];
   const seen = new Set<string>();
 
@@ -231,16 +252,18 @@ const getAdditionalDetails = (event: TrackingEvent, context?: TrackingContext) =
     for (const [key, value] of Object.entries(source)) {
       const normalizedKey = normalizeKey(key);
       if (normalizedKey === "status" || SENTENCE_METADATA_KEYS.has(normalizedKey)) continue;
+      if (isInternalUserRefKey(normalizedKey)) continue;
 
       const isIdKey = normalizedKey.endsWith("_id") || normalizedKey.endsWith("id");
       const resolvedValue = getNameForIdKey(event, key, value, context);
       if (isIdKey && !resolvedValue) continue;
 
-      const displayValue =
+      const rawValue =
         resolvedValue ||
         (isRecord(value)
           ? asDisplayString(value.name ?? value.full_name ?? value.fullName ?? value.title ?? value.id)
           : asDisplayString(value));
+      const displayValue = rawValue && !resolvedValue ? formatMetadataValue(t, normalizedKey, rawValue) : rawValue;
       if (!displayValue) continue;
 
       const label = humanize(getIdPrefix(key) || key);
@@ -415,7 +438,7 @@ const formatNoteWithNames = (note: string, event: TrackingEvent, t: T, actor: st
 
   if (branchName && /dispatch qilindi|dispatch|jo'natildi|jonatildi/i.test(formattedNote)) {
     return {
-      key: "tracking.dynamic.dispatchToBranch",
+      key: dispatchTemplateKey(branchName),
       params: { actor, post: postName || t("tracking.entity.postInSentence"), branch: branchName },
     };
   }
@@ -423,6 +446,23 @@ const formatNoteWithNames = (note: string, event: TrackingEvent, t: T, actor: st
 };
 
 type Template = { key: string; params: Record<string, string> };
+
+/**
+ * vbu7Wr3o: nomning o'zida «filial» so'zi bor («TEST Claude Surxondaryo filiali», «Филиал Самарканд») — jumlada
+ * «… filiali filialiga» takrorlanmasin: shablon nomni o'zi qo'shimchasiz oladi (`dispatchToNamedBranch`).
+ */
+const BRANCH_WORD = /(^|[\s(«"])(filial|filiali|филиал[а-яё]*)($|[\s)»".,])/iu;
+export const branchNameHasBranchWord = (name: string) => BRANCH_WORD.test(name.trim());
+
+const dispatchTemplateKey = (branch: string) =>
+  branchNameHasBranchWord(branch) ? "tracking.dynamic.dispatchToNamedBranch" : "tracking.dynamic.dispatchToBranch";
+
+/**
+ * vbu7Wr3o: filial menejeri / kuryer pochtani qabul qildi (`on the road → waiting`, `action: "post_received"`,
+ * metadata `{ post_id, branch_name }` yoki `{ post_id, courier_name }`). Eski yozuvlar (`action: "waiting"`,
+ * `changed_by: "system"`) — o'zgarmaydi.
+ */
+export const isPostReceivedEvent = (event: TrackingEvent) => normalizeKey(event.action) === "post_received";
 
 /** 6kHnNH9j: `action: warehouse_returned` — ombor buyurtmasi bekor bo'lib, mahsulot omborga qaytdi. */
 export const isWarehouseReturnedEvent = (event: TrackingEvent) => normalizeKey(event.action) === "warehouse_returned";
@@ -482,7 +522,15 @@ const getSentenceTemplate = (
     return dynamic("createdByActor");
   }
   if (transition === "new->received") return dynamic("acceptedAtHq");
-  if (transition === "received->on_the_road") return dynamic("dispatchToBranch", { post, branch });
+  // vbu7Wr3o: qabul yozuvi `on_the_road->waiting` umumiy jumlasidan («… kutilmoqda holatiga qaytardi») OLDIN.
+  if (isPostReceivedEvent(event)) {
+    // Faqat yozuvdagi filial nomi (yozuv paytidagi) — buyurtmaning JORIY filiali (`context.branchName`) emas.
+    const receivedAt = getTrackingName(event, "branch");
+    return receivedAt ? dynamic("postReceivedAtBranch", { branch: receivedAt }) : dynamic("postReceived");
+  }
+  if (transition === "received->on_the_road") {
+    return { key: dispatchTemplateKey(branch), params: { actor, post, branch } };
+  }
   if (transition === "waiting->on_the_road") return dynamic("sentToCourier");
   if (transition === "on_the_road->waiting") return dynamic("returnedToWaiting");
   if (newStatus === "cancelled") return dynamic("cancelledByActor");
@@ -515,8 +563,11 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
     case "tracking.dynamic.cancelledPostReceivedAtBranch":
     case "tracking.dynamic.cancelledPostReceivedAtPlace":
     case "tracking.dynamic.acceptedAtHq":
+    case "tracking.dynamic.postReceived":
+    case "tracking.dynamic.postReceivedAtBranch":
       return Inbox;
     case "tracking.dynamic.dispatchToBranch":
+    case "tracking.dynamic.dispatchToNamedBranch":
       return Mail;
     case "tracking.dynamic.returnedToWaiting":
       return Clock;
@@ -614,7 +665,7 @@ export const describeTrackingEvent = (
       kind: detail.type === "phone" ? "phone" : undefined,
     });
   }
-  for (const detail of getAdditionalDetails(event, context)) {
+  for (const detail of getAdditionalDetails(event, t, context)) {
     pushDetail({ label: t(`tracking.field.${detail.key}`, { defaultValue: detail.label }), value: detail.value });
   }
 

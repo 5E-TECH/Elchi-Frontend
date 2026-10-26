@@ -5,7 +5,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Hech qanday so'rov serverga ketmaydi; yozuvchi so'rov `leaked` ga tushadi.
  */
 
-const ORIGIN = "http://127.0.0.1:4194";
+// Worktree serverlari boshqa portda — `E2E_ORIGIN` (`floor.ts` dagidek).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

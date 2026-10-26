@@ -496,7 +496,12 @@
       "destination_branch": "Куда",
       "target_branch": "Куда",
       "from_label": "Откуда",
-      "to_label": "Куда"
+      "to_label": "Куда",
+      "from_holder_type": "От кого",
+      "to_holder_type": "Кому",
+      "source_type": "Отправитель",
+      "source_user_role": "Роль отправителя",
+      "source_courier_name": "Курьер-отправитель"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} принял заказ в HQ",
@@ -514,7 +519,10 @@
       "returnedToMarketByActor": "{{actor}} передал(а) заказ маркету {{market}} — {{method}}",
       "createdByActor": "{{actor}} создал заказ",
       "cancelledPostReceivedAtPlace": "{{actor}} принял(а) отменённый заказ — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен"
+      "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен",
+      "postReceived": "{{actor}} принял(а) почту",
+      "postReceivedAtBranch": "{{actor}} принял(а) почту — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} отправил {{post}} из HQ в {{branch}}"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -525,6 +533,12 @@
       "manager": "Менеджер",
       "market": "Маркет",
       "system": "Система"
+    },
+    "holderValue": {
+      "hq": "Главный офис (HQ)",
+      "branch": "Филиал",
+      "courier": "Курьер",
+      "market": "Маркет"
     },
     "status": {
       "created": "Создан",

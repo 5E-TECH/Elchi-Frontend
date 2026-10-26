@@ -594,6 +594,14 @@ const Orders = () => {
       status: selectedActionOrder.status,
       total_price: selectedActionOrder.total_price,
       to_be_paid: selectedActionOrder.to_be_paid,
+      // vbu7Wr3o: sotish oynasidagi «Marketga to'langan summa · N so'mdan oshmasin» chegarasi — usiz
+      // `readMarketPaidBase` `to_be_paid` (sotuvgacha 0) ga tushardi («0 so'mdan oshmasin»). Detal `buildActionOrder`
+      // dagidek.
+      sale_market_paid_max:
+        typeof selectedActionOrder.sale_market_paid_max === "number" ||
+        typeof selectedActionOrder.sale_market_paid_max === "string"
+          ? selectedActionOrder.sale_market_paid_max
+          : null,
       external_id: (orderFlags.external_id as string | number | null | undefined) ?? null,
       where_deliver: selectedActionOrder.where_deliver,
       market: {
