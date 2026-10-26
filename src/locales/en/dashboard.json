@@ -417,5 +417,34 @@
       "title": "No region has been assigned to you yet",
       "description": "Once an administrator assigns a region, its statistics will appear here."
     }
+  },
+  "dmDelivery": {
+    "title": "Receipt delivery",
+    "description": "{{period}} · Telegram, private chat",
+    "descriptionDefault": "Last 30 days · Telegram, private chat",
+    "loadError": "Couldn't load the delivery report",
+    "emptyTitle": "No receipts were sent in this period",
+    "emptyHint": "When a manager accepts cash from a courier, a receipt is sent to the courier's Telegram.",
+    "noAttemptsTitle": "No delivery attempts",
+    "noAttemptsHint": "Nothing was sent via Telegram to any recipient — see the reasons alongside.",
+    "gaugeLabel": "Delivered / sent",
+    "gaugeAria": "Receipt delivery: {{value}}. Delivered {{sent}}, failed {{failed}}",
+    "sent": "Delivered",
+    "failed": "Failed",
+    "reach": "Reach",
+    "reachHint": "{{sent}} of {{total}} recipients reached",
+    "pending": "Queued",
+    "pendingHint": "Still being sent — counted neither as delivered nor as failed",
+    "skipped": "Not sent",
+    "skippedHint": "Recipients intentionally not messaged",
+    "noProvider": "Bot not configured",
+    "reasonCount": "{{reason}}: {{value}}",
+    "reasons": {
+      "no_telegram_id": "Telegram not connected",
+      "bot_blocked": "Bot blocked",
+      "not_private_chat": "Not a private chat",
+      "other": "Other reason"
+    },
+    "note": "“Delivered” — messages accepted by Telegram. Recipients without Telegram or who blocked the bot count as “Not sent” and lower the “Reach”."
   }
 }
