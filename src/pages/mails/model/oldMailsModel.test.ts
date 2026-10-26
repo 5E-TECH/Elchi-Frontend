@@ -200,8 +200,33 @@ describe("oldMailsModel — server so'rovi (F4, YfrqN70i)", () => {
     const rows = [mail(), mail({ id: "91" })];
     expect(
       readOldMailsPage({ statusCode: 200, data: { data: rows, total: 250, page: 2, totalPages: 32, limit: 8 } }),
-    ).toEqual({ rows, total: 250, totalPages: 32, limit: 8 });
-    expect(readOldMailsPage(undefined)).toEqual({ rows: [], total: 0, totalPages: 1, limit: 0 });
+    ).toEqual({ rows, total: 250, totalPages: 32, limit: 8, ordersTotal: null, amountTotal: null });
+    expect(readOldMailsPage(undefined)).toEqual({
+      rows: [],
+      total: 0,
+      totalPages: 1,
+      limit: 0,
+      ordersTotal: null,
+      amountTotal: null,
+    });
+  });
+
+  it("tveJKICY: filtr bo'yicha yig'indilar — `orders_total`, `amount_total` (0 ham son; yo'q / noto'g'ri — null)", () => {
+    const body = (extra: Record<string, unknown>) => ({
+      statusCode: 200,
+      data: { data: [mail()], total: 46, page: 1, totalPages: 6, limit: 8, ...extra },
+    });
+    expect(readOldMailsPage(body({ orders_total: 684, amount_total: 128_360_000 }))).toMatchObject({
+      total: 46,
+      ordersTotal: 684,
+      amountTotal: 128_360_000,
+    });
+    // Imkonsiz filtr — backend `0` beradi: «0 ta buyurtma · jami 0 so'm» (yig'indi yo'q emas).
+    expect(readOldMailsPage(body({ orders_total: 0, amount_total: "0" }))).toMatchObject({ ordersTotal: 0, amountTotal: 0 });
+    expect(readOldMailsPage(body({ orders_total: null, amount_total: "abc" }))).toMatchObject({
+      ordersTotal: null,
+      amountTotal: null,
+    });
   });
 });
 

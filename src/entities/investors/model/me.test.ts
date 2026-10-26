@@ -126,6 +126,19 @@ describe("toInvestorInvestmentsPage / toInvestorProfitsPage", () => {
     expect(page.items).toEqual([{ id: "3", amount: 100_000_000, investedAt: "2026-08-01T00:00:00.000Z" }]);
     expect(page.meta).toEqual({ page: 1, limit: 3, total: 5, totalPages: 2 });
     expect(page.totalAmount).toBe(450_000_000);
+    // Eski javob — `range_amount` yo'q: `null` (0 emas).
+    expect(page.rangeAmount).toBeNull();
+  });
+
+  it("su4IYGCN: `summary.range_amount` — tanlangan oraliq yig'indisi (0 ham qiymat)", () => {
+    const page = (rangeAmount: unknown) =>
+      toInvestorInvestmentsPage({
+        data: { items: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 }, summary: { total_amount: 450_000_000, range_amount: rangeAmount } },
+      });
+    expect(page(150_000_000).rangeAmount).toBe(150_000_000);
+    expect(page("2500000").rangeAmount).toBe(2_500_000);
+    expect(page(0).rangeAmount).toBe(0);
+    expect(page(null).rangeAmount).toBeNull();
   });
 
   it("foyda: holat, foiz va to'langan sana; summary", () => {

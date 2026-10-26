@@ -89,7 +89,8 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  *
  * Pochtalar (F4, backend YfrqN70i): filtr va sahifalash SERVERDA — `GET /post` / `post/courier/old-posts` URL
  * filtrlari, `page`, `limit` (≤ 100) va `has_orders=true` bilan (`buildOldMailsQuery`); sahifalash javobdagi
- * `total` bo'yicha; xulosa — faqat «N ta pochta» (API buyurtma/summa yig'indisini bermaydi); Excel — barcha
+ * `total` bo'yicha; xulosa — «N ta pochta · M ta buyurtma · jami S» (server `total`, `orders_total`, `amount_total` —
+ * filtr bo'yicha barcha sahifalar, tveJKICY; eski javobda yig'indilar yo'q — faqat «N ta pochta»); Excel — barcha
  * filtrlangan qatorlar, 100 talab sahifalab (`fetchAllOldMailPages`).
  * «Filial paketlari»: `GET transfer-batches` da viloyat va sana oralig'i yo'q — BARCHA sahifalar yuklanadi
  * (`fetchAllTransferBatches`), filtr, xulosa, sahifalash va Excel mijoz tomonida.
@@ -589,18 +590,26 @@ const OldMails = ({ layout }: OldMailsProps) => {
   );
 
   // Xulosa (D6, manager maketi «46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm»; telefonda 2 qator).
-  // Pochtalarda faqat «N ta pochta» — server `total`: API buyurtma/summa yig'indisini bermaydi, bitta sahifadan
-  // hisoblash noto'g'ri bo'lardi (ega savoli Q1). Paketlarda — to'liq, barcha yuklangan paketlar bo'yicha.
-  const summary = isAllBatchMode ? (
+  // Pochtalarda — server: `total`, `orders_total`, `amount_total` (tveJKICY — joriy filtr bo'yicha BARCHA sahifalar;
+  // bitta sahifadan hisoblanmaydi). Javobda yig'indilar bo'lmasa (eski backend) — faqat «N ta pochta».
+  // Paketlarda — mijoz hisobi, barcha yuklangan paketlar bo'yicha.
+  const mailSums =
+    mailsPage.ordersTotal !== null && mailsPage.amountTotal !== null
+      ? { orders: mailsPage.ordersTotal, amount: mailsPage.amountTotal }
+      : null;
+  const totals = isAllBatchMode ? { orders: batchTotals.orders, amount: batchTotals.amount } : mailSums;
+  const summary = (
     <p className="text-[13px] leading-[18px] text-text-muted">
-      {summaryPart("old.summaryBatches", batchTotals.count)}
-      {" · "}
-      {summaryPart("old.summaryOrders", batchTotals.orders)}
-      {isPhone ? <br /> : " · "}
-      {summaryPart("old.summaryTotal", batchTotals.amount, { amount: money(batchTotals.amount) })}
+      {summaryPart(isAllBatchMode ? "old.summaryBatches" : "old.summaryMails", listTotal)}
+      {totals ? (
+        <>
+          {" · "}
+          {summaryPart("old.summaryOrders", totals.orders)}
+          {isPhone ? <br /> : " · "}
+          {summaryPart("old.summaryTotal", totals.amount, { amount: money(totals.amount) })}
+        </>
+      ) : null}
     </p>
-  ) : (
-    <p className="text-[13px] leading-[18px] text-text-muted">{summaryPart("old.summaryMails", listTotal)}</p>
   );
 
   const modeSwitch = canUseBatchMode ? (

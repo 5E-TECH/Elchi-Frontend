@@ -208,7 +208,19 @@ const normalizeHistoryItem = (
   actor: toText(item?.actor?.name ?? item?.actor ?? item?.user?.name ?? item?.user?.fullName),
   action: toText(item?.action ?? item?.message ?? item?.title),
   created_at: toText(item?.created_at ?? item?.createdAt, createdAtFallback),
+  label: optionalText(item?.action_label),
 });
+
+/**
+ * `GET transfer-batches/:id/history` (3HKvAyhm) → `data: [{ id, batch_id, user_id, action, action_label, notes,
+ * created_at, user: { id, name } | null }]`, xronologik (eng eskisi birinchi). Bajargan — `user.name` (identity javob
+ * bermasa `null` → «—»), matn — `action` (`CREATED | SENT | RECEIVED | CANCELLED`), zaxira — `action_label`.
+ */
+export const normalizeBatchHistory = (payload: any): BatchHistoryItem[] => {
+  const source = payload?.data ?? payload;
+  const rows = Array.isArray(source) ? source : Array.isArray(source?.data) ? source.data : [];
+  return rows.map((item: any, index: number) => normalizeHistoryItem(item, index, ""));
+};
 
 const normalizeBatch = (raw: any): Batch => ({
   id: toText(raw?.id ?? raw?._id ?? raw?.batch_id),
@@ -428,6 +440,22 @@ export const useBatchDetail = (id?: string, options?: { silentError?: boolean })
     queryFn: async () => {
       const response = await api.get(API_ENDPOINTS.BATCHES.BY_ID(id || ""));
       return normalizeBatchDetail(response.data);
+    },
+  });
+
+/**
+ * Paket tarixi (3HKvAyhm) — «Tarix» kartasi. Rollar `GET transfer-batches/:id` bilan bir xil (logist — yo'q, 403):
+ * `enabled` ni sahifa rol bo'yicha beradi. Xato kartaning o'zida (`ErrorState`), global xabar yo'q.
+ * Kalit `[BATCH_KEY, "history", id]` — jo'natish/qabuldan keyingi `[BATCH_KEY]` yangilanishi tarixni ham oladi.
+ */
+export const useBatchHistory = (id?: string, options?: { enabled?: boolean }) =>
+  useQuery<BatchHistoryItem[]>({
+    queryKey: [BATCH_KEY, "history", id],
+    enabled: Boolean(id) && (options?.enabled ?? true),
+    meta: { silentError: true },
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.BATCHES.HISTORY(id || ""));
+      return normalizeBatchHistory(response.data);
     },
   });
 

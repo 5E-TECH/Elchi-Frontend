@@ -94,13 +94,26 @@ const detail = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const respond = (body: Record<string, unknown> = detail()) => {
+/** `GET transfer-batches/:id/history` qatori (branch-service `findTransferBatchHistory` shakli, 3HKvAyhm). */
+const historyRow = (
+  id: string,
+  action: string,
+  actionLabel: string,
+  createdAt: string,
+  user: { id: string; name: string | null } | null,
+) => ({ id, batch_id: "172", user_id: user?.id ?? "0", action, action_label: actionLabel, notes: null, created_at: createdAt, user });
+
+const respond = (
+  body: Record<string, unknown> = detail(),
+  history: () => Promise<unknown> = () => Promise.resolve({ data: { statusCode: 200, data: [] } }),
+) => {
   mocks.get.mockImplementation((url: string) => {
     if (url === "transfer-batches/172" || url === "transfer-batches/172/remaining") return Promise.resolve({ data: body });
-    if (url === "branches/1") return Promise.resolve({ data: { statusCode: 200, data: { id: "1", name: "Toshkent HQ" } } });
+    if (url === "transfer-batches/172/history") return history();
     return Promise.reject(new Error(`kutilmagan so'rov: ${url}`));
   });
 };
+const historyCard = () => screen.getByRole("region", { name: "Tarix" });
 
 const stateFor = (role: string) =>
   ({
@@ -149,8 +162,7 @@ describe("BatchDetailPage — /batches/:id", () => {
     const info = screen.getByRole("region", { name: "Paket ma'lumotlari" });
     expect(within(info).getByText("Urgut filiali")).toBeInTheDocument();
     expect(within(info).getByText("SMQ-URG")).toBeInTheDocument();
-    // `GET branches/:id` — faqat superadmin/admin (backend `@Roles`): menejer so'rov yubormaydi, nom noma'lum — «—».
-    expect(mocks.get).not.toHaveBeenCalledWith("branches/1", expect.anything());
+    // Eski javob (faqat `destination_branch_id`): nom noma'lum — «—»; `GET branches/:id` hech kimda so'ralmaydi (3HKvAyhm).
     expect(mocks.get.mock.calls.some(([url]) => String(url).startsWith("branches/"))).toBe(false);
     expect(within(info).getByText("Qayerga").nextSibling).toHaveTextContent("—");
     expect(within(info).getByText("Samarqand viloyati")).toBeInTheDocument();
@@ -169,7 +181,8 @@ describe("BatchDetailPage — /batches/:id", () => {
     expect(within(ordersCard()).getByRole("checkbox", { name: "№10166 ni tanlash" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "HQ'ga yuborish — 0 ta" })[0]).toBeDisabled();
     expect(mocks.scanner?.enabled).toBe(true);
-    expect(screen.getByRole("region", { name: "Tarix" })).toHaveTextContent("Tarix hozircha mavjud emas");
+    expect(await within(historyCard()).findByText("Tarix hozircha mavjud emas")).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith("transfer-batches/172/history");
   });
 
   it("tanlangan buyurtmalar HQ'ga yuboriladi: PATCH { orderIds }, yuborilganlar yashiriladi", async () => {
@@ -189,7 +202,7 @@ describe("BatchDetailPage — /batches/:id", () => {
       expect(mocks.patch).toHaveBeenCalledWith("transfer-batches/172/send", { orderIds: ["10166", "10163"] }),
     );
     expect(await screen.findByText("Paket HQ'ga yuborildi")).toBeInTheDocument();
-    // Menejer qabul qiluvchi filial nomini ololmaydi (`GET branches/:id` — 403) — nomsiz matn.
+    // Eski javobda qabul qiluvchi filial nomi yo'q — nomsiz matn.
     expect(screen.getByText("2 ta buyurtma HQ'ga yuborildi")).toBeInTheDocument();
     await waitFor(() =>
       expect(within(ordersCard()).queryByRole("checkbox", { name: "№10166 ni tanlash" })).not.toBeInTheDocument(),
@@ -263,15 +276,16 @@ describe("BatchDetailPage — /batches/:id", () => {
   });
 
   it("superadmin — doim faqat o'qish: tanlov, skaner va yuborish yo'q; market ustuni", async () => {
-    respond(detail({ status: "RECEIVED" }));
+    respond(detail({ status: "RECEIVED", destination_branch: { id: "1", name: "Toshkent HQ" } }));
     renderPage("superadmin", { from: "batches", fromSearch: "?tab=old&page=2" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Paket B-172" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Paketlar" })).toHaveAttribute("href", "/batches?tab=old&page=2");
     expect(within(screen.getByRole("banner")).getByText("Qabul qilingan")).toHaveClass("bg-success-soft");
-    // Superadmin: tafsilotda faqat `destination_branch_id` — nom `GET branches/:id` dan.
+    // 3HKvAyhm: nom tafsilotdagi `destination_branch` dan — `GET branches/:id` endi chaqirilmaydi.
     const info = screen.getByRole("region", { name: "Paket ma'lumotlari" });
-    expect(await within(info).findByText("Toshkent HQ")).toBeInTheDocument();
+    expect(within(info).getByText("Toshkent HQ")).toBeInTheDocument();
+    expect(mocks.get.mock.calls.some(([url]) => String(url).startsWith("branches/"))).toBe(false);
     expect(within(ordersCard()).queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /HQ'ga yuborish/ })).not.toBeInTheDocument();
     expect(mocks.scanner?.enabled).toBe(false);
@@ -293,10 +307,9 @@ describe("BatchDetailPage — /batches/:id", () => {
   });
 
   it("qaytarish paketi qaytarishlardan: «← Qaytarishlar», yo'nalish «Qaytarish», tarix", async () => {
-    respond(
-      detail({
-        direction: "RETURN",
-        history: [{ id: "h1", action: "CREATED", actor: { name: "Ravshan Ortiqov" }, created_at: local(8, 9, 20) }],
+    respond(detail({ direction: "RETURN" }), () =>
+      Promise.resolve({
+        data: { statusCode: 200, data: [historyRow("h1", "CREATED", "Yaratildi", local(8, 9, 20), { id: "1", name: "Ravshan Ortiqov" })] },
       }),
     );
     const user = userEvent.setup();
@@ -311,9 +324,84 @@ describe("BatchDetailPage — /batches/:id", () => {
     expect(within(screen.getByRole("banner")).getByRole("button", { name: "HQ'ga yuborish — 0 ta" })).toBeInTheDocument();
     await user.click(within(ordersCard()).getByRole("checkbox", { name: "№10166 ni tanlash" }));
     expect(within(ordersCard()).getByText("Faqat tanlanganlar HQ'ga yuboriladi, qolganlari paketda qoladi")).toBeInTheDocument();
-    const history = screen.getByRole("region", { name: "Tarix" });
-    expect(within(history).getByText("Qaytarish paketi yaratildi")).toBeInTheDocument();
-    expect(within(history).getByText("Ravshan Ortiqov")).toBeInTheDocument();
+    expect(await within(historyCard()).findByText("Qaytarish paketi yaratildi")).toBeInTheDocument();
+    expect(within(historyCard()).getByText("Ravshan Ortiqov")).toBeInTheDocument();
+  });
+
+  it("⭐ 3HKvAyhm menejer: filial nomlari tafsilotdan (`source_branch` / `destination_branch`), branches/:id yo'q", async () => {
+    respond(detail({ status: "SENT", destination_branch: { id: "1", name: "Toshkent HQ" } }));
+    renderPage("manager");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    // Sarlavha izohi: «Urgut filiali → Toshkent HQ · Yaratilgan: …».
+    expect(screen.getByRole("banner")).toHaveTextContent(/Urgut filiali\s*Toshkent HQ · Yaratilgan:/);
+    const info = screen.getByRole("region", { name: "Paket ma'lumotlari" });
+    expect(within(info).getByText("Filial").nextSibling).toHaveTextContent("Urgut filiali");
+    expect(within(info).getByText("Qayerga").nextSibling).toHaveTextContent("Toshkent HQ");
+    expect(mocks.get.mock.calls.some(([url]) => String(url).startsWith("branches/"))).toBe(false);
+  });
+
+  it("⭐ 3HKvAyhm «Tarix» — GET …/history: eng yangisi tepada, bajargan xodim, noma'lum harakat — `action_label`", async () => {
+    respond(detail({ status: "RECEIVED", destination_branch: { id: "1", name: "Toshkent HQ" } }), () =>
+      Promise.resolve({
+        data: {
+          statusCode: 200,
+          // Backend — xronologik (eng eskisi birinchi).
+          data: [
+            historyRow("h1", "CREATED", "Yaratildi", local(6, 12, 2), { id: "31", name: "Malika Yusupova" }),
+            historyRow("h2", "SENT", "Jo'natildi", local(6, 16, 10), { id: "31", name: "Malika Yusupova" }),
+            historyRow("h3", "RECEIVED", "Qabul qilindi", local(6, 19, 35), { id: "40", name: "Bobur Xolmatov" }),
+            // Identity javob bermadi — `user: null`: bajargan qatori yo'q, ro'yxat yiqilmaydi.
+            historyRow("h4", "REOPENED", "Qayta ochildi", local(6, 20, 0), null),
+          ],
+        },
+      }),
+    );
+    renderPage("admin");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    const list = await within(historyCard()).findByRole("list", { name: "Paket tarixi" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows.map((row) => row.querySelector("p")?.textContent)).toEqual([
+      "Qayta ochildi",
+      "Paket Toshkent HQ'da qabul qilindi",
+      "Paket Toshkent HQ'ga jo'natildi",
+      "Paket yaratildi",
+    ]);
+    expect(rows[0]).not.toHaveTextContent("—");
+    expect(rows[1]).toHaveTextContent("Bobur Xolmatov");
+    expect(rows[3]).toHaveTextContent("Malika Yusupova");
+    expect(within(historyCard()).getByText("4 ta")).toBeInTheDocument();
+  });
+
+  it("3HKvAyhm «Tarix» xatosi — karta ichida «Qayta urinish», sahifa ishlayveradi", async () => {
+    let fail = true;
+    respond(detail({ status: "RECEIVED" }), () =>
+      fail
+        ? Promise.reject({ response: { status: 500 } })
+        : Promise.resolve({
+            data: { statusCode: 200, data: [historyRow("h1", "CREATED", "Yaratildi", local(6, 12, 2), { id: "31", name: "Malika Yusupova" })] },
+          }),
+    );
+    const user = userEvent.setup();
+    renderPage("manager");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(await within(historyCard()).findByText("Tarixni yuklab bo'lmadi", {}, { timeout: 4000 })).toBeInTheDocument();
+    // Asosiy kartalar xatodan ta'sirlanmaydi.
+    expect(screen.getByRole("region", { name: "Paket ma'lumotlari" })).toBeInTheDocument();
+    fail = false;
+    await user.click(within(historyCard()).getByRole("button", { name: "Qayta urinish" }));
+    expect(await within(historyCard()).findByText("Paket yaratildi")).toBeInTheDocument();
+  });
+
+  it("3HKvAyhm: logist — tarix so'rovi yuborilmaydi (backend 403), tafsilotdagi `history` ko'rsatiladi", async () => {
+    respond(detail({ status: "SENT" }));
+    renderPage("logist");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(within(historyCard()).getByText("Tarix hozircha mavjud emas")).toBeInTheDocument();
+    expect(mocks.get).not.toHaveBeenCalledWith("transfer-batches/172/history");
   });
 
   it("paket topilmadi (404) — bo'sh holat va orqaga havola", async () => {

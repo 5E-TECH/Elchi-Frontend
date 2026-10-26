@@ -9,12 +9,12 @@ import {
 
 /**
  * MO-2 — market operatori (desktop): bosh sahifa — o'z marketi KPI va reytingi («Siz» — profildagi `market_id`), xarajat
- * tasdiqlarisiz; «Daromadim» — «Stavkam» (foiz) va menyudan o'tish. MO-3: yon menyu to'liq (Bosh sahifa · Buyurtmalar ·
+ * so'rovlari faqat o'qish (6QLF7nst); «Daromadim» — «Stavkam» (foiz) va menyudan o'tish. MO-3: yon menyu to'liq (Bosh sahifa · Buyurtmalar ·
  * Buyurtma yaratish · Mahsulotlar · Daromadim), bosh sahifada «Buyurtma yaratish» va buyurtma havolalari.
  */
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat tasdiqlari yo'q, buyurtma havolalari faqat ochiq yo'llarga", async ({
+test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat so'rovlari faqat o'qish, buyurtma havolalari faqat ochiq yo'llarga", async ({
   page,
 }) => {
   const mock = await openOperatorHome(page);
@@ -25,7 +25,13 @@ test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat tasdiqlari yo'q
   const sales = page.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" });
   await expect(sales.getByRole("listitem").filter({ hasText: "Baraka Shop" })).toContainText("Siz");
   await expect(sales.getByRole("listitem").filter({ hasText: "Nur Elektronika" })).not.toContainText("Siz");
-  await expect(page.getByText("Qo'shimcha xarajat tasdiqlari")).toHaveCount(0);
+  // 6QLF7nst (N14): so'rovlar ro'yxati — faqat o'qish («Tasdiqlash / Rad etish» yo'q).
+  const approvals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }) });
+  await expect(approvals).toContainText("1 ta so'rov kutilmoqda");
+  await expect(approvals).toContainText("Faqat market egasi qaror qiladi");
+  await expect(approvals.getByRole("link", { name: "№EL-100076" })).toHaveAttribute("href", "/orders/edit/76");
+  await expect(approvals).toContainText("Ali Kuryer · Kuryer");
+  await expect(approvals.getByRole("button")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Buyurtma yaratish" })).toBeVisible();
   await expectOnlyOperatorOrderLinks(page);
   await expectNoHorizontalOverflow(page);

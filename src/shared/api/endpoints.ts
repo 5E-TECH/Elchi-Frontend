@@ -211,6 +211,7 @@ export const API_ENDPOINTS = {
     BASE: "transfer-batches", // GET list
     BY_ID: (id: string | number) => `transfer-batches/${id}`,
     REMAINING: (id: string | number) => `transfer-batches/${id}/remaining`,
+    HISTORY: (id: string | number) => `transfer-batches/${id}/history`, // GET tarix, eng eskisi birinchi (3HKvAyhm)
     SEND: (id: string | number) => `transfer-batches/${id}/send`, // PATCH mark sent (vehicle info)
     RECEIVE: (id: string | number) => `transfer-batches/${id}/receive`,
     RECEIVE_ORDERS: (id: string | number) => `transfer-batches/${id}/receive-orders`,

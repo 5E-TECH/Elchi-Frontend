@@ -71,6 +71,11 @@ export type InvestorInvestmentsPage = {
   meta: InvestorPageMeta;
   /** Barcha investitsiyalar yig'indisi (sahifa emas). */
   totalAmount: number;
+  /**
+   * Tanlangan oraliq (`from_date`/`to_date`) yig'indisi — barcha sahifalar (`summary.range_amount`, su4IYGCN / IN-3);
+   * oraliqsiz — `total_amount` ga teng. Eski javobda maydon yo'q — `null`.
+   */
+  rangeAmount: number | null;
 };
 
 export type InvestorProfitsPage = {
@@ -185,6 +190,13 @@ const toInvestment = (value: unknown): InvestorInvestment => {
   };
 };
 
+/** Ixtiyoriy summa: son (yoki son-matn) — o'zi, yo'q / noto'g'ri — `null` (0 — haqiqiy qiymat). */
+const optionalAmount = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 export const toInvestorInvestmentsPage = (payload: unknown): InvestorInvestmentsPage => {
   const body = unwrap(payload);
   const items = (Array.isArray(body.items) ? body.items : []).map(toInvestment);
@@ -192,6 +204,7 @@ export const toInvestorInvestmentsPage = (payload: unknown): InvestorInvestments
     items,
     meta: toMeta(body.meta, items.length),
     totalAmount: toNumber(asRecord(body.summary).total_amount),
+    rangeAmount: optionalAmount(asRecord(body.summary).range_amount),
   };
 };
 

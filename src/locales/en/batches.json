@@ -87,6 +87,8 @@
     "sendErrorDescription": "The selection is kept — try again",
     "historyCount": "{{value}}",
     "historyLabel": "Batch history",
+    "historyLoading": "Loading history",
+    "historyError": "Couldn't load the history",
     "historyAction": {
       "created": "Batch created",
       "createdReturn": "Return batch created",

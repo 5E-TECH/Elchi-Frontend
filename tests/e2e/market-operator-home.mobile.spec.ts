@@ -11,14 +11,14 @@ import { tapTargets, tooSmall } from "./support/tapTargets";
 /**
  * MO-2 — market operatori telefonda (390): pastki menyu (skanersiz, «Menyu»siz; MO-3 dan 5 katak — Bosh sahifa ·
  * Buyurtmalar · Yaratish · Mahsulotlar · Daromadim); bosh sahifa — market bosh sahifasi operator rejimida (xarajat
- * tasdiqlarisiz); «Daromadim» — «Stavkam». Sizish to'sig'i: faqat o'z marketi analitikasi so'raladi
+ * so'rovlari faqat o'qish — 6QLF7nst); «Daromadim» — «Stavkam». Sizish to'sig'i: faqat o'z marketi analitikasi so'raladi
  * (ROL-0 dagi `roles-shell.mobile.spec.ts` operator bandi shu yerga ko'chdi).
  */
 test.describe.configure({ timeout: 180_000 });
 
 const bottomNav = (page: import("@playwright/test").Page) => page.getByRole("navigation", { name: "Asosiy bo'limlar" });
 
-test("⭐ 390: bosh sahifa — pastki menyu 5 katak, xarajat tasdiqlari yo'q, buyurtma havolalari faqat ochiq yo'llarga, sizish yo'q", async ({
+test("⭐ 390: bosh sahifa — pastki menyu 5 katak, xarajat so'rovlari faqat o'qish, buyurtma havolalari faqat ochiq yo'llarga, sizish yo'q", async ({
   page,
 }) => {
   const mock = await openOperatorHome(page);
@@ -33,7 +33,10 @@ test("⭐ 390: bosh sahifa — pastki menyu 5 katak, xarajat tasdiqlari yo'q, bu
   await expect(nav.getByRole("button", { name: "Menyu" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Skanerlash/ })).toHaveCount(0);
 
-  await expect(page.getByText("Qo'shimcha xarajat tasdiqlari")).toHaveCount(0);
+  // 6QLF7nst: xarajat so'rovi — faqat o'qish (tugmasiz), telefonda ham.
+  const approvals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }) });
+  await expect(approvals).toContainText("Faqat market egasi qaror qiladi");
+  await expect(approvals.getByRole("button")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Buyurtma yaratish" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tezkor harakatlar" })).toBeVisible();
   // Profildagi ism — operatorniki, market nomi sifatida chiqmaydi.

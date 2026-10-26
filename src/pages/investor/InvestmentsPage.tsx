@@ -44,8 +44,9 @@ const SKELETON_ROWS = 5;
  * &limit` — doira JWT'dan, tartib `invested_at` DESC (serverda; sarlavhada saralash tugmasi yo'q).
  *
  *  - Karta sarlavhasi: filtrsiz — «Jami: X so'm · N ta» (`summary.total_amount` — BARCHA investitsiyalar);
- *    oraliq tanlanganda backend oraliq summasini bermaydi (N6 → IN-3): bitta sahifa bo'lsa — sahifa yig'indisi
- *    («Tanlangan oraliqda: X so'm · N ta»), aks holda faqat «Tanlangan oraliqda: N ta».
+ *    oraliq tanlanganda — «Tanlangan oraliqda: X so'm · N ta», X = `summary.range_amount` (oraliqning BARCHA
+ *    sahifalari bo'yicha backend yig'indisi — su4IYGCN / IN-3). Eski javobda `range_amount` yo'q bo'lsa — avvalgidek:
+ *    bitta sahifa bo'lsa sahifa yig'indisi, aks holda faqat «Tanlangan oraliqda: N ta».
  *  - «Jamidagi hissasi» = summa / `summary.total_amount` (frontendda; «Ulush» so'zi — faqat KPI stavkasi).
  *  - `DateRange` («Barcha vaqt» — filtrsiz), oraliq Toshkent kuni bo'yicha (`toInvestmentsParams`).
  *  - Holatlar: yuklanish — jadval skeleti; filtrsiz bo'sh — bosh sahifa matni; oraliqda bo'sh — «Filtrni tozalash»;
@@ -121,7 +122,11 @@ const InvestmentsPage = () => {
     // `count` — son (i18next ko'plik shakli uchun), `countText` — mahalliy formatdagi matn.
     const counts = { count: summaryData.meta.total, countText: count(summaryData.meta.total) };
     if (!filtered) return t("investmentsPage.total", { amount: money(summaryData.totalAmount), ...counts });
-    // Oraliq yig'indisi — faqat oraliqning BARCHA yozuvlari shu javobda bo'lsa (sahifadan tashqari havola
+    // IN-3: oraliq yig'indisi serverdan (`summary.range_amount`, sahifadan qat'i nazar; yozuv yo'q — 0).
+    if (summaryData.rangeAmount !== null) {
+      return t("investmentsPage.rangeTotal", { amount: money(summaryData.rangeAmount), ...counts });
+    }
+    // Eski javob: oraliq yig'indisi — faqat oraliqning BARCHA yozuvlari shu javobda bo'lsa (sahifadan tashqari havola
     // `?page=3` → `items=[]`, `total=3` — «0 so'm» emas, faqat son).
     if (summaryData.items.length === summaryData.meta.total) {
       const sum = summaryData.items.reduce((acc, item) => acc + item.amount, 0);
