@@ -46,6 +46,32 @@ export type AiPreviewItem = {
   allow_free_text?: boolean;
 };
 
+/**
+ * J3hEDtFN (prompt `2026-10-26.1`): AI noaniq maydonni TAXMIN QILMAYDI — qiymat `null` qoladi va `warnings[]` ga
+ * tushadi. Faqat enum (erkin matn yo'q) — frontend o'z matnini ko'rsatadi; noma'lum qiymat e'tiborsiz.
+ */
+export const AI_WARNING_FIELDS = [
+  "customer_name",
+  "phone_number",
+  "extra_number",
+  "region_name",
+  "district_name",
+  "address",
+  "items",
+  "total_price",
+  "comment",
+  "where_deliver",
+  "is_replacement",
+  "operator",
+] as const;
+export type AiWarningField = (typeof AI_WARNING_FIELDS)[number];
+
+/** `unclear` — o'qib bo'lmadi; `ambiguous` — bir necha talqin; `conflict` — zid qiymatlar. */
+export const AI_WARNING_REASONS = ["unclear", "ambiguous", "conflict"] as const;
+export type AiWarningReason = (typeof AI_WARNING_REASONS)[number];
+
+export type AiPreviewWarning = { field: AiWarningField; reason: AiWarningReason };
+
 export type AiPreviewOrder = {
   customer_name: string;
   phone_number: string;
@@ -74,6 +100,8 @@ export type AiPreviewOrder = {
    * qaytadi — operator karta o'chirsa ham o'zgarmaydi.
    */
   index?: number;
+  /** Noaniq maydonlar (bo'sh massiv / yo'q — ogohlantirish yo'q). */
+  warnings?: AiPreviewWarning[];
 };
 
 export type AiParseResponse = {

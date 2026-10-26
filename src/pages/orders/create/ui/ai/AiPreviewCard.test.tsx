@@ -326,3 +326,70 @@ describe("AiPreviewCard", () => {
     });
   });
 });
+
+describe("AI ogohlantirishlari `warnings[]` (J3hEDtFN)", () => {
+  const fieldWarnings = () =>
+    screen.queryAllByTestId("ai-field-warning").map((node) => [node.dataset.field, node.textContent]);
+
+  it("har ogohlantirish o'z maydoni ostida, sabab bo'yicha o'z matni (server matni yo'q)", () => {
+    renderCard(
+      aiPreview({
+        total_price: null,
+        warnings: [
+          { field: "total_price", reason: "unclear" },
+          { field: "phone_number", reason: "ambiguous" },
+          { field: "address", reason: "conflict" },
+        ],
+      }),
+    );
+
+    expect(fieldWarnings()).toEqual([
+      ["phone_number", "Bir necha xil tushunish mumkin — tekshiring"],
+      ["address", "Matnda bir-biriga zid qiymatlar bor — tekshiring"],
+      ["total_price", "AI aniq o'qiy olmadi — tekshiring"],
+    ]);
+    // Maydonga bog'langan (aria-describedby → hint).
+    expect(textbox("Umumiy summa")).toHaveAccessibleDescription(/AI aniq o'qiy olmadi/);
+    expect(textbox("Manzil")).toHaveAccessibleDescription(/zid qiymatlar/);
+  });
+
+  it("noma'lum maydon yoki sabab, erkin matn — ko'rsatilmaydi; bo'sh massiv — belgi yo'q", () => {
+    renderCard(
+      aiPreview({
+        warnings: [
+          { field: "secret", reason: "unclear" },
+          { field: "comment", reason: "Narx 150 mi yoki 1,5 mln?" },
+          "phone_number",
+        ] as never,
+      }),
+    );
+    expect(fieldWarnings()).toEqual([]);
+    expect(screen.queryByText(/Narx 150 mi/)).not.toBeInTheDocument();
+  });
+
+  it("ogohlantirish tayyorlikka ta'sir qilmaydi: to'liq karta «Tayyor» va yaratish mumkin", () => {
+    renderCard(aiPreview({ warnings: [{ field: "customer_name", reason: "ambiguous" }] }));
+    expect(screen.getByText("Tayyor")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bu kartani yaratish" })).toBeEnabled();
+    expect(fieldWarnings()).toEqual([["customer_name", "Bir necha xil tushunish mumkin — tekshiring"]]);
+  });
+
+  it("operator maydonni o'zgartirsa — o'sha belgi yo'qoladi, boshqalari qoladi", () => {
+    renderCard(
+      aiPreview({
+        warnings: [
+          { field: "customer_name", reason: "unclear" },
+          { field: "comment", reason: "ambiguous" },
+        ],
+      }),
+    );
+    fireEvent.change(textbox("Mijoz ismi"), { target: { value: "Valiyev Ali" } });
+    expect(fieldWarnings()).toEqual([["comment", "Bir necha xil tushunish mumkin — tekshiring"]]);
+  });
+
+  it("kartada maydoni yo'q `is_replacement` — maydonlar ustida nomi bilan", () => {
+    renderCard(aiPreview({ warnings: [{ field: "is_replacement", reason: "conflict" }] }));
+    const list = screen.getByRole("list", { name: "AI ogohlantirishlari" });
+    expect(list).toHaveTextContent("Almashtirish buyurtmasi: Matnda bir-biriga zid qiymatlar bor — tekshiring");
+  });
+});

@@ -674,6 +674,15 @@
   "aiAllProducts": "Barcha mahsulotlar",
   "aiPhoneRead": "AI o'qigan raqam: {{value}}",
   "aiRegionGuessed": "Viloyat matnda yo'q — AI taxmin qildi, tekshiring",
+  "aiWarning": {
+    "unclear": "AI aniq o'qiy olmadi — tekshiring",
+    "ambiguous": "Bir necha xil tushunish mumkin — tekshiring",
+    "conflict": "Matnda bir-biriga zid qiymatlar bor — tekshiring",
+    "listLabel": "AI ogohlantirishlari",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Almashtirish buyurtmasi",
+    "fieldRegion": "Viloyat"
+  },
   "aiItems": "Mahsulotlar",
   "aiReadAs": "AI o'qidi",
   "aiRemoveItem": "Mahsulotni olib tashlash: {{name}}",

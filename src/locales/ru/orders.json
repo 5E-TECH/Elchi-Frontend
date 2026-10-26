@@ -674,6 +674,15 @@
   "aiAllProducts": "Все товары",
   "aiPhoneRead": "AI прочитал номер: {{value}}",
   "aiRegionGuessed": "Региона нет в тексте — AI предположил, проверьте",
+  "aiWarning": {
+    "unclear": "AI не смог точно прочитать — проверьте",
+    "ambiguous": "Можно понять по-разному — проверьте",
+    "conflict": "В тексте противоречивые значения — проверьте",
+    "listLabel": "Предупреждения AI",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Заказ на замену",
+    "fieldRegion": "Регион"
+  },
   "aiItems": "Товары",
   "aiReadAs": "AI прочитал",
   "aiRemoveItem": "Удалить товар: {{name}}",

@@ -674,6 +674,15 @@
   "aiAllProducts": "All products",
   "aiPhoneRead": "AI read the number as: {{value}}",
   "aiRegionGuessed": "Region is not in the text — AI guessed it, please check",
+  "aiWarning": {
+    "unclear": "AI could not read this clearly — please check",
+    "ambiguous": "This can be read in more than one way — please check",
+    "conflict": "The text has conflicting values — please check",
+    "listLabel": "AI warnings",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Replacement order",
+    "fieldRegion": "Region"
+  },
   "aiItems": "Products",
   "aiReadAs": "AI read",
   "aiRemoveItem": "Remove product: {{name}}",
