@@ -14,13 +14,6 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.RECEIVABLE_BALANCE ──────────────────────────────────
-  const useGetReceivableBalance = (id: string, enabled: boolean = true) =>
-    useQuery({
-      queryKey: ["integ-cov", "receivable-balance", id],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLE_BALANCE(id)).then((res) => res.data),
-      enabled: enabled && !!id,
-    });
 
   // ── POST · INTEGRATIONS.REMITTANCES ────────────────────────────────────────
   const createRemittance = useMutation({
@@ -44,13 +37,6 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.SYNC_HISTORY_BY_ID ──────────────────────────────────
-  const useGetSyncHistoryById = (id: string, enabled: boolean = true) =>
-    useQuery({
-      queryKey: ["integ-cov", "sync-history", id],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY_BY_ID(id)).then((res) => res.data),
-      enabled: enabled && !!id,
-    });
 
   // ── POST · INTEGRATIONS.SYNC_QUEUE ─────────────────────────────────────────
   const syncQueue = useMutation({
@@ -115,11 +101,9 @@ export const useIntegrationsCoverage = () => {
 
   return {
     healthcheck,
-    useGetReceivableBalance,
     createRemittance,
     retry,
     sync,
-    useGetSyncHistoryById,
     syncQueue,
     test,
     dispatch,
