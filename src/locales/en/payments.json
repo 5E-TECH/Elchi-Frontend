@@ -1090,6 +1090,55 @@
           "click": "card",
           "other": "other"
         }
+      },
+      "autoClosed": {
+        "title": "Closed automatically — {{time}}, the cashier did not close it",
+        "titleNoTime": "Closed automatically, the cashier did not close it",
+        "text": "{{name}} opened the shift at {{time}} and did not close it; cash and card balances were not counted, totals are from the system.",
+        "textNoName": "The cashier did not close the shift; cash and card balances were not counted, totals are from the system."
+      },
+      "file": {
+        "pdf": "PDF",
+        "xlsx": "Download Excel"
+      },
+      "resend": {
+        "action": "Resend the report",
+        "sending": "Sending…",
+        "confirmTitle": "Resend the report?",
+        "confirmText": "The report will be sent again to the recipients from the settings (superadmin, couriers, markets) as a new round.",
+        "confirm": "Resend",
+        "done": "Report resent",
+        "failed": "The report was not resent"
+      },
+      "deliveries": {
+        "title": "Who received the report",
+        "recipients": "{{value}} recipients",
+        "round": "Round {{round}}",
+        "kind": {
+          "superadmin": "Superadmin",
+          "courier": "Couriers · {{value}}",
+          "market": "Markets · {{value}}"
+        },
+        "hint": {
+          "superadmin": "full report and {{format}}",
+          "courier": "Only their own operations",
+          "market": "Only payments to them"
+        },
+        "channel": {
+          "telegram": "Telegram",
+          "in_app": "In-app"
+        },
+        "queued": "sending",
+        "failedLine": "{{name}} — {{channel}}: {{reason}}",
+        "failedUnknown": "not sent",
+        "failedMore": "{{count}} more not sent",
+        "empty": {
+          "open": "The report is sent after the shift closes.",
+          "pending": "The report is queued and will be sent shortly.",
+          "skipped": "The report was not sent — all recipients are turned off in the settings.",
+          "failed": "Sending the report failed — try resending it.",
+          "none": "This shift report has not been sent to anyone yet."
+        }
       }
     },
     "settings": {
@@ -1122,7 +1171,58 @@
         "none": "Image optional, balance confirmed manually",
         "off": "Confirmation off — the shift closes as before"
       },
-      "empty": "This cashbox has no active cards"
+      "empty": "This cashbox has no active cards",
+      "auto": {
+        "title": "Automatic closing",
+        "subtitle": "If the cashier does not close in time",
+        "enabled": "Close the shift automatically",
+        "enabledHint": "At the set time an open shift is closed by the system; the report says «Closed automatically»",
+        "times": "Closing times per day",
+        "timesHint": "{{value}} times a day · Tashkent time (UTC+5)",
+        "timesRequired": "Add at least one closing time",
+        "addTime": "Add time",
+        "pickTime": "Pick a time",
+        "cancelAdd": "Cancel adding a time",
+        "removeTime": "Remove {{time}}",
+        "scope": "Which cashboxes",
+        "scopes": {
+          "main": "Main cashbox only",
+          "branches": "Main cashbox and branch cashboxes"
+        },
+        "warn": "Warn {{value}} min before closing",
+        "warnOff": "Warn before closing",
+        "warnHint": "The cashier gets a reminder in Telegram and in the app",
+        "warnBefore": "Minutes before",
+        "warnMinutes": "{{value}} min",
+        "note": "When closed automatically, cash and cards are not counted — the closing balance is taken from the system and no difference is calculated. The cashier opens the next shift."
+      },
+      "report": {
+        "title": "Sending the shift report",
+        "subtitle": "Every time a shift closes — by the cashier or automatically",
+        "label": "Report recipients",
+        "recipient": "Recipient",
+        "groups": {
+          "superadmin": "Superadmin",
+          "couriers": "Couriers",
+          "markets": "Markets"
+        },
+        "groupHints": {
+          "superadmin": "Full report and attachment",
+          "couriers": "Only their own operations",
+          "markets": "Only payments to them"
+        },
+        "channels": {
+          "telegram": "Telegram",
+          "in_app": "In-app"
+        },
+        "switch": {
+          "telegram": "{{group}}: Telegram",
+          "in_app": "{{group}}: in-app notification"
+        },
+        "format": "Attachment format",
+        "formatHint": "Sent to the superadmin together with the Telegram message",
+        "note": "Only couriers and markets with operations in the shift get the report: a courier sees only their own transfers, a market only the amounts paid to it. Users without Telegram get only the in-app notification."
+      }
     },
     "resultReport": "Shift report"
   }

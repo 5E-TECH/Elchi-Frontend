@@ -1124,12 +1124,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/payments/shifts/:id` — Smena hisoboti — naqd, kartalar bo'yicha qoldiq va AI tekshiruvi
 
-- **Fayllar:** `src/pages/payments/shiftReport/index.tsx` · `src/pages/payments/components/shiftCheck/aiStatus.tsx` · `src/pages/payments/components/shiftCheck/aiStatusMeta.ts`
+- **Fayllar:** `src/pages/payments/shiftReport/index.tsx` · `src/pages/payments/shiftReport/ReportDeliveries.tsx` · `src/pages/payments/components/shiftCheck/aiStatus.tsx` · `src/pages/payments/components/shiftCheck/aiStatusMeta.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Manba — GET finance/shift/:id/report (superadmin/admin/menejer — o'z filiali; registrator — asosiy kassa): KPI (ochilish · kirim · chiqim · yopilish · farq), «Naqd», «Kartalar va hisob raqamlar» (tizim bo'yicha, kiritilgan, rasm — 300 s imzolangan havola, AI natija + «Kiritilgan ≠ rasm», farq, izoh; telefonda kartalar), «Operatsiyalar xulosasi» (tur × to'lov usuli). Ochiq smenada ham ishlaydi (info banner). Kirish — smena natija oynasidagi «Smena hisoboti» (kartalar tekshirilgan smenada). «Avtomatik yopildi» banneri, «Hisobot kimlarga yuborildi», «Vaqt chizig'i», PDF/Excel/qayta yuborish — avtomatik yopish va hisobot yuborish kartalari backendi bilan (hozir chizilmaydi). Tarix ro'yxati /payments/shifts (alohida maket chizilmagan) — kodda yo'q.
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Manba — GET finance/shift/:id/report (superadmin/admin/menejer — o'z filiali; registrator — asosiy kassa): KPI (ochilish · kirim · chiqim · yopilish · farq), «Naqd», «Kartalar va hisob raqamlar» (tizim bo'yicha, kiritilgan, rasm — 300 s imzolangan havola, AI natija + «Kiritilgan ≠ rasm», farq, izoh; telefonda kartalar), «Operatsiyalar xulosasi» (tur × to'lov usuli). Ochiq smenada ham ishlaydi (info banner). Kirish — smena natija oynasidagi «Smena hisoboti» (kartalar tekshirilgan smenada). y8Tqm9Ap / gWI4gYkw (2026-10-26): avtomatik yopilgan smenada sariq «Avtomatik yopildi — HH:MM, kassir yopmagan» banneri (close_reason=auto); faqat superadmin — sarlavhada hisobot fayli (PDF / «Excelga yuklash», report.file_url 300 s) va «Hisobotni qayta yuborish» (tasdiq bilan, POST finance/shift/:id/report/resend), «Hisobot kimlarga yuborildi» kartasi (deliveries[] oxirgi raund: qabul qiluvchi turi × Telegram / tizim, «Telegram ulanmagan» sababi). Bildirishnoma havolasi /payments/shift-report/:id → shu sahifaga yo'naltiriladi. «Vaqt chizig'i» — backend bermaydi, chizilmaydi. Tarix ro'yxati /payments/shifts (alohida maket chizilmagan) — kodda yo'q.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1139,12 +1139,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/payments/shift-settings` — Kassa smenasi sozlamalari — kartalar qoldig'ini tasdiqlash, rasm, AI (faqat superadmin)
 
-- **Fayllar:** `src/pages/payments/shiftSettings/index.tsx` · `src/pages/payments/shiftSettings/settingsDiff.ts` · `src/pages/settings/ui/settingsUi.tsx`
+- **Fayllar:** `src/pages/payments/shiftSettings/index.tsx` · `src/pages/payments/shiftSettings/AutomationCards.tsx` · `src/pages/payments/shiftSettings/CellSwitch.tsx` · `src/pages/payments/shiftSettings/settingsDiff.ts` · `src/pages/settings/ui/settingsUi.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canManageShiftSettings` (access.ts → canManageShiftSettings (kiZgTybn; backend PATCH finance/shift/settings @Roles(SUPERADMIN)))
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Faqat SUPERADMIN (canManageShiftSettings = backend PATCH finance/shift/settings @Roles(SUPERADMIN)). GET finance/shift/settings → global kalitlar + asosiy kassa kartalari; «Saqlash» faqat o'zgargan maydonlarni yuboradi; karta rasmi o'chsa AI ham o'chadi (AI faqat rasm talab qilingan kartada — backend 400). Kirish — smena yopish oynasidagi va smena hisobotidagi «Sozlamalar». «Avtomatik yopish» va «Smena hisobotini yuborish» bloklari — o'z kartalari backendi bilan (hozir chizilmaydi).
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Faqat SUPERADMIN (canManageShiftSettings = backend PATCH finance/shift/settings @Roles(SUPERADMIN)). GET finance/shift/settings → global kalitlar + asosiy kassa kartalari; «Saqlash» faqat o'zgargan maydonlarni yuboradi; karta rasmi o'chsa AI ham o'chadi (AI faqat rasm talab qilingan kartada — backend 400). Kirish — smena yopish oynasidagi va smena hisobotidagi «Sozlamalar». y8Tqm9Ap / gWI4gYkw (2026-10-26): «Avtomatik yopish» (kalit, kuniga yopish vaqtlari — Toshkent HH:MM, 1–12 ta; «Qaysi kassalarda» — backend scope: faqat asosiy kassa | asosiy + filiallar, maketdagi har kassa belgisi o'rniga ikki variant; yopishdan N daqiqa oldin ogohlantirish, 0 — o'chiq) va «Smena hisobotini yuborish» (superadmin / kuryerlar / marketlar × Telegram / tizim, ilova formati PDF | Excel) — o'sha «Saqlash» bilan (PATCH auto_close / report, faqat o'zgarganlar); javobda auto_close / report bo'lmasa (eski backend) chizilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2026,6 +2026,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/new-orders/integrations/create` | `/integrations/sources/create` | `canCreateOrdersByRoleAndBranchType` |
 | `/new-orders/branches/:branchId/:batchId` | `/new-orders/branches/:branchId/batches/:batchId` | `canCreateOrdersByRoleAndBranchType` → `canViewAdminNewOrderTabs` |
 | `/new-orders/integrations/:id` | `/integrations/sources/:id` | `canCreateOrdersByRoleAndBranchType` |
+| `/payments/shift-report/:id` | `/payments/shifts/:id` | — |
 | `/notification` | `/notifications` | — |
 | `*` | `/404` | — |
 
@@ -3180,7 +3181,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/payments/components/shiftCheck/aiStatusMeta.ts` | `/payments/shifts/:id` |
 | `src/pages/payments/components/shiftCheck/useShiftAccountsForm.ts` | `/payments/main-cashbox` |
 | `src/pages/payments/index.tsx` | `/payments` |
+| `src/pages/payments/shiftReport/ReportDeliveries.tsx` | `/payments/shifts/:id` |
 | `src/pages/payments/shiftReport/index.tsx` | `/payments/shifts/:id` |
+| `src/pages/payments/shiftSettings/AutomationCards.tsx` | `/payments/shift-settings` |
+| `src/pages/payments/shiftSettings/CellSwitch.tsx` | `/payments/shift-settings` |
 | `src/pages/payments/shiftSettings/index.tsx` | `/payments/shift-settings` |
 | `src/pages/payments/shiftSettings/settingsDiff.ts` | `/payments/shift-settings` |
 | `src/pages/products/create/index.tsx` | `/products/create-product/:id` |
