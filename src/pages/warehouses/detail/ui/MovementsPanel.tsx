@@ -19,12 +19,16 @@ import { MovementItem } from "./MovementItem";
 
 const PAGE_SIZES = [20, 50, 100] as const;
 
-/** «Turi» filtri: Qaytdi — bekor (band bo'shadi) va qaytish birga. */
+/**
+ * «Turi» filtri (`GET /warehouses/:id/movements?type=` — IN, ADJUST, RESERVE, RELEASE, OUT, RETURN). hfkhYrGk №2:
+ * «Band bo'shadi» (RELEASE) va «Omborga qaytdi» (RETURN) — alohida tanlov (ilgari ikkalasi bitta «Qaytdi» edi).
+ */
 const TYPE_FILTERS = {
   IN: "IN",
   RESERVE: "RESERVE",
   OUT: "OUT",
-  RETURN: "RETURN,RELEASE",
+  RELEASE: "RELEASE",
+  RETURN: "RETURN",
   ADJUST: "ADJUST",
 } as const;
 type TypeFilter = "" | keyof typeof TYPE_FILTERS;
@@ -32,7 +36,7 @@ type TypeFilter = "" | keyof typeof TYPE_FILTERS;
 /**
  * «HARAKATLAR» TABI — to'liq jurnal (`GET /warehouses/:id/movements`, eng yangisi tepada, sahifalab). Maket yo'q —
  * eng yaqini `superadmin-warehouse-detail` «Oxirgi harakatlar» (qator ko'rinishi AYNAN o'sha) + «Turi:» filtri
- * (Kirim · Band · Chiqim · Qaytdi · Tuzatish).
+ * (Kirim · Band · Chiqim · Band bo'shadi · Omborga qaytdi · Tuzatish).
  */
 export const MovementsPanel = ({ warehouseId }: { warehouseId: string }) => {
   const text = useWarehouseText();

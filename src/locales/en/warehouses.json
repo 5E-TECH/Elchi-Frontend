@@ -258,8 +258,8 @@
       "IN": "Receipt",
       "RESERVE": "Reserved",
       "OUT": "Issued",
-      "RELEASE": "Returned",
-      "RETURN": "Returned",
+      "RELEASE": "Reservation released",
+      "RETURN": "Returned to warehouse",
       "ADJUST": "Adjustment",
       "MOVE_OUT": "Transfer",
       "MOVE_IN": "Transfer"
@@ -268,8 +268,8 @@
       "IN": "Admin added products",
       "RESERVE": "Order #{{order}} created",
       "OUT": "Order #{{order}} handed to courier",
-      "RELEASE": "Order #{{order}} cancelled",
-      "RETURN": "Order #{{order}} cancelled",
+      "RELEASE": "Order #{{order}} — reservation released",
+      "RETURN": "Order #{{order}} returned to the warehouse",
       "ADJUST": "Stocktaking: {{before}} → {{after}}",
       "MOVE_OUT": "Moved to another warehouse",
       "MOVE_IN": "Moved from another warehouse"
@@ -280,7 +280,6 @@
       "RELEASE": "Reservation released",
       "RETURN": "Returned to the warehouse"
     },
-    "returnedToWarehouse": "returned to the warehouse",
     "actor": "{{name}}, {{role}}"
   },
   "actorRole": {

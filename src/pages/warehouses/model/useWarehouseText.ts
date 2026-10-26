@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   ClipboardList,
   Lock,
+  LockOpen,
   RotateCcw,
   type LucideIcon,
 } from "lucide-react";
@@ -13,12 +14,16 @@ import { getErrorKind, getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateLocalized, formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 
-/** Harakat ikonkasi (maket `superadmin-warehouse-detail` «Oxirgi harakatlar»). */
+/**
+ * Harakat ikonkasi (maket `superadmin-warehouse-detail` «Oxirgi harakatlar»). hfkhYrGk №2: «Band bo'shadi» (RELEASE —
+ * buyurtma o'chirildi / bekor, mahsulot ombordan chiqmagan) «Omborga qaytdi» (RETURN — mahsulot qaytib keldi) bilan
+ * adashmasin: band — `Lock`, bo'shashi — `LockOpen`; qaytish — maketdagi `RotateCcw`.
+ */
 export const MOVEMENT_ICON: Record<MovementType, LucideIcon> = {
   IN: ArrowDownLeft,
   RESERVE: Lock,
   OUT: ArrowUpRight,
-  RELEASE: RotateCcw,
+  RELEASE: LockOpen,
   RETURN: RotateCcw,
   ADJUST: ClipboardList,
   MOVE_OUT: ArrowLeftRight,
