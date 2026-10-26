@@ -7,7 +7,7 @@ import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { OrderParentBanner } from "../../../../widgets/order-meta";
 import { DetailAlert } from "./DetailAlert";
-import { LOCK_ALERT_ID, type OrderDetailLayout } from "./orderDetailAccess";
+import { LOCK_ALERT_ID, type OrderDetailLayout, type ProductsLockReason } from "./orderDetailAccess";
 
 const ACTION_LABEL_KEYS = {
   sell: "extraCostApprovalActionSell",
@@ -19,6 +19,11 @@ type DetailAlertsProps = {
   layout: OrderDetailLayout;
   pendingApproval: PendingExtraCostApproval | null;
   productsLocked: boolean;
+  /**
+   * Mahsulot qulfi sababi: `hq` — «HQ qabul qilgandan keyin …», `warehouse` — viloyat ombori buyurtmasi HQ'dan
+   * o'tmaydi, mahsulot omborda band qilingan (hfkhYrGk №4).
+   */
+  productsLockReason?: ProductsLockReason;
   destinationLocked: boolean;
   /** Superadmin / admin — qulf matnida «Mijoz va manzilni …», boshqalarda «Manzilni …». */
   canEditCustomer: boolean;
@@ -32,9 +37,10 @@ type DetailAlertsProps = {
   marketListHref?: string | null;
   /**
    * Qulf sababi (maketlar `*-orders-detail-cancelled`): bekor qilingan — «Buyurtma bekor qilingan — …»,
-   * marketga topshirilgan — «Buyurtma marketga topshirilgan — …». Berilmasa — «filialga jo'natilgan».
+   * marketga topshirilgan — «Buyurtma marketga topshirilgan — …», ombor buyurtmasi omborga qaytgan (hfkhYrGk №3,
+   * marketga topshirilmagan) — «Mahsulot omborga qaytarilgan — …». Berilmasa — «filialga jo'natilgan».
    */
-  lockReason?: "cancelled" | "returned" | null;
+  lockReason?: "cancelled" | "returned" | "warehouse" | null;
 };
 
 /**
@@ -46,6 +52,7 @@ export const DetailAlerts = ({
   layout,
   pendingApproval,
   productsLocked,
+  productsLockReason = "hq",
   destinationLocked,
   canEditCustomer,
   parentOrderId,
@@ -116,11 +123,13 @@ export const DetailAlerts = ({
     if (productsLocked && destinationLocked) {
       return (
         <DetailAlert tone="neutral" icon={Lock} role="status" id={LOCK_ALERT_ID.all} title={t("orderDetail.editClosedTitle")}>
-          {lockReason === "returned"
-            ? t("orderDetail.editClosedReturnedBody")
-            : lockReason === "cancelled"
-              ? t("orderDetail.editClosedCancelledBody")
-              : t("orderDetail.editClosedBody")}
+          {lockReason === "warehouse"
+            ? t("orderDetail.editClosedWarehouseBody")
+            : lockReason === "returned"
+              ? t("orderDetail.editClosedReturnedBody")
+              : lockReason === "cancelled"
+                ? t("orderDetail.editClosedCancelledBody")
+                : t("orderDetail.editClosedBody")}
         </DetailAlert>
       );
     }
@@ -133,7 +142,9 @@ export const DetailAlerts = ({
           id={LOCK_ALERT_ID.products}
           title={t("orderDetail.productsLockedTitle")}
         >
-          {t("orderDetail.productsLockedBody")}{" "}
+          {productsLockReason === "warehouse"
+            ? t("orderDetail.productsLockedWarehouseBody")
+            : t("orderDetail.productsLockedBody")}{" "}
           {canEditCustomer ? t("orderDetail.productsLockedCustomerAddress") : t("orderDetail.productsLockedAddress")}
         </DetailAlert>
       );

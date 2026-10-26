@@ -11,6 +11,7 @@ import { Badge, Card, EmptyState } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey, getInitials } from "../../../orders/list/courier/list/orderActionModel";
 import { DetailStatusBadge } from "./DetailStatusBadge";
 import { OrderComment } from "./OrderComment";
+import type { ProductsLockReason } from "./orderDetailAccess";
 import {
   getDistrictName,
   getProductImageUrl,
@@ -163,10 +164,13 @@ export const CourierContactCard = ({
 export const CourierProductsCard = ({
   order,
   locked = false,
+  lockReason = "hq",
   className,
 }: {
   order: OrderDetail;
   locked?: boolean;
+  /** Qulf sababi (hfkhYrGk №4): viloyat ombori buyurtmasida — «omborda band qilingan». */
+  lockReason?: ProductsLockReason;
   className?: string;
 }) => {
   const { t } = useTranslation(["orders", "newOrders"]);
@@ -217,7 +221,11 @@ export const CourierProductsCard = ({
           <OrderComment comment={comment} />
         </div>
       ) : null}
-      {locked ? <LockNote>{t("productsLockReason", { ns: "newOrders" })}</LockNote> : null}
+      {locked ? (
+        <LockNote>
+          {t(lockReason === "warehouse" ? "productsLockReasonWarehouse" : "productsLockReason", { ns: "newOrders" })}
+        </LockNote>
+      ) : null}
     </Card>
   );
 };

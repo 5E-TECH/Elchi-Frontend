@@ -7,14 +7,17 @@ import { Badge, Card, DataTable, EmptyState, type DataTableColumn } from "../../
 import { getDeliveryLabelKey } from "../../../orders/list/courier/list/orderActionModel";
 import { EditButton } from "./EditButton";
 import { OrderComment } from "./OrderComment";
+import type { ProductsLockReason } from "./orderDetailAccess";
 import { getProductImageUrl, isCatalogLessItem, type OrderDetail, type OrderDetailItem } from "./orderDetailModel";
 
 type ProductsCardProps = {
   order: OrderDetail;
   /** «Tahrirlash» (superadmin, admin, registrator, menejer). */
   editable?: boolean;
-  /** HQ qabul qilgan — mahsulot va summa qulflangan. */
+  /** HQ qabul qilgan (yoki viloyat ombori buyurtmasi — mahsulot omborda band) — mahsulot va summa qulflangan. */
   locked?: boolean;
+  /** Qulf sababi — o'chiq «Tahrirlash» izohi (hfkhYrGk №4: ombor buyurtmasida «HQ qabul qilgandan keyin» emas). */
+  lockReason?: ProductsLockReason;
   lockDescribedBy?: string;
   onEdit?: () => void;
   /** Pastki qismdagi «Yetkazish turi» (marketda u «Manzil» kartasida). */
@@ -30,6 +33,7 @@ export const ProductsCard = ({
   order,
   editable = false,
   locked = false,
+  lockReason = "hq",
   lockDescribedBy,
   onEdit,
   showDelivery = true,
@@ -82,7 +86,7 @@ export const ProductsCard = ({
             label={t("editOrder", { ns: "newOrders" })}
             onClick={() => onEdit?.()}
             disabled={locked}
-            reason={t("productsLockReason", { ns: "newOrders" })}
+            reason={t(lockReason === "warehouse" ? "productsLockReasonWarehouse" : "productsLockReason", { ns: "newOrders" })}
             describedBy={lockDescribedBy}
           />
         ) : undefined

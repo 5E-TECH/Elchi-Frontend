@@ -35,7 +35,19 @@ describe("FulfillmentSourceTag", () => {
       fromWarehouse: true,
       warehouseId: "3",
       warehouseName: "Urgut",
+      warehouseKind: null,
     });
-    expect(readFulfillmentSource(null)).toEqual({ fromWarehouse: false, warehouseId: null, warehouseName: null });
+    expect(readFulfillmentSource(null)).toEqual({
+      fromWarehouse: false,
+      warehouseId: null,
+      warehouseName: null,
+      warehouseKind: null,
+    });
+    // hfkhYrGk №4: `warehouse.kind` — Markaziy ombor (HQ) yoki viloyat ombori; HQ buyurtmasida — `null`.
+    expect(readFulfillmentSource({ fulfillment_source: "WAREHOUSE", warehouse: { id: 1, kind: "HQ" } }).warehouseKind).toBe("HQ");
+    expect(readFulfillmentSource({ fulfillment_source: "WAREHOUSE", warehouse: { id: 3, kind: "regional" } }).warehouseKind).toBe(
+      "REGIONAL",
+    );
+    expect(readFulfillmentSource({ fulfillment_source: "HQ", warehouse: { id: 1, kind: "HQ" } }).warehouseKind).toBeNull();
   });
 });

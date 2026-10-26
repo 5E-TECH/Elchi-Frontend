@@ -32,7 +32,7 @@ export type StockLevel = (typeof STOCK_LEVELS)[number];
 
 /**
  * Harakat turi: IN — Kirim, RESERVE — Band, OUT — Chiqim (kuryerga berildi), RELEASE — band bo'shadi (bekor),
- * RETURN — Qaytdi, ADJUST — Tuzatish (inventarizatsiya), MOVE_* — ko'chirish (hozir yo'q).
+ * RETURN — Omborga qaytdi, ADJUST — Tuzatish (inventarizatsiya), MOVE_* — ko'chirish (hozir yo'q).
  */
 export const MOVEMENT_TYPES = ["IN", "RESERVE", "OUT", "RELEASE", "RETURN", "ADJUST", "MOVE_OUT", "MOVE_IN"] as const;
 export type MovementType = (typeof MOVEMENT_TYPES)[number];

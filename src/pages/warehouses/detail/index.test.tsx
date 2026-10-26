@@ -187,12 +187,60 @@ describe("Ombor tafsiloti — superadmin, admin", () => {
     await user.click(await screen.findByRole("tab", { name: /Harakatlar/ }));
     expect(await screen.findByRole("list", { name: "Harakatlar jurnali" })).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledWith("warehouses/3/movements", { params: { page: 1, limit: 20 } });
+    // hfkhYrGk №2: «Band bo'shadi» (RELEASE) va «Omborga qaytdi» (RETURN) — alohida tanlov, «Qaytdi» yo'q.
     await user.click(screen.getByRole("combobox", { name: /Turi/ }));
-    await user.click(await screen.findByRole("option", { name: "Qaytdi" }));
+    expect(screen.queryByRole("option", { name: "Qaytdi" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("option", { name: "Omborga qaytdi" }));
     await waitFor(() =>
-      expect(mocks.get).toHaveBeenCalledWith("warehouses/3/movements", { params: { page: 1, limit: 20, type: "RETURN,RELEASE" } }),
+      expect(mocks.get).toHaveBeenCalledWith("warehouses/3/movements", { params: { page: 1, limit: 20, type: "RETURN" } }),
+    );
+    await user.click(screen.getByRole("combobox", { name: /Turi/ }));
+    await user.click(await screen.findByRole("option", { name: "Band bo'shadi" }));
+    await waitFor(() =>
+      expect(mocks.get).toHaveBeenCalledWith("warehouses/3/movements", { params: { page: 1, limit: 20, type: "RELEASE" } }),
     );
     expect(screen.queryByRole("heading", { name: "Oxirgi harakatlar" })).not.toBeInTheDocument();
+  });
+
+  it("hfkhYrGk №2: «Band bo'shadi» (RELEASE) va «Omborga qaytdi» (RETURN) — har biri o'z belgisi va sarlavhasi bilan", async () => {
+    const row = (id: string, type: string, qty: number, onHand: number, reserved: number) => ({
+      id,
+      type,
+      qty,
+      on_hand_after: onHand,
+      reserved_after: reserved,
+      ref_type: "order",
+      ref_id: id === "905" ? "10244" : "10198",
+      order_id: id === "905" ? "10244" : "10198",
+      note: null,
+      created_at: "2026-10-24T10:05:00Z",
+      product: { id: "202", name: "Quvvatlagich 20 W" },
+      market: { id: "121", name: "Baraka Shop" },
+      actor: { id: "2", name: "Nilufar Rashidova", role: "admin" },
+    });
+    const base = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url: string, config?: unknown) =>
+      url === "warehouses/3/movements"
+        ? Promise.resolve({ data: { ...MOVEMENTS, data: [row("905", "RELEASE", -1, 9, 1), row("904", "RETURN", 1, 10, 1)], total: 2 } })
+        : base(url, config),
+    );
+    renderAs("superadmin");
+    const recent = await screen.findByRole("list", { name: "Oxirgi harakatlar" });
+    const [release, back] = within(recent).getAllByRole("listitem");
+    expect(within(release).getByText("Band bo'shadi")).toBeInTheDocument();
+    expect(within(release).getByText("Buyurtma №10244 — band bo'shadi")).toBeInTheDocument();
+    expect(within(back).getByText("Omborga qaytdi")).toBeInTheDocument();
+    expect(within(back).getByText("Buyurtma №10198 omborga qaytdi")).toBeInTheDocument();
+    expect(within(back).getByText("+1 dona")).toBeInTheDocument();
+    // Ilgari ikkalasi ham «Qaytdi» · «… bekor qilindi» edi.
+    expect(within(recent).queryByText("Qaytdi")).not.toBeInTheDocument();
+    expect(within(recent).queryByText(/bekor qilindi/)).not.toBeInTheDocument();
+    // Qaytish qatorida «· omborga qaytdi» takrori yo'q — faqat «mahsulot · market».
+    expect(within(back).getByText("Quvvatlagich 20 W · Baraka Shop")).toBeInTheDocument();
+    // Ikonkalar har xil (band bo'shashi — qulf ochildi, qaytish — RotateCcw).
+    const iconOf = (item: HTMLElement) => item.querySelector("svg")?.getAttribute("class") ?? "";
+    expect(iconOf(release)).toContain("lock-open");
+    expect(iconOf(back)).toContain("rotate-ccw");
   });
 
   it("topilmasa (404) — «Ombor topilmadi»", async () => {

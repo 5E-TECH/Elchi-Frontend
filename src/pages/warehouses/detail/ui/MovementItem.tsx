@@ -7,21 +7,16 @@ import { MOVEMENT_ICON, useWarehouseText } from "../../model/useWarehouseText";
 
 /**
  * Harakat qatori (maket «Oxirgi harakatlar» `.el-list-item`): neytral ikonka katagi, tur belgisi («Kirim», «Band»,
- * «Chiqim», «Qaytdi», «Tuzatish») + sarlavha, «mahsulot · market» (qaytishda «· omborga qaytdi»; izoh/sabab bo'lsa —
+ * «Chiqim», «Band bo'shadi», «Omborga qaytdi», «Tuzatish») + sarlavha, «mahsulot · market» (izoh/sabab bo'lsa —
  * oxirida), o'ngda miqdor (kirim va qaytish — yashil «+40 dona», qolgani neytral) va «sana · muallif»; telefonda sana
- * matn ostida.
+ * matn ostida. hfkhYrGk №2: maketdagi «· omborga qaytdi» qo'shimchasi olib tashlandi — endi belgi va sarlavhaning
+ * o'zi «Omborga qaytdi» deydi (uch marta takrorlanmasin).
  */
 export const MovementItem = ({ movement }: { movement: WarehouseMovement }) => {
   const text = useWarehouseText();
-  const { t } = text;
   const Icon = MOVEMENT_ICON[movement.type];
   const amount = text.movementAmount(movement);
-  const subParts = [
-    movement.product.name,
-    movement.market.name,
-    movement.type === "RETURN" ? t("movement.returnedToWarehouse") : null,
-    movement.note,
-  ].filter(Boolean);
+  const subParts = [movement.product.name, movement.market.name, movement.note].filter(Boolean);
   const actor = text.actorText(movement.actor);
   const when = [text.dateTime(movement.createdAt), actor].filter(Boolean).join(" · ");
 

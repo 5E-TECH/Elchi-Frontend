@@ -258,8 +258,8 @@
       "IN": "Kirim",
       "RESERVE": "Band",
       "OUT": "Chiqim",
-      "RELEASE": "Qaytdi",
-      "RETURN": "Qaytdi",
+      "RELEASE": "Band bo'shadi",
+      "RETURN": "Omborga qaytdi",
       "ADJUST": "Tuzatish",
       "MOVE_OUT": "Ko'chirish",
       "MOVE_IN": "Ko'chirish"
@@ -268,8 +268,8 @@
       "IN": "Admin mahsulot qo'shdi",
       "RESERVE": "Buyurtma №{{order}} yaratildi",
       "OUT": "Buyurtma №{{order}} kuryerga berildi",
-      "RELEASE": "Buyurtma №{{order}} bekor qilindi",
-      "RETURN": "Buyurtma №{{order}} bekor qilindi",
+      "RELEASE": "Buyurtma №{{order}} — band bo'shadi",
+      "RETURN": "Buyurtma №{{order}} omborga qaytdi",
       "ADJUST": "Inventarizatsiya: {{before}} → {{after}}",
       "MOVE_OUT": "Boshqa omborga ko'chirildi",
       "MOVE_IN": "Boshqa ombordan ko'chirildi"
@@ -280,7 +280,6 @@
       "RELEASE": "Band bo'shadi",
       "RETURN": "Omborga qaytdi"
     },
-    "returnedToWarehouse": "omborga qaytdi",
     "actor": "{{name}}, {{role}}"
   },
   "actorRole": {

@@ -328,3 +328,65 @@ describe("buildReturnPath — review tuzatishlari", () => {
     expect(path!.pending).toMatchObject({ kind: "send", days: null });
   });
 });
+
+describe("buildReturnPath — bir xil vaqtli hodisalar (hfkhYrGk №5)", () => {
+  /** Ombor buyurtmasi: ombor filialida qabul + «Omborga qaytdi» — bitta tranzaksiyada, vaqti AYNAN bir xil. */
+  const WAREHOUSE_ORDER = {
+    id: "10244",
+    status: "returned_to_market",
+    holder_type: "MARKET",
+    fulfillment_source: "WAREHOUSE",
+    warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
+    branch: { id: "11", name: "Samarqand filiali" },
+  };
+  const SAME_AT = "2026-10-25T12:30:00+05:00";
+  const cancelled = ev("2026-10-25T10:00:00+05:00", { ...status("waiting", "cancelled"), actor: courier });
+  const sent = ev("2026-10-25T11:00:00+05:00", {
+    ...status("cancelled", "cancelled (sent)"),
+    actor: courier,
+    changed_by_role: "courier",
+  });
+  const received = ev(SAME_AT, {
+    ...status("cancelled (sent)", "cancelled"),
+    action: "cancelled_post_received",
+    actor: manager,
+    metadata: { destination_branch: "Samarqand filiali (SM, ID: 11)", received_by_hq: false },
+  });
+  const warehouseReturned = ev(SAME_AT, {
+    ...status("cancelled", "returned_to_market"),
+    action: "warehouse_returned",
+    actor: manager,
+    metadata: { warehouse_id: "3" },
+  });
+
+  it("«Qabul qilindi» → «Omborga qaytdi» — backend teskari bersa ham (vaqt teng, zanjir tartibi hal qiladi)", () => {
+    // Backend eng yangisi tepada beradi: teng vaqtda «Omborga qaytdi» qabuldan OLDIN kelishi mumkin.
+    for (const events of [
+      [warehouseReturned, received, sent, cancelled],
+      [cancelled, sent, received, warehouseReturned],
+      [received, warehouseReturned, cancelled, sent],
+    ]) {
+      const path = buildReturnPath(events, WAREHOUSE_ORDER);
+      expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "warehouse"]);
+      // Joy qabuldan olinadi — qabul oldin qayta ishlangani uchun «Samarqand filiali».
+      expect(path!.steps.at(-1)).toMatchObject({ kind: "warehouse", place: "Samarqand filiali" });
+      expect(path!.closedToWarehouse).toBe(true);
+    }
+  });
+
+  it("teng vaqtli HQ qabuli va marketga topshirish — «Qabul qilindi» oldin, «Marketga topshirildi» keyin", () => {
+    const at = "2026-10-06T10:00:00+05:00";
+    const events = [
+      ev(at, { ...status("cancelled", "returned_to_market"), action: "cancelled_market_handover", actor: registrator }),
+      ev(at, {
+        ...status("cancelled (sent)", "cancelled"),
+        action: "cancelled_post_received",
+        actor: registrator,
+        metadata: { received_by_hq: true },
+      }),
+      ...BRANCH_TO_HQ.slice(0, 3),
+    ];
+    const path = buildReturnPath(events, { ...HQ_ORDER, status: "returned_to_market", holder_type: "MARKET" });
+    expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "handed"]);
+  });
+});

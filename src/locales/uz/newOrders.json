@@ -209,6 +209,7 @@
   "orderActionError": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
   "updateError": "Ma'lumotlarni yangilab bo'lmadi.",
   "productsLockReason": "HQ qabul qilgandan keyin summa va mahsulotlarni o'zgartirib bo'lmaydi.",
+  "productsLockReasonWarehouse": "Mahsulotlar omborda band qilingan — summa va mahsulotlarni o'zgartirib bo'lmaydi.",
   "destinationLockReason": "Filialga jo'natilgandan keyin mijoz va manzilni o'zgartirib bo'lmaydi.",
   "note": "Izoh",
   "enterNote": "Izoh kiriting...",
