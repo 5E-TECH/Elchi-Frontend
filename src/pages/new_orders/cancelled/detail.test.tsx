@@ -39,6 +39,8 @@ const mocks = vi.hoisted(() => ({
   scanner: { current: null as ScannerOptions | null },
   qrRequired: { current: true as boolean | undefined },
   emptyList: { current: false },
+  /** `useCancelledOrdersByMarket` ga uzatilgan parametrlar (BG3 `stage`, sana). */
+  cancelledCalls: [] as Array<{ stage?: string; start_day?: string; end_day?: string } | undefined>,
 }));
 
 const order = (id: string, name: string, total: number) => ({
@@ -70,6 +72,55 @@ const ordersResponse = () => {
   return responses.get(key);
 };
 
+/** BG3: «Yo'lda» (`courier,in_transit,branch`) va «Olganlarim» (`market`) javoblari — bosqich maydonlari bilan. */
+const stageResponses = new Map<string, unknown>();
+const stageResponse = (stage: string) => {
+  if (!stageResponses.has(stage)) {
+    stageResponses.set(
+      stage,
+      stage === "market"
+        ? {
+            data: [
+              {
+                ...order("490", "Kamola Saidova", 590000),
+                status: "returned_to_market",
+                return_stage: "market",
+                cancel_return: {
+                  stage: "market",
+                  place_type: "BRANCH",
+                  place_name: "Samarqand filiali",
+                  handed_over_at: "2026-10-20T12:05:00.000Z",
+                  handover_method: "qr",
+                },
+              },
+            ],
+            total: 1,
+          }
+        : {
+            data: [
+              {
+                ...order("510", "Dilnoza Karimova", 185000),
+                return_stage: "courier",
+                cancel_return: { stage: "courier", place_type: "COURIER", place_name: "Akmal Rahimov" },
+              },
+              {
+                ...order("511", "Madina Rasulova", 229000),
+                return_stage: "branch",
+                cancel_return: {
+                  stage: "branch",
+                  place_type: "BRANCH",
+                  place_name: "Farg'ona filiali",
+                  received_at: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+                },
+              },
+            ],
+            total: 2,
+          },
+    );
+  }
+  return stageResponses.get(stage);
+};
+
 const idleQuery = () => ({ status: "pending", data: undefined, isLoading: false, isError: false, refetch: vi.fn() });
 
 vi.mock("../../../entities/orders", () => ({
@@ -77,14 +128,20 @@ vi.mock("../../../entities/orders", () => ({
     useGetTodayOrders: idleQuery,
     useGetTodayOrdersByMarket: idleQuery,
     useCancelledMarkets: idleQuery,
-    useCancelledOrdersByMarket: () => ({
-      status: "success",
-      isSuccess: true,
-      data: ordersResponse(),
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    }),
+    useCancelledOrdersByMarket: (
+      _marketId: string,
+      options?: { enabled?: boolean; stage?: string; start_day?: string; end_day?: string },
+    ) => {
+      if (options?.stage) mocks.cancelledCalls.push(options);
+      return {
+        status: "success",
+        isSuccess: true,
+        data: options?.stage ? stageResponse(options.stage) : ordersResponse(),
+        isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
+      };
+    },
     generateCancelledMarketQr: { mutate: mocks.generateMutate, isPending: false },
     scanMarketCancelledQr: { mutate: vi.fn(), mutateAsync: mocks.scanMutateAsync, isPending: false },
     verifyMarketCancelledPin: { mutate: vi.fn(), mutateAsync: mocks.pinMutateAsync, isPending: false },
@@ -535,6 +592,7 @@ describe("Bekor qilinganlar — market roli", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.emptyList.current = false;
+    mocks.cancelledCalls.length = 0;
   });
 
   const marketState = (qrRequired?: boolean) =>
@@ -624,6 +682,47 @@ describe("Bekor qilinganlar — market roli", () => {
     await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
     const dialog = await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" });
     expect(within(dialog).queryByTestId("market-qr-pin")).toBeNull();
+  });
+
+  it("vOczoOUE 2-bosqich: «Olib ketishga tayyor · Yo'lda · Olganlarim» — sonlar, `stage` so'rovlari, bosqich va joy", async () => {
+    const user = userEvent.setup();
+    renderDetail(marketState());
+
+    const tabs = screen.getByRole("group", { name: "Bekor qilinganlar bosqichi" });
+    const chip = (name: RegExp) => within(tabs).getByRole("button", { name });
+    expect(chip(/Olib ketishga tayyor/)).toHaveAttribute("aria-pressed", "true");
+    expect(chip(/Olib ketishga tayyor/)).toHaveTextContent("Olib ketishga tayyor2");
+    expect(chip(/Yo'lda/)).toHaveTextContent("Yo'lda2");
+    expect(chip(/Olganlarim/)).toHaveTextContent("Olganlarim1");
+    // So'rovlar: «Yo'lda» — hali HQ'ga yetmaganlar, «Olganlarim» — shu oy topshirilganlar.
+    expect(mocks.cancelledCalls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stage: "courier,in_transit,branch" }),
+        expect.objectContaining({ stage: "market", start_day: expect.stringMatching(/^\d{4}-\d{2}-01$/) }),
+      ]),
+    );
+
+    await user.click(chip(/Yo'lda/));
+    expect(chip(/Yo'lda/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("heading", { name: "Yo'ldagi bekor buyurtmalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+    const transit = screen.getByTestId("market-returns-transit");
+    expect(within(transit).getAllByText("Bekor · kuryerda").length).toBeGreaterThan(0);
+    expect(within(transit).getAllByText("Akmal Rahimov").length).toBeGreaterThan(0);
+    expect(within(transit).getAllByText("Bekor · filialda").length).toBeGreaterThan(0);
+    const age = within(transit).getAllByTestId("cancel-return-age")[0];
+    expect(age).toHaveTextContent("4 kun");
+    expect(age.dataset.level).toBe("warn");
+
+    await user.click(chip(/Olganlarim/));
+    expect(screen.getByRole("heading", { name: "Olgan bekor buyurtmalaringiz" })).toBeInTheDocument();
+    const received = screen.getByTestId("market-returns-received");
+    expect(within(received).getAllByText("Samarqand filiali").length).toBeGreaterThan(0);
+    expect(within(received).getAllByText("QR orqali").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /Olingan sana oralig'i/ })).toBeInTheDocument();
+
+    await user.click(chip(/Olib ketishga tayyor/));
+    expect(screen.getByRole("button", { name: "Qabul qilish" })).toBeInTheDocument();
   });
 
   it("marketda QR o'chirilgan bo'lsa — «Qabul qilish» yo'q", () => {
