@@ -17,8 +17,8 @@ export type CustomerSegmentFiltersProps = {
   /** «Oxirgi buyurtma» taqvimida bugungi kun (test va namuna). */
   today?: string;
   /**
-   * «Buyurtmalar soni» — «dan – gacha» (bildirishnoma auditoriyasi, KM-2: `segment.max_orders` bor). Sukut `false` —
-   * faqat minimum (SMS kampaniyasi DTO'sida «gacha» yo'q).
+   * «Buyurtmalar soni» — «dan – gacha» (`segment.max_orders`: bildirishnoma auditoriyasi KM-2 va SMS kampaniyasi —
+   * sdNGqCBa). Sukut `false` — faqat minimum.
    */
   withMaxOrders?: boolean;
   /** Teskari oraliq («dan» > «gacha») xatosi — «gacha» maydoni ostida. */
@@ -39,7 +39,7 @@ const todayIso = () => {
  * «MIJOZ FILTRLARI» — maket `superadmin-notifications-sms-campaign-segment` (o'ng ustun, chiziq ostida).
  *
  * Viloyat va Tuman (`Select`, tuman ro'yxati viloyatdan keyin), Market (`Select` qidiruv bilan), «Oxirgi buyurtma»
- * (`DateRange`) va «Buyurtmalar soni» — faqat minimum («gacha» SMS kampaniyada yo'q — maketda «Taklif»). Har
+ * (`DateRange`) va «Buyurtmalar soni» — minimum yoki `withMaxOrders` bilan «dan – gacha». Har
  * ro'yxatda «Barchasi» — filtr yo'q. Viloyat almashsa tuman tozalanadi.
  *
  * Umumiy: SMS kampaniya (KM-1) va bildirishnoma «Auditoriya» rejimi (KM-2). Qiymat — `CustomerSegment`,

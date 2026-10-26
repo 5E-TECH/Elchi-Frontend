@@ -5,9 +5,13 @@ import { Trans, useTranslation } from "react-i18next";
 import { NoticeAlert } from "../../../entities/notification";
 import {
   CustomerSegmentFilters,
+  draftFromSavedAudience,
+  isCustomerOnlyAudience,
   isFutureSlot,
+  isOrderRangeInverted,
   toCustomerSegmentPayload,
   toScheduledAt,
+  useAudienceSegments,
   useCampaignTime,
   type CustomerSegment,
 } from "../../../entities/notification-campaign";
@@ -17,6 +21,7 @@ import {
   previewSmsCampaign,
   smsCampaignErrorKind,
   smsCampaignStatus,
+  smsCampaignSegmentError,
   smsDailyQuota,
   smsScheduleErrorKey,
   SMS_MAX_SCHEDULE_DAYS,
@@ -27,6 +32,7 @@ import {
   useSmsStatus,
   useSmsTariffs,
   useSmsTemplates,
+  type SmsCampaignAudienceTarget,
   type SmsCampaignHistoryItem,
   type SmsCampaignInput,
   type SmsCampaignPreview,
@@ -156,8 +162,10 @@ const Num = ({
  *
  * «Yangi kampaniya» (KM-1, maket `-campaign-segment`): shablon yoki o'z matni → turi FAQAT «Reklama» (backend
  * boshqasini 400 `campaign_promo_only` bilan rad etadi; xizmat xabari — tizim hodisalaridan) → hisoblagich →
- * o'zgaruvchilar → kimga: raqamlar | mijozlar segmenti (`CustomerSegmentFilters`: Viloyat / Tuman / Market
- * `Select`, «Oxirgi buyurtma» `DateRange`, «Buyurtmalar soni» — minimum) + jonli auditoriya va bugungi SMS limiti
+ * o'zgaruvchilar → kimga: raqamlar | mijozlar segmenti («Saqlangan segment» — faqat mijoz shartlilari, tanlansa
+ * `audience_segment_id` ketadi va sharti filtrlarga ko'chiriladi; `CustomerSegmentFilters`: Viloyat / Tuman / Market
+ * `Select`, «Oxirgi buyurtma» `DateRange`, «Buyurtmalar soni» — «dan – gacha», teskari oraliq so'ralmaydi —
+ * sdNGqCBa) + jonli auditoriya va bugungi SMS limiti
  * (KM-S4; oshsa «Ko'rib chiqish» o'chiq) → «Yuborish vaqti» (Darhol; tungi taqiqda — qachon ketishi) →
  * «Ko'rib chiqish». Ko'rib chiqish `POST …/campaigns/preview` (hech narsa
  * yuborilmaydi) va YANGI `Idempotency-Key` → tasdiq oynasi (aniq qabul qiluvchilar, roziligi yo'qlar, noto'g'ri
@@ -190,6 +198,12 @@ const CampaignPage = () => {
   // KM-6: «Yuborish vaqti» — darhol yoki tanlangan Toshkent vaqti; xato «Ko'rib chiqish» bosilgach ko'rinadi.
   const [sendTime, setSendTime] = useState<SmsSendTimeValue>(createSmsSendTime);
   const [scheduleTouched, setScheduleTouched] = useState(false);
+  /**
+   * (sdNGqCBa) Tanlangan saqlangan segment: so'rovga `segment` o'rniga `audience_segment_id` ketadi, sharti filtrlarga
+   * ko'chiriladi (ko'rinsin). Filtr qo'lda o'zgarsa — tanlov bekor, endi filtrlar yuboriladi.
+   */
+  const [savedSegmentId, setSavedSegmentId] = useState("");
+  const savedSegments = useAudienceSegments(audience === "segment");
 
   const [preview, setPreview] = useState<SmsCampaignPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -223,9 +237,23 @@ const CampaignPage = () => {
     .map((value) => value.trim())
     .filter(Boolean);
   const segmentPayload = useMemo(() => toCustomerSegmentPayload(segment), [segment]);
+  /** «dan» > «gacha» — backend 400 (teskari oraliq); so'rov yuborilmaydi, xato «gacha» ostida. */
+  const rangeInverted = audience === "segment" && isOrderRangeInverted(segment);
+  /** SMS'ga yaraydigan (faqat mijoz) saqlangan segmentlar — maket: «Faqat mijoz shartli segmentlar chiqadi». */
+  const customerSegments = useMemo(
+    () => (savedSegments.data ?? []).filter((item) => isCustomerOnlyAudience(item.audience)),
+    [savedSegments.data],
+  );
+  const savedSegment = customerSegments.find((item) => item.id === savedSegmentId) ?? null;
+  const audienceTarget: SmsCampaignAudienceTarget | null =
+    audience !== "segment" || rangeInverted
+      ? null
+      : savedSegmentId
+        ? { audience_segment_id: savedSegmentId }
+        : { segment: segmentPayload };
 
   // Jonli auditoriya (faqat «Mijozlar segmenti»): debounce bilan preview, natija + bugungi limit.
-  const audienceQuery = useSmsCampaignAudience(audience === "segment" ? segmentPayload : null);
+  const audienceQuery = useSmsCampaignAudience(audienceTarget);
   const quota = smsDailyQuota(status.data);
   const audienceData = audienceQuery.data;
   const audienceFresh =
@@ -235,7 +263,7 @@ const CampaignPage = () => {
     !audienceQuery.isError &&
     audienceData !== undefined;
   const audienceState: CampaignAudienceState =
-    audienceQuery.settled && !audienceQuery.isFetching && audienceQuery.isError
+    rangeInverted || (audienceQuery.settled && !audienceQuery.isFetching && audienceQuery.isError)
       ? "error"
       : !audienceFresh || !audienceData
         ? "loading"
@@ -247,7 +275,18 @@ const CampaignPage = () => {
               ? "limit"
               : "ready";
 
-  const audienceErrorKind = audienceQuery.isError ? smsCampaignErrorKind(audienceQuery.error) : undefined;
+  const audienceErrorKind = rangeInverted
+    ? "badRequest"
+    : audienceQuery.isError
+      ? smsCampaignErrorKind(audienceQuery.error)
+      : undefined;
+  /** Segment xatosi (teskari oraliq, xodimli / o'chirilgan saqlangan segment) — aniq matn. */
+  const segmentError = rangeInverted
+    ? "orderRange"
+    : audienceQuery.isError
+      ? smsCampaignSegmentError(audienceQuery.error)
+      : null;
+  const audienceErrorText = segmentError ? t(`campaign.errors.${segmentError}`) : undefined;
 
   const recipientsGuess =
     audience === "phones" ? phoneList.length : (audienceData?.recipients ?? 1);
@@ -273,7 +312,11 @@ const CampaignPage = () => {
       ? { template_code: template.code, lang: template.lang }
       : { message_class: "promo" as const, text: text.trim() }),
     ...(variables.length ? { vars } : {}),
-    segment: audience === "phones" ? { phones: phoneList } : segmentPayload,
+    ...(audience === "phones"
+      ? { segment: { phones: phoneList } }
+      : savedSegmentId
+        ? { audience_segment_id: savedSegmentId }
+        : { segment: segmentPayload }),
     ...(scheduled && sendTime.day && sendTime.time ? { scheduled_at: toScheduledAt(sendTime.day, sendTime.time) } : {}),
   });
 
@@ -284,7 +327,9 @@ const CampaignPage = () => {
 
   const audienceHint: Record<Exclude<CampaignAudienceState, "ready">, string> = {
     loading: t("campaign.hintAudienceWait"),
-    error: isRetryableSmsCampaignError(audienceErrorKind)
+    error: audienceErrorText
+      ? audienceErrorText
+      : isRetryableSmsCampaignError(audienceErrorKind)
       ? t("campaign.hintAudienceError")
       : t("campaign.hintAudienceBlocked"),
     fanout: t("campaign.hintFanout"),
@@ -306,6 +351,8 @@ const CampaignPage = () => {
   const errorText = (error: unknown, fallback: string) => {
     const scheduleKey = smsScheduleErrorKey(error);
     if (scheduleKey) return t(`campaign.errors.${scheduleKey}`, { days: SMS_MAX_SCHEDULE_DAYS });
+    const segmentKind = smsCampaignSegmentError(error);
+    if (segmentKind) return t(`campaign.errors.${segmentKind}`);
     const kind = smsCampaignErrorKind(error);
     return kind === "unknown" ? fallback : t(`campaign.errors.${kind}`);
   };
@@ -727,12 +774,54 @@ const CampaignPage = () => {
               </Field>
             ) : (
               <>
-                <CustomerSegmentFilters value={segment} onChange={setSegment} />
+                <Field
+                  label={t("segment.saved")}
+                  labelAs="span"
+                  hint={
+                    savedSegments.isError
+                      ? t("segment.savedLoadError")
+                      : savedSegment
+                        ? t("segment.savedApplied", { name: savedSegment.name })
+                        : t("segment.savedHint")
+                  }
+                  hintLive
+                >
+                  <Select
+                    className="w-full"
+                    options={[
+                      { value: "", label: t("segment.savedNone") },
+                      ...customerSegments.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                        description: item.description ?? undefined,
+                      })),
+                    ]}
+                    value={savedSegmentId}
+                    emptyText={t("segment.savedEmpty")}
+                    noOptionsText={t("segment.savedEmpty")}
+                    loading={savedSegments.isLoading}
+                    onChange={(id) => {
+                      const picked = customerSegments.find((item) => item.id === id);
+                      setSavedSegmentId(picked ? picked.id : "");
+                      if (picked) setSegment(draftFromSavedAudience(picked.audience).customerSegment);
+                    }}
+                  />
+                </Field>
+                <CustomerSegmentFilters
+                  value={segment}
+                  onChange={(next) => {
+                    setSavedSegmentId("");
+                    setSegment(next);
+                  }}
+                  withMaxOrders
+                  orderRangeError={rangeInverted ? t("segment.orderRange") : undefined}
+                />
                 <CampaignAudienceSummary
                   state={audienceState}
                   data={audienceData}
                   quota={quota}
-                  errorKind={audienceErrorKind}
+                  errorKind={segmentError ? "badRequest" : audienceErrorKind}
+                  errorText={audienceErrorText}
                   onRetry={() => void audienceQuery.refetch()}
                 />
               </>

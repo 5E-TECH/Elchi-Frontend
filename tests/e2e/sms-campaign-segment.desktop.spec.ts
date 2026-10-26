@@ -29,7 +29,7 @@ test.describe("SMS kampaniya — mijozlar segmenti, 1440px", () => {
     await pick(page, /^Market/, "Baraka Shop");
     await panel.getByRole("button", { name: /^Oxirgi buyurtma/ }).click();
     await page.getByRole("button", { name: "Bu oy" }).click();
-    await panel.getByRole("textbox", { name: "Buyurtmalar soni" }).fill("2");
+    await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("2");
 
     const audience = panel.getByTestId("campaign-audience");
     await expect(audience).toHaveAttribute("data-state", "ready");
@@ -68,10 +68,86 @@ test.describe("SMS kampaniya — mijozlar segmenti, 1440px", () => {
 
     // Limitdan oshdi (qolgan 420) — qizil holat, «Ko'rib chiqish» o'chiq.
     mock.audience = { recipients: 450, blocked_no_consent: 0, skipped_invalid_phone: 0 };
-    await panel.getByRole("textbox", { name: "Buyurtmalar soni" }).fill("3");
+    await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("3");
     await expect(audience).toHaveAttribute("data-state", "limit");
     await expect(audience.getByRole("alert")).toContainText("Bugungi limit yetmaydi: kerak 450 ta, qolgan 420 ta");
     await expect(panel.getByRole("button", { name: "Ko'rib chiqish" })).toBeDisabled();
+
+    expect(mock.leaked).toEqual([]);
+  });
+});
+
+/**
+ * sdNGqCBa — «Buyurtmalar soni» «dan – gacha» (`segment.max_orders`) va «Saqlangan segment» (`audience_segment_id`
+ * — `segment` o'rniga). Faqat jonli preview so'raladi, hech narsa yuborilmaydi.
+ */
+test.describe("SMS kampaniya — «gacha» va saqlangan segment, 1440px", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  test.describe.configure({ timeout: 120_000 });
+
+  test("⭐ «gacha» → max_orders; teskari oraliq so'ralmaydi; saqlangan segment → audience_segment_id; xodimli / o'chirilgan — aniq matn", async ({
+    page,
+  }) => {
+    const mock = await mockSmsCampaignApi(page);
+    const panel = await openSegmentCampaign(page);
+    await panel.getByRole("textbox", { name: "Xabar matni" }).fill("Elchi: kuzgi chegirma 20%");
+    const audience = panel.getByTestId("campaign-audience");
+    const review = panel.getByRole("button", { name: "Ko'rib chiqish" });
+
+    // «dan – gacha».
+    await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("2");
+    await panel.getByRole("textbox", { name: "Buyurtmalar soni — gacha" }).fill("10");
+    await expect(audience).toHaveAttribute("data-state", "ready");
+    await expect.poll(() => mock.previews.at(-1)?.segment).toEqual({ min_orders: 2, max_orders: 10 });
+
+    // Teskari oraliq: xato «gacha» ostida, so'rov ketmaydi, ko'rib chiqish yopiq.
+    const sent = mock.previews.length;
+    await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("20");
+    await expect(panel.getByText("«dan» «gacha» dan katta bo'lmasligi kerak (teskari oraliq)", { exact: true })).toBeVisible();
+    await expect(audience).toHaveAttribute("data-state", "error");
+    await expect(audience).toContainText(
+      "Buyurtmalar soni: «dan» «gacha» dan katta bo'lmasligi kerak (teskari oraliq)",
+    );
+    await expect(review).toBeDisabled();
+    await page.waitForTimeout(600);
+    expect(mock.previews.length).toBe(sent);
+
+    // Saqlangan segment: faqat mijoz shartlilari; tanlansa sharti filtrlarga ko'chadi, so'rovda audience_segment_id.
+    await page.getByRole("combobox", { name: /^Saqlangan segment/ }).click();
+    await expect(page.getByRole("option", { name: /Toshkent — faol mijozlar/ })).toBeVisible();
+    await expect(page.getByRole("option", { name: /Kuryerlar va mijozlar/ })).toHaveCount(0);
+    await page.getByRole("option", { name: /Toshkent — faol mijozlar/ }).click();
+    await expect(panel.getByText("«Toshkent — faol mijozlar (2–10)» segmenti qo'llandi")).toBeVisible();
+    await expect(panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" })).toHaveValue("2");
+    await expect(panel.getByRole("textbox", { name: "Buyurtmalar soni — gacha" })).toHaveValue("10");
+    await expect(panel.getByRole("combobox", { name: /^Viloyat/ })).toContainText("Toshkent sh.");
+    await expect(audience).toHaveAttribute("data-state", "ready");
+    await expect
+      .poll(() => mock.previews.at(-1))
+      .toEqual({ message_class: "promo", text: "Elchi", audience_segment_id: "11" });
+    await expect(review).toBeEnabled();
+    await review.click();
+    const dialog = page.getByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+    await expect(dialog).toBeVisible();
+    const reviewed = mock.previews.at(-1)!;
+    expect(reviewed.audience_segment_id).toBe("11");
+    expect(reviewed).not.toHaveProperty("segment");
+    // Yubormaymiz — faqat ko'rib chiqish.
+    await dialog.getByRole("button", { name: "Bekor qilish" }).click();
+
+    // Backend xodimli deb rad etdi (400 segment_not_customer_only) — aniq matn, xom matn yo'q.
+    await page.getByRole("combobox", { name: /^Saqlangan segment/ }).click();
+    await page.getByRole("option", { name: /Eski segment/ }).click();
+    await expect(audience).toHaveAttribute("data-state", "error");
+    await expect(audience).toContainText("Bu saqlangan segmentda xodimlar bor yoki mijozlar yo'q");
+    await expect(panel.getByText(/broadcast bor/)).toHaveCount(0);
+    await expect(review).toBeDisabled();
+
+    // O'chirilgan segment — 404.
+    await page.getByRole("combobox", { name: /^Saqlangan segment/ }).click();
+    await page.getByRole("option", { name: /O'chirilgan segment/ }).click();
+    await expect(audience).toContainText("Saqlangan segment topilmadi — o'chirilgan bo'lishi mumkin");
+    await expect(review).toBeDisabled();
 
     expect(mock.leaked).toEqual([]);
   });

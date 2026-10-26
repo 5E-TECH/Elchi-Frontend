@@ -4,6 +4,7 @@ import {
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
+  smsCampaignSegmentError,
   smsDailyQuota,
   tashkentMinuteOfDay,
 } from "./campaign";
@@ -93,5 +94,40 @@ describe("KM-6 (2aS7PFX0) SMS rejalashtirish yordamchilari", () => {
     expect(smsScheduleErrorKey(err(400, "Xabar matni bo'sh"))).toBeNull();
     expect(smsScheduleErrorKey(err(409, "scheduled_at"))).toBeNull();
     expect(smsScheduleErrorKey(undefined)).toBeNull();
+  });
+});
+
+describe("smsCampaignSegmentError (sdNGqCBa)", () => {
+  const err = (status: number, data: Record<string, unknown>) => ({ response: { status, data } });
+
+  it("teskari oraliq — backend matni bo'yicha", () => {
+    expect(
+      smsCampaignSegmentError(
+        err(400, { message: "segment: min_orders max_orders dan katta bo'lmasligi kerak (teskari oraliq)" }),
+      ),
+    ).toBe("orderRange");
+  });
+
+  it("segment_not_customer_only — `reason` yoki (gateway tushirgan bo'lsa) matn bo'yicha", () => {
+    expect(
+      smsCampaignSegmentError(err(400, { message: "x", reason: "segment_not_customer_only" })),
+    ).toBe("notCustomerOnly");
+    expect(
+      smsCampaignSegmentError(
+        err(400, { message: "Saqlangan segmentda xodim rollari / broadcast bor — SMS reklama kampaniyasi …" }),
+      ),
+    ).toBe("notCustomerOnly");
+    expect(
+      smsCampaignSegmentError(err(400, { message: ["Saqlangan segment mijozlarni nishonlamaydi (include_customers yo'q)"] })),
+    ).toBe("notCustomerOnly");
+  });
+
+  it("404 «Segment topilmadi» — notFound; boshqa xatolar — null", () => {
+    expect(smsCampaignSegmentError(err(404, { message: "Segment topilmadi" }))).toBe("notFound");
+    expect(smsCampaignSegmentError(err(404, { message: "Cannot POST" }))).toBeNull();
+    expect(smsCampaignSegmentError(err(400, { message: "Xabar matni bo'sh" }))).toBeNull();
+    expect(smsCampaignSegmentError(err(409, { message: "opt_out_not_configured" }))).toBeNull();
+    expect(smsCampaignSegmentError(new Error("network"))).toBeNull();
+    expect(smsCampaignSegmentError(undefined)).toBeNull();
   });
 });

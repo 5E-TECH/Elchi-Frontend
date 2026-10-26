@@ -101,7 +101,10 @@
       "timeout": "The server did not respond — check the campaign history, then try again",
       "forbidden": "You do not have access to this action",
       "scheduleTooFar": "You can schedule at most {{days}} days ahead — pick another date",
-      "scheduleInvalid": "The send time was rejected — pick the date and time again"
+      "scheduleInvalid": "The send time was rejected — pick the date and time again",
+      "orderRange": "Order count: “from” must not be greater than “to” (reversed range)",
+      "notCustomerOnly": "This saved segment includes staff or has no customers — SMS campaigns go to customers only. To text staff, use “Send message” → “Audience”",
+      "notFound": "Saved segment not found — it may have been deleted. Choose another one"
     },
     "whenScheduled": "At a set time",
     "whenScheduledHint": "Pick a date and time — up to {{days}} days ahead",
@@ -163,7 +166,14 @@
     "maxOrdersPlaceholder": "to",
     "ordersFrom": "Number of orders — from",
     "ordersTo": "Number of orders — to",
-    "loadError": "Could not load the list"
+    "loadError": "Could not load the list",
+    "saved": "Saved segment",
+    "savedNone": "None — use filters",
+    "savedHint": "Only customer segments are listed; the selected condition is copied into the SMS form",
+    "savedApplied": "Segment “{{name}}” applied — changing a filter clears the selection",
+    "savedEmpty": "No saved customer segments",
+    "savedLoadError": "Couldn't load saved segments",
+    "orderRange": "“From” must not be greater than “to” (reversed range)"
   },
   "audience": {
     "title": "Audience: {{value}}",

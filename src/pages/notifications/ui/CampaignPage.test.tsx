@@ -342,7 +342,7 @@ describe("CampaignPage (sVByLMnt)", () => {
     await user.click(await screen.findByRole("option", { name: "Chilonzor tumani" }));
     await user.click(screen.getByRole("combobox", { name: /^Market/ }));
     await user.click(await screen.findByRole("option", { name: "Baraka Shop" }));
-    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "2");
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" }), "2");
 
     await waitFor(() => expect(block).toHaveAttribute("data-state", "ready"));
     expect(block).toHaveTextContent("Auditoriya: 386 ta");
@@ -410,7 +410,7 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeDisabled();
 
     next = audience({ recipients: 200, fanout_exceeded: true, max_fanout: 200 });
-    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "3");
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" }), "3");
     await waitFor(() => expect(block).toHaveAttribute("data-state", "fanout"));
     expect(block).toHaveTextContent("Auditoriya juda katta");
     expect(block).toHaveTextContent("Bitta kampaniyada ko'pi bilan 200 ta");

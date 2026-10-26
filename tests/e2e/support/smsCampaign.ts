@@ -51,6 +51,46 @@ const HISTORY = [
   },
 ];
 
+/**
+ * sdNGqCBa — saqlangan segmentlar (`GET notifications/audience/segments`, push bilan bitta jadval): «11» — faqat
+ * mijozlar (SMS'ga yaraydi), «12» — kuryerlar + mijozlar (formada chiqmaydi), «14» — ro'yxatda mijozlik, lekin
+ * backend uni xodimli deb rad etadi (400 `segment_not_customer_only` matnini ko'rsatish uchun), «15» — o'chirilgan (404).
+ */
+const SAVED_SEGMENTS = [
+  {
+    id: "11",
+    name: "Toshkent — faol mijozlar (2–10)",
+    description: "Kuzgi aksiya",
+    audience: { include_customers: true, segment: { region_id: "1", min_orders: 2, max_orders: 10 } },
+    last_total: 120,
+    last_counted_at: null,
+  },
+  {
+    id: "12",
+    name: "Kuryerlar va mijozlar",
+    description: null,
+    audience: { roles: ["courier"], include_customers: true, confirm_all_customers: true },
+    last_total: 900,
+    last_counted_at: null,
+  },
+  {
+    id: "14",
+    name: "Eski segment (rollar bilan)",
+    description: null,
+    audience: { include_customers: true, confirm_all_customers: true },
+    last_total: 50,
+    last_counted_at: null,
+  },
+  {
+    id: "15",
+    name: "O'chirilgan segment",
+    description: null,
+    audience: { include_customers: true, segment: { min_orders: 3 } },
+    last_total: 10,
+    last_counted_at: null,
+  },
+];
+
 export type SmsCampaignMock = {
   /** Jonli auditoriya javobi (o'zgartirsa keyingi so'rovga ta'sir qiladi). */
   audience: { recipients: number; blocked_no_consent: number; skipped_invalid_phone: number };
@@ -80,6 +120,30 @@ export const mockSmsCampaignApi = async (page: Page): Promise<SmsCampaignMock> =
     if (path === "notifications/sms/campaigns/preview" && request.method() === "POST") {
       const body = request.postDataJSON() as Record<string, unknown>;
       mock.previews.push(body);
+      // sdNGqCBa — backend javoblari: xodimli saqlangan segment, o'chirilgan segment, teskari oraliq.
+      if (body.audience_segment_id === "14") {
+        return reply(
+          route,
+          {
+            statusCode: 400,
+            message:
+              "Saqlangan segmentda xodim rollari / broadcast bor — SMS reklama kampaniyasi faqat mijozlar segmenti bilan",
+            reason: "segment_not_customer_only",
+          },
+          400,
+        );
+      }
+      if (body.audience_segment_id === "15") {
+        return reply(route, { statusCode: 404, message: "Segment topilmadi" }, 404);
+      }
+      const segment = (body.segment ?? {}) as { min_orders?: number; max_orders?: number };
+      if (segment.min_orders && segment.max_orders && segment.min_orders > segment.max_orders) {
+        return reply(
+          route,
+          { statusCode: 400, message: "segment: min_orders max_orders dan katta bo'lmasligi kerak (teskari oraliq)" },
+          400,
+        );
+      }
       const recipients = mock.audience.recipients;
       return reply(route, {
         statusCode: 200,
@@ -120,6 +184,8 @@ export const mockSmsCampaignApi = async (page: Page): Promise<SmsCampaignMock> =
       });
     }
     if (path === "notifications/sms/campaigns") return reply(route, { statusCode: 200, data: HISTORY });
+    if (path === "notifications/audience/segments")
+      return reply(route, { statusCode: 200, data: { items: SAVED_SEGMENTS, total: SAVED_SEGMENTS.length } });
     if (path === "region") return reply(route, { statusCode: 200, data: REGIONS });
     if (path === "district")
       return reply(route, { statusCode: 200, data: DISTRICTS[url.searchParams.get("region_id") ?? ""] ?? [] });

@@ -21,7 +21,7 @@ test("⭐ 390: segment filtrlari, jonli auditoriya va limit; toshish yo'q, nisho
 
   await pick(page, /^Viloyat/, "Toshkent sh.");
   await pick(page, /^Tuman/, "Yunusobod tumani");
-  await panel.getByRole("textbox", { name: "Buyurtmalar soni" }).fill("2");
+  await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("2");
 
   const audience = panel.getByTestId("campaign-audience");
   await expect(audience).toHaveAttribute("data-state", "ready");
@@ -45,6 +45,27 @@ test("⭐ 390: segment filtrlari, jonli auditoriya va limit; toshish yo'q, nisho
 
   await panel.getByRole("textbox", { name: "Xabar matni" }).fill("Elchi: kuzgi chegirma 20%");
   await expect(panel.getByRole("button", { name: "Ko'rib chiqish" })).toBeEnabled();
+
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+  expect(mock.leaked).toEqual([]);
+});
+
+test("⭐ 390 (sdNGqCBa): saqlangan segment va «dan – gacha» — toshish yo'q, nishonlar ≥ 44 px", async ({ page }) => {
+  const mock = await mockSmsCampaignApi(page);
+  const panel = await openSegmentCampaign(page);
+
+  await page.getByRole("combobox", { name: /^Saqlangan segment/ }).click();
+  await expect(page.getByRole("option", { name: /Kuryerlar va mijozlar/ })).toHaveCount(0);
+  await page.getByRole("option", { name: /Toshkent — faol mijozlar/ }).click();
+  await expect(panel.getByRole("textbox", { name: "Buyurtmalar soni — gacha" })).toHaveValue("10");
+  await expect(panel.getByTestId("campaign-audience")).toHaveAttribute("data-state", "ready");
+  await expect.poll(() => mock.previews.at(-1)?.audience_segment_id).toBe("11");
+
+  // Teskari oraliq — xato ko'rinadi, tanlov bekor bo'ladi.
+  await panel.getByRole("textbox", { name: "Buyurtmalar soni — dan" }).fill("20");
+  await expect(panel.getByText("«dan» «gacha» dan katta bo'lmasligi kerak (teskari oraliq)", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("combobox", { name: /^Saqlangan segment/ })).toContainText("Tanlanmagan");
 
   expect(tooSmall(await tapTargets(page))).toEqual([]);
   await expectNoHorizontalOverflow(page);

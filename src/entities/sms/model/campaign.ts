@@ -127,3 +127,37 @@ export const smsScheduleErrorKey = (error: unknown): "scheduleTooFar" | "schedul
   if (reason === "scheduled_at_invalid" || /scheduled_at/i.test(raw)) return "scheduleInvalid";
   return null;
 };
+
+/**
+ * (sdNGqCBa) Segment xatosi — umumiy «so'rov rad etildi» o'rniga aniq matn uchun:
+ *  - `orderRange` — 400 «segment: min_orders max_orders dan katta bo'lmasligi kerak (teskari oraliq)»;
+ *  - `notCustomerOnly` — 400 `reason: segment_not_customer_only` (saqlangan segmentda xodim rollari / broadcast yoki
+ *    mijozlar yo'q). Gateway `reason` ni tushirib yuborishi mumkin — backend matni bo'yicha ham taniladi;
+ *  - `notFound` — 404 «Segment topilmadi» (saqlangan segment o'chirilgan).
+ * Boshqa xato — `null` (umumiy `smsCampaignErrorKind`).
+ */
+export type SmsCampaignSegmentError = "orderRange" | "notCustomerOnly" | "notFound";
+
+const backendText = (data: unknown): string => {
+  if (!data || typeof data !== "object") return "";
+  const record = data as { message?: unknown; error?: unknown };
+  const parts = [record.message, record.error].flatMap((value) => (Array.isArray(value) ? value : [value]));
+  return parts.filter((value): value is string => typeof value === "string").join(" ");
+};
+
+export const smsCampaignSegmentError = (error: unknown): SmsCampaignSegmentError | null => {
+  const response = ((error ?? {}) as { response?: { status?: unknown; data?: unknown } }).response;
+  const status = Number(response?.status);
+  const data = (response?.data ?? {}) as { reason?: unknown };
+  const text = backendText(response?.data);
+  if (status === 404 && /segment/i.test(text)) return "notFound";
+  if (status !== 400 && status !== 422) return null;
+  if (
+    data.reason === "segment_not_customer_only" ||
+    /segment_not_customer_only|xodim rollari|mijozlarni nishonlamaydi/i.test(text)
+  ) {
+    return "notCustomerOnly";
+  }
+  if (/teskari oraliq|min_orders max_orders/i.test(text)) return "orderRange";
+  return null;
+};

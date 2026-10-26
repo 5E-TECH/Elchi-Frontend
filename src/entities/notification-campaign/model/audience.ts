@@ -184,3 +184,15 @@ export const draftFromSavedAudience = (audience: unknown): AudienceDraft => {
     allCustomers: includeCustomers && record.confirm_all_customers === true,
   };
 };
+
+/**
+ * (sdNGqCBa) Saqlangan segment SMS kampaniyasiga yaraydimi — backend `sms-campaign.service` `segmentOf` qoidasi bilan
+ * bir xil: mijozlar nishonlangan (`include_customers`), xodim rollari (`customer` dan boshqa) va `broadcast` yo'q.
+ * Aks holda backend 400 `segment_not_customer_only` qaytaradi — SMS formasida bunday segment ro'yxatga chiqmaydi.
+ */
+export const isCustomerOnlyAudience = (audience: unknown): boolean => {
+  const record = asRecord(audience);
+  if (record.broadcast === true || record.include_customers !== true) return false;
+  const roles = Array.isArray(record.roles) ? record.roles : [];
+  return roles.every((role) => String(role).toLowerCase() === "customer");
+};

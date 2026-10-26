@@ -3,8 +3,8 @@
  *
  * Backend: order-service `order.customer.segment` (`customer-segment.service.ts`) — buyurtmalar bo'yicha
  * `market_id`, `region_id`, `district_id`, `min_orders` (faqat > 1 ta'sir qiladi), oxirgi buyurtma sanasi
- * (`MAX(createdAt) >= last_order_from`, `MAX(createdAt) < last_order_to`). SMS kampaniyasi DTO'sida
- * `max_orders` («gacha») YO'Q — UI faqat minimumni beradi (maketdagi «gacha» — «Taklif · backend kerak»).
+ * (`MAX(createdAt) >= last_order_from`, `MAX(createdAt) < last_order_to`), `max_orders` («gacha») — bildirishnoma
+ * auditoriyasi (KM-2) va SMS kampaniyasi (sdNGqCBa); teskari oraliq — 400.
  */
 export interface CustomerSegment {
   region_id?: string;
@@ -17,8 +17,8 @@ export interface CustomerSegment {
   /** Kamida shuncha buyurtma (1 … `MAX_MIN_ORDERS`). */
   min_orders?: number;
   /**
-   * Ko'pi bilan shuncha buyurtma («gacha»). Faqat bildirishnoma auditoriyasida (KM-2, `AudienceSegmentDto.max_orders`);
-   * SMS kampaniyasi DTO'sida yo'q — u yerda maydon chizilmaydi va qiymat bo'sh qoladi.
+   * Ko'pi bilan shuncha buyurtma («gacha», 1 … `MAX_MIN_ORDERS`): bildirishnoma auditoriyasi (KM-2) va SMS
+   * kampaniyasi (sdNGqCBa, `SmsCampaignSegmentDto.max_orders`).
    */
   max_orders?: number;
 }

@@ -101,7 +101,10 @@
       "timeout": "Server javob bermadi — kampaniyalar tarixini tekshiring, keyin qayta urinib ko'ring",
       "forbidden": "Bu amal uchun ruxsatingiz yo'q",
       "scheduleTooFar": "Ko'pi bilan {{days}} kun oldinga rejalashtirish mumkin — boshqa sanani tanlang",
-      "scheduleInvalid": "Yuborish vaqti qabul qilinmadi — sana va soatni qayta tanlang"
+      "scheduleInvalid": "Yuborish vaqti qabul qilinmadi — sana va soatni qayta tanlang",
+      "orderRange": "Buyurtmalar soni: «dan» «gacha» dan katta bo'lmasligi kerak (teskari oraliq)",
+      "notCustomerOnly": "Bu saqlangan segmentda xodimlar bor yoki mijozlar yo'q — SMS kampaniya faqat mijozlarga. Xodimlarga SMS — «Xabar yuborish» → «Auditoriya» orqali",
+      "notFound": "Saqlangan segment topilmadi — o'chirilgan bo'lishi mumkin. Boshqasini tanlang"
     },
     "whenScheduled": "Belgilangan vaqtda",
     "whenScheduledHint": "Sana va soatni tanlang — {{days}} kungacha oldinga",
@@ -163,7 +166,14 @@
     "maxOrdersPlaceholder": "gacha",
     "ordersFrom": "Buyurtmalar soni — dan",
     "ordersTo": "Buyurtmalar soni — gacha",
-    "loadError": "Ro'yxatni olib bo'lmadi"
+    "loadError": "Ro'yxatni olib bo'lmadi",
+    "saved": "Saqlangan segment",
+    "savedNone": "Tanlanmagan — filtrlar bo'yicha",
+    "savedHint": "Faqat mijoz shartli segmentlar chiqadi; tanlangan shart SMS formasiga ko'chiriladi",
+    "savedApplied": "«{{name}}» segmenti qo'llandi — filtrni o'zgartirsangiz, tanlov bekor bo'ladi",
+    "savedEmpty": "Mijoz shartli saqlangan segment yo'q",
+    "savedLoadError": "Saqlangan segmentlarni olib bo'lmadi",
+    "orderRange": "«dan» «gacha» dan katta bo'lmasligi kerak (teskari oraliq)"
   },
   "audience": {
     "title": "Auditoriya: {{value}} ta",

@@ -19,6 +19,7 @@ export {
   createAudienceDraft,
   draftFromSavedAudience,
   isAudienceSegmentEmpty,
+  isCustomerOnlyAudience,
   toAudienceTarget,
   type AudienceDraft,
   type AudienceGate,
