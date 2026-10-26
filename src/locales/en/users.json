@@ -452,6 +452,27 @@
         "title": "Role changed, the rest was not saved",
         "text": "{{name}} is now {{role}}. Other changes were not saved — check them and save again."
       }
+    },
+    "courierDistrict": {
+      "label": "District",
+      "placeholder": "Choose a district",
+      "hint": "Optional · only {{region}} districts, pick by searching",
+      "hintNoRegionName": "Optional · only districts of the courier's region, pick by searching",
+      "listLabel": "{{region}} districts",
+      "clear": "Clear the district",
+      "loadError": "Couldn't load districts",
+      "needBranch": "Choose a branch first — districts come from its region",
+      "branchNoRegion": "The branch's region is unknown — no district can be chosen",
+      "noRegion": "The courier has no region — no district can be chosen",
+      "branchHint": "Optional · if empty — head office (HQ); can also be assigned later on the branch page",
+      "regionHint": "Filled in from the selected branch",
+      "regionHintEdit": "The branch is changed via “Transfer to another branch” — that clears the district",
+      "errors": {
+        "notFound": "District not found — choose again from the list",
+        "wrongRegion": "The district is not in the courier's region — choose one from this region",
+        "invalid": "The district is invalid — choose again from the list",
+        "unavailable": "Couldn't check the district — try again in a moment"
+      }
     }
   },
   "tgGroup": {
@@ -488,6 +509,8 @@
     "cardLinked": "Bot connected",
     "cardUnlinked": "Bot not connected",
     "listHint": "Personal Elchi bot connection. Store group status is on the user's details page, in the “Telegram group” card.",
+    "filterLabel": "Telegram bot:",
+    "filterAll": "All",
     "unavailable": "Cannot be connected"
   }
 }

@@ -140,12 +140,20 @@ test("⭐ 409 count_mismatch → «Birlashtirib bo'lmadi»: «Sabab», nusxalash
   // Server matni va HTTP kodi ko'rinmaydi.
   await expect(page.getByText(/tekshiruv mos kelmadi/)).toHaveCount(0);
   await expect(error).not.toContainText("409");
+  // Z1c1sNPT: «Bo'z tumaniga qaytarildi: buyurtmalar · foydalanuvchilar · filiallar» — details.rolled_back_*.
+  await expect(error.getByText("Bo'z tumaniga qaytarildi", { exact: true })).toBeVisible();
+  await expect(error.getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" }).getByRole("listitem")).toHaveText([
+    /Buyurtmalar\s*128 ta/,
+    /Foydalanuvchilar\s*6 ta/,
+    /Filiallar\s*1 ta/,
+  ]);
 
   await error.getByRole("button", { name: "Xabarni nusxalash" }).click();
   await expect(toast(page, "Xabar nusxalandi", { tone: "success" })).toBeVisible();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain("Kod: count_mismatch · orders");
   expect(copied).toContain("trace_id: e2e-trace-1");
+  expect(copied).toContain("Bo'z tumaniga qaytarildi: buyurtmalar 128 ta · foydalanuvchilar 6 ta · filiallar 1 ta");
 
   await error.getByRole("button", { name: "Qayta urinish" }).click();
   await expect(page.getByRole("alertdialog", { name: "Birlashtirilmoqda…" })).toBeVisible();
@@ -175,7 +183,8 @@ test("503 manual_fix → «Birlashtirish chala qoldi»: qaytmaganlar, «Qayta ur
   const stranded = manual.getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" });
   await expect(stranded.getByRole("listitem")).toHaveCount(2);
   await expect(stranded).toContainText("Buyurtmalar · 14 ta");
-  await expect(stranded).toContainText("Izboskan tumanida qoldi");
+  // Z1c1sNPT: qaytmagan buyurtma raqamlari (`stranded_order_ids`, ≤10 ta) + «va yana N ta» (14 − 5).
+  await expect(stranded).toContainText("Izboskan tumanida qoldi: №7001, №7002, №7015, №7023, №7040 va yana 9 ta");
   await expect(stranded).toContainText("Foydalanuvchilar · ID'lar noma'lum");
   await expect(manual.getByRole("button", { name: "Qayta urinish" })).toHaveCount(0);
   await expect(page.getByText(/kompensatsiya/)).toHaveCount(0);

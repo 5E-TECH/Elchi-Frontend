@@ -66,6 +66,13 @@ test("⭐ 390: xato oynasi — pastki varaqa, «Sabab», «Qayta urinish» → n
   await expect(error).toBeVisible();
   await expectSheet(page, error, ["Xabarni nusxalash", "Qayta urinish"]);
   await expect(error.getByTestId("merge-error-reason")).toContainText("Sonlar mos kelmadi");
+  // Z1c1sNPT: «Bo'z tumaniga qaytarildi» — details.rolled_back_* dan.
+  await expect(error.getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" }).getByRole("listitem")).toHaveText([
+    /Buyurtmalar\s*128 ta/,
+    /Foydalanuvchilar\s*6 ta/,
+    /Filiallar\s*1 ta/,
+  ]);
+  await expectSheet(page, error, ["Xabarni nusxalash", "Qayta urinish"]);
   await error.getByRole("button", { name: "Qayta urinish" }).click();
 
   const result = page.getByRole("dialog", { name: "Tumanlar birlashtirildi" });
@@ -83,5 +90,9 @@ test("390: «Birlashtirish chala qoldi» — pastki varaqa, ≥ 44 px", async ({
   const manual = page.getByRole("alertdialog", { name: "Birlashtirish chala qoldi" });
   await expect(manual).toBeVisible();
   await expectSheet(page, manual, ["Xabarni nusxalash", "Faoliyat jurnalini ochish"]);
-  await expect(manual.getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" }).getByRole("listitem")).toHaveCount(2);
+  const stranded = manual.getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" }).getByRole("listitem");
+  await expect(stranded).toHaveCount(2);
+  // Z1c1sNPT: qaytmagan buyurtma raqamlari (stranded_order_ids) va «va yana N ta».
+  await expect(stranded.first()).toContainText("Izboskan tumanida qoldi: №7001, №7002, №7015, №7023, №7040 va yana 9 ta");
+  await expect(manual.getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" })).toHaveCount(0);
 });

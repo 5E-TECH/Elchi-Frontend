@@ -11,6 +11,11 @@ export interface UserRequestOptions<T> {
   errorMessage?: string;
   onSuccess?: (data: T) => void;
   onError?: (error: unknown) => void;
+  /**
+   * Xato tavsifini o'zi beradi (masalan kuryer tumani xatosi — DtKKY0V8: server matni o'rniga i18n matni).
+   * `undefined` qaytarsa — odatiy tartib (backend matni → `errorMessage`).
+   */
+  describeError?: (error: unknown) => string | undefined;
   /** `common` nomlar fazosini o'qiy oladigan tarjimon (`useTranslation(["users", "common"])`). */
   t: TFunction;
 }
@@ -26,6 +31,7 @@ export const runUserRequest = async <T>({
   errorMessage,
   onSuccess,
   onError,
+  describeError,
   t,
 }: UserRequestOptions<T>): Promise<T | undefined> => {
   let data: T;
@@ -35,7 +41,11 @@ export const runUserRequest = async <T>({
     // Javobsiz xato — interceptor bitta tarmoq xabarini ko'rsatgan, ikkinchi «Xatolik» chiqmaydi (G6F68ti6, 4-band).
     if (!isNetworkFailure(error)) {
       notify.error(t("error", { ns: "common" }), {
-        description: getBackendErrorMessage(error) ?? errorMessage ?? t("serverRequestError", { ns: "common" }),
+        description:
+          describeError?.(error) ??
+          getBackendErrorMessage(error) ??
+          errorMessage ??
+          t("serverRequestError", { ns: "common" }),
       });
     }
     onError?.(error);

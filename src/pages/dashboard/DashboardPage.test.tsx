@@ -28,6 +28,16 @@ vi.mock("../../entities/payments", async (importOriginal) => ({
   useCashBox: () => ({ useGetCashboxMyCashbox: (...args: unknown[]) => myCashboxMock(...args) }),
 }));
 
+// 2crjWf7v: «Kvitansiya yetkazilishi» (o'z testi — `DmDeliveryCard.test.tsx`); bu yerda faqat qaysi rolga va qaysi
+// davr bilan chiziladi.
+const dmDeliveryMock = vi.fn();
+vi.mock("../../widgets/dm-delivery/ui/DmDeliveryCard", () => ({
+  default: (props: { enabled: boolean; from?: string; to?: string }) => {
+    dmDeliveryMock(props);
+    return props.enabled ? <section aria-label="Kvitansiya yetkazilishi" /> : null;
+  },
+}));
+
 // Viloyat oynasi (egasi «regions») — lazy; testda props'ni ko'rsatadigan o'rinbosar.
 const regionDialogMock = vi.fn();
 vi.mock("../../widgets/region-detail", () => ({
@@ -890,5 +900,34 @@ describe("DashboardPage (v2) — «Ilovani o'rnatish» (KI-2, courier-dashboard-
   ])("%s — kartasiz (ega javobi KI-S3: faqat kuryer)", (_name, state) => {
     renderWithProviders(<DashboardPage />, { preloadedState: state });
     expect(screen.queryByTestId("pwa-card-dashboard")).not.toBeInTheDocument();
+  });
+});
+
+describe("DashboardPage (v2) — «Kvitansiya yetkazilishi» (2crjWf7v)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    settingsState.data = undefined;
+    getDashboardMock.mockReturnValue(query({ data: { orders: {} } }));
+    getKpiMock.mockReturnValue(
+      query({ data: { averageOrderValue: 0, averageFulfillmentHours: 0, onTimeRate: 0, cancellationRate: 0, courierEfficiency: 0, marketRating: [] } }),
+    );
+    getRevenueMock.mockReturnValue(query({ data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: [], values: [] } } }));
+    useRegionStatsMock.mockReturnValue(query({ regions: [], summary: null, scopedDetail: null }));
+    myCashboxMock.mockReturnValue(query(undefined));
+  });
+
+  it("faqat superadmin — karta bosh sahifa davri bilan (sana bo'sh — backend sukuti)", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: role("superadmin") });
+    expect(screen.getByRole("region", { name: "Kvitansiya yetkazilishi" })).toBeInTheDocument();
+    expect(dmDeliveryMock).toHaveBeenLastCalledWith({ enabled: true, from: "", to: "" });
+  });
+
+  it.each([
+    ["admin", adminState],
+    ["registrator", registratorState],
+    ["kuryer", courierState],
+  ])("%s — kartasiz (endpoint faqat superadmin)", (_name, state) => {
+    renderWithProviders(<DashboardPage />, { preloadedState: state });
+    expect(screen.queryByRole("region", { name: "Kvitansiya yetkazilishi" })).not.toBeInTheDocument();
   });
 });

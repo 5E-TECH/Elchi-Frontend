@@ -37,6 +37,8 @@ const details = (patch: Partial<MergeErrorDetails> = {}): MergeErrorDetails => (
   mismatches: [{ kind: "orders", district: "target", expected: 1254, actual: 1255 }],
   manualFix: false,
   stranded: [],
+  rolledBack: null,
+  strandedOrderIds: [],
   traceId: "7d0c2a4e",
   ...patch,
 });
@@ -147,6 +149,75 @@ describe("DistrictMergeDialog — xato oynalari (tf324cXN)", () => {
     expect(
       within(dialog).getByRole("button", { name: "Faoliyat jurnalini ochish" }),
     ).toBeInTheDocument();
+  });
+
+  it("Z1c1sNPT: 409 — «Bo'z tumaniga qaytarildi» ro'yxati details.rolled_back_* dan, nusxada ham", async () => {
+    const user = userEvent.setup();
+    renderDialog(errorState(409, { rolledBack: { orders: 128, users: 6, branches: 1 } }));
+    const dialog = screen.getByRole("alertdialog", { name: "Birlashtirib bo'lmadi" });
+
+    expect(within(dialog).getByText("Bo'z tumaniga qaytarildi")).toBeInTheDocument();
+    const list = within(dialog).getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" });
+    expect(within(list).getAllByRole("listitem").map((row) => plain(row.textContent))).toEqual([
+      "Buyurtmalar128 ta",
+      "Foydalanuvchilar6 ta",
+      "Filiallar1 ta",
+    ]);
+
+    await user.click(within(dialog).getByRole("button", { name: "Xabarni nusxalash" }));
+    expect(plain(await navigator.clipboard.readText())).toContain(
+      "Bo'z tumaniga qaytarildi: buyurtmalar 128 ta · foydalanuvchilar 6 ta · filiallar 1 ta",
+    );
+  });
+
+  it("Z1c1sNPT: 503 timeout — boshlanmagan qadamlar (0) chizilmaydi; hammasi 0 / eski javob — ro'yxat yo'q", () => {
+    const { unmount } = renderWithProviders(
+      <DistrictMergeDialog
+        merge={controller(
+          errorState(503, {
+            reason: "timeout",
+            kind: "users",
+            timeoutMs: 15000,
+            mismatches: [],
+            rolledBack: { orders: 128, users: 0, branches: 0 },
+          }),
+        )}
+        candidates={[IZBOSKAN]}
+      />,
+    );
+    const dialog = screen.getByRole("alertdialog", { name: "Servis javob bermadi" });
+    const list = within(dialog).getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" });
+    expect(within(list).getAllByRole("listitem").map((row) => plain(row.textContent))).toEqual(["Buyurtmalar128 ta"]);
+    unmount();
+
+    renderDialog(errorState(409, { rolledBack: { orders: 0, users: 0, branches: 0 } }));
+    expect(screen.queryByRole("list", { name: "Bo'z tumaniga qaytarilganlar" })).toBeNull();
+  });
+
+  it("Z1c1sNPT: manual_fix — qaytmagan buyurtmalar raqamlari (stranded_order_ids) va «va yana N ta»", () => {
+    renderDialog(
+      errorState(503, {
+        reason: "timeout",
+        kind: "users",
+        timeoutMs: 15000,
+        mismatches: [],
+        manualFix: true,
+        stranded: [
+          { kind: "orders", districtId: "28", count: 14 },
+          { kind: "users", districtId: null, count: null },
+        ],
+        // «qaytarildi» ro'yxati «chala qoldi» oynasida chizilmaydi (maket `-error-manual`).
+        rolledBack: { orders: 100, users: 0, branches: 0 },
+        strandedOrderIds: ["7001", "7002"],
+      }),
+    );
+    const dialog = screen.getByRole("alertdialog", { name: "Birlashtirish chala qoldi" });
+    const list = within(dialog).getByRole("list", { name: "Bo'z tumaniga qaytmaganlar" });
+    expect(within(list).getAllByRole("listitem").map((row) => plain(row.textContent))).toEqual([
+      "Buyurtmalar · 14 taIzboskan tumanida qoldi: №7001, №7002 va yana 12 ta",
+      "Foydalanuvchilar · ID'lar noma'lumJoyi aniqlanmadi — jurnalda tekshiring",
+    ]);
+    expect(within(dialog).queryByRole("list", { name: "Bo'z tumaniga qaytarilganlar" })).toBeNull();
   });
 
   it("unknown reason code: dialog without the «Sabab» row", () => {

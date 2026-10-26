@@ -126,6 +126,58 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
     expect(within(filters).getByText("Shaxsiy Elchi boti ulanishi. Market guruhlari holati — foydalanuvchi tafsilotida, «Telegram guruhi» kartasida.")).toBeInTheDocument();
   });
 
+  it("yA31z7Rr: «Telegram boti: Barchasi · Ulangan · Ulanmagan» — server filtri `telegram_linked`, URL `telegram`, sahifa 1", async () => {
+    const user = userEvent.setup();
+    render("/all-users?page=3");
+
+    const group = screen.getByRole("group", { name: "Telegram boti:" });
+    expect(within(group).getAllByRole("button").map((chip) => chip.textContent)).toEqual([
+      "Barchasi",
+      "Ulangan",
+      "Ulanmagan",
+    ]);
+    expect(within(group).getByRole("button", { name: "Barchasi" })).toHaveAttribute("aria-pressed", "true");
+    // Taklif belgisi endi yo'q — filtr ishlaydi.
+    expect(screen.queryByText(/Taklif/)).not.toBeInTheDocument();
+
+    await user.click(within(group).getByRole("button", { name: "Ulangan" }));
+    expect(currentSearch().get("telegram")).toBe("linked");
+    expect(currentSearch().get("page")).toBe("1");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, telegram_linked: "true" });
+    expect(within(group).getByRole("button", { name: "Ulangan" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(within(group).getByRole("button", { name: "Ulanmagan" }));
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, telegram_linked: "false" });
+
+    await user.click(within(group).getByRole("button", { name: "Barchasi" }));
+    expect(currentSearch().has("telegram")).toBe(false);
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+    // KPI — filtrsiz (Telegram filtri unga ta'sir qilmaydi).
+    expect(mocks.useGetUser).toHaveBeenLastCalledWith({ page: 1, limit: 1 }, true, { silentError: true });
+  });
+
+  it("yA31z7Rr: URL `telegram=unlinked` boshqa filtrlar bilan AND; noma'lum qiymat — so'rovga ketmaydi; «Filtrlarni tozalash» uni ham oladi", async () => {
+    mocks.useGetUser.mockImplementation((params: { limit?: number }) =>
+      params?.limit === 1 ? listResponse() : { ...listResponse(), data: { data: { items: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } } } },
+    );
+    const user = userEvent.setup();
+    const { unmount } = render("/all-users?role=courier&telegram=unlinked");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "courier", telegram_linked: "false" });
+    expect(screen.getByText("Mos foydalanuvchi topilmadi")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+    expect(currentSearch().has("telegram")).toBe(false);
+    unmount();
+
+    render("/all-users?telegram=yes");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+  });
+
+  it("2CBnPAeg: superadmin tablarida son yo'q (maket `superadmin-users-list`) — countsByRole bo'lsa ham", () => {
+    mocks.useGetUser.mockImplementation(() => listResponse({ countsByRole: { courier: 3, market: 342 } }));
+    render("/all-users");
+    expect(screen.getByRole("tab", { name: "Kuryerlar" }).textContent).toBe("Kuryerlar");
+  });
+
   it("URL'dagi filtrlar so'rovga o'tadi", () => {
     render("/all-users?role=courier&status=inactive&search=Jasur&page=3&limit=25");
 
@@ -325,5 +377,31 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
       "href",
       "/all-users/1",
     );
+  });
+
+  it("2CBnPAeg: tab sonlari `meta.countsByRole` dan (filial ko'lami), «Hammasi» — `totalUsers`; tab almashsa ham o'zgarmaydi", async () => {
+    mocks.useGetUser.mockImplementation(() =>
+      listResponse({
+        total: 16,
+        totalUsers: 16,
+        countsByRole: { admin: 0, manager: 0, courier: 8, registrator: 2, market: 6 },
+      }),
+    );
+    const user = userEvent.setup();
+    render("/all-users", "manager", { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } });
+
+    const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
+    const texts = () => within(tabs).getAllByRole("tab").map((tab) => (tab.textContent ?? "").replace(/\s/g, " "));
+    expect(texts()).toEqual(["Hammasi 16", "Kuryerlar 8", "Ro'yxatchilar 2", "Marketlar 6"]);
+
+    await user.click(within(tabs).getByRole("tab", { name: /Kuryerlar/ }));
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "courier" });
+    expect(texts()).toEqual(["Hammasi 16", "Kuryerlar 8", "Ro'yxatchilar 2", "Marketlar 6"]);
+  });
+
+  it("menejer: Telegram chiplari yo'q, URL `telegram` so'rovga ketmaydi", () => {
+    render("/all-users?telegram=linked", "manager", { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } });
+    expect(screen.queryByRole("group", { name: "Telegram boti:" })).not.toBeInTheDocument();
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
   });
 });

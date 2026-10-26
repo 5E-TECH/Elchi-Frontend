@@ -1,8 +1,8 @@
 // dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-list-telegram, admin-users-list-telegram, superadmin-users-list-roles, superadmin-users-list-role-select, superadmin-users-delete-dialog, admin-users-delete-dialog
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { CircleCheck, Plus, SearchX, Users } from "lucide-react";
+import { CircleCheck, Plus, SearchX, Send, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { useUser, type IUserFilter } from "../../../entities/user/api/userApi";
@@ -18,6 +18,7 @@ import {
   Field,
   PageHeader,
   Pagination,
+  Pressable,
   QueryBoundary,
   Select,
   SkeletonTable,
@@ -45,6 +46,21 @@ const MANAGER_TABS = ["", "courier", "registrator", "market"] as const;
 /** Tab nomi kaliti: `v2.list.tabs.<kalit>` (`market_operator` → `marketOperator`). */
 const tabLabelKey = (value: string) => (value === "market_operator" ? "marketOperator" : value || "all");
 const STATUS_VALUES = ["active", "inactive"] as const;
+/**
+ * yA31z7Rr / td89SKXQ — «Telegram boti: Barchasi · Ulangan · Ulanmagan» (maket `*-users-list-telegram`, ega qarori
+ * 2026-10-19 tg-link S4). URL kaliti `telegram` (`linked` · `unlinked`; «Barchasi» — kalitsiz) → server filtri
+ * `GET /users?telegram_linked=true|false` (sahifalash va sonlar to'g'ri; joriy sahifa frontendda filtrlanmaydi).
+ */
+const TELEGRAM_VALUES = ["linked", "unlinked"] as const;
+type TelegramFilter = (typeof TELEGRAM_VALUES)[number];
+const isTelegramFilter = (value: string): value is TelegramFilter =>
+  (TELEGRAM_VALUES as readonly string[]).includes(value);
+
+/** `.el-chip` (CODE-MAP §2): `aria-pressed` — tanlangan. */
+const CHIP =
+  "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border border-border-strong bg-surface px-3 " +
+  "text-[13px] font-medium text-text hover:border-text-subtle aria-pressed:border-action aria-pressed:bg-action-soft " +
+  "aria-pressed:font-semibold aria-pressed:text-action-fg max-md:h-11";
 
 /** Eski URL kalitlari (`userRole`, `userStatus`, `userSearch`) — yangi `role/status/search` ga ko'chiriladi. */
 const LEGACY_KEYS = { role: "userRole", status: "userStatus", search: "userSearch" } as const;
@@ -67,9 +83,14 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  * Holat URL'da (yagona manba): `role` (tab), `status`, `search`, `page`, `limit`. Filtr o'zgarsa — sahifa 1.
  * Eski `userRole/userStatus/userSearch` kalitlari o'qiladi va yangisiga ko'chiriladi. Avvalgi redux sinxroni
  * (`filter.userRole/userStatus`, `search.userSearch`) olib tashlandi — ularni boshqa hech kim o'qimaydi (grep).
- * So'rov: `GET /users?role&status&search&page&limit` (`useUser().useGetUser`) — bitta so'rov, server sahifalashi
- * (avvalgi `market` + `marketing` birlashtirish olib tashlandi, FY-1). Tab sonlari chizilmaydi: menejerda `meta.countsByRole` kuryerlarni
- * filial bo'yicha cheklamaydi (gateway ro'yxatni keyin filtrlaydi) — son ro'yxatga zid bo'lardi.
+ * So'rov: `GET /users?role&status&search&telegram_linked&page&limit` (`useUser().useGetUser`) — bitta so'rov, server
+ * sahifalashi (avvalgi `market` + `marketing` birlashtirish olib tashlandi, FY-1).
+ *
+ * Tab sonlari (2CBnPAeg, maket `manager-users-list` — «Barchasi 16 · Kuryerlar 8 …»): faqat menejerda, `meta.countsByRole`
+ * dan (backend endi filial ko'lamida, sahifalashdan oldin sanaydi; «Barchasi» — `meta.totalUsers`). Sonlar `role`
+ * dan boshqa filtrlarga (qidiruv, holat) bo'ysunadi — ro'yxat bilan bir xil. Superadmin/admin maketida tab soni yo'q.
+ *
+ * «Telegram boti» chiplari (yA31z7Rr / td89SKXQ) — superadmin/admin (ustun ham faqat ularda), URL `telegram`.
  */
 const UserListPage = memo(() => {
   const { t } = useTranslation(["users", "common", "ui"]);
@@ -82,6 +103,7 @@ const UserListPage = memo(() => {
   const isManager = viewerRole === "manager";
 
   const { page, limit, setPage, setLimit } = usePagination({ key: "users", defaultLimit: 10 });
+  const telegramLabelId = useId();
 
   const read = (key: keyof typeof LEGACY_KEYS) => searchParams.get(key) ?? searchParams.get(LEGACY_KEYS[key]) ?? "";
   const tabValues: readonly string[] = isManager ? MANAGER_TABS : STAFF_TABS;
@@ -90,6 +112,9 @@ const UserListPage = memo(() => {
   const role = tabValues.includes(urlRole) ? urlRole : "";
   const status = read("status");
   const search = read("search");
+  const telegramParam = searchParams.get("telegram") ?? "";
+  // Ustun va chiplar faqat superadmin/admin'da — boshqa rol uchun URL kaliti so'rovga ketmaydi.
+  const telegram: TelegramFilter | "" = canManageUsers && isTelegramFilter(telegramParam) ? telegramParam : "";
 
   // Eski kalitlar — bir marta yangisiga ko'chiriladi (havola va xatcho'plar ishlayveradi).
   const hasLegacyKeys = Object.values(LEGACY_KEYS).some((key) => searchParams.has(key));
@@ -111,13 +136,13 @@ const UserListPage = memo(() => {
 
   /** Filtrni yozadi va sahifani 1 ga qaytaradi (avvalgi `resetPagination` xulqi). */
   const writeFilter = useCallback(
-    (key: "role" | "status" | "search", value: string) => {
+    (key: "role" | "status" | "search" | "telegram", value: string) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
           if (value) next.set(key, value);
           else next.delete(key);
-          next.delete(LEGACY_KEYS[key]);
+          if (key !== "telegram") next.delete(LEGACY_KEYS[key]);
           if (next.has("page")) next.set("page", "1");
           return next;
         },
@@ -156,8 +181,9 @@ const UserListPage = memo(() => {
     if (role) params.role = role;
     if (status) params.status = status;
     if (search) params.search = search;
+    if (telegram) params.telegram_linked = telegram === "linked" ? "true" : "false";
     return params;
-  }, [limit, page, role, search, status]);
+  }, [limit, page, role, search, status, telegram]);
 
   const { useGetUser } = useUser();
   // Ikkala so'rov xatosi sahifada (`ErrorState`) — global xabar takrorlanmaydi.
@@ -171,9 +197,17 @@ const UserListPage = memo(() => {
   const items = listData?.items;
 
   // ─── Ko'rinish ─────────────────────────────────────────────────────────────
+  // 2CBnPAeg: menejer tablari sonlari — `countsByRole` (filial ko'lamida); «Barchasi» — `totalUsers`. Javobda yo'q
+  // (eski backend) — son chizilmaydi (taxmin qilinmaydi).
+  const countsByRole = meta?.countsByRole;
+  const totalUsers = meta?.totalUsers;
   const tabs = useMemo<TabItem[]>(
-    () => tabValues.map((value) => ({ value, label: t(`v2.list.tabs.${tabLabelKey(value)}`) })),
-    [tabValues, t],
+    () =>
+      tabValues.map((value) => {
+        const count = !isManager || !countsByRole ? undefined : value ? (countsByRole[value] ?? 0) : totalUsers;
+        return { value, label: t(`v2.list.tabs.${tabLabelKey(value)}`), ...(count === undefined ? {} : { count }) };
+      }),
+    [countsByRole, isManager, tabValues, t, totalUsers],
   );
   // Telefon (maket `superadmin-users-list-role-select`): «Hammasi», so'ng «Xodimlar» va «Tashqi hisoblar» guruhlari.
   const roleOptions = useMemo<SelectOption[]>(
@@ -200,14 +234,14 @@ const UserListPage = memo(() => {
     [t],
   );
 
-  const activeFilters = (status ? 1 : 0) + (search ? 1 : 0);
+  const activeFilters = (status ? 1 : 0) + (search ? 1 : 0) + (telegram ? 1 : 0);
   const clearFilters = () => {
     window.clearTimeout(searchTimer.current);
     setSearchText("");
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        ["status", "search", ...Object.values(LEGACY_KEYS)].forEach((key) => next.delete(key));
+        ["status", "search", "telegram", ...Object.values(LEGACY_KEYS)].forEach((key) => next.delete(key));
         if (next.has("page")) next.set("page", "1");
         return next;
       },
@@ -280,6 +314,7 @@ const UserListPage = memo(() => {
           ariaLabel={t("v2.list.tabsLabel")}
           listClassName="px-3"
           className={isManager ? undefined : "max-md:hidden"}
+          countBusy={listQuery.isFetching}
         />
 
         <div
@@ -332,10 +367,35 @@ const UserListPage = memo(() => {
               icon={CircleCheck}
             />
           </Field>
-          {/* TG-B (`*-users-list-telegram`): ustun izohi ko'rinadigan qator (sarlavhadagi `title` faqat sichqonchada).
-              Maketdagi «Telegram boti» filtr chiplari — «Taklif · backend kerak», chizilmaydi. */}
+          {/* TG-B (`*-users-list-telegram`): «Telegram boti: Barchasi · Ulangan · Ulanmagan» chiplari (yA31z7Rr —
+              server filtri) va ustun izohi ko'rinadigan qator (sarlavhadagi `title` faqat sichqonchada). */}
           {canManageUsers ? (
-            <p className="m-0 basis-full text-[13px] leading-[18px] text-text-muted">{t("tgBot.listHint")}</p>
+            <div
+              role="group"
+              aria-labelledby={telegramLabelId}
+              className="flex basis-full flex-wrap items-center gap-2"
+            >
+              <span
+                id={telegramLabelId}
+                className="inline-flex flex-none items-center gap-1.5 text-[13px] text-text-muted"
+              >
+                <Send size={16} aria-hidden="true" />
+                {t("tgBot.filterLabel")}
+              </span>
+              <span className="inline-flex flex-wrap gap-2">
+                {(["", ...TELEGRAM_VALUES] as const).map((value) => (
+                  <Pressable
+                    key={value || "all"}
+                    aria-pressed={telegram === value}
+                    className={CHIP}
+                    onClick={() => writeFilter("telegram", value)}
+                  >
+                    {value ? t(`tgBot.${value}`) : t("tgBot.filterAll")}
+                  </Pressable>
+                ))}
+              </span>
+              <p className="m-0 basis-full text-[13px] leading-[18px] text-text-muted">{t("tgBot.listHint")}</p>
+            </div>
           ) : null}
         </div>
 

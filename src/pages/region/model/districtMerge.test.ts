@@ -59,6 +59,8 @@ const details = (patch: Partial<MergeErrorDetails> = {}): MergeErrorDetails => (
   mismatches: [],
   manualFix: false,
   stranded: [],
+  rolledBack: null,
+  strandedOrderIds: [],
   traceId: null,
   ...patch,
 });
@@ -227,6 +229,8 @@ describe("parseMergeErrorDetails (tf324cXN)", () => {
       mismatches: [{ kind: "orders", district: "target", expected: 1254, actual: 1255 }],
       manualFix: false,
       stranded: [],
+      rolledBack: null,
+      strandedOrderIds: [],
       traceId: "7d0c2a4e",
     });
   });
@@ -259,6 +263,31 @@ describe("parseMergeErrorDetails (tf324cXN)", () => {
         { kind: "users", districtId: null, count: null },
       ],
     });
+  });
+
+  it("Z1c1sNPT: reads flat rolled_back_* counts and stranded_order_ids (≤10); old body — rolledBack null", () => {
+    const parsed = parseMergeErrorDetails({
+      statusCode: 503,
+      data: {
+        reason: "timeout",
+        details: {
+          reason: "timeout",
+          kind: "users",
+          rolled_back_orders: 128,
+          rolled_back_users: 0,
+          rolled_back_branches: "1",
+          manual_fix: true,
+          stranded: [{ kind: "orders", district_id: "12", count: 14 }],
+          stranded_order_ids: ["7001", 7002, "", null, "7003", "7004", "7005", "7006", "7007", "7008", "7009", "7010", "7011"],
+        },
+      },
+    });
+    expect(parsed?.rolledBack).toEqual({ orders: 128, users: 0, branches: 1 });
+    expect(parsed?.strandedOrderIds).toEqual(["7001", "7002", "7003", "7004", "7005", "7006", "7007", "7008", "7009", "7010"]);
+
+    const old = parseMergeErrorDetails(COUNT_MISMATCH_BODY);
+    expect(old?.rolledBack).toBeNull();
+    expect(old?.strandedOrderIds).toEqual([]);
   });
 
   it("returns null when the body is not machine-readable (no details.manual_fix)", () => {

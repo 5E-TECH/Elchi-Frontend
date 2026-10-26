@@ -22,7 +22,14 @@ export interface CustomerSuggestion {
   /** Eng yangi yangi-holatdagi buyurtma id'lari (ko'pi bilan 5). */
   new_order_ids: string[];
   last_order_at: string | null;
+  /**
+   * 9444UAa8 — qaysi maydon mos keldi (`phone` · `extra_number` · `name`; ustuvorlik — asosiy telefon). Eski javob
+   * yoki noma'lum qiymat — `null` (belgi taxmin qilinmaydi).
+   */
+  matched_by: CustomerSuggestMatch | null;
 }
+
+export type CustomerSuggestMatch = "phone" | "extra_number" | "name";
 
 export type CustomerSuggestParams = {
   /** Faqat raqamlar (kamida 7 ta) — backend `parseUzPhoneSearch`. */

@@ -416,5 +416,34 @@
       "title": "Sizga hali viloyat biriktirilmagan",
       "description": "Administrator viloyat biriktirgach, uning statistikasi shu yerda chiqadi."
     }
+  },
+  "dmDelivery": {
+    "title": "Kvitansiya yetkazilishi",
+    "description": "{{period}} · Telegram, shaxsiy chat",
+    "descriptionDefault": "Oxirgi 30 kun · Telegram, shaxsiy chat",
+    "loadError": "Yetkazish hisobotini yuklab bo'lmadi",
+    "emptyTitle": "Bu davrda kvitansiya yuborilmagan",
+    "emptyHint": "Menejer kuryerdan pul qabul qilganda kvitansiya kuryerning Telegram'iga yuboriladi.",
+    "noAttemptsTitle": "Yuborishga urinish bo'lmadi",
+    "noAttemptsHint": "Qabul qiluvchilarning hech biriga Telegram orqali yuborilmadi — sabablari yonida.",
+    "gaugeLabel": "Yetdi / yuborilgan",
+    "gaugeAria": "Kvitansiya yetkazilishi: {{value}}. Yetdi {{sent}}, xato {{failed}}",
+    "sent": "Yetdi",
+    "failed": "Xato",
+    "reach": "Qamrov",
+    "reachHint": "{{total}} qabul qiluvchidan {{sent}} tasiga yetdi",
+    "pending": "Navbatda",
+    "pendingHint": "Hali yuborilmoqda — yetdi ham, xato ham hisoblanmagan",
+    "skipped": "Yuborilmadi",
+    "skippedHint": "Ataylab yuborilmagan qabul qiluvchilar",
+    "noProvider": "Bot sozlanmagan",
+    "reasonCount": "{{reason}}: {{value}}",
+    "reasons": {
+      "no_telegram_id": "Telegram ulanmagan",
+      "bot_blocked": "Botni bloklagan",
+      "not_private_chat": "Shaxsiy chat emas",
+      "other": "Boshqa sabab"
+    },
+    "note": "«Yetdi» — Telegram qabul qilgan xabarlar. Telegram ulanmaganlar va botni bloklaganlar «Yuborilmadi» ga kiradi va «Qamrov» ni pasaytiradi."
   }
 }

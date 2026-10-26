@@ -497,6 +497,11 @@ export const API_ENDPOINTS = {
   TELEGRAM_SCAN: {
     DONE: "telegram/scan/done", // POST { order_ids } → { accepted, ignored }; bot sends the summary
   },
+  // 2crjWf7v — shaxsiy Telegram xabarlari (sukut: to'lov kvitansiyasi) yetkazish hisoboti, FAQAT superadmin:
+  // GET ?from&to (ISO yoki YYYY-MM-DD — Toshkent kuni; sukut 30 kun)&type → { totals, skipped_reasons, by_role, days }
+  TELEGRAM_REPORTS: {
+    DM_DELIVERY: "telegram/dm-delivery",
+  },
 
   // ── Files (MinIO) — guide §10 ────────────────────────────────────────────
   FILES: {

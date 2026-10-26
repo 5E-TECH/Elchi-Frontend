@@ -54,6 +54,7 @@ import {
 import { isLowDataRanking, rankingDescription } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
+import DmDeliveryCard from "../../widgets/dm-delivery/ui/DmDeliveryCard";
 import CourierCashCard from "./ui/CourierCashCard";
 import CourierPlanCard from "./ui/CourierPlanCard";
 import DeliveryQualityCard from "./ui/DeliveryQualityCard";
@@ -662,6 +663,12 @@ const DashboardPage = () => {
           />
         </DeferredMount>
       ) : null}
+      {/* 2crjWf7v: «Kvitansiya yetkazilishi» — faqat superadmin (`GET /telegram/dm-delivery`, boshqa rolga 403). */}
+      <DmDeliveryCard
+        enabled={normalizedRole === "superadmin"}
+        from={hasDateFilter ? fromDate : ""}
+        to={hasDateFilter ? toDate : ""}
+      />
     </div>
   );
 };

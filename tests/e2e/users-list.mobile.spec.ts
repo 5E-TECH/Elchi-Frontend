@@ -106,3 +106,25 @@ test("⭐ 390 FY-1: tablar o'rnida «Rol» tanlovi, guruhlar, tanlangan rol so'r
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(tooSmall(await tapTargets(page))).toEqual([]);
 });
+
+/**
+ * yA31z7Rr / td89SKXQ (maket `superadmin-users-list-telegram`, ega qarori tg-link S4): «Telegram boti: Barchasi ·
+ * Ulangan · Ulanmagan» chiplari — telefonda ≥ 44 px, tanlov server filtriga (`GET /users?telegram_linked=`), URL `telegram`.
+ */
+test("⭐ 390 yA31z7Rr: «Telegram boti» chiplari ≥ 44 px, tanlov `telegram_linked` bilan so'raladi", async ({ page }) => {
+  const { listQueries } = await openUsers(page);
+  const group = page.getByRole("group", { name: "Telegram boti:" });
+  const chips = group.getByRole("button");
+  await expect(chips).toHaveText(["Barchasi", "Ulangan", "Ulanmagan"]);
+  await expect(chips.first()).toHaveAttribute("aria-pressed", "true");
+  for (const chip of await chips.all()) {
+    expect(Math.round((await chip.boundingBox())?.height ?? 0)).toBeGreaterThanOrEqual(44);
+  }
+
+  await group.getByRole("button", { name: "Ulanmagan" }).click();
+  await expect(page).toHaveURL(/[?&]telegram=unlinked\b/);
+  await expect.poll(() => listQueries.at(-1)?.get("telegram_linked")).toBe("false");
+  await expect(group.getByRole("button", { name: "Ulanmagan" })).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+});

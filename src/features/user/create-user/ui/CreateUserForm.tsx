@@ -12,6 +12,7 @@ import {
   EyeOff,
   KeyRound,
   Map as MapIcon,
+  MapPin,
   Route,
   Store,
   Truck,
@@ -56,6 +57,8 @@ import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 import { runUserRequest } from "../../lib/userRequest";
 import { readViewerBranch } from "../../lib/viewerBranch";
 import { getBranchOptionsForRole, isManagerHqSelection } from "../lib/branchOptions";
+import { CourierDistrictField } from "../../courier-district/ui/CourierDistrictField";
+import { courierDistrictErrorKind } from "../../courier-district/model/courierDistrict";
 import {
   areCourierTariffsRequired,
   buildCourierTariffs,
@@ -76,6 +79,8 @@ interface CreateUserFormValues {
   homeRate: string;
   centerRate: string;
   deliveryType: "address" | "center" | "";
+  /** DtKKY0V8 — kuryer tumani (ixtiyoriy, `""` — tumansiz). */
+  districtId: string;
 }
 
 const INITIAL_FORM: CreateUserFormValues = {
@@ -90,6 +95,7 @@ const INITIAL_FORM: CreateUserFormValues = {
   homeRate: "",
   centerRate: "",
   deliveryType: "",
+  districtId: "",
 };
 
 const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
@@ -116,6 +122,7 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   defaultTariff: "deliveryType",
   delivery_type: "deliveryType",
   deliveryType: "deliveryType",
+  district_id: "districtId",
 };
 
 const getBranchOptionLabel = (branch: Branch) => {
@@ -226,6 +233,8 @@ export const CreateUserForm = memo(() => {
   const { control, handleSubmit, reset, setValue, setError, clearErrors } = methods;
 
   const role = useWatch({ control, name: "role" });
+  // DtKKY0V8: kuryer «Ish hududi» — tanlangan filial (superadmin/admin) va uning viloyati.
+  const watchedBranchId = useWatch({ control, name: "branchId" }) ?? "";
   // fix3b FE-USR-11: kuryer tariflari maosh kiritilmaguncha majburiy (yulduzcha).
   const salaryValue = useWatch({ control, name: "salary" }) ?? "";
   const courierTariffsRequired = areCourierTariffsRequired({ salary: salaryValue });
@@ -247,6 +256,15 @@ export const CreateUserForm = memo(() => {
     value: branch.id,
     label: getBranchOptionLabel(branch),
   }));
+  // Kuryer viloyati: menejer — o'z filiali; superadmin/admin — tanlangan filial (tanlanmasa HQ — viloyat noma'lum,
+  // tuman tanlanmaydi: maket «Avval filialni tanlang»).
+  const selectedCourierBranch = canLoadBranches
+    ? (branchesResponse?.data ?? []).find((branch) => String(branch.id) === String(watchedBranchId)) ?? null
+    : null;
+  const selectedBranchRegion =
+    selectedCourierBranch?.region?.id && selectedCourierBranch.region.name !== "—" ? selectedCourierBranch.region : null;
+  const courierRegionId = canLoadBranches ? (selectedBranchRegion?.id ?? null) : viewerBranch.regionId || null;
+  const courierRegionName = canLoadBranches ? (selectedBranchRegion?.name ?? null) : viewerBranch.regionName;
 
   useEffect(() => {
     reset({ ...INITIAL_FORM, role });
@@ -393,7 +411,11 @@ export const CreateUserForm = memo(() => {
     return valid;
   };
 
-  const submitRequest = <T,>(request: () => Promise<T>, successMessage: string) =>
+  const submitRequest = <T,>(
+    request: () => Promise<T>,
+    successMessage: string,
+    describeError?: (error: unknown) => string | undefined,
+  ) =>
     runUserRequest({
       t,
       request,
@@ -406,6 +428,7 @@ export const CreateUserForm = memo(() => {
         if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
       },
       onSuccess: () => navigate(-1),
+      describeError,
     });
 
   const onSubmit = async (values: CreateUserFormValues) => {
@@ -472,6 +495,11 @@ export const CreateUserForm = memo(() => {
       };
       // `region_id` yuborilmaydi: gateway DTO'sida yo'q (doim 400 edi) — hudud filialdan olinadi.
       if (authRole === "manager" && currentBranchId) payload.branch_id = currentBranchId;
+      // perqZ3oM / FY-6 (maket `superadmin-users-create-courier-district`): superadmin/admin filial tanlasa — kuryer
+      // o'sha filialda (viloyati filialdan); tanlanmasa — avvalgidek HQ.
+      if (canLoadBranches && values.branchId) payload.branch_id = values.branchId;
+      // DtKKY0V8: tuman — ixtiyoriy, faqat kuryer viloyatidan (backend ham tekshiradi: 400 / 503).
+      if (values.districtId) payload.district_id = values.districtId;
       if (values.salary.trim()) {
         payload.salary = parseAmount(values.salary);
         if (values.paymentDay) {
@@ -486,7 +514,22 @@ export const CreateUserForm = memo(() => {
       payload.tariff_home = tariffs.tariff_home;
       payload.tariff_center = tariffs.tariff_center;
 
-      await submitRequest(() => createCourier.mutateAsync(payload), t("createCourier"));
+      const districtSent = Boolean(payload.district_id);
+      const districtError = (error: unknown) => {
+        const kind = courierDistrictErrorKind(error, { districtSent });
+        return kind ? t(`v2.courierDistrict.errors.${kind}`) : undefined;
+      };
+      await submitRequest(
+        () =>
+          createCourier.mutateAsync(payload).catch((error: unknown) => {
+            // Tuman xatosi — maydon ostida ham (kuryer yaratilmagan, kiritilganlar joyida).
+            const message = districtError(error);
+            if (message) setError("districtId", { type: "server", message });
+            throw error;
+          }),
+        t("createCourier"),
+        districtError,
+      );
       return;
     }
 
@@ -681,6 +724,72 @@ export const CreateUserForm = memo(() => {
         </Field>
       )}
     />
+  );
+
+  // DtKKY0V8 (maketlar `superadmin-users-create-courier-district`, `manager-users-create-courier-district`):
+  // superadmin/admin — Filial (ixtiyoriy) · Viloyat (filialdan, faqat o'qish) · Tuman; menejer — faqat Tuman (o'z
+  // filiali viloyati). Filial almashsa tuman tozalanadi (boshqa viloyat tumani 400 bo'lardi).
+  const courierDistrictField = (
+    <Controller
+      control={control}
+      name="districtId"
+      render={({ field, fieldState }) => (
+        <CourierDistrictField
+          regionId={courierRegionId}
+          regionName={courierRegionName}
+          value={field.value}
+          onChange={field.onChange}
+          onBlur={field.onBlur}
+          error={fieldState.error?.message}
+          disabledHint={
+            canLoadBranches && !watchedBranchId
+              ? t("v2.courierDistrict.needBranch")
+              : t("v2.courierDistrict.branchNoRegion")
+          }
+        />
+      )}
+    />
+  );
+  const courierWorkArea = (
+    <FormSection title={t("v2.edit.workArea")}>
+      <div className={GRID_200}>
+        {canLoadBranches ? (
+          <>
+            <Controller
+              control={control}
+              name="branchId"
+              render={({ field, fieldState }) => (
+                <Field
+                  label={t("v2.create.fields.branch")}
+                  labelAs="span"
+                  hint={t("v2.courierDistrict.branchHint")}
+                  error={fieldState.error?.message}
+                >
+                  <Select
+                    searchable
+                    clearable
+                    options={branchOptions}
+                    value={field.value || null}
+                    onChange={(next) => {
+                      field.onChange(next ?? "");
+                      setValue("districtId", "");
+                      clearErrors("districtId");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={t("branchPlaceholder")}
+                    loading={isBranchesLoading}
+                  />
+                </Field>
+              )}
+            />
+            <Field label={t("v2.edit.region")} hint={t("v2.courierDistrict.regionHint")}>
+              <TextInput readOnly icon={MapPin} value={selectedBranchRegion?.name ?? "—"} />
+            </Field>
+          </>
+        ) : null}
+        {courierDistrictField}
+      </div>
+    </FormSection>
   );
 
   const salaryPlaceholder = t("v2.create.fields.salaryPlaceholder");
@@ -932,6 +1041,8 @@ export const CreateUserForm = memo(() => {
                 </div>
               </FormSection>
             ) : null}
+
+            {role === "courier" ? courierWorkArea : null}
 
             {role === "courier" ? (
               <FormSection title={t("v2.create.sections.salaryTariff")} note={t("v2.create.fields.courierSalaryNote")}>

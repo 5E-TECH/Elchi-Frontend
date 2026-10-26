@@ -857,6 +857,7 @@
     "scopeAll": "Все клиенты · число заказов по {{market}}",
     "scopeMarket": "Клиенты {{market}} · число заказов по этому магазину",
     "scopeOwn": "Ваши клиенты · число заказов только у вас",
+    "extraNumberMatch": "Доп. номер:",
     "ordersCount_one": "{{value}} заказ",
     "ordersCount_few": "{{value}} заказа",
     "ordersCount_many": "{{value}} заказов",
