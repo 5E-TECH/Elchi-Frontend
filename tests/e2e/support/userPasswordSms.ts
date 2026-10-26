@@ -128,7 +128,16 @@ export const mockCreateUserSms = async (page: Page, options: { theme?: "light" |
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "1", role: "superadmin", name: "Bosh admin", status: "active" }));
+      return reply(
+        route,
+        wrap({
+          id: "1",
+          role: "superadmin",
+          name: "Bosh admin",
+          status: "active",
+          settings: { appearance: { theme: options.theme ?? "light", themeChosen: true } },
+        }),
+      );
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
     if (path === "couriers" && request.method() === "POST") {
