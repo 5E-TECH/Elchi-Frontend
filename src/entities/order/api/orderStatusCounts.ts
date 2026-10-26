@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { hashKey, useQuery } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { OrderListParams } from "../types/order";
@@ -91,6 +92,40 @@ const fetchOrderStatusCounts = (params: OrderListParams) =>
     .get(API_ENDPOINTS.ORDERS.STATUS_COUNTS, { params: toStatusCountsParams(params) })
     .then((res) => parseOrderStatusCounts(res.data));
 
+/**
+ * BITTA TAYMER (review): filtrsiz `/orders` tablari va yon menyu badge'i bitta so'rovni (`{}` kaliti) ulashadi.
+ * Ikkalasi o'z `refetchInterval` ini qo'ysa, React Query har kuzatuvchiga alohida taymer ochadi — bitta so'rov uchun
+ * ikki 60 s lik taymer. Shu kalitni davriy so'rashni xohlagan kuzatuvchilardan faqat BIRINCHISI (egasi) taymer
+ * qo'yadi; u ketsa yoki to'xtasa (sahifada oyna ochiq — `refreshPaused`), navbatdagisi egalikni oladi.
+ */
+const pollOwners = new Map<string, symbol[]>();
+const pollListeners = new Set<() => void>();
+const emitPollOwners = () => pollListeners.forEach((listener) => listener());
+const subscribePollOwners = (listener: () => void) => {
+  pollListeners.add(listener);
+  return () => {
+    pollListeners.delete(listener);
+  };
+};
+
+const useSharedRefetchInterval = (key: string, interval: number | false): number | false => {
+  const [token] = useState(() => Symbol("status-counts-poller"));
+  const wants = interval !== false && interval > 0;
+  useEffect(() => {
+    if (!wants) return undefined;
+    pollOwners.set(key, [...(pollOwners.get(key) ?? []), token]);
+    emitPollOwners();
+    return () => {
+      const rest = (pollOwners.get(key) ?? []).filter((item) => item !== token);
+      if (rest.length) pollOwners.set(key, rest);
+      else pollOwners.delete(key);
+      emitPollOwners();
+    };
+  }, [key, token, wants]);
+  const isOwner = useSyncExternalStore(subscribePollOwners, () => pollOwners.get(key)?.[0] === token);
+  return wants && isOwner ? interval : false;
+};
+
 type StatusCountsOptions = {
   enabled?: boolean;
   refetchInterval?: number | false;
@@ -101,28 +136,35 @@ type StatusCountsOptions = {
  * `/orders` holat tablari sonlari — ro'yxat filtrlari bilan. Filtr almashganda yangi javob kelguncha oldingi sonlar
  * turadi (`isPlaceholderData` — sahifa ularni xira, `countBusy` qiladi).
  */
-export const useOrderStatusCounts = (params: OrderListParams, options: StatusCountsOptions = {}) =>
-  useQuery({
-    queryKey: orderStatusCountsQueryKey(params),
+export const useOrderStatusCounts = (params: OrderListParams, options: StatusCountsOptions = {}) => {
+  const queryKey = orderStatusCountsQueryKey(params);
+  const enabled = options.enabled ?? true;
+  const refetchInterval = useSharedRefetchInterval(hashKey(queryKey), enabled ? (options.refetchInterval ?? false) : false);
+  return useQuery({
+    queryKey,
     queryFn: () => fetchOrderStatusCounts(params),
-    enabled: options.enabled ?? true,
+    enabled,
     placeholderData: (previous) => previous,
-    refetchInterval: options.refetchInterval ?? false,
+    refetchInterval,
     // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
     ...(options.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
     meta: { silentError: true },
   });
+};
 
 /**
  * «Qabul va yaratish» badge'i — filtrsiz `GET /orders/status-counts` ning `new_incoming` i. `null` — badge yo'q
  * (bo'lim yo'q rol, so'rov yiqildi yoki hali kelmadi).
  */
 export const useNewIncomingOrdersCount = (enabled: boolean): number | null => {
+  const queryKey = orderStatusCountsQueryKey({});
+  // Filtrsiz `/orders` ochiq bo'lsa taymer bitta (`useSharedRefetchInterval`) — ikkinchi 60 s lik so'rov yo'q.
+  const refetchInterval = useSharedRefetchInterval(hashKey(queryKey), enabled ? ORDER_STATUS_COUNTS_REFRESH_MS : false);
   const query = useQuery({
-    queryKey: orderStatusCountsQueryKey({}),
+    queryKey,
     queryFn: () => fetchOrderStatusCounts({}),
     enabled,
-    refetchInterval: enabled ? ORDER_STATUS_COUNTS_REFRESH_MS : false,
+    refetchInterval,
     meta: { silentError: true },
   });
   return enabled ? (query.data?.new_incoming ?? null) : null;
