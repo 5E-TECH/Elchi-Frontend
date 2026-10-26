@@ -247,15 +247,17 @@ const OrderCreateFormContent = () => {
   const details = useWatch({ control, name: "details" });
   const marketRoleId = roleState.id ?? profile?.id;
   const marketRoleName = roleState.name ?? profile?.name;
-  // Operatorning `id`/`name` i — o'zi, market emas: «Bugungi buyurtmalar» kartasi yo'q (`orders/markets/:id/new`
-  // operatorga yopiq — N12); market nomi faqat sarlavhada (`my-profile.market`, N13).
+  // Operatorning `id`/`name` i — o'zi, market emas. «Yangi buyurtmalar» kartasi (nCAFnqIe / N12, MO-8) — operator
+  // marketi bo'yicha: `my-profile.market_id` (bo'lmasa `market.id`, N13), nomi — `my-profile.market.name`;
+  // `GET orders/markets/:marketId/new` operatorga faqat o'z marketi uchun ochiq. Biriktirilmagan — karta yo'q.
+  const operatorMarketId = isMarketOperator ? (profile?.market_id ?? profile?.market?.id ?? undefined) : undefined;
   const selectedMarketId = isMarketOperator
-    ? undefined
+    ? operatorMarketId
     : isMarketRole
       ? marketRoleId
       : market?.id ?? selectedMarketFromState?.id;
   const selectedMarketName = isMarketOperator
-    ? undefined
+    ? operatorMarketName ?? undefined
     : isMarketRole
       ? marketRoleName
       : market?.name ?? selectedMarketFromState?.name;
@@ -572,6 +574,7 @@ const OrderCreateFormContent = () => {
                   marketId={selectedMarketId}
                   marketName={selectedMarketName}
                   isMarketRole={isMarketRole}
+                  operator={isMarketOperator}
                 />
               ) : null}
             </aside>

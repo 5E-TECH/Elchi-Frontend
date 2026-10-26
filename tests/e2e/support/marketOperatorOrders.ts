@@ -3,9 +3,10 @@ import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../../
 
 /**
  * MO-3 — market operatori buyurtmalari (`/orders`, `/orders/edit/:id`) va «AI bilan» yaratish (`/new-orders/create`)
- * uchun soxta backend. Operatorga backendda yopiq yo'llar (`region*`, `markets*`, `orders/markets/*`,
- * `orders/:id/tracking`, `orders/extra-cost-approvals`, kuryerlar, foydalanuvchilar) so'ralsa — `forbidden` ga
- * yoziladi va 403 qaytadi (haqiqiy backend kabi); test oxirida ro'yxat bo'sh bo'lishi shart.
+ * uchun soxta backend. Operatorga backendda yopiq yo'llar (`markets*`, boshqa marketning `orders/markets/*`,
+ * `orders/:id/tracking`, kuryerlar, foydalanuvchilar) so'ralsa — `forbidden` ga yoziladi va 403 qaytadi (haqiqiy
+ * backend kabi); test oxirida ro'yxat bo'sh bo'lishi shart. O'z marketining `orders/markets/7/new` (nCAFnqIe / N12) va
+ * `orders/extra-cost-approvals` (6QLF7nst, faqat o'qish) — ochiq.
  */
 // Worktree serverlari boshqa portda — `E2E_ORIGIN`.
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
@@ -49,10 +50,12 @@ export const OPERATOR_ORDERS = [
 
 /**
  * Operatorga backendda yopiq (403) yo'llar — frontend ularni umuman so'ramasligi kerak. `region`, `district` —
- * MO-7 dan ochiq (backend 6cb2340, N11).
+ * MO-7 dan ochiq (backend 6cb2340, N11); o'z marketining `orders/markets/7/new` — N12 (backend a3c67d0);
+ * `orders/extra-cost-approvals` (GET) — N14 (8f0811b).
  */
-const FORBIDDEN_GET =
-  /^(markets?($|\/)|orders\/markets\/|orders\/[^/]+\/tracking$|orders\/extra-cost-approvals|users($|\/)|couriers|branches|market-operators)/;
+const FORBIDDEN_GET = new RegExp(
+  `^(markets?($|/)|orders/markets/(?!${OPERATOR_MARKET_ID}/new$)|orders/[^/]+/tracking$|users($|/)|couriers|branches|market-operators)`,
+);
 
 export type MarketOperatorOrdersMock = {
   /** Barcha so'rovlar (`GET orders`, `POST orders/ai-parse` …). */
@@ -134,6 +137,13 @@ export const mockMarketOperatorOrders = async (page: Page, { aiEnabled = true, p
       const statuses = url.searchParams.getAll("status").flatMap((value) => value.split(","));
       const items = statuses.length ? OPERATOR_ORDERS.filter((item) => statuses.includes(item.status)) : OPERATOR_ORDERS;
       return reply(route, { statusCode: 200, data: items, total: items.length, page: 1, limit: 10 });
+    }
+    // N12: o'z marketining yangi buyurtmalari — bugungi «Yangi» (market roli bilan bir xil javob, massiv).
+    if (path === `orders/markets/${OPERATOR_MARKET_ID}/new` && method === "GET") {
+      return reply(
+        route,
+        wrap(OPERATOR_ORDERS.filter((item) => item.status === "new").map((item) => ({ ...item, createdAt: new Date().toISOString() }))),
+      );
     }
     const detail = OPERATOR_ORDERS.find((item) => path === `orders/${item.id}`);
     if (detail && method === "GET") return reply(route, wrap(detail));

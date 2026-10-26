@@ -85,11 +85,17 @@ test("⭐ «Buyurtma yaratish» menyudan: /new-orders → /new-orders/create, «
   expectNoForbiddenRequests(mock);
 });
 
-test("⭐ MO-7: qo'lda yaratish — viloyat/tuman, katalog; POST /orders market_id va operator'siz, Idempotency-Key; «Operator: Siz»", async ({
+test("⭐ MO-7: qo'lda yaratish — viloyat/tuman, katalog; POST /orders market_id va operator'siz, Idempotency-Key; «Operator: Siz»; N12 «Yangi buyurtmalar»", async ({
   page,
 }) => {
   const mock = await openOperatorCreate(page);
   await expect(page.getByTestId("manual-mode-panel")).toBeVisible();
+  // nCAFnqIe (N12): «Yangi buyurtmalar» yon kartasi — o'z marketi, qator buyurtma tafsilotiga.
+  const today = page.getByRole("region", { name: "Yangi buyurtmalar" });
+  await expect(today).toContainText("Baraka Shop · bugun");
+  await expect(today).toContainText("Jami 1 ta");
+  await expect(today.getByRole("link", { name: /Sevara Tojiboyeva/ })).toHaveAttribute("href", "/orders/edit/10247");
+  expect(mock.requests).toContain("GET orders/markets/7/new");
   const aside = page.getByRole("complementary", { name: "Buyurtma xulosasi" });
   await expect(aside.getByRole("textbox", { name: "Operator" })).toHaveValue("Dilnoza Karimova");
   await expect(aside.getByText("Siz — avtomatik yoziladi")).toBeVisible();

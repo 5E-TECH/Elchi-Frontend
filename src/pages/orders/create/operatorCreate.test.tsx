@@ -17,7 +17,8 @@ import OrderCreate from "./index";
  * MO-3 / MO-7 (OfRSoRUX) — market operatori `/new-orders/create` da: «Qo'lda · AI bilan» (maket
  * `market_operator-new-orders-create-manual`; AI holatlari `market-new-orders-create-ai-*`). Backend 6cb2340:
  * `POST /orders` va `GET /region`, `/district` operatorga ochiq; `market_id` tokendan, `operator` — operatorning o'zi.
- * Market qadami va «Yangi buyurtmalar» yon kartasi yo'q (`orders/markets/:id/new` operatorga yopiq — N12).
+ * Market qadami yo'q. «Yangi buyurtmalar» yon kartasi — operator marketi bo'yicha (nCAFnqIe / N12, MO-8:
+ * `GET orders/markets/:marketId/new` operatorga o'z marketi uchun ochiq); havolalar — `/orders/edit/:id`, `/orders?status=new`.
  */
 
 const operatorState = {
@@ -78,7 +79,7 @@ beforeEach(() => {
 });
 
 describe("OrderCreate — market operatori (MO-3, MO-7)", () => {
-  it("sukut — «Qo'lda», «Qo'lda · AI bilan» tablari; sarlavhada «Baraka Shop nomidan»; market qadami va yon karta yo'q", async () => {
+  it("sukut — «Qo'lda», «Qo'lda · AI bilan» tablari; sarlavhada «Baraka Shop nomidan»; market qadami yo'q", async () => {
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
     expect(screen.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeInTheDocument();
@@ -86,12 +87,81 @@ describe("OrderCreate — market operatori (MO-3, MO-7)", () => {
     expect(screen.getByTestId("create-mode-tabs")).toBeInTheDocument();
     expect(screen.getByTestId("manual-mode-panel")).not.toHaveClass("hidden");
     expect(screen.queryByText(/Avval marketni tanlang/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Yangi buyurtmalar" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Buyurtmalar/ })).toHaveAttribute("href", "/orders");
 
-    // Viloyat ro'yxati operatorga ochiq (N11); market yangi buyurtmalari (`orders/markets/…`) so'ralmaydi.
+    // Viloyat ro'yxati operatorga ochiq (N11); boshqa market yo'llari (`markets*`) so'ralmaydi, faqat o'z marketi
+    // yangi buyurtmalari (N12).
     await waitFor(() => expect(getUrls()).toContain("region"));
-    expect(getUrls().filter((url) => /^orders\/markets\/|^markets/.test(url))).toEqual([]);
+    await waitFor(() =>
+      expect(getUrls().filter((url) => /^orders\/markets\/|^markets/.test(url))).toEqual(["orders/markets/37/new"]),
+    );
+  });
+
+  it("⭐ nCAFnqIe (N12): «Yangi buyurtmalar» — o'z marketi bugungilari, qator → /orders/edit/:id, telefonda → /orders?status=new", async () => {
+    const today = new Date().toISOString();
+    mocks.get.mockImplementation((url: string) =>
+      url === "orders/markets/37/new"
+        ? Promise.resolve({
+            data: {
+              statusCode: 200,
+              data: [
+                {
+                  id: "10247",
+                  status: "new",
+                  where_deliver: "address",
+                  total_price: 185000,
+                  createdAt: today,
+                  customer: { id: "c1", name: "Sevara Tojiboyeva", district: { id: "1", name: "Yunusobod tumani" } },
+                },
+                // Kechagi (sana filtri yo'q — backend barcha yangilarni beradi): «bugun» kartasiga kirmaydi.
+                { id: "10101", status: "new", where_deliver: "center", total_price: 90000, createdAt: "2026-01-02T08:00:00.000Z", customer: { id: "c2", name: "Bekzod Aliyev" } },
+              ],
+            },
+          })
+        : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
+
+    const card = await screen.findByRole("region", { name: "Yangi buyurtmalar" });
+    expect(card).toHaveTextContent("Baraka Shop · bugun");
+    const row = await within(card).findByRole("link", { name: /Sevara Tojiboyeva/ });
+    expect(within(card).getByText("Jami 1 ta")).toBeInTheDocument();
+    expect(row).toHaveAttribute("href", "/orders/edit/10247");
+    expect(row).toHaveTextContent("№10247 · Yunusobod tumani");
+    expect(within(card).queryByText("Bekzod Aliyev")).not.toBeInTheDocument();
+    // Telefon (maket `el-show-mobile`): havola-karta — «Buyurtmalar» ning «Yangi» tabiga («Qabul va yaratish» yopiq).
+    expect(screen.getByRole("link", { name: "Bugungi yangi buyurtmalar, 1 ta" })).toHaveAttribute("href", "/orders?status=new");
+    expect(screen.getByRole("link", { name: "Bugungi yangi buyurtmalar, 1 ta" })).toHaveTextContent("Baraka Shop · bugun · 1 ta");
+    expect(getUrls().filter((url) => url.startsWith("orders/markets/"))).toEqual(["orders/markets/37/new"]);
+  });
+
+  it("nCAFnqIe: profildagi `market_id` ustun; marketga biriktirilmagan operator — karta ham, so'rov ham yo'q", async () => {
+    const withMarketId = {
+      ...(operatorState as Record<string, unknown>),
+      user: {
+        ...(operatorState as { user: Record<string, unknown> }).user,
+        user: { id: "42", role: "market_operator", name: "Dilnoza Karimova", market_id: 7 },
+      },
+    } as never;
+    const { unmount } = renderWithProviders(<OrderCreate />, { preloadedState: withMarketId });
+    // Nomsiz market: «— · bugun» emas — «Bugun».
+    const card = await screen.findByRole("region", { name: "Yangi buyurtmalar" });
+    expect(within(card).getByText("Bugun")).toBeInTheDocument();
+    await waitFor(() => expect(getUrls()).toContain("orders/markets/7/new"));
+    unmount();
+
+    mocks.get.mockClear();
+    const unassigned = {
+      ...(operatorState as Record<string, unknown>),
+      user: {
+        ...(operatorState as { user: Record<string, unknown> }).user,
+        user: { id: "42", role: "market_operator", name: "Dilnoza Karimova", market_id: null },
+      },
+    } as never;
+    renderWithProviders(<OrderCreate />, { preloadedState: unassigned });
+    await waitFor(() => expect(getUrls()).toContain("region"));
+    expect(screen.queryByRole("region", { name: "Yangi buyurtmalar" })).not.toBeInTheDocument();
+    expect(getUrls().filter((url) => url.startsWith("orders/markets/"))).toEqual([]);
   });
 
   it("xulosada «Operator» — o'zi, faqat o'qish («Siz — avtomatik yoziladi»)", async () => {
