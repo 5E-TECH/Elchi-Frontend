@@ -245,7 +245,7 @@ export const runUserPasswordSmsScenarios = (suffix: string, { mobile = false }: 
     // Esc yopmaydi; 403 PASSWORD_CHANGE_REQUIRED uchun «Ma'lumotni yuklab bo'lmadi» xabarlari chiqmaydi.
     await page.keyboard.press("Escape");
     await expect(dialog).toBeVisible();
-    expect(calls.gated).toBeGreaterThan(0);
+    await expect.poll(() => calls.gated, { timeout: 30_000 }).toBeGreaterThan(0);
     await expect(toast(page, "Ma'lumotni yuklab bo'lmadi")).toHaveCount(0);
 
     const current = dialog.locator('input[autocomplete="current-password"]');
