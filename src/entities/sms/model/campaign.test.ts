@@ -4,6 +4,7 @@ import {
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
+  smsCampaignSegmentError,
   smsDailyQuota,
   tashkentMinuteOfDay,
 } from "./campaign";
@@ -61,5 +62,72 @@ describe("KM-1 SMS kampaniya yordamchilari", () => {
     expect(isRetryableSmsCampaignError("badRequest")).toBe(false);
     expect(isRetryableSmsCampaignError("conflict")).toBe(false);
     expect(isRetryableSmsCampaignError("forbidden")).toBe(false);
+  });
+});
+
+describe("KM-6 (2aS7PFX0) SMS rejalashtirish yordamchilari", () => {
+  it("holat: ma'lum qiymat; eski qatorda holat yo'q — `queued`; noma'lum — null", async () => {
+    const { smsCampaignStatus } = await import("./campaign");
+    expect(smsCampaignStatus({ status: "scheduled" })).toBe("scheduled");
+    expect(smsCampaignStatus({ status: "cancelled" })).toBe("cancelled");
+    expect(smsCampaignStatus({ status: "failed" })).toBe("failed");
+    expect(smsCampaignStatus({})).toBe("queued");
+    expect(smsCampaignStatus({ status: "weird" })).toBeNull();
+  });
+
+  it("90 kun chegarasi — backend `scheduled_at_too_far` bilan bir xil", async () => {
+    const { isSmsScheduleTooFar } = await import("./campaign");
+    const now = Date.parse("2026-10-26T12:00:00+05:00");
+    expect(isSmsScheduleTooFar(now + 89 * 86_400_000, now)).toBe(false);
+    expect(isSmsScheduleTooFar(now + 90 * 86_400_000, now)).toBe(false);
+    expect(isSmsScheduleTooFar(now + 90 * 86_400_000 + 1, now)).toBe(true);
+  });
+
+  it("400 xatosi: «… kun oldinga» — tooFar, zonasiz — invalid, boshqa — null", async () => {
+    const { smsScheduleErrorKey } = await import("./campaign");
+    const err = (status: number, message: unknown) => ({ response: { status, data: { message } } });
+    expect(smsScheduleErrorKey(err(400, "scheduled_at ko'pi bilan 90 kun oldinga"))).toBe("scheduleTooFar");
+    expect(
+      smsScheduleErrorKey(err(400, "scheduled_at: vaqt zonasi bilan bo'lishi kerak (masalan 2026-10-20T09:00:00+05:00 yoki ...Z)")),
+    ).toBe("scheduleInvalid");
+    expect(smsScheduleErrorKey(err(400, ["scheduled_at must be a string"]))).toBe("scheduleInvalid");
+    expect(smsScheduleErrorKey(err(400, "Xabar matni bo'sh"))).toBeNull();
+    expect(smsScheduleErrorKey(err(409, "scheduled_at"))).toBeNull();
+    expect(smsScheduleErrorKey(undefined)).toBeNull();
+  });
+});
+
+describe("smsCampaignSegmentError (sdNGqCBa)", () => {
+  const err = (status: number, data: Record<string, unknown>) => ({ response: { status, data } });
+
+  it("teskari oraliq — backend matni bo'yicha", () => {
+    expect(
+      smsCampaignSegmentError(
+        err(400, { message: "segment: min_orders max_orders dan katta bo'lmasligi kerak (teskari oraliq)" }),
+      ),
+    ).toBe("orderRange");
+  });
+
+  it("segment_not_customer_only — `reason` yoki (gateway tushirgan bo'lsa) matn bo'yicha", () => {
+    expect(
+      smsCampaignSegmentError(err(400, { message: "x", reason: "segment_not_customer_only" })),
+    ).toBe("notCustomerOnly");
+    expect(
+      smsCampaignSegmentError(
+        err(400, { message: "Saqlangan segmentda xodim rollari / broadcast bor — SMS reklama kampaniyasi …" }),
+      ),
+    ).toBe("notCustomerOnly");
+    expect(
+      smsCampaignSegmentError(err(400, { message: ["Saqlangan segment mijozlarni nishonlamaydi (include_customers yo'q)"] })),
+    ).toBe("notCustomerOnly");
+  });
+
+  it("404 «Segment topilmadi» — notFound; boshqa xatolar — null", () => {
+    expect(smsCampaignSegmentError(err(404, { message: "Segment topilmadi" }))).toBe("notFound");
+    expect(smsCampaignSegmentError(err(404, { message: "Cannot POST" }))).toBeNull();
+    expect(smsCampaignSegmentError(err(400, { message: "Xabar matni bo'sh" }))).toBeNull();
+    expect(smsCampaignSegmentError(err(409, { message: "opt_out_not_configured" }))).toBeNull();
+    expect(smsCampaignSegmentError(new Error("network"))).toBeNull();
+    expect(smsCampaignSegmentError(undefined)).toBeNull();
   });
 });

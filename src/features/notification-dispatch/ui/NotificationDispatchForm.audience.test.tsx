@@ -19,7 +19,7 @@ const STAFF: Record<string, number> = {
   logist: 4,
 };
 
-type Reply = { status?: number; body: unknown; network?: boolean };
+type Reply = { status?: number; body: unknown; network?: boolean; message?: string };
 let previewReply: ((body: Record<string, unknown>) => Reply) | null;
 let createReplies: Reply[];
 let cancelReply: Reply | null;
@@ -51,7 +51,7 @@ const respond = (reply: Reply) =>
   reply.network
     ? Promise.reject(networkError())
     : reply.status && reply.status >= 400
-    ? Promise.reject(httpError(reply.status))
+    ? Promise.reject(httpError(reply.status, reply.message))
     : Promise.resolve({ status: reply.status ?? 200, data: reply.body });
 
 const computedPreview = (body: Record<string, unknown>) => {
@@ -395,7 +395,9 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     expect(screen.getByRole("checkbox", { name: "Telegram" })).toHaveAccessibleDescription(
       "Kampaniyada yo'q",
     );
-    expect(screen.queryByRole("checkbox", { name: "SMS" })).not.toBeInTheDocument();
+    // KM-5: SMS — kampaniyada bor, sukut o'chiq; tanlanmaguncha preview'ga `channels` ketmaydi.
+    expect(screen.getByRole("checkbox", { name: "SMS" })).not.toBeChecked();
+    expect(previews().every((body) => !("channels" in body))).toBe(true);
     expect(screen.queryByRole("textbox", { name: "Guruh kaliti" })).not.toBeInTheDocument();
     expect(screen.getByText("Darhol · kampaniya · 98 ta qabul qiluvchi")).toBeInTheDocument();
   });
@@ -995,5 +997,137 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
       await waitFor(() => expect(campaignCalls()).toHaveLength(1));
       expect(campaignCalls()[0][1]).not.toHaveProperty("scheduled_at");
     });
+  });
+});
+
+describe("NotificationDispatchForm — kampaniyada SMS kanali (KM-5, 9D1Gl9MS)", () => {
+  /** Preview'ning `sms` bloki (backend `audience-preview.service.ts`): bo'laklar matndan, narx = tarif × bo'lak × rozilik. */
+  const smsBlock = (body: Record<string, unknown>, patch: Record<string, unknown> = {}) => {
+    const text = [body.title, body.body].filter(Boolean).join(": ");
+    const parts = text.length > 40 ? 2 : 1;
+    return {
+      exact: true,
+      message_class: "promo",
+      recipients: 60,
+      blocked_no_consent: 30,
+      skipped_invalid_phone: 8,
+      with_valid_phone: 90,
+      encoding: "GSM-7",
+      parts,
+      text_provided: Boolean(text),
+      tariff: 175,
+      estimated_cost: 175 * parts * 60,
+      max_fanout: 20000,
+      fanout_exceeded: false,
+      sms_enabled: true,
+      opt_out_configured: true,
+      quiet_hours: { start: 1080, end: 540 },
+      ...patch,
+    };
+  };
+  const withSms = (patch: Record<string, unknown> = {}) => {
+    previewReply = (body) => {
+      const base = computedPreview(body);
+      const channels = Array.isArray(body.channels) ? (body.channels as string[]) : [];
+      return {
+        body: channels.includes("sms")
+          ? { data: { ...base.data, by_channel: { ...base.data.by_channel, sms: 60 }, sms: smsBlock(body, patch) } }
+          : base,
+      };
+    };
+  };
+
+  const pickMarketsWithSms = async (user: User, title = "Yangi tariflar") => {
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), title);
+    await user.click(screen.getByRole("checkbox", { name: "SMS" }));
+  };
+
+  it("SMS ticked: preview asks for the consent split (no text while typing), shows it; confirm counts cost with the final text; POST has sms", async () => {
+    withSms();
+    const user = userEvent.setup();
+    await openAudience(user);
+    await pickMarketsWithSms(user);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "SMS" })).toHaveAccessibleDescription("60 ta raqamda rozilik bor"),
+    );
+    expect(previews().at(-1)).toEqual({ roles: ["market"], channels: ["in_app", "sms"] });
+    const split = screen.getByTestId("campaign-sms-split");
+    expect(split).toHaveTextContent("SMS reklama sifatida ketadi");
+    expect(split).toHaveTextContent("Rozilik bor: 60 ta · Rozilik yo'q: 30 ta · Raqam noto'g'ri: 8 ta");
+    expect(split).toHaveTextContent("18:00–09:00 oralig'ida yuborilmaydi — 09:00 ga suriladi");
+    expect(sendButton()).toBeEnabled();
+
+    await user.type(screen.getByRole("textbox", { name: "Matn" }), "Barcha tariflar 1-noyabrdan yangilanadi");
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    await waitFor(() => expect(within(dialog).getByTestId("confirm-sms-recipients")).toHaveTextContent("60 ta"));
+    expect(previews().at(-1)).toEqual({
+      roles: ["market"],
+      channels: ["in_app", "sms"],
+      title: "Yangi tariflar",
+      body: "Barcha tariflar 1-noyabrdan yangilanadi",
+    });
+    // 175 × 2 bo'lak × 60 = 21 000.
+    expect(within(dialog).getByTestId("confirm-sms-cost")).toHaveTextContent(/21\s000 so'm \(2 bo'lak\)/);
+    expect(within(dialog).getByText("SMS: rozilik yo'q").nextSibling).toHaveTextContent("30 ta");
+    expect(within(dialog).getByText("SMS: raqam noto'g'ri").nextSibling).toHaveTextContent("8 ta");
+    expect(within(dialog).getByText("Ilova ichida, Ochiq ekranga, SMS")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+    await waitFor(() => expect(campaignCalls()).toHaveLength(1));
+    expect((campaignCalls()[0][1] as { channels: string[] }).channels).toEqual(["in_app", "realtime", "sms"]);
+  });
+
+  it("blocks sending with a clear reason: SMS off, opt-out not configured, fan-out over SMS_MAX_FANOUT (prod 2)", async () => {
+    withSms({ fanout_exceeded: true, max_fanout: 2 });
+    const user = userEvent.setup();
+    await openAudience(user);
+    await pickMarketsWithSms(user);
+    const reason = "SMS uchun auditoriya 2 tadan oshmasligi kerak — nishonni toraytiring yoki SMS kanalisiz yuboring.";
+    await waitFor(() => expect(screen.getByTestId("campaign-sms-block")).toHaveTextContent(reason));
+    expect(sendButton()).toBeDisabled();
+    expect(screen.getByText(reason, { selector: "#campaign-send-note" })).toBeInTheDocument();
+
+    // SMS olib tashlansa — yuborish mumkin.
+    await user.click(screen.getByRole("checkbox", { name: "SMS" }));
+    await waitFor(() => expect(sendButton()).toBeEnabled());
+    expect(screen.queryByTestId("campaign-sms-block")).not.toBeInTheDocument();
+  });
+
+  it("SMS disabled / opt-out missing in the preview → disabled with its own text", async () => {
+    withSms({ sms_enabled: false });
+    const user = userEvent.setup();
+    await openAudience(user);
+    await pickMarketsWithSms(user);
+    await waitFor(() =>
+      expect(screen.getByTestId("campaign-sms-block")).toHaveTextContent("SMS o'chiq yoki sozlanmagan"),
+    );
+    expect(sendButton()).toBeDisabled();
+  });
+
+  it("409 sms_disabled from create → the SMS text (backend message is not shown)", async () => {
+    withSms();
+    createReplies = [
+      {
+        status: 409,
+        body: null,
+        message: "SMS o'chiq (SMS_ENABLED=false) — SMS kanali bilan kampaniya yaratilmadi (sms_disabled)",
+      },
+    ];
+    const user = userEvent.setup();
+    await openAudience(user);
+    await pickMarketsWithSms(user);
+    await waitFor(() => expect(sendButton()).toBeEnabled());
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: /Ha, yuborish/ })).toBeEnabled());
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+    expect(
+      await screen.findByText(
+        "SMS o'chiq yoki sozlanmagan — kampaniya yaratilmadi. SMS kanalisiz yuboring. Hech kimga yuborilmadi.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/SMS_ENABLED/)).not.toBeInTheDocument();
   });
 });

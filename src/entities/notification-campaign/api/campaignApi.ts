@@ -75,6 +75,72 @@ export interface AudienceSampleItem {
   phone: string | null;
 }
 
+/**
+ * SMS kanali bo'yicha bo'linish (KM-5, 9D1Gl9MS) — preview so'rovida `channels` da `sms` bo'lsa javobdagi `sms` bloki.
+ * Kampaniya SMS'i DOIM reklama: faqat roziligi borlarga, 18:00–09:00 da yuborilmaydi. `exact = false` (auditoriya
+ * kampaniya chegarasidan katta) — sonlar va narx `null`. Telefon javobda yo'q.
+ */
+export interface AudienceSmsPreview {
+  exact: boolean;
+  /** Roziligi bor — SMS ketadi. */
+  recipients: number | null;
+  blockedNoConsent: number | null;
+  skippedInvalidPhone: number | null;
+  withValidPhone: number | null;
+  encoding: string | null;
+  parts: number;
+  textProvided: boolean;
+  /** Bir bo'lak narxi (so'm). */
+  tariff: number | null;
+  estimatedCost: number | null;
+  /** SMS kanali bilan kampaniya auditoriyasi chegarasi (`SMS_MAX_FANOUT`). */
+  maxFanout: number | null;
+  fanoutExceeded: boolean;
+  smsEnabled: boolean;
+  optOutConfigured: boolean;
+  /** Toshkent, kun boshidan daqiqa. */
+  quietHours: { start: number; end: number } | null;
+}
+
+/** Preview so'roviga qo'shimcha (KM-5): SMS tanlansa — kanallar va matn (bo'lak va narx uchun). */
+export interface AudiencePreviewExtras {
+  channels?: string[];
+  title?: string;
+  body?: string;
+}
+
+const toNullableNumber = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+export const normalizeAudienceSms = (value: unknown): AudienceSmsPreview | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const sms = asRecord(value);
+  const quiet = asRecord(sms.quiet_hours);
+  const start = Number(quiet.start);
+  const end = Number(quiet.end);
+  return {
+    exact: sms.exact !== false,
+    recipients: toNullableCount(sms.recipients),
+    blockedNoConsent: toNullableCount(sms.blocked_no_consent),
+    skippedInvalidPhone: toNullableCount(sms.skipped_invalid_phone),
+    withValidPhone: toNullableCount(sms.with_valid_phone),
+    encoding: toText(sms.encoding),
+    parts: Math.max(1, toCount(sms.parts)),
+    textProvided: sms.text_provided === true,
+    tariff: toNullableNumber(sms.tariff),
+    estimatedCost: toNullableNumber(sms.estimated_cost),
+    maxFanout: toNullableCount(sms.max_fanout),
+    fanoutExceeded: sms.fanout_exceeded === true,
+    // Maydon yo'q (eski backend) — yoqiq deb hisoblanmaydi: yaratish 409 bermasin.
+    smsEnabled: sms.sms_enabled === true,
+    optOutConfigured: sms.opt_out_configured === true,
+    quietHours: Number.isFinite(start) && Number.isFinite(end) ? { start, end } : null,
+  };
+};
+
 export interface AudiencePreview {
   /** `false` — auditoriya kampaniya chegarasidan katta: son identity statistikasidan, push sanalmagan. */
   exact: boolean;
@@ -86,6 +152,8 @@ export interface AudiencePreview {
   campaignMax: number | null;
   campaignAllowed: boolean;
   sample: AudienceSampleItem[] | null;
+  /** SMS bo'linishi — faqat so'rovda `channels` da `sms` bo'lsa (aks holda `null`). */
+  sms?: AudienceSmsPreview | null;
 }
 
 export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
@@ -94,6 +162,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
   const limits = asRecord(data.limits);
   const byChannel = asRecord(data.by_channel);
   const campaignMax = toNullableCount(limits.campaign_max);
+  const sms = normalizeAudienceSms(data.sms);
   return {
     exact: data.exact !== false,
     total,
@@ -113,6 +182,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
           return { id: toText(item.id) ?? "", role: toText(item.role), phone: toText(item.phone) };
         })
       : null,
+    ...(sms ? { sms } : {}),
   };
 };
 
@@ -121,7 +191,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
  * 30 s kutadi). `withSample` — 20 tagacha maskalangan qator («Namunani ko'rish»).
  */
 export const previewAudience = async (
-  target: AudienceTarget | { broadcast: true } | { recipient_ids: string[] },
+  target: (AudienceTarget | { broadcast: true } | { recipient_ids: string[] }) & AudiencePreviewExtras,
   { withSample = false }: { withSample?: boolean } = {},
 ) =>
   normalizeAudiencePreview(

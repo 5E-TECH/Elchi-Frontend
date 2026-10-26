@@ -6,14 +6,20 @@ import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryE
 
 export {
   isRetryableSmsCampaignError,
+  isSmsScheduleTooFar,
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
+  smsCampaignStatus,
+  smsCampaignSegmentError,
   smsDailyQuota,
+  smsScheduleErrorKey,
+  SMS_MAX_SCHEDULE_DAYS,
   tashkentMinuteOfDay,
   type QuietHours,
   type QuietNotice,
   type SmsCampaignErrorKind,
+  type SmsCampaignSegmentError,
   type SmsDailyQuota,
 } from "./model/campaign";
 
@@ -60,6 +66,8 @@ export interface SmsCampaignSegment {
   last_order_from?: string;
   last_order_to?: string;
   min_orders?: number;
+  /** (sdNGqCBa) Ko'pi bilan shuncha buyurtma («gacha», 1–1000, kiradi); `min_orders > max_orders` — 400. */
+  max_orders?: number;
   phones?: string[];
 }
 
@@ -73,8 +81,23 @@ export interface SmsCampaignInput {
   template_code?: string;
   lang?: SmsLanguage;
   vars?: Record<string, string>;
+  /**
+   * (sdNGqCBa) Saqlangan segment (`GET /notifications/audience/segments`) — `segment` O'RNIGA (ikkalasi birga —
+   * 400). Faqat mijoz segmenti; xodim rollari / broadcast / mijozsiz — 400 `segment_not_customer_only`, yo'q — 404.
+   */
+  audience_segment_id?: string;
   segment?: SmsCampaignSegment;
+  /**
+   * KM-6 (2aS7PFX0): rejalashtirish — ISO + ANIQ zona (`2026-10-28T10:00:00+05:00`), ≤90 kun. Yo'q — darhol.
+   * Reklama 18:00–09:00 oynasiga tushsa backend 09:00 ga suradi (`quiet_hours_shifted`).
+   */
+  scheduled_at?: string;
 }
+
+/** Jonli auditoriya nishoni: filtrlar (`segment`) YOKI saqlangan segment (`audience_segment_id`). */
+export type SmsCampaignAudienceTarget =
+  | { segment: SmsCampaignSegment; audience_segment_id?: never }
+  | { audience_segment_id: string; segment?: never };
 
 export interface SmsCampaignPreview {
   message_class: SmsMessageClass;
@@ -92,6 +115,35 @@ export interface SmsCampaignPreview {
   estimated_cost: number | null;
   scheduled_for: string;
   sms_enabled: boolean;
+  /** KM-6: admin so'ragan lahza (belgilangan vaqt yoki hozir). */
+  requested_at?: string | null;
+  /** KM-6: yuboriladigan lahza Toshkent vaqtida (`…+05:00`). */
+  scheduled_for_tashkent?: string | null;
+  /** KM-6: so'ralgan vaqt tungi taqiqqa tushib, oyna tugashiga surildi. */
+  quiet_hours_shifted?: boolean;
+}
+
+/**
+ * KM-6: kampaniya holati — `scheduled` (vaqti kutilmoqda, bekor qilish mumkin), `queued` (navbatga qo'yilgan),
+ * `failed` (vaqti kelganda rad etildi — `last_error`), `cancelled`. Eski qatorlarda bo'lmasligi mumkin.
+ */
+export type SmsCampaignStatus = "scheduled" | "queued" | "failed" | "cancelled";
+
+export const SMS_CAMPAIGN_STATUSES: readonly SmsCampaignStatus[] = ["scheduled", "queued", "failed", "cancelled"];
+
+/** `POST …/campaigns` javobi: darhol — `queued`; kelajakdagi `scheduled_at` — `scheduled` (sonlar prognoz). */
+export interface SmsCampaignCreated {
+  campaign_id: string;
+  status?: SmsCampaignStatus;
+  queued: number;
+  recipients?: number;
+  blocked_no_consent: number;
+  skipped_invalid_phone: number;
+  estimated_cost?: number | string | null;
+  scheduled_for?: string | null;
+  scheduled_for_tashkent?: string | null;
+  requested_at?: string | null;
+  quiet_hours_shifted?: boolean;
 }
 
 export interface SmsCampaignHistoryItem {
@@ -108,6 +160,18 @@ export interface SmsCampaignHistoryItem {
   failed: number;
   pending: number;
   estimated_cost: string | null;
+  /** KM-6 maydonlari (eski backend javobida yo'q bo'lishi mumkin). */
+  status?: SmsCampaignStatus | string;
+  scheduled_at?: string | null;
+  scheduled_for?: string | null;
+  scheduled_for_tashkent?: string | null;
+  requested_at?: string | null;
+  quiet_hours_shifted?: boolean;
+  started_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  last_error?: string | null;
+  can_cancel?: boolean;
 }
 
 export interface SmsReportDay {
@@ -221,15 +285,15 @@ export const SMS_AUDIENCE_PROBE_TEXT = "Elchi";
 export const SMS_AUDIENCE_DEBOUNCE_MS = 400;
 
 /**
- * JONLI AUDITORIYA (KM-1): mijozlar segmenti → `POST …/campaigns/preview` (debounce bilan). `segment = null` —
- * so'rov yo'q (masalan «Raqamlar» rejimi). Oldingi natija yangisi kelguncha qoladi (`keepPreviousData`);
+ * JONLI AUDITORIYA (KM-1): mijozlar segmenti (yoki saqlangan segment — sdNGqCBa) → `POST …/campaigns/preview`
+ * (debounce bilan). `target = null` — so'rov yo'q (masalan «Raqamlar» rejimi yoki teskari oraliq). Oldingi natija yangisi kelguncha qoladi (`keepPreviousData`);
  * `settled = false` — filtr o'zgargan, so'rov hali ketmagan.
  */
 export const useSmsCampaignAudience = (
-  segment: SmsCampaignSegment | null,
+  target: SmsCampaignAudienceTarget | null,
   delay: number = SMS_AUDIENCE_DEBOUNCE_MS,
 ) => {
-  const key = segment ? JSON.stringify(segment) : null;
+  const key = target ? JSON.stringify(target) : null;
   const [debouncedKey, setDebouncedKey] = useState(key);
   useEffect(() => {
     if (key === debouncedKey) return undefined;
@@ -243,7 +307,7 @@ export const useSmsCampaignAudience = (
       previewSmsCampaign({
         message_class: "promo",
         text: SMS_AUDIENCE_PROBE_TEXT,
-        segment: JSON.parse(debouncedKey ?? "{}") as SmsCampaignSegment,
+        ...(JSON.parse(debouncedKey ?? "{}") as SmsCampaignAudienceTarget),
       }),
     enabled: key !== null && debouncedKey !== null,
     placeholderData: keepPreviousData,
@@ -260,7 +324,7 @@ export const useSendSmsCampaign = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ input, idempotencyKey }: { input: SmsCampaignInput; idempotencyKey: string }) =>
-      unwrap<{ campaign_id: string; queued: number; blocked_no_consent: number; skipped_invalid_phone: number }>(
+      unwrap<SmsCampaignCreated>(
         (
           await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGNS, input, {
             headers: { "Idempotency-Key": idempotencyKey },
@@ -271,6 +335,18 @@ export const useSendSmsCampaign = () => {
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns });
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.status });
     },
+  });
+};
+
+/**
+ * KM-6: rejalashtirilgan kampaniyani bekor qilish — `POST …/campaigns/:id/cancel` (faqat `scheduled`; boshqasi —
+ * 409). Natijadan qat'i nazar tarix yangilanadi (409 da ham holat o'zgargan bo'ladi).
+ */
+export const useCancelSmsCampaign = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_CANCEL(id))).data,
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns }),
   });
 };
 

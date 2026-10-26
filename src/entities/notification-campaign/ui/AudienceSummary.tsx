@@ -72,7 +72,8 @@ export const AllCustomersChoice = ({
  * `-send-states` «Auditoriya hisobi»): son va kesim (Mijoz · Market · Xodim; faqat xodim bo'lsa — rollar bo'yicha),
  * «Push: N ta foydalanuvchi» (backend qurilma emas, foydalanuvchini sanaydi), «Namunani ko'rish» va «Segmentni
  * saqlash». Holatlar: filtr tanlang (+ «Filtrsiz»), hisoblanmoqda (tugmalar o'chiq), 0 ta, chegaradan oshdi (qizil),
- * katta auditoriya (navbat izohi + info), xato (+ «Qayta urinish»). SMS soni — KM-5 gacha chizilmaydi.
+ * katta auditoriya (navbat izohi + info), xato (+ «Qayta urinish»). SMS (KM-5) — rozilik bo'yicha son forma «Kanal»
+ * kartasida (SMS tanlanganda).
  */
 export const AudienceSummary = ({
   state,

@@ -5,6 +5,7 @@ import {
   createAudienceDraft,
   draftFromSavedAudience,
   isAudienceSegmentEmpty,
+  isCustomerOnlyAudience,
   toAudienceTarget,
   type AudienceDraft,
 } from "./audience";
@@ -148,5 +149,23 @@ describe("draftFromSavedAudience", () => {
       toAudienceTarget(draft({ kinds: ["customer"], customerSegment: { min_orders: 1, max_orders: 5 } })),
     ).toEqual({ include_customers: true, segment: { max_orders: 5 } });
     expect(audienceSegmentPayload({ min_orders: 2 })).toEqual({ min_orders: 2 });
+  });
+});
+
+describe("isCustomerOnlyAudience (sdNGqCBa — SMS kampaniyasiga yaraydigan saqlangan segment)", () => {
+  it("faqat mijozlar (filtr bilan yoki «Filtrsiz») — ha", () => {
+    expect(isCustomerOnlyAudience({ include_customers: true, segment: { region_id: "1" } })).toBe(true);
+    expect(isCustomerOnlyAudience({ include_customers: true, confirm_all_customers: true })).toBe(true);
+    expect(isCustomerOnlyAudience({ include_customers: true, roles: ["customer"] })).toBe(true);
+  });
+
+  it("xodim rollari, broadcast yoki mijozsiz — yo'q (backend 400 segment_not_customer_only)", () => {
+    expect(isCustomerOnlyAudience({ include_customers: true, roles: ["courier"] })).toBe(false);
+    expect(isCustomerOnlyAudience({ include_customers: true, roles: ["market"] })).toBe(false);
+    expect(isCustomerOnlyAudience({ broadcast: true })).toBe(false);
+    expect(isCustomerOnlyAudience({ broadcast: true, include_customers: true })).toBe(false);
+    expect(isCustomerOnlyAudience({ roles: ["admin"] })).toBe(false);
+    expect(isCustomerOnlyAudience({})).toBe(false);
+    expect(isCustomerOnlyAudience(null)).toBe(false);
   });
 });

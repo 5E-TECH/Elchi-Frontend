@@ -27,6 +27,7 @@ import {
   getCampaigns,
   getSchedulePolicy,
   previewAudience,
+  type AudiencePreviewExtras,
   type CreateSegmentInput,
 } from "./campaignApi";
 
@@ -37,7 +38,8 @@ export const CAMPAIGN_PROGRESS_INTERVAL_MS = 3_000;
 /** Rejalashtirilgan (masalan, tungi taqiq bilan 09:00 ga surilgan) kampaniya — kamroq so'rov. */
 export const CAMPAIGN_SCHEDULED_INTERVAL_MS = 60_000;
 
-type PreviewTarget = AudienceTarget | { broadcast: true };
+/** Nishon (+ KM-5: SMS tanlansa `channels`, `title`, `body` — javobda `sms` bloki). */
+type PreviewTarget = (AudienceTarget | { broadcast: true }) & AudiencePreviewExtras;
 
 /**
  * JONLI AUDITORIYA (KM-2): nishon → `POST notifications/audience/preview` (debounce bilan). `target = null` — so'rov

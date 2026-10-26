@@ -192,13 +192,14 @@ export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayloa
 
 /**
  * «Auditoriya» → `POST /notifications/campaigns` tanasi. Kanallar — faqat kampaniyada ruxsat etilganlari (`in_app`
- * doim, «Ochiq ekranga», Push); Telegram va SMS yuborilmaydi (backend 400). Guruh kaliti yo'q. «Belgilangan vaqtda»
- * (KM-3) — `scheduled_at` Toshkent vaqti `+05:00` bilan; «Darhol» da `scheduled_at` umuman yo'q.
+ * doim, «Ochiq ekranga», Push, SMS — KM-5); Telegram yuborilmaydi (backend 400). Guruh kaliti yo'q. «Belgilangan
+ * vaqtda» (KM-3) — `scheduled_at` Toshkent vaqti `+05:00` bilan; «Darhol» da `scheduled_at` umuman yo'q.
  */
 export const buildCampaignPayload = (values: DispatchFormValues, target: AudienceTarget): CampaignPayload => {
   const channels: CampaignPayload["channels"] = ["in_app"];
   if (values.realtime) channels.push("realtime");
   if (values.push) channels.push("push");
+  if (values.sms) channels.push("sms");
   const body = values.body.trim();
   const link = values.link.trim();
   return {
@@ -213,5 +214,22 @@ export const buildCampaignPayload = (values: DispatchFormValues, target: Audienc
     ...(values.schedule?.when === "scheduled" && values.schedule.day && values.schedule.time
       ? { scheduled_at: toScheduledAt(values.schedule.day, values.schedule.time) }
       : {}),
+  };
+};
+
+/**
+ * Auditoriya preview'iga qo'shimcha (KM-5): SMS tanlansa — `channels` (javobda rozilik bo'yicha `sms` bloki) va matn
+ * (`title: body` — bo'laklar soni va narx shundan). SMS tanlanmasa — hech narsa (so'rov avvalgidek).
+ */
+export const campaignPreviewExtras = (
+  values: Pick<DispatchFormValues, "sms" | "title" | "body">,
+): { channels?: string[]; title?: string; body?: string } => {
+  if (!values.sms) return {};
+  const title = values.title?.trim() ?? "";
+  const body = values.body?.trim() ?? "";
+  return {
+    channels: ["in_app", "sms"],
+    ...(title ? { title } : {}),
+    ...(body ? { body } : {}),
   };
 };

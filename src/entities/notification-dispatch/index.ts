@@ -27,9 +27,12 @@ export {
   deriveDispatchStatus,
   externalChannels,
   isDispatchHistoryStatus,
+  isChannelOutcome,
   isDispatchLive,
+  resolveDispatchStatus,
+  statusFromChannelOutcome,
 } from "./model/status";
-export type { BucketCounts, DeliveryBucket, DispatchOutcome } from "./model/status";
+export type { BucketCounts, ChannelOutcome, DeliveryBucket, DispatchOutcome } from "./model/status";
 export { failureReasonKey } from "./model/reasons";
 export { useAudienceText } from "./model/useAudienceText";
 export {

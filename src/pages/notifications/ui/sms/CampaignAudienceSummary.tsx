@@ -33,6 +33,8 @@ export type CampaignAudienceSummaryProps = {
   quota: SmsDailyQuota | null;
   /** `error` holatida — `smsCampaignErrorKind(error)`; berilmasa `unknown`. */
   errorKind?: SmsCampaignErrorKind;
+  /** (sdNGqCBa) Aniq sabab (teskari oraliq, xodimli / o'chirilgan saqlangan segment) — umumiy matn o'rniga. */
+  errorText?: string;
   onRetry: () => void;
 };
 
@@ -47,6 +49,7 @@ export const CampaignAudienceSummary = ({
   data,
   quota,
   errorKind = "unknown",
+  errorText,
   onRetry,
 }: CampaignAudienceSummaryProps) => {
   const { t, i18n } = useTranslation("sms");
@@ -64,7 +67,7 @@ export const CampaignAudienceSummary = ({
   const retryable = isRetryableSmsCampaignError(errorKind);
   if (state === "error") {
     title = t("audience.error");
-    detail = retryable ? t("audience.errorHint") : t(`campaign.errors.${errorKind}`);
+    detail = errorText ?? (retryable ? t("audience.errorHint") : t(`campaign.errors.${errorKind}`));
   } else if (loading && !data) {
     title = t("audience.loading");
   } else if (state === "fanout") {

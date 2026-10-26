@@ -55,9 +55,9 @@ test.describe("Xabar yuborish — auditoriya, 1440px", () => {
         segment: { region_id: "1", district_id: "11", min_orders: 2, max_orders: 10 },
       });
 
-      // Kanal: Telegram — kampaniyada yo'q, SMS chizilmaydi, guruh kaliti yo'q.
+      // Kanal: Telegram — kampaniyada yo'q, SMS (KM-5) — bor, sukut o'chiq; guruh kaliti yo'q.
       await expect(form.getByRole("checkbox", { name: "Telegram" })).toBeDisabled();
-      await expect(form.getByRole("checkbox", { name: "SMS" })).toHaveCount(0);
+      await expect(form.getByRole("checkbox", { name: "SMS" })).not.toBeChecked();
       await expect(form.getByRole("textbox", { name: "Guruh kaliti" })).toHaveCount(0);
       await expect(form.getByText("314 ta foydalanuvchida yoqilgan")).toBeVisible();
 
@@ -127,6 +127,90 @@ test.describe("Xabar yuborish — auditoriya, 1440px", () => {
       expect(mock.leaked).toEqual([]);
     });
   }
+
+  for (const theme of ["light", "dark"] as const) {
+    test(`KM-5: SMS kanali — rozilik bo'yicha son, narx tasdiqda, POST da sms (${theme})`, async ({ page }) => {
+      const mock = await mockCampaignApi(page, { theme });
+      const form = await openAudience(page);
+      await form.getByRole("checkbox", { name: "Market" }).check();
+      await expect(form.getByTestId("audience-summary")).toContainText("Auditoriya: 98 ta");
+      await form.getByRole("textbox", { name: "Sarlavha" }).fill("Yangi tariflar 1-noyabrdan");
+      await form
+        .getByRole("textbox", { name: "Matn" })
+        .fill("Barcha yetkazish tariflari 1-noyabrdan yangilanadi, batafsil ilovada.");
+      await form.getByRole("checkbox", { name: "SMS" }).check();
+
+      const split = form.getByTestId("campaign-sms-split");
+      await expect(split).toContainText("Rozilik bor: 59 ta · Rozilik yo'q: 34 ta · Raqam noto'g'ri: 5 ta");
+      await expect(split).toContainText("18:00–09:00 oralig'ida yuborilmaydi — 09:00 ga suriladi");
+      await expect(form.getByText("59 ta raqamda rozilik bor")).toBeVisible();
+      // Yozayotganda matn yuborilmaydi — faqat kanal.
+      expect(mock.previews.at(-1)).toEqual({ roles: ["market"], channels: ["in_app", "sms"] });
+      expect(await noHorizontalScroll(page)).toBe(true);
+      await shot(page, `audience-sms-${theme}`, form);
+
+      await form.getByRole("button", { name: /^Yuborish/ }).click();
+      const confirm = page.getByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+      await expect(confirm.getByTestId("confirm-sms-recipients")).toHaveText("59 ta");
+      // 175 so'm × 2 bo'lak × 59 = 20 650.
+      await expect(confirm.getByTestId("confirm-sms-cost")).toHaveText(/20\s650 so'm \(2 bo'lak\)/);
+      await expect(confirm).toContainText("SMS reklama sifatida ketadi");
+      await expect(confirm).toContainText("Ilova ichida, Ochiq ekranga, SMS");
+      expect(mock.previews.at(-1)).toMatchObject({
+        roles: ["market"],
+        channels: ["in_app", "sms"],
+        title: "Yangi tariflar 1-noyabrdan",
+      });
+      await shot(page, `audience-sms-confirm-${theme}`);
+      await confirm.getByRole("button", { name: /Ha, yuborish/ }).click();
+      await expect(confirm).toBeHidden();
+      expect(mock.campaigns).toHaveLength(1);
+      expect(mock.campaigns[0].body).toMatchObject({ channels: ["in_app", "realtime", "sms"] });
+      expect(mock.leaked).toEqual([]);
+    });
+  }
+
+  test("KM-5: SMS chegarasi (SMS_MAX_FANOUT=2) — yuborilmaydi, tushunarli matn", async ({
+    page,
+  }) => {
+    const mock = await mockCampaignApi(page);
+    mock.smsPatch = { fanout_exceeded: true, max_fanout: 2 };
+    const form = await openAudience(page);
+    await form.getByRole("checkbox", { name: "Market" }).check();
+    await form.getByRole("textbox", { name: "Sarlavha" }).fill("Yangi tariflar");
+    await form.getByRole("checkbox", { name: "SMS" }).check();
+    const reason =
+      "SMS uchun auditoriya 2 tadan oshmasligi kerak — nishonni toraytiring yoki SMS kanalisiz yuboring.";
+    await expect(form.getByTestId("campaign-sms-block")).toHaveText(reason);
+    await expect(form.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
+    await shot(page, "audience-sms-fanout", form);
+    expect(mock.campaigns).toEqual([]);
+    expect(mock.leaked).toEqual([]);
+  });
+
+  test("KM-5: preview ruxsat bersa-yu, yaratishda 409 sms_disabled — xom matn emas, i18n", async ({ page }) => {
+    const mock = await mockCampaignApi(page);
+    const form = await openAudience(page);
+    await form.getByRole("checkbox", { name: "Market" }).check();
+    await form.getByRole("textbox", { name: "Sarlavha" }).fill("Yangi tariflar");
+    await form.getByRole("checkbox", { name: "SMS" }).check();
+    await expect(form.getByTestId("campaign-sms-split")).toBeVisible();
+    mock.createReplies.push({
+      status: 409,
+      body: {
+        statusCode: 409,
+        message: "SMS o'chiq (SMS_ENABLED=false) — SMS kanali bilan kampaniya yaratilmadi (sms_disabled)",
+      },
+    });
+    await form.getByRole("button", { name: /^Yuborish/ }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    await confirm.getByRole("button", { name: /Ha, yuborish/ }).click();
+    await expect(
+      form.getByText("SMS o'chiq yoki sozlanmagan — kampaniya yaratilmadi. SMS kanalisiz yuboring. Hech kimga yuborilmadi."),
+    ).toBeVisible();
+    await expect(form.getByText(/SMS_ENABLED/)).toHaveCount(0);
+    expect(mock.leaked).toEqual([]);
+  });
 
   test("holatlar: faqat xodim, chegaradan oshdi, 0 ta, xato va «Qayta urinish»", async ({
     page,

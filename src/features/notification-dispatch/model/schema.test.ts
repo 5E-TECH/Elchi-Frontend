@@ -4,6 +4,7 @@ import * as schemaModule from "./schema";
 import {
   RECIPIENT_MODES,
   buildCampaignPayload,
+  campaignPreviewExtras,
   buildDispatchPayload,
   createDefaultValues,
   createDispatchSchema,
@@ -114,7 +115,7 @@ describe("buildCampaignPayload", () => {
     allCustomers: false,
   });
 
-  it("sends the audience target, the type and only campaign channels — no Telegram, SMS or group key", () => {
+  it("sends the audience target, the type and only campaign channels — SMS (KM-5) yes, Telegram and group key no", () => {
     const payload = buildCampaignPayload(
       base({ mode: "audience", category: "marketing", realtime: true, telegram: true, sms: true, push: true }),
       target!,
@@ -128,7 +129,20 @@ describe("buildCampaignPayload", () => {
       priority: "normal",
       title: "Ish vaqti",
       body: "Ertaga 9:00 dan",
-      channels: ["in_app", "realtime", "push"],
+      channels: ["in_app", "realtime", "push", "sms"],
+    });
+  });
+
+  it("KM-5: preview extras — only with SMS: channels and the trimmed text (title: body → parts and cost)", () => {
+    expect(campaignPreviewExtras({ sms: false, title: "Aksiya", body: "20%" })).toEqual({});
+    expect(campaignPreviewExtras({ sms: true, title: " Aksiya ", body: " " })).toEqual({
+      channels: ["in_app", "sms"],
+      title: "Aksiya",
+    });
+    expect(campaignPreviewExtras({ sms: true, title: "Aksiya", body: "Chegirma 20%" })).toEqual({
+      channels: ["in_app", "sms"],
+      title: "Aksiya",
+      body: "Chegirma 20%",
     });
   });
 

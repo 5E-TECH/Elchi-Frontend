@@ -1,28 +1,45 @@
 // dizayn-v2: superadmin-notifications-sms-campaign, superadmin-notifications-sms-campaign-confirm-dialog, superadmin-notifications-sms-campaign-segment
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { Clock, History, Info, MessageSquareText, Send } from "lucide-react";
+import { CalendarClock, CircleX, Clock, History, Info, MessageSquareText, Moon, Send } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { NoticeAlert } from "../../../entities/notification";
 import {
   CustomerSegmentFilters,
+  draftFromSavedAudience,
+  isCustomerOnlyAudience,
+  isFutureSlot,
+  isOrderRangeInverted,
   toCustomerSegmentPayload,
+  toScheduledAt,
+  useAudienceSegments,
+  useCampaignTime,
   type CustomerSegment,
 } from "../../../entities/notification-campaign";
 import {
   isRetryableSmsCampaignError,
+  isSmsScheduleTooFar,
   previewSmsCampaign,
   smsCampaignErrorKind,
+  smsCampaignStatus,
+  smsCampaignSegmentError,
   smsDailyQuota,
+  smsScheduleErrorKey,
+  SMS_MAX_SCHEDULE_DAYS,
+  useCancelSmsCampaign,
   useSendSmsCampaign,
   useSmsCampaignAudience,
   useSmsCampaigns,
   useSmsStatus,
   useSmsTariffs,
   useSmsTemplates,
+  type SmsCampaignAudienceTarget,
   type SmsCampaignHistoryItem,
   type SmsCampaignInput,
   type SmsCampaignPreview,
+  type SmsCampaignStatus,
 } from "../../../entities/sms";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -40,13 +57,17 @@ import {
   SegmentedControl,
   Select,
   SkeletonTable,
+  StatusBadge,
   TextInput,
+  useConfirm,
   type DataTableColumn,
+  type Tone,
 } from "../../../shared/ui/primitives";
 import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
 import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
 import { CampaignSendTime } from "./sms/CampaignSendTime";
+import { createSmsSendTime, type SmsSendTimeErrors, type SmsSendTimeValue } from "./sms/sendTime";
 import { CardList } from "./sms/CardList";
 
 type Audience = "phones" | "segment";
@@ -55,6 +76,14 @@ const newKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/** KM-6: kampaniya holati → ton (bildirishnoma kampaniyasi `CAMPAIGN_STATUS_META` bilan bir xil ma'no). */
+const SMS_STATUS_META: Record<SmsCampaignStatus, { tone: Tone; variant: "soft" | "outline" }> = {
+  scheduled: { tone: "info", variant: "soft" },
+  queued: { tone: "success", variant: "soft" },
+  failed: { tone: "danger", variant: "soft" },
+  cancelled: { tone: "danger", variant: "outline" },
+};
 
 const hhmm = (minutes: number) =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -133,8 +162,10 @@ const Num = ({
  *
  * «Yangi kampaniya» (KM-1, maket `-campaign-segment`): shablon yoki o'z matni → turi FAQAT «Reklama» (backend
  * boshqasini 400 `campaign_promo_only` bilan rad etadi; xizmat xabari — tizim hodisalaridan) → hisoblagich →
- * o'zgaruvchilar → kimga: raqamlar | mijozlar segmenti (`CustomerSegmentFilters`: Viloyat / Tuman / Market
- * `Select`, «Oxirgi buyurtma» `DateRange`, «Buyurtmalar soni» — minimum) + jonli auditoriya va bugungi SMS limiti
+ * o'zgaruvchilar → kimga: raqamlar | mijozlar segmenti («Saqlangan segment» — faqat mijoz shartlilari, tanlansa
+ * `audience_segment_id` ketadi va sharti filtrlarga ko'chiriladi; `CustomerSegmentFilters`: Viloyat / Tuman / Market
+ * `Select`, «Oxirgi buyurtma» `DateRange`, «Buyurtmalar soni» — «dan – gacha», teskari oraliq so'ralmaydi —
+ * sdNGqCBa) + jonli auditoriya va bugungi SMS limiti
  * (KM-S4; oshsa «Ko'rib chiqish» o'chiq) → «Yuborish vaqti» (Darhol; tungi taqiqda — qachon ketishi) →
  * «Ko'rib chiqish». Ko'rib chiqish `POST …/campaigns/preview` (hech narsa
  * yuborilmaydi) va YANGI `Idempotency-Key` → tasdiq oynasi (aniq qabul qiluvchilar, roziligi yo'qlar, noto'g'ri
@@ -152,6 +183,9 @@ const CampaignPage = () => {
   // Kvota noma'lum bo'lsa limit qatori chizilmaydi — global xabar (xom backend matni) kerak emas.
   const status = useSmsStatus({ silentError: true });
   const sendCampaign = useSendSmsCampaign();
+  const cancelCampaign = useCancelSmsCampaign();
+  const confirm = useConfirm();
+  const campaignTime = useCampaignTime();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const isBelowLg = useIsBelowLg();
 
@@ -161,6 +195,15 @@ const CampaignPage = () => {
   const [audience, setAudience] = useState<Audience>("phones");
   const [phones, setPhones] = useState("");
   const [segment, setSegment] = useState<CustomerSegment>({});
+  // KM-6: «Yuborish vaqti» — darhol yoki tanlangan Toshkent vaqti; xato «Ko'rib chiqish» bosilgach ko'rinadi.
+  const [sendTime, setSendTime] = useState<SmsSendTimeValue>(createSmsSendTime);
+  const [scheduleTouched, setScheduleTouched] = useState(false);
+  /**
+   * (sdNGqCBa) Tanlangan saqlangan segment: so'rovga `segment` o'rniga `audience_segment_id` ketadi, sharti filtrlarga
+   * ko'chiriladi (ko'rinsin). Filtr qo'lda o'zgarsa — tanlov bekor, endi filtrlar yuboriladi.
+   */
+  const [savedSegmentId, setSavedSegmentId] = useState("");
+  const savedSegments = useAudienceSegments(audience === "segment");
 
   const [preview, setPreview] = useState<SmsCampaignPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -194,9 +237,23 @@ const CampaignPage = () => {
     .map((value) => value.trim())
     .filter(Boolean);
   const segmentPayload = useMemo(() => toCustomerSegmentPayload(segment), [segment]);
+  /** «dan» > «gacha» — backend 400 (teskari oraliq); so'rov yuborilmaydi, xato «gacha» ostida. */
+  const rangeInverted = audience === "segment" && isOrderRangeInverted(segment);
+  /** SMS'ga yaraydigan (faqat mijoz) saqlangan segmentlar — maket: «Faqat mijoz shartli segmentlar chiqadi». */
+  const customerSegments = useMemo(
+    () => (savedSegments.data ?? []).filter((item) => isCustomerOnlyAudience(item.audience)),
+    [savedSegments.data],
+  );
+  const savedSegment = customerSegments.find((item) => item.id === savedSegmentId) ?? null;
+  const audienceTarget: SmsCampaignAudienceTarget | null =
+    audience !== "segment" || rangeInverted
+      ? null
+      : savedSegmentId
+        ? { audience_segment_id: savedSegmentId }
+        : { segment: segmentPayload };
 
   // Jonli auditoriya (faqat «Mijozlar segmenti»): debounce bilan preview, natija + bugungi limit.
-  const audienceQuery = useSmsCampaignAudience(audience === "segment" ? segmentPayload : null);
+  const audienceQuery = useSmsCampaignAudience(audienceTarget);
   const quota = smsDailyQuota(status.data);
   const audienceData = audienceQuery.data;
   const audienceFresh =
@@ -206,7 +263,7 @@ const CampaignPage = () => {
     !audienceQuery.isError &&
     audienceData !== undefined;
   const audienceState: CampaignAudienceState =
-    audienceQuery.settled && !audienceQuery.isFetching && audienceQuery.isError
+    rangeInverted || (audienceQuery.settled && !audienceQuery.isFetching && audienceQuery.isError)
       ? "error"
       : !audienceFresh || !audienceData
         ? "loading"
@@ -218,17 +275,49 @@ const CampaignPage = () => {
               ? "limit"
               : "ready";
 
-  const audienceErrorKind = audienceQuery.isError ? smsCampaignErrorKind(audienceQuery.error) : undefined;
+  const audienceErrorKind = rangeInverted
+    ? "badRequest"
+    : audienceQuery.isError
+      ? smsCampaignErrorKind(audienceQuery.error)
+      : undefined;
+  /** Segment xatosi (teskari oraliq, xodimli / o'chirilgan saqlangan segment) — aniq matn. */
+  const segmentError = rangeInverted
+    ? "orderRange"
+    : audienceQuery.isError
+      ? smsCampaignSegmentError(audienceQuery.error)
+      : null;
+  const audienceErrorText = segmentError ? t(`campaign.errors.${segmentError}`) : undefined;
 
   const recipientsGuess =
     audience === "phones" ? phoneList.length : (audienceData?.recipients ?? 1);
+
+  const scheduled = sendTime.when === "scheduled";
+  /** Sana/soat xatosi: «Tanlang» — faqat bosilgach; o'tib ketgan va 90 kundan uzoq — darhol. */
+  const validateSendTime = (value: SmsSendTimeValue, touched: boolean, at: number): SmsSendTimeErrors => {
+    if (value.when !== "scheduled") return {};
+    if (!value.day) return touched ? { day: t("campaign.scheduleErrors.day") } : {};
+    if (!value.time) return touched ? { time: t("campaign.scheduleErrors.time") } : {};
+    if (!isFutureSlot(value.day, value.time, at)) return { time: t("campaign.scheduleErrors.past") };
+    if (isSmsScheduleTooFar(Date.parse(toScheduledAt(value.day, value.time)), at)) {
+      return { day: t("campaign.scheduleErrors.tooFar", { days: SMS_MAX_SCHEDULE_DAYS }) };
+    }
+    return {};
+  };
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  const sendTimeErrors = validateSendTime(sendTime, scheduleTouched, checkedAt);
+  const sendTimeReady = !scheduled || (Boolean(sendTime.day && sendTime.time) && !Object.keys(sendTimeErrors).length);
 
   const input = (): SmsCampaignInput => ({
     ...(template
       ? { template_code: template.code, lang: template.lang }
       : { message_class: "promo" as const, text: text.trim() }),
     ...(variables.length ? { vars } : {}),
-    segment: audience === "phones" ? { phones: phoneList } : segmentPayload,
+    ...(audience === "phones"
+      ? { segment: { phones: phoneList } }
+      : savedSegmentId
+        ? { audience_segment_id: savedSegmentId }
+        : { segment: segmentPayload }),
+    ...(scheduled && sendTime.day && sendTime.time ? { scheduled_at: toScheduledAt(sendTime.day, sendTime.time) } : {}),
   });
 
   const canPreview =
@@ -238,7 +327,9 @@ const CampaignPage = () => {
 
   const audienceHint: Record<Exclude<CampaignAudienceState, "ready">, string> = {
     loading: t("campaign.hintAudienceWait"),
-    error: isRetryableSmsCampaignError(audienceErrorKind)
+    error: audienceErrorText
+      ? audienceErrorText
+      : isRetryableSmsCampaignError(audienceErrorKind)
       ? t("campaign.hintAudienceError")
       : t("campaign.hintAudienceBlocked"),
     fanout: t("campaign.hintFanout"),
@@ -253,14 +344,24 @@ const CampaignPage = () => {
         ? t("campaign.hintPhones")
         : audience === "segment" && audienceState !== "ready"
           ? audienceHint[audienceState]
-          : t("campaign.hintReady");
+          : !sendTimeReady
+            ? t("campaign.hintSchedule")
+            : t("campaign.hintReady");
 
   const errorText = (error: unknown, fallback: string) => {
+    const scheduleKey = smsScheduleErrorKey(error);
+    if (scheduleKey) return t(`campaign.errors.${scheduleKey}`, { days: SMS_MAX_SCHEDULE_DAYS });
+    const segmentKind = smsCampaignSegmentError(error);
+    if (segmentKind) return t(`campaign.errors.${segmentKind}`);
     const kind = smsCampaignErrorKind(error);
     return kind === "unknown" ? fallback : t(`campaign.errors.${kind}`);
   };
 
   const openPreview = async () => {
+    const at = Date.now();
+    setScheduleTouched(true);
+    setCheckedAt(at);
+    if (Object.keys(validateSendTime(sendTime, true, at)).length) return;
     setPreviewLoading(true);
     setPreviewError(null);
     setResult(null);
@@ -278,15 +379,29 @@ const CampaignPage = () => {
 
   const confirmSend = async () => {
     if (!idempotencyKey || sendCampaign.isPending) return;
+    // Tasdiq oynasi ochiq turganda tanlangan vaqt o'tib ketsa — backend uni «darhol» deb oladi; yubormaymiz.
+    if (scheduled && !isFutureSlot(sendTime.day, sendTime.time, Date.now())) {
+      setPreview(null);
+      setCheckedAt(Date.now());
+      setResult({ type: "error", message: t("campaign.scheduleErrors.expired") });
+      return;
+    }
     try {
       const res = await sendCampaign.mutateAsync({ input: input(), idempotencyKey });
+      const when = campaignTime.inline(res.scheduled_for_tashkent ?? res.scheduled_for);
       setResult({
         type: "success",
-        message: t("campaign.sent", {
-          queued: res.queued,
-          blocked: res.blocked_no_consent,
-          skipped: res.skipped_invalid_phone,
-        }),
+        message:
+          res.status === "scheduled"
+            ? t(res.quiet_hours_shifted ? "campaign.scheduledShifted" : "campaign.scheduledResult", {
+                when: when ?? "",
+                recipients: formatNumberLocalized(res.recipients ?? 0, { language }),
+              })
+            : t("campaign.sent", {
+                queued: res.queued,
+                blocked: res.blocked_no_consent,
+                skipped: res.skipped_invalid_phone,
+              }),
       });
       setPreview(null);
       setIdempotencyKey(null);
@@ -298,6 +413,12 @@ const CampaignPage = () => {
 
   const tariff = tariffs.data?.promo ?? null;
   const scheduledLater = preview && new Date(preview.scheduled_for).getTime() - Date.now() > 60_000;
+  /** KM-6: tasdiq «Belgilangan vaqtda» uchun — kampaniya `scheduled` bo'lib yaratiladi («Bekor qilish» mumkin). */
+  const previewScheduled = Boolean(preview && scheduled);
+  /** Yuboriladigan vaqt Toshkent vaqtida («Ertaga, 10:00») — sahifadagi «Toshkent vaqti» belgisi bilan bir xil. */
+  const confirmWhen = preview
+    ? campaignTime.format(preview.scheduled_for_tashkent ?? preview.scheduled_for)
+    : null;
   // KM-S4: aniq qabul qiluvchilar bugungi qoldiqdan ko'p bo'lsa — backend 409 (kvota) qaytaradi; oldindan to'xtatiladi.
   const overQuota = Boolean(preview && quota && preview.recipients > quota.remaining);
   const blockedSend =
@@ -322,14 +443,117 @@ const CampaignPage = () => {
     [t],
   );
 
+  /** KM-6: holat belgisi (noma'lum yangi holat — belgisiz). */
+  const statusBadge = useCallback(
+    (item: SmsCampaignHistoryItem) => {
+      const status = smsCampaignStatus(item);
+      if (!status) return null;
+      const meta = SMS_STATUS_META[status];
+      return <StatusBadge tone={meta.tone} variant={meta.variant} label={t(`campaign.status.${status}`)} />;
+    },
+    [t],
+  );
+
+  /**
+   * KM-6: rejalashtirilgan vaqt (Toshkent), tungi taqiq siljishi va rad etilish sababi — sana ostida.
+   */
+  const scheduleNote = useCallback(
+    (item: SmsCampaignHistoryItem) => {
+      const status = smsCampaignStatus(item);
+      const when = campaignTime.format(item.scheduled_for_tashkent ?? item.scheduled_for ?? item.scheduled_at);
+      const lines: ReactNode[] = [];
+      if (when && (status === "scheduled" || status === "cancelled" || item.quiet_hours_shifted)) {
+        lines.push(
+          <span key="when" className="inline-flex items-center gap-1 text-xs text-text-muted">
+            <CalendarClock aria-hidden="true" size={14} className="shrink-0" />
+            {t(status === "scheduled" ? "campaign.scheduledFor" : "campaign.scheduledWas", { when })}
+          </span>,
+        );
+      }
+      if (item.quiet_hours_shifted) {
+        const requested = campaignTime.format(item.requested_at);
+        lines.push(
+          <span key="shift" className="inline-flex items-center gap-1 text-xs text-text-muted">
+            <Moon aria-hidden="true" size={14} className="shrink-0" />
+            {requested ? t("campaign.shiftedFrom", { requested }) : t("campaign.shiftedShort")}
+          </span>,
+        );
+      }
+      if (status === "failed" && item.last_error) {
+        lines.push(
+          <span key="error" className="text-xs text-danger-fg [overflow-wrap:anywhere]">
+            {t("campaign.failedReason", { reason: item.last_error })}
+          </span>,
+        );
+      }
+      return lines.length ? <span className="flex min-w-0 flex-col gap-0.5">{lines}</span> : null;
+    },
+    [campaignTime, t],
+  );
+
+  /**
+   * KM-6: «Bekor qilish» (faqat `can_cancel`) — xavfli tasdiq; 409 — allaqachon boshlangan / rejalashtirilmagan
+   * (xabar, tarix yangilanadi).
+   */
+  const askCancel = useCallback(
+    (item: SmsCampaignHistoryItem) => {
+      const when = campaignTime.format(item.scheduled_for_tashkent ?? item.scheduled_for ?? item.scheduled_at);
+      void confirm({
+        title: t("campaign.cancelTitle"),
+        description: when ? t("campaign.cancelText", { when }) : t("campaign.cancelTextNoTime"),
+        confirmLabel: t("campaign.cancelConfirm"),
+        cancelLabel: t("campaign.cancelClose"),
+        tone: "danger",
+        icon: CircleX,
+        confirmIcon: CircleX,
+        details: (
+          <span className="line-clamp-3 text-[13px] text-text [overflow-wrap:anywhere]">{item.text}</span>
+        ),
+        onConfirm: async () => {
+          try {
+            await cancelCampaign.mutateAsync(item.id);
+            notify.success(t("campaign.cancelDone"));
+          } catch (error) {
+            if (getErrorStatus(error) !== 409) throw error;
+            notify.error(t("campaign.cancelConflict"));
+          }
+        },
+        errorMessage: () => t("campaign.cancelFailed"),
+      });
+    },
+    [campaignTime, cancelCampaign, confirm, t],
+  );
+
+  const cancelButton = useCallback(
+    (item: SmsCampaignHistoryItem, full?: boolean) =>
+      item.can_cancel ? (
+        <Button
+          variant="danger-soft"
+          size="sm"
+          leftIcon={CircleX}
+          onClick={() => askCancel(item)}
+          className={full ? "max-md:w-full" : undefined}
+        >
+          {t("campaign.cancelAction")}
+        </Button>
+      ) : null,
+    [askCancel, t],
+  );
+
   const historyColumns = useMemo<DataTableColumn<SmsCampaignHistoryItem>[]>(
     () => [
       {
         id: "date",
         header: t("campaign.col.date"),
-        cellClassName: "whitespace-nowrap tabular-nums",
-        cell: (item) => formatDateTimeLocalized(item.created_at, { language }),
+        cellClassName: "tabular-nums",
+        cell: (item) => (
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="whitespace-nowrap">{formatDateTimeLocalized(item.created_at, { language })}</span>
+            {scheduleNote(item)}
+          </span>
+        ),
       },
+      { id: "status", header: t("campaign.col.status"), cell: statusBadge },
       { id: "class", header: t("campaign.col.class"), cell: classBadge },
       {
         id: "text",
@@ -368,8 +592,14 @@ const CampaignPage = () => {
         align: "end",
         cell: (item) => <Num value={item.pending} tone="warning" language={language} />,
       },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("campaign.col.actions")}</span>,
+        align: "end",
+        cell: (item) => cancelButton(item),
+      },
     ],
-    [classBadge, language, t],
+    [cancelButton, classBadge, language, scheduleNote, statusBadge, t],
   );
 
   const renderHistoryCard = useCallback(
@@ -384,11 +614,15 @@ const CampaignPage = () => {
       return (
         <div className="flex min-w-0 flex-col gap-2 px-4 py-3">
           <div className="flex min-w-0 items-center justify-between gap-2">
-            {classBadge(item)}
+            <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+              {classBadge(item)}
+              {statusBadge(item)}
+            </span>
             <span className="text-[13px] whitespace-nowrap text-text-muted tabular-nums">
               {formatDateTimeLocalized(item.created_at, { language })}
             </span>
           </div>
+          {scheduleNote(item)}
           <span className="text-sm text-text [overflow-wrap:anywhere]">{item.text}</span>
           <span className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-muted">
             {stats.map(([label, value, tone, strong]) => (
@@ -404,10 +638,11 @@ const CampaignPage = () => {
               </span>
             ))}
           </span>
+          {cancelButton(item, true)}
         </div>
       );
     },
-    [classBadge, language, t],
+    [cancelButton, classBadge, language, scheduleNote, statusBadge, t],
   );
 
   const confirmRows: Array<{ label: ReactNode; value: ReactNode }> = preview
@@ -539,12 +774,54 @@ const CampaignPage = () => {
               </Field>
             ) : (
               <>
-                <CustomerSegmentFilters value={segment} onChange={setSegment} />
+                <Field
+                  label={t("segment.saved")}
+                  labelAs="span"
+                  hint={
+                    savedSegments.isError
+                      ? t("segment.savedLoadError")
+                      : savedSegment
+                        ? t("segment.savedApplied", { name: savedSegment.name })
+                        : t("segment.savedHint")
+                  }
+                  hintLive
+                >
+                  <Select
+                    className="w-full"
+                    options={[
+                      { value: "", label: t("segment.savedNone") },
+                      ...customerSegments.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                        description: item.description ?? undefined,
+                      })),
+                    ]}
+                    value={savedSegmentId}
+                    emptyText={t("segment.savedEmpty")}
+                    noOptionsText={t("segment.savedEmpty")}
+                    loading={savedSegments.isLoading}
+                    onChange={(id) => {
+                      const picked = customerSegments.find((item) => item.id === id);
+                      setSavedSegmentId(picked ? picked.id : "");
+                      if (picked) setSegment(draftFromSavedAudience(picked.audience).customerSegment);
+                    }}
+                  />
+                </Field>
+                <CustomerSegmentFilters
+                  value={segment}
+                  onChange={(next) => {
+                    setSavedSegmentId("");
+                    setSegment(next);
+                  }}
+                  withMaxOrders
+                  orderRangeError={rangeInverted ? t("segment.orderRange") : undefined}
+                />
                 <CampaignAudienceSummary
                   state={audienceState}
                   data={audienceData}
                   quota={quota}
-                  errorKind={audienceErrorKind}
+                  errorKind={segmentError ? "badRequest" : audienceErrorKind}
+                  errorText={audienceErrorText}
                   onRetry={() => void audienceQuery.refetch()}
                 />
               </>
@@ -563,7 +840,15 @@ const CampaignPage = () => {
           ) : null}
         </div>
 
-        <CampaignSendTime quietHours={quiet} />
+        <CampaignSendTime
+          quietHours={quiet}
+          value={sendTime}
+          onChange={(value) => {
+            setSendTime(value);
+            setCheckedAt(Date.now());
+          }}
+          errors={sendTimeErrors}
+        />
       </Card>
 
       <Card
@@ -660,7 +945,7 @@ const CampaignPage = () => {
               loadingText={t("campaign.sending")}
               onClick={() => void confirmSend()}
             >
-              {t("campaign.send")}
+              {previewScheduled ? t("campaign.schedule") : t("campaign.send")}
             </Button>
           </>
         }
@@ -684,13 +969,25 @@ const CampaignPage = () => {
               ))}
             </dl>
 
-            {scheduledLater ? (
+            {preview.quiet_hours_shifted ? (
+              <NoticeAlert
+                tone="warning"
+                icon={Moon}
+                data-testid="campaign-confirm-shifted"
+                title={t("campaign.confirmShifted", {
+                  when: campaignTime.inline(preview.scheduled_for_tashkent ?? preview.scheduled_for) ?? "",
+                })}
+              >
+                {t("campaign.confirmShiftedText", {
+                  requested: campaignTime.format(preview.requested_at) ?? "",
+                  ...(quiet ? { from: hhmm(quiet.start), to: hhmm(quiet.end) } : { from: "18:00", to: "09:00" }),
+                })}
+              </NoticeAlert>
+            ) : scheduledLater ? (
               <NoticeAlert
                 tone="info"
-                icon={Clock}
-                title={t("campaign.confirmScheduled", {
-                  time: formatDateTimeLocalized(preview.scheduled_for, { language }),
-                })}
+                icon={previewScheduled ? CalendarClock : Clock}
+                title={t("campaign.confirmScheduled", { time: confirmWhen ?? "" })}
               >
                 {preview.message_class === "promo" && quiet
                   ? t("campaign.confirmQuietHours", {
@@ -727,7 +1024,7 @@ const CampaignPage = () => {
             </div>
 
             <p className="m-0 text-[13px] font-semibold text-text">
-              {t("campaign.confirmIrreversible")}
+              {previewScheduled ? t("campaign.confirmCancellable") : t("campaign.confirmIrreversible")}
             </p>
           </div>
         ) : null}

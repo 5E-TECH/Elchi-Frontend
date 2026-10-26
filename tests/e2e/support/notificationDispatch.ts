@@ -35,6 +35,9 @@ const undeliveredRow = (index: number) => ({
 });
 
 export const PARTIAL_DISPATCH = {
+  // NS-4: backend javobida holat va kanal natijasi (tarixdagi bilan AYNI).
+  status: "partial",
+  channel_outcome: { realtime: "full", telegram: "partial", sms: "none" },
   dispatched: 148,
   recipient_ids: [],
   channels: ["in_app", "realtime", "telegram", "sms"],
