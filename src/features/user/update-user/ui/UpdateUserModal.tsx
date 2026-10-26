@@ -15,6 +15,11 @@ import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
 import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
+import {
+  checkPasswordPolicy,
+  getPasswordPolicyServerMessage,
+  passwordMinLength,
+} from "../../../../shared/lib/passwordPolicy";
 import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
@@ -183,7 +188,7 @@ export const UpdateUserModal = memo(({
   initialUser = null,
   isOwnProfile = false,
 }: UpdateUserModalProps) => {
-  const { t, i18n } = useTranslation(["users", "common"]);
+  const { t, i18n } = useTranslation(["users", "common", "auth"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const authRole = useSelector((state: RootState) => state.role.role);
   const currentUserId = useSelector(
@@ -336,6 +341,14 @@ export const UpdateUserModal = memo(({
 
     if (getUzbekistanPhoneDigits(values.phone).length !== 9) {
       fail("phone", t("phoneValidation"));
+    }
+
+    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz.
+    if (values.password) {
+      const passwordIssue = checkPasswordPolicy(values.password, effectiveRole);
+      if (passwordIssue && passwordIssue !== "required") {
+        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(effectiveRole) }));
+      }
     }
 
     if (isAdmin && values.payment_day) {
@@ -602,7 +615,11 @@ export const UpdateUserModal = memo(({
           ? t("ownPasswordChangedOthersSignedOut")
           : t("userUpdatedPasswordReset", { name: userData.name }),
       errorMessage: t("editUserError"),
-      onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+      onError: (error) => {
+        applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
+        const passwordMessage = getPasswordPolicyServerMessage(error);
+        if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
+      },
       onSuccess: () => (warehouseOrderChanged ? void saveWarehouseOrder() : onClose()),
     });
   };
@@ -732,7 +749,7 @@ export const UpdateUserModal = memo(({
                 render={({ field, fieldState }) => (
                   <Field
                     label={t("v2.edit.newPassword")}
-                    hint={t("v2.edit.newPasswordHint")}
+                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: passwordMinLength(effectiveRole) })}`}
                     error={fieldState.error?.message}
                   >
                     <TextInput

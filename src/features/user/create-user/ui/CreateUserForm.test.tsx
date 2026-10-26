@@ -179,7 +179,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
 
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await save(user);
 
@@ -187,7 +187,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
     expect(mocks.createAdmin).toHaveBeenCalledWith({
       name: "Yangi Admin",
       phone_number: "+998901234567",
-      password: "secret12",
+      password: "Secret-2026x",
       salary: 5000000,
       payment_day: 15,
     });
@@ -200,7 +200,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await save(user);
 
@@ -217,7 +217,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Menejer");
     await fill(user, container, "fullName", "Menejer Bir");
     await fill(user, container, "phone", "901112233");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await user.click(screen.getByRole("combobox", { name: "Filial" }));
     await user.click(screen.getByRole("option", { name: /Surxondaryo/ }));
     await fill(user, container, "homeRate", "10000");
@@ -228,7 +228,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     expect(mocks.createManager).toHaveBeenCalledWith({
       name: "Menejer Bir",
       phone_number: "+998901112233",
-      password: "secret12",
+      password: "Secret-2026x",
       branch_id: "15",
       tariff_home: 10000,
       tariff_center: 8000,
@@ -241,7 +241,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Menejer");
     await fill(user, container, "fullName", "Menejer Bir");
     await fill(user, container, "phone", "901112233");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await save(user);
 
     expect(await screen.findByText("Filial tanlang")).toBeInTheDocument();
@@ -254,7 +254,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Ro'yxatchi");
     await fill(user, container, "fullName", "Ro'yxatchi Bir");
     await fill(user, container, "phone", "907778899");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await user.click(screen.getByRole("combobox", { name: "Filial" }));
     await user.click(screen.getByRole("option", { name: /HQ-TSHKNT/ }));
     await fill(user, container, "salary", "3000000");
@@ -266,7 +266,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     expect(mocks.createRegistrator).toHaveBeenCalledWith({
       name: "Ro'yxatchi Bir",
       phone_number: "+998907778899",
-      password: "secret12",
+      password: "Secret-2026x",
       salary: 3000000,
       payment_day: 5,
       branch_id: "1",
@@ -325,7 +325,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
     await user.click(screen.getByRole("option", { name: "1" }));
@@ -352,7 +352,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await fill(user, container, "fullName", "Azamat To'g'ayev");
     await fill(user, container, "phone", "946273051");
-    await fill(user, container, "password", "urgut2026");
+    await fill(user, container, "password", "urgut-2026x");
     await fill(user, container, "homeRate", "20000");
     await fill(user, container, "centerRate", "15000");
     await save(user);
@@ -361,7 +361,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     expect(mocks.createCourier).toHaveBeenCalledWith({
       name: "Azamat To'g'ayev",
       phone_number: "+998946273051",
-      password: "urgut2026",
+      password: "urgut-2026x",
       branch_id: "44",
       tariff_home: 20000,
       tariff_center: 15000,
@@ -384,7 +384,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     expect(screen.queryByRole("combobox", { name: "Filial" })).not.toBeInTheDocument();
     await fill(user, container, "fullName", "Kamola Rustamova");
     await fill(user, container, "phone", "938061952");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "4200000");
     await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
     await user.click(screen.getByRole("option", { name: "25" }));

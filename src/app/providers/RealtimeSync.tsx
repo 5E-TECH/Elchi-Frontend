@@ -13,6 +13,7 @@ import { logRealtime, realtimeUrl, setRealtimeConnected } from "../../shared/lib
 import {
   handleSessionRevokedEvent,
   handleSessionRevokedSocketError,
+  isSessionCheckUnavailableSocketError,
   SESSION_REVOKED_EVENT,
 } from "../../auth/sessionRevoked";
 
@@ -45,6 +46,13 @@ type RealtimePayload = Partial<
 
 /** Bir vaqtda kelgan hodisalarni yig'ish oynasi — bitta so'rov va bitta xabar. */
 const BATCH_MS = 400;
+
+/**
+ * NDmZMzCP: ulanish `SESSION_CHECK_UNAVAILABLE` bilan rad etilsa (identity vaqtincha javob bermadi) — chiqish emas,
+ * shuncha kutib (+ tasodifiy 0–5 s, hamma qurilma bir soniyada urinmasin) qayta ulanadi.
+ */
+const SESSION_CHECK_RECONNECT_MS = 15_000;
+const SESSION_CHECK_RECONNECT_JITTER_MS = 5_000;
 
 /** Faqat ilova ichidagi yo'l — tashqi havola toastdan ochilmaydi. */
 const toInAppLink = (link: string | null | undefined) =>
@@ -116,6 +124,7 @@ const RealtimeSync = () => {
     if (!isAuthenticated || !accessToken) return;
     let socket: Socket | null = null;
     let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Kutubxona faqat kirgandan keyin yuklanadi — kirish sahifasi va birinchi yuklanish og'irlashmaydi.
     // Token `auth` da ketadi (cookie kerak emas — `withCredentials` yo'q).
@@ -138,6 +147,20 @@ const RealtimeSync = () => {
           client.removeAllListeners();
           client.disconnect();
         };
+        // Sessiya tekshiruvi vaqtincha ishlamadi — server rad etib uzadi (socket.io o'zi qayta urinmaydi): kechiktirib
+        // qo'lda ulanish. Bir vaqtda faqat bitta taymer.
+        let sessionCheckFailed = false;
+        const reconnectLater = () => {
+          if (reconnectTimer || cancelled) return;
+          logRealtime("sessiyani tekshirib bo'lmadi — keyinroq qayta ulanadi");
+          reconnectTimer = setTimeout(
+            () => {
+              reconnectTimer = null;
+              if (!cancelled && !client.connected) client.connect();
+            },
+            SESSION_CHECK_RECONNECT_MS + Math.floor(Math.random() * SESSION_CHECK_RECONNECT_JITTER_MS),
+          );
+        };
         client.on(SESSION_REVOKED_EVENT, (payload: unknown) => {
           if (handleSessionRevokedEvent(payload)) closeRevoked();
           else logRealtime("boshqa sessiya hodisasi — e'tiborsiz", payload);
@@ -153,6 +176,10 @@ const RealtimeSync = () => {
         client.on("disconnect", (reason) => {
           setRealtimeConnected(false);
           logRealtime("uzildi", reason);
+          if (reason === "io server disconnect" && sessionCheckFailed) {
+            sessionCheckFailed = false;
+            reconnectLater();
+          }
           // Uzilish oralig'ida kelgan xabarlar o'tib ketmasin — sanoq darhol so'raladi, keyin 60 s polling.
           void queryClient.invalidateQueries({
             queryKey: queryKeys.notificationsInbox.unreadCount,
@@ -166,10 +193,12 @@ const RealtimeSync = () => {
           );
           // Yopilgan sessiya tokeni bilan qayta ulanish rad etildi — qayta urinish emas, chiqish.
           if (handleSessionRevokedSocketError(error)) closeRevoked();
+          else if (!client.active && isSessionCheckUnavailableSocketError(error)) reconnectLater();
         });
         client.on("error", (error: unknown) => {
           logRealtime("server xatosi", error);
           if (handleSessionRevokedSocketError(error)) closeRevoked();
+          else if (isSessionCheckUnavailableSocketError(error)) sessionCheckFailed = true;
         });
         client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
@@ -183,6 +212,7 @@ const RealtimeSync = () => {
 
     return () => {
       cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (socket) {
         socket.removeAllListeners();
         socket.disconnect();

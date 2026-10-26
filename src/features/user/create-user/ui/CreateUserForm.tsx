@@ -47,6 +47,11 @@ import {
   type SelectOption,
 } from "../../../../shared/ui/primitives";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
+import {
+  checkPasswordPolicy,
+  getPasswordPolicyServerMessage,
+  passwordMinLength,
+} from "../../../../shared/lib/passwordPolicy";
 import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 import { runUserRequest } from "../../lib/userRequest";
 import { readViewerBranch } from "../../lib/viewerBranch";
@@ -183,7 +188,7 @@ const FormSection = ({ title, note, children }: { title: string; note?: ReactNod
  * `navigate(-1)`. Filiallar so'rovi faqat superadmin/admin uchun (menejerga `GET branches` 403).
  */
 export const CreateUserForm = memo(() => {
-  const { t } = useTranslation(["users", "common"]);
+  const { t } = useTranslation(["users", "common", "auth"]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const formId = useId();
@@ -274,11 +279,15 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (!values.password.trim()) {
+    // NDmZMzCP: kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz; qolganini (oddiy / ketma-ket / telefon) server.
+    const passwordIssue = checkPasswordPolicy(values.password, role);
+    if (passwordIssue === "required") {
       setError("password", { message: t("passwordRequired") });
       valid = false;
-    } else if (values.password.length < 4) {
-      setError("password", { message: t("v2.create.errors.passwordMin") });
+    } else if (passwordIssue) {
+      setError("password", {
+        message: t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(role) }),
+      });
       valid = false;
     }
 
@@ -390,7 +399,12 @@ export const CreateUserForm = memo(() => {
       request,
       successMessage,
       errorMessage: t("loadError"),
-      onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+      onError: (error) => {
+        applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
+        // Parol siyosati 400 (`message` massivi, `errors` siz) — matn parol maydoni ostida ham.
+        const passwordMessage = getPasswordPolicyServerMessage(error);
+        if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
+      },
       onSuccess: () => navigate(-1),
     });
 
@@ -492,8 +506,11 @@ export const CreateUserForm = memo(() => {
         navigate(logistAssignmentPath(createdIdOf(response)));
       } catch (error) {
         // Server matni ko'rsatilmaydi: 409 — telefon band (maydon ostida), qolgani — umumiy xabar.
+        const passwordMessage = getPasswordPolicyServerMessage(error);
         if (statusOf(error) === 409) {
           setError("phone", { type: "server", message: t("v2.logist.phoneTaken") });
+        } else if (passwordMessage) {
+          setError("password", { type: "server", message: passwordMessage });
         } else {
           notify.error(t("v2.logist.createError"), { description: t("v2.logist.createErrorText") });
         }
@@ -593,7 +610,7 @@ export const CreateUserForm = memo(() => {
         <Field
           label={t("v2.create.fields.password")}
           required
-          hint={t("v2.create.fields.passwordHint")}
+          hint={t("auth:passwordPolicy.hint", { min: passwordMinLength(role) })}
           error={fieldState.error?.message}
         >
           <TextInput

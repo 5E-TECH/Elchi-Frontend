@@ -40,6 +40,11 @@ const socketMock = vi.hoisted(() => {
         socket.disconnected = true;
       },
       disconnected: false,
+      connected: false,
+      connectCalls: 0,
+      connect: () => {
+        socket.connectCalls += 1;
+      },
       io: {
         on: (event: string, handler: Handler) => managerHandlers.set(event, [...(managerHandlers.get(event) ?? []), handler]),
         off: (event: string) => managerHandlers.delete(event),
@@ -342,6 +347,47 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
 
       expect(socket.disconnected).toBe(true);
       await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    });
+
+    it("NDmZMzCP: `error` SESSION_CHECK_UNAVAILABLE + server uzdi — chiqish yo'q, ~15–20 s dan keyin qayta ulanadi", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+      vi.useFakeTimers();
+      try {
+        act(() => {
+          socket.fire("error", { message: "Session check unavailable", code: "SESSION_CHECK_UNAVAILABLE" });
+          socket.fire("disconnect", "io server disconnect");
+        });
+        expect(socket.disconnected).toBe(false);
+        act(() => vi.advanceTimersByTime(14_000));
+        expect(socket.connectCalls).toBe(0);
+        act(() => vi.advanceTimersByTime(7_000));
+        expect(socket.connectCalls).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(replace).not.toHaveBeenCalled();
+      expect(tokenStorage.getAccessToken()).not.toBeNull();
+    });
+
+    it("NDmZMzCP: `connect_error` SESSION_CHECK_UNAVAILABLE (`active=false`) — kechiktirib qayta ulanish, chiqish yo'q", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+      vi.useFakeTimers();
+      try {
+        act(() => {
+          socket.active = false;
+          socket.fire(
+            "connect_error",
+            Object.assign(new Error("Session check unavailable"), { data: { code: "SESSION_CHECK_UNAVAILABLE" } }),
+          );
+        });
+        act(() => vi.advanceTimersByTime(21_000));
+        expect(socket.connectCalls).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(replace).not.toHaveBeenCalled();
     });
 
     it("oddiy server uzilishi (hodisasiz «io server disconnect») — avvalgidek: sanoq so'raladi, chiqish yo'q", async () => {

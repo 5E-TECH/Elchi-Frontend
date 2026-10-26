@@ -192,7 +192,8 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     await typePassword(user, "yangiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
-    expect(await screen.findByText("Parol juda qisqa")).toBeInTheDocument();
+    // NDmZMzCP: server matni xabarda va parol maydoni ostida.
+    expect(await screen.findAllByText("Parol juda qisqa")).not.toHaveLength(0);
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
   });
@@ -274,7 +275,7 @@ describe("UpdateUserModal — dizayn v2 oynasi (maket `superadmin-users-edit-dia
     expect(dialog).toHaveAccessibleDescription("Baraka Shop · Market");
     expect(screen.getByText("Asosiy ma'lumotlar")).toBeInTheDocument();
     expect(screen.getByText("Market ma'lumotlari")).toBeInTheDocument();
-    expect(screen.getByText("Bo'sh qoldirilsa, parol o'zgarmaydi")).toBeInTheDocument();
+    expect(screen.getByText(/^Bo'sh qoldirilsa, parol o'zgarmaydi\. Kamida 8 ta belgi/)).toBeInTheDocument();
     expect(screen.getByText("Nofaol qilishdan oldin tasdiq so'raladi")).toBeInTheDocument();
     // Eski `home` qiymati — «Uygacha» (API `address`).
     expect(screen.getByRole("combobox", { name: "Asosiy tarif" })).toHaveTextContent("Uygacha");
