@@ -17,6 +17,7 @@ import {
     type SidebarUserRole,
 } from "../model/menuConfig";
 import { getActiveNavPath, useMobileMenu, useNavPathname } from "../model/shellNav";
+import { formatNavCount, NEW_ORDERS_NAV_PATH, useNewOrdersNavCount } from "../model/navSections";
 
 /**
  * TELEFON PASTKI MENYUSI (< 768) — maket `.el-bottomnav` / `.el-bn-*` (design/kit/helmet.html),
@@ -144,6 +145,14 @@ const FAB =
     "motion-reduce:transition-none group-active:scale-[.94] group-active:bg-action-hover " +
     "group-active:ring-6 group-active:ring-focus";
 
+/**
+ * Son belgisi (taxta `tizim-states-navigation` 06 · 4 «Son belgisi»): ikonka burchagida `.el-dotcount` — yangi =
+ * `info` rang, 2px `surface` hoshiya, 22×20; 99 dan ko'pi «99+». Ekran o'quvchi nomi «Qabul, 7 ta yangi».
+ */
+const NAV_COUNT =
+    "pointer-events-none absolute -right-[13px] -top-[7px] h-5 min-w-[22px] rounded-full border-2 border-surface " +
+    "bg-info px-1 text-center text-xs font-bold leading-4 text-on-solid";
+
 const NAV_ICON_SIZE = 22;
 const FAB_ICON_SIZE = 24;
 
@@ -160,9 +169,13 @@ const BottomNav = () => {
     // Desktop Sidebar ham shunday rolga bo'sh menyu ko'rsatadi.
     const userRole = normalizeSidebarRole(role, user);
 
+    const menuItems = useMemo(() => (userRole ? getSidebarConfigForUser(userRole, user) : []), [userRole, user]);
+    // GaBIPi3Z: «Qabul» katagidagi son — yon menyu bilan bir kesh yozuvi (`new_incoming`).
+    const newOrdersCount = useNewOrdersNavCount(userRole, menuItems);
+    const newOrdersBadge = formatNavCount(newOrdersCount);
+
     const entries = useMemo<BottomNavEntry[]>(() => {
         if (!userRole) return [];
-        const menuItems = getSidebarConfigForUser(userRole, user);
         const shortLabels = { ...SHORT_LABEL, ...SHORT_LABEL_BY_ROLE[userRole] };
         const result: BottomNavEntry[] = [];
 
@@ -190,7 +203,7 @@ const BottomNav = () => {
             });
         }
         return result;
-    }, [userRole, user, t]);
+    }, [userRole, menuItems, t]);
 
     // Faol katak: eng uzun mos yo'l (`/orders/123` → «Buyurtmalar»); «Menyu» — yo'lsiz, hech qachon tanlanmaydi.
     const activeTo = useMemo(
@@ -266,18 +279,33 @@ const BottomNav = () => {
                 }
 
                 const Icon = entry.icon;
+                const count = entry.to === NEW_ORDERS_NAV_PATH ? newOrdersBadge : null;
                 return (
                     <Link
                         key={entry.key}
                         to={entry.to}
                         aria-current={isActive ? "page" : undefined}
+                        aria-label={
+                            count
+                                ? `${entry.label}, ${t("sidebar:newCount", { count: newOrdersCount ?? 0 })}`
+                                : undefined
+                        }
                         title={entry.label}
                         onPointerEnter={preload}
                         onFocus={preload}
                         onTouchStart={preload}
                         className={cx(ITEM, "text-text-muted")}
                     >
-                        <Icon size={NAV_ICON_SIZE} strokeWidth={2} aria-hidden="true" className="flex-none" />
+                        {count ? (
+                            <span className="relative inline-flex flex-none">
+                                <Icon size={NAV_ICON_SIZE} strokeWidth={2} aria-hidden="true" />
+                                <span aria-hidden="true" data-bottomnav-count className={NAV_COUNT}>
+                                    {count}
+                                </span>
+                            </span>
+                        ) : (
+                            <Icon size={NAV_ICON_SIZE} strokeWidth={2} aria-hidden="true" className="flex-none" />
+                        )}
                         <span className={LABEL}>{entry.label}</span>
                     </Link>
                 );

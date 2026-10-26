@@ -32,6 +32,8 @@ import {
  *   `elchi-push-<id>` — push va socket orqali kelsa ham ikki marta chiqmaydi), bir nechta — «N ta yangi bildirishnoma».
  * - Har ulanishda (birinchi ham) inbox yangilanadi — ulanmagan oraliqdagi xabarlar yo'qolmaydi.
  * - Polling zaxira: ulanganda sanoq 5 daqiqada, uzilganda 60 s da (`useUnreadCount`).
+ * - Buyurtma hodisasi (`category: "order"`, qatorli yoki signal) — ochiq buyurtma so'rovlari (`["orders"]`: ro'yxat,
+ *   holat tablari sonlari va «Qabul va yaratish» badge'i — GaBIPi3Z) shu yig'ish oynasida bir marta yangilanadi.
  * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
  *   token `sid` iga mos bo'lsa — yoki yopilgan sessiya tokeni bilan ulanish rad etilsa (`error` / `connect_error`
  *   «SESSION_REVOKED») — qurilma joyida chiqadi (`auth/sessionRevoked` → `logoutRevokedSession`, `POST auth/logout`
@@ -42,6 +44,9 @@ import {
 type RealtimePayload = Partial<
   Pick<InboxNotification, "id" | "title" | "body" | "link" | "category" | "type">
 >;
+
+/** Buyurtma so'rovlari kalit prefiksi (`entities/order` `ORDER_KEY`, holat sonlari ham shu ostida). */
+const ORDERS_QUERY_PREFIX = "orders";
 
 /** Bir vaqtda kelgan hodisalarni yig'ish oynasi — bitta so'rov va bitta xabar. */
 const BATCH_MS = 400;
@@ -60,6 +65,8 @@ const RealtimeSync = () => {
   // Bir vaqtda kelgan hodisalar (masalan bitta buyurtmaning ketma-ket holatlari) BATCH_MS ichida yig'iladi:
   // bitta yangilash so'rovi va bitta xabar (bir nechta bo'lsa — «N ta yangi bildirishnoma»).
   const pendingRef = useRef(new Map<string, RealtimePayload>());
+  /** Yig'ish oynasida buyurtma hodisasi keldimi — ro'yxat va sonlar (`["orders"]`) bir marta yangilanadi. */
+  const ordersChangedRef = useRef(false);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ishlovchi — eng so'nggi `t` / `navigate` bilan; ulanish ular o'zgarganda qayta ochilmaydi.
@@ -70,6 +77,10 @@ const RealtimeSync = () => {
       const rows = [...pendingRef.current.values()];
       pendingRef.current.clear();
       void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all });
+      if (ordersChangedRef.current) {
+        ordersChangedRef.current = false;
+        void queryClient.invalidateQueries({ queryKey: [ORDERS_QUERY_PREFIX], refetchType: "active" });
+      }
       // Yashirin tabda xabar emas (badge baribir yangilanadi).
       if (!rows.length || document.visibilityState !== "visible") return;
       if (rows.length > 1) {
@@ -101,6 +112,7 @@ const RealtimeSync = () => {
   const handleNotification = useRef((payload: RealtimePayload) => {
     // Rol/broadcast signali (`id` yo'q) — faqat yangilash; qatorli hodisa — xabar uchun (bir xil `id` bir marta).
     if (payload.id && payload.title) pendingRef.current.set(payload.id, payload);
+    if (payload.category === "order") ordersChangedRef.current = true;
     if (!flushTimerRef.current)
       flushTimerRef.current = setTimeout(() => flushRef.current(), BATCH_MS);
   }).current;

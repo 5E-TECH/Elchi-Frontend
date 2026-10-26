@@ -36,6 +36,11 @@ const getOrdersMock = vi.fn((params: { page: number; limit: number }) => ({
   isLoading: false,
 }));
 
+// GaBIPi3Z: holat tablari sonlari — bu testlar ro'yxat va oynalarni tekshiradi (sonlar `statusCounts.test.tsx` da).
+vi.mock("../../entities/order/api/orderStatusCounts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/order/api/orderStatusCounts")>()),
+  useOrderStatusCounts: () => ({ data: undefined, isPlaceholderData: false, isFetching: false, refetch: async () => undefined }),
+}));
 vi.mock("../../entities/order/api/orderApi", () => ({
   useOrders: () => ({
     useGetOrders: (params: { page: number; limit: number }) => getOrdersMock(params),
