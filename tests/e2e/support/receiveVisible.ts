@@ -4,7 +4,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * ndKkHjhe — uzun ro'yxatda (50 ta) «Qabul qilish — N ta …» sahifa sarlavhasi amallarida: market yangi buyurtmalari
  * (`/new-orders/:marketId`) va filial paketi (`/new-orders/branches/:branchId/batches/:batchId`). Soxta backend.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4194). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -5,7 +5,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * mos. Yo'l o'zgarganda Redux filtri tozalanadi (`useResetInputsOnPathChange`), /orders filtrlarining manbai esa URL —
  * qaytilganda hammasi URL'dan tiklanadi. Soxta API (superadmin): `where_deliver=center` — faqat markazgacha buyurtma.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4194). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

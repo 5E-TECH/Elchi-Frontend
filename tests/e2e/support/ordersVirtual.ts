@@ -3,7 +3,8 @@ import { expect, type Page, type Route } from "@playwright/test";
 /**
  * F4RSPBwx — /orders 100 qator (virtualizatsiya): soxta API (superadmin), 100 ta buyurtma `limit=100` da.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4194). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
