@@ -307,7 +307,28 @@ describe("region statistics adapters", () => {
         message: "Sizga viloyat biriktirilmagan",
         data: { region: null, summary: null, districts: [] },
       }),
-    ).toEqual({ region: null, detail: null });
+    ).toEqual({ region: null, scope: null, detail: null });
+  });
+
+  it("aLx7Di99: normalizes data.scope (branch / courier) and the no-branch empty state", () => {
+    const base = { region: { id: "12", name: "Jizzax viloyati" }, summary: {}, districts: [] };
+    expect(
+      normalizeMyRegionDistrictStats({
+        data: { ...base, scope: { type: "branch", branch_id: "7", branch_name: " Urgut filiali " } },
+      }).scope,
+    ).toEqual({ type: "branch", branchId: "7", branchName: "Urgut filiali" });
+    expect(
+      normalizeMyRegionDistrictStats({ data: { ...base, scope: { type: "courier", courier_id: "5" } } })
+        .scope,
+    ).toEqual({ type: "courier" });
+    expect(normalizeMyRegionDistrictStats({ data: base }).scope).toBeNull();
+    expect(
+      normalizeMyRegionDistrictStats({
+        statusCode: 200,
+        message: "Sizga filial biriktirilmagan",
+        data: { region: null, summary: null, districts: [] },
+      }),
+    ).toEqual({ region: null, scope: null, detail: null, noBranch: true });
   });
 
   it("formats helper values for the v2 cards", () => {

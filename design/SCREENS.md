@@ -1382,7 +1382,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q)
 - **Menyuda:** «Hududlar» (`regions`) — superadmin, admin, manager, courier, logist
 - **Holat:** v2
-- **Izoh:** Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q).
+- **Izoh:** Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 (aLx7Di99): my/district-stats raqamlari so'rovchi kesimida, sarlavha `data.scope` bo'yicha — menejer «{filial} buyurtmalari · …», kuryer «Faqat o'zingizga tegishli …» / «Sizga tegishli buyurtmalar»; scope yo'q (eski backend) — «{viloyat} buyurtmalari». Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|

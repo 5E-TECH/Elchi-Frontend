@@ -439,25 +439,55 @@ export const normalizeRegionDetailStats = (payload: unknown): RegionDetailStats 
  * `GET region/my/district-stats` (kuryer va menejer, uherIk8r): so'rovchining O'Z viloyati, tumanlar
  * kesimida. Viloyat serverda aniqlanadi; biriktirilmagan bo'lsa `region: null` (200).
  */
+/**
+ * aLx7Di99: raqamlar kimning kesimida — kuryer (o'z buyurtmalari) yoki menejer filiali. Eski backend
+ * `scope` bermaydi — `null` (sarlavha viloyat matniga qaytadi).
+ */
+export type MyRegionStatsScope =
+  | { type: "courier" }
+  | { type: "branch"; branchId: string; branchName: string | null };
+
 export interface MyRegionDistrictStats {
   region: { id: string; name: string; satoCode?: string } | null;
+  scope: MyRegionStatsScope | null;
+  /** Menejerga filial biriktirilmagan (backend: 200, `region: null`, «Sizga filial biriktirilmagan»). */
+  noBranch?: boolean;
   /** `region` bor bo'lsa — viloyat va uning BARCHA tumanlari (0 buyurtmalilari ham). */
   detail: RegionDetailStats | null;
 }
 
+const normalizeMyStatsScope = (value: unknown): MyRegionStatsScope | null => {
+  const scope = asRecord(value);
+  if (scope.type === "courier") return { type: "courier" };
+  if (scope.type === "branch") {
+    const name = typeof scope.branch_name === "string" ? scope.branch_name.trim() : "";
+    return { type: "branch", branchId: String(scope.branch_id ?? ""), branchName: name || null };
+  }
+  return null;
+};
+
 export const normalizeMyRegionDistrictStats = (payload: unknown): MyRegionDistrictStats => {
   const source = unwrapRegionDetail(payload);
   const region = asRecord(source.region);
+  const scope = normalizeMyStatsScope(source.scope);
   const id = region.id ?? region.region_id;
-  if (id == null || id === "") return { region: null, detail: null };
+  if (id == null || id === "") {
+    const message = asRecord(payload).message;
+    const noBranch = typeof message === "string" && /filial biriktirilmagan/i.test(message);
+    return { region: null, scope, detail: null, ...(noBranch ? { noBranch } : {}) };
+  }
   const satoCode = region.satoCode ?? region.sato_code;
-  const scope = {
+  const regionScope = {
     id: String(id),
     name: String(region.name ?? ""),
     ...(satoCode ? { satoCode: String(satoCode) } : {}),
   };
-  const detail = normalizeRegionDetailStats({ ...source, region: scope });
-  return { region: scope, detail: { ...detail, id: scope.id, name: scope.name } };
+  const detail = normalizeRegionDetailStats({ ...source, region: regionScope });
+  return {
+    region: regionScope,
+    scope,
+    detail: { ...detail, id: regionScope.id, name: regionScope.name },
+  };
 };
 
 export const normalizeDistrictCatalog = (payload: unknown): DistrictCatalogItem[] => {

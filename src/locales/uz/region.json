@@ -195,6 +195,10 @@
         "title": "Bu foydalanuvchi uchun viloyat topilmadi",
         "text": "Filialingizga viloyat biriktirilmagan. Bosh ofis kabi viloyatsiz filiallarda bu holat kutiladi."
       },
+      "noBranch": {
+        "title": "Sizga filial biriktirilmagan",
+        "text": "Statistika filial kesimida ko'rsatiladi. Filial biriktirilgach raqamlar shu yerda chiqadi."
+      },
       "noDistricts": {
         "title": "Tumanlar ma'lumoti topilmadi",
         "text": "Bu viloyat uchun tumanlar ro'yxati hali bo'sh."
@@ -268,6 +272,11 @@
       "subtitle": "{{region}} buyurtmalari · Tuman ustiga bosib batafsil ma'lumotni ko'ring",
       "subtitleNoRegion": "Tuman ustiga bosib batafsil ma'lumotni ko'ring",
       "cardSubtitle": "{{period}} · {{region}} buyurtmalari",
+      "subtitleBranch": "{{branch}} buyurtmalari · Tuman ustiga bosib batafsil ma'lumotni ko'ring",
+      "subtitleCourier": "Faqat o'zingizga tegishli tuman statistikasi",
+      "cardSubtitleBranch": "{{period}} · {{branch}} buyurtmalari",
+      "cardSubtitleCourier": "{{period}} · Sizga tegishli buyurtmalar",
+      "branchFallback": "Filialingiz",
       "gaugeAria": "{{region}}, muvaffaqiyat darajasi: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta",
       "overview": {
         "title": "Umumiy ko'rsatkichlar",

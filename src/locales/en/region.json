@@ -195,6 +195,10 @@
         "title": "No region found for this user",
         "text": "Your branch has no region assigned. This is expected for branches without a region, such as the head office."
       },
+      "noBranch": {
+        "title": "No branch assigned to you",
+        "text": "Statistics are shown per branch. Numbers will appear here once a branch is assigned."
+      },
       "noDistricts": {
         "title": "No district data found",
         "text": "The district list for this region is still empty."
@@ -268,6 +272,11 @@
       "subtitle": "{{region}} orders · Click a district to see the details",
       "subtitleNoRegion": "Click a district to see the details",
       "cardSubtitle": "{{period}} · {{region}} orders",
+      "subtitleBranch": "{{branch}} orders · Click a district to see the details",
+      "subtitleCourier": "District statistics for your orders only",
+      "cardSubtitleBranch": "{{period}} · {{branch}} orders",
+      "cardSubtitleCourier": "{{period}} · Your orders",
+      "branchFallback": "Your branch",
       "gaugeAria": "{{region}}, success rate: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}",
       "overview": {
         "title": "Overall figures",
