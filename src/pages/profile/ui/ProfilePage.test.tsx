@@ -124,6 +124,12 @@ describe("Profil — parolni o'zgartirish", () => {
     await userEvent.click(screen.getByRole("button", { name: "Parolni o'zgartirish" }));
     return screen.findByRole("dialog", { name: "Parolni o'zgartirish" });
   };
+  /** aidsxJ2H: «Joriy parol» · «Yangi parol» · «Yangi parolni takrorlang». */
+  const passwordFields = (dialog: HTMLElement) => ({
+    current: within(dialog).getByPlaceholderText("Joriy parolni kiriting"),
+    first: within(dialog).getByPlaceholderText("Yangi parolni kiriting"),
+    second: within(dialog).getByPlaceholderText("Parolni yana bir bor kiriting"),
+  });
 
   it("bo'sh, qisqa va mos kelmagan parol yuborilmaydi", async () => {
     const dialog = await openDialog();
@@ -131,8 +137,11 @@ describe("Profil — parolni o'zgartirish", () => {
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     expect(within(dialog).getByText("Yangi parolni kiriting")).toBeInTheDocument();
+    // aidsxJ2H: joriy parol ham majburiy.
+    expect(within(dialog).getByText("Joriy parolni kiriting")).toBeInTheDocument();
 
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "abc");
     await userEvent.type(second, "abc");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
@@ -154,27 +163,39 @@ describe("Profil — parolni o'zgartirish", () => {
     await userEvent.type(second, "    ");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     expect(within(dialog).getByText("Yangi parolni kiriting")).toBeInTheDocument();
+
+    // aidsxJ2H: yangi parol joriysi bilan bir xil — yuborilmaydi.
+    await userEvent.clear(first);
+    await userEvent.type(first, "Eski-parol1");
+    await userEvent.clear(second);
+    await userEvent.type(second, "Eski-parol1");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    expect(within(dialog).getByText("Yangi parol joriy paroldan farq qilishi kerak")).toBeInTheDocument();
     expect(patchCalls()).toEqual([]);
   });
 
-  it("mos kelsa yashil izoh; saqlansa faqat `{ password }` ketadi, «boshqa qurilmalardan chiqildi», shu qurilma qoladi", async () => {
+  it("mos kelsa yashil izoh; saqlansa `{ old_password, password }` ketadi, «boshqa qurilmalardan chiqildi», shu qurilma qoladi", async () => {
     const dialog = await openDialog();
     expect(
       within(dialog).getByText("Saqlangach, boshqa barcha qurilmalar hisobingizdan darhol chiqadi. Shu qurilma tizimda qoladi."),
     ).toBeInTheDocument();
     const sessionCalls = () => mocks.get.mock.calls.filter(([url]) => url === "auth/sessions").length;
     await waitFor(() => expect(sessionCalls()).toBe(1));
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    expect(current).toHaveAttribute("type", "password");
+    expect(current).toHaveAttribute("autocomplete", "current-password");
     expect(first).toHaveAttribute("type", "password");
-    await userEvent.click(within(dialog).getAllByRole("button", { name: "Parolni ko'rsatish" })[0]);
+    // [0] — «Joriy parol», [1] — «Yangi parol».
+    await userEvent.click(within(dialog).getAllByRole("button", { name: "Parolni ko'rsatish" })[1]);
     expect(first).toHaveAttribute("type", "text");
 
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "namuna12");
     await userEvent.type(second, "namuna12");
     expect(within(dialog).getByText("Parollar mos keladi")).toBeInTheDocument();
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
-    await waitFor(() => expect(patchCalls()).toEqual([{ password: "namuna12" }]));
+    await waitFor(() => expect(patchCalls()).toEqual([{ old_password: "Eski-parol1", password: "namuna12" }]));
     expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Parolni o'zgartirish" })).not.toBeInTheDocument());
     // Backend boshqa qurilmalarni chiqardi — «Sessiyalar» qayta so'raladi; shu qurilma tizimda qoladi.
@@ -192,7 +213,8 @@ describe("Profil — parolni o'zgartirish", () => {
       },
     });
     const dialog = await openDialog();
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "11111111");
     await userEvent.type(second, "11111111");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
@@ -200,6 +222,47 @@ describe("Profil — parolni o'zgartirish", () => {
     expect(await within(dialog).findByText("Parol juda oddiy")).toBeInTheDocument();
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(window.sessionStorage.getItem("elchi_login_notice")).toBeNull();
+  });
+
+  it.each([
+    ["OLD_PASSWORD_REQUIRED", "Joriy parolni kiriting"],
+    ["OLD_PASSWORD_INVALID", "Joriy parol noto'g'ri"],
+  ])("aidsxJ2H: 400 %s — «Joriy parol» ostida, chiqarilmaydi, umumiy xato xabari yo'q", async (code, text) => {
+    mocks.patch.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 400, data: { statusCode: 400, message: text, code } },
+    });
+    const dialog = await openDialog();
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Notogri-parol1");
+    await userEvent.type(first, "namuna12");
+    await userEvent.type(second, "namuna12");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+
+    expect(await within(dialog).findByText(text)).toBeInTheDocument();
+    expect(current).toHaveAttribute("aria-invalid", "true");
+    expect(first).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText("Xatolik")).not.toBeInTheDocument();
+    expect(mocks.logout).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("elchi_login_notice")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Parolni o'zgartirish" })).toBeInTheDocument();
+  });
+
+  it("aidsxJ2H: yangisi joriysi bilan bir xil (server 400, kodsiz) — «Yangi parol» ostida", async () => {
+    mocks.patch.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 400, data: { statusCode: 400, message: "Yangi parol joriy paroldan farq qilishi kerak" } },
+    });
+    const dialog = await openDialog();
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
+    await userEvent.type(first, "namuna12");
+    await userEvent.type(second, "namuna12");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+
+    expect(await within(dialog).findAllByText("Yangi parol joriy paroldan farq qilishi kerak")).not.toHaveLength(0);
+    expect(first).toHaveAttribute("aria-invalid", "true");
+    expect(mocks.logout).not.toHaveBeenCalled();
   });
 });
 
