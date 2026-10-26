@@ -130,6 +130,71 @@ describe("DataTable — jadval", () => {
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["№10242", "№10241", "№10231"]);
   });
 
+  it("⭐ MJAKYdyh: har `<th>` da scope=\"col\" — oddiy, saralanadigan, tanlov va tafsilot ustunlari ham", () => {
+    render(
+      <DataTable
+        rows={ROWS}
+        columns={COLUMNS}
+        getRowKey={(row) => row.id}
+        label="Buyurtmalar"
+        sort={{ key: "createdAt", direction: "desc" }}
+        onSortChange={vi.fn()}
+        selection={{ isSelected: () => false, onToggle: vi.fn(), onToggleAll: vi.fn(), rowLabel: (row) => `№${row.id} ni tanlash` }}
+        expandable={{ isExpanded: () => false, onToggle: vi.fn(), render: (row) => <p>Tafsilot {row.id}</p> }}
+      />,
+    );
+
+    const headers = within(screen.getByRole("table", { name: "Buyurtmalar" })).getAllByRole("columnheader");
+    // 5 ustun + tanlov + tafsilot.
+    expect(headers).toHaveLength(COLUMNS.length + 2);
+    for (const header of headers) expect(header).toHaveAttribute("scope", "col");
+  });
+
+  it("⭐ MJAKYdyh: saralash sarlavhasi — `<button>`, klaviatura: Tab bilan fokus, Enter va Probel saralashni almashtiradi", async () => {
+    const user = userEvent.setup();
+    const changes: Array<DataTableSort | null> = [];
+    const Harness = () => {
+      const [sort, setSort] = useState<DataTableSort | null>(null);
+      return (
+        <DataTable
+          rows={ROWS}
+          columns={COLUMNS}
+          getRowKey={(row) => row.id}
+          sort={sort}
+          onSortChange={(next) => {
+            changes.push(next);
+            setSort(next);
+          }}
+        />
+      );
+    };
+    render(<Harness />);
+
+    const byDate = screen.getByRole("button", { name: "Buyurtma" });
+    expect(byDate.tagName).toBe("BUTTON");
+    expect(byDate).toHaveAttribute("type", "button");
+    expect(screen.getByRole("columnheader", { name: "Buyurtma" })).not.toHaveAttribute("aria-sort");
+
+    await user.tab();
+    expect(byDate).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(changes).toEqual([{ key: "createdAt", direction: "desc" }]);
+    expect(screen.getByRole("columnheader", { name: "Buyurtma" })).toHaveAttribute("aria-sort", "descending");
+    expect(byDate).toHaveFocus();
+
+    await user.keyboard(" ");
+    expect(changes.at(-1)).toEqual({ key: "createdAt", direction: "asc" });
+    expect(screen.getByRole("columnheader", { name: "Buyurtma" })).toHaveAttribute("aria-sort", "ascending");
+
+    // Keyingi saralanadigan sarlavha («Mijoz», «Market» — tugmasiz, Tab ularni o'tkazib yuboradi).
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Holat" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(changes.at(-1)).toEqual({ key: "status", direction: "asc" });
+    expect(screen.getByRole("columnheader", { name: "Holat" })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("columnheader", { name: "Buyurtma" })).not.toHaveAttribute("aria-sort");
+  });
+
   it("qatorni bosish: qatorda — chaqiriladi, ichidagi havola yoki tugmada — yo'q", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
