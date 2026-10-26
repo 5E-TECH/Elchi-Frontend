@@ -131,6 +131,14 @@
         "rowAria": "{{name}}: заказов {{count}}, продано {{rate}}",
         "sold": "продано {{rate}}",
         "showAll": "Все регионы ({{count}})"
+      },
+      "pointAria": "{{name}}: заказов {{count}}, успешность {{rate}}, выручка {{revenue}}",
+      "a11y": {
+        "chartContainerLabel": "{title}. Интерактивная карта.",
+        "svgContainerLabel": "Интерактивная карта",
+        "endOfChartMarker": "Конец карты.",
+        "seriesSummary": "{series.name}, регионов: {series.points.length}.",
+        "nullPointValue": "Нет данных"
       }
     },
     "table": {

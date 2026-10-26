@@ -373,6 +373,40 @@ describe("OrderFilters — telefon (superadmin-orders-filters-mobile)", () => {
     expect(active).not.toHaveClass("max-md:scrollbar-hide");
   });
 
+  it("⭐ dushanba: «Bu hafta» belgilanadi (oralig'i «Bugun» bilan bir xil), qo'llangach qayta ochilganda ham", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba
+    try {
+      const user = userEvent.setup();
+      open("superadmin", "/orders");
+      await user.click(screen.getByRole("button", { name: "Filtrlar" }));
+      let sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
+      await user.click(within(sheet).getByRole("radio", { name: "Bu hafta" }));
+      expect(within(sheet).getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+      expect(within(sheet).getByRole("radio", { name: "Bugun" })).not.toBeChecked();
+
+      await user.click(sheetFooter(sheet).getByRole("button", { name: /Natijalarni ko'rsatish/ }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(currentParams().get("startDay")).toBe("2026-10-26");
+      expect(currentParams().get("endDay")).toBe("2026-10-26");
+
+      await user.click(screen.getByRole("button", { name: "Filtrlar 1" }));
+      sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
+      expect(within(sheet).getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+      await user.click(within(sheet).getByRole("radio", { name: "Bugun" }));
+      expect(within(sheet).getByRole("radio", { name: "Bugun" })).toBeChecked();
+
+      // Qoralama qo'llanmay yopildi — qayta ochilganda qo'llangan «Bu hafta».
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "Filtrlar 1" }));
+      sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
+      expect(within(sheet).getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("edits a draft in the sheet and writes the URL once on «Natijalarni ko'rsatish»", async () => {
     const user = userEvent.setup();
     open("superadmin", "/orders?orderRegionId=r1&page=2");

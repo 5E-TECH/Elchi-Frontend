@@ -25,6 +25,7 @@
     "design:preview": "node design/tools/preview.mjs",
     "design:screens": "node design/tools/screens.mjs",
     "design:guard": "node scripts/design-guard.mjs",
+    "query-keys:check": "node scripts/query-key-roots.mjs",
     "app:shot": "node design/tools/app-shot.mjs"
   },
   "browserslist": [
@@ -42,6 +43,7 @@
     "@svg-maps/uzbekistan": "^2.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-virtual": "3.14.14",
     "@zxing/library": "0.21.3",
     "antd": "^6.3.0",
     "axios": "^1.13.5",

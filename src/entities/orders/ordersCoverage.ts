@@ -38,23 +38,6 @@ export const useOrdersCoverage = () => {
       enabled,
     });
 
-  const useGetMarketNewOrders = (marketId: string, enabled: boolean = true) =>
-    useQuery({
-      queryKey: ["orders-cov", "market-new", marketId],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId))
-          .then((res) => res.data),
-      enabled,
-    });
-
-  const useGetQrCode = (token: string, enabled: boolean = true) =>
-    useQuery({
-      queryKey: ["orders-cov", "qr-code", token],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.QR_CODE(token)).then((res) => res.data),
-      enabled,
-    });
-
   // ── PATCH mutations ───────────────────────────────────────────────────────
 
   const updateOrder = useMutation({
@@ -124,8 +107,6 @@ export const useOrdersCoverage = () => {
     useGetOrderTracking,
     useGetSettlementState,
     useGetOrdersByMarket,
-    useGetMarketNewOrders,
-    useGetQrCode,
     // PATCH
     updateOrder,
     // POST

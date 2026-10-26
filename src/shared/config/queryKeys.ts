@@ -97,4 +97,14 @@ export const queryKeys = {
     all: ["account-sessions"] as const,
     mine: ["account-sessions", "mine"] as const,
   },
+  /**
+   * Partiyalar (`GET batches`) — `entities/batch` (`BATCH_KEY`) bilan bitta ildiz: partiya mutatsiyalari `["batches"]` ni
+   * yangilaydi, `/returns` ro'yxati ham shu ostida — qabuldan keyin eski qolmaydi (sUjPxTzJ).
+   */
+  batches: {
+    all: ["batches"] as const,
+    returns: (branchId: string | null, params: object) => ["batches", "returns", branchId, params] as const,
+  },
+  /** Joriy foydalanuvchi profili (`GET auth/my-profile`) — yagona kesh: auth bootstrap, `useSettings`, `useGetMyProfile`. */
+  myProfile: ["user", "profile"] as const,
 } as const;

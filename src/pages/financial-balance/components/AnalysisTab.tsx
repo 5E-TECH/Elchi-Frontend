@@ -56,6 +56,8 @@ import LedgerFlow from "./LedgerFlow";
 const PAGE_SIZE = 10;
 
 type Period = "today" | "week" | "month" | "all" | "custom";
+/** Tez tanlov tugmasi (sana oralig'i qo'lda tanlansa — `null`). */
+export type AnalysisPreset = Exclude<Period, "custom">;
 
 /** Manba ikonkasi (maketdagi reyting avatarlari). */
 const SOURCE_ICON: Record<string, LucideIcon> = {
@@ -70,17 +72,26 @@ const SOURCE_ICON: Record<string, LucideIcon> = {
   cancel_extra_cost: Truck,
 };
 
-const PRESET_RANGE: Record<Exclude<Period, "custom">, () => ISODateRange> = {
+const PRESET_RANGE: Record<AnalysisPreset, () => ISODateRange> = {
   today: getTodayRange,
   week: getThisWeekRange,
   month: getThisMonthRange,
   all: () => ({ from: "", to: "" }),
 };
 
-const matchPeriod = (range: ISODateRange): Period => {
+const isPresetRange = (key: AnalysisPreset, range: ISODateRange) => {
+  const preset = PRESET_RANGE[key]();
+  return preset.from === range.from && preset.to === range.to;
+};
+
+/**
+ * Segmentdagi tanlov. Bosilgan tugma oraliq unga teng ekan o'zi ko'rsatiladi: dushanba kuni «Bu hafta», oyning
+ * 1-kunida «Bu oy» oralig'i «Bugun» bilan bir xil — faqat oraliqdan topilsa doim «Bugun» belgilanardi.
+ */
+const resolvePeriod = (range: ISODateRange, chosen: AnalysisPreset | null): Period => {
+  if (chosen && isPresetRange(chosen, range)) return chosen;
   for (const key of ["today", "week", "month", "all"] as const) {
-    const preset = PRESET_RANGE[key]();
-    if (preset.from === range.from && preset.to === range.to) return key;
+    if (isPresetRange(key, range)) return key;
   }
   return "custom";
 };
@@ -175,6 +186,9 @@ interface AnalysisTabProps {
   /** Davr (sahifa sarlavhasidagi «Excelga yuklash» ham shu davr bilan). Berilmasa — ichki holat (sukut: bugun). */
   range?: ISODateRange;
   onRangeChange?: (range: ISODateRange) => void;
+  /** Bosilgan tez tanlov (sahifada turadi — tab almashib qaytganda ham saqlanadi). Berilmasa — ichki holat. */
+  preset?: AnalysisPreset | null;
+  onPresetChange?: (preset: AnalysisPreset | null) => void;
 }
 
 /**
@@ -184,12 +198,18 @@ interface AnalysisTabProps {
  * sana paramsiz). Sukut — bugun. Sana `YYYY-MM-DD` (C2: backend Toshkent kuni deb oladi).
  * «Kunlik kirim va chiqim» maketda «Taklif» — chizilmaydi.
  */
-const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
+const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPresetChange }: AnalysisTabProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { useGetFinancialBalanceAnalytics, useGetFinancialBalanceTopImpacts } = useFinanceCoverage();
   const [ownRange, setOwnRange] = useState<ISODateRange>(getTodayRange);
   const range = rangeProp ?? ownRange;
+  const [ownPreset, setOwnPreset] = useState<AnalysisPreset | null>(null);
+  const chosenPreset = presetProp === undefined ? ownPreset : presetProp;
+  const setPreset = (next: AnalysisPreset | null) => {
+    if (onPresetChange) onPresetChange(next);
+    else setOwnPreset(next);
+  };
   const [page, setPage] = useState(1);
   // Sahifa almashganda ro'yxat kartasining boshi ko'rinsin (D-03; karta grafiklar ostida).
   const topCardRef = useRef<HTMLElement>(null);
@@ -241,7 +261,7 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
   const periodText =
     formatRangeShort(range) ??
     (range.from ? `${formatDay(range.from)} –` : range.to ? `– ${formatDay(range.to)}` : t("v2Balance.analysis.allTime"));
-  const period = matchPeriod(range);
+  const period = resolvePeriod(range, chosenPreset);
 
   const columns = useMemo<DataTableColumn<LedgerRow>[]>(
     () => [
@@ -328,14 +348,24 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
           labelAs="span"
           className="min-w-0 flex-[1_1_220px] max-md:basis-full"
         >
-          <DateRange value={range} onChange={changeRange} presets={false} clearable={false} />
+          <DateRange
+            value={range}
+            onChange={(next) => {
+              setPreset(null);
+              changeRange(next);
+            }}
+            presets={false}
+            clearable={false}
+          />
         </Field>
         <SegmentedControl<Period>
           ariaLabel={t("v2Balance.analysis.periodSeg")}
           className="flex-none"
           value={period}
           onValueChange={(value) => {
-            if (value !== "custom") changeRange(PRESET_RANGE[value]());
+            if (value === "custom") return;
+            setPreset(value);
+            changeRange(PRESET_RANGE[value]());
           }}
           options={[
             { value: "today", label: t("v2Balance.analysis.today") },

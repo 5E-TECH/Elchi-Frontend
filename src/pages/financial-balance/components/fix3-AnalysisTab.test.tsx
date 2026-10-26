@@ -1,7 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { afterEach, beforeEach, vi } from "vitest";
-import AnalysisTab from "./AnalysisTab";
+import AnalysisTab, { type AnalysisPreset } from "./AnalysisTab";
+import { getTodayRange, type ISODateRange } from "../../../shared/lib/dateRange";
 import { renderWithProviders } from "../../../test/test-utils";
 
 /**
@@ -88,6 +90,73 @@ describe("AnalysisTab date params (C2)", () => {
     await user.click(screen.getByRole("radio", { name: "Bu oy" }));
 
     expect(calls.analytics.at(-1)).toEqual({ fromDate: first, toDate: toDateInputValue(now) });
+  });
+});
+
+/**
+ * Dushanba kuni «Bu hafta», oyning 1-kunida «Bu oy» oralig'i «Bugun» bilan bir xil — avval segment oraliqdan
+ * topilgani uchun doim «Bugun» belgilanardi (e2e `balance-analysis-period` har dushanba yiqilardi).
+ */
+describe("AnalysisTab — oraliqlari bir xil tez tanlovlar (dushanba, oyning 1-kuni)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const checked = (name: string) =>
+    within(screen.getByRole("radiogroup", { name: "Davr" })).getByRole("radio", { name }).getAttribute("aria-checked");
+
+  it("⭐ dushanba: «Bu hafta» bosilsa o'zi belgilanadi, «Bugun» — qayta bosilsa «Bugun»", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 10)); // dushanba
+    const user = userEvent.setup();
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+    expect(checked("Bugun")).toBe("true");
+
+    await user.click(screen.getByRole("radio", { name: "Bu hafta" }));
+    expect(checked("Bu hafta")).toBe("true");
+    expect(checked("Bugun")).toBe("false");
+    expect(calls.analytics.at(-1)).toEqual({ fromDate: "2026-10-26", toDate: "2026-10-26" });
+
+    await user.click(screen.getByRole("radio", { name: "Bugun" }));
+    expect(checked("Bugun")).toBe("true");
+    expect(checked("Bu hafta")).toBe("false");
+  });
+
+  it("⭐ oyning 1-kuni: «Bu oy» bosilsa o'zi belgilanadi", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 1, 10)); // payshanba, 1-oktabr
+    const user = userEvent.setup();
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+
+    await user.click(screen.getByRole("radio", { name: "Bu oy" }));
+    expect(checked("Bu oy")).toBe("true");
+    expect(checked("Bugun")).toBe("false");
+  });
+
+  it("tanlov sahifada turadi: tab almashib qaytganda (komponent qayta chizilsa) ham «Bu hafta»", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 10));
+    const user = userEvent.setup();
+    const Host = () => {
+      const [range, setRange] = useState<ISODateRange>(getTodayRange);
+      const [preset, setPreset] = useState<AnalysisPreset | null>(null);
+      const [shown, setShown] = useState(true);
+      return (
+        <>
+          {shown ? <AnalysisTab range={range} onRangeChange={setRange} preset={preset} onPresetChange={setPreset} /> : null}
+          <button type="button" onClick={() => setShown((value) => !value)}>
+            tab
+          </button>
+        </>
+      );
+    };
+    renderWithProviders(<Host />, { route: "/financial-balance?tab=analysis" });
+
+    await user.click(screen.getByRole("radio", { name: "Bu hafta" }));
+    await user.click(screen.getByRole("button", { name: "tab" }));
+    await user.click(screen.getByRole("button", { name: "tab" }));
+
+    expect(checked("Bu hafta")).toBe("true");
   });
 });
 

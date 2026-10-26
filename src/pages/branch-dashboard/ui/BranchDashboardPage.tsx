@@ -7,7 +7,13 @@ import { canViewBatchesPage } from "../../../app/lib/access";
 import type { RootState } from "../../../app/config/store";
 import { useDashboard } from "../../../entities/dashboard";
 import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
-import { periodLabel, resolveDashboardPeriod, share } from "../../../entities/dashboard/lib/period";
+import {
+  isDashboardQuickKey,
+  periodLabel,
+  resolveDashboardPeriod,
+  share,
+  type DashboardQuickKey,
+} from "../../../entities/dashboard/lib/period";
 import { readProfileBranchName } from "../../../entities/dashboard/lib/profile";
 import { buildDashboardDateParams, getEffectiveAllTimeRange } from "../../../entities/dashboard/lib/allTime";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
@@ -49,12 +55,17 @@ const BranchDashboardPage = () => {
   const canOpenBatches = useSelector(canViewBatchesPage);
   const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const storedPreset = useSelector((state: RootState) => state.filter.dashboardPreset);
   const defaultDateRange = useMemo(() => getTodayRange(), []);
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" && storedFromDate ? storedFromDate : defaultDateRange.from,
   );
   const [toDate, setToDate] = useState(
     typeof storedToDate === "string" && storedToDate ? storedToDate : defaultDateRange.to,
+  );
+  // Bosilgan tez tanlov: dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i «Bugun» bilan bir xil.
+  const [preset, setPreset] = useState<DashboardQuickKey | null>(
+    isDashboardQuickKey(storedPreset) ? storedPreset : null,
   );
   const analyticsScope = `${userRole || "unknown"}:${userId || "unknown"}`;
   const analyticsParams = useMemo(
@@ -76,10 +87,13 @@ const BranchDashboardPage = () => {
   const dashboard = adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false);
 
   const applyRange = useCallback(
-    (range: { from: string; to: string }) => {
+    (range: { from: string; to: string }, nextPreset: DashboardQuickKey | null = null) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
+      setPreset(nextPreset);
+      dispatch(
+        setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to, dashboardPreset: nextPreset }),
+      );
     },
     [dispatch],
   );
@@ -88,9 +102,11 @@ const BranchDashboardPage = () => {
     setToDate(defaultDateRange.to);
     dispatch(removeFilterValue("dashboardFromDate"));
     dispatch(removeFilterValue("dashboardToDate"));
+    dispatch(removeFilterValue("dashboardPreset"));
+    setPreset(null);
   }, [defaultDateRange.from, defaultDateRange.to, dispatch]);
 
-  const period = resolveDashboardPeriod(fromDate, toDate);
+  const period = resolveDashboardPeriod(fromDate, toDate, preset);
   const periodText = periodLabel(tDash, period);
   const branchName = readProfileBranchName(user) ?? t("branchFallback");
   const count = (value: number) => formatNumberLocalized(value, { language });
@@ -115,6 +131,7 @@ const BranchDashboardPage = () => {
       toDate={toDate}
       effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
       onChange={applyRange}
+      preset={preset}
       onClear={clearRange}
       showYear={false}
       clearable={!(fromDate === defaultDateRange.from && toDate === defaultDateRange.to)}

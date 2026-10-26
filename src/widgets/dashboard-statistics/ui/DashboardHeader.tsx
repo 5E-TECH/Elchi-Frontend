@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { getPresetDateRange, getYearRange, type ISODateRange } from "../../../shared/lib/dateRange";
 import { DateRange, PageHeader, SegmentedControl, Select } from "../../../shared/ui/primitives";
-import { resolveDashboardPeriod } from "../../../entities/dashboard/lib/period";
+import { resolveDashboardPeriod, type DashboardQuickKey } from "../../../entities/dashboard/lib/period";
 
-type QuickKey = "today" | "week" | "month" | "all";
+type QuickKey = DashboardQuickKey;
 const CUSTOM = "custom";
 const QUICK_KEYS: readonly QuickKey[] = ["today", "week", "month", "all"];
 const YEAR_COUNT = 6;
@@ -16,7 +16,10 @@ export interface DashboardHeaderProps {
   description: ReactNode;
   fromDate: string;
   toDate: string;
-  onChange: (range: ISODateRange) => void;
+  /** Yangi davr; `preset` — bosilgan tez tanlov tugmasi (yil yoki sana oralig'i tanlansa — `null`). */
+  onChange: (range: ISODateRange, preset: QuickKey | null) => void;
+  /** Bosilgan tez tanlov (sahifada saqlanadi): dushanba «Bu hafta» = «Bugun» oralig'i — qaysi biri bosilgani. */
+  preset?: QuickKey | null;
   /** Sana maydonidagi × (tanlovni tozalash). */
   onClear: () => void;
   /** «Yil» ro'yxati (SA/admin/registrator/market). */
@@ -44,6 +47,7 @@ const DashboardHeader = ({
   fromDate,
   toDate,
   onChange,
+  preset = null,
   onClear,
   showYear = true,
   rangePlaceholder,
@@ -52,7 +56,7 @@ const DashboardHeader = ({
   effectiveRange = null,
 }: DashboardHeaderProps) => {
   const { t } = useTranslation("dashboard");
-  const period = resolveDashboardPeriod(fromDate, toDate);
+  const period = resolveDashboardPeriod(fromDate, toDate, preset);
   const hasRange = Boolean(fromDate && toDate);
   // Bo'sh oraliq — bugun (backend sukuti), segmentda ham «Bugun» tanlangan ko'rinadi.
   const activeQuick: QuickKey | typeof CUSTOM =
@@ -80,7 +84,7 @@ const DashboardHeader = ({
         ariaLabel={t("v2Dashboard.header.periodLabel")}
         value={activeQuick}
         onValueChange={(key) => {
-          if (key !== CUSTOM) onChange(getPresetDateRange(key));
+          if (key !== CUSTOM) onChange(getPresetDateRange(key), key);
         }}
         options={QUICK_KEYS.map((key) => ({ value: key, label: t(`quickRanges.${key}`) }))}
       />
@@ -93,7 +97,7 @@ const DashboardHeader = ({
               value={period.kind === "year" ? String(period.year) : ""}
               onChange={(value) => {
                 const year = Number(value);
-                if (year) onChange(getYearRange(year));
+                if (year) onChange(getYearRange(year), null);
                 else onClear();
               }}
             />
@@ -103,7 +107,7 @@ const DashboardHeader = ({
           value={rangeValue}
           onChange={(range) => {
             if (!range.from && !range.to) onClear();
-            else onChange(range);
+            else onChange(range, null);
           }}
           presets={false}
           placeholder={rangePlaceholder ?? t("v2Dashboard.header.rangePlaceholder")}

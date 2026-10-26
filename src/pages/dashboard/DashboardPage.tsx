@@ -16,6 +16,8 @@ import {
   resolveDashboardPeriod,
   share,
   splitCompactMoney,
+  isDashboardQuickKey,
+  type DashboardQuickKey,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
 import { getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
@@ -76,6 +78,7 @@ const DashboardPage = () => {
   const dispatch = useDispatch();
   const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const storedPreset = useSelector((state: RootState) => state.filter.dashboardPreset);
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
@@ -91,19 +94,26 @@ const DashboardPage = () => {
 
   const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
+  // Bosilgan tez tanlov: dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i «Bugun» bilan bir xil.
+  const [preset, setPreset] = useState<DashboardQuickKey | null>(
+    isDashboardQuickKey(storedPreset) ? storedPreset : null,
+  );
   const { data: settingsData } = useSettings();
   const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
   const hasDateFilter = Boolean(fromDate && toDate);
   const allTimeRange = getAllTimeRange();
   const isAllTime = fromDate === allTimeRange.from && toDate === allTimeRange.to;
-  const period = resolveDashboardPeriod(fromDate, toDate);
+  const period = resolveDashboardPeriod(fromDate, toDate, preset);
 
   const applyRange = useCallback(
-    (range: { from: string; to: string }) => {
+    (range: { from: string; to: string }, nextPreset: DashboardQuickKey | null = null) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
+      setPreset(nextPreset);
+      dispatch(
+        setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to, dashboardPreset: nextPreset }),
+      );
     },
     [dispatch],
   );
@@ -112,6 +122,8 @@ const DashboardPage = () => {
     setToDate("");
     dispatch(removeFilterValue("dashboardFromDate"));
     dispatch(removeFilterValue("dashboardToDate"));
+    dispatch(removeFilterValue("dashboardPreset"));
+    setPreset(null);
   }, [dispatch]);
 
   const { getDashboard, getKpi } = useDashboard();
@@ -138,7 +150,10 @@ const DashboardPage = () => {
   );
 
   // Oldingi teng davr (bugun → kecha): faqat KPI qatori bor rollarda, joriy javob kelgach.
-  const prevRange = useMemo(() => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
+  const prevRange = useMemo(
+    () => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate, preset)),
+    [fromDate, preset, toDate],
+  );
   const previousParams = useMemo(
     () => (prevRange ? { start_day: prevRange.from, end_day: prevRange.to } : analyticsParams),
     [analyticsParams, prevRange],
@@ -554,6 +569,7 @@ const DashboardPage = () => {
         fromDate={fromDate}
         toDate={toDate}
         onChange={applyRange}
+        preset={preset}
         onClear={clearRange}
         showYear={!isCourier}
         rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}

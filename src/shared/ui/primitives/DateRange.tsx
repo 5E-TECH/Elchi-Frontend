@@ -12,11 +12,11 @@ import {
   formatRangeFull,
   formatRangeShort,
   getPresetRange,
-  matchPreset,
   normalizeISODay,
   normalizeRange,
   pluralForm,
   RANGE_DASH,
+  resolvePreset,
   todayISODay,
   type DatePresetKey,
   type ISODay,
@@ -64,8 +64,13 @@ export type DateRangeSelection = "range" | "day";
 
 export type DateRangePanelProps = Omit<ComponentProps<"div">, "onChange" | "children"> & {
   value: Partial<ISODateRange> | null | undefined;
-  /** Oraliq tanlandi (ikkinchi bosish) yoki tez tanlov bosildi. */
-  onChange: (range: ISODateRange, source: DateRangeChangeSource) => void;
+  /** Oraliq tanlandi (ikkinchi bosish) yoki tez tanlov bosildi (`preset` — qaysi chip). */
+  onChange: (range: ISODateRange, source: DateRangeChangeSource, preset?: DatePresetKey) => void;
+  /**
+   * Oxirgi bosilgan chip (dushanba «Bu hafta» = «Bugun» oralig'i — qaysi biri bosilgani). Berilmasa — panelning
+   * ichki holati; `DateRange` uni o'zida saqlaydi (panel har ochilishda yangidan chiziladi).
+   */
+  preset?: DatePresetKey | null;
   /** Tez tanlov chiplari; `false` — yo'q. Sukut — maketdagi `Bugun / Bu hafta / Bu oy / Barchasi`. */
   presets?: readonly DatePresetKey[] | false;
   min?: string;
@@ -111,6 +116,7 @@ export const DateRangePanel = ({
   autoFocus = false,
   surface = "plain",
   selection = "range",
+  preset: presetProp,
   className,
   ...rest
 }: DateRangePanelProps) => {
@@ -122,7 +128,9 @@ export const DateRangePanel = ({
   const [draftStart, setDraftStart] = useState<ISODay>("");
   const [preview, setPreview] = useState<ISODay>("");
   const presetList = presets === false ? [] : presets;
-  const pressed = presetList.length ? matchPreset(range, presetList, today) : null;
+  const [ownPreset, setOwnPreset] = useState<DatePresetKey | null>(null);
+  const chosen = presetProp === undefined ? ownPreset : presetProp;
+  const pressed = presetList.length ? resolvePreset(range, presetList, chosen, today) : null;
   const dayMode = selection === "day";
 
   const select = (day: ISODay) => {
@@ -143,7 +151,8 @@ export const DateRangePanel = ({
   const applyPreset = (preset: DatePresetKey) => {
     setDraftStart("");
     setPreview("");
-    onChange(getPresetRange(preset, today), "preset");
+    setOwnPreset(preset);
+    onChange(getPresetRange(preset, today), "preset", preset);
   };
 
   const full = formatRangeFull(range);
@@ -313,11 +322,13 @@ export const DateRange = ({
   const range = normalizeRange(value);
   const empty = !range.from && !range.to;
   const dayMode = selection === "day";
+  // Oxirgi bosilgan chip (panel yopilsa ham): oraliq unga teng ekan chip ham, kun rejimidagi nom ham shu.
+  const [chosen, setChosen] = useState<DatePresetKey | null>(null);
   // Kun rejimi: tez tanlovga mos qiymat — uning nomi («Bugun», «Bu hafta», «Bu oy»), «Barchasi» — bo'sh qiymat.
   const presetList = presets === false ? [] : presets.filter((preset) => preset !== "all");
   const matchedPreset =
     dayMode && !empty && presetList.length
-      ? matchPreset(range, presetList, normalizeISODay(today) || todayISODay())
+      ? resolvePreset(range, presetList, chosen, normalizeISODay(today) || todayISODay())
       : null;
   const presetText = matchedPreset ? t(`date.presets.${matchedPreset}`) : null;
 
@@ -346,7 +357,14 @@ export const DateRange = ({
         spoken={spoken}
         ariaLabel={ariaLabel ?? t(dayMode ? "date.dateLabel" : "date.rangeLabel")}
         clearLabel={t(dayMode ? "date.clearDate" : "date.clear")}
-        onClear={clearable ? () => onChange({ ...EMPTY_RANGE }) : undefined}
+        onClear={
+          clearable
+            ? () => {
+                setChosen(null);
+                onChange({ ...EMPTY_RANGE });
+              }
+            : undefined
+        }
         id={id}
         invalid={invalid}
         disabled={disabled}
@@ -363,10 +381,12 @@ export const DateRange = ({
         {({ phone }) => (
           <DateRangePanel
             value={range}
-            onChange={(next) => {
+            onChange={(next, source, preset) => {
+              setChosen(source === "preset" ? (preset ?? null) : null);
               onChange(next);
               close(true);
             }}
+            preset={chosen}
             presets={presets}
             min={min}
             max={max}

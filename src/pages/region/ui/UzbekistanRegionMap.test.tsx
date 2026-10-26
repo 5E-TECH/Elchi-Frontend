@@ -6,7 +6,12 @@ import type { RegionItem } from "../../../entities/region";
 import { toRegionRows } from "../model/regionsModel";
 import UzbekistanRegionMap from "./UzbekistanRegionMap";
 
-type MockPoint = Record<string, unknown> & { rowId?: string; color?: string; name?: string };
+type MockPoint = Record<string, unknown> & {
+  rowId?: string;
+  color?: string;
+  name?: string;
+  accessibility?: { description?: string };
+};
 type MockSeries = {
   data?: MockPoint[];
   nullColor?: string;
@@ -16,6 +21,14 @@ type MockSeries = {
 type MockOptions = {
   series?: MockSeries[];
   tooltip?: { formatter?: (this: MockPoint) => string | false };
+  accessibility?: { enabled?: boolean; description?: string; keyboardNavigation?: { enabled?: boolean } };
+};
+
+const A11Y = {
+  title: "Viloyatlar xaritasi",
+  locale: "uz",
+  lang: {},
+  pointDescription: (row: { name: string }) => `${row.name}: tavsif`,
 };
 
 const lastOptions = vi.hoisted(() => ({ current: null as MockOptions | null }));
@@ -86,6 +99,7 @@ describe("UzbekistanRegionMap (v2: faqat xarita, ranglar region-map tokenlaridan
         tooltipHtml={() => ""}
         onSelect={() => undefined}
         ariaLabel="Xarita"
+        a11y={A11Y}
       />,
     );
 
@@ -97,7 +111,15 @@ describe("UzbekistanRegionMap (v2: faqat xarita, ranglar region-map tokenlaridan
       "uz-qr": "#eef1f8", // buyurtma yo'q → sunken
     });
     expect(lastOptions.current?.series?.[0]?.nullColor).toBe("#eef1f8");
-    expect(screen.getByRole("img", { name: "Xarita" })).toBeInTheDocument();
+    // fYgDe3MW: tavsif — Highcharts `accessibility` da; `role="img"` viloyatlarni klaviaturadan yashirmaydi.
+    expect(lastOptions.current?.accessibility).toMatchObject({
+      enabled: true,
+      description: "Xarita",
+      keyboardNavigation: { enabled: true },
+    });
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    // Har viloyatning o'z tavsifi (skrin-rider; maket: «Andijon viloyati: 21 ta buyurtma, …»).
+    expect(data.find((point) => point.rowId === "6")?.accessibility?.description).toBe("Samarqand viloyati: tavsif");
   });
 
   it("opens the region on click and renders label + tooltip from the caller", async () => {
@@ -113,6 +135,7 @@ describe("UzbekistanRegionMap (v2: faqat xarita, ranglar region-map tokenlaridan
         tooltipHtml={tooltipHtml}
         onSelect={onSelect}
         ariaLabel="Xarita"
+        a11y={A11Y}
       />,
     );
 

@@ -4,7 +4,13 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
-import { periodLabel, resolveDashboardPeriod, share } from "../../entities/dashboard/lib/period";
+import {
+  isDashboardQuickKey,
+  periodLabel,
+  resolveDashboardPeriod,
+  share,
+  type DashboardQuickKey,
+} from "../../entities/dashboard/lib/period";
 import { useRegionStats } from "../../entities/region";
 import { cx } from "../../shared/lib/cx";
 import { formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
@@ -65,15 +71,23 @@ const LogistDashboardPage = () => {
 
   const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const storedPreset = useSelector((state: RootState) => state.filter.dashboardPreset);
   const userId = useSelector((state: RootState) => state.user.user?.id);
   const roleId = useSelector((state: RootState) => state.role.id);
   const me = userId ?? roleId;
 
   const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
-  const period = resolveDashboardPeriod(fromDate, toDate);
+  // Bosilgan tez tanlov: dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i «Bugun» bilan bir xil.
+  const [preset, setPreset] = useState<DashboardQuickKey | null>(
+    isDashboardQuickKey(storedPreset) ? storedPreset : null,
+  );
+  const period = resolveDashboardPeriod(fromDate, toDate, preset);
   const periodText = periodLabel(t, period);
-  const params = useMemo(() => regionStatsParams(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
+  const params = useMemo(
+    () => regionStatsParams(resolveDashboardPeriod(fromDate, toDate, preset)),
+    [fromDate, preset, toDate],
+  );
 
   const { data, isPending, isPaused, isError, isFetching, refetch } = useRegionStats(params);
   const model = useMemo(() => buildLogistDashboard(data?.regions ?? [], me), [data?.regions, me]);
@@ -86,10 +100,13 @@ const LogistDashboardPage = () => {
   const loading = (isPending && !isPaused) || !meKnown;
 
   const applyRange = useCallback(
-    (range: { from: string; to: string }) => {
+    (range: { from: string; to: string }, nextPreset: DashboardQuickKey | null = null) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
+      setPreset(nextPreset);
+      dispatch(
+        setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to, dashboardPreset: nextPreset }),
+      );
     },
     [dispatch],
   );
@@ -98,6 +115,8 @@ const LogistDashboardPage = () => {
     setToDate("");
     dispatch(removeFilterValue("dashboardFromDate"));
     dispatch(removeFilterValue("dashboardToDate"));
+    dispatch(removeFilterValue("dashboardPreset"));
+    setPreset(null);
   }, [dispatch]);
 
   const count = (value: number) => formatNumberLocalized(value, { language });
@@ -118,6 +137,7 @@ const LogistDashboardPage = () => {
       fromDate={fromDate}
       toDate={toDate}
       onChange={applyRange}
+      preset={preset}
       onClear={clearRange}
       showYear={false}
     />

@@ -1,5 +1,7 @@
 import axios from "axios";
+import type { QueryClient } from "@tanstack/react-query";
 import store from "../app/config/store";
+import { queryKeys } from "../shared/config/queryKeys";
 import { setId, setName, setRegion, setRole, removeRole } from "../shared/model/roleSlice";
 import { BASE_URL } from "../shared/const";
 import { API_ENDPOINTS } from "../shared/api";
@@ -132,6 +134,25 @@ const persistSessionMetadata = (response: LoginResponse | RefreshResponse) => {
   });
 };
 
+/**
+ * Yagona profil keshi (z87E6tdQ): `AuthBootstrap` ilovaning `QueryClient` ini bog'laydi — profil `useSettings` va
+ * `useGetMyProfile` bilan bitta kesh kaliti orqali olinadi: parallel so'rovlar bitta, javob ularga ham yoziladi.
+ */
+let profileCache: QueryClient | null = null;
+
+export const bindProfileCache = (client: QueryClient | null) => {
+  profileCache = client;
+};
+
+const requestMyProfile = (accessToken: string) =>
+  authClient
+    .get<{ data?: AuthenticatedUser }>(API_ENDPOINTS.AUTH.MY_PROFILE, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((response) => response.data);
+
 export const fetchMyProfile = async (accessToken?: string) => {
   const resolvedAccessToken = accessToken ?? tokenStorage.getAccessToken();
 
@@ -139,13 +160,18 @@ export const fetchMyProfile = async (accessToken?: string) => {
     throw new Error("Access token is missing");
   }
 
-  const response = await authClient.get<{ data?: AuthenticatedUser }>(API_ENDPOINTS.AUTH.MY_PROFILE, {
-    headers: {
-      Authorization: `Bearer ${resolvedAccessToken}`,
-    },
-  });
+  // Har chaqiruv yangi javob oladi (`staleTime: 0`); qayta urinish va xato xabari — chaqiruvchida.
+  const body = profileCache
+    ? await profileCache.fetchQuery({
+        queryKey: queryKeys.myProfile,
+        queryFn: () => requestMyProfile(resolvedAccessToken),
+        staleTime: 0,
+        retry: false,
+        meta: { silentError: true },
+      })
+    : await requestMyProfile(resolvedAccessToken);
 
-  const user = response.data?.data;
+  const user = body?.data;
 
   if (!user) {
     throw new Error("Profile payload is missing");

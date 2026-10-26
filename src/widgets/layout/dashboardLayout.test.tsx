@@ -7,6 +7,7 @@ import i18n from "../../i18n";
 import { createTestStore } from "../../test/test-utils";
 import DashboardLayout, { SHELL_DESKTOP_QUERY } from "./dashboardLayout";
 import { useShellBannerSlot } from "../../shared/lib/shellBannerSlot";
+import { PageHeader } from "../../shared/ui/primitives";
 
 /**
  * SHELL tuzilmasi (maket `.el-app` / `.el-main` / `.el-content`): slotlar, bitta skroll
@@ -283,3 +284,59 @@ describe("DashboardLayout — sahifa xatosi shell ichida (QKCeGZ3N)", () => {
 });
 
 const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;
+
+describe("DashboardLayout — bo'lim almashuvi (WuVeVZqo)", () => {
+  const renderPages = () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/",
+          element: <DashboardLayout />,
+          children: [
+            { path: "orders", element: <PageHeader title="Buyurtmalar" /> },
+            { path: "payments", element: <PageHeader title="To'lovlar" /> },
+          ],
+        },
+      ],
+      { initialEntries: ["/orders"] },
+    );
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Provider store={createTestStore()}>
+          <RouterProvider router={router} />
+        </Provider>
+      </I18nextProvider>,
+    );
+    return router;
+  };
+  const announcer = () => document.getElementById("route-announcer") as HTMLElement;
+
+  it("⭐ jonli hudud: birinchi yuklanishda jim, bo'lim almashganda yangi sahifa nomi; brauzer sarlavhasi ham", async () => {
+    const router = renderPages();
+    expect(announcer()).toHaveAttribute("role", "status");
+    expect(announcer()).toHaveAttribute("aria-live", "polite");
+    expect(announcer()).toHaveTextContent("");
+    expect(document.title).toBe("Buyurtmalar — Elchi Pochta");
+
+    await act(() => router.navigate("/payments"));
+
+    expect(announcer()).toHaveTextContent("To'lovlar");
+    expect(document.title).toBe("To'lovlar — Elchi Pochta");
+  });
+
+  it("⭐ fokus: menyudan (kontent tashqarisidan) o'tilsa — kontentga; kontent ichida bo'lsa — joyida", async () => {
+    const router = renderPages();
+    const content = document.getElementById("main-content") as HTMLElement;
+
+    screen.getByRole("button", { name: "Menyuni ochish" }).focus();
+    await act(() => router.navigate("/payments"));
+    expect(content).toHaveFocus();
+
+    // Sahifa ichidagi element fokusda — o'tishda tegilmaydi (masalan sahifa ichidagi tab-havola).
+    const inner = document.createElement("button");
+    content.appendChild(inner);
+    inner.focus();
+    await act(() => router.navigate("/orders"));
+    expect(inner).toHaveFocus();
+  });
+});

@@ -18,6 +18,8 @@ import {
   previousPeriodRange,
   resolveDashboardPeriod,
   share,
+  isDashboardQuickKey,
+  type DashboardQuickKey,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileName } from "../../entities/dashboard/lib/profile";
 import { buildDashboardDateParams, getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
@@ -83,6 +85,7 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
 
   const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const storedPreset = useSelector((state: RootState) => state.filter.dashboardPreset);
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
@@ -95,6 +98,10 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
 
   const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
+  // Bosilgan tez tanlov: dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i «Bugun» bilan bir xil.
+  const [preset, setPreset] = useState<DashboardQuickKey | null>(
+    isDashboardQuickKey(storedPreset) ? storedPreset : null,
+  );
   const { data: settingsData } = useSettings();
   const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
@@ -102,7 +109,7 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     const all = getAllTimeRange();
     return fromDate === all.from && toDate === all.to;
   })();
-  const period = resolveDashboardPeriod(fromDate, toDate);
+  const period = resolveDashboardPeriod(fromDate, toDate, preset);
   const analyticsScope = useMemo(() => `${role ?? "unknown"}:${user?.id ?? "unknown"}`, [role, user?.id]);
   // «Barchasi» — `all=true` (tya24blo), `start_day=1970-01-01` emas.
   const analyticsParams = useMemo(() => buildDashboardDateParams(fromDate, toDate), [fromDate, toDate]);
@@ -117,7 +124,10 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, !unassigned, analyticsScope);
   // Oldingi teng davr (ega savoli 1 sukuti) — joriy javob kelgach, «Barchasi»da yo'q.
-  const prevRange = useMemo(() => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
+  const prevRange = useMemo(
+    () => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate, preset)),
+    [fromDate, preset, toDate],
+  );
   const previousParams = useMemo(
     () => (prevRange ? { start_day: prevRange.from, end_day: prevRange.to } : analyticsParams),
     [analyticsParams, prevRange],
@@ -170,10 +180,13 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   const count = (value: number) => formatNumberLocalized(value, { language });
 
   const applyRange = useCallback(
-    (range: { from: string; to: string }) => {
+    (range: { from: string; to: string }, nextPreset: DashboardQuickKey | null = null) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
+      setPreset(nextPreset);
+      dispatch(
+        setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to, dashboardPreset: nextPreset }),
+      );
     },
     [dispatch],
   );
@@ -182,6 +195,8 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     setToDate("");
     dispatch(removeFilterValue("dashboardFromDate"));
     dispatch(removeFilterValue("dashboardToDate"));
+    dispatch(removeFilterValue("dashboardPreset"));
+    setPreset(null);
   }, [dispatch]);
 
   const delta = (current: number, previous: number | undefined) => (hasPrevious ? percentChange(current, previous) : null);
@@ -256,6 +271,7 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         toDate={toDate}
         effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
         onChange={applyRange}
+        preset={preset}
         onClear={clearRange}
         primaryAction={createOrderButton}
       />

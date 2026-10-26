@@ -8,8 +8,10 @@ import MobileMenu from "../Sidebar/ui/MobileMenu";
 import { ScannerHost } from "../scanner";
 import { useMobileMenu } from "../Sidebar/model/shellNav";
 import { useShellScroll } from "./model/useShellScroll";
+import { useRouteFocus } from "./model/useRouteFocus";
 import { setShellBannerSlot } from "../../shared/lib/shellBannerSlot";
 import RouteProgress, { RouteSuspenseFallback } from "./ui/RouteProgress";
+import RouteAnnouncer from "./ui/RouteAnnouncer";
 import SkipLink, { MAIN_CONTENT_ID } from "./ui/SkipLink";
 import ErrorBoundary, { type ErrorBoundaryFallbackProps } from "../../shared/ui/ErrorBoundary";
 import ErrorBoundaryPage from "../../shared/ui/ErrorBoundaryPage";
@@ -60,6 +62,8 @@ const DashboardLayout = () => {
   const { pathname } = useLocation();
   const scrollRef = useRef<HTMLElement>(null);
   useShellScroll(scrollRef);
+  // WuVeVZqo: bo'lim almashganda fokus kontentga, nomi skrin-riderga (`RouteAnnouncer`).
+  useRouteFocus();
 
   // Bo'lim almashsa suriluvchi menyu yopiladi (band bosilganda yoki «Orqaga» bilan).
   useEffect(() => {
@@ -81,6 +85,7 @@ const DashboardLayout = () => {
     <div className="flex h-dvh overflow-hidden bg-bg font-sans text-text [--shell-bottomnav-h:calc(4rem+env(safe-area-inset-bottom))]">
       {/* Telefon menyusi ochiq bo'lsa havola ham `inert` (ustun va pastki menyu kabi). */}
       <SkipLink inert={isMenuOpen} />
+      <RouteAnnouncer />
 
       <div data-shell-slot="sidebar" className="hidden h-full shrink-0 lg:flex">
         <Sidebar />

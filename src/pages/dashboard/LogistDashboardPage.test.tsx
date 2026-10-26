@@ -206,6 +206,21 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
     );
   });
 
+  it("⭐ dushanba: «Bu hafta» bosilsa o'zi belgilanadi (oralig'i «Bugun» bilan bir xil)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba: «Bu hafta» = «Bugun» oralig'i
+    try {
+      const user = userEvent.setup();
+      renderPage();
+      await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/);
+      await user.click(screen.getByRole("radio", { name: "Bu hafta" }));
+      expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Bugun" })).not.toBeChecked();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("kuryerlar soni noma'lum (identity javob bermadi) — «—», yolg'on 0 emas", async () => {
     mocks.get.mockResolvedValue({
       data: { data: { regions: [region(1, "Samarqand viloyati", ME, [10, 5, 1], [null, null])] } },

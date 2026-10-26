@@ -248,6 +248,23 @@ export const matchPreset = (
   return null;
 };
 
+/**
+ * `matchPreset`, lekin bosilgan tez tanlov (`chosen`) oraliq unga teng ekan o'zi qaytadi: dushanba kuni «Bu hafta»,
+ * oyning 1-kunida «Bu oy» oralig'i «Bugun» bilan bir xil — birinchi mosi doim «Bugun» bo'lardi.
+ */
+export const resolvePreset = (
+  range: ISODateRange,
+  presets: readonly DatePresetKey[],
+  chosen: DatePresetKey | null,
+  today: ISODay = todayISODay(),
+): DatePresetKey | null => {
+  if (chosen && presets.includes(chosen)) {
+    const candidate = getPresetRange(chosen, today);
+    if (candidate.from === range.from && candidate.to === range.to) return chosen;
+  }
+  return matchPreset(range, presets, today);
+};
+
 /* ─── Ko'rinish (KK.OO.YYYY — `formatDateLocalized`) ─────────────────────────────────────────── */
 
 /** Bitta kun: `"08.10.2026"`; bo'sh — `""`. */

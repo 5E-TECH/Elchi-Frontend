@@ -131,6 +131,14 @@
         "rowAria": "{{name}}: {{count}} orders, {{rate}} sold",
         "sold": "{{rate}} sold",
         "showAll": "All {{count}} regions"
+      },
+      "pointAria": "{{name}}: {{count}} orders, {{rate}} success, {{revenue}} revenue",
+      "a11y": {
+        "chartContainerLabel": "{title}. Interactive map.",
+        "svgContainerLabel": "Interactive map",
+        "endOfChartMarker": "End of map.",
+        "seriesSummary": "{series.name}, {series.points.length} regions.",
+        "nullPointValue": "No data"
       }
     },
     "table": {

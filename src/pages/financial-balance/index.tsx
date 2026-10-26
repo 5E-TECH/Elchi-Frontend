@@ -22,7 +22,7 @@ import {
   getPanelId,
   getTabId,
 } from "../../shared/ui/primitives";
-import AnalysisTab from "./components/AnalysisTab";
+import AnalysisTab, { type AnalysisPreset } from "./components/AnalysisTab";
 import FinancialEntryModal from "./components/FinancialEntryModal";
 import HistoryTab from "./components/HistoryTab";
 import SettlementRanks from "./components/SettlementRanks";
@@ -63,6 +63,8 @@ const FinancialBalance = () => {
   const [exporting, setExporting] = useState(false);
   // Tahlil davri sahifada turadi: «Excelga yuklash» Tahlil tabida aynan shu davr bilan yuklaydi.
   const [analysisRange, setAnalysisRange] = useState<ISODateRange>(getTodayRange);
+  // Bosilgan tez tanlov ham shu yerda: dushanba «Bu hafta» = «Bugun» oralig'i — tab almashib qaytganda tanlov yo'qolmasin.
+  const [analysisPreset, setAnalysisPreset] = useState<AnalysisPreset | null>(null);
 
   // Tab almashganda Tarixning sahifa/filtr parametrlari tozalanadi — aks holda
   // keyingi safar "Tarix" ochilganda eski sahifa/filtrga jimgina tushib qoladi.
@@ -232,7 +234,12 @@ const FinancialBalance = () => {
         ) : activeTab === "history" ? (
           <HistoryTab />
         ) : (
-          <AnalysisTab range={analysisRange} onRangeChange={setAnalysisRange} />
+          <AnalysisTab
+            range={analysisRange}
+            onRangeChange={setAnalysisRange}
+            preset={analysisPreset}
+            onPresetChange={setAnalysisPreset}
+          />
         )}
       </div>
 

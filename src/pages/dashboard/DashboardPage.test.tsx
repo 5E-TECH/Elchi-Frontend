@@ -208,6 +208,43 @@ describe("DashboardPage (v2)", () => {
     expect(sectionOf("Muvaffaqiyat darajasi")).toHaveTextContent("01.04 – 14.04 · sotilgan / qabul qilingan");
   });
 
+  it("⭐ dushanba: «Bu hafta» bosilsa o'zi belgilanadi, sarlavha — «Tanlangan davr»", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba: «Bu hafta» = «Bugun» oralig'i
+    try {
+      const user = userEvent.setup();
+      renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+      await user.click(screen.getByRole("radio", { name: "Bu hafta" }));
+
+      expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Bugun" })).not.toBeChecked();
+      expect(screen.getByText("Tanlangan davr ko'rsatkichlari · butun kompaniya bo'yicha")).toBeInTheDocument();
+      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "2026-10-26", end_day: "2026-10-26" }, true, "admin:unknown");
+
+      await user.click(screen.getByRole("radio", { name: "Bugun" }));
+      expect(screen.getByRole("radio", { name: "Bugun" })).toBeChecked();
+      expect(screen.getByText("Bugungi ko'rsatkichlar · butun kompaniya bo'yicha")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("dushanba: bosilgan «Bu hafta» redux'dan tiklanadi (sahifa qayta ochilganda)", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba: «Bu hafta» = «Bugun» oralig'i
+    try {
+      renderWithProviders(<DashboardPage />, {
+        preloadedState: {
+          role: { id: "admin-1", role: "admin", region: null, name: "admin" },
+          filter: { dashboardFromDate: "2026-10-26", dashboardToDate: "2026-10-26", dashboardPreset: "week" },
+        } as never,
+      });
+      expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("reytinglar: Top marketlar (backend reytingi), Top filiallar, Top kuryerlar (`couriers` dan saralangan)", async () => {
     const user = userEvent.setup();
     const performer = (index: number) => ({ total_orders: 20, successful_orders: 20 - index, success_rate: ((20 - index) / 20) * 100 });
