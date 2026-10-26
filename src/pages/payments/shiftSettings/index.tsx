@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-shift-settings
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CreditCard, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,7 +52,6 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
   const { t } = useTranslation("payments");
   const update = useUpdateShiftCheckSettings();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
-  useEffect(() => setDraft(toDraft(settings)), [settings]);
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
   const dirty = Object.keys(body).length > 0;
@@ -223,7 +222,8 @@ const ShiftSettingsPage = () => {
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
       <QueryBoundary query={query} skeleton="lines" isEmpty={() => false}>
-        {(settings) => <SettingsForm settings={settings} />}
+        {/* Saqlangandan keyin server qiymatlari bilan forma qaytadan boshlanadi (kalit — sozlamalar holati). */}
+        {(settings) => <SettingsForm key={JSON.stringify(settings)} settings={settings} />}
       </QueryBoundary>
     </div>
   );
