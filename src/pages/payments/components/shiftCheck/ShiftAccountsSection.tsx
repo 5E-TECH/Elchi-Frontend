@@ -4,6 +4,7 @@ import {
   Ban,
   CircleCheck,
   CircleX,
+  Clock,
   CreditCard,
   ExternalLink,
   FileImage,
@@ -32,7 +33,7 @@ import {
   TONE_FG,
   TONE_SOFT,
 } from "../../../../shared/ui/primitives";
-import { AiStatusBadge, EnteredMismatchBadge } from "./aiStatus";
+import { AiStatusBadge, AiTimedOutBadge, EnteredMismatchBadge } from "./aiStatus";
 import { cardSubtitle } from "./aiStatusMeta";
 import type { ShiftAccountRow, ShiftAccountsForm } from "./useShiftAccountsForm";
 
@@ -70,6 +71,10 @@ const AiLine = ({ row }: { row: ShiftAccountRow }) => {
   } else if (!row.hasPhoto) {
     line = { tone: "neutral", icon: ScanLine, text: t("shiftCheck.ai.line.waitingPhoto") };
     badge = null;
+  } else if (row.aiTimedOut) {
+    // 3 daqiqadan beri `pending` — so'rov to'xtadi; backend yopishda baribir 30 s kutadi, keyin yopadi.
+    line = { tone: "warning", icon: Clock, text: t("shiftCheck.ai.line.timedOut") };
+    badge = <AiTimedOutBadge />;
   } else if (row.aiStatus === "pending" || row.aiStatus === "not_required") {
     line = { tone: "neutral", icon: null, text: t("shiftCheck.ai.line.pending") };
     badge = <AiStatusBadge status="pending" />;
@@ -345,7 +350,9 @@ const ShiftAccountsSection = ({ form, submitted }: { form: ShiftAccountsForm; su
   const headingId = useId();
   const anyAi = form.rows.some((row) => row.aiEnabled);
   const commentRows = form.rows.filter((row) => row.commentRequired).length;
-  const pendingRows = form.rows.filter((row) => row.aiEnabled && row.hasPhoto && row.aiStatus === "pending").length;
+  const pendingRows = form.rows.filter(
+    (row) => row.aiEnabled && row.hasPhoto && row.aiStatus === "pending" && !row.aiTimedOut,
+  ).length;
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3" data-testid="shift-accounts-section">

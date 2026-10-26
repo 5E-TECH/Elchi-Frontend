@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
@@ -43,6 +44,12 @@ export const SHIFT_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 export const SHIFT_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 /** `pending` paytida so'rov oralig'i (realtime kelmasa ham holat yangilansin). */
 export const SHIFT_PENDING_POLL_MS = 5000;
+/**
+ * AI `pending` shundan uzoq tursa (mijoz birinchi ko'rgan paytdan) 5 s lik so'rov to'xtaydi va «AI natijasi kelmadi»
+ * ko'rsatiladi — ai-service javob bermasa sahifa cheksiz so'rov yubormasin. Realtime `finance.shift.account_checked`
+ * kelsa — holat baribir yangilanadi; rasm qayta yuklansa (`photo_uploaded_at` yangi) hisob qaytadan boshlanadi.
+ */
+export const SHIFT_PENDING_MAX_MS = 3 * 60_000;
 /** Yopish AI natijasini 30 s gacha kutadi (gateway 45 s) — mijoz kutishi undan uzunroq. */
 export const SHIFT_CLOSE_TIMEOUT_MS = 60_000;
 
@@ -562,12 +569,70 @@ export const useUpdateShiftCheckSettings = () => {
   });
 };
 
-const hasPending = (report: ShiftReport | null | undefined) =>
-  Boolean(report?.accounts.some((row) => row.ai_status === "pending"));
+// ───────────────────────── AI `pending` muddati ─────────────────────────
+
+/** `smena:karta:rasm vaqti` → mijoz `pending` ni birinchi ko'rgan lahza (server soatiga bog'liq emas). */
+const pendingSeenAt = new Map<string, number>();
+const pendingKey = (shiftId: string, row: Pick<ShiftAccountCheck, "card_id" | "photo_uploaded_at">) =>
+  `${shiftId}:${row.card_id}:${row.photo_uploaded_at ?? ""}`;
+
+/** `pending` qator birinchi ko'rilgan lahza (birinchi chaqiruvda yoziladi). */
+export const shiftAiPendingSince = (
+  shiftId: string,
+  row: Pick<ShiftAccountCheck, "card_id" | "photo_uploaded_at">,
+  now: number = Date.now(),
+): number => {
+  const key = pendingKey(shiftId, row);
+  const seen = pendingSeenAt.get(key);
+  if (seen !== undefined) return seen;
+  pendingSeenAt.set(key, now);
+  return now;
+};
+
+/** AI natijasi kutish muddatidan (3 daqiqa) o'tdimi — faqat `pending` qator uchun `true` bo'lishi mumkin. */
+export const isShiftAiPendingStale = (
+  shiftId: string,
+  row: Pick<ShiftAccountCheck, "card_id" | "photo_uploaded_at" | "ai_status">,
+  now: number = Date.now(),
+): boolean => row.ai_status === "pending" && now - shiftAiPendingSince(shiftId, row, now) >= SHIFT_PENDING_MAX_MS;
+
+/** Testlar uchun: kuzatuvni tozalash. */
+export const resetShiftAiPendingTracker = () => pendingSeenAt.clear();
+
+/** Muddati o'tmagan `pending` qator bormi — bo'lsa so'rov davom etadi. */
+const hasFreshPending = (shiftId: string, report: ShiftReport | null | undefined, now: number = Date.now()) =>
+  Boolean(report?.accounts.some((row) => row.ai_status === "pending" && !isShiftAiPendingStale(shiftId, row, now)));
+
+/**
+ * Kutish muddati o'tgan `pending` kartalar (`card_id`). Muddat kelganda o'zi qayta chiziladi (taymer), ya'ni
+ * so'rov to'xtagach ham «AI natijasi kelmadi» o'z vaqtida chiqadi.
+ */
+export const useShiftAiTimedOut = (
+  shiftId: string | null | undefined,
+  accounts: readonly ShiftAccountCheck[] | null | undefined,
+): ReadonlySet<string> => {
+  const id = String(shiftId ?? "");
+  const [now, setNow] = useState(() => Date.now());
+  const pending = useMemo(() => (accounts ?? []).filter((row) => row.ai_status === "pending"), [accounts]);
+  const next = pending
+    .map((row) => shiftAiPendingSince(id, row) + SHIFT_PENDING_MAX_MS)
+    .filter((deadline) => deadline > now)
+    .sort((a, b) => a - b)[0];
+  useEffect(() => {
+    if (next === undefined) return undefined;
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, next - Date.now()) + 20);
+    return () => clearTimeout(timer);
+  }, [next]);
+  return useMemo(
+    () => new Set(pending.filter((row) => isShiftAiPendingStale(id, row, now)).map((row) => row.card_id)),
+    [id, now, pending],
+  );
+};
 
 /**
  * `GET finance/shift/:id/report`. `pollPending` — AI `pending` qatori bor ekan 5 s da qayta o'qiladi (realtime
- * `finance.shift.account_checked` ham `[shift]` ni yangilaydi — bu faqat zaxira).
+ * `finance.shift.account_checked` ham `[shift]` ni yangilaydi — bu faqat zaxira); `pending` 3 daqiqadan oshsa
+ * (`SHIFT_PENDING_MAX_MS`) so'rov to'xtaydi — UI «AI natijasi kelmadi» (`useShiftAiTimedOut`).
  */
 export const useShiftReport = (id: string | null | undefined, options: { enabled?: boolean; pollPending?: boolean } = {}) =>
   useQuery({
@@ -575,7 +640,8 @@ export const useShiftReport = (id: string | null | undefined, options: { enabled
     queryFn: () =>
       api.get(API_ENDPOINTS.CASHBOX.SHIFT_REPORT(String(id))).then((res) => normalizeShiftReport(res.data)),
     enabled: Boolean(id) && (options.enabled ?? true),
-    refetchInterval: (query) => (options.pollPending && hasPending(query.state.data) ? SHIFT_PENDING_POLL_MS : false),
+    refetchInterval: (query) =>
+      options.pollPending && hasFreshPending(String(id ?? ""), query.state.data) ? SHIFT_PENDING_POLL_MS : false,
     meta: options.pollPending ? { silentError: true } : undefined,
   });
 

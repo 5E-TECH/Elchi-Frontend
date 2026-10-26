@@ -3,6 +3,7 @@ import {
   evaluateShiftAccountRow,
   useCashboxCardBalances,
   useShiftCheckSettings,
+  useShiftAiTimedOut,
   useShiftReport,
   useUploadShiftAccountPhoto,
   validateShiftPhoto,
@@ -54,6 +55,8 @@ export type ShiftAccountRow = {
   errors: ShiftAccountRowError[];
   /** Yopish 400 da backend ko'rsatgan karta — qator ajratiladi. */
   serverIssue: "comment" | "photo" | null;
+  /** AI `pending` kutish muddatidan (3 daqiqa) o'tdi — «AI natijasi kelmadi». */
+  aiTimedOut: boolean;
 };
 
 type RowInput = { entered?: string; comment?: string };
@@ -76,6 +79,8 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
   const balancesQuery = useCashboxCardBalances(open && enabled);
   const reportQuery = useShiftReport(shiftId, { enabled: open && enabled, pollPending: true });
   const upload = useUploadShiftAccountPhoto();
+  // AI `pending` 3 daqiqadan oshdi — so'rov to'xtagan, qatorda «AI natijasi kelmadi».
+  const aiTimedOut = useShiftAiTimedOut(shiftId, reportQuery.data?.accounts);
 
   const [inputs, setInputs] = useState<Record<string, RowInput>>({});
   const [photos, setPhotos] = useState<Record<string, ShiftAccountLocalPhoto>>({});
@@ -148,9 +153,10 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
           commentRequired,
           errors,
           serverIssue,
+          aiTimedOut: aiStatus === "pending" && aiTimedOut.has(card.card_id),
         };
       }),
-    [balances, drafts, enabled, inputs, photoErrors, photos, serverIssues, settingsQuery.data, uploading],
+    [aiTimedOut, balances, drafts, enabled, inputs, photoErrors, photos, serverIssues, settingsQuery.data, uploading],
   );
 
   const setRowInput = useCallback((cardId: string, patch: Partial<RowInput>) => {

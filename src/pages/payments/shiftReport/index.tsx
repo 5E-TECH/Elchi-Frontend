@@ -22,6 +22,7 @@ import { Link, useParams } from "react-router-dom";
 import { canManageShiftSettings } from "../../../app/lib/access";
 import {
   useResendShiftReport,
+  useShiftAiTimedOut,
   useShiftReport,
   type ShiftAccountCheck,
   type ShiftReport,
@@ -52,7 +53,7 @@ import {
   useConfirm,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
-import { AiStatusBadge, EnteredMismatchBadge } from "../components/shiftCheck/aiStatus";
+import { AiStatusBadge, AiTimedOutBadge, EnteredMismatchBadge } from "../components/shiftCheck/aiStatus";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
 import ReportDeliveries from "./ReportDeliveries";
 
@@ -111,6 +112,10 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
   const signed = (value: number | null) => (value === null ? "—" : formatSignedMoneyLocalized(value, { language }));
 
   const { cash, card, accounts, operations } = report;
+  // AI `pending` 3 daqiqadan oshgan kartalar — so'rov to'xtagan, «AI natijasi kelmadi».
+  const aiTimedOut = useShiftAiTimedOut(report.shift.id, accounts);
+  const statusBadge = (row: ShiftAccountCheck) =>
+    aiTimedOut.has(row.card_id) ? <AiTimedOutBadge /> : <AiStatusBadge status={row.ai_status} />;
   const cashCounted = cash.closing_balance !== null && report.shift.status === "closed" && cash.discrepancy !== null;
   const income = sum(cash.total_income, card.total_income);
   const expense = sum(cash.total_expense, card.total_expense);
@@ -137,6 +142,7 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
         ? t("shiftCheck.report.accounts.settingOff")
         : t("shiftCheck.report.accounts.noPhoto");
     }
+    if (aiTimedOut.has(row.card_id)) return t("shiftCheck.ai.line.timedOut");
     if (row.ai_read_balance === null) return null;
     return row.ai_status === "mismatch"
       ? t("shiftCheck.report.accounts.aiReadMismatch", { amount: money(row.ai_read_balance) })
@@ -146,7 +152,7 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
   const aiCell = (row: ShiftAccountCheck) => (
     <span className="flex flex-col items-start gap-1">
       <span className="inline-flex flex-wrap gap-1.5">
-        <AiStatusBadge status={row.ai_status} />
+        {statusBadge(row)}
         {row.ai_entered_ok === false ? <EnteredMismatchBadge /> : null}
       </span>
       {aiDetail(row) ? <span className="text-[13px] text-text-muted">{aiDetail(row)}</span> : null}
@@ -220,7 +226,7 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
     <div className="flex flex-col gap-3 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         {cardName(row)}
-        <AiStatusBadge status={row.ai_status} />
+        {statusBadge(row)}
       </div>
       <dl className="m-0 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px]">
         <dt className="text-text-muted">{t("shiftCheck.report.accounts.system")}</dt>

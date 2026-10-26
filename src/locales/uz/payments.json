@@ -1021,9 +1021,11 @@
         "error": "AI tekshiruvi ishlamadi — smena baribir yopiladi",
         "disabled": "AI tekshiruvi o'chirilgan — qoldiq qo'lda tasdiqlanadi",
         "waitingPhoto": "Skrinshot yuklang — AI qoldiqni tekshiradi",
-        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi"
+        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi",
+        "timedOut": "AI natijasi kelmadi — qoldiq qo'lda tasdiqlanadi"
       },
-      "enteredBadge": "Kiritilgan ≠ rasm"
+      "enteredBadge": "Kiritilgan ≠ rasm",
+      "timedOutBadge": "Natija kelmadi"
     },
     "report": {
       "title": "Smena hisoboti",

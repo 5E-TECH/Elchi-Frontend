@@ -1021,9 +1021,11 @@
         "error": "AI check failed — the shift still closes",
         "disabled": "AI check is disabled — balance is confirmed manually",
         "waitingPhoto": "Upload a screenshot — AI will check the balance",
-        "enteredMismatch": "Entered balance differs from the image ({{read}})"
+        "enteredMismatch": "Entered balance differs from the image ({{read}})",
+        "timedOut": "No AI result — the balance is confirmed manually"
       },
-      "enteredBadge": "Entered ≠ image"
+      "enteredBadge": "Entered ≠ image",
+      "timedOutBadge": "No result"
     },
     "report": {
       "title": "Shift report",
