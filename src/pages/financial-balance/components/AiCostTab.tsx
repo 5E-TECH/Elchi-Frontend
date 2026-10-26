@@ -44,6 +44,7 @@ import {
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 
 /**
  * «AI XARAJAT» TABI (Celz3rKJ) — `/financial-balance?tab=ai` (superadmin, admin). Backend: `GET /ai-usage/dashboard`
@@ -102,6 +103,7 @@ const AiCostTab = () => {
   const [range, setRange] = useState<ISODateRange>(getLast30DaysRange);
   const [preset, setPreset] = useState<Preset | null>("last30");
   const [trendView, setTrendView] = useState<ChartView>("chart");
+  const isPhone = useIsPhone();
   const period = resolvePeriod(range, preset);
 
   const dashboardQuery = useAiUsageDashboard(range);
@@ -163,6 +165,9 @@ const AiCostTab = () => {
         {(dashboard, { isRefetching }) => {
           const { summary } = dashboard;
           const cost = splitCompactMoney(summary.totalCostUzs, language);
+          const trendToggle = (
+            <ViewToggle value={trendView} onChange={setTrendView} ariaLabel={t("trend.viewLabel")} className="max-md:w-full" />
+          );
           return (
             <div className={cx("flex flex-col gap-6 transition-opacity max-md:gap-4", isRefetching && "opacity-60")}>
               <section aria-label={t("kpi.label")} className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-md:gap-3">
@@ -212,9 +217,12 @@ const AiCostTab = () => {
                   className="min-w-0 flex-[2_1_560px]"
                   title={t("trend.title")}
                   description={t("trend.subtitle", { range: rangeText })}
-                  actions={<ViewToggle value={trendView} onChange={setTrendView} ariaLabel={t("trend.viewLabel")} />}
+                  // Telefonda «Grafik | Jadval» sarlavha yonida siqilib qoladi — tana boshida to'liq enli (filial «Kunlik
+                  // daromad» kartasidagi naqsh).
+                  actions={isPhone ? undefined : trendToggle}
                   bodyClassName="flex flex-col gap-4"
                 >
+                  {isPhone ? trendToggle : null}
                   <DailyTrend days={dashboard.dailySeries} view={trendView} rangeText={rangeText} />
                 </Card>
                 <Card
