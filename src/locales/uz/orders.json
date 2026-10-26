@@ -841,6 +841,7 @@
     "scopeAll": "Barcha mijozlar · buyurtmalar soni {{market}} bo'yicha",
     "scopeMarket": "{{market}} mijozlari · buyurtmalar soni shu market bo'yicha",
     "scopeOwn": "Sizning mijozlaringiz · buyurtmalar soni faqat sizda",
+    "extraNumberMatch": "Qo'shimcha raqam:",
     "ordersCount": "{{value}} ta buyurtma",
     "newCount": "{{value}} ta yangi",
     "searching": "Mijoz qidirilmoqda...",

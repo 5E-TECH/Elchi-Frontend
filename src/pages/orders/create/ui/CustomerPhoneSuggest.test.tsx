@@ -141,6 +141,24 @@ describe("CS-A — telefon bo'yicha mijoz taklifi (desktop)", () => {
     expect(within(list).getByRole("option", { name: "Yangi mijoz sifatida davom etish" })).toBeInTheDocument();
   });
 
+  it("9444UAa8: matched_by = extra_number — qatorda «Qo'shimcha raqam: …»; phone / yo'q — belgi chiqmaydi", async () => {
+    mocks.get.mockImplementation(
+      apiGet([
+        { ...SHAHNOZA, matched_by: "extra_number" },
+        { ...DILNOZA, extra_number: "93-111-22-33", matched_by: "phone" },
+      ]),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "9987122");
+    const list = await screen.findByRole("listbox", { name: "Mijoz takliflari" });
+    const extra = await within(list).findByRole("option", { name: /Shahnoza Abdullayeva/ });
+    expect(extra).toHaveTextContent("Qo'shimcha raqam: +998 99 871 22 64");
+    const byPhone = within(list).getByRole("option", { name: /Dilnoza Karimova/ });
+    expect(byPhone).not.toHaveTextContent("Qo'shimcha raqam");
+  });
+
   it("qidirilmoqda va «Mijoz topilmadi — yangi mijoz» holatlari", async () => {
     let resolveSuggest: (value: unknown) => void = () => undefined;
     mocks.get.mockImplementation((url: string) =>
@@ -394,6 +412,20 @@ describe("CS-A — telefonda pastki varaqa", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Mijozni tanlang" })).not.toBeInTheDocument());
     await waitFor(() => expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue("Shahnoza Abdullayeva"));
     expect(await screen.findByText("Mavjud mijoz")).toBeInTheDocument();
+  });
+
+  it("9444UAa8: varaqada ham «Qo'shimcha raqam: …» belgisi (matched_by = extra_number)", async () => {
+    setPhoneViewport(true);
+    mocks.get.mockImplementation(apiGet([{ ...SHAHNOZA, matched_by: "extra_number" }, DILNOZA]));
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "9987122");
+    const sheet = await screen.findByRole("dialog", { name: "Mijozni tanlang" });
+    expect(within(sheet).getByRole("option", { name: /Shahnoza Abdullayeva/ })).toHaveTextContent(
+      "Qo'shimcha raqam: +998 99 871 22 64",
+    );
+    expect(within(sheet).getByRole("option", { name: /Dilnoza Karimova/ })).not.toHaveTextContent("Qo'shimcha raqam");
   });
 
   it("natija yo'q — varaqa ochilmaydi, maydon ostida «Mijoz topilmadi»", async () => {

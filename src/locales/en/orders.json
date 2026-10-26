@@ -841,6 +841,7 @@
     "scopeAll": "All customers · order count for {{market}}",
     "scopeMarket": "{{market}} customers · order count for this store",
     "scopeOwn": "Your customers · order count with you only",
+    "extraNumberMatch": "Extra number:",
     "ordersCount_one": "{{value}} order",
     "ordersCount_other": "{{value}} orders",
     "newCount_one": "{{value}} new",

@@ -1,7 +1,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import type { CustomerDistrict, CustomerSuggestion, CustomerSuggestParams } from "./types";
+import type { CustomerDistrict, CustomerSuggestMatch, CustomerSuggestion, CustomerSuggestParams } from "./types";
 
 export const CUSTOMER_SUGGEST_KEY = "customer-suggest";
 export const CUSTOMER_DISTRICT_KEY = "customer-district";
@@ -21,6 +21,9 @@ const count = (value: unknown): number | null => {
 /** Gateway qobig'i `{ statusCode, message, data }` yoki to'g'ridan-to'g'ri qiymat. */
 const unwrap = (payload: unknown): unknown =>
   payload && typeof payload === "object" && "data" in payload ? (payload as { data: unknown }).data : payload;
+
+/** `matched_by` ning ma'lum qiymatlari (9444UAa8). */
+const MATCHES: ReadonlySet<CustomerSuggestMatch> = new Set<CustomerSuggestMatch>(["phone", "extra_number", "name"]);
 
 /** Javobdan takliflar (noto'g'ri qatorlar tashlanadi, maydonlar oq ro'yxatda). */
 export const toCustomerSuggestions = (payload: unknown): CustomerSuggestion[] => {
@@ -45,6 +48,7 @@ export const toCustomerSuggestions = (payload: unknown): CustomerSuggestion[] =>
           ? row.new_order_ids.map(text).filter((id): id is string => Boolean(id))
           : [],
         last_order_at: text(row.last_order_at),
+        matched_by: MATCHES.has(row.matched_by as CustomerSuggestMatch) ? (row.matched_by as CustomerSuggestMatch) : null,
       };
     })
     .filter((row) => row.id !== "");

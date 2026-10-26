@@ -28,6 +28,7 @@ describe("toCustomerSuggestions", () => {
           has_new_orders: true,
           new_order_ids: [10260, null],
           last_order_at: "2026-10-19T09:52:00.000Z",
+          matched_by: "extra_number",
           password: "yo'q",
         },
         { name: "id'siz" },
@@ -49,8 +50,21 @@ describe("toCustomerSuggestions", () => {
         has_new_orders: true,
         new_order_ids: ["10260"],
         last_order_at: "2026-10-19T09:52:00.000Z",
+        matched_by: "extra_number",
       },
     ]);
+  });
+
+  it("9444UAa8: matched_by — faqat phone | extra_number | name, qolgani (yo'q / noma'lum) `null`", () => {
+    const rows = toCustomerSuggestions({
+      data: [
+        { id: "1", matched_by: "phone" },
+        { id: "2", matched_by: "name" },
+        { id: "3", matched_by: "address" },
+        { id: "4" },
+      ],
+    });
+    expect(rows.map((row) => row.matched_by)).toEqual(["phone", "name", null, null]);
   });
 
   it("market konteksti yo'q — sonlar `null`; ro'yxat bo'lmasa bo'sh", () => {
