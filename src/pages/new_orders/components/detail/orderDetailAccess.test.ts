@@ -134,7 +134,7 @@ describe("market operatori (MO-3) — market ko'rinishi, faqat o'qish", () => {
   });
 });
 
-describe("getOrderDetailAccess — ombor buyurtmasi (hfkhYrGk №4)", () => {
+describe("getOrderDetailAccess — ombor buyurtmasi (hfkhYrGk №4, №6)", () => {
   const warehouseOrder = (fields: Record<string, unknown> = {}) =>
     order({
       status: "received",
@@ -157,6 +157,24 @@ describe("getOrderDetailAccess — ombor buyurtmasi (hfkhYrGk №4)", () => {
     expect(getOrderDetailAccess({ role: "superadmin", branchType: null, order: warehouseOrder() }).productsLocked).toBe(true);
   });
 
+  it("№6: «O'chirish» — faqat superadmin, `received` ombor buyurtmasi, kuryerda emas", () => {
+    const canDelete = (role: string, value: ReturnType<typeof order>) =>
+      getOrderDetailAccess({ role, branchType: "REGIONAL", canSellCancel: true, order: value }).canDelete;
+    expect(canDelete("superadmin", warehouseOrder())).toBe(true);
+    expect(canDelete("superadmin", warehouseOrder({ holder_type: null }))).toBe(true);
+    for (const role of ["admin", "registrator", "manager", "market", "courier", "market_operator"]) {
+      expect(canDelete(role, warehouseOrder()), role).toBe(false);
+    }
+    // Kuryer qo'lida (backend: kuryerdagisi ON_THE_ROAD) va boshqa holatlar — yo'q.
+    expect(canDelete("superadmin", warehouseOrder({ holder_type: "COURIER" }))).toBe(false);
+    for (const status of ["new", "on the road", "waiting", "sold", "cancelled", "returned_to_market"]) {
+      expect(canDelete("superadmin", warehouseOrder({ status })), status).toBe(false);
+    }
+    // Faqat ombor buyurtmasi — HQ buyurtmasiga kengaytirilmagan.
+    expect(canDelete("superadmin", order({ status: "received", fulfillment_source: "HQ" }))).toBe(false);
+    expect(canDelete("superadmin", order({ status: "received" }))).toBe(false);
+    expect(canDelete("superadmin", null)).toBe(false);
+  });
 });
 
 describe("getUserCanSellCancel", () => {

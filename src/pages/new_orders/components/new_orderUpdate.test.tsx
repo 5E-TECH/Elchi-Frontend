@@ -32,6 +32,8 @@ const sellModalProps = vi.hoisted(() => ({ last: null as null | { order: { items
 
 const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 const rollbackMutation = vi.hoisted(() => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }));
+// hfkhYrGk №6: `DELETE /orders/:id` — superadmin ombor buyurtmasini tafsilotdan o'chiradi.
+const deleteMutation = vi.hoisted(() => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }));
 
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
@@ -53,6 +55,7 @@ vi.mock("../../../entities/orders", () => ({
     PartlySellOrder: idleMutation,
     CancelOrder: idleMutation,
     RollbackOrder: rollbackMutation,
+    deleteOrder: deleteMutation,
     scanMarketCancelledQr: idleMutation,
     verifyMarketCancelledPin: idleMutation,
   }),
@@ -883,7 +886,7 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
   });
 });
 
-describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari (hfkhYrGk №3, №4)", () => {
+describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari va o'chirish (hfkhYrGk №3, №4, №6)", () => {
   const WAREHOUSE = {
     fulfillment_source: "WAREHOUSE",
     warehouse: { id: "3", name: "Samarqand filiali ombori", branch_id: "11" },
@@ -897,6 +900,7 @@ describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari (hfkhYrGk №3, №
     orderState.extra = undefined;
     orderState.status = undefined;
     returnPathEvents.list = [];
+    deleteMutation.mutateAsync.mockReset();
   });
 
   it("№3: omborga qaytgan (returned_to_market + WAREHOUSE) — «Mahsulot omborga qaytarilgan», «marketga topshirilgan» emas", () => {
@@ -947,5 +951,86 @@ describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari (hfkhYrGk №3, №
     renderPage("superadmin");
     expect(document.getElementById("products-lock")).toHaveTextContent("HQ qabul qilgandan keyin ularni o'zgartirib bo'lmaydi.");
     expect(screen.queryByText(/omborda band qilingan/)).toBeNull();
+  });
+
+  it("№6: «O'chirish» — faqat superadmin; admin, registrator, menejer, HQ buyurtmasi va kuryerdagisida yo'q", () => {
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE };
+    const superadmin = renderPage("superadmin");
+    expect(screen.getByTestId("delete-order-button")).toHaveTextContent("O'chirish");
+    superadmin.unmount();
+
+    for (const role of ["admin", "registrator", "manager"]) {
+      const view = renderPage(role);
+      expect(screen.queryByTestId("delete-order-button"), role).toBeNull();
+      view.unmount();
+    }
+
+    orderState.extra = { ...WAREHOUSE, holder_type: "COURIER" };
+    const held = renderPage("superadmin");
+    expect(screen.queryByTestId("delete-order-button")).toBeNull();
+    held.unmount();
+
+    orderState.extra = { fulfillment_source: "HQ" };
+    renderPage("superadmin");
+    expect(screen.queryByTestId("delete-order-button")).toBeNull();
+  });
+
+  it("№6: tasdiq oynasi → DELETE → «Buyurtma №… o'chirildi» va ro'yxatga qaytadi; bekor qilinsa so'rov yo'q", async () => {
+    const user = userEvent.setup();
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE };
+    deleteMutation.mutateAsync.mockResolvedValue({});
+    renderWithProviders(
+      <Routes>
+        <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
+        <Route path="/orders" element={<p>ORDERS LIST</p>} />
+      </Routes>,
+      {
+        route: "/orders/edit/1251175",
+        preloadedState: { role: { id: "superadmin-1", role: "superadmin", region: null, name: "superadmin" } } as never,
+      },
+    );
+
+    // Bekor qilish — so'rov yuborilmaydi.
+    await user.click(screen.getByTestId("delete-order-button"));
+    let dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani o'chirish" });
+    expect(dialog).toHaveTextContent("Buyurtma o'chiriladi, ombordagi band bo'shatiladi.");
+    expect(dialog).toHaveTextContent("№1251175 · Ali Valiyev");
+    expect(dialog).toHaveTextContent("Baraka Shop");
+    expect(dialog).toHaveTextContent("Urgut tumani");
+    expect(dialog).toHaveTextContent("100 000 so'm");
+    expect(dialog).toHaveTextContent("Bu amalni qaytarib bo'lmaydi.");
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(deleteMutation.mutateAsync).not.toHaveBeenCalled();
+
+    // Tasdiqlash — DELETE, xabar, ro'yxatga qaytish.
+    await user.click(screen.getByTestId("delete-order-button"));
+    dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() => expect(deleteMutation.mutateAsync).toHaveBeenCalledWith("1251175"));
+    expect(await screen.findByText("Buyurtma №1251175 o'chirildi")).toBeInTheDocument();
+    expect(await screen.findByText("ORDERS LIST")).toBeInTheDocument();
+  });
+
+  it("№6: backend xatosi — oynada ko'rinadi, oyna ochiq qoladi, sahifa joyida", async () => {
+    const user = userEvent.setup();
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE };
+    deleteMutation.mutateAsync.mockRejectedValue(
+      Object.assign(new Error("409"), {
+        isAxiosError: true,
+        response: { status: 409, data: { message: "Pochtadagi buyurtmani faqat jo'natilmagan va to'lovsiz holatda o'chirish mumkin" } },
+      }),
+    );
+    renderPage("superadmin");
+
+    await user.click(screen.getByTestId("delete-order-button"));
+    const dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    expect(await within(dialog).findByText(/faqat jo'natilmagan va to'lovsiz holatda/)).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", { name: "Buyurtmani o'chirish" })).toBeInTheDocument();
+    expect(screen.queryByText(/o'chirildi/)).toBeNull();
   });
 });

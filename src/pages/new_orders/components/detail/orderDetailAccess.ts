@@ -8,6 +8,7 @@ import {
   canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
+  normalizeOrderStatus,
 } from "../newOrderUpdateRules";
 import type { OrderDetail } from "./orderDetailModel";
 
@@ -30,6 +31,10 @@ import type { OrderDetail } from "./orderDetailModel";
  * (`GET orders/:id/tracking` — `@Roles` da MARKET_OPERATOR yo'q, 403);
  * registratorda mijoz tugmasi o'chiq (sababi bilan), menejerda tugma yo'q, faqat izoh
  * (`*-orders-detail` maketlari).
+ *
+ * O'chirish (hfkhYrGk №6; backend `DELETE /orders/:id` — `received` ni faqat SUPERADMIN o'chiradi, ombor buyurtmasida
+ * band ham bo'shaydi): faqat superadmin, faqat ombor buyurtmasi (`fulfillment_source: WAREHOUSE`), `received` va kuryerga
+ * berilmagan (`holder_type` ≠ COURIER). Boshqa buyurtmalarga kengaytirilmagan — yetishmagan yo'l faqat shu edi.
  */
 
 export type OrderPageBranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
@@ -113,11 +118,20 @@ export interface OrderDetailAccess {
   canViewTracking: boolean;
   /** Bekor qilingan buyurtmaning QR sahifasi (`/new-orders/cancelled/:marketId`) — faqat market egasi (MO-3). */
   canOpenCancelledQr: boolean;
+  /** «O'chirish» — superadmin, qabul qilingan (kuryerga berilmagan) ombor buyurtmasi (hfkhYrGk №6). */
+  canDelete: boolean;
 }
 
 export type ProductsLockReason = "hq" | "warehouse";
 
 const normalizeRole = (role: string | null | undefined) => (role ?? "").trim().toLowerCase();
+
+/** Superadmin o'chira oladigan ombor buyurtmasi: `received`, kuryer qo'lida emas (backend: kuryerdagisi ON_THE_ROAD). */
+const isDeletableWarehouseOrder = (order: OrderDetail | null): boolean =>
+  Boolean(order) &&
+  readFulfillmentSource(order).fromWarehouse &&
+  normalizeOrderStatus(order?.status ?? "") === "received" &&
+  String(order?.holder_type ?? "").toUpperCase() !== "COURIER";
 
 /** Viloyat ombori buyurtmasi (Markaziy ombor — faqat `warehouse.kind: HQ`). */
 const getProductsLockReason = (order: OrderDetail | null): ProductsLockReason => {
@@ -167,6 +181,7 @@ export const getOrderDetailAccess = ({
     canHandOverReturn: canMarkReturnedToMarket(rawRole, order),
     canViewTracking: !isMarketOperator,
     canOpenCancelledQr: role === "market",
+    canDelete: role === "superadmin" && isDeletableWarehouseOrder(order),
   };
 };
 

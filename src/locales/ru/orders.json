@@ -787,7 +787,15 @@
     "noProducts": "В заказе нет товаров",
     "notFoundTitle": "Заказ не найден",
     "notFoundDescription": "Заказа №{{id}} нет или у вас нет доступа к нему.",
-    "backToOrders": "Вернуться к заказам"
+    "backToOrders": "Вернуться к заказам",
+    "deleteAction": "Удалить",
+    "deleteTitle": "Удалить заказ",
+    "deleteWarehouseDescription": "Заказ будет удалён, резерв на складе снимется.",
+    "deleteTotal": "Итого",
+    "deleteConfirm": "Удалить",
+    "deleting": "Удаление…",
+    "deleted": "Заказ №{{id}} удалён",
+    "deletedWarehouseDescription": "Резерв на складе снят."
   },
   "createCatalogEmptyHint": "Каталог этого маркета пуст. Добавьте товар через поле «Товар не из каталога».",
   "amountInput": {

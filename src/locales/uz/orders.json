@@ -787,7 +787,15 @@
     "noProducts": "Buyurtmada mahsulot yo'q",
     "notFoundTitle": "Buyurtma topilmadi",
     "notFoundDescription": "№{{id}} raqamli buyurtma yo'q yoki uni ko'rishga ruxsatingiz yo'q.",
-    "backToOrders": "Buyurtmalarga qaytish"
+    "backToOrders": "Buyurtmalarga qaytish",
+    "deleteAction": "O'chirish",
+    "deleteTitle": "Buyurtmani o'chirish",
+    "deleteWarehouseDescription": "Buyurtma o'chiriladi, ombordagi band bo'shatiladi.",
+    "deleteTotal": "Jami summa",
+    "deleteConfirm": "O'chirish",
+    "deleting": "O'chirilmoqda…",
+    "deleted": "Buyurtma №{{id}} o'chirildi",
+    "deletedWarehouseDescription": "Ombordagi band bo'shatildi."
   },
   "createCatalogEmptyHint": "Bu marketning katalogi bo'sh. Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.",
   "amountInput": {

@@ -3,7 +3,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
+import { Check, PackageCheck, RotateCcw, Trash2, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import {
   isWarehouseReturn,
@@ -59,6 +59,7 @@ import {
 import { PaymentCard } from "./detail/PaymentCard";
 import { ProductsCard } from "./detail/ProductsCard";
 import { ProofCard } from "./detail/ProofCard";
+import { useDeleteWarehouseOrder } from "./detail/useDeleteWarehouseOrder";
 import { EditAddressDialog, EditCustomerDialog, EditOrderDialog } from "./editDialogs";
 
 /**
@@ -67,7 +68,8 @@ import { EditAddressDialog, EditCustomerDialog, EditOrderDialog } from "./editDi
  * Maketlar: `<rol>-orders-detail` (superadmin, admin, manager, registrator, market, courier). Sahifa
  * shell ichida chiziladi (tashqi karta / chekka / o'z skrolli yo'q). Tuzilma:
  *  - sarlavha (`DetailHeader`): «← Buyurtmalar», №, holat, rol amallari (sotish, bekor qilish,
- *    qaytarish, marketga qaytarish / topshirish);
+ *    qaytarish, marketga qaytarish / topshirish; superadmin — qabul qilingan ombor buyurtmasini «O'chirish»,
+ *    hfkhYrGk №6, maket yo'q — eng yaqini `manager-orders-detail` «Bekor qilish» + `manager-new-orders-delete-confirm-dialog`);
  *  - ogohlantirishlar (`DetailAlerts`): market tasdig'i, qulflar, qisman sotuv banneri;
  *  - ikki ustun (`flex-row-reverse flex-wrap`: yon ustun DOM'da birinchi — telefonda tepada):
  *    yon — Buyurtma ma'lumotlari, Mijoz + Manzil, To'lov; asosiy — Mahsulotlar, Dalillar, Tarix.
@@ -101,7 +103,7 @@ const NewOrderUpdate = () => {
   const canSellCancel = getUserCanSellCancel(user);
 
   // ─── Ma'lumot ─────────────────────────────────────────────────────────────
-  const { useGetOrderById, SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrders();
+  const { useGetOrderById, SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, deleteOrder } = useOrders();
   const orderQuery = useGetOrderById(orderId, Boolean(orderId), (current) => {
     const detail = normalizeOrderDetail(current);
     return pollWhileApprovalPending(detail ? [detail] : []);
@@ -291,10 +293,24 @@ const NewOrderUpdate = () => {
     });
   }, [RollbackOrder, actionOrder, refreshTracking, showActionError]);
 
+  // hfkhYrGk №6: superadmin — qabul qilingan ombor buyurtmasini o'chirish (tasdiq oynasi, band bo'shaydi).
+  const requestDelete = useDeleteWarehouseOrder({ order, deleteOrder, onDeleted: handleBack });
+
   // ─── Sarlavha amallari (bitta asosiy — «Sotish») ───────────────────────────
   const headerActions =
     order && access.layout === "default" ? (
       <>
+        {access.canDelete ? (
+          <Button
+            variant="danger-soft"
+            leftIcon={Trash2}
+            data-testid="delete-order-button"
+            aria-haspopup="dialog"
+            onClick={() => void requestDelete()}
+          >
+            {t("orderDetail.deleteAction", { ns: "orders" })}
+          </Button>
+        ) : null}
         {access.canStartReturn ? (
           <Button
             variant="secondary"

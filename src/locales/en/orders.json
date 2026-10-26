@@ -787,7 +787,15 @@
     "noProducts": "No products in the order",
     "notFoundTitle": "Order not found",
     "notFoundDescription": "Order №{{id}} does not exist or you do not have access to it.",
-    "backToOrders": "Back to orders"
+    "backToOrders": "Back to orders",
+    "deleteAction": "Delete",
+    "deleteTitle": "Delete order",
+    "deleteWarehouseDescription": "The order will be deleted and its warehouse reservation released.",
+    "deleteTotal": "Total",
+    "deleteConfirm": "Delete",
+    "deleting": "Deleting…",
+    "deleted": "Order #{{id}} deleted",
+    "deletedWarehouseDescription": "The warehouse reservation was released."
   },
   "createCatalogEmptyHint": "This market's catalog is empty. Add the product with the “Product not in catalog” field.",
   "amountInput": {
