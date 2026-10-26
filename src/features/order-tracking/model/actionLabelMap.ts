@@ -11,6 +11,8 @@ export const actionLabelMap: Record<string, string> = {
   cancelled_post_received: "tracking.action.cancelledPostReceived",
   closed: "tracking.action.closed",
   received: "tracking.action.received",
+  // vbu7Wr3o: filial menejeri / kuryer pochtani qabul qildi — «Qabul qilindi».
+  post_received: "tracking.action.received",
   rollback: "tracking.action.rollback",
   sent: "tracking.action.sent",
   waiting: "tracking.action.waiting",

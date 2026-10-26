@@ -37,7 +37,9 @@ import {
   getActiveNavTo,
   getNavPersona,
   getTileAccessibleName,
+  NEW_ORDERS_NAV_PATH,
   useNavSections,
+  useNewOrdersNavCount,
   type NavEntry,
   type NavSection,
 } from "../model/navSections";
@@ -179,6 +181,8 @@ type VariantProps = {
   label: (item: NavEntry) => string;
   /** Ixcham katak yorlig'i (qisqa shakl bo'lsa — u). */
   shortLabel: (item: NavEntry) => string;
+  /** Band soni (GaBIPi3Z: «Qabul va yaratish» — `new_incoming`); `null` — belgi yo'q. */
+  navCount: (item: NavEntry) => { count: string; countLabel: string } | null;
   onClose: () => void;
   onSearch: (value: string) => void;
   onLogout: () => void;
@@ -213,6 +217,7 @@ const Drawer = ({
   branchTypeMissing,
   showSearch,
   label,
+  navCount,
   onClose,
   onSearch,
   onLogout,
@@ -290,6 +295,7 @@ const Drawer = ({
                       to={item.to}
                       icon={item.icon}
                       label={label(item)}
+                      {...(navCount(item) ?? {})}
                       active={item.to === activeTo}
                       onNavigate={onClose}
                       touch
@@ -547,6 +553,8 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const titleId = useId();
 
   const { role, user, sections, items, branchTypeMissing } = useNavSections();
+  // GaBIPi3Z: yon menyu va pastki menyu bilan bir kesh yozuvi — qo'shimcha so'rov ketmaydi.
+  const newOrdersCount = useNewOrdersNavCount(role, items);
   const roleState = useSelector((state: RootState) => state.role);
   // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar ochilmaydigan rolda (logist: LG-4 gacha) u 403
   // sahifasiga olib borardi; yuqori paneldagi global qidiruv qoladi. Market operatorida MO-3 dan beri ochiq.
@@ -610,6 +618,10 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     showSearch: roleHasGlobalSearch(user?.role || role || roleState.role) && canOpenOrders,
     label: (item) => t(item.labelKey),
     shortLabel: (item) => t(item.shortLabelKey ?? item.labelKey),
+    navCount: (item) => {
+      const count = item.to === NEW_ORDERS_NAV_PATH ? formatNavCount(newOrdersCount) : null;
+      return count ? { count, countLabel: t("newCount", { count: newOrdersCount ?? 0 }) } : null;
+    },
     onClose,
     onSearch,
     onLogout: () => {

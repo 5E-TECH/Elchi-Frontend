@@ -5,6 +5,7 @@ import type { RootState } from "../../../app/config/store";
 import type { User } from "../../../entities/user/model/types";
 // Yengil modul (barrel emas) — asosiy chunkka to'liq ombor API'si tushmasin.
 import { useHasOwnWarehouse } from "../../../entities/warehouse/api/ownWarehouse";
+import { useNewIncomingOrdersCount } from "../../../entities/order/api/orderStatusCounts";
 import {
   getSidebarGroupsForUser,
   hasUnknownBranchType,
@@ -177,6 +178,31 @@ export const formatNavCount = (count: number | null | undefined): string | null 
   if (typeof count !== "number" || !Number.isFinite(count) || count <= 0) return null;
   return count > 99 ? "99+" : String(Math.floor(count));
 };
+
+/** «Qabul va yaratish» bandi yo'li — badge shu bandda (yon menyu, planshet menyusi, pastki menyu). */
+export const NEW_ORDERS_NAV_PATH = "/new-orders";
+
+/**
+ * `new_incoming` keladigan rollar (FRONTEND_CHANGELOG 2026-10-26, GaBIPi3Z): SA/admin/registrator, filial xodimi,
+ * market. Operator, kuryer, logist, investor — `null` (bo'lim yo'q), shuning uchun so'rov umuman ketmaydi.
+ */
+const NEW_INCOMING_ROLES: ReadonlySet<SidebarUserRole> = new Set(["superadmin", "admin", "registrator", "manager", "market"]);
+
+/** Badge so'raladimi: rol `new_incoming` oladi VA uning menyusida «Qabul va yaratish» bandi bor (menejerda filial turiga qarab). */
+export const hasNewOrdersBadge = (
+  role: SidebarUserRole | null | undefined,
+  items: readonly Pick<NavEntry, "to">[],
+): boolean => Boolean(role && NEW_INCOMING_ROLES.has(role) && items.some((item) => item.to === NEW_ORDERS_NAV_PATH));
+
+/**
+ * «Qabul va yaratish» badge'i soni (`GET /orders/status-counts` → `new_incoming`, filtrsiz; 60 s da va buyurtma
+ * amallari / jonli hodisada yangilanadi). `null` — badge yo'q. Uch joy (yon menyu, planshet menyusi, pastki menyu)
+ * bitta kesh yozuvini ulashadi — qo'shimcha so'rov ketmaydi.
+ */
+export const useNewOrdersNavCount = (
+  role: SidebarUserRole | null | undefined,
+  items: readonly Pick<NavEntry, "to">[],
+): number | null => useNewIncomingOrdersCount(hasNewOrdersBadge(role, items));
 
 /** Ism → 2 harfli avatar (maket `.el-avatar`: «Jasur Tursunov» → «JT»). */
 export const getInitials = (name: string | null | undefined): string => {

@@ -35,9 +35,21 @@ const baseRow = {
 
 const rows = [
   { ...baseRow, id: "10302", status: "sold", customer: { id: "c-1", name: "Malika Yusupova", phone_number: "+998998124011" } },
-  { ...baseRow, id: "10293", status: "waiting", customer: { id: "c-2", name: "Sevara Tursunova", phone_number: "+998905621407" } },
+  {
+    ...baseRow,
+    id: "10293",
+    status: "waiting",
+    customer: { id: "c-2", name: "Sevara Tursunova", phone_number: "+998905621407" },
+    // vbu7Wr3o: kutilayotgan buyurtmada `to_be_paid` 0 — chegara backend bergan maydonda (96 000 − markaz tarifi).
+    sale_market_paid_max: 25000,
+  },
 ];
 
+// GaBIPi3Z: holat tablari sonlari — bu testlar ro'yxat va oynalarni tekshiradi (sonlar `statusCounts.test.tsx` da).
+vi.mock("../../entities/order/api/orderStatusCounts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/order/api/orderStatusCounts")>()),
+  useOrderStatusCounts: () => ({ data: undefined, isPlaceholderData: false, isFetching: false, refetch: async () => undefined }),
+}));
 vi.mock("../../entities/order/api/orderApi", () => ({
   useOrders: () => ({
     useGetOrders: () => ({
@@ -158,6 +170,22 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     );
     expect(await screen.findByText("Buyurtma sotildi")).toBeInTheDocument();
     expect(screen.getByText("№10293 · Sevara Tursunova")).toBeInTheDocument();
+  });
+
+  it("vbu7Wr3o: sotish oynasida «Marketga to'langan summa» chegarasi `sale_market_paid_max` dan (25 000, «0 so'm» emas)", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(rowAction("№10293 ni sotish"));
+    const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    const field = within(dialog).getByLabelText("Marketga to'langan summa");
+    const hint = field.closest("[data-field]") ?? dialog;
+    expect(hint).toHaveTextContent(/25\s000 so'mdan oshmasin/);
+    expect(dialog).not.toHaveTextContent(/·\s*0 so'mdan oshmasin/);
+
+    // Chegaradan oshsa — xato va «Sotish» yuborilmaydi.
+    await user.type(field, "30000");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/25\s000/);
   });
 
   it("bekor qilish: sabab tanlanadi → POST cancel → «Buyurtma bekor qilindi»", async () => {

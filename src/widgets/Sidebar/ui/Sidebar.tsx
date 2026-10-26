@@ -11,7 +11,14 @@ import LogoWhite from "../../../shared/assets/brand/elchi-logo-white.png";
 import MarkWhite from "../../../shared/assets/brand/elchi-mark-white.png";
 import { setSidebar } from "../model/sidebarSlice";
 import { useNavPathname } from "../model/shellNav";
-import { getActiveNavTo, useNavSections, type NavSectionId } from "../model/navSections";
+import {
+  formatNavCount,
+  getActiveNavTo,
+  NEW_ORDERS_NAV_PATH,
+  useNavSections,
+  useNewOrdersNavCount,
+  type NavSectionId,
+} from "../model/navSections";
 import SidebarItem from "./SidebarItem";
 import { NAV_ROW, NAV_ROW_COLLAPSED, NAV_ROW_IDLE } from "./navClasses";
 
@@ -65,7 +72,7 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const isOpen = useSelector((state: RootState) => state.sidebar.isOpen);
   const collapsed = !isOpen;
-  const { sections, items, branchTypeMissing } = useNavSections();
+  const { role, sections, items, branchTypeMissing } = useNavSections();
   const pathname = useNavPathname();
   const activeTo = useMemo(() => getActiveNavTo(items, pathname), [items, pathname]);
   const navId = useId();
@@ -100,6 +107,10 @@ const Sidebar = () => {
   };
 
   const toggleLabel = collapsed ? t("expand") : t("collapse");
+
+  // GaBIPi3Z: «Qabul va yaratish» badge'i (`new_incoming`; 0 / `null` — belgi yo'q, > 99 — «99+»).
+  const newOrdersCount = useNewOrdersNavCount(role, items);
+  const newOrdersBadge = formatNavCount(newOrdersCount);
 
   const queryClient = useQueryClient();
   const updateSettings = useUpdateSettings();
@@ -239,6 +250,9 @@ const Sidebar = () => {
                       to={item.to}
                       icon={item.icon}
                       label={t(item.labelKey)}
+                      {...(item.to === NEW_ORDERS_NAV_PATH && newOrdersBadge
+                        ? { count: newOrdersBadge, countLabel: t("newCount", { count: newOrdersCount ?? 0 }) }
+                        : {})}
                       active={item.to === activeTo}
                       collapsed={collapsed}
                       onHint={onHint}

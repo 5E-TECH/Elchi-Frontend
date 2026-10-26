@@ -496,7 +496,12 @@
       "destination_branch": "Destination branch",
       "target_branch": "Destination branch",
       "from_label": "From",
-      "to_label": "To"
+      "to_label": "To",
+      "from_holder_type": "From",
+      "to_holder_type": "To",
+      "source_type": "Sender",
+      "source_user_role": "Sender role",
+      "source_courier_name": "Sending courier"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} accepted the order at HQ",
@@ -514,7 +519,10 @@
       "returnedToMarketByActor": "{{actor}} handed the order to {{market}} — {{method}}",
       "createdByActor": "{{actor}} created the order",
       "cancelledPostReceivedAtPlace": "{{actor}} received the cancelled order — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored"
+      "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored",
+      "postReceived": "{{actor}} received the post",
+      "postReceivedAtBranch": "{{actor}} received the post — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}}"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -525,6 +533,12 @@
       "manager": "Manager",
       "market": "Market",
       "system": "System"
+    },
+    "holderValue": {
+      "hq": "Head office (HQ)",
+      "branch": "Branch",
+      "courier": "Courier",
+      "market": "Market"
     },
     "status": {
       "created": "Created",

@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useOrders } from "../../entities/order/api/orderApi";
+import { useOrderStatusCounts } from "../../entities/order/api/orderStatusCounts";
 import { useOrders as useOrderActions } from "../../entities/orders";
 import {
   pollWhileApprovalPending,
@@ -460,6 +461,20 @@ const Orders = () => {
   );
   const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
 
+  // GaBIPi3Z: holat tablari sonlari — ro'yxat bilan BIR XIL filtrlar (holatsiz, sahifasiz), bir xil yangilanish
+  // (60 s, ilovaga qaytganda, «Yangilash»; oyna ochiq bo'lsa to'xtaydi). Kuryer o'z ro'yxatini va sonlarini
+  // (`/orders/courier/orders/counts` — kuryer ro'yxati `total` i bilan teng) `CourierOrders` da o'zi so'raydi.
+  const statusCountsParams = useMemo(
+    () => buildOrderListParams({ ...filterValues, statuses: [] }, role, { page: 0, limit: 0 }),
+    [filterValues, role],
+  );
+  const statusCountsQuery = useOrderStatusCounts(statusCountsParams, {
+    enabled: role !== "courier",
+    refetchInterval: refreshPaused ? false : ORDERS_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: !refreshPaused,
+  });
+  const statusCounts = statusCountsQuery.data ?? null;
+
   const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
     ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
     ?? {};
@@ -504,7 +519,10 @@ const Orders = () => {
         : items,
     [exactOrder, items, pinnedOrderId],
   );
-  const refresh = useOrdersRefresh({ list: ordersQuery, extras: [Boolean(exactOrderId) && exactOrderQuery] });
+  const refresh = useOrdersRefresh({
+    list: ordersQuery,
+    extras: [statusCountsQuery, Boolean(exactOrderId) && exactOrderQuery],
+  });
   const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
   const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
   const canSendCancelledToHq = canUseManagerBulkSend && activeStatusTab === "cancelled";
@@ -576,6 +594,14 @@ const Orders = () => {
       status: selectedActionOrder.status,
       total_price: selectedActionOrder.total_price,
       to_be_paid: selectedActionOrder.to_be_paid,
+      // vbu7Wr3o: sotish oynasidagi «Marketga to'langan summa · N so'mdan oshmasin» chegarasi — usiz
+      // `readMarketPaidBase` `to_be_paid` (sotuvgacha 0) ga tushardi («0 so'mdan oshmasin»). Detal `buildActionOrder`
+      // dagidek.
+      sale_market_paid_max:
+        typeof selectedActionOrder.sale_market_paid_max === "number" ||
+        typeof selectedActionOrder.sale_market_paid_max === "string"
+          ? selectedActionOrder.sale_market_paid_max
+          : null,
       external_id: (orderFlags.external_id as string | number | null | undefined) ?? null,
       where_deliver: selectedActionOrder.where_deliver,
       market: {
@@ -1000,8 +1026,10 @@ const Orders = () => {
         value: tab.id,
         label: t(`ordersList.tabs.${tab.id}`),
         title: TAB_HINT_KEYS[tab.id] ? t(TAB_HINT_KEYS[tab.id] as string) : undefined,
+        // Son kelmagan (yuklanmoqda, xato) — tab sonsiz; 0 ham ko'rsatiladi (taxta `tizim-states-navigation`).
+        ...(statusCounts ? { count: statusCounts[tab.id] } : {}),
       })),
-    [t],
+    [statusCounts, t],
   );
 
   if (role === "courier") {
@@ -1091,6 +1119,8 @@ const Orders = () => {
           onValueChange={handleStatusTabChange}
           ariaLabel={t("ordersList.tabsLabel")}
           listClassName="px-3"
+          // Fon yangilanishi yoki filtr almashib yangi sonlar kutilmoqda — eski son xira (maket `*-refreshing`).
+          countBusy={refresh.refreshing || Boolean(statusCountsQuery.isPlaceholderData && statusCountsQuery.isFetching)}
         />
 
         {/* Asboblar qatori (qidiruv, sana, «Filtrlar»), panel va chiplar. */}

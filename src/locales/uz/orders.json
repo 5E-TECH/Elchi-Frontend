@@ -496,7 +496,12 @@
       "destination_branch": "Qayerga",
       "target_branch": "Qayerga",
       "from_label": "Qayerdan",
-      "to_label": "Qayerga"
+      "to_label": "Qayerga",
+      "from_holder_type": "Kimdan",
+      "to_holder_type": "Kimga",
+      "source_type": "Jo'natuvchi",
+      "source_user_role": "Jo'natuvchi roli",
+      "source_courier_name": "Jo'natgan kuryer"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} buyurtmani HQ'da qabul qildi",
@@ -514,7 +519,10 @@
       "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga topshirdi — {{method}}",
       "createdByActor": "{{actor}} buyurtmani yaratdi",
       "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi"
+      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi",
+      "postReceived": "{{actor}} pochtani qabul qildi",
+      "postReceivedAtBranch": "{{actor}} pochtani qabul qildi — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} {{post}}ni HQ'dan {{branch}}ga jo'natdi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -525,6 +533,12 @@
       "manager": "Menejer",
       "market": "Market",
       "system": "Tizim"
+    },
+    "holderValue": {
+      "hq": "Bosh ofis (HQ)",
+      "branch": "Filial",
+      "courier": "Kuryer",
+      "market": "Market"
     },
     "status": {
       "created": "Yaratilgan",

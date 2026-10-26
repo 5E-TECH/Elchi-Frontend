@@ -61,6 +61,11 @@ export interface OrderListItem {
     where_deliver: DeliveryType;
     total_price: number;
     to_be_paid: number;
+    /**
+     * Sotishda «Marketga to'langan summa» chegarasi (uguUEhin): kutilayotgan buyurtmada `to_be_paid` hali 0, chegara
+     * shu maydonda. Ro'yxat va detalda menejerga ham keladi (vbu7Wr3o); logistga yo'q.
+     */
+    sale_market_paid_max?: number | string | null;
     paid_amount: number;
     district_id: string | null;
     region_id: string | null;

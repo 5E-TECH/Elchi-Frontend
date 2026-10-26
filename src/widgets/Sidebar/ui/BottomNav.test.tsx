@@ -26,6 +26,17 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
+// GaBIPi3Z: «Qabul va yaratish» badge'i (`GET /orders/status-counts` → `new_incoming`) — haqiqiy so'rov ketmaydi,
+// son testda boshqariladi; `enabled` qiymatlari yoziladi (badge'siz rolda so'rov yoqilmaydi).
+const newIncoming = vi.hoisted(() => ({ count: null as number | null, enabled: [] as boolean[] }));
+vi.mock("../../../entities/order/api/orderStatusCounts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/order/api/orderStatusCounts")>()),
+  useNewIncomingOrdersCount: (enabled: boolean) => {
+    newIncoming.enabled.push(enabled);
+    return enabled ? newIncoming.count : null;
+  },
+}));
+
 type DesignRole =
   | "superadmin"
   | "admin"
@@ -431,5 +442,45 @@ describe("BottomNav — investor (IN-1, IN-2)", () => {
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
+  });
+});
+
+describe("BottomNav — «Qabul» katagidagi son (GaBIPi3Z, taxta `tizim-states-navigation` 06 · 4)", () => {
+  afterEach(() => {
+    newIncoming.count = null;
+    newIncoming.enabled = [];
+  });
+
+  it("ikonka burchagida `info` son, nomi «Qabul, 7 ta yangi»", () => {
+    newIncoming.count = 7;
+    renderNav("admin");
+    const link = screen.getByRole("link", { name: "Qabul, 7 ta yangi" });
+    const badge = link.querySelector("[data-bottomnav-count]") as HTMLElement;
+    expect(badge).toHaveTextContent("7");
+    expect(badge).toHaveAttribute("aria-hidden", "true");
+    expect(badge).toHaveClass("bg-info", "text-on-solid", "border-surface");
+    // Yorliq bitta qatorda qoladi — son ikonka o'ramida.
+    expect(badge.parentElement?.querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Buyurtmalar" }).querySelector("[data-bottomnav-count]")).toBeNull();
+  });
+
+  it("marketda «Yaratish» katagida; 99 dan ko'p — «99+»", () => {
+    newIncoming.count = 120;
+    renderNav("market");
+    const link = screen.getByRole("link", { name: "Yaratish, 120 ta yangi" });
+    expect(link.querySelector("[data-bottomnav-count]")).toHaveTextContent("99+");
+  });
+
+  it("0 yoki `null` — belgi va qo'shimcha nom yo'q", () => {
+    newIncoming.count = 0;
+    renderNav("superadmin");
+    expect(screen.getByRole("link", { name: "Qabul" }).querySelector("[data-bottomnav-count]")).toBeNull();
+  });
+
+  it("kuryerda (`new_incoming: null`, bo'lim yo'q) so'rov yoqilmaydi", () => {
+    newIncoming.count = 5;
+    renderNav("courier");
+    expect(newIncoming.enabled.every((enabled) => !enabled)).toBe(true);
+    expect(document.querySelector("[data-bottomnav-count]")).toBeNull();
   });
 });

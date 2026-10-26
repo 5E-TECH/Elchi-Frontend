@@ -33,6 +33,17 @@ vi.mock("../../../entities/warehouse/api/ownWarehouse", () => ({
   useHasOwnWarehouse: (enabled: boolean) => (enabled ? ownWarehouse.exists : undefined),
 }));
 
+// GaBIPi3Z: «Qabul va yaratish» badge'i (`GET /orders/status-counts` → `new_incoming`) — haqiqiy so'rov ketmaydi,
+// son testda boshqariladi; `enabled` qiymatlari yoziladi (badge'siz rolda so'rov yoqilmaydi).
+const newIncoming = vi.hoisted(() => ({ count: null as number | null, enabled: [] as boolean[] }));
+vi.mock("../../../entities/order/api/orderStatusCounts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/order/api/orderStatusCounts")>()),
+  useNewIncomingOrdersCount: (enabled: boolean) => {
+    newIncoming.enabled.push(enabled);
+    return enabled ? newIncoming.count : null;
+  },
+}));
+
 type DesignRole =
   | "superadmin"
   | "admin"
@@ -322,5 +333,51 @@ describe("Sidebar — menejer filial turi", () => {
 
     renderSidebar("market");
     expect(screen.getByRole("link", { name: "To'lovlar" })).toHaveAttribute("href", "/cash-box");
+  });
+});
+
+describe("Sidebar — «Qabul va yaratish» soni (GaBIPi3Z, `new_incoming`)", () => {
+  afterEach(() => {
+    newIncoming.count = null;
+    newIncoming.enabled = [];
+  });
+
+  it("son bandda (`nav-count` pilyula), ekran o'quvchi nomi «Qabul va yaratish, 7 ta yangi»", () => {
+    newIncoming.count = 7;
+    renderSidebar("superadmin");
+    const link = screen.getByRole("link", { name: "Qabul va yaratish, 7 ta yangi" });
+    expect(link).toHaveTextContent("Qabul va yaratish7");
+    expect(within(link).getByText("7")).toHaveClass("bg-nav-count");
+    // Boshqa bandlarda son yo'q.
+    expect(screen.getByRole("link", { name: "Buyurtmalar" })).toHaveTextContent(/^Buyurtmalar$/);
+  });
+
+  it.each([
+    { count: null, reason: "kelmadi / rolda yo'q" },
+    { count: 0, reason: "nol" },
+  ])("son $count ($reason) — belgi chiqmaydi", ({ count }) => {
+    newIncoming.count = count;
+    renderSidebar("admin");
+    expect(screen.getByRole("link", { name: "Qabul va yaratish" })).toHaveTextContent(/^Qabul va yaratish$/);
+  });
+
+  it("99 dan ko'p — «99+»", () => {
+    newIncoming.count = 150;
+    renderSidebar("registrator");
+    expect(screen.getByRole("link", { name: "Qabul va yaratish, 150 ta yangi" })).toHaveTextContent("99+");
+  });
+
+  it("yig'ilgan menyuda ham son ko'rinadi (ikonka ustida)", () => {
+    newIncoming.count = 4;
+    renderSidebar("market", { open: false });
+    expect(screen.getByRole("link", { name: /, 4 ta yangi$/ })).toHaveTextContent("4");
+  });
+
+  it("so'rov faqat `new_incoming` keladigan va menyusida bo'lim bor rollarda yoqiladi", () => {
+    renderSidebar("courier");
+    expect(newIncoming.enabled.every((enabled) => !enabled)).toBe(true);
+    newIncoming.enabled = [];
+    renderSidebar("market");
+    expect(newIncoming.enabled).toContain(true);
   });
 });
