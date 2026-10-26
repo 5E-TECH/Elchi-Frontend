@@ -4,6 +4,14 @@ import tailwindcss from "@tailwindcss/vite";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fillInlineScriptHashes, inlineScriptHashes } from "./scripts/csp-headers.mjs";
+import {
+  STAGING_ROBOTS_TXT,
+  stagingApiHost,
+  stagingHeaders,
+  stagingIndexHtml,
+  stagingManifest,
+  stagingServiceWorker,
+} from "./scripts/staging-build.mjs";
 
 const usePolling = process.env.VITE_USE_POLLING !== "false";
 
@@ -59,17 +67,29 @@ const firstPaintPreload = (): Plugin => {
 };
 
 /**
+ * TEST muhit (staging) build'i — faqat `npm run build:staging` (`vite build --mode staging`, `.env.staging` →
+ * `VITE_APP_ENV=staging`): test API hosti (https, production emas — aks holda build yiqiladi). Boshqa rejimlarda
+ * (production, development, test, visual) — `null`, quyidagi pluginlar production chiqishiga tegmaydi.
+ */
+const stagingTarget = (env: Record<string, string>) =>
+  env.VITE_APP_ENV === "staging" ? { apiHost: stagingApiHost(env.VITE_BASE_URL) } : null;
+
+/**
  * CSP xeshlari (KwodkKWY): `public/_headers` → `dist/_headers` nusxasidagi `{{INLINE_SCRIPT_HASHES}}` o'rniga
  * yakuniy `dist/index.html` ichki skriptlarining `'sha256-…'` xeshlari yoziladi (preload skripti har build'da
  * o'zgaradi). Hisoblanmasa build yiqiladi (`scripts/csp-headers.mjs`).
+ * Staging'da shu yerning o'zida API hosti test API'ga almashadi va `X-Robots-Tag` qo'shiladi
+ * (`scripts/staging-build.mjs`); production'da `_headers` avvalgidek.
  */
 const cspInlineScriptHashes = (): Plugin => {
   let outDir = "dist";
+  let staging: ReturnType<typeof stagingTarget> = null;
   return {
     name: "elchi-csp-inline-script-hashes",
     apply: "build",
     configResolved(config) {
       outDir = resolve(config.root, config.build.outDir);
+      staging = stagingTarget(config.env);
     },
     writeBundle() {
       const headersPath = resolve(outDir, "_headers");
@@ -78,14 +98,52 @@ const cspInlineScriptHashes = (): Plugin => {
         throw new Error("elchi-csp-inline-script-hashes: dist/_headers yoki dist/index.html topilmadi");
       }
       const hashes = inlineScriptHashes(readFileSync(htmlPath, "utf8"));
-      writeFileSync(headersPath, fillInlineScriptHashes(readFileSync(headersPath, "utf8"), hashes));
+      const headers = fillInlineScriptHashes(readFileSync(headersPath, "utf8"), hashes);
+      writeFileSync(headersPath, staging ? stagingHeaders(headers, staging.apiHost) : headers);
+    },
+  };
+};
+
+/**
+ * TEST muhit (staging): saytni production'dan adashtirib bo'lmasin — `index.html` (noindex, «[TEST]» sarlavha, PWA
+ * nomlari), `manifest.webmanifest` («… TEST» nom), `sw.js` («[TEST]» bildirishnoma sarlavhasi), `robots.txt`
+ * (`Disallow: /`). Almashtirish joyi topilmasa — build yiqiladi (`scripts/staging-build.mjs`). Production'da hech
+ * narsa qilmaydi. Ekrandagi «TEST muhit» belgisi — `src/widgets/staging-banner`.
+ */
+const stagingBuild = (): Plugin => {
+  let outDir = "dist";
+  let enabled = false;
+  const rewrite = (file: string, transform: (source: string) => string) => {
+    const path = resolve(outDir, file);
+    if (!existsSync(path)) throw new Error(`elchi-staging-build: dist/${file} topilmadi`);
+    writeFileSync(path, transform(readFileSync(path, "utf8")));
+  };
+  return {
+    name: "elchi-staging-build",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+      enabled = stagingTarget(config.env) !== null;
+      // Cloudflare Workers Builds (dashboard'dagi git integratsiyasi; `WORKERS_CI_BRANCH` ni o'zi beradi) `test`
+      // branchidan PRODUCTION rejimida build qilmasin: aks holda test kodi production Worker `elchi-frontend` ga
+      // versiya bo'lib yuklanardi. `test` → faqat `npm run build:staging` + `wrangler deploy --env staging`.
+      if (!enabled && process.env.WORKERS_CI_BRANCH === "test") {
+        throw new Error("elchi-staging-build: `test` branchi production rejimida build qilinmaydi (npm run build:staging)");
+      }
+    },
+    transformIndexHtml: { order: "pre", handler: (html) => (enabled ? stagingIndexHtml(html) : html) },
+    writeBundle() {
+      if (!enabled) return;
+      rewrite("manifest.webmanifest", stagingManifest);
+      rewrite("sw.js", stagingServiceWorker);
+      rewrite("robots.txt", () => STAGING_ROBOTS_TXT);
     },
   };
 };
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), firstPaintPreload(), cspInlineScriptHashes()],
+  plugins: [react(), tailwindcss(), firstPaintPreload(), cspInlineScriptHashes(), stagingBuild()],
   server: {
     watch: {
       ignored: [

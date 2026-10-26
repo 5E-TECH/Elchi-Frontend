@@ -193,6 +193,7 @@ export const V2_SCOPES = Object.freeze([
   "src/widgets/order-return-path",
   "src/widgets/region-detail",
   "src/widgets/scanner",
+  "src/widgets/staging-banner",
   "src/widgets/user-detail",
   "src/widgets/user-list",
   // TOZ-2: v1 `BackButton.tsx` v2 tokenlariga o'tdi — `src/shared/ui` butunligicha (primitives, charts, error-page, camera …).

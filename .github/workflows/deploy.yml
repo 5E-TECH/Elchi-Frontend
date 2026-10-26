@@ -6,9 +6,20 @@
 #
 # Endi: `main`ga push -> sifat darvozasi -> deploy. PR'da faqat tekshiruv (+ Playwright e2e).
 #
+# TEST muhit (staging): `test`ga push -> o'sha sifat darvozasi -> `npm run build:staging` (`.env.staging`, test API)
+# -> `npx wrangler deploy --env staging` -> ALOHIDA Worker `elchi-frontend-test`, https://test-admin.elchipochta.uz.
+# Oqim: dev -> test (merge) -> staging; test -> main (merge) -> production (avvalgidek).
+# Staging deploy faqat repo o'zgaruvchisi `STAGING_ENABLED` = `true` bo'lganda (Settings -> Secrets and variables ->
+# Actions -> Variables). Test backend (test-api.elchipochta.uz) tayyor bo'lmaguncha o'zgaruvchi qo'yilmaydi:
+# `test`ga push faqat tekshiruv + staging build'ini yuradi, hech narsa chiqmaydi.
+# `main`/production yo'li o'zgarmagan: `test`da production build ham, production deploy ham yurmaydi; har deploy
+# oldidan `npm run check:target` build aynan o'z muhitiniki ekanini tekshiradi (production <-> staging adashmaydi).
+#
 # Kerakli GitHub Secrets (Settings -> Secrets and variables -> Actions):
-#   CLOUDFLARE_API_TOKEN   — "Edit Cloudflare Workers" shablonidagi token
+#   CLOUDFLARE_API_TOKEN   — "Edit Cloudflare Workers" shablonidagi token (staging ham shu token bilan; custom domen
+#                            test-admin.elchipochta.uz uchun elchipochta.uz zonasida Workers Routes / DNS ruxsati)
 #   CLOUDFLARE_ACCOUNT_ID  — akkaunt id (`npx wrangler whoami` ko'rsatadi)
+# Variables: STAGING_ENABLED — `true` bo'lsa `test` branchi staging'ga chiqadi (sukut: yo'q — staging o'chiq).
 #
 # Build uchun qo'shimcha sir kerak emas: `.env.production` repoda turadi va
 # ichida faqat ochiq qiymatlar bor (VITE_* baribir bundle'ga tushadi).
@@ -17,15 +28,15 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, test]
   pull_request:
   workflow_dispatch:
 
-# Bir branchda ikkita deploy bir vaqtda ketmasin. main'da `cancel-in-progress`
-# o'chirilgan — productionga chiqish yarim yo'lda uzilib qolmasligi kerak.
+# Bir branchda ikkita deploy bir vaqtda ketmasin. main'da (va test'da) `cancel-in-progress`
+# o'chirilgan — productionga (staging'ga) chiqish yarim yo'lda uzilib qolmasligi kerak.
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/test' }}
 
 jobs:
   deploy:
@@ -68,10 +79,30 @@ jobs:
           npm run design:guard -- --diff "origin/${BASE_REF}"
 
       # `npm run build` = `tsc -b && vite build`, ya'ni tip tekshiruvi shu yerda.
+      # `test` branchida production build'i yo'q — o'rniga staging (quyida), production deploy ham yo'q.
       - run: npm run build
+        if: github.ref != 'refs/heads/test'
+
+      # TEST muhit: `tsc -b && vite build --mode staging` (`.env.staging` — test API, «TEST muhit» belgisi, noindex).
+      - name: Build (staging)
+        if: github.ref == 'refs/heads/test'
+        run: npm run build:staging
 
       # Bundle byudjeti: entry ≤ 600 KB gzip, index.html da jsPDF yo'q.
       - run: npm run check:bundle
+
+      # `dist` aynan o'z muhitining build'i: API hosti (_headers CSP, JS), noindex, «[TEST]», manifest, robots.txt.
+      # Staging build'i production'ga (yoki aksincha) hech qachon chiqmasin.
+      - name: Deploy maqsadi (dist ↔ muhit)
+        run: npm run check:target -- ${{ github.ref == 'refs/heads/test' && 'staging' || 'production' }}
+
+      # PR'da staging build'i ham yig'ilib tekshiriladi (alohida papkada — `dist` production'niki bo'lib qoladi):
+      # `.env.staging` / vite.config.ts / public/* dagi o'zgarish staging'ni buzsa, `test`ga merge'dan oldin ko'rinadi.
+      - name: Staging build (tekshiruv)
+        if: github.event_name == 'pull_request'
+        run: |
+          npx vite build --mode staging --outDir "$RUNNER_TEMP/dist-staging" --emptyOutDir --logLevel warn
+          npm run check:target -- staging "$RUNNER_TEMP/dist-staging"
 
       # E2E (Playwright, tests/e2e) — faqat PR'da, yiqilsa merge bo'lmaydi (ega qarori 2026-10-17).
       # API so'rovlari testlarning o'zida mock qilinadi (tests/e2e/support/*), backend kerak emas;
@@ -119,3 +150,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # TEST muhit: `wrangler.jsonc` → `env.staging` — Worker `elchi-frontend-test`, test-admin.elchipochta.uz.
+      # `--env staging` siz chaqirilmaydi: production Worker'ga tegmaydi. Faqat `STAGING_ENABLED` = `true` bo'lsa.
+      - name: Deploy (staging)
+        if: github.ref == 'refs/heads/test' && vars.STAGING_ENABLED == 'true'
+        run: npx wrangler deploy --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Staging o'chiq (deploy qilinmadi)
+        if: github.ref == 'refs/heads/test' && vars.STAGING_ENABLED != 'true'
+        run: |
+          echo "::notice title=Staging::STAGING_ENABLED != true — test-admin.elchipochta.uz ga deploy qilinmadi (build va tekshiruvlar o'tdi)."
+          echo "Staging o'chiq: repo o'zgaruvchisi \`STAGING_ENABLED\` = \`true\` emas — deploy qilinmadi (Settings → Secrets and variables → Actions → Variables)." >> "$GITHUB_STEP_SUMMARY"
