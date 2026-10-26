@@ -19,6 +19,7 @@ import {
   canCreateOrders,
   canReceiveExternalOrders,
   canViewPaymentsPage,
+  canManageShiftSettings,
   canHandoverCancelledToMarket,
   canCreateProducts,
   canViewProducts,
@@ -120,6 +121,9 @@ const Mails = lazy(() => import("../../pages/mails"));
 const MailDetail = lazy(() => import("../../pages/mails/detail"));
 
 const Payments = lazy(() => import("../../pages/payments"));
+// kiZgTybn — smena hisoboti (kartalar, AI holati) va smena sozlamalari (faqat superadmin).
+const ShiftReportPage = lazy(() => import("../../pages/payments/shiftReport"));
+const ShiftSettingsPage = lazy(() => import("../../pages/payments/shiftSettings"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
@@ -998,6 +1002,25 @@ const AppRouter = () => {
                       redirectTo="/cash-box"
                     >
                       <CashDetail />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "shifts/:id",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={isPaymentsManager}
+                      redirectTo="/cash-box"
+                    >
+                      <ShiftReportPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "shift-settings",
+                  element: (
+                    <ProtectedRoute canActivate={canManageShiftSettings}>
+                      <ShiftSettingsPage />
                     </ProtectedRoute>
                   ),
                 },

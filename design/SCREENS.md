@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**84 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **48** · qisman: **127** · v2 ga ko'chirilgan route: **84 / 84**
+**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **45** · qisman: **127** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -90,8 +90,8 @@
 | `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
 | `/my-earnings` | Moliya | `src/pages/my-earnings/index.tsx` | market_operator (MO-2: canViewMyEarnings = hasRole('market_operator') (access.ts)) | 2 | v2 |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
-| `(taklif) /payments/shifts/:id` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | eski |
-| `(taklif) /payments/shift-settings` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | eski |
+| `/payments/shifts/:id` | Moliya | `src/pages/payments/shiftReport/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 1 | v2 |
+| `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 1 | v2 |
 | `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
 | `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 21 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
@@ -1007,7 +1007,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/payments/main-cashbox` — Asosiy kassa (to'ldirish / xarajat / smenani yopish)
 
-- **Fayllar:** `src/pages/payments/components/mainCashbox.tsx` · `src/pages/payments/components/MainCashboxBalanceChart.tsx` · `src/pages/payments/components/lib/mainCashboxStats.ts` · `src/pages/payments/components/CashboxFormPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/CloseShiftPopup.tsx` · `src/pages/payments/components/OpenShiftDialog.tsx` · `src/pages/payments/components/ShiftResultDialog.tsx` · `src/pages/payments/components/ShiftBanner.tsx` · `src/pages/payments/components/lib/useCashboxShift.ts` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/SalaryPaymentPopup.tsx` · `src/shared/components/popupSelect.tsx` · `src/pages/payments/components/lib/exportMainCashboxReport.ts`
+- **Fayllar:** `src/pages/payments/components/mainCashbox.tsx` · `src/pages/payments/components/MainCashboxBalanceChart.tsx` · `src/pages/payments/components/lib/mainCashboxStats.ts` · `src/pages/payments/components/CashboxFormPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/CloseShiftPopup.tsx` · `src/pages/payments/components/shiftCheck/ShiftAccountsSection.tsx` · `src/pages/payments/components/shiftCheck/useShiftAccountsForm.ts` · `src/pages/payments/components/OpenShiftDialog.tsx` · `src/pages/payments/components/ShiftResultDialog.tsx` · `src/pages/payments/components/ShiftBanner.tsx` · `src/pages/payments/components/lib/useCashboxShift.ts` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/SalaryPaymentPopup.tsx` · `src/shared/components/popupSelect.tsx` · `src/pages/payments/components/lib/exportMainCashboxReport.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -1025,7 +1025,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-accounts` — Asosiy kassa — kartalar va hisob raqamlar | [design/fragments/superadmin--payments-main-cashbox-accounts.html](fragments/superadmin--payments-main-cashbox-accounts.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-cashbox-account-form-dialog` — Karta yoki hisob raqam qo'shish (popup) | [design/fragments/superadmin--payments-cashbox-account-form-dialog.html](fragments/superadmin--payments-cashbox-account-form-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-fill-dialog-account` — Kassaga kirim — karta yoki hisob raqamni tanlash (popup) | [design/fragments/superadmin--payments-main-cashbox-fill-dialog-account.html](fragments/superadmin--payments-main-cashbox-fill-dialog-account.html) | oyna | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog-accounts` — Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html](fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog-accounts` — Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html](fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox` — Asosiy kassa | [design/fragments/admin--payments-main-cashbox.html](fragments/admin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog` — Kassadan xarajat / Kassani to'ldirish<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/admin--payments-cashbox-form-dialog.html](fragments/admin--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-shift-dialog` — Smenani yopish<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/admin--payments-shift-dialog.html](fragments/admin--payments-shift-dialog.html) | oyna | v2 |
@@ -1122,43 +1122,33 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/financial-balance` | admin | `admin-balance-history-detail-dialog` — Balans yozuvi tafsiloti<br>↳ `src/pages/financial-balance/components/FinancialHistoryDetail.tsx` | [design/fragments/superadmin--balance-history-detail-dialog.html](fragments/superadmin--balance-history-detail-dialog.html) | oyna | v2 |
 | `/financial-balance` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
 
-#### `(taklif) /payments/shifts/:id` — Smena hisoboti va smenalar tarixi (taklif — kodda yo'q)
+#### `/payments/shifts/:id` — Smena hisoboti — naqd, kartalar bo'yicha qoldiq va AI tekshiruvi
 
-- **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Holat:** eski
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Kartalar bo'yicha qoldiq + AI natijasi, «Avtomatik yopildi» banneri, hisobot kimlarga yuborilgani. Tarix ro'yxati /payments/shifts (alohida maket chizilmagan — jadval superadmin-orders-list andozasida).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `(taklif) /payments/shifts/:id` | superadmin | `superadmin-payments-shift-report` — Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | [design/fragments/superadmin--payments-shift-report.html](fragments/superadmin--payments-shift-report.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /payments/shifts/:id` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shifts/:id` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-
-#### `(taklif) /payments/shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot yuborish (taklif — kodda yo'q, faqat superadmin)
-
-- **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Holat:** eski
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar. Faqat SUPERADMIN; asosiy kassa sahifasidan ochiladi.
+- **Fayllar:** `src/pages/payments/shiftReport/index.tsx` · `src/pages/payments/components/shiftCheck/aiStatus.tsx` · `src/pages/payments/components/shiftCheck/aiStatusMeta.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Manba — GET finance/shift/:id/report (superadmin/admin/menejer — o'z filiali; registrator — asosiy kassa): KPI (ochilish · kirim · chiqim · yopilish · farq), «Naqd», «Kartalar va hisob raqamlar» (tizim bo'yicha, kiritilgan, rasm — 300 s imzolangan havola, AI natija + «Kiritilgan ≠ rasm», farq, izoh; telefonda kartalar), «Operatsiyalar xulosasi» (tur × to'lov usuli). Ochiq smenada ham ishlaydi (info banner). Kirish — smena natija oynasidagi «Smena hisoboti» (kartalar tekshirilgan smenada). «Avtomatik yopildi» banneri, «Hisobot kimlarga yuborildi», «Vaqt chizig'i», PDF/Excel/qayta yuborish — avtomatik yopish va hisobot yuborish kartalari backendi bilan (hozir chizilmaydi). Tarix ro'yxati /payments/shifts (alohida maket chizilmagan) — kodda yo'q.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `(taklif) /payments/shift-settings` | superadmin | `superadmin-payments-shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | [design/fragments/superadmin--payments-shift-settings.html](fragments/superadmin--payments-shift-settings.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /payments/shift-settings` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /payments/shift-settings` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `/payments/shifts/:id` | superadmin | `superadmin-payments-shift-report` — Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | [design/fragments/superadmin--payments-shift-report.html](fragments/superadmin--payments-shift-report.html) | sahifa | v2 |
+| `/payments/shifts/:id` | admin | — Maket yo'q — eng yaqini: superadmin-payments-shift-report (ayni sahifa, «Sozlamalar» tugmasisiz) | — | — | v2 |
+| `/payments/shifts/:id` | manager | — Maket yo'q — eng yaqini: superadmin-payments-shift-report (o'z filiali kassasi smenasi, «Sozlamalar» tugmasisiz) | — | — | v2 |
+
+#### `/payments/shift-settings` — Kassa smenasi sozlamalari — kartalar qoldig'ini tasdiqlash, rasm, AI (faqat superadmin)
+
+- **Fayllar:** `src/pages/payments/shiftSettings/index.tsx` · `src/pages/payments/shiftSettings/settingsDiff.ts` · `src/pages/settings/ui/settingsUi.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canManageShiftSettings` (access.ts → canManageShiftSettings (kiZgTybn; backend PATCH finance/shift/settings @Roles(SUPERADMIN)))
+- **Rollar:** superadmin
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 2-, 3-, 11-bandlar; kiZgTybn (2026-10-26). Faqat SUPERADMIN (canManageShiftSettings = backend PATCH finance/shift/settings @Roles(SUPERADMIN)). GET finance/shift/settings → global kalitlar + asosiy kassa kartalari; «Saqlash» faqat o'zgargan maydonlarni yuboradi; karta rasmi o'chsa AI ham o'chadi (AI faqat rasm talab qilingan kartada — backend 400). Kirish — smena yopish oynasidagi va smena hisobotidagi «Sozlamalar». «Avtomatik yopish» va «Smena hisobotini yuborish» bloklari — o'z kartalari backendi bilan (hozir chizilmaydi).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | [design/fragments/superadmin--payments-shift-settings.html](fragments/superadmin--payments-shift-settings.html) | sahifa | v2 |
 
 #### `(taklif) /ai-assistant` — AI moliyaviy yordamchi (taklif — kodda yo'q)
 
@@ -2045,7 +2035,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 222 · kodda yo'q: 20
+242 ta maket · kodda bor: 225 · kodda yo'q: 17
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2274,9 +2264,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-payments-main-cashbox-accounts` | Asosiy kassa — kartalar va hisob raqamlar | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: kassa kartalari va hisob raqamlari bo'limi — backend'da MAIN uchun nomli kartalar bor (3PE0B03q), frontend'da UI yo'q; turi/bank/oxirgi 4 raqam/egasi, filial kassalari — yangi. |
 | `superadmin-payments-cashbox-account-form-dialog` | Karta yoki hisob raqam qo'shish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: karta yoki hisob raqam qo'shish oynasi; smena kalitlari (rasm, AI) faqat superadminga. |
 | `superadmin-payments-main-cashbox-fill-dialog-account` | Kassaga kirim — karta yoki hisob raqamni tanlash (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 1-band: kirim/xarajatda karta yoki hisob raqam tanlovi. |
-| `superadmin-payments-main-cashbox-shift-dialog-accounts` | Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-band: smena yopishda har karta qoldig'i, skrinshot va AI tekshiruvi natijasi (CloseShiftPopup). |
-| `superadmin-payments-shift-report` | Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | sahifa | `(taklif) /payments/shifts/:id` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: smena hisoboti sahifasi — kodda yo'q. |
-| `superadmin-payments-shift-settings` | Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | sahifa | `(taklif) /payments/shift-settings` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 2-, 3-, 11-bandlar: kassa smenasi sozlamalari — kodda yo'q. |
+| `superadmin-payments-main-cashbox-shift-dialog-accounts` | Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
+| `superadmin-payments-shift-report` | Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | sahifa | `/payments/shifts/:id` | `src/pages/payments/shiftReport/index.tsx` | v2 |
+| `superadmin-payments-shift-settings` | Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | sahifa | `/payments/shift-settings` | `src/pages/payments/shiftSettings/index.tsx` | v2 |
 | `superadmin-neworders-create-ai-input-images` | Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92). |
 | `superadmin-ai-assistant` | AI moliyaviy yordamchi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q. |
 | `superadmin-ai-assistant-access-dialog` | AI yordamchi — kirish huquqi (popup) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q. |
@@ -3185,7 +3175,14 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/payments/components/patmentHistoryTable.tsx` | `/payments` |
 | `src/pages/payments/components/paymentHistoryActor.ts` | `/payments` |
 | `src/pages/payments/components/paymentSourceType.ts` | `/payments`, `/cash-box` |
+| `src/pages/payments/components/shiftCheck/ShiftAccountsSection.tsx` | `/payments/main-cashbox` |
+| `src/pages/payments/components/shiftCheck/aiStatus.tsx` | `/payments/shifts/:id` |
+| `src/pages/payments/components/shiftCheck/aiStatusMeta.ts` | `/payments/shifts/:id` |
+| `src/pages/payments/components/shiftCheck/useShiftAccountsForm.ts` | `/payments/main-cashbox` |
 | `src/pages/payments/index.tsx` | `/payments` |
+| `src/pages/payments/shiftReport/index.tsx` | `/payments/shifts/:id` |
+| `src/pages/payments/shiftSettings/index.tsx` | `/payments/shift-settings` |
+| `src/pages/payments/shiftSettings/settingsDiff.ts` | `/payments/shift-settings` |
 | `src/pages/products/create/index.tsx` | `/products/create-product/:id` |
 | `src/pages/products/list/index.tsx` | `/products` |
 | `src/pages/products/list/ui/EditProductDialog.tsx` | `/products` |
@@ -3287,7 +3284,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/settings/ui/NotificationsPanel.tsx` | `/settings` |
 | `src/pages/settings/ui/ScannerPanel.tsx` | `/settings` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
-| `src/pages/settings/ui/settingsUi.tsx` | `/settings` |
+| `src/pages/settings/ui/settingsUi.tsx` | `/settings`, `/payments/shift-settings` |
 | `src/pages/system-ops/index.tsx` | `/system-ops` |
 | `src/pages/system-ops/lib/aiStatus.ts` | `/system-ops` |
 | `src/pages/system-ops/lib/systemOps.ts` | `/system-ops` |
