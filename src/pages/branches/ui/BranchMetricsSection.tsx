@@ -15,6 +15,7 @@ import {
   splitCompactMoney,
 } from "../../../entities/dashboard/lib/period";
 import { formatCompactMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Sparkline } from "../../../shared/ui/charts";
 import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { Card, EmptyState, ErrorState, SegmentedControl, StatCard } from "../../../shared/ui/primitives";
 import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
@@ -38,7 +39,6 @@ import {
   BranchCouriersCard,
   BranchRevenueCard,
   BranchStatusCard,
-  MetricSparkline,
   MetricsLoadingCard,
 } from "./BranchMetricsCards";
 
@@ -262,7 +262,7 @@ const MetricsBody = ({ metrics, period, periodText, language, branchId, onRetry,
               hint={delta != null ? hint : undefined}
               valueTone={kpi.key === "profit" && current.profit < 0 ? "danger" : undefined}
             >
-              {values ? <MetricSparkline values={values} label={sparkLabel(label, values, kpi.money)} /> : undefined}
+              {values ? <Sparkline values={values} label={sparkLabel(label, values, kpi.money)} /> : undefined}
             </StatCard>
           );
         })}

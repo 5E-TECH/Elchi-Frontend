@@ -28,9 +28,6 @@
     "profit": "Net profit",
     "courier_profit": "Profit"
   },
-  "performance": {
-    "couriers_all_time_unavailable": "The courier breakdown is not calculated for the “All” period — pick a date range."
-  },
   "periods": {
     "daily": "Daily",
     "weekly": "Weekly",
@@ -152,7 +149,9 @@
       "courierLabel": "Figures, {{period}}",
       "totalRevenue": "Total revenue",
       "netProfit": "Net profit",
-      "avgOrder": "Average order"
+      "avgOrder": "Average order",
+      "lostRevenue": "Lost revenue",
+      "sparkAria": "{{label}}, last {{days}} days: {{min}} – {{max}} per day, last day {{last}}"
     },
     "success": {
       "title": "Success rate",
@@ -164,7 +163,10 @@
       "gaugeTotal": "Sold / total orders",
       "threshold": "Good threshold · 70%",
       "zonesNote": "Zones: below 40% — low · 40–70% — average · 70% and above — good",
-      "aria": "Success rate: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}"
+      "aria": "Success rate: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}",
+      "target": "Target · {{value}}",
+      "subTarget": "{{period}} · target {{target}}",
+      "ariaTarget": "Success rate: {{rate}}, target {{target}}. Sold {{sold}}, cancelled {{cancelled}}"
     },
     "status": {
       "title": "Order status",
@@ -185,9 +187,7 @@
       "onTimeUnmeasured": "Not measured — no deliveries in this period",
       "cancelRate": "Cancellation rate",
       "duration": "Delivery time",
-      "durationHint": "from acceptance to sale",
-      "allTimeTitle": "Quality figures are not calculated for all time",
-      "allTimeHint": "Pick a day, week or month"
+      "durationHint": "from acceptance to sale"
     },
     "results": {
       "title": "Delivery results",
@@ -198,16 +198,15 @@
     },
     "finance": {
       "title": "Financial analysis",
-      "subtitle": "Revenue · compared with the previous period",
+      "subtitle": "Net profit = market tariff − courier and branch share",
       "periodLabel": "Chart period",
       "viewLabel": "Financial analysis view",
-      "revenueDays": "Revenue · {{count}} days",
       "orders": "Orders",
       "average": {
-        "daily": "Average daily revenue",
-        "weekly": "Average weekly revenue",
-        "monthly": "Average monthly revenue",
-        "yearly": "Average yearly revenue"
+        "daily": "Average daily profit",
+        "weekly": "Average weekly profit",
+        "monthly": "Average monthly profit",
+        "yearly": "Average yearly profit"
       },
       "previousValue": "previous: {{value}}",
       "current": "Current",
@@ -218,7 +217,12 @@
       "compareAria": "Compare with the previous period",
       "tableDate": "Date",
       "chartAria": "Revenue, {{range}}",
-      "empty": "No revenue data for this period"
+      "empty": "No revenue data for this period",
+      "profitDays": "Net profit · {{count}} days",
+      "profitAll": "Net profit · all time",
+      "profitChartAria": "Net profit, {{range}}",
+      "profitEmpty": "No profit data for this period",
+      "clampedNote": "“All” — only the last {{days}} days are counted: {{range}}"
     },
     "cash": {
       "title": "Cash balance",
@@ -245,7 +249,6 @@
       "limited": "Not much data yet — rankings may change",
       "emptyTitle": "Not enough data for a ranking yet",
       "emptyHint": "The ranking appears here once there are more orders",
-      "couriersAllTimeTitle": "Courier breakdown is not calculated for all time",
       "you": "You",
       "yourPlace": "Your place",
       "place": "#{{rank}}",
@@ -316,6 +319,9 @@
       "soldShare": "{{rate}} sold",
       "showAll": "All {{count}} regions",
       "empty": "No orders by region for this period"
+    },
+    "allTime": {
+      "clamped": "last {{days}} days"
     }
   },
   "v2Market": {

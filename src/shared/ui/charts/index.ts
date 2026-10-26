@@ -44,6 +44,9 @@ export { ViewToggle } from "./ViewToggle";
 export type { ChartView, ViewToggleProps } from "./ViewToggle";
 
 export { DeltaChip } from "./DeltaChip";
+
+// DwrMygfo: KPI kartasi ostidagi 14 kunlik chiziq (bosh sahifa, filial ko'rsatkichlari).
+export { Sparkline } from "./Sparkline";
 export type { DeltaChipProps } from "./DeltaChip";
 
 // IN-1: steklangan ustunlar (investor «Oylik foyda» — To'langan · Kutilmoqda).

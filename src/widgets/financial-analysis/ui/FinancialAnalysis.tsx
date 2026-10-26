@@ -1,7 +1,8 @@
 // dizayn-v2: superadmin-dashboard-main, admin-dashboard-main
 import { lazy, memo, Suspense, useEffect, useMemo, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { useDashboard, type RevenueParams, type RevenuePoint, type RevenueResponse } from "../../../entities/dashboard";
+import { useDashboard, type RevenueParams, type RevenueResponse } from "../../../entities/dashboard";
+import { clampedAllTimeWindow } from "../../../entities/dashboard/lib/allTime";
 import { formatShortRange, rangeDays } from "../../../entities/dashboard/lib/period";
 import { cx } from "../../../shared/lib/cx";
 import { getPreviousPeriodRange, getTodayRange } from "../../../shared/lib/dateRange";
@@ -15,7 +16,7 @@ import {
   writeStoredDashboardComparison,
 } from "../../../shared/lib/preferencesStorage";
 import DeferredMount from "../../../shared/ui/DeferredMount";
-import { ChartLegend, DeltaChip, ViewToggle, type ChartView } from "../../../shared/ui/charts";
+import { ChartLegend, ChartNote, DeltaChip, ViewToggle, type ChartView } from "../../../shared/ui/charts";
 import {
   Button,
   Card,
@@ -28,6 +29,7 @@ import {
   SkeletonChart,
 } from "../../../shared/ui/primitives";
 import { calculatePercentChange } from "../lib/periodComparison";
+import { bucketsOf, readProfitValues, readTotalProfit } from "../lib/profitSeries";
 import CashBalanceCard from "./CashBalanceCard";
 import type { TrendPoint } from "./FinancialTrendPlot";
 
@@ -50,26 +52,31 @@ export interface FinancialAnalysisProps {
   analyticsScope?: string;
   /** Sahifaning yuqoridagi bloklari yuklanib, joylashuv barqaror (sukut `true`) — plot kuzatuvi shundan keyin. */
   layoutReady?: boolean;
+  /**
+   * «Barchasi» (XdKajqLe): `GET analytics/revenue?all=true` (backend oxirgi 366 kunga qisqartiradi — `clamped` bo'lsa
+   * izoh), oldingi davr yo'q (solishtirish o'chiq), davr sukuti — oylik. Davr almashsa chaqiruvchi `key` bilan qayta
+   * o'rnatadi.
+   */
+  allTime?: boolean;
 }
 
 /**
- * Joriy javobdan grafik nuqtalari — faqat `chart.labels/values` (2Fj7iw1k: backend ularni doim to'ldiradi; eski
- * zaxira yo'li — javobdagi raqamli `"0"`, `"1"` kalitlaridan `RevenuePoint` yig'ish — olib tashlandi). Buyurtmalar
- * soni — `data[]` bo'laklaridan (`ordersCount`), `label` bo'yicha; topilmasa `null` («—», 0 emas).
+ * Joriy javobdan grafik nuqtalari — `chart.labels` + «Sof foyda» (`chart.profitValues`, l9NNdsCH). Buyurtmalar
+ * soni — `data[]` bo'laklaridan (`ordersCount`), `label` bo'yicha; topilmasa `null` («—», 0 emas). Eski zaxira yo'li
+ * (javobdagi raqamli `"0"`, `"1"` kalitlari) yo'q (2Fj7iw1k).
  */
 const toChartData = (payload: RevenueResponse["data"] | undefined) => {
   const labels = payload?.chart?.labels ?? [];
-  const values = payload?.chart?.values ?? [];
-  if (!labels.length || !values.length) return [];
-  const buckets = Array.isArray(payload?.data) ? (payload.data as Partial<RevenuePoint>[]) : [];
+  const values = readProfitValues(payload);
+  if (!labels.length || !values?.length) return [];
   const ordersByLabel = new Map(
-    buckets
+    bucketsOf(payload)
       .filter((bucket) => typeof bucket?.label === "string" && Number.isFinite(Number(bucket.ordersCount)))
       .map((bucket) => [bucket.label as string, Number(bucket.ordersCount)]),
   );
   return labels.map((label, index) => ({
     date: label,
-    revenue: Number(values[index] ?? 0),
+    profit: Number(values[index] ?? 0),
     orders: ordersByLabel.get(label) ?? null,
   }));
 };
@@ -112,31 +119,34 @@ const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: bo
 );
 
 /**
- * «MOLIYAVIY TAHLIL» (2/3) + «KASSA BALANSI» (1/3) — faqat SA/admin, «Barchasi»dan tashqari davrda.
+ * «MOLIYAVIY TAHLIL» (2/3) + «KASSA BALANSI» (1/3) — faqat SA/admin, har davrda («Barchasi» — `all=true`, XdKajqLe).
  *
  * Saqlanadigan xulq (eski `FinancialAnalysis.tsx:278-319`): davr holati (Kunlik … Yillik), oldingi teng
  * davr `getPreviousPeriodRange`, solishtirish so'rovi faqat yoqilganda, holat `preferencesStorage` da,
  * nuqtalar soni teng bo'lmasa oldingi chiziq yashiriladi, foiz o'zgarishi `calculatePercentChange`.
- * Ega savoli 4 sukuti: qator — daromad (`SUM(total_price)`), sarlavha «Moliyaviy tahlil».
+ * Qator — «Sof foyda» (maket `superadmin-dashboard-main`; backend `chart.profitValues`, `summary.totalProfit` —
+ * l9NNdsCH; ilgari ega savoli 4 sukuti bilan daromad edi).
  */
-const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = true }: FinancialAnalysisProps) => {
+const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = true, allTime = false }: FinancialAnalysisProps) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
   const { getRevenue } = useDashboard();
-  const [period, setPeriod] = useState<RevenuePeriod>("daily");
+  const [period, setPeriod] = useState<RevenuePeriod>(allTime ? "monthly" : "daily");
   const [view, setView] = useState<ChartView>("chart");
-  const [comparisonEnabled, setComparisonEnabled] = useState(() => readStoredDashboardComparison() ?? true);
+  const [comparisonStored, setComparisonEnabled] = useState(() => readStoredDashboardComparison() ?? true);
+  // «Barchasi»da oldingi davr yo'q — solishtirish o'chiq (saqlangan tanlov o'zgarmaydi).
+  const comparisonEnabled = comparisonStored && !allTime;
 
   const todayRange = getTodayRange();
   const effectiveStart = startDate || todayRange.from;
   const effectiveEnd = endDate || todayRange.to;
   const previousRange = useMemo(
-    () => getPreviousPeriodRange({ from: effectiveStart, to: effectiveEnd }),
-    [effectiveStart, effectiveEnd],
+    () => (allTime ? null : getPreviousPeriodRange({ from: effectiveStart, to: effectiveEnd })),
+    [allTime, effectiveStart, effectiveEnd],
   );
   const revenueParams = useMemo<RevenueParams>(
-    () => ({ period, start_day: effectiveStart, end_day: effectiveEnd }),
-    [effectiveEnd, effectiveStart, period],
+    () => (allTime ? { period, all: true } : { period, start_day: effectiveStart, end_day: effectiveEnd }),
+    [allTime, effectiveEnd, effectiveStart, period],
   );
   const previousParams = useMemo<RevenueParams>(
     () => ({ period, start_day: previousRange?.from, end_day: previousRange?.to }),
@@ -165,7 +175,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
   const isPreviousLoading = comparisonEnabled && Boolean(previousRange) && previousQuery.isLoading;
 
   const toggleComparison = () => {
-    const next = !comparisonEnabled;
+    const next = !comparisonStored;
     setComparisonEnabled(next);
     writeStoredDashboardComparison(next);
   };
@@ -176,7 +186,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
   // Oldingi davrning daromad bo'lagi olinmagan bo'lsa — 0 bilan solishtirilmaydi (delta va chiziq yo'q).
   const previousFailed = useMemo(() => isPartFailed(previousPayload, "summary", "chart"), [previousPayload]);
   const previousHasData = !previousFailed && Boolean(previousSummary && previousSummary.totalOrders > 0);
-  const previousValues = previousPayload?.chart?.values;
+  const previousValues = useMemo(() => readProfitValues(previousPayload) ?? undefined, [previousPayload]);
   const previousLabels = previousPayload?.chart?.labels;
   // Nuqtalar faqat indeks bo'yicha moslashtiriladi — uzunlik teng bo'lmasa oldingi chiziq yashiriladi.
   const previousLengthMatches = Boolean(previousValues?.length) && previousValues!.length === chartData.length;
@@ -197,7 +207,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
     () =>
       chartData.map((point, index) => ({
         label: point.date,
-        current: point.revenue,
+        current: point.profit,
         orders: point.orders,
         previous: showPreviousLine ? (previousValues?.[index] ?? null) : null,
         previousLabel: showPreviousLine && previousLabels?.[index]
@@ -207,16 +217,27 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
     [chartData, previousLabels, previousValues, showPreviousLine, t],
   );
 
-  const currentRangeText = formatShortRange({ from: effectiveStart, to: effectiveEnd });
+  // «Barchasi»: backend qisqartirgan haqiqiy oraliq (bo'lsa) — legenda va izohda 1970 emas.
+  const clamped = allTime ? clampedAllTimeWindow(revenuePayload?.appliedRange) : null;
+  const currentRangeText = allTime
+    ? clamped
+      ? formatShortRange(clamped.range)
+      : t("v2Dashboard.period.all")
+    : formatShortRange({ from: effectiveStart, to: effectiveEnd });
   const previousRangeText = previousRange ? formatShortRange(previousRange) : "";
   const days = rangeDays({ from: effectiveStart, to: effectiveEnd });
+  // O'rtacha — bandlar soni bo'yicha (backend `avgRevenue` bilan bir xil qoida: jami / bandlar).
+  const averageOf = (total: number | null | undefined, buckets: number) =>
+    total == null ? undefined : buckets > 0 ? Math.round(total / buckets) : 0;
+  const currentProfit = readTotalProfit(revenuePayload) ?? 0;
+  const previousProfit = previousHasData ? readTotalProfit(previousPayload) : null;
 
   const metrics = [
     {
-      key: "revenue",
-      label: t("v2Dashboard.finance.revenueDays", { count: days }),
-      value: currentSummary?.totalRevenue ?? 0,
-      previous: previousHasData ? previousSummary?.totalRevenue : undefined,
+      key: "profit",
+      label: allTime ? t("v2Dashboard.finance.profitAll") : t("v2Dashboard.finance.profitDays", { count: days }),
+      value: currentProfit,
+      previous: previousProfit ?? undefined,
       format: (value: number) => formatCompactMoneyLocalized(value, { language }),
       formatPrevious: (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false }),
     },
@@ -231,8 +252,8 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
     {
       key: "average",
       label: t(`v2Dashboard.finance.average.${period}`),
-      value: currentSummary?.avgRevenue ?? 0,
-      previous: previousHasData ? previousSummary?.avgRevenue : undefined,
+      value: averageOf(currentProfit, chartData.length) ?? 0,
+      previous: averageOf(previousProfit, previousValues?.length ?? 0),
       format: (value: number) => formatCompactMoneyLocalized(value, { language }),
       formatPrevious: (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false }),
     },
@@ -307,12 +328,18 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
                 </div>
               ) : null}
 
+              {clamped ? (
+                <ChartNote>
+                  {t("v2Dashboard.finance.clampedNote", { days: clamped.days, range: formatShortRange(clamped.range) })}
+                </ChartNote>
+              ) : null}
+
               {points.length === 0 ? (
-                <EmptyState size="chart" title={t("v2Dashboard.finance.empty")} />
+                <EmptyState size="chart" title={t("v2Dashboard.finance.profitEmpty")} />
               ) : view === "chart" ? (
                 <figure
                   className="m-0 min-w-0"
-                  aria-label={t("v2Dashboard.finance.chartAria", { range: currentRangeText })}
+                  aria-label={t("v2Dashboard.finance.profitChartAria", { range: currentRangeText })}
                 >
                   <DeferredMount
                     minHeight={PLOT_HEIGHT.desktop}
@@ -420,12 +447,14 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope, layoutReady = t
                 : []),
             ]}
           />
-          <ComparisonSwitch
-            checked={comparisonEnabled}
-            onToggle={toggleComparison}
-            label={t("comparison.toggle")}
-            ariaLabel={t("v2Dashboard.finance.compareAria")}
-          />
+          {allTime ? null : (
+            <ComparisonSwitch
+              checked={comparisonEnabled}
+              onToggle={toggleComparison}
+              label={t("comparison.toggle")}
+              ariaLabel={t("v2Dashboard.finance.compareAria")}
+            />
+          )}
         </div>
       </Card>
       <CashBalanceCard query={cashQuery} />

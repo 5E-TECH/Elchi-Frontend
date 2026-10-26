@@ -18,8 +18,13 @@ export interface SuccessRateCardProps {
   gaugeLabel: string;
   /** Oldingi davr ko'rsatkichi (delta chip + «Kecha · 74,8%» nuqtasi). */
   previous?: { rate: number; label: string } | null;
-  /** Legendada «Yaxshi chegarasi · 70%». */
+  /** Legendada «Yaxshi chegarasi · 70%» (maqsad berilsa — uning o'rnida «Maqsad · 80%»). */
   showThreshold?: boolean;
+  /**
+   * Maqsad, % (l9NNdsCH — backend `targets.successRate`): shkalada maqsad chizig'i va legendada «Maqsad · 80%»
+   * («Yaxshi chegarasi · 70%» o'rniga). Berilmasa — avvalgidek.
+   */
+  target?: number | null;
   /** Pastdagi izoh (`ChartNote`). */
   note?: ReactNode;
   className?: string;
@@ -37,6 +42,7 @@ const SuccessRateCard = ({
   gaugeLabel,
   previous,
   showThreshold = true,
+  target,
   note,
   className,
 }: SuccessRateCardProps) => {
@@ -55,7 +61,15 @@ const SuccessRateCard = ({
       label: `${previous.label} · ${formatPercentLocalized(previous.rate, { language })}`,
     });
   }
-  if (showThreshold) {
+  const hasTarget = target != null && Number.isFinite(target);
+  if (hasTarget) {
+    legend.unshift({
+      key: "target",
+      tone: "neutral",
+      shape: "target",
+      label: t("v2Dashboard.success.target", { value: formatPercentLocalized(target, { language }) }),
+    });
+  } else if (showThreshold) {
     legend.push({ key: "threshold", tone: "success", label: t("v2Dashboard.success.threshold") });
   }
 
@@ -75,12 +89,14 @@ const SuccessRateCard = ({
       <Gauge
         value={rate}
         label={gaugeLabel}
-        ariaLabel={t("v2Dashboard.success.aria", {
+        ariaLabel={t(hasTarget ? "v2Dashboard.success.ariaTarget" : "v2Dashboard.success.aria", {
           rate: rateText,
+          target: hasTarget ? formatPercentLocalized(target, { language }) : undefined,
           sold: formatNumberLocalized(sold, { language }),
           cancelled: formatNumberLocalized(cancelled, { language }),
         })}
         marker={previous ? { value: previous.rate, label: previous.label } : undefined}
+        target={hasTarget ? target : undefined}
         stats={[
           {
             key: "sold",
