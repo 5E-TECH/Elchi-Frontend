@@ -6,6 +6,7 @@
 //     tarjimalar va antd yo'q;
 //   - dist/assets/*.js da Safari 15 dan yuqori sintaksis yo'q (`static {}`, `??=`, private maydon …) — js9ndYwA,
 //     `vite.config.ts` → `build.target`;
+//   - dist/_headers bor va xeshli `assets/` — `Cache-Control: public, max-age=31536000, immutable` (04YKjCOD);
 //   - index.html ga yangi eager chunk qo'shilsa — ogohlantirish (snapshot).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -84,6 +85,13 @@ for (const file of readdirSync(join(DIST, "assets")).filter((name) => name.endsW
 }
 if (modern.length) fail(`Safari 15 dan yuqori sintaksis (build.target tushirmagan): ${modern.join("; ")}`);
 else console.log("Sintaksis: Safari 15 bazasidan yuqorisi yo'q.");
+
+// Kesh sarlavhalari (04YKjCOD): `public/_headers` dist'ga tushgan, xeshli `assets/` — 1 yil + immutable.
+const headersFile = join(DIST, "_headers");
+if (!existsSync(headersFile)) fail("dist/_headers yo'q — Cloudflare sarlavhalari (CSP, kesh) deploy'ga tushmaydi.");
+else if (!/^\/assets\/\*\n\s+Cache-Control: public, max-age=31536000, immutable$/m.test(readFileSync(headersFile, "utf8"))) {
+  fail("dist/_headers: `/assets/*` uchun `Cache-Control: public, max-age=31536000, immutable` yo'q — har yuklashda 304.");
+} else console.log("Kesh: dist/_headers — /assets/* 1 yil, immutable.");
 
 const unexpected = rows.map((row) => row.name).filter((name) => !EXPECTED_ENTRY_CHUNKS.includes(name));
 if (unexpected.length) console.warn(`::warning::index.html ga yangi eager chunk qo'shildi: ${unexpected.join(", ")} — kerakmi, tekshiring.`);
