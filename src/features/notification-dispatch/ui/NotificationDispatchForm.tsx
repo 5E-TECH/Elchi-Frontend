@@ -40,8 +40,7 @@ import {
 import { NoticeAlert } from "../../../entities/notification";
 import {
   SentDetailDialog,
-  deriveDispatchStatus,
-  isDispatchHistoryStatus,
+  resolveDispatchStatus,
   type DispatchHistoryStatus,
 } from "../../../entities/notification-dispatch";
 import { cx } from "../../../shared/lib/cx";
@@ -536,10 +535,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           setSendError({ title: t("dispatch.duplicateFailedTitle"), text: t("dispatch.duplicateFailedText") });
           return;
         }
-        const status =
-          response.duplicate && isDispatchHistoryStatus(response.status)
-            ? response.status
-            : deriveDispatchStatus(response);
+        // NS-4: holat — javobdagi `status` (tarixdagi bilan AYNI), so'ng `channel_outcome`; eski `> 0` qoidasi emas.
+        const status = resolveDispatchStatus(response);
         setOutcome({ ...sent, kind: "result", result: response, status });
       },
       onError: (error) => {

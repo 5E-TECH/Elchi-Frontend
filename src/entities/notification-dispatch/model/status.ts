@@ -146,27 +146,73 @@ export const externalChannels = (channels: readonly string[], channelStatus: Cha
   return EXTERNAL_CHANNELS.filter((channel) => known.has(channel));
 };
 
+/** Kanal natijasi (`POST /notifications/dispatch` javobidagi `channel_outcome`, NS-4). */
+export type ChannelOutcome = "full" | "partial" | "none";
+
+export const isChannelOutcome = (value: unknown): value is ChannelOutcome =>
+  value === "full" || value === "partial" || value === "none";
+
 /**
- * Yangi (takror emas) yuborish javobida `status` yo'q — backend tarixga yozgan qoida bilan bir xil
- * (`historyStatusFor` + `summarizeChannels`): hamma filtrlangan — `skipped`; har tashqi kanal kamida bittaga
- * ketgan — `sent`; bir qismi — `partial`; hech biri — `inbox_only`.
+ * Javobda `status` ham, `channel_outcome` ham bo'lmasa (eski backend) — backend qoidasining aynan nusxasi (aNynHYU0,
+ * 2026-10-26): tashqi kanal har bir qabul qiluvchiga ketgandagina «to'liq» (`by_channel[kanal] >= dispatched`);
+ * Telegram GURUH relay'i (`telegram_group`) — bitta xabar = to'liq (`> 0`). Hamma filtrlangan — `skipped`; hamma kanal
+ * to'liq — `sent`; biror kanal ketgan, lekin hammasi to'liq emas — `partial`; hech biri — `inbox_only`.
  */
 export const deriveDispatchStatus = ({
   channels,
   by_channel,
   dispatched,
   skipped_by_preference,
+  telegram_group = false,
 }: {
   channels: readonly string[];
   by_channel: Record<string, number>;
   dispatched: number;
   skipped_by_preference: number;
+  telegram_group?: boolean;
 }): DispatchHistoryStatus => {
   if (!dispatched && skipped_by_preference) return "skipped";
   const external = channels.filter((channel) => channel !== "in_app");
-  const delivered = external.filter((channel) => Number(by_channel[channel] ?? 0) > 0);
-  if (delivered.length === external.length) return "sent";
-  return delivered.length ? "partial" : "inbox_only";
+  const sentTo = (channel: string) => Number(by_channel[channel] ?? 0);
+  const full = external.filter((channel) =>
+    channel === "telegram" && telegram_group ? sentTo(channel) > 0 : sentTo(channel) > 0 && sentTo(channel) >= dispatched,
+  );
+  if (full.length === external.length) return "sent";
+  return external.some((channel) => sentTo(channel) > 0) ? "partial" : "inbox_only";
+};
+
+/** `channel_outcome` dan holat (backend `summarizeChannels` bilan bir xil): hammasi `full` — `sent`. */
+export const statusFromChannelOutcome = (
+  outcome: Record<string, ChannelOutcome>,
+  dispatched: number,
+  skippedByPreference: number,
+): DispatchHistoryStatus => {
+  if (!dispatched && skippedByPreference) return "skipped";
+  const values = Object.entries(outcome)
+    .filter(([channel]) => channel !== "in_app")
+    .map(([, value]) => value);
+  if (values.every((value) => value === "full")) return "sent";
+  return values.some((value) => value !== "none") ? "partial" : "inbox_only";
+};
+
+/**
+ * Yuborish natijasining holati (NS-4): backend javobidagi `status` (tarixdagi bilan AYNI — `sent | partial |
+ * inbox_only | skipped`) asosiy manba; yo'q bo'lsa — `channel_outcome`; u ham yo'q bo'lsa — `deriveDispatchStatus`.
+ */
+export const resolveDispatchStatus = (result: {
+  status: string | null;
+  channel_outcome: Record<string, ChannelOutcome> | null;
+  channels: readonly string[];
+  by_channel: Record<string, number>;
+  dispatched: number;
+  skipped_by_preference: number;
+  telegram?: unknown;
+}): DispatchHistoryStatus => {
+  if (isDispatchHistoryStatus(result.status)) return result.status;
+  if (result.channel_outcome && Object.keys(result.channel_outcome).length) {
+    return statusFromChannelOutcome(result.channel_outcome, result.dispatched, result.skipped_by_preference);
+  }
+  return deriveDispatchStatus({ ...result, telegram_group: Boolean(result.telegram) });
 };
 
 /** Hali o'zgarishi mumkin: yuborilmoqda yoki biror kanal navbatda — tafsilot jonli yangilanadi. */
