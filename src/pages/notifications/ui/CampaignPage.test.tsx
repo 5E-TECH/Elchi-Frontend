@@ -705,5 +705,53 @@ describe("CampaignPage (sVByLMnt)", () => {
       await waitFor(() => expect(historyCalls()).toBeGreaterThan(before));
       expect(screen.queryByText(/Kampaniya bekor qilinmaydi/)).toBeNull();
     });
+
+    it("review: bugungi qoldiq ertaga rejalashtirilgan kampaniyani to'smaydi («Raqamlar», tasdiq oynasi)", async () => {
+      api.post.mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith("preview")
+            ? {
+                data: {
+                  data: {
+                    ...preview,
+                    recipients: 421,
+                    scheduled_for: tomorrowAt("10:00"),
+                    scheduled_for_tashkent: tomorrowAt("10:00"),
+                    requested_at: tomorrowAt("10:00"),
+                    quiet_hours_shifted: false,
+                  },
+                },
+              }
+            : { data: { data: { campaign_id: "13", status: "scheduled", queued: 0, blocked_no_consent: 0, skipped_invalid_phone: 0 } } },
+        ),
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await fill(user, "Chegirma");
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+      expect(within(dialog).queryByText(/Bugungi limit yetmaydi/)).toBeNull();
+      expect(within(dialog).getByRole("button", { name: "Rejalashtirish" })).toBeEnabled();
+    });
+
+    it("review: segment — ertangi kampaniyada «Bugun qolgan» qatori va «limit» holati yo'q; bugunga qaytsa — yana bor", async () => {
+      mockPreview(() => Promise.resolve({ data: { data: audience({ recipients: 450 }) } }));
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await user.type(screen.getByRole("textbox", { name: "Xabar matni" }), "Chegirma");
+      const block = await openSegment(user);
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "limit"));
+
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      expect(screen.getByTestId("campaign-schedule-chosen")).toHaveTextContent(/^Ertaga/);
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "ready"));
+      expect(block).not.toHaveTextContent("Bugun qolgan");
+      expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeEnabled();
+
+      await user.click(screen.getByRole("radio", { name: /Darhol/ }));
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "limit"));
+      expect(block).toHaveTextContent("SMS limiti · Bugun qolgan: 420 / 500");
+    });
   });
 });

@@ -9,8 +9,10 @@ import {
   isCustomerOnlyAudience,
   isFutureSlot,
   isOrderRangeInverted,
+  tashkentToday,
   toCustomerSegmentPayload,
   toScheduledAt,
+  toTashkentMoment,
   useAudienceSegments,
   useCampaignTime,
   type CustomerSegment,
@@ -67,7 +69,7 @@ import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
 import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
 import { CampaignSendTime } from "./sms/CampaignSendTime";
-import { createSmsSendTime, type SmsSendTimeErrors, type SmsSendTimeValue } from "./sms/sendTime";
+import { createSmsSendTime, quietShiftFor, type SmsSendTimeErrors, type SmsSendTimeValue } from "./sms/sendTime";
 import { CardList } from "./sms/CardList";
 
 type Audience = "phones" | "segment";
@@ -254,7 +256,17 @@ const CampaignPage = () => {
 
   // Jonli auditoriya (faqat «Mijozlar segmenti»): debounce bilan preview, natija + bugungi limit.
   const audienceQuery = useSmsCampaignAudience(audienceTarget);
-  const quota = smsDailyQuota(status.data);
+  /**
+   * Bugungi qoldiq (`GET sms/status` — Toshkent kuni) faqat BUGUN ketadigan kampaniyani cheklaydi: boshqa kunga
+   * rejalashtirilgani (tungi taqiq ertaga surgani ham) o'sha kun kvotasi bilan yuborilganda tekshiriladi — bugungi
+   * qoldiq uni to'smaydi va «Bugun qolgan» qatori chizilmaydi.
+   */
+  const todayQuota = smsDailyQuota(status.data);
+  const plannedDay =
+    sendTime.when === "scheduled" && sendTime.day
+      ? (quietShiftFor(sendTime.day, sendTime.time, status.data?.quiet_hours)?.day ?? sendTime.day)
+      : tashkentToday();
+  const quota = plannedDay === tashkentToday() ? todayQuota : null;
   const audienceData = audienceQuery.data;
   const audienceFresh =
     audienceQuery.settled &&
@@ -420,7 +432,10 @@ const CampaignPage = () => {
     ? campaignTime.format(preview.scheduled_for_tashkent ?? preview.scheduled_for)
     : null;
   // KM-S4: aniq qabul qiluvchilar bugungi qoldiqdan ko'p bo'lsa — backend 409 (kvota) qaytaradi; oldindan to'xtatiladi.
-  const overQuota = Boolean(preview && quota && preview.recipients > quota.remaining);
+  // Faqat bugun ketadigan kampaniya uchun: yuborish kuni — backend aytgan `scheduled_for` (tungi taqiq siljishi bilan).
+  const previewDay = preview ? toTashkentMoment(preview.scheduled_for_tashkent ?? preview.scheduled_for)?.day : null;
+  const previewToday = !previewDay || previewDay === tashkentToday();
+  const overQuota = Boolean(preview && todayQuota && previewToday && preview.recipients > todayQuota.remaining);
   const blockedSend =
     !preview || preview.recipients === 0 || preview.fanout_exceeded || overQuota;
   const count = useCallback(
@@ -1002,11 +1017,11 @@ const CampaignPage = () => {
                 {t("campaign.fanoutExceeded", { max: preview.max_fanout })}
               </NoticeAlert>
             ) : null}
-            {overQuota && quota ? (
+            {overQuota && todayQuota ? (
               <NoticeAlert tone="danger">
                 {t("audience.quotaExceeded", {
                   need: formatNumberLocalized(preview.recipients, { language }),
-                  left: formatNumberLocalized(quota.remaining, { language }),
+                  left: formatNumberLocalized(todayQuota.remaining, { language }),
                 })}
               </NoticeAlert>
             ) : null}
