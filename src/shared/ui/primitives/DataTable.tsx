@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
 import { useIsPhone } from "./date/useIsPhone";
 import { IconButton } from "./IconButton";
+import { useVirtualRows } from "./virtual/useVirtualRows";
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -33,6 +34,9 @@ import { IconButton } from "./IconButton";
  *    Telefonda kartaning o'ng tomonida 44 px chevron, panel karta ostida. `toggle: "none"` — tugmani
  *    iste'molchi o'zi chizadi (masalan amallar ustunida, maket `*-integrations-legacy-partners`):
  *    jadval faqat panelni chiqaradi, `panelId` bilan tugmaga `aria-controls` beriladi.
+ *  - Uzun ro'yxat (`virtualizeFrom`, F4RSPBwx): qatorlar shu sondan ko'p bo'lsa faqat ko'rinadiganlari (+ zaxira)
+ *    chiziladi, qolgani o'rnida bo'sh joy — skroll uzunligi, qator balandligi, tanlov o'zgarmaydi; ekran o'quvchiga
+ *    umumiy son (`aria-rowcount` / `aria-setsize`). Ochiladigan qatorli jadvalda yoqilmaydi.
  *
  *    <DataTable
  *      rows={orders}
@@ -135,6 +139,8 @@ export type DataTableProps<T> = {
   className?: string;
   /** Ochiladigan qatorlar (tafsilot paneli). */
   expandable?: DataTableExpandable<T>;
+  /** Qatorlar shu sondan ko'p bo'lsa — virtualizatsiya (faqat ko'rinadigan qatorlar DOM'da). Sukut: yo'q. */
+  virtualizeFrom?: number;
 };
 
 /* ─── Klasslar (CODE-MAP 2.6) ─────────────────────────────────────────────── */
@@ -161,6 +167,10 @@ const TD_SIZE: Record<DataTableDensity, string> = {
 const SORT_BUTTON =
   "inline-flex items-center gap-1 rounded-sm uppercase tracking-[.04em] text-text-muted hover:text-text " +
   "aria-pressed:text-text transition-[color] duration-150 motion-reduce:transition-none";
+
+/** Virtualizatsiyada qator balandligi taxmini (px; chizilgach o'lchanadi) — `TD_SIZE` va telefon kartasi. */
+const ROW_ESTIMATE: Record<DataTableDensity, number> = { default: 56, tight: 56, "tablet-tight": 56, compact: 44 };
+const CARD_ESTIMATE = 112;
 
 const CHECKBOX = "size-[18px] cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-45";
 
@@ -239,10 +249,23 @@ export const DataTable = <T,>({
   busy = false,
   className,
   expandable,
+  virtualizeFrom,
 }: DataTableProps<T>) => {
   const { t } = useTranslation("ui");
   const isPhone = useIsPhone();
   const panelBaseId = useId();
+  const asCards = isPhone && Boolean(renderCard);
+  const anchorRef = useRef<HTMLElement | null>(null);
+  const virtual = useVirtualRows({
+    count: rows.length,
+    enabled: virtualizeFrom !== undefined && rows.length > virtualizeFrom && !expandable,
+    estimateSize: asCards ? CARD_ESTIMATE : ROW_ESTIMATE[density],
+    anchorRef,
+  });
+  const visibleIndexes = virtual ? virtual.items.map((item) => item.index) : rows.map((_, index) => index);
+  const setAnchor = (node: HTMLElement | null) => {
+    anchorRef.current = node;
+  };
 
   const selectable = (row: T) => (selection?.isSelectable ? selection.isSelectable(row) : true);
   const selectableRows = selection ? rows.filter(selectable) : [];
@@ -308,9 +331,10 @@ export const DataTable = <T,>({
     );
   };
 
-  if (isPhone && renderCard) {
+  if (asCards && renderCard) {
     return (
       <ul
+        ref={setAnchor}
         aria-label={cardsLabel ?? label ?? t("table.cards")}
         aria-busy={busy || undefined}
         className={cx(
@@ -319,39 +343,56 @@ export const DataTable = <T,>({
           className,
         )}
       >
-        {rows.map((row, index) => (
-          <li
-            key={getRowKey(row, index)}
-            data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
-            data-expanded={expandedRow(row) ? "" : undefined}
-            className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index))}
-            onClick={onRowClick ? handleRowClick(row, index) : undefined}
-          >
-            {selection ? (
-              <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
-                {rowCheckbox(row)}
-              </label>
-            ) : null}
-            {hasToggleColumn ? (
-              <div className="flex min-w-0 items-start gap-2 pr-1">
-                <div className="min-w-0 flex-1">{renderCard(row, index)}</div>
-                <div className="flex flex-none pt-2">
-                  {expandableRow(row) ? expandToggle(row, index) : <span aria-hidden="true" className="block w-11" />}
+        {virtual && virtual.paddingTop > 0 ? <li aria-hidden="true" style={{ height: virtual.paddingTop }} /> : null}
+        {visibleIndexes.map((index) => {
+          const row = rows[index];
+          return (
+            <li
+              key={getRowKey(row, index)}
+              ref={virtual?.measureElement}
+              data-index={virtual ? index : undefined}
+              aria-setsize={virtual ? rows.length : undefined}
+              aria-posinset={virtual ? index + 1 : undefined}
+              data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
+              data-expanded={expandedRow(row) ? "" : undefined}
+              className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index))}
+              onClick={onRowClick ? handleRowClick(row, index) : undefined}
+            >
+              {selection ? (
+                <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
+                  {rowCheckbox(row)}
+                </label>
+              ) : null}
+              {hasToggleColumn ? (
+                <div className="flex min-w-0 items-start gap-2 pr-1">
+                  <div className="min-w-0 flex-1">{renderCard(row, index)}</div>
+                  <div className="flex flex-none pt-2">
+                    {expandableRow(row) ? expandToggle(row, index) : <span aria-hidden="true" className="block w-11" />}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              renderCard(row, index)
-            )}
-            {expandable && expandedRow(row) ? (
-              <div id={panelIdOf(row, index)} className={cx("min-w-0", expandable.panelClassName ?? PANEL_CARD)}>
-                {expandable.render(row)}
-              </div>
-            ) : null}
-          </li>
-        ))}
+              ) : (
+                renderCard(row, index)
+              )}
+              {expandable && expandedRow(row) ? (
+                <div id={panelIdOf(row, index)} className={cx("min-w-0", expandable.panelClassName ?? PANEL_CARD)}>
+                  {expandable.render(row)}
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+        {virtual && virtual.paddingBottom > 0 ? <li aria-hidden="true" style={{ height: virtual.paddingBottom }} /> : null}
       </ul>
     );
   }
+
+  const columnCount = columns.length + (selection ? 1 : 0) + (hasToggleColumn ? 1 : 0);
+  // Virtualizatsiyada ko'rinmas qatorlar o'rni (skroll uzunligi o'zgarmasin).
+  const spacer = (height: number) => (
+    <tr aria-hidden="true">
+      <td colSpan={columnCount} className="p-0" style={{ height }} />
+    </tr>
+  );
 
   return (
     <div
@@ -362,9 +403,13 @@ export const DataTable = <T,>({
         className,
       )}
     >
-      <table aria-label={label} className="w-full border-collapse text-sm [&_tbody_tr:last-child_td]:border-b-0">
+      <table
+        aria-label={label}
+        aria-rowcount={virtual ? rows.length + 1 : undefined}
+        className="w-full border-collapse text-sm [&_tbody_tr:last-child_td]:border-b-0"
+      >
         <thead>
-          <tr>
+          <tr aria-rowindex={virtual ? 1 : undefined}>
             {selection ? (
               <th scope="col" className={cx(TH, TH_SIZE[density], "w-11 pr-0 text-left")}>
                 <HeaderCheckbox
@@ -416,13 +461,18 @@ export const DataTable = <T,>({
             })}
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row, index) => {
+        <tbody ref={setAnchor}>
+          {virtual && virtual.paddingTop > 0 ? spacer(virtual.paddingTop) : null}
+          {visibleIndexes.map((index) => {
+            const row = rows[index];
             const expanded = expandedRow(row);
             const tdBorder = expanded ? null : TD_BORDER;
             return (
               <Fragment key={getRowKey(row, index)}>
                 <tr
+                  ref={virtual?.measureElement}
+                  data-index={virtual ? index : undefined}
+                  aria-rowindex={virtual ? index + 2 : undefined}
                   // `aria-selected` faqat grid/treegrid qatorida — oddiy jadvalda holat belgining o'zida (`checked`).
                   data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
                   data-expanded={expanded ? "" : undefined}
@@ -459,7 +509,7 @@ export const DataTable = <T,>({
                   <tr data-expanded-panel="" className={expandable.expandedClassName ?? "bg-sunken"}>
                     <td
                       id={panelIdOf(row, index)}
-                      colSpan={columns.length + (selection ? 1 : 0) + (hasToggleColumn ? 1 : 0)}
+                      colSpan={columnCount}
                       className={cx(TD_BORDER, "align-top text-text", expandable.panelClassName ?? PANEL_TABLE[toggleMode])}
                     >
                       {expandable.render(row)}
@@ -469,6 +519,7 @@ export const DataTable = <T,>({
               </Fragment>
             );
           })}
+          {virtual && virtual.paddingBottom > 0 ? spacer(virtual.paddingBottom) : null}
         </tbody>
       </table>
     </div>
