@@ -304,5 +304,9 @@
       "rowBadge": "Duplicate number",
       "rowBadgeTitle": "Also to this number: {{ids}}"
     }
+  },
+  "receipt": {
+    "contact": "If there is a problem",
+    "courier": "Courier"
   }
 }

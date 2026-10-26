@@ -36,8 +36,11 @@ export const isCampaignDisplayStatus = (value: unknown): value is CampaignDispla
 export const isCampaignActive = (status: CampaignStatus | null | undefined) =>
   status === "draft" || status === "queued" || status === "running";
 
-/** Kampaniya kanallari — backend `CAMPAIGN_ALLOWED_CHANNELS` (SMS — KM-5, Telegram — kampaniyada yo'q). */
-export const CAMPAIGN_CHANNELS = ["in_app", "realtime", "push"] as const;
+/**
+ * Kampaniya kanallari — backend `CAMPAIGN_ALLOWED_CHANNELS` (Telegram — kampaniyada yo'q). SMS (KM-5) — doim reklama:
+ * faqat roziligi borlarga, 18:00–09:00 da yuborilmaydi (09:00 ga suriladi).
+ */
+export const CAMPAIGN_CHANNELS = ["in_app", "realtime", "push", "sms"] as const;
 export type CampaignChannel = (typeof CAMPAIGN_CHANNELS)[number];
 
 /**
@@ -88,6 +91,14 @@ export interface Campaign {
   is_promo: boolean;
   /** Reklama tungi taqiqda to'xtagan — shu lahzada davom etadi (WIsb9Ytq). */
   paused_until: string | null;
+  /**
+   * N10 (fb4qy6bd): admin so'ragan lahza — belgilangan vaqt yoki «Darhol» da yaratilgan lahza (eski kampaniyalarda
+   * `null`); `_tashkent` — o'sha lahza `+05:00` bilan.
+   */
+  requested_at: string | null;
+  requested_at_tashkent: string | null;
+  /** N10: so'ralgan vaqt reklama tungi taqiqiga tushib, oyna tugashiga surildi (eski kampaniyalarda `false`). */
+  quiet_hours_shifted: boolean;
 }
 
 export interface CampaignListPage {

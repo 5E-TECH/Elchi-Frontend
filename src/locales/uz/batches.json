@@ -82,6 +82,8 @@
     "sendErrorDescription": "Tanlov saqlanadi — qayta urinib ko'ring",
     "historyCount": "{{value}} ta",
     "historyLabel": "Paket tarixi",
+    "historyLoading": "Tarix yuklanmoqda",
+    "historyError": "Tarixni yuklab bo'lmadi",
     "historyAction": {
       "created": "Paket yaratildi",
       "createdReturn": "Qaytarish paketi yaratildi",
@@ -106,6 +108,8 @@
     "region": "VILOYAT:",
     "orders": "BUYURTMALAR:",
     "total": "JAMI:",
-    "date": "SANA:"
+    "date": "SANA:",
+    "driver": "HAYDOVCHI:",
+    "vehicle": "AVTOMOBIL:"
   }
 }

@@ -2,6 +2,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Check, Eye, EyeOff, Lock, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
@@ -11,15 +13,23 @@ import {
   normalizeBackendFieldMessage,
 } from "../../../features/user/lib/backendFieldErrors";
 import { Button, Dialog, Field, IconButton, TextInput } from "../../../shared/ui/primitives";
-
-/** Backend `UpdateAdminRequestDto.password`: `@MinLength(4)` (api-gateway `identity.swagger.dto.ts`). */
-export const PASSWORD_MIN_LENGTH = 4;
+import {
+  checkPasswordPolicy,
+  getPasswordPolicyServerMessage,
+  passwordMinLength,
+} from "../../../shared/lib/passwordPolicy";
 
 type ChangePasswordDialogProps = {
   open: boolean;
   onClose: () => void;
   name: string;
   phone: string | null | undefined;
+  /**
+   * `required` — NDmZMzCP «Yangi parol o'rnating» (`must_change_password`): sarlavha / izoh boshqa, «Bekor qilish»
+   * o'rniga «Keyinroq». Saqlangach `onChanged` (token yangilash, bayroqni tozalash).
+   */
+  variant?: "change" | "required";
+  onChanged?: () => void | Promise<void>;
 };
 
 type Errors = { password?: string; repeat?: string };
@@ -31,11 +41,23 @@ type Errors = { password?: string; repeat?: string };
  * qoladi (2026-10-23; avval hamma sessiya yopilib, shu yerdan ham chiqarilardi) → «Parol almashtirildi — boshqa
  * qurilmalardan chiqildi», oyna yopiladi; «Sessiyalar» ro'yxati qayta so'raladi (`updateMyProfile` →
  * `queryKeys.accountSessions`). Ikki marta yuborilmaydi (`submittingRef`).
- * Tekshiruv: bo'sh emas, kamida 4 belgi, takrori mos (mos kelsa — yashil «Parollar mos keladi»).
+ * Tekshiruv (NDmZMzCP siyosati, `shared/lib/passwordPolicy`): bo'sh emas, kamida 8 (xodim — 10) belgi, boshida /
+ * oxirida bo'shliq yo'q, takrori mos (mos kelsa — yashil «Parollar mos keladi»). Oddiy / ketma-ket / telefonga teng
+ * parolni server rad etadi — 400 matni maydon ostida.
  */
-export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePasswordDialogProps) => {
-  const { t } = useTranslation(["profile", "users", "common"]);
+export const ChangePasswordDialog = ({
+  open,
+  onClose,
+  name,
+  phone,
+  variant = "change",
+  onChanged,
+}: ChangePasswordDialogProps) => {
+  const { t } = useTranslation(["profile", "users", "common", "auth"]);
   const { updateMyProfile } = useUser();
+  const role = useSelector((state: RootState) => state.role.role);
+  const minLength = passwordMinLength(role);
+  const required = variant === "required";
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -65,8 +87,9 @@ export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePassw
   const validate = (): Errors => {
     const next: Errors = {};
     // Faqat bo'shliqdan iborat parol — bo'sh hisoblanadi (eski `UpdateUserModal`: `password.trim()` bo'sh → yuborilmaydi).
-    if (!password.trim()) next.password = t("profile:password.required");
-    else if (password.length < PASSWORD_MIN_LENGTH) next.password = t("profile:password.tooShort");
+    const issue = checkPasswordPolicy(password, role);
+    if (issue === "required") next.password = t("profile:password.required");
+    else if (issue) next.password = t(`auth:passwordPolicy.${issue}`, { min: minLength });
     if (!repeat) next.repeat = t("profile:password.repeatRequired");
     else if (repeat !== password) next.repeat = t("profile:password.mismatch");
     return next;
@@ -83,10 +106,16 @@ export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePassw
     setBusy(true);
     try {
       await updateMyProfile.mutateAsync({ password });
-      notify.success(t("profile:password.changedOthersSignedOut"));
+      notify.success(
+        required ? t("auth:mustChange.success") : t("profile:password.changedOthersSignedOut"),
+        required ? { description: t("profile:password.changedOthersSignedOut") } : undefined,
+      );
+      await onChanged?.();
       onClose();
     } catch (error) {
-      const fieldMessage = normalizeBackendFieldMessage(extractBackendFieldErrors(error).password);
+      const fieldMessage =
+        normalizeBackendFieldMessage(extractBackendFieldErrors(error).password) ??
+        getPasswordPolicyServerMessage(error);
       if (fieldMessage) setErrors({ password: fieldMessage });
       notify.error(t("common:error"), {
         description: getBackendErrorMessage(error) ?? t("users:editUserError"),
@@ -117,18 +146,22 @@ export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePassw
       busy={busy}
       size="sm"
       icon={Lock}
-      title={t("profile:password.title")}
+      title={required ? t("auth:mustChange.title") : t("profile:password.title")}
       description={
-        <>
-          {name} · <span className="whitespace-nowrap">{formatPhone(phone)}</span>
-        </>
+        required ? (
+          t("auth:mustChange.description")
+        ) : (
+          <>
+            {name} · <span className="whitespace-nowrap">{formatPhone(phone)}</span>
+          </>
+        )
       }
       onSubmit={submit}
       formProps={{ noValidate: true }}
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>
-            {t("profile:password.cancel")}
+            {required ? t("auth:mustChange.later") : t("profile:password.cancel")}
           </Button>
           <Button type="submit" loading={busy} loadingText={t("profile:password.saving")}>
             {t("profile:password.submit")}
@@ -139,7 +172,7 @@ export const ChangePasswordDialog = ({ open, onClose, name, phone }: ChangePassw
       <Field
         label={t("profile:password.new")}
         required
-        hint={t("profile:password.minHint")}
+        hint={t("auth:passwordPolicy.hint", { min: minLength })}
         error={errors.password}
       >
         <TextInput

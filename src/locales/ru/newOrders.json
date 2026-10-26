@@ -499,6 +499,30 @@
       "summary_other": "<strong>{{value}}</strong> отменённого заказа",
       "summaryTotal": "всего <strong>{{sum}}</strong>"
     },
+    "returns": {
+      "tabsLabel": "Этапы отменённых",
+      "ready": "Готовы к выдаче",
+      "transit": "В пути",
+      "received": "Полученные",
+      "transitTitle": "Отменённые заказы в пути",
+      "transitHint": "Когда HQ примет заказ, он перейдёт в список «Готовы к выдаче».",
+      "receivedTitle": "Полученные вами отменённые заказы",
+      "summary_one": "<strong>{{value}}</strong> заказ",
+      "summary_few": "<strong>{{value}}</strong> заказа",
+      "summary_many": "<strong>{{value}}</strong> заказов",
+      "summary_other": "<strong>{{value}}</strong> заказа",
+      "columns": {
+        "where": "Где",
+        "receivedAt": "Получен",
+        "placeMethod": "Место и способ"
+      },
+      "rangeLabel": "Период получения",
+      "transitEmptyTitle": "Нет отменённых заказов в пути",
+      "transitEmptyDescription": "Заказы, отменённые курьером, отображаются здесь, пока не дойдут до HQ.",
+      "receivedEmptyTitle": "За этот период заказов не получено",
+      "receivedEmptyDescription": "Попробуйте изменить период.",
+      "truncated": "Список неполный — сократите период."
+    },
     "qrDialog": {
       "title": "QR-код отменённых заказов",
       "description": "Дайте отсканировать этот QR-код на почте для передачи.",

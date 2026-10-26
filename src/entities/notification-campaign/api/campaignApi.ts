@@ -16,6 +16,8 @@ import type {
   CampaignExportStatus,
   CampaignReport,
   CampaignReportChannel,
+  CampaignReportKind,
+  CampaignReportSms,
   CampaignUndeliveredPage,
 } from "../model/report";
 import { DEFAULT_MAX_SCHEDULE_DAYS } from "../model/schedule";
@@ -75,6 +77,72 @@ export interface AudienceSampleItem {
   phone: string | null;
 }
 
+/**
+ * SMS kanali bo'yicha bo'linish (KM-5, 9D1Gl9MS) — preview so'rovida `channels` da `sms` bo'lsa javobdagi `sms` bloki.
+ * Kampaniya SMS'i DOIM reklama: faqat roziligi borlarga, 18:00–09:00 da yuborilmaydi. `exact = false` (auditoriya
+ * kampaniya chegarasidan katta) — sonlar va narx `null`. Telefon javobda yo'q.
+ */
+export interface AudienceSmsPreview {
+  exact: boolean;
+  /** Roziligi bor — SMS ketadi. */
+  recipients: number | null;
+  blockedNoConsent: number | null;
+  skippedInvalidPhone: number | null;
+  withValidPhone: number | null;
+  encoding: string | null;
+  parts: number;
+  textProvided: boolean;
+  /** Bir bo'lak narxi (so'm). */
+  tariff: number | null;
+  estimatedCost: number | null;
+  /** SMS kanali bilan kampaniya auditoriyasi chegarasi (`SMS_MAX_FANOUT`). */
+  maxFanout: number | null;
+  fanoutExceeded: boolean;
+  smsEnabled: boolean;
+  optOutConfigured: boolean;
+  /** Toshkent, kun boshidan daqiqa. */
+  quietHours: { start: number; end: number } | null;
+}
+
+/** Preview so'roviga qo'shimcha (KM-5): SMS tanlansa — kanallar va matn (bo'lak va narx uchun). */
+export interface AudiencePreviewExtras {
+  channels?: string[];
+  title?: string;
+  body?: string;
+}
+
+const toNullableNumber = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+export const normalizeAudienceSms = (value: unknown): AudienceSmsPreview | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const sms = asRecord(value);
+  const quiet = asRecord(sms.quiet_hours);
+  const start = Number(quiet.start);
+  const end = Number(quiet.end);
+  return {
+    exact: sms.exact !== false,
+    recipients: toNullableCount(sms.recipients),
+    blockedNoConsent: toNullableCount(sms.blocked_no_consent),
+    skippedInvalidPhone: toNullableCount(sms.skipped_invalid_phone),
+    withValidPhone: toNullableCount(sms.with_valid_phone),
+    encoding: toText(sms.encoding),
+    parts: Math.max(1, toCount(sms.parts)),
+    textProvided: sms.text_provided === true,
+    tariff: toNullableNumber(sms.tariff),
+    estimatedCost: toNullableNumber(sms.estimated_cost),
+    maxFanout: toNullableCount(sms.max_fanout),
+    fanoutExceeded: sms.fanout_exceeded === true,
+    // Maydon yo'q (eski backend) — yoqiq deb hisoblanmaydi: yaratish 409 bermasin.
+    smsEnabled: sms.sms_enabled === true,
+    optOutConfigured: sms.opt_out_configured === true,
+    quietHours: Number.isFinite(start) && Number.isFinite(end) ? { start, end } : null,
+  };
+};
+
 export interface AudiencePreview {
   /** `false` — auditoriya kampaniya chegarasidan katta: son identity statistikasidan, push sanalmagan. */
   exact: boolean;
@@ -86,6 +154,8 @@ export interface AudiencePreview {
   campaignMax: number | null;
   campaignAllowed: boolean;
   sample: AudienceSampleItem[] | null;
+  /** SMS bo'linishi — faqat so'rovda `channels` da `sms` bo'lsa (aks holda `null`). */
+  sms?: AudienceSmsPreview | null;
 }
 
 export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
@@ -94,6 +164,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
   const limits = asRecord(data.limits);
   const byChannel = asRecord(data.by_channel);
   const campaignMax = toNullableCount(limits.campaign_max);
+  const sms = normalizeAudienceSms(data.sms);
   return {
     exact: data.exact !== false,
     total,
@@ -113,6 +184,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
           return { id: toText(item.id) ?? "", role: toText(item.role), phone: toText(item.phone) };
         })
       : null,
+    ...(sms ? { sms } : {}),
   };
 };
 
@@ -121,7 +193,7 @@ export const normalizeAudiencePreview = (payload: unknown): AudiencePreview => {
  * 30 s kutadi). `withSample` — 20 tagacha maskalangan qator («Namunani ko'rish»).
  */
 export const previewAudience = async (
-  target: AudienceTarget | { broadcast: true } | { recipient_ids: string[] },
+  target: (AudienceTarget | { broadcast: true } | { recipient_ids: string[] }) & AudiencePreviewExtras,
   { withSample = false }: { withSample?: boolean } = {},
 ) =>
   normalizeAudiencePreview(
@@ -232,6 +304,9 @@ export const normalizeCampaign = (payload: unknown): Campaign => {
     can_cancel: data.can_cancel === true,
     is_promo: data.is_promo === true,
     paused_until: toText(data.paused_until),
+    requested_at: toText(data.requested_at),
+    requested_at_tashkent: toText(data.requested_at_tashkent),
+    quiet_hours_shifted: data.quiet_hours_shifted === true,
   };
 };
 
@@ -314,16 +389,54 @@ const toReportChannel = (raw: unknown): CampaignReportChannel => {
   };
 };
 
+/** Pul / tarif: `null` — o'lchanmagan yoki tarif sozlanmagan («—»), HECH QACHON 0 ga aylantirilmaydi. */
+const toNullableAmount = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+const REPORT_ENCODINGS = ["GSM-7", "UCS-2", "mixed"];
+
+/** SMS bloki (`sms`) — yo'q yoki obyekt emas → `null` (blok chizilmaydi). */
+const toReportSms = (value: unknown): CampaignReportSms | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const sms = asRecord(value);
+  const parts = sms.parts_per_message && typeof sms.parts_per_message === "object" ? asRecord(sms.parts_per_message) : null;
+  const dlr = sms.dlr && typeof sms.dlr === "object" ? asRecord(sms.dlr) : null;
+  const encoding = toText(sms.encoding);
+  return {
+    messages: toCount(sms.messages),
+    partsTotal: toCount(sms.parts_total),
+    partsPerMessage: parts ? { min: toCount(parts.min), max: toCount(parts.max) } : null,
+    encoding: encoding && REPORT_ENCODINGS.includes(encoding) ? encoding : null,
+    dlr: dlr
+      ? {
+          final: toCount(dlr.final),
+          delivered: toCount(dlr.delivered),
+          failed: toCount(dlr.failed),
+          awaiting: toCount(dlr.awaiting),
+        }
+      : null,
+    tariffPerPart: toNullableAmount(sms.tariff_per_part),
+    costOfSent: toNullableAmount(sms.cost_of_sent),
+  };
+};
+
 /** Hisobot javobi. Xom matnlar (`note`, `dlr.note`, `cost.note`) olinmaydi — foydalanuvchiga faqat i18n. */
 export const normalizeCampaignReport = (payload: unknown): CampaignReport => {
   const data = unwrap(payload);
   const campaign = asRecord(data.campaign);
   const stats = asRecord(data.stats);
   const permissions = asRecord(data.permissions);
+  const dlr = asRecord(data.dlr);
+  const cost = asRecord(data.cost);
   return {
+    kind: data.kind === "sms" ? "sms" : "notification",
     campaign: {
       id: toText(campaign.id) ?? "",
       title: toText(campaign.title) ?? "",
+      text: toText(campaign.text),
       category: toText(campaign.category),
       channels: Array.isArray(campaign.channels) ? campaign.channels.map(String) : [],
       display_status: isCampaignDisplayStatus(campaign.display_status) ? campaign.display_status : null,
@@ -343,14 +456,40 @@ export const normalizeCampaignReport = (payload: unknown): CampaignReport => {
     byChannel: (Array.isArray(data.by_channel) ? data.by_channel : [])
       .map(toReportChannel)
       .filter((row) => row.channel),
+    dlr: {
+      supported: dlr.supported === true,
+      received: toNullableCount(dlr.received),
+      awaiting: toNullableCount(dlr.awaiting),
+    },
+    sms: toReportSms(data.sms),
+    cost: {
+      // Narx bloki yo'q (eski javob) — o'lchanmagan, 0 emas.
+      estimated: toNullableAmount(cost.estimated),
+      costOfSent: toNullableAmount(cost.cost_of_sent),
+      paidChannels: Array.isArray(cost.paid_channels) ? cost.paid_channels.map(String) : [],
+    },
     canExport: permissions.can_export === true,
     exportSyncLimit: toCount(data.export_sync_limit) || 10_000,
   };
 };
 
-/** `GET …/campaigns/:id/report` — statistika va kanal kesimi. */
-export const getCampaignReport = async (id: string) =>
-  normalizeCampaignReport((await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_REPORT(id))).data);
+/** Hisobot manzillari: bildirishnoma — `/notifications/campaigns/:id/…`, SMS — `/notifications/sms/campaigns/:id/…`. */
+const REPORT_URLS = {
+  notification: {
+    report: API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_REPORT,
+    undelivered: API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED,
+    export: API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED_EXPORT,
+  },
+  sms: {
+    report: API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_REPORT,
+    undelivered: API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_UNDELIVERED,
+    export: API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_UNDELIVERED_EXPORT,
+  },
+} satisfies Record<CampaignReportKind, Record<"report" | "undelivered" | "export", (id: string) => string>>;
+
+/** `GET …/campaigns/:id/report` — statistika, kanal kesimi, SMS bloki va taxminiy narx. */
+export const getCampaignReport = async (id: string, kind: CampaignReportKind = "notification") =>
+  normalizeCampaignReport((await api.get(REPORT_URLS[kind].report(id))).data);
 
 export const normalizeCampaignUndelivered = (payload: unknown): CampaignUndeliveredPage => {
   const data = unwrap(payload);
@@ -372,6 +511,7 @@ export const normalizeCampaignUndelivered = (payload: unknown): CampaignUndelive
             channel: toText(failure.channel) ?? "",
             status: toText(failure.status) ?? "",
             reason: toText(failure.reason),
+            reason_code: toText(failure.reason_code),
           };
         }),
       };
@@ -390,10 +530,8 @@ export const normalizeCampaignUndelivered = (payload: unknown): CampaignUndelive
 export const getCampaignUndelivered = async (
   id: string,
   params: { page?: number; limit?: number } = {},
-) =>
-  normalizeCampaignUndelivered(
-    (await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED(id), { params })).data,
-  );
+  kind: CampaignReportKind = "notification",
+) => normalizeCampaignUndelivered((await api.get(REPORT_URLS[kind].undelivered(id), { params })).data);
 
 /** `Blob` → matn (`blob.text` bo'lmagan muhitda — `FileReader`). */
 const readBlobText = (blob: unknown): Promise<string> => {
@@ -419,9 +557,12 @@ export type CampaignExportResult =
   | { kind: "file"; blob: Blob; fileName: string | null }
   | { kind: "job"; exportId: string };
 
-export const exportCampaignUndelivered = async (id: string): Promise<CampaignExportResult> => {
+export const exportCampaignUndelivered = async (
+  id: string,
+  kind: CampaignReportKind = "notification",
+): Promise<CampaignExportResult> => {
   // CSV 10 000 qatorgacha sinxron quriladi (gateway 60 s kutadi) — umumiy 20 s emas, eksport muddati.
-  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.CAMPAIGN_UNDELIVERED_EXPORT(id), {
+  const response = await api.get(REPORT_URLS[kind].export(id), {
     responseType: "blob",
     timeout: LONG_REQUEST_TIMEOUT_MS,
   });

@@ -2,6 +2,9 @@ import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axio
 import tokenStorage from "./tokenStorage";
 import { logoutAndRedirect, refreshAccessToken } from "./authService";
 import { emitNetworkError, emitNetworkRestored, isNetworkFailure, isTransientAuthFailure } from "./networkError";
+import { PASSWORD_CHANGE_REQUIRED_CODE, requirePasswordChange, responseErrorCode } from "./passwordChange";
+import { notify } from "../shared/lib/notify";
+import i18n from "../i18n";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -43,6 +46,29 @@ const SESSION_REVOKED_MESSAGE = "session revoked";
 const isSessionRevoked = (error: AxiosError) => {
   const message = (error.response?.data as { message?: unknown } | undefined)?.message;
   return typeof message === "string" && message.trim().toLowerCase() === SESSION_REVOKED_MESSAGE;
+};
+
+/**
+ * NDmZMzCP: gateway sessiyani tekshira olmadi (identity javob bermadi) — 503 `SESSION_CHECK_UNAVAILABLE`. Bu 401
+ * EMAS: foydalanuvchi chiqarilmaydi, so'rov odatdagidek rad etiladi (React Query 5xx ni bir marta qayta so'raydi),
+ * bitta ogohlantirish (bir xil `id` — takrorlanmaydi).
+ */
+export const SESSION_CHECK_UNAVAILABLE_CODE = "SESSION_CHECK_UNAVAILABLE";
+export const SESSION_CHECK_TOAST_ID = "elchi-session-check-unavailable";
+
+const handleSecurityCodes = (error: AxiosError) => {
+  const status = error.response?.status;
+  if (status !== 403 && status !== 503) return;
+  const code = responseErrorCode(error.response?.data);
+  if (status === 403 && code === PASSWORD_CHANGE_REQUIRED_CODE) {
+    // Darvoza yoqilgan (`PASSWORD_CHANGE_GATE`): chiqarilmaydi — «Yangi parol o'rnating» oynasi ochiladi.
+    requirePasswordChange();
+  } else if (status === 503 && code === SESSION_CHECK_UNAVAILABLE_CODE) {
+    notify.warning(i18n.t("auth:sessionCheckUnavailable.title"), {
+      id: SESSION_CHECK_TOAST_ID,
+      description: i18n.t("auth:sessionCheckUnavailable.text"),
+    });
+  }
 };
 
 const hasRefreshTokenExpired = () => {
@@ -126,6 +152,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       // Fon so'rovi (`silentNetworkError`, masalan har daqiqadagi o'qilmaganlar soni) — holat belgilanadi, lekin
       // foydalanuvchi yopgan tarmoq xabari qayta ochilmaydi (9-band).
       emitNetworkError(error, { silent: error.config?.silentNetworkError === true });
+      handleSecurityCodes(error);
 
       if (!shouldAttemptRefresh(error)) {
         return Promise.reject(error);

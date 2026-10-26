@@ -13,6 +13,7 @@ import { logRealtime, realtimeUrl, setRealtimeConnected } from "../../shared/lib
 import {
   handleSessionRevokedEvent,
   handleSessionRevokedSocketError,
+  isSessionCheckUnavailableSocketError,
   SESSION_REVOKED_EVENT,
 } from "../../auth/sessionRevoked";
 
@@ -32,6 +33,8 @@ import {
  *   `elchi-push-<id>` — push va socket orqali kelsa ham ikki marta chiqmaydi), bir nechta — «N ta yangi bildirishnoma».
  * - Har ulanishda (birinchi ham) inbox yangilanadi — ulanmagan oraliqdagi xabarlar yo'qolmaydi.
  * - Polling zaxira: ulanganda sanoq 5 daqiqada, uzilganda 60 s da (`useUnreadCount`).
+ * - Buyurtma hodisasi (`category: "order"`, qatorli yoki signal) — ochiq buyurtma so'rovlari (`["orders"]`: ro'yxat,
+ *   holat tablari sonlari va «Qabul va yaratish» badge'i — GaBIPi3Z) shu yig'ish oynasida bir marta yangilanadi.
  * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
  *   token `sid` iga mos bo'lsa — yoki yopilgan sessiya tokeni bilan ulanish rad etilsa (`error` / `connect_error`
  *   «SESSION_REVOKED») — qurilma joyida chiqadi (`auth/sessionRevoked` → `logoutRevokedSession`, `POST auth/logout`
@@ -43,8 +46,18 @@ type RealtimePayload = Partial<
   Pick<InboxNotification, "id" | "title" | "body" | "link" | "category" | "type">
 >;
 
+/** Buyurtma so'rovlari kalit prefiksi (`entities/order` `ORDER_KEY`, holat sonlari ham shu ostida). */
+const ORDERS_QUERY_PREFIX = "orders";
+
 /** Bir vaqtda kelgan hodisalarni yig'ish oynasi — bitta so'rov va bitta xabar. */
 const BATCH_MS = 400;
+
+/**
+ * NDmZMzCP: ulanish `SESSION_CHECK_UNAVAILABLE` bilan rad etilsa (identity vaqtincha javob bermadi) — chiqish emas,
+ * shuncha kutib (+ tasodifiy 0–5 s, hamma qurilma bir soniyada urinmasin) qayta ulanadi.
+ */
+const SESSION_CHECK_RECONNECT_MS = 15_000;
+const SESSION_CHECK_RECONNECT_JITTER_MS = 5_000;
 
 /** Faqat ilova ichidagi yo'l — tashqi havola toastdan ochilmaydi. */
 const toInAppLink = (link: string | null | undefined) =>
@@ -60,6 +73,8 @@ const RealtimeSync = () => {
   // Bir vaqtda kelgan hodisalar (masalan bitta buyurtmaning ketma-ket holatlari) BATCH_MS ichida yig'iladi:
   // bitta yangilash so'rovi va bitta xabar (bir nechta bo'lsa — «N ta yangi bildirishnoma»).
   const pendingRef = useRef(new Map<string, RealtimePayload>());
+  /** Yig'ish oynasida buyurtma hodisasi keldimi — ro'yxat va sonlar (`["orders"]`) bir marta yangilanadi. */
+  const ordersChangedRef = useRef(false);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ishlovchi — eng so'nggi `t` / `navigate` bilan; ulanish ular o'zgarganda qayta ochilmaydi.
@@ -70,6 +85,10 @@ const RealtimeSync = () => {
       const rows = [...pendingRef.current.values()];
       pendingRef.current.clear();
       void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all });
+      if (ordersChangedRef.current) {
+        ordersChangedRef.current = false;
+        void queryClient.invalidateQueries({ queryKey: [ORDERS_QUERY_PREFIX], refetchType: "active" });
+      }
       // Yashirin tabda xabar emas (badge baribir yangilanadi).
       if (!rows.length || document.visibilityState !== "visible") return;
       if (rows.length > 1) {
@@ -101,6 +120,7 @@ const RealtimeSync = () => {
   const handleNotification = useRef((payload: RealtimePayload) => {
     // Rol/broadcast signali (`id` yo'q) — faqat yangilash; qatorli hodisa — xabar uchun (bir xil `id` bir marta).
     if (payload.id && payload.title) pendingRef.current.set(payload.id, payload);
+    if (payload.category === "order") ordersChangedRef.current = true;
     if (!flushTimerRef.current)
       flushTimerRef.current = setTimeout(() => flushRef.current(), BATCH_MS);
   }).current;
@@ -116,6 +136,7 @@ const RealtimeSync = () => {
     if (!isAuthenticated || !accessToken) return;
     let socket: Socket | null = null;
     let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Kutubxona faqat kirgandan keyin yuklanadi — kirish sahifasi va birinchi yuklanish og'irlashmaydi.
     // Token `auth` da ketadi (cookie kerak emas — `withCredentials` yo'q).
@@ -138,6 +159,20 @@ const RealtimeSync = () => {
           client.removeAllListeners();
           client.disconnect();
         };
+        // Sessiya tekshiruvi vaqtincha ishlamadi — server rad etib uzadi (socket.io o'zi qayta urinmaydi): kechiktirib
+        // qo'lda ulanish. Bir vaqtda faqat bitta taymer.
+        let sessionCheckFailed = false;
+        const reconnectLater = () => {
+          if (reconnectTimer || cancelled) return;
+          logRealtime("sessiyani tekshirib bo'lmadi — keyinroq qayta ulanadi");
+          reconnectTimer = setTimeout(
+            () => {
+              reconnectTimer = null;
+              if (!cancelled && !client.connected) client.connect();
+            },
+            SESSION_CHECK_RECONNECT_MS + Math.floor(Math.random() * SESSION_CHECK_RECONNECT_JITTER_MS),
+          );
+        };
         client.on(SESSION_REVOKED_EVENT, (payload: unknown) => {
           if (handleSessionRevokedEvent(payload)) closeRevoked();
           else logRealtime("boshqa sessiya hodisasi — e'tiborsiz", payload);
@@ -153,6 +188,10 @@ const RealtimeSync = () => {
         client.on("disconnect", (reason) => {
           setRealtimeConnected(false);
           logRealtime("uzildi", reason);
+          if (reason === "io server disconnect" && sessionCheckFailed) {
+            sessionCheckFailed = false;
+            reconnectLater();
+          }
           // Uzilish oralig'ida kelgan xabarlar o'tib ketmasin — sanoq darhol so'raladi, keyin 60 s polling.
           void queryClient.invalidateQueries({
             queryKey: queryKeys.notificationsInbox.unreadCount,
@@ -166,10 +205,12 @@ const RealtimeSync = () => {
           );
           // Yopilgan sessiya tokeni bilan qayta ulanish rad etildi — qayta urinish emas, chiqish.
           if (handleSessionRevokedSocketError(error)) closeRevoked();
+          else if (!client.active && isSessionCheckUnavailableSocketError(error)) reconnectLater();
         });
         client.on("error", (error: unknown) => {
           logRealtime("server xatosi", error);
           if (handleSessionRevokedSocketError(error)) closeRevoked();
+          else if (isSessionCheckUnavailableSocketError(error)) sessionCheckFailed = true;
         });
         client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
@@ -183,6 +224,7 @@ const RealtimeSync = () => {
 
     return () => {
       cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (socket) {
         socket.removeAllListeners();
         socket.disconnect();

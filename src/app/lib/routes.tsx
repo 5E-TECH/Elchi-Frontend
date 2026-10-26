@@ -19,6 +19,7 @@ import {
   canCreateOrders,
   canReceiveExternalOrders,
   canViewPaymentsPage,
+  canManageShiftSettings,
   canHandoverCancelledToMarket,
   canCreateProducts,
   canViewProducts,
@@ -120,6 +121,9 @@ const Mails = lazy(() => import("../../pages/mails"));
 const MailDetail = lazy(() => import("../../pages/mails/detail"));
 
 const Payments = lazy(() => import("../../pages/payments"));
+// kiZgTybn — smena hisoboti (kartalar, AI holati) va smena sozlamalari (faqat superadmin).
+const ShiftReportPage = lazy(() => import("../../pages/payments/shiftReport"));
+const ShiftSettingsPage = lazy(() => import("../../pages/payments/shiftSettings"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
@@ -331,6 +335,17 @@ const LegacyIntegrationDetailRedirect = () => {
   const { id } = useParams();
 
   return <Navigate replace to={`/integrations/sources/${id ?? ""}`} />;
+};
+
+/**
+ * gWI4gYkw: smena hisoboti bildirishnomasi (`finance.shift_closed` / `finance.shift_auto_closed`) superadminga
+ * `link: /payments/shift-report/:id` bilan keladi (toast «Ochish», qo'ng'iroqcha, Inbox, push) — hisobot sahifasi
+ * `/payments/shifts/:id` da. Ruxsatni nishon route tekshiradi.
+ */
+const LegacyShiftReportRedirect = () => {
+  const { id } = useParams();
+
+  return <Navigate replace to={`/payments/shifts/${id ?? ""}`} />;
 };
 
 const NewOrdersCancelledDetailEntry = () => {
@@ -998,6 +1013,26 @@ const AppRouter = () => {
                       redirectTo="/cash-box"
                     >
                       <CashDetail />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "shifts/:id",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={isPaymentsManager}
+                      redirectTo="/cash-box"
+                    >
+                      <ShiftReportPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                { path: "shift-report/:id", element: <LegacyShiftReportRedirect /> },
+                {
+                  path: "shift-settings",
+                  element: (
+                    <ProtectedRoute canActivate={canManageShiftSettings}>
+                      <ShiftSettingsPage />
                     </ProtectedRoute>
                   ),
                 },

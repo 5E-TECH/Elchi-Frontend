@@ -968,5 +968,265 @@
         "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."
       }
     }
+  },
+  "shiftCheck": {
+    "accounts": {
+      "title": "Kartalar va hisob raqamlar",
+      "hint": "Bank ilovasidagi qoldiqni kiriting va skrinshot yuklang — AI rasmdagi summani kiritilgan va tizimdagi qoldiq bilan solishtiradi.",
+      "hintNoAi": "Bank ilovasidagi qoldiqni kiriting; skrinshot so'ralgan kartada rasm yuklang.",
+      "settings": "Sozlamalar",
+      "entered": "Ilovadagi qoldiq",
+      "system": "Tizim bo'yicha:",
+      "photo": "Skrinshot",
+      "photoOptional": "(ixtiyoriy)",
+      "upload": "Skrinshot yuklash",
+      "replace": "Rasmni almashtirish",
+      "uploading": "Yuklanmoqda…",
+      "uploaded": "Rasm yuklandi",
+      "open": "Rasmni ochish",
+      "comment": "Izoh",
+      "commentPlaceholder": "Farq sababini yozing",
+      "commentHint": "Qoldiq tizimdagidan farq qiladi — izohsiz smena yopilmaydi",
+      "commentOptionalPlaceholder": "Ixtiyoriy — masalan, qoldiq haqida eslatma",
+      "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
+      "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
+      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
+      "alert": "{{count}} ta kartada farq bor — izoh majburiy",
+      "pending": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "errors": {
+        "entered": "Ilovadagi qoldiqni kiriting",
+        "photo": "Skrinshot majburiy — avval rasm yuklang",
+        "comment": "Farq bor yoki AI natijasi mos emas — izoh yozing",
+        "photoType": "Faqat jpeg, png yoki webp rasm yuklang",
+        "photoSize": "Rasm hajmi 5 MB dan oshmasin",
+        "upload": "Rasm yuklanmadi"
+      }
+    },
+    "ai": {
+      "status": {
+        "match": "Mos keldi",
+        "mismatch": "Mos kelmadi",
+        "pending": "Tekshirilmoqda",
+        "unreadable": "O'qilmadi",
+        "error": "Xato",
+        "disabled": "O'chirilgan",
+        "not_required": "Tekshirilmagan"
+      },
+      "line": {
+        "match": "AI rasmdan {{amount}} o'qidi",
+        "mismatch": "Rasmda {{read}}, tizimda {{expected}}",
+        "mismatchNoRead": "AI rasmdagi qoldiqni tizimdagi bilan mos emas deb topdi",
+        "pending": "AI rasmni tekshirmoqda…",
+        "unreadable": "AI rasmni o'qiy olmadi — qoldiq qo'lda tasdiqlanadi",
+        "error": "AI tekshiruvi ishlamadi — smena baribir yopiladi",
+        "disabled": "AI tekshiruvi o'chirilgan — qoldiq qo'lda tasdiqlanadi",
+        "waitingPhoto": "Skrinshot yuklang — AI qoldiqni tekshiradi",
+        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi",
+        "timedOut": "AI natijasi kelmadi — qoldiq qo'lda tasdiqlanadi"
+      },
+      "enteredBadge": "Kiritilgan ≠ rasm",
+      "timedOutBadge": "Natija kelmadi"
+    },
+    "report": {
+      "title": "Smena hisoboti",
+      "back": "Asosiy kassa",
+      "subtitle": "{{cashbox}} · {{range}}",
+      "mainCashbox": "Asosiy kassa",
+      "branchCashbox": "Filial kassasi",
+      "openBanner": "Smena hali ochiq — natijalar yopilguncha o'zgarishi mumkin.",
+      "notFound": "Smena topilmadi yoki sizga ko'rinmaydi",
+      "kpi": {
+        "opening": "Ochilish qoldig'i",
+        "openingHint": "naqd {{cash}} · kartalar {{card}}",
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "closing": "Yopilish qoldig'i",
+        "closingCounted": "sanalgan",
+        "closingSystem": "tizim bo'yicha",
+        "diff": "Farq",
+        "diffHint": "naqd {{cash}} · kartalar {{card}}"
+      },
+      "cash": {
+        "title": "Naqd",
+        "expected": "Kutilgan",
+        "counted": "Sanalgan",
+        "diff": "Farq",
+        "notCounted": "Sanalmagan",
+        "notCountedHint": "Kassir kiritmagan",
+        "diffNotCounted": "Sanalmagani uchun hisoblanmadi"
+      },
+      "accounts": {
+        "title": "Kartalar va hisob raqamlar",
+        "subtitle": "{{count}} ta · {{checked}} tasi AI bilan tekshirildi",
+        "label": "Kartalar bo'yicha natijalar",
+        "card": "Karta",
+        "system": "Tizim bo'yicha",
+        "entered": "Kiritilgan",
+        "photo": "Rasm",
+        "ai": "AI natija",
+        "diff": "Farq",
+        "comment": "Izoh",
+        "total": "Jami",
+        "totalCount": "{{count}} ta karta",
+        "photoOpen": "Ochish",
+        "photoMissing": "Yuklanmagan",
+        "notCounted": "Sanalmagan",
+        "aiRead": "AI o'qidi: {{amount}}",
+        "aiReadMismatch": "Rasmda {{amount}}",
+        "noPhoto": "Rasm yuklanmagan",
+        "settingOff": "Sozlamada o'chirilgan",
+        "commentMissing": "Izoh yozilmagan",
+        "emptyTitle": "Kartalar tekshirilmagan",
+        "emptyText": "Bu smenada karta qoldig'i tasdiqlanmagan (sozlama o'chiq bo'lgan)."
+      },
+      "ops": {
+        "title": "Operatsiyalar xulosasi",
+        "subtitle": "{{count}} ta operatsiya",
+        "net": "Sof oqim",
+        "count": "{{count}} ta",
+        "empty": "Smenada kassa operatsiyasi yo'q",
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "other": "Operatsiya",
+        "method": {
+          "cash": "naqd",
+          "click": "karta",
+          "other": "boshqa"
+        }
+      },
+      "autoClosed": {
+        "title": "Avtomatik yopildi — {{time}}, kassir yopmagan",
+        "titleNoTime": "Avtomatik yopildi, kassir yopmagan",
+        "text": "{{name}} {{time}} da ochgan smenani yopmagan; naqd va kartalar qoldig'i sanalmagan, hisob tizim ma'lumoti bo'yicha.",
+        "textNoName": "Smena kassir tomonidan yopilmagan; naqd va kartalar qoldig'i sanalmagan, hisob tizim ma'lumoti bo'yicha."
+      },
+      "file": {
+        "pdf": "PDF",
+        "xlsx": "Excelga yuklash"
+      },
+      "resend": {
+        "action": "Hisobotni qayta yuborish",
+        "sending": "Yuborilmoqda…",
+        "confirmTitle": "Hisobotni qayta yuborasizmi?",
+        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar) yangi raund bilan yana yuboriladi.",
+        "confirm": "Qayta yuborish",
+        "done": "Hisobot qayta yuborildi",
+        "failed": "Hisobot qayta yuborilmadi"
+      },
+      "deliveries": {
+        "title": "Hisobot kimlarga yuborildi",
+        "recipients": "{{value}} ta qabul qiluvchi",
+        "round": "{{round}}-raund",
+        "kind": {
+          "superadmin": "Superadmin",
+          "courier": "Kuryerlar · {{value}} ta",
+          "market": "Marketlar · {{value}} ta"
+        },
+        "hint": {
+          "superadmin": "to'liq hisobot va {{format}}",
+          "courier": "Faqat o'z operatsiyalari",
+          "market": "Faqat o'ziga to'lovlar"
+        },
+        "channel": {
+          "telegram": "Telegram",
+          "in_app": "Tizim"
+        },
+        "queued": "yuborilmoqda",
+        "failedLine": "{{name}} — {{channel}}: {{reason}}",
+        "failedUnknown": "yuborilmadi",
+        "failedMore": "Yana {{count}} ta yuborilmagan",
+        "empty": {
+          "open": "Smena yopilgach hisobot yuboriladi.",
+          "pending": "Hisobot navbatda — tez orada yuboriladi.",
+          "skipped": "Hisobot yuborilmadi — sozlamada barcha qabul qiluvchilar o'chirilgan.",
+          "failed": "Hisobotni yuborishda xato bo'ldi — qayta yuborib ko'ring.",
+          "none": "Bu smena hisoboti hali hech kimga yuborilmagan."
+        }
+      }
+    },
+    "settings": {
+      "title": "Kassa smenasi sozlamalari",
+      "subtitle": "Barcha kassalar uchun · faqat superadmin o'zgartiradi",
+      "back": "Asosiy kassa",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda…",
+      "saved": "Sozlamalar saqlandi",
+      "saveError": "Sozlamalar saqlanmadi",
+      "section": "Kartalar qoldig'ini tasdiqlash",
+      "sectionHint": "Smena yopilganda har bir karta va hisob raqam uchun so'raladi",
+      "accountCheck": "Smena yopishda har karta qoldig'i majburiy",
+      "accountCheckHint": "Kassir har karta uchun bank ilovasidagi qoldiqni kiritmaguncha smena yopilmaydi",
+      "photo": "Rasm talab qilish",
+      "photoHint": "Har karta uchun bank ilovasidan skrinshot yuklash so'raladi",
+      "ai": "AI tekshiruvi",
+      "aiHint": "AI rasmdagi qoldiqni o'qiydi, kiritilgan va tizimdagi summa bilan solishtiradi. Farq bo'lsa izoh majburiy",
+      "perCard": "Har karta bo'yicha",
+      "perCardHint": "Umumiy kalit o'chiq bo'lsa, karta kalitlari ishlamaydi. AI faqat rasm talab qilingan kartada ishlaydi.",
+      "perCardLabel": "Kartalar bo'yicha smena kalitlari",
+      "card": "Karta",
+      "result": "Natija",
+      "needsPhoto": "Rasm kerak",
+      "cardPhoto": "{{card}}: rasm talab qilish",
+      "cardAi": "{{card}}: AI tekshiruvi",
+      "resultText": {
+        "photoAi": "Rasm majburiy, AI tekshiradi",
+        "photo": "Rasm majburiy, qoldiq qo'lda tasdiqlanadi",
+        "none": "Rasm ixtiyoriy, qoldiq qo'lda tasdiqlanadi",
+        "off": "Tasdiqlash o'chiq — smena avvalgidek yopiladi"
+      },
+      "empty": "Bu kassada faol karta yo'q",
+      "auto": {
+        "title": "Avtomatik yopish",
+        "subtitle": "Kassir o'z vaqtida yopmasa",
+        "enabled": "Smenani avtomatik yopish",
+        "enabledHint": "Belgilangan vaqtda ochiq smena tizim tomonidan yopiladi, hisobotda «Avtomatik yopildi» deb yoziladi",
+        "times": "Kuniga yopish vaqtlari",
+        "timesHint": "Kuniga {{value}} marta · Toshkent vaqti (UTC+5)",
+        "timesRequired": "Kamida bitta yopish vaqtini qo'shing",
+        "addTime": "Vaqt qo'shish",
+        "pickTime": "Vaqtni tanlang",
+        "cancelAdd": "Vaqt qo'shishni bekor qilish",
+        "removeTime": "{{time}} ni olib tashlash",
+        "scope": "Qaysi kassalarda",
+        "scopes": {
+          "main": "Faqat asosiy kassa",
+          "branches": "Asosiy kassa va filial kassalari"
+        },
+        "warn": "Yopishdan {{value}} daqiqa oldin ogohlantirish",
+        "warnOff": "Yopishdan oldin ogohlantirish",
+        "warnHint": "Kassirga Telegram va tizim orqali eslatma keladi",
+        "warnBefore": "Necha daqiqa oldin",
+        "warnMinutes": "{{value}} daqiqa",
+        "note": "Avtomatik yopilganda naqd va kartalar sanalmaydi — yopilish qoldig'i tizim bo'yicha olinadi, farq hisoblanmaydi. Keyingi smenani kassir o'zi ochadi."
+      },
+      "report": {
+        "title": "Smena hisobotini yuborish",
+        "subtitle": "Har smena yopilganda — kassir yoki avtomatik",
+        "label": "Hisobot qabul qiluvchilari",
+        "recipient": "Qabul qiluvchi",
+        "groups": {
+          "superadmin": "Superadmin",
+          "couriers": "Kuryerlar",
+          "markets": "Marketlar"
+        },
+        "groupHints": {
+          "superadmin": "To'liq hisobot va ilova",
+          "couriers": "Faqat o'z operatsiyalari",
+          "markets": "Faqat o'ziga to'lovlar"
+        },
+        "channels": {
+          "telegram": "Telegram",
+          "in_app": "Tizim"
+        },
+        "switch": {
+          "telegram": "{{group}}: Telegram",
+          "in_app": "{{group}}: tizim bildirishnomasi"
+        },
+        "format": "Ilova formati",
+        "formatHint": "Superadminga Telegram xabari bilan birga yuboriladi",
+        "note": "Hisobot faqat smenada operatsiyasi bo'lgan kuryer va marketlarga boradi: kuryer faqat o'z o'tkazmalarini, market faqat o'ziga to'langan summalarni ko'radi. Telegram ulanmagan foydalanuvchiga faqat tizim bildirishnomasi yuboriladi."
+      }
+    },
+    "resultReport": "Smena hisoboti"
   }
 }

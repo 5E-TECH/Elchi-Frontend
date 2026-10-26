@@ -457,6 +457,58 @@ describe("Region page — manager / courier (scoped, my/district-stats)", () => 
     expect(calledUrls()).toEqual(["region/my/district-stats"]);
   });
 
+  it("aLx7Di99: manager header names the branch scope (data.scope.type = branch)", async () => {
+    respond({
+      "region/my/district-stats": {
+        ...MY_DISTRICT_STATS,
+        data: {
+          ...MY_DISTRICT_STATS.data,
+          scope: { type: "branch", branch_id: "7", branch_name: "Urgut filiali" },
+        },
+      },
+      district: DISTRICT_CATALOG,
+    });
+    renderRegion("manager");
+
+    expect(
+      await screen.findByText(
+        "Urgut filiali buyurtmalari · Tuman ustiga bosib batafsil ma'lumotni ko'ring",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/· Urgut filiali buyurtmalari$/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Jizzax viloyati buyurtmalari/)).not.toBeInTheDocument();
+  });
+
+  it("aLx7Di99: courier header says «Sizga tegishli buyurtmalar» (data.scope.type = courier)", async () => {
+    respond({
+      "region/my/district-stats": {
+        ...MY_DISTRICT_STATS,
+        data: { ...MY_DISTRICT_STATS.data, scope: { type: "courier", courier_id: "5" } },
+      },
+      district: DISTRICT_CATALOG,
+    });
+    renderRegion("courier");
+
+    expect(
+      await screen.findByText("Faqat o'zingizga tegishli tuman statistikasi"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/· Sizga tegishli buyurtmalar$/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Jizzax viloyati buyurtmalari/)).not.toBeInTheDocument();
+  });
+
+  it("aLx7Di99: manager without a branch sees «Sizga filial biriktirilmagan»", async () => {
+    respond({
+      "region/my/district-stats": {
+        statusCode: 200,
+        message: "Sizga filial biriktirilmagan",
+        data: { region: null, summary: null, districts: [] },
+      },
+    });
+    renderRegion("manager");
+
+    expect(await screen.findByText("Sizga filial biriktirilmagan")).toBeInTheDocument();
+  });
+
   it("shows the load error with retry when my/district-stats fails", async () => {
     apiGetMock.mockRejectedValue(
       Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),

@@ -1,6 +1,6 @@
-// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-handover-done, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, superadmin-neworders-cancelled-pin-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
+// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-handover-done, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, superadmin-neworders-cancelled-pin-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog, market-new-orders-cancelled-transit, market-new-orders-cancelled-received
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Trans, useTranslation } from "react-i18next";
 import { QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
@@ -56,6 +56,15 @@ import {
   type HandoverAuthMethod,
 } from "./cancelledModel";
 import { CancelledOrdersTable } from "./ui/CancelledOrdersTable";
+import { MarketReturnsChips, MarketReturnsPanel } from "./ui/MarketReturns";
+import {
+  MARKET_RETURNS_VIEW_KEY,
+  parseMarketReturnsView,
+  useMarketReturns,
+  type MarketReturnsRange,
+  type MarketReturnsView,
+} from "./useMarketReturns";
+import { getThisMonthRange } from "../../../shared/lib/dateRange";
 import { HandedOverCard, type HandedOverOrder } from "./ui/HandedOverCard";
 import { HandoverStatusAlert } from "./ui/HandoverStatusAlert";
 import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
@@ -145,6 +154,25 @@ const CancelledMarketDetail = () => {
     [orders],
   );
   const isMarketRole = role === "market";
+  // vOczoOUE 2-bosqich (BG3): market — «Olib ketishga tayyor · Yo'lda · Olganlarim» (`?view=`); «Olganlarim» sukut
+  // bo'yicha shu oy (topshirish vaqti).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const returnsView = parseMarketReturnsView(searchParams.get(MARKET_RETURNS_VIEW_KEY));
+  const [receivedRange, setReceivedRange] = useState<MarketReturnsRange>(() => getThisMonthRange());
+  const returns = useMarketReturns(marketId, { enabled: isMarketRole, range: receivedRange });
+  const handleReturnsViewChange = useCallback(
+    (view: MarketReturnsView) =>
+      setSearchParams(
+        (previous) => {
+          const next = new URLSearchParams(previous);
+          if (view === "ready") next.delete(MARKET_RETURNS_VIEW_KEY);
+          else next.set(MARKET_RETURNS_VIEW_KEY, view);
+          return next;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  );
   // Sarlavhadagi nom: buyurtmadan; ro'yxat bo'sh bo'lsa (hammasi jo'natilgan) — marketlar ro'yxatidan
   // (kalit «Bekor qilinganlar» sahifasi va tab soni bilan umumiy — kesh bitta).
   const nameFromOrders = rawOrders[0]?.market?.name?.trim() || null;
@@ -636,101 +664,130 @@ const CancelledMarketDetail = () => {
           title={hasTabs ? undefined : t("cancelled.market.headTitle")}
         >
           <NewOrdersTabs />
-          <div className="px-4 pt-4 pb-3">
-            <div
-              role="region"
-              aria-labelledby={regionTitleId}
-              className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-xl bg-sunken p-4"
-            >
-              <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
-                <span
-                  aria-hidden="true"
-                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
+          <MarketReturnsChips
+            value={returnsView}
+            counts={{
+              ready: isLoaded ? orders.length : null,
+              transit: returns.transit.total,
+              received: returns.received.total,
+            }}
+            onChange={handleReturnsViewChange}
+          />
+          {returnsView === "transit" ? (
+            <MarketReturnsPanel
+              view="transit"
+              query={returns.transit.query}
+              rows={returns.transit.rows}
+              truncated={returns.transit.truncated}
+            />
+          ) : returnsView === "received" ? (
+            <MarketReturnsPanel
+              view="received"
+              query={returns.received.query}
+              rows={returns.received.rows}
+              truncated={returns.received.truncated}
+              range={receivedRange}
+              onRangeChange={setReceivedRange}
+            />
+          ) : (
+            <>
+              <div className="px-4 pt-4 pb-3">
+                <div
+                  role="region"
+                  aria-labelledby={regionTitleId}
+                  className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-xl bg-sunken p-4"
                 >
-                  <ScanLine size={20} />
-                </span>
-                <div className="flex min-w-0 flex-col gap-1">
-                  <h2 id={regionTitleId} className="text-base font-bold text-text">
-                    {isCancelledHandoverQrRequired
-                      ? t("cancelled.market.handoverTitle")
-                      : t("cancelled.market.notRequiredTitle")}
-                  </h2>
-                  <p className="text-[13px] text-text-muted">
-                    {isCancelledHandoverQrRequired
-                      ? t("cancelled.market.handoverHint")
-                      : t("cancelled.market.notRequiredHint")}
-                  </p>
+                  <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
+                    >
+                      <ScanLine size={20} />
+                    </span>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <h2 id={regionTitleId} className="text-base font-bold text-text">
+                        {isCancelledHandoverQrRequired
+                          ? t("cancelled.market.handoverTitle")
+                          : t("cancelled.market.notRequiredTitle")}
+                      </h2>
+                      <p className="text-[13px] text-text-muted">
+                        {isCancelledHandoverQrRequired
+                          ? t("cancelled.market.handoverHint")
+                          : t("cancelled.market.notRequiredHint")}
+                      </p>
+                    </div>
+                  </div>
+                  {isCancelledHandoverQrRequired ? (
+                    <div className="flex flex-[0_1_auto] flex-wrap items-center gap-x-4 gap-y-3 max-md:w-full">
+                      <Badge tone="success" dot role="status">
+                        {t("cancelled.market.qrReady")}
+                      </Badge>
+                      {/* Bekor buyurtma bo'lmasa ham yoqiq: shu QR qaytarilgan buyurtmani «Marketga topshirildi» (CidJqG5a) uchun ham kerak. */}
+                      <Button
+                        variant="secondary"
+                        leftIcon={QrCode}
+                        aria-haspopup="dialog"
+                        loading={generateCancelledMarketQr.isPending}
+                        onClick={handleGenerateQr}
+                        className="flex-[1_0_auto] max-md:w-full"
+                      >
+                        {t("cancelled.market.receive")}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
-              {isCancelledHandoverQrRequired ? (
-                <div className="flex flex-[0_1_auto] flex-wrap items-center gap-x-4 gap-y-3 max-md:w-full">
-                  <Badge tone="success" dot role="status">
-                    {t("cancelled.market.qrReady")}
-                  </Badge>
-                  {/* Bekor buyurtma bo'lmasa ham yoqiq: shu QR qaytarilgan buyurtmani «Marketga topshirildi» (CidJqG5a) uchun ham kerak. */}
-                  <Button
-                    variant="secondary"
-                    leftIcon={QrCode}
-                    aria-haspopup="dialog"
-                    loading={generateCancelledMarketQr.isPending}
-                    onClick={handleGenerateQr}
-                    className="flex-[1_0_auto] max-md:w-full"
-                  >
-                    {t("cancelled.market.receive")}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 pt-1 pb-4 max-md:px-4">
-            <h3 className="text-sm font-semibold text-text">{t("cancelled.market.listTitle")}</h3>
-            {isLoaded && orders.length > 0 ? (
-              <p className="text-[13px] text-text-muted">
-                <span className="whitespace-nowrap">
-                  <Trans
-                    t={t}
-                    i18nKey="cancelled.market.summary"
-                    count={orders.length}
-                    values={{ value: number(orders.length) }}
-                    components={{ strong: <strong className="font-semibold text-text" /> }}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 pt-1 pb-4 max-md:px-4">
+                <h3 className="text-sm font-semibold text-text">{t("cancelled.market.listTitle")}</h3>
+                {isLoaded && orders.length > 0 ? (
+                  <p className="text-[13px] text-text-muted">
+                    <span className="whitespace-nowrap">
+                      <Trans
+                        t={t}
+                        i18nKey="cancelled.market.summary"
+                        count={orders.length}
+                        values={{ value: number(orders.length) }}
+                        components={{ strong: <strong className="font-semibold text-text" /> }}
+                      />
+                    </span>
+                    {" · "}
+                    <span className="whitespace-nowrap">
+                      <Trans
+                        t={t}
+                        i18nKey="cancelled.market.summaryTotal"
+                        values={{ sum: money(totalSum) }}
+                        components={{ strong: <strong className="font-semibold text-text" /> }}
+                      />
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+              <QueryBoundary
+                query={listQuery}
+                skeleton="table"
+                loadingLabel={t("cancelled.table.loading")}
+                empty={
+                  <EmptyState
+                    icon={RotateCcw}
+                    title={t("cancelled.table.emptyTitle")}
+                    description={t("cancelled.table.marketEmptyDescription")}
                   />
-                </span>
-                {" · "}
-                <span className="whitespace-nowrap">
-                  <Trans
-                    t={t}
-                    i18nKey="cancelled.market.summaryTotal"
-                    values={{ sum: money(totalSum) }}
-                    components={{ strong: <strong className="font-semibold text-text" /> }}
+                }
+                className="border-t border-border"
+              >
+                {(_list, { isRefetching }) => (
+                  <CancelledOrdersTable
+                    variant="market"
+                    rows={marketRows}
+                    label={t("cancelled.table.label")}
+                    sort={marketSort}
+                    onSortChange={setMarketSort}
+                    busy={isRefetching}
                   />
-                </span>
-              </p>
-            ) : null}
-          </div>
-          <QueryBoundary
-            query={listQuery}
-            skeleton="table"
-            loadingLabel={t("cancelled.table.loading")}
-            empty={
-              <EmptyState
-                icon={RotateCcw}
-                title={t("cancelled.table.emptyTitle")}
-                description={t("cancelled.table.marketEmptyDescription")}
-              />
-            }
-            className="border-t border-border"
-          >
-            {(_list, { isRefetching }) => (
-              <CancelledOrdersTable
-                variant="market"
-                rows={marketRows}
-                label={t("cancelled.table.label")}
-                sort={marketSort}
-                onSortChange={setMarketSort}
-                busy={isRefetching}
-              />
-            )}
-          </QueryBoundary>
+                )}
+              </QueryBoundary>
+            </>
+          )}
         </Card>
         <MarketQrDialog open={isQrOpen} qr={handoverQr} onClose={() => setIsQrOpen(false)} />
       </>

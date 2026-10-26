@@ -78,6 +78,9 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
             totalPages: Math.max(1, Math.ceil(ALL_POSTS.length / limit)),
             limit_capped: requested > 100,
             max_limit: 100,
+            // tveJKICY: filtr bo'yicha yig'indilar — barcha sahifalar (150 × 3 buyurtma, 150 × 650 000 so'm).
+            orders_total: ALL_POSTS.reduce((sum, item) => sum + item.order_quantity, 0),
+            amount_total: ALL_POSTS.reduce((sum, item) => sum + item.post_total_price, 0),
           },
         });
       }
@@ -110,6 +113,8 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
     await expect(courierCell("91")).toHaveText("—");
     // F4: sahifalash server `total` i bo'yicha — birinchi so'rov 8 ta qator, `has_orders=true`.
     await expect(page.getByText("1–8 / 150 ta pochta")).toBeVisible();
+    // tveJKICY: xulosa — server yig'indilari (joriy 8 qatorniki emas).
+    await expect(page.getByText(/^150 ta pochta · 450 ta buyurtma · jami 97\s500\s000\sso'm$/)).toBeVisible();
     await expect(table.getByRole("link", { name: /^№\d+$/ })).toHaveCount(8);
     expect(postQueries[0]).toMatchObject({ page: "1", limit: "8", has_orders: "true" });
 

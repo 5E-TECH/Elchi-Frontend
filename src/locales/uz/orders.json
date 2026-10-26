@@ -21,6 +21,15 @@
       "paidHint": "To'langan va qisman to'langan buyurtmalar",
       "cancelledHint": "Bekor qilingan va bekor — jo'natilgan buyurtmalar"
     },
+    "cancelStage": {
+      "label": "Bekor bosqichi bo'yicha",
+      "all": "Barchasi",
+      "courier": "Kuryerda",
+      "in_transit": "Yo'lda",
+      "branch": "Filialda",
+      "hq": "HQ'da",
+      "market": "Topshirilgan"
+    },
     "columns": {
       "order": "Buyurtma",
       "customer": "Mijoz",
@@ -425,10 +434,12 @@
   "createTotalHint": "Mijozdan olinadigan jami summa",
   "createTodayAside": "Tanlangan market buyurtmalari",
   "createTodayDescription": "{{market}} · bugun",
+  "createTodayDescriptionNoMarket": "Bugun",
   "createTodayCount": "{{count}} ta",
   "createTodayTotal": "Jami {{count}} ta",
   "createTodayLinkAria": "Bugungi yangi buyurtmalar, {{count}} ta",
   "createTodayLinkSub": "{{market}} · bugun · {{count}} ta",
+  "createTodayLinkSubNoMarket": "Bugun · {{count}} ta",
   "createTodayEmpty": "Bugun yangi buyurtma yo'q",
   "orderCreatedMarketRole": "Buyurtma yaratildi. Mahsulotlaringiz uchun yangi buyurtma kiritishda davom etishingiz mumkin.",
   "orderCreatedForMarket": "Buyurtma yaratildi. Shu market uchun yangi buyurtma kiritishingiz mumkin.",
@@ -496,7 +507,15 @@
       "destination_branch": "Qayerga",
       "target_branch": "Qayerga",
       "from_label": "Qayerdan",
-      "to_label": "Qayerga"
+      "to_label": "Qayerga",
+      "from_holder_type": "Kimdan",
+      "to_holder_type": "Kimga",
+      "source_type": "Jo'natuvchi",
+      "source_user_role": "Jo'natuvchi roli",
+      "source_courier_name": "Jo'natgan kuryer",
+      "source_courier": "Jo'natgan kuryer",
+      "source_user": "Jo'natuvchi xodim",
+      "holder_courier": "Saqlovchi kuryer"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} buyurtmani HQ'da qabul qildi",
@@ -514,7 +533,10 @@
       "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga topshirdi — {{method}}",
       "createdByActor": "{{actor}} buyurtmani yaratdi",
       "cancelledPostReceivedAtPlace": "{{actor}} bekor qilingan buyurtmani qabul qildi — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi"
+      "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi",
+      "postReceived": "{{actor}} pochtani qabul qildi",
+      "postReceivedAtBranch": "{{actor}} pochtani qabul qildi — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} {{post}}ni HQ'dan {{branch}}ga jo'natdi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -525,6 +547,12 @@
       "manager": "Menejer",
       "market": "Market",
       "system": "Tizim"
+    },
+    "holderValue": {
+      "hq": "Bosh ofis (HQ)",
+      "branch": "Filial",
+      "courier": "Kuryer",
+      "market": "Market"
     },
     "status": {
       "created": "Yaratilgan",
@@ -616,11 +644,13 @@
   "aiImageCount": "{{count}}/{{max}} surat",
   "aiJumpToUnready": "To'ldirilmagan ({{count}})",
   "aiImagePreparing": "{{current}}/{{total}} tayyorlanmoqda...",
-  "aiTooManyImages": "Ko'pi bilan {{max}} ta rasm. Birinchilari qabul qilindi.",
+  "aiTooManyImages": "Ko'pi bilan {{max}} ta rasm yuborish mumkin. Birinchilari qabul qilindi.",
   "aiImageTooLarge": "fayl juda katta (30 MB dan ortiq)",
-  "aiImageUnsupported": "faqat surat yuklash mumkin (JPG, PNG, WEBP)",
+  "aiImageUnsupported": "faqat JPEG, PNG yoki WebP rasm",
   "aiImageDecodeFailed": "suratni o'qib bo'lmadi — boshqa suratni tanlang",
   "aiImageHeic": "HEIC surat — telefonda JPEG qilib saqlang yoki boshqa suratni tanlang",
+  "aiImageOverLimit": "rasm {{imageSize}} MB dan katta — kichikroq surat tanlang",
+  "aiImagesTotalOverLimit": "Rasmlar jami {{totalSize}} MB dan oshmasligi kerak — sig'maganlari qo'shilmadi.",
   "aiRemoveImage": "Suratni olib tashlash: {{name}}",
   "aiParseButton": "Tahlil qilish",
   "aiRetryParse": "Qayta tahlil qil",
@@ -658,6 +688,15 @@
   "aiAllProducts": "Barcha mahsulotlar",
   "aiPhoneRead": "AI o'qigan raqam: {{value}}",
   "aiRegionGuessed": "Viloyat matnda yo'q — AI taxmin qildi, tekshiring",
+  "aiWarning": {
+    "unclear": "AI aniq o'qiy olmadi — tekshiring",
+    "ambiguous": "Bir necha xil tushunish mumkin — tekshiring",
+    "conflict": "Matnda bir-biriga zid qiymatlar bor — tekshiring",
+    "listLabel": "AI ogohlantirishlari",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Almashtirish buyurtmasi",
+    "fieldRegion": "Viloyat"
+  },
   "aiItems": "Mahsulotlar",
   "aiReadAs": "AI o'qidi",
   "aiRemoveItem": "Mahsulotni olib tashlash: {{name}}",
@@ -704,6 +743,12 @@
   "aiHttpTooLargeDescription": "Rasmlar sonini kamaytiring yoki boshqa surat tanlang.",
   "aiHttpBadRequestTitle": "Ma'lumot noto'g'ri",
   "aiHttpBadRequestDescription": "Matn va rasmlarni tekshirib, qayta yuboring.",
+  "aiHttpImageRejectedTitle": "Rasm qabul qilinmadi",
+  "aiServerImageCount": "Ko'pi bilan {{max}} ta rasm yuborish mumkin. Ortiqchasini olib tashlang.",
+  "aiServerImageSize": "Rasm {{imageSize}} MB dan katta — kichikroq surat tanlang.",
+  "aiServerImagesTotal": "Rasmlar jami {{totalSize}} MB dan oshmasligi kerak — bir qismini olib tashlang.",
+  "aiServerImageType": "Faqat JPEG, PNG yoki WebP rasm yuborish mumkin.",
+  "aiServerImageBroken": "Rasm fayli buzilgan yoki o'qib bo'lmadi — boshqa surat tanlang.",
   "aiHttpForbiddenTitle": "Ruxsat yo'q",
   "aiHttpForbiddenDescription": "Sizda AI bilan buyurtma yaratishga ruxsat yo'q. Buyurtmani qo'lda kiriting.",
   "aiCreateFailedWith": "Buyurtma yaratilmadi: {{detail}}",
@@ -851,6 +896,7 @@
     "scopeAll": "Barcha mijozlar · buyurtmalar soni {{market}} bo'yicha",
     "scopeMarket": "{{market}} mijozlari · buyurtmalar soni shu market bo'yicha",
     "scopeOwn": "Sizning mijozlaringiz · buyurtmalar soni faqat sizda",
+    "extraNumberMatch": "Qo'shimcha raqam:",
     "ordersCount": "{{value}} ta buyurtma",
     "newCount": "{{value}} ta yangi",
     "searching": "Mijoz qidirilmoqda...",

@@ -22,6 +22,7 @@ import {
 import { loadAppLocales } from "../i18n";
 import { deviceIdHeaders } from "./deviceId";
 import { deviceNameHeaders } from "./deviceName";
+import { clearPasswordChangeFlag, syncPasswordChangeFlag } from "./passwordChange";
 
 type LoginCredentials = {
   phone_number: string;
@@ -115,6 +116,7 @@ const syncUserContext = (user: AuthenticatedUser) => {
 
 const resetClientAuthState = () => {
   tokenStorage.clear();
+  clearPasswordChangeFlag();
   store.dispatch(logoutAction());
   store.dispatch(removeRole());
   store.dispatch(setError(null));
@@ -296,6 +298,8 @@ export const refreshAccessToken = async () => {
 
   tokenStorage.setAccessToken(nextAccessToken);
   persistSessionMetadata(response.data);
+  // NDmZMzCP: `must_change_password` — «Yangi parol o'rnating» oynasi (parol almashgach refresh `false` beradi).
+  syncPasswordChangeFlag(response.data);
   store.dispatch(loginSuccess({ accessToken: nextAccessToken }));
 
   return nextAccessToken;
@@ -384,6 +388,7 @@ export const login = async (credentials: LoginCredentials) => {
 
     tokenStorage.setAccessToken(accessToken);
     persistSessionMetadata(response.data);
+    syncPasswordChangeFlag(response.data);
     store.dispatch(loginSuccess({ accessToken }));
 
     let user: AuthenticatedUser | null = null;

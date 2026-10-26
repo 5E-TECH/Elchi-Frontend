@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown, superadmin-notifications-send-audience, superadmin-notifications-send-states, superadmin-notifications-send-schedule, superadmin-notifications-send-confirm-scheduled-dialog
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { CalendarClock, Clock, Lock, Send, TriangleAlert, Users, X } from "lucide-react";
+import { CalendarClock, Clock, Lock, MessageSquareText, Send, TriangleAlert, Users, X } from "lucide-react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -33,20 +33,21 @@ import {
   type AudienceBuilderErrors,
   type AudienceDraft,
   type AudienceGate,
+  type AudienceSmsPreview,
   type AudienceTarget,
   type CampaignCreated,
   type CampaignPayload,
 } from "../../../entities/notification-campaign";
+import { minutesToHhmm } from "../../../entities/sms";
 import { NoticeAlert } from "../../../entities/notification";
 import {
   SentDetailDialog,
-  deriveDispatchStatus,
-  isDispatchHistoryStatus,
+  resolveDispatchStatus,
   type DispatchHistoryStatus,
 } from "../../../entities/notification-dispatch";
 import { cx } from "../../../shared/lib/cx";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
-import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { useDebounce } from "../../../shared/lib/useDebounce";
 import {
@@ -74,6 +75,7 @@ import {
   RECIPIENT_MODES,
   buildCampaignPayload,
   buildDispatchPayload,
+  campaignPreviewExtras,
   createDefaultSchedule,
   createDefaultValues,
   createDispatchSchema,
@@ -89,6 +91,25 @@ import { DispatchUnknownCard } from "./DispatchUnknownCard";
 
 /** «Hamma» soni — backend o'zi sanaydi (`POST notifications/audience/preview`). */
 const BROADCAST_TARGET = { broadcast: true as const };
+/**
+ * KM-5: SMS tanlansa jonli son so'roviga `channels` — javobda rozilik bo'yicha `sms` bloki. Matn (bo'lak va narx)
+ * faqat tasdiq oynasida yuboriladi — yozayotganda jonli son qayta sanalmasin.
+ */
+const SMS_PREVIEW_CHANNELS = { channels: ["in_app", "sms"] };
+
+/** SMS kanali yuborishni to'sadigan sabab (preview `sms` bloki bo'yicha) — matn kaliti va qiymatlari. */
+const smsBlock = (
+  sms: AudienceSmsPreview | null | undefined,
+): { key: string; values?: Record<string, number> } | null => {
+  if (!sms || !sms.smsEnabled) return { key: "campaign.sms.blocked.disabled" };
+  if (!sms.optOutConfigured) return { key: "campaign.sms.blocked.optOut" };
+  if (sms.fanoutExceeded) {
+    return sms.maxFanout !== null
+      ? { key: "campaign.sms.blocked.fanout", values: { max: sms.maxFanout } }
+      : { key: "campaign.sms.blocked.fanoutUnknown" };
+  }
+  return null;
+};
 
 /** Yuborilgan so'rov (`client_request_id` bilan) va uning barmoq izi — «Qayta urinish» aynan shuni yuboradi. */
 type SentRequest = { request: DispatchPayload & { client_request_id: string }; fingerprint: string; sentAt: string };
@@ -107,7 +128,12 @@ type CampaignRequest = {
   target: AudienceTarget;
   key: string;
   fingerprint: string;
-  preview: { total: number; campaignMax: number | null };
+  /** `sms` — faqat SMS so'ralganda (KM-5): 409/400 sababini aniqlash uchun. */
+  preview: {
+    total: number;
+    campaignMax: number | null;
+    sms?: Pick<AudienceSmsPreview, "smsEnabled" | "optOutConfigured" | "fanoutExceeded" | "maxFanout"> | null;
+  };
   sentAt: string;
 };
 
@@ -129,6 +155,8 @@ type CampaignConfirm = {
   requestedAt: string;
   /** «Belgilangan vaqtda» — tanlangan Toshkent kuni va soati. */
   scheduled: { day: string; time: string } | null;
+  /** KM-5: SMS so'ralgan — rozilik bo'yicha son va narx shu nishon + matn bilan sanaladi (hech narsa yuborilmaydi). */
+  smsTarget: (AudienceTarget & { channels?: string[]; title?: string; body?: string }) | null;
 };
 
 const GATE_ERRORS: Partial<Record<AudienceGate, keyof AudienceBuilderErrors>> = {
@@ -257,7 +285,9 @@ type NotificationDispatchFormProps = {
  *
  * «AUDITORIYA» (KM-2, maketlar `-send-audience`, `-send-states`): «Rol» rejimi o'rnida — doim kampaniya (ega KM-S1).
  * Konstruktor (`AudienceBuilder`) → nishon → jonli son (`POST audience/preview`, debounce); segmentsiz mijozlar
- * so'ralmaydi. «Kanal» — Ilova ichida · Ochiq ekranga · Push (Telegram — «Kampaniyada yo'q», SMS — KM-5); guruh kaliti
+ * so'ralmaydi. «Kanal» — Ilova ichida · Ochiq ekranga · Push · SMS (KM-5: doim reklama — rozilik bo'yicha son jonli
+ * preview'dan, narx tasdiqda yakuniy matn bilan; SMS o'chiq / opt-out yo'q / `SMS_MAX_FANOUT` dan katta — yuborilmaydi)
+ * (Telegram — «Kampaniyada yo'q»); guruh kaliti
  * yo'q. «Yuborish» son hisoblanmaguncha, 0 ta, xato yoki chegaradan katta bo'lsa o'chiq. Tasdiq — kampaniya xulosasi
  * (Kimga, aniq son, kanallar, kategoriya, «Darhol»; reklama tungi taqiqqa tushsa — `schedule-policy` bo'yicha qachon
  * ketishi). `POST /notifications/campaigns` + `Idempotency-Key` (mazmunga bog'langan, `attempts`): javobsiz / 502–504 —
@@ -293,8 +323,14 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const audienceDraft = values.audience ?? createAudienceDraft();
   const gate = audienceGate(audienceDraft);
   const audienceTarget = isAudience ? toAudienceTarget(audienceDraft) : null;
+  /** KM-5: kampaniyada SMS kanali tanlangan. */
+  const campaignSms = isAudience && Boolean(values.sms);
   const audiencePreview = useAudiencePreview(
-    isAudience ? audienceTarget : values.mode === "all" ? BROADCAST_TARGET : null,
+    isAudience
+      ? audienceTarget && (campaignSms ? { ...audienceTarget, ...SMS_PREVIEW_CHANNELS } : audienceTarget)
+      : values.mode === "all"
+        ? BROADCAST_TARGET
+        : null,
   );
   const previewState = isAudience ? audiencePreviewState(gate, audiencePreview) : "idle";
   const previewErrorKind =
@@ -310,7 +346,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const [builderEpoch, setBuilderEpoch] = useState(0);
 
   // KM-3: «Yuborish vaqti». Reklama (`marketing`) tungi taqiq soatlari — `schedule-policy` dan (kodda qotirilmaydi).
-  const promo = values.category === "marketing";
+  // KM-5: SMS kanalli kampaniya kategoriyadan qat'i nazar reklama (18:00–09:00 da yuborilmaydi).
+  const promo = values.category === "marketing" || campaignSms;
   const schedulePolicy = useSchedulePolicyInfo(values.category, isAudience);
   const schedule: CampaignScheduleValue = values.schedule ?? createDefaultSchedule();
   const scheduled = isAudience && schedule.when === "scheduled";
@@ -371,14 +408,33 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const confirmDescription = useAudienceDescription(confirmCampaign?.draft ?? audienceDraft, {
     enabled: Boolean(confirmCampaign),
   });
+  /** Tasdiqdagi kampaniya reklama taqiqiga bo'ysunadi: `marketing` yoki SMS kanali (KM-5 — SMS doim reklama). */
+  const confirmPromo = Boolean(
+    confirmCampaign &&
+      (confirmCampaign.payload.category === "marketing" || confirmCampaign.payload.channels.includes("sms")),
+  );
   const quietPolicy = useSchedulePolicy(
-    { scheduled_at: confirmCampaign?.requestedAt, category: confirmCampaign?.payload.category },
-    Boolean(confirmCampaign) && confirmCampaign?.payload.category === "marketing",
+    {
+      scheduled_at: confirmCampaign?.requestedAt,
+      category: confirmPromo ? "marketing" : confirmCampaign?.payload.category,
+    },
+    confirmPromo,
   );
   const quietCheck = confirmCampaign && quietPolicy.data?.check?.shifted ? quietPolicy.data : null;
   /** Reklama: tungi taqiq tekshiruvi kelguncha «Ha, yuborish» o'chiq — ogohlantirishsiz tasdiqlanmasin. */
-  const quietPending =
-    confirmCampaign?.payload.category === "marketing" && quietPolicy.isFetching;
+  const quietPending = confirmPromo && quietPolicy.isFetching;
+  /** KM-5: SMS — rozilik bo'yicha son va narx yakuniy matn bilan (preview, hech narsa yuborilmaydi). */
+  const confirmSmsQuery = useAudiencePreview(confirmCampaign?.smsTarget ?? null, 0);
+  const confirmSms = confirmCampaign?.smsTarget
+    ? confirmSmsQuery.current
+      ? (confirmSmsQuery.data?.sms ?? null)
+      : undefined
+    : undefined;
+  const confirmSmsLoading = Boolean(
+    confirmCampaign?.smsTarget && !confirmSmsQuery.current && !(confirmSmsQuery.settled && confirmSmsQuery.isError),
+  );
+  /** Tasdiq paytida SMS to'sig'i (o'chiq / opt-out / chegara) — «Yuborish» o'chiq, sababi oynada. */
+  const confirmSmsBlock = confirmSms !== undefined ? smsBlock(confirmSms) : null;
   const recountAudience = useRecountAudience();
   /** 400 dan keyin son qayta sanalmoqda — «Yuborish» kutadi. */
   const [recounting, setRecounting] = useState(false);
@@ -489,12 +545,19 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         setSyncedAt(at);
         return;
       }
+      // KM-5: SMS o'chiq / opt-out sozlanmagan / chegaradan katta — yuborilmaydi (sababi tugma ostida).
+      if (formValues.sms && smsBlock(data.sms)) return;
       const payload = buildCampaignPayload(formValues, target);
       setConfirmCampaign({
         payload,
         target,
         draft: formValues.audience,
-        preview: { total: data.total, campaignMax: data.campaignMax },
+        preview: {
+          total: data.total,
+          campaignMax: data.campaignMax,
+          ...(formValues.sms ? { sms: data.sms ?? null } : {}),
+        },
+        smsTarget: formValues.sms ? { ...target, ...campaignPreviewExtras(formValues) } : null,
         requestedAt: payload.scheduled_at ?? tashkentNowIso(),
         scheduled: payload.scheduled_at
           ? { day: formValues.schedule.day, time: formValues.schedule.time }
@@ -536,10 +599,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           setSendError({ title: t("dispatch.duplicateFailedTitle"), text: t("dispatch.duplicateFailedText") });
           return;
         }
-        const status =
-          response.duplicate && isDispatchHistoryStatus(response.status)
-            ? response.status
-            : deriveDispatchStatus(response);
+        // NS-4: holat — javobdagi `status` (tarixdagi bilan AYNI), so'ng `channel_outcome`; eski `> 0` qoidasi emas.
+        const status = resolveDispatchStatus(response);
         setOutcome({ ...sent, kind: "result", result: response, status });
       },
       onError: (error) => {
@@ -623,8 +684,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           setRecounting(true);
           void recountAudience(request.target)
             .then(
-              (fresh) => ({ total: fresh.total, campaignMax: fresh.campaignMax }),
-              () => null,
+              (fresh) => ({
+                total: fresh.total,
+                campaignMax: fresh.campaignMax,
+                ...(request.preview.sms !== undefined ? { sms: request.preview.sms } : {}),
+              }),
+              () => (request.preview.sms !== undefined ? request.preview : null),
             )
             .then((fresh) => {
               if (!current()) return;
@@ -732,6 +797,24 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const count = (value: number) => formatNumberLocalized(value, { language });
   const counter = (value: string | undefined, max: number) =>
     t("dispatch.counter", { count: count(value?.length ?? 0), max: count(max) });
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  /** Jonli `sms` bloki (KM-5) — faqat SMS tanlangan va son joriy nishonga tegishli bo'lsa. */
+  const liveSms = campaignSms && audiencePreview.current ? (audiencePreview.data?.sms ?? null) : null;
+  const liveSmsBlock =
+    campaignSms && canSendAudience(previewState) ? smsBlock(audiencePreview.data?.sms) : null;
+  const smsBlockText = (block: { key: string; values?: Record<string, number> }) =>
+    t(
+      block.key,
+      Object.fromEntries(Object.entries(block.values ?? {}).map(([key, value]) => [key, count(value)])),
+    );
+  /** «18:00–09:00 da yuborilmaydi — 09:00 ga suriladi» (oyna backend `quiet_hours` dan; bo'lmasa — umumiy matn). */
+  const smsQuietText = (sms: AudienceSmsPreview | null | undefined) =>
+    sms?.quietHours && sms.quietHours.start !== sms.quietHours.end
+      ? t("campaign.sms.quiet", {
+          start: minutesToHhmm(sms.quietHours.start),
+          end: minutesToHhmm(sms.quietHours.end),
+        })
+      : t("campaign.sms.quietUnknown");
 
 
   const confirmMessage: { title: string; body?: string; link?: string } | null =
@@ -746,7 +829,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
    * (`check.shifted`, oyna ochilgan lahzaga).
    */
   const liveQuiet =
-    confirmCampaign && !confirmScheduled && confirmCampaign.payload.category === "marketing"
+    confirmCampaign && !confirmScheduled && confirmPromo
       ? schedulePolicy.data?.quietHours
       : undefined;
   const liveRelease = liveQuiet ? quietReleaseMoment(liveQuiet, now) : null;
@@ -775,15 +858,19 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           ? "campaign.disabled.empty"
           : previewState === "overCap"
             ? "campaign.disabled.overCap"
-            : policyPending
-              ? "campaign.disabled.policy"
-              : null;
+            : liveSmsBlock
+              ? liveSmsBlock.key
+              : policyPending
+                ? "campaign.disabled.policy"
+                : null;
 
   /** «Yuborish» ostidagi izoh (sababi yoki «Darhol · kampaniya · N ta»); yo'q bo'lsa tugma unga bog'lanmaydi. */
   const sendNote = !isAudience
     ? null
     : sendBlockedKey
-      ? t(sendBlockedKey)
+      ? liveSmsBlock && sendBlockedKey === liveSmsBlock.key
+        ? smsBlockText(liveSmsBlock)
+        : t(sendBlockedKey)
       : canSendAudience(previewState)
         ? !scheduled
           ? t("campaign.previewNote", {
@@ -802,6 +889,36 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                 count: audiencePreview.data?.total ?? 0,
               })
         : null;
+
+  /**
+   * Tasdiq oynasidagi SMS qatorlari (KM-5): rozilik bor / yo'q, noto'g'ri raqam, taxminiy narx (yakuniy matn bilan,
+   * `bo'laklar × tarif × rozilik bor`). Hisoblanayotganda — «…», sanab bo'lmasa — «—».
+   */
+  const smsConfirmRows = () => {
+    const pending = confirmSmsLoading ? "…" : "—";
+    const sms = confirmSms ?? null;
+    const exact = Boolean(sms?.exact);
+    const num = (value: number | null | undefined) =>
+      exact && value != null ? t("campaign.confirm.count", { value: count(value) }) : pending;
+    return [
+      {
+        label: t("campaign.sms.recipients"),
+        value: <span data-testid="confirm-sms-recipients">{num(sms?.recipients)}</span>,
+      },
+      { label: t("campaign.sms.blockedNoConsent"), value: num(sms?.blockedNoConsent) },
+      { label: t("campaign.sms.invalidPhone"), value: num(sms?.skippedInvalidPhone) },
+      {
+        label: t("campaign.sms.cost"),
+        value: (
+          <span data-testid="confirm-sms-cost">
+            {exact && sms?.estimatedCost != null
+              ? t("campaign.sms.costValue", { value: money(sms.estimatedCost), parts: count(sms.parts) })
+              : pending}
+          </span>
+        ),
+      },
+    ];
+  };
 
   return (
     <>
@@ -1010,8 +1127,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
           <Card title={t("dispatch.sectionChannels")} bodyClassName="flex flex-col gap-4">
             {isAudience ? (
-              // Kampaniya kanallari (maket `-send-audience` «Kanal»): Ilova ichida · Ochiq ekranga · Push; Telegram —
-              // «Kampaniyada yo'q» (o'chiq); SMS — KM-5 gacha chizilmaydi («Taklif · backend kerak»).
+              // Kampaniya kanallari (maket `-send-audience` «Kanal»): Ilova ichida · Ochiq ekranga · Push · SMS (KM-5 —
+              // rozilik bergan raqamlarga, doim reklama); Telegram — «Kampaniyada yo'q» (o'chiq).
               <>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(max(220px,34%),100%),1fr))] gap-2">
                   <ChoiceCheckbox
@@ -1056,6 +1173,25 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                       />
                     )}
                   />
+                  <Controller
+                    control={control}
+                    name="sms"
+                    render={({ field }) => (
+                      <ChoiceCheckbox
+                        checked={field.value}
+                        disabled={locked}
+                        label={t("dispatch.channel.sms")}
+                        hint={
+                          liveSms?.recipients != null
+                            ? t("campaign.channel.smsHint", { value: count(liveSms.recipients) })
+                            : t("campaign.channel.smsHintUnknown")
+                        }
+                        hintId="campaign-sms-hint"
+                        plainLabel
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                   <ChoiceCheckbox
                     checked={false}
                     disabled
@@ -1066,6 +1202,33 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                   />
                 </div>
                 <p className="m-0 text-xs text-text-muted">{t("campaign.channel.hint")}</p>
+                {campaignSms && liveSmsBlock ? (
+                  <NoticeAlert tone="danger" role="alert" icon={MessageSquareText} data-testid="campaign-sms-block">
+                    {smsBlockText(liveSmsBlock)}
+                  </NoticeAlert>
+                ) : campaignSms && liveSms ? (
+                  <NoticeAlert
+                    tone="neutral"
+                    role="note"
+                    icon={MessageSquareText}
+                    title={t("campaign.sms.title")}
+                    data-testid="campaign-sms-split"
+                  >
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span>
+                        {liveSms.exact && liveSms.recipients !== null
+                          ? t("campaign.sms.split", {
+                              recipients: count(liveSms.recipients),
+                              blocked: count(liveSms.blockedNoConsent ?? 0),
+                              invalid: count(liveSms.skippedInvalidPhone ?? 0),
+                            })
+                          : t("campaign.sms.splitInexact")}
+                      </span>
+                      <span>{smsQuietText(liveSms)}</span>
+                      <span>{t("campaign.sms.costLater")}</span>
+                    </span>
+                  </NoticeAlert>
+                ) : null}
               </>
             ) : (
               <div className="grid grid-cols-[repeat(auto-fit,minmax(min(max(220px,34%),100%),1fr))] gap-2">
@@ -1382,7 +1545,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               leftIcon={confirmScheduled ? CalendarClock : Send}
               loading={sending}
               loadingText={confirmScheduled ? t("campaign.confirm.scheduling") : t("dispatch.confirmSending")}
-              disabled={quietPending || slotPassed}
+              disabled={quietPending || slotPassed || confirmSmsLoading || Boolean(confirmSmsBlock)}
               onClick={confirmSend}
             >
               {confirmScheduled ? t("campaign.schedule.submit") : t("dispatch.confirmSend")}
@@ -1430,6 +1593,17 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                   : null}
               </NoticeAlert>
             ) : null}
+            {confirmCampaign?.smsTarget ? (
+              confirmSmsBlock ? (
+                <NoticeAlert tone="danger" role="alert" icon={MessageSquareText} data-testid="confirm-sms-block">
+                  {smsBlockText(confirmSmsBlock)}
+                </NoticeAlert>
+              ) : (
+                <NoticeAlert tone="neutral" role="note" icon={MessageSquareText} title={t("campaign.sms.title")}>
+                  {smsQuietText(confirmSms ?? confirmCampaign.preview.sms as AudienceSmsPreview | null | undefined)}
+                </NoticeAlert>
+              )
+            ) : null}
             <dl className="m-0 flex min-w-0 flex-col rounded-xl bg-sunken px-4 py-1">
               {(confirmCampaign
                 ? [
@@ -1449,6 +1623,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                       label: t("dispatch.confirmChannels"),
                       value: campaignChannelLabels(confirmCampaign.payload.channels),
                     },
+                    ...(confirmCampaign.smsTarget ? smsConfirmRows() : []),
                     {
                       label: t("campaign.confirm.category"),
                       value: t(`category.${confirmCampaign.payload.category}`),

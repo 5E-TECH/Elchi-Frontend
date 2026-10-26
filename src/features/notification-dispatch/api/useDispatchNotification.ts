@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import { toChannelStatus, toCountMap, type ChannelStatusCounts } from "../../../entities/notification-dispatch";
+import {
+  isChannelOutcome,
+  toChannelStatus,
+  toCountMap,
+  type ChannelOutcome,
+  type ChannelStatusCounts,
+} from "../../../entities/notification-dispatch";
 import type { DispatchPayload } from "../model/schema";
 
 export type DispatchResult = {
@@ -15,10 +21,13 @@ export type DispatchResult = {
   /**
    * Ayni `client_request_id` bilan avvalgi urinish bor edi — backend QAYTA YUBORMADI va tarixdagi natijani qaytardi
    * (200). `status` — o'sha urinishning tarixdagi holati: `sent` · `partial` · `inbox_only` · `skipped` (yuborilgan),
-   * `running` (hali yuborilmoqda), `failed` (xato bilan tugagan). Yangi yuborishda `status` yo'q (`null`).
+   * `running` (hali yuborilmoqda), `failed` (xato bilan tugagan). Yangi yuborishda ham (NS-4, 2026-10-26) `status`
+   * keladi — tarixdagi bilan AYNI (`sent | partial | inbox_only | skipped`); eski backend — `null`.
    */
   duplicate: boolean;
   status: string | null;
+  /** Kanal natijasi (NS-4): `{ sms: 'partial', push: 'full' }`; javobda yo'q — `null`. */
+  channel_outcome: Record<string, ChannelOutcome> | null;
   /** Kanal bo'yicha haqiqatan ketgan / navbatga qo'yilgan son (`in_app` — qutiga yozilgan). */
   by_channel: Record<string, number>;
   /** Kanal × holat soni (`{ telegram: { queued: 131, skipped: 17 } }`); tarix yozilmagan bo'lsa `null`. */
@@ -31,6 +40,13 @@ export type DispatchResult = {
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const toChannelOutcome = (value: unknown): Record<string, ChannelOutcome> | null => {
+  const entries = Object.entries(asRecord(value)).filter(([, outcome]) => isChannelOutcome(outcome)) as Array<
+    [string, ChannelOutcome]
+  >;
+  return entries.length ? Object.fromEntries(entries) : null;
+};
 
 const unwrap = (payload: unknown) => {
   const record = asRecord(payload);
@@ -59,6 +75,7 @@ export const useDispatchNotification = () => {
         telegram: data.telegram ?? null,
         duplicate: data.duplicate === true,
         status: typeof data.status === "string" ? data.status : null,
+        channel_outcome: toChannelOutcome(data.channel_outcome),
         by_channel: toCountMap(data.by_channel),
         channel_status: toChannelStatus(data.channel_status),
         no_provider: Array.isArray(data.no_provider) ? data.no_provider.map(String) : [],

@@ -29,6 +29,8 @@ npm run dev        # start Vite dev server
 |---|---|
 | `npm run dev` | Vite dev server |
 | `npm run build` | Type-check (`tsc -b`) + `vite build --mode production` |
+| `npm run build:staging` | Type-check + `vite build --mode staging` (TEST site, see below) |
+| `npm run check:target -- <production\|staging> [dir]` | Verifies `dist` was built for that environment (CI runs it before every deploy) |
 | `npm run preview` | Build then serve via `wrangler dev` |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest unit tests |
@@ -43,6 +45,7 @@ All `VITE_*` variables are embedded into the client bundle and are therefore
 | File | Purpose | Tracked? |
 |---|---|---|
 | `.env.production` | Production API URL (`VITE_BASE_URL`) used by `npm run build` | ✅ committed (public URL only) |
+| `.env.staging` | TEST API URL + `VITE_APP_ENV=staging`, used by `npm run build:staging` | ✅ committed (public URL only) |
 | `.env` | Local dev override (e.g. an internal API IP) | ❌ git-ignored |
 | `.env.development` | Shared dev defaults | ✅ committed |
 | `.env.example` | Template | ✅ committed |
@@ -72,3 +75,34 @@ This project is **not** on Cloudflare Pages, Netlify or Vercel. A stale
 used to sit alongside the real config and were removed — wrangler prefers
 `wrangler.jsonc`, so the extra files only misled readers about where the site
 actually runs.
+
+### Staging (TEST site)
+
+Flow: `dev` → merge into `test` → https://test-admin.elchipochta.uz (API https://test-api.elchipochta.uz);
+`test` → merge into `main` → production, exactly as before.
+
+- A push to `test` runs the same quality gate, then `npm run build:staging` and
+  `npx wrangler deploy --env staging` — a **separate** Worker `elchi-frontend-test` with the custom domain
+  `test-admin.elchipochta.uz` (`wrangler.jsonc` → `env.staging`). The deploy step runs only when the repository
+  variable `STAGING_ENABLED` is `true` (Settings → Secrets and variables → Actions → Variables); until the test
+  backend exists the variable stays unset and `test` pushes only build and check.
+- The staging build is visibly different and cannot be mistaken for production: a «TEST muhit» marker on every
+  page (`src/widgets/staging-banner`, staging-only chunk), `[TEST]` title prefix, `noindex` (meta, `X-Robots-Tag`,
+  `robots.txt`), PWA name «Elchi TEST», `[TEST]` push notification titles, and CSP hosts pointing at the test API
+  (`scripts/staging-build.mjs`). The production `dist` is unchanged — none of this code reaches it.
+- Before every deploy CI runs `npm run check:target`, so a staging `dist` can never be deployed to production
+  (or the other way round). A production-mode build on the `test` branch inside Cloudflare Workers Builds fails on
+  purpose (`WORKERS_CI_BRANCH`).
+
+Owner checklist before enabling (`STAGING_ENABLED=true`):
+
+1. Cloudflare → Workers & Pages → `elchi-frontend` → Settings → Build: if a Git repository is connected
+   (Workers Builds), it deploys `main` on its own, outside this workflow and its quality gate. Either disconnect it
+   (GitHub Actions is the single deploy path) or at least turn off builds for non-production branches, so `test`/`dev`
+   pushes never upload versions to the production Worker.
+2. The `CLOUDFLARE_API_TOKEN` must also be allowed to create the custom domain: zone `elchipochta.uz` →
+   Workers Routes: Edit, Zone: Read, DNS: Edit (or add the domain once by hand: `elchi-frontend-test` → Settings →
+   Domains & Routes). No DNS record may already exist for `test-admin.elchipochta.uz`.
+3. The test backend must accept the origin `https://test-admin.elchipochta.uz` (CORS, socket.io) and serve
+   `POST /csp-report`.
+4. Create the `test` branch from `dev`, then set `STAGING_ENABLED` to `true`.

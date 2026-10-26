@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-main-cashbox-shift-dialog, admin-payments-shift-dialog, manager-payments-close-shift-dialog
+// dizayn-v2: superadmin-payments-main-cashbox-shift-dialog, admin-payments-shift-dialog, manager-payments-close-shift-dialog, superadmin-payments-main-cashbox-shift-dialog-accounts
 import { memo, useId, useState, type ReactNode } from "react";
 import { Banknote, CreditCard, Download, Timer, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,9 @@ import { parseOptionalAmountInput } from "./lib/amountInput";
 import { computeShiftDiff, shiftDiffKind } from "./lib/shiftDiff";
 import { ShiftDiffAmount, ShiftDiffBadge } from "./ShiftDiff";
 import ShiftSummaryList from "./ShiftSummaryList";
+import ShiftAccountsSection from "./shiftCheck/ShiftAccountsSection";
+import { useShiftAccountsForm } from "./shiftCheck/useShiftAccountsForm";
+import type { CloseShiftAccount } from "../../../entities/payments";
 
 /**
  * «SMENANI YOPISH» OYNASI (maketlar `superadmin-payments-main-cashbox-shift-dialog`, `admin-payments-shift-dialog`,
@@ -23,6 +26,12 @@ import ShiftSummaryList from "./ShiftSummaryList";
  *  - «Smenani yopish» → `onConfirm({ countedCash, countedCard, comment })`. Oynaning o'zi tasdiq (ikkinchi tasdiq
  *    yo'q); yuborilayotganda Esc, fon, × va «Bekor qilish» oynani yopmaydi; xatoda oyna ochiq qoladi (ota komponent).
  *  Yopilgach Excel hisobot avtomatik yuklanadi va natija oynasi ochiladi (`ShiftResultDialog`).
+ *
+ * Kartalar qoldig'ini tasdiqlash (kiZgTybn, maket `superadmin-payments-main-cashbox-shift-dialog-accounts`): faqat
+ * `GET finance/shift/settings` → `account_check_enabled` bo'lsa — «Sanalgan karta» o'rnida «Kartalar va hisob
+ * raqamlar» bo'limi (`ShiftAccountsSection`): har karta qoldig'i majburiy, rasm majburiy kartada skrinshot, farq /
+ * AI «Mos kelmadi» / kiritilgan ≠ rasm — izoh majburiy (backend 400 qoidalari). Yuborishda `accounts[]` va sanalgan
+ * karta = Σ kiritilgan. O'chiq bo'lsa (yoki sozlama o'qilmasa) — oyna avvalgidek.
  */
 
 export type CloseShiftPayload = {
@@ -30,12 +39,21 @@ export type CloseShiftPayload = {
   /** Sanalmagan — `null`. */
   countedCard: number | null;
   comment: string;
+  /** kiZgTybn — kartalar qoldig'i (tasdiqlash yoqilganda). */
+  accounts?: CloseShiftAccount[];
 };
+
+/** `onConfirm` natijasi: backend 400 matni (kartalar tekshiruvi). */
+export type CloseShiftResult = { error?: string | null };
 
 interface CloseShiftPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (payload: CloseShiftPayload) => void;
+  /**
+   * Yopish. Kartalar rejimida 400 bo'lsa `{ error }` qaytaradi — xabar kartaga tegishli bo'lsa («Humo»: … izoh
+   * majburiy) oyna o'sha kartani ajratadi va qoldiqlarni qayta o'qiydi.
+   */
+  onConfirm: (payload: CloseShiftPayload) => void | Promise<CloseShiftResult | void>;
   isLoading?: boolean;
   /** Ochiq smena boshlangan vaqt (`opened_at`). */
   openedAt?: string;
@@ -44,6 +62,8 @@ interface CloseShiftPopupProps {
   /** Kassaning jonli naqd / karta qoldig'i (kutilgan); noma'lum — `null`. */
   expectedCash: number | null;
   expectedCard: number | null;
+  /** Ochiq smena ID si — kartalar qoralamasi (rasm, AI holati) va rasm yuklash uchun. */
+  shiftId?: string | null;
 }
 
 const LabelWithIcon = ({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) => (
@@ -62,6 +82,7 @@ const CloseShiftPopup = ({
   openedByName,
   expectedCash,
   expectedCard,
+  shiftId,
 }: CloseShiftPopupProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -72,11 +93,14 @@ const CloseShiftPopup = ({
   const idBase = useId();
   const cashDiffId = `${idBase}-cash-diff`;
   const cardDiffId = `${idBase}-card-diff`;
+  const accountsForm = useShiftAccountsForm({ open: isOpen, shiftId });
+  const accountMode = accountsForm.enabled;
 
   const countedCash = parseOptionalAmountInput(cashInput);
   const countedCard = parseOptionalAmountInput(cardInput);
   const cashDiff = computeShiftDiff(countedCash, expectedCash);
-  const cardDiff = computeShiftDiff(countedCard, expectedCard);
+  // Kartalar rejimida «Sanalgan karta» maydoni yo'q — farq har karta qatorida (o'z izohi bilan).
+  const cardDiff = accountMode ? null : computeShiftDiff(countedCard, expectedCard);
   const hasDiff = [cashDiff, cardDiff].some((diff) => {
     const kind = shiftDiffKind(diff);
     return kind === "shortage" || kind === "surplus";
@@ -91,6 +115,7 @@ const CloseShiftPopup = ({
     setCardInput("");
     setComment("");
     setSubmitted(false);
+    accountsForm.reset();
   };
 
   const handleClose = () => {
@@ -99,9 +124,19 @@ const CloseShiftPopup = ({
   };
 
   const handleConfirm = () => {
-    if (isLoading) return;
+    if (isLoading || accountsForm.settingsLoading || accountsForm.isUploading) return;
     setSubmitted(true);
     if (countedCash === null || (hasDiff && !commentText)) return;
+    const accounts = accountsForm.buildPayload();
+    if (accounts) {
+      if (accountsForm.hasErrors) return;
+      void Promise.resolve(
+        onConfirm({ countedCash, countedCard: accounts.countedCard, comment: commentText, accounts: accounts.accounts }),
+      ).then((result) => {
+        if (result?.error) accountsForm.applyCloseError(result.error);
+      });
+      return;
+    }
     onConfirm({ countedCash, countedCard, comment: commentText });
   };
 
@@ -157,6 +192,7 @@ const CloseShiftPopup = ({
             leftIcon={Timer}
             onClick={handleConfirm}
             loading={isLoading}
+            disabled={accountsForm.settingsLoading || accountsForm.isUploading}
             loadingText={t("v2MainCashbox.shift.close.closing")}
           >
             {t("v2MainCashbox.shift.close.submit")}
@@ -199,24 +235,26 @@ const CloseShiftPopup = ({
           </Field>
           {diffBox(cashDiff, countedCash, expectedCash, cashDiffId)}
         </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Field
-            label={<LabelWithIcon icon={CreditCard}>{t("v2MainCashbox.shift.close.countedCard")}</LabelWithIcon>}
-            optional
-            hint={expectedHint(expectedCard)}
-          >
-            <TextInput
-              mode="money"
-              size="lg"
-              value={cardInput}
-              onValueChange={setCardInput}
-              placeholder="0"
-              autoComplete="off"
-              aria-describedby={cardDiffId}
-            />
-          </Field>
-          {diffBox(cardDiff, countedCard, expectedCard, cardDiffId)}
-        </div>
+        {accountMode ? null : (
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Field
+              label={<LabelWithIcon icon={CreditCard}>{t("v2MainCashbox.shift.close.countedCard")}</LabelWithIcon>}
+              optional
+              hint={expectedHint(expectedCard)}
+            >
+              <TextInput
+                mode="money"
+                size="lg"
+                value={cardInput}
+                onValueChange={setCardInput}
+                placeholder="0"
+                autoComplete="off"
+                aria-describedby={cardDiffId}
+              />
+            </Field>
+            {diffBox(cardDiff, countedCard, expectedCard, cardDiffId)}
+          </div>
+        )}
       </div>
 
       {hasDiff ? (
@@ -228,6 +266,8 @@ const CloseShiftPopup = ({
           <span className="min-w-0 font-bold text-text">{t("v2MainCashbox.shift.close.diffAlert")}</span>
         </div>
       ) : null}
+
+      {accountMode ? <ShiftAccountsSection form={accountsForm} submitted={submitted} /> : null}
 
       <Field
         label={t("v2MainCashbox.shift.comment")}
@@ -247,7 +287,9 @@ const CloseShiftPopup = ({
 
       <p className="m-0 flex items-start gap-2 text-xs text-text-muted">
         <Download aria-hidden="true" size={16} className="mt-px shrink-0" />
-        <span className="min-w-0">{t("v2MainCashbox.shift.close.note")}</span>
+        <span className="min-w-0">
+          {accountMode ? t("shiftCheck.accounts.note") : t("v2MainCashbox.shift.close.note")}
+        </span>
       </p>
     </Dialog>
   );

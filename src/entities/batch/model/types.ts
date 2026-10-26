@@ -34,6 +34,8 @@ export interface BatchHistoryItem {
   actor: string;
   action: string;
   created_at: string;
+  /** Backend matni (`action_label`: «Yaratildi», «Jo'natildi» …) — noma'lum `action` uchun zaxira (3HKvAyhm). */
+  label?: string;
 }
 
 export interface Batch {

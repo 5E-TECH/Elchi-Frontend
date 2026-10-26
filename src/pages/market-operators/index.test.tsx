@@ -245,7 +245,7 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
   const fill = async (user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) => {
     await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
     await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
-    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola-2025x");
   };
 
   it("POST faqat 3 maydon, so'ng PATCH komissiya (qat'iy summa); xabar «Operator qo'shildi»", async () => {
@@ -267,7 +267,7 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     expect(api.post).toHaveBeenCalledWith("market-operators", {
       name: "Lola Karimova",
       phone_number: "+998901234567",
-      password: "lola25",
+      password: "lola-2025x",
     });
     expect(await screen.findByText("Operator qo'shildi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Operator qo'shish" })).not.toBeInTheDocument());
@@ -550,7 +550,7 @@ describe("MarketOperatorsPage — review tuzatishlari", () => {
     const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
     await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
     await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
-    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola-2025x");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
     expect(await screen.findByRole("table", { name: "Operatorlar ro'yxati" })).toBeInTheDocument();
@@ -566,7 +566,7 @@ describe("MarketOperatorsPage — review tuzatishlari", () => {
     const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
     await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
     await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
-    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola-2025x");
     await user.type(within(dialog).getByLabelText(/Komissiya/, { selector: "input" }), "4");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
@@ -584,7 +584,7 @@ describe("MarketOperatorsPage — review tuzatishlari", () => {
     const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
     await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
     await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
-    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola-2025x");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
     expect(await screen.findByText("Market bloklangan — operator qo'shib bo'lmaydi")).toBeInTheDocument();

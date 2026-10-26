@@ -120,6 +120,14 @@ export const mockBatchesApi = async (page: Page) => {
     if ((path === "transfer-batches/172" || path === "transfer-batches/172/remaining") && request.method() === "GET") {
       return reply(route, detail(sent));
     }
+    // 3HKvAyhm: paket tarixi — xronologik (eng eskisi birinchi), bajargan `user.name`.
+    if (path === "transfer-batches/172/history" && request.method() === "GET") {
+      const created = { id: "h1", batch_id: "172", user_id: "1", action: "CREATED", action_label: "Yaratildi", notes: null, created_at: today(9, 20), user: { id: "1", name: "Ravshan Ortiqov" } };
+      const sentRows = sends.length
+        ? [{ id: "h2", batch_id: "172", user_id: "1", action: "SENT", action_label: "Jo'natildi", notes: null, created_at: new Date().toISOString(), user: { id: "1", name: "Ravshan Ortiqov" } }]
+        : [];
+      return reply(route, { statusCode: 200, data: [created, ...sentRows] });
+    }
     if (path === "transfer-batches/172/send" && request.method() === "PATCH") {
       const body = request.postDataJSON() as { orderIds: string[] };
       sends.push({ path, body });

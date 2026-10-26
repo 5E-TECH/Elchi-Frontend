@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-dashboard-main, admin-dashboard-main, registrator-dashboard-main, courier-dashboard-home, courier-dashboard-pwa-install
-import { Banknote, CircleCheck, CircleX, Package, ReceiptText, Trophy, Truck, Wallet } from "lucide-react";
+import { Banknote, CircleCheck, CircleX, Package, ReceiptText, TrendingDown, Trophy, Truck, Wallet } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,13 +20,22 @@ import {
   type DashboardQuickKey,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
-import { getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
+import { clampedAllTimeWindow, getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
+import { seriesValues } from "../../entities/dashboard/lib/trend";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { InstallAppCard } from "../../features/pwa-install";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
-import { CURRENCY_LABEL, formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../shared/lib/formatMoney";
+import {
+  CURRENCY_LABEL,
+  formatCompactMoneyLocalized,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatPercentLocalized,
+  resolveMoneyLanguage,
+} from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import DeferredMount from "../../shared/ui/DeferredMount";
+import { Sparkline } from "../../shared/ui/charts";
 import { Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
 import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import RegionOverviewCard from "../../widgets/dashboard-region/ui/RegionOverviewCard";
@@ -45,6 +54,7 @@ import {
 import { isLowDataRanking, rankingDescription } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
+import DmDeliveryCard from "../../widgets/dm-delivery/ui/DmDeliveryCard";
 import CourierCashCard from "./ui/CourierCashCard";
 import CourierPlanCard from "./ui/CourierPlanCard";
 import DeliveryQualityCard from "./ui/DeliveryQualityCard";
@@ -55,9 +65,11 @@ import DeliveryResultsCard from "./ui/DeliveryResultsCard";
  * menejer — `/branch-dashboard`.
  *
  * Saqlanadigan xulq: davr redux'da (`filter.dashboardFromDate/ToDate`), «Barchasi» → `{ all: true }`,
- * kpi faqat SA/admin va «Barchasi»dan tashqari (backend 403 — Audit P1-2), operator — faqat asosiy
- * kartalar (backend operatorni filialga cheklamaydi), kuryer — `myStat` + `topCouriers`.
- * Oldingi teng davr (delta, «Kecha · %») — ega savoli 1 sukuti: ikkinchi so'rov joriy javobdan keyin.
+ * kpi faqat SA/admin (backend 403 — Audit P1-2; «Barchasi»da ham `all=true` bilan — XdKajqLe), operator — faqat
+ * asosiy kartalar (backend operatorni filialga cheklamaydi), kuryer — `myStat` + `topCouriers`.
+ * Oldingi teng davr (delta, «Kecha · %») va 14 kunlik sparkline (DwrMygfo) — SA/admin uchun joriy javobning o'zidagi
+ * `previous` / `series` (dashboard va kpi), ikkinchi og'ir so'rov yo'q. Kuryer dashboardida `previous` yo'q — unda
+ * oldingi davr hamon alohida so'rov (joriy javobdan keyin). «Yo'qotilgan daromad» va «maqsad 80%» — l9NNdsCH.
  * Grafiklar — `shared/ui/charts` (oddiy SVG); recharts faqat «Moliyaviy tahlil» plotida (lazy, §1.9).
  * Qisman nosozlik (VkwhHqvW): `failedParts` dagi bo'lak 0 lar bilan emas, o'z kartasi joyida
  * `DashboardPartError` («Ma'lumotni yuklab bo'lmadi» + «Qayta urinish») bilan chiziladi.
@@ -142,14 +154,15 @@ const DashboardPage = () => {
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, needsDashboard, analyticsScope);
-  const kpiEnabled = widgets.stats && isAnalyticsAdmin && !isAllTime;
+  const kpiEnabled = widgets.stats && isAnalyticsAdmin;
   const { data: kpiData, isLoading: kpiLoading, isError: kpiError, refetch: refetchKpi } = getKpi(
     analyticsParams,
     kpiEnabled,
     analyticsScope,
   );
 
-  // Oldingi teng davr (bugun → kecha): faqat KPI qatori bor rollarda, joriy javob kelgach.
+  // Oldingi teng davr (bugun → kecha). SA/admin: joriy javobning `previous` bo'lagi (DwrMygfo) — ikkinchi so'rov yo'q.
+  // Kuryer dashboardida `previous` yo'q — faqat unda oldingi davr alohida so'raladi (joriy javob kelgach).
   const prevRange = useMemo(
     () => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate, preset)),
     [fromDate, preset, toDate],
@@ -158,27 +171,28 @@ const DashboardPage = () => {
     () => (prevRange ? { start_day: prevRange.from, end_day: prevRange.to } : analyticsParams),
     [analyticsParams, prevRange],
   );
-  const wantsPrevious = Boolean(prevRange) && ((isAnalyticsAdmin && widgets.stats) || isCourier);
-  const { data: previousData } = getDashboard(previousParams, wantsPrevious && Boolean(data), analyticsScope);
-  const { data: previousKpiData } = getKpi(previousParams, kpiEnabled && Boolean(prevRange) && Boolean(kpiData), analyticsScope);
+  const wantsCourierPrevious = Boolean(prevRange) && isCourier;
+  const { data: previousData } = getDashboard(previousParams, wantsCourierPrevious && Boolean(data), analyticsScope);
 
   const orders = data?.data?.orders;
   const courierStat = data?.data?.myStat;
   const kpi = kpiData?.data;
-  // Oldingi davr bo'lagi olinmagan bo'lsa (VkwhHqvW) — 0 bilan solishtirilmaydi, delta yashiriladi.
+  // Oldingi davr bo'lagi olinmagan bo'lsa (VkwhHqvW, `failed_parts: trend`) — `previous: null`: 0 bilan
+  // solishtirilmaydi, delta yashiriladi.
+  const previousOrders = isAnalyticsAdmin && widgets.stats && !isAllTime ? (data?.data?.previous ?? undefined) : undefined;
+  const series = isAnalyticsAdmin ? data?.data?.series : null;
   const previousFailed = previousData?.data?.failedParts;
-  const previousOrders =
-    wantsPrevious && !hasFailedPart(previousFailed, "orders") ? previousData?.data?.orders : undefined;
   const previousCourierStat =
-    wantsPrevious && !hasFailedPart(previousFailed, "myStat") ? previousData?.data?.myStat : undefined;
-  const previousKpi = kpiStatsMissing(previousKpiData?.data) ? undefined : previousKpiData?.data;
+    wantsCourierPrevious && !hasFailedPart(previousFailed, "myStat") ? previousData?.data?.myStat : undefined;
+  const previousKpi = isAllTime || kpiStatsMissing(kpi) ? undefined : (kpi?.previous ?? undefined);
+  const kpiSeries = kpiStatsMissing(kpi) ? null : kpi?.series;
+  const successTarget = isAnalyticsAdmin ? (data?.data?.targets?.successRate ?? null) : null;
 
   // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
   const failedParts = data?.data?.failedParts;
   // KPI: faqat statistikada chiziladigan ko'rsatkichlar olinmasa — boshqa bo'lak statistikani yashirmaydi.
   const kpiStatsFailed = kpiStatsMissing(kpiData?.data);
-  const statsFailed =
-    dashboardError || hasFailedPart(failedParts, "orders") || (!isAllTime && (kpiError || kpiStatsFailed));
+  const statsFailed = dashboardError || hasFailedPart(failedParts, "orders") || (kpiEnabled && (kpiError || kpiStatsFailed));
   const retryDashboard = () => void refetchDashboard();
   const partError = (title: string, testId: string) => (
     <DashboardPartError data-testid={testId} title={title} onRetry={retryDashboard} retrying={dashboardFetching} />
@@ -186,6 +200,9 @@ const DashboardPage = () => {
 
   const periodText = periodLabel(t, period);
   const hint = comparisonHint(t, period);
+  // «Barchasi»: backend oraliqni 366 kunga qisqartirgan bo'lsa — «oxirgi 366 kun» izohi (XdKajqLe).
+  const kpiClamped = isAllTime ? clampedAllTimeWindow(kpi?.appliedRange ?? data?.data?.appliedRange) : null;
+  const kpiAllTimeNote = kpiClamped ? t("v2Dashboard.allTime.clamped", { days: kpiClamped.days }) : null;
   /** KPI delta va izohi («kechaga nisbatan»): delta bo'lmasa (oldingi davr yo'q, asos 0) — izoh ham yo'q. */
   const deltaProps = (value: number | null) => ({ delta: value, hint: value != null ? hint : undefined });
   const prevName = previousLabel(t, period);
@@ -209,6 +226,21 @@ const DashboardPage = () => {
   const successRate = share(sold, accepted);
   const previousRate =
     previousOrders && previousOrders.acceptedCount > 0 ? share(previousOrders.soldAndPaid, previousOrders.acceptedCount) : null;
+  const moneyCompact = (value: number) => formatCompactMoneyLocalized(value, { language });
+  /** Sparkline ma'nosi (ekran o'quvchi): «Jami daromad, oxirgi 14 kun: kuniga 2,1 – 9,6 mln so'm, oxirgi kun 4,9 mln so'm». */
+  const sparkline = (label: string, values: number[] | null, format: (value: number) => string = moneyCompact) =>
+    values ? (
+      <Sparkline
+        values={values}
+        label={t("v2Dashboard.kpi.sparkAria", {
+          label,
+          days: values.length,
+          min: format(Math.min(...values)),
+          max: format(Math.max(...values)),
+          last: format(values[values.length - 1]),
+        })}
+      />
+    ) : undefined;
 
   const statusSegments = [
     { key: "sold", label: t("v2Dashboard.status.sold"), value: sold, tone: "success" as const, icon: CircleCheck },
@@ -221,36 +253,67 @@ const DashboardPage = () => {
     const loading = isLoading || kpiLoading;
     const revenue = splitCompactMoney(orders?.totalRevenue ?? 0, language);
     const profit = splitCompactMoney(orders?.profit ?? 0, language);
+    const lostRevenue = orders?.lostRevenue;
+    const lost = splitCompactMoney(lostRevenue ?? 0, language);
     const average = kpi?.averageOrderValue ?? 0;
-    const delta = (current: number | undefined, previous: number | undefined) =>
+    const delta = (current: number | null | undefined, previous: number | null | undefined) =>
       previousOrders ? percentChange(current, previous) : null;
+    const labels = {
+      revenue: t("v2Dashboard.kpi.totalRevenue"),
+      profit: t("v2Dashboard.kpi.netProfit"),
+      average: t("v2Dashboard.kpi.avgOrder"),
+      lost: t("v2Dashboard.kpi.lostRevenue"),
+    };
+    const averageFormat = (value: number) => formatMoneyLocalized(value, { language });
     return (
-      <KpiRow count={3} label={t("v2Dashboard.kpi.label")}>
+      <KpiRow count={4} label={t("v2Dashboard.kpi.label")}>
         <StatCard
-          label={t("v2Dashboard.kpi.totalRevenue")}
+          data-kpi="revenue"
+          label={labels.revenue}
           icon={ReceiptText}
           loading={loading}
           value={revenue.value}
           unit={revenue.unit}
           {...deltaProps(delta(orders?.totalRevenue, previousOrders?.totalRevenue))}
-        />
+        >
+          {sparkline(labels.revenue, seriesValues(series, (point) => point.totalRevenue))}
+        </StatCard>
         <StatCard
-          label={t("v2Dashboard.kpi.netProfit")}
+          data-kpi="profit"
+          label={labels.profit}
           icon={Wallet}
           loading={loading}
           value={profit.value}
           unit={profit.unit}
           valueTone={(orders?.profit ?? 0) < 0 ? "danger" : undefined}
           {...deltaProps(delta(orders?.profit, previousOrders?.profit))}
-        />
+        >
+          {sparkline(labels.profit, seriesValues(series, (point) => point.profit))}
+        </StatCard>
         <StatCard
-          label={t("v2Dashboard.kpi.avgOrder")}
+          data-kpi="average"
+          label={labels.average}
           icon={Banknote}
           loading={loading}
-          value={isAllTime ? "—" : formatMoneyLocalized(average, { language, withCurrency: false })}
-          unit={isAllTime ? undefined : CURRENCY_LABEL[resolveMoneyLanguage(language)]}
+          value={formatMoneyLocalized(average, { language, withCurrency: false })}
+          unit={CURRENCY_LABEL[resolveMoneyLanguage(language)]}
           {...deltaProps(previousKpi ? percentChange(average, previousKpi.averageOrderValue) : null)}
-        />
+        >
+          {sparkline(labels.average, seriesValues(kpiSeries, (point) => point.averageOrderValue), averageFormat)}
+        </StatCard>
+        {/* l9NNdsCH: bekor qilingan buyurtmalar summasi — kamayishi yaxshi. Backend bermasa (eski javob) — «—». */}
+        <StatCard
+          data-kpi="lostRevenue"
+          label={labels.lost}
+          icon={TrendingDown}
+          loading={loading}
+          value={lostRevenue == null ? "—" : lost.value}
+          unit={lostRevenue == null ? undefined : lost.unit}
+          goodWhen="down"
+          {...deltaProps(lostRevenue == null ? null : delta(lostRevenue, previousOrders?.lostRevenue))}
+        >
+          {sparkline(labels.lost, seriesValues(series, (point) => point.lostRevenue))}
+        </StatCard>
       </KpiRow>
     );
   };
@@ -262,13 +325,18 @@ const DashboardPage = () => {
         <Card>
           <ErrorState
             description={t("load_error")}
-            onRetry={() => void (isAllTime || !kpiEnabled ? refetchDashboard() : Promise.all([refetchDashboard(), refetchKpi()]))}
+            onRetry={() => void (!kpiEnabled ? refetchDashboard() : Promise.all([refetchDashboard(), refetchKpi()]))}
           />
         </Card>
       );
     }
     const successDescription = isAnalyticsAdmin
-      ? t("v2Dashboard.success.subAccepted", { period: periodText })
+      ? successTarget != null
+        ? t("v2Dashboard.success.subTarget", {
+            period: periodText,
+            target: formatPercentLocalized(successTarget, { language }),
+          })
+        : t("v2Dashboard.success.subAccepted", { period: periodText })
       : t("v2Dashboard.success.subScoped", { period: periodText, scope: branchName ?? t("v2Dashboard.success.subAcceptedShort") });
     return (
       <>
@@ -289,6 +357,7 @@ const DashboardPage = () => {
                 gaugeLabel={t("v2Dashboard.success.gaugeAccepted")}
                 previous={isAnalyticsAdmin && previousRate != null ? { rate: previousRate, label: prevName } : null}
                 showThreshold={!isRegistrator}
+                target={successTarget}
                 note={isRegistrator ? t("v2Dashboard.success.zonesNote") : undefined}
               />
               <OrderStatusCard
@@ -303,11 +372,10 @@ const DashboardPage = () => {
           )}
           {isAnalyticsAdmin ? (
             <DeliveryQualityCard
-              description={previousKpi ? `${periodText} · ${hint}` : periodText}
+              description={[periodText, previousKpi ? hint : kpiAllTimeNote].filter(Boolean).join(" · ")}
               kpi={kpi}
               previous={previousKpi}
               loading={kpiLoading || isLoading}
-              allTime={isAllTime}
               accepted={accepted}
               cancelled={cancelled}
             />
@@ -415,18 +483,8 @@ const DashboardPage = () => {
             description={sub}
             items={courierItems}
             expandable
-            empty={
-              isAllTime ? (
-                <EmptyState
-                  size="chart"
-                  icon={Trophy}
-                  title={t("v2Dashboard.top.couriersAllTimeTitle")}
-                  description={t("performance.couriers_all_time_unavailable")}
-                />
-              ) : (
-                emptyRanking
-              )
-            }
+            // XdKajqLe: «Barchasi»da ham backend `couriers` beradi (uN1tjjGu) — bo'sh bo'lsa odatdagi bo'sh holat.
+            empty={emptyRanking}
           />
         ) : null}
       </CardRow>
@@ -581,10 +639,13 @@ const DashboardPage = () => {
       {isCourier ? <InstallAppCard placement="dashboard" /> : null}
       {renderCourier()}
       {renderStats()}
-      {widgets.financial && isAnalyticsAdmin && !isAllTime ? (
+      {widgets.financial && isAnalyticsAdmin ? (
         <FinancialAnalysis
+          // «Barchasi» ↔ oraliq: davr tanlovi qaytadan (barcha davrda sukut — oylik), solishtirish holati saqlanadi.
+          key={isAllTime ? "all" : "range"}
           startDate={hasDateFilter ? fromDate : ""}
           endDate={hasDateFilter ? toDate : ""}
+          allTime={isAllTime}
           analyticsScope={analyticsScope}
           // NIFAnCvf: yuqoridagi KPI va kartalar yuklangach — aks holda plot skeletlar ostida ekranga tushadi.
           layoutReady={!isLoading && !kpiLoading}
@@ -602,6 +663,12 @@ const DashboardPage = () => {
           />
         </DeferredMount>
       ) : null}
+      {/* 2crjWf7v: «Kvitansiya yetkazilishi» — faqat superadmin (`GET /telegram/dm-delivery`, boshqa rolga 403). */}
+      <DmDeliveryCard
+        enabled={normalizedRole === "superadmin"}
+        from={hasDateFilter ? fromDate : ""}
+        to={hasDateFilter ? toDate : ""}
+      />
     </div>
   );
 };

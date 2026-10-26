@@ -22,6 +22,7 @@ import {
   getPanelId,
   getTabId,
 } from "../../shared/ui/primitives";
+import AiCostTab from "./components/AiCostTab";
 import AnalysisTab, { type AnalysisPreset } from "./components/AnalysisTab";
 import FinancialEntryModal from "./components/FinancialEntryModal";
 import HistoryTab from "./components/HistoryTab";
@@ -31,7 +32,8 @@ import { splitCompact } from "./lib/balanceFormat";
 import { HISTORY_PARAM_PREFIX, normalizeFinancialBalance } from "./lib/financialBalance";
 import { buildHistoryExportParams, buildRangeExportParams, readHistoryFilters } from "./lib/historyFilters";
 
-const FINANCIAL_BALANCE_TABS = ["overview", "history", "analysis"] as const;
+// «ai» — «AI xarajat» (Celz3rKJ): karta matni bo'yicha «Balans» ichida tab (maketda yo'q — eng yaqini `*-balance-analysis`).
+const FINANCIAL_BALANCE_TABS = ["overview", "history", "analysis", "ai"] as const;
 type FinancialBalanceTab = (typeof FINANCIAL_BALANCE_TABS)[number];
 
 const TABS_ID = "financial-balance-tabs";
@@ -47,9 +49,11 @@ const isFinancialBalanceTab = (value: string | null): value is FinancialBalanceT
  * Har tabda: sarlavha («Excelga yuklash» — faol tab paramlari bilan; «Yozuv qo'shish» — qo'lda daftar
  * yozuvi), 4 ko'rsatkich (kassa, yo'ldagi pul, marketlar qarzi, umumiy balans) va formula izohi, tablar
  * (`?tab=`). KPI kunlik o'zgarishi va 14 kunlik chizig'i maketda «Taklif» (kunlik snapshot yo'q) — chizilmaydi.
+ * «AI xarajat» (`?tab=ai`, Celz3rKJ) — `GET /ai-usage/dashboard` + `/ai-usage/ai-orders`; tab ochilgandagina so'raladi.
  */
 const FinancialBalance = () => {
   const { t, i18n } = useTranslation("payments");
+  const { t: tAi } = useTranslation("aiUsage");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { useGetFinancialBalance } = useCashBox();
   const balanceQuery = useGetFinancialBalance();
@@ -118,6 +122,7 @@ const FinancialBalance = () => {
     { value: "overview" as const, label: t("v2Balance.tabs.overview") },
     { value: "history" as const, label: t("v2Balance.tabs.history") },
     { value: "analysis" as const, label: t("v2Balance.tabs.analysis") },
+    { value: "ai" as const, label: tAi("tab") },
   ];
 
   const renderKpis = () => {
@@ -233,6 +238,8 @@ const FinancialBalance = () => {
           ) : null
         ) : activeTab === "history" ? (
           <HistoryTab />
+        ) : activeTab === "ai" ? (
+          <AiCostTab />
         ) : (
           <AnalysisTab
             range={analysisRange}

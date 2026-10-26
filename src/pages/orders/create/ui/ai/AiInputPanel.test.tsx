@@ -99,29 +99,74 @@ describe("AiInputPanel", () => {
     expect(textarea()).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("3 tadan ortiq rasm tanlansa xabar chiqadi va birinchi 3 tasi QABUL qilinadi", async () => {
+  const files = (count: number, from = 1) => Array.from({ length: count }, (_, i) => file(`${from + i}.jpg`));
+
+  it("20 tadan ortiq rasm tanlansa backend matni chiqadi va birinchi 20 tasi QABUL qilinadi (WHMAIqyo)", async () => {
     renderPanel();
 
-    selectFiles([file("1.jpg"), file("2.jpg"), file("3.jpg"), file("4.jpg")]);
+    selectFiles(files(21));
 
-    expect(await screen.findByText(/Ko'pi bilan 3 ta rasm/)).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(3));
-    expect(mocks.prepareImage).toHaveBeenCalledTimes(3);
-    expect(mocks.prepareImage.mock.calls.map(([f]) => (f as File).name)).toEqual(["1.jpg", "2.jpg", "3.jpg"]);
+    expect(await screen.findByText("Ko'pi bilan 20 ta rasm yuborish mumkin. Birinchilari qabul qilindi.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(20));
+    expect(mocks.prepareImage).toHaveBeenCalledTimes(20);
+    expect(mocks.prepareImage.mock.calls.map(([f]) => (f as File).name)).toEqual(files(20).map((f) => f.name));
+    // Har rasm 1,5 MB chegarasi bilan tayyorlanadi (kerak bo'lsa sifat tushiriladi).
+    expect(mocks.prepareImage).toHaveBeenCalledWith(expect.any(File), { maxBytes: 1.5 * 1024 * 1024 });
+    expect(screen.getByRole("button", { name: "Surat qo'shish (20/20)" })).toBeDisabled();
   });
 
-  it("bo'sh slotlar hisoblanadi: 2 ta rasm bor bo'lsa yangi tanlovdan faqat 1 tasi olinadi", async () => {
+  it("bo'sh slotlar hisoblanadi: 18 ta rasm bor bo'lsa yangi tanlovdan faqat 2 tasi olinadi", async () => {
     renderPanel();
-    selectFiles([file("1.jpg"), file("2.jpg")]);
-    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(2));
+    selectFiles(files(18));
+    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(18));
 
-    selectFiles([file("3.jpg"), file("4.jpg")]);
+    selectFiles(files(3, 19));
 
-    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(3));
-    expect(screen.getByText(/Ko'pi bilan 3 ta rasm/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(20));
+    expect(screen.getByText(/Ko'pi bilan 20 ta rasm yuborish mumkin/)).toBeInTheDocument();
   });
 
-  it("PDF → \"faqat surat\", HEIC → alohida tushuntirish", async () => {
+  it("kichraytirilgan rasm 1,5 MB dan katta (`over_limit`) → fayl nomi bilan xabar, eskiz qo'shilmaydi", async () => {
+    mocks.prepareImage.mockImplementation((f: File) =>
+      f.name === "katta.jpg" ? Promise.reject(new PrepareImageError("over_limit")) : Promise.resolve(prepared(f.name)),
+    );
+    renderPanel();
+
+    selectFiles([file("katta.jpg"), file("oddiy.jpg")]);
+
+    expect(await screen.findByText("katta.jpg: rasm 1,5 MB dan katta — kichikroq surat tanlang")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-image-grid").children).toHaveLength(1);
+  });
+
+  it("jami 20 MB dan oshadigan rasm qo'shilmaydi, kichigi hali sig'adi; × bosilsa xabar yo'qoladi", async () => {
+    // 14 × 1,4 MB = 19,6 MB; keyingi 1,4 MB sig'maydi, 300 KB sig'adi.
+    mocks.prepareImage.mockImplementation((f: File) =>
+      Promise.resolve(prepared(f.name, f.name === "kichik.jpg" ? 300 : 1.4 * 1024)),
+    );
+    renderPanel();
+
+    selectFiles([...files(15), file("kichik.jpg")]);
+
+    expect(
+      await screen.findByText("Rasmlar jami 20 MB dan oshmasligi kerak — sig'maganlari qo'shilmadi."),
+    ).toBeInTheDocument();
+    const grid = screen.getByTestId("ai-image-grid");
+    expect(grid.children).toHaveLength(15);
+    expect(within(grid).queryByAltText("15.jpg")).not.toBeInTheDocument();
+    expect(within(grid).getByAltText("kichik.jpg")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Suratni olib tashlash: 1.jpg" }));
+    expect(screen.queryByText(/Rasmlar jami 20 MB/)).not.toBeInTheDocument();
+  });
+
+  it("WebP surat qabul qilinadi (gateway endi JPEG, PNG, WebP oladi)", async () => {
+    renderPanel();
+    selectFiles([file("rasm.webp", "image/webp")]);
+    expect(await screen.findByAltText("rasm.jpg")).toBeInTheDocument();
+    expect(screen.queryByText(/faqat JPEG, PNG yoki WebP/)).not.toBeInTheDocument();
+  });
+
+  it("PDF → \"faqat JPEG, PNG yoki WebP\", HEIC → alohida tushuntirish", async () => {
     mocks.prepareImage.mockImplementation((f: File) =>
       Promise.reject(new PrepareImageError(f.name.endsWith(".pdf") ? "unsupported" : "heic_unsupported")),
     );
@@ -129,7 +174,7 @@ describe("AiInputPanel", () => {
 
     selectFiles([file("hujjat.pdf", "application/pdf"), file("IMG_1.HEIC", "image/heic")]);
 
-    expect(await screen.findByText(/hujjat\.pdf: faqat surat yuklash mumkin/)).toBeInTheDocument();
+    expect(await screen.findByText("hujjat.pdf: faqat JPEG, PNG yoki WebP rasm")).toBeInTheDocument();
     expect(screen.getByText(/IMG_1\.HEIC: HEIC surat — telefonda JPEG qilib saqlang/)).toBeInTheDocument();
   });
 
@@ -387,6 +432,22 @@ describe("AiInputPanel", () => {
       expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
     });
 
+    it.each([
+      ["Ko'pi bilan 20 ta rasm yuborish mumkin", "Ko'pi bilan 20 ta rasm yuborish mumkin. Ortiqchasini olib tashlang."],
+      ["Too many files", "Ko'pi bilan 20 ta rasm yuborish mumkin. Ortiqchasini olib tashlang."],
+      ["Rasm 1,5 MB dan katta", "Rasm 1,5 MB dan katta — kichikroq surat tanlang."],
+      ["Rasmlar jami 20 MB dan oshmasligi kerak", "Rasmlar jami 20 MB dan oshmasligi kerak — bir qismini olib tashlang."],
+      ["Faqat JPEG, PNG yoki WebP rasm", "Faqat JPEG, PNG yoki WebP rasm yuborish mumkin."],
+      ["Rasm fayli buzilgan yoki o'qib bo'lmadi", "Rasm fayli buzilgan yoki o'qib bo'lmadi — boshqa surat tanlang."],
+      ["Rasm fayli buzilgan yoki turi mos emas", "Rasm fayli buzilgan yoki o'qib bo'lmadi — boshqa surat tanlang."],
+    ])("400 «%s» → «Rasm qabul qilinmadi» + o'z matni (server matni xom emas)", async (serverText, shown) => {
+      await failWithHttp(httpError(400, { message: serverText }));
+      expect(await screen.findByText("Rasm qabul qilinmadi")).toBeInTheDocument();
+      expect(screen.getByText(shown)).toBeInTheDocument();
+      expect(screen.queryByText("Ma'lumot noto'g'ri")).not.toBeInTheDocument();
+      if (serverText !== shown) expect(screen.queryByText(serverText)).not.toBeInTheDocument();
+    });
+
     it("413 → \"Rasm juda katta\"", async () => {
       await failWithHttp(httpError(413));
       expect(await screen.findByText("Rasm juda katta")).toBeInTheDocument();
@@ -423,13 +484,13 @@ describe("AiInputPanel", () => {
       fireEvent.change(camera);
 
       expect(await screen.findByAltText("kamera.jpg")).toBeInTheDocument();
-      expect(screen.getByText("1/3 surat")).toBeInTheDocument();
+      expect(screen.getByText("1/20 surat")).toBeInTheDocument();
     });
 
-    it("3 ta surat bo'lsa ikkala telefon tugmasi ham o'chadi", async () => {
+    it("20 ta surat bo'lsa ikkala telefon tugmasi ham o'chadi", async () => {
       renderPanel();
-      selectFiles([file("a.jpg"), file("b.jpg"), file("c.jpg")]);
-      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(3));
+      selectFiles(Array.from({ length: 20 }, (_, i) => file(`p${i}.jpg`)));
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(20));
       expect(screen.getByRole("button", { name: "Surat olish" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Galereyadan" })).toBeDisabled();
     });

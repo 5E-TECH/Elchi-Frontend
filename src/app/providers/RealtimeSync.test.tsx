@@ -40,6 +40,11 @@ const socketMock = vi.hoisted(() => {
         socket.disconnected = true;
       },
       disconnected: false,
+      connected: false,
+      connectCalls: 0,
+      connect: () => {
+        socket.connectCalls += 1;
+      },
       io: {
         on: (event: string, handler: Handler) => managerHandlers.set(event, [...(managerHandlers.get(event) ?? []), handler]),
         off: (event: string) => managerHandlers.delete(event),
@@ -150,7 +155,10 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     });
 
     expect(await screen.findByText("5 ta yangi bildirishnoma")).toBeInTheDocument();
-    expect(invalidate).toHaveBeenCalledTimes(1);
+    // Bitta inbox yangilanishi + (buyurtma hodisalari — GaBIPi3Z) bitta ochiq buyurtma so'rovlari yangilanishi.
+    expect(invalidate).toHaveBeenCalledTimes(2);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["orders"], refetchType: "active" });
     expect(screen.queryByText("Holat 1")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ochish" }));
     expect(await screen.findByText("inbox-sahifasi")).toBeInTheDocument();
@@ -183,6 +191,22 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.queryByText("Yashirin tab")).not.toBeInTheDocument();
+  });
+
+  it("GaBIPi3Z: buyurtma signali (`category: \"order\"`, `id` siz ham) — ochiq buyurtma so'rovlari (ro'yxat, tab sonlari, badge) yangilanadi; boshqa kategoriya — yo'q", async () => {
+    const { queryClient } = renderSync();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+    invalidate.mockClear();
+
+    act(() => lastSocket().fire("notification:new", { type: "finance.cashbox", category: "finance" }));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all }));
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["orders"], refetchType: "active" });
+
+    invalidate.mockClear();
+    act(() => lastSocket().fire("notification:new", { type: "order.created", category: "order" }));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["orders"], refetchType: "active" }));
+    expect(invalidate).toHaveBeenCalledTimes(2);
   });
 
   it("⭐ TC4/TC11: ulanganda polling 5 daqiqa; uzilsa sanoq darhol so'raladi va 60 s ga qaytadi; qayta ulanganda inbox yangilanadi", async () => {
@@ -342,6 +366,47 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
 
       expect(socket.disconnected).toBe(true);
       await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    });
+
+    it("NDmZMzCP: `error` SESSION_CHECK_UNAVAILABLE + server uzdi — chiqish yo'q, ~15–20 s dan keyin qayta ulanadi", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+      vi.useFakeTimers();
+      try {
+        act(() => {
+          socket.fire("error", { message: "Session check unavailable", code: "SESSION_CHECK_UNAVAILABLE" });
+          socket.fire("disconnect", "io server disconnect");
+        });
+        expect(socket.disconnected).toBe(false);
+        act(() => vi.advanceTimersByTime(14_000));
+        expect(socket.connectCalls).toBe(0);
+        act(() => vi.advanceTimersByTime(7_000));
+        expect(socket.connectCalls).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(replace).not.toHaveBeenCalled();
+      expect(tokenStorage.getAccessToken()).not.toBeNull();
+    });
+
+    it("NDmZMzCP: `connect_error` SESSION_CHECK_UNAVAILABLE (`active=false`) — kechiktirib qayta ulanish, chiqish yo'q", async () => {
+      await renderSignedIn();
+      const socket = lastSocket();
+      vi.useFakeTimers();
+      try {
+        act(() => {
+          socket.active = false;
+          socket.fire(
+            "connect_error",
+            Object.assign(new Error("Session check unavailable"), { data: { code: "SESSION_CHECK_UNAVAILABLE" } }),
+          );
+        });
+        act(() => vi.advanceTimersByTime(21_000));
+        expect(socket.connectCalls).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(replace).not.toHaveBeenCalled();
     });
 
     it("oddiy server uzilishi (hodisasiz «io server disconnect») — avvalgidek: sanoq so'raladi, chiqish yo'q", async () => {

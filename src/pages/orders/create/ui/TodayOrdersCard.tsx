@@ -18,6 +18,12 @@ type TodayOrdersCardProps = {
   marketName?: string;
   /** Market roli: badge «Jami N ta», telefonda karta o'rniga havola-karta (maket `market-new-orders-create-manual`). */
   isMarketRole: boolean;
+  /**
+   * Market operatori (nCAFnqIe / N12, maket `market_operator-new-orders-create-manual`): «Qabul va yaratish»
+   * qobig'ining market sahifalari operatorga yopiq — qator buyurtma tafsilotiga (`/orders/edit/:id`), telefondagi
+   * havola-karta «Buyurtmalar» ning «Yangi» tabiga (`/orders?status=new`) olib boradi.
+   */
+  operator?: boolean;
   className?: string;
 };
 
@@ -62,7 +68,7 @@ const TodayOrderRow = ({ order, href }: { order: ApiOrder; href: string }) => {
  * «Bugun» — Toshkent kuni bo'yicha mijozda (D-07): `GET orders/markets/:id/new` sana filtrisiz BARCHA yangi
  * buyurtmalarni beradi (06.10 dagi ham), sarlavha esa «· bugun» deydi.
  */
-const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: TodayOrdersCardProps) => {
+const TodayOrdersCard = ({ marketId, marketName, isMarketRole, operator = false, className }: TodayOrdersCardProps) => {
   const { t } = useTranslation("orders");
   const { useGetTodayOrdersByMarket } = useIncomingOrders();
   const query = useGetTodayOrdersByMarket(marketId, undefined, Boolean(marketId));
@@ -74,15 +80,22 @@ const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: Toda
     [query.data],
   );
   const count = orders.length;
-  const market = marketName ?? "—";
-  const detailHref = (order: ApiOrder) => `/new-orders/${marketId}/edit/${order.id}`;
+  const market = marketName?.trim() || null;
+  const detailHref = (order: ApiOrder) =>
+    operator ? `/orders/edit/${order.id}` : `/new-orders/${marketId}/edit/${order.id}`;
+  const listHref = operator ? "/orders?status=new" : `/new-orders/${marketId}`;
+  // Market nomi noma'lum (operator profilida `market.name` yo'q) — «— · bugun» emas, faqat «Bugun».
+  const description = market ? t("createTodayDescription", { market }) : t("createTodayDescriptionNoMarket");
+  const linkSub = market
+    ? t("createTodayLinkSub", { market, count })
+    : t("createTodayLinkSubNoMarket", { count });
 
   return (
     <>
       <Card
         padding="none"
         title={t("newOrders")}
-        description={t("createTodayDescription", { market })}
+        description={description}
         actions={<Badge>{isMarketRole ? t("createTodayTotal", { count }) : t("createTodayCount", { count })}</Badge>}
         className={cx(isMarketRole && "max-md:hidden", className)}
       >
@@ -101,7 +114,7 @@ const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: Toda
 
       {isMarketRole ? (
         <Link
-          to={`/new-orders/${marketId}`}
+          to={listHref}
           aria-label={t("createTodayLinkAria", { count })}
           className={cx(
             "hidden min-h-14 min-w-0 items-center gap-3 rounded-[14px] border border-border bg-surface px-5 py-4 text-text max-md:flex",
@@ -117,7 +130,7 @@ const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: Toda
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate font-semibold text-text">{t("newOrders")}</span>
-            <span className="truncate text-[13px] text-text-muted">{t("createTodayLinkSub", { market, count })}</span>
+            <span className="truncate text-[13px] text-text-muted">{linkSub}</span>
           </span>
           <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-text-subtle" />
         </Link>

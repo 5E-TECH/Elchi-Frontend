@@ -87,8 +87,8 @@
     "namePlaceholder": "For example, Nodira Aliyeva",
     "phone": "Phone",
     "password": "Password",
-    "passwordPlaceholder": "At least 4 characters",
-    "passwordHint": "At least 4 characters. The operator signs in with this phone and password.",
+    "passwordPlaceholder": "At least 8 characters",
+    "passwordHint": "At least 8 characters. Simple, sequential passwords and the phone number are not accepted. The operator signs in with this phone and password.",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "commission": "Commission",
@@ -103,7 +103,9 @@
       "phoneRequired": "Enter the full phone number",
       "phoneTaken": "This phone number is taken — enter another one",
       "passwordRequired": "Enter a password",
-      "passwordShort": "Password must be at least 4 characters"
+      "passwordShort": "Password must be at least 8 characters",
+      "passwordSpaces": "The password must not start or end with a space",
+      "passwordLong": "The password is too long — 72 characters at most"
     },
     "failed": "Operator not added",
     "failedText": "Check the details and try again.",

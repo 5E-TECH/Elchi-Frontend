@@ -1,4 +1,5 @@
 import { getAllTimeRange, getTodayRange, type ISODateRange } from "../../../shared/lib/dateRange";
+import { rangeDays } from "./period";
 
 /**
  * «BARCHASI» (tya24blo, backend uN1tjjGu). Hamma rolda — superadmin, market, menejer — `all=true` yuboriladi.
@@ -87,4 +88,17 @@ export const getEffectiveAllTimeRange = (
 ): ISODateRange | null => {
   if (!isAllTimeRange(fromDate, toDate) || !applied?.clamped || !applied.from) return null;
   return { from: applied.from, to: applied.to ?? getTodayRange().to };
+};
+
+/**
+ * «Barchasi» (XdKajqLe): backend oraliqni qisqartirgan bo'lsa (`clamped: true`) — haqiqiy oraliq va kunlar soni
+ * («oxirgi 366 kun» izohi uchun). Qisqartirilmagan yoki meta yo'q — `null` (izoh chizilmaydi).
+ */
+export const clampedAllTimeWindow = (
+  applied: AppliedRange | null | undefined,
+): { range: ISODateRange; days: number } | null => {
+  if (!applied?.clamped || !applied.from) return null;
+  const range = { from: applied.from, to: applied.to ?? getTodayRange().to };
+  const days = rangeDays(range);
+  return days > 0 ? { range, days } : null;
 };

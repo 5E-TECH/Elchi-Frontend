@@ -4,6 +4,7 @@ import {
   MAX_IMAGE_DIM,
   MAX_SOURCE_BYTES,
   PrepareImageError,
+  QUALITY_STEPS,
   fitWithin,
   prepareImage,
 } from "./downscaleImage";
@@ -40,6 +41,9 @@ let bitmapFails: boolean;
 let imageFails: boolean;
 let created: number;
 let revoked: number;
+/** Sifatga qarab blob hajmi (bayt); `null` — doim "JPEG-BYTES". */
+let blobSizeAt: ((quality: number) => number) | null;
+let qualities: number[];
 
 class OffscreenCanvasMock {
   width: number;
@@ -56,7 +60,9 @@ class OffscreenCanvasMock {
     const last = canvases[canvases.length - 1];
     last.type = options.type;
     last.quality = options.quality;
-    return Promise.resolve(new Blob(["JPEG-BYTES"], { type: options.type }));
+    qualities.push(options.quality);
+    const body = blobSizeAt ? "x".repeat(blobSizeAt(options.quality)) : "JPEG-BYTES";
+    return Promise.resolve(new Blob([body], { type: options.type }));
   }
 }
 
@@ -80,6 +86,8 @@ beforeEach(() => {
   imageFails = false;
   created = 0;
   revoked = 0;
+  blobSizeAt = null;
+  qualities = [];
   vi.stubGlobal(
     "createImageBitmap",
     vi.fn(() =>
@@ -229,5 +237,54 @@ describe("prepareImage", () => {
 
     expect(canvases).toEqual([{ width: 1080, height: 720, type: "image/jpeg", quality: 0.92 }]);
     expect(result.media_type).toBe("image/jpeg");
+  });
+
+  describe("hajm chegarasi `maxBytes` (WHMAIqyo: 1,5 MB)", () => {
+    const MB = 1024 * 1024;
+    const LIMIT = 1.5 * MB;
+
+    it("chegaradan katta natija — sifat bosqichma-bosqich tushiriladi, o'lcham o'zgarmaydi", async () => {
+      const sizes: Record<number, number> = { 0.92: 2 * MB, 0.85: 1.75 * MB, 0.75: 1.25 * MB };
+      blobSizeAt = (quality) => sizes[quality] ?? 1 * MB;
+
+      const result = await prepareImage(file("dense.jpg", "image/jpeg", 9 * MB), { maxBytes: LIMIT });
+
+      expect(qualities).toEqual([0.92, 0.85, 0.75]);
+      expect(canvases).toHaveLength(1);
+      expect(canvases[0]).toMatchObject({ width: MAX_IMAGE_DIM, height: 1176 });
+      expect(result.bytes).toBe(1.25 * MB);
+      expect(result.media_type).toBe("image/jpeg");
+    });
+
+    it("chegaraga sig'sa qayta kodlanmaydi", async () => {
+      blobSizeAt = () => 900 * 1024;
+      const result = await prepareImage(file("ok.jpg", "image/jpeg"), { maxBytes: LIMIT });
+      expect(qualities).toEqual([JPEG_QUALITY]);
+      expect(result.bytes).toBe(900 * 1024);
+    });
+
+    it("eng past sifatda ham katta → PrepareImageError('over_limit')", async () => {
+      blobSizeAt = () => 2 * MB;
+      const error = await prepareImage(file("huge.png", "image/png"), { maxBytes: LIMIT }).catch((e) => e);
+      expect(error).toBeInstanceOf(PrepareImageError);
+      expect(error.code).toBe("over_limit");
+      expect(qualities).toEqual([...QUALITY_STEPS]);
+    });
+
+    it("zaxira yo'l (`<canvas>`) ham sifatni tushiradi", async () => {
+      vi.stubGlobal("createImageBitmap", undefined);
+      const big = btoa("x".repeat(2 * MB));
+      const small = btoa("x".repeat(1 * MB));
+      vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockImplementation((type?: string, quality?: unknown) => {
+        qualities.push(Number(quality));
+        return `data:${type};base64,${Number(quality) >= 0.85 ? big : small}`;
+      });
+
+      const result = await prepareImage(file("fallback.jpg", "image/jpeg"), { maxBytes: LIMIT });
+
+      expect(qualities).toEqual([0.92, 0.85, 0.75]);
+      expect(result.bytes).toBe(1 * MB);
+      expect(revoked).toBe(created);
+    });
   });
 });

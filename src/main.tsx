@@ -54,3 +54,9 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 
 // Logout'da push obunasi token bekor qilinishidan OLDIN serverdan o'chadi.
 registerBeforeLogout(unsubscribePushOnLogout);
+
+// TEST muhit (staging, test-admin.elchipochta.uz): «TEST muhit» belgisi va «[TEST]» sarlavha. Shart build vaqtida
+// hisoblanadi (`.env.production` → `VITE_APP_ENV=production`) — production bundle'da bu blok ham, chunk ham yo'q.
+if (import.meta.env.VITE_APP_ENV === "staging") {
+  void import("./widgets/staging-banner").then(({ mountStagingBanner }) => mountStagingBanner());
+}

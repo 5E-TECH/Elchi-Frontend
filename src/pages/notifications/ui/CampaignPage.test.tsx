@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import CampaignPage from "./CampaignPage";
 import { SMS_KEYS } from "../../../entities/sms";
+import { shiftDay, tashkentToday } from "../../../entities/notification-campaign";
 
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -341,7 +342,7 @@ describe("CampaignPage (sVByLMnt)", () => {
     await user.click(await screen.findByRole("option", { name: "Chilonzor tumani" }));
     await user.click(screen.getByRole("combobox", { name: /^Market/ }));
     await user.click(await screen.findByRole("option", { name: "Baraka Shop" }));
-    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "2");
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" }), "2");
 
     await waitFor(() => expect(block).toHaveAttribute("data-state", "ready"));
     expect(block).toHaveTextContent("Auditoriya: 386 ta");
@@ -409,7 +410,7 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeDisabled();
 
     next = audience({ recipients: 200, fanout_exceeded: true, max_fanout: 200 });
-    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni" }), "3");
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" }), "3");
     await waitFor(() => expect(block).toHaveAttribute("data-state", "fanout"));
     expect(block).toHaveTextContent("Auditoriya juda katta");
     expect(block).toHaveTextContent("Bitta kampaniyada ko'pi bilan 200 ta");
@@ -505,14 +506,14 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(screen.queryByText(/message_class/)).toBeNull();
   });
 
-  it("«Yuborish vaqti»: Darhol tanlangan, Toshkent vaqti; «Belgilangan vaqtda» chizilmaydi", () => {
+  it("«Yuborish vaqti»: Darhol tanlangan, Toshkent vaqti; «Belgilangan vaqtda» bor (KM-6)", () => {
     renderWithProviders(<CampaignPage />);
     expect(screen.getByRole("heading", { name: "Yuborish vaqti" })).toBeInTheDocument();
     expect(screen.getByText("Toshkent vaqti")).toBeInTheDocument();
     const group = screen.getByRole("radiogroup", { name: "Yuborish vaqti" });
     expect(within(group).getByRole("radio", { name: /Darhol/ })).toBeChecked();
-    expect(within(group).getAllByRole("radio")).toHaveLength(1);
-    expect(screen.queryByText(/Belgilangan vaqtda/)).toBeNull();
+    expect(within(group).getAllByRole("radio")).toHaveLength(2);
+    expect(within(group).getByRole("radio", { name: /Belgilangan vaqtda/ })).not.toBeChecked();
     expect(screen.queryByText(/Taklif/)).toBeNull();
     expect(screen.queryByText(/Saqlangan segment|Segmentni saqlash/)).toBeNull();
   });
@@ -525,5 +526,232 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(within(table).getByText("25")).toHaveClass("text-warning-fg");
     expect(within(table).getByText("3")).toHaveClass("text-danger-fg");
     expect(screen.getByText("1 ta")).toBeInTheDocument();
+  });
+
+  describe("KM-6 (2aS7PFX0): rejalashtirish va «Bekor qilish»", () => {
+    const tomorrowAt = (time: string) => `${shiftDay(tashkentToday(), 1)}T${time}:00+05:00`;
+
+    it("«Belgilangan vaqtda» — preview va yaratish `scheduled_at` (+05:00) bilan; «Rejalashtirish» → «Kampaniya rejalashtirildi»", async () => {
+      api.post.mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith("preview")
+            ? {
+                data: {
+                  data: {
+                    ...preview,
+                    scheduled_for: tomorrowAt("10:00"),
+                    scheduled_for_tashkent: tomorrowAt("10:00"),
+                    requested_at: tomorrowAt("10:00"),
+                    quiet_hours_shifted: false,
+                  },
+                },
+              }
+            : {
+                data: {
+                  data: {
+                    campaign_id: "12",
+                    status: "scheduled",
+                    queued: 0,
+                    recipients: 1,
+                    blocked_no_consent: 1,
+                    skipped_invalid_phone: 1,
+                    estimated_cost: 175,
+                    scheduled_for: tomorrowAt("10:00"),
+                    scheduled_for_tashkent: tomorrowAt("10:00"),
+                    requested_at: tomorrowAt("10:00"),
+                    quiet_hours_shifted: false,
+                  },
+                },
+              },
+        ),
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await fill(user, "Chegirma");
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      expect(screen.getByTestId("campaign-schedule-chosen")).toHaveTextContent("Ertaga, 10:00 da yuboriladi");
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+      expect(api.post.mock.calls[0][1]).toMatchObject({ scheduled_at: tomorrowAt("10:00") });
+      expect(within(dialog).getByText("Ertaga, 10:00 da yuboriladi")).toBeInTheDocument();
+      expect(within(dialog).getByText(/Vaqti kelguncha kampaniyani tarixdan bekor qilish mumkin/)).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Yuborish" })).toBeNull();
+
+      await user.click(within(dialog).getByRole("button", { name: "Rejalashtirish" }));
+      await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+      const [url, body] = api.post.mock.calls[1];
+      expect(url).toBe("notifications/sms/campaigns");
+      expect(body).toMatchObject({ scheduled_at: tomorrowAt("10:00") });
+      expect(
+        await screen.findByText("Kampaniya rejalashtirildi: ertaga, 10:00 da yuboriladi. Qabul qiluvchilar (taxminan): 1 ta."),
+      ).toBeInTheDocument();
+    });
+
+    it("`quiet_hours_shifted` — tasdiqda «Tungi taqiq sababli … ga surildi» va so'ralgan vaqt", async () => {
+      api.post.mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith("preview")
+            ? {
+                data: {
+                  data: {
+                    ...preview,
+                    scheduled_for: `${shiftDay(tashkentToday(), 2)}T09:00:00+05:00`,
+                    scheduled_for_tashkent: `${shiftDay(tashkentToday(), 2)}T09:00:00+05:00`,
+                    requested_at: tomorrowAt("20:00"),
+                    quiet_hours_shifted: true,
+                  },
+                },
+              }
+            : { data: { data: { campaign_id: "1", queued: 0, blocked_no_consent: 0, skipped_invalid_phone: 0 } } },
+        ),
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await fill(user, "Chegirma");
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+      const shifted = within(dialog).getByTestId("campaign-confirm-shifted");
+      expect(shifted).toHaveTextContent(/Tungi taqiq sababli .*09:00 ga surildi/);
+      expect(shifted).toHaveTextContent("So'ralgan: Ertaga, 20:00. Reklama 18:00–09:00 oralig'ida yuborilmaydi.");
+    });
+
+    it("400 «… 90 kun oldinga» — tushunarli matn (xom backend matni emas)", async () => {
+      api.post.mockRejectedValue({
+        response: { status: 400, data: { message: "scheduled_at ko'pi bilan 90 kun oldinga" } },
+      });
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await fill(user, "Chegirma");
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+      expect(
+        await screen.findByText("Ko'pi bilan 90 kun oldinga rejalashtirish mumkin — boshqa sanani tanlang"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/scheduled_at/)).toBeNull();
+    });
+
+    const SCHEDULED_ROW = {
+      ...HISTORY[0],
+      id: "7",
+      message_class: "promo",
+      text: "Kuzgi chegirma 20%",
+      queued: 0,
+      sent: 0,
+      delivered: 0,
+      failed: 0,
+      pending: 0,
+      status: "scheduled",
+      scheduled_at: tomorrowAt("10:00"),
+      scheduled_for: tomorrowAt("10:00"),
+      scheduled_for_tashkent: tomorrowAt("10:00"),
+      requested_at: tomorrowAt("10:00"),
+      quiet_hours_shifted: false,
+      can_cancel: true,
+    };
+    const FAILED_ROW = {
+      ...HISTORY[0],
+      id: "8",
+      message_class: "promo",
+      text: "Bayram aksiyasi",
+      status: "failed",
+      last_error: "kunlik kvota tugagan",
+      can_cancel: false,
+    };
+    const withHistory = (rows: unknown[]) => {
+      const base = api.get.getMockImplementation();
+      api.get.mockImplementation((url: string, ...rest: unknown[]) =>
+        url.endsWith("sms/campaigns") ? Promise.resolve({ data: { data: rows } }) : base?.(url, ...rest),
+      );
+    };
+
+    it("tarix: «Rejalashtirilgan» + vaqt, «Rad etildi» + sabab; «Bekor qilish» → tasdiq → POST …/7/cancel", async () => {
+      withHistory([SCHEDULED_ROW, FAILED_ROW]);
+      api.post.mockResolvedValue({ data: { data: { ...SCHEDULED_ROW, status: "cancelled", can_cancel: false } } });
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      const table = await screen.findByRole("table", { name: "Yuborilgan kampaniyalar" });
+      expect(within(table).getByText("Rejalashtirilgan")).toBeInTheDocument();
+      expect(within(table).getByText("Ertaga, 10:00 da yuboriladi")).toBeInTheDocument();
+      expect(within(table).getByText("Rad etildi")).toBeInTheDocument();
+      expect(within(table).getByText("Sabab: kunlik kvota tugagan")).toBeInTheDocument();
+      // Faqat `can_cancel` qatorda tugma bor.
+      expect(within(table).getAllByRole("button", { name: "Bekor qilish" })).toHaveLength(1);
+
+      await user.click(within(table).getByRole("button", { name: "Bekor qilish" }));
+      const confirmDialog = await screen.findByRole("alertdialog", { name: "Kampaniyani bekor qilasizmi?" });
+      expect(confirmDialog).toHaveTextContent("Ertaga, 10:00 da yuborilishi kerak edi");
+      expect(api.post).not.toHaveBeenCalled();
+      await user.click(within(confirmDialog).getByRole("button", { name: "Kampaniyani bekor qilish" }));
+      await waitFor(() => expect(api.post).toHaveBeenCalledWith("notifications/sms/campaigns/7/cancel"));
+      expect(await screen.findByText("Kampaniya bekor qilindi")).toBeInTheDocument();
+    });
+
+    it("bekor qilish 409 — «allaqachon boshlangan yoki rejalashtirilmagan», tarix qayta so'raladi", async () => {
+      withHistory([SCHEDULED_ROW]);
+      api.post.mockRejectedValue({ response: { status: 409, data: { message: "Kampaniya bekor qilinmaydi" } } });
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      const table = await screen.findByRole("table", { name: "Yuborilgan kampaniyalar" });
+      const historyCalls = () => api.get.mock.calls.filter(([url]) => String(url).endsWith("sms/campaigns")).length;
+      const before = historyCalls();
+      await user.click(within(table).getByRole("button", { name: "Bekor qilish" }));
+      const confirmDialog = await screen.findByRole("alertdialog", { name: "Kampaniyani bekor qilasizmi?" });
+      await user.click(within(confirmDialog).getByRole("button", { name: "Kampaniyani bekor qilish" }));
+      expect(
+        await screen.findByText("Bekor qilib bo'lmadi: kampaniya allaqachon boshlangan yoki rejalashtirilmagan"),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(historyCalls()).toBeGreaterThan(before));
+      expect(screen.queryByText(/Kampaniya bekor qilinmaydi/)).toBeNull();
+    });
+
+    it("review: bugungi qoldiq ertaga rejalashtirilgan kampaniyani to'smaydi («Raqamlar», tasdiq oynasi)", async () => {
+      api.post.mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith("preview")
+            ? {
+                data: {
+                  data: {
+                    ...preview,
+                    recipients: 421,
+                    scheduled_for: tomorrowAt("10:00"),
+                    scheduled_for_tashkent: tomorrowAt("10:00"),
+                    requested_at: tomorrowAt("10:00"),
+                    quiet_hours_shifted: false,
+                  },
+                },
+              }
+            : { data: { data: { campaign_id: "13", status: "scheduled", queued: 0, blocked_no_consent: 0, skipped_invalid_phone: 0 } } },
+        ),
+      );
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await fill(user, "Chegirma");
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+      expect(within(dialog).queryByText(/Bugungi limit yetmaydi/)).toBeNull();
+      expect(within(dialog).getByRole("button", { name: "Rejalashtirish" })).toBeEnabled();
+    });
+
+    it("review: segment — ertangi kampaniyada «Bugun qolgan» qatori va «limit» holati yo'q; bugunga qaytsa — yana bor", async () => {
+      mockPreview(() => Promise.resolve({ data: { data: audience({ recipients: 450 }) } }));
+      const user = userEvent.setup();
+      renderWithProviders(<CampaignPage />);
+      await user.type(screen.getByRole("textbox", { name: "Xabar matni" }), "Chegirma");
+      const block = await openSegment(user);
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "limit"));
+
+      await user.click(screen.getByRole("radio", { name: /Belgilangan vaqtda/ }));
+      expect(screen.getByTestId("campaign-schedule-chosen")).toHaveTextContent(/^Ertaga/);
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "ready"));
+      expect(block).not.toHaveTextContent("Bugun qolgan");
+      expect(screen.getByRole("button", { name: "Ko'rib chiqish" })).toBeEnabled();
+
+      await user.click(screen.getByRole("radio", { name: /Darhol/ }));
+      await waitFor(() => expect(block).toHaveAttribute("data-state", "limit"));
+      expect(block).toHaveTextContent("SMS limiti · Bugun qolgan: 420 / 500");
+    });
   });
 });

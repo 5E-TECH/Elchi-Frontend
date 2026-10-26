@@ -304,5 +304,9 @@
       "rowBadge": "Повторный номер",
       "rowBadgeTitle": "На этот номер также: {{ids}}"
     }
+  },
+  "receipt": {
+    "contact": "При проблеме",
+    "courier": "Курьер"
   }
 }

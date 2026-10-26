@@ -15,6 +15,11 @@ import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
 import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
+import {
+  checkPasswordPolicy,
+  getPasswordPolicyServerMessage,
+  passwordMinLength,
+} from "../../../../shared/lib/passwordPolicy";
 import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
@@ -40,6 +45,8 @@ import {
   type RoleChangeErrorKind,
 } from "../../change-role";
 import { WarehouseOrderSection } from "./WarehouseOrderSection";
+import { CourierDistrictField } from "../../courier-district/ui/CourierDistrictField";
+import { courierDistrictErrorKind } from "../../courier-district/model/courierDistrict";
 
 /** «Logist biriktirish» sahifasi (logist boshqa rolga o'tgach — bo'shagan viloyatlarni berish). */
 const LOGIST_ASSIGNMENT_PATH = "/regions/logist-assignment";
@@ -183,7 +190,7 @@ export const UpdateUserModal = memo(({
   initialUser = null,
   isOwnProfile = false,
 }: UpdateUserModalProps) => {
-  const { t, i18n } = useTranslation(["users", "common"]);
+  const { t, i18n } = useTranslation(["users", "common", "auth"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const authRole = useSelector((state: RootState) => state.role.role);
   const currentUserId = useSelector(
@@ -194,6 +201,9 @@ export const UpdateUserModal = memo(({
   const setWarehouseOrder = useSetMarketWarehouseOrder();
   // yXC91RRx: «Ombordan buyurtma yaratish» — tegilmagan bo'lsa `null` (saqlangan qiymat ko'rinadi).
   const [warehouseOrderDraft, setWarehouseOrderDraft] = useState<boolean | null>(null);
+  // DtKKY0V8: kuryer «Tuman» — tegilmagan bo'lsa `null` (saqlangan `district_id` ko'rinadi); server xatosi maydonda.
+  const [districtDraft, setDistrictDraft] = useState<string | null>(null);
+  const [districtError, setDistrictError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -270,6 +280,12 @@ export const UpdateUserModal = memo(({
   const warehouseOrderChanged = canEditWarehouseOrder && warehouseOrder !== initialWarehouseOrder;
   const fetchedUser = needsCourierRegion ? unwrapUserResponse(rawUser) : null;
   const courierRegion = userData?.region ?? fetchedUser?.region ?? null;
+  // DtKKY0V8: joriy tuman — `GET /users/:id` (yoki ro'yxat qatori) `district_id`; viloyat — kuryer hududi.
+  const initialDistrictId = String(userData?.district_id ?? fetchedUser?.district_id ?? "");
+  const districtValue = districtDraft ?? initialDistrictId;
+  const districtChanged = isCourier && districtDraft !== null && districtDraft !== initialDistrictId;
+  const courierRegionId =
+    courierRegion?.id != null && String(courierRegion.id).trim() ? String(courierRegion.id) : (userData?.region_id ?? null);
   const courierRegionLoading = needsCourierRegion && isUserLoading;
   // So'rov yiqilsa «Biriktirilmagan» deyilmaydi (bu yolg'on bo'lardi) — qiymat noma'lum: «—».
   const courierRegionFailed = needsCourierRegion && isUserError && !fetchedUser;
@@ -312,6 +328,8 @@ export const UpdateUserModal = memo(({
     setRoleError(null);
     setCommittedRole(null);
     setWarehouseOrderDraft(null);
+    setDistrictDraft(null);
+    setDistrictError(null);
     if (!userId) {
       setShowPassword(false);
       filledForUserRef.current = null;
@@ -336,6 +354,14 @@ export const UpdateUserModal = memo(({
 
     if (getUzbekistanPhoneDigits(values.phone).length !== 9) {
       fail("phone", t("phoneValidation"));
+    }
+
+    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz.
+    if (values.password) {
+      const passwordIssue = checkPasswordPolicy(values.password, effectiveRole);
+      if (passwordIssue && passwordIssue !== "required") {
+        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(effectiveRole) }));
+      }
     }
 
     if (isAdmin && values.payment_day) {
@@ -558,6 +584,9 @@ export const UpdateUserModal = memo(({
       payload.ai_price_per_order = values.ai_price.trim() ? parseAmount(values.ai_price) : null;
     }
 
+    // DtKKY0V8: tuman faqat o'zgargan bo'lsa (`null` — tozalash). Viloyat bu bilan o'zgarmaydi.
+    if (districtChanged) payload.district_id = districtDraft || null;
+
     if (!targetRole && Object.keys(payload).length === 0) {
       if (warehouseOrderChanged) await saveWarehouseOrder();
       else onClose();
@@ -590,20 +619,36 @@ export const UpdateUserModal = memo(({
     // xodimning paroli almashsa — o'sha xodimning barcha qurilmalari chiqadi. Matn shuni aytadi; o'z sessiyalari
     // ro'yxati `useUser` mutatsiyasida yangilanadi (`queryKeys.accountSessions`).
     const passwordChanged = Boolean(payload.password);
+    const districtSent = payload.district_id !== undefined;
+    const districtErrorText = (error: unknown) => {
+      const kind = districtSent ? courierDistrictErrorKind(error, { districtSent }) : null;
+      return kind ? t(`v2.courierDistrict.errors.${kind}`) : undefined;
+    };
+    setDistrictError(null);
     await runUserRequest({
       t,
       request: () =>
-        isOwnProfile
+        (isOwnProfile
           ? updateMyProfile.mutateAsync(payload)
-          : updateUser.mutateAsync({ id: userId, data: payload }),
+          : updateUser.mutateAsync({ id: userId, data: payload })
+        ).catch((error: unknown) => {
+          // Tuman xatosi (400 / 503) — «Tuman» maydoni ostida ham; boshqa maydonlar saqlanmagan, kiritilganlar joyida.
+          setDistrictError(districtErrorText(error) ?? null);
+          throw error;
+        }),
       successMessage: !passwordChanged
         ? t("userUpdatedSuccess", { name: userData.name })
         : isSelf
           ? t("ownPasswordChangedOthersSignedOut")
           : t("userUpdatedPasswordReset", { name: userData.name }),
       errorMessage: t("editUserError"),
-      onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+      onError: (error) => {
+        applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
+        const passwordMessage = getPasswordPolicyServerMessage(error);
+        if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
+      },
       onSuccess: () => (warehouseOrderChanged ? void saveWarehouseOrder() : onClose()),
+      describeError: districtErrorText,
     });
   };
 
@@ -732,7 +777,7 @@ export const UpdateUserModal = memo(({
                 render={({ field, fieldState }) => (
                   <Field
                     label={t("v2.edit.newPassword")}
-                    hint={t("v2.edit.newPasswordHint")}
+                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: passwordMinLength(effectiveRole) })}`}
                     error={fieldState.error?.message}
                   >
                     <TextInput
@@ -810,10 +855,14 @@ export const UpdateUserModal = memo(({
           ) : null}
 
           {isCourier ? (
-            // FY-S4: «Ish hududi» faqat o'qish — viloyat (filial biriktiruvidan); filial «Boshqa filialga o'tkazish»
-            // oynasi orqali. «Tuman» tanlovi (maketda «Taklif · backend kerak») chizilmaydi.
+            // FY-S4: «Ish hududi» — viloyat faqat o'qish (filial biriktiruvidan; filial «Boshqa filialga o'tkazish»
+            // oynasi orqali, unda tuman tozalanadi). DtKKY0V8 (maket `superadmin-users-edit-courier-district`):
+            // «Tuman» — shu viloyat tumanlari, ixtiyoriy, faqat o'zgargan bo'lsa yuboriladi.
             <FormSection title={t("v2.edit.workArea")}>
-              <Field label={t("v2.edit.region")} hint={canTransferCourier ? t("v2.edit.regionHint") : undefined}>
+              <Field
+                label={t("v2.edit.region")}
+                hint={canTransferCourier ? t("v2.courierDistrict.regionHintEdit") : undefined}
+              >
                 {/* Yuklanishda ham 44px maydon (oyna sakramaydi, yorliq boshqaruvga bog'langan). */}
                 <TextInput
                   readOnly
@@ -829,6 +878,18 @@ export const UpdateUserModal = memo(({
                   }
                 />
               </Field>
+              <CourierDistrictField
+                regionId={courierRegionFailed ? null : courierRegionId}
+                regionName={courierRegion?.name ?? null}
+                regionLoading={courierRegionLoading}
+                value={districtValue}
+                onChange={(next) => {
+                  setDistrictDraft(next);
+                  setDistrictError(null);
+                }}
+                error={districtError ?? undefined}
+                disabledHint={t("v2.courierDistrict.noRegion")}
+              />
             </FormSection>
           ) : null}
 

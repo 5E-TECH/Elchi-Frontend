@@ -21,6 +21,15 @@
       "paidHint": "Оплаченные и частично оплаченные заказы",
       "cancelledHint": "Отменённые и отменённые — отправленные заказы"
     },
+    "cancelStage": {
+      "label": "По этапу возврата",
+      "all": "Все",
+      "courier": "У курьера",
+      "in_transit": "В пути",
+      "branch": "В филиале",
+      "hq": "В HQ",
+      "market": "Переданы"
+    },
     "columns": {
       "order": "Заказ",
       "customer": "Клиент",
@@ -425,10 +434,12 @@
   "createTotalHint": "Итоговая сумма к получению от клиента",
   "createTodayAside": "Заказы выбранного маркета",
   "createTodayDescription": "{{market}} · сегодня",
+  "createTodayDescriptionNoMarket": "Сегодня",
   "createTodayCount": "{{count}} шт.",
   "createTodayTotal": "Всего {{count}}",
   "createTodayLinkAria": "Новые заказы за сегодня: {{count}}",
   "createTodayLinkSub": "{{market}} · сегодня · {{count}} шт.",
+  "createTodayLinkSubNoMarket": "Сегодня · {{count}} шт.",
   "createTodayEmpty": "Сегодня новых заказов нет",
   "orderCreatedMarketRole": "Заказ создан. Вы можете продолжить добавлять новые заказы для своих товаров.",
   "orderCreatedForMarket": "Заказ создан. Вы можете добавить еще один заказ для этого маркета.",
@@ -496,7 +507,15 @@
       "destination_branch": "Куда",
       "target_branch": "Куда",
       "from_label": "Откуда",
-      "to_label": "Куда"
+      "to_label": "Куда",
+      "from_holder_type": "От кого",
+      "to_holder_type": "Кому",
+      "source_type": "Отправитель",
+      "source_user_role": "Роль отправителя",
+      "source_courier_name": "Курьер-отправитель",
+      "source_courier": "Курьер-отправитель",
+      "source_user": "Сотрудник-отправитель",
+      "holder_courier": "Курьер-держатель"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} принял заказ в HQ",
@@ -514,7 +533,10 @@
       "returnedToMarketByActor": "{{actor}} передал(а) заказ маркету {{market}} — {{method}}",
       "createdByActor": "{{actor}} создал заказ",
       "cancelledPostReceivedAtPlace": "{{actor}} принял(а) отменённый заказ — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен"
+      "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен",
+      "postReceived": "{{actor}} принял(а) почту",
+      "postReceivedAtBranch": "{{actor}} принял(а) почту — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} отправил {{post}} из HQ в {{branch}}"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -525,6 +547,12 @@
       "manager": "Менеджер",
       "market": "Маркет",
       "system": "Система"
+    },
+    "holderValue": {
+      "hq": "Главный офис (HQ)",
+      "branch": "Филиал",
+      "courier": "Курьер",
+      "market": "Маркет"
     },
     "status": {
       "created": "Создан",
@@ -616,11 +644,13 @@
   "aiImageCount": "{{count}}/{{max}} фото",
   "aiJumpToUnready": "Не заполнено ({{count}})",
   "aiImagePreparing": "Подготовка {{current}}/{{total}}...",
-  "aiTooManyImages": "Не более {{max}} фото. Приняты первые из выбранных.",
+  "aiTooManyImages": "Можно отправить не более {{max}} фото. Приняты первые из выбранных.",
   "aiImageTooLarge": "файл слишком большой (более 30 МБ)",
-  "aiImageUnsupported": "можно загружать только фото (JPG, PNG, WEBP)",
+  "aiImageUnsupported": "только фото JPEG, PNG или WebP",
   "aiImageDecodeFailed": "не удалось прочитать фото — выберите другое",
   "aiImageHeic": "фото HEIC — сохраните его в JPEG на телефоне или выберите другое",
+  "aiImageOverLimit": "фото больше {{imageSize}} МБ — выберите фото поменьше",
+  "aiImagesTotalOverLimit": "Общий размер фото не должен превышать {{totalSize}} МБ — не поместившиеся не добавлены.",
   "aiRemoveImage": "Удалить фото: {{name}}",
   "aiParseButton": "Анализировать",
   "aiRetryParse": "Проанализировать снова",
@@ -658,6 +688,15 @@
   "aiAllProducts": "Все товары",
   "aiPhoneRead": "AI прочитал номер: {{value}}",
   "aiRegionGuessed": "Региона нет в тексте — AI предположил, проверьте",
+  "aiWarning": {
+    "unclear": "AI не смог точно прочитать — проверьте",
+    "ambiguous": "Можно понять по-разному — проверьте",
+    "conflict": "В тексте противоречивые значения — проверьте",
+    "listLabel": "Предупреждения AI",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Заказ на замену",
+    "fieldRegion": "Регион"
+  },
   "aiItems": "Товары",
   "aiReadAs": "AI прочитал",
   "aiRemoveItem": "Удалить товар: {{name}}",
@@ -704,6 +743,12 @@
   "aiHttpTooLargeDescription": "Уменьшите количество фото или выберите другое фото.",
   "aiHttpBadRequestTitle": "Неверные данные",
   "aiHttpBadRequestDescription": "Проверьте текст и фото и отправьте снова.",
+  "aiHttpImageRejectedTitle": "Фото не принято",
+  "aiServerImageCount": "Можно отправить не более {{max}} фото. Уберите лишние.",
+  "aiServerImageSize": "Фото больше {{imageSize}} МБ — выберите фото поменьше.",
+  "aiServerImagesTotal": "Общий размер фото не должен превышать {{totalSize}} МБ — уберите часть фото.",
+  "aiServerImageType": "Можно отправлять только фото JPEG, PNG или WebP.",
+  "aiServerImageBroken": "Файл фото повреждён или не читается — выберите другое фото.",
   "aiHttpForbiddenTitle": "Нет доступа",
   "aiHttpForbiddenDescription": "У вас нет права создавать заказы через AI. Введите заказ вручную.",
   "aiCreateFailedWith": "Заказ не создан: {{detail}}",
@@ -851,6 +896,7 @@
     "scopeAll": "Все клиенты · число заказов по {{market}}",
     "scopeMarket": "Клиенты {{market}} · число заказов по этому магазину",
     "scopeOwn": "Ваши клиенты · число заказов только у вас",
+    "extraNumberMatch": "Доп. номер:",
     "ordersCount_one": "{{value}} заказ",
     "ordersCount_few": "{{value}} заказа",
     "ordersCount_many": "{{value}} заказов",

@@ -86,6 +86,25 @@ const PARSE_ERRORS: Record<AiParseFailureReason, AiErrorView> = {
 const UNKNOWN_PARSE_ERROR = editText("aiParseFailedTitle", "aiParseFailed");
 
 /**
+ * Gateway'ning rasm chegarasi 400 matnlari (`assertAiParseInput`, WHMAIqyo) → o'z i18n kaliti: ru/en interfeysda
+ * ham tushunarli, server matni xom ko'rsatilmaydi. Qiymatlar (`{{max}}`, `{{imageSize}}`, `{{totalSize}}`) —
+ * `AiInputPanel` dagi chegaralardan. Multer'ning «Too many files» (21+ fayl) — soni bo'yicha.
+ */
+const IMAGE_LIMIT_DETAILS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^Ko['ʻ‘’`]?pi bilan \d+ ta rasm/i, "aiServerImageCount"],
+  [/^Too many files/i, "aiServerImageCount"],
+  [/^Rasmlar jami/i, "aiServerImagesTotal"],
+  [/^Rasm [\d.,]+ MB dan katta/i, "aiServerImageSize"],
+  [/^Faqat JPEG, PNG yoki WebP/i, "aiServerImageType"],
+  [/^Rasm fayli buzilgan/i, "aiServerImageBroken"],
+];
+
+const imageLimitView = (detail: string | undefined): AiErrorView | null => {
+  const found = detail ? IMAGE_LIMIT_DETAILS.find(([pattern]) => pattern.test(detail.trim())) : undefined;
+  return found ? editText("aiHttpImageRejectedTitle", found[1]) : null;
+};
+
+/**
  * MO-3: qo'lda yaratish yo'q rol (market operatori — `POST /orders` unga hali yopiq, MO-7). «Qo'lda kiriting»
  * maslahati o'rniga kim hal qilishi aytiladi; «Qo'lda yaratish» tugmasi chiqmaydi (`AiInputPanel`). AI rad etgan
  * matn — «Matnni tahrirlash». 5xx «Qayta urinish» izohi ham «qo'lda kiriting» desiz.
@@ -146,7 +165,8 @@ const httpErrorView = (error: unknown): AiErrorView | null => {
     return { ...manual("aiHttpForbiddenTitle", "aiHttpForbiddenDescription"), detail: serverDetail(error) };
   }
   if (status === 400 || status === 422) {
-    return { ...editText("aiHttpBadRequestTitle", "aiHttpBadRequestDescription"), detail: serverDetail(error) };
+    const detail = serverDetail(error);
+    return imageLimitView(detail) ?? { ...editText("aiHttpBadRequestTitle", "aiHttpBadRequestDescription"), detail };
   }
   return { ...UNKNOWN_PARSE_ERROR, description: "aiParseRequestFailed", detail: serverDetail(error) };
 };

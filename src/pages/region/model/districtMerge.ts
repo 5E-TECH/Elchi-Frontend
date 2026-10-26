@@ -63,6 +63,13 @@ export type MergeErrorDetails = {
   /** `true` — kompensatsiya chala: qo'lda tuzatish kerak (`stranded`). */
   manualFix: boolean;
   stranded: MergeStranded[];
+  /**
+   * Z1c1sNPT — manba tumanga QAYTARILGAN sonlar (`details.rolled_back_orders|users|branches`, jami; boshlanmagan
+   * qadam — 0). Eski backend javobida yo'q — `null` (ro'yxat chizilmaydi).
+   */
+  rolledBack: MergeCounts | null;
+  /** Z1c1sNPT — `manual_fix` da manbaga qaytmagan buyurtmalarning birinchi ≤10 ta ID'si (`stranded_order_ids`). */
+  strandedOrderIds: string[];
   /** Gateway `trace_id` — «Xabarni nusxalash» matni uchun. */
   traceId: string | null;
 };
@@ -201,6 +208,8 @@ const REASONS: ReadonlySet<string> = new Set<MergeErrorReason>([
 ]);
 const asKind = (value: unknown): MergeKind | null =>
   typeof value === "string" && (MERGE_KINDS as readonly string[]).includes(value) ? (value as MergeKind) : null;
+/** `stranded_order_ids` — backend ko'pi bilan 10 ta beradi (to'liq ro'yxat — activity log). */
+const STRANDED_IDS_MAX = 10;
 const asId = (value: unknown): string | null => {
   if (typeof value === "string" && value.trim()) return value.trim();
   return typeof value === "number" && Number.isFinite(value) ? String(value) : null;
@@ -210,6 +219,8 @@ const asId = (value: unknown): string | null => {
  * 409/503 xato javobi (`{ statusCode, message, data: { reason, details }, trace_id }`, tf324cXN) → oyna uchun
  * tafsilot. `details.manual_fix` (har doim boolean) bo'lmasa — `null`: javob mashina o'qiydigan emas (400/404,
  * eski backend), oyna «qaytarildi» deb da'vo qilmaydi. `message` (server matni) o'qilmaydi.
+ * Z1c1sNPT: `details.rolled_back_*` — «… ga qaytarildi» ro'yxati (`rolledBack`), `details.stranded_order_ids` —
+ * qaytmagan buyurtmalar raqamlari (`strandedOrderIds`).
  */
 export const parseMergeErrorDetails = (body: unknown): MergeErrorDetails | null => {
   const root = asRecord(body);
@@ -235,6 +246,14 @@ export const parseMergeErrorDetails = (body: unknown): MergeErrorDetails | null 
     if (!row || !kind) continue;
     stranded.push({ kind, districtId: asId(row.district_id), count: count(row.count) });
   }
+  const rolledBack = parseMergeCounts({
+    orders: details.rolled_back_orders,
+    users: details.rolled_back_users,
+    branches: details.rolled_back_branches,
+  });
+  const strandedOrderIds = Array.isArray(details.stranded_order_ids)
+    ? details.stranded_order_ids.map(asId).filter((id): id is string => id != null).slice(0, STRANDED_IDS_MAX)
+    : [];
   return {
     reason,
     kind: asKind(details.kind),
@@ -242,6 +261,8 @@ export const parseMergeErrorDetails = (body: unknown): MergeErrorDetails | null 
     mismatches,
     manualFix: details.manual_fix,
     stranded,
+    rolledBack,
+    strandedOrderIds,
     traceId: typeof root.trace_id === "string" && root.trace_id ? root.trace_id : null,
   };
 };

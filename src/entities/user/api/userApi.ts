@@ -33,6 +33,8 @@ export interface IUserFilter {
   toDate?: string;
   page?: number;
   limit?: number;
+  /** yA31z7Rr — `GET /users?telegram_linked=true|false` (server filtri; boshqa qiymat — 400). */
+  telegram_linked?: "true" | "false";
 }
 
 type UserListMeta = {
@@ -43,6 +45,11 @@ type UserListMeta = {
   totalMarket?: number;
   totalEmployees?: number;
   totalUsers?: number;
+  /**
+   * 2CBnPAeg — rol bo'yicha sonlar: `role` filtridan tashqari barcha filtrlar (qidiruv, holat, `telegram_linked`,
+   * menejer ko'lami) bilan, sahifalashdan oldin. Eski javobda yo'q — `undefined`.
+   */
+  countsByRole?: Record<string, number>;
 };
 
 type NormalizedUserListResponse = {
@@ -122,9 +129,21 @@ const normalizeUserListResponse = (
         totalUsers: meta.totalUsers === undefined
           ? undefined
           : toNumber(meta.totalUsers),
+        countsByRole: toCountsByRole(meta.countsByRole),
       },
     },
   };
+};
+
+/** `meta.countsByRole` → `{ rol: son }` (son bo'lmagan qiymatlar tashlanadi); obyekt bo'lmasa — `undefined`. */
+const toCountsByRole = (value: unknown): Record<string, number> | undefined => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const counts: Record<string, number> = {};
+  for (const [role, raw] of Object.entries(value as Record<string, unknown>)) {
+    const count = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() ? Number(raw) : NaN;
+    if (Number.isFinite(count) && count >= 0) counts[role] = count;
+  }
+  return counts;
 };
 
 /**

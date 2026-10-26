@@ -51,6 +51,25 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
   }),
 }));
 
+// DtKKY0V8: kuryer «Tuman» — viloyat tumanlari (`GET region/:id`), tarmoqsiz.
+vi.mock("../../../../entities/logistics/api/logisticsApi", () => ({
+  useLogistics: () => ({
+    useGetDistricts: (regionId?: string) => ({
+      data:
+        regionId === "12"
+          ? [
+              { id: 41, name: "Urgut tumani" },
+              { id: 40, name: "Pastdarg'om tumani" },
+            ]
+          : regionId === "22"
+            ? [{ id: 201, name: "Termiz tumani" }]
+            : undefined,
+      isLoading: false,
+      isError: false,
+    }),
+  }),
+}));
+
 vi.mock("../../../../entities/branch", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../../entities/branch")>()),
   useBranches: mocks.useBranches,
@@ -179,7 +198,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
 
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await save(user);
 
@@ -187,7 +206,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
     expect(mocks.createAdmin).toHaveBeenCalledWith({
       name: "Yangi Admin",
       phone_number: "+998901234567",
-      password: "secret12",
+      password: "Secret-2026x",
       salary: 5000000,
       payment_day: 15,
     });
@@ -200,7 +219,7 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await save(user);
 
@@ -217,7 +236,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Menejer");
     await fill(user, container, "fullName", "Menejer Bir");
     await fill(user, container, "phone", "901112233");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await user.click(screen.getByRole("combobox", { name: "Filial" }));
     await user.click(screen.getByRole("option", { name: /Surxondaryo/ }));
     await fill(user, container, "homeRate", "10000");
@@ -228,7 +247,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     expect(mocks.createManager).toHaveBeenCalledWith({
       name: "Menejer Bir",
       phone_number: "+998901112233",
-      password: "secret12",
+      password: "Secret-2026x",
       branch_id: "15",
       tariff_home: 10000,
       tariff_center: 8000,
@@ -241,7 +260,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Menejer");
     await fill(user, container, "fullName", "Menejer Bir");
     await fill(user, container, "phone", "901112233");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await save(user);
 
     expect(await screen.findByText("Filial tanlang")).toBeInTheDocument();
@@ -254,7 +273,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await pickRole(user, "Ro'yxatchi");
     await fill(user, container, "fullName", "Ro'yxatchi Bir");
     await fill(user, container, "phone", "907778899");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await user.click(screen.getByRole("combobox", { name: "Filial" }));
     await user.click(screen.getByRole("option", { name: /HQ-TSHKNT/ }));
     await fill(user, container, "salary", "3000000");
@@ -266,7 +285,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     expect(mocks.createRegistrator).toHaveBeenCalledWith({
       name: "Ro'yxatchi Bir",
       phone_number: "+998907778899",
-      password: "secret12",
+      password: "Secret-2026x",
       salary: 3000000,
       payment_day: 5,
       branch_id: "1",
@@ -325,7 +344,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
     await fill(user, container, "fullName", "Yangi Admin");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "5000000");
     await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
     await user.click(screen.getByRole("option", { name: "1" }));
@@ -352,7 +371,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await fill(user, container, "fullName", "Azamat To'g'ayev");
     await fill(user, container, "phone", "946273051");
-    await fill(user, container, "password", "urgut2026");
+    await fill(user, container, "password", "urgut-2026x");
     await fill(user, container, "homeRate", "20000");
     await fill(user, container, "centerRate", "15000");
     await save(user);
@@ -361,7 +380,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     expect(mocks.createCourier).toHaveBeenCalledWith({
       name: "Azamat To'g'ayev",
       phone_number: "+998946273051",
-      password: "urgut2026",
+      password: "urgut-2026x",
       branch_id: "44",
       tariff_home: 20000,
       tariff_center: 15000,
@@ -384,7 +403,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     expect(screen.queryByRole("combobox", { name: "Filial" })).not.toBeInTheDocument();
     await fill(user, container, "fullName", "Kamola Rustamova");
     await fill(user, container, "phone", "938061952");
-    await fill(user, container, "password", "secret12");
+    await fill(user, container, "password", "Secret-2026x");
     await fill(user, container, "salary", "4200000");
     await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
     await user.click(screen.getByRole("option", { name: "25" }));
@@ -392,6 +411,116 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await waitFor(() => expect(mocks.createRegistrator).toHaveBeenCalledTimes(1));
     expect(mocks.createRegistrator).toHaveBeenCalledWith(expect.objectContaining({ branch_id: "44", payment_day: 25 }));
+  });
+});
+
+describe("CreateUserForm — kuryer «Ish hududi» (DtKKY0V8, maketlar `*-users-create-courier-district`)", () => {
+  const REGIONAL_BRANCHES = [
+    { ...mocks.branches[0], region: { id: "11", name: "Toshkent shahri" } },
+    { ...mocks.branches[1], region: { id: "22", name: "Surxondaryo viloyati" } },
+    { ...mocks.branches[1], id: "17", name: "Chilonzor punkt", code: "PNK", type: "PICKUP" as const, level: 2 },
+  ];
+
+  const fillCourier = async (user: User, container: HTMLElement) => {
+    await fill(user, container, "fullName", "Sardor Qodirov");
+    await fill(user, container, "phone", "931184625");
+    await fill(user, container, "password", "kuryer2026");
+    await fill(user, container, "homeRate", "20000");
+    await fill(user, container, "centerRate", "15000");
+  };
+
+  it("menejer: faqat «Tuman» — o'z filiali viloyati tumanlari; tanlansa `district_id` yuboriladi", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: managerState("REGIONAL") });
+
+    expect(screen.getByText("Ish hududi")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Filial" })).not.toBeInTheDocument();
+    const district = screen.getByRole("combobox", { name: "Tuman" });
+    expect(district).toHaveAccessibleDescription("Ixtiyoriy · faqat Samarqand viloyati tumanlari, qidirib tanlanadi");
+    await user.click(district);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Pastdarg'om tumani",
+      "Urgut tumani",
+    ]);
+    await user.click(screen.getByRole("option", { name: "Pastdarg'om tumani" }));
+
+    await fillCourier(user, container);
+    await save(user);
+
+    await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
+    expect(mocks.createCourier).toHaveBeenCalledWith(
+      expect.objectContaining({ branch_id: "44", district_id: "40" }),
+    );
+  });
+
+  it("superadmin: Filial (ixtiyoriy, PICKUP yo'q) → Viloyat → Tuman; filial almashsa tuman tozalanadi", async () => {
+    mocks.useBranches.mockReturnValue({ data: { data: REGIONAL_BRANCHES }, isLoading: false });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+    await pickRole(user, "Kuryer");
+
+    const district = screen.getByRole("combobox", { name: "Tuman" });
+    expect(district).toBeDisabled();
+    expect(district).toHaveAccessibleDescription("Avval filialni tanlang — tumanlar filial viloyatidan olinadi");
+    expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("—");
+
+    await user.click(screen.getByRole("combobox", { name: "Filial" }));
+    const options = screen.getAllByRole("option").map((option) => option.textContent ?? "");
+    expect(options.some((label) => label.includes("Chilonzor punkt"))).toBe(false);
+    await user.click(screen.getByRole("option", { name: /Surxondaryo/ }));
+
+    expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("Surxondaryo viloyati");
+    await user.click(screen.getByRole("combobox", { name: "Tuman" }));
+    await user.click(screen.getByRole("option", { name: "Termiz tumani" }));
+
+    await fillCourier(user, container);
+    await save(user);
+
+    await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
+    expect(mocks.createCourier).toHaveBeenCalledWith({
+      name: "Sardor Qodirov",
+      phone_number: "+998931184625",
+      password: "kuryer2026",
+      branch_id: "15",
+      district_id: "201",
+      tariff_home: 20000,
+      tariff_center: 15000,
+    });
+
+    // Filial almashsa — tuman tozalanadi (boshqa viloyat tumani 400 bo'lardi).
+    await user.click(screen.getByRole("combobox", { name: "Filial" }));
+    await user.click(screen.getByRole("option", { name: /Bosh ofis/ }));
+    expect(screen.getByRole("combobox", { name: "Tuman" })).toHaveValue("");
+  });
+
+  it("superadmin: filialsiz — avvalgidek HQ (`branch_id` va `district_id` yuborilmaydi)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+    await pickRole(user, "Kuryer");
+    await fillCourier(user, container);
+    await save(user);
+
+    await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
+    const payload = mocks.createCourier.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("branch_id");
+    expect(payload).not.toHaveProperty("district_id");
+  });
+
+  it("400 «Tuman topilmadi» — «Tuman» ostida va xabarda i18n matni, sahifada qoladi", async () => {
+    mocks.createCourier.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 400, data: { statusCode: 400, message: "Tuman topilmadi" } },
+    });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: managerState("REGIONAL") });
+    await user.click(screen.getByRole("combobox", { name: "Tuman" }));
+    await user.click(screen.getByRole("option", { name: "Urgut tumani" }));
+    await fillCourier(user, container);
+    await save(user);
+
+    const text = "Tuman topilmadi — ro'yxatdan qayta tanlang";
+    await waitFor(() => expect(screen.getAllByText(text).length).toBe(2));
+    expect(mocks.navigate).not.toHaveBeenCalled();
   });
 });
 

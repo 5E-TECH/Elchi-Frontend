@@ -176,6 +176,18 @@
       "pushDisabled": "Push o'chirilgan",
       "appOpen": "Ilova ochiq edi",
       "quietHours": "Tungi tinch vaqt",
+      "pushExpired": "Push obunasi eskirgan",
+      "pushTooLarge": "Xabar push uchun juda katta",
+      "pushRateLimited": "Push xizmati so'rovlarni chekladi",
+      "pushRejected": "Push xizmati rad etdi",
+      "pushServiceError": "Push xizmatida xatolik",
+      "networkError": "Tarmoq xatosi",
+      "smsNoConsent": "Reklama SMS'ga rozilik yo'q",
+      "smsFanout": "SMS auditoriya chegarasidan oshdi",
+      "smsOptOut": "Bekor qilish havolasi sozlanmagan",
+      "campaignCancelled": "Kampaniya bekor qilindi",
+      "smsRejected": "Operator rad etdi",
+      "smsExpired": "Operator muddatida yetkaza olmadi",
       "noSubscription": "Push obunasi yo'q",
       "notEligible": "Kanal ulanmagan",
       "failedTelegram": "Telegram xatosi",
@@ -497,7 +509,9 @@
       "pushHint": "{{value}} ta foydalanuvchida yoqilgan",
       "pushHintUnknown": "Bildirishnomani yoqqan foydalanuvchilarga",
       "telegramOff": "Kampaniyada yo'q",
-      "hint": "Auditoriya bo'yicha xabar doim kampaniya sifatida navbat orqali ketadi; reklama tungi taqiq bilan. Telegram — market guruhlari uchun, kampaniyada yo'q."
+      "hint": "Auditoriya bo'yicha xabar doim kampaniya sifatida navbat orqali ketadi; reklama tungi taqiq bilan. SMS — doim reklama: faqat rozilik bergan raqamlarga, kunlik limit doirasida. Telegram — market guruhlari uchun, kampaniyada yo'q.",
+      "smsHint": "{{value}} ta raqamda rozilik bor",
+      "smsHintUnknown": "Reklama — faqat rozilik bergan raqamlarga"
     },
     "previewNote": "Darhol · kampaniya · {{value}} ta qabul qiluvchi",
     "disabled": {
@@ -541,7 +555,11 @@
       "forbidden": "Kampaniya yuborishga ruxsatingiz yo'q.",
       "tooMany": "So'rovlar juda ko'p — birozdan keyin qayta urinib ko'ring.",
       "server": "Serverda xatolik yuz berdi — birozdan keyin qayta urinib ko'ring.",
-      "generic": "Kampaniyani yaratib bo'lmadi — birozdan keyin qayta urinib ko'ring."
+      "generic": "Kampaniyani yaratib bo'lmadi — birozdan keyin qayta urinib ko'ring.",
+      "smsDisabled": "SMS o'chiq yoki sozlanmagan — kampaniya yaratilmadi. SMS kanalisiz yuboring. Hech kimga yuborilmadi.",
+      "smsOptOut": "Reklama SMS uchun bekor qilish havolasi sozlanmagan — kampaniya yaratilmadi. Hech kimga yuborilmadi.",
+      "smsFanout": "SMS uchun auditoriya {{max}} tadan oshmasligi kerak — nishonni toraytiring yoki SMS kanalisiz yuboring. Hech kimga yuborilmadi.",
+      "smsFanoutUnknown": "Auditoriya SMS chegarasidan katta — nishonni toraytiring yoki SMS kanalisiz yuboring. Hech kimga yuborilmadi."
     },
     "progress": {
       "title": "Kampaniya",
@@ -631,6 +649,7 @@
       "orders": "{{range}} buyurtma",
       "paused": "Tungi taqiq — {{time}} da davom etadi",
       "quietShifted": "Tungi taqiq tufayli surildi",
+      "requestedShifted": "{{time}} da so'ralgan, tungi taqiq tufayli surildi",
       "sent": "{{sent}} yuborildi",
       "sentWithFailed": "{{sent}} yuborildi · {{failed}} xato",
       "progress": "{{done}} / {{total}}",
@@ -676,6 +695,31 @@
       "pendingCaption": "{{value}} ta jarayonda",
       "failed": "Xato",
       "skipped": "O'tkazib yuborildi",
+      "smsCampaign": "SMS kampaniya",
+      "smsReportLabel": "SMS kampaniya hisoboti — {{date}}",
+      "delivered": "Yetkazildi",
+      "deliveredByDlr": "operator hisobotiga ko'ra",
+      "deliveredAwaiting": "operator hisoboti hali kelmagan",
+      "deliveredNoDlr": "bu kanallarda yetkazish hisoboti yo'q",
+      "cost": "Narx",
+      "costFree": "taxminiy · bepul kanallar",
+      "costEstimate": "taxminiy · faktik summa — provayder hisobidan",
+      "costNoTariff": "taxminiy · tarif sozlanmagan",
+      "sms": {
+        "title": "SMS",
+        "messages": "Xabarlar",
+        "parts": "Bo'laklar",
+        "partsValue": "{{total}} ta · 1 xabar = {{range}} bo'lak",
+        "encoding": "Kodlash",
+        "encodingMixed": "Aralash (GSM-7 va UCS-2)",
+        "dlr": "Operator hisoboti",
+        "dlrValue": "Yetkazildi {{delivered}} · Xato {{failed}} · Kutilmoqda {{awaiting}}",
+        "dlrNone": "Hali kelmagan · kutilmoqda {{value}} ta",
+        "tariff": "1 bo'lak narxi",
+        "noTariff": "Tarif sozlanmagan",
+        "costOfSent": "Yuborilganlar narxi",
+        "costNote": "Narx taxminiy: tarif × bo'laklar. Faktik summa — provayder hisobidan."
+      },
       "none": "yo'q",
       "inChannel": "{{channel}} kanalida",
       "inChannels": "{{value}} ta kanalda",
@@ -698,6 +742,25 @@
       "undeliveredPages": "Yetkazilmaganlar sahifalari",
       "failureFailed": "{{channel}} — xato",
       "failureSkipped": "{{channel}} — o'tkazildi"
+    },
+    "sms": {
+      "title": "SMS reklama sifatida ketadi",
+      "split": "Rozilik bor: {{recipients}} ta · Rozilik yo'q: {{blocked}} ta · Raqam noto'g'ri: {{invalid}} ta",
+      "splitInexact": "Auditoriya katta — rozilik bo'yicha son aniq hisoblanmadi",
+      "quiet": "Faqat rozilik bergan raqamlarga ketadi. {{start}}–{{end}} oralig'ida yuborilmaydi — {{end}} ga suriladi.",
+      "quietUnknown": "Faqat rozilik bergan raqamlarga ketadi. Tungi taqiq soatlarida yuborilmaydi — ertalabga suriladi.",
+      "costLater": "Narx tasdiqlash oynasida yakuniy matn bilan hisoblanadi.",
+      "recipients": "SMS: rozilik bor",
+      "blockedNoConsent": "SMS: rozilik yo'q",
+      "invalidPhone": "SMS: raqam noto'g'ri",
+      "cost": "SMS taxminiy narxi",
+      "costValue": "{{value}} ({{parts}} bo'lak)",
+      "blocked": {
+        "disabled": "SMS o'chiq yoki sozlanmagan — SMS kanalini olib tashlang.",
+        "optOut": "Reklama SMS uchun bekor qilish havolasi sozlanmagan — SMS kanalisiz yuboring.",
+        "fanout": "SMS uchun auditoriya {{max}} tadan oshmasligi kerak — nishonni toraytiring yoki SMS kanalisiz yuboring.",
+        "fanoutUnknown": "Auditoriya SMS chegarasidan katta — nishonni toraytiring yoki SMS kanalisiz yuboring."
+      }
     }
   }
 }

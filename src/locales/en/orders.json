@@ -21,6 +21,15 @@
       "paidHint": "Paid and partly paid orders",
       "cancelledHint": "Cancelled and cancelled — sent orders"
     },
+    "cancelStage": {
+      "label": "By return stage",
+      "all": "All",
+      "courier": "With courier",
+      "in_transit": "In transit",
+      "branch": "At branch",
+      "hq": "At HQ",
+      "market": "Handed over"
+    },
     "columns": {
       "order": "Order",
       "customer": "Customer",
@@ -425,10 +434,12 @@
   "createTotalHint": "Total amount to collect from the customer",
   "createTodayAside": "Selected market orders",
   "createTodayDescription": "{{market}} · today",
+  "createTodayDescriptionNoMarket": "Today",
   "createTodayCount": "{{count}}",
   "createTodayTotal": "Total {{count}}",
   "createTodayLinkAria": "Today's new orders, {{count}}",
   "createTodayLinkSub": "{{market}} · today · {{count}}",
+  "createTodayLinkSubNoMarket": "Today · {{count}}",
   "createTodayEmpty": "No new orders today",
   "orderCreatedMarketRole": "Order created. You can continue adding new orders for your products.",
   "orderCreatedForMarket": "Order created. You can add another order for this market.",
@@ -496,7 +507,15 @@
       "destination_branch": "Destination branch",
       "target_branch": "Destination branch",
       "from_label": "From",
-      "to_label": "To"
+      "to_label": "To",
+      "from_holder_type": "From",
+      "to_holder_type": "To",
+      "source_type": "Sender",
+      "source_user_role": "Sender role",
+      "source_courier_name": "Sending courier",
+      "source_courier": "Sending courier",
+      "source_user": "Sending staff member",
+      "holder_courier": "Holder courier"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} accepted the order at HQ",
@@ -514,7 +533,10 @@
       "returnedToMarketByActor": "{{actor}} handed the order to {{market}} — {{method}}",
       "createdByActor": "{{actor}} created the order",
       "cancelledPostReceivedAtPlace": "{{actor}} received the cancelled order — {{place}}",
-      "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored"
+      "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored",
+      "postReceived": "{{actor}} received the post",
+      "postReceivedAtBranch": "{{actor}} received the post — {{branch}}",
+      "dispatchToNamedBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}}"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -525,6 +547,12 @@
       "manager": "Manager",
       "market": "Market",
       "system": "System"
+    },
+    "holderValue": {
+      "hq": "Head office (HQ)",
+      "branch": "Branch",
+      "courier": "Courier",
+      "market": "Market"
     },
     "status": {
       "created": "Created",
@@ -616,11 +644,13 @@
   "aiImageCount": "{{count}}/{{max}} photos",
   "aiJumpToUnready": "Incomplete ({{count}})",
   "aiImagePreparing": "Preparing {{current}}/{{total}}...",
-  "aiTooManyImages": "At most {{max}} photos. The first ones were accepted.",
+  "aiTooManyImages": "You can send at most {{max}} photos. The first ones were accepted.",
   "aiImageTooLarge": "file is too large (over 30 MB)",
-  "aiImageUnsupported": "only photos can be uploaded (JPG, PNG, WEBP)",
+  "aiImageUnsupported": "only JPEG, PNG or WebP photos",
   "aiImageDecodeFailed": "could not read the photo — choose another one",
   "aiImageHeic": "HEIC photo — save it as JPEG on your phone or choose another one",
+  "aiImageOverLimit": "photo is larger than {{imageSize}} MB — choose a smaller one",
+  "aiImagesTotalOverLimit": "Photos must not exceed {{totalSize}} MB in total — the ones that did not fit were not added.",
   "aiRemoveImage": "Remove photo: {{name}}",
   "aiParseButton": "Analyze",
   "aiRetryParse": "Analyze again",
@@ -658,6 +688,15 @@
   "aiAllProducts": "All products",
   "aiPhoneRead": "AI read the number as: {{value}}",
   "aiRegionGuessed": "Region is not in the text — AI guessed it, please check",
+  "aiWarning": {
+    "unclear": "AI could not read this clearly — please check",
+    "ambiguous": "This can be read in more than one way — please check",
+    "conflict": "The text has conflicting values — please check",
+    "listLabel": "AI warnings",
+    "withField": "{{field}}: {{reason}}",
+    "fieldReplacement": "Replacement order",
+    "fieldRegion": "Region"
+  },
   "aiItems": "Products",
   "aiReadAs": "AI read",
   "aiRemoveItem": "Remove product: {{name}}",
@@ -704,6 +743,12 @@
   "aiHttpTooLargeDescription": "Use fewer photos or choose a different photo.",
   "aiHttpBadRequestTitle": "Invalid data",
   "aiHttpBadRequestDescription": "Check the text and photos and send again.",
+  "aiHttpImageRejectedTitle": "Photo was not accepted",
+  "aiServerImageCount": "You can send at most {{max}} photos. Remove the extra ones.",
+  "aiServerImageSize": "A photo is larger than {{imageSize}} MB — choose a smaller one.",
+  "aiServerImagesTotal": "Photos must not exceed {{totalSize}} MB in total — remove some of them.",
+  "aiServerImageType": "Only JPEG, PNG or WebP photos can be sent.",
+  "aiServerImageBroken": "The photo file is damaged or unreadable — choose another photo.",
   "aiHttpForbiddenTitle": "No permission",
   "aiHttpForbiddenDescription": "You are not allowed to create orders with AI. Enter the order manually.",
   "aiCreateFailedWith": "The order was not created: {{detail}}",
@@ -851,6 +896,7 @@
     "scopeAll": "All customers · order count for {{market}}",
     "scopeMarket": "{{market}} customers · order count for this store",
     "scopeOwn": "Your customers · order count with you only",
+    "extraNumberMatch": "Extra number:",
     "ordersCount_one": "{{value}} order",
     "ordersCount_other": "{{value}} orders",
     "newCount_one": "{{value}} new",

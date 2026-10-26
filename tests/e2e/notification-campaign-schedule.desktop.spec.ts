@@ -82,6 +82,10 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     await expect(history).toContainText("2 040 / 4 860");
     await expect(history).toContainText("210 yuborildi · 2 xato");
     await expect(history).toContainText("Xodim: Kuryer");
+    // N10 (fb4qy6bd): so'ralgan vaqt va tungi taqiq belgisi (maket: «18:40 da so'ralgan, tungi taqiq»).
+    await expect(history.getByRole("row").filter({ hasText: "Hafta oxiri" })).toContainText(
+      "Ertaga, 09:00bugun, 18:40 da so'ralgan, tungi taqiq tufayli surildi",
+    );
     await expect(history).toContainText("6 tadan 1–6");
     // Bekor qilingan va xato kampaniyada chiziq — yuborilganlar ulushi (backend `progress_pct` = 100 emas).
     await expect(history.getByRole("progressbar", { name: "«Bayram kunlari ish tartibi» — yuborildi" })).toHaveAttribute(
@@ -124,6 +128,14 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     await expect(report).toContainText("Push — xato");
     await expect(report).toContainText("Push yetkazilmadi");
     await expect(report).not.toContainText("raw provider text");
+    // H7kpCman: «Yetkazildi» — DLR yo'q → «—» (0 emas); narx yonida «taxminiy»; SMS bloki yo'q (`sms: null`).
+    const stats = report.getByTestId("campaign-report-stats");
+    await expect(stats).toContainText("Yetkazildi—bu kanallarda yetkazish hisoboti yo'q");
+    await expect(stats).toContainText("taxminiy · bepul kanallar");
+    await expect(report.getByTestId("campaign-report-sms")).toHaveCount(0);
+    // N9: maskalangan telefon va `reason_code` dan sabab.
+    await expect(report).toContainText("Kuryer · ***7400");
+    await expect(report).toContainText("Push obunasi eskirgan");
     await shot(page, "desktop-report");
 
     const download = page.waitForEvent("download");

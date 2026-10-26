@@ -25,7 +25,7 @@ import { UserDetailView } from "../../../widgets/user-detail/ui/UserDetailView";
 
 /**
  * `/profile` (dizayn v2, maketlar `common-profile`, `common-profile-password-dialog`): ma'lumot kartasi, maosh
- * (faqat maoshli xodimda), parol oynasi (≥ 4 belgi, takror mos; saqlangach boshqa qurilmalar chiqadi, shu qurilma
+ * (faqat maoshli xodimda), parol oynasi (≥ 8 belgi — NDmZMzCP, takror mos; saqlangach boshqa qurilmalar chiqadi, shu qurilma
  * qoladi — «Sessiyalar» qayta so'raladi) va tahrirlash oynasi
  * (faqat o'zgargan maydonlar). Shuningdek o'z Telegram'ini botga ulash (BreQwksC) va marketda «Guruhda mijoz
  * ismi va telefoni» kaliti (ysBqD9Nx) — ikkalasi faqat shu sahifada (o'z profili).
@@ -137,7 +137,7 @@ describe("Profil — parolni o'zgartirish", () => {
     await userEvent.type(second, "abc");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     expect(
-      within(dialog).getByText("Parol kamida 4 ta belgidan iborat bo'lsin"),
+      within(dialog).getByText("Parol kamida 8 ta belgidan iborat bo'lsin"),
     ).toBeInTheDocument();
 
     await userEvent.clear(first);
@@ -193,8 +193,8 @@ describe("Profil — parolni o'zgartirish", () => {
     });
     const dialog = await openDialog();
     const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
-    await userEvent.type(first, "1111");
-    await userEvent.type(second, "1111");
+    await userEvent.type(first, "11111111");
+    await userEvent.type(second, "11111111");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
     expect(await within(dialog).findByText("Parol juda oddiy")).toBeInTheDocument();

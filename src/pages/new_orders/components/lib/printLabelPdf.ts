@@ -3,12 +3,9 @@ import type { ApiOrder } from "../../model/apiOrder";
 import pdfLogoUrl from "../../../../shared/assets/pdflogo.svg";
 import pdfLogoFallbackUrl from "../../../../shared/assets/logoo.png";
 import i18n from "../../../../i18n";
+import { getReceiptContactPhone } from "./receiptContact";
 
 type LabelOrder = ApiOrder & {
-  market?: {
-    name?: string | null;
-    phone_number?: string | null;
-  } | null;
   operator?: string | null;
   logist?: {
     name?: string | null;
@@ -169,15 +166,8 @@ const getExtraPhone = (order: LabelOrder) => {
 // Ko'cha/uy manzili (viloyat+tumandan alohida) — getAddress viloyat+tuman beradi.
 const getStreet = (order: LabelOrder) => safe(order.address, "");
 
-// "Muammo bo'lsa" aloqa raqami: avval market telefoni, keyin logist/kuryer.
-// Menejer buyurtmalarida kuryer obyekti yo'q, shuning uchun market asosiy fallback.
-const getContactPhone = (order: LabelOrder) => {
-  const phone =
-    safe(order.market?.phone_number, "") ||
-    safe(order.logist?.phone_number, "") ||
-    safe(order.courier?.phone_number, "");
-  return phone ? formatPhoneNumber(phone) : "-";
-};
+// "Muammo bo'lsa" aloqa raqami (1mOjtOVC): operator telefoni(lari), u bo'lmasa — market, keyin logist/kuryer.
+const getContactPhone = (order: LabelOrder) => getReceiptContactPhone(order) || "-";
 
 const ellipsize = (pdf: jsPDF, text: string, maxWidth: number) => {
   if (pdf.getTextWidth(text) <= maxWidth) return text;

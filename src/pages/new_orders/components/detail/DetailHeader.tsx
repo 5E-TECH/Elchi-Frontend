@@ -76,7 +76,10 @@ export const DetailHeader = ({
   const stage = order && !isCourier ? resolveCancelReturnStage(order) : null;
   const place = stage ? placeText(resolveCancelReturnPlace(order, stage, { handoverAt })) : null;
   const stageLine = stage
-    ? [place?.name, place?.extra, stage === "market" ? handoverMethod : null].filter(Boolean).join(" · ")
+    ? // Usul: tarixdan (sabab bilan) yoki BG2 `cancel_return.handover_method` dan.
+      [place?.name, place?.extra, stage === "market" ? (handoverMethod ?? place?.method) : null]
+        .filter(Boolean)
+        .join(" · ")
     : "";
 
   const meta = order ? (

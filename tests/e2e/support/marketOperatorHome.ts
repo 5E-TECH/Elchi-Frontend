@@ -3,8 +3,9 @@ import { expect, type Page, type Route } from "@playwright/test";
 /**
  * MO-2 — market operatori qobig'i, bosh sahifasi (`/`, `MarketDashboardPage` operator rejimida) va «Daromadim»
  * (`/my-earnings`) uchun soxta backend. `analytics/dashboard` — operatorning marketi bo'yicha (backend
- * `resolveRequesterForMarket`); `auth/my-profile` — `market_id` va komissiya. Yozish so'rovlari taqiqlangan
- * (`leaked`), jonli kanal yopiladi.
+ * `resolveRequesterForMarket`); `auth/my-profile` — `market_id` va komissiya; `orders/extra-cost-approvals` — o'z
+ * marketining kutilayotgan so'rovi (6QLF7nst: operatorga faqat o'qish). Yozish so'rovlari taqiqlangan (`leaked`),
+ * jonli kanal yopiladi.
  */
 const ORIGIN = "http://127.0.0.1:4194";
 const cors = {
@@ -27,6 +28,24 @@ const market = (id: string, name: string, total: number, sold: number) => ({
   successful_orders: sold,
   success_rate: (sold / total) * 100,
 });
+
+/** 6QLF7nst — kutilayotgan qo'shimcha xarajat so'rovi (backend 0Ngp09FG shakli: `order_number`, `requested_by`). */
+const PENDING_APPROVALS = [
+  {
+    id: "501",
+    order_id: "76",
+    order_number: "EL-100076",
+    market_id: OPERATOR_MARKET_ID,
+    requested_by_user_id: "301",
+    requested_by_role: "courier",
+    requested_by: { id: "301", name: "Ali Kuryer" },
+    action: "sell",
+    amount: 25_000,
+    status: "pending",
+    proof_file_keys: [],
+    createdAt: new Date().toISOString(),
+  },
+];
 
 const DASHBOARD = {
   myStat: { totalOrders: 38, soldOrders: 24, canceledOrders: 4, profit: 3_450_000, successRate: 63.16, inProgress: 10 },
@@ -80,6 +99,9 @@ export const mockMarketOperator = async (page: Page, { commission = { type: "per
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 2 }));
     if (path === "analytics/dashboard" && method === "GET") return reply(route, wrap(DASHBOARD));
+    if (path === "orders/extra-cost-approvals" && method === "GET") {
+      return reply(route, wrap(url.searchParams.get("status") === "pending" ? PENDING_APPROVALS : []));
+    }
     if (method !== "GET") {
       mock.leaked.push(`${method} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
@@ -115,18 +137,27 @@ export const openOperatorEarnings = async (page: Page, options: MockOptions = {}
 
 /**
  * Sizish to'sig'i — ruxsat ro'yxati (allowlist): operator bosh sahifasi va «Daromadim» faqat o'z profili, o'z marketi
- * analitikasi (`analytics/dashboard`) va qobiq hisoblagichini so'raydi. Boshqa har qanday GET (kompaniya analitikasi,
- * `region/stats`, xarajat tasdiqlari — operatorga 403, moliya, kassa, investor, buyurtmalar, foydalanuvchilar, market
- * egasining operatorlar ro'yxati va h.k.) — sizish; catch-all mock unga 200 bersa ham test yiqiladi.
+ * analitikasi (`analytics/dashboard`), o'z marketining xarajat so'rovlari (6QLF7nst — faqat o'qish) va qobiq
+ * hisoblagichini so'raydi. Boshqa har qanday GET (kompaniya analitikasi, `region/stats`, moliya, kassa, investor,
+ * buyurtmalar, foydalanuvchilar, market egasining operatorlar ro'yxati va h.k.) — sizish; catch-all mock unga 200
+ * bersa ham test yiqiladi.
  */
-const ALLOWED_GET = new Set(["auth/my-profile", "analytics/dashboard", "notifications/inbox/unread-count"]);
+const ALLOWED_GET = new Set([
+  "auth/my-profile",
+  "analytics/dashboard",
+  "orders/extra-cost-approvals",
+  "notifications/inbox/unread-count",
+]);
 /** Ruxsat ro'yxatidagi yo'l ham bosh sahifa bo'lmasa so'ralmasligi kerak (`/my-earnings` faqat profilni o'qiydi). */
-const HOME_ONLY_GET = new Set(["analytics/dashboard"]);
+const HOME_ONLY_GET = new Set(["analytics/dashboard", "orders/extra-cost-approvals"]);
 
 export const expectNoLeakRequests = (mock: MarketOperatorMock, { home = true }: { home?: boolean } = {}) => {
   // Yozuvchi ishlayotganini tasdiqlash (aks holda tekshiruv bo'sh ro'yxat ustida «o'tib» ketadi).
   expect(mock.requested).toContain("auth/my-profile");
-  if (home) expect(mock.requested).toContain("analytics/dashboard");
+  if (home) {
+    expect(mock.requested).toContain("analytics/dashboard");
+    expect(mock.requested).toContain("orders/extra-cost-approvals");
+  }
   expect(mock.requested.filter((path) => !ALLOWED_GET.has(path))).toEqual([]);
   if (!home) expect(mock.requested.filter((path) => HOME_ONLY_GET.has(path))).toEqual([]);
   expect(mock.leaked).toEqual([]);
@@ -150,5 +181,10 @@ export const expectOnlyOperatorOrderLinks = async (page: Page) => {
     .evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
   const orderLinks = hrefs.filter((href) => /^\/(orders|new-orders)/.test(href));
   expect(orderLinks).toContain("/new-orders/create");
-  expect(orderLinks.filter((href) => !/^\/orders(\?|$)/.test(href) && href !== "/new-orders/create")).toEqual([]);
+  // `/orders/edit/:id` — buyurtma tafsiloti (MO-3: operatorga ochiq; xarajat so'rovidagi raqam havolasi).
+  expect(
+    orderLinks.filter(
+      (href) => !/^\/orders(\?|$)/.test(href) && !/^\/orders\/edit\/\d+$/.test(href) && href !== "/new-orders/create",
+    ),
+  ).toEqual([]);
 };

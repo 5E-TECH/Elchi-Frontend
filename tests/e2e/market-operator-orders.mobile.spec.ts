@@ -52,6 +52,12 @@ test("⭐ 390: «Yaratish» katagi → «Qo'lda · AI bilan» (MO-7), AI kartala
   await expect(bottomNav(page).getByRole("link", { name: "Yaratish" })).toHaveAttribute("aria-current", "page");
   // Qo'lda forma telefonda sig'adi, keyin «AI bilan».
   await expect(page.getByLabel(/^Mijoz ismi/)).toBeVisible();
+  // nCAFnqIe (N12): telefonda ro'yxat o'rniga havola-karta — «Buyurtmalar» ning «Yangi» tabiga.
+  const todayLink = page.getByRole("link", { name: "Bugungi yangi buyurtmalar, 1 ta" });
+  await expect(todayLink).toBeVisible();
+  await expect(todayLink).toHaveAttribute("href", "/orders?status=new");
+  await expect(todayLink).toContainText("Baraka Shop · bugun · 1 ta");
+  await expect(page.getByRole("region", { name: "Yangi buyurtmalar" })).toBeHidden();
   await expectNoHorizontalOverflow(page);
   await page.getByTestId("create-mode-tabs").getByRole("radio", { name: /AI bilan/ }).click();
 

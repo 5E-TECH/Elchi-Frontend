@@ -8,10 +8,10 @@ import type { RootState } from "../../../app/config/store";
 import {
   BATCH_STATUS_TONE,
   useBatchDetail,
+  useBatchHistory,
   useBatchRemainingDetail,
   useSendTransferBatch,
 } from "../../../entities/batch";
-import { useBranchDetail } from "../../../entities/branch";
 import type { PostOrder } from "../../../entities/mails";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
@@ -60,10 +60,11 @@ const READ_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "market
 const READ_COLUMNS_NO_MARKET: readonly OrdersTableColumn[] = ["order", "customer", "address", "delivery", "status", "amount"];
 const READ_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["market", "delivery"];
 
-/** Filial nomi: ro'yxatda bor bo'lsa, aks holda (`—`, «Filial #12») — `null`. */
+/** Filial nomi: javobda bor bo'lsa, aks holda (`—`, «Filial #12») — `null`. */
 const branchName = (name: string | null | undefined) => (isPlaceholderBranchName(name) ? null : knownText(name));
-const branchLookupId = (branch: { id: string; name: string } | undefined) =>
-  branch && isPlaceholderBranchName(branch.name) ? (knownText(branch.id) ?? undefined) : undefined;
+
+/** `GET transfer-batches/:id/history` ruxsati (backend `@Roles` — logist yo'q). */
+const HISTORY_ROLES = new Set(["superadmin", "admin", "manager", "registrator", "branch"]);
 
 /**
  * PAKET TAFSILOTI — `/batches/:id` (superadmin, admin, menejer HQ · PICKUP · HYBRID; registrator ham — jo'natish
@@ -84,6 +85,9 @@ const branchLookupId = (branch: { id: string; name: string } | undefined) =>
  * «6 / 9 ta tanlandi», ro'yxatda «Bekor qilish» va «Bu paketda yo'q · tanlanmadi»); yuborish — sahifadagi tugma.
  * Faqat o'qish rejimida maqsad yo'q (markaziy tugma universal `/scan` ni ochadi).
  * Ma'lumot: `GET transfer-batches/:id` va `…/remaining` (buyurtmalar — qolganlari, bo'lmasa hammasi; v1 dagidek).
+ * Filial nomlari (3HKvAyhm) — tafsilotdagi `source_branch` / `destination_branch` `{ id, name }` dan, BARCHA rollarda
+ * (menejer ham); `GET branches/:id` chaqirilmaydi. «Tarix» — `GET transfer-batches/:id/history` (eng eskisi birinchi
+ * keladi, maketdagidek eng yangisi tepada ko'rsatiladi), o'z yuklanish / xato holati bilan — sahifani kutdirmaydi.
  */
 const BatchDetailPage = () => {
   const { t, i18n } = useTranslation(["batches", "newOrders", "mails", "common"]);
@@ -102,13 +106,14 @@ const BatchDetailPage = () => {
   const canSendToMainBranch = batch?.status === "new" && (role === "manager" || role === "registrator");
   const isReturn = batch?.direction === "return";
 
-  // Filial nomlari tafsilotda kelmasa (`destination_branch_id` xolos) — `GET branches/:id` dan. Bu endpoint faqat
-  // superadmin va admin uchun (backend `@Roles(SUPERADMIN, ADMIN)`): menejer/registrator so'rov yubormaydi (403 bo'lardi).
-  const canLookupBranch = role === "superadmin" || role === "admin";
-  const fromQuery = useBranchDetail(canLookupBranch ? branchLookupId(batch?.from_branch) : undefined);
-  const toQuery = useBranchDetail(canLookupBranch ? branchLookupId(batch?.to_branch) : undefined);
-  const fromName = branchName(batch?.from_branch.name) ?? branchName(fromQuery.data?.name);
-  const toName = branchName(batch?.to_branch.name) ?? branchName(toQuery.data?.name);
+  // Filial nomlari — tafsilot javobidan (`source_branch` / `destination_branch`, 3HKvAyhm; `null` — filial topilmadi
+  // → «—»). `GET branches/:id` (faqat SA/admin) endi chaqirilmaydi.
+  const fromName = branchName(batch?.from_branch.name);
+  const toName = branchName(batch?.to_branch.name);
+
+  // «Tarix» — alohida so'rov (logistga yopiq: unda tafsilot javobidagi `history`, odatda bo'sh).
+  const canReadHistory = HISTORY_ROLES.has(String(role ?? ""));
+  const historyQuery = useBatchHistory(id, { enabled: canReadHistory });
 
   const rawOrders = useMemo(
     () => mapBatchOrdersToPostOrders(remainingBatch ?? batch),
@@ -346,6 +351,9 @@ const BatchDetailPage = () => {
     </>
   );
 
+  // Backend — xronologik (eng eskisi birinchi); maket — eng yangisi tepada.
+  const historyItems = canReadHistory ? [...(historyQuery.data ?? [])].reverse() : batch.history;
+
   const infoItems = [
     {
       label: t("detail.branch"),
@@ -427,7 +435,15 @@ const BatchDetailPage = () => {
         footerAction={canSendToMainBranch && !isReturn && orders.length > 0 ? sendButton(true) : undefined}
       />
 
-      <BatchHistoryCard items={batch.history} direction={batch.direction} targetName={toName} />
+      <BatchHistoryCard
+        items={historyItems}
+        direction={batch.direction}
+        targetName={toName}
+        loading={canReadHistory && historyQuery.isPending && historyQuery.fetchStatus !== "idle"}
+        error={canReadHistory && !historyQuery.data ? historyQuery.error : null}
+        onRetry={() => void historyQuery.refetch()}
+        retrying={historyQuery.isFetching}
+      />
     </div>
   );
 };

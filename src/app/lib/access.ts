@@ -315,3 +315,9 @@ export const canManageWarehouses: Predicate = hasRole("superadmin", "admin");
  */
 export const canViewAllWarehouses: Predicate = hasRole("superadmin", "admin", "registrator");
 export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerCan("warehouse"));
+
+/**
+ * Kassa smenasi sozlamalari (kiZgTybn: kartalar qoldig'ini tasdiqlash, rasm, AI kalitlari) — backend
+ * `PATCH finance/shift/settings` `@Roles(SUPERADMIN)` bilan AYNAN bir xil. O'qish (GET) yopuvchi rollarga ochiq.
+ */
+export const canManageShiftSettings: Predicate = hasRole("superadmin");

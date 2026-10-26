@@ -3,7 +3,7 @@ import { memo, useEffect, useId, useState } from "react";
 import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
 import { createLoginResolver, type LoginFormValues } from "../../../shared/lib/validation/loginSchema";
@@ -14,6 +14,7 @@ import { Button, Field, IconButton, TextInput } from "../../../shared/ui/primiti
 import { useLogin } from "../api/login";
 import { isNetworkFailure } from "../../../auth/networkError";
 import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
+import { responseErrorCode } from "../../../auth/passwordChange";
 
 /**
  * Kirish formasi — dizayn v2 (maketlar `common-login`, `common-login-error`). Ramka (navy panel / tasma) —
@@ -31,7 +32,20 @@ import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
 
 interface ApiErrorResponse {
   message?: string;
+  code?: string;
+  retry_after_seconds?: number;
 }
+
+/** NDmZMzCP: telefon (+IP) bo'yicha login qulfi — 429 `{ code: "LOGIN_LOCKED", retry_after_seconds }`. */
+const LOGIN_LOCKED_CODE = "LOGIN_LOCKED";
+
+/** Qulf soniyalari: javobdagi `retry_after_seconds`, bo'lmasa `Retry-After` sarlavhasi. */
+const lockSecondsOf = (err: AxiosError<ApiErrorResponse>): number | null => {
+  const fromBody = Number(err.response?.data?.retry_after_seconds);
+  const fromHeader = Number(err.response?.headers?.["retry-after"]);
+  const seconds = Number.isFinite(fromBody) && fromBody > 0 ? fromBody : fromHeader;
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
+};
 
 type LoginFormProps = {
   /** Forma ochilganda telefon maydoniga fokus («Sessiya tugadi» → «Qayta kirish» dan keyin). */
@@ -43,6 +57,9 @@ const ALERT_BASE = "flex items-start gap-3 rounded-xl px-4 py-3 text-sm";
 const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorHint, setErrorHint] = useState<string | null>(null);
+  // Login qulfi: qaysi telefon va qachongacha (ms). Qulf backend'da telefon (+IP) bo'yicha — «Kirish» faqat O'SHA
+  // raqam yozilib turganda o'chiq; boshqa raqam bilan kirish mumkin (server baribir o'zi tekshiradi).
+  const [lock, setLock] = useState<{ phone: string; until: number } | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation("auth");
@@ -80,8 +97,17 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
     if (autoFocus) setFocus("phone_number");
   }, [autoFocus, setFocus]);
 
+  useEffect(() => {
+    if (lock === null) return;
+    const timer = setTimeout(() => setLock(null), Math.max(0, lock.until - Date.now()));
+    return () => clearTimeout(timer);
+  }, [lock]);
+
+  const phoneValue = useWatch({ control, name: "phone_number" });
+  const lockedNow = lock !== null && phoneValue === lock.phone;
+
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
-    if (isSubmitting) return;
+    if (isSubmitting || (lock !== null && data.phone_number === lock.phone)) return;
 
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
@@ -110,7 +136,14 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
           if (status === 400 || status === 401 || status === 404) hint = t("loginErrorHint");
           // hQqymheT: backend matni inglizcha («ThrottlerException: Too Many Requests») — o'zbekcha matn va nima
           // qilish kerakligi. Cheklov 1 daqiqalik oyna (gateway AUTH_THROTTLE); `Retry-After` o'qilsa — aniq soniya.
-          if (status === 429) {
+          if (status === 429 && responseErrorCode(err.response.data) === LOGIN_LOCKED_CODE) {
+            // NDmZMzCP: ketma-ket xato parol — telefon qulflandi (1 → 2 → 4 … 15 daqiqa). Daqiqaga yaxlitlanadi
+            // (backend matni bilan bir xil), tugma qulf tugaguncha o'chiq.
+            const seconds = lockSecondsOf(err);
+            message = t("loginLocked");
+            hint = t("loginLockedRetryIn", { count: Math.max(1, Math.ceil((seconds ?? 60) / 60)) });
+            if (seconds) setLock({ phone: payload.phone_number, until: Date.now() + seconds * 1000 });
+          } else if (status === 429) {
             const retryAfter = Math.ceil(Number(err.response.headers?.["retry-after"]));
             message = t("tooManyAttempts");
             hint =
@@ -233,7 +266,15 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
         </Field>
       </div>
 
-      <Button type="submit" size="lg" fullWidth loading={isSubmitting} loadingText={t("signingIn")} className="mt-2">
+      <Button
+        type="submit"
+        size="lg"
+        fullWidth
+        loading={isSubmitting}
+        loadingText={t("signingIn")}
+        disabled={lockedNow}
+        className="mt-2"
+      >
         {t("loginButton")}
       </Button>
     </form>

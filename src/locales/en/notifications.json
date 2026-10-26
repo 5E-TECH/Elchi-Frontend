@@ -176,6 +176,18 @@
       "pushDisabled": "Push turned off",
       "appOpen": "The app was open",
       "quietHours": "Night quiet hours",
+      "pushExpired": "Push subscription expired",
+      "pushTooLarge": "Message too large for push",
+      "pushRateLimited": "Push service limited requests",
+      "pushRejected": "Rejected by the push service",
+      "pushServiceError": "Push service error",
+      "networkError": "Network error",
+      "smsNoConsent": "No consent for promo SMS",
+      "smsFanout": "SMS audience limit exceeded",
+      "smsOptOut": "Opt-out link not configured",
+      "campaignCancelled": "Campaign cancelled",
+      "smsRejected": "Rejected by the operator",
+      "smsExpired": "The operator did not deliver in time",
       "noSubscription": "No push subscription",
       "notEligible": "Channel not connected",
       "failedTelegram": "Telegram error",
@@ -503,7 +515,9 @@
       "pushHint": "Enabled for {{value}} users",
       "pushHintUnknown": "To users with notifications on",
       "telegramOff": "Not in campaigns",
-      "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. Telegram is for market groups and is not in campaigns."
+      "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. SMS is always advertising: only to numbers with consent, within the daily limit. Telegram is for market groups and is not in campaigns.",
+      "smsHint": "{{value}} numbers have consent",
+      "smsHintUnknown": "Advertising — only to numbers with consent"
     },
     "previewNote_one": "Now · campaign · {{value}} recipient",
     "previewNote_other": "Now · campaign · {{value}} recipients",
@@ -549,7 +563,11 @@
       "forbidden": "You are not allowed to send campaigns.",
       "tooMany": "Too many requests — try again a bit later.",
       "server": "Server error — try again a bit later.",
-      "generic": "Could not create the campaign — try again a bit later."
+      "generic": "Could not create the campaign — try again a bit later.",
+      "smsDisabled": "SMS is off or not configured — the campaign was not created. Send without SMS. Nothing was sent.",
+      "smsOptOut": "The unsubscribe link for advertising SMS is not configured — the campaign was not created. Nothing was sent.",
+      "smsFanout": "For SMS the audience must not exceed {{max}} — narrow the target or send without SMS. Nothing was sent.",
+      "smsFanoutUnknown": "The audience exceeds the SMS limit — narrow the target or send without SMS. Nothing was sent."
     },
     "progress": {
       "title": "Campaign",
@@ -642,6 +660,7 @@
       "orders": "{{range}} orders",
       "paused": "Night ban — continues {{time}}",
       "quietShifted": "Moved because of the night ban",
+      "requestedShifted": "Requested {{time}}, moved because of the night ban",
       "sent": "{{sent}} sent",
       "sentWithFailed": "{{sent}} sent · {{failed}} failed",
       "progress": "{{done}} / {{total}}",
@@ -687,6 +706,31 @@
       "pendingCaption": "{{value}} in progress",
       "failed": "Failed",
       "skipped": "Skipped",
+      "smsCampaign": "SMS campaign",
+      "smsReportLabel": "SMS campaign report — {{date}}",
+      "delivered": "Delivered",
+      "deliveredByDlr": "per operator report",
+      "deliveredAwaiting": "operator report not received yet",
+      "deliveredNoDlr": "no delivery report in these channels",
+      "cost": "Cost",
+      "costFree": "estimated · free channels",
+      "costEstimate": "estimated · actual amount comes from the provider bill",
+      "costNoTariff": "estimated · tariff not set",
+      "sms": {
+        "title": "SMS",
+        "messages": "Messages",
+        "parts": "Parts",
+        "partsValue": "{{total}} · 1 message = {{range}} parts",
+        "encoding": "Encoding",
+        "encodingMixed": "Mixed (GSM-7 and UCS-2)",
+        "dlr": "Operator report",
+        "dlrValue": "Delivered {{delivered}} · Failed {{failed}} · Awaiting {{awaiting}}",
+        "dlrNone": "Not received yet · awaiting {{value}}",
+        "tariff": "Price per part",
+        "noTariff": "Tariff not set",
+        "costOfSent": "Cost of sent",
+        "costNote": "Estimated cost: tariff × parts. The actual amount comes from the provider bill."
+      },
       "none": "none",
       "inChannel": "in {{channel}}",
       "inChannels": "in {{value}} channels",
@@ -710,6 +754,25 @@
       "undeliveredPages": "Pages of undelivered",
       "failureFailed": "{{channel}} — failed",
       "failureSkipped": "{{channel}} — skipped"
+    },
+    "sms": {
+      "title": "SMS is sent as advertising",
+      "split": "With consent: {{recipients}} · Without consent: {{blocked}} · Invalid number: {{invalid}}",
+      "splitInexact": "The audience is large — the consent split was not counted exactly",
+      "quiet": "Goes only to numbers with consent. Not sent between {{start}} and {{end}} — moved to {{end}}.",
+      "quietUnknown": "Goes only to numbers with consent. Not sent during night-ban hours — moved to the morning.",
+      "costLater": "The cost is calculated in the confirmation window from the final text.",
+      "recipients": "SMS: with consent",
+      "blockedNoConsent": "SMS: no consent",
+      "invalidPhone": "SMS: invalid number",
+      "cost": "Estimated SMS cost",
+      "costValue": "{{value}} ({{parts}} parts)",
+      "blocked": {
+        "disabled": "SMS is off or not configured — remove the SMS channel.",
+        "optOut": "The unsubscribe link for advertising SMS is not configured — send without SMS.",
+        "fanout": "For SMS the audience must not exceed {{max}} — narrow the target or send without SMS.",
+        "fanoutUnknown": "The audience exceeds the SMS limit — narrow the target or send without SMS."
+      }
     }
   }
 }

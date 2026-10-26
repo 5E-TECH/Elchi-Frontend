@@ -42,6 +42,17 @@ vi.mock("../../../entities/notification-inbox/api/inboxApi", async (importOrigin
   getInboxUnreadCount: vi.fn(async () => unread.count),
 }));
 
+// GaBIPi3Z: «Qabul va yaratish» badge'i (`GET /orders/status-counts` → `new_incoming`) — haqiqiy so'rov ketmaydi,
+// son testda boshqariladi; `enabled` qiymatlari yoziladi (badge'siz rolda so'rov yoqilmaydi).
+const newIncoming = vi.hoisted(() => ({ count: null as number | null, enabled: [] as boolean[] }));
+vi.mock("../../../entities/order/api/orderStatusCounts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/order/api/orderStatusCounts")>()),
+  useNewIncomingOrdersCount: (enabled: boolean) => {
+    newIncoming.enabled.push(enabled);
+    return enabled ? newIncoming.count : null;
+  },
+}));
+
 type DesignRole =
   | "superadmin"
   | "admin"
@@ -558,5 +569,26 @@ describe("MobileMenu — investor (IN-1, IN-2)", () => {
     expect(links[2]).toHaveAccessibleName("Foyda tarixi");
     expect(links[0]).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("MobileMenu — «Qabul va yaratish» soni (GaBIPi3Z)", () => {
+  afterEach(() => {
+    newIncoming.count = null;
+    newIncoming.enabled = [];
+  });
+
+  it("planshet panelida son bandda, nomi «Qabul va yaratish, 7 ta yangi»", () => {
+    newIncoming.count = 7;
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
+    const link = within(sectionsNav()).getByRole("link", { name: "Qabul va yaratish, 7 ta yangi" });
+    expect(link).toHaveTextContent("7");
+  });
+
+  it("son yo'q — oddiy band", () => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "admin");
+    expect(within(sectionsNav()).getByRole("link", { name: "Qabul va yaratish" })).toHaveTextContent(
+      /^Qabul va yaratish$/,
+    );
   });
 });

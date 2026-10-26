@@ -287,3 +287,73 @@ describe("CampaignHistoryCard (KM-3)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Kampaniya hisoboti" })).toBeNull());
   });
 });
+
+describe("CampaignHistoryCard — N10 (fb4qy6bd): so'ralgan vaqt va tungi taqiq belgisi", () => {
+  it("quiet_hours_shifted — «… da so'ralgan, tungi taqiq tufayli surildi» (rejalashtirilgan va yuborilgan); siljimagan — izohsiz", async () => {
+    listReturns([
+      {
+        id: "13",
+        status: "queued",
+        display_status: "scheduled",
+        title: "Hafta oxiri aksiyasi",
+        category: "marketing",
+        channels: ["in_app", "push"],
+        audience: { roles: ["market"] },
+        total: 3420,
+        sent: 0,
+        progress_pct: 0,
+        created_at: "2026-10-21T05:50:00Z",
+        scheduled_at: "2026-10-22T04:00:00Z",
+        // Bugun 18:40 (Toshkent) ga so'ralgan — ertangi 09:00 ga surilgan.
+        requested_at: "2026-10-21T13:40:00.000Z",
+        requested_at_tashkent: "2026-10-21T18:40:00+05:00",
+        quiet_hours_shifted: true,
+        can_cancel: true,
+      },
+      {
+        id: "18",
+        status: "done",
+        display_status: "sent",
+        title: "Kechagi reklama",
+        category: "marketing",
+        channels: ["in_app"],
+        audience: { roles: ["market"] },
+        total: 98,
+        sent: 98,
+        progress_pct: 100,
+        created_at: "2026-10-19T14:00:00Z",
+        scheduled_at: "2026-10-20T04:00:00Z",
+        requested_at: "2026-10-19T14:00:00.000Z",
+        quiet_hours_shifted: true,
+        can_cancel: false,
+      },
+      {
+        id: "19",
+        status: "done",
+        display_status: "sent",
+        title: "Oddiy e'lon",
+        category: "system",
+        channels: ["in_app"],
+        audience: { roles: ["market"] },
+        total: 98,
+        sent: 98,
+        progress_pct: 100,
+        created_at: "2026-10-21T04:00:00Z",
+        requested_at: "2026-10-21T04:00:00.000Z",
+        quiet_hours_shifted: false,
+        can_cancel: false,
+      },
+    ]);
+    renderWithProviders(<CampaignHistoryCard />);
+    const card = await screen.findByTestId("campaign-history");
+    const table = await within(card).findByRole("table");
+    const rows = within(table).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("Ertaga, 09:00bugun, 18:40 da so'ralgan, tungi taqiq tufayli surildi");
+    expect(rows[2]).toHaveTextContent("Kecha, 09:00");
+    expect(rows[2]).toHaveTextContent("19.10.2026, 19:00 da so'ralgan, tungi taqiq tufayli surildi");
+    expect(rows[3]).not.toHaveTextContent("so'ralgan");
+    expect(rows[3]).not.toHaveTextContent("tungi taqiq");
+    // Belgi — bitta (eski «Tungi taqiq tufayli surildi» izohi takrorlanmaydi).
+    expect(within(rows[1]).getAllByText(/tungi taqiq/i)).toHaveLength(1);
+  });
+});

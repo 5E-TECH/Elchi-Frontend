@@ -67,8 +67,9 @@ import QuickActions from "./ui/QuickActions";
  *
  * `variant="operator"` — MARKET OPERATORI bosh sahifasi (MO-2; maket yo'q — eng yaqini `market-dashboard-home`).
  * `analytics/dashboard` operatorga ochiq (backend operatorni o'z marketiga cheklaydi). Farqlar:
- *   - qo'shimcha xarajat tasdiqlari (`ExtraCostApprovals`, `AutoApprovedExtraCosts`) yo'q va so'ralmaydi —
- *     `GET orders/extra-cost-approvals` operatorga 403 (faqat o'qish ruxsati — N14, MO-8);
+ *   - qo'shimcha xarajat tasdiqlari — FAQAT O'QISH (6QLF7nst / N14, MO-8): `GET orders/extra-cost-approvals` operatorga
+ *     ochildi (o'z marketi so'rovlari), `approve`/`reject` — 403. `ExtraCostApprovals` rol bo'yicha tugmalarsiz,
+ *     sarlavhada «Faqat market egasi qaror qiladi». «Avtomatik tasdiqlangan xarajatlar» (market e'tirozi uchun) — yo'q;
  *   - sarlavha izohida market nomi yo'q (profil faqat `market_id` beradi — N13), o'rnida davr;
  *   - «Marketlar bo'yicha sotuv foizi» da o'z qatori — `market_id` (operatorning o'z id'si emas);
  *   - profilda `market_id` yo'q (operator hali marketga biriktirilmagan) — `analytics/dashboard` so'ralmaydi (backend
@@ -276,12 +277,8 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         primaryAction={createOrderButton}
       />
 
-      {isOperator ? null : (
-        <>
-          <ExtraCostApprovals />
-          <AutoApprovedExtraCosts />
-        </>
-      )}
+      <ExtraCostApprovals />
+      {isOperator ? null : <AutoApprovedExtraCosts />}
 
       {dashboardError || statsFailed ? (
         <Card>

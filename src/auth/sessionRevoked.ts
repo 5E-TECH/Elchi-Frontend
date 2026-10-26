@@ -73,3 +73,22 @@ export const handleSessionRevokedSocketError = (error: unknown): boolean => {
   void logoutRevokedSession();
   return true;
 };
+
+const SESSION_CHECK_UNAVAILABLE_SOCKET_CODE = "session_check_unavailable";
+
+/**
+ * NDmZMzCP: gateway sessiyani tekshira olmadi (identity javob bermadi) — socket ulanishi `SESSION_CHECK_UNAVAILABLE`
+ * bilan rad etildi. Bu chiqish EMAS: kanal biroz kutib qayta ulanadi (`RealtimeSync`).
+ */
+export const isSessionCheckUnavailableSocketError = (error: unknown, depth = 0): boolean => {
+  const mentions = (value: unknown) =>
+    typeof value === "string" &&
+    value.trim().toLowerCase().replace(/[\s-]+/g, "_").includes(SESSION_CHECK_UNAVAILABLE_SOCKET_CODE);
+  if (typeof error === "string") return mentions(error);
+  if (!error || typeof error !== "object") return false;
+  const { message, code, data } = error as { message?: unknown; code?: unknown; data?: unknown };
+  if (mentions(code) || mentions(message)) return true;
+  return depth < 2 && data !== undefined && data !== error
+    ? isSessionCheckUnavailableSocketError(data, depth + 1)
+    : false;
+};

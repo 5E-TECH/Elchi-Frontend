@@ -54,6 +54,28 @@ test.describe("Xabar yuborish — auditoriya, 390px", () => {
     });
   }
 
+  test("KM-5: SMS kanali telefonda — rozilik bo'yicha son, tasdiqda narx, skrollsiz", async ({ page }) => {
+    const mock = await mockCampaignApi(page);
+    const form = await openAudience(page);
+    await form.getByRole("checkbox", { name: "Market" }).check();
+    await expect(form.getByTestId("audience-summary")).toContainText("Auditoriya: 98 ta");
+    await form.getByRole("textbox", { name: "Sarlavha" }).fill("Yangi tariflar");
+    const sms = form.getByRole("checkbox", { name: "SMS" });
+    await sms.check();
+    await expect(form.getByTestId("campaign-sms-split")).toContainText("Rozilik bor: 59 ta");
+    // Kanal kartasi (label) — bosiladigan maydon ≥ 44px.
+    const card = form.locator("label", { has: page.getByRole("checkbox", { name: "SMS" }) });
+    expect((await card.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect(await noHorizontalScroll(page)).toBe(true);
+    await shot(page, "phone-audience-sms", form);
+    await form.getByRole("button", { name: /^Yuborish/ }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    await expect(confirm.getByTestId("confirm-sms-cost")).toHaveText(/10\s325 so'm \(1 bo'lak\)/);
+    expect(await noHorizontalScroll(page)).toBe(true);
+    await shot(page, "phone-audience-sms-confirm");
+    expect(mock.leaked).toEqual([]);
+  });
+
   test("kampaniya progressi telefonda — tugmalar 44px, skrollsiz", async ({ page }) => {
     const mock = await mockCampaignApi(page);
     const form = await openAudience(page);

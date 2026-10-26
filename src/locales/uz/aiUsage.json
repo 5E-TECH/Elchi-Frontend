@@ -1,0 +1,96 @@
+{
+  "tab": "AI xarajat",
+  "period": "Davr",
+  "periodSeg": "Tez tanlov",
+  "presets": {
+    "today": "Bugun",
+    "week": "Bu hafta",
+    "month": "Bu oy",
+    "last30": "30 kun"
+  },
+  "loading": "AI xarajati yuklanmoqda",
+  "loadFailed": "AI xarajatini yuklab bo'lmadi",
+  "unit": {
+    "calls": "ta",
+    "orders": "ta"
+  },
+  "kpi": {
+    "label": "AI xarajati ko'rsatkichlari",
+    "cost": "Jami AI xarajat",
+    "calls": "Chaqiruvlar",
+    "orders": "AI buyurtmalar",
+    "average": "O'rtacha narx · 1 buyurtma",
+    "cacheSaved": "keshdan tejaldi: {{value}}",
+    "ordersCost": "buyurtmalarga: {{value}}",
+    "noOrders": "AI buyurtma yo'q"
+  },
+  "trend": {
+    "title": "Kunlik xarajat",
+    "subtitle": "{{range}} · Toshkent kuni bo'yicha",
+    "viewLabel": "Kunlik xarajat ko'rinishi",
+    "cost": "Xarajat",
+    "date": "Sana",
+    "calls": "Chaqiruvlar",
+    "orders": "AI buyurtmalar",
+    "empty": "Bu davrda AI chaqiruvi bo'lmagan",
+    "aria": "Kunlik AI xarajati, {{range}}: jami {{total}}",
+    "cardMeta": "{{calls}} ta chaqiruv · {{orders}} ta AI buyurtma · {{usd}}"
+  },
+  "sources": {
+    "title": "Buyurtma manbasi",
+    "subtitle": "Davrda yaratilgan buyurtmalar",
+    "ai": "AI",
+    "manual": "Qo'lda",
+    "bot": "Telegram bot",
+    "external": "Tashqi tizim",
+    "branch": "Filial",
+    "empty": "Bu davrda buyurtma yaratilmagan",
+    "failed": "Buyurtma manbasini yuklab bo'lmadi",
+    "aria": "Buyurtma manbasi, jami {{total}} ta: {{list}}"
+  },
+  "features": {
+    "title": "Funksiyalar bo'yicha",
+    "subtitle": "Har AI funksiyasining xarajati",
+    "empty": "Bu davrda AI chaqiruvi bo'lmagan",
+    "col": {
+      "feature": "Funksiya",
+      "calls": "Chaqiruvlar",
+      "tokens": "Tokenlar (kirish / chiqish)",
+      "cost": "Xarajat"
+    },
+    "tokens": "{{input}} / {{output}}",
+    "cardMeta": "{{calls}} ta chaqiruv · {{usd}}"
+  },
+  "feature": {
+    "order_extract_multi": "Matndan buyurtma ajratish",
+    "order_extract_image": "Rasmdan buyurtma ajratish",
+    "order_district": "Tumanni aniqlash",
+    "order_item_match": "Mahsulotni moslash"
+  },
+  "models": {
+    "title": "Modellar bo'yicha",
+    "subtitle": "Xarajat ulushi",
+    "empty": "Bu davrda AI chaqiruvi bo'lmagan",
+    "sub": "{{calls}} ta · {{usd}}"
+  },
+  "rateNote": "So'mdagi xarajat har chaqiruv paytidagi kurs bilan yozilgan. Hozirgi kurs: 1 $ = {{rate}}",
+  "orders": {
+    "title": "AI buyurtmalar",
+    "subtitle": "AI yordamida yaratilgan buyurtmalar · eng yangisi birinchi",
+    "count": "{{value}} ta",
+    "loading": "AI buyurtmalar yuklanmoqda",
+    "empty": "Bu davrda AI buyurtma yo'q",
+    "emptyDescription": "AI yordamida yaratilgan buyurtmalar shu yerda chiqadi",
+    "degraded": "Buyurtma raqami va holatini hozir olib bo'lmadi — ro'yxat qisman",
+    "draftShared": "{{value}} · {{count}} ta buyurtmaga",
+    "cardCost": "AI xarajati: {{value}}",
+    "col": {
+      "order": "Buyurtma",
+      "status": "Holati",
+      "total": "Summa",
+      "model": "Model",
+      "cost": "AI xarajati",
+      "date": "Yaratilgan"
+    }
+  }
+}

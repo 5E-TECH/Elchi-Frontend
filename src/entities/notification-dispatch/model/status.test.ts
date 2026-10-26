@@ -6,6 +6,8 @@ import {
   deliveryBucket,
   deriveDispatchStatus,
   externalChannels,
+  resolveDispatchStatus,
+  statusFromChannelOutcome,
   failureBadge,
   isDispatchLive,
 } from "./status";
@@ -60,8 +62,17 @@ describe("notification-dispatch status (ega S3 ranglari)", () => {
   it("derives the status of a fresh dispatch the same way the backend writes history", () => {
     const base = { dispatched: 10, skipped_by_preference: 0 };
     expect(deriveDispatchStatus({ ...base, channels: ["in_app"], by_channel: { in_app: 10 } })).toBe("sent");
+    // NS-4 (aNynHYU0): kanal faqat HAR BIR qabul qiluvchiga ketganda to'liq — 10 dan 3 tasiga SMS endi «qisman».
     expect(
       deriveDispatchStatus({ ...base, channels: ["in_app", "telegram", "sms"], by_channel: { telegram: 8, sms: 3 } }),
+    ).toBe("partial");
+    expect(
+      deriveDispatchStatus({ ...base, channels: ["in_app", "telegram", "sms"], by_channel: { telegram: 10, sms: 10 } }),
+    ).toBe("sent");
+    expect(deriveDispatchStatus({ ...base, channels: ["in_app", "sms"], by_channel: { sms: 1 } })).toBe("partial");
+    // Telegram GURUH relay'i — bitta xabar = to'liq.
+    expect(
+      deriveDispatchStatus({ ...base, channels: ["in_app", "telegram"], by_channel: { telegram: 1 }, telegram_group: true }),
     ).toBe("sent");
     expect(
       deriveDispatchStatus({ ...base, channels: ["in_app", "telegram", "sms"], by_channel: { telegram: 8, sms: 0 } }),
@@ -89,5 +100,26 @@ describe("notification-dispatch status (ega S3 ranglari)", () => {
   it("«Provayder ulanmagan» — neutral tone with the warning triangle (maket send-result, inbox-only)", () => {
     expect(DELIVERY_META.no_provider.tone).toBe("neutral");
     expect(DELIVERY_META.no_provider.icon).toBe(TriangleAlert);
+  });
+
+  it("NS-4: prefers the backend `status`, then `channel_outcome`, over the derived rule", () => {
+    const result = {
+      status: null as string | null,
+      channel_outcome: null as Record<string, "full" | "partial" | "none"> | null,
+      channels: ["in_app", "sms", "push"],
+      by_channel: { in_app: 10, sms: 1, push: 10 },
+      dispatched: 10,
+      skipped_by_preference: 0,
+    };
+    // Backend javobidagi holat (tarixdagi bilan AYNI) — har doim asosiy manba.
+    expect(resolveDispatchStatus({ ...result, status: "partial", by_channel: { sms: 10, push: 10 } })).toBe("partial");
+    expect(resolveDispatchStatus({ ...result, status: "inbox_only" })).toBe("inbox_only");
+    // `status` yo'q — `channel_outcome`.
+    expect(resolveDispatchStatus({ ...result, channel_outcome: { sms: "full", push: "full" } })).toBe("sent");
+    expect(resolveDispatchStatus({ ...result, channel_outcome: { sms: "partial", push: "full" } })).toBe("partial");
+    expect(resolveDispatchStatus({ ...result, channel_outcome: { sms: "none", push: "none" } })).toBe("inbox_only");
+    // Ikkalasi ham yo'q — backend qoidasining nusxasi (1/10 SMS — «qisman», eski `> 0` qoidasidagi «yuborildi» emas).
+    expect(resolveDispatchStatus(result)).toBe("partial");
+    expect(statusFromChannelOutcome({ sms: "none" }, 0, 4)).toBe("skipped");
   });
 });

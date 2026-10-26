@@ -149,6 +149,7 @@ export const API_ENDPOINTS = {
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
     COURIER_ORDER_COUNTS: "orders/courier/orders/counts", // GET kuryer tablari soni { waiting, all, cancelled } (0d11ewk7)
+    STATUS_COUNTS: "orders/status-counts", // GET holat tablari sonlari + new_incoming — `GET /orders` filtrlari bilan (GaBIPi3Z)
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
@@ -210,6 +211,7 @@ export const API_ENDPOINTS = {
     BASE: "transfer-batches", // GET list
     BY_ID: (id: string | number) => `transfer-batches/${id}`,
     REMAINING: (id: string | number) => `transfer-batches/${id}/remaining`,
+    HISTORY: (id: string | number) => `transfer-batches/${id}/history`, // GET tarix, eng eskisi birinchi (3HKvAyhm)
     SEND: (id: string | number) => `transfer-batches/${id}/send`, // PATCH mark sent (vehicle info)
     RECEIVE: (id: string | number) => `transfer-batches/${id}/receive`,
     RECEIVE_ORDERS: (id: string | number) => `transfer-batches/${id}/receive-orders`,
@@ -236,6 +238,15 @@ export const API_ENDPOINTS = {
     SHIFT_HISTORY: "finance/shift",
     SHIFT_OPEN: "finance/shift/open",
     SHIFT_CLOSE: "finance/shift/close",
+    // kiZgTybn — smena yopishda har karta qoldig'ini tasdiqlash: sozlamalar (GET — yopuvchi rollar, PATCH — faqat
+    // superadmin), qoldiq skrinshoti (multipart `photo`), smena hisoboti (naqd + kartalar + AI holati).
+    SHIFT_SETTINGS: "finance/shift/settings",
+    SHIFT_ACCOUNT_PHOTO: "finance/shift/account-photo",
+    SHIFT_REPORT: (id: string | number) => `finance/shift/${id}/report`,
+    /** gWI4gYkw — smena hisobotini qayta yuborish (faqat superadmin, yangi raund). */
+    SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
+    // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
+    CARDS: "finance/cashbox/cards",
   },
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox
@@ -281,6 +292,12 @@ export const API_ENDPOINTS = {
     REPORT_COURIERS: "analytics/reports/couriers",
     REPORT_FINANCE: "analytics/reports/finance",
     REPORT_ORDERS: "analytics/reports/orders",
+  },
+
+  // ── AI xarajat paneli (Celz3rKJ; faqat SUPERADMIN / ADMIN) — «Balans → AI xarajat» ──
+  AI_USAGE: {
+    DASHBOARD: "ai-usage/dashboard", // GET ?fromDate&toDate (YYYY-MM-DD, Toshkent; sukut — oxirgi 30 kun)
+    AI_ORDERS: "ai-usage/ai-orders", // GET ?fromDate&toDate&limit (1..100)
   },
 
   // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──
@@ -424,6 +441,11 @@ export const API_ENDPOINTS = {
     CAMPAIGN_EXPORT_BY_ID: (exportId: string) => `notifications/campaigns/exports/${encodeURIComponent(exportId)}`,
     CAMPAIGN_EXPORT_DOWNLOAD: (exportId: string) =>
       `notifications/campaigns/exports/${encodeURIComponent(exportId)}/download`,
+    // SMS kampaniyasi hisoboti (H7kpCman) — javob shakli bildirishnoma kampaniyasiniki bilan bir xil (`kind: 'sms'`)
+    SMS_CAMPAIGN_REPORT: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/report`, // GET
+    SMS_CAMPAIGN_UNDELIVERED: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered`,
+    SMS_CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
+      `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered/export`, // GET CSV (faqat superadmin)
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device
@@ -437,6 +459,7 @@ export const API_ENDPOINTS = {
     SMS_TEMPLATE_APPROVE: (id: string | number) => `notifications/sms/templates/${id}/approve`,
     SMS_CAMPAIGNS: "notifications/sms/campaigns", // GET history / POST send (Idempotency-Key)
     SMS_CAMPAIGN_PREVIEW: "notifications/sms/campaigns/preview",
+    SMS_CAMPAIGN_CANCEL: (id: string | number) => `notifications/sms/campaigns/${id}/cancel`, // POST — faqat `scheduled` (KM-6)
     SMS_CONSENTS: "notifications/sms/consents",
     SMS_CONSENTS_REVOKE: "notifications/sms/consents/revoke",
   },
@@ -475,6 +498,11 @@ export const API_ENDPOINTS = {
   // ── Telegram scan Mini App (courier; `/tg/scan`, MWYaqprw) ───────────────
   TELEGRAM_SCAN: {
     DONE: "telegram/scan/done", // POST { order_ids } → { accepted, ignored }; bot sends the summary
+  },
+  // 2crjWf7v — shaxsiy Telegram xabarlari (sukut: to'lov kvitansiyasi) yetkazish hisoboti, FAQAT superadmin:
+  // GET ?from&to (ISO yoki YYYY-MM-DD — Toshkent kuni; sukut 30 kun)&type → { totals, skipped_reasons, by_role, days }
+  TELEGRAM_REPORTS: {
+    DM_DELIVERY: "telegram/dm-delivery",
   },
 
   // ── Files (MinIO) — guide §10 ────────────────────────────────────────────

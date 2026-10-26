@@ -441,11 +441,14 @@ describe("dashboard response normalization", () => {
     expect(result.data.chart).toEqual({
       labels: ["2026-06-10"],
       values: [150000],
+      // l9NNdsCH: eski javobda «Sof foyda» seriyasi yo'q — `null` (0 lar emas).
+      profitValues: null,
     });
     expect(result.data.summary).toEqual({
       totalRevenue: 150000,
       totalOrders: 3,
       avgRevenue: 150000,
+      totalProfit: null,
     });
     expect(result.data.finance).toMatchObject({
       currentSituation: 90000,

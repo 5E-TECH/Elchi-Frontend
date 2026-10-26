@@ -1,7 +1,8 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n from "../../../i18n";
 import { api } from "../../../shared/api/api";
 import { renderWithProviders } from "../../../test/test-utils";
 import OldMails from "./oldMails";
@@ -28,6 +29,14 @@ vi.mock("../../../entities/user/api/userApi", () => ({
 }));
 vi.mock("../detail/lib/printMode", () => ({ printOrders: mocks.printOrders }));
 vi.mock("./lib/exportOldMailsToExcel", () => ({ exportOldMailsToExcel: mocks.exportOldMailsToExcel }));
+
+/** Xulosa qatori (`<p>`) — bo'shliqlar (NBSP ham) normallashtirilgan matn bo'yicha. */
+const summaryLine = (text: string | RegExp) =>
+  screen.getByText((_, node) => {
+    if (node?.tagName !== "P") return false;
+    const content = (node.textContent ?? "").replace(/\s+/g, " ").trim();
+    return typeof text === "string" ? content === text : text.test(content);
+  });
 
 const post = (
   id: string,
@@ -77,18 +86,19 @@ const BATCHES = [
 ];
 
 /** Server javobi (`GET /post`): sahifa qatorlari + `total` (filtrlangan barcha qatorlar soni). */
-const pageBody = (rows: unknown[], meta: { total?: number; page?: number; limit?: number } = {}) => {
-  const total = meta.total ?? rows.length;
-  const limit = meta.limit ?? 8;
+type PageMeta = { total?: number; page?: number; limit?: number; orders_total?: number; amount_total?: number };
+
+const pageBody = (rows: unknown[], meta: PageMeta = {}) => {
+  const { total = rows.length, limit = 8, page = 1, ...sums } = meta;
   return {
     statusCode: 200,
-    data: { data: rows, total, page: meta.page ?? 1, limit, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    data: { data: rows, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)), ...sums },
   };
 };
 
 const mailsResult = (
   rows: unknown[],
-  meta: { total?: number; page?: number; limit?: number } = {},
+  meta: PageMeta = {},
   extra: Record<string, unknown> = {},
 ) => ({
   data: pageBody(rows, meta),
@@ -239,7 +249,36 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(screen.queryByRole("button", { name: "№92: chekni qayta chiqarish" })).not.toBeInTheDocument();
   });
 
-  it("summary line shows the server total only (API gives no order/amount sums — Q1 default)", () => {
+  it("⭐ tveJKICY: xulosa — «N ta pochta · M ta buyurtma · jami S» server yig'indilaridan (sahifadan emas)", () => {
+    mocks.useGetOldMails.mockReturnValue(
+      mailsResult(MAILS, { total: 46, orders_total: 684, amount_total: 128_360_000 }),
+    );
+    renderOld("manager", "/mails/old", "card");
+
+    // Sahifadagi 3 ta pochtaning yig'indisi emas — filtr bo'yicha barcha sahifalar (backend `orders_total`, `amount_total`).
+    expect(summaryLine("46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm")).toBeInTheDocument();
+    expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
+  });
+
+  it("tveJKICY: imkonsiz filtr — yig'indilar 0; ru/en ham server sonlari bilan", async () => {
+    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 3, orders_total: 0, amount_total: 0 }));
+    renderOld("admin", "/mails/old", "card");
+    expect(summaryLine("3 ta pochta · 0 ta buyurtma · jami 0 so'm")).toBeInTheDocument();
+
+    await act(async () => {
+      await i18n.changeLanguage("ru");
+    });
+    expect(summaryLine("3 почты · 0 заказов · всего 0 сум")).toBeInTheDocument();
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    expect(summaryLine("3 mails · 0 orders · total 0 UZS")).toBeInTheDocument();
+    await act(async () => {
+      await i18n.changeLanguage("uz");
+    });
+  });
+
+  it("eski javob (yig'indilarsiz) — xulosa faqat «N ta pochta», sahifadan hisoblanmaydi", () => {
     mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 46 }));
     renderOld("manager", "/mails/old", "card");
 
@@ -698,6 +737,15 @@ describe("OldMails — telefon (< 768)", () => {
     const cards = screen.getByRole("list");
     expect(within(cards).getByText("Pochta №90")).toBeInTheDocument();
     expect(within(cards).getByText(/Kuryer: Buxaro Courier · Buxoro/)).toBeInTheDocument();
+  });
+
+  it("tveJKICY 390px: xulosa ikki qatorda — «N ta pochta · M ta buyurtma» va ostida summa", () => {
+    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 46, orders_total: 684, amount_total: 128_360_000 }));
+    renderOld("manager", "/mails/old", "card");
+
+    const line = summaryLine(/^46 ta pochta · 684 ta buyurtma/);
+    expect(line.querySelector("br")).not.toBeNull();
+    expect(line).toHaveTextContent("jami 128 360 000 so'm");
   });
 
   it("courier phone: «Jami N ta pochta» is the server total", () => {

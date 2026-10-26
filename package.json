@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging",
     "check:bundle": "node scripts/check-bundle.mjs",
+    "check:target": "node scripts/check-deploy-target.mjs",
     "lint": "eslint . --quiet",
     "lint:report": "eslint .",
     "preview": "npm run build && wrangler dev",

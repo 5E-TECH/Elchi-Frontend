@@ -1,4 +1,4 @@
-export type { CustomerDistrict, CustomerSuggestion, CustomerSuggestParams } from "./types";
+export type { CustomerDistrict, CustomerSuggestMatch, CustomerSuggestion, CustomerSuggestParams } from "./types";
 export {
   CUSTOMER_DISTRICT_KEY,
   CUSTOMER_SUGGEST_KEY,

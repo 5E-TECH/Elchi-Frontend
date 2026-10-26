@@ -38,6 +38,17 @@ vi.mock("../../../../shared/lib/useLogout", () => ({
   useLogout: () => ({ logout: mocks.logout }),
 }));
 
+// DtKKY0V8: kuryer «Tuman» tanlovi viloyat tumanlarini so'raydi (`GET region/:id`) — tarmoqsiz.
+vi.mock("../../../../entities/logistics/api/logisticsApi", () => ({
+  useLogistics: () => ({
+    useGetDistricts: (regionId?: string) => ({
+      data: regionId ? [{ id: 41, name: "Urgut tumani" }] : undefined,
+      isLoading: false,
+      isError: false,
+    }),
+  }),
+}));
+
 beforeEach(() => {
   mocks.useGetUserById.mockReset().mockReturnValue({ data: undefined, isLoading: false });
 });
@@ -192,7 +203,8 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     await typePassword(user, "yangiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
-    expect(await screen.findByText("Parol juda qisqa")).toBeInTheDocument();
+    // NDmZMzCP: server matni xabarda va parol maydoni ostida.
+    expect(await screen.findAllByText("Parol juda qisqa")).not.toHaveLength(0);
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
   });
@@ -274,7 +286,7 @@ describe("UpdateUserModal — dizayn v2 oynasi (maket `superadmin-users-edit-dia
     expect(dialog).toHaveAccessibleDescription("Baraka Shop · Market");
     expect(screen.getByText("Asosiy ma'lumotlar")).toBeInTheDocument();
     expect(screen.getByText("Market ma'lumotlari")).toBeInTheDocument();
-    expect(screen.getByText("Bo'sh qoldirilsa, parol o'zgarmaydi")).toBeInTheDocument();
+    expect(screen.getByText(/^Bo'sh qoldirilsa, parol o'zgarmaydi\. Kamida 8 ta belgi/)).toBeInTheDocument();
     expect(screen.getByText("Nofaol qilishdan oldin tasdiq so'raladi")).toBeInTheDocument();
     // Eski `home` qiymati — «Uygacha» (API `address`).
     expect(screen.getByRole("combobox", { name: "Asosiy tarif" })).toHaveTextContent("Uygacha");
@@ -465,7 +477,7 @@ describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer �
     expect(mocks.updateUser).toHaveBeenCalledWith({ id: "81", data: { salary: 3500000 } });
   });
 
-  it("kuryer (tafsilotdan, `region` bor) — «Ish hududi»: viloyat faqat o'qish + «O'tkazish» izohi, tuman tanlovi yo'q", async () => {
+  it("kuryer (tafsilotdan, `region` bor) — «Ish hududi»: viloyat faqat o'qish + «O'tkazish» izohi, «Tuman» tanlovi (DtKKY0V8)", async () => {
     const user = userEvent.setup();
     renderModal(
       makeUser({ region: { id: "14", name: "Samarqand viloyati", sato_code: "1718", createdAt: "", updatedAt: "" } }),
@@ -476,8 +488,11 @@ describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer �
     const region = screen.getByRole("textbox", { name: "Viloyat" });
     expect(region).toHaveValue("Samarqand viloyati");
     expect(region).toHaveAttribute("readonly");
-    expect(region).toHaveAccessibleDescription("Filial «Boshqa filialga o'tkazish» orqali o'zgaradi");
-    expect(screen.queryByRole("combobox", { name: "Tuman" })).not.toBeInTheDocument();
+    expect(region).toHaveAccessibleDescription(
+      "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi — unda tuman tozalanadi",
+    );
+    // DtKKY0V8: «Tuman» — shu viloyat tumanlari; tegilmasa yuborilmaydi.
+    expect(screen.getByRole("combobox", { name: "Tuman" })).toBeInTheDocument();
     // Tafsilotda viloyat bor — qo'shimcha so'rov yo'q.
     expect(mocks.useGetUserById).toHaveBeenLastCalledWith("");
 

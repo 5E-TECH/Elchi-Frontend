@@ -43,8 +43,9 @@ export interface ScopedRegionViewProps {
 /**
  * MENEJER va KURYER `/regions` — o'z viloyati, tumanlar kesimida. Ma'lumot FAQAT
  * `GET region/my/district-stats` (kuryerga `stats/all` — 403; viloyat serverda aniqlanadi). 0 buyurtmali
- * tumanlar — `GET district?region_id` katalogi bilan to'ldiriladi. Matnlarda filial/«sizga tegishli»
- * da'vosi yo'q: endpoint viloyat raqamlarini beradi (§9 savol 12 sukuti). Maket: `manager-regions-scoped`
+ * tumanlar — `GET district?region_id` katalogi bilan to'ldiriladi. aLx7Di99: raqamlar so'rovchi kesimida
+ * (`data.scope`) — menejer «<filial> buyurtmalari», kuryer «Sizga tegishli buyurtmalar»; `scope` yo'q
+ * (eski backend) — viloyat matni. Maket: `manager-regions-scoped`
  * (kuryer maketi — o'sha tuzilma, F3 birxillashtirish).
  */
 const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionViewProps) => {
@@ -90,18 +91,26 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
   const compact = splitCompactMoney(revenue, language);
 
   const regionName = region?.name ?? "";
-  const cardSub = regionName
-    ? t("v2.scoped.cardSubtitle", { period: periodLabel, region: regionName })
-    : periodLabel;
+  const scope = query.data?.scope ?? null;
+  const branchName =
+    scope?.type === "branch" ? (scope.branchName ?? t("v2.scoped.branchFallback")) : "";
+  let cardSub = periodLabel;
+  let subtitle = t("v2.scoped.subtitleNoRegion");
+  if (scope?.type === "courier") {
+    cardSub = t("v2.scoped.cardSubtitleCourier", { period: periodLabel });
+    subtitle = t("v2.scoped.subtitleCourier");
+  } else if (scope?.type === "branch") {
+    cardSub = t("v2.scoped.cardSubtitleBranch", { period: periodLabel, branch: branchName });
+    subtitle = t("v2.scoped.subtitleBranch", { branch: branchName });
+  } else if (regionName) {
+    cardSub = t("v2.scoped.cardSubtitle", { period: periodLabel, region: regionName });
+    subtitle = t("v2.scoped.subtitle", { region: regionName });
+  }
 
   const header = (
     <PageHeader
       title={regionName ? t("v2.scoped.title", { region: regionName }) : t("v2.page.title")}
-      description={
-        regionName
-          ? t("v2.scoped.subtitle", { region: regionName })
-          : t("v2.scoped.subtitleNoRegion")
-      }
+      description={subtitle}
       actions={controls}
     />
   );
@@ -135,12 +144,13 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
       </>
     );
   } else if (!region) {
+    const reason = query.data.noBranch ? "noBranch" : "noRegion";
     body = (
       <EmptyState
         framed
         icon={MapIcon}
-        title={t("v2.states.noRegion.title")}
-        description={t("v2.states.noRegion.text")}
+        title={t(`v2.states.${reason}.title`)}
+        description={t(`v2.states.${reason}.text`)}
       />
     );
   } else {

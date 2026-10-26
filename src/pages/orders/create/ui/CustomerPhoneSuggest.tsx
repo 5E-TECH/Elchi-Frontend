@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-neworders-create-manual-step2-customer-suggest, admin-neworders-create-manual-step2-customer-suggest, manager-new-orders-create-manual-step2-customer-suggest, registrator-new-orders-create-step2-customer-suggest, market-new-orders-create-manual-customer-suggest
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { UserPlus } from "lucide-react";
+import { Phone, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -68,6 +68,9 @@ const SuggestionRow = ({ suggestion, districtName, active, id, inCombobox, onPic
   const newCount = suggestion.new_orders_count ?? 0;
   const phone = suggestion.phone_number ? formatPhone(suggestion.phone_number) : "";
   const subline = [phone, districtName].filter(Boolean).join(" · ");
+  // 9444UAa8: qo'shimcha raqam bo'yicha topilgan — faqat backend `matched_by` aytsa (taxmin qilinmaydi).
+  const extraMatch =
+    suggestion.matched_by === "extra_number" && suggestion.extra_number ? formatPhone(suggestion.extra_number) : null;
 
   return (
     <Pressable
@@ -82,6 +85,14 @@ const SuggestionRow = ({ suggestion, districtName, active, id, inCombobox, onPic
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-semibold wrap-break-word">{suggestion.name?.trim() || "—"}</span>
         {subline ? <span className="text-[13px] text-text-muted">{subline}</span> : null}
+        {extraMatch ? (
+          <span className="inline-flex items-center gap-1 text-xs text-text-muted">
+            <Phone size={12} aria-hidden="true" className="shrink-0" />
+            <span>
+              {t("createCustomer.extraNumberMatch")} <span className="font-semibold text-text">{extraMatch}</span>
+            </span>
+          </span>
+        ) : null}
       </span>
       {ordersCount != null || newCount > 0 ? (
         <span className="flex shrink-0 flex-col items-end gap-1">
@@ -109,7 +120,8 @@ const SuggestionRow = ({ suggestion, districtName, active, id, inCombobox, onPic
  *
  * 7 raqamdan keyin, 300 ms kutib `GET customers/suggest` (market rolida `market_id` yuborilmaydi):
  *  - desktop/planshet — maydon ostida ro'yxat (`combobox` + `listbox`, ↑ ↓ Enter Esc): sarlavha (doira), qatorlar
- *    (ism; telefon · tuman; «N ta buyurtma», «N ta yangi»), «Yangi mijoz sifatida davom etish»; «Mijoz
+ *    (ism; telefon · tuman; `matched_by: extra_number` da «Qo'shimcha raqam: …» — 9444UAa8; «N ta buyurtma»,
+ *    «N ta yangi»), «Yangi mijoz sifatida davom etish»; «Mijoz
  *    qidirilmoqda...» va «Mijoz topilmadi» holatlari;
  *  - telefon — natija bo'lsagina pastki varaqa «Mijozni tanlang» (qidiruv/topilmadi — maydon ostida bir qator).
  *

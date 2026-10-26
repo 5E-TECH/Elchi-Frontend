@@ -95,6 +95,9 @@ export interface PostOrder {
   status: OrderStatus;
   comment: string | null;
   operator: string | null;
+  /** 1mOjtOVC: chek uchun operator telefonlari (bo'lmasa — `null`). */
+  operator_phone?: string | null;
+  secondary_operator_phone?: string | null;
   post_id: string | null;
   canceled_post_id?: string | null;
   sold_at?: string | null;

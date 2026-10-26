@@ -16,6 +16,14 @@ test.describe("Paketlar — HQ'ga yuborish, 1440px", () => {
     await table.getByRole("link", { name: "B-172 paketini ochish" }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: "Paket B-172" })).toBeVisible();
+    // 3HKvAyhm: menejer ham filial nomlarini ko'radi (tafsilot `source_branch` / `destination_branch`), «Tarix» — /history.
+    const info = page.getByRole("region", { name: "Paket ma'lumotlari" });
+    await expect(info).toContainText("Urgut filiali");
+    await expect(info).toContainText("Toshkent HQ");
+    const history = page.getByRole("region", { name: "Tarix" });
+    await expect(history.getByRole("listitem")).toHaveCount(1);
+    await expect(history).toContainText("Paket yaratildi");
+    await expect(history).toContainText("Ravshan Ortiqov");
     const orders = page.getByRole("region", { name: "Paketdagi buyurtmalar" });
     await orders.getByRole("checkbox", { name: "№10166 ni tanlash" }).check();
     await orders.getByRole("checkbox", { name: "№10163 ni tanlash" }).check();
@@ -26,6 +34,9 @@ test.describe("Paketlar — HQ'ga yuborish, 1440px", () => {
     expect(sends).toEqual([{ path: "transfer-batches/172/send", body: { orderIds: ["10166", "10163"] } }]);
     await expect(orders.getByRole("checkbox", { name: "№10166 ni tanlash" })).toHaveCount(0);
     await expect(orders.getByRole("checkbox", { name: "№10165 ni tanlash" })).toBeVisible();
+    // Jo'natishdan keyin tarix yangilanadi — eng yangisi tepada.
+    await expect(history.getByRole("listitem")).toHaveCount(2);
+    await expect(history.getByRole("listitem").first()).toContainText("Paket Toshkent HQ'ga jo'natildi");
 
     // «← Paketlar» — kelgan tabga (holat `fromSearch`), yon menyudagi «Paketlar» emas.
     const back = page.locator('[data-shell-slot="content"]').getByRole("link", { name: "Paketlar", exact: true });
