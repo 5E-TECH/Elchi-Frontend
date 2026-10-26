@@ -11,42 +11,22 @@ import {
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { cx } from "../../../shared/lib/cx";
 import { notify } from "../../../shared/lib/notify";
-import { Button, Card, DataTable, PageHeader, Pressable, QueryBoundary, type DataTableColumn } from "../../../shared/ui/primitives";
+import { Button, Card, DataTable, PageHeader, QueryBoundary, type DataTableColumn } from "../../../shared/ui/primitives";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
-import { diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
-import { SwitchRow, SwitchTrack } from "../../settings/ui/settingsUi";
+import { AutoCloseCard, ReportSendCard } from "./AutomationCards";
+import { CellSwitch } from "./CellSwitch";
+import { autoCloseDraftError, diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
+import { SwitchRow } from "../../settings/ui/settingsUi";
 
 /**
  * KASSA SMENASI SOZLAMALARI — `/payments/shift-settings`, faqat superadmin (maket `superadmin-payments-shift-settings`,
  * kiZgTybn). «Kartalar qoldig'ini tasdiqlash» kartasi: global kalitlar (`account_check_enabled`, `photo_required`,
  * `ai_check_enabled`) va «Har karta bo'yicha» jadvali (`require_photo_on_shift_close`, `ai_check_enabled`; AI faqat
  * rasm talab qilingan kartada — backend 400 qoidasi, rasm o'chsa AI ham o'chadi). «Saqlash» →
- * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Maketdagi «Avtomatik yopish» va «Smena hisobotini
- * yuborish» bloklari — boshqa kartalar backendi bilan keladi, hozir chizilmaydi.
+ * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Pastda «Avtomatik yopish» (y8Tqm9Ap) va «Smena
+ * hisobotini yuborish» (gWI4gYkw) kartalari — `AutomationCards.tsx`; backend javobida `auto_close` / `report`
+ * bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi.
  */
-
-const CellSwitch = ({
-  checked,
-  disabled,
-  label,
-  onToggle,
-}: {
-  checked: boolean;
-  disabled?: boolean;
-  label: string;
-  onToggle: (next: boolean) => void;
-}) => (
-  <Pressable
-    role="switch"
-    aria-checked={checked}
-    aria-label={label}
-    disabled={disabled}
-    onClick={() => onToggle(!checked)}
-    className="group inline-flex min-h-11 items-center rounded-lg px-1 disabled:cursor-not-allowed"
-  >
-    <SwitchTrack />
-  </Pressable>
-);
 
 const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
   const { t } = useTranslation("payments");
@@ -55,6 +35,8 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
   const dirty = Object.keys(body).length > 0;
+  // Avtomatik yopish yoqilgan, lekin vaqt yo'q — backend 1–12 ta kutadi; xato kartada, «Saqlash» o'chiq.
+  const invalid = autoCloseDraftError(draft) !== null;
 
   const setCard = (cardId: string, patch: Partial<Draft["cards"][string]>) =>
     setDraft((current) => {
@@ -65,7 +47,7 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
     });
 
   const save = async () => {
-    if (!dirty || update.isPending) return;
+    if (!dirty || invalid || update.isPending) return;
     try {
       await update.mutateAsync(body);
       notify.success(t("shiftCheck.settings.saved"));
@@ -142,7 +124,7 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
           <Button
             leftIcon={Save}
             onClick={() => void save()}
-            disabled={!dirty}
+            disabled={!dirty || invalid}
             loading={update.isPending}
             loadingText={t("shiftCheck.settings.saving")}
           >
@@ -213,6 +195,20 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
           <p className="m-0 px-5 py-4 text-[13px] text-text-muted">{t("shiftCheck.settings.empty")}</p>
         )}
       </Card>
+      {draft.auto_close || draft.report ? (
+        <div className="flex flex-wrap items-start gap-4">
+          {draft.auto_close ? (
+            <AutoCloseCard
+              value={draft.auto_close}
+              timesError={invalid}
+              onChange={(auto_close) => setDraft((current) => ({ ...current, auto_close }))}
+            />
+          ) : null}
+          {draft.report ? (
+            <ReportSendCard value={draft.report} onChange={(report) => setDraft((current) => ({ ...current, report }))} />
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 };

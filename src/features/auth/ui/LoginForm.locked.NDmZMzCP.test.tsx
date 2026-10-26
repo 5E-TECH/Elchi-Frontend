@@ -85,4 +85,33 @@ describe("LoginForm — NDmZMzCP login qulfi (429 LOGIN_LOCKED)", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Juda ko'p urinish");
     expect(submitButton()).not.toBeDisabled();
   });
+
+  it("review: qulf faqat o'sha raqamga — boshqa raqam yozilsa «Kirish» ishlaydi, qaytsa yana o'chiq", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValueOnce(locked(240)).mockResolvedValueOnce({ accessToken: "t", user: null });
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+    await screen.findByRole("alert");
+    expect(submitButton()).toBeDisabled();
+    const lockedPhone = (loginFn.mock.calls[0][0] as { phone_number: string }).phone_number;
+
+    const phone = screen.getByLabelText("Telefon raqam");
+    await user.clear(phone);
+    await user.type(phone, "91 765 43 21");
+    expect(submitButton()).not.toBeDisabled();
+
+    // Qulflangan raqamga qaytildi — yana o'chiq.
+    await user.clear(phone);
+    await user.type(phone, "90 123 45 67");
+    expect(submitButton()).toBeDisabled();
+
+    await user.clear(phone);
+    await user.type(phone, "91 765 43 21");
+    await user.click(submitButton());
+    await waitFor(() => expect(loginFn).toHaveBeenCalledTimes(2));
+    const second = (loginFn.mock.calls[1][0] as { phone_number: string }).phone_number;
+    expect(second).not.toBe(lockedPhone);
+    expect(second).toBe("+998917654321");
+  });
 });

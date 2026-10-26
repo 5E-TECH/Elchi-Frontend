@@ -243,6 +243,8 @@ export const API_ENDPOINTS = {
     SHIFT_SETTINGS: "finance/shift/settings",
     SHIFT_ACCOUNT_PHOTO: "finance/shift/account-photo",
     SHIFT_REPORT: (id: string | number) => `finance/shift/${id}/report`,
+    /** gWI4gYkw — smena hisobotini qayta yuborish (faqat superadmin, yangi raund). */
+    SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
     // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
     CARDS: "finance/cashbox/cards",
   },

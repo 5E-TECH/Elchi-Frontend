@@ -1,9 +1,10 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-dialog-accounts
-import { useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import {
   Ban,
   CircleCheck,
   CircleX,
+  Clock,
   CreditCard,
   ExternalLink,
   FileImage,
@@ -32,7 +33,7 @@ import {
   TONE_FG,
   TONE_SOFT,
 } from "../../../../shared/ui/primitives";
-import { AiStatusBadge, EnteredMismatchBadge } from "./aiStatus";
+import { AiStatusBadge, AiTimedOutBadge, EnteredMismatchBadge } from "./aiStatus";
 import { cardSubtitle } from "./aiStatusMeta";
 import type { ShiftAccountRow, ShiftAccountsForm } from "./useShiftAccountsForm";
 
@@ -40,7 +41,9 @@ import type { ShiftAccountRow, ShiftAccountsForm } from "./useShiftAccountsForm"
  * «KARTALAR VA HISOB RAQAMLAR» — smena yopish oynasining bo'limi (maket
  * `superadmin-payments-main-cashbox-shift-dialog-accounts`, kiZgTybn). Har karta qatori: nomi + bank · ··1234,
  * «Ilovadagi qoldiq *» (ostida «Tizim bo'yicha»), «Skrinshot *|(ixtiyoriy)» va AI natija chizig'i; farq ≠ 0, AI
- * «Mos kelmadi» yoki kiritilgan ≠ rasmdagi bo'lsa — «Izoh *» (backend 400 qoidalarining aynan nusxasi).
+ * «Mos kelmadi» yoki kiritilgan ≠ rasmdagi bo'lsa — «Izoh *» (backend 400 qoidalarining aynan nusxasi). Izoh maydoni
+ * har doim ko'rinadi (majburiy bo'lmasa — «(ixtiyoriy)»): yopish paytida kutilgan qoldiq o'zgarib backend izoh so'rasa,
+ * kassir uni yoza oladi. Backend 400 da ko'rsatgan karta qizil halqa bilan ajratiladi va ko'rinishga suriladi.
  */
 
 const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp";
@@ -68,6 +71,10 @@ const AiLine = ({ row }: { row: ShiftAccountRow }) => {
   } else if (!row.hasPhoto) {
     line = { tone: "neutral", icon: ScanLine, text: t("shiftCheck.ai.line.waitingPhoto") };
     badge = null;
+  } else if (row.aiTimedOut) {
+    // 3 daqiqadan beri `pending` — so'rov to'xtadi; backend yopishda baribir 30 s kutadi, keyin yopadi.
+    line = { tone: "warning", icon: Clock, text: t("shiftCheck.ai.line.timedOut") };
+    badge = <AiTimedOutBadge />;
   } else if (row.aiStatus === "pending" || row.aiStatus === "not_required") {
     line = { tone: "neutral", icon: null, text: t("shiftCheck.ai.line.pending") };
     badge = <AiStatusBadge status="pending" />;
@@ -234,7 +241,13 @@ const AccountRow = ({
   const photoErrorId = useId();
   const cardId = row.card.card_id;
   const subtitle = cardSubtitle(row.card);
-  const show = (error: "entered" | "photo" | "comment") => submitted && row.errors.includes(error);
+  const itemRef = useRef<HTMLLIElement>(null);
+  const highlighted = row.serverIssue !== null;
+  useEffect(() => {
+    if (highlighted) itemRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [highlighted]);
+  const show = (error: "entered" | "photo" | "comment") =>
+    (submitted || row.serverIssue === error) && row.errors.includes(error);
   const photoError =
     row.photoError === "type"
       ? t("shiftCheck.accounts.errors.photoType")
@@ -247,7 +260,16 @@ const AccountRow = ({
             : undefined;
 
   return (
-    <li className="flex flex-col gap-3 border-b border-border px-4 py-4 last:border-b-0 max-md:px-3" data-testid={`shift-account-${cardId}`}>
+    <li
+      ref={itemRef}
+      className={cx(
+        "flex flex-col gap-3 border-b border-border px-4 py-4 last:border-b-0 max-md:px-3",
+        // Backend 400 da ko'rsatgan karta — qizil halqa (`.el-field` xato halqasi bilan bir xil ton).
+        highlighted && "rounded-xl ring-2 ring-inset ring-danger-fg/50",
+      )}
+      data-testid={`shift-account-${cardId}`}
+      data-highlighted={highlighted || undefined}
+    >
       <div className="grid gap-x-4 gap-y-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-sunken text-text-muted">
@@ -301,23 +323,23 @@ const AccountRow = ({
 
       <AiLine row={row} />
 
-      {row.commentRequired || row.comment ? (
-        <Field
-          label={t("shiftCheck.accounts.comment")}
-          required={row.commentRequired}
-          optional={!row.commentRequired}
-          hint={row.commentRequired ? t("shiftCheck.accounts.commentHint") : undefined}
-          error={show("comment") ? t("shiftCheck.accounts.errors.comment") : undefined}
-        >
-          <TextInput
-            multiline
-            rows={2}
-            value={row.comment}
-            onValueChange={(value) => form.setRowInput(cardId, { comment: value })}
-            placeholder={t("shiftCheck.accounts.commentPlaceholder")}
-          />
-        </Field>
-      ) : null}
+      <Field
+        label={t("shiftCheck.accounts.comment")}
+        required={row.commentRequired}
+        optional={!row.commentRequired}
+        hint={row.commentRequired ? t("shiftCheck.accounts.commentHint") : undefined}
+        error={show("comment") ? t("shiftCheck.accounts.errors.comment") : undefined}
+      >
+        <TextInput
+          multiline
+          rows={2}
+          value={row.comment}
+          onValueChange={(value) => form.setRowInput(cardId, { comment: value })}
+          placeholder={
+            row.commentRequired ? t("shiftCheck.accounts.commentPlaceholder") : t("shiftCheck.accounts.commentOptionalPlaceholder")
+          }
+        />
+      </Field>
     </li>
   );
 };
@@ -328,7 +350,9 @@ const ShiftAccountsSection = ({ form, submitted }: { form: ShiftAccountsForm; su
   const headingId = useId();
   const anyAi = form.rows.some((row) => row.aiEnabled);
   const commentRows = form.rows.filter((row) => row.commentRequired).length;
-  const pendingRows = form.rows.filter((row) => row.aiEnabled && row.hasPhoto && row.aiStatus === "pending").length;
+  const pendingRows = form.rows.filter(
+    (row) => row.aiEnabled && row.hasPhoto && row.aiStatus === "pending" && !row.aiTimedOut,
+  ).length;
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3" data-testid="shift-accounts-section">

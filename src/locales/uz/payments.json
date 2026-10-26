@@ -987,6 +987,7 @@
       "comment": "Izoh",
       "commentPlaceholder": "Farq sababini yozing",
       "commentHint": "Qoldiq tizimdagidan farq qiladi — izohsiz smena yopilmaydi",
+      "commentOptionalPlaceholder": "Ixtiyoriy — masalan, qoldiq haqida eslatma",
       "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
       "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
       "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
@@ -1020,9 +1021,11 @@
         "error": "AI tekshiruvi ishlamadi — smena baribir yopiladi",
         "disabled": "AI tekshiruvi o'chirilgan — qoldiq qo'lda tasdiqlanadi",
         "waitingPhoto": "Skrinshot yuklang — AI qoldiqni tekshiradi",
-        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi"
+        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi",
+        "timedOut": "AI natijasi kelmadi — qoldiq qo'lda tasdiqlanadi"
       },
-      "enteredBadge": "Kiritilgan ≠ rasm"
+      "enteredBadge": "Kiritilgan ≠ rasm",
+      "timedOutBadge": "Natija kelmadi"
     },
     "report": {
       "title": "Smena hisoboti",
@@ -1090,6 +1093,55 @@
           "click": "karta",
           "other": "boshqa"
         }
+      },
+      "autoClosed": {
+        "title": "Avtomatik yopildi — {{time}}, kassir yopmagan",
+        "titleNoTime": "Avtomatik yopildi, kassir yopmagan",
+        "text": "{{name}} {{time}} da ochgan smenani yopmagan; naqd va kartalar qoldig'i sanalmagan, hisob tizim ma'lumoti bo'yicha.",
+        "textNoName": "Smena kassir tomonidan yopilmagan; naqd va kartalar qoldig'i sanalmagan, hisob tizim ma'lumoti bo'yicha."
+      },
+      "file": {
+        "pdf": "PDF",
+        "xlsx": "Excelga yuklash"
+      },
+      "resend": {
+        "action": "Hisobotni qayta yuborish",
+        "sending": "Yuborilmoqda…",
+        "confirmTitle": "Hisobotni qayta yuborasizmi?",
+        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar) yangi raund bilan yana yuboriladi.",
+        "confirm": "Qayta yuborish",
+        "done": "Hisobot qayta yuborildi",
+        "failed": "Hisobot qayta yuborilmadi"
+      },
+      "deliveries": {
+        "title": "Hisobot kimlarga yuborildi",
+        "recipients": "{{value}} ta qabul qiluvchi",
+        "round": "{{round}}-raund",
+        "kind": {
+          "superadmin": "Superadmin",
+          "courier": "Kuryerlar · {{value}} ta",
+          "market": "Marketlar · {{value}} ta"
+        },
+        "hint": {
+          "superadmin": "to'liq hisobot va {{format}}",
+          "courier": "Faqat o'z operatsiyalari",
+          "market": "Faqat o'ziga to'lovlar"
+        },
+        "channel": {
+          "telegram": "Telegram",
+          "in_app": "Tizim"
+        },
+        "queued": "yuborilmoqda",
+        "failedLine": "{{name}} — {{channel}}: {{reason}}",
+        "failedUnknown": "yuborilmadi",
+        "failedMore": "Yana {{count}} ta yuborilmagan",
+        "empty": {
+          "open": "Smena yopilgach hisobot yuboriladi.",
+          "pending": "Hisobot navbatda — tez orada yuboriladi.",
+          "skipped": "Hisobot yuborilmadi — sozlamada barcha qabul qiluvchilar o'chirilgan.",
+          "failed": "Hisobotni yuborishda xato bo'ldi — qayta yuborib ko'ring.",
+          "none": "Bu smena hisoboti hali hech kimga yuborilmagan."
+        }
       }
     },
     "settings": {
@@ -1122,7 +1174,58 @@
         "none": "Rasm ixtiyoriy, qoldiq qo'lda tasdiqlanadi",
         "off": "Tasdiqlash o'chiq — smena avvalgidek yopiladi"
       },
-      "empty": "Bu kassada faol karta yo'q"
+      "empty": "Bu kassada faol karta yo'q",
+      "auto": {
+        "title": "Avtomatik yopish",
+        "subtitle": "Kassir o'z vaqtida yopmasa",
+        "enabled": "Smenani avtomatik yopish",
+        "enabledHint": "Belgilangan vaqtda ochiq smena tizim tomonidan yopiladi, hisobotda «Avtomatik yopildi» deb yoziladi",
+        "times": "Kuniga yopish vaqtlari",
+        "timesHint": "Kuniga {{value}} marta · Toshkent vaqti (UTC+5)",
+        "timesRequired": "Kamida bitta yopish vaqtini qo'shing",
+        "addTime": "Vaqt qo'shish",
+        "pickTime": "Vaqtni tanlang",
+        "cancelAdd": "Vaqt qo'shishni bekor qilish",
+        "removeTime": "{{time}} ni olib tashlash",
+        "scope": "Qaysi kassalarda",
+        "scopes": {
+          "main": "Faqat asosiy kassa",
+          "branches": "Asosiy kassa va filial kassalari"
+        },
+        "warn": "Yopishdan {{value}} daqiqa oldin ogohlantirish",
+        "warnOff": "Yopishdan oldin ogohlantirish",
+        "warnHint": "Kassirga Telegram va tizim orqali eslatma keladi",
+        "warnBefore": "Necha daqiqa oldin",
+        "warnMinutes": "{{value}} daqiqa",
+        "note": "Avtomatik yopilganda naqd va kartalar sanalmaydi — yopilish qoldig'i tizim bo'yicha olinadi, farq hisoblanmaydi. Keyingi smenani kassir o'zi ochadi."
+      },
+      "report": {
+        "title": "Smena hisobotini yuborish",
+        "subtitle": "Har smena yopilganda — kassir yoki avtomatik",
+        "label": "Hisobot qabul qiluvchilari",
+        "recipient": "Qabul qiluvchi",
+        "groups": {
+          "superadmin": "Superadmin",
+          "couriers": "Kuryerlar",
+          "markets": "Marketlar"
+        },
+        "groupHints": {
+          "superadmin": "To'liq hisobot va ilova",
+          "couriers": "Faqat o'z operatsiyalari",
+          "markets": "Faqat o'ziga to'lovlar"
+        },
+        "channels": {
+          "telegram": "Telegram",
+          "in_app": "Tizim"
+        },
+        "switch": {
+          "telegram": "{{group}}: Telegram",
+          "in_app": "{{group}}: tizim bildirishnomasi"
+        },
+        "format": "Ilova formati",
+        "formatHint": "Superadminga Telegram xabari bilan birga yuboriladi",
+        "note": "Hisobot faqat smenada operatsiyasi bo'lgan kuryer va marketlarga boradi: kuryer faqat o'z o'tkazmalarini, market faqat o'ziga to'langan summalarni ko'radi. Telegram ulanmagan foydalanuvchiga faqat tizim bildirishnomasi yuboriladi."
+      }
     },
     "resultReport": "Smena hisoboti"
   }

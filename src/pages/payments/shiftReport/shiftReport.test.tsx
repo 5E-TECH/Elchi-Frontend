@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import ShiftReportPage from ".";
@@ -150,5 +151,110 @@ describe("ShiftReportPage (kiZgTybn)", () => {
   it("an open shift shows the info banner", async () => {
     render(superadmin, { ...REPORT, shift: { ...REPORT.shift, status: "open", closed_at: null } });
     expect(await screen.findByText("Smena hali ochiq — natijalar yopilguncha o'zgarishi mumkin.")).toBeInTheDocument();
+  });
+});
+
+/** y8Tqm9Ap + gWI4gYkw — avtomatik yopilgan smena banneri, «Hisobot kimlarga yuborildi», fayl va qayta yuborish. */
+describe("ShiftReportPage — auto close and report deliveries (y8Tqm9Ap, gWI4gYkw)", () => {
+  const delivery = (over: Record<string, unknown>) => ({
+    round: 1,
+    status: "sent",
+    failed_reason: null,
+    sent_at: "2026-10-23T18:01:00.000Z",
+    created_at: "2026-10-23T18:00:30.000Z",
+    ...over,
+  });
+  const AUTO_REPORT = {
+    ...REPORT,
+    shift: { ...REPORT.shift, closed_by_name: null },
+    cash: { ...REPORT.cash, closing_balance: null, discrepancy: null },
+    close_reason: "auto",
+    closed_by_system: true,
+    auto_close: { closed_at: "2026-10-23T18:00:00.000Z", label: "Avtomatik yopildi — 23:00, kassir yopmagan" },
+    report: { status: "sent", round: 2, file_format: "pdf", has_file: true, file_url: "https://files.example/report-31.pdf" },
+    deliveries: [
+      // Eski raund — hisobga kirmaydi.
+      delivery({ round: 1, recipient_id: "1", recipient_name: "Shodiyor Ergashev", recipient_kind: "superadmin", channel: "telegram", status: "failed" }),
+      delivery({ round: 2, recipient_id: "1", recipient_name: "Shodiyor Ergashev", recipient_kind: "superadmin", channel: "telegram" }),
+      delivery({ round: 2, recipient_id: "1", recipient_name: "Shodiyor Ergashev", recipient_kind: "superadmin", channel: "in_app" }),
+      delivery({ round: 2, recipient_id: "7", recipient_name: "Bekzod Aliyev", recipient_kind: "courier", channel: "telegram", status: "failed", failed_reason: "Telegram ulanmagan", sent_at: null }),
+      delivery({ round: 2, recipient_id: "7", recipient_name: "Bekzod Aliyev", recipient_kind: "courier", channel: "in_app" }),
+      delivery({ round: 2, recipient_id: "8", recipient_name: "Ali Valiyev", recipient_kind: "courier", channel: "telegram" }),
+      delivery({ round: 2, recipient_id: "8", recipient_name: "Ali Valiyev", recipient_kind: "courier", channel: "in_app" }),
+      delivery({ round: 2, recipient_id: "21", recipient_name: "Baraka Shop", recipient_kind: "market", channel: "telegram_group", status: "queued", sent_at: null }),
+      delivery({ round: 2, recipient_id: "21", recipient_name: "Baraka Shop", recipient_kind: "market", channel: "in_app", status: "skipped", sent_at: null }),
+    ],
+  };
+
+  // Vaqtlar Toshkent mintaqasida (vitest sozlamasi): 18:00Z → 23:00.
+  it("auto-closed shift: yellow banner, deliveries grouped by recipient (latest round), file link", async () => {
+    render(superadmin, AUTO_REPORT);
+    const banner = await screen.findByTestId("shift-auto-closed");
+    expect(banner).toHaveTextContent("Avtomatik yopildi — 23:00, kassir yopmagan");
+    expect(banner).toHaveTextContent("Shodiyor Ergashev 14:05 da ochgan smenani yopmagan");
+
+    const list = screen.getByRole("list", { name: "Hisobot kimlarga yuborildi" });
+    expect(screen.getByText("23:01 · 4 ta qabul qiluvchi · 2-raund")).toBeInTheDocument();
+    const admin = within(list).getByTestId("shift-delivery-superadmin");
+    expect(admin).toHaveTextContent("Shodiyor Ergashev · to'liq hisobot va PDF");
+    expect(within(admin).getByText("Telegram")).toBeInTheDocument();
+    const couriers = within(list).getByTestId("shift-delivery-courier");
+    expect(couriers).toHaveTextContent("Kuryerlar · 2 ta");
+    expect(within(couriers).getByText("Telegram 1 / 2")).toBeInTheDocument();
+    expect(within(couriers).getByText("Tizim 2 / 2")).toBeInTheDocument();
+    expect(couriers).toHaveTextContent("Bekzod Aliyev — Telegram: Telegram ulanmagan");
+    const markets = within(list).getByTestId("shift-delivery-market");
+    // Tizim kanali sozlamada o'chiq (skipped) — chizilmaydi; guruhga yuborish hali navbatda.
+    expect(markets).toHaveTextContent("Telegram 0 / 1 · yuborilmoqda");
+    expect(within(markets).queryByText(/Tizim/)).not.toBeInTheDocument();
+
+    expect(screen.getByRole("link", { name: "PDF" })).toHaveAttribute("href", "https://files.example/report-31.pdf");
+  });
+
+  it("superadmin resends the report after confirming; the report is re-read", async () => {
+    const user = userEvent.setup();
+    render(superadmin, AUTO_REPORT);
+    http.post.mockReset();
+    http.post.mockResolvedValueOnce({ data: { statusCode: 200, data: { round: 3, status: "sent", deliveries: [] } } });
+    await user.click(await screen.findByRole("button", { name: "Hisobotni qayta yuborish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Hisobotni qayta yuborasizmi?" });
+    expect(http.post).not.toHaveBeenCalled();
+    const reads = http.get.mock.calls.length;
+    await user.click(within(dialog).getByRole("button", { name: "Qayta yuborish" }));
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith("finance/shift/31/report/resend"));
+    expect(await screen.findByText("Hisobot qayta yuborildi")).toBeInTheDocument();
+    await waitFor(() => expect(http.get.mock.calls.length).toBeGreaterThan(reads));
+  });
+
+  it("a rejected resend (400 — already sending) shows the backend message", async () => {
+    const user = userEvent.setup();
+    render(superadmin, AUTO_REPORT);
+    http.post.mockReset();
+    http.post.mockRejectedValueOnce(
+      Object.assign(new Error("400"), { response: { status: 400, data: { message: "Hisobot hozir yuborilmoqda" } } }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Hisobotni qayta yuborish" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Qayta yuborish" }));
+    expect(await screen.findByText("Hisobot hozir yuborilmoqda")).toBeInTheDocument();
+  });
+
+  it("while the report is being sent the resend button is disabled; no deliveries yet → queue text", async () => {
+    render(superadmin, { ...AUTO_REPORT, report: { ...AUTO_REPORT.report, status: "processing" }, deliveries: [] });
+    expect(await screen.findByRole("button", { name: "Hisobotni qayta yuborish" })).toBeDisabled();
+    expect(screen.getByText("Hisobot navbatda — tez orada yuboriladi.")).toBeInTheDocument();
+  });
+
+  it("manager: the banner is shown, but no deliveries card, file or resend (superadmin only)", async () => {
+    render(manager, { ...AUTO_REPORT, deliveries: [], report: { ...AUTO_REPORT.report, file_url: null } });
+    expect(await screen.findByTestId("shift-auto-closed")).toBeInTheDocument();
+    expect(screen.queryByText("Hisobot kimlarga yuborildi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hisobotni qayta yuborish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "PDF" })).not.toBeInTheDocument();
+  });
+
+  it("a manually closed shift has no auto-close banner", async () => {
+    render(superadmin, { ...REPORT, close_reason: "manual", auto_close: null });
+    await screen.findByRole("table", { name: "Kartalar bo'yicha natijalar" });
+    expect(screen.queryByTestId("shift-auto-closed")).not.toBeInTheDocument();
   });
 });

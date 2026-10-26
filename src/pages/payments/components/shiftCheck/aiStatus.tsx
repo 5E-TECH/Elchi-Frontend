@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-dialog-accounts, superadmin-payments-shift-report
-import { Ban, Check, CircleAlert, X, type LucideIcon } from "lucide-react";
+import { Ban, Check, CircleAlert, Clock, X, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ShiftAiStatus } from "../../../../entities/payments";
 import { Badge } from "../../../../shared/ui/primitives";
@@ -35,6 +35,16 @@ export const EnteredMismatchBadge = () => {
   return (
     <Badge tone="danger" icon={CircleAlert}>
       {t("shiftCheck.ai.enteredBadge")}
+    </Badge>
+  );
+};
+
+/** AI `pending` 3 daqiqadan oshdi (so'rov to'xtagan) — «Natija kelmadi» (warning, soat ikonkasi). */
+export const AiTimedOutBadge = () => {
+  const { t } = useTranslation("payments");
+  return (
+    <Badge tone="warning" icon={Clock}>
+      {t("shiftCheck.ai.timedOutBadge")}
     </Badge>
   );
 };

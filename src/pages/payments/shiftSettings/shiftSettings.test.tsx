@@ -88,6 +88,13 @@ describe("Shift settings (kiZgTybn)", () => {
     expect(await screen.findByText("Sozlamalar saqlandi")).toBeInTheDocument();
   });
 
+  it("old backend without auto_close / report: the automation cards are not drawn", async () => {
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await screen.findByRole("button", { name: /Saqlash/ });
+    expect(screen.queryByText("Avtomatik yopish")).not.toBeInTheDocument();
+    expect(screen.queryByText("Smena hisobotini yuborish")).not.toBeInTheDocument();
+  });
+
   it("a rejected save (403) shows the backend message", async () => {
     http.patch.mockRejectedValueOnce(
       Object.assign(new Error("403"), {
@@ -99,5 +106,79 @@ describe("Shift settings (kiZgTybn)", () => {
     await user.click(await screen.findByRole("switch", { name: "Rasm talab qilish" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     expect(await screen.findByText("Smena sozlamalarini faqat superadmin o'zgartiradi")).toBeInTheDocument();
+  });
+});
+
+/** y8Tqm9Ap + gWI4gYkw — «Avtomatik yopish» va «Smena hisobotini yuborish» kartalari: PATCH faqat o'zgarganlar. */
+describe("Shift settings — auto close and report sending (y8Tqm9Ap, gWI4gYkw)", () => {
+  const AUTOMATION = {
+    ...SETTINGS,
+    auto_close: { enabled: false, times: ["23:00", "14:00"], scope: "main", warn_before_min: 15 },
+    report: {
+      recipients: {
+        superadmin: { telegram: true, in_app: true },
+        couriers: { telegram: false, in_app: false },
+        markets: { telegram: false, in_app: false },
+      },
+      format: "pdf",
+    },
+  };
+
+  beforeEach(() => {
+    http.get.mockImplementation(async () => ({ data: { statusCode: 200, data: AUTOMATION } }));
+  });
+
+  it("auto close: switch, times (remove + add, sorted), scope and warn minutes → only the changed auto_close keys", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    const enable = await screen.findByRole("switch", { name: "Smenani avtomatik yopish" });
+    expect(enable).toHaveAttribute("aria-checked", "false");
+    const times = screen.getByRole("list", { name: "Kuniga yopish vaqtlari" });
+    // Backend tartiblamagan bo'lsa ham — o'sish tartibida.
+    expect(within(times).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["14:00", "23:00"]);
+    expect(screen.getByText("Kuniga 2 marta · Toshkent vaqti (UTC+5)")).toBeInTheDocument();
+
+    await user.click(enable);
+    await user.click(screen.getByRole("button", { name: "14:00 ni olib tashlash" }));
+    await user.click(screen.getByRole("button", { name: "Vaqt qo'shish" }));
+    await user.click(await screen.findByRole("option", { name: "09:30" }));
+    expect(within(times).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["09:30", "23:00"]);
+
+    await user.click(screen.getByRole("radio", { name: "Asosiy kassa va filial kassalari" }));
+    const warn = screen.getByRole("switch", { name: "Yopishdan 15 daqiqa oldin ogohlantirish" });
+    await user.click(warn);
+    expect(screen.getByRole("switch", { name: "Yopishdan oldin ogohlantirish" })).toHaveAttribute("aria-checked", "false");
+
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
+    expect(http.patch).toHaveBeenCalledWith("finance/shift/settings", {
+      auto_close: { enabled: true, times: ["09:30", "23:00"], scope: "main+branches", warn_before_min: 0 },
+    });
+  });
+
+  it("auto close turned on without any time: error under the times and «Saqlash» stays disabled", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await user.click(await screen.findByRole("switch", { name: "Smenani avtomatik yopish" }));
+    await user.click(screen.getByRole("button", { name: "14:00 ni olib tashlash" }));
+    await user.click(screen.getByRole("button", { name: "23:00 ni olib tashlash" }));
+    expect(screen.getByText("Kamida bitta yopish vaqtini qo'shing")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled();
+  });
+
+  it("report sending: recipient × channel switches and the PDF / Excel format → only the changed report keys", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    const table = await screen.findByRole("table", { name: "Hisobot qabul qiluvchilari" });
+    expect(within(table).getByRole("switch", { name: "Superadmin: Telegram" })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(table).getByRole("switch", { name: "Kuryerlar: tizim bildirishnomasi" }));
+    await user.click(within(table).getByRole("switch", { name: "Superadmin: Telegram" }));
+    await user.click(screen.getByRole("radio", { name: "Excel" }));
+
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
+    expect(http.patch).toHaveBeenCalledWith("finance/shift/settings", {
+      report: { recipients: { superadmin: { telegram: false }, couriers: { in_app: true } }, format: "xlsx" },
+    });
   });
 });
