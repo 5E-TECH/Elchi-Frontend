@@ -67,7 +67,7 @@ import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
 import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
 import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
-import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
+import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
@@ -724,8 +724,8 @@ const MainCashbox = () => {
   );
 
   const handleCloseShift = useCallback(
-    async ({ countedCash, countedCard, comment, accounts }: CloseShiftPayload) => {
-      if (!closingShiftId || closeShift.isPending) return;
+    async ({ countedCash, countedCard, comment, accounts }: CloseShiftPayload): Promise<CloseShiftResult | undefined> => {
+      if (!closingShiftId || closeShift.isPending) return undefined;
       const openedByName = shiftState.openedByName;
       let closed: CashboxShift | null = null;
       let closedResponse: unknown = null;
@@ -747,7 +747,8 @@ const MainCashbox = () => {
         notify.error(t("common:error"), { description: accountMessage || t("closeShiftError") });
         // Smena boshqa xodim tomonidan yopilgan bo'lishi mumkin — holat qayta o'qiladi.
         refetchShift();
-        return;
+        // Oyna kartani ajratadi va qoldiqlarni qayta o'qiydi («Humo»: … izoh majburiy).
+        return accountMessage ? { error: accountMessage } : undefined;
       }
       setClosingShiftId(null);
       handleExportExcel();
@@ -759,6 +760,7 @@ const MainCashbox = () => {
       } else {
         notify.success(t("common:success"), { description: t("closeShiftSuccess") });
       }
+      return undefined;
     },
     [closeShift, closingShiftId, handleExportExcel, refetchShift, shiftState.openedByName, t],
   );

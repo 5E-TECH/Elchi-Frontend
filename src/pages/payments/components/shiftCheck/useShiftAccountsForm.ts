@@ -24,6 +24,9 @@ import { parseOptionalAmountInput } from "../lib/amountInput";
  *  - qoralama (rasm, AI holati) — `GET finance/shift/:id/report` → `accounts[]`; realtime
  *    `finance.shift.account_checked` `[shift]` so'rovlarini yangilaydi (AI holati jonli o'zgaradi), `pending` da 5 s.
  *  - Rasm tanlanishi bilan yuklanadi (`POST finance/shift/account-photo`), kiritilgan qoldiq bilan birga.
+ *  - Yopish 400 ««Karta»: … izoh majburiy» (yoki «… rasm majburiy») qaytarsa — `applyCloseError`: kartalar
+ *    qoldig'i va qoralamalar qayta o'qiladi (mijozdagi kutilgan qoldiq eskirgan bo'lishi mumkin), o'sha karta
+ *    ajratiladi va izoh majburiy bo'ladi (backend shunday dedi — mijoz hisobi farqni ko'rmasa ham).
  */
 
 export type ShiftAccountLocalPhoto = { name: string; size: number; at: Date };
@@ -49,9 +52,23 @@ export type ShiftAccountRow = {
   enteredOk: boolean | null;
   commentRequired: boolean;
   errors: ShiftAccountRowError[];
+  /** Yopish 400 da backend ko'rsatgan karta — qator ajratiladi. */
+  serverIssue: "comment" | "photo" | null;
 };
 
 type RowInput = { entered?: string; comment?: string };
+
+/** Yopish 400 xabari: `«Humo»: farq bor yoki AI natijasi mos emas — izoh majburiy` (backend `${label}: …`). */
+export type ShiftCloseServerIssue = { cardName: string; kind: "comment" | "photo" };
+
+export const parseShiftCloseError = (message: string | null | undefined): ShiftCloseServerIssue | null => {
+  const match = /«([^»]+)»\s*:\s*(.+)$/u.exec(String(message ?? "").trim());
+  if (!match) return null;
+  const reason = match[2].toLowerCase();
+  if (reason.includes("izoh majburiy")) return { cardName: match[1].trim(), kind: "comment" };
+  if (reason.includes("rasm") && reason.includes("majburiy")) return { cardName: match[1].trim(), kind: "photo" };
+  return null;
+};
 
 export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId?: string | null }) => {
   const settingsQuery = useShiftCheckSettings(open);
@@ -66,6 +83,8 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
   const [photoErrors, setPhotoErrors] = useState<Record<string, { kind: "type" | "size" | "upload"; message: string | null }>>(
     {},
   );
+  /** Backend 400 da ko'rsatgan karta (ajratiladi): `card_id` → sabab. */
+  const [serverIssues, setServerIssues] = useState<Record<string, "comment" | "photo">>({});
 
   const balances = useMemo(
     () => new Map((balancesQuery.data ?? []).map((card) => [card.id, card.balance])),
@@ -99,6 +118,14 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
           aiReadBalance,
           comment,
         });
+        const serverIssue = serverIssues[card.card_id] ?? null;
+        // Backend izohni majburiy dedi — mijoz hisobi farqni ko'rmasa ham (kutilgan qoldiq yopish paytida o'zgargan).
+        const serverComment = serverIssue === "comment";
+        const commentRequired = evaluated.commentRequired || serverComment;
+        const errors =
+          serverComment && !comment.trim() && !evaluated.errors.includes("comment")
+            ? [...evaluated.errors, "comment" as const]
+            : evaluated.errors;
         const photoError = photoErrors[card.card_id];
         return {
           card,
@@ -118,9 +145,12 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
           aiStatus,
           aiReadBalance,
           ...evaluated,
+          commentRequired,
+          errors,
+          serverIssue,
         };
       }),
-    [balances, drafts, enabled, inputs, photoErrors, photos, settingsQuery.data, uploading],
+    [balances, drafts, enabled, inputs, photoErrors, photos, serverIssues, settingsQuery.data, uploading],
   );
 
   const setRowInput = useCallback((cardId: string, patch: Partial<RowInput>) => {
@@ -171,7 +201,28 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
     setPhotos({});
     setUploading({});
     setPhotoErrors({});
+    setServerIssues({});
   }, []);
+
+  const { refetch: refetchBalances } = balancesQuery;
+  const { refetch: refetchReport } = reportQuery;
+  /**
+   * Yopish 400 xabarini qo'llaydi: karta topilsa — ajratiladi, kutilgan qoldiqlar va qoralamalar qayta o'qiladi;
+   * `true` — xabar kartaga tegishli.
+   */
+  const applyCloseError = useCallback(
+    (message: string | null | undefined): boolean => {
+      const issue = parseShiftCloseError(message);
+      if (!issue) return false;
+      const target = (settingsQuery.data?.cards ?? []).find((card) => card.name.trim() === issue.cardName);
+      if (!target) return false;
+      setServerIssues({ [target.card_id]: issue.kind });
+      void refetchBalances();
+      void refetchReport();
+      return true;
+    },
+    [refetchBalances, refetchReport, settingsQuery.data],
+  );
 
   const isUploading = rows.some((row) => row.uploading);
   const hasErrors = rows.some((row) => row.errors.length > 0);
@@ -203,6 +254,7 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
     uploadPhoto,
     reset,
     buildPayload,
+    applyCloseError,
   };
 };
 

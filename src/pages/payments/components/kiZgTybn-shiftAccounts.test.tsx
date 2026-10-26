@@ -266,7 +266,8 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     expect(await within(row(dialog, "2")).findByText("1 850 000 so'm")).toBeInTheDocument();
     // AI o'chiq karta — qo'lda tasdiqlanadi, rasm ixtiyoriy.
     expect(within(row(dialog, "3")).getByText("AI tekshiruvi o'chirilgan — qoldiq qo'lda tasdiqlanadi")).toBeInTheDocument();
-    expect(within(row(dialog, "3")).getByText("(ixtiyoriy)")).toBeInTheDocument();
+    // (izoh maydonidagi «(ixtiyoriy)» — yorliq ichida; bu yerda skrinshot maydoni tekshiriladi)
+    expect(within(row(dialog, "3")).getByText("(ixtiyoriy)", { ignore: "label span, script, style" })).toBeInTheDocument();
     // Superadmin — «Sozlamalar» havolasi.
     expect(within(section).getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/payments/shift-settings");
 
@@ -393,5 +394,55 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
     expect(await screen.findByText("«Humo virtual»: farq bor yoki AI natijasi mos emas — izoh majburiy")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: CLOSE_SHIFT })).toBeInTheDocument();
+  });
+
+  it("review: the comment box is always there; a 400 «izoh majburiy» re-reads balances, highlights the card and asks for the comment", async () => {
+    server.settings = enabledSettings({ photo_required: false, ai_check_enabled: false });
+    server.settings.cards = (server.settings.cards as Array<Record<string, unknown>>).map((card) => ({
+      ...card,
+      photo_required: false,
+      ai_enabled: false,
+    }));
+    // Mijoz hisobida farq yo'q (kiritilgan = jonli qoldiq), lekin yopish paytida backend snapshot'i boshqa.
+    server.closeError = { status: 400, message: "«Humo virtual»: farq bor yoki AI natijasi mos emas — izoh majburiy" };
+    const user = userEvent.setup();
+    open();
+    const dialog = await openCloseDialog(user);
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
+    // Izoh maydoni har kartada — farq bo'lmasa ixtiyoriy.
+    for (const cardId of ["1", "2", "3"]) {
+      expect(within(row(dialog, cardId)).getByLabelText(/^Izoh/)).toBeInTheDocument();
+      expect(within(row(dialog, cardId)).getByText(/\(ixtiyoriy\)/, { selector: "label span" })).toBeInTheDocument();
+    }
+
+    await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+    for (const [cardId, value] of [["1", "2140000"], ["2", "1850000"], ["3", "1450000"]] as const) {
+      await user.type(within(row(dialog, cardId)).getByLabelText(/^Ilovadagi qoldiq/), value);
+    }
+    const balanceReads = () => http.get.mock.calls.filter(([url]) => url === "finance/cashbox/cards").length;
+    const before = balanceReads();
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
+
+    const humo = row(dialog, "2");
+    await waitFor(() => expect(humo).toHaveAttribute("data-highlighted", "true"));
+    expect(row(dialog, "1")).not.toHaveAttribute("data-highlighted");
+    await waitFor(() => expect(balanceReads()).toBeGreaterThan(before));
+    expect(within(humo).getByText("Farq bor yoki AI natijasi mos emas — izoh yozing")).toBeInTheDocument();
+    // Endi izoh majburiy — «(ixtiyoriy)» yo'q.
+    expect(within(humo).queryByText(/\(ixtiyoriy\)/, { selector: "label span" })).not.toBeInTheDocument();
+
+    // Izohsiz qayta yuborilmaydi; izoh bilan — yuboriladi.
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    expect(postsTo("finance/shift/close")).toHaveLength(1);
+    server.closeError = null;
+    await user.type(within(humo).getByLabelText(/^Izoh/), "Yopish paytida karta to'ldirildi");
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(2));
+    expect((postsTo("finance/shift/close")[1] as { accounts: unknown[] }).accounts).toContainEqual({
+      card_id: "2",
+      entered_balance: 1_850_000,
+      comment: "Yopish paytida karta to'ldirildi",
+    });
   });
 });

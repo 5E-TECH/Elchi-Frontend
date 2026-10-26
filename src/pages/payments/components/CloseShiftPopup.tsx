@@ -43,10 +43,17 @@ export type CloseShiftPayload = {
   accounts?: CloseShiftAccount[];
 };
 
+/** `onConfirm` natijasi: backend 400 matni (kartalar tekshiruvi). */
+export type CloseShiftResult = { error?: string | null };
+
 interface CloseShiftPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (payload: CloseShiftPayload) => void;
+  /**
+   * Yopish. Kartalar rejimida 400 bo'lsa `{ error }` qaytaradi — xabar kartaga tegishli bo'lsa («Humo»: … izoh
+   * majburiy) oyna o'sha kartani ajratadi va qoldiqlarni qayta o'qiydi.
+   */
+  onConfirm: (payload: CloseShiftPayload) => void | Promise<CloseShiftResult | void>;
   isLoading?: boolean;
   /** Ochiq smena boshlangan vaqt (`opened_at`). */
   openedAt?: string;
@@ -123,7 +130,11 @@ const CloseShiftPopup = ({
     const accounts = accountsForm.buildPayload();
     if (accounts) {
       if (accountsForm.hasErrors) return;
-      onConfirm({ countedCash, countedCard: accounts.countedCard, comment: commentText, accounts: accounts.accounts });
+      void Promise.resolve(
+        onConfirm({ countedCash, countedCard: accounts.countedCard, comment: commentText, accounts: accounts.accounts }),
+      ).then((result) => {
+        if (result?.error) accountsForm.applyCloseError(result.error);
+      });
       return;
     }
     onConfirm({ countedCash, countedCard, comment: commentText });

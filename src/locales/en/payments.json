@@ -987,6 +987,7 @@
       "comment": "Comment",
       "commentPlaceholder": "Explain the difference",
       "commentHint": "The balance differs from the system — the shift will not close without a comment",
+      "commentOptionalPlaceholder": "Optional — e.g. a note about the balance",
       "empty": "This cashbox has no active cards — only cash is counted.",
       "loadError": "Card list did not load — the server checks it on close.",
       "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 30 seconds.",

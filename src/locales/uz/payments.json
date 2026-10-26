@@ -987,6 +987,7 @@
       "comment": "Izoh",
       "commentPlaceholder": "Farq sababini yozing",
       "commentHint": "Qoldiq tizimdagidan farq qiladi — izohsiz smena yopilmaydi",
+      "commentOptionalPlaceholder": "Ixtiyoriy — masalan, qoldiq haqida eslatma",
       "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
       "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
       "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
