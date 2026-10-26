@@ -97,4 +97,6 @@ export const queryKeys = {
     all: ["account-sessions"] as const,
     mine: ["account-sessions", "mine"] as const,
   },
+  /** Joriy foydalanuvchi profili (`GET auth/my-profile`) — yagona kesh: auth bootstrap, `useSettings`, `useGetMyProfile`. */
+  myProfile: ["user", "profile"] as const,
 } as const;
