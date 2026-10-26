@@ -30,8 +30,10 @@ export {
   isDispatchLive,
 } from "./model/status";
 export type { BucketCounts, DeliveryBucket, DispatchOutcome } from "./model/status";
-export { failureReasonKey, SMS_DLR_FAILED_STATUSES } from "./model/reasons";
+export { failureReasonKey } from "./model/reasons";
 export { useAudienceText } from "./model/useAudienceText";
+// N9 (lkQiuyQu): SMS operator hisobotining yakuniy xato holatlari — kampaniya hisobotida «xato» guruhi.
+export { SMS_DLR_FAILED_STATUSES } from "./model/reasons";
 export {
   getSentDetail,
   getSentList,
