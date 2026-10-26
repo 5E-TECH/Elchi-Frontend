@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 /**
  * NDmZMzCP e2e (soxta gateway): login qulfi — `POST auth/login` 429 `{ code: "LOGIN_LOCKED", retry_after_seconds }`;
  * zaif parol — login javobida `must_change_password: true` → «Yangi parol o'rnating» oynasi, `PATCH auth/my-profile
- * { password }` dan keyin `POST auth/refresh` bayroqsiz token beradi.
+ * { old_password, password }` (aidsxJ2H — joriy parol majburiy) dan keyin `POST auth/refresh` bayroqsiz token beradi.
  */
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 const b64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -105,6 +105,8 @@ export const runAuthPolicyScenarios = () => {
     const dialog = page.getByRole("dialog", { name: "Yangi parol o'rnating" });
     await expect(dialog).toBeVisible({ timeout: 30_000 });
     const inputs = dialog.locator('input[autocomplete="new-password"]');
+    // aidsxJ2H: «Joriy parol» — kirishda yozilgan parol.
+    await dialog.locator('input[autocomplete="current-password"]').fill("eski-parol");
     await inputs.nth(0).fill("qisqa123");
     await inputs.nth(1).fill("qisqa123");
     await dialog.getByRole("button", { name: "Parolni saqlash" }).click();
@@ -115,7 +117,7 @@ export const runAuthPolicyScenarios = () => {
     await inputs.nth(1).fill("Yangi-Parol-2026");
     await dialog.getByRole("button", { name: "Parolni saqlash" }).click();
     await expect(dialog).toHaveCount(0, { timeout: 15_000 });
-    expect(calls.passwordPatches).toEqual([{ password: "Yangi-Parol-2026" }]);
+    expect(calls.passwordPatches).toEqual([{ old_password: "eski-parol", password: "Yangi-Parol-2026" }]);
     await expect.poll(() => calls.refresh).toBeGreaterThanOrEqual(1);
     await expect(page.getByText("Yangi parol o'rnatildi", { exact: true }).first()).toBeVisible();
   });

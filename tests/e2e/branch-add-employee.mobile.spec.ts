@@ -35,6 +35,8 @@ test.describe("Filial «Xodim qo'shish» — yangi xodim darhol — 390px", () =
     await expect(form).toBeVisible({ timeout: 30_000 });
     await form.locator('input[name="fullName"]').fill("Lola Kuryerova");
     await form.locator('input[name="phone"]').fill("901112233");
+    // aidsxJ2H: sukut — «Tizim yaratsin va SMS yuborsin»; bu oqim — qo'lda parol (avvalgi xulq).
+    await form.getByText("Qo'lda kiritish", { exact: true }).click();
     await form.locator('input[name="password"]').fill("lola2026ok");
     await form.locator('input[name="homeRate"]').fill("25000");
     await form.locator('input[name="centerRate"]').fill("15000");
