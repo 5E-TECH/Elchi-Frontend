@@ -16,5 +16,38 @@
     // SPA: mavjud bo'lmagan barcha yo'llar index.html ga (200) qaytariladi,
     // shunda react-router sahifalari to'g'ridan-to'g'ri ochilganda ham ishlaydi.
     "not_found_handling": "single-page-application"
+  },
+  // ─── TEST muhit (staging) ──────────────────────────────────────────────────────────────────────────────────
+  // Faqat `npx wrangler deploy --env staging` (CI: `test` branchi, `vars.STAGING_ENABLED == 'true'`,
+  // .github/workflows/deploy.yml). Yuqoridagi production sozlamalari bunga BOG'LIQ EMAS: `--env` siz har qanday
+  // `wrangler deploy` avvalgidek production Worker `elchi-frontend` ga chiqadi.
+  // ALOHIDA Worker `elchi-frontend-test` + custom domen test-admin.elchipochta.uz (birinchi deploy'da wrangler
+  // o'zi yaratadi: DNS yozuvi va sertifikat). `dist` — `npm run build:staging` chiqishi (test API, «TEST muhit»
+  // belgisi, noindex); deploy oldidan `npm run check:target -- staging` tekshiradi.
+  // Hamma kalit ataylab shu yerda qayta yozilgan (meros qoidalariga tayanmaslik uchun). workers.dev / preview
+  // manzillari o'chiq — TEST sayt bitta manzilda, backend CORS'i ham faqat shu domen uchun.
+  "env": {
+    "staging": {
+      "name": "elchi-frontend-test",
+      "compatibility_date": "2026-05-19",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "observability": {
+        "enabled": true
+      },
+      "assets": {
+        "directory": "./dist",
+        "not_found_handling": "single-page-application"
+      },
+      "routes": [
+        {
+          "pattern": "test-admin.elchipochta.uz",
+          "custom_domain": true
+        }
+      ],
+      "workers_dev": false,
+      "preview_urls": false
+    }
   }
 }
