@@ -337,6 +337,55 @@ describe("DateRange — kun rejimi (selection=\"day\") va ichki yorliq", () => {
   });
 });
 
+/**
+ * Dushanba kuni «Bu hafta», oyning 1-kunida «Bu oy» oralig'i «Bugun» bilan bir xil — avval chip oraliqdan topilib,
+ * doim «Bugun» bosilgan ko'rinardi. Endi oxirgi bosilgan chip eslab qolinadi (panel yopilib ochilsa ham).
+ */
+describe("DateRange — oraliqlari bir xil tez tanlovlar (dushanba)", () => {
+  const MONDAY = "2026-10-26";
+
+  it("⭐ «Bu hafta» bosilsa — qayta ochilganda o'sha chip bosilgan; taqvimdan tanlansa — oddiy moslik («Bugun»)", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Controlled today={MONDAY} onChange={onChange} />);
+
+    await user.click(trigger());
+    await user.click(screen.getByRole("button", { name: "Bu hafta" }));
+    expect(onChange).toHaveBeenLastCalledWith({ from: MONDAY, to: MONDAY });
+
+    await user.click(trigger());
+    let dialog = screen.getByRole("dialog", { name: "Sana oralig'ini tanlash" });
+    expect(within(dialog).getByRole("button", { name: "Bu hafta" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).getByRole("button", { name: "Bugun" })).toHaveAttribute("aria-pressed", "false");
+
+    // Taqvimda xuddi shu kun (26 → 26) — chip tanlovi tozalanadi, oraliq «Bugun» ga mos.
+    await user.click(within(dialog).getAllByRole("gridcell", { name: "26-oktabr" })[0]);
+    await user.click(within(dialog).getAllByRole("gridcell", { name: "26-oktabr" })[0]);
+    await user.click(trigger());
+    dialog = screen.getByRole("dialog", { name: "Sana oralig'ini tanlash" });
+    expect(within(dialog).getByRole("button", { name: "Bugun" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).getByRole("button", { name: "Bu hafta" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("⭐ kun rejimi: maydonda «Bu hafta» («Bugun» emas)", async () => {
+    const user = userEvent.setup();
+    render(
+      <Field label="Sana" hideLabel labelAs="span">
+        <Controlled today={MONDAY} selection="day" presets={["today", "week", "month", "all"]} months={1} placeholder="Barchasi" />
+      </Field>,
+    );
+    const field = () => screen.getByRole("button", { name: /^Sana / });
+
+    await user.click(field());
+    await user.click(screen.getByRole("button", { name: "Bu hafta" }));
+    expect(field()).toHaveAccessibleName("Sana Bu hafta");
+
+    await user.click(field());
+    await user.click(screen.getByRole("button", { name: "Bugun" }));
+    expect(field()).toHaveAccessibleName("Sana Bugun");
+  });
+});
+
 describe("DateRangePanel — sahifadagi ochiq namuna", () => {
   it("o'z yuzasi bilan chiziladi va tanlov onChange ga boradi", async () => {
     const user = userEvent.setup();
@@ -354,6 +403,6 @@ describe("DateRangePanel — sahifadagi ochiq namuna", () => {
     const panel = screen.getByRole("group", { name: "Namuna" });
     expect(panel).toHaveClass("bg-raised", "rounded-[14px]");
     await user.click(within(panel).getByRole("button", { name: "Bugun" }));
-    expect(onChange).toHaveBeenCalledWith({ from: TODAY, to: TODAY }, "preset");
+    expect(onChange).toHaveBeenCalledWith({ from: TODAY, to: TODAY }, "preset", "today");
   });
 });

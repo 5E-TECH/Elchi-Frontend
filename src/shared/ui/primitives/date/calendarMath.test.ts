@@ -11,6 +11,7 @@ import {
   getPresetRange,
   isoDayToDate,
   matchPreset,
+  resolvePreset,
   normalizeISODay,
   normalizeRange,
   parseISODay,
@@ -102,6 +103,20 @@ describe("calendarMath — tez tanlov", () => {
     expect(matchPreset({ from: "2026-10-01", to: today }, presets, today)).toBe("month");
     expect(matchPreset({ from: "", to: "" }, presets, today)).toBe("all");
     expect(matchPreset({ from: "2026-10-02", to: today }, presets, today)).toBeNull();
+  });
+
+  it("⭐ bosilgan chip (dushanba «Bu hafta», 1-kun «Bu oy» = «Bugun» oralig'i) — o'zi; teng bo'lmasa — birinchi mosi", () => {
+    const presets = ["today", "week", "month", "all"] as const;
+    const monday = "2026-10-26";
+    const mondayRange = { from: monday, to: monday };
+    expect(matchPreset(mondayRange, presets, monday)).toBe("today");
+    expect(resolvePreset(mondayRange, presets, "week", monday)).toBe("week");
+    expect(resolvePreset(mondayRange, presets, "today", monday)).toBe("today");
+    expect(resolvePreset(mondayRange, presets, null, monday)).toBe("today");
+    expect(resolvePreset({ from: "2026-10-01", to: "2026-10-01" }, presets, "month", "2026-10-01")).toBe("month");
+    // Oraliq bosilgan chipnikiga teng emas (sana qo'lda tanlangan) yoki chip ro'yxatda yo'q — oddiy moslik.
+    expect(resolvePreset({ from: "2026-10-20", to: monday }, presets, "week", monday)).toBeNull();
+    expect(resolvePreset(mondayRange, ["today", "month"], "week", monday)).toBe("today");
   });
 });
 

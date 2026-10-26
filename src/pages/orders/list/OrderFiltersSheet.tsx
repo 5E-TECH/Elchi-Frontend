@@ -96,11 +96,18 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
   const scope = getOrderFilterScope(role);
   const idBase = useId();
   const [draft, setDraft] = useState<OrderFilterValues>(initial);
+  // Bosilgan «Sana» tugmasi (qoralamada va qo'llangani): dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i
+  // «Bugun» bilan bir xil — faqat oraliqdan topilsa doim «Bugun» belgilanardi.
+  const [draftPeriod, setDraftPeriod] = useState<QuickPeriod | null>(null);
+  const [appliedPeriod, setAppliedPeriod] = useState<QuickPeriod | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
   // Har ochilishda qoralama URL'dagi qiymatlardan boshlanadi (yopilganda kiritilgani bekor bo'lgan).
   if (prevOpen !== open) {
     setPrevOpen(open);
-    if (open) setDraft(initial);
+    if (open) {
+      setDraft(initial);
+      setDraftPeriod(appliedPeriod);
+    }
   }
 
   // Kuryerlar qoralamadagi viloyat bo'yicha (yopiq varaqada — URL'dagisi, ortiqcha so'rov ketmasin).
@@ -118,7 +125,7 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
 
   const selectedCount = countPanelFilters(draft, scope) + Number(withDate && hasDateRange(draft));
   const statusCount = draft.statuses.filter((status) => FILTER_STATUSES.includes(status)).length;
-  const period = matchQuickPeriod(draft.dateFrom, draft.dateTo);
+  const period = matchQuickPeriod(draft.dateFrom, draft.dateTo, draftPeriod);
 
   const patch = (next: Partial<OrderFilterValues>) => setDraft((current) => ({ ...current, ...next }));
   const toggleStatus = (status: (typeof FILTER_STATUSES)[number]) =>
@@ -129,15 +136,18 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
       return { ...current, statuses: normalizeFilterStatuses(next) };
     });
 
-  const reset = () =>
+  const reset = () => {
     // Sana bo'limi yo'q bo'lsa sana asboblar qatorida qoladi — «Tozalash» unga tegmaydi.
     setDraft({
       ...EMPTY_ORDER_FILTERS,
       dateFrom: withDate ? "" : draft.dateFrom,
       dateTo: withDate ? "" : draft.dateTo,
     });
+    if (withDate) setDraftPeriod(null);
+  };
 
   const apply = () => {
+    setAppliedPeriod(draftPeriod);
     onApply(draft);
     onClose();
   };
@@ -239,12 +249,16 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
             onValueChange={(key) => {
               if (key === CUSTOM) return;
               const range = getQuickPeriodRange(key);
+              setDraftPeriod(key);
               patch({ dateFrom: range.from, dateTo: range.to });
             }}
           />
           <DateRange
             value={{ from: draft.dateFrom, to: draft.dateTo }}
-            onChange={({ from, to }) => patch({ dateFrom: from, dateTo: to })}
+            onChange={({ from, to }) => {
+              setDraftPeriod(null);
+              patch({ dateFrom: from, dateTo: to });
+            }}
             presets={false}
             placeholder={t("date.rangeLabel", { ns: "ui" })}
             className="w-full"

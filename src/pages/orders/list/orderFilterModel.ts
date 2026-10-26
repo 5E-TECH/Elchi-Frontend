@@ -293,12 +293,19 @@ export const getQuickPeriodRange = (period: QuickPeriod): { from: string; to: st
   }
 };
 
-/** Oraliq qaysi davrga aynan mos; qo'lda tanlangan oraliq — `null` (segmentda hech biri tanlanmagan). */
-export const matchQuickPeriod = (from: string, to: string): QuickPeriod | null =>
-  QUICK_PERIODS.find((period) => {
-    const range = getQuickPeriodRange(period);
-    return range.from === from && range.to === to;
-  }) ?? null;
+const isQuickPeriodRange = (period: QuickPeriod, from: string, to: string) => {
+  const range = getQuickPeriodRange(period);
+  return range.from === from && range.to === to;
+};
+
+/**
+ * Oraliq qaysi davrga aynan mos; qo'lda tanlangan oraliq — `null` (segmentda hech biri tanlanmagan). `chosen` —
+ * bosilgan tugma: oraliq unga teng ekan o'zi qaytadi (dushanba «Bu hafta», oyning 1-kuni «Bu oy» = «Bugun» oralig'i).
+ */
+export const matchQuickPeriod = (from: string, to: string, chosen: QuickPeriod | null = null): QuickPeriod | null => {
+  if (chosen && isQuickPeriodRange(chosen, from, to)) return chosen;
+  return QUICK_PERIODS.find((period) => isQuickPeriodRange(period, from, to)) ?? null;
+};
 
 /** `GET /orders` javobidagi umumiy son (sahifa bilan bir xil shakllar); bo'lmasa — `null`. */
 export const readOrdersTotal = (payload: unknown): number | null => {

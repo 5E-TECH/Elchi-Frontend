@@ -132,6 +132,20 @@ describe("MarketDashboardPage (v2)", () => {
     expect(getKpiMock).not.toHaveBeenCalled();
   });
 
+  it("⭐ dushanba: «Bu hafta» bosilsa o'zi belgilanadi (oralig'i «Bugun» bilan bir xil)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba: «Bu hafta» = «Bugun» oralig'i
+    try {
+      const user = userEvent.setup();
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+      await user.click(screen.getByRole("radio", { name: "Bu hafta" }));
+      expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Bugun" })).not.toBeChecked();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("tya24blo: «Barchasi» va `clamped` — sana maydonida haqiqiy oraliq (oxirgi 366 kun)", async () => {
     const user = userEvent.setup();
     getDashboardMock.mockImplementation((params: { all?: boolean }) => {

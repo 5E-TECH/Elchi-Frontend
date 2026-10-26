@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatShortRange,
+  isDashboardQuickKey,
   percentChange,
   previousPeriodRange,
   rangeDays,
@@ -40,6 +41,37 @@ describe("dashboard davri", () => {
     expect(formatShortRange({ from: "2026-10-08", to: "2026-10-08" })).toBe("08.10.2026");
     expect(formatShortRange({ from: "2025-12-28", to: "2026-01-05" })).toBe("28.12.2025 – 05.01.2026");
     expect(rangeDays({ from: "2026-09-25", to: "2026-10-08" })).toBe(14);
+  });
+});
+
+describe("dashboard davri — bosilgan tez tanlov (dushanba, oyning 1-kuni)", () => {
+  afterEach(() => vi.useRealTimers());
+  const at = (date: Date) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(date);
+  };
+
+  it("⭐ dushanba: «Bu hafta» oralig'i «Bugun» bilan bir xil — bosilgani qaytadi, bosilmagan bo'lsa «Bugun»", () => {
+    at(new Date(2026, 9, 26, 12));
+    expect(resolveDashboardPeriod("2026-10-26", "2026-10-26").kind).toBe("today");
+    expect(resolveDashboardPeriod("2026-10-26", "2026-10-26", "week").kind).toBe("week");
+    expect(resolveDashboardPeriod("2026-10-26", "2026-10-26", "today").kind).toBe("today");
+  });
+
+  it("⭐ oyning 1-kuni: «Bu oy»", () => {
+    at(new Date(2026, 9, 1, 12)); // payshanba
+    expect(resolveDashboardPeriod("2026-10-01", "2026-10-01", "month").kind).toBe("month");
+  });
+
+  it("bosilgan tanlov oraliq unga teng bo'lmasa e'tiborsiz (sana qo'lda o'zgargan yoki kun almashgan)", () => {
+    at(new Date(2026, 9, 27, 12)); // seshanba: «Bu hafta» endi 26–27
+    expect(resolveDashboardPeriod("2026-10-26", "2026-10-26", "week").kind).toBe("custom");
+    expect(resolveDashboardPeriod("2026-10-27", "2026-10-27", "month").kind).toBe("today");
+  });
+
+  it("redux qiymati tekshiriladi: faqat to'rt tez tanlov", () => {
+    for (const key of ["today", "week", "month", "all"]) expect(isDashboardQuickKey(key)).toBe(true);
+    for (const value of ["year", "custom", "", null, undefined, 1]) expect(isDashboardQuickKey(value)).toBe(false);
   });
 });
 

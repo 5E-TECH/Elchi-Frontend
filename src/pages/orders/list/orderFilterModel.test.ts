@@ -128,6 +128,23 @@ describe("orderFilterModel", () => {
     expect(["today", "week", "month"]).toContain(matchQuickPeriod(month.from, month.to));
   });
 
+  it("⭐ bosilgan tugma oraliq unga teng ekan o'zi qaytadi (dushanba «Bu hafta», 1-kun «Bu oy» = «Bugun»)", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 26, 12)); // dushanba
+    try {
+      expect(matchQuickPeriod("2026-10-26", "2026-10-26")).toBe("today");
+      expect(matchQuickPeriod("2026-10-26", "2026-10-26", "week")).toBe("week");
+      expect(matchQuickPeriod("2026-10-26", "2026-10-26", "today")).toBe("today");
+      // Teng emas — oddiy moslik.
+      expect(matchQuickPeriod("2026-10-26", "2026-10-26", "month")).toBe("today");
+      expect(matchQuickPeriod("2026-10-20", "2026-10-26", "week")).toBeNull();
+      vi.setSystemTime(new Date(2026, 9, 1, 12)); // oyning 1-kuni
+      expect(matchQuickPeriod("2026-10-01", "2026-10-01", "month")).toBe("month");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("6kHnNH9j: «Manba» — superadmin, admin, registrator, menejer; market tomonida param ketmaydi", () => {
     const withSource: OrderFilterValues = { ...EMPTY_ORDER_FILTERS, fulfillmentSource: "WAREHOUSE" };
     for (const role of ["superadmin", "admin", "registrator", "manager"]) {

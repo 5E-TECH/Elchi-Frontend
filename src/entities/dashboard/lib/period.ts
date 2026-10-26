@@ -12,10 +12,13 @@ import { resolveMoneyLanguage, CURRENCY_LABEL, formatCompactMoneyLocalized } fro
 /**
  * DASHBOARD DAVRI — sarlavha, grafik izohlari va oldingi davr solishtiruvi uchun umumiy hisob.
  *
- * Davr redux'da (`filter.dashboardFromDate/ToDate`) saqlanadi; bo'sh oraliq = bugun (backend ham shunday).
+ * Davr redux'da (`filter.dashboardFromDate/ToDate`, bosilgan tez tanlov — `dashboardPreset`) saqlanadi; bo'sh oraliq =
+ * bugun (backend ham shunday).
  * «Barchasi» = `getAllTimeRange()` (1970 … bugun).
  */
 export type DashboardPeriodKind = "today" | "week" | "month" | "year" | "all" | "custom";
+/** Sarlavhadagi tez tanlov tugmasi (`DashboardHeader` segmenti). */
+export type DashboardQuickKey = "today" | "week" | "month" | "all";
 
 export interface DashboardPeriod {
   kind: DashboardPeriodKind;
@@ -27,10 +30,32 @@ export interface DashboardPeriod {
 
 const YEAR_RE = /^(\d{4})-01-01$/;
 
-export const resolveDashboardPeriod = (fromDate: string, toDate: string): DashboardPeriod => {
+export const isDashboardQuickKey = (value: unknown): value is DashboardQuickKey =>
+  value === "today" || value === "week" || value === "month" || value === "all";
+
+const QUICK_RANGE: Record<DashboardQuickKey, () => ISODateRange> = {
+  today: getTodayRange,
+  week: getThisWeekRange,
+  month: getThisMonthRange,
+  all: getAllTimeRange,
+};
+
+/**
+ * `preset` — bosilgan tez tanlov: oraliq unga teng ekan o'zi qaytadi. Dushanba kuni «Bu hafta», oyning 1-kunida
+ * «Bu oy» oralig'i «Bugun» bilan bir xil — faqat oraliqdan topilsa doim «Bugun» chiqardi.
+ */
+export const resolveDashboardPeriod = (
+  fromDate: string,
+  toDate: string,
+  preset: DashboardQuickKey | null = null,
+): DashboardPeriod => {
   const today = getTodayRange();
   if (!fromDate || !toDate) return { kind: "today", range: today };
   const range = { from: fromDate, to: toDate };
+  if (preset) {
+    const chosen = QUICK_RANGE[preset]();
+    if (fromDate === chosen.from && toDate === chosen.to) return { kind: preset, range };
+  }
   const all = getAllTimeRange();
   if (fromDate === all.from && toDate === all.to) return { kind: "all", range };
   if (fromDate === today.from && toDate === today.to) return { kind: "today", range };
