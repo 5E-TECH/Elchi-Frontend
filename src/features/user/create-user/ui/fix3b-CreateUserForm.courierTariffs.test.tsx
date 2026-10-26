@@ -46,6 +46,10 @@ const fill = async (
   name: string,
   value: string,
 ) => {
+  // aidsxJ2H: parol maydoni faqat «Qo'lda kiritish» da (sukut — «Tizim yaratsin va SMS yuborsin»).
+  if (name === "password" && !container.querySelector('input[name="password"]')) {
+    await user.click(screen.getByRole("radio", { name: /^Qo'lda kiritish/ }));
+  }
   const input = container.querySelector<HTMLInputElement>(`input[name="${name}"]`);
   if (!input) throw new Error(`input not found: ${name}`);
   await user.type(input, value);

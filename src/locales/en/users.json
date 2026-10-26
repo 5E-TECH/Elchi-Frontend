@@ -297,7 +297,28 @@
         "marketNameRequired": "Enter the market name",
         "loginRequired": "Login is required"
       },
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "passwordMode": {
+        "section": "Password",
+        "legend": "How to issue the password",
+        "sms": "Generate and send by SMS",
+        "recommended": "Recommended",
+        "smsHint": "A random 12-character password is generated and sent by SMS to {{phone}}. Nobody sees the password.",
+        "smsHintNoPhone": "A random 12-character password is generated and sent by SMS to the user's phone. Nobody sees the password.",
+        "manual": "Enter manually",
+        "manualHint": "You enter the password yourself and hand it to the user. No SMS is sent.",
+        "mustChange": "Require a password change at first sign-in",
+        "mustChangeHintSms": "The user signs in with the password from the SMS and sets their own password right away",
+        "mustChangeHintManual": "The user signs in with the password you gave and sets their own password right away",
+        "sampleTitle": "SMS text sample",
+        "sampleText": "Elchi Pochta: hisobingiz yaratildi. Login: {{login}}, parol: ••••••••••••. Kirish: admin.elchipochta.uz. Parolni hech kimga bermang.",
+        "sampleMasked": "password hidden",
+        "sampleSize": "SMS — 1 message, ~160 characters",
+        "submitSms": "Create and send SMS",
+        "alertTitle": "Login and password arrive by SMS",
+        "alertText": "The login is the user's phone number. The system generates the password and sends it to that number — you don't need to pass it on.",
+        "phoneHint": "This number is the login; the password is sent to it too"
+      }
     },
     "detail": {
       "description": "{{role}} · Login: {{login}}",
@@ -452,6 +473,56 @@
         "title": "Role changed, the rest was not saved",
         "text": "{{name}} is now {{role}}. Other changes were not saved — check them and save again."
       }
+    },
+    "passwordSms": {
+      "title": "User created",
+      "descriptionSent": "The login and password were sent by SMS to the user's phone",
+      "descriptionPending": "The login and password are being sent by SMS to the user's phone",
+      "descriptionFailed": "The user was created, but the password SMS was not sent",
+      "login": "Login: {{phone}}",
+      "status": {
+        "pending": "Queued",
+        "sent": "SMS sent",
+        "delivered": "Delivered",
+        "failed": "SMS not sent",
+        "awaitingDelivery": "Awaiting delivery"
+      },
+      "pendingHint": "Handing the SMS to the provider",
+      "sentHint": "The provider accepted the SMS",
+      "deliveredHint": "According to the provider's report",
+      "awaitingHint": "Updates when the provider's report arrives",
+      "failure": {
+        "sms_disabled": "Sending SMS is turned off right now",
+        "daily_cap_exceeded": "Today's SMS limit is used up",
+        "fanout_exceeded": "The SMS limit is used up",
+        "provider_not_configured": "The SMS provider is not configured",
+        "invalid_phone": "Invalid phone number — the SMS was not sent",
+        "template_error": "The SMS template is misconfigured",
+        "notification_unavailable": "The SMS service did not respond",
+        "provider_rejected": "The SMS provider rejected the message (check the balance or template approval)",
+        "provider_unavailable": "Could not reach the SMS provider",
+        "not_delivered": "The SMS was not delivered to the phone",
+        "cancelled": "The SMS was cancelled"
+      },
+      "failureFallback": "The SMS was not sent — try again",
+      "manualSuggestion": "If the SMS doesn't arrive, edit the user, set the password yourself and pass it on. While SMS is not working, choose «Enter manually» when creating users.",
+      "resendTitle": "No SMS?",
+      "resendHint": "Resend once every 60 seconds",
+      "resendLeft": "{{count}} more today",
+      "resendDaily": "Today's resend limit is used up",
+      "resendCooldown": "Please wait",
+      "resendCooldownText": "You can resend in {{time}}",
+      "resend": "Resend SMS",
+      "resendCountdownAria": "in {{seconds}} seconds",
+      "resending": "Sending…",
+      "resent": "A new password was sent by SMS",
+      "resentDescription": "The previous temporary password no longer works",
+      "resentFailed": "A new password was created, but the SMS was not sent",
+      "resendError": "The SMS was not resent",
+      "note": "The password is never stored in plain text. The user sets a new password at first sign-in.",
+      "createAnother": "Create another",
+      "openUser": "Go to user",
+      "openLogistAssignment": "Assign regions"
     }
   },
   "tgGroup": {

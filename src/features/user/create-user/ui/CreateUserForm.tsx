@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid, superadmin-users-create-logist, admin-users-create-logist, superadmin-users-create-courier-district
+// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid, superadmin-users-create-logist, admin-users-create-logist, superadmin-users-create-courier-district, superadmin-users-create-password-sms, superadmin-users-create-password-result-dialog
 import { memo, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { Controller, useForm, useWatch, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
@@ -13,6 +13,7 @@ import {
   KeyRound,
   Map as MapIcon,
   Route,
+  Send,
   Store,
   Truck,
   UserCog,
@@ -25,6 +26,9 @@ import type {
   CreateManagerRequest,
   CreateMarketRequest,
   CreateRegistratorRequest,
+  CreateUserPasswordFields,
+  PasswordMode,
+  PasswordSms,
   UserRole,
 } from "../../../../entities/user/types/user";
 import { useUser } from "../../../../entities/user/api/userApi";
@@ -34,6 +38,7 @@ import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
 import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
+import { formatPhone } from "../../../../shared/lib/formatPhone";
 import {
   Button,
   Card,
@@ -61,6 +66,12 @@ import {
   buildCourierTariffs,
   getMissingCourierTariffs,
 } from "../lib/courierTariffs";
+import { PasswordModeSection } from "./PasswordModeSection";
+import { readCreatedUser } from "../../password-sms/model/passwordSms";
+import {
+  PasswordSmsResultDialog,
+  type PasswordSmsResultUser,
+} from "../../password-sms/ui/PasswordSmsResultDialog";
 
 const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
 
@@ -76,6 +87,10 @@ interface CreateUserFormValues {
   homeRate: string;
   centerRate: string;
   deliveryType: "address" | "center" | "";
+  /** aidsxJ2H: parolni qanday berish (sukut — tizim yaratadi va SMS yuboradi). */
+  passwordMode: PasswordMode;
+  /** aidsxJ2H: faqat `manual` da yuboriladi (`generate_sms` da backend doim `true`). */
+  mustChangePassword: boolean;
 }
 
 const INITIAL_FORM: CreateUserFormValues = {
@@ -90,6 +105,25 @@ const INITIAL_FORM: CreateUserFormValues = {
   homeRate: "",
   centerRate: "",
   deliveryType: "",
+  passwordMode: "generate_sms",
+  mustChangePassword: true,
+};
+
+/**
+ * aidsxJ2H: so'rovdagi parol maydonlari. `generate_sms` — faqat rejim (`password` yuborilsa 400,
+ * `must_change_password` — backend doim `true`); `manual` — parol + «birinchi kirishda almashtirsin».
+ */
+const passwordPayload = (values: CreateUserFormValues): CreateUserPasswordFields =>
+  values.passwordMode === "manual"
+    ? { password_mode: "manual", password: values.password, must_change_password: values.mustChangePassword }
+    : { password_mode: "generate_sms" };
+
+/** Natija oynasi (aidsxJ2H, `generate_sms` bilan yaratilgach). */
+type CreatedResult = {
+  user: PasswordSmsResultUser;
+  sms: PasswordSms | null;
+  /** Logist — asosiy amal «Viloyatlarni belgilash» (avvalgi oqim — «Logist biriktirish»). */
+  isLogist: boolean;
 };
 
 const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
@@ -213,6 +247,7 @@ export const CreateUserForm = memo(() => {
   );
 
   const [showPassword, setShowPassword] = useState(false);
+  const [created, setCreated] = useState<CreatedResult | null>(null);
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
   const [initialRole] = useState<UserRole>(
@@ -226,6 +261,12 @@ export const CreateUserForm = memo(() => {
   const { control, handleSubmit, reset, setValue, setError, clearErrors } = methods;
 
   const role = useWatch({ control, name: "role" });
+  const passwordMode = useWatch({ control, name: "passwordMode" }) ?? "generate_sms";
+  const mustChangePassword = useWatch({ control, name: "mustChangePassword" }) ?? true;
+  const phoneValue = useWatch({ control, name: "phone" }) ?? "";
+  const isSmsMode = passwordMode === "generate_sms";
+  const smsPhone =
+    getUzbekistanPhoneDigits(phoneValue).length === 9 ? formatPhone(toUzbekistanPhoneValue(phoneValue)) : null;
   // fix3b FE-USR-11: kuryer tariflari maosh kiritilmaguncha majburiy (yulduzcha).
   const salaryValue = useWatch({ control, name: "salary" }) ?? "";
   const courierTariffsRequired = areCourierTariffsRequired({ salary: salaryValue });
@@ -280,7 +321,8 @@ export const CreateUserForm = memo(() => {
     }
 
     // NDmZMzCP: kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz; qolganini (oddiy / ketma-ket / telefon) server.
-    const passwordIssue = checkPasswordPolicy(values.password, role);
+    // aidsxJ2H: faqat «Qo'lda kiritish» da — SMS rejimida parolni tizim yaratadi.
+    const passwordIssue = values.passwordMode === "manual" ? checkPasswordPolicy(values.password, role) : null;
     if (passwordIssue === "required") {
       setError("password", { message: t("passwordRequired") });
       valid = false;
@@ -393,11 +435,27 @@ export const CreateUserForm = memo(() => {
     return valid;
   };
 
-  const submitRequest = <T,>(request: () => Promise<T>, successMessage: string) =>
+  /** aidsxJ2H: SMS rejimida — natija oynasi (xabar o'rniga); qo'lda — avvalgidek xabar va `navigate(-1)`. */
+  const showCreatedResult = (response: unknown, values: CreateUserFormValues, isLogist = false) => {
+    const result = readCreatedUser(response);
+    setCreated({
+      user: {
+        id: result.id,
+        name: result.name ?? values.fullName.trim(),
+        phoneNumber: result.phoneNumber ?? toUzbekistanPhoneValue(values.phone),
+        role: values.role,
+        roleLabel: getRoleLabel(values.role),
+      },
+      sms: result.passwordSms,
+      isLogist,
+    });
+  };
+
+  const submitRequest = <T,>(request: () => Promise<T>, successMessage: string, values: CreateUserFormValues) =>
     runUserRequest({
       t,
       request,
-      successMessage,
+      successMessage: values.passwordMode === "generate_sms" ? null : successMessage,
       errorMessage: t("loadError"),
       onError: (error) => {
         applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
@@ -405,7 +463,8 @@ export const CreateUserForm = memo(() => {
         const passwordMessage = getPasswordPolicyServerMessage(error);
         if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
       },
-      onSuccess: () => navigate(-1),
+      onSuccess: (response) =>
+        values.passwordMode === "generate_sms" ? showCreatedResult(response, values) : navigate(-1),
     });
 
   const onSubmit = async (values: CreateUserFormValues) => {
@@ -418,11 +477,11 @@ export const CreateUserForm = memo(() => {
       const payload: CreateAdminRequest = {
         name: values.fullName,
         phone_number: rawPhone,
-        password: values.password,
+        ...passwordPayload(values),
         salary: parseAmount(values.salary),
         payment_day: Number(values.paymentDay),
       };
-      await submitRequest(() => createAdmin.mutateAsync(payload), t("createAdmin"));
+      await submitRequest(() => createAdmin.mutateAsync(payload), t("createAdmin"), values);
       return;
     }
 
@@ -432,12 +491,12 @@ export const CreateUserForm = memo(() => {
       const payload: CreateRegistratorRequest = {
         name: values.fullName,
         phone_number: rawPhone,
-        password: values.password,
+        ...passwordPayload(values),
         salary: parseAmount(values.salary),
         payment_day: Number(values.paymentDay),
         branch_id: branchId,
       };
-      await submitRequest(() => createRegistrator.mutateAsync(payload), t("createRegistrator"));
+      await submitRequest(() => createRegistrator.mutateAsync(payload), t("createRegistrator"), values);
       return;
     }
 
@@ -445,7 +504,7 @@ export const CreateUserForm = memo(() => {
       const payload: CreateManagerRequest = {
         name: values.fullName,
         phone_number: rawPhone,
-        password: values.password,
+        ...passwordPayload(values),
         branch_id: values.branchId,
       };
 
@@ -460,7 +519,7 @@ export const CreateUserForm = memo(() => {
         payload.tariff_center = parseAmount(values.centerRate);
       }
 
-      await submitRequest(() => createManager.mutateAsync(payload), t("createManager"));
+      await submitRequest(() => createManager.mutateAsync(payload), t("createManager"), values);
       return;
     }
 
@@ -468,7 +527,7 @@ export const CreateUserForm = memo(() => {
       const payload: CreateCourierRequest = {
         name: values.fullName,
         phone_number: rawPhone,
-        password: values.password,
+        ...passwordPayload(values),
       };
       // `region_id` yuborilmaydi: gateway DTO'sida yo'q (doim 400 edi) — hudud filialdan olinadi.
       if (authRole === "manager" && currentBranchId) payload.branch_id = currentBranchId;
@@ -486,7 +545,7 @@ export const CreateUserForm = memo(() => {
       payload.tariff_home = tariffs.tariff_home;
       payload.tariff_center = tariffs.tariff_center;
 
-      await submitRequest(() => createCourier.mutateAsync(payload), t("createCourier"));
+      await submitRequest(() => createCourier.mutateAsync(payload), t("createCourier"), values);
       return;
     }
 
@@ -494,12 +553,16 @@ export const CreateUserForm = memo(() => {
       const payload: CreateLogistRequest = {
         name: values.fullName.trim(),
         phone_number: rawPhone,
-        password: values.password,
+        ...passwordPayload(values),
         salary: parseAmount(values.salary),
       };
       if (values.paymentDay) payload.payment_day = Number(values.paymentDay);
       try {
         const response = await createLogist.mutateAsync(payload);
+        if (values.passwordMode === "generate_sms") {
+          showCreatedResult(response, values, true);
+          return;
+        }
         notify.success(t("v2.logist.created"), {
           description: t("v2.logist.createdDescription", { name: payload.name }),
         });
@@ -523,13 +586,13 @@ export const CreateUserForm = memo(() => {
         name: values.fullName,
         phone_number: rawPhone,
         username: values.username,
-        password: values.password,
+        ...passwordPayload(values),
         tariff_home: parseAmount(values.homeRate),
         tariff_center: parseAmount(values.centerRate),
         default_tariff: values.deliveryType === "center" ? "center" : "address",
       };
 
-      await submitRequest(() => createMarket.mutateAsync(payload), t("createMarket"));
+      await submitRequest(() => createMarket.mutateAsync(payload), t("createMarket"), values);
     }
   };
 
@@ -588,7 +651,13 @@ export const CreateUserForm = memo(() => {
       control={control}
       name="phone"
       render={({ field, fieldState }) => (
-        <Field label={t("v2.create.fields.phone")} required error={fieldState.error?.message}>
+        <Field
+          label={t("v2.create.fields.phone")}
+          required
+          // aidsxJ2H (maket `superadmin-users-create-password-sms`): SMS rejimida login va parol shu raqamga.
+          hint={isSmsMode && role !== "marketing" ? t("v2.create.passwordMode.phoneHint") : undefined}
+          error={fieldState.error?.message}
+        >
           <TextInput
             mode="phone"
             name={field.name}
@@ -794,9 +863,13 @@ export const CreateUserForm = memo(() => {
     <div role="note" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.info)}>
       <KeyRound size={18} aria-hidden="true" className="mt-px shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-1 text-text">
-        <div className="font-bold">{t("v2.create.alertTitle")}</div>
+        <div className="font-bold">
+          {isSmsMode ? t("v2.create.passwordMode.alertTitle") : t("v2.create.alertTitle")}
+        </div>
         <div className="text-[13px] leading-[18px]">
-          {t(shouldShowRolePanel ? "v2.create.alertText" : "v2.create.alertTextCourier")}
+          {isSmsMode
+            ? t("v2.create.passwordMode.alertText")
+            : t(shouldShowRolePanel ? "v2.create.alertText" : "v2.create.alertTextCourier")}
         </div>
       </div>
     </div>
@@ -864,8 +937,13 @@ export const CreateUserForm = memo(() => {
                 <Button variant="secondary" onClick={() => navigate(-1)} disabled={isPending}>
                   {t("cancel")}
                 </Button>
-                <Button type="submit" loading={isPending} loadingText={t("v2.create.saving")}>
-                  {t("save")}
+                <Button
+                  type="submit"
+                  loading={isPending}
+                  loadingText={t("v2.create.saving")}
+                  leftIcon={isSmsMode ? Send : undefined}
+                >
+                  {isSmsMode ? t("v2.create.passwordMode.submitSms") : t("save")}
                 </Button>
               </div>
             }
@@ -878,7 +956,6 @@ export const CreateUserForm = memo(() => {
                   t(isMarketRole ? "v2.create.fields.marketNamePlaceholder" : "v2.create.fields.namePlaceholder"),
                 )}
                 {phoneField}
-                {isMarketRole ? null : passwordField}
               </div>
             </FormSection>
 
@@ -959,7 +1036,6 @@ export const CreateUserForm = memo(() => {
                       t("v2.create.fields.loginPlaceholder"),
                       t("v2.create.fields.loginHint"),
                     )}
-                    {passwordField}
                   </div>
                 </FormSection>
                 <FormSection title={t("v2.create.sections.delivery")}>
@@ -997,9 +1073,49 @@ export const CreateUserForm = memo(() => {
                 </FormSection>
               </>
             ) : null}
+
+            {/* aidsxJ2H: «Parol» — maket `superadmin-users-create-password-sms` (barcha rollar). */}
+            <FormSection title={t("v2.create.passwordMode.section")}>
+              <PasswordModeSection
+                mode={passwordMode}
+                onModeChange={(next) => {
+                  setValue("passwordMode", next);
+                  clearErrors("password");
+                }}
+                mustChangePassword={mustChangePassword}
+                onMustChangePasswordChange={(next) => setValue("mustChangePassword", next)}
+                phone={smsPhone}
+                passwordField={<div className={GRID_260}>{passwordField}</div>}
+                disabled={isPending}
+              />
+            </FormSection>
           </Card>
         </form>
       </div>
+
+      {created ? (
+        <PasswordSmsResultDialog
+          open
+          user={created.user}
+          initialSms={created.sms}
+          viewerRole={authRole}
+          primaryLabel={t(created.isLogist ? "v2.passwordSms.openLogistAssignment" : "v2.passwordSms.openUser")}
+          onPrimary={() =>
+            navigate(
+              created.isLogist
+                ? logistAssignmentPath(created.user.id)
+                : created.user.id
+                  ? `/all-users/${encodeURIComponent(created.user.id)}`
+                  : "/all-users",
+            )
+          }
+          onCreateAnother={() => {
+            setCreated(null);
+            reset({ ...INITIAL_FORM, role });
+          }}
+          onClose={() => navigate(-1)}
+        />
+      ) : null}
     </div>
   );
 });

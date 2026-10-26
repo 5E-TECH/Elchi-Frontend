@@ -297,7 +297,28 @@
         "marketNameRequired": "Market nomini kiriting",
         "loginRequired": "Login kiritilmadi"
       },
-      "saving": "Saqlanmoqda…"
+      "saving": "Saqlanmoqda…",
+      "passwordMode": {
+        "section": "Parol",
+        "legend": "Parolni qanday berish",
+        "sms": "Tizim yaratsin va SMS yuborsin",
+        "recommended": "Tavsiya",
+        "smsHint": "12 belgili tasodifiy parol yaratiladi va {{phone}} raqamiga SMS qilib yuboriladi. Parol hech kimga ko'rsatilmaydi.",
+        "smsHintNoPhone": "12 belgili tasodifiy parol yaratiladi va foydalanuvchi telefoniga SMS qilib yuboriladi. Parol hech kimga ko'rsatilmaydi.",
+        "manual": "Qo'lda kiritish",
+        "manualHint": "Parolni o'zingiz kiritasiz va foydalanuvchiga o'zingiz yetkazasiz. SMS yuborilmaydi.",
+        "mustChange": "Birinchi kirishda parolni almashtirishni talab qilish",
+        "mustChangeHintSms": "Foydalanuvchi SMSdagi parol bilan kiradi va darhol o'z parolini o'rnatadi",
+        "mustChangeHintManual": "Foydalanuvchi siz bergan parol bilan kiradi va darhol o'z parolini o'rnatadi",
+        "sampleTitle": "SMS matni namunasi",
+        "sampleText": "Elchi Pochta: hisobingiz yaratildi. Login: {{login}}, parol: ••••••••••••. Kirish: admin.elchipochta.uz. Parolni hech kimga bermang.",
+        "sampleMasked": "parol yashirilgan",
+        "sampleSize": "SMS — 1 ta xabar, ~160 belgi",
+        "submitSms": "Yaratish va SMS yuborish",
+        "alertTitle": "Login va parol SMS orqali boradi",
+        "alertText": "Login — foydalanuvchining telefon raqami. Parolni tizim yaratadi va shu raqamga yuboradi, uni yetkazish shart emas.",
+        "phoneHint": "Login shu raqam bo'ladi, parol ham shu raqamga keladi"
+      }
     },
     "detail": {
       "description": "{{role}} · Login: {{login}}",
@@ -452,6 +473,56 @@
         "title": "Rol o'zgartirildi, qolgani saqlanmadi",
         "text": "{{name}} endi {{role}}. Boshqa o'zgarishlar saqlanmadi — tekshirib, qayta saqlang."
       }
+    },
+    "passwordSms": {
+      "title": "Foydalanuvchi yaratildi",
+      "descriptionSent": "Login va parol foydalanuvchining telefoniga SMS qilib yuborildi",
+      "descriptionPending": "Login va parol foydalanuvchining telefoniga SMS qilib yuborilmoqda",
+      "descriptionFailed": "Foydalanuvchi yaratildi, lekin parol SMS'i yuborilmadi",
+      "login": "Login: {{phone}}",
+      "status": {
+        "pending": "Navbatda",
+        "sent": "SMS yuborildi",
+        "delivered": "Yetkazildi",
+        "failed": "SMS yuborilmadi",
+        "awaitingDelivery": "Yetkazilishi kutilmoqda"
+      },
+      "pendingHint": "SMS provayderga berilmoqda",
+      "sentHint": "Provayder SMSni qabul qildi",
+      "deliveredHint": "Provayder hisoboti bo'yicha",
+      "awaitingHint": "Provayder hisoboti kelgach yangilanadi",
+      "failure": {
+        "sms_disabled": "SMS yuborish hozir o'chirilgan",
+        "daily_cap_exceeded": "Bugungi SMS limiti tugagan",
+        "fanout_exceeded": "SMS limiti tugagan",
+        "provider_not_configured": "SMS provayder sozlanmagan",
+        "invalid_phone": "Telefon raqami noto'g'ri — SMS yuborilmadi",
+        "template_error": "SMS shabloni noto'g'ri sozlangan",
+        "notification_unavailable": "SMS xizmati javob bermadi",
+        "provider_rejected": "SMS provayder xabarni rad etdi (balans yoki shablon tasdig'ini tekshiring)",
+        "provider_unavailable": "SMS provayderiga ulanib bo'lmadi",
+        "not_delivered": "SMS telefonga yetkazilmadi",
+        "cancelled": "SMS bekor qilindi"
+      },
+      "failureFallback": "SMS yuborilmadi — qayta urinib ko'ring",
+      "manualSuggestion": "SMS yetib bormasa, foydalanuvchini tahrirlab parolni o'zingiz o'rnating va unga yetkazing. SMS ishlamayotgan paytda yaratishda «Qo'lda kiritish»ni tanlang.",
+      "resendTitle": "SMS kelmadimi?",
+      "resendHint": "Qayta yuborish 60 soniyada bir marta",
+      "resendLeft": "bugun yana {{count}} marta",
+      "resendDaily": "Bugungi qayta yuborish limiti tugadi",
+      "resendCooldown": "Biroz kuting",
+      "resendCooldownText": "Qayta yuborish {{time}} dan keyin mumkin",
+      "resend": "SMSni qayta yuborish",
+      "resendCountdownAria": "{{seconds}} soniyadan keyin",
+      "resending": "Yuborilmoqda…",
+      "resent": "Yangi parol SMS orqali yuborildi",
+      "resentDescription": "Oldingi vaqtinchalik parol endi ishlamaydi",
+      "resentFailed": "Yangi parol yaratildi, lekin SMS yuborilmadi",
+      "resendError": "SMS qayta yuborilmadi",
+      "note": "Parol tizimda ochiq ko'rinishda saqlanmaydi. Foydalanuvchi birinchi kirishda yangi parol o'rnatadi.",
+      "createAnother": "Yana yaratish",
+      "openUser": "Foydalanuvchiga o'tish",
+      "openLogistAssignment": "Viloyatlarni belgilash"
     }
   },
   "tgGroup": {
