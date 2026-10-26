@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockSmsCampaignApi, pick } from "./support/smsCampaign";
+import { toast } from "./support/toast";
 import { NOON_TASHKENT, mockSmsScheduleApi } from "./support/smsCampaignSchedule";
 
 /**
@@ -66,7 +67,7 @@ test.describe("SMS kampaniya — rejalashtirish, 1440px", () => {
     const confirm = page.getByRole("alertdialog", { name: "Kampaniyani bekor qilasizmi?" });
     await expect(confirm).toContainText("23.10.2026, 09:00 da yuborilishi kerak edi");
     await confirm.getByRole("button", { name: "Kampaniyani bekor qilish" }).click();
-    await expect(page.getByText("Kampaniya bekor qilindi")).toBeVisible();
+    await expect(toast(page, "Kampaniya bekor qilindi")).toBeVisible();
     expect(mock.cancelled).toEqual(["41"]);
     await expect(row).toContainText("Bekor qilingan");
     await expect(row.getByRole("button", { name: "Bekor qilish" })).toHaveCount(0);

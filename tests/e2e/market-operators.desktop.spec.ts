@@ -48,13 +48,13 @@ test("⭐ operator qo'shish: POST {name, phone_number, password} → PATCH komis
   await expect(dialog).toContainText("Baraka Shop uchun yangi xodim");
   await dialog.getByLabel("Ism familiya").fill("Lola Karimova");
   await dialog.getByLabel("Telefon").fill("901234567");
-  await dialog.locator("input[type=password]").fill("lola25");
+  await dialog.locator("input[type=password]").fill("lola2026ok");
   await dialog.getByRole("textbox", { name: /Komissiya/ }).fill("4,5");
   await dialog.getByRole("button", { name: "Qo'shish" }).click();
 
   await expect(toast(page, "Operator qo'shildi", { tone: "success" })).toBeVisible();
   await expect(dialog).toBeHidden();
-  expect(mock.posts).toEqual([{ name: "Lola Karimova", phone_number: "+998901234567", password: "lola25" }]);
+  expect(mock.posts).toEqual([{ name: "Lola Karimova", phone_number: "+998901234567", password: "lola2026ok" }]);
   expect(mock.patches).toEqual([{ id: "47", body: { commission_type: "percent", commission_value: 4.5 } }]);
   await expect(page.getByRole("row", { name: /Lola Karimova/ })).toContainText("4,5%");
 });

@@ -36,7 +36,7 @@ test.describe("Filial «Xodim qo'shish» — yangi xodim darhol — 1440px", () 
     await expect(form).toBeVisible({ timeout: 30_000 });
     await form.locator('input[name="fullName"]').fill("Lola Kuryerova");
     await form.locator('input[name="phone"]').fill("901112233");
-    await form.locator('input[name="password"]').fill("lola2026");
+    await form.locator('input[name="password"]').fill("lola2026ok");
     await form.locator('input[name="homeRate"]').fill("25000");
     await form.locator('input[name="centerRate"]').fill("15000");
     await form.getByRole("button", { name: "Saqlash" }).click();

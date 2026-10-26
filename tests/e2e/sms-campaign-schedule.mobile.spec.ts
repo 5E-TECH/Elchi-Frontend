@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { expectNoHorizontalOverflow, mockSmsCampaignApi } from "./support/smsCampaign";
 import { NOON_TASHKENT, mockSmsScheduleApi } from "./support/smsCampaignSchedule";
 import { tapTargets, tooSmall } from "./support/tapTargets";
+import { toast } from "./support/toast";
 
 /**
  * KM-6 (2aS7PFX0) — telefonda (390): «Belgilangan vaqtda» sana va soat ustma-ust, rejalashtirish (SOXTA), tarix
@@ -26,8 +27,9 @@ test("⭐ 390: rejalashtirish, tarix kartasi va bekor qilish 409; toshish yo'q, 
   await sendTime.getByRole("radio", { name: /Belgilangan vaqtda/ }).check();
   await expect(sendTime.getByTestId("campaign-schedule-chosen")).toContainText("Ertaga, 10:00 da yuboriladi");
   // Telefonda «Sana» va «Soat» ustma-ust.
-  const day = (await sendTime.getByText("Sana", { exact: true }).boundingBox())!;
-  const time = (await sendTime.getByText("Soat", { exact: true }).boundingBox())!;
+  // Yorliqlar «Sana *» / «Soat *» (majburiy belgi bilan) — maydonlarning o'zi solishtiriladi.
+  const day = (await sendTime.getByRole("button", { name: /^Sana/ }).boundingBox())!;
+  const time = (await sendTime.getByRole("combobox", { name: "Soat" }).boundingBox())!;
   expect(time.y).toBeGreaterThan(day.y);
   expect(Math.abs(time.x - day.x)).toBeLessThan(2);
   expect(tooSmall(await tapTargets(page))).toEqual([]);
@@ -48,7 +50,7 @@ test("⭐ 390: rejalashtirish, tarix kartasi va bekor qilish 409; toshish yo'q, 
   const confirm = page.getByRole("alertdialog", { name: "Kampaniyani bekor qilasizmi?" });
   await confirm.getByRole("button", { name: "Kampaniyani bekor qilish" }).click();
   await expect(
-    page.getByText("Bekor qilib bo'lmadi: kampaniya allaqachon boshlangan yoki rejalashtirilmagan"),
+    toast(page, "Bekor qilib bo'lmadi: kampaniya allaqachon boshlangan yoki rejalashtirilmagan"),
   ).toBeVisible();
   expect(mock.cancelled).toEqual(["41"]);
   await expect(card).toContainText("Navbatga qo'yilgan");
