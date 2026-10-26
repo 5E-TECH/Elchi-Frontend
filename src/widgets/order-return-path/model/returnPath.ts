@@ -146,6 +146,19 @@ const isFlowBreak = (event: TrackingEvent) => {
   return to !== null && !CANCEL_FLOW_STATUSES.has(to);
 };
 
+/**
+ * Zanjirdagi o'rni — vaqti teng hodisalarni tartiblash uchun: bekor qilindi < jo'natildi < qabul qilindi <
+ * omborga qaytdi / marketga topshirildi. Boshqa hodisalar (custody, oddiy holat) — 0: bekor zanjiridan oldin.
+ */
+const stepRank = (event: TrackingEvent): number => {
+  if (isCustodyEvent(event)) return 0;
+  if (isCancelEvent(event)) return 1;
+  if (isSendEvent(event)) return 2;
+  if (isReceiveEvent(event)) return 3;
+  if (isWarehouseReturnEvent(event) || isHandoverEvent(event)) return 4;
+  return 0;
+};
+
 const actorOf = (event: TrackingEvent) => {
   const name = text(event.actor?.name) || text(event.actor?.username) || text(event.user_name);
   return name && name.toLowerCase() !== "system" ? name : null;
@@ -183,7 +196,9 @@ export const buildReturnPath = (
   const district = text(asRecord(record.district).name) || null;
   const reason = text(record.return_reason) || null;
 
-  const events = [...rawEvents].sort((a, b) => timeOf(a) - timeOf(b));
+  // hfkhYrGk №5: bitta tranzaksiyada yozilgan hodisalar (masalan ombor filialida qabul + «Omborga qaytdi») bir xil
+  // vaqtli — backend ularni teskari tartibda berishi mumkin; teng vaqtda zanjir tartibi (`stepRank`) hal qiladi.
+  const events = [...rawEvents].sort((a, b) => timeOf(a) - timeOf(b) || stepRank(a) - stepRank(b));
   const custody = events.filter(isCustodyEvent);
   const status = events.filter((event) => !isCustodyEvent(event));
 
