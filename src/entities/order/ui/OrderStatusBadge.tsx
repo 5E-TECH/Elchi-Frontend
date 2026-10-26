@@ -1,10 +1,15 @@
+import { ShieldAlert, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
+import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
+import { Badge } from "../../../shared/ui/primitives/Badge";
 import { StatusBadge, type StatusBadgeProps } from "../../../shared/ui/primitives/StatusBadge";
 import {
   cancelStageMetaFor,
+  readCancelHandoverFlags,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
+  type CancelReturnAgeLevel,
   type CancelReturnStage,
 } from "../model/cancelReturnStage";
 import { useCancelReturnPlaceText } from "./useCancelReturnPlaceText";
@@ -111,30 +116,91 @@ export const OrderStatusBadge = ({
 };
 
 /**
+ * «N kun» (vNKGbg5q, maket `superadmin-orders-list-cancelled`): < 3 kun — oddiy; ≥ 3 — sariq qalin; ≥ 7 — sariq +
+ * `TriangleAlert` (rang yolg'iz emas — matn va ikonka bilan).
+ */
+const CancelReturnAge = ({ text, level }: { text: string; level: CancelReturnAgeLevel | null }) => (
+  <span
+    data-testid="cancel-return-age"
+    data-level={level ?? undefined}
+    className={cx(
+      "whitespace-nowrap",
+      level && "font-semibold text-warning-fg",
+      level === "alert" && "inline-flex items-center gap-1 align-bottom",
+    )}
+  >
+    {level === "alert" ? <TriangleAlert size={14} aria-hidden="true" className="shrink-0" /> : null}
+    {text}
+  </span>
+);
+
+/**
  * BEKOR BOSQICHINING JOY QATORI (`.el-cell-sub`): jadval katagida belgi ostida, telefon kartasida
- * alohida qator. Ma'lumot yo'q bo'lsa — hech narsa chizilmaydi.
+ * alohida qator. Ma'lumot yo'q bo'lsa — hech narsa chizilmaydi. Joy, «N kun» (3/7 kunda ogohlantirish) va
+ * «Marketga topshirildi» vaqti + usuli backend `cancel_return` dan (BG1/BG2; yo'q bo'lsa — zaxira hisob).
+ *
+ * `withHandoverFlags` (xodim ro'yxatlari; market tomonida yo'q) — BG7: `handover_escalated_at` → qizil
+ * «Eskalatsiya» belgisi, `handover_notified_at` → «Marketga eslatildi (sana)». Faqat filial / HQ bosqichida.
  */
 export const OrderReturnPlace = ({
   order,
   stage,
   className,
+  withHandoverFlags = false,
 }: {
   order: unknown;
   stage?: CancelReturnStage | null;
   className?: string;
+  withHandoverFlags?: boolean;
 }) => {
+  const { t, i18n } = useTranslation(ORDER_STATUS_NS);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const format = useCancelReturnPlaceText();
   const resolvedStage = stage === undefined ? resolveCancelReturnStage(order) : stage;
   const text = format(resolveCancelReturnPlace(order, resolvedStage));
-  if (!text) return null;
+  const flags =
+    withHandoverFlags && (resolvedStage === "branch" || resolvedStage === "hq")
+      ? readCancelHandoverFlags(order)
+      : null;
+  const escalated = flags?.escalatedAt != null;
+  const notifiedAt = flags?.notifiedAt ?? null;
+  if (!text && !escalated && notifiedAt === null) return null;
+
+  const parts = text
+    ? [
+        text.name,
+        text.time ? <span className="whitespace-nowrap">{text.time}</span> : null,
+        text.days ? <CancelReturnAge text={text.days} level={text.level} /> : null,
+        text.method,
+      ].filter(Boolean)
+    : [];
+
   return (
-    <span
-      className={cx("text-[13px] text-text-muted", className)}
-      data-testid="cancel-return-place"
-    >
-      {text.name}
-      {text.name && text.extra ? " · " : null}
-      {text.extra ? <span className="whitespace-nowrap">{text.extra}</span> : null}
-    </span>
+    <>
+      {parts.length > 0 ? (
+        <span className={cx("text-[13px] text-text-muted", className)} data-testid="cancel-return-place">
+          {parts.map((part, index) => (
+            <span key={index}>
+              {index > 0 ? " · " : null}
+              {part}
+            </span>
+          ))}
+        </span>
+      ) : null}
+      {escalated || notifiedAt !== null ? (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-muted">
+          {escalated ? (
+            <Badge tone="danger" size="sm" icon={ShieldAlert} data-testid="cancel-return-escalated">
+              {t("cancelReturn.escalated")}
+            </Badge>
+          ) : null}
+          {notifiedAt !== null ? (
+            <span data-testid="cancel-return-notified">
+              {t("cancelReturn.notified", { date: formatDateLocalized(notifiedAt, { language }) })}
+            </span>
+          ) : null}
+        </span>
+      ) : null}
+    </>
   );
 };

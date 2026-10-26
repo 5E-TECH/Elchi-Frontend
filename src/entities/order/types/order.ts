@@ -50,6 +50,25 @@ export interface OrderCustomer {
     address?: string;
 }
 
+export type OrderCancelReturnStage = "courier" | "in_transit" | "branch" | "hq" | "market";
+export type OrderCancelHandoverMethod = "qr" | "manual" | "no_qr" | "pin";
+
+/** BG1 `cancel_return` (backend `GET /orders`, `/orders/:id`, `markets/:id/cancelled` …). */
+export interface OrderCancelReturn {
+    stage: OrderCancelReturnStage;
+    place_type: "COURIER" | "BRANCH" | "HQ" | null;
+    place_id: string | number | null;
+    /** Kuryerda — kuryer ismi; filial/HQ — nomi; `in_transit` — MAQSAD; `market` — qayerda topshirilgan. */
+    place_name: string | null;
+    /** Filial/HQ: shu joyda qachondan beri («N kun» shundan). */
+    received_at: string | null;
+    /** `in_transit`: jo'natilgan payt. */
+    sent_at: string | null;
+    /** `market`: topshirilgan payt va usul. */
+    handed_over_at: string | null;
+    handover_method: OrderCancelHandoverMethod | null;
+}
+
 export interface OrderListItem {
     id: string;
     /** Mijozga ko'rinadigan raqam («EL-100081», `enrichOrders`; yorliqdagi) — ro'yxatda shu ko'rsatiladi (rwAy8Qyk). */
@@ -82,8 +101,24 @@ export interface OrderListItem {
     canceled_post_id?: string | null;
     /** Kuryer ro'yxati: `cancelled` + `transport_status: "cancelled (sent)"` (gateway). */
     transport_status?: string | null;
-    /** Oxirgi custody o'tishi (bekor bosqichidagi «N kun»). */
+    /** Oxirgi custody o'tishi (bekor bosqichidagi «N kun» — `cancel_return` yo'q eski javobda zaxira). */
     last_handover_at?: string | null;
+    /**
+     * BG1 (vOczoOUE 2-bosqich): backend hisoblagan bekor bosqichi — FE `resolveCancelReturnStage` bilan AYNAN bir
+     * xil qoida; qabulgacha bekor — `null`.
+     */
+    return_stage?: OrderCancelReturnStage | null;
+    /** BG1: bekor posilka qayerda — hamma rol (market ham) bir xil ko'radi, pul maydoni yo'q. */
+    cancel_return?: OrderCancelReturn | null;
+    /** BG2: marketga topshirish (ombor qaytishi emas). */
+    market_handover_at?: string | null;
+    market_handover_by?: string | null;
+    market_handover_method?: OrderCancelHandoverMethod | null;
+    market_handover_branch_id?: string | null;
+    /** BG7 (vNKGbg5q): marketga «olib keting» eslatmasi (D+3) ketgan payt. */
+    handover_notified_at?: string | null;
+    /** BG7: admin navbatiga eskalatsiya (D+7) chiqarilgan payt. */
+    handover_escalated_at?: string | null;
     qr_code_token?: string | null;
     sell_requires_media?: boolean;
     cancel_requires_media?: boolean;
@@ -182,6 +217,11 @@ export interface OrderListParams {
     sort_dir?: "asc" | "desc";
     /** 6kHnNH9j: `WAREHOUSE` — faqat ombordan ketganlar, `HQ` — odatiy oqim. */
     fulfillment_source?: OrderFulfillmentSource;
+    /**
+     * BG4 (LFNLeSpu): bekor bosqichi bo'yicha server filtri — `courier,in_transit,branch,hq,market` (vergul, OR);
+     * ta'rif qatordagi `return_stage` bilan bir xil. Berilsa `status` yuborilmaydi (`market` — `returned_to_market`).
+     */
+    cancel_stage?: OrderCancelReturnStage;
 }
 
 export interface ExternalOrderItem {

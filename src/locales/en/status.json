@@ -27,6 +27,8 @@
     "towards": "→ {{name}}",
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
+    "escalated": "Escalated",
+    "notified": "Market reminded ({{date}})",
     "hq": "HQ",
     "method": {
       "qr": "Via QR",
