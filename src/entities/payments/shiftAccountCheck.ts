@@ -14,6 +14,12 @@ import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
  *    shu yerdan o'qiladi), `accounts_summary`, `operations[]`;
  *  - realtime `finance.shift.account_checked` → `[shift]` so'rovlari qayta o'qiladi (`app/providers/realtimeFinance`),
  *    ya'ni oynadagi AI holati jonli yangilanadi; socket bo'lmasa — `pending` paytida 5 s lik so'rov.
+ *
+ * 2026-10-26 (y8Tqm9Ap, gWI4gYkw): sozlamalarda `auto_close` (`enabled`, `times[]` — Toshkent `HH:MM`, `scope`,
+ * `warn_before_min`) va `report` (`recipients` superadmin / couriers / markets × `telegram` / `in_app`, `format`
+ * pdf | xlsx); hisobotda `close_reason` (manual | auto), `closed_by_system`, `auto_close` (`{closed_at, label}` —
+ * sariq banner), `report` (yuborish holati, fayl — faqat superadmin) va `deliveries[]` («Hisobot kimlarga
+ * yuborildi», faqat superadmin); `POST finance/shift/:id/report/resend` — qayta yuborish (faqat superadmin).
  */
 
 const shiftKey = "shift";
@@ -55,6 +61,37 @@ export type ShiftCheckCardSettings = {
   ai_enabled: boolean;
 };
 
+/** y8Tqm9Ap: avtomatik yopish qamrovi — faqat asosiy kassa yoki filial kassalari ham. */
+export const SHIFT_AUTO_CLOSE_SCOPES = ["main", "main+branches"] as const;
+export type ShiftAutoCloseScope = (typeof SHIFT_AUTO_CLOSE_SCOPES)[number];
+/** Backend chegaralari (`shift-schedule.rules.ts`): kuniga 1–12 marta, ogohlantirish 0–180 daqiqa (0 — yo'q). */
+export const SHIFT_AUTO_CLOSE_MAX_TIMES = 12;
+export const SHIFT_AUTO_CLOSE_MAX_WARN_MIN = 180;
+export const SHIFT_AUTO_CLOSE_DEFAULT_WARN_MIN = 15;
+const SHIFT_TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+export const isShiftCloseTime = (value: unknown): value is string =>
+  typeof value === "string" && SHIFT_TIME_RE.test(value.trim());
+
+export type ShiftAutoCloseSettings = {
+  enabled: boolean;
+  /** Toshkent vaqti `HH:MM`, o'sish tartibida, takrorsiz. */
+  times: string[];
+  scope: ShiftAutoCloseScope;
+  /** 0 — ogohlantirish yo'q. */
+  warn_before_min: number;
+};
+
+/** gWI4gYkw: hisobot qabul qiluvchilari guruhlari va kanallari. */
+export const SHIFT_REPORT_RECIPIENT_GROUPS = ["superadmin", "couriers", "markets"] as const;
+export type ShiftReportRecipientGroup = (typeof SHIFT_REPORT_RECIPIENT_GROUPS)[number];
+export type ShiftReportChannels = { telegram: boolean; in_app: boolean };
+export const SHIFT_REPORT_FORMATS = ["pdf", "xlsx"] as const;
+export type ShiftReportFormat = (typeof SHIFT_REPORT_FORMATS)[number];
+export type ShiftReportSendSettings = {
+  recipients: Record<ShiftReportRecipientGroup, ShiftReportChannels>;
+  format: ShiftReportFormat;
+};
+
 export type ShiftCheckSettings = {
   account_check_enabled: boolean;
   photo_required: boolean;
@@ -62,6 +99,10 @@ export type ShiftCheckSettings = {
   cashbox_user_id: string | null;
   cashbox_type: "main" | "branch" | null;
   cards: ShiftCheckCardSettings[];
+  /** y8Tqm9Ap — javobda yo'q bo'lsa (eski backend) `null`: blok chizilmaydi. */
+  auto_close: ShiftAutoCloseSettings | null;
+  /** gWI4gYkw — javobda yo'q bo'lsa `null`. */
+  report: ShiftReportSendSettings | null;
 };
 
 export type ShiftAccountCard = {
@@ -111,6 +152,44 @@ export type ShiftReportOperation = {
   total: number;
 };
 
+/** y8Tqm9Ap: smena qanday yopilgan (ochiq — `null`). */
+export type ShiftCloseReason = "manual" | "auto";
+
+/** gWI4gYkw: hisobot yuborish holati (`shifts.report_status`). */
+export type ShiftReportSendStatus = "pending" | "processing" | "sent" | "skipped" | "failed";
+const SHIFT_REPORT_SEND_STATUSES: readonly ShiftReportSendStatus[] = ["pending", "processing", "sent", "skipped", "failed"];
+
+export type ShiftReportDeliveryStatus = "queued" | "sent" | "failed" | "skipped";
+const SHIFT_REPORT_DELIVERY_STATUSES: readonly ShiftReportDeliveryStatus[] = ["queued", "sent", "failed", "skipped"];
+export type ShiftReportDeliveryChannel = "in_app" | "telegram" | "telegram_group";
+const SHIFT_REPORT_DELIVERY_CHANNELS: readonly ShiftReportDeliveryChannel[] = ["in_app", "telegram", "telegram_group"];
+export type ShiftReportRecipientKind = "superadmin" | "courier" | "market";
+const SHIFT_REPORT_RECIPIENT_KINDS: readonly ShiftReportRecipientKind[] = ["superadmin", "courier", "market"];
+
+/** «Hisobot kimlarga yuborildi» qatori (faqat superadmin ko'radi; boshqalarga bo'sh massiv). */
+export type ShiftReportDelivery = {
+  id: string | null;
+  round: number;
+  recipient_id: string;
+  recipient_name: string | null;
+  recipient_kind: ShiftReportRecipientKind;
+  channel: ShiftReportDeliveryChannel;
+  status: ShiftReportDeliveryStatus;
+  /** Masalan «Telegram ulanmagan». */
+  failed_reason: string | null;
+  sent_at: string | null;
+  created_at: string | null;
+};
+
+export type ShiftReportSendState = {
+  status: ShiftReportSendStatus | null;
+  round: number;
+  file_format: ShiftReportFormat | null;
+  has_file: boolean;
+  /** Imzolangan havola (300 s) — faqat superadmin. */
+  file_url: string | null;
+};
+
 export type ShiftReport = {
   shift: {
     id: string;
@@ -127,6 +206,12 @@ export type ShiftReport = {
   accounts: ShiftAccountCheck[];
   accounts_summary: Record<string, number> | null;
   operations: ShiftReportOperation[];
+  close_reason: ShiftCloseReason | null;
+  closed_by_system: boolean;
+  /** Avtomatik yopilgan smena — sariq banner (`label` — backend matni «Avtomatik yopildi — HH:MM, kassir yopmagan»). */
+  auto_close: { closed_at: string | null; label: string | null } | null;
+  report: ShiftReportSendState | null;
+  deliveries: ShiftReportDelivery[];
 };
 
 /** Yopish so'rovidagi bitta karta qatori (`POST finance/shift/close` → `accounts[]`). */
@@ -141,6 +226,13 @@ export type UpdateShiftSettingsRequest = {
   photo_required?: boolean;
   ai_check_enabled?: boolean;
   cards?: Array<{ card_id: string; require_photo_on_shift_close?: boolean; ai_check_enabled?: boolean }>;
+  /** y8Tqm9Ap — qisman (faqat o'zgargan maydonlar). */
+  auto_close?: Partial<ShiftAutoCloseSettings>;
+  /** gWI4gYkw — qisman: `recipients` da faqat o'zgargan guruh/kanal, backend qolganini saqlaydi. */
+  report?: {
+    recipients?: Partial<Record<ShiftReportRecipientGroup, Partial<ShiftReportChannels>>>;
+    format?: ShiftReportFormat;
+  };
 };
 
 // ───────────────────────── normalizatorlar ─────────────────────────
@@ -174,6 +266,40 @@ const payload = (value: unknown): Record<string, unknown> => {
   return "data" in root && root.data && typeof root.data === "object" ? record(root.data) : root;
 };
 
+/** `["23:00", "14:00", "14:00", "25:00"]` → `["14:00", "23:00"]` (yaroqsizlari tashlanadi). */
+export const normalizeShiftCloseTimes = (value: unknown): string[] =>
+  Array.isArray(value) ? [...new Set(value.filter(isShiftCloseTime).map((item) => item.trim()))].sort() : [];
+
+const normalizeAutoClose = (value: unknown): ShiftAutoCloseSettings | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = record(value);
+  const warn = num(raw.warn_before_min);
+  return {
+    enabled: bool(raw.enabled),
+    times: normalizeShiftCloseTimes(raw.times),
+    scope: raw.scope === "main+branches" ? "main+branches" : "main",
+    warn_before_min:
+      warn !== null && Number.isInteger(warn) && warn >= 0 && warn <= SHIFT_AUTO_CLOSE_MAX_WARN_MIN
+        ? warn
+        : SHIFT_AUTO_CLOSE_DEFAULT_WARN_MIN,
+  };
+};
+
+const normalizeReportSettings = (value: unknown): ShiftReportSendSettings | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = record(value);
+  const recipients = record(raw.recipients);
+  return {
+    recipients: Object.fromEntries(
+      SHIFT_REPORT_RECIPIENT_GROUPS.map((group) => {
+        const channels = record(recipients[group]);
+        return [group, { telegram: bool(channels.telegram), in_app: bool(channels.in_app) }];
+      }),
+    ) as Record<ShiftReportRecipientGroup, ShiftReportChannels>,
+    format: raw.format === "xlsx" ? "xlsx" : "pdf",
+  };
+};
+
 export const normalizeShiftCheckSettings = (value: unknown): ShiftCheckSettings => {
   const data = payload(value);
   const cards = Array.isArray(data.cards) ? data.cards : [];
@@ -203,6 +329,8 @@ export const normalizeShiftCheckSettings = (value: unknown): ShiftCheckSettings 
         } satisfies ShiftCheckCardSettings;
       })
       .filter((card): card is ShiftCheckCardSettings => card !== null),
+    auto_close: normalizeAutoClose(data.auto_close),
+    report: normalizeReportSettings(data.report),
   };
 };
 
@@ -256,6 +384,43 @@ const normalizeMoneyBlock = (value: unknown): ShiftReportMoney => {
   };
 };
 
+const oneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | null => {
+  const raw = String(value ?? "").toLowerCase();
+  return (allowed as readonly string[]).includes(raw) ? (raw as T) : null;
+};
+
+export const normalizeShiftReportDelivery = (value: unknown): ShiftReportDelivery | null => {
+  const row = record(value);
+  const recipientId = text(row.recipient_id);
+  const kind = oneOf(row.recipient_kind, SHIFT_REPORT_RECIPIENT_KINDS);
+  const channel = oneOf(row.channel, SHIFT_REPORT_DELIVERY_CHANNELS);
+  if (!recipientId || !kind || !channel) return null;
+  return {
+    id: text(row.id),
+    round: num(row.round) ?? 1,
+    recipient_id: recipientId,
+    recipient_name: text(row.recipient_name),
+    recipient_kind: kind,
+    channel,
+    status: oneOf(row.status, SHIFT_REPORT_DELIVERY_STATUSES) ?? "queued",
+    failed_reason: text(row.failed_reason),
+    sent_at: text(row.sent_at),
+    created_at: text(row.created_at),
+  };
+};
+
+const normalizeReportSendState = (value: unknown): ShiftReportSendState | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = record(value);
+  return {
+    status: oneOf(raw.status, SHIFT_REPORT_SEND_STATUSES),
+    round: num(raw.round) ?? 0,
+    file_format: oneOf(raw.file_format, SHIFT_REPORT_FORMATS),
+    has_file: bool(raw.has_file),
+    file_url: text(raw.file_url),
+  };
+};
+
 export const normalizeShiftReport = (value: unknown): ShiftReport | null => {
   const data = payload(value);
   const shiftRow = record(data.shift);
@@ -265,6 +430,8 @@ export const normalizeShiftReport = (value: unknown): ShiftReport | null => {
   const operations = Array.isArray(data.operations) ? data.operations : [];
   const summary = record(data.accounts_summary);
   const cashboxType = data.cashbox_type === "main" || data.cashbox_type === "branch" ? data.cashbox_type : null;
+  const autoClose = record(data.auto_close);
+  const closeReason = oneOf<ShiftCloseReason>(data.close_reason, ["manual", "auto"]);
   return {
     shift: {
       id,
@@ -293,6 +460,16 @@ export const normalizeShiftReport = (value: unknown): ShiftReport | null => {
         total: num(op.total) ?? 0,
       };
     }),
+    close_reason: closeReason,
+    closed_by_system: bool(data.closed_by_system),
+    auto_close:
+      closeReason === "auto" || (data.auto_close && typeof data.auto_close === "object")
+        ? { closed_at: text(autoClose.closed_at) ?? text(shiftRow.closed_at), label: text(autoClose.label) }
+        : null,
+    report: normalizeReportSendState(data.report),
+    deliveries: (Array.isArray(data.deliveries) ? data.deliveries : [])
+      .map(normalizeShiftReportDelivery)
+      .filter((row): row is ShiftReportDelivery => row !== null),
   };
 };
 
@@ -401,6 +578,30 @@ export const useShiftReport = (id: string | null | undefined, options: { enabled
     refetchInterval: (query) => (options.pollPending && hasPending(query.state.data) ? SHIFT_PENDING_POLL_MS : false),
     meta: options.pollPending ? { silentError: true } : undefined,
   });
+
+export type ResendShiftReportResult = { round: number | null; status: string | null; deliveries: ShiftReportDelivery[] };
+
+/**
+ * gWI4gYkw: `POST finance/shift/:id/report/resend` — faqat superadmin, yangi raund (ochiq smena / hozir
+ * yuborilayotgan — 400). Muvaffaqiyatda hisobot qayta o'qiladi («Hisobot kimlarga yuborildi» yangilanadi).
+ */
+export const useResendShiftReport = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (shiftId: string) =>
+      api.post(API_ENDPOINTS.CASHBOX.SHIFT_REPORT_RESEND(shiftId)).then((res): ResendShiftReportResult => {
+        const data = payload(res.data);
+        return {
+          round: num(data.round),
+          status: text(data.status),
+          deliveries: (Array.isArray(data.deliveries) ? data.deliveries : [])
+            .map(normalizeShiftReportDelivery)
+            .filter((row): row is ShiftReportDelivery => row !== null),
+        };
+      }),
+    onSuccess: (_result, shiftId) => client.invalidateQueries({ queryKey: shiftReportKey(shiftId) }),
+  });
+};
 
 export type CashboxCardBalance = { id: string; balance: number | null };
 

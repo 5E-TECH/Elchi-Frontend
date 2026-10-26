@@ -337,6 +337,17 @@ const LegacyIntegrationDetailRedirect = () => {
   return <Navigate replace to={`/integrations/sources/${id ?? ""}`} />;
 };
 
+/**
+ * gWI4gYkw: smena hisoboti bildirishnomasi (`finance.shift_closed` / `finance.shift_auto_closed`) superadminga
+ * `link: /payments/shift-report/:id` bilan keladi (toast «Ochish», qo'ng'iroqcha, Inbox, push) — hisobot sahifasi
+ * `/payments/shifts/:id` da. Ruxsatni nishon route tekshiradi.
+ */
+const LegacyShiftReportRedirect = () => {
+  const { id } = useParams();
+
+  return <Navigate replace to={`/payments/shifts/${id ?? ""}`} />;
+};
+
 const NewOrdersCancelledDetailEntry = () => {
   const { marketId } = useParams();
   const role = useSelector((state: RootState) => state.role.role);
@@ -1016,6 +1027,7 @@ const AppRouter = () => {
                     </ProtectedRoute>
                   ),
                 },
+                { path: "shift-report/:id", element: <LegacyShiftReportRedirect /> },
                 {
                   path: "shift-settings",
                   element: (
