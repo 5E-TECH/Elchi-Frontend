@@ -1,12 +1,13 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-result-dialog, admin-payments-main-cashbox-shift-result-dialog, manager-payments-main-cashbox-shift-result-dialog
 import { memo, type ReactNode } from "react";
-import { Banknote, CircleCheck, CreditCard, Download, Info, type LucideIcon } from "lucide-react";
+import { Banknote, CircleCheck, CreditCard, Download, FileText, Info, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CashboxShift } from "../../../entities/payments";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized, formatTimeLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
-import { Badge, Button, Dialog } from "../../../shared/ui/primitives";
+import { Link } from "react-router-dom";
+import { Badge, Button, buttonClasses, Dialog } from "../../../shared/ui/primitives";
 import { ShiftDiffAmount, ShiftDiffBadge } from "./ShiftDiff";
 import ShiftSummaryList, { type ShiftSummaryRow } from "./ShiftSummaryList";
 
@@ -32,6 +33,8 @@ type ShiftResultDialogProps = {
   /** «Karta (Click)» (asosiy kassa) yoki «Karta» (filial). */
   cardLabel: string;
   onExport: () => void;
+  /** kiZgTybn — kartalar tekshirilgan smenada «Smena hisoboti» havolasi (`/payments/shifts/:id`). */
+  reportHref?: string | null;
 };
 
 type Column = "cash" | "card";
@@ -53,6 +56,7 @@ const ShiftResultDialog = ({
   cashboxLabel,
   cardLabel,
   onExport,
+  reportHref,
 }: ShiftResultDialogProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -152,6 +156,12 @@ const ShiftResultDialog = ({
       description={description}
       footer={
         <>
+          {reportHref ? (
+            <Link to={reportHref} className={buttonClasses({ variant: "secondary" })} onClick={onClose}>
+              <FileText aria-hidden="true" size={18} />
+              {t("shiftCheck.resultReport")}
+            </Link>
+          ) : null}
           <Button variant="secondary" leftIcon={Download} onClick={onExport}>
             {t("v2MainCashbox.shift.result.export")}
           </Button>

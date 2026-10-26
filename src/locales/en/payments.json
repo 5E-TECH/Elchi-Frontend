@@ -968,5 +968,164 @@
         "branchReceive": "Receiving money from branches works once a shift is open in the main cashbox."
       }
     }
+  },
+  "shiftCheck": {
+    "accounts": {
+      "title": "Cards and accounts",
+      "hint": "Enter the balance from the bank app and upload a screenshot — AI compares the amount on the image with the entered and system balance.",
+      "hintNoAi": "Enter the balance from the bank app; upload a screenshot where it is required.",
+      "settings": "Settings",
+      "entered": "Balance in the app",
+      "system": "System:",
+      "photo": "Screenshot",
+      "photoOptional": "(optional)",
+      "upload": "Upload screenshot",
+      "replace": "Replace image",
+      "uploading": "Uploading…",
+      "uploaded": "Image uploaded",
+      "open": "Open image",
+      "comment": "Comment",
+      "commentPlaceholder": "Explain the difference",
+      "commentHint": "The balance differs from the system — the shift will not close without a comment",
+      "empty": "This cashbox has no active cards — only cash is counted.",
+      "loadError": "Card list did not load — the server checks it on close.",
+      "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 30 seconds.",
+      "alert_one": "{{count}} card has a difference — comment required",
+      "alert_other": "{{count}} cards have a difference — comment required",
+      "pending_one": "{{count}} card image is still being checked.",
+      "pending_other": "{{count}} card images are still being checked.",
+      "errors": {
+        "entered": "Enter the balance from the app",
+        "photo": "Screenshot required — upload an image first",
+        "comment": "There is a difference or AI did not match — write a comment",
+        "photoType": "Upload a jpeg, png or webp image",
+        "photoSize": "Image must not exceed 5 MB",
+        "upload": "Image was not uploaded"
+      }
+    },
+    "ai": {
+      "status": {
+        "match": "Matched",
+        "mismatch": "Mismatch",
+        "pending": "Checking",
+        "unreadable": "Unreadable",
+        "error": "Error",
+        "disabled": "Disabled",
+        "not_required": "Not checked"
+      },
+      "line": {
+        "match": "AI read {{amount}} on the image",
+        "mismatch": "Image {{read}}, system {{expected}}",
+        "mismatchNoRead": "AI found the image balance does not match the system",
+        "pending": "AI is checking the image…",
+        "unreadable": "AI could not read the image — balance is confirmed manually",
+        "error": "AI check failed — the shift still closes",
+        "disabled": "AI check is disabled — balance is confirmed manually",
+        "waitingPhoto": "Upload a screenshot — AI will check the balance",
+        "enteredMismatch": "Entered balance differs from the image ({{read}})"
+      },
+      "enteredBadge": "Entered ≠ image"
+    },
+    "report": {
+      "title": "Shift report",
+      "back": "Main cashbox",
+      "subtitle": "{{cashbox}} · {{range}}",
+      "mainCashbox": "Main cashbox",
+      "branchCashbox": "Branch cashbox",
+      "openBanner": "The shift is still open — results may change until it closes.",
+      "notFound": "Shift not found or not available to you",
+      "kpi": {
+        "opening": "Opening balance",
+        "openingHint": "cash {{cash}} · cards {{card}}",
+        "income": "Income",
+        "expense": "Expense",
+        "closing": "Closing balance",
+        "closingCounted": "counted",
+        "closingSystem": "by system",
+        "diff": "Difference",
+        "diffHint": "cash {{cash}} · cards {{card}}"
+      },
+      "cash": {
+        "title": "Cash",
+        "expected": "Expected",
+        "counted": "Counted",
+        "diff": "Difference",
+        "notCounted": "Not counted",
+        "notCountedHint": "Cashier did not enter it",
+        "diffNotCounted": "Not calculated — not counted"
+      },
+      "accounts": {
+        "title": "Cards and accounts",
+        "subtitle": "{{count}} total · {{checked}} checked by AI",
+        "label": "Results by card",
+        "card": "Card",
+        "system": "System",
+        "entered": "Entered",
+        "photo": "Image",
+        "ai": "AI result",
+        "diff": "Difference",
+        "comment": "Comment",
+        "total": "Total",
+        "totalCount": "{{count}} cards",
+        "photoOpen": "Open",
+        "photoMissing": "Not uploaded",
+        "notCounted": "Not counted",
+        "aiRead": "AI read: {{amount}}",
+        "aiReadMismatch": "Image {{amount}}",
+        "noPhoto": "No image uploaded",
+        "settingOff": "Disabled in settings",
+        "commentMissing": "No comment",
+        "emptyTitle": "Cards were not checked",
+        "emptyText": "Card balances were not confirmed in this shift (the setting was off)."
+      },
+      "ops": {
+        "title": "Operations summary",
+        "subtitle": "{{count}} operations",
+        "net": "Net flow",
+        "count": "{{count}}",
+        "empty": "No cashbox operations in this shift",
+        "income": "Income",
+        "expense": "Expense",
+        "other": "Operation",
+        "method": {
+          "cash": "cash",
+          "click": "card",
+          "other": "other"
+        }
+      }
+    },
+    "settings": {
+      "title": "Cashbox shift settings",
+      "subtitle": "For all cashboxes · only a superadmin can change",
+      "back": "Main cashbox",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Settings saved",
+      "saveError": "Settings were not saved",
+      "section": "Card balance confirmation",
+      "sectionHint": "Asked for every card and account when a shift closes",
+      "accountCheck": "Every card balance is required to close a shift",
+      "accountCheckHint": "The shift does not close until the cashier enters each card balance from the bank app",
+      "photo": "Require an image",
+      "photoHint": "A bank app screenshot is requested for each card",
+      "ai": "AI check",
+      "aiHint": "AI reads the balance on the image and compares it with the entered and system amount. A difference requires a comment",
+      "perCard": "Per card",
+      "perCardHint": "When the global switch is off, card switches have no effect. AI works only on cards that require an image.",
+      "perCardLabel": "Shift switches per card",
+      "card": "Card",
+      "result": "Result",
+      "needsPhoto": "Image needed",
+      "cardPhoto": "{{card}}: require an image",
+      "cardAi": "{{card}}: AI check",
+      "resultText": {
+        "photoAi": "Image required, AI checks",
+        "photo": "Image required, balance confirmed manually",
+        "none": "Image optional, balance confirmed manually",
+        "off": "Confirmation off — the shift closes as before"
+      },
+      "empty": "This cashbox has no active cards"
+    },
+    "resultReport": "Shift report"
   }
 }

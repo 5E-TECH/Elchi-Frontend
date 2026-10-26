@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { SHIFT_CLOSE_TIMEOUT_MS, type CloseShiftAccount } from "./shiftAccountCheck";
 
 export const cashbox = "cashbox";
 export const shift = "shift";
@@ -230,6 +231,11 @@ export type CloseShiftRequest = {
   closing_balance_cash: number;
   closing_balance_card?: number | null;
   comment?: string;
+  /**
+   * kiZgTybn — har karta / hisob qoldig'i (`shift.account_check.enabled` yoqilganda kassaning HAR faol kartasi uchun
+   * majburiy). Rasm kaliti yuborilmaydi: backend qoralamadagi (`account-photo`) rasmni oladi.
+   */
+  accounts?: CloseShiftAccount[];
 };
 
 const shiftMoneyKeys = [
@@ -475,17 +481,25 @@ export const useCashBox = () => {
   });
 
   const closeShift = useMutation({
-    mutationFn: ({ shift_id, closing_balance_cash, closing_balance_card, comment }: CloseShiftRequest) =>
-      api
-        .post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, {
-          shift_id,
-          closing_balance_cash,
-          // Karta sanalmagan bo'lsa yuborilmaydi — backend karta farqini hisoblamaydi («Sanalmadi»).
-          ...(closing_balance_card === null || closing_balance_card === undefined ? {} : { closing_balance_card }),
-          // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
-          ...(comment ? { comment } : {}),
-        })
-        .then((res) => res.data),
+    mutationFn: ({ shift_id, closing_balance_cash, closing_balance_card, comment, accounts }: CloseShiftRequest) => {
+      const body = {
+        shift_id,
+        closing_balance_cash,
+        // Karta sanalmagan bo'lsa yuborilmaydi — backend karta farqini hisoblamaydi («Sanalmadi»).
+        ...(closing_balance_card === null || closing_balance_card === undefined ? {} : { closing_balance_card }),
+        // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
+        ...(comment ? { comment } : {}),
+      };
+      // kiZgTybn: kartalar bilan — AI `pending` bo'lsa backend 30 s gacha kutadi (gateway 45 s).
+      const request = accounts?.length
+        ? api.post<ShiftMutationResponse>(
+            API_ENDPOINTS.CASHBOX.SHIFT_CLOSE,
+            { ...body, accounts },
+            { timeout: SHIFT_CLOSE_TIMEOUT_MS },
+          )
+        : api.post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, body);
+      return request.then((res) => res.data);
+    },
     onSuccess: async () => {
       void refreshCashbox();
       await client.invalidateQueries({ queryKey: [shift] });
@@ -527,3 +541,5 @@ export const useCashBox = () => {
     useGetFinancialBalance,
   };
 };
+
+export * from "./shiftAccountCheck";

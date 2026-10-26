@@ -39,6 +39,7 @@ import {
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
   Badge,
@@ -419,6 +420,7 @@ const MainCashbox = () => {
   const [shiftResult, setShiftResult] = useState<{
     shift: CashboxShift;
     openedByName: string | null;
+    reportHref?: string | null;
   } | null>(null);
   const [isShiftResultOpen, setIsShiftResultOpen] = useState(false);
 
@@ -722,20 +724,27 @@ const MainCashbox = () => {
   );
 
   const handleCloseShift = useCallback(
-    async ({ countedCash, countedCard, comment }: CloseShiftPayload) => {
+    async ({ countedCash, countedCard, comment, accounts }: CloseShiftPayload) => {
       if (!closingShiftId || closeShift.isPending) return;
       const openedByName = shiftState.openedByName;
       let closed: CashboxShift | null = null;
+      let closedResponse: unknown = null;
       try {
         const response = await closeShift.mutateAsync({
           shift_id: closingShiftId,
           closing_balance_cash: countedCash,
           closing_balance_card: countedCard,
           comment: comment || undefined,
+          ...(accounts ? { accounts } : {}),
         });
+        closedResponse = response;
         closed = normalizeCashboxShift(asRecord(response).data);
-      } catch {
-        notify.error(t("common:error"), { description: t("closeShiftError") });
+      } catch (error) {
+        // kiZgTybn: kartalar tekshiruvining 400 xabari karta nomi bilan keladi («Humo: izoh majburiy») — kassir nimani
+        // tuzatishini bilishi uchun shu matn ko'rsatiladi; boshqa xatolar — umumiy matn (avvalgidek).
+        const status = (error as { response?: { status?: number } } | null)?.response?.status;
+        const accountMessage = accounts?.length && status === 400 ? getApiErrorMessage(error) : "";
+        notify.error(t("common:error"), { description: accountMessage || t("closeShiftError") });
         // Smena boshqa xodim tomonidan yopilgan bo'lishi mumkin — holat qayta o'qiladi.
         refetchShift();
         return;
@@ -743,7 +752,9 @@ const MainCashbox = () => {
       setClosingShiftId(null);
       handleExportExcel();
       if (closed) {
-        setShiftResult({ shift: closed, openedByName });
+        // kiZgTybn: kartalar tekshirilgan bo'lsa natija oynasida «Smena hisoboti» havolasi.
+        const accountsChecked = Boolean(asRecord(asRecord(closedResponse).data).accounts_check);
+        setShiftResult({ shift: closed, openedByName, reportHref: accountsChecked ? `/payments/shifts/${closed.id}` : null });
         setIsShiftResultOpen(true);
       } else {
         notify.success(t("common:success"), { description: t("closeShiftSuccess") });
@@ -1616,6 +1627,7 @@ const MainCashbox = () => {
         openedByName={shiftState.openedByName}
         expectedCash={balanceKnown ? cashBalance : null}
         expectedCard={balanceKnown ? transferBalance : null}
+        shiftId={closingShiftId}
       />
 
       <ShiftResultDialog
@@ -1623,6 +1635,7 @@ const MainCashbox = () => {
         onClose={() => setIsShiftResultOpen(false)}
         shift={shiftResult?.shift ?? null}
         openedByName={shiftResult?.openedByName}
+        reportHref={shiftResult?.reportHref ?? null}
         closedByName={currentUserName}
         cashboxLabel={shiftCashboxLabel}
         cardLabel={shiftCardLabel}

@@ -968,5 +968,164 @@
         "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."
       }
     }
+  },
+  "shiftCheck": {
+    "accounts": {
+      "title": "Kartalar va hisob raqamlar",
+      "hint": "Bank ilovasidagi qoldiqni kiriting va skrinshot yuklang — AI rasmdagi summani kiritilgan va tizimdagi qoldiq bilan solishtiradi.",
+      "hintNoAi": "Bank ilovasidagi qoldiqni kiriting; skrinshot so'ralgan kartada rasm yuklang.",
+      "settings": "Sozlamalar",
+      "entered": "Ilovadagi qoldiq",
+      "system": "Tizim bo'yicha:",
+      "photo": "Skrinshot",
+      "photoOptional": "(ixtiyoriy)",
+      "upload": "Skrinshot yuklash",
+      "replace": "Rasmni almashtirish",
+      "uploading": "Yuklanmoqda…",
+      "uploaded": "Rasm yuklandi",
+      "open": "Rasmni ochish",
+      "comment": "Izoh",
+      "commentPlaceholder": "Farq sababini yozing",
+      "commentHint": "Qoldiq tizimdagidan farq qiladi — izohsiz smena yopilmaydi",
+      "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
+      "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
+      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
+      "alert_one": "{{count}} ta kartada farq bor — izoh majburiy",
+      "alert_other": "{{count}} ta kartada farq bor — izoh majburiy",
+      "pending_one": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "pending_other": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "errors": {
+        "entered": "Ilovadagi qoldiqni kiriting",
+        "photo": "Skrinshot majburiy — avval rasm yuklang",
+        "comment": "Farq bor yoki AI natijasi mos emas — izoh yozing",
+        "photoType": "Faqat jpeg, png yoki webp rasm yuklang",
+        "photoSize": "Rasm hajmi 5 MB dan oshmasin",
+        "upload": "Rasm yuklanmadi"
+      }
+    },
+    "ai": {
+      "status": {
+        "match": "Mos keldi",
+        "mismatch": "Mos kelmadi",
+        "pending": "Tekshirilmoqda",
+        "unreadable": "O'qilmadi",
+        "error": "Xato",
+        "disabled": "O'chirilgan",
+        "not_required": "Tekshirilmagan"
+      },
+      "line": {
+        "match": "AI rasmdan {{amount}} o'qidi",
+        "mismatch": "Rasmda {{read}}, tizimda {{expected}}",
+        "mismatchNoRead": "AI rasmdagi qoldiqni tizimdagi bilan mos emas deb topdi",
+        "pending": "AI rasmni tekshirmoqda…",
+        "unreadable": "AI rasmni o'qiy olmadi — qoldiq qo'lda tasdiqlanadi",
+        "error": "AI tekshiruvi ishlamadi — smena baribir yopiladi",
+        "disabled": "AI tekshiruvi o'chirilgan — qoldiq qo'lda tasdiqlanadi",
+        "waitingPhoto": "Skrinshot yuklang — AI qoldiqni tekshiradi",
+        "enteredMismatch": "Kiritilgan qoldiq rasmdagidan ({{read}}) farq qiladi"
+      },
+      "enteredBadge": "Kiritilgan ≠ rasm"
+    },
+    "report": {
+      "title": "Smena hisoboti",
+      "back": "Asosiy kassa",
+      "subtitle": "{{cashbox}} · {{range}}",
+      "mainCashbox": "Asosiy kassa",
+      "branchCashbox": "Filial kassasi",
+      "openBanner": "Smena hali ochiq — natijalar yopilguncha o'zgarishi mumkin.",
+      "notFound": "Smena topilmadi yoki sizga ko'rinmaydi",
+      "kpi": {
+        "opening": "Ochilish qoldig'i",
+        "openingHint": "naqd {{cash}} · kartalar {{card}}",
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "closing": "Yopilish qoldig'i",
+        "closingCounted": "sanalgan",
+        "closingSystem": "tizim bo'yicha",
+        "diff": "Farq",
+        "diffHint": "naqd {{cash}} · kartalar {{card}}"
+      },
+      "cash": {
+        "title": "Naqd",
+        "expected": "Kutilgan",
+        "counted": "Sanalgan",
+        "diff": "Farq",
+        "notCounted": "Sanalmagan",
+        "notCountedHint": "Kassir kiritmagan",
+        "diffNotCounted": "Sanalmagani uchun hisoblanmadi"
+      },
+      "accounts": {
+        "title": "Kartalar va hisob raqamlar",
+        "subtitle": "{{count}} ta · {{checked}} tasi AI bilan tekshirildi",
+        "label": "Kartalar bo'yicha natijalar",
+        "card": "Karta",
+        "system": "Tizim bo'yicha",
+        "entered": "Kiritilgan",
+        "photo": "Rasm",
+        "ai": "AI natija",
+        "diff": "Farq",
+        "comment": "Izoh",
+        "total": "Jami",
+        "totalCount": "{{count}} ta karta",
+        "photoOpen": "Ochish",
+        "photoMissing": "Yuklanmagan",
+        "notCounted": "Sanalmagan",
+        "aiRead": "AI o'qidi: {{amount}}",
+        "aiReadMismatch": "Rasmda {{amount}}",
+        "noPhoto": "Rasm yuklanmagan",
+        "settingOff": "Sozlamada o'chirilgan",
+        "commentMissing": "Izoh yozilmagan",
+        "emptyTitle": "Kartalar tekshirilmagan",
+        "emptyText": "Bu smenada karta qoldig'i tasdiqlanmagan (sozlama o'chiq bo'lgan)."
+      },
+      "ops": {
+        "title": "Operatsiyalar xulosasi",
+        "subtitle": "{{count}} ta operatsiya",
+        "net": "Sof oqim",
+        "count": "{{count}} ta",
+        "empty": "Smenada kassa operatsiyasi yo'q",
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "other": "Operatsiya",
+        "method": {
+          "cash": "naqd",
+          "click": "karta",
+          "other": "boshqa"
+        }
+      }
+    },
+    "settings": {
+      "title": "Kassa smenasi sozlamalari",
+      "subtitle": "Barcha kassalar uchun · faqat superadmin o'zgartiradi",
+      "back": "Asosiy kassa",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda…",
+      "saved": "Sozlamalar saqlandi",
+      "saveError": "Sozlamalar saqlanmadi",
+      "section": "Kartalar qoldig'ini tasdiqlash",
+      "sectionHint": "Smena yopilganda har bir karta va hisob raqam uchun so'raladi",
+      "accountCheck": "Smena yopishda har karta qoldig'i majburiy",
+      "accountCheckHint": "Kassir har karta uchun bank ilovasidagi qoldiqni kiritmaguncha smena yopilmaydi",
+      "photo": "Rasm talab qilish",
+      "photoHint": "Har karta uchun bank ilovasidan skrinshot yuklash so'raladi",
+      "ai": "AI tekshiruvi",
+      "aiHint": "AI rasmdagi qoldiqni o'qiydi, kiritilgan va tizimdagi summa bilan solishtiradi. Farq bo'lsa izoh majburiy",
+      "perCard": "Har karta bo'yicha",
+      "perCardHint": "Umumiy kalit o'chiq bo'lsa, karta kalitlari ishlamaydi. AI faqat rasm talab qilingan kartada ishlaydi.",
+      "perCardLabel": "Kartalar bo'yicha smena kalitlari",
+      "card": "Karta",
+      "result": "Natija",
+      "needsPhoto": "Rasm kerak",
+      "cardPhoto": "{{card}}: rasm talab qilish",
+      "cardAi": "{{card}}: AI tekshiruvi",
+      "resultText": {
+        "photoAi": "Rasm majburiy, AI tekshiradi",
+        "photo": "Rasm majburiy, qoldiq qo'lda tasdiqlanadi",
+        "none": "Rasm ixtiyoriy, qoldiq qo'lda tasdiqlanadi",
+        "off": "Tasdiqlash o'chiq — smena avvalgidek yopiladi"
+      },
+      "empty": "Bu kassada faol karta yo'q"
+    },
+    "resultReport": "Smena hisoboti"
   }
 }

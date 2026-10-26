@@ -236,6 +236,13 @@ export const API_ENDPOINTS = {
     SHIFT_HISTORY: "finance/shift",
     SHIFT_OPEN: "finance/shift/open",
     SHIFT_CLOSE: "finance/shift/close",
+    // kiZgTybn — smena yopishda har karta qoldig'ini tasdiqlash: sozlamalar (GET — yopuvchi rollar, PATCH — faqat
+    // superadmin), qoldiq skrinshoti (multipart `photo`), smena hisoboti (naqd + kartalar + AI holati).
+    SHIFT_SETTINGS: "finance/shift/settings",
+    SHIFT_ACCOUNT_PHOTO: "finance/shift/account-photo",
+    SHIFT_REPORT: (id: string | number) => `finance/shift/${id}/report`,
+    // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
+    CARDS: "finance/cashbox/cards",
   },
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox
