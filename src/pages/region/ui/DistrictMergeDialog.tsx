@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useNavigate } from "react-router-dom";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -296,21 +297,41 @@ const ReasonBox = ({ lines }: { lines: readonly string[] }) => {
   );
 };
 
+/**
+ * Qaytmagan buyurtmalar raqamlari (`details.stranded_order_ids`, ≤10 ta, Z1c1sNPT): «№7001, №7002 va yana 9 ta»
+ * («yana» — qatordagi jami sondan qolgani). Raqam yo'q — `null`.
+ */
+const strandedIdsText = (
+  t: TFunction<"region">,
+  ids: readonly string[],
+  total: number | null,
+  countTa: (value: number) => string,
+): string | null => {
+  if (!ids.length) return null;
+  const list = ids.map((id) => t("v2.districts.mergeError.orderNumber", { id })).join(", ");
+  const more = total != null && total > ids.length ? total - ids.length : 0;
+  return more > 0 ? t("v2.districts.mergeError.strandedIdsMore", { ids: list, more: countTa(more) }) : list;
+};
+
 /** «{manba}ga qaytmadi» — kompensatsiyadan keyin joyiga qaytmagan yozuvlar (`details.stranded`). */
 const StrandedList = ({
   title,
   label,
   rows,
   placeOf,
+  orderIds = [],
 }: {
   title: string;
   label: string;
   rows: readonly MergeStranded[];
   placeOf: (row: MergeStranded) => string;
+  /** Z1c1sNPT — birinchi «Buyurtmalar» qatoriga: «{joy}: №7001, №7002 …». */
+  orderIds?: readonly string[];
 }) => {
   const { t } = useTranslation("region");
   const countTa = useCountTa();
   if (!rows.length) return null;
+  const ordersRow = rows.findIndex((row) => row.kind === "orders");
   return (
     <div className="flex flex-col gap-2">
       <Overline>{title}</Overline>
@@ -318,6 +339,7 @@ const StrandedList = ({
         {rows.map((row, index) => {
           const Icon = ROW_ICONS[row.kind];
           const kind = t(`v2.districts.rows.${row.kind}`);
+          const ids = index === ordersRow ? strandedIdsText(t, orderIds, row.count, countTa) : null;
           return (
             <li
               key={`${row.kind}-${index}`}
@@ -330,7 +352,15 @@ const StrandedList = ({
                     ? t("v2.districts.mergeError.strandedUnknown", { kind })
                     : t("v2.districts.mergeError.strandedCount", { kind, count: countTa(row.count) })}
                 </span>
-                <span className="text-xs [overflow-wrap:anywhere] text-text-muted">{placeOf(row)}</span>
+                <span className="text-xs [overflow-wrap:anywhere] text-text-muted">
+                  {ids && row.districtId != null
+                    ? t("v2.districts.mergeError.strandedWithIds", { place: placeOf(row), ids })
+                    : placeOf(row)}
+                </span>
+                {/* Joyi aniqlanmagan bo'lsa — raqamlar alohida qatorda (gap «tekshiring: №…» bo'lib qolmasin). */}
+                {ids && row.districtId == null ? (
+                  <span className="text-xs [overflow-wrap:anywhere] text-text-muted">{ids}</span>
+                ) : null}
               </span>
             </li>
           );
@@ -663,15 +693,31 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
             ? t("v2.districts.mergeError.strandedIn", { name: nameOf(source) })
             : t("v2.districts.mergeError.strandedInId", { id: row.districtId });
     const title = t(`v2.districts.mergeError.title.${variant}`);
+    // Z1c1sNPT: «{manba}ga qaytarildi» — faqat «chala qoldi» bo'lmagan oynalarda (maket `-error-manual` da yo'q).
+    const rolledBack = variant !== "manual" && hasCounts(details.rolledBack) ? details.rolledBack : null;
     const copyReport = () => {
       const report = [
         title,
         `${source.name} (ID ${source.id}) → ${target.name} (ID ${target.id}) · ${source.regionName}`,
         ...reasons.map((line) => `${t("v2.districts.mergeError.reasonLabel")}: ${line}`),
+        ...(rolledBack
+          ? [
+              `${t("v2.districts.mergeError.rolledBackTitle", { from: source.name })}: ${MERGE_KINDS.map(
+                (kind) => `${t(`v2.districts.mergeError.kinds.${kind}`)} ${countTa(rolledBack[kind])}`,
+              ).join(" · ")}`,
+            ]
+          : []),
         ...details.stranded.map(
           (row) =>
             `${t(`v2.districts.rows.${row.kind}`)}: ${row.count == null ? "?" : countTa(row.count)} — ${placeOf(row)}`,
         ),
+        ...(details.strandedOrderIds.length
+          ? [
+              `${t("v2.districts.mergeError.strandedIdsLabel")}: ${details.strandedOrderIds
+                .map((id) => t("v2.districts.mergeError.orderNumber", { id }))
+                .join(", ")}`,
+            ]
+          : []),
         `${t("v2.districts.mergeError.copyCode")}: ${[details.reason ?? "—", details.kind].filter(Boolean).join(" · ")}`,
         details.traceId ? `trace_id: ${details.traceId}` : null,
         `${t("v2.districts.mergeError.copyTime")}: ${new Date().toISOString()}`,
@@ -723,8 +769,18 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
               label={t("v2.districts.mergeError.strandedAria", { from: nameOf(source) })}
               rows={details.stranded}
               placeOf={placeOf}
+              orderIds={details.strandedOrderIds}
             />
-          ) : null}
+          ) : (
+            // Z1c1sNPT (maket `merge-error`, `-error-unavailable`): «{manba}ga qaytarildi» — `details.rolled_back_*`;
+            // nol qatorlar (boshlanmagan qadam) chizilmaydi, hammasi 0 bo'lsa — blok yo'q.
+            <CountBlock
+              title={t("v2.districts.mergeError.rolledBackTitle", { from: nameOf(source) })}
+              label={t("v2.districts.mergeError.rolledBackAria", { from: nameOf(source) })}
+              counts={rolledBack}
+              withHints={false}
+            />
+          )}
           <DialogNote>{note}</DialogNote>
         </>
       ),

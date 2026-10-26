@@ -73,6 +73,10 @@ export const COUNT_MISMATCH: MergeReply = {
         mismatches: [{ kind: "orders", district: "target", expected: 1254, actual: 1255 }],
         from_district_id: "23",
         to_district_id: "24",
+        // Z1c1sNPT — A tumanga qaytarilgan sonlar (tekis, `details` ichida).
+        rolled_back_orders: 128,
+        rolled_back_users: 6,
+        rolled_back_branches: 1,
         manual_fix: false,
       },
     },
@@ -94,11 +98,16 @@ export const MANUAL_FIX: MergeReply = {
         timeout_ms: 15000,
         from_district_id: "23",
         to_district_id: "24",
+        rolled_back_orders: 114,
+        rolled_back_users: 0,
+        rolled_back_branches: 0,
         manual_fix: true,
         stranded: [
           { kind: "orders", district_id: "24", count: 14 },
           { kind: "users", district_id: null, count: null },
         ],
+        // Z1c1sNPT — qaytmagan buyurtmalarning birinchi ≤10 ta ID'si.
+        stranded_order_ids: ["7001", "7002", "7015", "7023", "7040"],
       },
     },
   },
