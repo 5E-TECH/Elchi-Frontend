@@ -3,7 +3,7 @@ import { memo, useEffect, useId, useState } from "react";
 import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
 import { createLoginResolver, type LoginFormValues } from "../../../shared/lib/validation/loginSchema";
@@ -57,8 +57,9 @@ const ALERT_BASE = "flex items-start gap-3 rounded-xl px-4 py-3 text-sm";
 const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorHint, setErrorHint] = useState<string | null>(null);
-  // Login qulfi tugaydigan vaqt (ms) — shu paytgacha «Kirish» tugmasi o'chiq (server baribir 429 qaytaradi).
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  // Login qulfi: qaysi telefon va qachongacha (ms). Qulf backend'da telefon (+IP) bo'yicha — «Kirish» faqat O'SHA
+  // raqam yozilib turganda o'chiq; boshqa raqam bilan kirish mumkin (server baribir o'zi tekshiradi).
+  const [lock, setLock] = useState<{ phone: string; until: number } | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation("auth");
@@ -97,13 +98,16 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
   }, [autoFocus, setFocus]);
 
   useEffect(() => {
-    if (lockedUntil === null) return;
-    const timer = setTimeout(() => setLockedUntil(null), Math.max(0, lockedUntil - Date.now()));
+    if (lock === null) return;
+    const timer = setTimeout(() => setLock(null), Math.max(0, lock.until - Date.now()));
     return () => clearTimeout(timer);
-  }, [lockedUntil]);
+  }, [lock]);
+
+  const phoneValue = useWatch({ control, name: "phone_number" });
+  const lockedNow = lock !== null && phoneValue === lock.phone;
 
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
-    if (isSubmitting || lockedUntil !== null) return;
+    if (isSubmitting || (lock !== null && data.phone_number === lock.phone)) return;
 
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
@@ -138,7 +142,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
             const seconds = lockSecondsOf(err);
             message = t("loginLocked");
             hint = t("loginLockedRetryIn", { count: Math.max(1, Math.ceil((seconds ?? 60) / 60)) });
-            if (seconds) setLockedUntil(Date.now() + seconds * 1000);
+            if (seconds) setLock({ phone: payload.phone_number, until: Date.now() + seconds * 1000 });
           } else if (status === 429) {
             const retryAfter = Math.ceil(Number(err.response.headers?.["retry-after"]));
             message = t("tooManyAttempts");
@@ -268,7 +272,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
         fullWidth
         loading={isSubmitting}
         loadingText={t("signingIn")}
-        disabled={lockedUntil !== null}
+        disabled={lockedNow}
         className="mt-2"
       >
         {t("loginButton")}
