@@ -490,6 +490,8 @@
     "cardLinked": "Bot connected",
     "cardUnlinked": "Bot not connected",
     "listHint": "Personal Elchi bot connection. Store group status is on the user's details page, in the “Telegram group” card.",
+    "filterLabel": "Telegram bot:",
+    "filterAll": "All",
     "unavailable": "Cannot be connected"
   }
 }

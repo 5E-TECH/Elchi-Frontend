@@ -490,6 +490,8 @@
     "cardLinked": "Бот подключён",
     "cardUnlinked": "Бот не подключён",
     "listHint": "Подключение личного бота Elchi. Статус групп магазина — в карточке «Telegram-группа» на странице пользователя.",
+    "filterLabel": "Telegram-бот:",
+    "filterAll": "Все",
     "unavailable": "Подключить нельзя"
   }
 }

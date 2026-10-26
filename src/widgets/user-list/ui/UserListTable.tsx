@@ -90,8 +90,8 @@ const telegramBotState = (user: User): TelegramBotState => {
  * «Nofaol qilish»/«Faol qilish», «O'chirish»). Menejerda (`manager-users-list`) amallar o'rnida «Ochish» (›).
  * TG-B (`*-users-list-telegram`, ega javobi tg-link S4): superadmin/admin jadvalida «Holat» dan keyin «Telegram boti»
  * (`telegram_linked`: «Ulangan» / «Ulanmagan», `Send` ikonkali belgi; planshetda ham), telefon kartasida «Bot ulangan» /
- * «Bot ulanmagan». «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmaydi — backend `telegram_linked`
- * parametri yo'q (yA31z7Rr, TG-D). Menejerda ustun yo'q.
+ * «Bot ulanmagan». «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri — sahifada (`UserListPage`, server
+ * `GET /users?telegram_linked`, yA31z7Rr). Menejerda ustun yo'q.
  * «Filial» (kGIjOciz, backend 914ff57): superadmin/admin jadvalida «Rol» dan keyin (planshetda ham), filialsiz rol —
  * «—», market operatorida — uning marketi (x6IO746K); telefon kartasida «telefon · filial». Menejerda (`manager-users-list`) ustun yo'q — u faqat o'z filialini
  * ko'radi.

@@ -490,6 +490,8 @@
     "cardLinked": "Bot ulangan",
     "cardUnlinked": "Bot ulanmagan",
     "listHint": "Shaxsiy Elchi boti ulanishi. Market guruhlari holati — foydalanuvchi tafsilotida, «Telegram guruhi» kartasida.",
+    "filterLabel": "Telegram boti:",
+    "filterAll": "Barchasi",
     "unavailable": "Ulab bo'lmaydi"
   }
 }
