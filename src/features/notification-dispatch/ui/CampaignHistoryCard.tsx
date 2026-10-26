@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-notifications-send-schedule, superadmin-notifications-campaign-cancel-dialog
 import { useMemo, useState } from "react";
-import { FileText, ListX, Send, ServerCrash } from "lucide-react";
+import { FileText, ListX, Moon, Send, ServerCrash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   CAMPAIGN_DISPLAY_STATUSES,
@@ -143,16 +143,44 @@ export const CampaignHistoryCard = () => {
         campaign.created_at,
       now,
     ) ?? "—";
-  /** Vaqt ostidagi izoh: reklama tungi taqiqda — surilgan (hali boshlanmagan) yoki qachon davom etadi. */
-  const whenNote = (campaign: Campaign) => {
-    if (!isCampaignPaused(campaign, now)) return null;
+  /**
+   * Vaqt ostidagi izohlar: N10 (fb4qy6bd) — so'ralgan vaqt tungi taqiqqa tushib surilgan bo'lsa (`quiet_hours_shifted`)
+   * «bugun, 18:40 da so'ralgan, tungi taqiq tufayli surildi» (maket: «18:40 da so'ralgan, tungi taqiq»; har holatda);
+   * reklama tungi taqiqda — surilgan (hali boshlanmagan) yoki qachon davom etadi.
+   */
+  const whenNotes = (campaign: Campaign): Array<{ key: string; text: string; shifted?: boolean }> => {
+    const notes: Array<{ key: string; text: string; shifted?: boolean }> = [];
+    if (campaign.quiet_hours_shifted) {
+      const requested = time.inline(campaign.requested_at ?? campaign.requested_at_tashkent, now);
+      notes.push({
+        key: "requested",
+        shifted: true,
+        text: requested
+          ? t("campaign.history.requestedShifted", { time: requested })
+          : t("campaign.history.quietShifted"),
+      });
+    }
+    if (!isCampaignPaused(campaign, now)) return notes;
     const display = campaignDisplayStatus(campaign);
-    if (display === "scheduled")
-      return campaignEffectiveAt(campaign) === campaign.paused_until ? t("campaign.history.quietShifted") : null;
-    return display === "sending"
-      ? t("campaign.history.paused", { time: time.inline(campaign.paused_until, now) ?? "" })
-      : null;
+    if (display === "scheduled") {
+      if (!campaign.quiet_hours_shifted && campaignEffectiveAt(campaign) === campaign.paused_until)
+        notes.push({ key: "paused", shifted: true, text: t("campaign.history.quietShifted") });
+    } else if (display === "sending") {
+      notes.push({
+        key: "paused",
+        text: t("campaign.history.paused", { time: time.inline(campaign.paused_until, now) ?? "" }),
+      });
+    }
+    return notes;
   };
+  const notesOf = (campaign: Campaign, className: string) =>
+    whenNotes(campaign).map((note) => (
+      <div key={note.key} className={cx(className, note.shifted && "flex items-start gap-1")}>
+        {/* «Tungi taqiq tufayli surildi» belgisi — oy ikonkasi (maket: tungi taqiq izohi). */}
+        {note.shifted ? <Moon aria-hidden="true" size={14} className="mt-0.5 shrink-0" /> : null}
+        <span className="min-w-0">{note.text}</span>
+      </div>
+    ));
   const recipients = (campaign: Campaign) => t("campaign.confirm.count", { value: num(campaign.total) });
   const progressText = (campaign: Campaign) => {
     if (campaignDisplayStatus(campaign) === "sent") {
@@ -228,7 +256,7 @@ export const CampaignHistoryCard = () => {
       cell: (campaign) => (
         <>
           <div className="whitespace-nowrap text-text">{when(campaign)}</div>
-          {whenNote(campaign) ? <div className={cx(SUB, "max-w-[180px]")}>{whenNote(campaign)}</div> : null}
+          {notesOf(campaign, cx(SUB, "max-w-[180px]"))}
         </>
       ),
     },
@@ -297,7 +325,7 @@ export const CampaignHistoryCard = () => {
         <AudienceLine campaign={campaign} />
       </span>
       <span className="text-xs text-text-muted">{meta(campaign)}</span>
-      {whenNote(campaign) ? <span className="text-xs text-text-muted">{whenNote(campaign)}</span> : null}
+      {notesOf(campaign, "text-xs text-text-muted")}
       {campaignDisplayStatus(campaign) === "scheduled" ? null : (
         <div className="flex min-w-0 items-center gap-3">
           <CampaignProgressBar

@@ -12,6 +12,7 @@ import {
   type CampaignPayload,
 } from "../model/campaign";
 import type { AudienceTarget } from "../model/audience";
+import { campaignReportKey, type CampaignReportKind, type CampaignReportRef } from "../model/report";
 import {
   cancelCampaign,
   createAudienceSegment,
@@ -252,10 +253,14 @@ export const useCampaigns = (params: CampaignListParams) =>
  * Kampaniya hisoboti (oyna ochiq ekan — `enabled`; yopilish animatsiyasida kesh ko'rinib turadi, so'rov yo'q).
  * Yuborilayotgan kampaniyada — har 3 s. Xato — oynaning o'zida.
  */
-export const useCampaignReport = (id: string | null, enabled = true) =>
+export const useCampaignReport = (
+  id: string | null,
+  enabled = true,
+  kind: CampaignReportKind = "notification",
+) =>
   useQuery({
-    queryKey: queryKeys.notificationCampaigns.report(id ?? ""),
-    queryFn: () => getCampaignReport(id as string),
+    queryKey: queryKeys.notificationCampaigns.report(id ? campaignReportKey({ id, kind }) : ""),
+    queryFn: () => getCampaignReport(id as string, kind),
     enabled: Boolean(id) && enabled,
     refetchInterval: (query) =>
       query.state.data?.campaign.display_status === "sending" ? CAMPAIGN_PROGRESS_INTERVAL_MS : false,
@@ -271,15 +276,18 @@ export const useCampaignUndelivered = (
   id: string | null,
   params: { page: number; limit: number },
   enabled = true,
-) =>
-  useQuery({
-    queryKey: queryKeys.notificationCampaigns.undelivered(id ?? "", params),
-    queryFn: () => getCampaignUndelivered(id as string, params),
+  kind: CampaignReportKind = "notification",
+) => {
+  // SMS va bildirishnoma kampaniyasining id'lari bir xil bo'lishi mumkin — kalitda tur ham bor (`sms:<id>`).
+  const key = id ? campaignReportKey({ id, kind }) : "";
+  return useQuery({
+    queryKey: queryKeys.notificationCampaigns.undelivered(key, params),
+    queryFn: () => getCampaignUndelivered(id as string, params, kind),
     enabled: Boolean(id) && enabled,
-    placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[2] === (id ?? "") ? previous : undefined,
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[2] === key ? previous : undefined),
     meta: { silentError: true },
   });
+};
 
 /** Fon eksporti holatini so'rash oralig'i (navbatda / tayyorlanmoqda). */
 export const CAMPAIGN_EXPORT_POLL_MS = 2_000;
@@ -328,8 +336,12 @@ export const useExportCampaignUndelivered = (
   }: ExportCampaignOptions = {},
 ) =>
   useMutation({
-    mutationFn: async (id: string): Promise<CampaignExportOutcome> => {
-      const fallbackName = `kampaniya-${id}-yetkazilmaganlar.csv`;
+    mutationFn: async (target: string | CampaignReportRef): Promise<CampaignExportOutcome> => {
+      // Satr — bildirishnoma kampaniyasi id'si (avvalgidek); SMS kampaniyasi — `{ id, kind: 'sms' }`.
+      const ref: CampaignReportRef = typeof target === "string" ? { id: target, kind: "notification" } : target;
+      /** Eslab qolingan fon vazifasi kaliti (SMS — `sms:<id>`). */
+      const id = campaignReportKey(ref);
+      const fallbackName = `${ref.kind === "sms" ? "sms-kampaniya" : "kampaniya"}-${ref.id}-yetkazilmaganlar.csv`;
       const pollJob = async (exportId: string): Promise<CampaignExportOutcome> => {
         for (let attempt = 0; attempt < maxPolls; attempt += 1) {
           if (attempt > 0) await wait(pollMs);
@@ -361,7 +373,7 @@ export const useExportCampaignUndelivered = (
         }
       }
 
-      const result = await exportCampaignUndelivered(id);
+      const result = await exportCampaignUndelivered(ref.id, ref.kind);
       if (result.kind === "file") {
         const fileName = result.fileName ?? fallbackName;
         save(result.blob, fileName);

@@ -438,6 +438,11 @@ export const API_ENDPOINTS = {
     CAMPAIGN_EXPORT_BY_ID: (exportId: string) => `notifications/campaigns/exports/${encodeURIComponent(exportId)}`,
     CAMPAIGN_EXPORT_DOWNLOAD: (exportId: string) =>
       `notifications/campaigns/exports/${encodeURIComponent(exportId)}/download`,
+    // SMS kampaniyasi hisoboti (H7kpCman) — javob shakli bildirishnoma kampaniyasiniki bilan bir xil (`kind: 'sms'`)
+    SMS_CAMPAIGN_REPORT: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/report`, // GET
+    SMS_CAMPAIGN_UNDELIVERED: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered`,
+    SMS_CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
+      `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered/export`, // GET CSV (faqat superadmin)
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device

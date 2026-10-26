@@ -8,6 +8,10 @@
  * `no_telegram_group`), `sms-dispatch.service.ts` (`sms_disabled`, `provider_not_configured`, `no_phone`,
  * `duplicate`, darvoza `daily_cap_exceeded`), `channel-planner.service.ts` (`push_disabled`, `no_phone`),
  * `resolve-channels.ts` (`muted`), `push-delivery.service.ts` (`online`, `quiet_hours`, `push_disabled`).
+ * N9 (lkQiuyQu): kampaniya hisobotidagi `failures[].reason_code` — push xatosi tasnifi `campaign-report.service.ts`
+ * `pushReasonCode` (`subscription_expired`, `payload_too_large`, `rate_limited`, `push_rejected`,
+ * `push_service_error`, `network_error`, `push_failed`); SMS darvozasi `sms-dispatch.service.ts` / `sms-gate.service.ts`
+ * (`no_consent`, `fanout_exceeded`, `opt_out_not_configured`), bekor qilingan kampaniya — `campaign_cancelled`.
  */
 
 /** Kod → `notifications:dispatch.reason.*` kaliti. */
@@ -26,6 +30,18 @@ const REASON_KEYS: Record<string, string> = {
   push_disabled: "pushDisabled",
   online: "appOpen",
   quiet_hours: "quietHours",
+  no_subscription: "noSubscription",
+  subscription_expired: "pushExpired",
+  payload_too_large: "pushTooLarge",
+  rate_limited: "pushRateLimited",
+  push_rejected: "pushRejected",
+  push_service_error: "pushServiceError",
+  network_error: "networkError",
+  push_failed: "failedPush",
+  no_consent: "smsNoConsent",
+  fanout_exceeded: "smsFanout",
+  opt_out_not_configured: "smsOptOut",
+  campaign_cancelled: "campaignCancelled",
 };
 
 /** Kod bo'lmasa — holat bo'yicha (kanaldan qat'i nazar). */
@@ -34,7 +50,14 @@ const STATUS_KEYS: Record<string, string> = {
   no_subscription: "noSubscription",
   not_eligible: "notEligible",
   blocked: "smsLimit",
+  // SMS operator hisoboti (DLR) yakuniy xatolari — SMS kampaniyasi «Yetkazilmaganlar»ida holat shu bo'ladi.
+  not_delivered: "failedSms",
+  rejected: "smsRejected",
+  expired: "smsExpired",
 };
+
+/** SMS operator hisoboti (DLR) yakuniy xato holatlari — «xato» guruhi (`failed` bilan bir qatorda). */
+export const SMS_DLR_FAILED_STATUSES: readonly string[] = ["not_delivered", "rejected", "expired"];
 
 /** `failed` + noma'lum sabab — kanal bo'yicha (maket: «Telegram xatosi», «SMS yetkazilmadi»). */
 const FAILED_KEYS: Record<string, string> = {

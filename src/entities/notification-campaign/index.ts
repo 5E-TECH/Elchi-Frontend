@@ -79,11 +79,16 @@ export {
 export { useCampaignTime, useClock } from "./model/useCampaignTime";
 export {
   REPORT_BUCKETS,
+  campaignReportKey,
   sumReportBucket,
   type CampaignExportJob,
   type CampaignExportStatus,
   type CampaignReport,
   type CampaignReportChannel,
+  type CampaignReportCost,
+  type CampaignReportKind,
+  type CampaignReportRef,
+  type CampaignReportSms,
   type CampaignUndeliveredFailure,
   type CampaignUndeliveredItem,
   type CampaignUndeliveredPage,

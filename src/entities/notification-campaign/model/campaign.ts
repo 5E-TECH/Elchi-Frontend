@@ -91,6 +91,14 @@ export interface Campaign {
   is_promo: boolean;
   /** Reklama tungi taqiqda to'xtagan — shu lahzada davom etadi (WIsb9Ytq). */
   paused_until: string | null;
+  /**
+   * N10 (fb4qy6bd): admin so'ragan lahza — belgilangan vaqt yoki «Darhol» da yaratilgan lahza (eski kampaniyalarda
+   * `null`); `_tashkent` — o'sha lahza `+05:00` bilan.
+   */
+  requested_at: string | null;
+  requested_at_tashkent: string | null;
+  /** N10: so'ralgan vaqt reklama tungi taqiqiga tushib, oyna tugashiga surildi (eski kampaniyalarda `false`). */
+  quiet_hours_shifted: boolean;
 }
 
 export interface CampaignListPage {
