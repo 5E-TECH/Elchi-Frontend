@@ -59,7 +59,8 @@ test.describe("SMS kampaniya — mijozlar segmenti, 1440px", () => {
     await expect(panel.getByTestId("campaign-quiet-notice")).toContainText(
       "Hozir 19:10 — SMS ertaga, 09:00 da yuboriladi",
     );
-    await expect(panel.getByText("Belgilangan vaqtda")).toHaveCount(0);
+    // KM-6: «Belgilangan vaqtda» endi tanlanadi (sinov — `sms-campaign-schedule.*.spec.ts`).
+    await expect(panel.getByRole("radio", { name: /Belgilangan vaqtda/ })).not.toBeChecked();
 
     // Matn bor, auditoriya tayyor — «Ko'rib chiqish» ochiq.
     await panel.getByRole("textbox", { name: "Xabar matni" }).fill("Elchi: kuzgi chegirma 20%");

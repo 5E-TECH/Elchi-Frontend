@@ -63,3 +63,35 @@ describe("KM-1 SMS kampaniya yordamchilari", () => {
     expect(isRetryableSmsCampaignError("forbidden")).toBe(false);
   });
 });
+
+describe("KM-6 (2aS7PFX0) SMS rejalashtirish yordamchilari", () => {
+  it("holat: ma'lum qiymat; eski qatorda holat yo'q — `queued`; noma'lum — null", async () => {
+    const { smsCampaignStatus } = await import("./campaign");
+    expect(smsCampaignStatus({ status: "scheduled" })).toBe("scheduled");
+    expect(smsCampaignStatus({ status: "cancelled" })).toBe("cancelled");
+    expect(smsCampaignStatus({ status: "failed" })).toBe("failed");
+    expect(smsCampaignStatus({})).toBe("queued");
+    expect(smsCampaignStatus({ status: "weird" })).toBeNull();
+  });
+
+  it("90 kun chegarasi — backend `scheduled_at_too_far` bilan bir xil", async () => {
+    const { isSmsScheduleTooFar } = await import("./campaign");
+    const now = Date.parse("2026-10-26T12:00:00+05:00");
+    expect(isSmsScheduleTooFar(now + 89 * 86_400_000, now)).toBe(false);
+    expect(isSmsScheduleTooFar(now + 90 * 86_400_000, now)).toBe(false);
+    expect(isSmsScheduleTooFar(now + 90 * 86_400_000 + 1, now)).toBe(true);
+  });
+
+  it("400 xatosi: «… kun oldinga» — tooFar, zonasiz — invalid, boshqa — null", async () => {
+    const { smsScheduleErrorKey } = await import("./campaign");
+    const err = (status: number, message: unknown) => ({ response: { status, data: { message } } });
+    expect(smsScheduleErrorKey(err(400, "scheduled_at ko'pi bilan 90 kun oldinga"))).toBe("scheduleTooFar");
+    expect(
+      smsScheduleErrorKey(err(400, "scheduled_at: vaqt zonasi bilan bo'lishi kerak (masalan 2026-10-20T09:00:00+05:00 yoki ...Z)")),
+    ).toBe("scheduleInvalid");
+    expect(smsScheduleErrorKey(err(400, ["scheduled_at must be a string"]))).toBe("scheduleInvalid");
+    expect(smsScheduleErrorKey(err(400, "Xabar matni bo'sh"))).toBeNull();
+    expect(smsScheduleErrorKey(err(409, "scheduled_at"))).toBeNull();
+    expect(smsScheduleErrorKey(undefined)).toBeNull();
+  });
+});

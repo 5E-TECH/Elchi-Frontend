@@ -437,6 +437,7 @@ export const API_ENDPOINTS = {
     SMS_TEMPLATE_APPROVE: (id: string | number) => `notifications/sms/templates/${id}/approve`,
     SMS_CAMPAIGNS: "notifications/sms/campaigns", // GET history / POST send (Idempotency-Key)
     SMS_CAMPAIGN_PREVIEW: "notifications/sms/campaigns/preview",
+    SMS_CAMPAIGN_CANCEL: (id: string | number) => `notifications/sms/campaigns/${id}/cancel`, // POST — faqat `scheduled` (KM-6)
     SMS_CONSENTS: "notifications/sms/consents",
     SMS_CONSENTS_REVOKE: "notifications/sms/consents/revoke",
   },

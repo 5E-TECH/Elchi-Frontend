@@ -6,10 +6,14 @@ import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryE
 
 export {
   isRetryableSmsCampaignError,
+  isSmsScheduleTooFar,
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
+  smsCampaignStatus,
   smsDailyQuota,
+  smsScheduleErrorKey,
+  SMS_MAX_SCHEDULE_DAYS,
   tashkentMinuteOfDay,
   type QuietHours,
   type QuietNotice,
@@ -74,6 +78,11 @@ export interface SmsCampaignInput {
   lang?: SmsLanguage;
   vars?: Record<string, string>;
   segment?: SmsCampaignSegment;
+  /**
+   * KM-6 (2aS7PFX0): rejalashtirish — ISO + ANIQ zona (`2026-10-28T10:00:00+05:00`), ≤90 kun. Yo'q — darhol.
+   * Reklama 18:00–09:00 oynasiga tushsa backend 09:00 ga suradi (`quiet_hours_shifted`).
+   */
+  scheduled_at?: string;
 }
 
 export interface SmsCampaignPreview {
@@ -92,6 +101,35 @@ export interface SmsCampaignPreview {
   estimated_cost: number | null;
   scheduled_for: string;
   sms_enabled: boolean;
+  /** KM-6: admin so'ragan lahza (belgilangan vaqt yoki hozir). */
+  requested_at?: string | null;
+  /** KM-6: yuboriladigan lahza Toshkent vaqtida (`…+05:00`). */
+  scheduled_for_tashkent?: string | null;
+  /** KM-6: so'ralgan vaqt tungi taqiqqa tushib, oyna tugashiga surildi. */
+  quiet_hours_shifted?: boolean;
+}
+
+/**
+ * KM-6: kampaniya holati — `scheduled` (vaqti kutilmoqda, bekor qilish mumkin), `queued` (navbatga qo'yilgan),
+ * `failed` (vaqti kelganda rad etildi — `last_error`), `cancelled`. Eski qatorlarda bo'lmasligi mumkin.
+ */
+export type SmsCampaignStatus = "scheduled" | "queued" | "failed" | "cancelled";
+
+export const SMS_CAMPAIGN_STATUSES: readonly SmsCampaignStatus[] = ["scheduled", "queued", "failed", "cancelled"];
+
+/** `POST …/campaigns` javobi: darhol — `queued`; kelajakdagi `scheduled_at` — `scheduled` (sonlar prognoz). */
+export interface SmsCampaignCreated {
+  campaign_id: string;
+  status?: SmsCampaignStatus;
+  queued: number;
+  recipients?: number;
+  blocked_no_consent: number;
+  skipped_invalid_phone: number;
+  estimated_cost?: number | string | null;
+  scheduled_for?: string | null;
+  scheduled_for_tashkent?: string | null;
+  requested_at?: string | null;
+  quiet_hours_shifted?: boolean;
 }
 
 export interface SmsCampaignHistoryItem {
@@ -108,6 +146,18 @@ export interface SmsCampaignHistoryItem {
   failed: number;
   pending: number;
   estimated_cost: string | null;
+  /** KM-6 maydonlari (eski backend javobida yo'q bo'lishi mumkin). */
+  status?: SmsCampaignStatus | string;
+  scheduled_at?: string | null;
+  scheduled_for?: string | null;
+  scheduled_for_tashkent?: string | null;
+  requested_at?: string | null;
+  quiet_hours_shifted?: boolean;
+  started_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  last_error?: string | null;
+  can_cancel?: boolean;
 }
 
 export interface SmsReportDay {
@@ -260,7 +310,7 @@ export const useSendSmsCampaign = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ input, idempotencyKey }: { input: SmsCampaignInput; idempotencyKey: string }) =>
-      unwrap<{ campaign_id: string; queued: number; blocked_no_consent: number; skipped_invalid_phone: number }>(
+      unwrap<SmsCampaignCreated>(
         (
           await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGNS, input, {
             headers: { "Idempotency-Key": idempotencyKey },
@@ -271,6 +321,18 @@ export const useSendSmsCampaign = () => {
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns });
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.status });
     },
+  });
+};
+
+/**
+ * KM-6: rejalashtirilgan kampaniyani bekor qilish — `POST …/campaigns/:id/cancel` (faqat `scheduled`; boshqasi —
+ * 409). Natijadan qat'i nazar tarix yangilanadi (409 da ham holat o'zgargan bo'ladi).
+ */
+export const useCancelSmsCampaign = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_CANCEL(id))).data,
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns }),
   });
 };
 

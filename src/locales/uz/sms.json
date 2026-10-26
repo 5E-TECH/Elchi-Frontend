@@ -75,7 +75,9 @@
       "delivered": "Yetkazildi",
       "failed": "Xato",
       "blocked": "Bloklangan",
-      "pending": "Kutilmoqda"
+      "pending": "Kutilmoqda",
+      "status": "Holat",
+      "actions": "Amallar"
     },
     "promoOnly": "Faqat reklama",
     "promoOnlyHint": "Xizmat xabarlari tizim hodisalaridan o'zi ketadi",
@@ -97,8 +99,53 @@
       "badRequest": "Kampaniya qabul qilinmadi — matn, o'zgaruvchilar va filtrlarni tekshiring",
       "conflict": "Kampaniya qabul qilinmadi: u allaqachon yuborilgan, bugungi limit tugagan yoki SMS sozlamalari to'liq emas",
       "timeout": "Server javob bermadi — kampaniyalar tarixini tekshiring, keyin qayta urinib ko'ring",
-      "forbidden": "Bu amal uchun ruxsatingiz yo'q"
-    }
+      "forbidden": "Bu amal uchun ruxsatingiz yo'q",
+      "scheduleTooFar": "Ko'pi bilan {{days}} kun oldinga rejalashtirish mumkin — boshqa sanani tanlang",
+      "scheduleInvalid": "Yuborish vaqti qabul qilinmadi — sana va soatni qayta tanlang"
+    },
+    "whenScheduled": "Belgilangan vaqtda",
+    "whenScheduledHint": "Sana va soatni tanlang — {{days}} kungacha oldinga",
+    "scheduleDay": "Sana",
+    "scheduleTime": "Soat",
+    "scheduleTimeHint": "Toshkent vaqti (UTC+5)",
+    "scheduleTimePlaceholder": "Soatni tanlang",
+    "scheduleShiftTitle": "{{requested}} reklama taqiqiga tushadi — SMS {{when}} da yuboriladi",
+    "scheduleChosen": "{{when}} da yuboriladi",
+    "scheduleChosenText": "Vaqti kelguncha kampaniyani tarixdan bekor qilish mumkin",
+    "scheduleErrors": {
+      "day": "Sanani tanlang",
+      "time": "Soatni tanlang",
+      "past": "Bu vaqt o'tib ketgan — keyingi soatni tanlang",
+      "tooFar": "Ko'pi bilan {{days}} kun oldinga rejalashtirish mumkin",
+      "expired": "Tanlangan vaqt o'tib ketdi — yangi vaqtni tanlab, qayta ko'rib chiqing"
+    },
+    "hintSchedule": "Yuborish sanasi va soatini tanlang",
+    "scheduledResult": "Kampaniya rejalashtirildi: {{when}} da yuboriladi. Qabul qiluvchilar (taxminan): {{recipients}} ta.",
+    "scheduledShifted": "Kampaniya rejalashtirildi: tungi taqiq sababli {{when}} ga surildi. Qabul qiluvchilar (taxminan): {{recipients}} ta.",
+    "status": {
+      "scheduled": "Rejalashtirilgan",
+      "queued": "Navbatga qo'yilgan",
+      "failed": "Rad etildi",
+      "cancelled": "Bekor qilingan"
+    },
+    "scheduledFor": "{{when}} da yuboriladi",
+    "scheduledWas": "Rejalashtirilgan vaqt: {{when}}",
+    "shiftedFrom": "So'ralgan: {{requested}} — tungi taqiq sababli surildi",
+    "shiftedShort": "Tungi taqiq sababli surildi",
+    "failedReason": "Sabab: {{reason}}",
+    "cancelAction": "Bekor qilish",
+    "cancelTitle": "Kampaniyani bekor qilasizmi?",
+    "cancelText": "{{when}} da yuborilishi kerak edi. Bekor qilingach hech kimga SMS ketmaydi.",
+    "cancelTextNoTime": "Bekor qilingach hech kimga SMS ketmaydi.",
+    "cancelConfirm": "Kampaniyani bekor qilish",
+    "cancelClose": "Yopish",
+    "cancelDone": "Kampaniya bekor qilindi",
+    "cancelConflict": "Bekor qilib bo'lmadi: kampaniya allaqachon boshlangan yoki rejalashtirilmagan",
+    "cancelFailed": "Kampaniyani bekor qilib bo'lmadi — qayta urinib ko'ring",
+    "confirmShifted": "Tungi taqiq sababli {{when}} ga surildi",
+    "confirmShiftedText": "So'ralgan: {{requested}}. Reklama {{from}}–{{to}} oralig'ida yuborilmaydi.",
+    "schedule": "Rejalashtirish",
+    "confirmCancellable": "Vaqti kelguncha kampaniyani tarixdan bekor qilish mumkin."
   },
   "segment": {
     "title": "Mijoz filtrlari",

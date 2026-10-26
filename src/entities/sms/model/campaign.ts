@@ -89,3 +89,41 @@ export const smsCampaignErrorKind = (error: unknown): SmsCampaignErrorKind => {
 /** Qayta urinish natijani o'zgartira oladigan xatolar (tarmoq, server); 400 / 409 / 403 — o'zgarmaydi. */
 export const isRetryableSmsCampaignError = (kind: SmsCampaignErrorKind = "unknown") =>
   kind === "timeout" || kind === "unknown";
+
+/** Javobdagi holat — ma'lum qiymat yoki `null` (yangi, noma'lum holat badge'siz qoladi). Eski qatorlarda holat yo'q
+ * — ular doim darhol navbatga qo'yilgan (`queued`). */
+export const smsCampaignStatus = (
+  item: { status?: unknown } | null | undefined,
+): "scheduled" | "queued" | "failed" | "cancelled" | null => {
+  const status = item?.status;
+  if (status === undefined || status === null || status === "") return "queued";
+  return status === "scheduled" || status === "queued" || status === "failed" || status === "cancelled"
+    ? status
+    : null;
+};
+
+/** Backend chegarasi (`CAMPAIGN_MAX_SCHEDULE_DAYS`) — bildirishnoma kampaniyasi bilan AYNI. */
+export const SMS_MAX_SCHEDULE_DAYS = 90;
+
+/** Tanlangan lahza (ms) hozirdan `maxDays` kundan uzoqmi (backend 400 `scheduled_at_too_far`). */
+export const isSmsScheduleTooFar = (
+  scheduledMs: number,
+  now: number = Date.now(),
+  maxDays: number = SMS_MAX_SCHEDULE_DAYS,
+) => Number.isFinite(scheduledMs) && scheduledMs > now + maxDays * 86_400_000;
+
+/**
+ * Rejalashtirish xatosi (400): gateway javobida faqat `message` qoladi — matnda `scheduled_at` bo'lsa, i18n kaliti:
+ * uzoq (`… kun oldinga`) — `scheduleTooFar`, zonasiz / noto'g'ri — `scheduleInvalid`. Boshqa xato — `null`.
+ */
+export const smsScheduleErrorKey = (error: unknown): "scheduleTooFar" | "scheduleInvalid" | null => {
+  const source = (error ?? {}) as { response?: { status?: unknown; data?: { message?: unknown; reason?: unknown } } };
+  const status = Number(source.response?.status);
+  if (status !== 400 && status !== 422) return null;
+  const data = source.response?.data;
+  const raw = Array.isArray(data?.message) ? data.message.join(" ") : String(data?.message ?? "");
+  const reason = String(data?.reason ?? "");
+  if (reason === "scheduled_at_too_far" || /scheduled_at[^]*kun oldinga/i.test(raw)) return "scheduleTooFar";
+  if (reason === "scheduled_at_invalid" || /scheduled_at/i.test(raw)) return "scheduleInvalid";
+  return null;
+};
