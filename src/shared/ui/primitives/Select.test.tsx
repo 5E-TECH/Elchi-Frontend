@@ -173,6 +173,38 @@ describe("Select — yopiq holat", () => {
   });
 });
 
+describe("Select — bosish maydoni (uEV2pchR)", () => {
+  it("ichki combobox quti balandligigacha cho'ziladi (self-stretch), quti 40 px / telefonda 44 px", () => {
+    render(<SingleControlled options={REGIONS} placeholder="Viloyat tanlang" />);
+    const trigger = combobox();
+    expect(trigger).toHaveClass("self-stretch", "flex-1", "min-w-0");
+    expect(trigger.closest("[data-select]")).toHaveClass("h-10", "max-md:h-11");
+  });
+
+  it("qutining chekkasini (combobox tashqarisi) bosish ham ro'yxatni ochadi va maydonni fokuslaydi; yana bosish — yopadi", async () => {
+    const user = userEvent.setup();
+    render(<SingleControlled options={REGIONS} />);
+    const box = combobox().closest("[data-select]") as HTMLElement;
+
+    // Bosish nishoni — quti o'zi (combobox emas), ya'ni avvalgi «o'lik zona».
+    await user.pointer({ keys: "[MouseLeft]", target: box });
+
+    expect(screen.getByRole("listbox", { name: "Viloyat" })).toBeInTheDocument();
+    expect(combobox()).toHaveAttribute("aria-expanded", "true");
+    expect(combobox()).toHaveFocus();
+
+    await user.pointer({ keys: "[MouseLeft]", target: box });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("fokus halqasi qutining o'zida (focus-within), ichki tugmada global kontur o'chiq", () => {
+    render(<SingleControlled options={REGIONS} />);
+    const trigger = combobox();
+    expect(trigger).toHaveClass("outline-none!");
+    expect(trigger.closest("[data-select]")).toHaveClass("focus-within:border-action", "focus-within:ring-focus");
+  });
+});
+
 describe("Select — ochiq ro'yxat", () => {
   it("bosilganda ochiladi: listbox yorliq bilan, tanlangan variant aria-selected + Check, faol", async () => {
     const user = userEvent.setup();

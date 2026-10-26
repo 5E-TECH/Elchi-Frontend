@@ -45,6 +45,14 @@ const Controlled = ({
 const trigger = () => screen.getByRole("button", { name: /^Sana oralig'i:/ });
 
 describe("DateRange — maydon", () => {
+  it("uEV2pchR: tugmaning o'zi butun quti — chegara, 40 px / telefonda 44 px, fokus halqasi tugmada", () => {
+    render(<Controlled />);
+    const button = trigger();
+    expect(button).toHaveClass("w-full", "h-10", "max-md:h-11", "border", "rounded-[10px]", "focus-visible:ring-3");
+    // Tashqi chegarali o'ram yo'q — bosilmaydigan «o'lik zona» qolmaydi.
+    expect(button.parentElement).not.toHaveClass("border");
+  });
+
   it("bo'sh: namuna matni, nomi «Sana oralig'i: …», dialog ochadi; chevron, × yo'q", () => {
     render(<Controlled />);
     const button = trigger();
