@@ -253,6 +253,57 @@ describe("describeTrackingEvent — pochta qabuli va metadata (vbu7Wr3o)", () =>
     expect(text).not.toMatch(/Holder Type|Received By|Source Type|101|BRANCH/);
   });
 
+  it("⭐ `source_courier_id` + `source_courier_name` — «Jo'natgan kuryer: …» (prod order 132: xom «Source Courier: …» emas), uz/ru/en", async () => {
+    await i18n.loadLanguages(["ru", "en"]);
+    // Backend (bekor pochtani qabul qilish yozuvi) metadata'si aynan shu shaklda: id + ism, manba / manzil filiali.
+    const event = {
+      ...base,
+      action: "status_change",
+      changed_by_role: "manager",
+      actor: manager,
+      old_value: { status: "cancelled" },
+      new_value: { status: "cancelled (sent)", holder_type: "BRANCH", holder_courier_id: null },
+      metadata: {
+        canceled_post_id: "41",
+        source_type: "COURIER",
+        source_user_id: "212",
+        source_user_role: "courier",
+        source_courier_id: "212",
+        source_courier_name: "Ali Valiyev",
+        source_branch_id: "12",
+        source_branch: "Urgut filiali (UR, ID: 12)",
+        destination_branch_id: "12",
+        received_by_hq: false,
+        received_by: "101",
+      },
+    } as unknown as TrackingEvent;
+    const labels = (lang: "uz" | "ru" | "en") =>
+      describeTrackingEvent(event, i18n.getFixedT(lang, "orders") as never, null).details;
+
+    const uz = labels("uz");
+    expect(uz).toContainEqual({ label: "Jo'natgan kuryer", value: "Ali Valiyev" });
+    expect(uz.filter((detail) => detail.value === "Ali Valiyev")).toHaveLength(1);
+    expect(labels("ru")).toContainEqual({ label: "Курьер-отправитель", value: "Ali Valiyev" });
+    expect(labels("en")).toContainEqual({ label: "Sending courier", value: "Ali Valiyev" });
+    for (const lang of ["uz", "ru"] as const) {
+      const text = labels(lang).map((detail) => `${detail.label}: ${detail.value}`).join(" / ");
+      expect(text).not.toMatch(/Source|Destination|Courier|Holder|Received By|212|101/);
+    }
+  });
+
+  it("`*_courier` / `source_*` id kalitlari ismi bilan kelsa — o'zbekcha yorliq (Jo'natuvchi xodim, Saqlovchi kuryer)", () => {
+    const v = view({
+      action: "status_change",
+      changed_by_role: "registrator",
+      old_value: { status: "waiting" },
+      new_value: { status: "waiting", holder_courier_id: "77", holder_courier_name: "Vali Aliyev" },
+      metadata: { source_user_id: "55", source_user_name: "Ravshan Ortiqov" },
+    });
+    expect(v.details).toContainEqual({ label: "Jo'natuvchi xodim", value: "Ravshan Ortiqov" });
+    expect(v.details).toContainEqual({ label: "Saqlovchi kuryer", value: "Vali Aliyev" });
+    expect(v.details.map((detail) => detail.label).join(" ")).not.toMatch(/Source|Holder|Courier|User/);
+  });
+
   it("bekor buyurtmani topshirish usuli (`method`) jumlada — alohida «Method: qr» qatori yo'q", () => {
     const v = view({
       action: "cancelled_market_handover_qr",

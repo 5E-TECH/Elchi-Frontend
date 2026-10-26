@@ -512,7 +512,10 @@
       "to_holder_type": "Kimga",
       "source_type": "Jo'natuvchi",
       "source_user_role": "Jo'natuvchi roli",
-      "source_courier_name": "Jo'natgan kuryer"
+      "source_courier_name": "Jo'natgan kuryer",
+      "source_courier": "Jo'natgan kuryer",
+      "source_user": "Jo'natuvchi xodim",
+      "holder_courier": "Saqlovchi kuryer"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} buyurtmani HQ'da qabul qildi",

@@ -512,7 +512,10 @@
       "to_holder_type": "To",
       "source_type": "Sender",
       "source_user_role": "Sender role",
-      "source_courier_name": "Sending courier"
+      "source_courier_name": "Sending courier",
+      "source_courier": "Sending courier",
+      "source_user": "Sending staff member",
+      "holder_courier": "Holder courier"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} accepted the order at HQ",

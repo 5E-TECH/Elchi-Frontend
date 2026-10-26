@@ -512,7 +512,10 @@
       "to_holder_type": "Кому",
       "source_type": "Отправитель",
       "source_user_role": "Роль отправителя",
-      "source_courier_name": "Курьер-отправитель"
+      "source_courier_name": "Курьер-отправитель",
+      "source_courier": "Курьер-отправитель",
+      "source_user": "Сотрудник-отправитель",
+      "holder_courier": "Курьер-держатель"
     },
     "dynamic": {
       "acceptedAtHq": "{{actor}} принял заказ в HQ",
