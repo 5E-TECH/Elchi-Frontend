@@ -1,0 +1,96 @@
+{
+  "tab": "AI costs",
+  "period": "Period",
+  "periodSeg": "Quick pick",
+  "presets": {
+    "today": "Today",
+    "week": "This week",
+    "month": "This month",
+    "last30": "30 days"
+  },
+  "loading": "Loading AI costs",
+  "loadFailed": "Could not load AI costs",
+  "unit": {
+    "calls": "calls",
+    "orders": "orders"
+  },
+  "kpi": {
+    "label": "AI cost figures",
+    "cost": "Total AI cost",
+    "calls": "Calls",
+    "orders": "AI orders",
+    "average": "Average cost · 1 order",
+    "cacheSaved": "saved by cache: {{value}}",
+    "ordersCost": "on orders: {{value}}",
+    "noOrders": "No AI orders"
+  },
+  "trend": {
+    "title": "Daily cost",
+    "subtitle": "{{range}} · by Tashkent day",
+    "viewLabel": "Daily cost view",
+    "cost": "Cost",
+    "date": "Date",
+    "calls": "Calls",
+    "orders": "AI orders",
+    "empty": "No AI calls in this period",
+    "aria": "Daily AI cost, {{range}}: total {{total}}",
+    "cardMeta": "{{calls}} calls · {{orders}} AI orders · {{usd}}"
+  },
+  "sources": {
+    "title": "Order source",
+    "subtitle": "Orders created in the period",
+    "ai": "AI",
+    "manual": "Manual",
+    "bot": "Telegram bot",
+    "external": "External system",
+    "branch": "Branch",
+    "empty": "No orders were created in this period",
+    "failed": "Could not load the order source",
+    "aria": "Order source, {{total}} in total: {{list}}"
+  },
+  "features": {
+    "title": "By feature",
+    "subtitle": "Cost of each AI feature",
+    "empty": "No AI calls in this period",
+    "col": {
+      "feature": "Feature",
+      "calls": "Calls",
+      "tokens": "Tokens (in / out)",
+      "cost": "Cost"
+    },
+    "tokens": "{{input}} / {{output}}",
+    "cardMeta": "{{calls}} calls · {{usd}}"
+  },
+  "feature": {
+    "order_extract_multi": "Order extraction from text",
+    "order_extract_image": "Order extraction from image",
+    "order_district": "District detection",
+    "order_item_match": "Product matching"
+  },
+  "models": {
+    "title": "By model",
+    "subtitle": "Share of cost",
+    "empty": "No AI calls in this period",
+    "sub": "{{calls}} calls · {{usd}}"
+  },
+  "rateNote": "Costs in UZS are recorded at the rate at the time of each call. Current rate: 1 $ = {{rate}}",
+  "orders": {
+    "title": "AI orders",
+    "subtitle": "Orders created with AI · newest first",
+    "count": "{{value}}",
+    "loading": "Loading AI orders",
+    "empty": "No AI orders in this period",
+    "emptyDescription": "Orders created with AI will appear here",
+    "degraded": "Order number and status are unavailable right now — the list is partial",
+    "draftShared": "{{value}} · for {{count}} orders",
+    "cardCost": "AI cost: {{value}}",
+    "col": {
+      "order": "Order",
+      "status": "Status",
+      "total": "Amount",
+      "model": "Model",
+      "cost": "AI cost",
+      "date": "Created"
+    }
+  }
+}
