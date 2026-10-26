@@ -47,3 +47,24 @@ test("⭐ finance.shift.auto_closed: «Smena avtomatik yopildi — 18:00» (Tosh
   await expect(toasts.getByText("Smena avtomatik yopildi — 18:00")).toBeVisible({ timeout: 10_000 });
   await expect.poll(() => shiftRequests(state.requests), { timeout: 10_000 }).toBeGreaterThan(before);
 });
+
+test("⭐ finance.cashbox.card_changed: kassa 2 s ichida qayta so'raladi, smena holati so'ralmaydi, xabar yo'q", async ({ page }) => {
+  const { state, emit } = await mockRealtime(page);
+  await page.goto("/payments/main-cashbox");
+  await expect.poll(() => state.auth.length, { timeout: 90_000 }).toBe(1);
+  await expect.poll(() => shiftRequests(state.requests), { timeout: 60_000 }).toBeGreaterThan(0);
+  await page.evaluate(() => ((window as unknown as { __noReload: boolean }).__noReload = true));
+  // Sahifa ochilishidagi so'rovlar tinchisin — keyingi farq faqat hodisadan.
+  await page.waitForTimeout(1_000);
+  const shiftBefore = shiftRequests(state.requests);
+  const cashboxBefore = state.requests.filter((path) => path.startsWith("finance/cashbox")).length;
+
+  emit("finance.cashbox.card_changed", { cashbox_id: "main" });
+
+  await expect
+    .poll(() => state.requests.filter((path) => path.startsWith("finance/cashbox")).length, { timeout: 2_000 })
+    .toBeGreaterThan(cashboxBefore);
+  expect(shiftRequests(state.requests)).toBe(shiftBefore);
+  await expect(page.getByText(/Smena avtomatik yopildi/)).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)).toBe(true);
+});
