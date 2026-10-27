@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
+import { Fragment, memo, useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
@@ -233,7 +233,7 @@ const HeaderCheckbox = ({
   );
 };
 
-export const DataTable = <T,>({
+const DataTableView = <T,>({
   rows,
   columns,
   getRowKey,
@@ -525,3 +525,10 @@ export const DataTable = <T,>({
     </div>
   );
 };
+
+/**
+ * `memo` (FCdwcvEv): ota komponent boshqa sababdan qayta chizilsa, lekin proplar o'sha-o'sha bo'lsa (barqaror `rows`,
+ * `columns`, `getRowKey`, callback'lar — `useMemo` / `useCallback`), jadval va kataklar qayta hisoblanmaydi. Ichkaridagi
+ * holat (telefon/desktop — `useIsPhone`, til) o'zgarsa — avvalgidek yangilanadi.
+ */
+export const DataTable = memo(DataTableView) as typeof DataTableView;
