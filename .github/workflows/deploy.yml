@@ -48,8 +48,36 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      # Staging darvozasi `test` dagi run'lar va ularning qadamlarini o'qiydi.
+      actions: read
 
     steps:
+      # Staging darvozasi (dev → test → main): `STAGING_ENABLED` yoqiq bo'lsa production FAQAT test saytga
+      # muvaffaqiyatli chiqqan kodni oladi — shu commit'ning daraxti (tree) `test` dagi oxirgi 30 ta muvaffaqiyatli
+      # run'dan birining daraxtiga teng va o'sha run'da «Deploy (staging)» qadami `success` bo'lishi shart
+      # (fast-forward ham, test → main merge commit ham o'tadi). main'ga to'g'ridan-to'g'ri push — run qizil, hech
+      # narsa build/deploy qilinmaydi. Shoshilinch holat: `STAGING_ENABLED` = false (staging deploy ham, darvoza ham
+      # o'chadi) → deploy → darhol `true`. Backend'dagi darvoza bilan bir xil qoida (Elchi-Backend docs/ops/staging.md).
+      - name: Staging darvozasi (test saytdan o'tganmi)
+        if: github.ref == 'refs/heads/main' && vars.STAGING_ENABLED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tree="$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$SHA" --jq .tree.sha)"
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy.yml/runs?branch=test&event=push&status=success&per_page=30" --jq '.workflow_runs[] | "\(.id) \(.head_sha)"')"
+          while read -r id rsha; do
+            [ -n "$id" ] || continue
+            [ "$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$rsha" --jq .tree.sha)" = "$tree" ] || continue
+            if [ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" --jq '[.jobs[].steps[]? | select(.name == "Deploy (staging)" and .conclusion == "success")] | length')" -gt 0 ]; then
+              echo "Staging darvozasi OK: bu kod test saytga chiqqan ($rsha, run $id)."
+              exit 0
+            fi
+          done <<< "$runs"
+          echo "::error::$SHA test saytga (test-admin.elchipochta.uz) muvaffaqiyatli chiqmagan — production rad etildi. Reliz: dev → test (test-admin'da tekshirish) → main."
+          exit 1
+
       - uses: actions/checkout@v6
         with:
           # To'liq tarix: PR'da dizayn qo'riqchisi (`--diff`) base branch bilan merge-base topadi.

@@ -168,6 +168,16 @@ describe(".github/workflows/deploy.yml — test → staging, main → production
     expect(staging).toContain("run: npx wrangler deploy --env staging\n");
   });
 
+  it("staging darvozasi — main + STAGING_ENABLED, birinchi qadam, «Deploy (staging)» natijasiga qaraydi", () => {
+    const gate = step("Staging darvozasi (test saytdan o'tganmi)");
+    expect(gate).toContain("if: github.ref == 'refs/heads/main' && vars.STAGING_ENABLED == 'true'\n");
+    // Darvoza shu nom bilan qidiradi — qadam nomi o'zgarsa darvoza hamma narsani rad etardi.
+    expect(gate).toContain('select(.name == "Deploy (staging)" and .conclusion == "success")');
+    expect(workflow).toContain("- name: Deploy (staging)\n");
+    expect(workflow.indexOf("- name: Staging darvozasi")).toBeLessThan(workflow.indexOf("- uses: actions/checkout"));
+    expect(workflow).toMatch(/permissions:\n\s+contents: read\n(\s+#.*\n)?\s+actions: read\n/);
+  });
+
   it("test'da production build'i yo'q — staging build'i va dist ↔ muhit tekshiruvi", () => {
     expect(workflow).toMatch(/- run: npm run build\n\s+if: github\.ref != 'refs\/heads\/test'\n/);
     expect(step("Build (staging)")).toContain("if: github.ref == 'refs/heads/test'\n");
