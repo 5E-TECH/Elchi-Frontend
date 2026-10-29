@@ -90,7 +90,9 @@ const DashboardHeader = ({
       />
       <div className="flex min-w-0 items-center gap-2 max-md:w-full">
         {showYear ? (
-          <div className="w-[112px] shrink-0 max-md:w-[108px]">
+          // Telefonda — matn kengligida (maket `market-dashboard-home`, `superadmin-dashboard-main`: «Yil» `width: auto`):
+          // qat'iy 108 px sana maydonini qisib, «Barchasi» oralig'ini «21.10.2025 – 20.10.2…» qilib kesardi (tya24blo).
+          <div className="w-[112px] shrink-0 max-md:w-auto">
             <Select
               aria-label={t("v2Dashboard.header.yearLabel")}
               options={yearOptions}

@@ -110,7 +110,11 @@ for (const viewport of [
         // 1970-01-01 hech qaysi so'rovda ketmadi.
         expect(requests.some((params) => params.get("start_day") === "1970-01-01")).toBe(false);
 
-        await expect(page.getByText(RANGE_TEXT)).toBeVisible();
+        const range = page.getByText(RANGE_TEXT);
+        await expect(range).toBeVisible();
+        // Oraliq TO'LIQ ko'rinadi — «… – 20.10.2…» bo'lib kesilmaydi (`toBeVisible` kesilishni ushlamaydi; tya24blo
+        // qayta tekshiruvi: market 390px da «Yil» tanlovi yonida matn qutisi 154 px, matn 171 px edi).
+        expect(await range.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       });
     }
