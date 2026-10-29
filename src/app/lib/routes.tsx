@@ -407,6 +407,11 @@ const AppRouter = () => {
   const { pathname } = useLocation();
   const isSignedIn = useSelector((state: RootState) => state.user.isAuthenticated);
   const standaloneErrorPage = standaloneErrorPageFor(pathname);
+  // `/payments` ↔ `/cash-box`: har biri faqat ikkinchisiga KIRA OLADIGAN rolni o'sha yerga yuboradi, qolgani — 403.
+  // Avval ikkala guard bir-biriga qaytarardi: ikkalasiga ham ruxsati yo'q rol (registrator, logist, market operatori,
+  // investor) qo'lda yozilgan manzilda ikki sahifa orasida cheksiz aylanardi.
+  const canOpenCashbox = useSelector(hasSelfCashboxAccess);
+  const canOpenPayments = useSelector(isPaymentsManager);
 
   const routes = useRoutes([
     { path: "/login", element: <Login /> },
@@ -988,7 +993,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <Payments />
                     </ProtectedRoute>
@@ -999,7 +1004,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <MainCashbox />
                     </ProtectedRoute>
@@ -1010,7 +1015,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <CashDetail />
                     </ProtectedRoute>
@@ -1021,7 +1026,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <ShiftReportPage />
                     </ProtectedRoute>
@@ -1043,7 +1048,7 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute
                   canActivate={hasSelfCashboxAccess}
-                  redirectTo="/payments"
+                  redirectTo={canOpenPayments ? "/payments" : "/403"}
                 >
                   <MyCashboxPage />
                 </ProtectedRoute>
