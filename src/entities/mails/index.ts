@@ -356,6 +356,29 @@ export const toReturnRequestsMailResponse = (payload: unknown): PaginatedPostsRe
   };
 };
 
+// ─── So'rovlar (kalit + queryFn bitta joyda) ─────────────────────────────────
+type MailsScope = { role: string | null | undefined; branchId: string | null | undefined };
+
+/**
+ * «Bugungi» (yangi, jo'natilmagan) pochtalar — `GET post/new`. Kalit `useMails().useGetNewMails` niki bilan bir:
+ * universal skaner «Pochtani jo'natish» varag'i (`pages/scan`) va «Bugungi pochtalar» ro'yxati bir kesh yozuvini
+ * ulashadi. ⚠️ Menejer uchun emas: menejerda shu kalit ostida `post?status=sent&branch_id` (hook o'zi almashtiradi);
+ * jo'natish rejimi menejerda yo'q (`canDispatchPostToBranch`).
+ */
+export const newMailsQueryOptions = ({ role, branchId }: MailsScope) => ({
+  queryKey: [MAILS_KEY, "new", role, branchId] as const,
+  queryFn: () => api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
+});
+
+/**
+ * «Rad etilgan» pochtalar (kuryerdan boshqa rollar) — `GET post/rejected`. Kalit `useGetRefusedMails` niki bilan
+ * bir: universal skaner «Rad etilgan pochta» varag'i va «Rad etilgan pochtalar» ro'yxati keshni ulashadi.
+ */
+export const refusedMailsQueryOptions = ({ role, branchId }: MailsScope) => ({
+  queryKey: [MAILS_KEY, "refused", role, branchId] as const,
+  queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+});
+
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 export const useMails = () => {
   const queryClient = useQueryClient();
@@ -383,15 +406,14 @@ export const useMails = () => {
       })
       .then((res) => res.data);
 
-  const useGetNewMails = (options?: { enabled?: boolean }) =>
-    useQuery({
-      queryKey: [MAILS_KEY, "new", role, branchId],
-      queryFn: () =>
-        isManagerRole
-          ? getManagerScopedPosts("sent")
-          : api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
+  const useGetNewMails = (options?: { enabled?: boolean }) => {
+    const query = newMailsQueryOptions({ role, branchId });
+    return useQuery({
+      queryKey: query.queryKey,
+      queryFn: isManagerRole ? () => getManagerScopedPosts("sent") : query.queryFn,
       enabled: options?.enabled ?? true,
     });
+  };
 
   const useGetNewMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
@@ -417,11 +439,7 @@ export const useMails = () => {
     });
 
   const useGetRefusedMails = (options?: { enabled?: boolean }) =>
-    useQuery({
-      queryKey: [MAILS_KEY, "refused", role, branchId],
-      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
-      enabled: options?.enabled ?? true,
-    });
+    useQuery({ ...refusedMailsQueryOptions({ role, branchId }), enabled: options?.enabled ?? true });
 
   // Backend sahifalamaydi: doiradagi (filial yoki HQ) barcha so'rovlar
   // kuryer bo'yicha guruhlab qaytadi — page/limit yuborilmaydi.

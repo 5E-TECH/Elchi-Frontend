@@ -5,7 +5,7 @@ import { test, type Page, type Route } from "@playwright/test";
  * `handlers` — yo'l (bosh `/` siz) → javob `data`si; qolgan GET'lar bo'sh ro'yxat oladi.
  */
 /** Ilova manzili — `playwright.config.ts` dagi `baseURL` dan (port qo'lda takrorlanmaydi). */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const corsFor = (origin: string) => ({
   "access-control-allow-origin": origin,
   "access-control-allow-credentials": "true",

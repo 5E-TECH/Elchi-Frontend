@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * Kunlik daromad bandlari va 14 kunlik seriya so'ralgan sanalardan quriladi (testlar har kuni o'tadi).
  * Yozish so'rovlari taqiqlangan; serverga hech narsa chiqmaydi. Ilova manzili — `playwright.config.ts` `baseURL`.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const METRICS_BRANCH = {

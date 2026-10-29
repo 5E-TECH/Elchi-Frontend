@@ -9,7 +9,7 @@ import { expectToast } from "./support/toast";
  * maydonlarni yuboradi, natija xabari chiqadi va oyna yopiladi.
  */
 
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -6,7 +6,7 @@ import { expect, test, type Route } from "@playwright/test";
  * `min-height` i `window.innerHeight` ga teng va u `.min-h-dvh { min-height: 100dvh }` qoidasidan (vh emas).
  * `mobile-390` (Chromium) va `PLAYWRIGHT_WEBKIT=1` da `webkit-iphone` (Safari dvigateli, iPhone 12) loyihalarida.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -5,7 +5,7 @@ import { aiDistrictsByRegion, aiPreview, aiProducts, aiRegions } from "../../src
  * AI BUYURTMA — 20 tagacha rasm (WHMAIqyo) va preview `warnings[]` (J3hEDtFN), 390px. Rasmlar HAQIQIY brauzer canvas'ida
  * tayyorlanadi (PNG → JPEG); so'rovlar soxta backendda — hech narsa serverga ketmaydi. `E2E_ORIGIN` — boshqa port.
  */
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

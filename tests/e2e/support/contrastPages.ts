@@ -224,7 +224,7 @@ export const CONTRAST_PAGES: ContrastPage[] = [
 export const openContrastPage = async (page: Page, target: ContrastPage, theme: Theme) => {
   const leaked: string[] = [];
   // Ilova manzili — `playwright.config.ts` dagi `baseURL` dan (port qo'lda takrorlanmaydi).
-  const appOrigin = new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+  const appOrigin = new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
   const cors = {
     "access-control-allow-origin": appOrigin,
     "access-control-allow-credentials": "true",

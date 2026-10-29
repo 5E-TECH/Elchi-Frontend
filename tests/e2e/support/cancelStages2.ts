@@ -7,7 +7,7 @@ import { ORDER_AT_HQ, ORDER_HANDED, ORDER_IN_TRANSIT, SUPERADMIN } from "./cance
  * `return_stage` / `cancel_return` / `handover_*_at` maydonlari. Hech qanday so'rov serverga ketmaydi; yozuvchi so'rov
  * `leaked` ga tushadi. Worktree serverlari boshqa portda — `E2E_ORIGIN`.
  */
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

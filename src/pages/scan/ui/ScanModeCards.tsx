@@ -4,8 +4,12 @@ import { Check, CircleCheck, CircleX, History, Info, TriangleAlert, type LucideI
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import type { ScanTargetListItem, ScanTargetTone } from "../../../shared/lib/scanner";
-import { Button, Card, EmptyState, SegmentedControl } from "../../../shared/ui/primitives";
+import {
+  SCAN_TARGET_SEGMENT_MAX_MODES,
+  type ScanTargetListItem,
+  type ScanTargetTone,
+} from "../../../shared/lib/scanner";
+import { Button, Card, EmptyState, SegmentedControl, Select } from "../../../shared/ui/primitives";
 import type { UniversalScanMode } from "../model/scanModes";
 
 /**
@@ -16,7 +20,11 @@ import type { UniversalScanMode } from "../model/scanModes";
 
 export type ScanModeOption = { value: UniversalScanMode; label: string };
 
-/** «Skaner rejimi»: segment, rejim izohi va rejimning amali (masalan «Marketni tanlang»). */
+/**
+ * «Skaner rejimi»: rejim tanlovi, rejim izohi va rejimning amali (masalan «Marketni tanlang»). Rejimlar
+ * `SCAN_TARGET_SEGMENT_MAX_MODES` tagacha — segment; ko'p bo'lsa (superadmin, admin, HQ registratori — 5–6 rejim,
+ * Trello vNcGDnNh) — ochiladigan ro'yxat (`Select`): segmentga sig'maydi. Telefon kamerasida — «Rejim: … ▾» varag'i.
+ */
 export const ScanModeCard = ({
   options,
   mode,
@@ -37,13 +45,26 @@ export const ScanModeCard = ({
       <h2 id={titleId} className="text-base font-bold text-text">
         {t("scanner.modes.label")}
       </h2>
-      <SegmentedControl
-        ariaLabel={t("scanner.modes.label")}
-        options={options}
-        value={mode}
-        onValueChange={onModeChange}
-        fullWidth
-      />
+      {options.length > SCAN_TARGET_SEGMENT_MAX_MODES ? (
+        <Select
+          aria-label={t("scanner.modes.label")}
+          options={options}
+          value={mode}
+          onChange={(value) => {
+            const next = options.find((option) => option.value === value);
+            if (next && next.value !== mode) onModeChange(next.value);
+          }}
+          className="w-full"
+        />
+      ) : (
+        <SegmentedControl
+          ariaLabel={t("scanner.modes.label")}
+          options={options}
+          value={mode}
+          onValueChange={onModeChange}
+          fullWidth
+        />
+      )}
       <p className="text-[13px] text-text-muted">{text}</p>
       {action}
     </Card>

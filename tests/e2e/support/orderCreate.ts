@@ -10,7 +10,7 @@ import { aiDistrictsByRegion, aiProducts, aiRegions } from "../../../src/test/ai
  * tanasi `createdOrders` ga yoziladi.
  */
 
-export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 
 const cors = {
   "access-control-allow-origin": ORIGIN,

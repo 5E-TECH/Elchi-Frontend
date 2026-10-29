@@ -1286,6 +1286,10 @@
       "retry": "Qayta urinish",
       "current": "Tanlangan"
     },
+    "modes": {
+      "title": "Skaner rejimi",
+      "current": "Rejim: {{label}}"
+    },
     "torchFailed": "Chiroqni yoqib bo'lmadi",
     "switchCamera": "Kamerani almashtirish",
     "lowLight": {

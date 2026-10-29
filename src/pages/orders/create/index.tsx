@@ -45,6 +45,7 @@ import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { PageHeader, useConfirm } from "../../../shared/ui/primitives";
+import SectionErrorBoundary from "../../../shared/ui/SectionErrorBoundary";
 
 type BackendErrorPayload = {
   message?: unknown;
@@ -518,32 +519,43 @@ const OrderCreateFormContent = () => {
                   }}
                 />
               ) : null}
-              {step === 2 ? <Step2Combined /> : null}
-              {step === 2 && canChooseSource ? <OrderSourceCard /> : null}
+              {/* QKCeGZ3N: har blok o'z xato chegarasida — bittasi yiqilsa forma (useForm shu sahifada) va qolgan
+                  bloklar ishlayveradi, kiritilgan ma'lumot yo'qolmaydi. */}
+              {step === 2 ? (
+                <SectionErrorBoundary>
+                  <Step2Combined />
+                </SectionErrorBoundary>
+              ) : null}
+              {step === 2 && canChooseSource ? (
+                <SectionErrorBoundary>
+                  <OrderSourceCard />
+                </SectionErrorBoundary>
+              ) : null}
             </div>
 
             {!aiHidden ? (
               <div data-testid="ai-mode-panel" className={isManual ? "hidden" : "flex min-w-0 flex-col gap-4"}>
-                <AiCreatePanel
-                  key={market ? String(market.id) : "no-market"}
-                  active={mode === "ai"}
-                  isMarketRole={isMarketRole}
-                  market={isMarketRole ? null : market}
-                  onSwitchToManual={() => setMode("manual")}
-                  // Operatorning AI oqimi avvalgidek viloyat/tuman ro'yxatlarisiz: tuman AI taklifidan, viloyatni
-                  // ai-confirm tumandan oladi (MO-3; qo'lda forma ro'yxatlarni o'zi so'raydi — N11).
-                  areaLists={!isMarketOperator}
-                  // Operator maydoni — o'zi (maket «Siz — avtomatik yoziladi»); matn yuborilmaydi, backend ismni o'zi yozadi.
-                  selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
-                  onChangeMarket={
-                    isMarketRole
-                      ? undefined
-                      : () => {
-                          methods.setValue("market", null);
-                          setStep(1);
-                        }
-                  }
-                />
+                <SectionErrorBoundary key={market ? String(market.id) : "no-market"}>
+                  <AiCreatePanel
+                    active={mode === "ai"}
+                    isMarketRole={isMarketRole}
+                    market={isMarketRole ? null : market}
+                    onSwitchToManual={() => setMode("manual")}
+                    // Operatorning AI oqimi avvalgidek viloyat/tuman ro'yxatlarisiz: tuman AI taklifidan, viloyatni
+                    // ai-confirm tumandan oladi (MO-3; qo'lda forma ro'yxatlarni o'zi so'raydi — N11).
+                    areaLists={!isMarketOperator}
+                    // Operator maydoni — o'zi (maket «Siz — avtomatik yoziladi»); matn yuborilmaydi, backend ismni o'zi yozadi.
+                    selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
+                    onChangeMarket={
+                      isMarketRole
+                        ? undefined
+                        : () => {
+                            methods.setValue("market", null);
+                            setStep(1);
+                          }
+                    }
+                  />
+                </SectionErrorBoundary>
               </div>
             ) : null}
           </div>
@@ -559,23 +571,27 @@ const OrderCreateFormContent = () => {
               )}
             >
               {showSummary ? (
-                <Step2Summary
-                  isMarketRole={isMarketRole}
-                  ready={canNext}
-                  submitting={createOrder.isPending}
-                  onPrevious={handlePrevious}
-                  backTo={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}
-                  selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
-                  blockers={pendingBlockers}
-                />
+                <SectionErrorBoundary>
+                  <Step2Summary
+                    isMarketRole={isMarketRole}
+                    ready={canNext}
+                    submitting={createOrder.isPending}
+                    onPrevious={handlePrevious}
+                    backTo={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}
+                    selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
+                    blockers={pendingBlockers}
+                  />
+                </SectionErrorBoundary>
               ) : null}
               {showToday && selectedMarketId ? (
-                <TodayOrdersCard
-                  marketId={selectedMarketId}
-                  marketName={selectedMarketName}
-                  isMarketRole={isMarketRole}
-                  operator={isMarketOperator}
-                />
+                <SectionErrorBoundary>
+                  <TodayOrdersCard
+                    marketId={selectedMarketId}
+                    marketName={selectedMarketName}
+                    isMarketRole={isMarketRole}
+                    operator={isMarketOperator}
+                  />
+                </SectionErrorBoundary>
               ) : null}
             </aside>
           ) : null}

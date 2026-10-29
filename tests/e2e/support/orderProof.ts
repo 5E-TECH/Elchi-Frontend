@@ -14,7 +14,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  */
 export type ProofBackend = "content" | "signed" | "prod-today";
 
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 export const CDN = "https://cdn.e2e.test";
 const cors = {
   "access-control-allow-origin": ORIGIN,

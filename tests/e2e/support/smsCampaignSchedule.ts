@@ -6,7 +6,7 @@ import type { Page, Route } from "@playwright/test";
  * bilan), `POST …/campaigns` (FAQAT soxta — `status: 'scheduled'`, hech narsa yuborilmaydi), tarix va
  * `POST …/campaigns/:id/cancel` (`cancelStatus` — 200 yoki 409).
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

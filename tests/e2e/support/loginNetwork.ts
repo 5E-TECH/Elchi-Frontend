@@ -8,7 +8,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  */
 type Outcome = "ok" | "abort" | "hang" | "401" | "403" | "429";
 
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const b64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
 export const E2E_TOKEN = `${b64url({ alg: "HS256" })}.${b64url({ id: "77", role: "manager", sid: "e2e-sid" })}.sig`;
 const PROFILE = { id: "77", role: "manager", name: "E2E menejer", status: "active" };

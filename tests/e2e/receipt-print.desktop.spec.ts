@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
  *  - brauzer yo'li: yashirin iframe, `print()` chaqiriladi, popup yo'q;
  *  - ilova tashqarisiga birorta so'rov ketmaydi (QR ilova ichida — tashqi QR xizmati yo'q, TZ qabul 4).
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 
 const order = (id: number, patch: Record<string, unknown> = {}) => ({
   id: String(id),

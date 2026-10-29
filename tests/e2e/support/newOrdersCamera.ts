@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Markaziy «Skaner» tugmasi shu sahifaning skan maqsadini ochadi: skan = darhol qabul; boshqa marketning
  * buyurtmasi server tekshiruvidan keyin rad etiladi; kamera ichida market almashtiriladi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

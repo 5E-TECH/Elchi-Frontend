@@ -7,7 +7,7 @@ import { expect, type Locator, type Page, type Route } from "@playwright/test";
  * `POST /orders/sell/:id { paidAmount }` → `data.status`: to'liq — `paid`,
  * qisman — `partly_paid`, yo'q — `sold`; `to_be_paid` dan oshsa 400.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

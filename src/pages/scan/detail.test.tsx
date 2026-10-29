@@ -190,6 +190,44 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
   });
 });
 
+// 6qypMFeT: qayta skanda eski holat yo'q — buyurtma allaqachon shu kuryerda yoki boshqa kuryerda bo'lsa
+// «O'zimga olish» faol emas (backend `scanAssignOrder` qoidasi), sababi yonida.
+describe("ScanDetailPage — kuryer: buyurtma kimda (6qypMFeT)", () => {
+  it("already mine (courier_id = me, on the road): «Bu buyurtma allaqachon sizda», button disabled, no request", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue({ type: "order", data: { ...ORDER, status: "on_the_road", courier_id: "courier-1" } });
+    renderDetail("courier");
+
+    expect(await screen.findByText("Bu buyurtma allaqachon sizda")).toBeInTheDocument();
+    expect(screen.getByText("Qayta olish shart emas — u buyurtmalaringiz ro'yxatida.")).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /O'zimga olish/ });
+    expect(button).toBeDisabled();
+    await user.click(button);
+    expect(assignMock).not.toHaveBeenCalled();
+  });
+
+  it("another courier: maket text with the courier name, button disabled", async () => {
+    fetchMock.mockResolvedValue({
+      type: "order",
+      data: { ...ORDER, status: "on_the_road", courier_id: "93", courier: { id: "93", name: "Bekzod Normurodov" } },
+    });
+    renderDetail("courier");
+
+    expect(await screen.findByText("Boshqa kuryerga biriktirilgan: Bekzod Normurodov")).toBeInTheDocument();
+    expect(screen.getByText(/Bu buyurtmani o'zingizga ololmaysiz/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /O'zimga olish/ })).toBeDisabled();
+  });
+
+  it("free order (no courier, «0» sentinel ham): button enabled, no notice", async () => {
+    fetchMock.mockResolvedValue({ type: "order", data: { ...ORDER, status: "received", courier_id: "0" } });
+    renderDetail("courier");
+
+    expect(await screen.findByRole("button", { name: /O'zimga olish/ })).toBeEnabled();
+    expect(screen.queryByTestId("courier-take-mine")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("courier-take-other")).not.toBeInTheDocument();
+  });
+});
+
 describe("ScanDetailPage — rol bo'yicha mazmun (spec G3 §2.3)", () => {
   it("staff: «Holat tarixi» and the order page link, no courier action", async () => {
     renderDetail("registrator");

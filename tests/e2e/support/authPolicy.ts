@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * zaif parol — login javobida `must_change_password: true` → «Yangi parol o'rnating» oynasi, `PATCH auth/my-profile
  * { password }` dan keyin `POST auth/refresh` bayroqsiz token beradi.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const b64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const TOKEN = `${b64url({ alg: "HS256" })}.${b64url({ id: "77", role: "manager", sid: "e2e-sid" })}.sig`;
 const PROFILE = { id: "77", role: "manager", name: "E2E menejer", phone_number: "+998901234567", status: "active" };

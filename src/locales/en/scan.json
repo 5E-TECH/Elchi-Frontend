@@ -59,7 +59,12 @@
     "assign": "Take it",
     "assigning": "Assigning…",
     "assignSuccess": "The order is assigned to you",
-    "assignError": "Could not take the order"
+    "assignError": "Could not take the order",
+    "alreadyMine": "This order is already yours",
+    "alreadyMineText": "No need to take it again — it is in your orders list.",
+    "otherCourier": "Assigned to another courier: {{name}}",
+    "otherCourierUnknown": "Assigned to another courier",
+    "otherCourierText": "You can't take this order. If the parcel is with you, tell the manager — they will reassign it to you."
   },
   "history": {
     "title": "Status history",
@@ -198,10 +203,17 @@
       "receive": "Receive",
       "dispatch": "Assign",
       "take": "Take myself",
+      "sendMail": "Send mail",
+      "refusedMail": "Refused mail",
+      "refusedMailShort": "Refused",
+      "handover": "Hand over to market",
       "infoText": "One code — the right page opens by itself.",
       "receiveText": "Choose a market first — its new orders open and the camera continues there. A scanned order is received at once.",
       "dispatchText": "A scanned order is added to the assignment basket — the basket is kept on this device. You pick the courier on the «Assign» page.",
-      "takeText": "Every scanned order is assigned to you at once. The camera stays open — scan the next parcel."
+      "takeText": "Every scanned order is assigned to you at once. The camera stays open — scan the next parcel.",
+      "sendMailText": "Choose a mail or read its QR code — the mail opens and the camera continues there. A scanned order is selected for sending.",
+      "refusedMailText": "Choose a refused mail or read its QR code — the mail opens and the camera continues there. A scanned order is selected for receiving.",
+      "handoverText": "Choose a market first — its cancelled orders open and the camera continues there. The market QR code is scanned first."
     },
     "receive": {
       "title": "Receive",
@@ -221,6 +233,35 @@
       "openText": "The basket is kept on this device",
       "notOrder": "This is not an order QR code — only orders go to the basket",
       "manualSubmit": "Add to basket"
+    },
+    "mail": {
+      "pick": "Choose a mail",
+      "pickLabel": "Mail №{{id}}",
+      "notMail": "This is not a mail QR code — read the mail QR code or choose it from the list"
+    },
+    "sendMail": {
+      "title": "Send mail",
+      "context": "Choose a mail or read its QR code",
+      "hint": "Bring the mail QR code into the frame",
+      "empty": "No new mail to send",
+      "notReady": "This mail can't be sent — only new mail is sent"
+    },
+    "refusedMail": {
+      "title": "Receive refused mail",
+      "context": "Choose a mail or read its QR code",
+      "hint": "Bring the mail QR code into the frame",
+      "empty": "No refused mail to receive",
+      "notReady": "This mail is not refused — open it in «Info» mode"
+    },
+    "handover": {
+      "title": "Hand over to market",
+      "context": "Choose a market first",
+      "hint": "Choose a market first",
+      "pick": "Choose a market",
+      "pickMeta_one": "{{value}} cancelled order",
+      "pickMeta_other": "{{value}} cancelled orders",
+      "empty": "No cancelled orders to hand over",
+      "pickFirst": "Choose a market first"
     },
     "take": {
       "title": "Take myself",
