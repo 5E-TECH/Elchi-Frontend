@@ -8,7 +8,7 @@ import { expectToast } from "./support/toast";
  * oldin): «0 so'mdan oshmasin» chiqmaydi, 5 000 xatosiz yuboriladi. 390px, soxta backend — sotuv backend kabi
  * `paidAmount ≤ sale_market_paid_max − extraCost` ni tekshiradi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

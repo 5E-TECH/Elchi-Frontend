@@ -9,7 +9,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *     admin (maket `admin-activity-logs-list`); menejer ikkalasida 403.
  * Soxta backend, 1440px.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

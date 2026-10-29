@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * javobda `data.scope` (`branch` + `branch_name` yoki `courier`). Soxta backend faqat o'qish so'rovlariga javob
  * beradi, yozish — `leaked`.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

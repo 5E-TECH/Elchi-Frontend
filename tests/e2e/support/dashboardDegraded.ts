@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * (`GET /analytics/dashboard` → `degraded: true` + `failed_parts`; asosiy order ma'lumoti olinmasa 503).
  * Birinchi javob nosoz, «Qayta urinish» dan keyingisi — sog' (servis tiklandi). Serverga so'rov ketmaydi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

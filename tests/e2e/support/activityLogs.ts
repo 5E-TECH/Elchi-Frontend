@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * (`GET /activity-logs/actions` → `data` + `registry` + `categories`; qatorda `action_meta`, `actor_status`).
  * Server kabi: `action` / `service` / `entity_type` / `user_id` bo'yicha qatorlar filtrlanadi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

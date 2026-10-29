@@ -8,8 +8,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Backend kabi: `filter` / `invalid_signature` parametrlari bo'yicha qatorlar
  * serverda filtrlanadi, sanoqlar BITTA javobdagi `counts` da keladi.
  */
-// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4194).
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4173).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

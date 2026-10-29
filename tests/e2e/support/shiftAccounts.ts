@@ -9,7 +9,7 @@ import { test, type Page, type Route } from "@playwright/test";
  *  - `POST finance/shift/close` — tanasi yoziladi (`closes`), javobda `accounts_check`;
  *  - boshqa yozish so'rovlari taqiqlangan (`leaked`).
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 const CARDS = [

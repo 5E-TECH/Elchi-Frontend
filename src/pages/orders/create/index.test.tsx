@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -1408,5 +1408,52 @@ describe("OrderCreate — «AI bilan» tabi va AI holati (CS-B 6-band, Ops S3)",
     await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/ai-availability"));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(tab("AI bilan")).toBeInTheDocument();
+  });
+});
+
+// QKCeGZ3N: forma ichidagi bitta blok (yon ustundagi «Yangi buyurtmalar») buzilgan javobdan yiqilsa — faqat uning
+// o'rnida «Bu bo'limni ochishda xatolik yuz berdi», yarim to'ldirilgan forma va qolgan bloklar joyida qoladi.
+describe("OrderCreate — bo'lim xato chegarasi (QKCeGZ3N)", () => {
+  const todayOrder = (customer: unknown) => ({
+    id: "10260",
+    status: "new",
+    where_deliver: "address",
+    total_price: 120000,
+    paid_amount: 0,
+    to_be_paid: 120000,
+    createdAt: new Date().toISOString(),
+    customer,
+  });
+
+  it("yarim to'ldirilgan forma: yon karta yiqilsa ism va summa saqlanadi, sahifa xatosi yo'q", async () => {
+    let broken = false;
+    mocks.get.mockImplementation((url: string) =>
+      url === "orders/markets/7/new"
+        ? Promise.resolve({
+            data: {
+              statusCode: 200,
+              // Buzilgan javob: ism obyekt — React uni chiza olmaydi (render xatosi).
+              data: [todayOrder(broken ? { id: "c9", name: { uz: "Buzilgan" } } : { id: "c9", name: "Ozoda Qayumova" })],
+            },
+          })
+        : aiApiGet(url),
+    );
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { queryClient } = renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    const card = await screen.findByRole("region", { name: "Yangi buyurtmalar" });
+    await within(card).findByRole("link", { name: /Ozoda Qayumova/ });
+
+    fireEvent.change(within(manualPanel()).getByPlaceholderText("Ism kiriting"), { target: { value: "Vali" } });
+    fireEvent.change(screen.getByLabelText(/^Umumiy summa/), { target: { value: "150000" } });
+
+    broken = true;
+    await act(() => queryClient.invalidateQueries());
+
+    expect(await screen.findByText("Bu bo'limni ochishda xatolik yuz berdi")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Yangi buyurtmalar" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Sahifani ko'rsatib bo'lmadi")).not.toBeInTheDocument();
+    expect((within(manualPanel()).getByPlaceholderText("Ism kiriting") as HTMLInputElement).value).toBe("Vali");
+    expect((screen.getByLabelText(/^Umumiy summa/) as HTMLInputElement).value).toBe("150 000");
+    errors.mockRestore();
   });
 });

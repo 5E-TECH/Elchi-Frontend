@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * Superadmin (`/product/market/:id`) va market (`/product/my-products`). Soxta backend server sukutini (`limit`
  * siz — 10 ta) va server qidiruvini taqlid qiladi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

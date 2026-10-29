@@ -6,8 +6,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * /returns o'z `["return-batches"]` kalitida edi: qabuldan keyin qaytilganda eski ro'yxat so'rovsiz ko'rinardi.
  * Superadmin, soxta API, sahifalar orasida SPA o'tish (to'liq qayta yuklashsiz), 1440px.
  */
-/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4194). */
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4173). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

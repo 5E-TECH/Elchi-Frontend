@@ -6,7 +6,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `role: "manager"` — filial menejeri (REGIONAL), pochta `sent`, buyurtmalar yo'lda (`manager-mails-detail-receive-*`).
  * Faqat GET; yozish so'rovi bo'lsa `leaked` ga tushadi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

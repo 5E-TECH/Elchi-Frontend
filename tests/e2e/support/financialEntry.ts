@@ -10,7 +10,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * - `Idempotency-Key` bir xil bo'lsa yozuv QAYTA yozilmaydi.
  * Muvaffaqiyatda 201 va yozuv daftar tarixining boshiga qo'shiladi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

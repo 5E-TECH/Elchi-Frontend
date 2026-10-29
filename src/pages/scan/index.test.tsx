@@ -13,6 +13,9 @@ const feedbackMock = vi.fn();
 const fetchMock = vi.fn();
 const assignMock = vi.fn();
 const marketsMock = vi.fn();
+const sendableMock = vi.fn();
+const refusedMock = vi.fn();
+const cancelledMock = vi.fn();
 const invalidateMock = vi.fn();
 
 const camera = vi.hoisted(() => ({
@@ -54,6 +57,9 @@ vi.mock("./lib/scanResource", async (importOriginal) => ({
   fetchScanDetail: (...args: unknown[]) => fetchMock(...args),
   scanAssignOrder: (...args: unknown[]) => assignMock(...args),
   fetchNewOrderMarkets: () => marketsMock(),
+  fetchSendableMails: (...args: unknown[]) => sendableMock(...args),
+  fetchRefusedMails: (...args: unknown[]) => refusedMock(...args),
+  fetchCancelledMarkets: () => cancelledMock(),
   invalidateAfterScanAction: () => {
     invalidateMock();
     return Promise.resolve();
@@ -141,6 +147,9 @@ beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue({ type: "order", data: ORDER });
   assignMock.mockReset();
   marketsMock.mockReset();
+  sendableMock.mockReset();
+  refusedMock.mockReset();
+  cancelledMock.mockReset();
   invalidateMock.mockReset();
   camera.onDecode = null;
   camera.state = { ...camera.state, isStarting: false, hasTorch: false, cameraErrorKind: null, cameraUnavailable: false };
@@ -431,12 +440,21 @@ const enterManual = async (user: ReturnType<typeof userEvent.setup>, code: strin
 };
 
 describe("ScanPage — rejimlar (3-bosqich)", () => {
-  it("superadmin: «Ma'lumot» · «Qabul qilish», «Kuryerga biriktirish» yo'q (backend 403)", () => {
+  it("superadmin: 5 ta rejim — ochiladigan ro'yxat (segmentga sig'maydi), «Kuryerga biriktirish» yo'q (backend 403)", async () => {
+    const user = userEvent.setup();
     renderScan("superadmin");
 
-    const group = screen.getByRole("radiogroup", MODE_GROUP);
-    expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["Ma'lumot", "Qabul qilish"]);
-    expect(within(group).getByRole("radio", { name: "Ma'lumot" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("radiogroup", MODE_GROUP)).not.toBeInTheDocument();
+    const select = screen.getByRole("combobox", MODE_GROUP);
+    expect(select).toHaveTextContent("Ma'lumot");
+    await user.click(select);
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
+      "Ma'lumot",
+      "Qabul qilish",
+      "Pochtani jo'natish",
+      "Rad etilgan pochta",
+      "Marketga topshirish",
+    ]);
   });
 
   it("filial turi aniqlanmagan menejer — bitta rejim, segment chizilmaydi", () => {
@@ -444,15 +462,16 @@ describe("ScanPage — rejimlar (3-bosqich)", () => {
     expect(screen.queryByRole("radiogroup", MODE_GROUP)).not.toBeInTheDocument();
   });
 
-  it("menejer HYBRID: «Biriktirish» → /dispatch, kamera ochiq holda; tanlov qurilmada eslab qolinadi", async () => {
+  it("menejer REGIONAL: «Biriktirish» → /dispatch, kamera ochiq holda; tanlov qurilmada eslab qolinadi", async () => {
     const user = userEvent.setup();
-    renderScan("manager", { branchType: "HYBRID" });
+    renderScan("manager", { branchType: "REGIONAL" });
 
     const group = screen.getByRole("radiogroup", MODE_GROUP);
+    // 3 ta rejim — segment; rad etilgan pochta segmentda qisqa yorliq bilan (390 px ga sig'adi).
     expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
       "Ma'lumot",
-      "Qabul qilish",
       "Biriktirish",
+      "Rad etilgan",
     ]);
     await user.click(within(group).getByRole("radio", { name: "Biriktirish" }));
 
@@ -525,6 +544,240 @@ describe("ScanPage — rejimlar (3-bosqich)", () => {
       "aria-checked",
       "true",
     );
+  });
+});
+
+/* ─── vNcGDnNh 2-band: pochta va marketga topshirish rejimlari ───────────── */
+
+const MAIL_TOKEN = "POST-mh2k9x-a1b2";
+const postScan = (post: Record<string, unknown>) => ({ type: "post", data: { statusCode: 200, data: post } });
+
+/** Ochiladigan ro'yxatda (yon panel, 3 tadan ko'p rejim) rejim tanlash. */
+const pickMode = async (user: ReturnType<typeof userEvent.setup>, label: string) => {
+  await user.click(screen.getByRole("combobox", MODE_GROUP));
+  await user.click(await screen.findByRole("option", { name: label }));
+};
+
+describe("ScanPage — «Pochtani jo'natish», «Rad etilgan pochta», «Marketga topshirish» (vNcGDnNh)", () => {
+  it("«Pochtani jo'natish» → yangi pochtalar varag'i → /mails/:id, kamera jo'natish maqsadida (ro'yxatdagi holat bilan)", async () => {
+    const user = userEvent.setup();
+    sendableMock.mockResolvedValue({
+      statusCode: 200,
+      data: [
+        { id: "2486", order_quantity: 6, region_id: "14", region: { id: "14", name: "Samarqand" } },
+        { id: "2490", order_quantity: 2, region_id: "3", region: { id: "3", name: "Buxoro" } },
+      ],
+    });
+    renderScan("superadmin");
+
+    await pickMode(user, "Pochtani jo'natish");
+    const sheet = await screen.findByRole("dialog", { name: "Pochtani tanlang" });
+    expect(await within(sheet).findByText("Samarqand · 6 ta buyurtma")).toBeInTheDocument();
+    expect(sendableMock).toHaveBeenCalledWith(expect.anything(), { role: "superadmin", branchId: "" });
+    // Yon panel: rejim izohi va amal.
+    expect(screen.getByRole("heading", { level: 1, name: "QR skaner" })).toBeInTheDocument();
+    await user.type(within(sheet).getByRole("searchbox"), "buxoro");
+    expect(within(sheet).queryByText("Pochta №2486")).not.toBeInTheDocument();
+    await user.clear(within(sheet).getByRole("searchbox"));
+    await user.click(within(sheet).getByRole("button", { name: /Pochta №2486/ }));
+
+    expect(navigateMock).toHaveBeenCalledWith("/mails/2486", {
+      state: {
+        fromTab: "today",
+        fallbackRegionId: "14",
+        fallbackRegionName: "Samarqand",
+        expectedOrderCount: 6,
+        openScanner: { targetId: "mail:2486:send" },
+      },
+    });
+    expect(window.localStorage.getItem("elchi:scan-mode:v1:u-1")).toBe("sendMail");
+  });
+
+  it("«Pochtani jo'natish»: ro'yxat bo'sh — «Jo'natiladigan yangi pochta yo'q»", async () => {
+    sendableMock.mockResolvedValue({ statusCode: 200, data: [] });
+    const user = userEvent.setup();
+    renderScan("superadmin", { mode: "sendMail" });
+
+    await user.click(screen.getByRole("button", { name: "Pochtani tanlang" }));
+    const sheet = await screen.findByRole("dialog", { name: "Pochtani tanlang" });
+    expect(await within(sheet).findByText("Jo'natiladigan yangi pochta yo'q")).toBeInTheDocument();
+  });
+
+  it("«Pochtani jo'natish»: pochta QR'i (yangi pochta) → o'sha pochta, kamera ochiq; varaqsiz", async () => {
+    fetchMock.mockResolvedValue(postScan({ id: "2486", status: "new", region_id: "14", order_quantity: 6 }));
+    renderScan("superadmin", { mode: "sendMail" });
+
+    hidScan(MAIL_TOKEN);
+
+    expect(fetchMock).toHaveBeenCalledWith(MAIL_TOKEN);
+    await waitFor(() =>
+      expect(navigateMock).toHaveBeenCalledWith("/mails/2486", {
+        state: {
+          fromTab: "today",
+          fallbackRegionId: "14",
+          expectedOrderCount: 6,
+          openScanner: { targetId: "mail:2486:send" },
+        },
+      }),
+    );
+    expect(feedbackMock).toHaveBeenCalledWith("success", "Pochta №2486 topildi", "keyboard");
+    expect(sendableMock).not.toHaveBeenCalled();
+  });
+
+  it("«Pochtani jo'natish»: jo'natilgan pochta QR'i — sababi bilan, sahifa ochilmaydi", async () => {
+    fetchMock.mockResolvedValue(postScan({ id: "2471", status: "sent" }));
+    renderScan("admin", { mode: "sendMail" });
+
+    hidScan(MAIL_TOKEN);
+
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith(
+        "error",
+        "Bu pochta jo'natishga tayyor emas — faqat yangi pochta jo'natiladi",
+        "keyboard",
+      ),
+    );
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("pochta rejimida buyurtma kodi — «Bu pochta QR kodi emas», so'rov yo'q; topilmagan pochta — «Pochta topilmadi»", async () => {
+    renderScan("superadmin", { mode: "sendMail" });
+
+    hidScan(TOKEN);
+    expect(feedbackMock).toHaveBeenCalledWith(
+      "error",
+      "Bu pochta QR kodi emas — pochta QR kodini o'qing yoki ro'yxatdan tanlang",
+      "keyboard",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRejectedValue(notFound());
+    hidScan(MAIL_TOKEN);
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("missing", "Pochta topilmadi", "keyboard"));
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("menejer HQ: segmentda «Rad etilgan» → rad etilgan pochtalar (kuryer bilan) → /mails/:id `type: refused`", async () => {
+    const user = userEvent.setup();
+    refusedMock.mockResolvedValue({
+      data: [
+        {
+          id: "2476",
+          order_quantity: 3,
+          region_id: "14",
+          region: { id: "14", name: "Samarqand" },
+          courier: { name: "Akmal Karimov" },
+        },
+      ],
+    });
+    renderScan("manager", { branchType: "HQ" });
+
+    const group = screen.getByRole("radiogroup", MODE_GROUP);
+    expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+      "Ma'lumot",
+      "Qabul qilish",
+      "Rad etilgan",
+    ]);
+    await user.click(within(group).getByRole("radio", { name: "Rad etilgan" }));
+    const sheet = await screen.findByRole("dialog", { name: "Pochtani tanlang" });
+    expect(await within(sheet).findByText("Samarqand · Akmal Karimov · 3 ta buyurtma")).toBeInTheDocument();
+    await user.click(within(sheet).getByRole("button", { name: /Pochta №2476/ }));
+
+    expect(navigateMock).toHaveBeenCalledWith("/mails/2476", {
+      state: {
+        fromTab: "refused",
+        type: "refused",
+        fallbackRegionId: "14",
+        fallbackRegionName: "Samarqand",
+        expectedOrderCount: 3,
+        openScanner: { targetId: "mail:2476:refused" },
+      },
+    });
+  });
+
+  it("«Rad etilgan pochta»: rad etilgan pochta QR'i → o'sha pochta; yangi pochta QR'i — «rad etilgan emas»", async () => {
+    fetchMock.mockResolvedValueOnce(postScan({ id: "2490", status: "new" }));
+    renderScan("superadmin", { mode: "refusedMail" });
+
+    hidScan(MAIL_TOKEN);
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "Bu pochta rad etilgan emas — uni «Ma'lumot» rejimida oching", "keyboard"),
+    );
+    expect(navigateMock).not.toHaveBeenCalled();
+
+    fetchMock.mockResolvedValueOnce(postScan({ id: "2476", status: "canceled", region_id: "14" }));
+    hidScan("PST-2476-qr");
+    await waitFor(() =>
+      expect(navigateMock).toHaveBeenCalledWith("/mails/2476", {
+        state: {
+          fromTab: "refused",
+          type: "refused",
+          fallbackRegionId: "14",
+          openScanner: { targetId: "mail:2476:refused" },
+        },
+      }),
+    );
+  });
+
+  it("«Marketga topshirish» → bekorlari bor marketlar → /new-orders/cancelled/:id, kamera topshirish maqsadida", async () => {
+    const user = userEvent.setup();
+    cancelledMock.mockResolvedValue({
+      data: [
+        { market_id: "201", orders_count: 3, total_price_sum: 761000, market: { id: "201", name: "Baraka Shop" } },
+        { market_id: "202", orders_count: 1, total_price_sum: 96000, market: { id: "202", name: "Nur Elektronika" } },
+      ],
+    });
+    renderScan("registrator", { branchType: "HQ" });
+
+    await pickMode(user, "Marketga topshirish");
+    const sheet = await screen.findByRole("dialog", { name: "Marketni tanlang" });
+    expect(await within(sheet).findByText("3 ta bekor qilingan buyurtma")).toBeInTheDocument();
+    await user.click(within(sheet).getByRole("button", { name: /Baraka Shop/ }));
+
+    expect(navigateMock).toHaveBeenCalledWith("/new-orders/cancelled/201", {
+      state: { openScanner: { targetId: "cancelled-handover:201" } },
+    });
+  });
+
+  it("«Marketga topshirish»: market tanlanmay skanerlansa (market QR ham) — «Avval marketni tanlang» va varaq", async () => {
+    cancelledMock.mockResolvedValue({ data: [] });
+    renderScan("admin", { mode: "handover" });
+
+    hidScan("MCR-201-e2e-0001");
+
+    expect(feedbackMock).toHaveBeenCalledWith("error", "Avval marketni tanlang", "keyboard");
+    const sheet = await screen.findByRole("dialog", { name: "Marketni tanlang" });
+    expect(await within(sheet).findByText("Topshiriladigan bekor qilingan buyurtma yo'q")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("telefon: 5 ta rejim — «Rejim: Ma'lumot» → rejimlar varag'i → «Marketga topshirish» → market varag'i", async () => {
+    const user = userEvent.setup();
+    setPhone(true);
+    cancelledMock.mockResolvedValue({
+      data: [{ market_id: "201", orders_count: 3, total_price_sum: 1, market: { id: "201", name: "Baraka Shop" } }],
+    });
+    renderScan("superadmin");
+
+    expect(screen.queryByRole("radiogroup", { name: "QR skaner" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Rejim: Ma'lumot" }));
+    const modesSheet = await screen.findByRole("dialog", { name: "Skaner rejimi" });
+    const group = within(modesSheet).getByRole("radiogroup", MODE_GROUP);
+    expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+      "Ma'lumot",
+      "Qabul qilish",
+      "Pochtani jo'natish",
+      "Rad etilgan pochta",
+      "Marketga topshirish",
+    ]);
+    expect(within(group).getByRole("radio", { name: "Ma'lumot" })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(group).getByRole("radio", { name: "Marketga topshirish" }));
+
+    const sheet = await screen.findByRole("dialog", { name: "Marketni tanlang" });
+    expect(await within(sheet).findByText("3 ta bekor qilingan buyurtma")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Marketga topshirish" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("elchi:scan-mode:v1:u-1")).toBe("handover");
   });
 });
 

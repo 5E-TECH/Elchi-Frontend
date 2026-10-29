@@ -4,7 +4,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Kiruvchi posilkalar (`/new-orders/incoming/:marketId`) e2e — soxta backend.
  * Andijon E2E qopi: token 30d2894f58d3f89170a612c8, 6 posilka (CbKnJLZO).
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

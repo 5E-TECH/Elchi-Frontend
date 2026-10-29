@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `superadmin-users-edit-market-ai`, `-phone`). Soxta backend: superadmin, market (AI narxi 250 so'm); `PATCH
  * users/40` tanalari yig'iladi va javobda yozuv yangilanadi. Serverga so'rov ketmaydi (jonli kanal ham yopiladi).
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

@@ -8,7 +8,7 @@ import { noHorizontalScroll, shot } from "./notificationCampaign";
  * «taxminiy»; «Yetkazilmaganlar» — maskalangan telefon va sabab. Kunduzgi va tungi, 390px va 1440px; gorizontal
  * skroll yo'q. Skrinshotlar — `KM2_SHOTS=<papka>` bo'lsa. Yozish so'rovi yuborilmaydi (`leaked`).
  */
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

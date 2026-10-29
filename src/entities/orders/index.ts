@@ -58,6 +58,16 @@ export const todayMarketsQueryOptions = (params?: unknown) => ({
   queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
 });
 
+/**
+ * `GET orders/markets/cancelled` (bekor qilingan buyurtmasi bor marketlar) — kalit va `queryFn` bitta joyda:
+ * `useCancelledMarkets` («Bekor qilinganlar» ro'yxati, tab soni) va universal skaner «Marketga topshirish» varag'i
+ * (`pages/scan`) bir kesh yozuvini ulashadi.
+ */
+export const cancelledMarketsQueryOptions = (params?: { search?: string }) => ({
+  queryKey: [orders, "markets", "cancelled", params] as const,
+  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+});
+
 export type ExtraCostApproval = {
   id: string;
   order_id: string;
@@ -316,12 +326,7 @@ export const useOrders = () => {
 
   // `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tablaridagi son faqat tab ko'rinsa so'raladi.
   const useCancelledMarkets = (params?: { search?: string }, options?: { enabled?: boolean }) =>
-    useQuery({
-      queryKey: [orders, "markets", "cancelled", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
-      enabled: options?.enabled ?? true,
-    });
+    useQuery({ ...cancelledMarketsQueryOptions(params), enabled: options?.enabled ?? true });
 
   /**
    * `GET /orders/markets/:marketId/cancelled`. Parametrsiz — HQ'da turganlar (topshirish ro'yxati; kalit «Bekor

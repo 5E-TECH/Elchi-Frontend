@@ -27,24 +27,24 @@ const modesOf = (role: string, branchType?: "HQ" | "REGIONAL" | "HYBRID" | "PICK
   resolveScanModes(scanModeAccessOf(stateOf(role, branchType)));
 
 describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
-  it("kuryer: «O'zimga olish» (sukut) va «Ma'lumot»", () => {
+  it("kuryer: «O'zimga olish» (sukut) va «Ma'lumot» — pochta va topshirish rejimlari yo'q", () => {
     expect(modesOf("courier", "REGIONAL")).toEqual(["take", "info"]);
     expect(defaultScanMode(modesOf("courier"))).toBe("take");
   });
 
-  it("menejer HYBRID: qabul (transfer) va biriktirish", () => {
-    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "dispatch"]);
+  it("menejer HYBRID: qabul (transfer), biriktirish va rad etilgan pochta", () => {
+    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "dispatch", "refusedMail"]);
   });
 
-  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), biriktirish bor", () => {
-    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "dispatch"]);
+  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), biriktirish va rad etilgan pochta bor", () => {
+    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "dispatch", "refusedMail"]);
   });
 
-  it("menejer HQ: qabul bor, biriktirish yo'q (HQ menejerida `/dispatch` yo'q)", () => {
-    expect(modesOf("manager", "HQ")).toEqual(["info", "receive"]);
+  it("menejer HQ: qabul va rad etilgan pochta, biriktirish yo'q (HQ menejerida `/dispatch` yo'q)", () => {
+    expect(modesOf("manager", "HQ")).toEqual(["info", "receive", "refusedMail"]);
   });
 
-  it("menejer PICKUP: faqat qabul", () => {
+  it("menejer PICKUP: faqat qabul (PICKUP da `/mails` yo'q — rad etilgan pochta ham yo'q)", () => {
     expect(modesOf("manager", "PICKUP")).toEqual(["info", "receive"]);
   });
 
@@ -52,17 +52,30 @@ describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
     expect(modesOf("manager")).toEqual(["info"]);
   });
 
-  it("registrator HQ: qabul va biriktirish", () => {
-    expect(modesOf("registrator", "HQ")).toEqual(["info", "receive", "dispatch"]);
+  it("registrator HQ: qabul, biriktirish, pochtani jo'natish, rad etilgan pochta va marketga topshirish", () => {
+    expect(modesOf("registrator", "HQ")).toEqual([
+      "info",
+      "receive",
+      "dispatch",
+      "sendMail",
+      "refusedMail",
+      "handover",
+    ]);
   });
 
-  it("registrator REGIONAL: qabul yo'q, biriktirish bor", () => {
+  it("registrator REGIONAL: qabul yo'q, biriktirish bor; pochta jo'natish / rad etilgan / topshirish — faqat HQ", () => {
     expect(modesOf("registrator", "REGIONAL")).toEqual(["info", "dispatch"]);
   });
 
-  it("superadmin va admin: qabul bor, «Kuryerga biriktirish» yo'q (backend assign-to-courier 403)", () => {
-    expect(modesOf("superadmin")).toEqual(["info", "receive"]);
-    expect(modesOf("admin")).toEqual(["info", "receive"]);
+  it("registrator HYBRID va PICKUP: pochta va topshirish yo'q (sahifalar HQ registratoriga); PICKUP da kuryer yo'q", () => {
+    expect(modesOf("registrator", "HYBRID")).toEqual(["info", "receive", "dispatch"]);
+    expect(modesOf("registrator", "PICKUP")).toEqual(["info", "receive"]);
+  });
+
+  it("superadmin va admin: qabul, pochtani jo'natish, rad etilgan pochta, marketga topshirish; «Kuryerga biriktirish» yo'q (backend assign-to-courier 403)", () => {
+    const expected = ["info", "receive", "sendMail", "refusedMail", "handover"];
+    expect(modesOf("superadmin")).toEqual(expected);
+    expect(modesOf("admin")).toEqual(expected);
     expect(defaultScanMode(modesOf("superadmin"))).toBe("info");
   });
 
@@ -70,6 +83,43 @@ describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
     expect(modesOf("market")).toEqual([]);
     // MO-3: market operatori buyurtma yaratadi (`canCreateOrders`), lekin qabul/skaner unda yo'q.
     expect(modesOf("market_operator")).toEqual([]);
+  });
+
+  it("boshqa rollar (logist, investor) — faqat «Ma'lumot»", () => {
+    expect(modesOf("logist")).toEqual(["info"]);
+    expect(modesOf("investor")).toEqual(["info"]);
+  });
+});
+
+describe("yangi rejimlar — kelinadigan sahifa sharti bilan aynan (vNcGDnNh)", () => {
+  const base = {
+    role: "superadmin",
+    branchType: null,
+    canCreateOrders: true,
+    canViewDispatch: true,
+    canSendMail: true,
+    canReceiveRefusedMail: true,
+    canHandoverCancelled: true,
+  } as const;
+
+  it("har rejim faqat o'z huquqi bilan", () => {
+    expect(resolveScanModes({ ...base, canSendMail: false })).not.toContain("sendMail");
+    expect(resolveScanModes({ ...base, canReceiveRefusedMail: false })).not.toContain("refusedMail");
+    expect(resolveScanModes({ ...base, canHandoverCancelled: false })).not.toContain("handover");
+  });
+
+  it("«Marketga topshirish» — `/new-orders` qobig'i yopiq bo'lsa ham yo'q (ota guard)", () => {
+    expect(resolveScanModes({ ...base, canCreateOrders: false })).not.toContain("handover");
+  });
+
+  it("tanlangan yangi rejim qurilmada eslab qolinadi", () => {
+    writeStoredScanMode("u-9", "handover");
+    expect(readStoredScanMode("u-9")).toBe("handover");
+    writeStoredScanMode("u-9", "sendMail");
+    expect(readStoredScanMode("u-9")).toBe("sendMail");
+    writeStoredScanMode("u-9", "refusedMail");
+    expect(readStoredScanMode("u-9")).toBe("refusedMail");
+    window.localStorage.clear();
   });
 });
 

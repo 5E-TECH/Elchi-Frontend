@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * bermasa `activeCouriers: null` — «Faol kuryerlar» «—», «N hududda» izohi yo'q (yolg'on «0 ta» emas). Kuryerlar
  * soni kelsa — avvalgidek. Ma'lumot — «Visual» fixture'lari, soxta backend, 1440px.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

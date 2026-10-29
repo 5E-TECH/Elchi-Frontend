@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * FRONTEND_CHANGELOG 2026-10-24 (batch D). Yozish so'rovlari taqiqlangan; serverga hech narsa chiqmaydi.
  * Ilova manzili — `playwright.config.ts` `baseURL` (worktree probe'larida boshqa port).
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 
 const DAY = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);

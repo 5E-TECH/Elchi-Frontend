@@ -5,7 +5,7 @@ import { expect, type Locator, type Page, type Route } from "@playwright/test";
  * `POST notifications/audience/preview`, `POST|DELETE notifications/audience/segments`, `POST notifications/campaigns`,
  * `POST notifications/campaigns/:id/cancel`; boshqasi `leaked` ga tushadi. Worktree serveri — `E2E_ORIGIN`.
  */
-export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4194";
+export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 
 /**
  * Sahifa soati (`page.clock.install`, keyin tabiiy oqadi) va fiksturalar BITTA lahzadan — 2026-10-21 11:00 Toshkent.

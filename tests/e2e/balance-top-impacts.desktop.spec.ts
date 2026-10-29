@@ -5,7 +5,7 @@ import { expect, test, type Route } from "@playwright/test";
  * Kontrakt: GET finance/financial-balance/top-impacts?page&limit (limit ≤ 100) → `data.pagination.total / totalPages`.
  * Soxta backend serverdek: limit 100 dan katta bo'lsa 100 ga qirqadi. 1440px.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",

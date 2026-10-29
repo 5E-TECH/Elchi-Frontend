@@ -37,6 +37,13 @@ export type ScanTargetListItem = {
 
 export type ScanTargetMode = { value: string; label: string };
 
+/**
+ * Kamera ichidagi rejim segmentida ko'pi bilan shuncha variant (telefonda 390 px ga yorliqlari kesilmay sig'adi).
+ * Ko'proq bo'lsa (universal skaner: superadmin, HQ registratori — 5–6 rejim, Trello vNcGDnNh) segment o'rniga
+ * «Rejim: <nomi> ▾» qatori va rejimlar varag'i chiziladi (`ScannerCamera`, yon panel `ScanModeCard`).
+ */
+export const SCAN_TARGET_SEGMENT_MAX_MODES = 3;
+
 export type ScanTargetSwitcherOption = { value: string; label: string; meta?: string };
 
 /**
@@ -54,6 +61,8 @@ export type ScanTargetSwitcher = {
   /** Variantlar yoki ularni yuklovchi funksiya (varaq ochilganda chaqiriladi). */
   options: ReadonlyArray<ScanTargetSwitcherOption> | (() => Promise<ReadonlyArray<ScanTargetSwitcherOption>>);
   onSelect: (value: string) => void;
+  /** Ro'yxat umuman bo'sh bo'lsa (qidiruvsiz) — masalan «Jo'natiladigan pochta yo'q» (sukut «Hech narsa topilmadi»). */
+  emptyText?: string;
 };
 
 /** Hisoblagich kengaytmasi: «Qabul qilindi 3 · Qoldi 3 · Topilmadi 1». */
@@ -138,7 +147,7 @@ const subscribe = (listener: () => void) => {
 
 const sameSwitcher = (a: ScanTargetSwitcher | undefined, b: ScanTargetSwitcher | undefined) => {
   if (!a || !b) return a === b;
-  if (a.label !== b.label || a.value !== b.value || a.title !== b.title) return false;
+  if (a.label !== b.label || a.value !== b.value || a.title !== b.title || a.emptyText !== b.emptyText) return false;
   // Yuklovchi funksiya har renderda yangi bo'lishi mumkin — u `latest` orqali chaqiriladi, teng hisoblanadi.
   if (typeof a.options === "function" || typeof b.options === "function") {
     return typeof a.options === typeof b.options;

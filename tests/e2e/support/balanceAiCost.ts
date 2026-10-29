@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * va `GET /ai-usage/ai-orders` (kontrakt — backend FRONTEND_CHANGELOG 2026-10-14 «Guruh H», 2026-10-15 bot manbasi).
  * Kunlik seriya so'ralgan `fromDate`…`toDate` dan quriladi. Yozish so'rovlari taqiqlangan. Ilova manzili — `baseURL`.
  */
-const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const DAY = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 

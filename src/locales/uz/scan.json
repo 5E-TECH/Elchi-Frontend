@@ -57,7 +57,12 @@
     "assign": "O'zimga olish",
     "assigning": "Biriktirilmoqda…",
     "assignSuccess": "Buyurtma sizga biriktirildi",
-    "assignError": "Buyurtmani o'zingizga olishda xatolik yuz berdi"
+    "assignError": "Buyurtmani o'zingizga olishda xatolik yuz berdi",
+    "alreadyMine": "Bu buyurtma allaqachon sizda",
+    "alreadyMineText": "Qayta olish shart emas — u buyurtmalaringiz ro'yxatida.",
+    "otherCourier": "Boshqa kuryerga biriktirilgan: {{name}}",
+    "otherCourierUnknown": "Boshqa kuryerga biriktirilgan",
+    "otherCourierText": "Bu buyurtmani o'zingizga ololmaysiz. Posilka sizda bo'lsa, menejerga xabar bering — u buyurtmani sizga qayta biriktiradi."
   },
   "history": {
     "title": "Holat tarixi",
@@ -195,10 +200,17 @@
       "receive": "Qabul qilish",
       "dispatch": "Biriktirish",
       "take": "O'zimga olish",
+      "sendMail": "Pochtani jo'natish",
+      "refusedMail": "Rad etilgan pochta",
+      "refusedMailShort": "Rad etilgan",
+      "handover": "Marketga topshirish",
       "infoText": "Bitta kod — tegishli sahifa o'zi ochiladi.",
       "receiveText": "Avval marketni tanlang — uning yangi buyurtmalari ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma darhol qabul qilinadi.",
       "dispatchText": "Skanerlangan buyurtma biriktirish savatiga qo'shiladi — savat shu qurilmada saqlanadi. Kuryerni «Biriktirish» sahifasida tanlaysiz.",
-      "takeText": "Har skanerlangan buyurtma darhol sizga biriktiriladi. Kamera yopilmaydi — keyingi posilkani skanerlang."
+      "takeText": "Har skanerlangan buyurtma darhol sizga biriktiriladi. Kamera yopilmaydi — keyingi posilkani skanerlang.",
+      "sendMailText": "Pochtani tanlang yoki uning QR kodini o'qing — pochta ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma jo'natish uchun tanlanadi.",
+      "refusedMailText": "Rad etilgan pochtani tanlang yoki uning QR kodini o'qing — pochta ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma qabul qilish uchun tanlanadi.",
+      "handoverText": "Avval marketni tanlang — uning bekor qilingan buyurtmalari ochiladi va kamera o'sha yerda davom etadi. Avval market QR kodi skanerlanadi."
     },
     "receive": {
       "title": "Qabul qilish",
@@ -217,6 +229,34 @@
       "openText": "Savat shu qurilmada saqlanadi",
       "notOrder": "Bu buyurtma QR kodi emas — savatga faqat buyurtma qo'shiladi",
       "manualSubmit": "Savatga qo'shish"
+    },
+    "mail": {
+      "pick": "Pochtani tanlang",
+      "pickLabel": "Pochta №{{id}}",
+      "notMail": "Bu pochta QR kodi emas — pochta QR kodini o'qing yoki ro'yxatdan tanlang"
+    },
+    "sendMail": {
+      "title": "Pochtani jo'natish",
+      "context": "Pochtani tanlang yoki QR kodini o'qing",
+      "hint": "Pochta QR kodini ramka ichiga olib keling",
+      "empty": "Jo'natiladigan yangi pochta yo'q",
+      "notReady": "Bu pochta jo'natishga tayyor emas — faqat yangi pochta jo'natiladi"
+    },
+    "refusedMail": {
+      "title": "Rad etilgan pochtani qabul qilish",
+      "context": "Pochtani tanlang yoki QR kodini o'qing",
+      "hint": "Pochta QR kodini ramka ichiga olib keling",
+      "empty": "Qabul qilinadigan rad etilgan pochta yo'q",
+      "notReady": "Bu pochta rad etilgan emas — uni «Ma'lumot» rejimida oching"
+    },
+    "handover": {
+      "title": "Marketga topshirish",
+      "context": "Avval marketni tanlang",
+      "hint": "Avval marketni tanlang",
+      "pick": "Marketni tanlang",
+      "pickMeta": "{{value}} ta bekor qilingan buyurtma",
+      "empty": "Topshiriladigan bekor qilingan buyurtma yo'q",
+      "pickFirst": "Avval marketni tanlang"
     },
     "take": {
       "title": "O'zimga olish",

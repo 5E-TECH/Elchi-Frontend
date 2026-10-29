@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * 18:00–09:00), tariflar, viloyat / tuman / market ro'yxatlari va `POST …/campaigns/preview` (jonli auditoriya).
  * Kampaniya YUBORILMAYDI: preview'dan boshqa yozish so'rovi `leaked` ga tushadi va 403 oladi.
  */
-const ORIGIN = "http://127.0.0.1:4194";
+const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
