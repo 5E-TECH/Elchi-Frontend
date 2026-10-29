@@ -392,7 +392,7 @@ describe("design guard rules", () => {
 
     it("istisno: themeTokens.ts va OUTPUT_FORMAT_FILES; hint tokenni nomlaydi", () => {
       expect(named(`const a = { color: "white" };`, "src/shared/config/themeTokens.ts")).toBeUndefined();
-      expect(named("const css = `color: black;`;", "src/pages/mails/detail/lib/printMode.ts")).toBeUndefined();
+      expect(named("const css = `color: black;`;", "src/features/print-receipts/lib/printReceiptHtml.ts")).toBeUndefined();
       const v = scanSource("src/x.tsx", `<path stroke="white" />`).violations[0];
       expect([v.rule, v.match, v.col]).toEqual(["named-colour", "white", 15]);
       expect(v.hint).toMatch(/fill-current/);
@@ -746,7 +746,7 @@ describe("design guard engine", () => {
     });
 
     it("OUTPUT_FORMAT_FILES: rang qoidalari qo'llanmaydi, boshqa qoidalar (money) qo'llanadi", () => {
-      const printFile = "src/pages/mails/detail/lib/printMode.ts";
+      const printFile = "src/features/print-receipts/lib/printReceiptHtml.ts";
       expect(printFile in OUTPUT_FORMAT_FILES).toBe(true);
       const res = scanSource(
         printFile,
@@ -756,7 +756,7 @@ describe("design guard engine", () => {
       expect(res.counts).toEqual({ money: 1 });
       // Haqiqiy faylga hex qo'shilsa ham rang hisobga kirmaydi.
       const real = Object.values(
-        import.meta.glob("../pages/mails/detail/lib/printMode.ts", {
+        import.meta.glob("../features/print-receipts/lib/printReceiptHtml.ts", {
           eager: true,
           query: "?raw",
           import: "default",

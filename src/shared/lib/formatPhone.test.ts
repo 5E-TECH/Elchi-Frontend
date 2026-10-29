@@ -12,7 +12,7 @@ describe("formatPhone — O'zbekiston raqamlari", () => {
     ["998901234567", "12 ta raqam, + siz"],
     ["+998901234567", "kanonik qiymat (backend, toUzbekistanPhoneValue)"],
     ["+998 90 123 45 67", "allaqachon formatlangan"],
-    ["+998 (90) 123-45-67", "printLabelPdf / UserListTable ko'rinishi"],
+    ["+998 (90) 123-45-67", "eski yorliq / UserListTable ko'rinishi"],
     ["+998-90-123-45-67", "chiziqchalar"],
     ["998 90 123 45 67", "+ siz, bo'sh joy bilan"],
     ["(90) 123-45-67", "qavsli mahalliy qism"],

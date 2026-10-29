@@ -1,9 +1,10 @@
 // dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
 import type { ReactNode } from "react";
-import { Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { ReceiptPackageSheet } from "../../../features/print-receipts";
 import { cx } from "../../../shared/lib/cx";
-import { Button, Card } from "../../../shared/ui/primitives";
+import { Card } from "../../../shared/ui/primitives";
+import BatchPrintMenu from "./BatchPrintMenu";
 import BatchQrCode from "./BatchQrCode";
 
 type Props = {
@@ -13,16 +14,18 @@ type Props = {
   /** Varaq izohi (faqat jo'natish rejimida; planshet/telefonda ko'rinishi `hintClassName` bilan). */
   hint?: ReactNode;
   hintClassName?: string;
-  onPrint: () => void;
+  onPrint: (sheet: ReceiptPackageSheet) => void;
+  /** Paket cheki tayyorlanmoqda. */
+  printing?: boolean;
   className?: string;
 };
 
 /**
- * «QR KOD» kartasi (maket `*-batches-detail*`): o'ngda paket raqami, QR (`api.qrserver.com`, ochilmasa — zaxira
- * yozuv) chiziqli ramkada va «Chop etish» (A5 varaq — `BatchPrintSheet`). Izoh bo'lsa (jo'natish rejimi) QR yonida,
- * aks holda QR markazda va tugma pastda.
+ * «QR KOD» kartasi (maket `*-batches-detail*`): o'ngda paket raqami, QR (ilova ichida — `ReceiptQr`; token yo'q —
+ * zaxira yozuv) chiziqli ramkada va «Chop etish» menyusi (paket cheki: termal 100×60 yoki A5 — `BatchPrintMenu`,
+ * HJ5sLHiz). Izoh bo'lsa (jo'natish rejimi) QR yonida, aks holda QR markazda va tugma pastda.
  */
-const BatchQrCard = ({ displayId, token, hint, hintClassName, onPrint, className }: Props) => {
+const BatchQrCard = ({ displayId, token, hint, hintClassName, onPrint, printing = false, className }: Props) => {
   const { t } = useTranslation("batches");
 
   return (
@@ -43,16 +46,14 @@ const BatchQrCard = ({ displayId, token, hint, hintClassName, onPrint, className
           token={token}
           fallbackLabel={displayId}
           alt={t("detail.qrImage", { id: displayId })}
-          className="aspect-square w-[188px] max-w-full object-contain"
+          className="block aspect-square w-[188px] max-w-full text-nav"
           fallbackClassName="flex aspect-square w-[188px] max-w-full flex-col items-center justify-center gap-1 text-center text-sm font-semibold text-nav"
           fallbackLabelClassName="text-[13px] font-medium"
         />
       </div>
       <div className={cx("flex min-w-0 flex-col gap-3", hint ? "flex-[1_1_240px]" : "w-full")}>
         {hint ? <p className={cx("text-[13px] text-text-muted", hintClassName)}>{hint}</p> : null}
-        <Button variant="secondary" leftIcon={Printer} fullWidth onClick={onPrint}>
-          {t("detail.print")}
-        </Button>
+        <BatchPrintMenu onSelect={onPrint} loading={printing} className="w-full" />
       </div>
     </Card>
   );

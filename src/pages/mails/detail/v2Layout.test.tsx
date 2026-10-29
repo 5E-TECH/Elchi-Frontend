@@ -19,6 +19,15 @@ const mocks = vi.hoisted(() => ({
     onMissing: (raw: string, source: "keyboard" | "camera") => void;
     orders: Array<{ id: string }>;
   },
+  printOrderReceipts: vi.fn(),
+  printPackageReceipt: vi.fn(),
+}));
+
+vi.mock("../../../features/print-receipts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../features/print-receipts")>()),
+  printOrderReceipts: mocks.printOrderReceipts,
+  printPackageReceipt: mocks.printPackageReceipt,
+  preloadReceiptPrinting: () => Promise.resolve(),
 }));
 
 vi.mock("../../../entities/branch", async (importOriginal) => ({
@@ -72,7 +81,7 @@ const stateFor = (role: string, branchType?: string) =>
     },
   }) as never;
 
-const regular = (rows: ReturnType<typeof order>[], post?: { status: string }) =>
+const regular = (rows: ReturnType<typeof order>[], post?: { status: string; qr_code_token?: string }) =>
   mocks.useMailDetail.mockImplementation((postId: string) => ({
     data: postId ? { data: { allOrdersByPostId: rows, ...(post ? { post: { id: POST_ID, ...post } } : {}) } } : undefined,
     isLoading: false,
@@ -107,6 +116,97 @@ const renderPage = (preloadedState: never, route: string | { pathname: string; s
     { route, preloadedState },
   );
 
+describe("MailDetailPage v2 — chek (HJ5sLHiz)", () => {
+  beforeEach(() => {
+    mocks.useRefused.mockReturnValue({ data: undefined, isLoading: false, isError: false });
+    mocks.printOrderReceipts.mockReset().mockResolvedValue({ orders: 1, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPackageReceipt.mockReset().mockResolvedValue({ orders: 0, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+  });
+
+  it("menyu: brauzer · PDF · A4 · «Pochta cheki»; pochta cheki — pochtaning o'zi, buyurtmalar — A4 da", async () => {
+    const user = userEvent.setup();
+    regular([order("101", "received", 185000), order("102", "received", 240000)], { status: "new" });
+    renderPage(stateFor("superadmin"));
+
+    await user.click(screen.getByRole("checkbox", { name: "№101 ni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Chop etish 1" }));
+    const items = () => within(screen.getByRole("menu")).getAllByRole("menuitem");
+    expect(items().map((item) => item.querySelector(".font-semibold")?.textContent)).toEqual([
+      "Brauzer orqali chop etish",
+      "PDF yorliq (100×60 mm)",
+      "A4 varaq (12 ta)",
+      "Pochta cheki",
+    ]);
+    await user.click(screen.getByRole("menuitem", { name: /Pochta cheki/ }));
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "post", id: POST_ID, ordersCount: 2, to: "Sirdaryo" }),
+      { sheet: "thermal", output: "browser" },
+    );
+    expect(mocks.printOrderReceipts).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Chop etish 1" }));
+    await user.click(screen.getByRole("menuitem", { name: /A4 varaq/ }));
+    expect(mocks.printOrderReceipts).toHaveBeenCalledWith([expect.objectContaining({ id: "101" })], {
+      sheet: "a4",
+      output: "browser",
+    });
+    // Qatordagi menyu — faqat buyurtma cheklari (pochta cheki yo'q).
+    await user.click(screen.getByRole("button", { name: "№102 ni chop etish" }));
+    expect(items().map((item) => item.querySelector(".font-semibold")?.textContent)).not.toContain("Pochta cheki");
+  });
+
+  it("nothing selected: «Pochta cheki» prints without a selection; order receipts are disabled until orders are selected", async () => {
+    const user = userEvent.setup();
+    regular([order("101", "received", 185000), order("102", "received", 240000)], { status: "new" });
+    renderPage(stateFor("superadmin"));
+
+    const trigger = screen.getByRole("button", { name: "Chop etish 0" });
+    expect(trigger).toBeEnabled();
+    await user.click(trigger);
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getByText("Buyurtma tanlanmagan")).toBeInTheDocument();
+    const orderItems = ["Brauzer orqali chop etish", "PDF yorliq (100×60 mm)", "A4 varaq (12 ta)"].map((name) =>
+      within(menu).getByRole("menuitem", { name: new RegExp(name.replace(/[()]/g, "\\$&")) }),
+    );
+    for (const item of orderItems) {
+      expect(item).toHaveAttribute("aria-disabled", "true");
+      expect(item).toHaveTextContent("Avval buyurtmalarni tanlang");
+    }
+    const postReceipt = within(menu).getByRole("menuitem", { name: /Pochta cheki/ });
+    expect(postReceipt).not.toHaveAttribute("aria-disabled");
+    // Ochilganda fokus birinchi faol bandda.
+    expect(postReceipt).toHaveFocus();
+
+    // O'chiq band tanlanmaydi, menyu ochiq qoladi.
+    await user.click(orderItems[0]);
+    expect(mocks.printOrderReceipts).not.toHaveBeenCalled();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    await user.click(postReceipt);
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "post", id: POST_ID, ordersCount: 2, token: null }),
+      { sheet: "thermal", output: "browser" },
+    );
+    // Pochta tokeni kelmagan — buyurtmalardagidek oldindan ogohlantirish (chek «QR yo'q» ramkasi bilan chiqadi).
+    expect(await screen.findByText("Pochta chekida QR yo'q")).toBeInTheDocument();
+    expect(screen.getByText(/QR o'rnida «QR yo'q» ramkasi chiqadi/)).toBeInTheDocument();
+  });
+
+  it("post token present → no QR warning for «Pochta cheki»", async () => {
+    const user = userEvent.setup();
+    regular([order("101", "received", 185000)], { status: "new", qr_code_token: "POST-1a2b3c4d5e6f7a8b9c" });
+    renderPage(stateFor("superadmin"));
+    await user.click(screen.getByRole("button", { name: "Chop etish 0" }));
+    await user.click(screen.getByRole("menuitem", { name: /Pochta cheki/ }));
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "post", token: "POST-1a2b3c4d5e6f7a8b9c" }),
+      { sheet: "thermal", output: "browser" },
+    );
+    await waitFor(() => expect(mocks.printPackageReceipt).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Pochta chekida QR yo'q")).not.toBeInTheDocument();
+  });
+});
+
 describe("MailDetailPage v2 — rejimlar", () => {
   beforeEach(() => {
     mocks.useRefused.mockReturnValue({ data: undefined, isLoading: false, isError: false });
@@ -119,7 +219,8 @@ describe("MailDetailPage v2 — rejimlar", () => {
 
     const send = screen.getByRole("button", { name: "Pochtani jo'natish — 0 ta" });
     expect(send).toBeDisabled();
-    expect(screen.getByRole("button", { name: /^Chop etish/ })).toBeDisabled();
+    // Tanlovsiz ham faol — «Pochta cheki» uchun (buyurtma cheklari menyuda o'chiq, HJ5sLHiz).
+    expect(screen.getByRole("button", { name: "Chop etish 0" })).toBeEnabled();
     expect(screen.getByText("QR kodni skanerlasangiz, buyurtma ro'yxatda avtomatik tanlanadi")).toBeInTheDocument();
 
     await user.click(screen.getByRole("checkbox", { name: "№101 ni tanlash" }));
@@ -172,7 +273,8 @@ describe("MailDetailPage v2 — rejimlar", () => {
     expect(screen.getByText("QR skanerlansa, buyurtma avtomatik tanlanadi")).toBeInTheDocument();
     expect(within(screen.getByRole("table")).queryByRole("link")).toBeNull();
     expect(screen.getByRole("progressbar", { name: "Tanlangan buyurtmalar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tanlangan 0 ta buyurtmani chop etish" })).toBeDisabled();
+    // Tanlovsiz: tugma «Pochta cheki» uchun faol (buyurtma cheklari menyuda o'chiq), nomi — ko'rinadigan matn.
+    expect(screen.getByRole("button", { name: "Chop etish 0" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "№401 yorlig'ini chop etish" })).toBeInTheDocument();
   });
 

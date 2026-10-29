@@ -544,7 +544,7 @@
       "components": [
         "src/pages/new_orders/components/new_orderDetail.tsx",
         "src/pages/new_orders/components/newOrderReceiveRules.ts",
-        "src/pages/new_orders/components/lib/printLabelPdf.ts",
+        "src/features/print-receipts/index.ts",
         "src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx",
         "src/pages/new_orders/components/marketOrders/SelectionBar.tsx",
         "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
@@ -750,7 +750,8 @@
         "src/pages/batches/ui/BatchInfoCard.tsx",
         "src/pages/batches/ui/BatchQrCard.tsx",
         "src/pages/batches/ui/BatchHistoryCard.tsx",
-        "src/pages/batches/ui/BatchPrintSheet.tsx",
+        "src/pages/batches/ui/BatchPrintMenu.tsx",
+        "src/pages/batches/lib/batchReceipt.ts",
         "src/pages/batches/ui/BatchQrCode.tsx",
         "src/pages/batches/lib/batchOrderMailAdapter.ts",
         "src/pages/mails/detail/ui/OrdersTable.tsx",
@@ -2447,7 +2448,7 @@
     },
     "shift-report-messages": {"defines": "Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali.", "code": "taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed)"},
     "scan-feedback": {"defines": "Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari.", "code": "src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin)"},
-    "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin)"},
+    "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/features/print-receipts (HJ5sLHiz: buyurtma cheki termal 100×60 va A4, paket / pochta cheki termal va A5, lokal QR); kirish nuqtalari — src/pages/new_orders/components/new_orderDetail.tsx, src/pages/mails/detail/lib/printMode.ts, src/pages/mails/components/oldMails.tsx, src/pages/batches/ui/BatchDetailPage.tsx"},
     "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx)"}
   }
 }

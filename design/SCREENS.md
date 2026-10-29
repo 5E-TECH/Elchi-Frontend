@@ -582,7 +582,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/:marketId` — Market yangi buyurtmalari — qabul (market rolida: o'z yangi buyurtmalari)
 
-- **Fayllar:** `src/pages/new_orders/components/new_orderDetail.tsx` · `src/pages/new_orders/components/newOrderReceiveRules.ts` · `src/pages/new_orders/components/lib/printLabelPdf.ts` · `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` · `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` · `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` · `src/pages/new_orders/components/marketOrders/marketOrdersModel.ts` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/components/new_orderDetail.tsx` · `src/pages/new_orders/components/newOrderReceiveRules.ts` · `src/features/print-receipts/index.ts` · `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` · `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` · `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` · `src/pages/new_orders/components/marketOrders/marketOrdersModel.ts` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -796,7 +796,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/batches/:id` — Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)
 
-- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintSheet.tsx` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
+- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintMenu.tsx` · `src/pages/batches/lib/batchReceipt.ts` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -2803,7 +2803,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-motion` | Harakat, fokus va kirish qulayligi | Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi. | src/index.css (:focus-visible, animatsiyalar), docs/DESIGN_SYSTEM.md §9 | barcha sahifalar |
 | `tizim-shift-report-messages` | Smena hisoboti — Telegram va tizim xabarlari | Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali. | taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed) | barcha sahifalar |
 | `tizim-scan-feedback` | Skaner natijasi — to'liq ekran rang effekti va ovozlar | Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari. | src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
-| `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
+| `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/features/print-receipts (HJ5sLHiz: buyurtma cheki termal 100×60 va A4, paket / pochta cheki termal va A5, lokal QR); kirish nuqtalari — src/pages/new_orders/components/new_orderDetail.tsx, src/pages/mails/detail/lib/printMode.ts, src/pages/mails/components/oldMails.tsx, src/pages/batches/ui/BatchDetailPage.tsx | barcha sahifalar |
 | `tizim-product-labels` | Mahsulot stikeri — QR va shtrix kod (40×30, 58×40) | Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari. | src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx) | barcha sahifalar |
 
 ## 6. Fayl → route
@@ -2859,6 +2859,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
+| `src/features/print-receipts/index.ts` | `/new-orders/:marketId` |
 | `src/features/push-notifications/ui/PushExplainDialog.tsx` | `/inbox` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
 | `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | `/settings` |
@@ -2884,11 +2885,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/activity-logs/index.tsx` | `/activity-logs` |
 | `src/pages/batches/lib/batchFormat.ts` | `/batches` |
 | `src/pages/batches/lib/batchOrderMailAdapter.ts` | `/batches/:id` |
+| `src/pages/batches/lib/batchReceipt.ts` | `/batches/:id` |
 | `src/pages/batches/model/batchView.ts` | `/batches` |
 | `src/pages/batches/ui/BatchDetailPage.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchHistoryCard.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchInfoCard.tsx` | `/batches/:id` |
-| `src/pages/batches/ui/BatchPrintSheet.tsx` | `/batches/:id` |
+| `src/pages/batches/ui/BatchPrintMenu.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchQrCard.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchQrCode.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchesPage.tsx` | `/batches` |
@@ -3076,7 +3078,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/editDialogs/index.ts` | `/orders/edit/:orderId` |
-| `src/pages/new_orders/components/lib/printLabelPdf.ts` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` | `/new-orders/:marketId` |
