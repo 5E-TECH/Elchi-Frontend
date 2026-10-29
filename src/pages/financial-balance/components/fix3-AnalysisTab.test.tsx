@@ -312,3 +312,38 @@ describe("AnalysisTab — «Daftar qoldig'i harakati» va manbalar", () => {
     expect(screen.getByText(/Davr bugungacha davom etmaydi/)).toBeInTheDocument();
   });
 });
+
+/**
+ * guzrGySp: backend endi top-impacts qatorida ham `created_by_user: {id, name, role} | null` beradi (history bilan bir
+ * xil, 0c27571) — «Kiritgan» ustunida ism (avval `#id` edi); foydalanuvchi topilmasa `#id`, tizim yozuvi — «Avtomatik».
+ */
+describe("AnalysisTab — «Kiritgan» ustuni (guzrGySp)", () => {
+  it("ism `created_by_user` dan, `null` bo'lsa `#id`, muallifsiz — «Avtomatik»", () => {
+    calls.topData = {
+      data: {
+        items: [
+          topItem(1, 500_000, {
+            created_by: "7",
+            created_by_user: { id: "7", name: "Dilnoza Karimova", role: "admin" },
+          }),
+          topItem(2, -200_000, { created_by: "9", created_by_user: null }),
+          topItem(3, 30_000, { created_by: null, created_by_user: null }),
+        ],
+        pagination: { total: 3, page: 1, limit: 10, totalPages: 1 },
+      },
+    };
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+
+    const table = screen.getByRole("table", { name: "Eng katta ta'sir ko'rsatgan tranzaksiyalar" });
+    const actorColumn = within(table)
+      .getAllByRole("columnheader")
+      .findIndex((cell) => cell.textContent === "Kiritgan");
+    expect(actorColumn).toBeGreaterThan(-1);
+    const actors = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.querySelectorAll("td")[actorColumn]?.textContent);
+
+    expect(actors).toEqual(["Dilnoza Karimova", "#9", "Avtomatik"]);
+  });
+});

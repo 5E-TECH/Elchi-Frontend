@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildWaterfall, normalizeApiBuckets, readTopImpactsPagination, toPlotPercent } from "./analytics";
+import {
+  buildWaterfall,
+  normalizeApiBuckets,
+  normalizeLedgerRows,
+  readTopImpactsPagination,
+  toPlotPercent,
+} from "./analytics";
 import { normalizeFinancialBalance } from "./financialBalance";
 import { buildHistoryExportParams, readHistoryFilters } from "./historyFilters";
 
@@ -79,6 +85,27 @@ describe("analytics javobi", () => {
       limit: 10,
     });
     expect(readTopImpactsPagination(undefined, 2, 10)).toEqual({ total: 0, page: 2, limit: 10 });
+  });
+
+  // guzrGySp: top-impacts qatorida backend `created_by_user: {id, name, role} | null` (history bilan bir xil).
+  it("normalizeLedgerRows — «Kiritgan»: ism `created_by_user` dan, foydalanuvchi yo'q — `#id`, muallifsiz — avtomatik", () => {
+    const rows = normalizeLedgerRows([
+      {
+        id: "1",
+        source_type: "manual_income",
+        amount: 500_000,
+        created_by: "7",
+        created_by_user: { id: "7", name: "Dilnoza Karimova", role: "admin" },
+      },
+      { id: "2", source_type: "manual_expense", amount: 200_000, created_by: "9", created_by_user: null },
+      { id: "3", source_type: "sell_profit", amount: 30_000, created_by: null, created_by_user: null },
+    ]);
+
+    expect(rows.map(({ actor, automatic }) => ({ actor, automatic }))).toEqual([
+      { actor: "Dilnoza Karimova", automatic: false },
+      { actor: "#9", automatic: false },
+      { actor: "", automatic: true },
+    ]);
   });
 });
 

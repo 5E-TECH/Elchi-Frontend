@@ -35,7 +35,10 @@ export interface LedgerRow {
   sourceType: string;
   /** Tizim yozgan (`created_by` yo'q) — «Avtomatik». */
   automatic: boolean;
-  /** Kim kiritgan: ism, bo'lmasa `#id` (top-impacts javobida ism yo'q — `#id`). */
+  /**
+   * Kim kiritgan: `created_by_user.name` (top-impacts ham history kabi `created_by_user: {id, name, role} | null`
+   * beradi — guzrGySp, backend 0c27571), foydalanuvchi topilmasa (`null`) — `#id`.
+   */
   actor: string;
   amount: number;
   signedAmount: number;
