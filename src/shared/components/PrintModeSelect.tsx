@@ -30,7 +30,9 @@ import { usePopover } from "../ui/primitives/overlay/usePopover";
  *  - `hideCount` — `header` tugmasida son yo'q («Barchasini chop etish», maket `courier-mails-detail-refused`);
  *  - `ariaLabel` — tugma nomi (maket: «Barcha 5 ta buyurtma yorlig'ini chop etish»);
  *  - `iconSize` / `iconVariant` — `icon` tugmasi o'lchami va ko'rinishi (kuryer kartasi: `lg`, chegarali);
- *  - `compact` — `header` tugmasi ixcham (`Button compact`; tor qatorda, maket `courier-mails-detail-receive` telefon).
+ *  - `compact` — `header` tugmasi ixcham (`Button compact`; tor qatorda, maket `courier-mails-detail-receive` telefon);
+ *  - `loading` — chop etish fayli tayyorlanmoqda: tugmada spinner, menyu ochilmaydi (HJ5sLHiz);
+ *  - `onOpen` — menyu (varaqa) ochilganda: chop etish modulini oldindan yuklash uchun.
  */
 export type PrintSelectOption = {
   id: string;
@@ -66,6 +68,10 @@ type Props = {
   iconVariant?: IconButtonVariant;
   /** `header`: ixcham tugma (kichikroq chekka va ikonka). */
   compact?: boolean;
+  /** Chop etish ketmoqda — tugma `loading`, menyu ochilmaydi. */
+  loading?: boolean;
+  /** Menyu ochilganda (oldindan yuklash). */
+  onOpen?: () => void;
 };
 
 /** Varaqadagi band (`.el-menu-item` + o'ngda `ChevronRight`, maket `courier-mails-detail-print-menu`). */
@@ -95,6 +101,8 @@ const PrintModeSelect = ({
   iconSize = "sm",
   iconVariant,
   compact = false,
+  loading = false,
+  onOpen,
 }: Props) => {
   const { t, i18n } = useTranslation("ui");
   const isPhone = useIsPhone();
@@ -119,8 +127,10 @@ const PrintModeSelect = ({
   };
 
   const openWith = (target: "first" | "last") => {
+    if (loading) return;
     focusTargetRef.current = target;
     setOpen(true);
+    onOpen?.();
   };
 
   useDismiss({ open: open && !asSheet, refs: [anchorRef, floatingRef], onDismiss: () => close(false) });
@@ -201,6 +211,7 @@ const PrintModeSelect = ({
           variant="secondary"
           compact={compact}
           disabled={triggerDisabled}
+          loading={loading}
           aria-label={ariaLabel}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
@@ -227,6 +238,7 @@ const PrintModeSelect = ({
           size={iconSize}
           variant={iconVariant}
           disabled={triggerDisabled}
+          loading={loading}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
           onKeyDown={onTriggerKeyDown}

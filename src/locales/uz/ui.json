@@ -734,7 +734,14 @@
   "printMenu": {
     "button": "Chop etish",
     "menu": "Chop etish usuli",
-    "count": "{{count}} ta tanlangan"
+    "count": "{{count}} ta tanlangan",
+    "noQr": "{{value}} ta buyurtmada QR yo'q",
+    "noQrHint": "Chekda QR o'rnida «QR yo'q» ramkasi chiqadi — bu buyurtmalarni skaner o'qimaydi.",
+    "error": "Chek chop etilmadi",
+    "errorHint": "Chop etish faylini tayyorlab bo'lmadi. Qayta urinib ko'ring.",
+    "fontError": "Chek shriftlari yuklanmadi — internet aloqasini tekshirib, qayta urinib ko'ring.",
+    "pdfSaved": "PDF fayl yuklab olindi",
+    "pdfSavedHint": "Brauzer yangi oynani ochmadi — faylni yuklab olinganlar ichidan oching."
   },
   "dialog": {
     "close": "Yopish",

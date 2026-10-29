@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Inbox, Package, Printer } from "lucide-react";
+import { ArrowRight, Inbox, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
@@ -13,6 +13,11 @@ import {
   useSendTransferBatch,
 } from "../../../entities/batch";
 import type { PostOrder } from "../../../entities/mails";
+import {
+  printPackageReceipt,
+  useReceiptPrint,
+  type ReceiptPackageSheet,
+} from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -24,7 +29,6 @@ import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
   Badge,
-  Button,
   Card,
   EmptyState,
   ErrorState,
@@ -38,6 +42,7 @@ import OrdersTable, { type OrdersTableColumn } from "../../mails/detail/ui/Order
 import SendButton from "../../mails/detail/ui/SendButton";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { formatBatchDisplayId } from "../lib/batchFormat";
+import { toBatchReceiptSource } from "../lib/batchReceipt";
 import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
 import {
   isPlaceholderBranchName,
@@ -49,7 +54,7 @@ import {
 } from "../model/batchView";
 import BatchHistoryCard from "./BatchHistoryCard";
 import BatchInfoCard from "./BatchInfoCard";
-import BatchPrintSheet from "./BatchPrintSheet";
+import BatchPrintMenu from "./BatchPrintMenu";
 import BatchQrCard from "./BatchQrCard";
 
 /** Jo'natish rejimi (maket `manager-batches-detail-send`, `manager-returns-batch-detail`): market ustuni yo'q. */
@@ -71,7 +76,7 @@ const HISTORY_ROLES = new Set(["superadmin", "admin", "manager", "registrator", 
  * huquqi bilan), dizayn v2.
  *
  * Sarlavha: «← Paketlar / Qaytarishlar / Eski pochtalar» (kelgan sahifa — `state.from`), «Paket B-172» + holat,
- * «from → to · Yaratilgan: …»; amallar «Chop etish» (A5 varaq, `BatchPrintSheet`) va jo'natish rejimida
+ * «from → to · Yaratilgan: …»; amallar «Chop etish» (paket cheki: termal 100×60 yoki A5, `BatchPrintMenu`) va jo'natish rejimida
  * «HQ'ga yuborish — n ta». Kartalar: «Paket ma'lumotlari» (+ yetkazish turi bo'yicha), «QR kod», «Paketdagi
  * buyurtmalar» (pochta tafsilotining `OrdersTable` kartasi), «Tarix».
  *
@@ -254,7 +259,13 @@ const BatchDetailPage = () => {
 
   const back = resolveBatchBack(readBatchDetailState(location.state), batch);
   const backLabel = t(`detail.back.${back.label}`);
-  const print = useCallback(() => window.print(), []);
+  // Paket cheki (HJ5sLHiz, TZ F8/F10): termal 100×60 yoki A5 — `features/print-receipts` (lokal QR, bitta joylash).
+  const receiptPrint = useReceiptPrint();
+  const print = (sheet: ReceiptPackageSheet) => {
+    if (!batch) return;
+    const source = toBatchReceiptSource(batch, { from: fromName, to: toName });
+    void receiptPrint.run({ print: () => printPackageReceipt(source, { sheet, output: "browser" }) });
+  };
 
   // ─── Yuklanish ───────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -369,8 +380,6 @@ const BatchDetailPage = () => {
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
-      <BatchPrintSheet batch={batch} fromName={fromName} regionName={region} />
-
       <PageHeader
         back={back.to}
         backLabel={backLabel}
@@ -386,9 +395,7 @@ const BatchDetailPage = () => {
         actions={
           canSendToMainBranch ? (
             <>
-              <Button variant="secondary" leftIcon={Printer} onClick={print}>
-                {t("detail.print")}
-              </Button>
+              <BatchPrintMenu onSelect={print} loading={receiptPrint.printing} />
               {sendButton(false)}
             </>
           ) : undefined
@@ -408,6 +415,7 @@ const BatchDetailPage = () => {
           // Maket: oddiy paketda izoh faqat planshetda, qaytarish paketida planshet va telefonda.
           hintClassName={isReturn ? "hidden max-lg:block" : "hidden max-lg:block max-md:hidden"}
           onPrint={print}
+          printing={receiptPrint.printing}
           className={canSendToMainBranch ? "flex-[1_1_280px]" : "flex-[1_1_240px]"}
         />
       </div>

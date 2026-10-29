@@ -17,6 +17,11 @@ import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { canDispatchPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
+import {
+  countReceiptsWithoutQr,
+  preloadReceiptPrinting,
+  useReceiptPrint,
+} from "../../../features/print-receipts";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 import PrintModeSelect from "../../../shared/components/PrintModeSelect";
 import { api } from "../../../shared/api/api";
@@ -54,7 +59,13 @@ import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
 import { DuplicatePhonesAlert } from "./ui/DuplicatePhonesAlert";
 import { useMailPrintOptions } from "./ui/printOptions";
 import { getPostStatusBadge } from "./lib/postStatus";
-import { printOrders, type PrintMode } from "./lib/printMode";
+import {
+  printOrders,
+  printPostReceipt,
+  toPostReceiptSource,
+  type OrderPrintMode,
+  type PrintMode,
+} from "./lib/printMode";
 import { resolveDispatchRegionId } from "./lib/dispatchRegion";
 import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
 import {
@@ -898,21 +909,41 @@ const MailDetailPage = () => {
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
-  const printOptions = useMailPrintOptions();
+  // HJ5sLHiz: «Pochta cheki» (qop uchun) — pochtaning o'z ma'lumoti bor oddiy pochtada (rad etilganda emas).
+  const canPrintPostReceipt = Boolean(postId) && !isEffectiveRefusedDetail && regularOrdersFromPost.length > 0;
+  const printOptions = useMailPrintOptions({ withPostReceipt: canPrintPostReceipt });
+  const receiptPrint = useReceiptPrint();
+  const runReceiptPrint = receiptPrint.run;
 
-  // 1mOjtOVC: chekda pochta kuryeri (`GET /post/:id` → `courier`, yo'q — `null`, qator chiqmaydi).
-  const postCourier = postMeta?.courier ?? null;
+  // Chek (HJ5sLHiz, `features/print-receipts`): buyurtma cheklari — tanlanganlar / barchasi / bitta qator;
+  // «Pochta cheki» — pochtaning o'zi (№, qayerga, buyurtmalar soni, jami, kuryer, QR).
   const handlePrintOrders = useCallback(
-    (mode: PrintMode, printTargets: PostOrder[]) => {
+    (mode: PrintMode, printTargets: PostOrder[], key: string) => {
+      if (mode === "post_receipt") {
+        if (!postId) return;
+        const source = toPostReceiptSource({
+          postId,
+          post: postMeta,
+          orders: regularOrdersFromPost,
+          totals: regularResponse?.data,
+          regionName: regionLabel,
+        });
+        void runReceiptPrint({ key, print: () => printPostReceipt(source) });
+        return;
+      }
       if (printTargets.length === 0) return;
-      printOrders(mode, printTargets, { postCourier });
+      void runReceiptPrint({
+        key,
+        withoutQr: countReceiptsWithoutQr(printTargets),
+        print: () => printOrders(mode, printTargets),
+      });
     },
-    [postCourier],
+    [postId, postMeta, regionLabel, regularOrdersFromPost, regularResponse, runReceiptPrint],
   );
 
   const handlePrint = useCallback(
     (mode: PrintMode) => {
-      handlePrintOrders(mode, selectedOrders);
+      handlePrintOrders(mode, selectedOrders, "selected");
     },
     [handlePrintOrders, selectedOrders],
   );
@@ -920,17 +951,20 @@ const MailDetailPage = () => {
   // D16: kuryerning rad etilgan pochtasida tanlov yo'q — «Barchasini chop etish» hamma buyurtmani oladi.
   const handlePrintAll = useCallback(
     (mode: PrintMode) => {
-      handlePrintOrders(mode, orders);
+      handlePrintOrders(mode, orders, "all");
     },
     [handlePrintOrders, orders],
   );
 
   const handlePrintOne = useCallback(
-    (order: PostOrder, mode: PrintMode) => {
-      handlePrintOrders(mode, [order]);
+    (order: PostOrder, mode: OrderPrintMode) => {
+      handlePrintOrders(mode, [order], `row:${order.id}`);
     },
     [handlePrintOrders],
   );
+  const printingOrderId = receiptPrint.printingKey?.startsWith("row:")
+    ? receiptPrint.printingKey.slice(4)
+    : null;
 
   const openDeleteConfirm = useCallback((orderIds: string[]) => {
     if (orderIds.length === 0) return;
@@ -1078,6 +1112,8 @@ const MailDetailPage = () => {
       sheetTitle={t("detailPage.printSheetTitle")}
       sheetDescription={t("detailPage.printSheetDescription", { value: selectedValue, count: selectedCount })}
       options={printOptions}
+      loading={receiptPrint.printingKey === "selected"}
+      onOpen={preloadReceiptPrinting}
       className={className}
       compact={compact}
     />
@@ -1094,6 +1130,8 @@ const MailDetailPage = () => {
       sheetTitle={t("detailPage.printSheetTitle")}
       sheetDescription={t("detailPage.printAllSheetDescription", { value: count(orders.length), count: orders.length })}
       options={printOptions}
+      loading={receiptPrint.printingKey === "all"}
+      onOpen={preloadReceiptPrinting}
       className="w-full"
     />
   );
@@ -1221,6 +1259,7 @@ const MailDetailPage = () => {
         onToggleOne={toggleOne}
         onClearSelection={clearSelection}
         onPrintOne={isOldDetail ? undefined : handlePrintOne}
+        printingOrderId={printingOrderId}
         onDeleteOne={handleDeleteOne}
         // yokjwjXG: savat = buyurtmani SHU pochtadan o'chirish (`POST /post/delete`),
         // `POST /post/cancel` (bekor qilinganlarni qaytarish) EMAS. Faqat

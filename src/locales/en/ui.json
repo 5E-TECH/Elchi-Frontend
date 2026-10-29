@@ -734,7 +734,14 @@
   "printMenu": {
     "button": "Print",
     "menu": "Print method",
-    "count": "{{count}} selected"
+    "count": "{{count}} selected",
+    "noQr": "Orders without a QR code: {{value}}",
+    "noQrHint": "These receipts show a «QR yo'q» frame instead of the QR code — the scanner can't read them.",
+    "error": "Receipt not printed",
+    "errorHint": "Couldn't prepare the print file. Please try again.",
+    "fontError": "The receipt fonts didn't load — check your internet connection and try again.",
+    "pdfSaved": "PDF file downloaded",
+    "pdfSavedHint": "The browser blocked the new window — open the file from your downloads."
   },
   "dialog": {
     "close": "Close",

@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
-import { useMails, type PostOrder } from "../../../entities/mails";
+import { useMails, type MailDetailData, type PostOrder } from "../../../entities/mails";
 import {
   BATCH_KEY,
   BATCH_STATUS_TONE,
@@ -15,6 +15,7 @@ import {
   type BatchStatus,
 } from "../../../entities/batch";
 import { useUser } from "../../../entities/user/api/userApi";
+import { countReceiptsWithoutQr, useReceiptPrint } from "../../../features/print-receipts";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { cx } from "../../../shared/lib/cx";
@@ -40,7 +41,7 @@ import {
 import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
-import { printOrders } from "../detail/lib/printMode";
+import { printPostWithOrders, toPostReceiptSource } from "../detail/lib/printMode";
 import type { MailsTabLayout } from "../model/mailsLayout";
 import {
   buildOldMailsQuery,
@@ -60,6 +61,7 @@ import {
   OLD_MAILS_PAGE_MAX,
   readOldMailsFilters,
   readOldMailsPage,
+  readPostDetail,
   readPostOrders,
   summarizeOldMails,
   toOldMailSourceFromBatch,
@@ -349,8 +351,11 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Chekni qayta chiqarish ────────────────────────────────────────────── */
 
+  // Ega qarori 5 (HJ5sLHiz): avval pochta cheki, keyin buyurtma cheklari — bitta chop etish ishida (termal 100×60).
+  // Chop etish xatosi va «QR yo'q» ogohlantirishi — `useReceiptPrint`; so'rov xatosi — shu yerda.
   const [printingId, setPrintingId] = useState<string | null>(null);
   const printingRef = useRef(false);
+  const runReceiptPrint = useReceiptPrint().run;
   const handleReprint = useCallback(
     async (row: OldMailRow) => {
       // Qayta bosish himoyasi: chek tayyorlanayotganda boshqa so'rov ketmaydi.
@@ -358,23 +363,42 @@ const OldMails = ({ layout }: OldMailsProps) => {
       printingRef.current = true;
       setPrintingId(row.id);
       try {
-        const response = await api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(row.id));
-        const orders = readPostOrders<PostOrder>(response.data);
+        let orders: PostOrder[];
+        let detail: MailDetailData | null;
+        try {
+          const response = await api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(row.id));
+          orders = readPostOrders<PostOrder>(response.data);
+          detail = readPostDetail(response.data);
+        } catch {
+          notify.error(t("mails:reprintReceiptError"));
+          return;
+        }
 
         if (orders.length === 0) {
           notify.warning(t("mails:emptyOrders"));
           return;
         }
 
-        printOrders("browser", orders);
-      } catch {
-        notify.error(t("mails:reprintReceiptError"));
+        const source = toPostReceiptSource({
+          postId: row.id,
+          post: detail?.post ?? null,
+          orders,
+          totals: detail,
+          regionName: row.regionName,
+          createdAt: row.createdAt,
+          courier: row.courierName ? { name: row.courierName } : null,
+        });
+        await runReceiptPrint({
+          key: row.id,
+          withoutQr: countReceiptsWithoutQr(orders),
+          print: () => printPostWithOrders(source, orders),
+        });
       } finally {
         printingRef.current = false;
         setPrintingId(null);
       }
     },
-    [t],
+    [runReceiptPrint, t],
   );
 
   // Telefon kartasi: paketda «Paket B-129 · 14 ta buyurtma · sana» (maket `*-mails-old-*batches`); menejerda

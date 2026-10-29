@@ -13,6 +13,13 @@ const mocks = vi.hoisted(() => ({
   deleteMutateAsync: vi.fn(),
   marketsList: undefined as unknown,
   orders: [] as Record<string, unknown>[],
+  printOrderReceipts: vi.fn(),
+}));
+
+vi.mock("../../../features/print-receipts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../features/print-receipts")>()),
+  printOrderReceipts: mocks.printOrderReceipts,
+  preloadReceiptPrinting: () => Promise.resolve(),
 }));
 
 const baseOrders = () => [
@@ -117,6 +124,7 @@ beforeEach(() => {
   mocks.receiveMutate.mockReset();
   mocks.transferMutate.mockReset();
   mocks.deleteMutateAsync.mockReset();
+  mocks.printOrderReceipts.mockReset();
   mocks.orders = baseOrders();
   mocks.marketsList = undefined;
 });
@@ -379,6 +387,49 @@ describe("NewOrderDetail — xodim sahifasi (dizayn v2)", () => {
     const region = await screen.findByRole("region", { name: "Tanlangan buyurtmalar" });
     expect(region).toHaveTextContent("Chop etish va qabul qilish faqat tanlanganlarga qo'llanadi");
     expect(within(region).queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("NewOrderDetail — chek (HJ5sLHiz, features/print-receipts)", () => {
+  it("«A4 varaq (12 ta)»: tanlanganlar A4 da; QR tokeni yo'qlari uchun oldindan ogohlantirish", async () => {
+    const user = userEvent.setup();
+    mocks.orders = [{ ...baseOrders()[0], qr_code_token: "a".repeat(24) }, baseOrders()[1]];
+    mocks.printOrderReceipts.mockResolvedValue({ orders: 1, pages: 1, jobs: 1, withoutQr: 1, delivery: ["printed"] });
+    renderPage("superadmin");
+
+    await user.click(await screen.findByRole("checkbox", { name: "№o2 ni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Chop etish 1" }));
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      expect.stringContaining("Brauzer orqali"),
+      expect.stringContaining("PDF (60×100 mm)"),
+      expect.stringContaining("A4 varaq (12 ta)"),
+    ]);
+    await user.click(within(menu).getByRole("menuitem", { name: /A4 varaq/ }));
+
+    expect(mocks.printOrderReceipts).toHaveBeenCalledWith([expect.objectContaining({ id: "o2" })], {
+      sheet: "a4",
+      output: "browser",
+    });
+    expect(await screen.findByText("1 ta buyurtmada QR yo'q")).toBeInTheDocument();
+  });
+
+  it("PDF — termal 100×60; shrift yuklanmasa xato + «Qayta urinish» (shriftsiz chek yo'q)", async () => {
+    const user = userEvent.setup();
+    const { ReceiptFontError } = await import("../../../features/print-receipts");
+    mocks.printOrderReceipts.mockRejectedValueOnce(new ReceiptFontError("offline"));
+    renderPage("superadmin");
+
+    await user.click(await screen.findByRole("button", { name: "Barchasini tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Chop etish 2" }));
+    await user.click(screen.getByRole("menuitem", { name: /PDF/ }));
+
+    expect(mocks.printOrderReceipts).toHaveBeenCalledWith(expect.any(Array), { sheet: "thermal", output: "pdf" });
+    expect(await screen.findByText("Chek chop etilmadi")).toBeInTheDocument();
+    expect(screen.getByText(/Chek shriftlari yuklanmadi/)).toBeInTheDocument();
+    mocks.printOrderReceipts.mockResolvedValueOnce({ orders: 2, pages: 2, jobs: 1, withoutQr: 0, delivery: ["opened"] });
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(mocks.printOrderReceipts).toHaveBeenCalledTimes(2));
   });
 });
 

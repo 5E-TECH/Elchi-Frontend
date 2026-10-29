@@ -109,12 +109,13 @@
     "cameraRejectedText": "No match · not selected"
   },
   "print": {
-    "branch": "BRANCH:",
-    "region": "REGION:",
-    "orders": "ORDERS:",
-    "total": "TOTAL:",
-    "date": "DATE:",
-    "driver": "DRIVER:",
-    "vehicle": "VEHICLE:"
+    "thermal": {
+      "label": "Thermal label (100×60 mm)",
+      "hint": "Thermal printer · stuck on the batch"
+    },
+    "a5": {
+      "label": "A5 sheet",
+      "hint": "Office printer"
+    }
   }
 }

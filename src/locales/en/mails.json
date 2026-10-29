@@ -150,9 +150,13 @@
       "label": "PDF label (100×60 mm)",
       "hint": "The PDF file opens in a new window"
     },
-    "thermal": {
-      "label": "Thermal printer (80mm)",
-      "hint": "Receipt format"
+    "a4": {
+      "label": "A4 sheet (12 per page)",
+      "hint": "Office printer · 12 receipts per sheet"
+    },
+    "postReceipt": {
+      "label": "Mail receipt",
+      "hint": "Receipt for the mail bag (100×60 mm)"
     }
   },
   "detailFullInfo": "Full information",
@@ -304,9 +308,5 @@
       "rowBadge": "Duplicate number",
       "rowBadgeTitle": "Also to this number: {{ids}}"
     }
-  },
-  "receipt": {
-    "contact": "If there is a problem",
-    "courier": "Courier"
   }
 }

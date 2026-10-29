@@ -7,6 +7,12 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { branchTypeOf, canViewBatchesPage } from "../../../app/lib/access";
 import { useOrders } from "../../../entities/orders";
+import {
+  countReceiptsWithoutQr,
+  preloadReceiptPrinting,
+  printOrderReceipts,
+  useReceiptPrint,
+} from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
@@ -501,8 +507,11 @@ const NewOrderDetail = () => {
     );
   }, [location.key, logReceived, navigate, orders.length, receiveMutation, refetch, rememberReceivedScan, selectedOrders, t]);
 
+  // Chek (HJ5sLHiz, `features/print-receipts`): «Brauzer orqali» va «PDF» — termal 100×60, «A4 varaq» — 12 tadan.
+  const receiptPrint = useReceiptPrint();
+  const runReceiptPrint = receiptPrint.run;
   const handlePrint = useCallback(
-    async (mode: string) => {
+    (mode: string) => {
       const printableOrders = selectedOrders.length > 0 ? selectedOrders : orders;
 
       if (!printableOrders.length) {
@@ -510,25 +519,16 @@ const NewOrderDetail = () => {
         return;
       }
 
-      if (mode === "pdf") {
-        try {
-          const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
-          await openOrdersLabelPdf(printableOrders);
-        } catch {
-          notify.error(t("print"), { description: t("printError") });
-        }
-        return;
-      }
-
-      // Brauzer orqali chop etish
-      try {
-        const { openOrdersLabelBrowserPrint } = await import("./lib/printLabelPdf");
-        openOrdersLabelBrowserPrint(printableOrders);
-      } catch {
-        notify.error(t("print"), { description: t("printError") });
-      }
+      void runReceiptPrint({
+        withoutQr: countReceiptsWithoutQr(printableOrders),
+        print: () =>
+          printOrderReceipts(printableOrders, {
+            sheet: mode === "a4" ? "a4" : "thermal",
+            output: mode === "pdf" ? "pdf" : "browser",
+          }),
+      });
     },
-    [orders, selectedOrders, t],
+    [orders, runReceiptPrint, selectedOrders, t],
   );
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
@@ -713,7 +713,9 @@ const NewOrderDetail = () => {
             transferHint={receiveMode === "transfer"}
             printOnly={!canReceive}
             canOpenBatches={canOpenBatches}
-            onPrint={(mode) => void handlePrint(mode)}
+            onPrint={handlePrint}
+            printing={receiptPrint.printing}
+            onPrintMenuOpen={preloadReceiptPrinting}
           />
         ) : null}
         {list}

@@ -34,6 +34,13 @@ const mocks = vi.hoisted(() => ({
   patch: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
+  printPackageReceipt: vi.fn(),
+}));
+
+vi.mock("../../../features/print-receipts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../features/print-receipts")>()),
+  printPackageReceipt: mocks.printPackageReceipt,
+  preloadReceiptPrinting: () => Promise.resolve(),
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -147,6 +154,52 @@ afterEach(() => {
   mocks.get.mockReset();
   mocks.patch.mockReset();
   mocks.playScanFeedback.mockReset();
+});
+
+describe("BatchDetailPage — paket cheki (HJ5sLHiz)", () => {
+  it("«Chop etish» menyusi: termal 100×60 yoki A5 — paket cheki lokal QR bilan (window.print emas)", async () => {
+    const user = userEvent.setup();
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    mocks.printPackageReceipt.mockResolvedValue({ orders: 0, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    respond(
+      detail({
+        status: "RECEIVED",
+        destination_branch: { id: "1", name: "Toshkent HQ" },
+        driver_name: "Aziz Rahimov",
+        vehicle_plate: "30 A 456 BC",
+      }),
+    );
+    renderPage("superadmin");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Paket B-172" })).toBeInTheDocument();
+    const card = screen.getByRole("region", { name: "QR kod" });
+    const qr = within(card).getByRole("img", { name: "B-172 paketining QR kodi" });
+    expect(qr.tagName.toLowerCase()).toBe("svg");
+    expect(qr.querySelector("path")?.getAttribute("fill")).toBe("currentColor");
+
+    await user.click(within(card).getByRole("button", { name: "Chop etish" }));
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      expect.stringContaining("Termal yorliq (100×60 mm)"),
+      expect.stringContaining("A5 varaq"),
+    ]);
+    await user.click(within(menu).getByRole("menuitem", { name: /A5 varaq/ }));
+
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "batch",
+        id: "172",
+        direction: "forward",
+        token: "BTB-172",
+        from: "Urgut filiali",
+        to: "Toshkent HQ",
+        ordersCount: 3,
+        totalPrice: 864000,
+      }),
+      { sheet: "a5", output: "browser" },
+    );
+    expect(print).not.toHaveBeenCalled();
+  });
 });
 
 describe("BatchDetailPage — /batches/:id", () => {

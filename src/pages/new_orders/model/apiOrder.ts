@@ -13,6 +13,8 @@ export interface ApiOrder {
   total_price: number;
   paid_amount: number;
   to_be_paid: number;
+  /** Mijoz onlayn to'lagan qism (`order.entity.ts`); chekdagi summa = `total_price − paid_online_amount` (HJ5sLHiz). */
+  paid_online_amount?: number | null;
   createdAt: string;
   comment: string | null;
   address: string | null;

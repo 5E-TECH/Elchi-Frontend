@@ -31,6 +31,24 @@ describe("PrintModeSelect (v2)", () => {
     expect(screen.getByRole("button", { name: /Chop etish/ })).toBeDisabled();
   });
 
+  it("loading (chek tayyorlanmoqda): tugma band, menyu ochilmaydi; ochilganda onOpen (oldindan yuklash)", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const { rerender } = renderWithProviders(
+      <PrintModeSelect count={2} onSelect={() => undefined} buttonLabel="Chop etish" options={OPTIONS} onOpen={onOpen} loading />,
+    );
+    const trigger = screen.getByRole("button", { name: /Chop etish/ });
+    expect(trigger).toHaveAttribute("aria-busy", "true");
+    await user.click(trigger);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(onOpen).not.toHaveBeenCalled();
+
+    rerender(<PrintModeSelect count={2} onSelect={() => undefined} buttonLabel="Chop etish" options={OPTIONS} onOpen={onOpen} />);
+    await user.click(screen.getByRole("button", { name: "Chop etish 2" }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
   it("ochilganda fokus birinchi bandda; ↓ ↑ yuradi; Enter tanlaydi, fokus tugmaga qaytadi", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

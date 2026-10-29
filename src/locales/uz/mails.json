@@ -150,9 +150,13 @@
       "label": "PDF yorliq (100×60 mm)",
       "hint": "PDF fayl yangi oynada ochiladi"
     },
-    "thermal": {
-      "label": "Termal printer (80mm)",
-      "hint": "Receipt format"
+    "a4": {
+      "label": "A4 varaq (12 ta)",
+      "hint": "Ofis printeri · bir varaqda 12 ta chek"
+    },
+    "postReceipt": {
+      "label": "Pochta cheki",
+      "hint": "Pochta qopi uchun chek (100×60 mm)"
     }
   },
   "detailFullInfo": "To'liq ma'lumot",
@@ -304,9 +308,5 @@
       "rowBadge": "Takroriy raqam",
       "rowBadgeTitle": "Shu raqamga yana: {{ids}}"
     }
-  },
-  "receipt": {
-    "contact": "Muammo bo'lsa",
-    "courier": "Kuryer"
   }
 }

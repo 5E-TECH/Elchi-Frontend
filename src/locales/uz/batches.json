@@ -104,12 +104,13 @@
     "cameraRejectedText": "Mos kelmadi · tanlanmadi"
   },
   "print": {
-    "branch": "FILIAL:",
-    "region": "VILOYAT:",
-    "orders": "BUYURTMALAR:",
-    "total": "JAMI:",
-    "date": "SANA:",
-    "driver": "HAYDOVCHI:",
-    "vehicle": "AVTOMOBIL:"
+    "thermal": {
+      "label": "Termal yorliq (100×60 mm)",
+      "hint": "Termal printer · paket ustiga yopishtiriladi"
+    },
+    "a5": {
+      "label": "A5 varaq",
+      "hint": "Ofis printeri"
+    }
   }
 }

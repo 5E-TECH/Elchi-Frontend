@@ -19,6 +19,15 @@ const mocks = vi.hoisted(() => ({
     onMissing: (raw: string, source: "keyboard" | "camera") => void;
     orders: Array<{ id: string }>;
   },
+  printOrderReceipts: vi.fn(),
+  printPackageReceipt: vi.fn(),
+}));
+
+vi.mock("../../../features/print-receipts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../features/print-receipts")>()),
+  printOrderReceipts: mocks.printOrderReceipts,
+  printPackageReceipt: mocks.printPackageReceipt,
+  preloadReceiptPrinting: () => Promise.resolve(),
 }));
 
 vi.mock("../../../entities/branch", async (importOriginal) => ({
@@ -106,6 +115,46 @@ const renderPage = (preloadedState: never, route: string | { pathname: string; s
     </Routes>,
     { route, preloadedState },
   );
+
+describe("MailDetailPage v2 — chek (HJ5sLHiz)", () => {
+  beforeEach(() => {
+    mocks.useRefused.mockReturnValue({ data: undefined, isLoading: false, isError: false });
+    mocks.printOrderReceipts.mockReset().mockResolvedValue({ orders: 1, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPackageReceipt.mockReset().mockResolvedValue({ orders: 0, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+  });
+
+  it("menyu: brauzer · PDF · A4 · «Pochta cheki»; pochta cheki — pochtaning o'zi, buyurtmalar — A4 da", async () => {
+    const user = userEvent.setup();
+    regular([order("101", "received", 185000), order("102", "received", 240000)], { status: "new" });
+    renderPage(stateFor("superadmin"));
+
+    await user.click(screen.getByRole("checkbox", { name: "№101 ni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Chop etish 1" }));
+    const items = () => within(screen.getByRole("menu")).getAllByRole("menuitem");
+    expect(items().map((item) => item.querySelector(".font-semibold")?.textContent)).toEqual([
+      "Brauzer orqali chop etish",
+      "PDF yorliq (100×60 mm)",
+      "A4 varaq (12 ta)",
+      "Pochta cheki",
+    ]);
+    await user.click(screen.getByRole("menuitem", { name: /Pochta cheki/ }));
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "post", id: POST_ID, ordersCount: 2, to: "Sirdaryo" }),
+      { sheet: "thermal", output: "browser" },
+    );
+    expect(mocks.printOrderReceipts).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Chop etish 1" }));
+    await user.click(screen.getByRole("menuitem", { name: /A4 varaq/ }));
+    expect(mocks.printOrderReceipts).toHaveBeenCalledWith([expect.objectContaining({ id: "101" })], {
+      sheet: "a4",
+      output: "browser",
+    });
+    // Qatordagi menyu — faqat buyurtma cheklari (pochta cheki yo'q).
+    await user.click(screen.getByRole("button", { name: "№102 ni chop etish" }));
+    expect(items().map((item) => item.querySelector(".font-semibold")?.textContent)).not.toContain("Pochta cheki");
+  });
+});
 
 describe("MailDetailPage v2 — rejimlar", () => {
   beforeEach(() => {

@@ -129,6 +129,8 @@ export const V2_SCOPES = Object.freeze([
   "src/features/notification-toggle",
   "src/features/order-return",
   "src/features/order-tracking",
+  // HJ5sLHiz: chek moduli — rangsiz (HTML chiqishi `printReceiptHtml.ts` — OUTPUT_FORMAT_FILES).
+  "src/features/print-receipts",
   "src/features/push-notifications",
   "src/features/pwa-install",
   "src/features/telegram-link",
@@ -213,9 +215,8 @@ export const V2_SCOPE_PENDING = Object.freeze({
 /** Ilova mavzusidan tashqari chiqish formatlari (chop etish, termal yorliq, Excel): rang qoidalari qo'llanmaydi —
  *  oq qog'ozdagi qora matn / Excel ARGB to'g'ri. Faqat `/lib/` dagi print|export|pdf|label fayllari (test). */
 export const OUTPUT_FORMAT_FILES = Object.freeze({
-  "src/pages/new_orders/components/lib/printLabelPdf.ts":
-    "termal yorliq / PDF — oq qog'oz, ilova mavzusidan tashqari",
-  "src/pages/mails/detail/lib/printMode.ts": "brauzer chop etish HTML'i — oq qog'oz",
+  "src/features/print-receipts/lib/printReceiptHtml.ts":
+    "chek / yorliq brauzer chop etish HTML'i — oq qog'ozda qora (#000 / #fff), ilova mavzusidan tashqari",
   "src/pages/mails/components/lib/exportOldMailsToExcel.ts": "Excel katak ranglari (ARGB)",
   "src/pages/payments/components/lib/exportMainCashboxReport.ts": "Excel katak ranglari (ARGB)",
 });
