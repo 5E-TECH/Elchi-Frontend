@@ -319,12 +319,12 @@
         "src/entities/order/ui/FulfillmentSourceTag.tsx"
       ],
       "views": {
-        "superadmin": ["orders-list", "orders-list-cancelled", "orders-list-refreshing", "orders-list-refresh-error", "orders-filters-mobile", "orders-list-skip-link"],
+        "superadmin": ["orders-list", "orders-list-cancelled", "orders-list-refreshing", "orders-list-refresh-error", "orders-filters-mobile", "orders-list-skip-link", "orders-list-special-categories"],
         "admin": ["orders-list", "orders-filters-mobile"],
         "manager": ["orders-list-all", "orders-list-all-refreshing", "orders-list-all-refresh-error", "orders-list-pending", "orders-list-cancelled", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
         "registrator": ["orders-list", "orders-filters-mobile"],
         "market": ["orders-list"],
-        "courier": ["orders-pending", "orders-pending-refreshing", "orders-pending-refresh-error", "orders-tab-switcher-open", "orders-all", "orders-cancelled", "orders-sell-dialog", "orders-sell-extra-cost-dialog", "orders-sell-partial-dialog", "orders-action-approval-pending", "orders-cancel-dialog", "orders-rollback-confirm"],
+        "courier": ["orders-pending", "orders-pending-refreshing", "orders-pending-refresh-error", "orders-tab-switcher-open", "orders-all", "orders-cancelled", "orders-sell-dialog", "orders-sell-extra-cost-dialog", "orders-sell-partial-dialog", "orders-action-approval-pending", "orders-cancel-dialog", "orders-rollback-confirm", "orders-pending-special-categories"],
         "logist": ["orders-list"],
         "tizim": ["states-data"]
       },
@@ -366,13 +366,14 @@
         "src/features/order-return/ui/MarkReturnedModal.tsx"
       ],
       "views": {
-        "superadmin": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-order-dialog", "orders-detail-edit-customer-dialog", "orders-detail-edit-address-dialog"],
+        "superadmin": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-order-dialog", "orders-detail-edit-customer-dialog", "orders-detail-edit-address-dialog", "orders-detail-special-categories", "orders-detail-special-categories-dialog", "orders-detail-special-categories-locked"],
         "admin": ["orders-detail", "orders-edit-order-dialog", "orders-edit-customer-dialog", "orders-edit-address-dialog"],
         "manager": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-address-dialog", "orders-detail-edit-products-dialog", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
         "registrator": ["orders-detail", "orders-detail-edit-order-dialog", "orders-detail-edit-address-dialog"],
-        "market": ["orders-detail", "orders-detail-cancelled"],
-        "courier": ["orders-detail"],
-        "logist": ["orders-detail"]
+        "market": ["orders-detail", "orders-detail-cancelled", "orders-detail-special-categories"],
+        "courier": ["orders-detail", "orders-detail-special-categories"],
+        "logist": ["orders-detail"],
+        "tizim": ["category-labels"]
       },
       "roleNotes": {
         "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — tahrirlash, «To'lov» kartasi, amallar yo'q; «Kuzatuv» (GET /orders/:id/tracking) birinchi, «Hozir qayerda» qatori. GET /orders/:id (assertCanViewOrder) va /tracking (@Roles) logistga hozir 403 — backend kerak.",
@@ -429,7 +430,7 @@
         "src/pages/orders/create/model/useOrderSource.ts"
       ],
       "views": {
-        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog", "neworders-create-ai-input-images", "neworders-create-manual-source"],
+        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog", "neworders-create-ai-input-images", "neworders-create-manual-source", "neworders-create-manual-step2-special-categories", "neworders-create-ai-preview-special-categories"],
         "admin": ["neworders-create-manual", "neworders-create-market-picker", "neworders-create-ai", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
         "manager": ["new-orders-create-manual-step1", "new-orders-create-manual-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-manual-step2-customer-suggest", "new-orders-create-manual-step2-existing-customer", "new-orders-create-manual-step2-customer-update-dialog"],
         "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-step2-customer-suggest", "new-orders-create-step2-existing-customer", "new-orders-create-step2-customer-update-dialog"],
@@ -553,12 +554,12 @@
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "faqat o'z marketi" },
       "views": {
-        "superadmin": ["neworders-market-orders", "neworders-market-orders-camera", "neworders-receive-confirm-dialog"],
+        "superadmin": ["neworders-market-orders", "neworders-market-orders-camera", "neworders-receive-confirm-dialog", "neworders-market-orders-special-print-menu", "neworders-market-orders-special-print-dialog"],
         "admin": ["neworders-market-detail", "neworders-market-detail-camera", "neworders-market-confirm-dialog"],
         "manager": ["new-orders-market-detail", "new-orders-market-detail-camera", "new-orders-receive-confirm-dialog", "new-orders-delete-confirm-dialog"],
         "registrator": ["new-orders-market-detail", "new-orders-market-detail-camera", "new-orders-market-detail-receive-dialog", "new-orders-market-detail-delete-dialog"],
         "market": ["new-orders-list", "new-orders-delete-dialog"],
-        "tizim": ["scanner"]
+        "tizim": ["scanner", "category-labels"]
       },
       "note": "NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan)."
     },
@@ -712,13 +713,13 @@
         "src/shared/components/PrintModeSelect.tsx"
       ],
       "views": {
-        "superadmin": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
+        "superadmin": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old", "mails-detail-special-categories"],
         "admin": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-send-branch-dialog", "mails-refused-detail", "mails-old-detail"],
         "manager": ["mails-detail-receive", "mails-detail-receive-duplicates", "mails-detail-receive-search", "mails-detail-receive-search-empty", "mails-detail-receive-camera", "mails-detail-refused-receive", "mails-detail-old"],
         "registrator": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
-        "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu"],
+        "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu", "mails-detail-print-menu-special", "mails-detail-print-menu-special-disabled"],
         "logist": ["mails-detail"],
-        "tizim": ["scanner"]
+        "tizim": ["scanner", "category-labels"]
       },
       "roleNotes": {
         "logist": "Logist (kodda yo'q): faqat ko'rish — skaner, jo'natish, o'chirish, summa yo'q. GET /post/:id va /post/orders/:id logistga 403 — backend kerak."
@@ -896,7 +897,7 @@
         "admin": ["scan-result"],
         "manager": ["scan-result"],
         "registrator": ["scan-result"],
-        "courier": ["scan-order-detail", "scan-package-detail", "scan-post-detail", "scan-not-found", "scan-other-courier"],
+        "courier": ["scan-order-detail", "scan-package-detail", "scan-post-detail", "scan-not-found", "scan-other-courier", "scan-order-detail-special-categories"],
         "tizim": ["scanner"]
       },
       "roleNotes": {
@@ -1927,7 +1928,22 @@
     "superadmin-ai-assistant": "Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q.",
     "superadmin-ai-assistant-access-dialog": "Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q.",
     "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
-    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish."
+    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish.",
+    "superadmin-neworders-create-manual-step2-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialCategoryPicker (entities/order/ui, 7 ta .el-chip — Pressable aria-pressed, role=group «Maxsus belgilar (ixtiyoriy)») Step2Combined.tsx da «Izoh» tepasida; xulosada «Maxsus belgilar» qatori; payload special_categories faqat bo'sh bo'lmasa (orderCreateForm.ts). Market va market operatori — joylashuv bir xil (market-new-orders-create-manual), admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday.",
+    "superadmin-neworders-create-ai-preview-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: AiPreviewCard.tsx — har kartada picker («Izoh» tepasida), aiDraft.ts + buildAiConfirmPayload (AiConfirmOrderDto.special_categories). «AI taklifi» holati — BE-2 (ixtiyoriy).",
+    "superadmin-orders-detail-special-categories-dialog": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: features/order-special-categories — SpecialCategoriesDialog (Dialog + picker + «Saqlash»), useUpdateSpecialCategories → PUT /orders/:id/special-categories; saqlangach notify.success + amal «Maxsus yorliqni chop etish»; 403 / tarmoq — notify.error, oyna saqlanadi.",
+    "superadmin-orders-detail-special-categories-locked": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: 409 SPECIAL_CATEGORIES_LOCKED «Bu holatda maxsus belgini o'zgartirib bo'lmaydi» — tafsilot qayta yuklanadi, chiplar o'chiq, faqat «Yopish»; qulf qoidasi — canEditSpecialCategories (entities/order/model/specialCategories.ts).",
+    "courier-orders-pending-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialCategoryTags (2 ta + «+N», to'liqi aria-label da) kuryer ro'yxatlarida (orders/list/courier/list/ordertable/*) — holat ustunida va telefon kartasida; kuryer belgini o'zgartirmaydi.",
+    "courier-scan-order-detail-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: scan/detail.tsx (ScanOrderResult) — holat qatorida SpecialCategoryTags (ORDER_SCAN_LIGHT_SELECT / ORDER_FIELDS da special_categories); xodim skanida ham shunday.",
+    "superadmin-orders-list-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: OrdersTable.tsx statusBadges — SpecialCategoryTags (Badge neutral + 14 px ikonka + nom), telefon kartasida alohida qator. Filtr YO'Q (TZ: GET /orders da param yo'q). admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday, market ham.",
+    "superadmin-orders-detail-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: DetailHeader.tsx — «Maxsus belgilar:» qatori + «O'zgartirish» (canCreateOrders && canEditSpecialCategories — faol; faqat canCreateOrders — o'chiq, «Bu holatda o'zgartirib bo'lmaydi»); «Maxsus yorliq chop etish» (Printer); tarix — actionLabelMap/describeTrackingEvent «Maxsus belgilar: …». admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday.",
+    "market-orders-detail-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: market — faqat «Yaratilgan»/«Yangi» da o'zgartiradi; «Yo'lda» da tugma o'chiq + izoh; «Maxsus yorliq chop etish» bor. Market operatori — o'z marketi, Yaratilgan/Yangi; chop etish yo'q.",
+    "courier-orders-detail-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: kuryer — belgilar ko'rinadi, «O'zgartirish» yo'q (PUT → 403), «Maxsus yorliq chop etish» bor; telefonda belgilar To'lov kartasidagi holat qatorida.",
+    "superadmin-mails-detail-special-categories": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: mails/detail/ui/OrdersTable.tsx — holat ustunida SpecialCategoryTags; PostOrder.special_categories (entities/mails), toApiOrder ko'chiradi. Barcha pochta rejimlarida (qabul, rad etilgan, tarix) — shunday.",
+    "superadmin-neworders-market-orders-special-print-menu": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: MarketOrdersTable.tsx — Yetkazish ustunida belgilar; SelectionBar.tsx menyusida «Faqat maxsus yorliqlar» (categories_only, belgisiz tanlovda PrintModeSelect option.disabled + izoh); chekdan keyin maxsus yorliqlar avtomatik.",
+    "superadmin-neworders-market-orders-special-print-dialog": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialLabelPrintDialog (Dialog) — «N ta buyurtma · M ta yorliq», belgilar chiplari (hammasi tanlangan), nusxa SegmentedControl 1·2·3, usul «Brauzer · PDF 100×60», «Chop etish»; tafsilotdagi «Maxsus yorliq chop etish» ham shu oynani ochadi (1 ta buyurtma).",
+    "courier-mails-detail-print-menu-special": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: ui/printOptions.tsx — «Faqat maxsus yorliqlar» (mails.json printOptions.categoriesOnly), oyna ochadi; buyurtma cheklari (brauzer · PDF 100×60 · A4) ichida maxsus yorliqlar avtomatik.",
+    "courier-mails-detail-print-menu-special-disabled": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: tanlovda maxsus belgi yo'q — band aria-disabled + izoh «Tanlanganlarda maxsus belgi yo'q» (PrintModeSelect option.disabled)."
   },
   "partialViews": {
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
@@ -2449,6 +2465,7 @@
     "shift-report-messages": {"defines": "Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali.", "code": "taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed)"},
     "scan-feedback": {"defines": "Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari.", "code": "src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin)"},
     "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/features/print-receipts (HJ5sLHiz: buyurtma cheki termal 100×60 va A4, paket / pochta cheki termal va A5, lokal QR); kirish nuqtalari — src/pages/new_orders/components/new_orderDetail.tsx, src/pages/mails/detail/lib/printMode.ts, src/pages/mails/components/oldMails.tsx, src/pages/batches/ui/BatchDetailPage.tsx"},
-    "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx)"}
+    "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx)"},
+    "category-labels": {"defines": "Maxsus yorliq (kategoriya belgisi): 7 ta belgi — Sinadigan, Diniy kitob, Suyuqlik, Tez buziladigan, Elektronika (batareyali), Og'ir yuk, Hujjat (kanonik tartib); termal 100×60, faqat qora, katta ikonka, o'zbekcha + ruscha matn (ilova tilidan qat'i nazar), pastda «№EL-… · 1/2», QR yo'q; ko'rinish — chapda qora plitada ikonka (ega tanlovi, 2026-10-29); A4 (12 ta) da buyurtma katagidan keyingi kataklar; chop etish tartibi (chek → uning maxsus yorliqlari → keyingi buyurtma); «Faqat maxsus yorliqlar» va nusxa soni.", "code": "src/entities/order/model/specialCategories.ts (yangi), src/features/print-receipts (kategoriya yorlig'i — yangi; printOrderReceipts ketma-ketligi), src/features/order-special-categories (SpecialLabelPrintDialog — yangi), design/icon-registry.json «Maxsus belgilar»"}
   }
 }

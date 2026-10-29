@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **40** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **711 ta maket** (439 sahifa, 254 oyna, 18 tizim taxtasi; 605 ta fragment fayli) · kodda yo'q: **55** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -54,10 +54,10 @@
 | `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | v2 |
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 19 | v2 |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | v2 |
-| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
-| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 23 | v2 |
+| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
+| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 29 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 4 | v2 |
-| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 41 | v2 |
+| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
@@ -65,7 +65,7 @@
 | `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
 | `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | v2 |
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 18 | v2 |
-| `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 17 | v2 |
+| `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 20 | v2 |
 | `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
 | `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 0 | v2 |
 | `/mails` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 0 | v2 |
@@ -73,14 +73,14 @@
 | `/mails/return` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 4 | v2 |
 | `/mails/refused` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 5 | v2 |
 | `/mails/old` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
-| `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 38 | v2 |
+| `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 42 | v2 |
 | `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 10 | v2 |
 | `/batches/:id` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
 | `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 3 | v2 |
 | `/dispatch` | Biriktirish va tezkor amal | `src/pages/dispatch/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID) | 8 | v2 |
 | `/courier-bulk` | Biriktirish va tezkor amal | `src/pages/courier-bulk/index.tsx` | manager (REGIONAL · HYBRID), courier | 7 | v2 |
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
-| `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 10 | v2 |
+| `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 11 | v2 |
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
@@ -306,6 +306,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | superadmin | `superadmin-orders-list-refresh-error` — Buyurtmalar ro'yxati — yangilanmadi | [design/fragments/superadmin--orders-list-refresh-error.html](fragments/superadmin--orders-list-refresh-error.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | superadmin | `superadmin-orders-list-skip-link` — Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda<br>↳ `src/widgets/layout/ui/SkipLink.tsx` | [design/fragments/superadmin--orders-list-skip-link.html](fragments/superadmin--orders-list-skip-link.html) | sahifa | v2 |
+| `/orders` | superadmin | `superadmin-orders-list-special-categories` — Buyurtmalar ro'yxati — maxsus belgilar (2 + «+N») | [design/fragments/superadmin--orders-list-special-categories.html](fragments/superadmin--orders-list-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | admin | `admin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/admin--orders-list.html](fragments/admin--orders-list.html) | sahifa | qisman |
 | `/orders` | admin | `admin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | manager | `manager-orders-list-all` — Buyurtmalar — Hamma buyurtmalar | [design/fragments/manager--orders-list-all.html](fragments/manager--orders-list-all.html) | sahifa | v2 |
@@ -332,6 +333,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | courier | `courier-orders-action-approval-pending` — Market tasdig'i kutilmoqda<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-action-approval-pending.html](fragments/courier--orders-action-approval-pending.html) | oyna | v2 |
 | `/orders` | courier | `courier-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/courier--orders-cancel-dialog.html](fragments/courier--orders-cancel-dialog.html) | oyna | v2 |
 | `/orders` | courier | `courier-orders-rollback-confirm` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/courier--orders-rollback-confirm.html](fragments/courier--orders-rollback-confirm.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-pending-special-categories` — Buyurtmalar — Kutilayotganlar, maxsus belgilar | [design/fragments/courier--orders-pending-special-categories.html](fragments/courier--orders-pending-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | logist | `logist-orders-list` — Buyurtmalar — faqat ko'rish | [design/fragments/logist--orders-list.html](fragments/logist--orders-list.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
@@ -351,6 +353,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-order-dialog.html](fragments/superadmin--orders-detail-edit-order-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-customer-dialog` — Mijoz ma'lumotini tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-customer-dialog.html](fragments/superadmin--orders-detail-edit-customer-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-address-dialog` — Manzilni tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-address-dialog.html](fragments/superadmin--orders-detail-edit-address-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-special-categories` — Buyurtma tafsilotlari — maxsus belgilar, «O'zgartirish», tarix | [design/fragments/superadmin--orders-detail-special-categories.html](fragments/superadmin--orders-detail-special-categories.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-special-categories-dialog` — Buyurtma tafsilotlari — «Maxsus belgilar» oynasi | [design/fragments/superadmin--orders-detail-special-categories-dialog.html](fragments/superadmin--orders-detail-special-categories-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-special-categories-locked` — «Maxsus belgilar» oynasi — holat qulflandi (409) | [design/fragments/superadmin--orders-detail-special-categories-locked.html](fragments/superadmin--orders-detail-special-categories-locked.html) | oyna | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | admin | `admin-orders-detail` — Buyurtma tafsiloti | [design/fragments/admin--orders-detail.html](fragments/admin--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | admin | `admin-orders-edit-order-dialog` — Buyurtmani tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/admin--orders-edit-order-dialog.html](fragments/admin--orders-edit-order-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | admin | `admin-orders-edit-customer-dialog` — Mijozni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | [design/fragments/admin--orders-edit-customer-dialog.html](fragments/admin--orders-edit-customer-dialog.html) | oyna | v2 |
@@ -367,9 +372,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail-cancelled` — Buyurtma tafsilotlari — bekor, «Qaytarish yo'li» (taklif) | [design/fragments/market--orders-detail-cancelled.html](fragments/market--orders-detail-cancelled.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | market | `market-orders-detail-special-categories` — Buyurtma tafsilotlari — maxsus belgilar (o'zgartirib bo'lmaydi) | [design/fragments/market--orders-detail-special-categories.html](fragments/market--orders-detail-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | market_operator | — Maket yo'q — eng yaqini: market-orders-detail. Kodda (MO-3): market ko'rinishi (getOrderDetailAccess → layout market), faqat o'qish — tahrirlash, sotish / bekor, qaytarish va topshirish yo'q; «Buyurtma ma'lumotlari» da faqat market tarifi (backend proyeksiyasi market bilan bir xil). «Kuzatuv» va «Qaytarish yo'li» yo'q — GET orders/:id/tracking @Roles da MARKET_OPERATOR yo'q (403); bekor QR sahifasi — faqat market egasi. | — | — | v2 |
 | `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | courier | `courier-orders-detail-special-categories` — Buyurtma tafsilotlari — maxsus belgilar (faqat ko'rish) | [design/fragments/courier--orders-detail-special-categories.html](fragments/courier--orders-detail-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | logist | `logist-orders-detail` — Buyurtma tafsiloti va kuzatuv — faqat ko'rish | [design/fragments/logist--orders-detail.html](fragments/logist--orders-detail.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | tizim taxtasi | `tizim-category-labels` — Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | [design/fragments/tizim--category-labels.html](fragments/tizim--category-labels.html) | taxta | qoida |
 
 ### Qabul va yaratish
 
@@ -413,6 +421,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-customer-update-dialog` — Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html](fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-input-images` — Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | [design/fragments/superadmin--neworders-create-ai-input-images.html](fragments/superadmin--neworders-create-ai-input-images.html) | sahifa | yangi (kodda yo'q) |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-source` — Buyurtma yaratish — manba: viloyat ombori yoki HQ | [design/fragments/superadmin--neworders-create-manual-source.html](fragments/superadmin--neworders-create-manual-source.html) | sahifa | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-special-categories` — Buyurtma yaratish — 2-qadam: maxsus belgilar (Izoh tepasida) | [design/fragments/superadmin--neworders-create-manual-step2-special-categories.html](fragments/superadmin--neworders-create-manual-step2-special-categories.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-preview-special-categories` — Buyurtma yaratish — AI natijalari: har kartada maxsus belgilar | [design/fragments/superadmin--neworders-create-ai-preview-special-categories.html](fragments/superadmin--neworders-create-ai-preview-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/new-orders/create` | admin | `admin-neworders-create-manual` — Buyurtma yaratish — Qo'lda | [design/fragments/admin--neworders-create-manual.html](fragments/admin--neworders-create-manual.html) | sahifa | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-market-picker` — Market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/admin--neworders-create-market-picker.html](fragments/admin--neworders-create-market-picker.html) | oyna | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/admin--neworders-create-ai.html](fragments/admin--neworders-create-ai.html) | sahifa | v2 |
@@ -594,6 +604,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders` — Market yangi buyurtmalari (qabul) | [design/fragments/superadmin--neworders-market-orders.html](fragments/superadmin--neworders-market-orders.html) | sahifa | v2 |
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-camera` — Market yangi buyurtmalari (qabul) — kamera | [design/fragments/superadmin--neworders-market-orders-camera.html](fragments/superadmin--neworders-market-orders-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-receive-confirm-dialog` — Qo'lda qabul qilish (tasdiq)<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/superadmin--neworders-receive-confirm-dialog.html](fragments/superadmin--neworders-receive-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-special-print-menu` — Market yangi buyurtmalari — «Faqat maxsus yorliqlar» menyusi | [design/fragments/superadmin--neworders-market-orders-special-print-menu.html](fragments/superadmin--neworders-market-orders-special-print-menu.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-special-print-dialog` — «Maxsus yorliq chop etish» oynasi | [design/fragments/superadmin--neworders-market-orders-special-print-dialog.html](fragments/superadmin--neworders-market-orders-special-print-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-detail` — Market yangi buyurtmalari | [design/fragments/admin--neworders-market-detail.html](fragments/admin--neworders-market-detail.html) | sahifa | v2 |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-detail-camera` — Market yangi buyurtmalari — kamera | [design/fragments/admin--neworders-market-detail-camera.html](fragments/admin--neworders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-confirm-dialog` — Qabul tasdig'i / buyurtmani o'chirish<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/admin--neworders-market-confirm-dialog.html](fragments/admin--neworders-market-confirm-dialog.html) | oyna | v2 |
@@ -608,6 +620,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/:marketId` | market | `market-new-orders-list` — Yangi buyurtmalar | [design/fragments/market--new-orders-list.html](fragments/market--new-orders-list.html) | sahifa | v2 |
 | `/new-orders/:marketId` | market | `market-new-orders-delete-dialog` — Buyurtmani o'chirish<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/market--new-orders-delete-dialog.html](fragments/market--new-orders-delete-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
+| `/new-orders/:marketId` | tizim taxtasi | `tizim-category-labels` — Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | [design/fragments/tizim--category-labels.html](fragments/tizim--category-labels.html) | taxta | qoida |
 
 #### `/new-orders/:marketId/edit/:orderId` — Yangi buyurtmani tahrirlash (qabuldan oldin)
 
@@ -739,6 +752,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/:id` | superadmin | `superadmin-mails-detail-send-dialog` — Pochtani filialga jo'natish (modal)<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/superadmin--mails-detail-send-dialog.html](fragments/superadmin--mails-detail-send-dialog.html) | oyna | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-refused` — Rad etilgan pochta tafsiloti (qabul) | [design/fragments/superadmin--mails-detail-refused.html](fragments/superadmin--mails-detail-refused.html) | sahifa | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-old` — Eski pochta tafsiloti (faqat o'qish) | [design/fragments/superadmin--mails-detail-old.html](fragments/superadmin--mails-detail-old.html) | sahifa | v2 |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-special-categories` — Pochta tafsiloti (jo'natish) — maxsus belgilar | [design/fragments/superadmin--mails-detail-special-categories.html](fragments/superadmin--mails-detail-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | admin | `admin-mails-detail` — Pochta tafsiloti | [design/fragments/admin--mails-detail.html](fragments/admin--mails-detail.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-detail-duplicates` — Pochta tafsiloti — takroriy telefonlar<br>↳ `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-detail-search` — Pochta tafsiloti — qidiruv<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | v2 |
@@ -767,8 +781,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/:id` | courier | `courier-mails-detail-refused` — Pochta tafsiloti — rad etilgan (faqat o'qish) | [design/fragments/courier--mails-detail-refused.html](fragments/courier--mails-detail-refused.html) | sahifa | v2 |
 | `/mails/:id` | courier | `courier-mails-detail-old` — Pochta tafsiloti — eski (tarix) | [design/fragments/courier--mails-detail-old.html](fragments/courier--mails-detail-old.html) | sahifa | v2 |
 | `/mails/:id` | courier | `courier-mails-detail-print-menu` — Chop etish menyusi<br>↳ `src/shared/components/PrintModeSelect.tsx` | [design/fragments/courier--mails-detail-print-menu.html](fragments/courier--mails-detail-print-menu.html) | oyna | v2 |
+| `/mails/:id` | courier | `courier-mails-detail-print-menu-special` — Chop etish menyusi — «Faqat maxsus yorliqlar» | [design/fragments/courier--mails-detail-print-menu-special.html](fragments/courier--mails-detail-print-menu-special.html) | oyna | yangi (kodda yo'q) |
+| `/mails/:id` | courier | `courier-mails-detail-print-menu-special-disabled` — Chop etish menyusi — «Faqat maxsus yorliqlar» o'chiq (belgisiz tanlov) | [design/fragments/courier--mails-detail-print-menu-special-disabled.html](fragments/courier--mails-detail-print-menu-special-disabled.html) | oyna | yangi (kodda yo'q) |
 | `/mails/:id` | logist | `logist-mails-detail` — Pochta tafsiloti — faqat ko'rish | [design/fragments/logist--mails-detail.html](fragments/logist--mails-detail.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
+| `/mails/:id` | tizim taxtasi | `tizim-category-labels` — Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | [design/fragments/tizim--category-labels.html](fragments/tizim--category-labels.html) | taxta | qoida |
 
 ### Paketlar va qaytarishlar
 
@@ -927,6 +944,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/scan/:token` | courier | `courier-scan-post-detail` — Skanerlangan pochta<br>↳ `src/pages/scan/ui/ScanPostDetail.tsx` | [design/fragments/courier--scan-post-detail.html](fragments/courier--scan-post-detail.html) | sahifa | v2 |
 | `/scan/:token` | courier | `courier-scan-not-found` — Skaner — topilmadi | [design/fragments/courier--scan-not-found.html](fragments/courier--scan-not-found.html) | sahifa | v2 |
 | `/scan/:token` | courier | `courier-scan-other-courier` — Skaner — boshqa kuryerga biriktirilgan | [design/fragments/courier--scan-other-courier.html](fragments/courier--scan-other-courier.html) | sahifa | qisman |
+| `/scan/:token` | courier | `courier-scan-order-detail-special-categories` — Skanerlangan buyurtma — maxsus belgilar | [design/fragments/courier--scan-order-detail-special-categories.html](fragments/courier--scan-order-detail-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/scan/:token` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/scan/:token` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/scan/:token` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
@@ -2036,7 +2054,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 227 · kodda yo'q: 15
+251 ta maket · kodda bor: 227 · kodda yo'q: 24
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2282,6 +2300,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `superadmin-neworders-create-manual-step2-special-categories` | Buyurtma yaratish — 2-qadam: maxsus belgilar (Izoh tepasida) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialCategoryPicker (entities/order/ui, 7 ta .el-chip — Pressable aria-pressed, role=group «Maxsus belgilar (ixtiyoriy)») Step2Combined.tsx da «Izoh» tepasida; xulosada «Maxsus belgilar» qatori; payload special_categories faqat bo'sh bo'lmasa (orderCreateForm.ts). Market va market operatori — joylashuv bir xil (market-new-orders-create-manual), admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday. |
+| `superadmin-neworders-create-ai-preview-special-categories` | Buyurtma yaratish — AI natijalari: har kartada maxsus belgilar | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: AiPreviewCard.tsx — har kartada picker («Izoh» tepasida), aiDraft.ts + buildAiConfirmPayload (AiConfirmOrderDto.special_categories). «AI taklifi» holati — BE-2 (ixtiyoriy). |
+| `superadmin-orders-detail-special-categories-dialog` | Buyurtma tafsilotlari — «Maxsus belgilar» oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: features/order-special-categories — SpecialCategoriesDialog (Dialog + picker + «Saqlash»), useUpdateSpecialCategories → PUT /orders/:id/special-categories; saqlangach notify.success + amal «Maxsus yorliqni chop etish»; 403 / tarmoq — notify.error, oyna saqlanadi. |
+| `superadmin-orders-detail-special-categories-locked` | «Maxsus belgilar» oynasi — holat qulflandi (409) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: 409 SPECIAL_CATEGORIES_LOCKED «Bu holatda maxsus belgini o'zgartirib bo'lmaydi» — tafsilot qayta yuklanadi, chiplar o'chiq, faqat «Yopish»; qulf qoidasi — canEditSpecialCategories (entities/order/model/specialCategories.ts). |
+| `superadmin-orders-list-special-categories` | Buyurtmalar ro'yxati — maxsus belgilar (2 + «+N») | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: OrdersTable.tsx statusBadges — SpecialCategoryTags (Badge neutral + 14 px ikonka + nom), telefon kartasida alohida qator. Filtr YO'Q (TZ: GET /orders da param yo'q). admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday, market ham. |
+| `superadmin-orders-detail-special-categories` | Buyurtma tafsilotlari — maxsus belgilar, «O'zgartirish», tarix | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: DetailHeader.tsx — «Maxsus belgilar:» qatori + «O'zgartirish» (canCreateOrders && canEditSpecialCategories — faol; faqat canCreateOrders — o'chiq, «Bu holatda o'zgartirib bo'lmaydi»); «Maxsus yorliq chop etish» (Printer); tarix — actionLabelMap/describeTrackingEvent «Maxsus belgilar: …». admin, ro'yxatchi va menejer (HQ · PICKUP · HYBRID) — xuddi shunday. |
+| `superadmin-mails-detail-special-categories` | Pochta tafsiloti (jo'natish) — maxsus belgilar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: mails/detail/ui/OrdersTable.tsx — holat ustunida SpecialCategoryTags; PostOrder.special_categories (entities/mails), toApiOrder ko'chiradi. Barcha pochta rejimlarida (qabul, rad etilgan, tarix) — shunday. |
+| `superadmin-neworders-market-orders-special-print-menu` | Market yangi buyurtmalari — «Faqat maxsus yorliqlar» menyusi | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: MarketOrdersTable.tsx — Yetkazish ustunida belgilar; SelectionBar.tsx menyusida «Faqat maxsus yorliqlar» (categories_only, belgisiz tanlovda PrintModeSelect option.disabled + izoh); chekdan keyin maxsus yorliqlar avtomatik. |
+| `superadmin-neworders-market-orders-special-print-dialog` | «Maxsus yorliq chop etish» oynasi | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialLabelPrintDialog (Dialog) — «N ta buyurtma · M ta yorliq», belgilar chiplari (hammasi tanlangan), nusxa SegmentedControl 1·2·3, usul «Brauzer · PDF 100×60», «Chop etish»; tafsilotdagi «Maxsus yorliq chop etish» ham shu oynani ochadi (1 ta buyurtma). |
 
 ### admin — Admin
 
@@ -2605,7 +2632,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-36 ta maket · kodda bor: 31 · kodda yo'q: 5
+37 ta maket · kodda bor: 31 · kodda yo'q: 6
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2645,6 +2672,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-products-warehouse-stock` | Mahsulotlar — omborlardagi qoldiq | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
+| `market-orders-detail-special-categories` | Buyurtma tafsilotlari — maxsus belgilar (o'zgartirib bo'lmaydi) | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: market — faqat «Yaratilgan»/«Yangi» da o'zgartiradi; «Yo'lda» da tugma o'chiq + izoh; «Maxsus yorliq chop etish» bor. Market operatori — o'z marketi, Yaratilgan/Yangi; chop etish yo'q. |
 
 ### market_operator — Market operatori
 
@@ -2660,7 +2688,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-53 ta maket · kodda bor: 52 · kodda yo'q: 1
+58 ta maket · kodda bor: 52 · kodda yo'q: 6
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2717,6 +2745,11 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 | `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/features/pwa-install/ui/InstallAppCard.tsx` | v2 |
 | `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/features/pwa-install/ui/IosInstallDialog.tsx` | v2 |
+| `courier-orders-pending-special-categories` | Buyurtmalar — Kutilayotganlar, maxsus belgilar | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialCategoryTags (2 ta + «+N», to'liqi aria-label da) kuryer ro'yxatlarida (orders/list/courier/list/ordertable/*) — holat ustunida va telefon kartasida; kuryer belgini o'zgartirmaydi. |
+| `courier-scan-order-detail-special-categories` | Skanerlangan buyurtma — maxsus belgilar | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: scan/detail.tsx (ScanOrderResult) — holat qatorida SpecialCategoryTags (ORDER_SCAN_LIGHT_SELECT / ORDER_FIELDS da special_categories); xodim skanida ham shunday. |
+| `courier-orders-detail-special-categories` | Buyurtma tafsilotlari — maxsus belgilar (faqat ko'rish) | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: kuryer — belgilar ko'rinadi, «O'zgartirish» yo'q (PUT → 403), «Maxsus yorliq chop etish» bor; telefonda belgilar To'lov kartasidagi holat qatorida. |
+| `courier-mails-detail-print-menu-special` | Chop etish menyusi — «Faqat maxsus yorliqlar» | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: ui/printOptions.tsx — «Faqat maxsus yorliqlar» (mails.json printOptions.categoriesOnly), oyna ochadi; buyurtma cheklari (brauzer · PDF 100×60 · A4) ichida maxsus yorliqlar avtomatik. |
+| `courier-mails-detail-print-menu-special-disabled` | Chop etish menyusi — «Faqat maxsus yorliqlar» o'chiq (belgisiz tanlov) | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: tanlovda maxsus belgi yo'q — band aria-disabled + izoh «Tanlanganlarda maxsus belgi yo'q» (PrintModeSelect option.disabled). |
 
 ### logist — Logist
 
@@ -2805,6 +2838,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-scan-feedback` | Skaner natijasi — to'liq ekran rang effekti va ovozlar | Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari. | src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
 | `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/features/print-receipts (HJ5sLHiz: buyurtma cheki termal 100×60 va A4, paket / pochta cheki termal va A5, lokal QR); kirish nuqtalari — src/pages/new_orders/components/new_orderDetail.tsx, src/pages/mails/detail/lib/printMode.ts, src/pages/mails/components/oldMails.tsx, src/pages/batches/ui/BatchDetailPage.tsx | barcha sahifalar |
 | `tizim-product-labels` | Mahsulot stikeri — QR va shtrix kod (40×30, 58×40) | Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari. | src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx) | barcha sahifalar |
+| `tizim-category-labels` | Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | Maxsus yorliq (kategoriya belgisi): 7 ta belgi — Sinadigan, Diniy kitob, Suyuqlik, Tez buziladigan, Elektronika (batareyali), Og'ir yuk, Hujjat (kanonik tartib); termal 100×60, faqat qora, katta ikonka, o'zbekcha + ruscha matn (ilova tilidan qat'i nazar), pastda «№EL-… · 1/2», QR yo'q; ko'rinish — chapda qora plitada ikonka (ega tanlovi, 2026-10-29); A4 (12 ta) da buyurtma katagidan keyingi kataklar; chop etish tartibi (chek → uning maxsus yorliqlari → keyingi buyurtma); «Faqat maxsus yorliqlar» va nusxa soni. | src/entities/order/model/specialCategories.ts (yangi), src/features/print-receipts (kategoriya yorlig'i — yangi; printOrderReceipts ketma-ketligi), src/features/order-special-categories (SpecialLabelPrintDialog — yangi), design/icon-registry.json «Maxsus belgilar» | `/orders/edit/:orderId`, `/new-orders/:marketId`, `/mails/:id` |
 
 ## 6. Fayl → route
 
@@ -3414,7 +3448,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Band | Kalit | `to` | Route | Shart (filial turi) | superadmin maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `superadmin-dashboard-main` (+1) |
-| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+5) |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+6) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+2) |
@@ -3509,7 +3543,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Band | Kalit | `to` | Route | Shart (filial turi) | courier maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `courier-dashboard-home` (+1) |
-| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+11) |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+12) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
 | Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+3) |

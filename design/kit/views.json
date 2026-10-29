@@ -6259,6 +6259,150 @@
    "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
    "order": 201.6,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-manual-step2-special-categories",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: maxsus belgilar (Izoh tepasida)",
+   "fragment": "superadmin--neworders-create-manual-step2-special-categories",
+   "order": 28.4,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-ai-preview-special-categories",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI natijalari: har kartada maxsus belgilar",
+   "fragment": "superadmin--neworders-create-ai-preview-special-categories",
+   "order": 30.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-detail-special-categories-dialog",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — «Maxsus belgilar» oynasi",
+   "fragment": "superadmin--orders-detail-special-categories-dialog",
+   "order": 17.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-detail-special-categories-locked",
+   "menuKey": "orders",
+   "title": "«Maxsus belgilar» oynasi — holat qulflandi (409)",
+   "fragment": "superadmin--orders-detail-special-categories-locked",
+   "order": 17.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "orders-pending-special-categories",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Kutilayotganlar, maxsus belgilar",
+   "fragment": "courier--orders-pending-special-categories",
+   "order": 347.3,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "scan-order-detail-special-categories",
+   "menuKey": "scan",
+   "title": "Skanerlangan buyurtma — maxsus belgilar",
+   "fragment": "courier--scan-order-detail-special-categories",
+   "order": 376.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-list-special-categories",
+   "menuKey": "orders",
+   "title": "Buyurtmalar ro'yxati — maxsus belgilar (2 + «+N»)",
+   "fragment": "superadmin--orders-list-special-categories",
+   "order": 15.3,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-detail-special-categories",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — maxsus belgilar, «O'zgartirish», tarix",
+   "fragment": "superadmin--orders-detail-special-categories",
+   "order": 17.2,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "orders-detail-special-categories",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — maxsus belgilar (o'zgartirib bo'lmaydi)",
+   "fragment": "market--orders-detail-special-categories",
+   "order": 328.3,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "orders-detail-special-categories",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — maxsus belgilar (faqat ko'rish)",
+   "fragment": "courier--orders-detail-special-categories",
+   "order": 357.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "mails-detail-special-categories",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti (jo'natish) — maxsus belgilar",
+   "fragment": "superadmin--mails-detail-special-categories",
+   "order": 49.4,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-market-orders-special-print-menu",
+   "menuKey": "newOrders",
+   "title": "Market yangi buyurtmalari — «Faqat maxsus yorliqlar» menyusi",
+   "fragment": "superadmin--neworders-market-orders-special-print-menu",
+   "order": 22.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-market-orders-special-print-dialog",
+   "menuKey": "newOrders",
+   "title": "«Maxsus yorliq chop etish» oynasi",
+   "fragment": "superadmin--neworders-market-orders-special-print-dialog",
+   "order": 22.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "mails-detail-print-menu-special",
+   "menuKey": "mails",
+   "title": "Chop etish menyusi — «Faqat maxsus yorliqlar»",
+   "fragment": "courier--mails-detail-print-menu-special",
+   "order": 370.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "mails-detail-print-menu-special-disabled",
+   "menuKey": "mails",
+   "title": "Chop etish menyusi — «Faqat maxsus yorliqlar» o'chiq (belgisiz tanlov)",
+   "fragment": "courier--mails-detail-print-menu-special-disabled",
+   "order": 370.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "tizim",
+   "viewId": "category-labels",
+   "menuKey": "category-labels",
+   "title": "Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib)",
+   "fragment": "tizim--category-labels",
+   "order": 17.5,
+   "kind": "standalone"
   }
  ],
  "groupTitles": {
@@ -6276,7 +6420,8 @@
    "shift-report-messages": "Smena hisoboti xabarlari (Telegram, tizim)",
    "scan-feedback": "Skaner natijasi: rang effekti va ovoz",
    "receipts": "Chek va paket cheki",
-   "product-labels": "Mahsulot stikeri (QR, shtrix kod)"
+   "product-labels": "Mahsulot stikeri (QR, shtrix kod)",
+   "category-labels": "Maxsus yorliq (kategoriya belgisi)"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",
