@@ -50,19 +50,27 @@ test.describe("Buyurtma yaratish — taxminiy yetkazish narxi (6NYcXvGy), 1440px
       { weight_kg: 1.2, length_cm: 30, width_cm: 22, height_cm: 15, volumetric_enabled: true },
     ]);
 
-    // 2) Debounce: ketma-ket uchta o'zgarish (Termos ×3, Kitob) — bitta so'rov, har dona alohida element.
-    await thermos.click();
-    await thermos.click();
-    await catalog.getByRole("button", { name: /Kitob/ }).click();
+    // 2) Debounce: ketma-ket uchta o'zgarish (Termos ×3, Kitob) — bitta so'rov, har dona alohida element. Bosishlar bitta
+    // vazifada (sekin CI'da ham 400 ms kutish ichida).
+    const thermosEl = await thermos.elementHandle();
+    const bookEl = await catalog.getByRole("button", { name: /Kitob/ }).elementHandle();
+    await page.evaluate(
+      ([first, second]) => {
+        (first as HTMLElement).click();
+        (first as HTMLElement).click();
+        (second as HTMLElement).click();
+      },
+      [thermosEl, bookEl],
+    );
     // 3,6 + 0,5 = 4,1 kg; hajmli 5,94 + 0,168 = 6,108 → hisob 6,2 kg → 6 qo'shimcha kg → 35 000 + 24 000.
     await expect(estimate).toHaveText("≈ 59 000 so'm");
     expect(quoteRequests).toHaveLength(2);
     expect(quoteRequests[1].items).toHaveLength(4);
 
-    // 3) O'lchovsiz mahsulot — ogohlantirish, narx o'zgarmaydi va yangi so'rov ketmaydi.
+    // 3) O'lchovsiz mahsulot — nomi bilan izoh (maket), narx o'zgarmaydi va yangi so'rov ketmaydi.
     await catalog.getByRole("button", { name: /Eski mahsulot/ }).click();
-    await expect(price.getByTestId("delivery-unmeasured")).toHaveText(
-      "1 ta mahsulotda o'lchov yo'q — narx ularsiz hisoblandi",
+    await expect(price.getByRole("status")).toHaveText(
+      "«Eski mahsulot» o'lchovi kiritilmagan — vazni hisobga kirmadi",
     );
     await expect(estimate).toHaveText("≈ 59 000 so'm");
 
@@ -115,8 +123,11 @@ test.describe("Buyurtma yaratish — taxminiy yetkazish narxi (6NYcXvGy), 1440px
       .getByRole("list", { name: /katalogi$/ })
       .getByRole("button", { name: /Termos/ })
       .click();
-    await expect(price).toContainText("Hisoblab bo'lmadi");
-    await expect(price).toContainText("Buyurtma baribir yaratiladi — narx sotuvda hisoblanadi.");
+    // Maket «hisoblab bo'lmadi»: hozircha market standart narxi, sabab va «Qayta urinish».
+    await expect(price.getByTestId("delivery-estimate")).toHaveText("35 000 so'm");
+    await expect(price.getByRole("alert")).toHaveText(
+      "Vazn bo'yicha qo'shimchani hisoblab bo'lmadi — hozircha standart narx. Buyurtmani baribir yaratish mumkin.",
+    );
     // Forma ishlayveradi: summa va «Buyurtma yaratish» joyida, xato toast'i yo'q (blok o'zi aytadi).
     await expect(page.locator('input[name="details.total_price"]')).toHaveValue("45 000");
     await expect(summary.getByRole("button", { name: "Buyurtma yaratish" })).toBeVisible();

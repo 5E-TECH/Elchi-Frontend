@@ -16,17 +16,17 @@ const CASES = [
   {
     language: "uz",
     amount: "≈ 39 000 so'm",
-    warning: "1 ta mahsulotda o'lchov yo'q — narx ularsiz hisoblandi",
+    warning: "«Eski mahsulot» o'lchovi kiritilmagan — vazni hisobga kirmadi",
   },
   {
     language: "ru",
     amount: "≈ 39 000 сум",
-    warning: "У 1 товара нет габаритов — цена рассчитана без него",
+    warning: "«Eski mahsulot»: габариты не указаны — вес не учтён",
   },
   {
     language: "en",
     amount: "≈ 39,000 UZS",
-    warning: "1 product has no measurements — the price was calculated without it",
+    warning: "“Eski mahsulot”: no measurements — weight not counted",
   },
 ] as const;
 
@@ -48,7 +48,9 @@ test.describe("Buyurtma yaratish — taxminiy yetkazish narxi (6NYcXvGy), 390px"
       await page.getByRole("button", { name: /Eski mahsulot/ }).click();
       const estimate = page.getByTestId("delivery-estimate");
       await expect(estimate).toHaveText(amount);
-      await expect(page.getByTestId("delivery-unmeasured")).toHaveText(warning);
+      await expect(
+        estimate.locator("xpath=ancestor::*[@role='group'][1]").getByRole("status"),
+      ).toHaveText(warning);
 
       const block = estimate.locator("xpath=ancestor::*[@role='group'][1]");
       await block.scrollIntoViewIfNeeded();

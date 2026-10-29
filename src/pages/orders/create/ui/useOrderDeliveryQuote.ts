@@ -28,10 +28,12 @@ export type OrderDeliveryQuote = {
 /**
  * Taxminiy yetkazish narxi (6NYcXvGy): tanlangan mahsulotlar o'lchovidan `POST /delivery/quote/by-tariff` (~400 ms
  * kutib, `useDeliveryQuoteByTariff`), natija — tanlangan tur bo'yicha. Katalog — `Step2Combined` bilan bir xil so'rov
- * (keshdan). O'lchovli mahsulot yo'q yoki rol narxni ko'rmaydi — so'rov ketmaydi.
+ * (keshdan). O'lchovli mahsulot yo'q, rol narxni ko'rmaydi yoki `enabled` o'chiq (market standart narxi yo'q — qator
+ * chizilmaydi) — so'rov ketmaydi.
  */
 export const useOrderDeliveryQuote = (
   control: Control<OrderCreateFormValues>,
+  enabled = true,
 ): OrderDeliveryQuote => {
   const role = useSelector((state: RootState) => state.role.role);
   const visible = canSeeMarketTariffs(role);
@@ -39,6 +41,6 @@ export const useOrderDeliveryQuote = (
   const whereDeliver = useWatch({ control, name: "details.where_deliver" });
   const { findProduct } = useOrderCatalog(control);
   const input = useMemo(() => buildOrderQuoteInput(items, findProduct), [findProduct, items]);
-  const state = useDeliveryQuoteByTariff(input.items, { enabled: visible });
+  const state = useDeliveryQuoteByTariff(input.items, { enabled: visible && enabled });
   return { visible, input, state, quote: quoteForDeliveryType(state.quotes, whereDeliver) };
 };

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { DeliveryQuote } from "../../../../entities/delivery-pricing";
 import {
   buildOrderQuoteInput,
+  estimateTotal,
+  MAX_QUOTE_UNITS_PER_ITEM,
   quoteForDeliveryType,
   readCatalogMeasure,
 } from "./orderDeliveryQuote";
@@ -90,6 +92,9 @@ describe("buildOrderQuoteInput", () => {
     expect(input.items).toHaveLength(3);
     expect(input.items.filter((item) => item.weight_kg === 1.2)).toHaveLength(2);
     expect(input.items.filter((item) => item.volumetric_enabled === false)).toHaveLength(1);
+    // Maket: o'lchovsiz mahsulot nomi bilan aytiladi («Sovg'a qadog'i» katalogda yo'q — …).
+    expect(input.catalogLessNames).toEqual(["Katalogdan tashqari"]);
+    expect(input.unmeasuredNames).toEqual(["Eski mahsulot"]);
   });
 
   it("noto'g'ri yoki kasr son — kamida 1 dona, butun qismi", () => {
@@ -101,11 +106,22 @@ describe("buildOrderQuoteInput", () => {
     ).toHaveLength(2);
   });
 
+  it("cheksiz yoki juda katta son so'rovni osiltirmaydi — bir qatorda ko'pi bilan MAX_QUOTE_UNITS_PER_ITEM", () => {
+    expect(
+      buildOrderQuoteInput([{ product_id: "501", quantity: Infinity }], findProduct).items,
+    ).toHaveLength(1);
+    expect(
+      buildOrderQuoteInput([{ product_id: "501", quantity: 10_000 }], findProduct).items,
+    ).toHaveLength(MAX_QUOTE_UNITS_PER_ITEM);
+  });
+
   it("mahsulot yo'q — so'rov ham yo'q", () => {
     expect(buildOrderQuoteInput([], findProduct)).toEqual({
       items: [],
       measured: 0,
       unmeasured: 0,
+      catalogLessNames: [],
+      unmeasuredNames: [],
     });
   });
 });
@@ -125,5 +141,13 @@ describe("quoteForDeliveryType", () => {
   it("javob yo'q yoki bu turga faol tarif yo'q — `null`", () => {
     expect(quoteForDeliveryType(undefined, "address")).toBeNull();
     expect(quoteForDeliveryType({ ...quotes, address: null }, "address")).toBeNull();
+  });
+});
+
+describe("estimateTotal — maket: market standart narxi + vazn uchun qo'shimcha", () => {
+  it("server `total` (umumiy tarif asosi) emas — standart narx + `extra`", () => {
+    const address = { ...quote("address", 64_000), base: 60_000, extra: 4_000 };
+    expect(estimateTotal(35_000, address)).toBe(39_000);
+    expect(estimateTotal(35_000, { ...address, extra: 0 })).toBe(35_000);
   });
 });

@@ -11,20 +11,22 @@ import DeliveryPriceBlock from "./DeliveryPriceBlock";
 import type { OrderDeliveryQuote } from "./useOrderDeliveryQuote";
 
 /**
- * 6NYcXvGy — «Buyurtma xulosasi» → «Yetkazish narxi» (maket `*-create-manual-step2-existing-customer`): server
- * hisobidagi taxminiy narx, holatlar va o'lchovsiz mahsulot ogohlantirishi; o'lchovli mahsulot yo'q — CS-B standart narx.
+ * 6NYcXvGy — «Buyurtma xulosasi» → «Yetkazish narxi» (maket `market-new-orders-create-manual-existing-customer`
+ * holatlari): MARKET STANDART NARXI + vazn uchun qo'shimcha; standart doirasida, hisoblanmoqda, hisoblab bo'lmadi,
+ * katalogdan tashqari / o'lchovsiz mahsulot; o'lchovli mahsulot yo'q — CS-B standart narx.
  */
 
+/** Server hisobi: umumiy tarif asosi 60 000 — blok uni EMAS, market standartini (35 000) ko'rsatadi. */
 const QUOTE: DeliveryQuote = {
   tariffId: "address",
-  base: 35_000,
+  base: 60_000,
   perExtraKg: 4_000,
   actualKg: 1.8,
   volumetricKg: 2.4,
   billableKg: 2.4,
   extraKg: 2,
   extra: 8_000,
-  total: 43_000,
+  total: 68_000,
   basis: "volume",
   volumetricFromKg: 0,
   volumetricApplied: true,
@@ -40,9 +42,20 @@ const success = (overrides: Partial<DeliveryQuoteState> = {}): DeliveryQuoteStat
   ...overrides,
 });
 
+const input = (
+  overrides: Partial<OrderDeliveryQuote["input"]> = {},
+): OrderDeliveryQuote["input"] => ({
+  items: [],
+  measured: 2,
+  unmeasured: 0,
+  catalogLessNames: [],
+  unmeasuredNames: [],
+  ...overrides,
+});
+
 const estimate = (overrides: Partial<OrderDeliveryQuote> = {}): OrderDeliveryQuote => ({
   visible: true,
-  input: { items: [], measured: 2, unmeasured: 0 },
+  input: input(),
   state: success(),
   quote: QUOTE,
   ...overrides,
@@ -59,51 +72,34 @@ const renderBlock = (props: Partial<Parameters<typeof DeliveryPriceBlock>[0]> = 
   );
 
 const group = () => screen.getByRole("group", { name: "Yetkazish narxi" });
+const value = () => within(group()).getByTestId("delivery-estimate");
 
 afterEach(async () => {
   await i18n.changeLanguage("uz");
 });
 
-describe("DeliveryPriceBlock — taxminiy narx (6NYcXvGy)", () => {
-  it("«≈ 43 000 so'm», standart + vazn (qo'shimcha kg ajratilgan), hisob vazni, og'irlik va hajmli vazn, «Taxminiy»", () => {
+describe("DeliveryPriceBlock — maket holatlari (6NYcXvGy)", () => {
+  it("qo'shimcha bor: «≈ 43 000 so'm» = standart 35 000 + vazn uchun 8 000 (tarif asosi 60 000 emas)", () => {
     renderBlock();
-    const block = group();
-    expect(within(block).getByTestId("delivery-estimate")).toHaveTextContent("≈ 43 000 so'm");
-    expect(block).toHaveTextContent("Standart 35 000 + vazn uchun 8 000 so'm (2 kg × 4 000)");
-    expect(block).toHaveTextContent("Hisob vazni 2,4 kg · hajm bo'yicha");
-    expect(block).toHaveTextContent("Og'irligi 1,8 kg · hajmli vazni 2,4 kg");
-    expect(block).toHaveTextContent("Marketdan yechiladi · yakuniy narx sotuvda qotiriladi");
-    expect(within(block).getByText("Taxminiy")).toBeInTheDocument();
-    // Standart narx o'rnida — dvigatel narxi («Standart narx» qatori yo'q).
-    expect(within(block).queryByText("Standart narx")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("delivery-unmeasured")).not.toBeInTheDocument();
+    expect(value()).toHaveTextContent("≈ 43 000 so'm");
+    expect(group()).toHaveTextContent("Standart 35 000 + vazn uchun 8 000 so'm (2 kg × 4 000)");
+    expect(group()).toHaveTextContent("Hisob vazni 2,4 kg · hajm bo'yicha");
+    expect(group()).toHaveTextContent("Og'irligi 1,8 kg · hajmli vazni 2,4 kg");
+    expect(group()).toHaveTextContent("Marketdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    expect(within(group()).getByText("Taxminiy")).toBeInTheDocument();
+    expect(group()).not.toHaveTextContent("60 000");
   });
 
-  it("qo'shimcha vazn yo'q — «… vazn uchun qo'shimcha yo'q», og'irlik bo'yicha; market — «Sizdan yechiladi»", () => {
-    const light = {
-      ...QUOTE,
-      extraKg: 0,
-      extra: 0,
-      total: 35_000,
-      billableKg: 0.8,
-      basis: "weight" as const,
-    };
+  it("standart doirasida: «35 000 so'm» (≈ siz), «Standart narx · qo'shimcha yo'q», hisob vazni; «Taxminiy» yo'q", () => {
+    const light = { ...QUOTE, extraKg: 0, extra: 0, billableKg: 0.8, basis: "weight" as const };
     renderBlock({ isMarketRole: true, estimate: estimate({ quote: light }) });
-    expect(group()).toHaveTextContent("≈ 35 000 so'm");
-    expect(group()).toHaveTextContent("Standart 35 000 — vazn uchun qo'shimcha yo'q");
+    expect(value()).toHaveTextContent(/^35 000 so'm$/);
+    expect(group()).toHaveTextContent("Standart narx · qo'shimcha yo'q");
     expect(group()).toHaveTextContent("Hisob vazni 0,8 kg · og'irlik bo'yicha");
-    expect(group()).toHaveTextContent("Sizdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    expect(within(group()).queryByText("Taxminiy")).not.toBeInTheDocument();
   });
 
-  it("o'lchovsiz mahsulot ham bor — ko'rinadigan ogohlantirish, narx o'lchovlilardan", () => {
-    renderBlock({ estimate: estimate({ input: { items: [], measured: 2, unmeasured: 1 } }) });
-    expect(screen.getByTestId("delivery-unmeasured")).toHaveTextContent(
-      "1 ta mahsulotda o'lchov yo'q — narx ularsiz hisoblandi",
-    );
-    expect(screen.getByTestId("delivery-estimate")).toHaveTextContent("≈ 43 000 so'm");
-  });
-
-  it("birinchi javob kutilmoqda — skelet va aria-busy, «Taxminiy» hali yo'q", () => {
+  it("hisoblanmoqda: skelet va «Vazn va hajm hisoblanmoqda...» (role=status), aria-busy, narx hali yo'q", () => {
     renderBlock({
       estimate: estimate({
         state: { status: "loading", quotes: undefined, isUpdating: true, retry: vi.fn() },
@@ -111,17 +107,17 @@ describe("DeliveryPriceBlock — taxminiy narx (6NYcXvGy)", () => {
       }),
     });
     expect(group()).toHaveAttribute("aria-busy", "true");
-    expect(screen.queryByTestId("delivery-estimate")).not.toBeInTheDocument();
-    expect(screen.queryByText("Taxminiy")).not.toBeInTheDocument();
+    expect(within(group()).getByRole("status")).toHaveTextContent("Vazn va hajm hisoblanmoqda...");
+    expect(within(group()).queryByTestId("delivery-estimate")).not.toBeInTheDocument();
   });
 
-  it("yangisi hisoblanmoqda — oldingi narx turadi, xira (aria-busy)", () => {
+  it("yangisi hisoblanmoqda — oldingi narx turadi, aria-busy", () => {
     renderBlock({ estimate: estimate({ state: success({ isUpdating: true }) }) });
     expect(group()).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByTestId("delivery-estimate")).toHaveTextContent("≈ 43 000 so'm");
+    expect(value()).toHaveTextContent("≈ 43 000 so'm");
   });
 
-  it("API javob bermadi — «Hisoblab bo'lmadi», forma ishlaydi, «Qayta urinish» qayta so'raydi", async () => {
+  it("hisoblab bo'lmadi: hozircha standart narx, sabab (role=alert), «Qayta urinish» qayta so'raydi", async () => {
     const user = userEvent.setup();
     const retry = vi.fn();
     renderBlock({
@@ -130,54 +126,79 @@ describe("DeliveryPriceBlock — taxminiy narx (6NYcXvGy)", () => {
         quote: null,
       }),
     });
-    expect(group()).toHaveTextContent("Hisoblab bo'lmadi");
-    expect(group()).toHaveTextContent("Buyurtma baribir yaratiladi — narx sotuvda hisoblanadi.");
-    expect(screen.queryByTestId("delivery-estimate")).not.toBeInTheDocument();
+    expect(value()).toHaveTextContent(/^35 000 so'm$/);
+    expect(within(group()).getByRole("alert")).toHaveTextContent(
+      "Vazn bo'yicha qo'shimchani hisoblab bo'lmadi — hozircha standart narx. Buyurtmani baribir yaratish mumkin.",
+    );
     await user.click(within(group()).getByRole("button", { name: "Qayta urinish" }));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it("tanlangan turga faol tarif yo'q — «—» va izoh", () => {
+  it("tanlangan turga faol tarif yo'q — standart narx va sabab, «Qayta urinish» yo'q (qayta so'rash foyda bermaydi)", () => {
     renderBlock({ estimate: estimate({ quote: null }) });
-    expect(group()).toHaveTextContent("—");
-    expect(group()).toHaveTextContent("Bu yetkazish turiga faol tarif yo'q");
+    expect(value()).toHaveTextContent(/^35 000 so'm$/);
+    expect(within(group()).getByRole("alert")).toBeInTheDocument();
+    expect(within(group()).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("katalogdan tashqari va o'lchovsiz mahsulotlar — nomi bilan izoh; 3 tadan ko'pi «va yana N ta»", () => {
+    renderBlock({
+      estimate: estimate({
+        input: input({
+          unmeasured: 5,
+          catalogLessNames: ["Sovg'a qadog'i"],
+          unmeasuredNames: ["Eski termos", "Lampa", "Kitob", "Soat"],
+        }),
+      }),
+    });
+    const notes = within(group())
+      .getAllByRole("status")
+      .map((node) => node.textContent);
+    expect(notes).toEqual([
+      "«Sovg'a qadog'i» katalogda yo'q — vazni hisobga kirmadi",
+      "«Eski termos», «Lampa», «Kitob» va yana 1 ta o'lchovi kiritilmagan — vazni hisobga kirmadi",
+    ]);
+    expect(value()).toHaveTextContent("≈ 43 000 so'm");
   });
 });
 
-describe("DeliveryPriceBlock — o'lchovli mahsulot yo'q (CS-B standart narx)", () => {
-  it("mahsulot tanlanmagan — standart narx avvalgidek", () => {
-    renderBlock({
-      estimate: estimate({ input: { items: [], measured: 0, unmeasured: 0 }, quote: null }),
-    });
+describe("DeliveryPriceBlock — o'lchovli mahsulot yo'q, standart narxsiz market", () => {
+  it("mahsulot tanlanmagan — CS-B standart narxi avvalgidek, izohsiz", () => {
+    renderBlock({ estimate: estimate({ input: input({ measured: 0 }), quote: null }) });
     expect(group()).toHaveTextContent("35 000 so'm");
     expect(group()).toHaveTextContent("Standart narx");
-    expect(screen.queryByText("Taxminiy")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("delivery-unmeasured")).not.toBeInTheDocument();
+    expect(group()).toHaveTextContent("Marketdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    expect(within(group()).queryByRole("status")).not.toBeInTheDocument();
+    expect(within(group()).queryByText("Taxminiy")).not.toBeInTheDocument();
   });
 
-  it("faqat o'lchovsiz mahsulotlar — standart narx + ogohlantirish; standart narx ham yo'q — «—» + ogohlantirish", () => {
-    const allUnmeasured = estimate({
-      input: { items: [], measured: 0, unmeasured: 2 },
-      quote: null,
-    });
-    const { unmount } = renderBlock({ estimate: allUnmeasured });
-    expect(group()).toHaveTextContent("35 000 so'm");
-    expect(screen.getByTestId("delivery-unmeasured")).toHaveTextContent(
-      "Mahsulotlarda o'lchov yo'q — vazn va hajm bo'yicha narx hisoblanmadi",
-    );
-    unmount();
-
-    renderBlock({ standardPrice: null, estimate: allUnmeasured });
-    expect(group()).toHaveTextContent("—");
-    expect(screen.getByTestId("delivery-unmeasured")).toBeInTheDocument();
-  });
-
-  it("narx ko'rmaydigan rol — dvigatel bloki ham, ogohlantirish ham yo'q", () => {
+  it("faqat katalogdan tashqari mahsulot — standart narx + nomli izoh", () => {
     renderBlock({
-      standardPrice: null,
-      estimate: estimate({ visible: false, input: { items: [], measured: 2, unmeasured: 1 } }),
+      estimate: estimate({
+        input: input({ measured: 0, unmeasured: 1, catalogLessNames: ["Sovg'a qadog'i"] }),
+        quote: null,
+      }),
     });
+    expect(group()).toHaveTextContent("35 000 so'm");
+    expect(within(group()).getByRole("status")).toHaveTextContent(
+      "«Sovg'a qadog'i» katalogda yo'q — vazni hisobga kirmadi",
+    );
+  });
+
+  it("standart narx yo'q (yoki yuklanmoqda) — qator yo'q, server hisobi bo'lsa ham (maket)", () => {
+    renderBlock({ standardPrice: null });
     expect(screen.queryByRole("group", { name: "Yetkazish narxi" })).not.toBeInTheDocument();
+  });
+
+  it("narxni ko'rmaydigan rol — izohlar ham yo'q", () => {
+    renderBlock({
+      estimate: estimate({
+        visible: false,
+        input: input({ measured: 0, unmeasured: 1, catalogLessNames: ["Sovg'a qadog'i"] }),
+        quote: null,
+      }),
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });
 
@@ -185,42 +206,41 @@ describe("DeliveryPriceBlock — uz/ru/en", () => {
   const KEYS = [
     "estimateValue",
     "estimateBreakdown",
-    "estimateBaseOnly",
+    "estimateWithinStandard",
     "estimateBillable",
     "estimateBillableNoBasis",
     "estimateBasisVolume",
     "estimateBasisWeight",
     "estimateWeights",
     "estimateBadge",
+    "estimateLoading",
     "estimateFailed",
-    "estimateFailedHint",
-    "estimateNoTariff",
-    "unmeasuredAll",
+    "quotedName",
+    "namesMore",
+    "catalogLessNote",
+    "unmeasuredNote",
   ];
 
-  it("uchala tilda kalitlar bor (ru — kirill), ko'plik shakllari: ru one/few/many, en one/other", () => {
+  it("uchala tilda kalitlar bor, ru — kirill", () => {
     for (const locale of [uzOrders, ruOrders, enOrders]) {
       const pricing = (locale as { createPricing: Record<string, string> }).createPricing;
       for (const key of KEYS) expect(pricing[key], key).toBeTruthy();
     }
-    expect(
-      (uzOrders as { createPricing: Record<string, string> }).createPricing.unmeasuredSome,
-    ).toBeTruthy();
     const ru = (ruOrders as { createPricing: Record<string, string> }).createPricing;
-    for (const form of ["one", "few", "many"])
-      expect(ru[`unmeasuredSome_${form}`]).toMatch(/[а-я]/);
-    const en = (enOrders as { createPricing: Record<string, string> }).createPricing;
-    for (const form of ["one", "other"]) expect(en[`unmeasuredSome_${form}`]).toBeTruthy();
+    for (const key of ["estimateFailed", "catalogLessNote", "estimateLoading"])
+      expect(ru[key]).toMatch(/[а-я]/);
   });
 
-  it("ruscha: «≈ 43 000 сум», «Расчётный вес 2,4 кг · по объёму», «У 3 товаров нет габаритов …»", async () => {
+  it("ruscha: «≈ 43 000 сум», «Расчётный вес 2,4 кг · по объёму», «… нет в каталоге»", async () => {
     await i18n.changeLanguage("ru");
-    renderBlock({ estimate: estimate({ input: { items: [], measured: 1, unmeasured: 3 } }) });
+    renderBlock({
+      estimate: estimate({ input: input({ unmeasured: 1, catalogLessNames: ["Подарок"] }) }),
+    });
     const block = screen.getByRole("group", { name: "Стоимость доставки" });
     expect(within(block).getByTestId("delivery-estimate")).toHaveTextContent("≈ 43 000 сум");
     expect(block).toHaveTextContent("Расчётный вес 2,4 кг · по объёму");
-    expect(screen.getByTestId("delivery-unmeasured")).toHaveTextContent(
-      "У 3 товаров нет габаритов",
+    expect(within(block).getByRole("status")).toHaveTextContent(
+      "«Подарок» нет в каталоге — вес не учтён",
     );
   });
 });

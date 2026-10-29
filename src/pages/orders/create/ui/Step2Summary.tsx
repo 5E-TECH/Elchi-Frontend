@@ -154,8 +154,9 @@ const Step2Summary = ({
   // bo'lmasa qator yo'q: maketning «Standart narxsiz market» holatida faqat kartalar va ogohlantirish chizilgan.
   const tariffState = useMarketTariffs(control);
   const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : null;
-  // 6NYcXvGy: o'lchovli mahsulotlar bo'lsa — server hisobidagi taxminiy narx (standart narx o'rnida).
-  const deliveryEstimate = useOrderDeliveryQuote(control);
+  // 6NYcXvGy: o'lchovli mahsulotlar bo'lsa — standart narx + vazn uchun qo'shimcha (server hisobi). Standart narx yo'q
+  // bo'lsa qator chizilmaydi — so'rov ham ketmaydi.
+  const deliveryEstimate = useOrderDeliveryQuote(control, deliveryPrice != null);
 
   // IR2OHIiN: faqat mahsulot va/yoki tuman yetishmasa — tugma nega o'chiqligi aniq yoziladi (backend ham 400 beradi).
   const blockedText =

@@ -139,7 +139,8 @@ export type QuoteRequestBody = {
 /**
  * 6NYcXvGy: soxta narx dvigateli — sayt kalkulyatori formulasi (hajmli vazn U×K×B / 5000, hisob vazni 0,1 kg
  * yuqoriga, birinchi kg asosiy narxda, har qo'shimcha kg 4 000) posilkadagi barcha elementlar yig'indisiga.
- * Asosiy narx: shahar 30 000, markazgacha 25 000, uygacha 35 000.
+ * Tarif asosi (sayt qiymatlari): shahar 35 000, markazgacha 40 000, uygacha 60 000 — `MARKET_TARIFFS` dan ataylab farqli:
+ * forma asosni emas, market standarti + `extra` ni ko'rsatadi (maket).
  */
 export const fakeDeliveryQuote = (body: QuoteRequestBody) => {
   const actualKg = body.items.reduce((sum, item) => sum + item.weight_kg, 0);
@@ -168,9 +169,9 @@ export const fakeDeliveryQuote = (body: QuoteRequestBody) => {
   return {
     body: wrap({
       quotes: {
-        city: quote("city", 30000),
-        center: quote("center", 25000),
-        address: quote("address", 35000),
+        city: quote("city", 35000),
+        center: quote("center", 40000),
+        address: quote("address", 60000),
       },
     }),
   };

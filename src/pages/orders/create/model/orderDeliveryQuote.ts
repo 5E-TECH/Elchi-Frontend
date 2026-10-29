@@ -7,13 +7,13 @@ import type { DeliveryType, OrderItem } from "../../../../entities/order/types/o
 import type { CatalogProduct } from "./orderPricing";
 
 /**
- * BUYURTMA FORMASIDA TAXMINIY YETKAZISH NARXI (6NYcXvGy, CS-E; maket `*-create-manual-step2-existing-customer` —
- * «Buyurtma xulosasi» → «Yetkazish narxi ≈ …»).
+ * BUYURTMA FORMASIDA TAXMINIY YETKAZISH NARXI (6NYcXvGy, CS-E; maketlar `*-create-manual-step2-existing-customer`,
+ * `market-new-orders-create-manual-existing-customer` — «Buyurtma xulosasi» → «Yetkazish narxi» holatlari).
  *
- * Narxni server hisoblaydi (`POST /delivery/quote/by-tariff`, elchipochta.uz kalkulyatori bilan ayni formula) — bu
- * yerda faqat so'rov elementlari yig'iladi: tanlangan katalog mahsulotining o'lchovi HAR DONA uchun alohida element
- * (bitta posilka). O'lchovsiz mahsulot (eski katalog, 6FLyjO6j) va katalogdan tashqari mahsulot so'rovga kirmaydi —
- * ular sanaladi va forma ogohlantiradi. Narx buyurtma payload'iga QO'SHILMAYDI (backend DTO qabul qilmaydi).
+ * Vazn uchun qo'shimchani server hisoblaydi (`POST /delivery/quote/by-tariff`) — bu yerda faqat so'rov elementlari
+ * yig'iladi: tanlangan katalog mahsulotining o'lchovi HAR DONA uchun alohida element (bitta posilka). O'lchovsiz
+ * mahsulot (eski katalog, 6FLyjO6j) va katalogdan tashqari mahsulot so'rovga kirmaydi — nomi bilan aytiladi. Narx
+ * buyurtma payload'iga QO'SHILMAYDI (backend DTO qabul qilmaydi).
  */
 
 const positiveNumber = (value: unknown): number | null => {
@@ -44,8 +44,19 @@ export type OrderQuoteInput = {
   items: DeliveryMeasureItem[];
   /** O'lchovli mahsulot qatorlari soni. */
   measured: number;
-  /** O'lchovsiz qatorlar (o'lchovi yo'q katalog mahsuloti yoki katalogdan tashqari). */
+  /** O'lchovsiz qatorlar soni (o'lchovi yo'q katalog mahsuloti yoki katalogdan tashqari). */
   unmeasured: number;
+  /** Katalogdan tashqari mahsulotlar nomi (maket: «Sovg'a qadog'i» katalogda yo'q — vazni hisobga kirmadi). */
+  catalogLessNames: string[];
+  /** O'lchovi kiritilmagan katalog mahsulotlari nomi. */
+  unmeasuredNames: string[];
+};
+
+/** Bitta qatorning donasi (so'rov elementlari soni): butun, kamida 1, ko'pi bilan `MAX_QUOTE_UNITS_PER_ITEM`. */
+export const MAX_QUOTE_UNITS_PER_ITEM = 500;
+const quoteUnits = (quantity: unknown) => {
+  const value = Math.floor(Number(quantity));
+  return Number.isFinite(value) && value > 0 ? Math.min(value, MAX_QUOTE_UNITS_PER_ITEM) : 1;
 };
 
 export const buildOrderQuoteInput = (
@@ -53,21 +64,37 @@ export const buildOrderQuoteInput = (
   findProduct: (id: string) => CatalogProduct | undefined,
 ): OrderQuoteInput => {
   const measures: DeliveryMeasureItem[] = [];
+  const catalogLessNames: string[] = [];
+  const unmeasuredNames: string[] = [];
   let measured = 0;
-  let unmeasured = 0;
   for (const item of items) {
-    const measure =
-      item.product_id == null ? null : readCatalogMeasure(findProduct(item.product_id));
+    const product = item.product_id == null ? undefined : findProduct(item.product_id);
+    const measure = readCatalogMeasure(product);
     if (!measure) {
-      unmeasured += 1;
+      const name = (product?.name ?? item.product_name ?? "").trim();
+      if (item.product_id == null) catalogLessNames.push(name);
+      else unmeasuredNames.push(name);
       continue;
     }
     measured += 1;
-    const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
-    for (let unit = 0; unit < quantity; unit += 1) measures.push(measure);
+    for (let unit = 0; unit < quoteUnits(item.quantity); unit += 1) measures.push(measure);
   }
-  return { items: measures, measured, unmeasured };
+  return {
+    items: measures,
+    measured,
+    unmeasured: catalogLessNames.length + unmeasuredNames.length,
+    catalogLessNames,
+    unmeasuredNames,
+  };
 };
+
+/**
+ * Maketdagi taxminiy narx: MARKET STANDART NARXI + vazn uchun qo'shimcha (server hisobidagi `extra` — asosiy narxga
+ * kiradigan kg dan ortig'i × tarifning har kg narxi). Server `total` i umumiy tarif asosidan — maket esa «Standart
+ * 35 000 + vazn uchun 8 000 so'm» (market kartasidagi standart narx «og'ir yoki katta posilkada oshadi»).
+ */
+export const estimateTotal = (standardPrice: number, quote: DeliveryQuote): number =>
+  standardPrice + Math.max(0, quote.extra);
 
 /**
  * Tanlangan yetkazish turining natijasi: «Markazgacha» — `center`, «Uygacha» — `address` (sayt kalkulyatoridagi
