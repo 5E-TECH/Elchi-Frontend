@@ -137,6 +137,12 @@ type SelectBaseProps<V extends string> = {
   valueAddon?: ReactNode;
   /** Ro'yxat qayerda ochiladi (sig'masa baribir ag'dariladi). Sukut — pastda. */
   placement?: "bottom" | "top";
+  /**
+   * Ro'yxat eni: `"match"` (sukut) — maydon eni bilan bir xil; `"min"` — kamida maydon eni, variantlar uzunroq bo'lsa
+   * kengroq. Tor maydon uchun (telefondagi bosh sahifa «Yil»i — matn kengligida; `"match"` da ro'yxat 53 px bo'lib
+   * «Yil» harflarga bo'linardi, tya24blo).
+   */
+  panelWidth?: "match" | "min";
   /** Ro'yxat ochiqligi (boshqariladigan). */
   open?: boolean;
   /** Birinchi chizishda ochiq (boshqarilmaydigan; namuna sahifasi). */
@@ -376,6 +382,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     inlineLabel,
     valueAddon,
     placement = "bottom",
+    panelWidth = "match",
     open: openProp,
     defaultOpen = false,
     onOpenChange,
@@ -471,7 +478,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
   const { anchorRef, floatingRef, floatingStyles, side } = usePopover<HTMLDivElement, HTMLDivElement>({
     open: isOpen && portal,
     placement: placement === "top" ? "top-start" : "bottom-start",
-    matchWidth: true,
+    matchWidth: panelWidth === "min" ? "min" : true,
     maxHeight: 280,
   });
   const controlRef = useRef<HTMLElement | null>(null);

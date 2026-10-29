@@ -116,6 +116,37 @@ for (const viewport of [
         // qayta tekshiruvi: market 390px da «Yil» tanlovi yonida matn qutisi 154 px, matn 171 px edi).
         expect(await range.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+        // Telefonda «Yil» tor (matn kengligida) — uning ro'yxati maydon eniga qisilmaydi: har variant bir qatorda
+        // (avval 53 px ro'yxatda «Yil» harflarga bo'linardi).
+        if (viewport.width === 390 && role !== "manager") {
+          await page.getByRole("combobox", { name: /Yil/ }).click();
+          // Har variant matni nechta qatorga bo'lingan (qutining balandligi 44 px qolib, matn toshadi — shuning uchun
+          // matn qatorlari sanaladi).
+          const lines = await page
+            .getByRole("listbox")
+            .getByRole("option")
+            .evaluateAll((nodes) =>
+              nodes.map((node) => {
+                const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+                let max = 0;
+                for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+                  if (!text.textContent?.trim()) continue;
+                  const range = document.createRange();
+                  range.selectNodeContents(text);
+                  max = Math.max(
+                    max,
+                    new Set(Array.from(range.getClientRects(), (rect) => Math.round(rect.top)))
+                      .size,
+                  );
+                }
+                return max;
+              }),
+            );
+          expect(lines.length).toBeGreaterThan(1);
+          expect(Math.max(...lines)).toBe(1);
+          await page.keyboard.press("Escape");
+        }
       });
     }
   });

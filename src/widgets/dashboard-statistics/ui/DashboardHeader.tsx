@@ -95,6 +95,8 @@ const DashboardHeader = ({
           <div className="w-[112px] shrink-0 max-md:w-auto">
             <Select
               aria-label={t("v2Dashboard.header.yearLabel")}
+              // Maydon telefonda tor — ro'yxat variantlar eniga kengayadi («Yil», «2026» va belgi bir qatorda).
+              panelWidth="min"
               options={yearOptions}
               value={period.kind === "year" ? String(period.year) : ""}
               onChange={(value) => {

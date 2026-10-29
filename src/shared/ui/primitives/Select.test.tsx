@@ -313,6 +313,24 @@ describe("Select — ochiq ro'yxat", () => {
     expect(panel.parentElement).toHaveAttribute("data-ui-layer", "dropdown");
     expect(screen.getByRole("option", { name: "Samarqand" })).toHaveClass("min-h-9", "max-md:min-h-11", "rounded-lg");
   });
+
+  // tya24blo: tor maydon (telefondagi bosh sahifa «Yil»i) — ro'yxat maydon eniga qisilmaydi.
+  it('panel eni: sukut — maydon eni (`width`); `panelWidth="min"` — kamida maydon eni (`min-width`), kengayadi', async () => {
+    const user = userEvent.setup();
+    const panelStyle = () =>
+      (screen.getByRole("listbox").closest("[data-select-panel]") as HTMLElement).style;
+
+    const { unmount } = render(<SingleControlled options={REGIONS} />);
+    await user.click(combobox());
+    expect(panelStyle().width).not.toBe("");
+    expect(panelStyle().minWidth).toBe("");
+    unmount();
+
+    render(<SingleControlled options={REGIONS} panelWidth="min" />);
+    await user.click(combobox());
+    expect(panelStyle().width).toBe("");
+    expect(panelStyle().minWidth).not.toBe("");
+  });
 });
 
 describe("Select — klaviatura (select-only combobox)", () => {
