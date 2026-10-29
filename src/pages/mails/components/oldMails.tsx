@@ -106,6 +106,8 @@ const PAGE_SIZES = [8, 16, 32, 64] as const;
 
 type OldMailRow = MailsTableRow & {
   regionId: string;
+  /** Chek uchun xom viloyat nomi (ekrandagi «Viloyat #…» zaxirasi emas); noma'lum — `null`. */
+  regionLabel: string | null;
   isBatch: boolean;
   /** Pochta holati turi (paketda — `null`). Chekni qayta chiqarish — faqat «qabul qilingan» pochtada. */
   kind: OldMailStatusKind | null;
@@ -306,6 +308,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
           createdAt: getOldMailDate(mail),
           regionId: String(mail.region?.id ?? mail.region_id ?? ""),
           regionName: regionNameOf(mail),
+          regionLabel: mail.region?.name || null,
           courierName: null,
           orders: Number(mail.order_quantity) || 0,
           amount: Number(mail.post_total_price) || 0,
@@ -321,6 +324,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
         createdAt: getOldMailDate(mail),
         regionId: String(mail.region?.id ?? mail.region_id ?? ""),
         regionName: regionNameOf(mail),
+        regionLabel: mail.region?.name || null,
         courierName: mail.courier?.name?.trim() || null,
         orders: Number(mail.order_quantity) || 0,
         amount: Number(mail.post_total_price) || 0,
@@ -388,7 +392,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
           post: detail?.post ?? null,
           orders,
           totals: detail,
-          regionName: row.regionName,
+          // Xom nom: noma'lum bo'lsa buyurtmalar viloyatiga o'tadi (yoki «Qayerga» chiqmaydi) — tafsilot sahifasidagidek.
+          regionName: row.regionLabel,
           createdAt: row.createdAt,
           courier: row.courierName ? { name: row.courierName } : null,
         });

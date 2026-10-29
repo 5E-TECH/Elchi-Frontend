@@ -39,13 +39,79 @@ describe("printReceiptHtml", () => {
     expect(frame.style.position).toBe("fixed");
     expect(frame.style.width).toBe("0px");
     expect(frame.getAttribute("aria-hidden")).toBe("true");
-    expect(load).toHaveBeenCalledTimes(5);
+    expect(load).toHaveBeenCalledTimes(6);
     expect(load).toHaveBeenCalledWith('700 10pt "ElchiReceipt"', "қ");
+    expect(load).toHaveBeenCalledWith('600 10pt "ElchiReceipt"', "қ");
     expect(print).toHaveBeenCalledTimes(1);
 
     frame.contentWindow!.dispatchEvent(new Event("afterprint"));
     await vi.waitFor(() => expect(frames()).toHaveLength(0));
     expect(revoke).toHaveBeenCalledWith("about:blank");
+  });
+
+  describe("keyboard focus", () => {
+    /** Brauzerdagidek: `contentWindow.focus()` fokusni iframe'ga oladi. */
+    const stubFrames = () => {
+      vi.spyOn(URL, "createObjectURL").mockReturnValue("about:blank");
+      vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+      const appendChild = document.body.appendChild.bind(document.body);
+      vi.spyOn(document.body, "appendChild").mockImplementation(<T extends Node>(node: T) => {
+        const frame = appendChild(node) as unknown as HTMLIFrameElement;
+        const win = frame.contentWindow!;
+        Object.defineProperty(frame.contentDocument!, "fonts", {
+          configurable: true,
+          value: { load: async () => [{ status: "loaded" }], ready: Promise.resolve() },
+        });
+        win.print = vi.fn();
+        win.focus = () => frame.focus();
+        win.requestAnimationFrame = (callback: FrameRequestCallback) => {
+          callback(0);
+          return 0;
+        };
+        return node;
+      });
+    };
+    const button = (name: string) => {
+      const element = document.createElement("button");
+      element.textContent = name;
+      document.body.append(element);
+      return element;
+    };
+    const afterPrint = async () => {
+      const [frame] = frames();
+      expect(document.activeElement).toBe(frame);
+      frame.contentWindow!.dispatchEvent(new Event("afterprint"));
+      await vi.waitFor(() => expect(frames()).toHaveLength(0));
+    };
+
+    afterEach(() => document.body.replaceChildren());
+
+    it("returns focus to the trigger once the print iframe is removed", async () => {
+      stubFrames();
+      const trigger = button("Chop etish");
+      trigger.focus();
+      await printReceiptHtml("<!doctype html><title>t</title>");
+      await afterPrint();
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it("does not take focus back if it moved elsewhere, or if the trigger is gone", async () => {
+      stubFrames();
+      const trigger = button("Chop etish");
+      const other = button("Boshqa");
+      trigger.focus();
+      await printReceiptHtml("<!doctype html><title>t</title>");
+      other.focus();
+      frames()[0].contentWindow!.dispatchEvent(new Event("afterprint"));
+      await vi.waitFor(() => expect(frames()).toHaveLength(0));
+      expect(document.activeElement).toBe(other);
+
+      trigger.focus();
+      await printReceiptHtml("<!doctype html><title>t</title>");
+      trigger.remove();
+      await afterPrint();
+      expect(document.activeElement).toBe(document.body);
+    });
   });
 
   it("missing fonts → ReceiptFontError, nothing is printed and the iframe is removed", async () => {

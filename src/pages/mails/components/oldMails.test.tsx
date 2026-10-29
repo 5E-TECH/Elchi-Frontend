@@ -318,6 +318,30 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(screen.queryByText("Pochta chekida QR yo'q")).not.toBeInTheDocument();
   });
 
+  it("reprint «Qayerga»: no region on the mail → the orders' region, never the «Viloyat #» screen fallback", async () => {
+    const user = userEvent.setup();
+    const noRegion = { ...post("95"), region: null, region_id: null };
+    mocks.useGetOldMails.mockReturnValue(mailsResult([noRegion]));
+    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    const postMeta = { id: "95", status: "received", qr_code_token: "POST-95", createdAt: "2026-10-07T12:55:00.000Z" };
+    const order = { id: "o1", qr_code_token: "a".repeat(24) };
+    vi.spyOn(api, "get")
+      .mockResolvedValueOnce({
+        data: { data: { allOrdersByPostId: [{ ...order, district: { region: { name: "Buxoro viloyati" } } }], post: postMeta } },
+      })
+      .mockResolvedValueOnce({ data: { data: { allOrdersByPostId: [order], post: postMeta } } });
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    expect(mocks.printPostWithOrders.mock.calls[0][0]).toMatchObject({ kind: "post", id: "95", to: "Buxoro viloyati" });
+
+    // Hech qayerda viloyat yo'q — «Qayerga» chekda chiqmaydi (`to: null`), «Viloyat #» emas.
+    await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(2));
+    expect(mocks.printPostWithOrders.mock.calls[1][0].to).toBeNull();
+  });
+
   it("warns before printing when orders have no QR token and shows a retryable error when printing fails", async () => {
     const user = userEvent.setup();
     mocks.printPostWithOrders.mockRejectedValueOnce(new Error("jsPDF"));

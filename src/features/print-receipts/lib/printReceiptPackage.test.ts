@@ -247,4 +247,70 @@ describe("A5 — mockup 02 «Yangi — A5 varaq»", () => {
     for (const op of lines)
       expect(op.x + measure(op.text, 28, 700)).toBeLessThanOrEqual(138 + 1e-6);
   });
+
+  describe("long route names stay above the «Qabul qildi / Imzo» row", () => {
+    const LONG_TO = "Qoraqalpog'iston Respublikasi Amudaryo tumani filiali";
+    const LONG_FROM = "Toshkent shahar Mirzo Ulug'bek tumani filiali";
+    const signTop = 194;
+    const bottomMargin = 200;
+    /** Matn qutisi (ascent / descent) — mm. */
+    const extent = (op: ReceiptTextOp) => ({
+      top: op.baseline - RECEIPT_FONT_METRICS.ascent * op.pt * MM_PER_PT,
+      bottom: op.baseline + RECEIPT_FONT_METRICS.descent * op.pt * MM_PER_PT,
+    });
+    const expectClearOfSignRow = (label: ReceiptLabel) => {
+      const sign = new Set(["Qabul qildi:", "Imzo:"]);
+      for (const op of texts(label)) {
+        const box = extent(op);
+        expect(box.bottom, `«${op.text}» ${box.bottom}`).toBeLessThanOrEqual(bottomMargin + 1e-6);
+        if (!sign.has(op.text))
+          expect(box.bottom, `«${op.text}» ${box.bottom}`).toBeLessThanOrEqual(signTop + 1e-6);
+        // x mm ning mingdan biriga yaxlitlangan (o'ngga tekislangan sana).
+        expect(op.x + measure(op.text, op.pt, op.weight)).toBeLessThanOrEqual(138 + 1e-3);
+      }
+      const qr = label.ops.find((op): op is ReceiptQrOp => op.kind === "qr")!;
+      expect(qr.y + qr.module * qr.symbol.count).toBeLessThanOrEqual(signTop + 1e-6);
+      const scan = text(label, "Qabul qilishda skanerlang");
+      const imzo = text(label, "Imzo:");
+      expect(extent(scan).bottom).toBeLessThan(extent(imzo).top);
+    };
+
+    it("a 4-line «Qayerga» steps the font down and is still printed whole", () => {
+      // 28 pt da 4 qator — QR yozuvi «Imzo:» ustiga tushardi (bazaviy chiziq 197,3 mm).
+      const label = layout({ ...BATCH, to: LONG_TO }, "a5");
+      expectClearOfSignRow(label);
+      const to = texts(label).filter((op) => op.weight === 700 && op.x === 46);
+      expect(to.map((op) => op.text).join(" ")).toBe(LONG_TO);
+      expect(to[0].pt).toBeLessThan(28);
+    });
+
+    it("4-line «Qayerga» + long «Qayerdan»: both printed whole at smaller sizes, nothing in the bottom margin", () => {
+      // 28 + 18 pt da QR yozuvi imzo chizig'idan pastga, 10 mm pastki chekkaga tushardi (bazaviy chiziq 205,3 mm).
+      const label = layout({ ...BATCH, from: LONG_FROM, to: LONG_TO }, "a5");
+      expectClearOfSignRow(label);
+      const route = texts(label).filter((op) => op.x === 46);
+      const join = (weight: number) =>
+        route
+          .filter((op) => op.weight === weight)
+          .map((op) => op.text)
+          .join(" ");
+      expect(join(600)).toBe(LONG_FROM);
+      expect(join(700)).toBe(LONG_TO);
+    });
+
+    it("names too long even at the smallest step are cut with «…» on their last line", () => {
+      const label = layout(
+        { ...BATCH, from: `${LONG_FROM} ${LONG_FROM}`, to: `${LONG_TO} ${LONG_TO}` },
+        "a5",
+      );
+      expectClearOfSignRow(label);
+      const route = texts(label).filter((op) => op.x === 46);
+      for (const weight of [600, 700]) {
+        const lines = route.filter((op) => op.weight === weight);
+        expect(lines.length).toBeGreaterThan(0);
+        expect(lines.at(-1)!.text.endsWith("…")).toBe(true);
+        expect(lines.slice(0, -1).every((op) => !op.text.includes("…"))).toBe(true);
+      }
+    });
+  });
 });

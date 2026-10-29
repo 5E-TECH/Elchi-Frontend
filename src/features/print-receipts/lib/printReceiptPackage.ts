@@ -180,6 +180,11 @@ interface PackageSpec {
     toLineHeight: number | null;
     /** Termal — bitta qator «…» bilan; A5 — so'zlab o'raladi. */
     wrap: boolean;
+    /**
+     * A5: blok joyiga sig'masa (imzo qatoriga yetsa) navbatdagi pog'ona — qator balandligi shrift bilan mutanosib
+     * kichrayadi; eng kichigida ham sig'masa, qatorlar «…» bilan qisqaradi. Yo'q — faqat `fromPt` / `toPt`.
+     */
+    steps?: ReadonlyArray<{ readonly toPt: number; readonly fromPt: number }>;
   };
   label: { pt: number; lineHeight: number };
   sign: {
@@ -260,6 +265,12 @@ const A5_PACKAGE_SPEC = Object.freeze({
     fromLineHeight: 8,
     toLineHeight: 34 / 3,
     wrap: true,
+    steps: [
+      { toPt: 28, fromPt: 18 },
+      { toPt: 24, fromPt: 18 },
+      { toPt: 20, fromPt: 18 },
+      { toPt: 20, fromPt: 16 },
+    ],
   },
   label: { pt: 12, lineHeight: 6 },
   sign: {
@@ -400,46 +411,91 @@ const wrapWords = (
 
 /**
  * «Qayerdan» / «Qayerga»: chapda yorliq (qat'iy en), o'ngda qiymat, birinchi qatorning bazaviy chizig'i bo'yicha
- * tekislangan (CSS `align-items: baseline`). Pastki chetini qaytaradi.
+ * tekislangan (CSS `align-items: baseline`). Blok `maxHeight` dan oshmaydi (A5: imzo qatoriga yetmasin) — avval
+ * `route.steps` pog'onalari, keyin ko'p qatorli qiymat (teng bo'lsa — «Qayerdan») oxirgi qatori «…» bilan qisqaradi.
+ * Pastki chetini qaytaradi.
  */
-const routeRows = (model: ReceiptPackageModel, spec: PackageSpec, top: number, ctx: Ctx) => {
+const routeRows = (
+  model: ReceiptPackageModel,
+  spec: PackageSpec,
+  top: number,
+  ctx: Ctx,
+  maxHeight = Number.POSITIVE_INFINITY,
+) => {
   const { route } = spec;
-  const rows = [
-    {
-      label: RECEIPT_PACKAGE_TEXT.from,
-      value: model.from,
-      pt: route.fromPt,
-      lineHeight: route.fromLineHeight ?? lh115(route.fromPt),
-      weight: 600 as const,
-    },
-    {
-      label: RECEIPT_PACKAGE_TEXT.to,
-      value: model.to,
-      pt: route.toPt,
-      lineHeight: route.toLineHeight ?? lh115(route.toPt),
-      weight: 700 as const,
-    },
-  ].filter((row) => row.value);
   const valueX = spec.x + route.labelWidth + route.labelGap;
   const valueWidth = spec.width1 - route.labelWidth - route.labelGap;
   const half = (lineHeight: number, pt: number) => receiptBaseline(0, lineHeight, pt);
+  const labelAbove = half(route.labelLineHeight, route.labelPt);
+  const scaled = (lineHeight: number | null, basePt: number, pt: number) =>
+    lineHeight === null ? lh115(pt) : (lineHeight * pt) / basePt;
+  const rowsAt = ({ fromPt, toPt }: { fromPt: number; toPt: number }) =>
+    [
+      {
+        label: RECEIPT_PACKAGE_TEXT.from,
+        value: model.from,
+        pt: fromPt,
+        lineHeight: scaled(route.fromLineHeight, route.fromPt, fromPt),
+        weight: 600 as const,
+      },
+      {
+        label: RECEIPT_PACKAGE_TEXT.to,
+        value: model.to,
+        pt: toPt,
+        lineHeight: scaled(route.toLineHeight, route.toPt, toPt),
+        weight: 700 as const,
+      },
+    ]
+      .filter((row) => row.value)
+      .map((row) => {
+        const valueAbove = half(row.lineHeight, row.pt);
+        return {
+          ...row,
+          above: Math.max(labelAbove, valueAbove),
+          below: Math.max(route.labelLineHeight - labelAbove, row.lineHeight - valueAbove),
+          lines: route.wrap
+            ? wrapWords(row.value, valueWidth, row.pt, row.weight, ctx.measure)
+            : [ellipsizeReceiptChars(row.value, valueWidth, row.pt, row.weight, ctx.measure)],
+        };
+      });
+  type Row = ReturnType<typeof rowsAt>[number];
+  const heightOf = (items: Row[]) =>
+    items.reduce(
+      (sum, row, index) =>
+        sum +
+        (index > 0 ? route.gap : 0) +
+        row.above +
+        row.below +
+        (row.lines.length - 1) * row.lineHeight,
+      0,
+    );
+  const steps = route.steps ?? [{ fromPt: route.fromPt, toPt: route.toPt }];
+  let rows = rowsAt(steps[0]);
+  for (const step of steps.slice(1)) {
+    if (heightOf(rows) <= maxHeight + EPS) break;
+    rows = rowsAt(step);
+  }
+  while (heightOf(rows) > maxHeight + EPS) {
+    const row = rows.reduce((longest, item) =>
+      item.lines.length > longest.lines.length ? item : longest,
+    );
+    if (row.lines.length <= 1) break;
+    const keep = row.lines.length - 1;
+    const rest = row.lines.slice(keep - 1).join(" ");
+    row.lines = [
+      ...row.lines.slice(0, keep - 1),
+      ellipsizeReceiptChars(rest, valueWidth, row.pt, row.weight, ctx.measure),
+    ];
+  }
   let y = top;
   rows.forEach((row, index) => {
     if (index > 0) y += route.gap;
-    const { lineHeight } = row;
-    const lines = route.wrap
-      ? wrapWords(row.value, valueWidth, row.pt, row.weight, ctx.measure)
-      : [ellipsizeReceiptChars(row.value, valueWidth, row.pt, row.weight, ctx.measure)];
-    const labelAbove = half(route.labelLineHeight, route.labelPt);
-    const valueAbove = half(lineHeight, row.pt);
-    const above = Math.max(labelAbove, valueAbove);
-    const below = Math.max(route.labelLineHeight - labelAbove, lineHeight - valueAbove);
-    const baseline = y + above;
+    const baseline = y + row.above;
     text(ctx, row.label, spec.x, baseline, route.labelPt, 500);
-    lines.forEach((line, lineIndex) =>
-      text(ctx, line, valueX, baseline + lineIndex * lineHeight, row.pt, row.weight),
+    row.lines.forEach((line, lineIndex) =>
+      text(ctx, line, valueX, baseline + lineIndex * row.lineHeight, row.pt, row.weight),
     );
-    y += above + below + (lines.length - 1) * lineHeight;
+    y += row.above + row.below + (row.lines.length - 1) * row.lineHeight;
   });
   return y;
 };
@@ -640,11 +696,25 @@ const layoutA5 = (
   const numberBottom = numberRow(model, spec, ctx);
   const ruleY = numberBottom + spec.rule.gap;
   ctx.out.push({ kind: "rect", x: spec.x, y: round3(ruleY), w: spec.width1, h: spec.rule.h });
-  const routeBottom = routeRows(model, spec, ruleY + spec.rule.h + 14 / 3, ctx);
 
   // Bo'lim: ingichka chiziq (margin 16 px, chiziq 1 px), ichki chekka 34 px; ustunlar orasi 34 px.
-  const sectionRule = routeBottom + 16 / 3;
   const rule = 1 / 3;
+  const qrBox = 60;
+  const captionLine = 6;
+  // Yo'nalish blokining joyi: QR ostidagi yozuv imzo qatoridan kamida 16 px yuqorida tugasin (chap ustun — raqamlar va
+  // odamlar — ko'pi bilan ~65 mm, QR + yozuvdan (77,3 mm) qisqa, shuning uchun QR ustuni hal qiladi).
+  const routeTop = ruleY + spec.rule.h + 14 / 3;
+  const lowerBlock = 16 / 3 + rule + 34 / 3 + qrBox + 34 / 3 + captionLine;
+  const signTop = spec.sign.bottom - spec.sign.lineHeight;
+  const routeBottom = routeRows(
+    model,
+    spec,
+    routeTop,
+    ctx,
+    signTop - 16 / 3 - lowerBlock - routeTop,
+  );
+
+  const sectionRule = routeBottom + 16 / 3;
   ctx.out.push({
     kind: "rect",
     x: spec.x,
@@ -653,7 +723,6 @@ const layoutA5 = (
     h: round3(rule),
   });
   const top = sectionRule + rule + 34 / 3;
-  const qrBox = 60;
   const qrX = spec.x + spec.width1 - qrBox;
   const columnWidth = qrX - 34 / 3 - spec.x;
   const { label } = spec;
@@ -687,7 +756,7 @@ const layoutA5 = (
     RECEIPT_PACKAGE_TEXT.scan.join(" "),
     qrX + qrBox / 2,
     top + qrBox + 34 / 3,
-    6,
+    captionLine,
     12,
     600,
   );

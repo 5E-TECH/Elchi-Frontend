@@ -400,28 +400,45 @@ export const createPdfReceiptMeasure = (pdf: jsPDF, data?: ReceiptFontData): Rec
 };
 
 /**
+ * HTML `@font-face` yozuvlari: har vazn (500 / 600 / 700) × har bo'lak (Manrope, Noto) — yuzi `faceOf` dan. Shu bilan
+ * 600 vaznli kirill (қ ғ ҳ) ham Noto Bold faylidan chiziladi, PDF va o'lchash bilan bir xil (aks holda brauzer 600 uchun
+ * Noto topmay, tizim shriftiga o'tadi). `probe` — `document.fonts.load` matni: shu bo'lakning belgisi.
+ */
+const RECEIPT_HTML_FACES: ReadonlyArray<{
+  face: ReceiptFace;
+  weight: ReceiptWeight;
+  probe: string;
+}> = (["A", "қ"] as const).flatMap((probe) =>
+  ([500, 600, 700] as const).map((weight) => ({
+    face: faceOf(probe.codePointAt(0) ?? 0, weight),
+    weight,
+    probe,
+  })),
+);
+
+/**
  * HTML chop etish oynasi uchun `@font-face` qoidalari: mutlaq URL (oyna `blob:` manzilda), metrikalar qotirilgan,
  * `font-display: block` — shrift yuklanmaguncha zaxira shrift bilan chizilmaydi.
  */
 export const receiptFontFaceCss = (resolveUrl: (url: string) => string): string => {
   const ascent = (RECEIPT_FONT_METRICS.ascent * 100).toFixed(1);
   const descent = (RECEIPT_FONT_METRICS.descent * 100).toFixed(1);
-  return RECEIPT_FACE_LIST.map((face) => {
+  return RECEIPT_HTML_FACES.map(({ face, weight }) => {
     const info = RECEIPT_FACES[face];
     return (
       `@font-face{font-family:"${RECEIPT_FONT_FAMILY}";src:url("${resolveUrl(info.url)}") format("truetype");` +
-      `font-weight:${info.weight};font-style:normal;font-display:block;unicode-range:${info.unicodeRange};` +
+      `font-weight:${weight};font-style:normal;font-display:block;unicode-range:${info.unicodeRange};` +
       `ascent-override:${ascent}%;descent-override:${descent}%;line-gap-override:0%}`
     );
   }).join("\n");
 };
 
 /**
- * `document.fonts.load` uchun so'rovlar: har yuz o'z belgisi bilan (Noto faqat U+0490–04FF matnida yuklanadi).
- * Har biri kamida bitta yuklangan yuz qaytarishi kerak.
+ * `document.fonts.load` uchun so'rovlar: har `@font-face` o'z vazni va belgisi bilan (Noto faqat U+0490–04FF matnida
+ * yuklanadi). Har biri kamida bitta yuklangan yuz qaytarishi kerak.
  */
 export const RECEIPT_FONT_PROBES: ReadonlyArray<{ font: string; text: string }> =
-  RECEIPT_FACE_LIST.map((face) => ({
-    font: `${RECEIPT_FACES[face].weight} 10pt "${RECEIPT_FONT_FAMILY}"`,
-    text: face.startsWith("noto") ? "қ" : "A",
+  RECEIPT_HTML_FACES.map(({ weight, probe }) => ({
+    font: `${weight} 10pt "${RECEIPT_FONT_FAMILY}"`,
+    text: probe,
   }));

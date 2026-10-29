@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-neworders-market-orders, admin-neworders-market-detail, manager-new-orders-market-detail, registrator-new-orders-market-detail
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FileText, LayoutGrid, ListChecks, Printer } from "lucide-react";
+import { FileText, ListChecks, Printer } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
@@ -55,7 +55,7 @@ export const SelectionBar = ({
     () => [
       { id: "browser", label: t("browserPrint"), hint: t("anyPrinter"), icon: <Printer size={18} /> },
       { id: "pdf", label: t("pdfPrint"), hint: t("gainschaPrinter"), icon: <FileText size={18} /> },
-      { id: "a4", label: t("a4Print"), hint: t("a4Printer"), icon: <LayoutGrid size={18} /> },
+      { id: "a4", label: t("a4Print"), hint: t("a4Printer"), icon: <FileText size={18} /> },
     ],
     [t],
   );

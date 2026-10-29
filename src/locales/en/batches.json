@@ -116,6 +116,7 @@
     "a5": {
       "label": "A5 sheet",
       "hint": "Office printer"
-    }
+    },
+    "sheetDescription": "The batch receipt will be printed: thermal label or A5 sheet"
   }
 }

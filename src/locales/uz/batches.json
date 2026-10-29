@@ -111,6 +111,7 @@
     "a5": {
       "label": "A5 varaq",
       "hint": "Ofis printeri"
-    }
+    },
+    "sheetDescription": "Paket cheki chop etiladi: termal yorliq yoki A5 varaq"
   }
 }

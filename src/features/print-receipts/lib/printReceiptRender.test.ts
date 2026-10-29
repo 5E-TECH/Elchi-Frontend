@@ -3,6 +3,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { createTestReceiptMeasure, loadTestReceiptFonts } from "../../../test/receiptTestFonts";
 import {
   RECEIPT_FACES,
+  RECEIPT_FONT_PROBES,
+  faceOf,
   registerReceiptFonts,
   type ReceiptFontData,
   type ReceiptMeasure,
@@ -163,15 +165,34 @@ describe("HTML renderer", () => {
     const css = new DOMParser()
       .parseFromString(html(pagesOf(cyrillic)), "text/html")
       .querySelector("style")!.textContent!;
-    expect(css.match(/@font-face/g)).toHaveLength(5);
+    expect(css.match(/@font-face/g)).toHaveLength(6);
     expect(css).toContain('src:url("https://elchi.test/');
     expect(css).toContain("unicode-range:U+0490-04FF");
     expect(css).toContain("ascent-override:106.6%;descent-override:30.0%");
     expect(css).toContain("font-kerning:none;font-variant-ligatures:none");
     // Faqat o'z shriftlari — tashqi manba (Google Fonts, QR xizmati) yo'q.
     const urls = [...css.matchAll(/url\("([^"]+)"\)/g)].map(([, url]) => url);
-    expect(urls).toHaveLength(5);
+    expect(urls).toHaveLength(6);
     for (const url of urls) expect(url.startsWith("https://elchi.test/")).toBe(true);
+  });
+
+  it("every weight has a Cyrillic (U+0490–04FF) face: 600 uses the Noto Bold file, as in the PDF", () => {
+    const css = new DOMParser()
+      .parseFromString(html(pagesOf(cyrillic)), "text/html")
+      .querySelector("style")!.textContent!;
+    const faces = [...css.matchAll(/@font-face\{[^}]*\}/g)].map(([rule]) => ({
+      url: /url\("https:\/\/elchi\.test([^"]+)"\)/.exec(rule)![1],
+      weight: Number(/font-weight:(\d+)/.exec(rule)![1]),
+      range: /unicode-range:([^;]+);/.exec(rule)![1],
+    }));
+    const cyrillicFaces = faces.filter((face) => face.range === "U+0490-04FF");
+    expect(cyrillicFaces.map((face) => face.weight).sort()).toEqual([500, 600, 700]);
+    // Joylash va PDF 600 vaznli «қ» ni `noto-700` bilan o'lchaydi va chizadi (`faceOf`) — brauzer ham shu faylni oladi.
+    expect(faceOf("қ".codePointAt(0)!, 600)).toBe("noto-700");
+    expect(cyrillicFaces.find((face) => face.weight === 600)?.url).toBe(
+      RECEIPT_FACES["noto-700"].url,
+    );
+    expect(RECEIPT_FONT_PROBES).toContainEqual({ font: '600 10pt "ElchiReceipt"', text: "қ" });
   });
 
   it("ink and paper only (black / white), user text escaped", () => {

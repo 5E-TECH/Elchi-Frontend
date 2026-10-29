@@ -16,7 +16,8 @@ type Props = {
 /**
  * Paket «Chop etish» menyusi (HJ5sLHiz, TZ F10 «Termal 100×60 · A5»): paket cheki termal printerda (qopga
  * yopishtiriladi) yoki ofis printerida A5 varaq. Maketda menyu yo'q — eng yaqini `courier-mails-detail-print-menu`
- * (`PrintModeSelect`, telefonda ham oddiy menyu).
+ * (`PrintModeSelect`): kompyuterda ochiladigan menyu, telefonda (< 768) — sarlavha va izohli pastki varaqa, pochta
+ * tafsilotidagi kabi.
  */
 const BatchPrintMenu = ({ onSelect, loading = false, className }: Props) => {
   const { t } = useTranslation("batches");
@@ -42,6 +43,8 @@ const BatchPrintMenu = ({ onSelect, loading = false, className }: Props) => {
       count={1}
       hideCount
       buttonLabel={t("detail.print")}
+      sheetTitle={t("detail.print")}
+      sheetDescription={t("print.sheetDescription")}
       options={options}
       onSelect={(mode) => onSelect(mode === "a5" ? "a5" : "thermal")}
       loading={loading}

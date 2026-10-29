@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FileText, Globe, LayoutGrid, Package } from "lucide-react";
+import { FileText, Globe, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
 
@@ -10,7 +10,8 @@ import type { PrintSelectOption } from "../../../../shared/components/PrintModeS
  * `ordersDisabled` — buyurtma tanlanmagan: buyurtma cheki bandlari o'chiq («Avval buyurtmalarni tanlang»), «Pochta
  * cheki» tanlovsiz ham ishlaydi (HJ5sLHiz).
  * Maketda faqat birinchi ikkitasi — qolganlari ega qarori 4 (eng yaqin maket — `courier-mails-detail-print-menu`).
- * Ikonkalar neytral — menyu ularni `sunken` qutichada chizadi.
+ * Ikonkalar neytral — menyu ularni `sunken` qutichada chizadi; nomlari `design/icon-registry.json` dan: yorliq va A4
+ * varaq — «Hujjat» (`FileText`), pochta cheki — «Pochta» (`Mail`, pochta qopi).
  */
 export const useMailPrintOptions = ({
   withPostReceipt = false,
@@ -37,7 +38,7 @@ export const useMailPrintOptions = ({
         id: "a4",
         label: t("printOptions.a4.label"),
         hint: t("printOptions.a4.hint"),
-        icon: <LayoutGrid size={18} aria-hidden="true" />,
+        icon: <FileText size={18} aria-hidden="true" />,
       }),
       ...(withPostReceipt
         ? [
@@ -45,7 +46,7 @@ export const useMailPrintOptions = ({
               id: "post_receipt",
               label: t("printOptions.postReceipt.label"),
               hint: t("printOptions.postReceipt.hint"),
-              icon: <Package size={18} aria-hidden="true" />,
+              icon: <Mail size={18} aria-hidden="true" />,
             },
           ]
         : []),

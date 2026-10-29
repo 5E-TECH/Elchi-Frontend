@@ -209,9 +209,13 @@ const activeFrames = new Set<() => void>();
 /**
  * Hujjatni yashirin iframe'da chop etadi: shriftlar yuklanmaguncha kutadi (yuklanmasa — `ReceiptFontError`,
  * shriftsiz chek chop etilmaydi), keyin `print()`. Iframe `afterprint` da (yoki 10 daqiqadan so'ng) olib tashlanadi.
+ * `win.focus()` fokusni iframe'ga oladi; iframe olib tashlangach fokus oldingi elementga (odatda «Chop etish»
+ * tugmasi) qaytadi — faqat u hali sahifada bo'lsa va fokus `body` ga tushgan bo'lsa (foydalanuvchi boshqa joyga
+ * o'tgan bo'lsa, tegilmaydi).
  */
 export const printReceiptHtml = async (html: string): Promise<void> => {
   activeFrames.forEach((cleanup) => cleanup());
+  const previous = document.activeElement;
   const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
@@ -234,6 +238,15 @@ export const printReceiptHtml = async (html: string): Promise<void> => {
     if (timer !== undefined) clearTimeout(timer);
     frame.remove();
     URL.revokeObjectURL(url);
+    const current = document.activeElement;
+    if (
+      previous instanceof HTMLElement &&
+      previous !== document.body &&
+      previous.isConnected &&
+      (current === null || current === document.body)
+    ) {
+      previous.focus({ preventScroll: true });
+    }
   };
   activeFrames.add(cleanup);
 
