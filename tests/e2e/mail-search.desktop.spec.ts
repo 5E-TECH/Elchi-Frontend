@@ -64,7 +64,9 @@ test.describe("Pochta ichida qidiruv va takroriy telefonlar — desktop", () => 
     await expect(search).toHaveValue("Laylo");
 
     await search.click();
-    await search.press("Home");
+    // macOS Chromium'da `Home` maydonda kursorni siljitmaydi (u yerda qator boshi — Cmd+←), aks holda
+    // «xy» oxiriga yozilib test faqat Mac'da yiqiladi. CI (Linux) avvalgidek `Home`.
+    await search.press(process.platform === "darwin" ? "Meta+ArrowLeft" : "Home");
     await search.press("ArrowRight");
     await search.press("ArrowRight");
     await search.pressSequentially("xy");
