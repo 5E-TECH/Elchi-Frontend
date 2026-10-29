@@ -13,6 +13,7 @@ import { FeedbackSection } from "./sections/FeedbackSection";
 import { FormatSection } from "./sections/FormatSection";
 import { FormsSection } from "./sections/FormsSection";
 import { PageHeaderSection } from "./sections/PageHeaderSection";
+import { ReceiptsSection } from "./sections/ReceiptsSection";
 import { SelectSection } from "./sections/SelectSection";
 import { StatesSection } from "./sections/StatesSection";
 import { TableSection } from "./sections/TableSection";
@@ -28,7 +29,8 @@ import { TabsSection } from "./sections/TabsSection";
  * Har bo'lim namunani kunduzgi va tungi mavzuda yonma-yon chizadi (`ThemePair`).
  * Skrinshot uchun URL parametrlari:
  *   `?section=<id>`  — faqat shu bo'lim (`buttons`, `badges`, `cards`, `page-header`, `tabs`, `format`,
- *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`, `table`, `charts`; noma'lum id — hammasi);
+ *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`, `table`, `charts`, `receipts`;
+ *                    noma'lum id — hammasi);
  *   `?theme-pair=0`  — har bo'limda bitta panel, ilovaning joriy mavzusida.
  *   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone
  */
@@ -50,6 +52,8 @@ const SECTIONS: ReadonlyArray<{ id: string; Component: ComponentType }> = [
   { id: "table", Component: TableSection },
   // IN-1: grafik primitivi `StackedBars` (`src/shared/ui/charts`).
   { id: "charts", Component: ChartsSection },
+  // HJ5sLHiz (TZ qabul 2): chek va yorliq namunalari (maket `tizim-receipts`), chop etish HTML'i bilan.
+  { id: "receipts", Component: ReceiptsSection },
 ];
 
 export const UiKitPage = () => {

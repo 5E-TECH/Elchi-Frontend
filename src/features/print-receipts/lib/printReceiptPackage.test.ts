@@ -102,6 +102,17 @@ describe("package receipt model (TZ F8)", () => {
       totalPrice: null,
       courier: { name: " ", phone_number: null },
     });
+    // Haydovchi / kuryer telefoni «-» / «—» — qator chiqmaydi.
+    expect(
+      toReceiptPackageModel({
+        ...BATCH,
+        driver: { name: "—", phone_number: "-" },
+        vehiclePlate: "–",
+      }),
+    ).toMatchObject({ person: null, vehicle: "" });
+    expect(
+      toReceiptPackageModel({ ...POST, courier: { name: "Jasur", phone_number: " — " } }).person,
+    ).toEqual({ role: "Kuryer", name: "Jasur", phone: "" });
     expect(model).toMatchObject({
       from: "",
       to: "",

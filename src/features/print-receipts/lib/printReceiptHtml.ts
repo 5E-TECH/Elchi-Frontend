@@ -5,6 +5,7 @@ import {
   ReceiptFontError,
   receiptFontFaceCss,
 } from "./printReceiptFonts";
+import type { ReceiptScheduler } from "./receiptScheduler";
 import {
   SCISSORS_LINES,
   splitReceiptKerned,
@@ -131,15 +132,26 @@ const pageHtml = (page: ReceiptPage) => {
 /** Shrift URL'i — mutlaq (oyna `blob:` manzilda ochiladi). */
 const absoluteUrl = (url: string) => new URL(url, document.baseURI).href;
 
-/** Sahifalar → to'liq HTML hujjat (skriptsiz). Hamma sahifa bir xil o'lchamda (`@page`). */
-export const renderReceiptHtml = (
-  pages: ReadonlyArray<ReceiptPage>,
-  options: { title?: string; resolveUrl?: (url: string) => string } = {},
+export interface ReceiptHtmlOptions {
+  title?: string;
+  resolveUrl?: (url: string) => string;
+  /**
+   * Ekrandagi namuna (`/ops/ui-kit?section=receipts`): 1 mm = shuncha CSS px (termal maket — 5, A5 — 3). Hujjat
+   * shu masshtabda chiziladi (`transform`), chop etishga ta'sir qilmaydi; berilmasa — haqiqiy o'lcham (chop etish).
+   */
+  previewPxPerMm?: number;
+}
+
+const documentHtml = (
+  body: string,
+  first: ReceiptPage | undefined,
+  options: ReceiptHtmlOptions,
 ): string => {
-  const first = pages[0];
   const width = first?.width ?? 100;
   const height = first?.height ?? 60;
-  const body = pages.map(pageHtml).join("\n");
+  const preview = options.previewPxPerMm
+    ? `html,body{overflow:hidden}body{width:${mm(width)};transform:scale(${num(options.previewPxPerMm / CSS_PX_PER_MM)});transform-origin:0 0}\n`
+    : "";
   return `<!doctype html>
 <html lang="uz">
 <head>
@@ -152,7 +164,7 @@ ${receiptFontFaceCss(options.resolveUrl ?? absoluteUrl)}
 :root{color-scheme:light only;--ink:#000;--paper:#fff}
 *{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 html,body{background:var(--paper);color:var(--ink)}
-.p{position:relative;overflow:hidden;break-after:page;page-break-after:always}
+${preview}.p{position:relative;overflow:hidden;break-after:page;page-break-after:always}
 .p:last-child{break-after:auto;page-break-after:auto}
 .t{position:absolute;white-space:pre;color:var(--ink);font-family:"${RECEIPT_FONT_FAMILY}";font-style:normal;font-kerning:none;font-variant-ligatures:none;font-feature-settings:"kern" 0,"liga" 0,"calt" 0;font-synthesis:none}
 .t.w{color:var(--paper)}
@@ -163,6 +175,29 @@ html,body{background:var(--paper);color:var(--ink)}
 ${body}
 </body>
 </html>`;
+};
+
+/** Sahifalar → to'liq HTML hujjat (skriptsiz). Hamma sahifa bir xil o'lchamda (`@page`). */
+export const renderReceiptHtml = (
+  pages: ReadonlyArray<ReceiptPage>,
+  options: ReceiptHtmlOptions = {},
+): string => documentHtml(pages.map(pageHtml).join("\n"), pages[0], options);
+
+/**
+ * `renderReceiptHtml` bo'laklab (TZ qabul 8): har sahifadan keyin `scheduler.checkpoint()` — 200 ta chek yig'ilayotganda
+ * UI qotmaydi. Natija `renderReceiptHtml` bilan aynan bir xil.
+ */
+export const renderReceiptHtmlSliced = async (
+  pages: ReadonlyArray<ReceiptPage>,
+  scheduler: ReceiptScheduler,
+  options: ReceiptHtmlOptions = {},
+): Promise<string> => {
+  const parts: string[] = [];
+  for (const page of pages) {
+    parts.push(pageHtml(page));
+    await scheduler.checkpoint();
+  }
+  return documentHtml(parts.join("\n"), pages[0], options);
 };
 
 const nextFrame = (win: Window) =>

@@ -737,6 +737,9 @@
     "count": "{{count}} ta tanlangan",
     "noQr": "{{value}} ta buyurtmada QR yo'q",
     "noQrHint": "Chekda QR o'rnida «QR yo'q» ramkasi chiqadi — bu buyurtmalarni skaner o'qimaydi.",
+    "noQrBatch": "Paket chekida QR yo'q",
+    "noQrPost": "Pochta chekida QR yo'q",
+    "noQrPackageHint": "Chekda QR o'rnida «QR yo'q» ramkasi chiqadi — qabul qilishda uni skaner o'qimaydi.",
     "error": "Chek chop etilmadi",
     "errorHint": "Chop etish faylini tayyorlab bo'lmadi. Qayta urinib ko'ring.",
     "fontError": "Chek shriftlari yuklanmadi — internet aloqasini tekshirib, qayta urinib ko'ring.",
@@ -1325,5 +1328,24 @@
       "Sentabr 2026",
       "Oktabr 2026"
     ]
+  },
+  "receiptsKit": {
+    "title": "Cheklar va yorliqlar",
+    "description": "Maket «tizim-receipts» namunalari — chop etishdagi HTML bilan aynan bir xil. Termal chek 1 mm = 5 px, A5 — 1 mm = 3 px, A4 varaq — kichiklashtirilgan. Chek matni doim o'zbekcha.",
+    "loading": "Cheklar tayyorlanmoqda",
+    "meta": "{{size}} mm · 1 mm = {{scale}} px",
+    "frameTitle": "{{title}}, {{page}}-sahifa",
+    "items": {
+      "main": "Yangi",
+      "partial": "Markazgacha, qisman to'langan",
+      "paid": "To'liq to'langan",
+      "returning": "Qaytarish — bekor qilingan buyurtma",
+      "elNumber": "To'liq raqam «№EL-…»",
+      "continuation": "Hammasi birga — 2 ta yorliq (1/2 + 2/2)",
+      "batchThermal": "Filial paketi — termal 100×60 mm",
+      "batchA5": "Filial paketi — A5 varaq (ofis printeri)",
+      "post": "Pochta cheki — termal 100×60 mm",
+      "a4": "A4 varaq — 12 ta chek (ofis printeri)"
+    }
   }
 }

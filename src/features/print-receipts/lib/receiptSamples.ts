@@ -1,9 +1,10 @@
 import type { ReceiptOrderSource } from "./printReceiptModel";
+import type { ReceiptPackageSource } from "./printReceiptPackage";
 
 /**
- * Maket `tizim-receipts` (01 va 01.B) namunalari — buyurtma manbasi shaklida. Joylash testlari
- * (`printReceiptLayout.test.ts`) ularni maket koordinatalari bilan solishtiradi; FE-5 da `/ops/ui-kit?section=receipts`
- * ham shularni chizadi. `order_number` yo'q — chekda «№{id}» (maketdagidek «№10241»).
+ * Maket `tizim-receipts` (01, 01.B, 02) namunalari — buyurtma / paket manbasi shaklida. Joylash testlari
+ * (`printReceiptLayout.test.ts`) ularni maket koordinatalari bilan solishtiradi; `/ops/ui-kit?section=receipts`
+ * (`receiptPreview.ts`) ham shularni chizadi. `order_number` yo'q — chekda «№{id}» (maketdagidek «№10241»).
  */
 
 const created = "2026-10-23T05:00:00.000Z";
@@ -134,6 +135,44 @@ export const RECEIPT_SAMPLES = {
     items: [item("Kitob to'plami", 1)],
     ...nur,
   },
+  /** Ega qarori 3: qaytayotgan buyurtma qayta chop etilsa — ramkada «Qaytarish». */
+  returning: {
+    id: "10455",
+    qr_code_token: token("e3"),
+    status: "cancelled",
+    where_deliver: "address",
+    total_price: 410_000,
+    createdAt: created,
+    customer: {
+      name: "Jamshid Qodirov",
+      phone_number: "+998946120034",
+      region: { name: "Toshkent sh." },
+      district: { name: "Mirobod tumani" },
+    },
+    address: "Amir Temur ko'chasi 41-uy, 7-xonadon",
+    items: [item("Simsiz quloqchin", 1)],
+    ...nur,
+  },
+  /** Ega qarori 2: to'liq «№EL-…» (rwAy8Qyk) — 185 000 so'm bilan № 14, summa 14. */
+  elNumber: {
+    id: "81",
+    order_number: "EL-100081",
+    qr_code_token: token("ef"),
+    status: "new",
+    where_deliver: "address",
+    total_price: 185_000,
+    createdAt: created,
+    customer: {
+      name: "Dilnoza Karimova",
+      phone_number: "+998901234567",
+      region: { name: "Samarqand" },
+      district: { name: "Urgut tumani" },
+    },
+    address: "Navoiy ko'chasi 14-uy, 3-xonadon",
+    items: [item("Smart soat X8 Pro", 1)],
+    operator_phone: "+998712001122",
+    ...baraka,
+  },
   /** 01.B a — qo'shimcha telefon. */
   a: {
     id: "10244",
@@ -250,3 +289,31 @@ export const RECEIPT_SAMPLES = {
 } satisfies Record<string, ReceiptOrderSource>;
 
 export type ReceiptSampleKey = keyof typeof RECEIPT_SAMPLES;
+
+/** Maket 02: filial paketi (B-172, `BTB-…`) va pochta (№2493, `POST-…`) cheki — termal 100×60 va A5. */
+export const RECEIPT_PACKAGE_SAMPLES = {
+  batch: {
+    kind: "batch",
+    id: "172",
+    direction: "forward",
+    token: "BTB-1a2b3c4d5e6f7a8b",
+    createdAt: "2026-10-23T09:15:00.000Z",
+    from: "Toshkent HQ",
+    to: "Samarqand filiali",
+    ordersCount: 48,
+    totalPrice: 8_640_000,
+    driver: { name: "Aziz Rahimov", phone_number: "998901234567" },
+    vehiclePlate: "30 A 456 BC",
+  },
+  post: {
+    kind: "post",
+    id: "2493",
+    token: "POST-1a2b3c4d5e6f7a8b9c",
+    createdAt: "2026-10-23T11:40:00.000Z",
+    from: "Toshkent HQ",
+    to: "Samarqand viloyati",
+    ordersCount: 40,
+    totalPrice: 7_420_000,
+    courier: { name: "Jasur Tursunov", phone_number: "998905554433" },
+  },
+} satisfies Record<string, ReceiptPackageSource>;

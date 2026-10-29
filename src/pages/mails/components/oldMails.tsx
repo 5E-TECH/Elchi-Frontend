@@ -15,7 +15,11 @@ import {
   type BatchStatus,
 } from "../../../entities/batch";
 import { useUser } from "../../../entities/user/api/userApi";
-import { countReceiptsWithoutQr, useReceiptPrint } from "../../../features/print-receipts";
+import {
+  countReceiptsWithoutQr,
+  receiptPackageWithoutQr,
+  useReceiptPrint,
+} from "../../../features/print-receipts";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { cx } from "../../../shared/lib/cx";
@@ -391,6 +395,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
         await runReceiptPrint({
           key: row.id,
           withoutQr: countReceiptsWithoutQr(orders),
+          packageWithoutQr: receiptPackageWithoutQr(source),
           print: () => printPostWithOrders(source, orders),
         });
       } finally {

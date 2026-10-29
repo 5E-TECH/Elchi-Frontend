@@ -99,15 +99,23 @@ const drawOp = (pdf: jsPDF, op: ReceiptOp) => {
   }
 };
 
-const orientationOf = (page: ReceiptPage): "landscape" | "portrait" =>
+const orientationOf = (page: Pick<ReceiptPage, "width" | "height">): "landscape" | "portrait" =>
   page.width > page.height ? "landscape" : "portrait";
 
-/** jsPDF konstruktori parametrlari (birinchi sahifa o'lchamida). */
-export const receiptPdfOptions = (page: ReceiptPage) => ({
+/**
+ * jsPDF konstruktori parametrlari (birinchi sahifa o'lchamida).
+ *
+ * `compress: false` — TZ qabul 8 (UI 100 ms dan ortiq qotmaydi): jsPDF siqishni `output()` ichida bitta sinxron blokda
+ * qiladi — 200 ta chekda 250–550 ms (`scratchpad/receipts-fix` o'lchovi), uni bo'laklab bo'lmaydi. Siqilmagan fayl
+ * ~3 MB (200 ta chek), `output()` ~60 ms; fayl faqat lokal `blob:` oynada ochiladi yoki chop etiladi.
+ * `floatPrecision: 3` — koordinatalar 0,001 pt (0,0004 mm) gacha: fayl va `output()` ikki baravar kichik.
+ */
+export const receiptPdfOptions = (page: Pick<ReceiptPage, "width" | "height">) => ({
   unit: "mm" as const,
   format: [page.width, page.height],
   orientation: orientationOf(page),
-  compress: true,
+  compress: false,
+  floatPrecision: 3,
 });
 
 /** Bitta sahifani joriy jsPDF sahifasiga chizadi. */
@@ -117,7 +125,7 @@ export const drawReceiptPage = (pdf: jsPDF, page: ReceiptPage) => {
 
 /**
  * Sahifalarni hujjatga chizadi (birinchisi — mavjud sahifaga, qolgani `addPage`). `onPage` — har sahifadan keyin
- * (25 taliklab `await` uchun chaqiruvchi ishlatadi).
+ * (chaqiruvchi `ReceiptScheduler.checkpoint` bilan vaqt bo'yicha navbat beradi).
  */
 export const renderReceiptPdf = async (
   pdf: jsPDF,

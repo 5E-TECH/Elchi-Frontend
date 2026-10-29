@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanReceiptValue,
   formatReceiptPerson,
+  formatReceiptPhone,
   getReceiptContactPhone,
   getReceiptContactPhones,
 } from "./receiptContact";
@@ -43,5 +45,30 @@ describe("receipt contact fields (1mOjtOVC, HJ5sLHiz: maket tizim-receipts 10-ba
     );
     expect(formatReceiptPerson({ name: "Jasur", phone_number: null })).toBe("Jasur");
     expect(formatReceiptPerson(null)).toBe("");
+  });
+
+  it("placeholders («-», «—», «–», whitespace, «...», «null») are empty — never printed", () => {
+    for (const value of ["-", "—", "–", " - ", "   ", "...", "…", "_", "null", "undefined", "N/A"]) {
+      expect(cleanReceiptValue(value), JSON.stringify(value)).toBe("");
+      expect(formatReceiptPhone(value), JSON.stringify(value)).toBe("");
+    }
+    // Raqamsiz matn telefon emas.
+    expect(formatReceiptPhone("( )")).toBe("");
+    expect(cleanReceiptValue("Baraka-Shop")).toBe("Baraka-Shop");
+    expect(formatReceiptPhone(" 998901234567 ")).toBe("+998 90 123 45 67");
+
+    // Operator raqamlari «-» / «—» — market raqami zaxira; hech biri yo'q — bo'sh.
+    expect(
+      getReceiptContactPhones({
+        operator_phone: "-",
+        secondary_operator_phone: "—",
+        market: { phone_number: "+998712001122" },
+      }),
+    ).toEqual(["+998 71 200 11 22"]);
+    expect(
+      getReceiptContactPhones({ operator_phone: "—", market: { phone_number: " - " } }),
+    ).toEqual([]);
+    expect(formatReceiptPerson({ name: "—", phone_number: "-" })).toBe("");
+    expect(formatReceiptPerson({ name: "Jasur", phone_number: "—" })).toBe("Jasur");
   });
 });

@@ -177,13 +177,21 @@ export interface OrderReceiptSpec {
     right: number;
     numberPts: readonly number[];
     numberLineFactor: number;
+    /** № va ramka orasi (maket: 5 mm) — barcha pog'onalar shu bilan sinaladi. */
     gap: number;
+    /** Eng kichik juftlikda (12 / 12) ham sig'masa — kamaytirilgan oraliq (4 mm); undan kam bo'lmaydi. */
     gapFallback: number;
     rule: { y: number; h: number };
   };
   amount: {
     pts: readonly number[];
-    /** Ramka balandligi summa shriftiga ko'ra. */
+    /**
+     * Oxirgi chora (`gapFallback` ham sig'masa — 1 000 000 000 so'mdan katta summa): summa yana shu o'lchamlarga
+     * kichrayadi (№ eng kichigida qoladi), oraliq `gapFallback` dan kam bo'lmaydi — № va ramka hech qachon ustma-ust
+     * tushmaydi.
+     */
+    lastResortPts: readonly number[];
+    /** Ramka balandligi summa shriftiga ko'ra (yo'q o'lcham — undan katta eng yaqini). */
     heights: Readonly<Record<number, number>>;
     /** «jami …» qatori qo'shilganda balandlik ortishi. */
     partialExtra: number;
@@ -264,7 +272,8 @@ export const THERMAL_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSp
   },
   amount: {
     pts: [16, 14, 12],
-    heights: { 16: 8, 14: 7.4, 12: 6.6 },
+    lastResortPts: [11, 10],
+    heights: { 16: 8, 14: 7.4, 12: 6.6, 11: 6.2, 10: 5.8 },
     partialExtra: 1.6,
     lineGap: 2,
     partialLineGap: 4,
@@ -321,6 +330,7 @@ export const A4_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSpec>({
   },
   amount: {
     pts: [14, 12, 10],
+    lastResortPts: [],
     heights: { 14: 7.4, 12: 6.6, 10: 5.8 },
     partialExtra: 1.6,
     lineGap: 2,
@@ -659,6 +669,19 @@ export interface ReceiptHeaderFit {
 const amountSizes = (amount: ReceiptAmount, spec: OrderReceiptSpec) =>
   amount.kind === "label" ? [spec.amount.labelPt] : spec.amount.pts;
 
+/** «so'm» o'lchami: 8 pt (A4 — 7), summa undan kichraysa — summa bilan bir xil. */
+const currencyPtOf = (pt: number, spec: OrderReceiptSpec) => Math.min(spec.amount.currencyPt, pt);
+
+/** Ramka balandligi: o'lchamning o'z qiymati; jadvalda yo'q (0,5 pt qadam) — undan katta eng yaqin o'lchamniki. */
+const amountHeightOf = (pt: number, spec: OrderReceiptSpec) => {
+  const { heights } = spec.amount;
+  if (heights[pt] !== undefined) return heights[pt];
+  const known = Object.keys(heights)
+    .map(Number)
+    .sort((a, b) => a - b);
+  return heights[known.find((size) => size >= pt) ?? known[known.length - 1]];
+};
+
 /** Ramka eni: summa + « so'm» (8 pt) yoki «jami …» (7 pt) dan kengi + 2 × (chiziq + ichki chekka) = + 3,2 mm. */
 const amountBox = (
   amount: ReceiptAmount,
@@ -668,25 +691,38 @@ const amountBox = (
 ) => {
   const inset = 2 * (spec.amount.border + spec.amount.padX);
   if (amount.kind === "label") {
-    return { width: measure(amount.text, pt, 700) + inset, height: spec.amount.labelHeight };
+    return {
+      width: measure(amount.text, pt, 700) + inset,
+      // Oxirgi chorada (yorliq 12 pt dan kichraygan) — summa ramkasi balandligi.
+      height:
+        pt >= spec.amount.labelPt - EPS
+          ? spec.amount.labelHeight
+          : Math.min(spec.amount.labelHeight, amountHeightOf(pt, spec)),
+    };
   }
   const main =
     measure(amount.value, pt, 700) +
-    measure(` ${RECEIPT_TEXT.currency}`, spec.amount.currencyPt, 700);
+    measure(` ${RECEIPT_TEXT.currency}`, currencyPtOf(pt, spec), 700);
   const total = amount.total
     ? measure(`${RECEIPT_TEXT.total} ${amount.total}`, spec.amount.totalPt, 600)
     : 0;
-  const base =
-    spec.amount.heights[pt] ?? spec.amount.heights[spec.amount.pts[spec.amount.pts.length - 1]];
   return {
     width: Math.max(main, total) + inset,
-    height: base + (amount.total ? spec.amount.partialExtra : 0),
+    height: amountHeightOf(pt, spec) + (amount.total ? spec.amount.partialExtra : 0),
   };
 };
 
+/** Summa kichrayishining pastki chegarasi (oxirgi chora ham sig'masa, 0,5 pt qadam bilan). */
+const AMOUNT_FLOOR_PT = 6;
+
 /**
  * Ega qarori 2: № 18 → 16 → 14 → 12, har biriga summa 16 → 14 → 12; birinchi `eni(№) + 5 mm + eni(ramka) ≤ 67,4` juftlik.
- * 12/12 da ham sig'masa — oraliq 4 mm (baribir sig'masa ham 12/12: № va summa kesilmaydi).
+ * 5 mm hech birida sig'masa:
+ *  1) eng kichik juftlik (12 / 12) oraliq 4 mm (`gapFallback`) bilan;
+ *  2) u ham sig'masa (summa ≥ ~1 000 000 000) — oxirgi chora: № 12 da qoladi, summa 11 → 10 pt (`lastResortPts`),
+ *     oraliq ≥ 4 mm;
+ *  3) 10 pt da ham sig'masa (amalda bo'lmaydi) — summa 0,5 pt dan kichrayib boradi, oraliq ≥ 4 mm.
+ * № va summa kesilmaydi va hech qachon ustma-ust tushmaydi.
  */
 export const fitReceiptHeader = (
   ref: string,
@@ -701,27 +737,49 @@ export const fitReceiptHeader = (
     const numberPt = pts.find((pt) => measure(ref, pt, 700) <= width + EPS) ?? pts[pts.length - 1];
     return { numberPt, amountPt: null, boxWidth: 0, boxHeight: 0, gap: null };
   }
+  const pair = (numberPt: number, numberWidth: number, amountPt: number): ReceiptHeaderFit => {
+    const box = amountBox(amount, amountPt, spec, measure);
+    return {
+      numberPt,
+      amountPt,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      gap: width - numberWidth - box.width,
+    };
+  };
+  const fits = (fit: ReceiptHeaderFit, gap: number) => (fit.gap ?? 0) >= gap - EPS;
+
   const sizes = amountSizes(amount, spec);
   for (const numberPt of pts) {
     const numberWidth = measure(ref, numberPt, 700);
     for (const amountPt of sizes) {
-      const box = amountBox(amount, amountPt, spec, measure);
-      const gap = width - numberWidth - box.width;
-      if (gap >= spec.header.gap - EPS) {
-        return { numberPt, amountPt, boxWidth: box.width, boxHeight: box.height, gap };
-      }
+      const fit = pair(numberPt, numberWidth, amountPt);
+      if (fits(fit, spec.header.gap)) return fit;
     }
   }
+
+  // 5 mm hech birida sig'madi: № eng kichigida, oraliq kamida `gapFallback`.
   const numberPt = pts[pts.length - 1];
-  const amountPt = sizes[sizes.length - 1];
-  const box = amountBox(amount, amountPt, spec, measure);
-  return {
-    numberPt,
-    amountPt,
-    boxWidth: box.width,
-    boxHeight: box.height,
-    gap: width - measure(ref, numberPt, 700) - box.width,
-  };
+  const numberWidth = measure(ref, numberPt, 700);
+  const smallest = sizes[sizes.length - 1];
+  const fallbacks = [
+    smallest,
+    ...spec.amount.lastResortPts.filter((pt) => pt < smallest - EPS),
+  ];
+  for (const amountPt of fallbacks) {
+    const fit = pair(numberPt, numberWidth, amountPt);
+    if (fits(fit, spec.header.gapFallback)) return fit;
+  }
+  let fit = pair(numberPt, numberWidth, fallbacks[fallbacks.length - 1]);
+  for (
+    let amountPt = fallbacks[fallbacks.length - 1] - 0.5;
+    amountPt >= AMOUNT_FLOOR_PT - EPS;
+    amountPt -= 0.5
+  ) {
+    fit = pair(numberPt, numberWidth, amountPt);
+    if (fits(fit, spec.header.gapFallback)) return fit;
+  }
+  return fit;
 };
 
 /**
@@ -742,7 +800,8 @@ const amountLineBox = (
   const shift = (size: number) =>
     (RECEIPT_FONT_METRICS.ascent - RECEIPT_FONT_METRICS.descent) * size;
   const line = fit.boxHeight - (amount.total ? box.partialLineGap : box.lineGap);
-  const lineBox = line + Math.max(0, shift(sizeMm(pt)) - shift(sizeMm(box.currencyPt))) / 2;
+  const lineBox =
+    line + Math.max(0, shift(sizeMm(pt)) - shift(sizeMm(currencyPtOf(pt, spec)))) / 2;
   const content = lineBox + (amount.total ? box.totalLine : 0);
   const top = y + box.border + (fit.boxHeight - 2 * box.border - content) / 2;
   return {
@@ -794,7 +853,8 @@ const headerOps = (
       });
     } else {
       const currency = ` ${RECEIPT_TEXT.currency}`;
-      const currencyWidth = measure(currency, box.currencyPt, 700);
+      const currencyPt = currencyPtOf(fit.amountPt, spec);
+      const currencyWidth = measure(currency, currencyPt, 700);
       const valueWidth = measure(amount.value, fit.amountPt, 700);
       const lines = amountLineBox(amount, fit, y, spec);
       const baseline = round3(lines.value);
@@ -810,7 +870,7 @@ const headerOps = (
         kind: "text",
         x: round3(right - currencyWidth),
         baseline,
-        pt: box.currencyPt,
+        pt: currencyPt,
         weight: 700,
         text: currency,
       });

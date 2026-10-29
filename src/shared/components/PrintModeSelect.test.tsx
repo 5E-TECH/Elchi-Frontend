@@ -90,6 +90,52 @@ describe("PrintModeSelect (v2)", () => {
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
+  it("allowEmpty: soni 0 bo'lsa ham faol; o'chiq band (aria-disabled) fokuslanadi, lekin tanlanmaydi (HJ5sLHiz)", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const options: PrintSelectOption[] = [
+      { ...OPTIONS[0], disabled: true, hint: "Avval buyurtmalarni tanlang" },
+      { ...OPTIONS[1], disabled: true },
+      { id: "post_receipt", label: "Pochta cheki", icon: <FileText size={16} /> },
+    ];
+    const { rerender } = renderWithProviders(
+      <PrintModeSelect count={0} onSelect={onSelect} buttonLabel="Chop etish" options={options} />,
+    );
+    // `allowEmpty` siz — eski xatti-harakat: 0 da o'chiq.
+    expect(screen.getByRole("button", { name: "Chop etish 0" })).toBeDisabled();
+
+    rerender(<PrintModeSelect count={0} allowEmpty onSelect={onSelect} buttonLabel="Chop etish" options={options} />);
+    const trigger = screen.getByRole("button", { name: "Chop etish 0" });
+    expect(trigger).toBeEnabled();
+    await user.click(trigger);
+    const items = screen.getAllByRole("menuitem");
+    expect(items.map((item) => item.getAttribute("aria-disabled"))).toEqual(["true", "true", null]);
+    // Ochilganda — birinchi faol band; ↓ o'chiq bandlardan ham o'tadi (WAI-ARIA: fokuslanadi).
+    expect(items[2]).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(items[0]).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    await user.click(items[1]);
+    expect(onSelect).not.toHaveBeenCalled();
+    await user.click(items[2]);
+    expect(onSelect).toHaveBeenCalledWith("post_receipt");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+
+    // Hamma band o'chiq — tugma ham o'chiq.
+    rerender(
+      <PrintModeSelect
+        count={0}
+        allowEmpty
+        onSelect={onSelect}
+        buttonLabel="Chop etish"
+        options={options.slice(0, 2)}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Chop etish 0" })).toBeDisabled();
+  });
+
   it("icon: ikonka tugma (nomi buttonLabel), ↑ — oxirgi bandga", async () => {
     const user = userEvent.setup();
     renderWithProviders(

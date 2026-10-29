@@ -15,6 +15,7 @@ import {
 import type { PostOrder } from "../../../entities/mails";
 import {
   printPackageReceipt,
+  receiptPackageWithoutQr,
   useReceiptPrint,
   type ReceiptPackageSheet,
 } from "../../../features/print-receipts";
@@ -264,7 +265,11 @@ const BatchDetailPage = () => {
   const print = (sheet: ReceiptPackageSheet) => {
     if (!batch) return;
     const source = toBatchReceiptSource(batch, { from: fromName, to: toName });
-    void receiptPrint.run({ print: () => printPackageReceipt(source, { sheet, output: "browser" }) });
+    void receiptPrint.run({
+      // Token yo'q — oldindan «Paket chekida QR yo'q» (chekda «QR yo'q» ramkasi).
+      packageWithoutQr: receiptPackageWithoutQr(source),
+      print: () => printPackageReceipt(source, { sheet, output: "browser" }),
+    });
   };
 
   // ─── Yuklanish ───────────────────────────────────────────────────────────────

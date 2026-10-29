@@ -109,6 +109,46 @@ describe("header: № and boxed sum (ega qarori 2)", () => {
     expect(result.gap!).toBeLessThan(5);
   });
 
+  it("gapFallback is enforced: 5 mm everywhere → 4 mm at 12 / 12 → the sum shrinks to 11 / 10 pt, gap ≥ 4 mm", () => {
+    // 1 999 999 999 so'm: 12 / 12 da oraliq ~1,7 mm (ustma-ust tushishga yaqin) — oxirgi chora: summa 11 pt, № 12 pt.
+    const absurd = fit("№EL-100081", collect("1 999 999 999"));
+    expect(absurd).toMatchObject({ numberPt: 12, amountPt: 11, boxHeight: 6.2 });
+    expect(absurd.gap!).toBeGreaterThanOrEqual(4);
+    // 19 999 999 999 so'm — 10 pt.
+    const bigger = fit("№EL-100081", collect("19 999 999 999"));
+    expect(bigger).toMatchObject({ numberPt: 12, amountPt: 10, boxHeight: 5.8 });
+    expect(bigger.gap!).toBeGreaterThanOrEqual(4);
+
+    // Bir xil enli soxta shrift: 12 / 12 da 4 mm ham sig'maydi → 11, 10, keyin 0,5 pt qadam — oraliq doim ≥ 4 mm.
+    const mono: ReceiptMeasure = (value, pt) => Array.from(value).length * 0.5 * pt * MM_PER_PT;
+    const tenPt = fitReceiptHeader("№EL-100081", collect("99 999 999 999 999"), mono);
+    expect(tenPt.numberPt).toBe(12);
+    expect(tenPt.amountPt!).toBeLessThan(12);
+    expect(tenPt.gap!).toBeGreaterThanOrEqual(4);
+    const beyond = fitReceiptHeader("№EL-100081", collect("9 999 999 999 999 999"), mono);
+    expect(beyond.amountPt!).toBeLessThan(10);
+    expect(beyond.gap!).toBeGreaterThanOrEqual(4);
+  });
+
+  it("1 999 999 999 so'm on the receipt: the box starts ≥ 4 mm after the number — nothing overlaps", () => {
+    const [label] = layout({
+      ...RECEIPT_SAMPLES.main,
+      order_number: "EL-100081",
+      total_price: 1_999_999_999,
+    });
+    const number = text(label, "№EL-100081");
+    const value = text(label, "1 999 999 999");
+    const box = frames(label)[0];
+    expect(number.pt).toBe(12);
+    expect(value.pt).toBe(11);
+    const numberRight = number.x + measure(number.text, number.pt, 700);
+    expect(box.x - numberRight).toBeGreaterThanOrEqual(4 - 1e-6);
+    expect(box.x + box.w).toBeCloseTo(69.4, 3);
+    // Summa va «so'm» ramka ichida.
+    expect(value.x).toBeGreaterThan(box.x);
+    expect(text(label, " so'm").pt).toBe(8);
+  });
+
   it("labels keep 12 pt («To'langan», «2/2 · davomi»); no money field → no box, № alone", () => {
     expect(fit("№10433", { kind: "label", text: "To'langan" })).toMatchObject({
       numberPt: 18,

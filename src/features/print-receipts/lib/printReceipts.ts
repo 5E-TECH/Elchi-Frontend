@@ -6,8 +6,9 @@ import {
   type ReceiptFontData,
   type ReceiptMeasure,
 } from "./printReceiptFonts";
-import { printReceiptHtml, renderReceiptHtml } from "./printReceiptHtml";
+import { printReceiptHtml, renderReceiptHtmlSliced } from "./printReceiptHtml";
 import {
+  A4_SHEET,
   composeReceiptPages,
   layoutOrderReceipt,
   ORDER_RECEIPT_SPECS,
@@ -17,6 +18,7 @@ import {
 } from "./printReceiptLayout";
 import {
   layoutPackageReceipt,
+  PACKAGE_RECEIPT_SPECS,
   toReceiptPackageModel,
   type ReceiptPackageSheet,
   type ReceiptPackageSource,
@@ -27,16 +29,16 @@ import {
   type ReceiptOrderSource,
 } from "./printReceiptModel";
 import { openReceiptPdf, receiptPdfOptions, renderReceiptPdf } from "./printReceiptPdf";
+import { createReceiptScheduler, type ReceiptScheduler } from "./receiptScheduler";
 
 /**
  * CHEK CHOP ETISH YO'LI (HJ5sLHiz, TZ F9) — dinamik yuklanadi (`index.ts`): jsPDF va shriftlar faqat chop etishda.
- * Shriftlar → o'lchovchi → model → joylash (25 taliklab `await`, UI qotmaydi) → bitta `ReceiptPage[]` → PDF yoki
- * brauzer (yashirin iframe). 200 dan ko'p buyurtma — 200 taliklab alohida ish (backend chegarasi bilan bir xil;
- * davomi yorliqlari hisobga kirmaydi).
+ * Shriftlar → bitta jsPDF hujjati (o'lchash ham, PDF ham shu) → model → joylash → bitta `ReceiptPage[]` → PDF yoki
+ * brauzer (yashirin iframe). Ish vaqt bo'yicha bo'laklanadi (`ReceiptScheduler`, 32 ms): joylash, PDF chizish va HTML
+ * yig'ish har birlikdan keyin navbat beradi — 200 ta chekda UI 100 ms dan ortiq qotmaydi (TZ qabul 8). 200 dan ko'p
+ * buyurtma — 200 taliklab alohida ish (backend chegarasi bilan bir xil; davomi yorliqlari hisobga kirmaydi).
  */
 
-/** Bir `await` oralig'idagi buyurtmalar. */
-export const RECEIPT_CHUNK = 25;
 /** Bitta chop etish ishi (PDF / brauzer oynasi) dagi buyurtmalar. */
 export const RECEIPT_JOB_LIMIT = 200;
 
@@ -63,6 +65,8 @@ export interface PrintOrderReceiptsOptions {
   leadingPackage?: ReceiptPackageSource;
   /** PDF yuklab olinganda fayl nomi (kengaytmasiz). */
   fileName?: string;
+  /** Ishni bo'laklash (sukut — yangi `createReceiptScheduler()`; testda soxta soat bilan). */
+  scheduler?: ReceiptScheduler;
 }
 
 export interface PrintPackageReceiptOptions {
@@ -90,30 +94,41 @@ export const warmUpReceiptPrinting = () =>
     () => undefined,
   );
 
-const yieldToMain = () => new Promise<void>((resolve) => globalThis.setTimeout(resolve, 0));
+/** Varaq (birinchi sahifa) o'lchami — PDF hujjati joylashdan oldin shu bilan yaratiladi. */
+const sheetSize = (sheet: ReceiptSheet) =>
+  sheet === "a4"
+    ? { width: A4_SHEET.width, height: A4_SHEET.height }
+    : { width: ORDER_RECEIPT_SPECS.thermal.width, height: ORDER_RECEIPT_SPECS.thermal.height };
 
-/** Shriftlar qo'shilgan o'lchov hujjati (o'lchash jsPDF metrikasi bilan — PDF va brauzer bir xil). */
-export const createReceiptMeasure = (fonts: ReceiptFontData): ReceiptMeasure => {
-  const pdf = new jsPDF({ unit: "mm", format: [100, 60], orientation: "landscape" });
+/** Shriftlar qo'shilgan jsPDF hujjati: o'lchash ham, PDF ham shu (ikkinchi hujjat va shriftlarni qayta o'qish yo'q). */
+const createReceiptDocument = (
+  fonts: ReceiptFontData,
+  size: { width: number; height: number } = sheetSize("thermal"),
+) => {
+  const pdf = new jsPDF(receiptPdfOptions(size));
   registerReceiptFonts(pdf, fonts);
-  return createPdfReceiptMeasure(pdf, fonts);
+  return pdf;
 };
 
-/** Buyurtmalar → sahifalar (`ReceiptPage[]`) — ikkala renderer uchun bitta manba. */
+/** Shriftlar qo'shilgan o'lchov hujjati (o'lchash jsPDF metrikasi bilan — PDF va brauzer bir xil). */
+export const createReceiptMeasure = (fonts: ReceiptFontData): ReceiptMeasure =>
+  createPdfReceiptMeasure(createReceiptDocument(fonts), fonts);
+
+/** Buyurtmalar → sahifalar (`ReceiptPage[]`) — ikkala renderer uchun bitta manba. Har buyurtmadan keyin navbat. */
 export const buildOrderReceiptPages = async (
   orders: ReadonlyArray<ReceiptOrderSource>,
   measure: ReceiptMeasure,
-  options: Pick<PrintOrderReceiptsOptions, "sheet" | "labelsAfterOrder"> = {},
+  options: Pick<PrintOrderReceiptsOptions, "sheet" | "labelsAfterOrder" | "scheduler"> = {},
 ): Promise<ReceiptPage[]> => {
   const sheet = options.sheet ?? "thermal";
   const spec = ORDER_RECEIPT_SPECS[sheet];
+  const scheduler = options.scheduler ?? createReceiptScheduler();
   const labels: ReceiptLabel[] = [];
-  for (let index = 0; index < orders.length; index += 1) {
-    if (index > 0 && index % RECEIPT_CHUNK === 0) await yieldToMain();
-    const order = orders[index];
+  for (const order of orders) {
     const model = toReceiptOrderModel(order);
     labels.push(...layoutOrderReceipt(model, { measure }, spec));
     labels.push(...(options.labelsAfterOrder?.(order, model, measure, sheet) ?? []));
+    await scheduler.checkpoint();
   }
   return composeReceiptPages(labels, sheet);
 };
@@ -139,22 +154,25 @@ const chunk = <T>(items: ReadonlyArray<T>, size: number): T[][] => {
   return out;
 };
 
-/** Tayyor sahifalarni chiqaradi: PDF (yangi oyna / yuklab olish) yoki brauzer (yashirin iframe). */
+/**
+ * Tayyor sahifalarni chiqaradi: PDF (yangi oyna / yuklab olish) yoki brauzer (yashirin iframe). `pdf` — sahifalar
+ * chiziladigan hujjat (birinchi sahifasi varaq o'lchamida, bo'sh).
+ */
 const deliverPages = async (
   pages: ReceiptPage[],
-  fonts: ReceiptFontData,
+  pdf: () => jsPDF,
   output: ReceiptOutput,
   fileName: string,
+  scheduler: ReceiptScheduler,
 ): Promise<"opened" | "saved" | "printed"> => {
   if (output === "pdf") {
-    const pdf = new jsPDF(receiptPdfOptions(pages[0]));
-    registerReceiptFonts(pdf, fonts);
-    await renderReceiptPdf(pdf, pages, (index) =>
-      index > 0 && index % RECEIPT_CHUNK === 0 ? yieldToMain() : undefined,
-    );
-    return openReceiptPdf(pdf, `${fileName}.pdf`);
+    const doc = pdf();
+    await renderReceiptPdf(doc, pages, () => scheduler.checkpoint());
+    await scheduler.checkpoint();
+    return openReceiptPdf(doc, `${fileName}.pdf`);
   }
-  await printReceiptHtml(renderReceiptHtml(pages));
+  const html = await renderReceiptHtmlSliced(pages, scheduler);
+  await printReceiptHtml(html);
   return "printed";
 };
 
@@ -179,11 +197,19 @@ export const printOrderReceipts = async (
   };
   if (orders.length === 0 && !options.leadingPackage) return result;
 
+  const scheduler = options.scheduler ?? createReceiptScheduler();
   const fonts = await loadReceiptFontData();
-  const measure = createReceiptMeasure(fonts);
+  // Birinchi ishning hujjati: o'lchash shu bilan, PDF bo'lsa — sahifalar ham shunga chiziladi.
+  const first = createReceiptDocument(fonts, sheetSize(sheet));
+  const measure = createPdfReceiptMeasure(first, fonts);
+  await scheduler.checkpoint();
   const jobs = orders.length ? chunk(orders, RECEIPT_JOB_LIMIT) : [[]];
   for (let job = 0; job < jobs.length; job += 1) {
-    const pages = await buildOrderReceiptPages(jobs[job], measure, { ...options, sheet });
+    const pages = await buildOrderReceiptPages(jobs[job], measure, {
+      ...options,
+      sheet,
+      scheduler,
+    });
     if (job === 0 && options.leadingPackage) {
       pages.unshift(buildPackageReceiptPage(options.leadingPackage, measure, "thermal"));
     }
@@ -194,9 +220,10 @@ export const printOrderReceipts = async (
     result.delivery.push(
       await deliverPages(
         pages,
-        fonts,
+        () => (job === 0 ? first : createReceiptDocument(fonts, sheetSize(sheet))),
         options.output,
         `${options.fileName ?? "elchi-cheklar"}${suffix}`,
+        scheduler,
       ),
     );
   }
@@ -208,17 +235,16 @@ export const printPackageReceipt = async (
   source: ReceiptPackageSource,
   options: PrintPackageReceiptOptions,
 ): Promise<ReceiptPrintResult> => {
+  const sheet = options.sheet ?? "thermal";
   const fonts = await loadReceiptFontData();
-  const page = buildPackageReceiptPage(
-    source,
-    createReceiptMeasure(fonts),
-    options.sheet ?? "thermal",
-  );
+  const pdf = createReceiptDocument(fonts, PACKAGE_RECEIPT_SPECS[sheet]);
+  const page = buildPackageReceiptPage(source, createPdfReceiptMeasure(pdf, fonts), sheet);
   const delivery = await deliverPages(
     [page],
-    fonts,
+    () => pdf,
     options.output,
     options.fileName ?? "elchi-paket",
+    createReceiptScheduler(),
   );
   return {
     orders: 0,

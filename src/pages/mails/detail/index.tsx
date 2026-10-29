@@ -20,6 +20,7 @@ import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import {
   countReceiptsWithoutQr,
   preloadReceiptPrinting,
+  receiptPackageWithoutQr,
   useReceiptPrint,
 } from "../../../features/print-receipts";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
@@ -912,6 +913,11 @@ const MailDetailPage = () => {
   // HJ5sLHiz: «Pochta cheki» (qop uchun) — pochtaning o'z ma'lumoti bor oddiy pochtada (rad etilganda emas).
   const canPrintPostReceipt = Boolean(postId) && !isEffectiveRefusedDetail && regularOrdersFromPost.length > 0;
   const printOptions = useMailPrintOptions({ withPostReceipt: canPrintPostReceipt });
+  // «Chop etish» (tanlanganlar): hech narsa tanlanmasa ham «Pochta cheki» ishlaydi, buyurtma cheklari — o'chiq.
+  const selectedPrintOptions = useMailPrintOptions({
+    withPostReceipt: canPrintPostReceipt,
+    ordersDisabled: selectedIds.size === 0,
+  });
   const receiptPrint = useReceiptPrint();
   const runReceiptPrint = receiptPrint.run;
 
@@ -928,7 +934,12 @@ const MailDetailPage = () => {
           totals: regularResponse?.data,
           regionName: regionLabel,
         });
-        void runReceiptPrint({ key, print: () => printPostReceipt(source) });
+        void runReceiptPrint({
+          key,
+          // Pochta tokeni yo'q — oldindan «Pochta chekida QR yo'q» (buyurtmalardagidek).
+          packageWithoutQr: receiptPackageWithoutQr(source),
+          print: () => printPostReceipt(source),
+        });
         return;
       }
       if (printTargets.length === 0) return;
@@ -1098,20 +1109,35 @@ const MailDetailPage = () => {
   ) : null;
 
   // Chop etish: tanlanganlar (menyu; telefonda pastki varaqa). Kuryerning rad etilgan pochtasida — barchasi.
+  // Hech narsa tanlanmagan: tugma «Pochta cheki» uchun faol (`allowEmpty`), buyurtma cheklari o'chiq (HJ5sLHiz).
+  const nothingSelected = selectedCount === 0;
   const renderPrintSelected = (className?: string, compact = false) => (
     <PrintModeSelect
       count={selectedCount}
+      allowEmpty={canPrintPostReceipt}
       onSelect={(mode) => handlePrint(mode as PrintMode)}
       buttonLabel={t("print")}
-      ariaLabel={isCourier ? t("detailPage.printSelectedLabel", { value: selectedValue, count: selectedCount }) : undefined}
+      ariaLabel={
+        isCourier && !nothingSelected
+          ? t("detailPage.printSelectedLabel", { value: selectedValue, count: selectedCount })
+          : undefined
+      }
       menuLabel={t("detailPage.printMenuLabel")}
-      menuTitle={t(isCourier ? "detailPage.printMenuTitleLabels" : "detailPage.printMenuTitle", {
-        value: selectedValue,
-        count: selectedCount,
-      })}
+      menuTitle={
+        nothingSelected
+          ? t("detailPage.printMenuTitleNone")
+          : t(isCourier ? "detailPage.printMenuTitleLabels" : "detailPage.printMenuTitle", {
+              value: selectedValue,
+              count: selectedCount,
+            })
+      }
       sheetTitle={t("detailPage.printSheetTitle")}
-      sheetDescription={t("detailPage.printSheetDescription", { value: selectedValue, count: selectedCount })}
-      options={printOptions}
+      sheetDescription={
+        nothingSelected
+          ? t("detailPage.printSheetDescriptionNone")
+          : t("detailPage.printSheetDescription", { value: selectedValue, count: selectedCount })
+      }
+      options={selectedPrintOptions}
       loading={receiptPrint.printingKey === "selected"}
       onOpen={preloadReceiptPrinting}
       className={className}

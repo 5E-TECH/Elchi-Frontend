@@ -219,6 +219,33 @@ describe("receipt fields (TZ F3)", () => {
       amount: null,
     });
   });
+
+  it("placeholder phones («-», «—», whitespace, «null») are empty: phone, extra number, «Muammo bo'lsa», number", () => {
+    const model = toReceiptOrderModel({
+      id: "6",
+      order_number: "—",
+      extra_number: "-",
+      operator_phone: "—",
+      secondary_operator_phone: " - ",
+      customer: { name: "Dilnoza", phone_number: "-", extra_number: "—" },
+      market: { name: "Baraka Shop", phone_number: "null" },
+    });
+    expect(model).toMatchObject({ ref: "№6", phone: "", extraPhone: "", contacts: [] });
+
+    // Bo'sh joy tutuvchi qator raqami keyingi manbaga yo'l beradi: `extra_number` «-» → `customer.extra_number`.
+    const fallback = toReceiptOrderModel({
+      id: "7",
+      extra_number: "–",
+      operator_phone: "-",
+      customer: { phone_number: " — ", extra_number: "998991981929" },
+      market: { phone_number: "+998712001122" },
+    });
+    expect(fallback).toMatchObject({
+      phone: "",
+      extraPhone: "+998 99 198 19 29",
+      contacts: ["+998 71 200 11 22"],
+    });
+  });
 });
 
 describe("receipt text: Cyrillic and Uzbek apostrophes (TZ F2)", () => {

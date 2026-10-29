@@ -314,6 +314,8 @@ describe("OldMails — xodim (pochtalar)", () => {
     const [source, printed] = mocks.printPostWithOrders.mock.calls[0];
     expect(printed).toEqual(orders);
     expect(source).toMatchObject({ kind: "post", id: "90", token: "POST-90", ordersCount: 1, totalPrice: 185_000 });
+    // Pochta va buyurtma tokenlari bor — «QR yo'q» ogohlantirishi yo'q.
+    expect(screen.queryByText("Pochta chekida QR yo'q")).not.toBeInTheDocument();
   });
 
   it("warns before printing when orders have no QR token and shows a retryable error when printing fails", async () => {
@@ -324,6 +326,8 @@ describe("OldMails — xodim (pochtalar)", () => {
 
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
     expect(await screen.findByText("1 ta buyurtmada QR yo'q")).toBeInTheDocument();
+    // Eski javobda `post` meta'si (va uning tokeni) yo'q — pochta cheki ham «QR yo'q» bilan chiqadi: oldindan aytiladi.
+    expect(await screen.findByText("Pochta chekida QR yo'q")).toBeInTheDocument();
     expect(await screen.findByText("Chek chop etilmadi")).toBeInTheDocument();
 
     mocks.printPostWithOrders.mockResolvedValueOnce({ orders: 1, pages: 2, jobs: 1, withoutQr: 1, delivery: ["printed"] });

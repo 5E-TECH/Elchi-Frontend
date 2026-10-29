@@ -5,6 +5,7 @@ import { CURRENCY_LABEL, formatMoneyLocalized } from "../../../shared/lib/format
 import { parseUzbekPhone } from "../../../shared/lib/formatPhone";
 import { normalizeReceiptText } from "./printReceiptFonts";
 import {
+  cleanReceiptValue,
   formatReceiptPhone,
   getReceiptContactPhones,
   type ReceiptContactSource,
@@ -173,13 +174,23 @@ export const formatReceiptDate = (value: unknown, withTime = false): string => {
   return withTime ? `${date}, ${pad2(local.getUTCHours())}:${pad2(local.getUTCMinutes())}` : date;
 };
 
-/** Faqat chiziqcha / nuqtadan iborat qiymat («-», «—», «...») — bo'sh joy tutuvchi, chekda chiqmaydi. */
-const PLACEHOLDER = /^[\s\-\u2010-\u2015_.…]*$/u;
-
+/**
+ * Birinchi to'ldirilgan qiymat. Bo'sh joy tutuvchi («-», «—», «...», «null» — `cleanReceiptValue`) bo'sh hisoblanadi:
+ * chekda chiqmaydi va keyingi manbaga o'tiladi.
+ */
 const firstText = (...values: unknown[]) => {
   for (const value of values) {
-    const text = normalizeReceiptText(value);
-    if (text && !PLACEHOLDER.test(text)) return text;
+    const text = cleanReceiptValue(normalizeReceiptText(value));
+    if (text) return text;
+  }
+  return "";
+};
+
+/** Telefon maydonlaridan birinchi raqamlisi (`formatReceiptPhone`; «-», «—» — bo'sh). */
+const firstPhone = (...values: unknown[]) => {
+  for (const value of values) {
+    const phone = formatReceiptPhone(normalizeReceiptText(value));
+    if (phone) return phone;
   }
   return "";
 };
@@ -199,8 +210,8 @@ const productLine = (item: ReceiptOrderItemSource) => {
 /** Manba → chek maydonlari (TZ F3 jadvali). */
 export const toReceiptOrderModel = (source: ReceiptOrderSource): ReceiptOrderModel => {
   const customer = source.customer ?? null;
-  const phone = formatReceiptPhone(customer?.phone_number);
-  const extra = formatReceiptPhone(firstText(source.extra_number, customer?.extra_number));
+  const phone = firstPhone(customer?.phone_number);
+  const extra = firstPhone(source.extra_number, customer?.extra_number);
   const regionName = firstText(
     customer?.region?.name,
     source.region?.name,
@@ -213,7 +224,10 @@ export const toReceiptOrderModel = (source: ReceiptOrderSource): ReceiptOrderMod
   const token = typeof source.qr_code_token === "string" ? source.qr_code_token.trim() : "";
   return {
     id: String(source.id),
-    ref: normalizeReceiptText(formatOrderRef(source)),
+    // «-» kabi `order_number` — yo'q hisoblanadi (zaxira «№{id}»).
+    ref: normalizeReceiptText(
+      formatOrderRef({ id: source.id, order_number: firstText(source.order_number) }),
+    ),
     qrToken: token || null,
     amount: receiptAmountOf(source),
     name: firstText(customer?.name),

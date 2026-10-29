@@ -1,5 +1,6 @@
 import type { jsPDF } from "jspdf";
 import { createPairKerning, type ReceiptPairKerning } from "./printReceiptKerning";
+import { ReceiptFontError } from "./receiptErrors";
 import manropeMediumUrl from "../../../shared/assets/fonts/Manrope-Medium.ttf?url";
 import manropeSemiBoldUrl from "../../../shared/assets/fonts/Manrope-SemiBold.ttf?url";
 import manropeBoldUrl from "../../../shared/assets/fonts/Manrope-Bold.ttf?url";
@@ -310,13 +311,7 @@ export const createReceiptMeasure = (
 /** Shrift fayllari: jsPDF VFS'ga beriladigan ikkilik satr (`\x00\x01\x00\x00…`). */
 export type ReceiptFontData = Readonly<Record<ReceiptFace, string>>;
 
-/** Shrift yuklanmadi — chop etilmaydi (TZ: `notify.error` + «Qayta urinish», shriftsiz chek yo'q). */
-export class ReceiptFontError extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
-    this.name = "ReceiptFontError";
-  }
-}
+export { ReceiptFontError };
 
 const toBinaryString = (bytes: Uint8Array) => {
   let out = "";

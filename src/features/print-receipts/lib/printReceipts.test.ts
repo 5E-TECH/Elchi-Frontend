@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { receiptDiskFontLoader } from "../../../test/receiptTestFonts";
-import { countReceiptsWithoutQr, ReceiptFontError } from "../index";
+import { countReceiptsWithoutQr, ReceiptFontError, receiptPackageWithoutQr } from "../index";
 import { loadReceiptFontData, resetReceiptFontCache } from "./printReceiptFonts";
 import {
   buildOrderReceiptPages,
@@ -14,6 +14,7 @@ import {
 } from "./printReceipts";
 import type { ReceiptPackageSource } from "./printReceiptPackage";
 import type { ReceiptLabel } from "./printReceiptLayout";
+import { createReceiptScheduler, RECEIPT_SLICE_MS } from "./receiptScheduler";
 import { RECEIPT_SAMPLES } from "./receiptSamples";
 
 /** HJ5sLHiz — chop etish yo'li (TZ F9): bitta `ReceiptPage[]`, 200 taliklab ish, PDF oynasi / yuklab olish, shrift xatosi. */
@@ -130,6 +131,59 @@ describe("printOrderReceipts", () => {
     ).rejects.toThrow();
   });
 
+  it("time-sliced (TZ qabul 8): layout, PDF drawing and HTML yield to the event loop every ≤ 32 ms of work", async () => {
+    vi.spyOn(window, "open").mockReturnValue({} as Window);
+    // Soxta soat: har o'qish — 8 ms ish. Navbatlar orasidagi «ish» hech qachon bo'lak + bitta birlikdan oshmaydi.
+    let time = 0;
+    const now = () => (time += 8);
+    const gaps: number[] = [];
+    let sliceStart = 0;
+    const yieldTo = vi.fn(async () => {
+      gaps.push(time - sliceStart);
+      await Promise.resolve();
+      sliceStart = time;
+    });
+    const orders = Array.from({ length: 40 }, (_, index) => ({
+      ...RECEIPT_SAMPLES.f,
+      id: String(40_000 + index),
+    }));
+
+    const pdfScheduler = createReceiptScheduler({ now, yieldTo });
+    const pdf = await printOrderReceipts(orders, { output: "pdf", scheduler: pdfScheduler });
+    expect(pdf).toMatchObject({ pages: 40, delivery: ["opened"] });
+    // 40 ta joylash + 40 ta PDF sahifa (80 birlik × 8 ms) → har 4 birlikda navbat.
+    expect(pdfScheduler.yields).toBeGreaterThanOrEqual(16);
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(RECEIPT_SLICE_MS + 8);
+
+    const htmlScheduler = createReceiptScheduler({ now, yieldTo });
+    await printOrderReceipts(orders, { output: "browser", scheduler: htmlScheduler });
+    expect(htmlScheduler.yields).toBeGreaterThanOrEqual(16);
+    expect(printed.html).toHaveLength(1);
+  });
+
+  it("the layout loop yields by time, not by a fixed count: a slow order yields right after it", async () => {
+    const measure = createReceiptMeasure(await loadReceiptFontData());
+    let time = 0;
+    const yieldTo = vi.fn(() => Promise.resolve());
+    const scheduler = createReceiptScheduler({ now: () => time, yieldTo });
+    const seen: number[] = [];
+    await buildOrderReceiptPages(
+      [RECEIPT_SAMPLES.f, RECEIPT_SAMPLES.e, RECEIPT_SAMPLES.f, RECEIPT_SAMPLES.f],
+      measure,
+      {
+        scheduler,
+        labelsAfterOrder: (_order, model) => {
+          // 2-buyurtma (01.B e) «sekin» — 50 ms; qolganlari 1 ms.
+          time += model.id === "104127" ? 50 : 1;
+          seen.push(yieldTo.mock.calls.length);
+          return [];
+        },
+      },
+    );
+    expect(seen).toEqual([0, 0, 1, 1]);
+    expect(scheduler.yields).toBe(1);
+  });
+
   it("nothing to print → no work", async () => {
     const open = vi.spyOn(window, "open");
     expect(await printOrderReceipts([], { output: "pdf" })).toMatchObject({
@@ -198,6 +252,15 @@ describe("building pages", () => {
         {},
       ]),
     ).toBe(3);
+  });
+});
+
+describe("package receipt QR warning (useReceiptPrint → packageWithoutQr)", () => {
+  it("a package / mail without a token → its kind; with a token → null", () => {
+    expect(receiptPackageWithoutQr({ kind: "batch", token: null })).toBe("batch");
+    expect(receiptPackageWithoutQr({ kind: "batch", token: " " })).toBe("batch");
+    expect(receiptPackageWithoutQr({ kind: "post" })).toBe("post");
+    expect(receiptPackageWithoutQr({ kind: "post", token: "POST-1a2b3c4d5e6f7a8b9c" })).toBeNull();
   });
 });
 

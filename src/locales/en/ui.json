@@ -737,6 +737,9 @@
     "count": "{{count}} selected",
     "noQr": "Orders without a QR code: {{value}}",
     "noQrHint": "These receipts show a «QR yo'q» frame instead of the QR code — the scanner can't read them.",
+    "noQrBatch": "The package receipt has no QR code",
+    "noQrPost": "The mail receipt has no QR code",
+    "noQrPackageHint": "The receipt shows a «QR yo'q» frame instead of the QR code — the scanner can't read it when receiving.",
     "error": "Receipt not printed",
     "errorHint": "Couldn't prepare the print file. Please try again.",
     "fontError": "The receipt fonts didn't load — check your internet connection and try again.",
@@ -1325,5 +1328,24 @@
       "September 2026",
       "October 2026"
     ]
+  },
+  "receiptsKit": {
+    "title": "Receipts and labels",
+    "description": "Samples from the «tizim-receipts» mockup — the same HTML that is printed. Thermal receipt 1 mm = 5 px, A5 — 1 mm = 3 px, A4 sheet — scaled down. Receipt text is always in Uzbek.",
+    "loading": "Preparing receipts",
+    "meta": "{{size}} mm · 1 mm = {{scale}} px",
+    "frameTitle": "{{title}}, page {{page}}",
+    "items": {
+      "main": "New",
+      "partial": "To the centre, partly paid",
+      "paid": "Fully paid",
+      "returning": "Return — cancelled order",
+      "elNumber": "Full number «№EL-…»",
+      "continuation": "Everything at once — 2 labels (1/2 + 2/2)",
+      "batchThermal": "Branch package — thermal 100×60 mm",
+      "batchA5": "Branch package — A5 sheet (office printer)",
+      "post": "Mail receipt — thermal 100×60 mm",
+      "a4": "A4 sheet — 12 receipts (office printer)"
+    }
   }
 }

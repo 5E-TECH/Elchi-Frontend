@@ -157,7 +157,8 @@
     "postReceipt": {
       "label": "Чек почты",
       "hint": "Чек на мешок с почтой (100×60 мм)"
-    }
+    },
+    "selectFirst": "Сначала выберите заказы"
   },
   "detailFullInfo": "Полная информация",
   "detailOrderId": "ID заказа",
@@ -190,9 +191,11 @@
     "printMenuLabel": "Способ печати",
     "printMenuTitle": "Выбрано заказов: {{value}}",
     "printMenuTitleLabels": "Этикетки выбранных заказов: {{value}}",
+    "printMenuTitleNone": "Заказы не выбраны",
     "printAllMenuTitle": "Этикетки всех заказов: {{value}}",
     "printSheetTitle": "Печать",
     "printSheetDescription": "Будут напечатаны этикетки выбранных заказов: {{value}}",
+    "printSheetDescriptionNone": "Чек почты можно напечатать сейчас; для этикеток заказов сначала выберите заказы",
     "printAllSheetDescription": "Будут напечатаны этикетки всех заказов: {{value}}",
     "printRow": "Распечатать №{{id}}",
     "printRowLabel": "Распечатать этикетку №{{id}}",

@@ -1,7 +1,12 @@
 /**
  * Chek va yorliq (HJ5sLHiz, maket `tizim-receipts`): buyurtma cheki (termal 100×60 yoki A4 varaq — 12 ta), paket va
- * pochta cheki (termal 100×60 yoki A5) — bitta joylash algoritmi, PDF va brauzer bitta `ReceiptPage[]` dan. Bu barrel
- * yengil: jsPDF, shriftlar va QR faqat chop etishda dinamik yuklanadi (entry chunk'ga kirmaydi — `npm run check:bundle`).
+ * pochta cheki (termal 100×60 yoki A5) — bitta joylash algoritmi, PDF va brauzer bitta `ReceiptPage[]` dan.
+ *
+ * BU BARREL YENGIL — sahifa bo'laklari faqat shuni statik import qiladi: undagi statik importlar faqat
+ * `receiptContact` (telefon formati), `receiptErrors`, `useReceiptPrint` va `ReceiptQr` (o'zi ham dinamik yuklaydi).
+ * Og'ir modullar — jsPDF, shriftlar (`?url` TTF), GPOS kerning, joylash, `qrcode` — faqat birinchi chop etish /
+ * namuna / QR chizishda `import()` bilan keladi (entry va sahifa bo'laklariga kirmaydi — `npm run check:bundle`,
+ * `index.lazy.test.ts`). Bu yerga `./lib/*` dan qiymat (`export { … } from`) qo'shmang — faqat `export type`.
  *
  * Kirish nuqtalari: «Qabul va yaratish» (`new_orderDetail.tsx`), pochta (`printMode.ts`, `oldMails.tsx`), paket
  * (`BatchDetailPage.tsx`); buyurtma tafsiloti (TzfF0bmQ): `await printOrderReceipts([order], { output: "browser" })`.
@@ -43,7 +48,8 @@ export type {
   ReceiptSheet,
 } from "./lib/printReceiptLayout";
 export type { ReceiptMeasure } from "./lib/printReceiptFonts";
-export { ReceiptFontError } from "./lib/printReceiptFonts";
+export type { ReceiptPreview, ReceiptPreviewId, ReceiptPreviewPage } from "./lib/receiptPreview";
+export { ReceiptFontError } from "./lib/receiptErrors";
 export {
   formatReceiptPerson,
   formatReceiptPhone,
@@ -58,6 +64,15 @@ export const countReceiptsWithoutQr = (
 ) =>
   orders.filter((order) => !(typeof order.qr_code_token === "string" && order.qr_code_token.trim()))
     .length;
+
+/**
+ * Paket / pochta chekida QR tokeni yo'q — `notify.warning` uchun (`useReceiptPrint` → `packageWithoutQr`): `batch` /
+ * `post`, token bor — `null`.
+ */
+export const receiptPackageWithoutQr = (
+  source: Pick<ReceiptPackageSource, "kind" | "token">,
+): ReceiptPackageSource["kind"] | null =>
+  typeof source.token === "string" && source.token.trim() ? null : source.kind;
 
 const loadPrinting = () => import("./lib/printReceipts");
 
@@ -83,6 +98,13 @@ export const preloadReceiptPrinting = (): Promise<void> =>
     (module) => module.warmUpReceiptPrinting(),
     () => undefined,
   );
+
+/**
+ * `/ops/ui-kit?section=receipts` namunalari (maket `tizim-receipts`): chop etishdagi HTML, maket masshtabida. Modul
+ * (jsPDF, shriftlar, joylash) shu chaqiruvda yuklanadi.
+ */
+export const loadReceiptPreviews = async () =>
+  (await import("./lib/receiptPreview")).buildReceiptPreviews();
 
 export { useReceiptPrint, type ReceiptPrintTask } from "./model/useReceiptPrint";
 export { default as ReceiptQr } from "./ui/ReceiptQr";

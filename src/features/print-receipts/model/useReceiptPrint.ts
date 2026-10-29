@@ -2,13 +2,14 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { ReceiptFontError } from "../lib/printReceiptFonts";
+import { ReceiptFontError } from "../lib/receiptErrors";
 import type { ReceiptPrintResult } from "../lib/printReceipts";
 
 /**
  * Chop etish tugmalari uchun umumiy oqim (HJ5sLHiz, TZ F9 · chegaraviy holatlar):
  *  - QR tokeni yo'q buyurtma bo'lsa — oldindan `notify.warning` «N ta buyurtmada QR yo'q» (chek baribir chiqadi,
- *    QR o'rnida «QR yo'q» ramkasi);
+ *    QR o'rnida «QR yo'q» ramkasi); paket / pochta chekining tokeni yo'q bo'lsa — xuddi shunday «Paket / Pochta chekida
+ *    QR yo'q» (`packageWithoutQr`, `receiptPackageWithoutQr`);
  *  - ish davomida tugma `loading` (`printing` / `printingKey`), qayta bosish e'tiborsiz;
  *  - xatoda `notify.error` + «Qayta urinish»: shrift yuklanmasa (`ReceiptFontError`) shriftsiz chek chiqmaydi;
  *  - PDF oynasi bloklanib fayl yuklab olinsa — `notify.info`.
@@ -19,6 +20,8 @@ export interface ReceiptPrintTask {
   key?: string;
   /** QR tokeni yo'q buyurtmalar soni (`countReceiptsWithoutQr`). */
   withoutQr?: number;
+  /** Paket (`batch`) yoki pochta (`post`) chekida QR tokeni yo'q (`receiptPackageWithoutQr`). */
+  packageWithoutQr?: "batch" | "post" | null;
   print: () => Promise<ReceiptPrintResult>;
 }
 
@@ -43,6 +46,12 @@ export const useReceiptPrint = () => {
           { description: t("ui:printMenu.noQrHint"), id: "receipt-no-qr" },
         );
       }
+      if (task.packageWithoutQr) {
+        notify.warning(
+          t(task.packageWithoutQr === "post" ? "ui:printMenu.noQrPost" : "ui:printMenu.noQrBatch"),
+          { description: t("ui:printMenu.noQrPackageHint"), id: "receipt-no-qr-package" },
+        );
+      }
       try {
         const result = await task.print();
         if (result.delivery.includes("saved")) {
@@ -58,7 +67,7 @@ export const useReceiptPrint = () => {
               : t("ui:printMenu.errorHint"),
           action: {
             label: t("common:retry"),
-            onClick: () => void run({ ...task, withoutQr: 0 }),
+            onClick: () => void run({ ...task, withoutQr: 0, packageWithoutQr: null }),
           },
         });
         return null;

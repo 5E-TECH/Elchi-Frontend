@@ -175,7 +175,9 @@ describe("BatchDetailPage — paket cheki (HJ5sLHiz)", () => {
     const card = screen.getByRole("region", { name: "QR kod" });
     const qr = within(card).getByRole("img", { name: "B-172 paketining QR kodi" });
     expect(qr.tagName.toLowerCase()).toBe("svg");
-    expect(qr.querySelector("path")?.getAttribute("fill")).toBe("currentColor");
+    // QR kodlovchi (`qrcode`) sahifa bo'lagida emas — birinchi chizishda dinamik yuklanadi, o'sha `<svg>` to'ladi.
+    await waitFor(() => expect(qr.querySelector("path")?.getAttribute("fill")).toBe("currentColor"));
+    expect(qr).not.toHaveAttribute("aria-busy");
 
     await user.click(within(card).getByRole("button", { name: "Chop etish" }));
     const menu = screen.getByRole("menu");
@@ -199,6 +201,27 @@ describe("BatchDetailPage — paket cheki (HJ5sLHiz)", () => {
       { sheet: "a5", output: "browser" },
     );
     expect(print).not.toHaveBeenCalled();
+    // Token bor — «QR yo'q» ogohlantirishi yo'q.
+    expect(screen.queryByText("Paket chekida QR yo'q")).not.toBeInTheDocument();
+  });
+
+  it("package without a QR token: warns before printing (same as for orders), the receipt still prints", async () => {
+    const user = userEvent.setup();
+    mocks.printPackageReceipt.mockResolvedValue({ orders: 0, pages: 1, jobs: 1, withoutQr: 1, delivery: ["printed"] });
+    respond(detail({ qr_code_token: null, status: "RECEIVED", destination_branch: { id: "1", name: "Toshkent HQ" } }));
+    renderPage("superadmin");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Paket B-172" })).toBeInTheDocument();
+    const card = screen.getByRole("region", { name: "QR kod" });
+    await user.click(within(card).getByRole("button", { name: "Chop etish" }));
+    await user.click(within(screen.getByRole("menu")).getByRole("menuitem", { name: /Termal yorliq/ }));
+
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "batch", id: "172", token: "" }),
+      { sheet: "thermal", output: "browser" },
+    );
+    expect(await screen.findByText("Paket chekida QR yo'q")).toBeInTheDocument();
+    expect(screen.getByText(/QR o'rnida «QR yo'q» ramkasi chiqadi/)).toBeInTheDocument();
   });
 });
 

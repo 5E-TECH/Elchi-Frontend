@@ -16,7 +16,7 @@ import {
 } from "./printReceiptLayout";
 import { formatReceiptDate, RECEIPT_TEXT } from "./printReceiptModel";
 import { encodeReceiptQr, receiptQrModule, type ReceiptQrSymbol } from "./printReceiptQr";
-import { formatReceiptPhone } from "./receiptContact";
+import { cleanReceiptValue, formatReceiptPhone } from "./receiptContact";
 
 /**
  * PAKET VA POCHTA CHEKI (HJ5sLHiz, maket `tizim-receipts` 02, TZ F8): qop yoki paket ustiga yopishtiriladi. Termal
@@ -106,11 +106,8 @@ const toNumber = (value: unknown): number | null => {
   return null;
 };
 
-const PLACEHOLDER = /^[\s\-‐-―_.…]*$/u;
-const textOf = (value: unknown) => {
-  const text = normalizeReceiptText(value);
-  return text && !PLACEHOLDER.test(text) ? text : "";
-};
+/** Matn; bo'sh joy tutuvchi («-», «—», «null» — `cleanReceiptValue`) — `""` (qator chiqmaydi). */
+const textOf = (value: unknown) => cleanReceiptValue(normalizeReceiptText(value));
 
 const packageRef = (source: ReceiptPackageSource) => {
   const id = textOf(source.id);
