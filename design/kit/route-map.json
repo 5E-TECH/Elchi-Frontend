@@ -89,7 +89,7 @@
       ],
       "views": {
         "market": ["dashboard-mobile-menu"],
-        "courier": ["dashboard-mobile-menu", "dashboard-mobile-search"],
+        "courier": ["dashboard-mobile-menu", "dashboard-mobile-search", "dashboard-user-menu-contacts", "dashboard-mobile-menu-contacts", "dashboard-contacts-dialog"],
         "investor": ["dashboard-mobile-menu"],
         "common": ["bell-dropdown"],
         "tizim": ["states-navigation", "responsive"]
@@ -223,11 +223,11 @@
         "superadmin": ["dashboard-main", "dashboard-region-modal"],
         "admin": ["dashboard-main"],
         "registrator": ["dashboard-main"],
-        "market": ["dashboard-home", "dashboard-extra-cost-approvals"],
-        "courier": ["dashboard-home", "dashboard-pwa-install"],
+        "market": ["dashboard-home", "dashboard-extra-cost-approvals", "dashboard-home-contacts"],
+        "courier": ["dashboard-home", "dashboard-pwa-install", "dashboard-home-contacts"],
         "logist": ["dashboard-main", "dashboard-mobile-menu", "dashboard-mobile-search"],
         "investor": ["dashboard-home", "dashboard-home-table", "dashboard-loading", "dashboard-empty", "dashboard-error", "dashboard-forbidden", "dashboard-not-linked"],
-        "tizim": ["charts"]
+        "tizim": ["charts", "contact-card"]
       },
       "roleNotes": {
         "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi.",
@@ -285,8 +285,8 @@
         "src/shared/ui/charts/index.ts"
       ],
       "views": {
-        "manager": ["branch-dashboard-main"],
-        "tizim": ["charts"]
+        "manager": ["branch-dashboard-main", "branch-dashboard-contacts"],
+        "tizim": ["charts", "contact-card"]
       },
       "note": "Asosiy fayl — ui/BranchDashboardPage.tsx (index.tsx faqat qayta eksport). «Sizning filial» — reytingda pinned qator; stats_unavailable — ErrorState «Statistika vaqtincha mavjud emas»; davr sukuti — bugun."
     },
@@ -368,11 +368,12 @@
       "views": {
         "superadmin": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-order-dialog", "orders-detail-edit-customer-dialog", "orders-detail-edit-address-dialog"],
         "admin": ["orders-detail", "orders-edit-order-dialog", "orders-edit-customer-dialog", "orders-edit-address-dialog"],
-        "manager": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-address-dialog", "orders-detail-edit-products-dialog", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
+        "manager": ["orders-detail", "orders-detail-cancelled", "orders-detail-edit-address-dialog", "orders-detail-edit-products-dialog", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog", "orders-detail-contacts"],
         "registrator": ["orders-detail", "orders-detail-edit-order-dialog", "orders-detail-edit-address-dialog"],
-        "market": ["orders-detail", "orders-detail-cancelled"],
-        "courier": ["orders-detail"],
-        "logist": ["orders-detail"]
+        "market": ["orders-detail", "orders-detail-cancelled", "orders-detail-contacts"],
+        "courier": ["orders-detail", "orders-detail-contacts"],
+        "logist": ["orders-detail"],
+        "tizim": ["contact-card"]
       },
       "roleNotes": {
         "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — tahrirlash, «To'lov» kartasi, amallar yo'q; «Kuzatuv» (GET /orders/:id/tracking) birinchi, «Hozir qayerda» qatori. GET /orders/:id (assertCanViewOrder) va /tracking (@Roles) logistga hozir 403 — backend kerak.",
@@ -393,7 +394,7 @@
       "views": {
         "superadmin": ["neworders-markets"],
         "admin": ["neworders-markets"],
-        "manager": ["new-orders-markets"],
+        "manager": ["new-orders-markets", "new-orders-markets-no-phone"],
         "registrator": ["new-orders-markets"]
       },
       "roleNotes": {
@@ -1146,8 +1147,8 @@
         "src/features/user/update-user/ui/UpdateUserModal.tsx"
       ],
       "views": {
-        "superadmin": ["users-list", "users-delete-dialog", "users-list-roles", "users-list-role-select", "users-list-telegram"],
-        "admin": ["users-list", "users-delete-dialog", "users-list-telegram"],
+        "superadmin": ["users-list", "users-delete-dialog", "users-list-roles", "users-list-role-select", "users-list-telegram", "users-list-responsibles-entry", "users-delete-dialog-responsible"],
+        "admin": ["users-list", "users-delete-dialog", "users-list-telegram", "users-list-responsibles-entry", "users-delete-dialog-responsible"],
         "manager": ["users-list"]
       },
       "note": "Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»). Ega tasdig'i 2026-10-19 (tg-link S4): «Telegram» ustuni va «Telegram boti: Barchasi · Ulangan · Ulanmagan» chiplari (*-users-list-telegram; superadmin va admin) — server filtri GET /users?telegram_linked=true|false (yA31z7Rr), URL kaliti telegram=linked|unlinked. 2CBnPAeg: menejer tablarida sonlar (manager-users-list) — meta.countsByRole (filial ko'lami, sahifalashdan oldin), «Barchasi» — meta.totalUsers; superadmin/admin maketida tab soni yo'q. FY-1: superadmin va admin — 9 ta rol tabi FY-S1 tartibida (eski «Operatorlar» olindi; admin maketida hali 7 tab — sukut: FY-S1 adminga ham), telefonda tablar o'rnida «Rol» Select (Xodimlar / Tashqi hisoblar, URL kaliti role); menejerda 4 tab o'zgarmagan; GET /users — bitta so'rov (market + marketing birlashtirish olindi)."
@@ -1184,12 +1185,13 @@
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
       ],
       "views": {
-        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog", "users-edit-role", "users-role-confirm-dialog", "users-role-confirm-logist", "users-edit-role-error", "users-edit-role-branch", "users-edit-courier-district", "users-edit-courier-district-phone", "users-edit-market-ai", "users-edit-market-ai-phone", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog", "users-edit-market-warehouse"],
-        "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog"],
+        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog", "users-edit-role", "users-role-confirm-dialog", "users-role-confirm-logist", "users-edit-role-error", "users-edit-role-branch", "users-edit-courier-district", "users-edit-courier-district-phone", "users-edit-market-ai", "users-edit-market-ai-phone", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog", "users-edit-market-warehouse", "users-detail-market-responsible", "users-detail-market-responsible-dialog", "users-role-confirm-responsible"],
+        "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog", "users-detail-market-responsible", "users-detail-market-responsible-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
       },
       "note": "Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail. Ega tasdig'i 2026-10-19 (tg-link): market tafsilotida «Telegram guruhi» kartasi — har xabar turi qatorida to'g'ridan-to'g'ri «Ulash» (S5), bir martalik havola + QR oynasi, muddati tugasa — qayta yaratish (*-users-detail-telegram-group-dialog / -expired-dialog); admin ham ulaydi (S2); «Guruhda mijoz ismi va telefoni» kaliti shu kartaga ko'chadi (S3). TG-B (2026-10-21): MarketTelegramGroupsCard — superadmin va admin (GET /notifications?market_id: «Ulangan · {sana} dan» / «Nofaol» / «Ulanmagan» + «Ulash»), «Barcha guruhlar «Bildirishnomalar» bo'limida» (canViewNotifications), PII kaliti «Ruxsatlar»dan shu kartaga ko'chdi; menejer va ro'yxatchi kartani ko'rmaydi. Oyna — MarketGroupLinkDialog (har 4 s kuzatuv, guruh paydo bo'lsa — «Guruh ulandi»); buyruq rejimi — maket yo'q, naqsh common-profile-telegram-command-dialog."
     },
+    {"path": "(taklif) /all-users/market-responsibles", "section": "users", "title": "Market mas'ullari — sukut mas'ul, umumiy raqamlar, market ↔ mas'ul (taklif — kodda yo'q)", "components": [], "roles": {"superadmin": "", "admin": ""}, "views": {"superadmin": ["users-market-responsibles", "users-market-responsibles-empty", "users-market-responsibles-settings-confirm", "users-market-responsibles-move-confirm", "users-market-responsibles-default-confirm"], "admin": ["users-market-responsibles", "users-market-responsibles-empty", "users-market-responsibles-settings-confirm", "users-market-responsibles-move-confirm", "users-market-responsibles-default-confirm"]}, "note": "T7 (eRhiuIVj) F4 — kodda yo'q: src/pages/users/market-responsibles/ (yangi), /all-users bolasi, alohida ProtectedRoute — faqat superadmin va admin (menejer — 403 ekrani). Kirish — /all-users sarlavhasidagi ikkilamchi «Market mas'ullari» tugmasi (menyu bandi yo'q). API: GET/PATCH /settings/contacts, GET /markets/responsibles, POST /markets/responsible/bulk, GET /markets?responsible_id=<id>|none. Mas'ul rollari: superadmin, admin, ro'yxatchi, logist. Route qo'shilganda yo'ldagi «(taklif) » olib tashlanadi va components to'ldiriladi."},
     {
       "path": "/regions",
       "section": "regions",
@@ -1773,8 +1775,10 @@
         "src/features/telegram-link/ui/MarketGroupLinkDialog.tsx"
       ],
       "views": {
-        "market": ["profile", "profile-telegram-status", "profile-telegram-group-dialog", "profile-telegram-group-expired-dialog"],
-        "common": ["profile", "profile-password-dialog", "profile-telegram", "profile-telegram-link-dialog", "profile-telegram-command-dialog", "profile-telegram-expired-dialog", "profile-telegram-linked", "profile-telegram-unlink-dialog"]
+        "market": ["profile", "profile-telegram-status", "profile-telegram-group-dialog", "profile-telegram-group-expired-dialog", "profile-contacts"],
+        "common": ["profile", "profile-password-dialog", "profile-telegram", "profile-telegram-link-dialog", "profile-telegram-command-dialog", "profile-telegram-expired-dialog", "profile-telegram-linked", "profile-telegram-unlink-dialog"],
+        "courier": ["profile-contacts"],
+        "tizim": ["contact-card"]
       },
       "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (NDmZMzCP: ≥ 8, xodim ≥ 10 belgi, server 400 matni maydon ostida, mos kelish; login/refresh javobida must_change_password: true bo'lsa shu oyna «Yangi parol o'rnating» rejimida (app/providers/PasswordChangePrompt, «Keyinroq» bilan yopiladi — bloklamaydi; maket yo'q — eng yaqini common-profile-password-dialog); 2026-10-23 dan saqlangach boshqa barcha qurilmalar chiqadi, shu qurilma qoladi — «Parol almashtirildi — boshqa qurilmalardan chiqildi», «Sessiyalar» qayta so'raladi; avval shu yerdan ham chiqarilardi); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3). TG-A (2026-10-21) — common-profile-telegram* maket bo'yicha: ulangan holatda qalin «@username» · «{sana} da ulangan»; havola oynasi — QR oq ramkada, muddat sanog'i va progress (LinkCountdown), «Ulanish kutilmoqda…», telefonda boshqa qadamlar va yig'ilgan «Boshqa telefondan — QR kod» (LinkQrPanel); buyruq rejimi (deep_link yo'q) — o'z qadamlari, sanoqsiz, faqat «Yopish»; muddati tugadi — sunken ichida bo'sh holat. Kod olinmasa — faqat i18n izoh (backend matni ko'rsatilmaydi). Havola qismlari (LinkCountdown, LinkQrPanel, useQrImage, requestGroupLinkCode) features/telegram-link da — notification-create shu yerdan oladi. EP-3 (Elchi Pochta #3, 2026-10-22): sahifa oxirida «Sessiyalar» kartasi (ProfileSessionsCard, barcha rollar; maket yo'q — eng yaqini market-profile «Telegram guruhi» qatorlari, `(maket yo'q) market-profile, common-profile`) — GET /auth/sessions: FAQAT shu hisobning faol sessiyalari, sarlavhada «N ta faol» (active_count), har qatorda qurilma (server yorlig'i, turi joriy tilda; bo'lmasa qisqa User-Agent yoki «Noma'lum qurilma»), «Shu qurilma» badge'i (tepada), IP, «Kirgan vaqti», «Oxirgi faollik» (nisbiy + sana); bo'sh / xato + «Qayta urinish» / skelet; bo'lim ochilganda va oynaga qaytilganda qayta so'raladi, davriy so'rov yo'q. Tizim bo'yicha son yoki boshqa foydalanuvchilar sessiyasi ko'rsatilmaydi. 2026-10-22: boshqa qurilmalarni chiqarish — har «Shu qurilma» bo'lmagan qatorda «Chiqarish» (DELETE /auth/sessions/:id), kamida bitta boshqa sessiya bo'lsa sarlavhada «Boshqa barcha qurilmalardan chiqish» (POST /auth/sessions/revoke-others); ikkalasi tasdiq oynasi (danger, qurilma / soni) bilan, 404 — «allaqachon yopilgan» xabari va ro'yxat yangilanadi, 400 — oyna ichida sabab (eski token — qayta kirish); yopilgan qurilma keyingi so'rovida 401 («Session revoked») → refresh 401 → kirish sahifasida «Sessiya tugadi» ekrani, izohi «Sessiyangiz boshqa qurilmadan yopildi» (maket yo'q — common-session-expired matni almashadi). 2026-10-23: qurilma nomi aniq — mijoz `X-Device-Name` yuboradi (Client Hints: «Samsung SM-A515F · Android 13 · Chrome 155», «Windows 11 · Chrome 154»; Safari/Firefox — User-Agent: «iPhone · iOS 17 · Safari»); shu qurilmada ochiq sessiya qayta kirishda qayta ishlatiladi — «Kirgan vaqti» oxirgi kirish, ostida «Birinchi marta: …» (first_logged_in_at, farq qilsa); status «expired» (qayta kirishi kerak) qatorlar oxirida, xiralashgan (text-muted) + neytral «Qayta kirish kerak» belgisi, «Chiqarish» ular uchun ham; «N ta faol» — faqat faollar; «Boshqa barcha qurilmalardan chiqish» tasdig'idagi son — barcha boshqalar; IP — «Tarmoq IP» (bitta Wi-Fi izohi title'da). Eski backend: status yo'q — faol, first_logged_in_at yo'q — qator chizilmaydi. 2026-10-23 (Telegram kabi qoida): shu qurilmadan birinchi kirganiga 48 soat to'lmagan sessiya boshqalarni chiqara olmaydi — GET /auth/sessions → can_revoke_others: false, revoke_available_at (ISO) va ro'yxatda kamida bitta boshqa sessiya bo'lsa (faqat shu qurilma — ogohlantirish yo'q, boshqasi kelsa chiqadi): kartada .el-alert (info, ShieldCheck) faqat «Xavfsizlik uchun yangi qurilmadan boshqa sessiyalarni chiqarib bo'lmaydi.» (qachon mumkinligi va parol maslahati ko'rsatilmaydi); «Chiqarish» va «Boshqa barcha qurilmalardan chiqish» yashirilmaydi — disabled + aria-describedby (sabab) + title; vaqt o'tsa cheklov o'zi olinadi; maydon yo'q (eski backend) — ruxsat. Baribir 403 SESSION_TOO_NEW (code, available_at — yuqori darajada yoki data/details/error ichida) — tasdiq yopiladi, notify.warning «Hozircha chiqarib bo'lmaydi» + sabab (vaqtsiz; server matnidagi sana ko'rsatilmaydi), ro'yxat qayta so'raladi. O'z «Chiqish» i cheklanmaydi. Maket yo'q — eng yaqini market-profile «Telegram guruhi» kartasi + CODE-MAP .el-alert. TG-C (KJNHAlGW, 2026-10-25): market-profile-telegram-status — market «Telegram guruhi» kartasida har tur holati GET /notifications/me/telegram-groups dan (market_id tokendan; javob har doim 2 tur): ulangan — «Ulangan» + «{sana} dan» (linked_at; kelmasa sanasiz), nofaol — «Nofaol» + /notifications dagi sabab matni va toni (NG-C; inactive_at kelmaydi — sanasiz), ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash»; ulangan (nofaol ham) turda «Ulash» yo'q; yuklanishda skelet, xatoda ErrorState + «Qayta urinish». Market o'z «Ulash» oynasi (market-profile-telegram-group-dialog) endi «Guruh ulanishi kutilmoqda…» va 3-qadam «holat shu yerda yangilanadi»: oyna ochiq va havola amalda ekan har 4 s shu endpoint so'raladi, tur ulansa oyna o'zi yopiladi va «Guruh ulandi»; oyna yopilsa yoki muddat tugasa (expired-dialog) so'rov to'xtaydi. Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi. market_operator profilida karta yo'q (maket yo'q — ega qarori kutiladi)."
     },
@@ -1926,7 +1930,38 @@
     "superadmin-ai-assistant": "Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q.",
     "superadmin-ai-assistant-access-dialog": "Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q.",
     "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
-    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish."
+    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish.",
+    "courier-dashboard-home-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard (useMyContacts, GET /users/me/contacts) — KPI qatoridan keyin.",
+    "manager-branch-dashboard-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard BranchDashboardPage da — sarlavhadan keyin.",
+    "market-dashboard-home-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard MarketDashboardPage da (market_operator — operator rejimida ham) — KPI qatoridan keyin.",
+    "courier-profile-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (kuryer, menejer).",
+    "market-profile-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (market, market_operator).",
+    "courier-orders-detail-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa» (Headset, problem_contacts, tel:).",
+    "manager-orders-detail-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa».",
+    "market-orders-detail-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — market/market_operator'da «Muammo bo'lsa» o'rnida «Elchi mas'ulingiz» (/users/me/contacts).",
+    "manager-new-orders-markets-no-phone": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 — menejerda market telefoni ustuni/qatori yo'q (markets/index.tsx, SourceListCard, MarketPicker, SelectMarketDialog).",
+    "courier-dashboard-user-menu-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 UserMenu «Aloqa» — shell, faqat ega roziligi bilan (taklif).",
+    "courier-dashboard-mobile-menu-contacts": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: MobileMenu «Aloqa» qatori — shell, faqat ega roziligi bilan (taklif).",
+    "courier-dashboard-contacts-dialog": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: «Aloqa» bandi ochadigan Dialog (ContactCard tanasi) — taklif.",
+    "superadmin-users-list-responsibles-entry": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — UserListPage sarlavhasida ikkilamchi «Market mas'ullari» (faqat superadmin, admin).",
+    "admin-users-list-responsibles-entry": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti).",
+    "superadmin-users-market-responsibles": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — sukut mas'ul + 2 umumiy raqam, xodimlar (market_count), marketlar DataTable (tanlov, qidiruv, «Barchasi · Shu xodimda · Sukutda», «Mas'ul», Pagination), ommaviy amallar.",
+    "superadmin-users-market-responsibles-empty": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — default_market_responsible null, support_phones [], barcha marketlar «Belgilanmagan».",
+    "superadmin-users-market-responsibles-settings-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — PATCH /settings/contacts oldidan useConfirm (oldin → keyin).",
+    "superadmin-users-market-responsibles-move-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — POST /markets/responsible/bulk, boshqa xodimdagi market bo'lsa — tasdiq «X → Y · N ta».",
+    "superadmin-users-market-responsibles-default-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — POST /markets/responsible/bulk { responsible_id: null } — tasdiq «X → Sukut · N ta».",
+    "admin-users-market-responsibles": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti).",
+    "admin-users-market-responsibles-empty": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham.",
+    "admin-users-market-responsibles-settings-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham.",
+    "admin-users-market-responsibles-move-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham.",
+    "admin-users-market-responsibles-default-confirm": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham.",
+    "superadmin-users-detail-market-responsible": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 UserDetailView (market) — «Elchi mas'uli» kartasi (responsible, responsible_source) + «O'zgartirish».",
+    "superadmin-users-detail-market-responsible-dialog": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — «Mas'ulni o'zgartirish» Dialog, PATCH /markets/:id/responsible.",
+    "superadmin-users-role-confirm-responsible": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 RoleSection tasdig'ida «N ta market sukutga o'tadi» (B4).",
+    "superadmin-users-delete-dialog-responsible": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 UserListTable o'chirish tasdig'ida «N ta market sukutga o'tadi» (B4).",
+    "admin-users-detail-market-responsible": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti).",
+    "admin-users-detail-market-responsible-dialog": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham.",
+    "admin-users-delete-dialog-responsible": "T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham."
   },
   "partialViews": {
     "superadmin-notifications-send-audience": "Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun).",
@@ -2448,6 +2483,8 @@
     "shift-report-messages": {"defines": "Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali.", "code": "taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed)"},
     "scan-feedback": {"defines": "Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari.", "code": "src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin)"},
     "receipts": {"defines": "Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari.", "code": "src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin)"},
-    "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx)"}
+    "product-labels": {"defines": "Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari.", "code": "src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx)"},
+    "contact-card": {"defines": "Aloqa kartasi (ContactCard): «Viloyatingiz logisti» (kuryer, menejer) va «Elchi mas'ulingiz» (market, market operatori) — anatomiya, joylar (bosh sahifa, profil, profil menyusi), holatlar (to'liq, bir nechta raqam, umumiy raqam, belgilanmagan, yuklanish, xato, oflayn «Oxirgi ma'lumot», nusxalandi); buyurtma tafsilotidagi «Muammo bo'lsa» / «Elchi mas'ulingiz» qatori; kim nimani ko'radi (market telefoni menejer, filial va kuryerga yo'q).", "code": "src/entities/contacts (useMyContacts, ContactCard — yangi), src/widgets/order-meta/ui/OrderMeta.tsx, src/widgets/header/ui/UserMenu.tsx (taklif), locales */common.json → contacts.*"},
+    "receipts-contact": {"defines": "Chekdagi «Muammo bo'lsa»: buyurtma viloyati logist(lar)i raqami (1–2 ta, «, » bilan) → umumiy raqamlar; ikkalasi ham yo'q — o'ng qism chiqmaydi («-» yozilmaydi); market va operator raqami yorliqqa chiqmaydi; 100×60 va A4 (12 ta) namunalari.", "code": "src/pages/new_orders/components/lib/receiptContact.ts (getReceiptContactPhone → problem_contacts), printLabelPdf.ts, src/pages/mails/detail/lib/printMode.ts"}
   }
 }

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **40** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **728 ta maket** (447 sahifa, 262 oyna, 19 tizim taxtasi; 613 ta fragment fayli) · kodda yo'q: **71** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -45,18 +45,18 @@
 
 | Route | Bo'lim | Asosiy fayl | Rollar | Maketlar | Holat |
 |---|---|---|---|---|---|
-| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
+| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 10 | v2 |
 | `/login` | Kirish va xato sahifalari | `src/features/auth/index.tsx` | hamma (kirishsiz) | 3 | v2 |
 | `/403` | Kirish va xato sahifalari | `src/shared/ui/Forbidden.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/404` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/500` | Kirish va xato sahifalari | `src/shared/ui/ServerError.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/runtime-error` | Kirish va xato sahifalari | `src/shared/ui/ErrorBoundaryPage.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | v2 |
-| `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 19 | v2 |
-| `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | v2 |
+| `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 22 | v2 |
+| `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 4 | v2 |
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
-| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 23 | v2 |
-| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 4 | v2 |
+| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 27 | v2 |
+| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 41 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
@@ -97,9 +97,10 @@
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
 | `/warehouses` | Mahsulotlar | `src/pages/warehouses/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx); menyu bandi faqat GET /warehouses bo'sh bo'lmasa (XtcEyQjb)), registrator (hamma omborlar, faqat ko'rish (XtcEyQjb, ega 2026-10-24); menyuda yo'q — maket roles.json registrator.menu da «warehouse» yo'q (ega qarori kutilmoqda)) | 4 | v2 |
 | `/warehouses/:id` | Mahsulotlar | `src/pages/warehouses/detail/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx); menyu bandi faqat GET /warehouses bo'sh bo'lmasa (XtcEyQjb)), registrator (hamma omborlar, faqat ko'rish (XtcEyQjb, ega 2026-10-24); menyuda yo'q — maket roles.json registrator.menu da «warehouse» yo'q (ega qarori kutilmoqda)) | 5 | v2 |
-| `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
+| `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 13 | v2 |
 | `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 10 | v2 |
-| `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 24 | v2 |
+| `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 29 | v2 |
+| `(taklif) /all-users/market-responsibles` | Foydalanuvchilar | — (taklif) | superadmin, admin | 10 | eski |
 | `/market-operators` | Foydalanuvchilar | `src/pages/market-operators/index.tsx` | market (MO-1: canViewMarketOperators = hasRole('market') (access.ts); backend market-operators — @Roles(MARKET), faqat o'z operatorlari) | 8 | v2 |
 | `/regions` | Hududlar | `src/pages/region/index.tsx` | superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q) | 9 | v2 |
 | `/regions/districts` | Hududlar | `src/pages/region/pages/districts/index.tsx` | superadmin, admin | 20 | v2 |
@@ -130,7 +131,7 @@
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
 | `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 8 | v2 |
 | `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
-| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 12 | v2 |
+| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 | `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 
@@ -157,6 +158,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(qobiq)` | market_operator | — Yangi rol qobig'i (maket): yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). Kodda (MO-2, MO-3): yon menyu maketdagidek 5 band (guruhsiz), pastki menyu shu 5 katak; «Buyurtma yaratish» — /new-orders (operatorda /new-orders/create ga yo'naltiriladi; yorlig'i rolga xos — sidebar:createOrder, qisqasi «Yaratish»). Menyu varaqasidagi qidiruv (/orders?search=) MO-3 dan beri ochiq. | — | — | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
+| `(qobiq)` | courier | `courier-dashboard-user-menu-contacts` — Profil menyusi — «Aloqa» bandi (taklif) | [design/fragments/courier--dashboard-user-menu-contacts.html](fragments/courier--dashboard-user-menu-contacts.html) | sahifa | yangi (kodda yo'q) |
+| `(qobiq)` | courier | `courier-dashboard-mobile-menu-contacts` — Menyu varag'i — «Aloqa» bandi (taklif) | [design/fragments/courier--dashboard-mobile-menu-contacts.html](fragments/courier--dashboard-mobile-menu-contacts.html) | oyna · faqat planshet + telefon | yangi (kodda yo'q) |
+| `(qobiq)` | courier | `courier-dashboard-contacts-dialog` — «Aloqa» oynasi — profil menyusidan (taklif) | [design/fragments/courier--dashboard-contacts-dialog.html](fragments/courier--dashboard-contacts-dialog.html) | oyna | yangi (kodda yo'q) |
 | `(qobiq)` | investor | `investor-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/investor--dashboard-mobile-menu.html](fragments/investor--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | umumiy (barcha rollar) | `common-bell-dropdown` — Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar)<br>↳ `src/widgets/header/ui/NotificationsMenu.tsx` | [design/fragments/common--bell-dropdown.html](fragments/common--bell-dropdown.html) | oyna | v2 |
 | `(qobiq)` | tizim taxtasi | `tizim-states-navigation` — Holatlar — navigatsiya | [design/fragments/tizim--states-navigation.html](fragments/tizim--states-navigation.html) | taxta | qoida |
@@ -258,9 +262,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/` | registrator | `registrator-dashboard-main` — Dashboard — statistika<br>↳ `src/pages/dashboard/DashboardPage.tsx` | [design/fragments/registrator--dashboard-main.html](fragments/registrator--dashboard-main.html) | sahifa | v2 |
 | `/` | market | `market-dashboard-home` — Mening dashboardim<br>↳ `src/pages/dashboard/MarketDashboardPage.tsx` | [design/fragments/market--dashboard-home.html](fragments/market--dashboard-home.html) | sahifa | v2 |
 | `/` | market | `market-dashboard-extra-cost-approvals` — Dashboard · Xarajat tasdiqlari<br>↳ `src/pages/dashboard/ui/ExtraCostApprovals.tsx` | [design/fragments/market--dashboard-extra-cost-approvals.html](fragments/market--dashboard-extra-cost-approvals.html) | sahifa | v2 |
+| `/` | market | `market-dashboard-home-contacts` — Bosh sahifa — «Elchi mas'ulingiz» kartasi | [design/fragments/market--dashboard-home-contacts.html](fragments/market--dashboard-home-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/` | market_operator | — Maket yo'q — eng yaqini: market-dashboard-home. MO-2 (2026-10-21): DashboardEntry → MarketDashboardPage variant="operator". GET analytics/dashboard market_operator'ga ochiq (DASHBOARD_ROLES; analytics resolveRequesterForMarket operatorni o'z marketiga cheklaydi: myStat, markets, topMarkets, topOperators). Qo'shimcha xarajat tasdiqlari — faqat o'qish (6QLF7nst / N14, MO-8; backend 8f0811b): GET orders/extra-cost-approvals operatorga ochiq (o'z marketi), approve/reject — 403; ExtraCostApprovals tugmalarsiz, sarlavhada «Faqat market egasi qaror qiladi»; marketga biriktirilmagan operatorda so'ralmaydi. «Avtomatik tasdiqlangan xarajatlar» (AutoApprovedExtraCosts — market e'tirozi uchun) yo'q. Sarlavha izohida market nomi yo'q (my-profile market nomini bermaydi — N13), o'rnida davr; «Marketlar bo'yicha sotuv foizi» da o'z qatori — profil market_id. «Tezkor harakatlar»: «Buyurtmalarni ko'rish» → /orders (faqat canViewOrders), «Buyurtma yaratish» va sarlavhadagi tugma — faqat canCreateOrders; holat kartasidagi ro'yxat havolasi — faqat canViewOrders. Ikkala ruxsat MO-3 da ochiladi — shungacha karta va havolalar yo'q (403 ga olib bormaydi). «To'lovlar»/kassa kartasi va moliya havolalari yo'q (finance ruxsati yo'q). | — | — | v2 |
 | `/` | courier | `courier-dashboard-home` — Bosh sahifa — kuryer statistikasi<br>↳ `src/pages/dashboard/DashboardPage.tsx` | [design/fragments/courier--dashboard-home.html](fragments/courier--dashboard-home.html) | sahifa | v2 |
 | `/` | courier | `courier-dashboard-pwa-install` — Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi)<br>↳ `src/features/pwa-install/ui/InstallAppCard.tsx` | [design/fragments/courier--dashboard-pwa-install.html](fragments/courier--dashboard-pwa-install.html) | sahifa | v2 |
+| `/` | courier | `courier-dashboard-home-contacts` — Bosh sahifa — «Viloyatingiz logisti» kartasi | [design/fragments/courier--dashboard-home-contacts.html](fragments/courier--dashboard-home-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/` | logist | `logist-dashboard-main` — Bosh sahifa — viloyatlarim<br>↳ `src/pages/dashboard/LogistDashboardPage.tsx` | [design/fragments/logist--dashboard-main.html](fragments/logist--dashboard-main.html) | sahifa | qisman |
 | `/` | logist | `logist-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/logist--dashboard-mobile-menu.html](fragments/logist--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
 | `/` | logist | `logist-dashboard-mobile-search` — Global qidiruv (telefon) — buyurtma, mijoz, telefon | [design/fragments/logist--dashboard-mobile-search.html](fragments/logist--dashboard-mobile-search.html) | oyna · faqat telefon | yangi (kodda yo'q) |
@@ -272,6 +278,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/` | investor | `investor-dashboard-forbidden` — Bosh sahifa — profil nofaol (403)<br>↳ `src/pages/investor/ui/InvestorAccessState.tsx` | [design/fragments/investor--dashboard-forbidden.html](fragments/investor--dashboard-forbidden.html) | sahifa | v2 |
 | `/` | investor | `investor-dashboard-not-linked` — Bosh sahifa — profil bog'lanmagan (404)<br>↳ `src/pages/investor/ui/InvestorAccessState.tsx` | [design/fragments/investor--dashboard-not-linked.html](fragments/investor--dashboard-not-linked.html) | sahifa | v2 |
 | `/` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
+| `/` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 
 #### `/branch-dashboard` — Filial paneli (menejer bosh sahifasi, dizayn v2)
 
@@ -285,7 +292,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/branch-dashboard` | manager | `manager-branch-dashboard-main` — Filial paneli<br>↳ `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | [design/fragments/manager--branch-dashboard-main.html](fragments/manager--branch-dashboard-main.html) | sahifa | v2 |
+| `/branch-dashboard` | manager | `manager-branch-dashboard-contacts` — Filial paneli — «Viloyatingiz logisti» kartasi | [design/fragments/manager--branch-dashboard-contacts.html](fragments/manager--branch-dashboard-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/branch-dashboard` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
+| `/branch-dashboard` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 
 ### Buyurtmalar
 
@@ -362,14 +371,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | manager | `manager-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/manager--orders-cancel-dialog.html](fragments/manager--orders-cancel-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | manager | `manager-orders-rollback-dialog` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/manager--orders-rollback-dialog.html](fragments/manager--orders-rollback-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-detail-contacts` — Buyurtma tafsiloti — «Muammo bo'lsa» qatori, market telefonisiz | [design/fragments/manager--orders-detail-contacts.html](fragments/manager--orders-detail-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail` — Buyurtma tafsiloti | [design/fragments/registrator--orders-detail.html](fragments/registrator--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/registrator--orders-detail-edit-order-dialog.html](fragments/registrator--orders-detail-edit-order-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail-cancelled` — Buyurtma tafsilotlari — bekor, «Qaytarish yo'li» (taklif) | [design/fragments/market--orders-detail-cancelled.html](fragments/market--orders-detail-cancelled.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | market | `market-orders-detail-contacts` — Buyurtma tafsilotlari — «Elchi mas'ulingiz» qatori | [design/fragments/market--orders-detail-contacts.html](fragments/market--orders-detail-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | market_operator | — Maket yo'q — eng yaqini: market-orders-detail. Kodda (MO-3): market ko'rinishi (getOrderDetailAccess → layout market), faqat o'qish — tahrirlash, sotish / bekor, qaytarish va topshirish yo'q; «Buyurtma ma'lumotlari» da faqat market tarifi (backend proyeksiyasi market bilan bir xil). «Kuzatuv» va «Qaytarish yo'li» yo'q — GET orders/:id/tracking @Roles da MARKET_OPERATOR yo'q (403); bekor QR sahifasi — faqat market egasi. | — | — | v2 |
 | `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | courier | `courier-orders-detail-contacts` — Buyurtma tafsilotlari — «Muammo bo'lsa» qatori, market telefonisiz | [design/fragments/courier--orders-detail-contacts.html](fragments/courier--orders-detail-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | logist | `logist-orders-detail` — Buyurtma tafsiloti va kuzatuv — faqat ko'rish | [design/fragments/logist--orders-detail.html](fragments/logist--orders-detail.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 
 ### Qabul va yaratish
 
@@ -387,6 +400,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders` | superadmin | `superadmin-neworders-markets` — Qabul va yaratish — Marketlar | [design/fragments/superadmin--neworders-markets.html](fragments/superadmin--neworders-markets.html) | sahifa | v2 |
 | `/new-orders` | admin | `admin-neworders-markets` — Qabul — Marketlar tabi | [design/fragments/admin--neworders-markets.html](fragments/admin--neworders-markets.html) | sahifa | v2 |
 | `/new-orders` | manager | `manager-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/manager--new-orders-markets.html](fragments/manager--new-orders-markets.html) | sahifa | v2 |
+| `/new-orders` | manager | `manager-new-orders-markets-no-phone` — Qabul va yaratish — Marketlar (telefon ustunisiz) | [design/fragments/manager--new-orders-markets-no-phone.html](fragments/manager--new-orders-markets-no-phone.html) | sahifa | yangi (kodda yo'q) |
 | `/new-orders` | registrator | `registrator-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/registrator--new-orders-markets.html](fragments/registrator--new-orders-markets.html) | sahifa | v2 |
 | `/new-orders` | market | — Market /new-orders/:marketId (o'z marketi) ga yo'naltiriladi — o'sha route'ga qarang. | — | — | v2 |
 | `/new-orders` | market_operator | — MO-3: menyu bandi «Buyurtma yaratish» — /new-orders → /new-orders/create (NewOrdersRoleGate, newOrdersShell.ts → resolveMarketOperatorNewOrdersAccess); qobiqning boshqa bolalari (market ro'yxati, bekorlar, qabul, paketlar, foydalanuvchi tafsiloti) — 403. | — | — | v2 |
@@ -1280,9 +1294,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users` | superadmin | `superadmin-users-list-roles` — Foydalanuvchilar — barcha rollar tablari (taklif) | [design/fragments/superadmin--users-list-roles.html](fragments/superadmin--users-list-roles.html) | sahifa | qisman |
 | `/all-users` | superadmin | `superadmin-users-list-role-select` — Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif) | [design/fragments/superadmin--users-list-role-select.html](fragments/superadmin--users-list-role-select.html) | sahifa · faqat telefon | v2 |
 | `/all-users` | superadmin | `superadmin-users-list-telegram` — Foydalanuvchilar ro'yxati — Telegram ustuni<br>↳ `src/widgets/user-list/ui/UserListTable.tsx` | [design/fragments/superadmin--users-list-telegram.html](fragments/superadmin--users-list-telegram.html) | sahifa | v2 |
+| `/all-users` | superadmin | `superadmin-users-list-responsibles-entry` — Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | [design/fragments/superadmin--users-list-responsibles-entry.html](fragments/superadmin--users-list-responsibles-entry.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users` | superadmin | `superadmin-users-delete-dialog-responsible` — Foydalanuvchini o'chirish — N ta market sukutga o'tadi | [design/fragments/superadmin--users-delete-dialog-responsible.html](fragments/superadmin--users-delete-dialog-responsible.html) | oyna | yangi (kodda yo'q) |
 | `/all-users` | admin | `admin-users-list` — Foydalanuvchilar ro'yxati | [design/fragments/superadmin--users-list.html](fragments/superadmin--users-list.html) | sahifa | v2 |
 | `/all-users` | admin | `admin-users-delete-dialog` — Foydalanuvchini o'chirish<br>↳ `src/widgets/user-list/ui/UserListTable.tsx` | [design/fragments/admin--users-delete-dialog.html](fragments/admin--users-delete-dialog.html) | oyna | v2 |
 | `/all-users` | admin | `admin-users-list-telegram` — Foydalanuvchilar ro'yxati — Telegram ustuni<br>↳ `src/widgets/user-list/ui/UserListTable.tsx` | [design/fragments/superadmin--users-list-telegram.html](fragments/superadmin--users-list-telegram.html) | sahifa | v2 |
+| `/all-users` | admin | `admin-users-list-responsibles-entry` — Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | [design/fragments/superadmin--users-list-responsibles-entry.html](fragments/superadmin--users-list-responsibles-entry.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users` | admin | `admin-users-delete-dialog-responsible` — Foydalanuvchini o'chirish — N ta market sukutga o'tadi | [design/fragments/superadmin--users-delete-dialog-responsible.html](fragments/superadmin--users-delete-dialog-responsible.html) | oyna | yangi (kodda yo'q) |
 | `/all-users` | manager | `manager-users-list` — Foydalanuvchilar (filial xodimlari) | [design/fragments/manager--users-list.html](fragments/manager--users-list.html) | sahifa | v2 |
 
 #### `/all-users/create-user` — Foydalanuvchi yaratish (dizayn v2)
@@ -1334,14 +1352,39 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR)<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/superadmin--users-detail-telegram-group-dialog.html](fragments/superadmin--users-detail-telegram-group-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/superadmin--users-detail-telegram-group-expired-dialog.html](fragments/superadmin--users-detail-telegram-group-expired-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-market-warehouse` — Marketni tahrirlash — «Ombordan buyurtma yaratish» kaliti (popup) | [design/fragments/superadmin--users-edit-market-warehouse.html](fragments/superadmin--users-edit-market-warehouse.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-detail-market-responsible` — Market tafsiloti — «Elchi mas'uli» kartasi | [design/fragments/superadmin--users-detail-market-responsible.html](fragments/superadmin--users-detail-market-responsible.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-detail-market-responsible-dialog` — Market tafsiloti — mas'ulni o'zgartirish (oyna) | [design/fragments/superadmin--users-detail-market-responsible-dialog.html](fragments/superadmin--users-detail-market-responsible-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-responsible` — Rolni o'zgartirish — Logist → Menejer, N ta market sukutga o'tadi | [design/fragments/superadmin--users-role-confirm-responsible.html](fragments/superadmin--users-role-confirm-responsible.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/:id` | admin | `admin-users-detail` — Foydalanuvchi tafsiloti | [design/fragments/admin--users-detail.html](fragments/admin--users-detail.html) | sahifa | qisman |
 | `/all-users/:id` | admin | `admin-users-edit-dialog` — Foydalanuvchini tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/admin--users-edit-dialog.html](fragments/admin--users-edit-dialog.html) | oyna | qisman |
 | `/all-users/:id` | admin | `admin-users-transfer-courier-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
 | `/all-users/:id` | admin | `admin-users-detail-telegram` — Foydalanuvchi tafsiloti — Telegram guruhi<br>↳ `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | [design/fragments/admin--users-detail-telegram.html](fragments/admin--users-detail-telegram.html) | sahifa | qisman |
 | `/all-users/:id` | admin | `admin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR)<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/admin--users-detail-telegram-group-dialog.html](fragments/admin--users-detail-telegram-group-dialog.html) | oyna | v2 |
 | `/all-users/:id` | admin | `admin-users-detail-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/admin--users-detail-telegram-group-expired-dialog.html](fragments/admin--users-detail-telegram-group-expired-dialog.html) | oyna | v2 |
+| `/all-users/:id` | admin | `admin-users-detail-market-responsible` — Market tafsiloti — «Elchi mas'uli» kartasi | [design/fragments/superadmin--users-detail-market-responsible.html](fragments/superadmin--users-detail-market-responsible.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/:id` | admin | `admin-users-detail-market-responsible-dialog` — Market tafsiloti — mas'ulni o'zgartirish (oyna) | [design/fragments/superadmin--users-detail-market-responsible-dialog.html](fragments/superadmin--users-detail-market-responsible-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/:id` | manager | `manager-users-detail` — Xodim tafsiloti | [design/fragments/manager--users-detail.html](fragments/manager--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | manager | `manager-users-edit-dialog` — Xodimni tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/manager--users-edit-dialog.html](fragments/manager--users-edit-dialog.html) | oyna | qisman |
+
+#### `(taklif) /all-users/market-responsibles` — Market mas'ullari — sukut mas'ul, umumiy raqamlar, market ↔ mas'ul (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin, admin
+- **Holat:** eski
+- **Izoh:** T7 (eRhiuIVj) F4 — kodda yo'q: src/pages/users/market-responsibles/ (yangi), /all-users bolasi, alohida ProtectedRoute — faqat superadmin va admin (menejer — 403 ekrani). Kirish — /all-users sarlavhasidagi ikkilamchi «Market mas'ullari» tugmasi (menyu bandi yo'q). API: GET/PATCH /settings/contacts, GET /markets/responsibles, POST /markets/responsible/bulk, GET /markets?responsible_id=<id>|none. Mas'ul rollari: superadmin, admin, ro'yxatchi, logist. Route qo'shilganda yo'ldagi «(taklif) » olib tashlanadi va components to'ldiriladi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /all-users/market-responsibles` | superadmin | `superadmin-users-market-responsibles` — Market mas'ullari | [design/fragments/superadmin--users-market-responsibles.html](fragments/superadmin--users-market-responsibles.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | superadmin | `superadmin-users-market-responsibles-empty` — Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | [design/fragments/superadmin--users-market-responsibles-empty.html](fragments/superadmin--users-market-responsibles-empty.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | superadmin | `superadmin-users-market-responsibles-settings-confirm` — Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq) | [design/fragments/superadmin--users-market-responsibles-settings-confirm.html](fragments/superadmin--users-market-responsibles-settings-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | superadmin | `superadmin-users-market-responsibles-move-confirm` — Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y) | [design/fragments/superadmin--users-market-responsibles-move-confirm.html](fragments/superadmin--users-market-responsibles-move-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | superadmin | `superadmin-users-market-responsibles-default-confirm` — Market mas'ullari — sukutga qaytarish (tasdiq) | [design/fragments/superadmin--users-market-responsibles-default-confirm.html](fragments/superadmin--users-market-responsibles-default-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | admin | `admin-users-market-responsibles` — Market mas'ullari | [design/fragments/superadmin--users-market-responsibles.html](fragments/superadmin--users-market-responsibles.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | admin | `admin-users-market-responsibles-empty` — Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | [design/fragments/superadmin--users-market-responsibles-empty.html](fragments/superadmin--users-market-responsibles-empty.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | admin | `admin-users-market-responsibles-settings-confirm` — Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq) | [design/fragments/superadmin--users-market-responsibles-settings-confirm.html](fragments/superadmin--users-market-responsibles-settings-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | admin | `admin-users-market-responsibles-move-confirm` — Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y) | [design/fragments/superadmin--users-market-responsibles-move-confirm.html](fragments/superadmin--users-market-responsibles-move-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /all-users/market-responsibles` | admin | `admin-users-market-responsibles-default-confirm` — Market mas'ullari — sukutga qaytarish (tasdiq) | [design/fragments/superadmin--users-market-responsibles-default-confirm.html](fragments/superadmin--users-market-responsibles-default-confirm.html) | oyna | yangi (kodda yo'q) |
 
 #### `/market-operators` — Operatorlar — market o'z operatorlarini boshqaradi (ega qarori 2026-10-19)
 
@@ -1961,6 +2004,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/profile` | market | `market-profile-telegram-status` — Profil — Telegram guruhi: biri ulangan (taklif · backend kerak) | [design/fragments/market--profile-telegram-status.html](fragments/market--profile-telegram-status.html) | sahifa | yangi (kodda yo'q) |
 | `/profile` | market | `market-profile-telegram-group-dialog` — Telegram guruhini ulash (havola, QR, holat kutilmoqda)<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/market--profile-telegram-group-dialog.html](fragments/market--profile-telegram-group-dialog.html) | oyna | qisman |
 | `/profile` | market | `market-profile-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi<br>↳ `src/features/telegram-link/ui/MarketGroupLinkDialog.tsx` | [design/fragments/market--profile-telegram-group-expired-dialog.html](fragments/market--profile-telegram-group-expired-dialog.html) | oyna | v2 |
+| `/profile` | market | `market-profile-contacts` — Profil — «Elchi mas'ulingiz» kartasi | [design/fragments/market--profile-contacts.html](fragments/market--profile-contacts.html) | sahifa | yangi (kodda yo'q) |
+| `/profile` | courier | `courier-profile-contacts` — Profil — «Viloyatingiz logisti» kartasi | [design/fragments/courier--profile-contacts.html](fragments/courier--profile-contacts.html) | sahifa | yangi (kodda yo'q) |
 | `/profile` | umumiy (barcha rollar) | `common-profile` — Profil | [design/fragments/common--profile.html](fragments/common--profile.html) | sahifa | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-password-dialog` — Profil — parolni o'zgartirish<br>↳ `src/pages/profile/ui/ChangePasswordDialog.tsx` | [design/fragments/common--profile-password-dialog.html](fragments/common--profile-password-dialog.html) | oyna | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-telegram` — Profil — Telegram ulanmagan<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram.html](fragments/common--profile-telegram.html) | sahifa | v2 |
@@ -1969,6 +2014,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/profile` | umumiy (barcha rollar) | `common-profile-telegram-expired-dialog` — Profil — Telegram havolasi eskirdi<br>↳ `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | [design/fragments/common--profile-telegram-expired-dialog.html](fragments/common--profile-telegram-expired-dialog.html) | oyna | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-telegram-linked` — Profil — Telegram ulangan (+ «Telegram ulandi» xabari)<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram-linked.html](fragments/common--profile-telegram-linked.html) | sahifa | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-telegram-unlink-dialog` — Profil — Telegram'ni uzish (tasdiq)<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram-unlink-dialog.html](fragments/common--profile-telegram-unlink-dialog.html) | oyna | v2 |
+| `/profile` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 
 #### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)
 
@@ -2036,7 +2082,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 227 · kodda yo'q: 15
+252 ta maket · kodda bor: 227 · kodda yo'q: 25
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2282,10 +2328,20 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `superadmin-users-list-responsibles-entry` | Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — UserListPage sarlavhasida ikkilamchi «Market mas'ullari» (faqat superadmin, admin). |
+| `superadmin-users-market-responsibles` | Market mas'ullari | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — sukut mas'ul + 2 umumiy raqam, xodimlar (market_count), marketlar DataTable (tanlov, qidiruv, «Barchasi · Shu xodimda · Sukutda», «Mas'ul», Pagination), ommaviy amallar. |
+| `superadmin-users-market-responsibles-empty` | Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — default_market_responsible null, support_phones [], barcha marketlar «Belgilanmagan». |
+| `superadmin-users-market-responsibles-settings-confirm` | Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — PATCH /settings/contacts oldidan useConfirm (oldin → keyin). |
+| `superadmin-users-market-responsibles-move-confirm` | Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — POST /markets/responsible/bulk, boshqa xodimdagi market bo'lsa — tasdiq «X → Y · N ta». |
+| `superadmin-users-market-responsibles-default-confirm` | Market mas'ullari — sukutga qaytarish (tasdiq) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — POST /markets/responsible/bulk { responsible_id: null } — tasdiq «X → Sukut · N ta». |
+| `superadmin-users-detail-market-responsible` | Market tafsiloti — «Elchi mas'uli» kartasi | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 UserDetailView (market) — «Elchi mas'uli» kartasi (responsible, responsible_source) + «O'zgartirish». |
+| `superadmin-users-detail-market-responsible-dialog` | Market tafsiloti — mas'ulni o'zgartirish (oyna) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — «Mas'ulni o'zgartirish» Dialog, PATCH /markets/:id/responsible. |
+| `superadmin-users-role-confirm-responsible` | Rolni o'zgartirish — Logist → Menejer, N ta market sukutga o'tadi | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 RoleSection tasdig'ida «N ta market sukutga o'tadi» (B4). |
+| `superadmin-users-delete-dialog-responsible` | Foydalanuvchini o'chirish — N ta market sukutga o'tadi | oyna | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 UserListTable o'chirish tasdig'ida «N ta market sukutga o'tadi» (B4). |
 
 ### admin — Admin
 
-158 ta maket · kodda bor: 154 · kodda yo'q: 4
+167 ta maket · kodda bor: 154 · kodda yo'q: 13
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2447,10 +2503,19 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `admin-users-list-responsibles-entry` | Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti). |
+| `admin-users-market-responsibles` | Market mas'ullari | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti). |
+| `admin-users-market-responsibles-empty` | Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
+| `admin-users-market-responsibles-settings-confirm` | Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
+| `admin-users-market-responsibles-move-confirm` | Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
+| `admin-users-market-responsibles-default-confirm` | Market mas'ullari — sukutga qaytarish (tasdiq) | oyna | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
+| `admin-users-detail-market-responsible` | Market tafsiloti — «Elchi mas'uli» kartasi | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti). |
+| `admin-users-detail-market-responsible-dialog` | Market tafsiloti — mas'ulni o'zgartirish (oyna) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
+| `admin-users-delete-dialog-responsible` | Foydalanuvchini o'chirish — N ta market sukutga o'tadi | oyna | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
 
 ### manager — Menejer
 
-87 ta maket · kodda bor: 83 · kodda yo'q: 4
+90 ta maket · kodda bor: 83 · kodda yo'q: 7
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2541,6 +2606,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `manager-users-create-courier-district` | Yangi xodim — kuryer, «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `manager-warehouse-detail` | Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
+| `manager-branch-dashboard-contacts` | Filial paneli — «Viloyatingiz logisti» kartasi | sahifa | `/branch-dashboard` | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard BranchDashboardPage da — sarlavhadan keyin. |
+| `manager-orders-detail-contacts` | Buyurtma tafsiloti — «Muammo bo'lsa» qatori, market telefonisiz | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa». |
+| `manager-new-orders-markets-no-phone` | Qabul va yaratish — Marketlar (telefon ustunisiz) | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 — menejerda market telefoni ustuni/qatori yo'q (markets/index.tsx, SourceListCard, MarketPicker, SelectMarketDialog). |
 
 ### registrator — Registrator
 
@@ -2605,7 +2673,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-36 ta maket · kodda bor: 31 · kodda yo'q: 5
+39 ta maket · kodda bor: 31 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2645,6 +2713,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-products-warehouse-stock` | Mahsulotlar — omborlardagi qoldiq | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
+| `market-dashboard-home-contacts` | Bosh sahifa — «Elchi mas'ulingiz» kartasi | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx + src/shared/ui/Forbidden.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard MarketDashboardPage da (market_operator — operator rejimida ham) — KPI qatoridan keyin. |
+| `market-profile-contacts` | Profil — «Elchi mas'ulingiz» kartasi | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (market, market_operator). |
+| `market-orders-detail-contacts` | Buyurtma tafsilotlari — «Elchi mas'ulingiz» qatori | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — market/market_operator'da «Muammo bo'lsa» o'rnida «Elchi mas'ulingiz» (/users/me/contacts). |
 
 ### market_operator — Market operatori
 
@@ -2660,7 +2731,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-53 ta maket · kodda bor: 52 · kodda yo'q: 1
+59 ta maket · kodda bor: 52 · kodda yo'q: 7
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2717,6 +2788,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 | `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/features/pwa-install/ui/InstallAppCard.tsx` | v2 |
 | `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/features/pwa-install/ui/IosInstallDialog.tsx` | v2 |
+| `courier-dashboard-home-contacts` | Bosh sahifa — «Viloyatingiz logisti» kartasi | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx + src/shared/ui/Forbidden.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard (useMyContacts, GET /users/me/contacts) — KPI qatoridan keyin. |
+| `courier-profile-contacts` | Profil — «Viloyatingiz logisti» kartasi | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (kuryer, menejer). |
+| `courier-orders-detail-contacts` | Buyurtma tafsilotlari — «Muammo bo'lsa» qatori, market telefonisiz | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa» (Headset, problem_contacts, tel:). |
+| `courier-dashboard-user-menu-contacts` | Profil menyusi — «Aloqa» bandi (taklif) | sahifa | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 UserMenu «Aloqa» — shell, faqat ega roziligi bilan (taklif). |
+| `courier-dashboard-mobile-menu-contacts` | Menyu varag'i — «Aloqa» bandi (taklif) | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: MobileMenu «Aloqa» qatori — shell, faqat ega roziligi bilan (taklif). |
+| `courier-dashboard-contacts-dialog` | «Aloqa» oynasi — profil menyusidan (taklif) | oyna | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: «Aloqa» bandi ochadigan Dialog (ContactCard tanasi) — taklif. |
 
 ### logist — Logist
 
@@ -2805,6 +2882,8 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-scan-feedback` | Skaner natijasi — to'liq ekran rang effekti va ovozlar | Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari. | src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
 | `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
 | `tizim-product-labels` | Mahsulot stikeri — QR va shtrix kod (40×30, 58×40) | Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari. | src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx) | barcha sahifalar |
+| `tizim-contact-card` | Aloqa kartasi va «Muammo bo'lsa» — holatlar | Aloqa kartasi (ContactCard): «Viloyatingiz logisti» (kuryer, menejer) va «Elchi mas'ulingiz» (market, market operatori) — anatomiya, joylar (bosh sahifa, profil, profil menyusi), holatlar (to'liq, bir nechta raqam, umumiy raqam, belgilanmagan, yuklanish, xato, oflayn «Oxirgi ma'lumot», nusxalandi); buyurtma tafsilotidagi «Muammo bo'lsa» / «Elchi mas'ulingiz» qatori; kim nimani ko'radi (market telefoni menejer, filial va kuryerga yo'q). | src/entities/contacts (useMyContacts, ContactCard — yangi), src/widgets/order-meta/ui/OrderMeta.tsx, src/widgets/header/ui/UserMenu.tsx (taklif), locales */common.json → contacts.* | `/`, `/branch-dashboard`, `/orders/edit/:orderId`, `/profile` |
+| `tizim-receipts-contact` | Chek — «Muammo bo'lsa» raqami (viloyat logisti) | Chekdagi «Muammo bo'lsa»: buyurtma viloyati logist(lar)i raqami (1–2 ta, «, » bilan) → umumiy raqamlar; ikkalasi ham yo'q — o'ng qism chiqmaydi («-» yozilmaydi); market va operator raqami yorliqqa chiqmaydi; 100×60 va A4 (12 ta) namunalari. | src/pages/new_orders/components/lib/receiptContact.ts (getReceiptContactPhone → problem_contacts), printLabelPdf.ts, src/pages/mails/detail/lib/printMode.ts | barcha sahifalar |
 
 ## 6. Fayl → route
 
@@ -3420,7 +3499,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
-| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+4) |
+| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
@@ -3444,7 +3523,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
-| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+2) |
+| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
@@ -3456,11 +3535,11 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
 | Band | Kalit | `to` | Route | Shart (filial turi) | manager maketlari |
 |---|---|---|---|---|---|
-| Bosh sahifa | `dashboard` | `/branch-dashboard` | `/branch-dashboard` | barchasi | `manager-branch-dashboard-main` |
+| Bosh sahifa | `dashboard` | `/branch-dashboard` | `/branch-dashboard` | barchasi | `manager-branch-dashboard-main` (+1) |
 | Biriktirish | `dispatch` | `/dispatch` | `/dispatch` | REGIONAL · HYBRID | `manager-dispatch-scan` (+2) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | barchasi | `manager-orders-list-all` (+7) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | REGIONAL · HYBRID | `manager-courier-bulk-main` (+1) |
-| Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` |
+| Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` (+1) |
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
@@ -3486,7 +3565,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
 | Band | Kalit | `to` | Route | Shart (filial turi) | market maketlari |
 |---|---|---|---|---|---|
-| Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+1) |
+| Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+2) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+1) |
@@ -3507,7 +3586,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
 | Band | Kalit | `to` | Route | Shart (filial turi) | courier maketlari |
 |---|---|---|---|---|---|
-| Bosh sahifa | `dashboard` | `/` | `/` | — | `courier-dashboard-home` (+1) |
+| Bosh sahifa | `dashboard` | `/` | `/` | — | `courier-dashboard-home` (+2) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+11) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
