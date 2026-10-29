@@ -49,12 +49,12 @@ test("⭐ «Holat»: Enter bilan ochiladi, ↓ ↓ + Enter — URL'da status=rec
     const id = await select.getAttribute("aria-activedescendant");
     return id ? page.locator(`[id="${id}"]`).innerText() : null;
   };
-  expect(await activeLabel()).toBe("Yangi");
+  await expect.poll(activeLabel).toBe("Yangi");
 
   await page.keyboard.press("ArrowDown");
-  expect(await activeLabel()).toBe("Yaratilgan");
+  await expect.poll(activeLabel).toBe("Yaratilgan");
   await page.keyboard.press("ArrowDown");
-  expect(await activeLabel()).toBe("Qabul qilindi");
+  await expect.poll(activeLabel).toBe("Qabul qilindi");
   await page.keyboard.press("Enter");
 
   await expect(page).toHaveURL(/[?&]status=received(&|$)/);
