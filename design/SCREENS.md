@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **695 ta maket** (429 sahifa, 249 oyna, 17 tizim taxtasi; 589 ta fragment fayli) · kodda yo'q: **40** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **713 ta maket** (437 sahifa, 259 oyna, 17 tizim taxtasi; 605 ta fragment fayli) · kodda yo'q: **58** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -84,14 +84,14 @@
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
-| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 12 | v2 |
-| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 22 | v2 |
-| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 14 | v2 |
+| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 20 | v2 |
+| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 28 | v2 |
+| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 16 | v2 |
 | `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
 | `/my-earnings` | Moliya | `src/pages/my-earnings/index.tsx` | market_operator (MO-2: canViewMyEarnings = hasRole('market_operator') (access.ts)) | 2 | v2 |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
 | `/payments/shifts/:id` | Moliya | `src/pages/payments/shiftReport/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 1 | v2 |
-| `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 1 | v2 |
+| `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 3 | v2 |
 | `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
 | `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 21 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
@@ -995,14 +995,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments` | superadmin | `superadmin-payments-market-picker-dialog` — Berilishi kerak / Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/superadmin--payments-market-picker-dialog.html](fragments/superadmin--payments-market-picker-dialog.html) | oyna | v2 |
 | `/payments` | superadmin | `superadmin-payments-to-give-dialog` — Berilishi kerak — market tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/superadmin--payments-to-give-dialog.html](fragments/superadmin--payments-to-give-dialog.html) | oyna | v2 |
 | `/payments` | superadmin | `superadmin-payments-history-detail-dialog` — To'lov tarixi — yozuv tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/superadmin--payments-history-detail-dialog.html](fragments/superadmin--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | superadmin | `superadmin-payments-history-detail-dialog-receipt` — To'lov tarixi — yozuv tafsiloti · «Chek» bo'limi (farq bor) | [design/fragments/superadmin--payments-history-detail-dialog-receipt.html](fragments/superadmin--payments-history-detail-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-detail-receipt-states` — To'lov tarixi — «Chek» bo'limi va ko'ruvchi holatlari | [design/fragments/superadmin--payments-history-detail-receipt-states.html](fragments/superadmin--payments-history-detail-receipt-states.html) | sahifa | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-receipt-viewer-dialog` — Chek rasmi — ko'ruvchi (Moslash ↔ 100%, yangi oynada ochish) | [design/fragments/superadmin--payments-receipt-viewer-dialog.html](fragments/superadmin--payments-receipt-viewer-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-receipt-reanalyze-confirm` — Chekni qayta tahlil — tasdiq | [design/fragments/superadmin--payments-history-receipt-reanalyze-confirm.html](fragments/superadmin--payments-history-receipt-reanalyze-confirm.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-overview-receipts` — To'lovlar — umumiy · «Chek» belgilari va «Chek holati» filtri | [design/fragments/superadmin--payments-overview-receipts.html](fragments/superadmin--payments-overview-receipts.html) | sahifa | yangi (kodda yo'q) |
 | `/payments` | admin | `admin-payments-overview` — To'lovlar | [design/fragments/admin--payments-overview.html](fragments/admin--payments-overview.html) | sahifa | v2 |
 | `/payments` | admin | `admin-payments-to-give-dialog` — Berilishi kerak — market tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-give-dialog.html](fragments/admin--payments-to-give-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-to-receive-dialog` — Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-receive-dialog.html](fragments/admin--payments-to-receive-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-history-detail-dialog` — To'lov tarixi tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/admin--payments-history-detail-dialog.html](fragments/admin--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | admin | `admin-payments-history-detail-dialog-receipt` — To'lov tarixi tafsiloti · «Chek» bo'limi | [design/fragments/superadmin--payments-history-detail-dialog-receipt.html](fragments/superadmin--payments-history-detail-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | admin | `admin-payments-overview-receipts` — To'lovlar · «Chek» belgilari va «Chek holati» filtri | [design/fragments/superadmin--payments-overview-receipts.html](fragments/superadmin--payments-overview-receipts.html) | sahifa | yangi (kodda yo'q) |
 | `/payments` | manager | `manager-payments-overview` — To'lovlar — umumiy | [design/fragments/manager--payments-overview.html](fragments/manager--payments-overview.html) | sahifa | qisman |
 | `/payments` | manager | `manager-payments-overview-shift-closed` — To'lovlar — smena yopiq<br>↳ `src/pages/payments/index.tsx`, `src/pages/payments/components/ShiftBanner.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-overview-shift-closed.html](fragments/manager--payments-overview-shift-closed.html) | sahifa | qisman |
 | `/payments` | manager | `manager-payments-courier-select-dialog` — Qabul qilish — kuryer tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/manager--payments-courier-select-dialog.html](fragments/manager--payments-courier-select-dialog.html) | oyna | v2 |
 | `/payments` | manager | `manager-payments-history-detail-dialog` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/manager--payments-history-detail-dialog.html](fragments/manager--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | manager | `manager-payments-history-detail-dialog-receipt` — Tranzaksiya tafsiloti · «Chek» bo'limi (faqat ko'rish) | [design/fragments/manager--payments-history-detail-dialog-receipt.html](fragments/manager--payments-history-detail-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
 | `/payments` | market_operator | — Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» (/my-earnings, MO-2). | — | — | v2 |
 
 #### `/payments/main-cashbox` — Asosiy kassa (to'ldirish / xarajat / smenani yopish)
@@ -1026,18 +1034,24 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-cashbox-account-form-dialog` — Karta yoki hisob raqam qo'shish (popup) | [design/fragments/superadmin--payments-cashbox-account-form-dialog.html](fragments/superadmin--payments-cashbox-account-form-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-fill-dialog-account` — Kassaga kirim — karta yoki hisob raqamni tanlash (popup) | [design/fragments/superadmin--payments-main-cashbox-fill-dialog-account.html](fragments/superadmin--payments-main-cashbox-fill-dialog-account.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog-accounts` — Smenani yopish — kartalar qoldig'i, rasm va AI tekshiruvi (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html](fragments/superadmin--payments-main-cashbox-shift-dialog-accounts.html) | oyna | v2 |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-expense-receipt-dialog` — Kassadan xarajat — chek rasmi bilan (popup) | [design/fragments/superadmin--payments-main-cashbox-expense-receipt-dialog.html](fragments/superadmin--payments-main-cashbox-expense-receipt-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-expense-receipt-confirm` — Xarajatni tasdiqlang — «Chek: biriktirildi» qatori | [design/fragments/superadmin--payments-main-cashbox-expense-receipt-confirm.html](fragments/superadmin--payments-main-cashbox-expense-receipt-confirm.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-expense-receipt-states` — Kassadan xarajat — chek rasmi maydoni holatlari | [design/fragments/superadmin--payments-main-cashbox-expense-receipt-states.html](fragments/superadmin--payments-main-cashbox-expense-receipt-states.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-receipts` — Asosiy kassa — operatsiyalar tarixida «Chek» belgilari | [design/fragments/superadmin--payments-main-cashbox-receipts.html](fragments/superadmin--payments-main-cashbox-receipts.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox` — Asosiy kassa | [design/fragments/admin--payments-main-cashbox.html](fragments/admin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog` — Kassadan xarajat / Kassani to'ldirish<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/admin--payments-cashbox-form-dialog.html](fragments/admin--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-shift-dialog` — Smenani yopish<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/admin--payments-shift-dialog.html](fragments/admin--payments-shift-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/admin--payments-main-cashbox-shift-closed.html](fragments/admin--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-open-dialog` — Smenani ochish<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/admin--payments-main-cashbox-shift-open-dialog.html](fragments/admin--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/admin--payments-main-cashbox-shift-result-dialog.html](fragments/admin--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog-receipt` — Kassadan xarajat — chek rasmi bilan | [design/fragments/admin--payments-cashbox-form-dialog-receipt.html](fragments/admin--payments-cashbox-form-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox` — Asosiy kassa (filial) | [design/fragments/manager--payments-main-cashbox.html](fragments/manager--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-cashbox-form-dialog` — Kassadan xarajat / to'ldirish oynasi<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/manager--payments-cashbox-form-dialog.html](fragments/manager--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-close-shift-dialog` — Smenani yopish oynasi<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/manager--payments-close-shift-dialog.html](fragments/manager--payments-close-shift-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-closed` — Asosiy kassa (filial) — smena yopiq | [design/fragments/manager--payments-main-cashbox-shift-closed.html](fragments/manager--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-open-dialog` — Smenani ochish oynasi<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/manager--payments-main-cashbox-shift-open-dialog.html](fragments/manager--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija oynasi<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/manager--payments-main-cashbox-shift-result-dialog.html](fragments/manager--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | manager | `manager-payments-cashbox-form-dialog-receipt` — Kassadan xarajat — chek rasmi bilan (filial) | [design/fragments/manager--payments-cashbox-form-dialog-receipt.html](fragments/manager--payments-cashbox-form-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
 
 #### `/payments/cash-detail/:id` — Kassa tafsiloti — kuryer / market / filial
 
@@ -1054,6 +1068,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-market` — Market kassasi (to'lov berish) | [design/fragments/superadmin--payments-cash-detail-market.html](fragments/superadmin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch` — Filial kassasi (filialdan qabul) | [design/fragments/superadmin--payments-cash-detail-branch.html](fragments/superadmin--payments-cash-detail-branch.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch-shift-closed` — Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | [design/fragments/superadmin--payments-cash-detail-branch-shift-closed.html](fragments/superadmin--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-courier-receipt` — Kuryer kassasi (HQ kuryeri) — «O'tkazma» qabulida chek rasmi | [design/fragments/superadmin--payments-cash-detail-courier-receipt.html](fragments/superadmin--payments-cash-detail-courier-receipt.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch-receipt` — Filial kassasi — filialdan HQ ga «O'tkazma» qabulida chek rasmi | [design/fragments/superadmin--payments-cash-detail-branch-receipt.html](fragments/superadmin--payments-cash-detail-branch-receipt.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-courier` — Kuryer kassasi | [design/fragments/admin--payments-cash-detail-courier.html](fragments/admin--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-market` — Market kassasi | [design/fragments/admin--payments-cash-detail-market.html](fragments/admin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-branch` — Filial kassasi (HQ qabul) | [design/fragments/admin--payments-cash-detail-branch.html](fragments/admin--payments-cash-detail-branch.html) | sahifa | v2 |
@@ -1149,6 +1165,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | [design/fragments/superadmin--payments-shift-settings.html](fragments/superadmin--payments-shift-settings.html) | sahifa | v2 |
+| `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings-receipts` — Kassa smenasi sozlamalari · «Chek rasmi va AI tahlili» kartasi | [design/fragments/superadmin--payments-shift-settings-receipts.html](fragments/superadmin--payments-shift-settings-receipts.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings-receipts-photo-off-confirm` — Chek rasmini o'chirish — tasdiq | [design/fragments/superadmin--payments-shift-settings-receipts-photo-off-confirm.html](fragments/superadmin--payments-shift-settings-receipts-photo-off-confirm.html) | oyna | yangi (kodda yo'q) |
 
 #### `(taklif) /ai-assistant` — AI moliyaviy yordamchi (taklif — kodda yo'q)
 
@@ -2036,7 +2054,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-242 ta maket · kodda bor: 227 · kodda yo'q: 15
+255 ta maket · kodda bor: 227 · kodda yo'q: 28
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2282,10 +2300,23 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `superadmin-payments-main-cashbox-expense-receipt-dialog` | Kassadan xarajat — chek rasmi bilan (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: CashboxFormPopup (spend) — «Chek rasmi *» (receipt/ReceiptField) kategoriya va izoh orasida, receipt-settings manual_expense.photo_required bo'lsa; superadminda «Sozlamalar» havolasi; yuklanayotganda «Xarajatni saqlash» o'chiq. |
+| `superadmin-payments-main-cashbox-expense-receipt-confirm` | Xarajatni tasdiqlang — «Chek: biriktirildi» qatori | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: useConfirm rows ← «Chek» · «Biriktirildi»; muvaffaqiyat — notify.success + «Chek AI tahlilida — natija tarixda ko'rinadi». |
+| `superadmin-payments-main-cashbox-expense-receipt-states` | Kassadan xarajat — chek rasmi maydoni holatlari | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: ReceiptField holatlari — bo'sh, sozlama yuklanmoqda, yuklanmoqda, yuklandi, AI o'chiq, majburiy, katta / format / HEIC, yuklash xatosi + «Qayta urinish», oflayn, RECEIPT_NOT_FOUND / 409. |
+| `superadmin-payments-cash-detail-courier-receipt` | Kuryer kassasi (HQ kuryeri) — «O'tkazma» qabulida chek rasmi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: cashDetail (type=courier, HQ kuryeri, superadmin/admin) — «O'tkazma» (click) tanlansa ReceiptField (kind courier_to_hq); Naqd va «Marketga o'tkazma» da yo'q; receipt_id barmoq iziga kirmaydi; tarix ro'yxatida «Chek» belgisi. Admin — ayni (havolasiz); menejerning kuryer qabulida chek yo'q. |
+| `superadmin-payments-cash-detail-branch-receipt` | Filial kassasi — filialdan HQ ga «O'tkazma» qabulida chek rasmi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: cashDetail (type=branch, branch-to-main, superadmin/admin) — «O'tkazma» da ReceiptField (kind branch_to_hq); bitta chek asosiy kassa kirimi va filial chiqimi qatorlarida. Admin — ayni (havolasiz). |
+| `superadmin-payments-history-detail-dialog-receipt` | To'lov tarixi — yozuv tafsiloti · «Chek» bo'limi (farq bor) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: FinanceHistoryDetailPopup → ReceiptSection (row.receipt bo'lsa): holat, eskiz → ko'ruvchi, AI maydonlari, farq, «Qayta tahlil» (superadmin/admin). |
+| `superadmin-payments-history-detail-receipt-states` | To'lov tarixi — «Chek» bo'limi va ko'ruvchi holatlari | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: ReceiptSection — mos keldi, tahlilda, natija kelmadi (ai_stale), o'qib bo'lmadi, xato, AI o'chiq, bayroqlar, urinishlar tugadi, yuklanmoqda / xato; ReceiptViewerDialog — 100%, yuklanmoqda, ochilmadi. |
+| `superadmin-payments-receipt-viewer-dialog` | Chek rasmi — ko'ruvchi (Moslash ↔ 100%, yangi oynada ochish) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: ReceiptViewerDialog — Dialog lg, telefonda to'liq ekran (pinch-zoom); photo_url 300 s, eskirsa qayta so'raladi. |
+| `superadmin-payments-history-receipt-reanalyze-confirm` | Chekni qayta tahlil — tasdiq | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: useConfirm → POST finance/receipts/:id/reanalyze (202); 409 / 429 / 400 xatolari oynada. |
+| `superadmin-payments-overview-receipts` | To'lovlar — umumiy · «Chek» belgilari va «Chek holati» filtri | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: patmentHistoryTable / PaymentHistoryList — «Chek» belgisi (Receipt + holat; telefonda karta meta qatorida); /payments da «Chek holati» Select (receipt_status, URL; superadmin/admin). Menejer — belgilar bor, filtr yo'q. «Chek yo'q» — faqat chek so'raladigan operatsiyalar (qo'lda chiqim va HQ'ga «O'tkazma» — kuryer va filialdan; naqd va boshqa turlar kirmaydi), ro'yxatda variant ostida izoh (ega qarori 2026-10-29; backend tasdiqlaydi). |
+| `superadmin-payments-shift-settings-receipts` | Kassa smenasi sozlamalari · «Chek rasmi va AI tahlili» kartasi | sahifa | `/payments/shift-settings` | `src/pages/payments/shiftSettings/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: GET/PATCH finance/receipt-settings — «Qo'lda chiqim» va «Kuryer va filialdan HQ ga o'tkazma» × «Chek rasmi majburiy» / «AI tahlili»; rasm o'chiq — AI kaliti o'chiq + «Avval chek rasmini yoqing»; sahifadagi yagona «Saqlash». |
+| `superadmin-payments-shift-settings-receipts-photo-off-confirm` | Chek rasmini o'chirish — tasdiq | oyna | `/payments/shift-settings` | `src/pages/payments/shiftSettings/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: useConfirm (danger) — «Chek rasmi majburiy» o'chirilishidan oldin; AI ham o'chadi. |
+| `superadmin-payments-main-cashbox-receipts` | Asosiy kassa — operatsiyalar tarixida «Chek» belgilari | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: mainCashbox.tsx historyColumns («Manba» katakchasi — kategoriya belgisidan keyin) va renderHistoryCard (telefon kartasining meta qatori) — «Chek» belgisi (Receipt + holat, /payments ro'yxatidagi belgi bilan bir xil). Belgi faqat chek so'raladigan qatorlarda: qo'lda chiqim va HQ'ga «O'tkazma» (click — bu sahifada «Karta (Click)»; kuryer va filialdan); naqd va boshqa turlarda yo'q. Faqat superadmin va admin (ega qarori 2026-10-29; admin — ayni, alohida maketsiz); menejerning filial kassasida (manager-payments-main-cashbox) belgi yo'q. Qator → FinanceHistoryDetailPopup «Chek» bo'limi. |
 
 ### admin — Admin
 
-158 ta maket · kodda bor: 154 · kodda yo'q: 4
+161 ta maket · kodda bor: 154 · kodda yo'q: 7
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2447,10 +2478,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `admin-payments-cashbox-form-dialog-receipt` | Kassadan xarajat — chek rasmi bilan | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: admin — superadmin oynasi bilan bir xil, «Sozlamalar» havolasisiz. |
+| `admin-payments-history-detail-dialog-receipt` | To'lov tarixi tafsiloti · «Chek» bo'limi | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: admin — superadmin fragmenti (ruxsatlar bir xil, «Qayta tahlil» bor). |
+| `admin-payments-overview-receipts` | To'lovlar · «Chek» belgilari va «Chek holati» filtri | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: admin — superadmin fragmenti. |
 
 ### manager — Menejer
 
-87 ta maket · kodda bor: 83 · kodda yo'q: 4
+89 ta maket · kodda bor: 83 · kodda yo'q: 6
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2541,6 +2575,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `manager-users-create-courier-district` | Yangi xodim — kuryer, «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `manager-warehouse-detail` | Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
+| `manager-payments-cashbox-form-dialog-receipt` | Kassadan xarajat — chek rasmi bilan (filial) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: menejer — o'z filiali kassasidan xarajatga chek (POST finance/receipts kind=manual_expense), «Sozlamalar» havolasisiz. |
+| `manager-payments-history-detail-dialog-receipt` | Tranzaksiya tafsiloti · «Chek» bo'limi (faqat ko'rish) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T3 (Y91CZN3B) chek rasmi + AI tahlil — kodda yo'q: menejer — o'z filiali cheklari, «Qayta tahlil» yo'q. |
 
 ### registrator — Registrator
 
@@ -3421,7 +3457,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+4) |
-| To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+3) |
+| To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+8) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
 | Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
@@ -3445,7 +3481,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+2) |
-| To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+3) |
+| To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+5) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
@@ -3467,7 +3503,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | REGIONAL · HYBRID | izohga qarang |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | HQ · PICKUP · REGIONAL · HYBRID | `manager-users-list` |
-| To'lovlar | `payments` | `/payments` | `/payments` | HQ · REGIONAL · HYBRID | `manager-payments-overview` (+3) |
+| To'lovlar | `payments` | `/payments` | `/payments` | HQ · REGIONAL · HYBRID | `manager-payments-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | barchasi | `manager-regions-scoped` |
 
 ### registrator — Registrator

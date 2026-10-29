@@ -6259,6 +6259,168 @@
    "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
    "order": 201.6,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-expense-receipt-dialog",
+   "menuKey": "payments",
+   "title": "Kassadan xarajat — chek rasmi bilan (popup)",
+   "fragment": "superadmin--payments-main-cashbox-expense-receipt-dialog",
+   "order": 63.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-expense-receipt-confirm",
+   "menuKey": "payments",
+   "title": "Xarajatni tasdiqlang — «Chek: biriktirildi» qatori",
+   "fragment": "superadmin--payments-main-cashbox-expense-receipt-confirm",
+   "order": 63.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-expense-receipt-states",
+   "menuKey": "payments",
+   "title": "Kassadan xarajat — chek rasmi maydoni holatlari",
+   "fragment": "superadmin--payments-main-cashbox-expense-receipt-states",
+   "order": 63.3,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-cashbox-form-dialog-receipt",
+   "menuKey": "payments",
+   "title": "Kassadan xarajat — chek rasmi bilan",
+   "fragment": "admin--payments-cashbox-form-dialog-receipt",
+   "order": 182.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-cashbox-form-dialog-receipt",
+   "menuKey": "payments",
+   "title": "Kassadan xarajat — chek rasmi bilan (filial)",
+   "fragment": "manager--payments-cashbox-form-dialog-receipt",
+   "order": 270.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cash-detail-courier-receipt",
+   "menuKey": "payments",
+   "title": "Kuryer kassasi (HQ kuryeri) — «O'tkazma» qabulida chek rasmi",
+   "fragment": "superadmin--payments-cash-detail-courier-receipt",
+   "order": 65.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cash-detail-branch-receipt",
+   "menuKey": "payments",
+   "title": "Filial kassasi — filialdan HQ ga «O'tkazma» qabulida chek rasmi",
+   "fragment": "superadmin--payments-cash-detail-branch-receipt",
+   "order": 67.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-receipt",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · «Chek» bo'limi (farq bor)",
+   "fragment": "superadmin--payments-history-detail-dialog-receipt",
+   "order": 61.01,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-history-detail-dialog-receipt",
+   "menuKey": "payments",
+   "title": "To'lov tarixi tafsiloti · «Chek» bo'limi",
+   "fragment": "superadmin--payments-history-detail-dialog-receipt",
+   "order": 180.01,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-history-detail-dialog-receipt",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · «Chek» bo'limi (faqat ko'rish)",
+   "fragment": "manager--payments-history-detail-dialog-receipt",
+   "order": 274.01,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-receipt-states",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — «Chek» bo'limi va ko'ruvchi holatlari",
+   "fragment": "superadmin--payments-history-detail-receipt-states",
+   "order": 61.02,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-receipt-viewer-dialog",
+   "menuKey": "payments",
+   "title": "Chek rasmi — ko'ruvchi (Moslash ↔ 100%, yangi oynada ochish)",
+   "fragment": "superadmin--payments-receipt-viewer-dialog",
+   "order": 61.03,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-receipt-reanalyze-confirm",
+   "menuKey": "payments",
+   "title": "Chekni qayta tahlil — tasdiq",
+   "fragment": "superadmin--payments-history-receipt-reanalyze-confirm",
+   "order": 61.04,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-overview-receipts",
+   "menuKey": "payments",
+   "title": "To'lovlar — umumiy · «Chek» belgilari va «Chek holati» filtri",
+   "fragment": "superadmin--payments-overview-receipts",
+   "order": 59.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-overview-receipts",
+   "menuKey": "payments",
+   "title": "To'lovlar · «Chek» belgilari va «Chek holati» filtri",
+   "fragment": "superadmin--payments-overview-receipts",
+   "order": 177.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-settings-receipts",
+   "menuKey": "payments",
+   "title": "Kassa smenasi sozlamalari · «Chek rasmi va AI tahlili» kartasi",
+   "fragment": "superadmin--payments-shift-settings-receipts",
+   "order": 64.97,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-settings-receipts-photo-off-confirm",
+   "menuKey": "payments",
+   "title": "Chek rasmini o'chirish — tasdiq",
+   "fragment": "superadmin--payments-shift-settings-receipts-photo-off-confirm",
+   "order": 64.98,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-receipts",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — operatsiyalar tarixida «Chek» belgilari",
+   "fragment": "superadmin--payments-main-cashbox-receipts",
+   "order": 62.1,
+   "kind": "page"
   }
  ],
  "groupTitles": {
