@@ -58,9 +58,16 @@ export const mockOrderCreateApi = async (
     profile?: Record<string, unknown>;
     /** `product/my-products` javobi (sukut — `aiProducts`). */
     products?: unknown[];
+    /**
+     * 6NYcXvGy: `POST delivery/quote/by-tariff` javobi (`status` sukut 200). Berilmasa — so'rov `leaked` ga tushadi
+     * (avvalgidek: o'lchovsiz katalogda u umuman ketmaydi).
+     */
+    quote?: (body: QuoteRequestBody) => { status?: number; body: unknown };
   } = {},
 ) => {
   const leaked: string[] = [];
+  /** 6NYcXvGy: har `POST delivery/quote/by-tariff` tanasi (vaqt tartibida). */
+  const quoteRequests: QuoteRequestBody[] = [];
   const createdOrders: Record<string, unknown>[] = [];
   /** gpCIsGjH: har `POST orders` ning `Idempotency-Key` sarlavhasi (`createdOrders` bilan bir tartibda). */
   const createKeys: (string | undefined)[] = [];
@@ -103,14 +110,104 @@ export const mockOrderCreateApi = async (
       createKeys.push((await request.allHeaders())["idempotency-key"]);
       return reply(route, wrap({ id: "e2e-order-1", status: "new" }), 201);
     }
+    if (path === "delivery/quote/by-tariff" && request.method() === "POST" && options.quote) {
+      const body = request.postDataJSON() as QuoteRequestBody;
+      quoteRequests.push(body);
+      const result = options.quote(body);
+      return reply(route, result.body, result.status ?? 200);
+    }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
     }
     return reply(route, wrap([]));
   });
-  return { leaked, createdOrders, createKeys, suggestQueries };
+  return { leaked, createdOrders, createKeys, suggestQueries, quoteRequests };
 };
+
+/** 6NYcXvGy: `POST delivery/quote/by-tariff` tanasi. */
+export type QuoteRequestBody = {
+  items: {
+    weight_kg: number;
+    length_cm: number;
+    width_cm: number;
+    height_cm: number;
+    volumetric_enabled: boolean;
+  }[];
+};
+
+/**
+ * 6NYcXvGy: soxta narx dvigateli — sayt kalkulyatori formulasi (hajmli vazn U×K×B / 5000, hisob vazni 0,1 kg
+ * yuqoriga, birinchi kg asosiy narxda, har qo'shimcha kg 4 000) posilkadagi barcha elementlar yig'indisiga.
+ * Asosiy narx: shahar 30 000, markazgacha 25 000, uygacha 35 000.
+ */
+export const fakeDeliveryQuote = (body: QuoteRequestBody) => {
+  const actualKg = body.items.reduce((sum, item) => sum + item.weight_kg, 0);
+  const volumetricKg = body.items.reduce(
+    (sum, item) =>
+      sum +
+      (item.volumetric_enabled ? (item.length_cm * item.width_cm * item.height_cm) / 5000 : 0),
+    0,
+  );
+  const billableKg = Math.max(Math.ceil(Math.max(actualKg, volumetricKg) * 10 - 1e-9) / 10, 0.1);
+  const extraKg = Math.max(0, Math.ceil(billableKg - 1 - 1e-9));
+  const quote = (tariffId: string, base: number) => ({
+    tariffId,
+    base,
+    perExtraKg: 4000,
+    actualKg: Math.round(actualKg * 1000) / 1000,
+    volumetricKg: Math.round(volumetricKg * 1000) / 1000,
+    billableKg,
+    extraKg,
+    extra: extraKg * 4000,
+    total: Math.round((base + extraKg * 4000) / 500) * 500,
+    basis: volumetricKg > actualKg ? "volume" : "weight",
+    volumetricFromKg: 0,
+    volumetricApplied: volumetricKg > 0,
+  });
+  return {
+    body: wrap({
+      quotes: {
+        city: quote("city", 30000),
+        center: quote("center", 25000),
+        address: quote("address", 35000),
+      },
+    }),
+  };
+};
+
+/** 6NYcXvGy: o'lchovli (2 ta) va o'lchovsiz (eski) mahsulotlar. */
+export const MEASURED_PRODUCTS = [
+  {
+    id: 601,
+    name: "Termos",
+    price: 45000,
+    weight_kg: "1.20",
+    length_cm: 30,
+    width_cm: 22,
+    height_cm: 15,
+    volumetric_enabled: true,
+  },
+  {
+    id: 602,
+    name: "Kitob",
+    price: 30000,
+    weight_kg: 0.5,
+    length_cm: 20,
+    width_cm: 14,
+    height_cm: 3,
+    volumetric_enabled: true,
+  },
+  {
+    id: 603,
+    name: "Eski mahsulot",
+    price: 20000,
+    weight_kg: null,
+    length_cm: null,
+    width_cm: null,
+    height_cm: null,
+  },
+];
 
 /**
  * Market roli to'g'ridan-to'g'ri 2-qadamga (Step2Combined) tushadi.
