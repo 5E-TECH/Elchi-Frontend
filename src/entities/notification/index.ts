@@ -17,6 +17,7 @@ export {
   NOTIFICATION_INACTIVE_REASONS,
   inactiveReasonKey,
   inactiveReasonTone,
+  isReconnectableInactiveReason,
   parseInactiveReason,
 } from "./lib/inactiveReason";
 export type { InactiveReasonKey, NotificationInactiveReason } from "./lib/inactiveReason";

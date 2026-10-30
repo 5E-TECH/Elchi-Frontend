@@ -126,16 +126,36 @@ test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
     expect(state.notificationRequests).toBe(0);
   });
 
-  test("⭐ market /profile (TG-C): nofaol guruh — «Nofaol» + sabab, «Ulash» yo'q", async ({ page }) => {
-    await mockMarketTgGroupApi(page, {
+  test("⭐ market /profile (TG-C): nofaol guruh — «Nofaol» + sabab; bot chiqarilgan — «Qayta ulash» → faollashguncha kutadi (BOT-3 #6)", async ({
+    page,
+  }) => {
+    const state = await mockMarketTgGroupApi(page, {
       role: "market",
-      rows: [{ ...marketGroupRow("create", false), inactive_reason: "kicked" }],
+      rows: [
+        { ...marketGroupRow("create", false), inactive_reason: "kicked" },
+        { ...marketGroupRow("cancel", false), inactive_reason: "manual" },
+      ],
+      connectAfterPolls: 1,
     });
     await page.goto("/profile");
 
-    const create = page.getByRole("region", { name: "Telegram guruhi" }).getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    const card = page.getByRole("region", { name: "Telegram guruhi" });
+    const create = card.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    const cancel = card.getByRole("group", { name: "Bekor qilinganlar guruhi" });
     await expect(create.getByText("Nofaol")).toBeVisible({ timeout: 90_000 });
     await expect(create.getByText("Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring")).toBeVisible();
+    // Admin o'chirgan — faqat admin yoqadi, tugma yo'q.
+    await expect(cancel.getByText("Qo'lda nofaol qilingan")).toBeVisible();
+    await expect(cancel.getByRole("button")).toHaveCount(0);
+
+    await create.getByRole("button", { name: "Yangi buyurtmalar guruhini qayta ulash" }).click();
+    const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
+    await expect(dialog.getByText("Guruh ulanishi kutilmoqda…")).toBeVisible();
+    expect(state.linkRequests).toEqual([{ purpose: "market_group", group_type: "create" }]);
+
+    await expect(page.getByText("Guruh ulandi", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(dialog).toHaveCount(0);
+    await expect(create.getByText("Ulangan")).toBeVisible();
     await expect(create.getByRole("button")).toHaveCount(0);
   });
 

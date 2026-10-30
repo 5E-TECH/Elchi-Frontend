@@ -135,9 +135,11 @@ export const mockMarketTgGroupApi = async (
     const watchPoll = (groupType: "create" | "cancel") => {
       if (state.pendingType !== groupType || connectAfterPolls == null) return;
       state.watchPolls += 1;
-      if (state.watchPolls > connectAfterPolls && !state.rows.some((row) => row.group_type === groupType)) {
-        state.rows.push({ ...marketGroupRow(groupType), createdAt: new Date().toISOString() });
-      }
+      if (state.watchPolls <= connectAfterPolls) return;
+      const existing = state.rows.find((row) => row.group_type === groupType);
+      // BOT-3 #6: nofaol guruh kod bilan qayta ulansa — o'sha qator qayta yoqiladi.
+      if (existing && !existing.is_active) Object.assign(existing, { is_active: true, inactive_reason: null });
+      if (!existing) state.rows.push({ ...marketGroupRow(groupType), createdAt: new Date().toISOString() });
     };
     if (path === "notifications/me/telegram-groups" && request.method() === "GET") {
       state.myGroupsRequests += 1;

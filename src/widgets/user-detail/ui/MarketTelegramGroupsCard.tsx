@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { canViewNotifications } from "../../../app/lib/access";
 import {
   inactiveReasonTone,
+  isReconnectableInactiveReason,
   NotificationInactiveNote,
   useMyTelegramGroups,
   useNotifications,
@@ -23,9 +24,19 @@ import { useMarketTelegramGroupPiiToggle } from "../model/useMarketTelegramGroup
 const GROUP_TYPES: readonly NotificationGroupType[] = ["create", "cancel"];
 
 /** Tur bo'yicha kalitlar (`users:tgGroup.*`). */
-const TYPE_KEYS: Record<NotificationGroupType, { title: string; off: string; aria: string }> = {
-  create: { title: "tgGroup.typeCreate", off: "tgGroup.offCreate", aria: "tgGroup.linkCreate" },
-  cancel: { title: "tgGroup.typeCancel", off: "tgGroup.offCancel", aria: "tgGroup.linkCancel" },
+const TYPE_KEYS: Record<NotificationGroupType, { title: string; off: string; aria: string; relinkAria: string }> = {
+  create: {
+    title: "tgGroup.typeCreate",
+    off: "tgGroup.offCreate",
+    aria: "tgGroup.linkCreate",
+    relinkAria: "tgGroup.relinkCreate",
+  },
+  cancel: {
+    title: "tgGroup.typeCancel",
+    off: "tgGroup.offCancel",
+    aria: "tgGroup.linkCancel",
+    relinkAria: "tgGroup.relinkCancel",
+  },
 };
 
 /** `.el-stat-icon` — neytral ikonka qutisi (CODE-MAP). */
@@ -62,7 +73,10 @@ export type MarketTelegramGroupsCardProps = {
  * jadvalidagi bilan bir xil matn va ton, sabab noma'lum — umumiy izoh; maket yo'q — eng yaqini
  * `superadmin-notifications-telegram-groups`; faollashtirish «Bildirishnomalar» bo'limida — xodimga «Barcha guruhlar …»
  * havolasi; marketga `inactive_at` kelmaydi — sanasiz); ulanmagan — «Ulanmagan» + nima kelmasligi va «Ulash». Bot
- * mavjud ulanishni almashtirmaydi — ulangan (nofaol ham) turda «Ulash» yo'q. Yuklanishda belgi o'rnida skelet,
+ * mavjud ulanishni almashtirmaydi — faol turda «Ulash» yo'q; nofaol turda faqat Telegram sababli bo'lsa (bot
+ * chiqarilgan, guruhdan chiqqan, guruh topilmadi, yuborishda rad — BOT-3 #6) «Qayta ulash» (o'sha oyna, shu guruhga
+ * kod — ulanish qayta yoqiladi; maket yo'q — eng yaqini `market-profile-telegram-status`), admin o'chirgan yoki
+ * sababi noma'lum — tugma yo'q (faqat admin). Yuklanishda belgi o'rnida skelet,
  * xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi). «Ulash» oynasi ikkala rejimda
  * ulanishni kuzatadi: guruh ulansa o'zi yopiladi, «Guruh ulandi».
  * Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi.
@@ -115,19 +129,19 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
       : { kind: "inactive", row: connection };
   };
 
-  const linkButton = (type: NotificationGroupType) => (
+  const linkButton = (type: NotificationGroupType, relink: boolean) => (
     <Button
       variant="secondary"
       size="sm"
       leftIcon={LinkIcon}
       aria-haspopup="dialog"
-      aria-label={t(TYPE_KEYS[type].aria)}
+      aria-label={t(relink ? TYPE_KEYS[type].relinkAria : TYPE_KEYS[type].aria)}
       loading={link.pendingType === type}
       disabled={link.pendingType !== null && link.pendingType !== type}
       onClick={() => void link.start(type)}
       className="max-md:h-11 max-md:basis-full max-md:text-sm"
     >
-      {t("tgGroup.link")}
+      {t(relink ? "tgGroup.relink" : "tgGroup.link")}
     </Button>
   );
 
@@ -173,8 +187,14 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
     );
   };
 
-  // Ulash faqat ulanmagan turda (xato yoki yuklanishda — yo'q).
-  const canLink = (type: NotificationGroupType) => statusQuery.isSuccess && stateOf(type).kind === "none";
+  // Ulash — ulanmagan turda, «Qayta ulash» — Telegram sababli nofaol turda (xato yoki yuklanishda — yo'q).
+  const linkAction = (type: NotificationGroupType): "link" | "relink" | null => {
+    if (!statusQuery.isSuccess) return null;
+    const state = stateOf(type);
+    if (state.kind === "none") return "link";
+    if (state.kind === "inactive" && isReconnectableInactiveReason(state.row.inactive_reason)) return "relink";
+    return null;
+  };
 
   const rows =
     statusQuery.isError ? (
@@ -212,7 +232,7 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
                 {notLinkedByYou(type)}
               </div>
             </div>
-            {canLink(type) ? linkButton(type) : null}
+            {linkAction(type) ? linkButton(type, linkAction(type) === "relink") : null}
           </div>
         );
       })
