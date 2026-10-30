@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **123** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **121** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -1372,8 +1372,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/create-user` | superadmin | `superadmin-users-create` — Foydalanuvchi yaratish | [design/fragments/superadmin--users-create.html](fragments/superadmin--users-create.html) | sahifa | v2 |
 | `/all-users/create-user` | superadmin | `superadmin-users-create-courier-district` — Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | [design/fragments/superadmin--users-create-courier-district.html](fragments/superadmin--users-create-courier-district.html) | sahifa | v2 |
 | `/all-users/create-user` | superadmin | `superadmin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
-| `/all-users/create-user` | superadmin | `superadmin-users-create-password-sms` — Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | [design/fragments/superadmin--users-create-password-sms.html](fragments/superadmin--users-create-password-sms.html) | sahifa | yangi (kodda yo'q) |
-| `/all-users/create-user` | superadmin | `superadmin-users-create-password-result-dialog` — Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | [design/fragments/superadmin--users-create-password-result-dialog.html](fragments/superadmin--users-create-password-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-password-sms` — Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | [design/fragments/superadmin--users-create-password-sms.html](fragments/superadmin--users-create-password-sms.html) | sahifa | v2 |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-password-result-dialog` — Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | [design/fragments/superadmin--users-create-password-result-dialog.html](fragments/superadmin--users-create-password-result-dialog.html) | oyna | v2 |
 | `/all-users/create-user` | admin | `admin-users-create` — Yangi foydalanuvchi | [design/fragments/admin--users-create.html](fragments/admin--users-create.html) | sahifa | v2 |
 | `/all-users/create-user` | admin | `admin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-courier` — Yangi xodim — kuryer | [design/fragments/manager--users-create-courier.html](fragments/manager--users-create-courier.html) | sahifa | v2 |
@@ -2137,7 +2137,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-287 ta maket · kodda bor: 227 · kodda yo'q: 60
+287 ta maket · kodda bor: 229 · kodda yo'q: 58
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2376,8 +2376,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
 | `superadmin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `superadmin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
-| `superadmin-users-create-password-sms` | Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi). |
-| `superadmin-users-create-password-result-dialog` | Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | oyna | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish. |
+| `superadmin-users-create-password-sms` | Foydalanuvchi yaratish — parolni tizim yaratadi va SMS yuboradi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
+| `superadmin-users-create-password-result-dialog` | Foydalanuvchi yaratildi — parol SMS orqali yuborildi (popup) | oyna | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `superadmin-neworders-create-manual-source` | Buyurtma yaratish — manba: viloyat ombori yoki HQ | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `superadmin-users-edit-market-warehouse` | Marketni tahrirlash — «Ombordan buyurtma yaratish» kaliti (popup) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | v2 |

@@ -105,6 +105,12 @@ const typePassword = async (user: ReturnType<typeof userEvent.setup>, value: str
   await user.type(input, value);
 };
 
+/** aidsxJ2H: o'z parolida «Joriy parol» (yangi parol kiritilgach chiqadi). */
+const typeCurrentPassword = async (user: ReturnType<typeof userEvent.setup>, value: string) => {
+  const input = await screen.findByPlaceholderText("Joriy parolni kiriting");
+  await user.type(input, value);
+};
+
 describe("UpdateUserModal — holat variantlari (fix3b)", () => {
   it("faqat 'Faol' va 'Nofaol' — 'Bloklangan' yo'q", async () => {
     const user = userEvent.setup();
@@ -131,10 +137,13 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     renderModal(makeUser({ id: "56" }), { role: "courier", id: "56" }, { isOwnProfile: true });
 
     await typePassword(user, "yangiParol1");
+    await typeCurrentPassword(user, "eskiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
     expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
-    expect(mocks.updateMyProfile).toHaveBeenCalledWith(expect.objectContaining({ password: "yangiParol1" }));
+    expect(mocks.updateMyProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ password: "yangiParol1", old_password: "eskiParol1" }),
+    );
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
   });
@@ -144,11 +153,36 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     renderModal(makeUser({ id: "7", role: "admin" }), { role: "admin", id: "7" });
 
     await typePassword(user, "yangiParol1");
+    await typeCurrentPassword(user, "eskiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
     expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
-    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "7", data: expect.objectContaining({ password: "yangiParol1" }) });
+    expect(mocks.updateUser).toHaveBeenCalledWith({
+      id: "7",
+      data: expect.objectContaining({ password: "yangiParol1", old_password: "eskiParol1" }),
+    });
     expect(mocks.logout).not.toHaveBeenCalled();
+  });
+
+  it("aidsxJ2H: o'z paroli — joriy parolsiz yuborilmaydi; 400 OLD_PASSWORD_INVALID «Joriy parol» ostida, chiqarilmaydi", async () => {
+    const user = userEvent.setup();
+    mocks.updateUser.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 400, data: { statusCode: 400, message: "Joriy parol noto'g'ri", code: "OLD_PASSWORD_INVALID" } },
+    });
+    renderModal(makeUser({ id: "7", role: "admin" }), { role: "admin", id: "7" });
+
+    await typePassword(user, "yangiParol1");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    expect(await screen.findByText("Joriy parolni kiriting")).toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+
+    await typeCurrentPassword(user, "notogri1");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    expect(await screen.findAllByText("Joriy parol noto'g'ri")).not.toHaveLength(0);
+    expect(screen.getByPlaceholderText("Joriy parolni kiriting")).toHaveAttribute("aria-invalid", "true");
+    expect(mocks.logout).not.toHaveBeenCalled();
+    expect(peekLoginNotice()).toBeNull();
   });
 
   it("boshqa xodimning paroli — admin chiqarilmaydi, xabarda xodim barcha qurilmalardan chiqarilgani", async () => {
@@ -156,6 +190,8 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     renderModal(makeUser({ id: "263" }), { role: "admin", id: "7" });
 
     await typePassword(user, "yangiParol1");
+    // Boshqa xodimning paroli — «Joriy parol» so'ralmaydi, `old_password` yuborilmaydi.
+    expect(screen.queryByPlaceholderText("Joriy parolni kiriting")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
     expect(
@@ -164,6 +200,7 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
       ),
     ).toBeInTheDocument();
     expect(mocks.updateUser).toHaveBeenCalledTimes(1);
+    expect(mocks.updateUser.mock.calls[0][0].data).not.toHaveProperty("old_password");
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
   });
@@ -201,6 +238,7 @@ describe("UpdateUserModal — parolni o'zgartirish (boshqa qurilmalar chiqadi)",
     renderModal(makeUser({ id: "56" }), { role: "courier", id: "56" }, { isOwnProfile: true });
 
     await typePassword(user, "yangiParol1");
+    await typeCurrentPassword(user, "eskiParol1");
     await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
     // NDmZMzCP: server matni xabarda va parol maydoni ostida.

@@ -44,6 +44,13 @@ export const API_ENDPOINTS = {
     // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
     // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
     ROLE: (id: string | number) => `users/${id}/role`,
+    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — faqat o'zi
+    // yaratgan kuryer; o'ziga — 403). POST (tanasiz) → `{ user_id, must_change_password, password_sms }` — YANGI
+    // parol + SMS, foydalanuvchi sessiyalari yopiladi; 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT
+    // (kuniga 5), `retry_after_seconds`.
+    PASSWORD_RESEND_SMS: (id: string | number) => `users/${id}/password/resend-sms`,
+    // GET → `{ user_id, must_change_password, password_sms | null }` — oxirgi parol SMS'ining jonli holati.
+    PASSWORD_SMS_STATUS: (id: string | number) => `users/${id}/password/sms-status`,
   },
   // Rol katalogi (FY-2, K3scaE0W; superadmin, admin, menejer): GET → { items, changeable_roles }. Yorliqlar faqat
   // o'zbekcha — frontend faqat `changeable_roles` ni oladi, nomlar i18n'dan.

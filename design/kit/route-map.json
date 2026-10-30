@@ -1930,8 +1930,6 @@
     "superadmin-neworders-create-ai-input-images": "Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92).",
     "superadmin-ai-assistant": "Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q.",
     "superadmin-ai-assistant-access-dialog": "Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q.",
-    "superadmin-users-create-password-sms": "Trello 2026-10-23 (ega topshirig'i), 10-band: parolni tizim yaratadi va SMS yuboradi (hozir parol qo'lda, ≥4 belgi).",
-    "superadmin-users-create-password-result-dialog": "Trello 2026-10-23 (ega topshirig'i), 10-band: yaratildi — SMS holati, qayta yuborish.",
     "superadmin-payments-history-detail-dialog-correctable": "T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: FinanceHistoryDetailPopup footer — canCorrectPayments + correctable.allowed → «Summani tahrirlash» (secondary), «Qaytarish» (danger-soft), muddat izohi.",
     "superadmin-payments-history-detail-dialog-locked": "T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: correctable.allowed = false → tugmalar o'rnida izoh (WINDOW_EXPIRED «Muddat tugagan: {sana}», LEGACY_UNLINKED «Eski yozuv», NOT_CORRECTABLE).",
     "superadmin-payments-history-detail-dialog-corrected": "T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: «Qaytarish va tahrir» bloki (amal, sana, kim, sabab, eski → yangi, bog'liq yozuvlar) — barcha rollarga.",
