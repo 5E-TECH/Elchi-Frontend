@@ -1,8 +1,8 @@
 import { devices, expect, test, type Route } from "@playwright/test";
 
 /**
- * KIRISH SAHIFASI TEZLIGI (rzzxMItN) — PROD BUILD, iPhone 12, CPU 4× sekin, tarmoq 1,6 Mbit/s / 150 ms (CDP).
- * Byudjet: LCP < 2500 ms, JS < 350 KB (sim orqali o'tgan bayt), CLS < 0,1 (hozir: ≈ 2,2 s / 240 KB / 0;
+ * KIRISH SAHIFASI TEZLIGI (rzzxMItN, 1l2xJiVA) — PROD BUILD, iPhone 12, CPU 4× sekin, tarmoq 1,6 Mbit/s / 150 ms (CDP).
+ * Byudjet: LCP < 2500 ms, FCP < 3500 ms, JS < 350 KB (sim orqali o'tgan bayt), CLS < 0,1 (hozir: ≈ 2,2 s / 240 KB / 0;
  * ilgari 3,1 s / 372 KB).
  *   - `/login` da o'zbekcha tarjimalarning yadrodan tashqari qismi (`uzRest`) yuklanmaydi, antd ham yo'q;
  *   - kirish sahifasi moduli chizishdan oldin keladi (`app/lib/loginPage.tsx`) — «Ilova yuklanmoqda» ekrani
@@ -20,6 +20,7 @@ const reply = (route: Route, body: unknown) =>
   route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
 
 const LCP_BUDGET_MS = 2500;
+const FCP_BUDGET_MS = 3500;
 const JS_BUDGET_BYTES = 350 * 1024;
 const CLS_BUDGET = 0.1;
 
@@ -34,7 +35,7 @@ test.use({
 });
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ /login sekin tarmoqda: LCP < 2,5 s, JS < 350 KB, CLS < 0,1; kirgach sahifa o'zbekcha", async ({ page, context }) => {
+test("⭐ /login sekin tarmoqda: LCP < 2,5 s, FCP < 3,5 s, JS < 350 KB, CLS < 0,1; kirgach sahifa o'zbekcha", async ({ page, context }) => {
   await context.route(/api\.elchipochta\.uz|:3004\//, (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
@@ -46,7 +47,7 @@ test("⭐ /login sekin tarmoqda: LCP < 2,5 s, JS < 350 KB, CLS < 0,1; kirgach sa
     return reply(route, { statusCode: 200, data: [] });
   });
   await page.addInitScript(() => {
-    const perf = { lcp: 0, cls: 0, loader: false };
+    const perf = { lcp: 0, fcp: 0, cls: 0, loader: false };
     (window as unknown as { __perf: typeof perf }).__perf = perf;
     new MutationObserver(() => {
       if (document.querySelector('[role="status"][aria-label="Ilova yuklanmoqda"]')) perf.loader = true;
@@ -54,6 +55,11 @@ test("⭐ /login sekin tarmoqda: LCP < 2,5 s, JS < 350 KB, CLS < 0,1; kirgach sa
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) perf.lcp = entry.startTime;
     }).observe({ type: "largest-contentful-paint", buffered: true });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.name === "first-contentful-paint") perf.fcp = entry.startTime;
+      }
+    }).observe({ type: "paint", buffered: true });
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries() as Array<PerformanceEntry & { value: number; hadRecentInput: boolean }>) {
         if (!entry.hadRecentInput) perf.cls += entry.value;
@@ -83,11 +89,13 @@ test("⭐ /login sekin tarmoqda: LCP < 2,5 s, JS < 350 KB, CLS < 0,1; kirgach sa
   await expect(page.locator('input[name="password"]')).toBeVisible({ timeout: 60_000 });
   // LCP nomzodi kirish formasi chizilgach yakunlanadi; kechroq siljish ham hisobga olinsin.
   await page.waitForTimeout(2000);
-  const perf = await page.evaluate(() => (window as unknown as { __perf: { lcp: number; cls: number; loader: boolean } }).__perf);
+  const perf = await page.evaluate(() => (window as unknown as { __perf: { lcp: number; fcp: number; cls: number; loader: boolean } }).__perf);
   const loaded = [...scripts.values()];
 
   expect(perf.lcp).toBeGreaterThan(0);
   expect(perf.lcp).toBeLessThan(LCP_BUDGET_MS);
+  expect(perf.fcp).toBeGreaterThan(0);
+  expect(perf.fcp).toBeLessThan(FCP_BUDGET_MS);
   expect(perf.cls).toBeLessThan(CLS_BUDGET);
   expect(perf.loader).toBe(false);
   expect(jsBytes).toBeLessThan(JS_BUDGET_BYTES);
