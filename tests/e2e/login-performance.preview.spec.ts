@@ -2,8 +2,8 @@ import { devices, expect, test, type Route } from "@playwright/test";
 
 /**
  * KIRISH SAHIFASI TEZLIGI (rzzxMItN, 1l2xJiVA) — PROD BUILD, iPhone 12, CPU 4× sekin, tarmoq 1,6 Mbit/s / 150 ms (CDP).
- * Byudjet: LCP < 2500 ms, FCP < 3500 ms, JS < 350 KB (sim orqali o'tgan bayt), CLS < 0,1 (hozir: ≈ 2,2 s / 240 KB / 0;
- * ilgari 3,1 s / 372 KB).
+ * Byudjet: LCP < 2500 ms, FCP < 3500 ms, JS < 350 KB (sim orqali o'tgan bayt), CLS < 0,1 (hozir: ≈ 1,0 s / 240 KB / 0;
+ * ilgari 3,1 s / 372 KB). LCP — `index.html` dagi birinchi kadr logotipi (`login-first-paint.preview.spec.ts`), forma JS bilan ≈ 2,4 s da keladi.
  *   - `/login` da o'zbekcha tarjimalarning yadrodan tashqari qismi (`uzRest`) yuklanmaydi, antd ham yo'q;
  *   - kirish sahifasi moduli chizishdan oldin keladi (`app/lib/loginPage.tsx`) — «Ilova yuklanmoqda» ekrani
  *     (Suspense) chaqnamaydi, birinchi chizishda forma;

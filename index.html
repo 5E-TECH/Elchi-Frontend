@@ -101,6 +101,8 @@
           // Dizayn v2: sukut — LIGHT; dark faqat aniq tanlanganda.
         }
         document.documentElement.classList.add(savedTheme === "dark" ? "dark" : "light");
+        // `/login` birinchi kadri (#login-shell) — faqat shu yo'lda ko'rinadi.
+        if (/^\/login\/?$/i.test(location.pathname)) document.documentElement.classList.add("login-first-paint");
       })();
     </script>
 
@@ -174,9 +176,71 @@
         color: #4b5575;
       }
     </style>
+
+    <!-- ═══════════════════ /login birinchi kadri (rzzxMItN) ═════════════════════════ -->
+    <!--
+      Sekin tarmoqda kuryer logotipni JS'ni kutmasdan ko'radi: navy tasma va logotip — `features/auth/index.tsx` dagi
+      sahifa bilan bir xil joyda (React kelganda sakramaydi), `createRoot` birinchi chizishda #root ni o'zi tozalaydi.
+      Matn yo'q: til hali noma'lum. Balandliklar: tasma 180 px = 40 + logotip 48 + 92, forma qismi 391 px (planshetda
+      395 px) — ortiqcha joy 2:1 bo'linadi, sahifadagidek. Sahifa tuzilishi o'zgarsa, shu yerga ham ko'chiriladi
+      (`login-first-paint.preview.spec.ts` farqni ushlaydi).
+    -->
+    <style>
+      #login-shell {
+        display: none;
+      }
+      .login-first-paint #login-shell {
+        display: flex;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: var(--color-surface, #ffffff);
+      }
+      .login-shell__brand {
+        flex: 0 0 42%;
+        box-sizing: border-box;
+        max-width: 620px;
+        padding: 48px 56px;
+        background: var(--color-nav, #1f2853);
+      }
+      .login-shell__brand img {
+        display: block;
+        width: 145px;
+        height: 48px;
+      }
+      @media (max-width: 1023px) {
+        .login-first-paint #login-shell {
+          flex-direction: column;
+        }
+        .login-shell__brand {
+          display: flex;
+          flex: 2 1 auto;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          max-width: none;
+          padding: 40px 16px 92px;
+        }
+        .login-shell__rest {
+          flex: 1 1 auto;
+          height: 395px;
+        }
+      }
+      @media (max-width: 767px) {
+        .login-shell__rest {
+          height: 391px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="login-shell" aria-hidden="true">
+        <div class="login-shell__brand">
+          <img src="/src/shared/assets/brand/elchi-logo-white.png" alt="" width="145" height="48" />
+        </div>
+        <div class="login-shell__rest"></div>
+      </div>
+    </div>
     <div id="legacy-fallback" class="elchi-fallback" role="alert">
       <div class="elchi-fallback__card">
         <span class="elchi-fallback__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
