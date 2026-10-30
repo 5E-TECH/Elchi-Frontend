@@ -12,8 +12,10 @@ import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAm
 import { toApiList, type OrderCreateBlocker, type OrderCreateFormValues } from "../model/orderCreateForm";
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
 import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
+import DeliveryPriceBlock from "./DeliveryPriceBlock";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
+import { useOrderDeliveryQuote } from "./useOrderDeliveryQuote";
 
 type Step2SummaryProps = {
   /** Market roli: «Market» qatori yo'q, pastki tugma «Orqaga» (`/new-orders`). */
@@ -48,8 +50,9 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  * «Operator», asosiy «Buyurtma yaratish» (`type="submit"`) + holat qatori, ostida «Oldingi» / «Orqaga».
  *
  * CS-B (maket `*-step2-existing-customer`):
- *  - «Yetkazish narxi» — VAQTINCHA faqat market standart narxi (narx dvigateli DAqXPeSy → CS-E); superadmin,
- *    admin, market; tariflar kelmaguncha, xatoda yoki tanlangan tur narxsiz bo'lsa qator yo'q;
+ *  - «Yetkazish narxi» — `DeliveryPriceBlock`: o'lchovli mahsulot bo'lsa taxminiy narx (narx dvigateli DAqXPeSy,
+ *    CS-E / 6NYcXvGy), aks holda market standart narxi; tariflar kelmaguncha, xatoda yoki tanlangan tur narxsiz
+ *    bo'lsa standart qator yo'q;
  *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
  *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
  */
@@ -74,7 +77,6 @@ const Step2Summary = ({
   } = useFormContext<OrderCreateFormValues>();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const money = (value: unknown) => formatMoneyLocalized(value, { language });
-  const deliveryPriceId = useId();
 
   const market = useWatch({ control, name: "market" });
   const items = useWatch({ control, name: "details.items" });
@@ -152,6 +154,9 @@ const Step2Summary = ({
   // bo'lmasa qator yo'q: maketning «Standart narxsiz market» holatida faqat kartalar va ogohlantirish chizilgan.
   const tariffState = useMarketTariffs(control);
   const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : null;
+  // 6NYcXvGy: o'lchovli mahsulotlar bo'lsa — standart narx + vazn uchun qo'shimcha (server hisobi). Standart narx yo'q
+  // bo'lsa qator chizilmaydi — so'rov ham ketmaydi.
+  const deliveryEstimate = useOrderDeliveryQuote(control, deliveryPrice != null);
 
   // IR2OHIiN: faqat mahsulot va/yoki tuman yetishmasa — tugma nega o'chiqligi aniq yoziladi (backend ham 400 beradi).
   const blockedText =
@@ -193,22 +198,9 @@ const Step2Summary = ({
         ) : null}
       </dl>
 
-      {deliveryPrice != null ? (
-        // `text-sm` — maketdagi `.el` asosi (14 px): summa `dl` qiymatlari bilan bir o'lchamda, «Umumiy summa» bilan
-        // raqobatlashmaydi (karta tanasining 16 px i meros bo'lmaydi).
-        <div role="group" aria-labelledby={deliveryPriceId} className="flex flex-col gap-1 text-sm">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <span id={deliveryPriceId} className="text-[13px] text-text-muted">
-              {t("createPricing.deliveryPrice")}
-            </span>
-            <span className="ml-auto font-semibold whitespace-nowrap text-text">{money(deliveryPrice)}</span>
-          </div>
-          <p className="m-0 text-xs text-text-muted">{t("createPricing.summaryStandard")}</p>
-          <p className="m-0 text-xs text-text-subtle">
-            {isMarketRole ? t("createPricing.summaryChargedOwn") : t("createPricing.summaryChargedMarket")}
-          </p>
-        </div>
-      ) : null}
+      {/* `text-sm` — maketdagi `.el` asosi (14 px): summa `dl` qiymatlari bilan bir o'lchamda, «Umumiy summa» bilan
+          raqobatlashmaydi. O'lchovli mahsulot bo'lsa — taxminiy narx (6NYcXvGy), aks holda standart narx (CS-B). */}
+      <DeliveryPriceBlock isMarketRole={isMarketRole} standardPrice={deliveryPrice} estimate={deliveryEstimate} />
 
       <Divider />
 

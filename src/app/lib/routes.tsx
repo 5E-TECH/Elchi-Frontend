@@ -226,9 +226,9 @@ const canViewDispatch = canViewDispatchPage;
 const canViewBatches = canViewBatchesPage;
 const canViewReturns = canViewReturnsPage;
 
-// Internal ops/maintenance screens (settlement, *-ops). Backend RBAC already
-// 403s their write endpoints, but these dev forms must not be reachable by URL
-// for non-admins. Admin/superadmin only. (Audit I17.)
+// «Faoliyat jurnali» (`/activity-logs`) — admin va superadmin (maket `admin-activity-logs-list`). Ops vositalari
+// (`/ops`, `*-ops`, `/finance-operators`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), `/logs` —
+// `canViewLogs` (faqat superadmin). Backend yozish yo'llarini o'zi 403 qiladi; bu faqat UI darvozasi (Audit I17, F2NzXpMv).
 const canViewOps = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
@@ -243,6 +243,8 @@ const canViewAdminNewOrderTabs = (state: RootState) => {
   return role === "admin" || role === "superadmin";
 };
 
+// Ops vositalari — `/ops` (hub) va to'g'ridan-to'g'ri `*-ops`, `/finance-operators`: FAQAT superadmin (maketlar
+// `superadmin-ops-*`; admin menyusida «Ops vositalari» yo'q). Ichki dev/texnik shakllar — URL orqali ham yopiq.
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewCourierBulk = canViewCourierBulkPage;
 
@@ -407,6 +409,11 @@ const AppRouter = () => {
   const { pathname } = useLocation();
   const isSignedIn = useSelector((state: RootState) => state.user.isAuthenticated);
   const standaloneErrorPage = standaloneErrorPageFor(pathname);
+  // `/payments` ↔ `/cash-box`: har biri faqat ikkinchisiga KIRA OLADIGAN rolni o'sha yerga yuboradi, qolgani — 403.
+  // Avval ikkala guard bir-biriga qaytarardi: ikkalasiga ham ruxsati yo'q rol (registrator, logist, market operatori,
+  // investor) qo'lda yozilgan manzilda ikki sahifa orasida cheksiz aylanardi.
+  const canOpenCashbox = useSelector(hasSelfCashboxAccess);
+  const canOpenPayments = useSelector(isPaymentsManager);
 
   const routes = useRoutes([
     { path: "/login", element: <Login /> },
@@ -988,7 +995,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <Payments />
                     </ProtectedRoute>
@@ -999,7 +1006,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <MainCashbox />
                     </ProtectedRoute>
@@ -1010,7 +1017,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <CashDetail />
                     </ProtectedRoute>
@@ -1021,7 +1028,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <ShiftReportPage />
                     </ProtectedRoute>
@@ -1043,7 +1050,7 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute
                   canActivate={hasSelfCashboxAccess}
-                  redirectTo="/payments"
+                  redirectTo={canOpenPayments ? "/payments" : "/403"}
                 >
                   <MyCashboxPage />
                 </ProtectedRoute>

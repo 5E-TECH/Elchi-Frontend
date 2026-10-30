@@ -983,7 +983,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/payments` — To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)
 
 - **Fayllar:** `src/pages/payments/index.tsx` · `src/pages/payments/components/PaymentSummaryCards.tsx` · `src/pages/payments/components/patmentHistoryTable.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/InactiveBadge.tsx` · `src/pages/payments/components/paymentSourceType.ts` · `src/pages/payments/components/paymentHistoryActor.ts` · `src/pages/payments/components/lib/receiveOptions.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
+- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `canOpenCashbox ? "/cash-box" : "/403"`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** «To'lovlar» (`payments`) — superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Holat:** v2
@@ -1020,7 +1020,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/payments/main-cashbox` — Asosiy kassa (to'ldirish / xarajat / smenani yopish)
 
 - **Fayllar:** `src/pages/payments/components/mainCashbox.tsx` · `src/pages/payments/components/MainCashboxBalanceChart.tsx` · `src/pages/payments/components/lib/mainCashboxStats.ts` · `src/pages/payments/components/CashboxFormPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/CloseShiftPopup.tsx` · `src/pages/payments/components/shiftCheck/ShiftAccountsSection.tsx` · `src/pages/payments/components/shiftCheck/useShiftAccountsForm.ts` · `src/pages/payments/components/OpenShiftDialog.tsx` · `src/pages/payments/components/ShiftResultDialog.tsx` · `src/pages/payments/components/ShiftBanner.tsx` · `src/pages/payments/components/lib/useCashboxShift.ts` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/SalaryPaymentPopup.tsx` · `src/shared/components/popupSelect.tsx` · `src/pages/payments/components/lib/exportMainCashboxReport.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
+- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `canOpenCashbox ? "/cash-box" : "/403"`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -1054,7 +1054,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/payments/cash-detail/:id` — Kassa tafsiloti — kuryer / market / filial
 
 - **Fayllar:** `src/pages/payments/components/cashDetail.tsx` · `src/pages/payments/components/CashboxActionFormCard.tsx` · `src/pages/payments/components/PaymentHistoryList.tsx` · `src/pages/payments/components/PaymentAckBadge.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/lib/paymentIdempotency.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
+- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `canOpenCashbox ? "/cash-box" : "/403"`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -1082,7 +1082,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/cash-box` — O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)
 
 - **Fayllar:** `src/pages/payments/components/MyCashboxPage.tsx` · `src/pages/payments/components/PaymentAckBadge.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/ExpenseCategoryBadge.tsx` · `src/pages/payments/components/paymentSourceType.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `hasSelfCashboxAccess` (routes.tsx → hasSelfCashboxAccess) · ruxsat bo'lmasa → `/payments`
+- **Qobiq:** DashboardLayout · **Guard:** `hasSelfCashboxAccess` (routes.tsx → hasSelfCashboxAccess) · ruxsat bo'lmasa → `canOpenPayments ? "/payments" : "/403"`
 - **Rollar:** manager, market, courier
 - **Menyuda:** «To'lovlar» (`payments`) — market; «Kassa» (`payments`) — courier
 - **Holat:** v2
@@ -1143,7 +1143,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/payments/shifts/:id` — Smena hisoboti — naqd, kartalar bo'yicha qoldiq va AI tekshiruvi
 
 - **Fayllar:** `src/pages/payments/shiftReport/index.tsx` · `src/pages/payments/shiftReport/ReportDeliveries.tsx` · `src/pages/payments/components/shiftCheck/aiStatus.tsx` · `src/pages/payments/components/shiftCheck/aiStatusMeta.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
+- **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `canOpenCashbox ? "/cash-box" : "/403"`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2

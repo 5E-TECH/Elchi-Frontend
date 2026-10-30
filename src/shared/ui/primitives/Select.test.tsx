@@ -313,6 +313,24 @@ describe("Select — ochiq ro'yxat", () => {
     expect(panel.parentElement).toHaveAttribute("data-ui-layer", "dropdown");
     expect(screen.getByRole("option", { name: "Samarqand" })).toHaveClass("min-h-9", "max-md:min-h-11", "rounded-lg");
   });
+
+  // tya24blo: tor maydon (telefondagi bosh sahifa «Yil»i) — ro'yxat maydon eniga qisilmaydi.
+  it('panel eni: sukut — maydon eni (`width`); `panelWidth="min"` — kamida maydon eni (`min-width`), kengayadi', async () => {
+    const user = userEvent.setup();
+    const panelStyle = () =>
+      (screen.getByRole("listbox").closest("[data-select-panel]") as HTMLElement).style;
+
+    const { unmount } = render(<SingleControlled options={REGIONS} />);
+    await user.click(combobox());
+    expect(panelStyle().width).not.toBe("");
+    expect(panelStyle().minWidth).toBe("");
+    unmount();
+
+    render(<SingleControlled options={REGIONS} panelWidth="min" />);
+    await user.click(combobox());
+    expect(panelStyle().width).toBe("");
+    expect(panelStyle().minWidth).not.toBe("");
+  });
 });
 
 describe("Select — klaviatura (select-only combobox)", () => {
@@ -668,6 +686,51 @@ describe("Select — ko'p tanlov", () => {
     expect(onChange).toHaveBeenLastCalledWith(["new"]);
     await user.click(screen.getByRole("button", { name: "Tozalash" }));
     expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  // 4VWDJp3w: ko'p tanlovda ham ARIA tuzilmasi — har option listbox'ning bevosita farzandi yoki uning ichidagi group'da.
+  it("ARIA: barcha option listbox'ning bevosita farzandi (guruhlilarda — listbox ichidagi group'da)", async () => {
+    const user = userEvent.setup();
+    const GROUPED: SelectOption[] = [
+      { value: "new", label: "Yangi", group: "Jarayonda" },
+      { value: "on_the_road", label: "Yo'lda", group: "Jarayonda" },
+      { value: "sold", label: "Sotilgan", group: "Yakunlangan" },
+    ];
+    for (const options of [STATUSES, GROUPED]) {
+      const { unmount } = render(<MultiControlled options={options} />);
+      await user.click(combobox("Holat"));
+      const listbox = screen.getByRole("listbox", { name: "Holat" });
+      expect(combobox("Holat")).toHaveAttribute("aria-controls", listbox.id);
+      const rendered = within(listbox).getAllByRole("option");
+      expect(rendered).toHaveLength(options.length);
+      for (const option of rendered) {
+        const parent = option.parentElement!;
+        const owner = parent.getAttribute("role") === "group" ? parent.parentElement : parent;
+        expect(owner).toBe(listbox);
+      }
+      unmount();
+    }
+  });
+
+  it("klaviatura: ↓ faol variantni (aria-activedescendant) keyingisiga suradi, fokus maydonda, tanlov o'zgarmaydi", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<MultiControlled options={STATUSES} onChangeSpy={onChange} />);
+    await user.click(combobox("Holat"));
+    const active = () => {
+      const id = combobox("Holat").getAttribute("aria-activedescendant");
+      return id ? document.getElementById(id)?.textContent : null;
+    };
+    expect(active()).toBe("Yangi");
+
+    await user.keyboard("{ArrowDown}");
+    expect(active()).toBe("Yaratilgan");
+    await user.keyboard("{ArrowDown}");
+    expect(active()).toBe("Qabul qilindi");
+
+    expect(combobox("Holat")).toHaveFocus();
+    expect(screen.getByRole("listbox", { name: "Holat" })).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("clearable: «Barchasini tozalash» (maketda — «Barcha holatlarni tozalash»)", async () => {
