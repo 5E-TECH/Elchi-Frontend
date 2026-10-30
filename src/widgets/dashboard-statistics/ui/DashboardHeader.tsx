@@ -92,7 +92,8 @@ const DashboardHeader = ({
         {showYear ? (
           // Telefonda — matn kengligida (maket `market-dashboard-home`, `superadmin-dashboard-main`: «Yil» `width: auto`):
           // qat'iy 108 px sana maydonini qisib, «Barchasi» oralig'ini «21.10.2025 – 20.10.2…» qilib kesardi (tya24blo).
-          <div className="w-[112px] shrink-0 max-md:w-auto">
+          // 82 px — ichki tugma ≥ 44 px (chevron tugmadan tashqarida: 16 + bo'shliq 8 + chekka 12 + chiziq 2).
+          <div className="w-[112px] shrink-0 max-md:w-auto max-md:min-w-[82px]">
             <Select
               aria-label={t("v2Dashboard.header.yearLabel")}
               // Maydon telefonda tor — ro'yxat variantlar eniga kengayadi («Yil», «2026» va belgi bir qatorda).
