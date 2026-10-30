@@ -10,6 +10,8 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import type { ExpenseProofCondition, Order, User, UserStatus } from "../../../entities/user/types/user";
 import { TransferCourierButton } from "../../../features/courier-transfer-branch";
+import { canManagePasswordSms } from "../../../features/user/password-sms/model/passwordSms";
+import { ResetPasswordSmsButton } from "../../../features/user/password-sms/ui/ResetPasswordSmsButton";
 import { runUserRequest } from "../../../features/user/lib/userRequest";
 import { readViewerBranch } from "../../../features/user/lib/viewerBranch";
 import { UpdateUserModal } from "../../../features/user/update-user/ui/UpdateUserModal";
@@ -148,6 +150,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const [showEdit, setShowEdit] = useState(false);
   const { updateUser, updateMarketAddOrder, updateMarketExpenseProof, updateMarketCancelledHandoverQr } = useUser();
   const currentRole = useSelector((state: RootState) => state.role.role);
+  const viewerId = useSelector((state: RootState) => state.role.id);
   const viewerBranchName = useSelector((state: RootState) => readViewerBranch(state.user.user).name);
 
   const canManagePrivilegedToggles = currentRole === "admin" || currentRole === "superadmin";
@@ -160,6 +163,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
+  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). Menejerga begona kuryer
+  // backend tomonida 403 — matni tasdiq oynasida.
+  const canResetPassword = String(viewerId ?? "") !== String(user.id) && canManagePasswordSms(currentRole, user.role);
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
@@ -276,6 +282,18 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     <>
       {canTransferCourier ? (
         <TransferCourierButton variant="secondary" courierId={user.id} courierName={user.name} />
+      ) : null}
+      {canResetPassword ? (
+        <ResetPasswordSmsButton
+          user={{
+            id: String(user.id),
+            name: user.name,
+            phoneNumber: user.phone_number ?? null,
+            role: user.role,
+            roleLabel,
+          }}
+          viewerRole={currentRole}
+        />
       ) : null}
       <Button leftIcon={Pencil} onClick={() => setShowEdit(true)}>
         {t("edit")}

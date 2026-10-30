@@ -5,11 +5,14 @@ import {
   dismissPasswordChangePrompt,
   isPasswordChangeForced,
   isPasswordChangePromptOpen,
+  isTemporaryPassword,
   requirePasswordChange,
   responseErrorCode,
   syncPasswordChangeFlag,
+  syncPasswordChangeFromToken,
   usePasswordChangePrompt,
 } from "./passwordChange";
+import tokenStorage from "./tokenStorage";
 
 /** Imzosiz soxta JWT (faqat payload o'qiladi). */
 const fakeJwt = (payload: Record<string, unknown>) =>
@@ -87,6 +90,27 @@ describe("passwordChange (NDmZMzCP «Yangi parol o'rnating» bayrog'i)", () => {
       clearPasswordChangeFlag();
       expect(isPasswordChangeForced()).toBe(false);
       expect(isPasswordChangePromptOpen()).toBe(false);
+    });
+
+    it("sahifa yangilanganda: `pwd_forced` token'dan bloklovchi oyna tiklanadi; oddiy token — tegmaydi", () => {
+      syncPasswordChangeFromToken(fakeJwt({ id: "7", role: "courier" }));
+      syncPasswordChangeFromToken(null);
+      expect(isPasswordChangePromptOpen()).toBe(false);
+
+      syncPasswordChangeFromToken(fakeJwt({ id: "7", role: "courier", pwd_change: true, pwd_forced: true }));
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(isPasswordChangeForced()).toBe(true);
+    });
+
+    it("vaqtinchalik parol faqat `pwd_forced` da: zaif parol + 403 — bloklaydi, lekin vaqtinchalik emas", () => {
+      tokenStorage.setAccessToken(fakeJwt({ id: "7", role: "courier", pwd_change: true }));
+      requirePasswordChange();
+      expect(isPasswordChangeForced()).toBe(true);
+      expect(isTemporaryPassword()).toBe(false);
+
+      tokenStorage.setAccessToken(fakeJwt({ id: "7", role: "courier", pwd_change: true, pwd_forced: true }));
+      expect(isTemporaryPassword()).toBe(true);
+      tokenStorage.setAccessToken(null);
     });
 
     it("buzilgan token — majburiy emas (xato yo'q)", () => {

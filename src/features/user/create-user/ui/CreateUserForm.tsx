@@ -84,6 +84,8 @@ interface CreateUserFormValues {
   phone: string;
   username: string;
   password: string;
+  /** xtXKLUwT: faqat «Qo'lda kiritish» da, so'rovga kirmaydi. */
+  passwordRepeat: string;
   salary: string;
   paymentDay: string;
   branchId: string;
@@ -104,6 +106,7 @@ const INITIAL_FORM: CreateUserFormValues = {
   phone: "",
   username: "",
   password: "",
+  passwordRepeat: "",
   salary: "",
   paymentDay: "",
   branchId: "",
@@ -349,6 +352,15 @@ export const CreateUserForm = memo(() => {
         message: t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(role) }),
       });
       valid = false;
+    }
+    if (values.passwordMode === "manual") {
+      if (!values.passwordRepeat) {
+        setError("passwordRepeat", { message: t("v2.create.fields.passwordRepeatRequired") });
+        valid = false;
+      } else if (values.passwordRepeat !== values.password) {
+        setError("passwordRepeat", { message: t("v2.create.fields.passwordMismatch") });
+        valid = false;
+      }
     }
 
     if (role === "admin" || role === "registrator" || role === "logist") {
@@ -746,6 +758,26 @@ export const CreateUserForm = memo(() => {
                 onClick={() => setShowPassword((previous) => !previous)}
               />
             }
+          />
+        </Field>
+      )}
+    />
+  );
+
+  const passwordRepeatField = (
+    <Controller
+      control={control}
+      name="passwordRepeat"
+      render={({ field, fieldState }) => (
+        <Field label={t("v2.create.fields.passwordRepeat")} required error={fieldState.error?.message}>
+          <TextInput
+            type={showPassword ? "text" : "password"}
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder="••••••"
+            autoComplete="new-password"
           />
         </Field>
       )}
@@ -1193,12 +1225,17 @@ export const CreateUserForm = memo(() => {
                 mode={passwordMode}
                 onModeChange={(next) => {
                   setValue("passwordMode", next);
-                  clearErrors("password");
+                  clearErrors(["password", "passwordRepeat"]);
                 }}
                 mustChangePassword={mustChangePassword}
                 onMustChangePasswordChange={(next) => setValue("mustChangePassword", next)}
                 phone={smsPhone}
-                passwordField={<div className={GRID_260}>{passwordField}</div>}
+                passwordField={
+                  <div className={GRID_260}>
+                    {passwordField}
+                    {passwordRepeatField}
+                  </div>
+                }
                 disabled={isPending}
               />
             </FormSection>

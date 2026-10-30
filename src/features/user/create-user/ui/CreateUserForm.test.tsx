@@ -113,6 +113,8 @@ const fill = async (user: User, container: HTMLElement, name: string, value: str
   const input = container.querySelector<HTMLInputElement>(`input[name="${name}"]`);
   if (!input) throw new Error(`input not found: ${name}`);
   await user.type(input, value);
+  // xtXKLUwT: «Qo'lda kiritish» — parol + takror maydoni.
+  if (name === "password") await fill(user, container, "passwordRepeat", value);
 };
 
 const save = (user: User) => user.click(screen.getByRole("button", { name: "Saqlash" }));
@@ -495,7 +497,9 @@ describe("CreateUserForm — kuryer «Ish hududi» (DtKKY0V8, maketlar `*-users-
     expect(mocks.createCourier).toHaveBeenCalledWith({
       name: "Sardor Qodirov",
       phone_number: "+998931184625",
+      password_mode: "manual",
       password: "kuryer2026",
+      must_change_password: true,
       branch_id: "15",
       district_id: "201",
       tariff_home: 20000,

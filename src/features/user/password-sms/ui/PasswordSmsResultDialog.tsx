@@ -10,6 +10,7 @@ import { formatPhone } from "../../../../shared/lib/formatPhone";
 import { notify } from "../../../../shared/lib/notify";
 import { Badge, Button, Dialog, type Tone } from "../../../../shared/ui/primitives";
 import { isNetworkFailure } from "../../../../auth/networkError";
+import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import { passwordSmsStatusKey, usePasswordSmsStatus, useResendPasswordSms } from "../api/passwordSmsApi";
 import {
   canManagePasswordSms,
@@ -17,6 +18,7 @@ import {
   isKnownFailureReason,
   readResendLimit,
 } from "../model/passwordSms";
+import { notifyResendLimit } from "./notifyResendLimit";
 
 export type PasswordSmsResultUser = {
   id: string | null;
@@ -35,10 +37,16 @@ type PasswordSmsResultDialogProps = {
   initialSms: PasswordSms | null;
   /** Ko'ruvchi roli — holatni so'rash va «Qayta yuborish» huquqi (`canManagePasswordSms`). */
   viewerRole: string | null | undefined;
-  /** Asosiy amal: «Foydalanuvchiga o'tish» (logist — «Viloyatlarni belgilash»). */
+  /**
+   * `created` (sukut) — yaratilgach; `reset` — tafsilotdagi «Parolni tiklash va SMS yuborish» (xtXKLUwT): sarlavha va
+   * izoh tiklash haqida, `failed` da parol o'zgarmagani aytiladi.
+   */
+  mode?: "created" | "reset";
+  /** Asosiy amal: «Foydalanuvchiga o'tish» (logist — «Viloyatlarni belgilash»), tiklashda — «Yopish». */
   primaryLabel: string;
   onPrimary: () => void;
-  onCreateAnother: () => void;
+  /** «Yana yaratish» (faqat yaratishda). */
+  onCreateAnother?: () => void;
   /** «Yopish» / Esc / fon. */
   onClose: () => void;
 };
@@ -73,12 +81,16 @@ const useNow = (active: boolean) => {
  * bo'lsa (masalan menejer yaratgan market) — faqat yaratishdagi holat, so'rash va qayta yuborish yo'q.
  * Prod'da SMS yuborilmasligi mumkin (Eskiz TEST rejimi, shablon moderatsiyasi) — sabab va «Qo'lda kiritish» tavsiyasi
  * ko'rinadi.
+ *
+ * Tiklash va qayta yuborish (backend shartnomasi): javobning o'zida `failed` — SMS navbatga tushmadi, parol va
+ * sessiyalar O'ZGARMAGAN; `pending` / `sent` dan keyin so'rovda `failed` — provayder rad etdi, parol allaqachon yangi.
  */
 export const PasswordSmsResultDialog = ({
   open,
   user,
   initialSms,
   viewerRole,
+  mode = "created",
   primaryLabel,
   onPrimary,
   onCreateAnother,
@@ -93,6 +105,8 @@ export const PasswordSmsResultDialog = ({
   // 429 — server aytgan vaqtgacha (soniya) tugma o'chiq; kunlik limit — bugun boshqa yo'q.
   const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
+  const reset = mode === "reset";
+  const [passwordUnchanged, setPasswordUnchanged] = useState(reset && initialSms?.status === "failed");
   const resend = useResendPasswordSms();
 
   // So'rash yakuniy holatda o'zi to'xtaydi (`refetchInterval`); boshlang'ich holat yakuniy bo'lsa — bitta so'rov.
@@ -129,10 +143,14 @@ export const PasswordSmsResultDialog = ({
       const result = await resend.mutateAsync(user.id);
       setBlockedUntil(null);
       setResent({ sms: result.passwordSms, at: Date.now() });
+      // Yiqilgan urinish avvalgi muvaffaqiyatli tiklashni bekor qilmaydi — bayroq faqat muvaffaqiyatda tushadi.
+      if (result.passwordSms?.status !== "failed") setPasswordUnchanged(false);
       // Yangi SMS — holat yana so'raladi (yakuniy holat bo'lmasa).
       void queryClient.invalidateQueries({ queryKey: passwordSmsStatusKey(user.id) });
       if (result.passwordSms?.status === "failed") {
-        notify.warning(t("v2.passwordSms.resentFailed"));
+        notify.warning(t("v2.passwordSms.resentFailed"), {
+          description: result.passwordSms.failure_message ?? undefined,
+        });
       } else {
         notify.success(t("v2.passwordSms.resent"), { description: t("v2.passwordSms.resentDescription") });
       }
@@ -141,17 +159,35 @@ export const PasswordSmsResultDialog = ({
       if (limit) {
         setBlockedUntil(Date.now() + limit.retryAfterSeconds * 1000);
         if (limit.kind === "daily") setDailyLimitReached(true);
-        notify.warning(t(limit.kind === "daily" ? "v2.passwordSms.resendDaily" : "v2.passwordSms.resendCooldown"), {
-          description:
-            limit.kind === "daily"
-              ? undefined
-              : t("v2.passwordSms.resendCooldownText", { time: formatCountdown(limit.retryAfterSeconds) }),
-        });
+        notifyResendLimit(t, limit);
         return;
       }
-      if (!isNetworkFailure(error)) notify.error(t("v2.passwordSms.resendError"));
+      if (!isNetworkFailure(error)) {
+        notify.error(t("v2.passwordSms.resendError"), { description: getBackendErrorMessage(error) ?? undefined });
+      }
     }
   };
+
+  const title = reset
+    ? t(passwordUnchanged ? "v2.passwordSms.reset.titleUnchanged" : "v2.passwordSms.reset.title")
+    : t("v2.passwordSms.title");
+  const description = reset
+    ? t(
+        passwordUnchanged
+          ? "v2.passwordSms.reset.descriptionUnchanged"
+          : failed
+            ? "v2.passwordSms.reset.descriptionFailed"
+            : sent
+              ? "v2.passwordSms.reset.descriptionSent"
+              : "v2.passwordSms.reset.descriptionPending",
+      )
+    : t(
+        failed
+          ? "v2.passwordSms.descriptionFailed"
+          : sent
+            ? "v2.passwordSms.descriptionSent"
+            : "v2.passwordSms.descriptionPending",
+      );
 
   const badge = (tone: Tone, text: string) => (
     <Badge tone={tone} dot className="self-start">
@@ -178,19 +214,15 @@ export const PasswordSmsResultDialog = ({
       size="lg"
       icon={failed ? TriangleAlert : CircleCheck}
       iconTone={failed ? "warning" : "success"}
-      title={t("v2.passwordSms.title")}
-      description={t(
-        failed
-          ? "v2.passwordSms.descriptionFailed"
-          : sent
-            ? "v2.passwordSms.descriptionSent"
-            : "v2.passwordSms.descriptionPending",
-      )}
+      title={title}
+      description={description}
       footer={
         <>
-          <Button variant="secondary" leftIcon={UserPlus} onClick={onCreateAnother}>
-            {t("v2.passwordSms.createAnother")}
-          </Button>
+          {onCreateAnother ? (
+            <Button variant="secondary" leftIcon={UserPlus} onClick={onCreateAnother}>
+              {t("v2.passwordSms.createAnother")}
+            </Button>
+          ) : null}
           <Button onClick={onPrimary}>{primaryLabel}</Button>
         </>
       }
@@ -225,7 +257,9 @@ export const PasswordSmsResultDialog = ({
               true,
             )}
             <div className="border-t border-border py-2.5">
-              <p className="m-0 text-[13px] text-text-muted">{t("v2.passwordSms.manualSuggestion")}</p>
+              <p className="m-0 text-[13px] text-text-muted">
+                {t(reset ? "v2.passwordSms.reset.manualSuggestion" : "v2.passwordSms.manualSuggestion")}
+              </p>
             </div>
           </>
         ) : (
@@ -287,10 +321,12 @@ export const PasswordSmsResultDialog = ({
         ) : null}
       </div>
 
-      <p className="m-0 flex items-start gap-2 text-[13px] text-text-muted">
-        <Lock size={16} aria-hidden="true" className="mt-px shrink-0" />
-        <span>{t("v2.passwordSms.note")}</span>
-      </p>
+      {passwordUnchanged ? null : (
+        <p className="m-0 flex items-start gap-2 text-[13px] text-text-muted">
+          <Lock size={16} aria-hidden="true" className="mt-px shrink-0" />
+          <span>{t("v2.passwordSms.note")}</span>
+        </p>
+      )}
     </Dialog>
   );
 };

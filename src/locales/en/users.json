@@ -291,7 +291,10 @@
         "defaultTariff": "Main tariff",
         "defaultTariffHint": "The main delivery type for the market's orders",
         "tariffHome": "To the door",
-        "tariffCenter": "To the centre"
+        "tariffCenter": "To the centre",
+        "passwordRepeat": "Repeat the password",
+        "passwordRepeatRequired": "Enter the password again",
+        "passwordMismatch": "Passwords do not match"
       },
       "errors": {
         "marketNameRequired": "Enter the market name",
@@ -317,7 +320,8 @@
         "submitSms": "Create and send SMS",
         "alertTitle": "Login and password arrive by SMS",
         "alertText": "The login is the user's phone number. The system generates the password and sends it to that number — you don't need to pass it on.",
-        "phoneHint": "This number is the login; the password is sent to it too"
+        "phoneHint": "This number is the login; the password is sent to it too",
+        "sampleSender": "Sender"
       }
     },
     "detail": {
@@ -523,7 +527,9 @@
         "provider_rejected": "The SMS provider rejected the message (check the balance or template approval)",
         "provider_unavailable": "Could not reach the SMS provider",
         "not_delivered": "The SMS was not delivered to the phone",
-        "cancelled": "The SMS was cancelled"
+        "cancelled": "The SMS was cancelled",
+        "staging_blocked": "SMS to this number is not sent in the test environment",
+        "internal_error": "The SMS was not sent — try again"
       },
       "failureFallback": "The SMS was not sent — try again",
       "manualSuggestion": "If the SMS doesn't arrive, edit the user, set the password yourself and pass it on. While SMS is not working, choose «Enter manually» when creating users.",
@@ -538,12 +544,30 @@
       "resending": "Sending…",
       "resent": "A new password was sent by SMS",
       "resentDescription": "The previous temporary password no longer works",
-      "resentFailed": "A new password was created, but the SMS was not sent",
+      "resentFailed": "The SMS was not sent, the password was not changed",
       "resendError": "The SMS was not resent",
       "note": "The password is never stored in plain text. The user sets a new password at first sign-in.",
       "createAnother": "Create another",
       "openUser": "Go to user",
-      "openLogistAssignment": "Assign regions"
+      "openLogistAssignment": "Assign regions",
+      "reset": {
+        "action": "Reset password and send SMS",
+        "confirmTitle": "Reset the password?",
+        "confirmDescription": "A new temporary password will be created for {{name}} and sent by SMS to {{phone}}.",
+        "confirmLabel": "Reset password",
+        "confirmLoading": "Sending…",
+        "consequenceOld": "The old password stops working immediately",
+        "consequenceSessions": "The user is signed out of all devices",
+        "consequenceFirstLogin": "The user sets their own password at first sign-in",
+        "title": "Password reset",
+        "titleUnchanged": "Password not reset",
+        "descriptionPending": "The new password is being sent by SMS to the user's phone",
+        "descriptionSent": "The new password was sent by SMS to the user's phone",
+        "descriptionFailed": "A new password was created, but the SMS did not arrive. The old password no longer works",
+        "descriptionUnchanged": "The SMS was not sent, so the password was not changed. The old password still works",
+        "manualSuggestion": "If the SMS doesn't arrive, edit the user, set the password yourself and pass it on.",
+        "error": "Couldn't reset the password"
+      }
     }
   },
   "tgGroup": {

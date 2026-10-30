@@ -1,7 +1,7 @@
 import type { PasswordMode, PasswordSms, PasswordSmsStatus } from "../../../../entities/user/types/user";
 
 /**
- * aidsxJ2H — vaqtinchalik parol SMS'i (backend 2026-10-26, `docs/frontend/FRONTEND_CHANGELOG.md`).
+ * aidsxJ2H — vaqtinchalik parol SMS'i (backend 2026-10-30, `docs/frontend/FRONTEND_CHANGELOG.md`).
  *
  * Yaratish javobi (`POST /admins|registrators|logists|couriers|managers|markets`) `data`: foydalanuvchi +
  * `password_mode` + `password_sms` (`manual` da `null`). `POST /users/:id/password/resend-sms` va
@@ -154,7 +154,9 @@ export const KNOWN_FAILURE_REASONS = [
   "provider_rejected",
   "provider_unavailable",
   "not_delivered",
+  "staging_blocked",
   "cancelled",
+  "internal_error",
 ] as const;
 
 export const isKnownFailureReason = (reason: string | null | undefined): reason is (typeof KNOWN_FAILURE_REASONS)[number] =>

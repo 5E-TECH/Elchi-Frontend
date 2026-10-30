@@ -53,6 +53,8 @@ const fill = async (
   const input = container.querySelector<HTMLInputElement>(`input[name="${name}"]`);
   if (!input) throw new Error(`input not found: ${name}`);
   await user.type(input, value);
+  // xtXKLUwT: «Qo'lda kiritish» — parol + takror maydoni.
+  if (name === "password") await fill(user, container, "passwordRepeat", value);
 };
 
 const openCourierForm = async () => {

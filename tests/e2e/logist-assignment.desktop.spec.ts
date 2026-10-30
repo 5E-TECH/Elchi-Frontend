@@ -118,6 +118,7 @@ test("«Logist yaratish» → «Logist» roli → POST /logists → shu sahifa y
   // aidsxJ2H: sukut — «Tizim yaratsin va SMS yuborsin»; bu oqim — qo'lda parol (avvalgi xulq).
   await form.getByText("Qo'lda kiritish", { exact: true }).click();
   await form.locator('input[name="password"]').fill("lola2026ok");
+  await form.locator('input[name="passwordRepeat"]').fill("lola2026ok");
   await form.locator('input[name="salary"]').fill("6000000");
   await form.getByRole("button", { name: "Saqlash" }).click();
 

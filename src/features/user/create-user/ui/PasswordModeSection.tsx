@@ -136,10 +136,15 @@ export const PasswordModeSection = ({
       {sms ? (
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-col gap-2 rounded-xl bg-sunken px-4 py-3">
-            <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
-              <MessageSquareText size={16} aria-hidden="true" />
-              {t("v2.create.passwordMode.sampleTitle")}
-            </span>
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
+                <MessageSquareText size={16} aria-hidden="true" />
+                {t("v2.create.passwordMode.sampleTitle")}
+              </span>
+              <span className="text-xs text-text-muted">
+                {t("v2.create.passwordMode.sampleSender")}: <span className="font-semibold text-text">ELCHI</span>
+              </span>
+            </div>
             <p className="m-0 text-[13px] text-text [overflow-wrap:anywhere]">
               {t("v2.create.passwordMode.sampleText", { login: phone ? phone.replace(/\s+/g, "") : "+998…" })}
             </p>

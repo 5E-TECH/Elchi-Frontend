@@ -183,8 +183,8 @@ export type PasswordSmsStatus = "pending" | "sent" | "delivered" | "failed";
 /**
  * Yaratish / `resend-sms` / `sms-status` javobidagi `password_sms` (PAROL YO'Q). `failure_reason` — mashina kodi
  * (`sms_disabled`, `daily_cap_exceeded`, `provider_not_configured`, `invalid_phone`, `template_error`,
- * `notification_unavailable`, `provider_rejected`, `provider_unavailable`, `not_delivered`), `failure_message` —
- * o'zbekcha sabab.
+ * `notification_unavailable`, `provider_rejected`, `provider_unavailable`, `not_delivered`, `staging_blocked`),
+ * `failure_message` — o'zbekcha sabab.
  */
 export interface PasswordSms {
   status: PasswordSmsStatus;

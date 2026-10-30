@@ -196,6 +196,15 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
 
     await user.clear(container.querySelector<HTMLInputElement>('input[name="password"]')!);
     await fill(user, container, "password", "zarafshon26");
+    // xtXKLUwT: takror maydoni — bo'sh va mos kelmasa yuborilmaydi; so'rovga kirmaydi.
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(await screen.findByText("Parolni qayta kiriting")).toBeInTheDocument();
+    await fill(user, container, "passwordRepeat", "zarafshon27");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(await screen.findByText("Parollar mos kelmadi")).toBeInTheDocument();
+    expect(mocks.createMarket).not.toHaveBeenCalled();
+    await user.clear(container.querySelector<HTMLInputElement>('input[name="passwordRepeat"]')!);
+    await fill(user, container, "passwordRepeat", "zarafshon26");
     await user.click(mustChange);
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
@@ -205,6 +214,7 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
       password: "zarafshon26",
       must_change_password: false,
     });
+    expect(mocks.createMarket.mock.calls[0][0]).not.toHaveProperty("passwordRepeat");
     expect(mocks.navigate).toHaveBeenCalledWith(-1);
     expect(screen.queryByRole("dialog", { name: "Foydalanuvchi yaratildi" })).not.toBeInTheDocument();
   });
@@ -241,6 +251,6 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
 
     const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
     expect(within(dialog).queryByRole("button", { name: /SMSni qayta yuborish/ })).not.toBeInTheDocument();
-    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.get.mock.calls.filter(([url]) => String(url).includes("password/sms-status"))).toEqual([]);
   });
 });

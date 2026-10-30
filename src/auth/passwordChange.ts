@@ -10,9 +10,11 @@ import tokenStorage from "./tokenStorage";
  * MAJBURIY rejim (aidsxJ2H): parolni admin / tizim bergan (yaratishda `generate_sms` yoki `manual` +
  * `must_change_password`, SMS'ni qayta yuborish) — token'da `pwd_forced: true`, gateway parol almashtirilmaguncha
  * boshqa har API'ni 403 `PASSWORD_CHANGE_REQUIRED` qiladi. Shunda oyna BLOKLOVCHI: «Keyinroq» yo'q, Esc / fon
- * yopmaydi (faqat «Chiqish»). `403 PASSWORD_CHANGE_REQUIRED` ham majburiy rejimni yoqadi (darvoza shu
- * foydalanuvchiga ishlayapti — boshqa sahifa baribir ochilmaydi). Zaif eski parol bayrog'i (faqat `pwd_change`) —
- * avvalgidek bloklamaydi.
+ * yopmaydi (faqat «Chiqish»), matni — vaqtinchalik parol haqida (`isTemporaryPassword`). Sahifa yangilansa bayroq
+ * token'dan tiklanadi (`syncPasswordChangeFromToken`). `403 PASSWORD_CHANGE_REQUIRED` ham bloklaydi (darvoza shu
+ * foydalanuvchiga ishlayapti — boshqa sahifa baribir ochilmaydi), lekin claim bo'lmasa (zaif parol, `PASSWORD_CHANGE_GATE`
+ * yoqilgan) matn NDmZMzCP nikicha qoladi. Darvozasiz zaif eski parol bayrog'i (faqat `pwd_change`) — avvalgidek
+ * bloklamaydi.
  *
  * Holat — modul darajasida (axios interceptor va authService React'dan tashqarida yozadi); komponent
  * `usePasswordChangePrompt` bilan o'qiydi.
@@ -76,6 +78,14 @@ export const requirePasswordChange = () => {
   emit();
 };
 
+/**
+ * Sahifa yangilanganda: modul holati yo'qoladi, `pwd_forced` token esa sessionStorage'da qoladi va refresh
+ * chaqirilmaydi — oyna birinchi 403 ni kutmasdan darhol ochiladi (`initAuth`).
+ */
+export const syncPasswordChangeFromToken = (token: string | null) => {
+  if (tokenStorage.isPasswordChangeForced(token)) requirePasswordChange();
+};
+
 /** «Keyinroq» — shu tab sessiyasida qayta chiqmaydi (keyingi kirishda yana). Majburiy rejimda ishlamaydi. */
 export const dismissPasswordChangePrompt = () => {
   if (dismissed || forced) return;
@@ -96,6 +106,9 @@ export const isPasswordChangePromptOpen = () => required && (forced || !dismisse
 
 /** aidsxJ2H: oyna bloklovchimi (`pwd_forced` yoki 403 `PASSWORD_CHANGE_REQUIRED`). */
 export const isPasswordChangeForced = () => required && forced;
+
+/** aidsxJ2H: foydalanuvchi vaqtinchalik parol bilan kirgan (`pwd_forced`) — oynaning matni shunga qarab tanlanadi. */
+export const isTemporaryPassword = () => isPasswordChangeForced() && tokenStorage.isPasswordChangeForced();
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener);

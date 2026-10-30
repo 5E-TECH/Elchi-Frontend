@@ -35,6 +35,11 @@ type ChangePasswordDialogProps = {
    * oyna bloklovchi: «Keyinroq» / «Yopish» yo'q, Esc va fon yopmaydi; o'rniga «Chiqish» (`onSignOut`).
    */
   forced?: boolean;
+  /**
+   * aidsxJ2H: foydalanuvchi vaqtinchalik parol bilan kirgan (`pwd_forced`) — izoh va «Joriy (vaqtinchalik) parol»
+   * yorlig'i shu holat uchun. Bloklashdan alohida: zaif parol + `PASSWORD_CHANGE_GATE` da oyna bloklaydi, matni NDmZMzCP niki.
+   */
+  temporary?: boolean;
   onSignOut?: () => void | Promise<void>;
   onChanged?: () => void | Promise<void>;
 };
@@ -61,6 +66,7 @@ export const ChangePasswordDialog = ({
   phone,
   variant = "change",
   forced = false,
+  temporary = false,
   onSignOut,
   onChanged,
 }: ChangePasswordDialogProps) => {
@@ -187,7 +193,7 @@ export const ChangePasswordDialog = ({
       title={required ? t("auth:mustChange.title") : t("profile:password.title")}
       description={
         required ? (
-          t(forced ? "auth:mustChange.forcedDescription" : "auth:mustChange.description")
+          t(temporary ? "auth:mustChange.forcedDescription" : "auth:mustChange.description")
         ) : (
           <>
             {name} · <span className="whitespace-nowrap">{formatPhone(phone)}</span>
@@ -219,11 +225,11 @@ export const ChangePasswordDialog = ({
         </>
       }
     >
-      {/* aidsxJ2H: joriy parol (majburiy rejimda — SMS'dagi yoki administrator bergan vaqtinchalik parol). */}
+      {/* aidsxJ2H: joriy parol (vaqtinchalik parolda — SMS'dagi yoki administrator bergan parol). */}
       <Field
-        label={t(forced ? "auth:currentPassword.temporaryLabel" : "auth:currentPassword.label")}
+        label={t(temporary ? "auth:currentPassword.temporaryLabel" : "auth:currentPassword.label")}
         required
-        hint={forced ? t("auth:currentPassword.temporaryHint") : undefined}
+        hint={temporary ? t("auth:currentPassword.temporaryHint") : undefined}
         error={errors.oldPassword}
       >
         <TextInput

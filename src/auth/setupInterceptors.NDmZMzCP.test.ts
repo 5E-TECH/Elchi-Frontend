@@ -88,6 +88,18 @@ describe("setupAuthInterceptors — NDmZMzCP xavfsizlik kodlari", () => {
     expect(mocks.logoutAndRedirect).not.toHaveBeenCalled();
   });
 
+  it("aidsxJ2H: parol almashgach eski token bilan ketgan so'rovning kech 403 javobi — oyna qayta ochilmaydi", async () => {
+    const run = wire();
+    const late = httpError(403, { statusCode: 403, code: "PASSWORD_CHANGE_REQUIRED" });
+    (late.config.headers as Record<string, string>).Authorization = "Bearer eski-token";
+    await expect(run(late)).rejects.toBeDefined();
+    expect(isPasswordChangePromptOpen()).toBe(false);
+
+    (late.config.headers as Record<string, string>).Authorization = "Bearer tok";
+    await expect(run(late)).rejects.toBeDefined();
+    expect(isPasswordChangePromptOpen()).toBe(true);
+  });
+
   it("oddiy 403 — bayroq tegilmaydi", async () => {
     const run = wire();
     await expect(run(httpError(403, { message: "Forbidden" }))).rejects.toBeDefined();

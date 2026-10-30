@@ -109,6 +109,73 @@ describe("PasswordSmsResultDialog (maket `superadmin-users-create-password-resul
     expect(within(dialog).getByRole("button", { name: /SMSni qayta yuborish/ })).toBeDisabled();
   });
 
+  it("qayta yuborish javobida `failed` — parol o'zgarmagani aytiladi («yaratildi» emas)", async () => {
+    const failed = smsOf({
+      status: "failed",
+      failure_reason: "sms_disabled",
+      failure_message: "SMS yuborish hozir o'chirilgan",
+      resend_available_at: inSeconds(-1),
+    });
+    mocks.get.mockResolvedValue(statusResponse(failed));
+    mocks.post.mockResolvedValue(statusResponse(failed));
+    renderWithProviders(<PasswordSmsResultDialog {...props} initialSms={failed} />);
+
+    const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
+    await userEvent.click(within(dialog).getByRole("button", { name: /SMSni qayta yuborish/ }));
+    expect(await screen.findByText("SMS yuborilmadi, parol o'zgarmadi")).toBeInTheDocument();
+    expect(screen.queryByText(/Yangi parol yaratildi/)).not.toBeInTheDocument();
+  });
+
+  it("test muhiti (`staging_blocked`) — sabab tarjima qilingan", async () => {
+    const blocked = smsOf({ status: "failed", failure_reason: "staging_blocked", failure_message: "x" });
+    mocks.get.mockResolvedValue(statusResponse(blocked));
+    renderWithProviders(<PasswordSmsResultDialog {...props} initialSms={blocked} />);
+    expect(await screen.findByText("Test muhitida bu raqamga SMS yuborilmaydi")).toBeInTheDocument();
+  });
+
+  describe("`reset` — tafsilotdagi «Parolni tiklash va SMS yuborish» (xtXKLUwT)", () => {
+    const resetProps = { ...props, mode: "reset" as const, primaryLabel: "Yopish", onCreateAnother: undefined };
+
+    it("yuborildi: tiklash matni, «Yana yaratish» yo'q, «Yopish» ishlaydi", async () => {
+      mocks.get.mockResolvedValue(statusResponse(smsOf()));
+      renderWithProviders(<PasswordSmsResultDialog {...resetProps} initialSms={smsOf()} />);
+      const dialog = await screen.findByRole("dialog", { name: "Parol tiklandi" });
+      expect(within(dialog).getByText("Yangi parol foydalanuvchining telefoniga SMS qilib yuborildi")).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Yana yaratish" })).not.toBeInTheDocument();
+      await userEvent.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
+      expect(props.onPrimary).toHaveBeenCalled();
+    });
+
+    it("javobda `failed` — parol o'zgarmadi, eski parol ishlaydi", async () => {
+      const failed = smsOf({ status: "failed", failure_reason: "provider_not_configured", resend_available_at: inSeconds(-1) });
+      mocks.get.mockResolvedValue(statusResponse(failed));
+      renderWithProviders(<PasswordSmsResultDialog {...resetProps} initialSms={failed} />);
+      const dialog = await screen.findByRole("dialog", { name: "Parol tiklanmadi" });
+      expect(within(dialog).getByText(/parol o'zgarmadi. Eski parol ishlashda davom etadi/)).toBeInTheDocument();
+      expect(within(dialog).getByText("SMS provayder sozlanmagan")).toBeInTheDocument();
+      expect(within(dialog).queryByText(/«Qo'lda kiritish»ni tanlang/)).not.toBeInTheDocument();
+    });
+
+    it("tiklangandan keyingi qayta yuborish yiqilsa — «Parol tiklanmadi» demaydi", async () => {
+      const rejected = smsOf({ status: "failed", failure_reason: "provider_rejected", resend_available_at: inSeconds(-1) });
+      mocks.get.mockResolvedValue(statusResponse(rejected));
+      mocks.post.mockResolvedValue(statusResponse({ ...rejected, failure_reason: "sms_disabled" }));
+      renderWithProviders(<PasswordSmsResultDialog {...resetProps} initialSms={smsOf({ status: "pending", sent_at: null })} />);
+      const dialog = await screen.findByRole("dialog", { name: "Parol tiklandi" });
+      await userEvent.click(await within(dialog).findByRole("button", { name: /SMSni qayta yuborish/ }));
+      await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
+      expect(await screen.findByText("SMS yuborilmadi, parol o'zgarmadi")).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "Parol tiklandi" })).toBeInTheDocument();
+    });
+
+    it("navbatga tushib keyin provayder rad etsa — parol allaqachon yangi", async () => {
+      mocks.get.mockResolvedValue(statusResponse(smsOf({ status: "failed", failure_reason: "provider_rejected" })));
+      renderWithProviders(<PasswordSmsResultDialog {...resetProps} initialSms={smsOf({ status: "pending", sent_at: null })} />);
+      const dialog = await screen.findByRole("dialog", { name: "Parol tiklandi" });
+      expect(await within(dialog).findByText(/SMS yetib bormadi. Eski parol endi ishlamaydi/)).toBeInTheDocument();
+    });
+  });
+
   it("429 PASSWORD_SMS_COOLDOWN — retry_after_seconds gacha o'chiq; PASSWORD_SMS_DAILY_LIMIT — kunlik limit matni", async () => {
     const failed = smsOf({ status: "failed", failure_reason: "invalid_phone", resend_available_at: inSeconds(-1) });
     mocks.get.mockResolvedValue(statusResponse(failed));

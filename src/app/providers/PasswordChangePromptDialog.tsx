@@ -6,6 +6,7 @@ import {
   clearPasswordChangeFlag,
   dismissPasswordChangePrompt,
   isPasswordChangePromptOpen,
+  isTemporaryPassword,
   usePasswordChangeForced,
 } from "../../auth/passwordChange";
 import { ChangePasswordDialog } from "../../pages/profile/ui/ChangePasswordDialog";
@@ -39,6 +40,7 @@ const PasswordChangePromptDialog = () => {
       open
       variant="required"
       forced={forced}
+      temporary={isTemporaryPassword()}
       name={profile?.name ?? fallbackName ?? ""}
       phone={profile?.phone_number}
       // Saqlangach bayroq allaqachon tozalangan — «Keyinroq» faqat oyna hali ochiq bo'lsa (yopish / Esc).

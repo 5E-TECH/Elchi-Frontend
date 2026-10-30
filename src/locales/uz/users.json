@@ -291,7 +291,10 @@
         "defaultTariff": "Asosiy tarif",
         "defaultTariffHint": "Market buyurtmalari uchun asosiy yetkazish turi",
         "tariffHome": "Uygacha",
-        "tariffCenter": "Markazgacha"
+        "tariffCenter": "Markazgacha",
+        "passwordRepeat": "Parolni takrorlang",
+        "passwordRepeatRequired": "Parolni qayta kiriting",
+        "passwordMismatch": "Parollar mos kelmadi"
       },
       "errors": {
         "marketNameRequired": "Market nomini kiriting",
@@ -317,7 +320,8 @@
         "submitSms": "Yaratish va SMS yuborish",
         "alertTitle": "Login va parol SMS orqali boradi",
         "alertText": "Login — foydalanuvchining telefon raqami. Parolni tizim yaratadi va shu raqamga yuboradi, uni yetkazish shart emas.",
-        "phoneHint": "Login shu raqam bo'ladi, parol ham shu raqamga keladi"
+        "phoneHint": "Login shu raqam bo'ladi, parol ham shu raqamga keladi",
+        "sampleSender": "Yuboruvchi"
       }
     },
     "detail": {
@@ -523,7 +527,9 @@
         "provider_rejected": "SMS provayder xabarni rad etdi (balans yoki shablon tasdig'ini tekshiring)",
         "provider_unavailable": "SMS provayderiga ulanib bo'lmadi",
         "not_delivered": "SMS telefonga yetkazilmadi",
-        "cancelled": "SMS bekor qilindi"
+        "cancelled": "SMS bekor qilindi",
+        "staging_blocked": "Test muhitida bu raqamga SMS yuborilmaydi",
+        "internal_error": "SMS yuborilmadi — qayta urinib ko'ring"
       },
       "failureFallback": "SMS yuborilmadi — qayta urinib ko'ring",
       "manualSuggestion": "SMS yetib bormasa, foydalanuvchini tahrirlab parolni o'zingiz o'rnating va unga yetkazing. SMS ishlamayotgan paytda yaratishda «Qo'lda kiritish»ni tanlang.",
@@ -538,12 +544,30 @@
       "resending": "Yuborilmoqda…",
       "resent": "Yangi parol SMS orqali yuborildi",
       "resentDescription": "Oldingi vaqtinchalik parol endi ishlamaydi",
-      "resentFailed": "Yangi parol yaratildi, lekin SMS yuborilmadi",
+      "resentFailed": "SMS yuborilmadi, parol o'zgarmadi",
       "resendError": "SMS qayta yuborilmadi",
       "note": "Parol tizimda ochiq ko'rinishda saqlanmaydi. Foydalanuvchi birinchi kirishda yangi parol o'rnatadi.",
       "createAnother": "Yana yaratish",
       "openUser": "Foydalanuvchiga o'tish",
-      "openLogistAssignment": "Viloyatlarni belgilash"
+      "openLogistAssignment": "Viloyatlarni belgilash",
+      "reset": {
+        "action": "Parolni tiklash va SMS yuborish",
+        "confirmTitle": "Parolni tiklaysizmi?",
+        "confirmDescription": "{{name}} uchun yangi vaqtinchalik parol yaratiladi va {{phone}} raqamiga SMS qilib yuboriladi.",
+        "confirmLabel": "Parolni tiklash",
+        "confirmLoading": "Yuborilmoqda…",
+        "consequenceOld": "Eski parol darhol ishlamay qoladi",
+        "consequenceSessions": "Foydalanuvchi barcha qurilmalardan chiqariladi",
+        "consequenceFirstLogin": "Birinchi kirishda o'z parolini o'rnatadi",
+        "title": "Parol tiklandi",
+        "titleUnchanged": "Parol tiklanmadi",
+        "descriptionPending": "Yangi parol foydalanuvchining telefoniga SMS qilib yuborilmoqda",
+        "descriptionSent": "Yangi parol foydalanuvchining telefoniga SMS qilib yuborildi",
+        "descriptionFailed": "Yangi parol yaratildi, lekin SMS yetib bormadi. Eski parol endi ishlamaydi",
+        "descriptionUnchanged": "SMS yuborilmadi, shuning uchun parol o'zgarmadi. Eski parol ishlashda davom etadi",
+        "manualSuggestion": "SMS yetib bormasa, foydalanuvchini tahrirlab parolni o'zingiz o'rnating va unga yetkazing.",
+        "error": "Parolni tiklab bo'lmadi"
+      }
     }
   },
   "tgGroup": {

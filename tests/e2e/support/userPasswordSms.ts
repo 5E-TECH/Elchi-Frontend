@@ -11,6 +11,7 @@ import { toast } from "./toast";
  * 2) Foydalanuvchi yaratish (superadmin): `POST couriers` `password_mode: generate_sms` → 201 + `password_sms`
  *    (Eskiz TEST rejimi — `failed` / `provider_rejected`); `POST users/:id/password/resend-sms` → yangi SMS
  *    (`pending`), `GET users/:id/password/sms-status` → `sent` → `delivered`.
+ * 3) xtXKLUwT: `/all-users/:id` — «Parolni tiklash va SMS yuborish» (tasdiq → resend-sms → natija oynasi).
  */
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4194").origin;
 const b64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -27,12 +28,19 @@ const corsFor = (origin: string) => ({
   "access-control-expose-headers": "Retry-After",
 });
 
-export const mockForcedFirstLogin = async (page: Page) => {
+export const mockForcedFirstLogin = async (page: Page, options: { theme?: "light" | "dark" } = {}) => {
   const origin = appOrigin();
   const cors = corsFor(origin);
   const reply = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
-  const profile = { id: "88", role: "courier", name: "Yangi Kuryer", phone_number: "+998901112233", status: "active" };
+  const profile = {
+    id: "88",
+    role: "courier",
+    name: "Yangi Kuryer",
+    phone_number: "+998901112233",
+    status: "active",
+    settings: { appearance: { theme: options.theme ?? "light", themeChosen: true } },
+  };
   const forcedToken = jwt({ id: "88", role: "courier", sid: "e2e-sid", pwd_change: true, pwd_forced: true });
   const plainToken = jwt({ id: "88", role: "courier", sid: "e2e-sid" });
   const state = { forced: true };
@@ -116,6 +124,7 @@ export const mockCreateUserSms = async (page: Page, options: { theme?: "light" |
   const inSeconds = (seconds: number) => new Date(Date.now() + seconds * 1000).toISOString();
   let sms: SmsState | null = null;
   let statusReads = 0;
+  let resendCount = 0;
   const creates: unknown[] = [];
   const resends: string[] = [];
   const leaked: string[] = [];
@@ -181,6 +190,7 @@ export const mockCreateUserSms = async (page: Page, options: { theme?: "light" |
           429,
         );
       }
+      resendCount += 1;
       sms = {
         status: "pending",
         failure_reason: null,
@@ -189,10 +199,24 @@ export const mockCreateUserSms = async (page: Page, options: { theme?: "light" |
         sent_at: null,
         delivered_at: null,
         resend_available_at: inSeconds(60),
-        resends_left_today: 4,
+        resends_left_today: 5 - resendCount,
       };
       statusReads = 0;
       return reply(route, wrap({ user_id: "91", must_change_password: true, password_sms: sms }));
+    }
+    if (path === "users/91" && request.method() === "GET") {
+      return reply(
+        route,
+        wrap({
+          id: "91",
+          name: "Sardor Qodirov",
+          phone_number: "+998901234567",
+          role: "courier",
+          status: "active",
+          createdAt: "2026-10-01T09:00:00.000Z",
+          updatedAt: "2026-10-01T09:00:00.000Z",
+        }),
+      );
     }
     if (path === "users/91/password/sms-status") {
       statusReads += 1;
@@ -279,6 +303,29 @@ export const runUserPasswordSmsScenarios = (suffix: string, { mobile = false }: 
     await expect(page).not.toHaveURL(/\/login/);
   });
 
+  for (const theme of ["light", "dark"] as const) {
+    test(`birinchi kirish: sahifa yangilansa ham oyna bloklaydi, matn vaqtinchalik parol haqida (${theme})`, async ({ page }) => {
+      const { calls } = await mockForcedFirstLogin(page, { theme });
+      await loginAs(page, TEMP_PASSWORD);
+      const dialog = page.getByRole("dialog", { name: "Yangi parol o'rnating" });
+      await expect(dialog).toBeVisible({ timeout: 30_000 });
+      await expect(dialog).not.toContainText("talablariga mos emas");
+      await expect(dialog.getByRole("button", { name: "Keyinroq" })).toHaveCount(0);
+
+      // Fon bosilsa ham yopilmaydi.
+      await page.mouse.click(5, 5);
+      await expect(dialog).toBeVisible();
+      await shot(page, `forced-dialog-${suffix}-${theme}`);
+
+      await page.reload();
+      await expect(dialog).toBeVisible({ timeout: 30_000 });
+      await expect(dialog).toContainText("vaqtinchalik parol bilan kirdingiz");
+      await expect(dialog.getByRole("button", { name: "Keyinroq" })).toHaveCount(0);
+      await expect(dialog.getByRole("button", { name: "Chiqish" })).toBeVisible();
+      expect(calls.logout).toBe(0);
+    });
+  }
+
   test("birinchi kirish: «Chiqish» — tizimdan chiqadi", async ({ page }) => {
     const { calls } = await mockForcedFirstLogin(page);
     await loginAs(page, TEMP_PASSWORD);
@@ -342,15 +389,54 @@ export const runUserPasswordSmsScenarios = (suffix: string, { mobile = false }: 
     await form.locator('input[name="fullName"]').fill("Lola Kuryerova");
     await form.locator('input[name="phone"]').fill("901112233");
     await form.locator('input[name="password"]').fill("lola2026ok");
+    await form.locator('input[name="passwordRepeat"]').fill("boshqa2026ok");
     await form.locator('input[name="homeRate"]').fill("25000");
     await form.locator('input[name="centerRate"]').fill("15000");
     const mustChange = form.getByRole("checkbox", { name: "Birinchi kirishda parolni almashtirishni talab qilish" });
     await expect(mustChange).toBeChecked();
     await expect(mustChange).toBeEnabled();
+    await form.getByRole("button", { name: "Saqlash" }).click();
+    await expect(form.getByText("Parollar mos kelmadi")).toBeVisible();
+    expect(mock.creates).toHaveLength(0);
+    await form.locator('input[name="passwordRepeat"]').fill("lola2026ok");
     await shot(page, `create-manual-form-${suffix}`);
     await form.getByRole("button", { name: "Saqlash" }).click();
     await expect.poll(() => mock.creates.length).toBe(1);
     expect(mock.creates[0]).toMatchObject({ password_mode: "manual", password: "lola2026ok", must_change_password: true });
+    expect(mock.creates[0]).not.toHaveProperty("passwordRepeat");
     await expect(page.getByRole("dialog", { name: "Foydalanuvchi yaratildi" })).toHaveCount(0);
   });
+
+  for (const theme of ["light", "dark"] as const) {
+    test(`tafsilot: «Parolni tiklash va SMS yuborish» — tasdiq, natija oynasi, 60 s sanoq (${theme})`, async ({ page }) => {
+      const mock = await mockCreateUserSms(page, { theme });
+      await page.goto("/all-users/91");
+      const action = page.getByRole("button", { name: "Parolni tiklash va SMS yuborish" });
+      await expect(action).toBeVisible({ timeout: 90_000 });
+      if (mobile) await expectNoHorizontalOverflow(page);
+      await shot(page, `detail-action-${suffix}-${theme}`);
+
+      await action.click();
+      const confirm = page.getByRole("alertdialog", { name: "Parolni tiklaysizmi?" });
+      await expect(confirm).toContainText("+998 90 123 45 67 raqamiga SMS qilib yuboriladi");
+      await expect(confirm).toContainText("Eski parol darhol ishlamay qoladi");
+      await shot(page, `reset-confirm-${suffix}-${theme}`);
+      expect(mock.resends).toHaveLength(0);
+      await confirm.getByRole("button", { name: "Parolni tiklash" }).click();
+
+      const dialog = page.getByRole("dialog", { name: "Parol tiklandi" });
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
+      expect(mock.resends).toEqual(["users/91/password/resend-sms"]);
+      await expect(dialog).toContainText("Yetkazildi", { timeout: 20_000 });
+      await expect(dialog.getByRole("button", { name: /SMSni qayta yuborish/ })).toBeDisabled();
+      await expect(dialog.getByRole("button", { name: /SMSni qayta yuborish/ })).toContainText(/\d:\d\d/);
+      await expect(dialog).not.toContainText("Vaqtinchalik9");
+      await expect(dialog.getByRole("button", { name: "Yana yaratish" })).toHaveCount(0);
+      if (mobile) await expectNoHorizontalOverflow(page);
+      await shot(page, `reset-result-${suffix}-${theme}`);
+      await dialog.getByRole("button", { name: "Yopish" }).last().click();
+      await expect(dialog).toHaveCount(0);
+      expect(mock.leaked).toEqual([]);
+    });
+  }
 };
