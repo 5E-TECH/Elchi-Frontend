@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { CRITICAL, KPI_OK, PARTIAL, healthCard, mockSystemOpsApi, openSystemOps, readiness } from "./support/systemOps";
 
 /**
- * OPS → TIZIM (/system-ops, OS-1 — maketlar `superadmin-ops-system[-partial|-critical|-error|-down]`):
+ * OPS → TIZIM (/ops?tab=system, OS-1 — maketlar `superadmin-ops-system[-partial|-critical|-error|-down]`):
  * «Tizim holati» `GET /health/readiness` dan (503 ham javob), xom backend matni chiqmaydi, «Yangilash» va
  * «Qayta urinish» qayta so'raydi, KPI xatosi — danger ogohlantirish.
  */

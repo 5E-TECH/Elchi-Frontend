@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { AI_CAP, AI_CONFIG, aiCard, aiFlag, aiStatus, healthCard, mockSystemOpsApi, openSystemOps } from "./support/systemOps";
 
 /**
- * OPS → TIZIM → «AI HOLATI» (/system-ops, OS-2 — maketlar `superadmin-ops-system[-ai-cap|-ai-config|-down]`):
+ * OPS → TIZIM → «AI HOLATI» (/ops?tab=system, OS-2 — maketlar `superadmin-ops-system[-ai-cap|-ai-config|-down]`):
  * `GET ai/status` + gateway bayrog'i `GET orders/ai-availability`; dollar «12,40 $» (S4); limitni oshirish tugmasi yo'q
  * (S2); kalit yo'q / noto'g'ri — «AI o'chiq» (S3); xom backend matni chiqmaydi.
  */

@@ -15,8 +15,9 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * bandlari menyuni cho'zib yuborardi, shu bois ular BITTA sahifada tab bo'lib yig'ildi — bu ekranlar
  * kamdan-kam ochiladi.
  *
- * Eski `/finance-operators`, `/system-ops` va h.k. marshrutlari SAQLANADI — o'sha sahifa o'z sarlavhasi va
- * «← Ops vositalari» havolasi bilan chiziladi; hub esa o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
+ * Eski `/finance-operators`, `/integrations-ops`, `/identity-ops` marshrutlari o'z sarlavhasi va «← Ops vositalari»
+ * havolasi bilan chiziladi; `/investors-ops`, `/logistics-ops`, `/branch-ops`, `/system-ops`, `/logs` — shu hubning
+ * tabiga yo'naltiradi (F2NzXpMv, bhitm9do). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
  * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
  * «Yetkazish narxi» (`pages/delivery-tariffs`) — «Hududlar» bo'limining sahifasi, hub uni ham `embedded` bilan chizadi.
  *

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **123** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **123** · qisman: **125** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -125,12 +125,7 @@
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
 | `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
-| `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | v2 |
-| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 3 | v2 |
-| `/branch-ops` | Tizim | `src/pages/branch-ops/index.tsx` | superadmin | 1 | v2 |
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
-| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 8 | v2 |
-| `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
 | `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 | `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
@@ -1889,12 +1884,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)
 
-- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx`
+- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/lib/returnRequestRows.ts` · `src/pages/branch-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/charts.tsx` · `src/pages/system-ops/lib/systemOps.ts` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
 - **Holat:** v2
-- **Izoh:** Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 10 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs.
+- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 10 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /integrations-ops, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /logistics-ops, /branch-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga yo'naltiradi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1955,47 +1950,6 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 |---|---|---|---|---|---|
 | `/integrations-ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 
-#### `/investors-ops` — Ops — Investorlar
-
-- **Fayllar:** `src/pages/investors-ops/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/investors-ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
-
-#### `/logistics-ops` — Ops — Logistika (qaytarish so'rovlari)
-
-- **Fayllar:** `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/lib/returnRequestRows.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
-
-#### `/branch-ops` — Ops — Filiallar (paketni bekor qilish)
-
-- **Fayllar:** `src/pages/branch-ops/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Paketni bekor qilish — tasdiq oynasi.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/branch-ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
-
 #### `/identity-ops` — Ops — Xodimlar ro'yxatlari
 
 - **Fayllar:** `src/pages/identity-ops/index.tsx`
@@ -2008,39 +1962,6 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
-
-#### `/system-ops` — Ops — Tizim
-
-- **Fayllar:** `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/charts.tsx` · `src/pages/system-ops/lib/systemOps.ts` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/system-ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-down` — Ops — Tizim: xizmatlar ishlamayapti<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-down.html](fragments/superadmin--ops-system-down.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-critical` — Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-critical.html](fragments/superadmin--ops-system-critical.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-ai-config` — Ops — Tizim: kalit nomi noto'g'ri, noma'lum model<br>↳ `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-ai-config.html](fragments/superadmin--ops-system-ai-config.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-ai-cap` — Ops — Tizim: AI kunlik limiti tugadi<br>↳ `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-ai-cap.html](fragments/superadmin--ops-system-ai-cap.html) | sahifa | v2 |
-
-#### `/logs` — Ops — Kirish diagnostikasi (POST /auth/refresh sinovi; eski nomi «Loglar», jurnal emas)
-
-- **Fayllar:** `src/pages/logs/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewLogs` (access.ts → canViewLogs)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/logs` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
 
 ### Profil, sozlamalar, bildirishnomalar qutisi
 
@@ -2118,6 +2039,10 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/integrations` | `/integrations/connections?scope=partner` | — |
 | `/integrations/incoming` | `/new-orders/incoming` | — |
 | `/partners` | `/integrations/partners` | — |
+| `/investors-ops` | `/ops?tab=investors` | `canViewOpsPages` |
+| `/logistics-ops` | `/ops?tab=logistics` | `canViewOpsPages` |
+| `/branch-ops` | `/ops?tab=branches` | `canViewOpsPages` |
+| `/system-ops` | `/ops?tab=system` | `canViewOpsPages` |
 | `/orders/add` | `/new-orders/create` | — |
 | `/orders/:orderId` | `/orders/edit/:orderId` | `canViewOrders` |
 | `/new-orders/external` | `/integrations/sources` | `canCreateOrdersByRoleAndBranchType` |
@@ -2129,6 +2054,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/new-orders/integrations/:id` | `/integrations/sources/:id` | `canCreateOrdersByRoleAndBranchType` |
 | `/payments/shift-report/:id` | `/payments/shifts/:id` | — |
 | `/notification` | `/notifications` | — |
+| `/logs` | `/ops?tab=auth` | `canViewLogs` |
 | `*` | `/404` | — |
 
 ## 4. Maket → kod (teskari, rollar bo'yicha)
@@ -2310,21 +2236,21 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
-| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | v2 |
-| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
-| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops`, `/logistics-ops` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
-| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
-| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | v2 |
+| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
+| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
 | `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
-| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | v2 |
-| `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-error` | Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-critical` | Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-ai-config` | Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-ai-cap` | Ops — Tizim: AI kunlik limiti tugadi | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops`, `/logs` | `src/pages/ops/index.tsx`, `src/pages/logs/index.tsx` | v2 |
+| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-error` | Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-critical` | Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-ai-config` | Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | sahifa | `/ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-ai-cap` | Ops — Tizim: AI kunlik limiti tugadi | sahifa | `/ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
 | `superadmin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `superadmin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `superadmin-notifications-send-audience` | Xabar yuborish — auditoriya konstruktori | sahifa | `/notifications/send` | `src/entities/notification-campaign/ui/AudienceBuilder.tsx` | qisman — Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun). |
@@ -3085,7 +3011,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/branch-dashboard/ui/BranchCards.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` | `/branch-dashboard` |
-| `src/pages/branch-ops/index.tsx` | `/branch-ops` |
+| `src/pages/branch-ops/index.tsx` | `/ops` |
 | `src/pages/branches/ui/BranchDetailPage.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsCards.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsSection.tsx` | `/branches/:id` |
@@ -3197,11 +3123,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/investor/ui/InvestorListCards.tsx` | `/` |
 | `src/pages/investor/ui/MonthlyProfitCard.tsx` | `/` |
 | `src/pages/investor/ui/ProfitHistoryTable.tsx` | `/`, `/profits` |
-| `src/pages/investors-ops/index.tsx` | `/investors-ops` |
-| `src/pages/logistics-ops/index.tsx` | `/logistics-ops`, `/ops` |
-| `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/logistics-ops` |
-| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/ops`, `/logistics-ops` |
-| `src/pages/logs/index.tsx` | `/logs` |
+| `src/pages/investors-ops/index.tsx` | `/ops` |
+| `src/pages/logistics-ops/index.tsx` | `/ops` |
+| `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/ops` |
+| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/ops` |
+| `src/pages/logs/index.tsx` | `/ops` |
 | `src/pages/mails/components/MailSummaryStats.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsListBody.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsTable.tsx` | `/mails/today`, `/mails/refused`, `/mails/old` |
@@ -3481,12 +3407,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/settings/ui/ScannerPanel.tsx` | `/settings` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
 | `src/pages/settings/ui/settingsUi.tsx` | `/settings`, `/payments/shift-settings` |
-| `src/pages/system-ops/index.tsx` | `/system-ops` |
-| `src/pages/system-ops/lib/aiStatus.ts` | `/system-ops` |
-| `src/pages/system-ops/lib/systemOps.ts` | `/system-ops` |
-| `src/pages/system-ops/ui/AiStatusCard.tsx` | `/system-ops`, `/ops` |
-| `src/pages/system-ops/ui/HealthCard.tsx` | `/system-ops`, `/ops` |
-| `src/pages/system-ops/ui/charts.tsx` | `/system-ops` |
+| `src/pages/system-ops/index.tsx` | `/ops` |
+| `src/pages/system-ops/lib/aiStatus.ts` | `/ops` |
+| `src/pages/system-ops/lib/systemOps.ts` | `/ops` |
+| `src/pages/system-ops/ui/AiStatusCard.tsx` | `/ops` |
+| `src/pages/system-ops/ui/HealthCard.tsx` | `/ops` |
+| `src/pages/system-ops/ui/charts.tsx` | `/ops` |
 | `src/pages/tg-scan/index.tsx` | `/tg/scan` |
 | `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |

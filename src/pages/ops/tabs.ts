@@ -9,8 +9,9 @@ export interface OpsTabMeta {
   /** Tab nomi — `ops` namespace kaliti (`ops:tabs.<key>`). */
   labelKey: string;
   /**
-   * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut.
-   * SAQLANADI — eski havola yoki xatcho'p buzilmasin. Markaz ichida tug'ilgan tabda (masalan «Xarajat
+   * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut — eski havola yoki xatcho'p buzilmaydi:
+   * `/finance-operators`, `/integrations-ops`, `/identity-ops` o'z sarlavhasi bilan chiziladi, qolganlari
+   * (`routes.tsx`) `/ops?tab=<key>` ga yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat
    * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
    */
   legacyPath?: string;
@@ -97,9 +98,9 @@ export const OPS_TABS: OpsTabMeta[] = [
      * tekshirmoqchi bo'lgan operator "Loglar"ni bosib, token yangilash
      * tugmasini ko'rardi va haqiqiy jurnalni (`/activity-logs`) topolmasdi.
      *
-     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Marshrut (`/logs`)
-     * saqlanadi, faqat menyudan olib tashlandi. Dizayn v2 da yorlig'i —
-     * «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
+     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Menyudan olib tashlandi,
+     * eski marshrut (`/logs`) shu tabga yo'naltiradi (bhitm9do). Dizayn v2 da
+     * yorlig'i — «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
      */
     key: "auth",
     labelKey: "tabs.auth",

@@ -8,7 +8,7 @@ import {
   reasonInput,
 } from "./support/branchOps";
 
-/** /branch-ops — 390px (iPhone 12): ro'yxat kartalarda, forma va xato ekranga sig'adi, tasdiq pastki varaqada. */
+/** /ops?tab=branches — 390px (iPhone 12): ro'yxat kartalarda, forma va xato ekranga sig'adi, tasdiq pastki varaqada. */
 test.describe("Filiallar — operatsiyalar — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 

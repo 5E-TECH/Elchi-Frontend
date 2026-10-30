@@ -21,7 +21,6 @@ const routeImporters: Record<string, RouteImporter> = {
   "/regions": () => import("../../pages/region/index"),
   "/notifications": () => import("../../pages/notifications"),
   "/branches": () => import("../../pages/branches"),
-  "/logs": () => import("../../pages/logs/index"),
   // ─── Qo'shimcha route'lar ────────────────────────────────────────────────
   "/scan": () => import("../../pages/scan"),
   "/settings": () => import("../../pages/settings/ui/SettingsPage"),

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { CRITICAL, healthCard, mockSystemOpsApi, openSystemOps } from "./support/systemOps";
 
-/** /system-ops — 390px: xizmatlar kartalarda, gorizontal skroll yo'q, tugmalar ≥ 44 px. */
+/** /ops?tab=system — 390px: xizmatlar kartalarda, gorizontal skroll yo'q, tugmalar ≥ 44 px. */
 test.describe("Ops → Tizim — Tizim holati — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 

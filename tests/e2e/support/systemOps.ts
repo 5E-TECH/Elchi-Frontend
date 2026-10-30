@@ -1,7 +1,7 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * `/system-ops` (Ops → Tizim) e2e uchun soxta backend (superadmin). Hech qanday so'rov serverga ketmaydi;
+ * `/ops?tab=system` (Ops → Tizim) e2e uchun soxta backend (superadmin). Hech qanday so'rov serverga ketmaydi;
  * GET bo'lmagan so'rov `leaked` ga tushadi.
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
@@ -200,7 +200,7 @@ export const mockSystemOpsApi = async (
 };
 
 export const openSystemOps = async (page: Page) => {
-  await page.goto("/system-ops");
+  await page.goto("/ops?tab=system");
   await expect(page.getByRole("heading", { name: "Tizim — xizmatlar va analitika" })).toBeVisible({ timeout: 60_000 });
 };
 

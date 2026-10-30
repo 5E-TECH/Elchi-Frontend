@@ -1,7 +1,7 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * `/logistics-ops` e2e uchun soxta backend (superadmin, OS-3). Hech qanday so'rov serverga ketmaydi;
+ * `/ops?tab=logistics` e2e uchun soxta backend (superadmin, OS-3). Hech qanday so'rov serverga ketmaydi;
  * ruxsatsiz yozuvchi so'rov `leaked` ga tushadi.
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
@@ -135,7 +135,7 @@ export const mockLogisticsOpsApi = async (
 };
 
 export const openLogisticsOps = async (page: Page) => {
-  await page.goto("/logistics-ops");
+  await page.goto("/ops?tab=logistics");
   await expect(page.getByRole("heading", { name: "Logistika — qaytarish so'rovlari" })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByText("Sherzod Komilov").first()).toBeVisible();
 };
