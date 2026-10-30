@@ -487,6 +487,7 @@
     "offCreate": "New order cards are not delivered",
     "offCancel": "Cancelled order messages are not delivered",
     "inactive": "Inactive",
+    "notLinkedByYou": "You did not connect this group. Check its members; if it needs replacing, contact an administrator.",
     "link": "Connect",
     "linkCreate": "Connect the new orders group",
     "linkCancel": "Connect the cancelled orders group",

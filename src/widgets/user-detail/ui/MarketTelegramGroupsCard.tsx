@@ -2,7 +2,7 @@
 import { memo, useId, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { ChevronRight, Link as LinkIcon, Send, Users } from "lucide-react";
+import { ChevronRight, Link as LinkIcon, Send, TriangleAlert, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { canViewNotifications } from "../../../app/lib/access";
 import {
@@ -36,7 +36,7 @@ const MUTED = "text-[13px] leading-[18px] text-text-muted";
 /** Bir tur holati — ikkala manbadan (`staff`: `GET /notifications`, `self`: `GET /notifications/me/telegram-groups`). */
 type GroupState =
   | { kind: "none" }
-  | { kind: "active"; since: string | null }
+  | { kind: "active"; since: string | null; linkedByOwner: boolean | null }
   | { kind: "inactive"; row: Pick<Notification, "is_active" | "inactive_reason" | "inactive_at"> };
 
 export type MarketTelegramGroupsCardProps = {
@@ -66,6 +66,9 @@ export type MarketTelegramGroupsCardProps = {
  * xatoda qatorlar o'rnida `ErrorState` + «Qayta urinish» (kalit ishlayveradi). «Ulash» oynasi ikkala rejimda
  * ulanishni kuzatadi: guruh ulansa o'zi yopiladi, «Guruh ulandi».
  * Maketdagi «Taklif · holat uchun backend kerak» belgisi chizilmaydi.
+ * BOT-2 (ega qarori Q2 = A): market o'z profilida ulangan guruhni boshqa xodim ulagan bo'lsa (`linked_by_owner: false`)
+ * — holat ostida ogohlantirish «Bu guruhni siz ulamagansiz …» (maket yo'q — eng yaqini
+ * `market-profile-telegram-status`; kod bilan almashtirish yo'q, faqat admin — shuning uchun «administratorga yozing»).
  */
 export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGroupsCardProps) => {
   const { t, i18n } = useTranslation("users");
@@ -101,14 +104,14 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
       const own = myGroupsQuery.data?.find((row) => row.group_type === type);
       if (!own?.linked) return { kind: "none" };
       return own.is_active
-        ? { kind: "active", since: own.linked_at }
+        ? { kind: "active", since: own.linked_at, linkedByOwner: own.linked_by_owner }
         : { kind: "inactive", row: { is_active: false, inactive_reason: own.inactive_reason, inactive_at: null } };
     }
     const rows = (groupsQuery.data?.data ?? []).filter((row) => row.group_type === type);
     const connection = rows.find((row) => row.is_active) ?? rows[0] ?? null;
     if (!connection) return { kind: "none" };
     return connection.is_active
-      ? { kind: "active", since: connection.created_at }
+      ? { kind: "active", since: connection.created_at, linkedByOwner: null }
       : { kind: "inactive", row: connection };
   };
 
@@ -157,6 +160,19 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
     );
   };
 
+  // BOT-2: egaga — guruhni boshqa xodim ulagan (xodim rejimida chiqmaydi).
+  const notLinkedByYou = (type: NotificationGroupType) => {
+    if (isStaff || !statusQuery.isSuccess) return null;
+    const state = stateOf(type);
+    if (state.kind !== "active" || state.linkedByOwner !== false) return null;
+    return (
+      <span role="note" className="inline-flex items-start gap-1.5 text-[13px] leading-[18px] text-warning-fg">
+        <TriangleAlert aria-hidden="true" size={14} strokeWidth={2} className="mt-0.5 shrink-0" />
+        {t("tgGroup.notLinkedByYou")}
+      </span>
+    );
+  };
+
   // Ulash faqat ulanmagan turda (xato yoki yuklanishda — yo'q).
   const canLink = (type: NotificationGroupType) => statusQuery.isSuccess && stateOf(type).kind === "none";
 
@@ -193,6 +209,7 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
                   {t(TYPE_KEYS[type].title)}
                 </h3>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{statusLine(type)}</div>
+                {notLinkedByYou(type)}
               </div>
             </div>
             {canLink(type) ? linkButton(type) : null}

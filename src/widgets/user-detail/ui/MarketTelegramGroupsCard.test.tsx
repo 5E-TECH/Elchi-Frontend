@@ -100,6 +100,7 @@ const own = (
   is_active: false,
   linked_at: null,
   inactive_reason: null,
+  linked_by_owner: null,
   ...overrides,
 });
 const LINKED = { linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z" } as const;
@@ -345,6 +346,39 @@ describe("MarketTelegramGroupsCard — `self` (market o'z profilida, TG-C: `mark
     expect(within(cancel).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
     expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
     expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
+  });
+
+  it("BOT-2: guruhni boshqa xodim ulagan (`linked_by_owner: false`) — egaga ogohlantirish; o'zi ulagan yoki noma'lum — yo'q", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, linked_by_owner: false }),
+      own("cancel", { ...LINKED, linked_by_owner: true }),
+    ]);
+    renderCard("self", "market", "201");
+
+    const create = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    const note = await within(create).findByRole("note");
+    expect(note).toHaveTextContent(
+      "Bu guruhni siz ulamagansiz. Guruh a'zolarini tekshiring — almashtirish kerak bo'lsa, administratorga yozing.",
+    );
+    expect(note).toHaveClass("text-warning-fg");
+    expect(note.querySelector("svg")).not.toBeNull();
+    expect(within(create).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(create).queryByRole("button")).not.toBeInTheDocument();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("BOT-2: nofaol guruhda va eski backendda (`linked_by_owner: null`) ogohlantirish chiqmaydi", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, is_active: false, inactive_reason: "kicked", linked_by_owner: false }),
+      own("cancel", LINKED),
+    ]);
+    renderCard("self", "market", "201");
+
+    expect(await screen.findAllByText("Nofaol")).toHaveLength(1);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(screen.queryByText(/siz ulamagansiz/)).not.toBeInTheDocument();
   });
 
   it("yuklanishda — skelet, «Ulash» yo'q; xato — `ErrorState` + «Qayta urinish» (backend matnisiz), kalit ishlayveradi", async () => {

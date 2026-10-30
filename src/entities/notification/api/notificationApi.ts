@@ -102,7 +102,7 @@ const MY_GROUP_TYPES: readonly NotificationGroupType[] = ["create", "cancel"];
 
 /**
  * `GET /notifications/me/telegram-groups` javobi (`{ data: [{ group_type, linked, is_active, linked_at,
- * inactive_reason }] }`) → har doim ikkala tur, `create` birinchi. Tur kelmasa yoki javob boshqa shaklda bo'lsa —
+ * inactive_reason, linked_by, linked_by_owner }] }`) → har doim ikkala tur, `create` birinchi. Tur kelmasa yoki javob boshqa shaklda bo'lsa —
  * ulanmagan (bo'sh holat to'qilmaydi: ulanmagan qator «Ulash» bilan chiziladi). Faol bo'lmagan qatorda
  * `is_active: false`, faol qatorda sabab `null`.
  */
@@ -115,7 +115,14 @@ export const normalizeMyTelegramGroups = (value: unknown): MyTelegramGroupStatus
     const item = rows.find((row) => row.group_type === groupType);
     const linked = item?.linked === true || item?.linked === "true";
     if (!item || !linked) {
-      return { group_type: groupType, linked: false, is_active: false, linked_at: null, inactive_reason: null };
+      return {
+        group_type: groupType,
+        linked: false,
+        is_active: false,
+        linked_at: null,
+        inactive_reason: null,
+        linked_by_owner: null,
+      };
     }
     // Maydon yo'q bo'lsa — faol; faqat aniq `false` nofaol (`GET /notifications` bilan bir xil qoida).
     const isActive = item.is_active !== false && item.is_active !== "false";
@@ -125,6 +132,12 @@ export const normalizeMyTelegramGroups = (value: unknown): MyTelegramGroupStatus
       is_active: isActive,
       linked_at: typeof item.linked_at === "string" && item.linked_at ? item.linked_at : null,
       inactive_reason: isActive ? null : parseInactiveReason(item.inactive_reason),
+      linked_by_owner:
+        item.linked_by_owner === true || item.linked_by_owner === "true"
+          ? true
+          : item.linked_by_owner === false || item.linked_by_owner === "false"
+            ? false
+            : null,
     };
   });
 };
