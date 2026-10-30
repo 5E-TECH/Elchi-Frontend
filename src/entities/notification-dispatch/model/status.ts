@@ -53,7 +53,8 @@ export const DELIVERY_BUCKETS: readonly DeliveryBucket[] = ["sent", "queued", "f
 /**
  * Backend `NotificationDeliveryStatus` + SMS darvozasi `blocked` → guruh.
  *  - `emitted` (realtime brokerga uzatildi) — maketda «Yuborildi»;
- *  - `queued` · `pending` · `accepted` — hali yo'lda («Navbatda»);
+ *  - `queued` · `pending` · `accepted` · `sending` · `retrying` — hali yo'lda («Navbatda»; `retrying` — BOT-3c: Telegram
+ *    429/5xx dan keyin outbox qayta urinadi, yakuniy `sent`/`failed` keyin yoziladi);
  *  - `skipped` · `not_eligible` · `no_subscription` · `blocked` — o'tkazib yuborildi;
  *  - noma'lum yangi holat — o'tkazib yuborildi deb hisoblanmaydi, `null` (chizilmaydi).
  */
@@ -65,6 +66,8 @@ export const deliveryBucket = (status: string): DeliveryBucket | null => {
     case "queued":
     case "pending":
     case "accepted":
+    case "sending":
+    case "retrying":
       return "queued";
     case "failed":
       return "failed";

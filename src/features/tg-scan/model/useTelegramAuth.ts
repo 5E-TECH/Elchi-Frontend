@@ -1,6 +1,7 @@
 // dizayn-v2: courier-scan-starting
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loginWithTelegram, type TelegramAuthResult, type TelegramAuthUser } from "../api/tgScanApi";
+import { isTelegramCourierOnlyError } from "./scanError";
 import { loadTelegramWebApp, prepareTelegramWebApp, type TelegramWebApp } from "./telegramWebApp";
 
 /**
@@ -9,7 +10,8 @@ import { loadTelegramWebApp, prepareTelegramWebApp, type TelegramWebApp } from "
  *   loading     — SDK yuklanmoqda yoki kirish so'rovi ketmoqda;
  *   outside     — `initData` yo'q (oddiy brauzer): kamera OCHILMAYDI;
  *   error       — kirish rad etildi (401: imzo/eskirgan/bog'lanmagan) yoki tarmoq xatosi;
- *   not-courier — akkaunt kuryer emas (skan faqat kuryerga: `scan-assign` va `scan/done` `@Roles(COURIER)`);
+ *   not-courier — akkaunt kuryer emas (skan faqat kuryerga: `scan-assign` va `scan/done` `@Roles(COURIER)`; BOT-2 dan
+ *                 backend boshqa rolga kirishning o'zida 403 `TELEGRAM_COURIER_ONLY` qaytaradi);
  *   expired     — skanerlash paytida JWT tugadi (refresh yo'q — Mini App qayta ochiladi);
  *   ready       — token xotirada (asosiy sessiya saqlagichiga yozilmaydi).
  */
@@ -21,7 +23,8 @@ export type TelegramAuthState =
   | { status: "expired"; webApp: TelegramWebApp }
   | { status: "ready"; webApp: TelegramWebApp; accessToken: string; user: TelegramAuthUser | null };
 
-type Attempt = { id: number; promise: Promise<{ webApp: TelegramWebApp | null; auth: TelegramAuthResult | null }> };
+type AttemptResult = { webApp: TelegramWebApp | null; auth: TelegramAuthResult | null; notCourier?: boolean };
+type Attempt = { id: number; promise: Promise<AttemptResult> };
 
 export const useTelegramAuth = ({ surfaceColor }: { surfaceColor?: () => string | null } = {}) => {
   const [state, setState] = useState<TelegramAuthState>({ status: "loading" });
@@ -39,17 +42,26 @@ export const useTelegramAuth = ({ surfaceColor }: { surfaceColor?: () => string 
     if (attemptRef.current?.id !== attemptId) {
       attemptRef.current = {
         id: attemptId,
-        promise: loadTelegramWebApp().then(async (webApp) => {
+        promise: loadTelegramWebApp().then(async (webApp): Promise<AttemptResult> => {
           if (!webApp?.initData) return { webApp, auth: null };
           prepareTelegramWebApp(webApp, surfaceColorRef.current?.());
-          return { webApp, auth: await loginWithTelegram(webApp.initData) };
+          try {
+            return { webApp, auth: await loginWithTelegram(webApp.initData) };
+          } catch (error) {
+            if (isTelegramCourierOnlyError(error)) return { webApp, auth: null, notCourier: true };
+            throw error;
+          }
         }),
       };
     }
 
     attemptRef.current.promise.then(
-      ({ webApp, auth }) => {
+      ({ webApp, auth, notCourier }) => {
         if (cancelled) return;
+        if (webApp && notCourier) {
+          setState({ status: "not-courier", webApp });
+          return;
+        }
         if (!webApp || !auth) {
           setState({ status: "outside" });
           return;

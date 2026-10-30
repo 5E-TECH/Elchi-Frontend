@@ -100,6 +100,7 @@ const own = (
   is_active: false,
   linked_at: null,
   inactive_reason: null,
+  linked_by_owner: null,
   ...overrides,
 });
 const LINKED = { linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z" } as const;
@@ -179,6 +180,9 @@ describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detai
     expect(within(cancel).getByText("Qo'lda nofaol qilingan")).toBeInTheDocument();
     expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
     expect(screen.queryByText("Xabarlar bu guruhga yuborilmayapti")).not.toBeInTheDocument();
+    // BOT-3 #6: bot chiqarilgan — xodim ham kod bilan «Qayta ulash»; qo'lda o'chirilgan — tugma yo'q.
+    expect(within(create).getByRole("button", { name: "Yangi buyurtmalar guruhini qayta ulash" })).toBeEnabled();
+    expect(within(cancel).queryByRole("button")).not.toBeInTheDocument();
     // Faollashtirish — «Bildirishnomalar» bo'limida.
     expect(screen.getByRole("link", { name: /Barcha guruhlar/ })).toHaveAttribute("href", "/notifications");
   });
@@ -345,6 +349,91 @@ describe("MarketTelegramGroupsCard — `self` (market o'z profilida, TG-C: `mark
     expect(within(cancel).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
     expect(within(cancel).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
     expect(screen.queryByRole("button", { name: /guruhini ulash/ })).not.toBeInTheDocument();
+    // BOT-3 #6: bot chiqarilgan — «Qayta ulash»; sababi noma'lum — tugma yo'q (faqat admin).
+    expect(within(create).getByRole("button", { name: "Yangi buyurtmalar guruhini qayta ulash" })).toHaveTextContent(
+      "Qayta ulash",
+    );
+    expect(within(cancel).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("BOT-3 #6: «Qayta ulash» — faqat Telegram sababli nofaol turda; admin o'chirgan (`manual`) — yo'q", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, is_active: false, inactive_reason: "blocked_on_send" }),
+      own("cancel", { ...LINKED, is_active: false, inactive_reason: "manual" }),
+    ]);
+    renderCard("self", "market", "201");
+
+    const create = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(await within(create).findByRole("button", { name: "Yangi buyurtmalar guruhini qayta ulash" })).toBeEnabled();
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).getByText("Nofaol")).toBeInTheDocument();
+    expect(within(cancel).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("BOT-3 #6: «Qayta ulash» → oyna faollashguncha kutadi (ulangan, lekin nofaol — yopilmaydi), faol bo'lsa «Guruh ulandi»", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let active = false;
+    mocks.getMyTelegramGroups.mockImplementation(async () => [
+      own("create", active ? LINKED : { ...LINKED, is_active: false, inactive_reason: "kicked" }),
+      own("cancel", LINKED),
+    ]);
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("create"));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderCard("self", "market", "201");
+
+    await user.click(await screen.findByRole("button", { name: "Yangi buyurtmalar guruhini qayta ulash" }));
+
+    expect(mocks.requestGroupLinkCode).toHaveBeenCalledWith({ purpose: "market_group", group_type: "create" });
+    expect(await screen.findByRole("dialog", { name: "Telegram guruhini ulash" })).toBeInTheDocument();
+
+    // Qator allaqachon `linked: true`, lekin nofaol — oyna ochiq qoladi.
+    const callsBefore = mocks.getMyTelegramGroups.mock.calls.length;
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS));
+    await waitFor(() => expect(mocks.getMyTelegramGroups.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(screen.getByRole("dialog", { name: "Telegram guruhini ulash" })).toBeInTheDocument();
+    expect(screen.queryByText("Guruh ulandi")).not.toBeInTheDocument();
+
+    active = true;
+    await act(() => vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS));
+
+    expect(await screen.findByText("Guruh ulandi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Telegram guruhini ulash" })).not.toBeInTheDocument());
+    const createRow = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    expect(within(createRow).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(createRow).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("BOT-2: guruhni boshqa xodim ulagan (`linked_by_owner: false`) — egaga ogohlantirish; o'zi ulagan yoki noma'lum — yo'q", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, linked_by_owner: false }),
+      own("cancel", { ...LINKED, linked_by_owner: true }),
+    ]);
+    renderCard("self", "market", "201");
+
+    const create = screen.getByRole("group", { name: "Yangi buyurtmalar guruhi" });
+    const note = await within(create).findByRole("note");
+    expect(note).toHaveTextContent(
+      "Bu guruhni siz ulamagansiz. Guruh a'zolarini tekshiring — almashtirish kerak bo'lsa, administratorga yozing.",
+    );
+    expect(note).toHaveClass("text-warning-fg");
+    expect(note.querySelector("svg")).not.toBeNull();
+    expect(within(create).getByText("Ulangan")).toBeInTheDocument();
+    expect(within(create).queryByRole("button")).not.toBeInTheDocument();
+
+    const cancel = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancel).queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("BOT-2: nofaol guruhda va eski backendda (`linked_by_owner: null`) ogohlantirish chiqmaydi", async () => {
+    mocks.getMyTelegramGroups.mockResolvedValue([
+      own("create", { ...LINKED, is_active: false, inactive_reason: "kicked", linked_by_owner: false }),
+      own("cancel", LINKED),
+    ]);
+    renderCard("self", "market", "201");
+
+    expect(await screen.findAllByText("Nofaol")).toHaveLength(1);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(screen.queryByText(/siz ulamagansiz/)).not.toBeInTheDocument();
   });
 
   it("yuklanishda — skelet, «Ulash» yo'q; xato — `ErrorState` + «Qayta urinish» (backend matnisiz), kalit ishlayveradi", async () => {
