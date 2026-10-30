@@ -150,10 +150,15 @@
       "label": "PDF label (100×60 mm)",
       "hint": "The PDF file opens in a new window"
     },
-    "thermal": {
-      "label": "Thermal printer (80mm)",
-      "hint": "Receipt format"
-    }
+    "a4": {
+      "label": "A4 sheet (12 per page)",
+      "hint": "Office printer · 12 receipts per sheet"
+    },
+    "postReceipt": {
+      "label": "Mail receipt",
+      "hint": "Receipt for the mail bag (100×60 mm)"
+    },
+    "selectFirst": "Select orders first"
   },
   "detailFullInfo": "Full information",
   "detailOrderId": "Order ID",
@@ -186,9 +191,11 @@
     "printMenuLabel": "Print method",
     "printMenuTitle": "{{value}} selected orders",
     "printMenuTitleLabels": "Labels for {{value}} selected orders",
+    "printMenuTitleNone": "No orders selected",
     "printAllMenuTitle": "Labels for all {{value}} orders",
     "printSheetTitle": "Print",
     "printSheetDescription": "Labels for {{value}} selected orders will be printed",
+    "printSheetDescriptionNone": "You can print the mail receipt now; select orders first to print their labels",
     "printAllSheetDescription": "Labels for all {{value}} orders will be printed",
     "printRow": "Print №{{id}}",
     "printRowLabel": "Print label for №{{id}}",
@@ -304,9 +311,5 @@
       "rowBadge": "Duplicate number",
       "rowBadgeTitle": "Also to this number: {{ids}}"
     }
-  },
-  "receipt": {
-    "contact": "If there is a problem",
-    "courier": "Courier"
   }
 }

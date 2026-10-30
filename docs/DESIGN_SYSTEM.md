@@ -944,7 +944,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   (`?tab`), `DataTable` (telefonda kartalar), `Pagination`; holat badge'i — haqiqiy paket holati
   (`entities/batch` `BATCH_STATUS_TONE` + `newOrders:batchStatus.*`). `/batches/:id` (`ui/BatchDetailPage.tsx`):
   `PageHeader` («← Paketlar / Qaytarishlar / Eski pochtalar»), `BatchInfoCard`, `BatchQrCard`, `BatchHistoryCard`,
-  A5 chop etish varag'i `BatchPrintSheet`; buyurtmalar — pochta tafsilotining `OrdersTable` kartasi
+  «Chop etish» menyusi `BatchPrintMenu` (paket cheki termal 100×60 yoki A5 — `features/print-receipts`, HJ5sLHiz;
+  QR ilova ichida); buyurtmalar — pochta tafsilotining `OrdersTable` kartasi
   (`appearance="batch"`: telefonda «№X · [market ·] telefon» + manzil, pastda «Jami N ta buyurtma»;
   qaytarish paketida `scannerReadyOnPhone`), jo'natish `PATCH transfer-batches/:id/send { orderIds }` va USB skaner
   o'zgarmagan. `GET branches/:id` faqat superadmin/admin uchun so'raladi (backend `@Roles`). `/returns`

@@ -187,7 +187,7 @@
 </li>
 <li style="display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; border-top: 1px solid var(--border); border-left: 1px solid var(--border)">
 <span class="el-cam-pin" style="position: static" aria-hidden="true">10</span>
-<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Jo'natuvchi va «Muammo bo'lsa»</span><span class="el-small el-muted">Pastki qat'iy band. Market nomi chapda; o'ngda operator telefoni, u bo'lmasa — market telefoni.</span></div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Jo'natuvchi va «Muammo bo'lsa»</span><span class="el-small el-muted">Pastki qat'iy band. Market nomi chapda; o'ngda «Muammo bo'lsa» — buyurtma viloyati logistining raqami (1–2 ta), u bo'lmasa — umumiy raqam (tizim-receipts-contact).</span></div>
 <span class="el-kbd" style="white-space: nowrap; height: auto; min-height: 22px">8 pt</span>
 </li>
 </ol>
@@ -1099,7 +1099,7 @@ joylash(order):
         <li class="el-small">Qo'shimcha telefon yo'q — qator chiqmaydi, joy manzilga qoladi.</li>
         <li class="el-small">Ko'cha manzili yo'q (ko'pincha markazgacha) — faqat viloyat · tuman.</li>
         <li class="el-small">Izoh yo'q — qator chiqmaydi. «-» hech qachon chop etilmaydi.</li>
-        <li class="el-small">Operator telefoni yo'q — «Muammo bo'lsa»da market telefoni.</li>
+        <li class="el-small">Logist ham, umumiy raqam ham yo'q — «Muammo bo'lsa» qismi chiqmaydi, «Jo'natuvchi» butun qatorni oladi.</li>
         <li class="el-small">to_be_paid = 0 — summa o'rniga ramkada «To'langan»; to_be_paid < jami — summa ostida «jami …».</li>
         <li class="el-small">Haydovchi, avtomobil raqami yo'q (paket) — qator chiqmaydi.</li>
       </ul>
@@ -1133,7 +1133,7 @@ joylash(order):
       <tr><td class="el-strong">Yorliq ustuni</td><td class="el-muted">«F.I.O:», «Telefon:», «Manzil:»… — 15 mm</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Yo'q; faqat Izoh, Jo'natuvchi, Muammo bo'lsa</td></tr>
       <tr><td class="el-strong">Bo'sh maydon</td><td class="el-muted">«-» bilan chiqadi (Mo'ljal, Logist)</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Chiqmaydi</td></tr>
       <tr><td class="el-strong">Logist qatori</td><td class="el-muted">Logist yoki kuryer ismi va telefoni</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Olib tashlandi</td></tr>
-      <tr><td class="el-strong">Jo'natuvchi</td><td class="el-muted">Market | operator ismi</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Faqat market nomi; operator telefoni «Muammo bo'lsa»da</td></tr>
+      <tr><td class="el-strong">Jo'natuvchi</td><td class="el-muted">Market | operator ismi</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Faqat market nomi; «Muammo bo'lsa»da viloyat logisti</td></tr>
       <tr><td class="el-strong">Logotip</td><td class="el-muted">Rangli belgi + «Elchi Pochta» yozuvi</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Yo'q — QR ichida ham (05)</td></tr>
       <tr><td class="el-strong">Sana, telefon</td><td class="el-muted">23/10/2026 · +998 (90) 123-45-67</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>23.10.2026 · +998 90 123 45 67</td></tr>
       <tr><td class="el-strong">Shrift</td><td class="el-muted">Arial / Helvetica 900; PDF da kirill yo'q</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Manrope 500–700, PDF ichiga joylanadi (kirill bilan)</td></tr>
@@ -1166,7 +1166,7 @@ joylash(order):
       <dt>Shrift</dt><dd>Manrope 500 · 600 · 700, lokal woff2; o'lchashdan oldin yuklanadi (document.fonts.load)</dd>
       <dt>Rang</dt><dd>Faqat qora va oq — kulrang termalda nuqtali bo'lib chiqadi</dd>
       <dt>Masshtab</dt><dd>Brauzerda 100 %, «Sahifaga moslash» o'chiq</dd>
-      <dt>Ma'lumot</dt><dd>to_be_paid, total_price, paid_amount, where_deliver, extra_number, operator telefonlari</dd>
+      <dt>Ma'lumot</dt><dd>to_be_paid, total_price, paid_amount, where_deliver, extra_number, problem_contacts (viloyat logistlari)</dd>
     </dl>
   </div>
 </section>

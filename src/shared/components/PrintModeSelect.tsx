@@ -30,13 +30,21 @@ import { usePopover } from "../ui/primitives/overlay/usePopover";
  *  - `hideCount` — `header` tugmasida son yo'q («Barchasini chop etish», maket `courier-mails-detail-refused`);
  *  - `ariaLabel` — tugma nomi (maket: «Barcha 5 ta buyurtma yorlig'ini chop etish»);
  *  - `iconSize` / `iconVariant` — `icon` tugmasi o'lchami va ko'rinishi (kuryer kartasi: `lg`, chegarali);
- *  - `compact` — `header` tugmasi ixcham (`Button compact`; tor qatorda, maket `courier-mails-detail-receive` telefon).
+ *  - `compact` — `header` tugmasi ixcham (`Button compact`; tor qatorda, maket `courier-mails-detail-receive` telefon);
+ *  - `loading` — chop etish fayli tayyorlanmoqda: tugmada spinner, menyu ochilmaydi (HJ5sLHiz);
+ *  - `onOpen` — menyu (varaqa) ochilganda: chop etish modulini oldindan yuklash uchun;
+ *  - `allowEmpty` — `header`: hech narsa tanlanmaganda (soni 0) ham tugma faol — tanlovsiz ishlaydigan band bor
+ *    (pochta tafsilotida «Pochta cheki», HJ5sLHiz); tanlov kerak bo'lgan bandlar `disabled`.
+ *
+ * Band `disabled` — `aria-disabled` (WAI-ARIA: fokuslanadi, lekin tanlanmaydi), xira; izohida nega o'chiqligi.
  */
 export type PrintSelectOption = {
   id: string;
   label: string;
   hint?: string;
   icon: ReactNode;
+  /** Hozir tanlab bo'lmaydi (masalan, buyurtma tanlanmagan) — ko'rinadi, lekin bosilmaydi. */
+  disabled?: boolean;
 };
 
 type Props = {
@@ -66,6 +74,12 @@ type Props = {
   iconVariant?: IconButtonVariant;
   /** `header`: ixcham tugma (kichikroq chekka va ikonka). */
   compact?: boolean;
+  /** Chop etish ketmoqda — tugma `loading`, menyu ochilmaydi. */
+  loading?: boolean;
+  /** Menyu ochilganda (oldindan yuklash). */
+  onOpen?: () => void;
+  /** `header`: soni 0 bo'lsa ham tugma faol (tanlovsiz ishlaydigan band bor). */
+  allowEmpty?: boolean;
 };
 
 /** Varaqadagi band (`.el-menu-item` + o'ngda `ChevronRight`, maket `courier-mails-detail-print-menu`). */
@@ -77,6 +91,9 @@ const SHEET_ITEM =
 const MENU_ITEM =
   "flex min-h-14 w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-text outline-none " +
   "transition-[background-color] duration-150 hover:bg-sunken focus-visible:bg-sunken motion-reduce:transition-none";
+
+/** O'chiq band (`aria-disabled`): xira, bosilmaydi; fokus ko'rinadi (klaviatura bilan o'tib ketiladi). */
+const ITEM_DISABLED = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
 
 const PrintModeSelect = ({
   variant = "header",
@@ -95,6 +112,9 @@ const PrintModeSelect = ({
   iconSize = "sm",
   iconVariant,
   compact = false,
+  loading = false,
+  onOpen,
+  allowEmpty = false,
 }: Props) => {
   const { t, i18n } = useTranslation("ui");
   const isPhone = useIsPhone();
@@ -110,7 +130,11 @@ const PrintModeSelect = ({
   });
 
   const label = buttonLabel ?? t("printMenu.button");
-  const triggerDisabled = disabled || options.length === 0 || (variant === "header" && count === 0);
+  const triggerDisabled =
+    disabled ||
+    options.length === 0 ||
+    options.every((option) => option.disabled) ||
+    (variant === "header" && count === 0 && !allowEmpty);
   const title = menuTitle ?? (variant === "header" && count > 0 ? t("printMenu.count", { count }) : null);
 
   const close = (returnFocus: boolean) => {
@@ -119,8 +143,10 @@ const PrintModeSelect = ({
   };
 
   const openWith = (target: "first" | "last") => {
+    if (loading) return;
     focusTargetRef.current = target;
     setOpen(true);
+    onOpen?.();
   };
 
   useDismiss({ open: open && !asSheet, refs: [anchorRef, floatingRef], onDismiss: () => close(false) });
@@ -130,16 +156,23 @@ const PrintModeSelect = ({
   useLayoutEffect(() => {
     if (!open || !isPositioned) return;
     const items = itemsRef.current.filter((item): item is HTMLButtonElement => Boolean(item));
-    (focusTargetRef.current === "last" ? items[items.length - 1] : items[0])?.focus({ preventScroll: true });
+    // Birinchi (oxirgi) faol bandga; o'chiq bandlar fokuslanadi, lekin ochilganda ulardan boshlanmaydi.
+    const enabled = items.filter((item) => item.getAttribute("aria-disabled") !== "true");
+    const pool = enabled.length ? enabled : items;
+    (focusTargetRef.current === "last" ? pool[pool.length - 1] : pool[0])?.focus({ preventScroll: true });
   }, [open, isPositioned]);
 
+  const isDisabled = (mode: string) => options.some((option) => option.id === mode && option.disabled);
+
   const pick = (mode: string) => {
+    if (isDisabled(mode)) return;
     onSelect(mode);
     close(true);
   };
 
   // Varaqa: `Dialog` o'zi fokusni ochgan tugmaga qaytaradi.
   const pickFromSheet = (mode: string) => {
+    if (isDisabled(mode)) return;
     onSelect(mode);
     setOpen(false);
   };
@@ -201,6 +234,7 @@ const PrintModeSelect = ({
           variant="secondary"
           compact={compact}
           disabled={triggerDisabled}
+          loading={loading}
           aria-label={ariaLabel}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
@@ -227,6 +261,7 @@ const PrintModeSelect = ({
           size={iconSize}
           variant={iconVariant}
           disabled={triggerDisabled}
+          loading={loading}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
           onKeyDown={onTriggerKeyDown}
@@ -251,8 +286,9 @@ const PrintModeSelect = ({
                 key={option.id}
                 type="button"
                 role="menuitem"
+                aria-disabled={option.disabled ? true : undefined}
                 onClick={() => pickFromSheet(option.id)}
-                className={cx(SHEET_ITEM, "border-b border-border last:border-b-0")}
+                className={cx(SHEET_ITEM, ITEM_DISABLED, "border-b border-border last:border-b-0")}
               >
                 <span
                   aria-hidden="true"
@@ -300,8 +336,9 @@ const PrintModeSelect = ({
                 type="button"
                 role="menuitem"
                 tabIndex={-1}
+                aria-disabled={option.disabled ? true : undefined}
                 onClick={() => pick(option.id)}
-                className={MENU_ITEM}
+                className={cx(MENU_ITEM, ITEM_DISABLED)}
               >
                 <span
                   aria-hidden="true"

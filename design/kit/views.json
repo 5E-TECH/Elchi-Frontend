@@ -6262,6 +6262,474 @@
   },
   {
    "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-correctable",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · «Qaytarish» va «Summani tahrirlash» (muddat ichida)",
+   "fragment": "superadmin--payments-history-detail-dialog-correctable",
+   "order": 61.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-locked",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tuzatib bo'lmaydi (muddat tugagan, eski yozuv)",
+   "fragment": "superadmin--payments-history-detail-dialog-locked",
+   "order": 61.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tahrirlangan to'lov, «Qaytarish va tahrir» bloki",
+   "fragment": "superadmin--payments-history-detail-dialog-corrected",
+   "order": 61.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-replacement",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tuzatilgan to'lov (yangi yozuv) va teskari yozuv",
+   "fragment": "superadmin--payments-history-detail-dialog-replacement",
+   "order": 61.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "To'lov tarixi tafsiloti · tahrirlangan to'lov (faqat ko'rish)",
+   "fragment": "superadmin--payments-history-detail-dialog-corrected",
+   "order": 180.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · qaytarilgan to'lov (faqat ko'rish)",
+   "fragment": "manager--payments-history-detail-dialog-corrected",
+   "order": 274.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "cashbox-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · tahrirlangan to'lov (sabab bilan)",
+   "fragment": "market--cashbox-history-detail-dialog-corrected",
+   "order": 343.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "cashbox-history-detail-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · qaytarilgan to'lov (sabab bilan)",
+   "fragment": "courier--cashbox-history-detail-corrected",
+   "order": 373.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-dialog",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — sabab (oyna)",
+   "fragment": "superadmin--payments-history-reverse-dialog",
+   "order": 61.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-confirm",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — tasdiq",
+   "fragment": "superadmin--payments-history-reverse-confirm",
+   "order": 61.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-errors",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — xatolar (smena yopiq, pul yetmaydi, internet yo'q …)",
+   "fragment": "superadmin--payments-history-reverse-errors",
+   "order": 61.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-dialog",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash (oyna)",
+   "fragment": "superadmin--payments-history-correct-amount-dialog",
+   "order": 61.8,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-confirm",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash — tasdiq",
+   "fragment": "superadmin--payments-history-correct-amount-confirm",
+   "order": 61.85,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-errors",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash — xatolar (ko'pi bilan …, bir xil summa)",
+   "fragment": "superadmin--payments-history-correct-amount-errors",
+   "order": 61.9,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-overview-corrected",
+   "menuKey": "payments",
+   "title": "To'lovlar — umumiy · qaytarilgan va tahrirlangan to'lovlar belgilari",
+   "fragment": "superadmin--payments-overview-corrected",
+   "order": 59.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cash-detail-courier-corrected",
+   "menuKey": "payments",
+   "title": "Kuryer kassasi · qaytarilgan to'lov belgilari",
+   "fragment": "superadmin--payments-cash-detail-courier-corrected",
+   "order": 65.5,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "cashbox-my-corrected",
+   "menuKey": "payments",
+   "title": "Market kassasi · tahrirlangan to'lov belgilari",
+   "fragment": "market--cashbox-my-corrected",
+   "order": 342.1,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "cashbox-my-transfers-corrected",
+   "menuKey": "payments",
+   "title": "Kassa — Oldi-berdi · qaytarilgan to'lov belgilari",
+   "fragment": "courier--cashbox-my-transfers-corrected",
+   "order": 372.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-settings-correction",
+   "menuKey": "payments",
+   "title": "Kassa smenasi sozlamalari · to'lovlarni tuzatish muddati (7 · 10 · 30 · Boshqa)",
+   "fragment": "superadmin--payments-shift-settings-correction",
+   "order": 64.96,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "contact-card",
+   "menuKey": "contact-card",
+   "title": "Aloqa kartasi va «Muammo bo'lsa» — holatlar",
+   "fragment": "tizim--contact-card",
+   "order": 18,
+   "kind": "standalone"
+  },
+  {
+   "role": "courier",
+   "viewId": "dashboard-home-contacts",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — «Viloyatingiz logisti» kartasi",
+   "fragment": "courier--dashboard-home-contacts",
+   "order": 344.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "branch-dashboard-contacts",
+   "menuKey": "dashboard",
+   "title": "Filial paneli — «Viloyatingiz logisti» kartasi",
+   "fragment": "manager--branch-dashboard-contacts",
+   "order": 224.1,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "dashboard-home-contacts",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — «Elchi mas'ulingiz» kartasi",
+   "fragment": "market--dashboard-home-contacts",
+   "order": 325.1,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "profile-contacts",
+   "menuKey": "profile",
+   "title": "Profil — «Viloyatingiz logisti» kartasi",
+   "fragment": "courier--profile-contacts",
+   "order": 399.5,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "profile-contacts",
+   "menuKey": "profile",
+   "title": "Profil — «Elchi mas'ulingiz» kartasi",
+   "fragment": "market--profile-contacts",
+   "order": 343.5,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "orders-detail-contacts",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — «Muammo bo'lsa» qatori, market telefonisiz",
+   "fragment": "courier--orders-detail-contacts",
+   "order": 357.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "orders-detail-contacts",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsiloti — «Muammo bo'lsa» qatori, market telefonisiz",
+   "fragment": "manager--orders-detail-contacts",
+   "order": 234.2,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "orders-detail-contacts",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — «Elchi mas'ulingiz» qatori",
+   "fragment": "market--orders-detail-contacts",
+   "order": 328.2,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-markets-no-phone",
+   "menuKey": "newOrders",
+   "title": "Qabul va yaratish — Marketlar (telefon ustunisiz)",
+   "fragment": "manager--new-orders-markets-no-phone",
+   "order": 239.1,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "dashboard-user-menu-contacts",
+   "menuKey": "dashboard",
+   "title": "Profil menyusi — «Aloqa» bandi (taklif)",
+   "fragment": "courier--dashboard-user-menu-contacts",
+   "order": 345.2,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "dashboard-mobile-menu-contacts",
+   "menuKey": "dashboard",
+   "title": "Menyu varag'i — «Aloqa» bandi (taklif)",
+   "fragment": "courier--dashboard-mobile-menu-contacts",
+   "order": 345.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "dashboard-contacts-dialog",
+   "menuKey": "dashboard",
+   "title": "«Aloqa» oynasi — profil menyusidan (taklif)",
+   "fragment": "courier--dashboard-contacts-dialog",
+   "order": 345.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-list-responsibles-entry",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi",
+   "fragment": "superadmin--users-list-responsibles-entry",
+   "order": 79.2,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-list-responsibles-entry",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi",
+   "fragment": "superadmin--users-list-responsibles-entry",
+   "order": 197.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-market-responsibles",
+   "menuKey": "users",
+   "title": "Market mas'ullari",
+   "fragment": "superadmin--users-market-responsibles",
+   "order": 84.3,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-market-responsibles-empty",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash)",
+   "fragment": "superadmin--users-market-responsibles-empty",
+   "order": 84.31,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-market-responsibles-settings-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq)",
+   "fragment": "superadmin--users-market-responsibles-settings-confirm",
+   "order": 84.32,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-market-responsibles-move-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y)",
+   "fragment": "superadmin--users-market-responsibles-move-confirm",
+   "order": 84.33,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-market-responsibles-default-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukutga qaytarish (tasdiq)",
+   "fragment": "superadmin--users-market-responsibles-default-confirm",
+   "order": 84.34,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-market-responsibles",
+   "menuKey": "users",
+   "title": "Market mas'ullari",
+   "fragment": "superadmin--users-market-responsibles",
+   "order": 202.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-market-responsibles-empty",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash)",
+   "fragment": "superadmin--users-market-responsibles-empty",
+   "order": 202.11,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-market-responsibles-settings-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukut va umumiy raqamlarni saqlash (tasdiq)",
+   "fragment": "superadmin--users-market-responsibles-settings-confirm",
+   "order": 202.12,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-market-responsibles-move-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — boshqa xodimga o'tkazish (tasdiq, X → Y)",
+   "fragment": "superadmin--users-market-responsibles-move-confirm",
+   "order": 202.13,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-market-responsibles-default-confirm",
+   "menuKey": "users",
+   "title": "Market mas'ullari — sukutga qaytarish (tasdiq)",
+   "fragment": "superadmin--users-market-responsibles-default-confirm",
+   "order": 202.14,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-market-responsible",
+   "menuKey": "users",
+   "title": "Market tafsiloti — «Elchi mas'uli» kartasi",
+   "fragment": "superadmin--users-detail-market-responsible",
+   "order": 82.4,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-market-responsible-dialog",
+   "menuKey": "users",
+   "title": "Market tafsiloti — mas'ulni o'zgartirish (oyna)",
+   "fragment": "superadmin--users-detail-market-responsible-dialog",
+   "order": 82.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-role-confirm-responsible",
+   "menuKey": "users",
+   "title": "Rolni o'zgartirish — Logist → Menejer, N ta market sukutga o'tadi",
+   "fragment": "superadmin--users-role-confirm-responsible",
+   "order": 84.155,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-delete-dialog-responsible",
+   "menuKey": "users",
+   "title": "Foydalanuvchini o'chirish — N ta market sukutga o'tadi",
+   "fragment": "superadmin--users-delete-dialog-responsible",
+   "order": 80.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-market-responsible",
+   "menuKey": "users",
+   "title": "Market tafsiloti — «Elchi mas'uli» kartasi",
+   "fragment": "superadmin--users-detail-market-responsible",
+   "order": 200.4,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-market-responsible-dialog",
+   "menuKey": "users",
+   "title": "Market tafsiloti — mas'ulni o'zgartirish (oyna)",
+   "fragment": "superadmin--users-detail-market-responsible-dialog",
+   "order": 200.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-delete-dialog-responsible",
+   "menuKey": "users",
+   "title": "Foydalanuvchini o'chirish — N ta market sukutga o'tadi",
+   "fragment": "superadmin--users-delete-dialog-responsible",
+   "order": 198.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "tizim",
+   "viewId": "receipts-contact",
+   "menuKey": "receipts",
+   "title": "Chek — «Muammo bo'lsa» raqami (viloyat logisti)",
+   "fragment": "tizim--receipts-contact",
+   "order": 16.5,
+   "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
    "viewId": "payments-main-cashbox-expense-receipt-dialog",
    "menuKey": "payments",
    "title": "Kassadan xarajat — chek rasmi bilan (popup)",
@@ -6438,7 +6906,8 @@
    "shift-report-messages": "Smena hisoboti xabarlari (Telegram, tizim)",
    "scan-feedback": "Skaner natijasi: rang effekti va ovoz",
    "receipts": "Chek va paket cheki",
-   "product-labels": "Mahsulot stikeri (QR, shtrix kod)"
+   "product-labels": "Mahsulot stikeri (QR, shtrix kod)",
+   "contact-card": "Aloqa kartasi va «Muammo bo'lsa»"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",
@@ -6528,7 +6997,8 @@
    "payments": "Kassa",
    "regions": "Hududlar",
    "scan": "Skanerlash (barcha holatlar)",
-   "inbox": "Bildirishnomalar"
+   "inbox": "Bildirishnomalar",
+   "profile": "Profil"
   },
   "logist": {
    "dashboard": "Bosh sahifa",

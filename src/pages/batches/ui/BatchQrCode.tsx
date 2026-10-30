@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
-import { memo, useState } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { getBatchQrUrl } from "../lib/batchFormat";
+import { ReceiptQr } from "../../../features/print-receipts";
 
 interface BatchQrCodeProps {
   token?: string | null;
@@ -9,13 +9,13 @@ interface BatchQrCodeProps {
   alt: string;
   className?: string;
   fallbackClassName?: string;
-  /** Zaxira yozuvidagi paket raqami klassi (ekranda 13 px; chop etishda `.batch-print-qr-fallback small`). */
+  /** Zaxira yozuvidagi paket raqami klassi. */
   fallbackLabelClassName?: string;
 }
 
 /**
- * Paket QR kodi: `api.qrserver.com` rasmi (token bo'yicha). Token yo'q yoki rasm yuklanmasa — zaxira yozuv
- * («QR kod» + paket raqami). Sahifadagi «QR kod» kartasi va A5 chop etish varag'i ishlatadi.
+ * Paket QR kodi — ilova ichida chiziladi (HJ5sLHiz: `ReceiptQr`, paket cheki bilan bir xil kod; tashqi QR
+ * xizmati yo'q). Token yo'q — zaxira yozuv («QR kod» + paket raqami). Sahifadagi «QR kod» kartasi ishlatadi.
  */
 const BatchQrCode = ({
   token,
@@ -26,11 +26,9 @@ const BatchQrCode = ({
   fallbackLabelClassName,
 }: BatchQrCodeProps) => {
   const { t } = useTranslation("batches");
-  const [failedToken, setFailedToken] = useState<string | null>(null);
   const normalizedToken = token?.trim() ?? "";
-  const canRenderQr = normalizedToken && failedToken !== normalizedToken;
 
-  if (!canRenderQr) {
+  if (!normalizedToken) {
     return (
       <div role="img" aria-label={alt} className={fallbackClassName}>
         <span>{t("detail.qrFallback")}</span>
@@ -39,14 +37,7 @@ const BatchQrCode = ({
     );
   }
 
-  return (
-    <img
-      src={getBatchQrUrl(normalizedToken)}
-      alt={alt}
-      onError={() => setFailedToken(normalizedToken)}
-      className={className}
-    />
-  );
+  return <ReceiptQr token={normalizedToken} label={alt} className={className} />;
 };
 
 export default memo(BatchQrCode);

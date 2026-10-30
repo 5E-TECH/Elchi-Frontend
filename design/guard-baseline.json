@@ -272,8 +272,6 @@
   "files": {
     "src/app/providers/theme/AntdThemeProvider.tsx": { "colour": 1 },
     "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "money": 1 },
-    "src/pages/mails/detail/lib/printMode.ts": { "money": 1 },
-    "src/pages/new_orders/components/lib/printLabelPdf.ts": { "money": 1 },
     "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 23, "dark-pair": 17, "money": 1 },
     "src/pages/payments/components/lib/amountInput.ts": { "money": 1 },
     "src/pages/payments/components/lib/exportMainCashboxReport.ts": { "money": 1 },

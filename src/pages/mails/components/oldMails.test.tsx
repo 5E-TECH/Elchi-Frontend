@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   fetchAllTransferBatches: vi.fn(),
   useGetRegions: vi.fn(),
   useGetCouriers: vi.fn(),
-  printOrders: vi.fn(),
+  printPostWithOrders: vi.fn(),
   exportOldMailsToExcel: vi.fn(),
 }));
 
@@ -27,7 +27,10 @@ vi.mock("../../../entities/batch", async (importOriginal) => ({
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({ useGetRegions: mocks.useGetRegions, useGetCouriers: mocks.useGetCouriers }),
 }));
-vi.mock("../detail/lib/printMode", () => ({ printOrders: mocks.printOrders }));
+vi.mock("../detail/lib/printMode", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../detail/lib/printMode")>()),
+  printPostWithOrders: mocks.printPostWithOrders,
+}));
 vi.mock("./lib/exportOldMailsToExcel", () => ({ exportOldMailsToExcel: mocks.exportOldMailsToExcel }));
 
 /** Xulosa qatori (`<p>`) — bo'shliqlar (NBSP ham) normallashtirilgan matn bo'yicha. */
@@ -164,6 +167,7 @@ describe("OldMails — xodim (pochtalar)", () => {
     mocks.useGetOldMails.mockReset();
     mocks.fetchOldMails.mockReset();
     mocks.exportOldMailsToExcel.mockReset();
+    mocks.printPostWithOrders.mockReset();
   });
 
   it("requests one server page (page, limit ≤ 100, has_orders) and renders the table with courier column and status badges", () => {
@@ -287,16 +291,72 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
   });
 
-  it("reprints the receipt through GET post/orders/:id and the browser print mode", async () => {
+  it("reprints through GET post/orders/:id: the mail receipt first, then the order receipts (ega qarori 5)", async () => {
     const user = userEvent.setup();
-    const orders = [{ id: "o1" }];
-    const get = vi.spyOn(api, "get").mockResolvedValue({ data: { data: orders } });
+    const orders = [{ id: "o1", qr_code_token: "a".repeat(24) }];
+    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    const get = vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          allOrdersByPostId: orders,
+          homeOrders: { homeOrders: 1, homeOrdersTotalPrice: 185_000 },
+          centerOrders: { centerOrders: 0, centerOrdersTotalPrice: 0 },
+          post: { id: "90", status: "received", qr_code_token: "POST-90", createdAt: "2026-10-07T12:55:00.000Z" },
+        },
+      },
+    });
     renderOld("admin", "/mails/old", "card");
 
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
 
     expect(get).toHaveBeenCalledWith("post/orders/90");
-    expect(mocks.printOrders).toHaveBeenCalledWith("browser", orders);
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    const [source, printed] = mocks.printPostWithOrders.mock.calls[0];
+    expect(printed).toEqual(orders);
+    expect(source).toMatchObject({ kind: "post", id: "90", token: "POST-90", ordersCount: 1, totalPrice: 185_000 });
+    // Pochta va buyurtma tokenlari bor — «QR yo'q» ogohlantirishi yo'q.
+    expect(screen.queryByText("Pochta chekida QR yo'q")).not.toBeInTheDocument();
+  });
+
+  it("reprint «Qayerga»: no region on the mail → the orders' region, never the «Viloyat #» screen fallback", async () => {
+    const user = userEvent.setup();
+    const noRegion = { ...post("95"), region: null, region_id: null };
+    mocks.useGetOldMails.mockReturnValue(mailsResult([noRegion]));
+    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    const postMeta = { id: "95", status: "received", qr_code_token: "POST-95", createdAt: "2026-10-07T12:55:00.000Z" };
+    const order = { id: "o1", qr_code_token: "a".repeat(24) };
+    vi.spyOn(api, "get")
+      .mockResolvedValueOnce({
+        data: { data: { allOrdersByPostId: [{ ...order, district: { region: { name: "Buxoro viloyati" } } }], post: postMeta } },
+      })
+      .mockResolvedValueOnce({ data: { data: { allOrdersByPostId: [order], post: postMeta } } });
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    expect(mocks.printPostWithOrders.mock.calls[0][0]).toMatchObject({ kind: "post", id: "95", to: "Buxoro viloyati" });
+
+    // Hech qayerda viloyat yo'q — «Qayerga» chekda chiqmaydi (`to: null`), «Viloyat #» emas.
+    await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(2));
+    expect(mocks.printPostWithOrders.mock.calls[1][0].to).toBeNull();
+  });
+
+  it("warns before printing when orders have no QR token and shows a retryable error when printing fails", async () => {
+    const user = userEvent.setup();
+    mocks.printPostWithOrders.mockRejectedValueOnce(new Error("jsPDF"));
+    vi.spyOn(api, "get").mockResolvedValue({ data: { data: [{ id: "o1", qr_code_token: null }] } });
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
+    expect(await screen.findByText("1 ta buyurtmada QR yo'q")).toBeInTheDocument();
+    // Eski javobda `post` meta'si (va uning tokeni) yo'q — pochta cheki ham «QR yo'q» bilan chiqadi: oldindan aytiladi.
+    expect(await screen.findByText("Pochta chekida QR yo'q")).toBeInTheDocument();
+    expect(await screen.findByText("Chek chop etilmadi")).toBeInTheDocument();
+
+    mocks.printPostWithOrders.mockResolvedValueOnce({ orders: 1, pages: 2, jobs: 1, withoutQr: 1, delivery: ["printed"] });
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(2));
   });
 
   it("warns when the mail has no orders and reports a reprint failure", async () => {
@@ -306,7 +366,7 @@ describe("OldMails — xodim (pochtalar)", () => {
 
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
     expect(await screen.findByText("Buyurtmalar topilmadi")).toBeInTheDocument();
-    expect(mocks.printOrders).not.toHaveBeenCalled();
+    expect(mocks.printPostWithOrders).not.toHaveBeenCalled();
 
     get.mockRejectedValueOnce(new Error("boom"));
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));

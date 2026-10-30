@@ -4,9 +4,10 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
 import { OrderReturnPlace, OrderStatusBadge } from "../../../../entities/order";
+import { preloadReceiptPrinting } from "../../../../features/print-receipts";
 import PrintModeSelect from "../../../../shared/components/PrintModeSelect";
 import { cx } from "../../../../shared/lib/cx";
-import type { PrintMode } from "../lib/printMode";
+import type { OrderPrintMode } from "../lib/printMode";
 import type { OrderRowView } from "../model/useOrderRowView";
 import { useMailPrintOptions } from "./printOptions";
 
@@ -25,10 +26,13 @@ export const RowPrintButton = ({
   label,
   onSelect,
   bordered = false,
+  loading = false,
 }: {
   label: string;
-  onSelect: (mode: PrintMode) => void;
+  onSelect: (mode: OrderPrintMode) => void;
   bordered?: boolean;
+  /** Shu buyurtma cheki tayyorlanmoqda. */
+  loading?: boolean;
 }) => {
   const { t } = useTranslation("mails");
   const options = useMailPrintOptions();
@@ -36,12 +40,14 @@ export const RowPrintButton = ({
     <PrintModeSelect
       variant="icon"
       count={1}
-      onSelect={(mode) => onSelect(mode as PrintMode)}
+      onSelect={(mode) => onSelect(mode as OrderPrintMode)}
       buttonLabel={label}
       menuLabel={t("detailPage.printMenuLabel")}
       options={options}
       iconSize={bordered ? "lg" : "sm"}
       iconVariant={bordered ? "secondary" : "ghost"}
+      loading={loading}
+      onOpen={preloadReceiptPrinting}
     />
   );
 };

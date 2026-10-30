@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { RootState } from "../../app/config/store";
 import { canViewUiKit } from "../../app/lib/access";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
@@ -10,6 +10,13 @@ import en from "../../locales/en/ui.json";
 import ru from "../../locales/ru/ui.json";
 import uz from "../../locales/uz/ui.json";
 import UiKitPage from "./index";
+
+// «Cheklar va yorliqlar» namunalari (jsPDF, shriftlar) — o'z testida (`ReceiptsSection.test.tsx`); bu yerda yuklanish
+// holatida qoladi.
+vi.mock("../../features/print-receipts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../features/print-receipts")>()),
+  loadReceiptPreviews: () => new Promise(() => undefined),
+}));
 
 /**
  * `/ops/ui-kit` — dizayn v2 komponentlar to'plami: faqat superadmin, menyuda yo'q,
@@ -49,6 +56,7 @@ const SECTION_IDS = [
   "states",
   "table",
   "charts",
+  "receipts",
 ];
 
 const sectionIds = () =>
@@ -117,6 +125,7 @@ describe("UiKitPage", () => {
       "Yuklanish, bo'sh va xato holatlari",
       "Jadval va sahifalash",
       "Grafiklar",
+      "Cheklar va yorliqlar",
     ]);
   });
 
@@ -150,7 +159,7 @@ describe("UiKitPage", () => {
     expect(sectionIds()).toHaveLength(SECTION_IDS.length);
   });
 
-  it.each(["forms", "select", "date", "dialog", "feedback", "states", "table", "charts"])("?section=%s — faqat shu bo'lim", (id) => {
+  it.each(["forms", "select", "date", "dialog", "feedback", "states", "table", "charts", "receipts"])("?section=%s — faqat shu bo'lim", (id) => {
     renderWithProviders(<UiKitPage />, { route: `/ops/ui-kit?section=${id}` });
     expect(sectionIds()).toEqual([id]);
   });

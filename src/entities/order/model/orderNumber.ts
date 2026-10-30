@@ -1,7 +1,7 @@
 /**
  * MIJOZGA KO'RINADIGAN BUYURTMA RAQAMI (rwAy8Qyk). Backend har buyurtma javobida (`enrichOrders`) `order_number`
  * beradi — «EL-» + (id + 100000), masalan id 81 → «EL-100081». Yorliq va chekda shu raqam chiqadi
- * (`printLabelPdf`), shuning uchun ro'yxat va tafsilot ham shuni ko'rsatadi — yorliqdagi raqamni qator bilan
+ * (`features/print-receipts`), shuning uchun ro'yxat va tafsilot ham shuni ko'rsatadi — yorliqdagi raqamni qator bilan
  * moslab bo'ladi. Ichki `id` havolalarda (`/orders/edit/:id`) va API'da qoladi.
  *
  * `order_number` yo'q yoki bo'sh (eski / boyitilmagan javob) — zaxira ichki `id`.
