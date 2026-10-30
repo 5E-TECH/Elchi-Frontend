@@ -6261,6 +6261,177 @@
    "kind": "dialog"
   },
   {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-correctable",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · «Qaytarish» va «Summani tahrirlash» (muddat ichida)",
+   "fragment": "superadmin--payments-history-detail-dialog-correctable",
+   "order": 61.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-locked",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tuzatib bo'lmaydi (muddat tugagan, eski yozuv)",
+   "fragment": "superadmin--payments-history-detail-dialog-locked",
+   "order": 61.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tahrirlangan to'lov, «Qaytarish va tahrir» bloki",
+   "fragment": "superadmin--payments-history-detail-dialog-corrected",
+   "order": 61.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-detail-dialog-replacement",
+   "menuKey": "payments",
+   "title": "To'lov tarixi — yozuv tafsiloti · tuzatilgan to'lov (yangi yozuv) va teskari yozuv",
+   "fragment": "superadmin--payments-history-detail-dialog-replacement",
+   "order": 61.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "To'lov tarixi tafsiloti · tahrirlangan to'lov (faqat ko'rish)",
+   "fragment": "superadmin--payments-history-detail-dialog-corrected",
+   "order": 180.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · qaytarilgan to'lov (faqat ko'rish)",
+   "fragment": "manager--payments-history-detail-dialog-corrected",
+   "order": 274.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "cashbox-history-detail-dialog-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · tahrirlangan to'lov (sabab bilan)",
+   "fragment": "market--cashbox-history-detail-dialog-corrected",
+   "order": 343.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "courier",
+   "viewId": "cashbox-history-detail-corrected",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti · qaytarilgan to'lov (sabab bilan)",
+   "fragment": "courier--cashbox-history-detail-corrected",
+   "order": 373.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-dialog",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — sabab (oyna)",
+   "fragment": "superadmin--payments-history-reverse-dialog",
+   "order": 61.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-confirm",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — tasdiq",
+   "fragment": "superadmin--payments-history-reverse-confirm",
+   "order": 61.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-reverse-errors",
+   "menuKey": "payments",
+   "title": "To'lovni qaytarish — xatolar (smena yopiq, pul yetmaydi, internet yo'q …)",
+   "fragment": "superadmin--payments-history-reverse-errors",
+   "order": 61.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-dialog",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash (oyna)",
+   "fragment": "superadmin--payments-history-correct-amount-dialog",
+   "order": 61.8,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-confirm",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash — tasdiq",
+   "fragment": "superadmin--payments-history-correct-amount-confirm",
+   "order": 61.85,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-history-correct-amount-errors",
+   "menuKey": "payments",
+   "title": "Summani tahrirlash — xatolar (ko'pi bilan …, bir xil summa)",
+   "fragment": "superadmin--payments-history-correct-amount-errors",
+   "order": 61.9,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-overview-corrected",
+   "menuKey": "payments",
+   "title": "To'lovlar — umumiy · qaytarilgan va tahrirlangan to'lovlar belgilari",
+   "fragment": "superadmin--payments-overview-corrected",
+   "order": 59.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cash-detail-courier-corrected",
+   "menuKey": "payments",
+   "title": "Kuryer kassasi · qaytarilgan to'lov belgilari",
+   "fragment": "superadmin--payments-cash-detail-courier-corrected",
+   "order": 65.5,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "cashbox-my-corrected",
+   "menuKey": "payments",
+   "title": "Market kassasi · tahrirlangan to'lov belgilari",
+   "fragment": "market--cashbox-my-corrected",
+   "order": 342.1,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "cashbox-my-transfers-corrected",
+   "menuKey": "payments",
+   "title": "Kassa — Oldi-berdi · qaytarilgan to'lov belgilari",
+   "fragment": "courier--cashbox-my-transfers-corrected",
+   "order": 372.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-shift-settings-correction",
+   "menuKey": "payments",
+   "title": "Kassa smenasi sozlamalari · to'lovlarni tuzatish muddati (7 · 10 · 30 · Boshqa)",
+   "fragment": "superadmin--payments-shift-settings-correction",
+   "order": 64.96,
+   "kind": "page"
+  },
+  {
    "role": "tizim",
    "viewId": "contact-card",
    "menuKey": "contact-card",

@@ -47,6 +47,8 @@ export interface OrderItem {
     name: string;
     image_url?: string | null;
   };
+  /** Hamkor buyurtmasi: katalogda yo'q mahsulot nomi (chekda `product.name` dan keyin). */
+  product_name?: string | null;
 }
 
 /**
@@ -82,6 +84,8 @@ export type WhereDeliver = "address" | "center";
 
 export interface PostOrder {
   id: string;
+  /** «EL-100081» — BE-1 (HJ5sLHiz) dan keyin pochta qatorlarida ham keladi; yo'q — chek `№{id}` chiqaradi. */
+  order_number?: string | null;
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -92,6 +96,8 @@ export interface PostOrder {
   total_price: number;
   to_be_paid: number;
   paid_amount: number;
+  /** Mijoz onlayn to'lagan qism; kelmasa — 0 (chekdagi summa = `total_price − paid_online_amount`). */
+  paid_online_amount?: number | null;
   status: OrderStatus;
   comment: string | null;
   operator: string | null;
@@ -134,6 +140,8 @@ export interface MailDetailPost {
   order_quantity?: number;
   createdAt?: string;
   branch_id?: string | null;
+  /** Jo'natuvchi filial (BE-2, HJ5sLHiz) — pochta chekidagi «Qayerdan»; hali kelmaydi, kelmasa qator chiqmaydi. */
+  branch?: { id: string; name: string } | null;
   /** Pochtaning o'z viloyati — sarlavha va manzil filiallari uchun birlamchi manba (router state — zaxira). */
   region_id?: string | null;
   region?: { id: string; name: string } | null;

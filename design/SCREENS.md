@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **728 ta maket** (447 sahifa, 262 oyna, 19 tizim taxtasi; 613 ta fragment fayli) · kodda yo'q: **71** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
+**86 ta route** (+ qobiq) · **747 ta maket** (452 sahifa, 276 oyna, 19 tizim taxtasi; 631 ta fragment fayli) · kodda yo'q: **90** · qisman: **125** · v2 ga ko'chirilgan route: **86 / 86**
 
 ## Qanday ishlatiladi
 
@@ -84,14 +84,14 @@
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
-| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 12 | v2 |
+| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 24 | v2 |
 | `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 22 | v2 |
-| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 14 | v2 |
-| `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
+| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 16 | v2 |
+| `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 10 | v2 |
 | `/my-earnings` | Moliya | `src/pages/my-earnings/index.tsx` | market_operator (MO-2: canViewMyEarnings = hasRole('market_operator') (access.ts)) | 2 | v2 |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
 | `/payments/shifts/:id` | Moliya | `src/pages/payments/shiftReport/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 1 | v2 |
-| `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 1 | v2 |
+| `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 2 | v2 |
 | `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
 | `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 21 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
@@ -596,7 +596,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/:marketId` — Market yangi buyurtmalari — qabul (market rolida: o'z yangi buyurtmalari)
 
-- **Fayllar:** `src/pages/new_orders/components/new_orderDetail.tsx` · `src/pages/new_orders/components/newOrderReceiveRules.ts` · `src/pages/new_orders/components/lib/printLabelPdf.ts` · `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` · `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` · `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` · `src/pages/new_orders/components/marketOrders/marketOrdersModel.ts` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/components/new_orderDetail.tsx` · `src/pages/new_orders/components/newOrderReceiveRules.ts` · `src/features/print-receipts/index.ts` · `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` · `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` · `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` · `src/pages/new_orders/components/marketOrders/marketOrdersModel.ts` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -810,7 +810,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/batches/:id` — Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)
 
-- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintSheet.tsx` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
+- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintMenu.tsx` · `src/pages/batches/lib/batchReceipt.ts` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -1009,10 +1009,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments` | superadmin | `superadmin-payments-market-picker-dialog` — Berilishi kerak / Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/superadmin--payments-market-picker-dialog.html](fragments/superadmin--payments-market-picker-dialog.html) | oyna | v2 |
 | `/payments` | superadmin | `superadmin-payments-to-give-dialog` — Berilishi kerak — market tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/superadmin--payments-to-give-dialog.html](fragments/superadmin--payments-to-give-dialog.html) | oyna | v2 |
 | `/payments` | superadmin | `superadmin-payments-history-detail-dialog` — To'lov tarixi — yozuv tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/superadmin--payments-history-detail-dialog.html](fragments/superadmin--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | superadmin | `superadmin-payments-history-detail-dialog-correctable` — To'lov tarixi — yozuv tafsiloti · «Qaytarish» va «Summani tahrirlash» (muddat ichida) | [design/fragments/superadmin--payments-history-detail-dialog-correctable.html](fragments/superadmin--payments-history-detail-dialog-correctable.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-detail-dialog-locked` — To'lov tarixi — yozuv tafsiloti · tuzatib bo'lmaydi (muddat tugagan, eski yozuv) | [design/fragments/superadmin--payments-history-detail-dialog-locked.html](fragments/superadmin--payments-history-detail-dialog-locked.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-detail-dialog-corrected` — To'lov tarixi — yozuv tafsiloti · tahrirlangan to'lov, «Qaytarish va tahrir» bloki | [design/fragments/superadmin--payments-history-detail-dialog-corrected.html](fragments/superadmin--payments-history-detail-dialog-corrected.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-detail-dialog-replacement` — To'lov tarixi — yozuv tafsiloti · tuzatilgan to'lov (yangi yozuv) va teskari yozuv | [design/fragments/superadmin--payments-history-detail-dialog-replacement.html](fragments/superadmin--payments-history-detail-dialog-replacement.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-reverse-dialog` — To'lovni qaytarish — sabab (oyna) | [design/fragments/superadmin--payments-history-reverse-dialog.html](fragments/superadmin--payments-history-reverse-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-reverse-confirm` — To'lovni qaytarish — tasdiq | [design/fragments/superadmin--payments-history-reverse-confirm.html](fragments/superadmin--payments-history-reverse-confirm.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-reverse-errors` — To'lovni qaytarish — xatolar (smena yopiq, pul yetmaydi, internet yo'q …) | [design/fragments/superadmin--payments-history-reverse-errors.html](fragments/superadmin--payments-history-reverse-errors.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-correct-amount-dialog` — Summani tahrirlash (oyna) | [design/fragments/superadmin--payments-history-correct-amount-dialog.html](fragments/superadmin--payments-history-correct-amount-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-correct-amount-confirm` — Summani tahrirlash — tasdiq | [design/fragments/superadmin--payments-history-correct-amount-confirm.html](fragments/superadmin--payments-history-correct-amount-confirm.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-history-correct-amount-errors` — Summani tahrirlash — xatolar (ko'pi bilan …, bir xil summa) | [design/fragments/superadmin--payments-history-correct-amount-errors.html](fragments/superadmin--payments-history-correct-amount-errors.html) | oyna | yangi (kodda yo'q) |
+| `/payments` | superadmin | `superadmin-payments-overview-corrected` — To'lovlar — umumiy · qaytarilgan va tahrirlangan to'lovlar belgilari | [design/fragments/superadmin--payments-overview-corrected.html](fragments/superadmin--payments-overview-corrected.html) | sahifa | yangi (kodda yo'q) |
 | `/payments` | admin | `admin-payments-overview` — To'lovlar | [design/fragments/admin--payments-overview.html](fragments/admin--payments-overview.html) | sahifa | v2 |
 | `/payments` | admin | `admin-payments-to-give-dialog` — Berilishi kerak — market tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-give-dialog.html](fragments/admin--payments-to-give-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-to-receive-dialog` — Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-receive-dialog.html](fragments/admin--payments-to-receive-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-history-detail-dialog` — To'lov tarixi tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/admin--payments-history-detail-dialog.html](fragments/admin--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | admin | `admin-payments-history-detail-dialog-corrected` — To'lov tarixi tafsiloti · tahrirlangan to'lov (faqat ko'rish) | [design/fragments/superadmin--payments-history-detail-dialog-corrected.html](fragments/superadmin--payments-history-detail-dialog-corrected.html) | oyna | yangi (kodda yo'q) |
 | `/payments` | manager | `manager-payments-overview` — To'lovlar — umumiy | [design/fragments/manager--payments-overview.html](fragments/manager--payments-overview.html) | sahifa | qisman |
 | `/payments` | manager | `manager-payments-overview-shift-closed` — To'lovlar — smena yopiq<br>↳ `src/pages/payments/index.tsx`, `src/pages/payments/components/ShiftBanner.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-overview-shift-closed.html](fragments/manager--payments-overview-shift-closed.html) | sahifa | qisman |
 | `/payments` | manager | `manager-payments-courier-select-dialog` — Qabul qilish — kuryer tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/manager--payments-courier-select-dialog.html](fragments/manager--payments-courier-select-dialog.html) | oyna | v2 |
@@ -1068,6 +1080,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-market` — Market kassasi (to'lov berish) | [design/fragments/superadmin--payments-cash-detail-market.html](fragments/superadmin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch` — Filial kassasi (filialdan qabul) | [design/fragments/superadmin--payments-cash-detail-branch.html](fragments/superadmin--payments-cash-detail-branch.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch-shift-closed` — Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | [design/fragments/superadmin--payments-cash-detail-branch-shift-closed.html](fragments/superadmin--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-courier-corrected` — Kuryer kassasi · qaytarilgan to'lov belgilari | [design/fragments/superadmin--payments-cash-detail-courier-corrected.html](fragments/superadmin--payments-cash-detail-courier-corrected.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-courier` — Kuryer kassasi | [design/fragments/admin--payments-cash-detail-courier.html](fragments/admin--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-market` — Market kassasi | [design/fragments/admin--payments-cash-detail-market.html](fragments/admin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-branch` — Filial kassasi (HQ qabul) | [design/fragments/admin--payments-cash-detail-branch.html](fragments/admin--payments-cash-detail-branch.html) | sahifa | v2 |
@@ -1078,6 +1091,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-ack` — Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri»<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/manager--payments-history-detail-dialog-ack.html](fragments/manager--payments-history-detail-dialog-ack.html) | oyna | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch-shift-closed` — Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-cash-detail-branch-shift-closed.html](fragments/manager--payments-cash-detail-branch-shift-closed.html) | sahifa | qisman |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-shift-closed` — Kassa tafsiloti — kuryerdan qabul · smena yopiq<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-cash-detail-courier-shift-closed.html](fragments/manager--payments-cash-detail-courier-shift-closed.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-corrected` — Tranzaksiya tafsiloti · qaytarilgan to'lov (faqat ko'rish) | [design/fragments/manager--payments-history-detail-dialog-corrected.html](fragments/manager--payments-history-detail-dialog-corrected.html) | oyna | yangi (kodda yo'q) |
 
 #### `/cash-box` — O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)
 
@@ -1093,11 +1107,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/cash-box` | manager | — Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch. | — | — | v2 |
 | `/cash-box` | market | `market-cashbox-my` — Market kassasi | [design/fragments/market--cashbox-my.html](fragments/market--cashbox-my.html) | sahifa | v2 |
 | `/cash-box` | market | `market-cashbox-history-detail-dialog` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/market--cashbox-history-detail-dialog.html](fragments/market--cashbox-history-detail-dialog.html) | oyna | v2 |
+| `/cash-box` | market | `market-cashbox-history-detail-dialog-corrected` — Tranzaksiya tafsiloti · tahrirlangan to'lov (sabab bilan) | [design/fragments/market--cashbox-history-detail-dialog-corrected.html](fragments/market--cashbox-history-detail-dialog-corrected.html) | oyna | yangi (kodda yo'q) |
+| `/cash-box` | market | `market-cashbox-my-corrected` — Market kassasi · tahrirlangan to'lov belgilari | [design/fragments/market--cashbox-my-corrected.html](fragments/market--cashbox-my-corrected.html) | sahifa | yangi (kodda yo'q) |
 | `/cash-box` | market_operator | — Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» (/my-earnings, MO-2). | — | — | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-all` — Kassa — Barcha tarix | [design/fragments/courier--cashbox-my-all.html](fragments/courier--cashbox-my-all.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-transfers` — Kassa — Oldi-berdi | [design/fragments/courier--cashbox-my-transfers.html](fragments/courier--cashbox-my-transfers.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-history-detail` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/courier--cashbox-history-detail.html](fragments/courier--cashbox-history-detail.html) | oyna | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-transfers-ack` — Kassa — Oldi-berdi · kvitansiya javobi<br>↳ `src/pages/payments/components/MyCashboxPage.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/courier--cashbox-my-transfers-ack.html](fragments/courier--cashbox-my-transfers-ack.html) | sahifa | v2 |
+| `/cash-box` | courier | `courier-cashbox-history-detail-corrected` — Tranzaksiya tafsiloti · qaytarilgan to'lov (sabab bilan) | [design/fragments/courier--cashbox-history-detail-corrected.html](fragments/courier--cashbox-history-detail-corrected.html) | oyna | yangi (kodda yo'q) |
+| `/cash-box` | courier | `courier-cashbox-my-transfers-corrected` — Kassa — Oldi-berdi · qaytarilgan to'lov belgilari | [design/fragments/courier--cashbox-my-transfers-corrected.html](fragments/courier--cashbox-my-transfers-corrected.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/my-earnings` — Daromadim — market operatorining komissiya hisobi (MO-2)
 
@@ -1163,6 +1181,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings` — Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | [design/fragments/superadmin--payments-shift-settings.html](fragments/superadmin--payments-shift-settings.html) | sahifa | v2 |
+| `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings-correction` — Kassa smenasi sozlamalari · to'lovlarni tuzatish muddati (7 · 10 · 30 · Boshqa) | [design/fragments/superadmin--payments-shift-settings-correction.html](fragments/superadmin--payments-shift-settings-correction.html) | sahifa | yangi (kodda yo'q) |
 
 #### `(taklif) /ai-assistant` — AI moliyaviy yordamchi (taklif — kodda yo'q)
 
@@ -2082,7 +2101,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-252 ta maket · kodda bor: 227 · kodda yo'q: 25
+265 ta maket · kodda bor: 227 · kodda yo'q: 38
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2328,6 +2347,19 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-edit-dialog-barcode` | Mahsulotni tahrirlash — shtrix kod va QR stiker (popup) | oyna | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `superadmin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish — asosiy narx, har kg narxi, kuchga kirish sanasi (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `superadmin-payments-history-detail-dialog-correctable` | To'lov tarixi — yozuv tafsiloti · «Qaytarish» va «Summani tahrirlash» (muddat ichida) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: FinanceHistoryDetailPopup footer — canCorrectPayments + correctable.allowed → «Summani tahrirlash» (secondary), «Qaytarish» (danger-soft), muddat izohi. |
+| `superadmin-payments-history-detail-dialog-locked` | To'lov tarixi — yozuv tafsiloti · tuzatib bo'lmaydi (muddat tugagan, eski yozuv) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: correctable.allowed = false → tugmalar o'rnida izoh (WINDOW_EXPIRED «Muddat tugagan: {sana}», LEGACY_UNLINKED «Eski yozuv», NOT_CORRECTABLE). |
+| `superadmin-payments-history-detail-dialog-corrected` | To'lov tarixi — yozuv tafsiloti · tahrirlangan to'lov, «Qaytarish va tahrir» bloki | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: «Qaytarish va tahrir» bloki (amal, sana, kim, sabab, eski → yangi, bog'liq yozuvlar) — barcha rollarga. |
+| `superadmin-payments-history-detail-dialog-replacement` | To'lov tarixi — yozuv tafsiloti · tuzatilgan to'lov (yangi yozuv) va teskari yozuv | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: correction.role = replacement («Tuzatilgan», yana tuzatsa bo'ladi — muddat zanjirning birinchi to'lovidan) va reversal («Teskari yozuv», NOT_CORRECTABLE). |
+| `superadmin-payments-history-reverse-dialog` | To'lovni qaytarish — sabab (oyna) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: features/payment-correction ReversePaymentDialog (Dialog, xulosa, «Sabab» 5–500). |
+| `superadmin-payments-history-reverse-confirm` | To'lovni qaytarish — tasdiq | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: useConfirm({ tone: "danger", amount, transfer, consequences, confirmLabel: "Qaytarish" }). |
+| `superadmin-payments-history-reverse-errors` | To'lovni qaytarish — xatolar (smena yopiq, pul yetmaydi, internet yo'q …) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: xato tasdiq oynasida qoladi (SHIFT_REQUIRED, INSUFFICIENT_BALANCE, CARD_ARCHIVED, ALREADY_CORRECTED, WINDOW_EXPIRED, oflayn). |
+| `superadmin-payments-history-correct-amount-dialog` | Summani tahrirlash (oyna) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: features/payment-correction CorrectAmountDialog (joriy summa, «To'g'ri summa», farq, «Sabab»). |
+| `superadmin-payments-history-correct-amount-confirm` | Summani tahrirlash — tasdiq | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: useConfirm({ confirmLabel: "Tahrirlash", rows, consequences }). |
+| `superadmin-payments-history-correct-amount-errors` | Summani tahrirlash — xatolar (ko'pi bilan …, bir xil summa) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: AMOUNT_EXCEEDS «Ko'pi bilan {max}», SAME_AMOUNT, oflayn. |
+| `superadmin-payments-overview-corrected` | To'lovlar — umumiy · qaytarilgan va tahrirlangan to'lovlar belgilari | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: patmentHistoryTable — 4 belgi (Qaytarildi, Tahrirlangan, Teskari yozuv, Tuzatilgan) jadvalda va telefon kartalarida. |
+| `superadmin-payments-cash-detail-courier-corrected` | Kuryer kassasi · qaytarilgan to'lov belgilari | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: PaymentHistoryList — «Qaytarildi» va «Teskari yozuv». |
+| `superadmin-payments-shift-settings-correction` | Kassa smenasi sozlamalari · to'lovlarni tuzatish muddati (7 · 10 · 30 · Boshqa) | sahifa | `/payments/shift-settings` | `src/pages/payments/shiftSettings/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: «To'lovlarni tuzatish muddati» kartasi (GET/PATCH finance/payment-corrections/settings), sahifadagi yagona «Saqlash». |
 | `superadmin-users-list-responsibles-entry` | Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — UserListPage sarlavhasida ikkilamchi «Market mas'ullari» (faqat superadmin, admin). |
 | `superadmin-users-market-responsibles` | Market mas'ullari | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — sukut mas'ul + 2 umumiy raqam, xodimlar (market_count), marketlar DataTable (tanlov, qidiruv, «Barchasi · Shu xodimda · Sukutda», «Mas'ul», Pagination), ommaviy amallar. |
 | `superadmin-users-market-responsibles-empty` | Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — default_market_responsible null, support_phones [], barcha marketlar «Belgilanmagan». |
@@ -2341,7 +2373,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-167 ta maket · kodda bor: 154 · kodda yo'q: 13
+168 ta maket · kodda bor: 154 · kodda yo'q: 14
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2503,6 +2535,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-warehouse-stock-in-dialog` | Omborga mahsulot qo'shish — kirim (popup) | oyna | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
 | `admin-regions-delivery-tariffs` | Yetkazish tariflari — har kg narxi, qo'shimcha haq chegarasi, kalkulyator | sahifa | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
 | `admin-regions-delivery-tariff-edit-dialog` | Tarifni o'zgartirish (popup) | oyna | `/delivery-tariffs` | `src/pages/delivery-tariffs/index.tsx` | v2 |
+| `admin-payments-history-detail-dialog-corrected` | To'lov tarixi tafsiloti · tahrirlangan to'lov (faqat ko'rish) | oyna | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: adminda blok va belgilar, amal yo'q (superadmin fragmenti). |
 | `admin-users-list-responsibles-entry` | Foydalanuvchilar ro'yxati — «Market mas'ullari» tugmasi | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti). |
 | `admin-users-market-responsibles` | Market mas'ullari | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham (superadmin fragmenti). |
 | `admin-users-market-responsibles-empty` | Market mas'ullari — sukut va umumiy raqam belgilanmagan (birinchi sozlash) | sahifa | `(taklif) /all-users/market-responsibles` | — | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F4 — admin ham. |
@@ -2515,7 +2548,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-90 ta maket · kodda bor: 83 · kodda yo'q: 7
+91 ta maket · kodda bor: 83 · kodda yo'q: 8
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2606,6 +2639,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `manager-users-create-courier-district` | Yangi xodim — kuryer, «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `manager-warehouse-detail` | Filial ombori — qoldiq va ombordan ketadigan buyurtmalar (faqat ko'rish) | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
+| `manager-payments-history-detail-dialog-corrected` | Tranzaksiya tafsiloti · qaytarilgan to'lov (faqat ko'rish) | oyna | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: filial kassasida «Qaytarildi» va blok; amal yo'q. |
 | `manager-branch-dashboard-contacts` | Filial paneli — «Viloyatingiz logisti» kartasi | sahifa | `/branch-dashboard` | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard BranchDashboardPage da — sarlavhadan keyin. |
 | `manager-orders-detail-contacts` | Buyurtma tafsiloti — «Muammo bo'lsa» qatori, market telefonisiz | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa». |
 | `manager-new-orders-markets-no-phone` | Qabul va yaratish — Marketlar (telefon ustunisiz) | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 — menejerda market telefoni ustuni/qatori yo'q (markets/index.tsx, SourceListCard, MarketPicker, SelectMarketDialog). |
@@ -2673,7 +2707,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-39 ta maket · kodda bor: 31 · kodda yo'q: 8
+41 ta maket · kodda bor: 31 · kodda yo'q: 10
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2713,6 +2747,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-products-warehouse-stock` | Mahsulotlar — omborlardagi qoldiq | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
+| `market-cashbox-history-detail-dialog-corrected` | Tranzaksiya tafsiloti · tahrirlangan to'lov (sabab bilan) | oyna | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: marketga «Tahrirlangan» va blok (sabab ko'rinadi). |
+| `market-cashbox-my-corrected` | Market kassasi · tahrirlangan to'lov belgilari | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: MyCashboxPage (market) — «Tahrirlangan», «Teskari yozuv», «Tuzatilgan». |
 | `market-dashboard-home-contacts` | Bosh sahifa — «Elchi mas'ulingiz» kartasi | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx + src/shared/ui/Forbidden.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard MarketDashboardPage da (market_operator — operator rejimida ham) — KPI qatoridan keyin. |
 | `market-profile-contacts` | Profil — «Elchi mas'ulingiz» kartasi | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (market, market_operator). |
 | `market-orders-detail-contacts` | Buyurtma tafsilotlari — «Elchi mas'ulingiz» qatori | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — market/market_operator'da «Muammo bo'lsa» o'rnida «Elchi mas'ulingiz» (/users/me/contacts). |
@@ -2731,7 +2767,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-59 ta maket · kodda bor: 52 · kodda yo'q: 7
+61 ta maket · kodda bor: 52 · kodda yo'q: 9
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2788,6 +2824,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 | `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/features/pwa-install/ui/InstallAppCard.tsx` | v2 |
 | `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/features/pwa-install/ui/IosInstallDialog.tsx` | v2 |
+| `courier-cashbox-history-detail-corrected` | Tranzaksiya tafsiloti · qaytarilgan to'lov (sabab bilan) | oyna | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: kuryerga «Qaytarildi» va blok (sabab ko'rinadi). |
+| `courier-cashbox-my-transfers-corrected` | Kassa — Oldi-berdi · qaytarilgan to'lov belgilari | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | yangi (kodda yo'q) — T6 (Env2iYq1) pul qaytarish / summani tahrirlash — kodda yo'q: MyCashboxPage (kuryer, «Oldi-berdi» tabi payment_reversal ni ham ko'rsatadi) — «Qaytarildi», «Teskari yozuv». |
 | `courier-dashboard-home-contacts` | Bosh sahifa — «Viloyatingiz logisti» kartasi | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx + src/shared/ui/Forbidden.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard (useMyContacts, GET /users/me/contacts) — KPI qatoridan keyin. |
 | `courier-profile-contacts` | Profil — «Viloyatingiz logisti» kartasi | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F3 ContactCard ProfilePage da (kuryer, menejer). |
 | `courier-orders-detail-contacts` | Buyurtma tafsilotlari — «Muammo bo'lsa» qatori, market telefonisiz | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — T7 (eRhiuIVj) aloqa raqamlari — kodda yo'q: F2 OrderMeta — «Market» qatorida telefon yo'q, yangi «Muammo bo'lsa» (Headset, problem_contacts, tel:). |
@@ -2880,7 +2918,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-motion` | Harakat, fokus va kirish qulayligi | Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi. | src/index.css (:focus-visible, animatsiyalar), docs/DESIGN_SYSTEM.md §9 | barcha sahifalar |
 | `tizim-shift-report-messages` | Smena hisoboti — Telegram va tizim xabarlari | Smena yopilganda (qo'lda yoki avtomatik) superadmin, kuryer va marketga Telegram va tizim orqali yuboriladigan xabarlar: matnlar, ilova (PDF/Excel), avtomatik yopilganda variant, hodisa → qabul qiluvchi → kanal jadvali. | taklif — kodda yo'q (notification-service finance.shift_closed / finance.shift_auto_closed) | barcha sahifalar |
 | `tizim-scan-feedback` | Skaner natijasi — to'liq ekran rang effekti va ovozlar | Skaner natijasi: to'liq ekran yashil / sariq / qizil qatlam (telefon, kamera, desktop USB), vaqt va harakat, reduced-motion, yangi ovozlar va tebranish spetsifikatsiyasi, holat → rang qoidalari. | src/shared/lib/scanner/feedback.ts, src/shared/components/ScanFeedbackOverlay.tsx, src/shared/ui/camera/ (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
-| `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/pages/new_orders/components/lib/printLabelPdf.ts, src/pages/batches/ui/BatchPrintSheet.tsx, src/pages/mails/detail/lib/printMode.ts (o'zgarishi kerak — ega tasdig'idan keyin) | barcha sahifalar |
+| `tizim-receipts` | Chek va paket cheki — yangi dizayn | Buyurtma cheki (termal 100×60 mm), paket cheki, A4 varaq (12 ta), chop etish qoidalari (shrift, QR, qisqartirish), hozir → yangi farqlari. | src/features/print-receipts (HJ5sLHiz: buyurtma cheki termal 100×60 va A4, paket / pochta cheki termal va A5, lokal QR); kirish nuqtalari — src/pages/new_orders/components/new_orderDetail.tsx, src/pages/mails/detail/lib/printMode.ts, src/pages/mails/components/oldMails.tsx, src/pages/batches/ui/BatchDetailPage.tsx | barcha sahifalar |
 | `tizim-product-labels` | Mahsulot stikeri — QR va shtrix kod (40×30, 58×40) | Mahsulot stikeri: Elchi kodi ELC-P-… (QR) va zavod shtrix kodi (EAN-13), 40×30 va 58×40 mm termal yorliq, chop etish va skanerlash qoidalari. | src/pages/products/model/productLabelPrint.ts (mahsulot tahririda «QR stiker chop etish», yXC91RRx) | barcha sahifalar |
 | `tizim-contact-card` | Aloqa kartasi va «Muammo bo'lsa» — holatlar | Aloqa kartasi (ContactCard): «Viloyatingiz logisti» (kuryer, menejer) va «Elchi mas'ulingiz» (market, market operatori) — anatomiya, joylar (bosh sahifa, profil, profil menyusi), holatlar (to'liq, bir nechta raqam, umumiy raqam, belgilanmagan, yuklanish, xato, oflayn «Oxirgi ma'lumot», nusxalandi); buyurtma tafsilotidagi «Muammo bo'lsa» / «Elchi mas'ulingiz» qatori; kim nimani ko'radi (market telefoni menejer, filial va kuryerga yo'q). | src/entities/contacts (useMyContacts, ContactCard — yangi), src/widgets/order-meta/ui/OrderMeta.tsx, src/widgets/header/ui/UserMenu.tsx (taklif), locales */common.json → contacts.* | `/`, `/branch-dashboard`, `/orders/edit/:orderId`, `/profile` |
 | `tizim-receipts-contact` | Chek — «Muammo bo'lsa» raqami (viloyat logisti) | Chekdagi «Muammo bo'lsa»: buyurtma viloyati logist(lar)i raqami (1–2 ta, «, » bilan) → umumiy raqamlar; ikkalasi ham yo'q — o'ng qism chiqmaydi («-» yozilmaydi); market va operator raqami yorliqqa chiqmaydi; 100×60 va A4 (12 ta) namunalari. | src/pages/new_orders/components/lib/receiptContact.ts (getReceiptContactPhone → problem_contacts), printLabelPdf.ts, src/pages/mails/detail/lib/printMode.ts | barcha sahifalar |
@@ -2938,6 +2976,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
+| `src/features/print-receipts/index.ts` | `/new-orders/:marketId` |
 | `src/features/push-notifications/ui/PushExplainDialog.tsx` | `/inbox` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
 | `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | `/settings` |
@@ -2963,11 +3002,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/activity-logs/index.tsx` | `/activity-logs` |
 | `src/pages/batches/lib/batchFormat.ts` | `/batches` |
 | `src/pages/batches/lib/batchOrderMailAdapter.ts` | `/batches/:id` |
+| `src/pages/batches/lib/batchReceipt.ts` | `/batches/:id` |
 | `src/pages/batches/model/batchView.ts` | `/batches` |
 | `src/pages/batches/ui/BatchDetailPage.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchHistoryCard.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchInfoCard.tsx` | `/batches/:id` |
-| `src/pages/batches/ui/BatchPrintSheet.tsx` | `/batches/:id` |
+| `src/pages/batches/ui/BatchPrintMenu.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchQrCard.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchQrCode.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchesPage.tsx` | `/batches` |
@@ -3155,7 +3195,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/editDialogs/index.ts` | `/orders/edit/:orderId` |
-| `src/pages/new_orders/components/lib/printLabelPdf.ts` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` | `/new-orders/:marketId` |
@@ -3500,7 +3539,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
-| To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+3) |
+| To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+14) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
 | Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
@@ -3524,7 +3563,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |
-| To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+3) |
+| To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+4) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
@@ -3569,7 +3608,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+1) |
-| To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+1) |
+| To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+3) |
 | Operatorlar | `operators` | `/market-operators` | `/market-operators` | — | `market-operators-list` (+7) |
 
 ### market_operator — Market operatori
@@ -3590,7 +3629,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+11) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
-| Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+3) |
+| Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+5) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `courier-regions-scoped` |
 
 ### logist — Logist

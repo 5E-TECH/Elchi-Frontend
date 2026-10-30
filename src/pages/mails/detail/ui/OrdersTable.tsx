@@ -21,7 +21,7 @@ import {
 } from "../../../../shared/ui/primitives";
 import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
 import { SelectionRegion } from "../../../../shared/ui/SelectionRegion";
-import type { PrintMode } from "../lib/printMode";
+import type { OrderPrintMode } from "../lib/printMode";
 import { orderRowDate, useOrderRowView } from "../model/useOrderRowView";
 import OrderRow, { RowPrintButton } from "./OrderRow";
 
@@ -94,7 +94,9 @@ interface OrdersTableProps {
   someSelected: boolean;
   onToggleAll: () => void;
   onToggleOne: (id: string) => void;
-  onPrintOne?: (order: PostOrder, mode: PrintMode) => void;
+  onPrintOne?: (order: PostOrder, mode: OrderPrintMode) => void;
+  /** Cheki tayyorlanayotgan qator — uning chop etish tugmasi `loading`. */
+  printingOrderId?: string | null;
   onDeleteOne?: (orderId: string) => void;
   canDelete?: boolean;
   variant?: "default" | "history";
@@ -199,6 +201,7 @@ const OrdersTable = memo(
     onToggleAll,
     onToggleOne,
     onPrintOne,
+    printingOrderId = null,
     onDeleteOne,
     canDelete = false,
     variant = "default",
@@ -293,12 +296,13 @@ const OrdersTable = memo(
               label={rowPrintLabel(order)}
               onSelect={(mode) => onPrintOne(order, mode)}
               bordered={isCourierCard && isPhone}
+              loading={printingOrderId === order.id}
             />
           ) : null}
           {deleteButton(order)}
         </>
       ),
-      [deleteButton, isCourierCard, isPhone, onPrintOne, rowPrintLabel],
+      [deleteButton, isCourierCard, isPhone, onPrintOne, printingOrderId, rowPrintLabel],
     );
 
     const duplicateBadge = useCallback(

@@ -84,8 +84,9 @@ describe("palette guard", () => {
  *  UserDetailWidget o'chdi, TransferCourierButton v2; `pages/scan/index.tsx` (kamera ishi) qo'shildi; integratsiya: 2 —
  *  iste'molchisiz v1 `ExtraCostApproval.tsx` o'chirildi; skaner 1-bosqich: 1 — `pages/scan/index.tsx` v2 ga o'tdi). */
 const MAX_PENDING = 1;
-/** OUTPUT_FORMAT_FILES o'lchami — faqat kamaytiring (dev birlashmasida exportOrdersToExcel.ts o'chdi: 5 → 4). */
-const MAX_OUTPUT_FORMAT = 4;
+/** OUTPUT_FORMAT_FILES o'lchami — faqat kamaytiring (dev birlashmasida exportOrdersToExcel.ts o'chdi: 5 → 4; HJ5sLHiz:
+ *  `printLabelPdf.ts` va `printMode.ts` chiqdi, chekning yagona HTML chiqishi `printReceiptHtml.ts` kirdi: 4 → 3). */
+const MAX_OUTPUT_FORMAT = 3;
 /** `src` dagi stil fayllari — faqat qisqaradi: v2 CSS modul/SCSS yozmaydi (Tailwind + tokenlar). `index.css` —
  *  tokenlar manbai (v1 `Table.module.css` Table bilan birga o'chirildi). */
 const STYLE_FILE_ALLOWLIST = ["src/index.css"];

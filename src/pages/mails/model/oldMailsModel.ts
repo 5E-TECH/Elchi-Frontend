@@ -1,5 +1,5 @@
 import type { Batch, BatchStatus } from "../../../entities/batch";
-import type { GetOldMailsParams } from "../../../entities/mails";
+import type { GetOldMailsParams, MailDetailData } from "../../../entities/mails";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
 
 /**
@@ -413,6 +413,16 @@ export const summarizeOldMails = (items: readonly OldMailSource[]) =>
     }),
     { count: 0, orders: 0, amount: 0 },
   );
+
+/**
+ * Pochta javobi (`GET post/orders/:id`) → pochtaning o'z ma'lumoti va jamlari (`post`, `homeOrders`, `centerOrders`) —
+ * pochta cheki uchun (HJ5sLHiz). Eski backend (massiv javob) — `null`.
+ */
+export const readPostDetail = (value: unknown): MailDetailData | null => {
+  const data = (value as { data?: unknown } | null)?.data;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  return data as MailDetailData;
+};
 
 /** Pochta javobi (`GET post/orders/:id`) → buyurtmalar (chekni qayta chiqarish; v1 `getPostOrders`). */
 export const readPostOrders = <T>(value: unknown): T[] => {

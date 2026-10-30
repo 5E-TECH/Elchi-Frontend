@@ -150,10 +150,15 @@
       "label": "PDF yorliq (100×60 mm)",
       "hint": "PDF fayl yangi oynada ochiladi"
     },
-    "thermal": {
-      "label": "Termal printer (80mm)",
-      "hint": "Receipt format"
-    }
+    "a4": {
+      "label": "A4 varaq (12 ta)",
+      "hint": "Ofis printeri · bir varaqda 12 ta chek"
+    },
+    "postReceipt": {
+      "label": "Pochta cheki",
+      "hint": "Pochta qopi uchun chek (100×60 mm)"
+    },
+    "selectFirst": "Avval buyurtmalarni tanlang"
   },
   "detailFullInfo": "To'liq ma'lumot",
   "detailOrderId": "Order ID",
@@ -186,9 +191,11 @@
     "printMenuLabel": "Chop etish usuli",
     "printMenuTitle": "{{value}} ta tanlangan buyurtma",
     "printMenuTitleLabels": "{{value}} ta tanlangan buyurtma yorlig'i",
+    "printMenuTitleNone": "Buyurtma tanlanmagan",
     "printAllMenuTitle": "Barcha {{value}} ta buyurtma yorlig'i",
     "printSheetTitle": "Chop etish",
     "printSheetDescription": "{{value}} ta tanlangan buyurtma yorlig'i chop etiladi",
+    "printSheetDescriptionNone": "Pochta chekini hozir chop etish mumkin; buyurtma yorliqlari uchun avval buyurtmalarni tanlang",
     "printAllSheetDescription": "Barcha {{value}} ta buyurtma yorlig'i chop etiladi",
     "printRow": "№{{id}} ni chop etish",
     "printRowLabel": "№{{id}} yorlig'ini chop etish",
@@ -304,9 +311,5 @@
       "rowBadge": "Takroriy raqam",
       "rowBadgeTitle": "Shu raqamga yana: {{ids}}"
     }
-  },
-  "receipt": {
-    "contact": "Muammo bo'lsa",
-    "courier": "Kuryer"
   }
 }
