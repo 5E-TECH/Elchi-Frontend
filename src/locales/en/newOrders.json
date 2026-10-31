@@ -648,6 +648,12 @@
       "switcherMeta": "{{value}}"
     }
   },
+  "orderQr": {
+    "title": "QR code",
+    "image": "QR code of order {{id}}",
+    "hint": "If the label is lost, scan this code",
+    "printTitle": "Order label"
+  },
   "orderEdit": {
     "backToNewOrders": "Intake and creation",
     "editOpenTitle": "Editing is open.",

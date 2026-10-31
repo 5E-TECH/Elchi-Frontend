@@ -379,7 +379,7 @@
         "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — tahrirlash, «To'lov» kartasi, amallar yo'q; «Kuzatuv» (GET /orders/:id/tracking) birinchi, «Hozir qayerda» qatori. GET /orders/:id (assertCanViewOrder) va /tracking (@Roles) logistga hozir 403 — backend kerak.",
         "market_operator": "Maket yo'q — eng yaqini: market-orders-detail. Kodda (MO-3): market ko'rinishi (getOrderDetailAccess → layout market), faqat o'qish — tahrirlash, sotish / bekor, qaytarish va topshirish yo'q; «Buyurtma ma'lumotlari» da faqat market tarifi (backend proyeksiyasi market bilan bir xil). «Kuzatuv» va «Qaytarish yo'li» yo'q — GET orders/:id/tracking @Roles da MARKET_OPERATOR yo'q (403); bekor QR sahifasi — faqat market egasi."
       },
-      "note": "Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi."
+      "note": "Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi. QR va yorliq (TzfF0bmQ; tafsilot maketlarida yo'q — eng yaqini: QR kartasi *-batches-detail, menyu courier-mails-detail-print-menu; joyini ega hali tasdiqlamagan): «To'lov» kartasidan keyin «QR kod» (qr_code_token yo'q — karta yo'q), sarlavhada «Chop etish» — brauzer yoki PDF 100×60 mm. Xodimlar va market; kuryerda yo'q."
     },
     {
       "path": "/new-orders",

@@ -671,6 +671,12 @@
       "switcherMeta": "{{value}} шт."
     }
   },
+  "orderQr": {
+    "title": "QR-код",
+    "image": "QR-код заказа {{id}}",
+    "hint": "Если этикетка потеряна, отсканируйте этот код",
+    "printTitle": "Этикетка заказа"
+  },
   "orderEdit": {
     "backToNewOrders": "Приём и создание",
     "editOpenTitle": "Редактирование открыто.",
