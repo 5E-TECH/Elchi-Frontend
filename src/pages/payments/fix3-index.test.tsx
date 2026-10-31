@@ -167,17 +167,27 @@ describe("FE-PAY-13 — 'Berilishi kerak' lists blocked markets that are still o
     };
     open(superadmin);
 
-    await userEvent.setup().click(screen.getByText("Berilishi kerak"));
+    const user = userEvent.setup();
+    await user.click(screen.getByText("Berilishi kerak"));
     const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
 
     expect(page.marketParams.at(-1)).not.toHaveProperty("status");
-    expect(rowKeys(dialog)).toEqual(["201", "202", "204"]);
+    // Spt8Cj7m: faol, 0 qoldiqli market sukut bo'yicha ko'rinmaydi.
+    expect(rowKeys(dialog)).toEqual(["201", "202"]);
     const blockedRow = within(dialog).getByRole("option", { name: /Kimdur/ });
     expect(within(blockedRow).getByText("Nofaol")).toBeInTheDocument();
     const activeRow = within(dialog).getByRole("option", { name: /Yandex/ });
     expect(within(activeRow).queryByText("Nofaol")).not.toBeInTheDocument();
     // Izoh: musbat summali marketlar soni va jami (bloklanganniki ham — puli bor).
     expect(within(dialog).getByText("2 ta market, jami 1 300 000 so'm")).toBeInTheDocument();
+
+    // Qidiruvda faol 0 qoldiqli market topiladi, bloklangan 0 qoldiqli — yo'q.
+    const search = within(dialog).getByRole("combobox");
+    await user.type(search, "Yangi");
+    expect(rowKeys(dialog)).toEqual(["204"]);
+    await user.clear(search);
+    await user.type(search, "Eski");
+    expect(within(dialog).queryByRole("option")).not.toBeInTheDocument();
   });
 });
 

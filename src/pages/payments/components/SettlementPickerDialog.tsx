@@ -40,6 +40,8 @@ import {
  * Ma'lumot faqat oyna ochiqligida: receive/courier — `useReceiveOptions` (`status=active` YO'Q, FE-PAY-13 —
  * bloklangan, lekin puli qolgan qator «Nofaol» belgisi bilan chiqadi); give — `GET /markets?limit=10000`
  * (`status` YO'Q, puli yo'q bloklangan market chiqmaydi). Tanlov navigatsiyasini chaqiruvchi qiladi.
+ *
+ * Maketdan farq (Spt8Cj7m, TC matni): «Berilishi kerak» da 0 so'mli market sukut bo'yicha ko'rinmaydi, faqat qidiruvda.
  */
 
 export type SettlementPickerKind = "receive" | "give" | "courier";
@@ -237,7 +239,12 @@ const SettlementPickerDialog = ({
     });
   }, [isMarketList, kind, marketsQuery.data, receive.options, t]);
 
-  const visible = useMemo(() => rows.filter((row) => matchesQuery(row, query)), [query, rows]);
+  const searching = query.trim() !== "";
+  // «Berilishi kerak» (Spt8Cj7m): 0 qoldiqli market sukut bo'yicha chiqmaydi, qidirilsa topiladi — kassasi ochiladi.
+  const visible = useMemo(
+    () => rows.filter((row) => (searching ? matchesQuery(row, query) : !isMarketList || row.amount !== 0)),
+    [isMarketList, query, rows, searching],
+  );
   // Guruhlar tartibi: avval filiallar, so'ng HQ kuryerlari; har guruh ichida — summa bo'yicha kamayish.
   const ordered = useMemo(
     () =>
@@ -398,7 +405,7 @@ const SettlementPickerDialog = ({
     );
   } else if (isError) {
     stateContent = <ErrorState title={t("v2Picker.loadError")} onRetry={retry} />;
-  } else if (rows.length === 0) {
+  } else if (rows.length === 0 || (ordered.length === 0 && !searching)) {
     stateContent = <EmptyState icon={Wallet} title={t("v2Picker.empty")} />;
   } else if (ordered.length === 0) {
     stateContent = <EmptyState icon={SearchX} title={t("v2Picker.noResults")} />;
