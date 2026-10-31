@@ -73,6 +73,8 @@ export const API_ENDPOINTS = {
     BASE: "markets", // GET list / POST create
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
+    // PATCH { extra_cost_enabled?, extra_cost_requires_approval? } — w2bDrE3i, faqat superadmin va admin
+    EXTRA_COST: (id: string | number) => `admin/markets/${id}`,
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
     // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
     // superadmin, admin, market — faqat o'zinikini)
