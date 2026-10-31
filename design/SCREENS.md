@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **127** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **128** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -1862,7 +1862,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign` — SMS — Kampaniya | [design/fragments/superadmin--notifications-sms-campaign.html](fragments/superadmin--notifications-sms-campaign.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-confirm-dialog` — SMS kampaniyani tasdiqlash | [design/fragments/superadmin--notifications-sms-campaign-confirm-dialog.html](fragments/superadmin--notifications-sms-campaign-confirm-dialog.html) | oyna | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | v2 |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | qisman |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-segment` — SMS — Kampaniya: mijozlar segmenti va yuborish vaqti<br>↳ `src/pages/notifications/ui/CampaignPage.tsx` | [design/fragments/superadmin--notifications-sms-campaign-segment.html](fragments/superadmin--notifications-sms-campaign-segment.html) | sahifa | qisman |
 | `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | v2 |
@@ -2230,7 +2230,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-sms-campaign` | SMS — Kampaniya | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-campaign-confirm-dialog` | SMS kampaniyani tasdiqlash | oyna | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
-| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | qisman — Maketda yo'q «Oylar bo'yicha» kartasi qo'shilgan (eng yaqini «Kunlar bo'yicha»): tanlangan davrdagi kun qatorlaridan. Karta FaFN0Pux TC matni bo'yicha, joyini ega tasdiqlashi kerak. |
 | `superadmin-notifications-sms-settings` | SMS — Sozlamalar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
