@@ -592,3 +592,4 @@ export const useCashBox = () => {
 };
 
 export * from "./shiftAccountCheck";
+export * from "./receipt";

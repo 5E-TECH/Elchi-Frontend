@@ -1342,5 +1342,69 @@
       "expenseStep": "Chiqim",
       "flowAria": "{{range}}: {{steps}}"
     }
+  },
+  "receipt": {
+    "field": {
+      "label": "Chek rasmi",
+      "settings": "Sozlamalar",
+      "upload": "Chek rasmini yuklash",
+      "formats": "JPG, PNG yoki WEBP · 5 MB gacha",
+      "pickAnother": "Bosing va boshqa rasm tanlang",
+      "hint": "Saqlangach AI chekdagi summani kiritilgan summa bilan solishtiradi",
+      "aiOff": "AI tahlili o'chiq — chek faqat saqlanadi",
+      "offline": "Internet yo'q — aloqa tiklangach rasmni yuklang",
+      "settingsLoading": "Sozlama yuklanmoqda",
+      "preparing": "Tayyorlanmoqda…",
+      "uploading": "Yuklanmoqda… {{percent}}%",
+      "uploadingAria": "Chek rasmi yuklanmoqda",
+      "cancel": "Yuklashni to'xtatish",
+      "uploaded": "Yuklandi",
+      "failed": "Yuklab bo'lmadi",
+      "retry": "Qayta urinish",
+      "replace": "Chek rasmini almashtirish",
+      "remove": "Chek rasmini olib tashlash",
+      "zoom": "Chek rasmini kattalashtirish",
+      "compressed": "Katta surat avval kichraytiriladi: {{from}} → {{to}}"
+    },
+    "confirm": {
+      "label": "Chek",
+      "attached": "Biriktirildi"
+    },
+    "notify": {
+      "withAi": "{{message}}. Chek AI tahlilida — natija tarixda ko'rinadi."
+    },
+    "errors": {
+      "RECEIPT_REQUIRED": "Chek rasmini yuklang",
+      "RECEIPT_NOT_FOUND": "Chek topilmadi yoki boshqa operatsiyaga biriktirilgan — rasmni qayta yuklang",
+      "RECEIPT_ALREADY_USED": "Chek topilmadi yoki boshqa operatsiyaga biriktirilgan — rasmni qayta yuklang",
+      "RECEIPT_NOT_OWNER": "Bu chekni boshqa xodim yuklagan — rasmni qayta yuklang",
+      "RECEIPT_KIND_MISMATCH": "Chek bu operatsiyaga mos emas — rasmni qayta yuklang",
+      "RECEIPT_NOT_APPLICABLE": "Bu operatsiyada chek qo'llanmaydi",
+      "RECEIPT_DISABLED": "Bu operatsiya uchun chek rasmi o'chirilgan",
+      "RECEIPT_AI_REQUIRES_PHOTO": "AI tahlili faqat chek rasmi yoqilganda ishlaydi",
+      "RECEIPT_ALREADY_MATCHED": "Chek mos keldi — qayta tahlil kerak emas",
+      "RECEIPT_AI_DISABLED": "Sozlamalarda «AI tahlili» o'chiq — qayta tahlil qilib bo'lmaydi",
+      "RECEIPT_AI_PENDING": "Bu chek hozir tahlil qilinmoqda — natijani kuting",
+      "RECEIPT_AI_ATTEMPTS_EXHAUSTED": "Bu chek 5 marta tahlil qilindi — boshqa urinish yo'q",
+      "file": {
+        "type": "Faqat JPG, PNG yoki WEBP rasm yuklang",
+        "size": "Rasm hajmi 5 MB dan oshmasin",
+        "heic": "HEIC rasmni o'qib bo'lmadi — JPG yoki PNG yuklang",
+        "decode": "Rasmni o'qib bo'lmadi — boshqa rasm tanlang"
+      }
+    },
+    "viewer": {
+      "title": "Chek rasmi",
+      "zoomLabel": "Rasm o'lchami",
+      "fit": "Moslash",
+      "actual": "100%",
+      "open": "Yangi oynada ochish",
+      "alt": "Chek rasmi",
+      "loading": "Rasm yuklanmoqda…",
+      "failed": "Rasmni ochib bo'lmadi",
+      "failedHint": "Havola eskirgan bo'lishi mumkin — qayta urinib ko'ring.",
+      "retry": "Qayta urinish",
+      "pinchHint": "Ikki barmoq bilan kattalashtiring"
+    }
   }
 }

@@ -119,7 +119,10 @@ beforeEach(() => {
         }
       : url === CATEGORIES_URL
         ? { data: { statusCode: 200, message: "Xarajat kategoriyalari", data: { items: [CATEGORY] } } }
-        : { data: { statusCode: 200, message: "success", data: {} } },
+        : url === "finance/receipt-settings"
+          ? // Chek rasmi o'chiq — bu testlar formaning o'zi haqida (chek: QlLf33Ma-receipt.test.tsx).
+            { data: { statusCode: 200, message: "ok", data: { manual_expense: { photo_required: false, ai_enabled: false } } } }
+          : { data: { statusCode: 200, message: "success", data: {} } },
   );
   http.patch.mockImplementation(async () => ({ data: { statusCode: 200, message: "ok", data: { id: "900" } } }));
 });

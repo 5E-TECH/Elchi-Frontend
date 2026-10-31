@@ -1342,5 +1342,69 @@
       "expenseStep": "Expense",
       "flowAria": "{{range}}: {{steps}}"
     }
+  },
+  "receipt": {
+    "field": {
+      "label": "Receipt photo",
+      "settings": "Settings",
+      "upload": "Upload receipt photo",
+      "formats": "JPG, PNG or WEBP · up to 5 MB",
+      "pickAnother": "Tap to choose another photo",
+      "hint": "After saving, AI compares the amount on the receipt with the entered amount",
+      "aiOff": "AI analysis is off — the receipt is only stored",
+      "offline": "No internet — upload the photo once you are back online",
+      "settingsLoading": "Loading settings",
+      "preparing": "Preparing…",
+      "uploading": "Uploading… {{percent}}%",
+      "uploadingAria": "Uploading receipt photo",
+      "cancel": "Stop upload",
+      "uploaded": "Uploaded",
+      "failed": "Upload failed",
+      "retry": "Try again",
+      "replace": "Replace receipt photo",
+      "remove": "Remove receipt photo",
+      "zoom": "Enlarge receipt photo",
+      "compressed": "Large photos are reduced first: {{from}} → {{to}}"
+    },
+    "confirm": {
+      "label": "Receipt",
+      "attached": "Attached"
+    },
+    "notify": {
+      "withAi": "{{message}}. The receipt is being analysed by AI — the result will appear in the history."
+    },
+    "errors": {
+      "RECEIPT_REQUIRED": "Upload the receipt photo",
+      "RECEIPT_NOT_FOUND": "Receipt not found or attached to another operation — upload the photo again",
+      "RECEIPT_ALREADY_USED": "Receipt not found or attached to another operation — upload the photo again",
+      "RECEIPT_NOT_OWNER": "Another employee uploaded this receipt — upload the photo again",
+      "RECEIPT_KIND_MISMATCH": "This receipt does not fit the operation — upload the photo again",
+      "RECEIPT_NOT_APPLICABLE": "Receipts do not apply to this operation",
+      "RECEIPT_DISABLED": "The receipt photo is turned off for this operation",
+      "RECEIPT_AI_REQUIRES_PHOTO": "AI analysis works only when the receipt photo is on",
+      "RECEIPT_ALREADY_MATCHED": "The receipt matched — no re-analysis needed",
+      "RECEIPT_AI_DISABLED": "«AI analysis» is off in settings — re-analysis is not possible",
+      "RECEIPT_AI_PENDING": "This receipt is being analysed — wait for the result",
+      "RECEIPT_AI_ATTEMPTS_EXHAUSTED": "This receipt was analysed 5 times — no attempts left",
+      "file": {
+        "type": "Upload JPG, PNG or WEBP only",
+        "size": "The photo must not exceed 5 MB",
+        "heic": "Could not read the HEIC photo — upload JPG or PNG",
+        "decode": "Could not read the photo — choose another one"
+      }
+    },
+    "viewer": {
+      "title": "Receipt photo",
+      "zoomLabel": "Photo size",
+      "fit": "Fit",
+      "actual": "100%",
+      "open": "Open in a new window",
+      "alt": "Receipt photo",
+      "loading": "Loading photo…",
+      "failed": "Could not open the photo",
+      "failedHint": "The link may have expired — try again.",
+      "retry": "Try again",
+      "pinchHint": "Pinch with two fingers to zoom"
+    }
   }
 }
