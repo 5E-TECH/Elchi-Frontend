@@ -56,13 +56,22 @@ const isSessionRevoked = (error: AxiosError) => {
 export const SESSION_CHECK_UNAVAILABLE_CODE = "SESSION_CHECK_UNAVAILABLE";
 export const SESSION_CHECK_TOAST_ID = "elchi-session-check-unavailable";
 
+/**
+ * So'rov hozirgi token bilan ketganmi. aidsxJ2H: parol almashgach bayroqsiz token olinadi — eski token bilan ketgan
+ * so'rovning kech kelgan 403 javobi «Yangi parol o'rnating» oynasini qayta ochmasin.
+ */
+const sentWithCurrentToken = (error: AxiosError) => {
+  const sent = String(error.config?.headers?.Authorization ?? "").replace(/^Bearer\s+/i, "");
+  return !sent || sent === tokenStorage.getAccessToken();
+};
+
 const handleSecurityCodes = (error: AxiosError) => {
   const status = error.response?.status;
   if (status !== 403 && status !== 503) return;
   const code = responseErrorCode(error.response?.data);
   if (status === 403 && code === PASSWORD_CHANGE_REQUIRED_CODE) {
-    // Darvoza yoqilgan (`PASSWORD_CHANGE_GATE`): chiqarilmaydi — «Yangi parol o'rnating» oynasi ochiladi.
-    requirePasswordChange();
+    // Darvoza (`pwd_forced` yoki `PASSWORD_CHANGE_GATE`): chiqarilmaydi — «Yangi parol o'rnating» oynasi ochiladi.
+    if (sentWithCurrentToken(error)) requirePasswordChange();
   } else if (status === 503 && code === SESSION_CHECK_UNAVAILABLE_CODE) {
     notify.warning(i18n.t("auth:sessionCheckUnavailable.title"), {
       id: SESSION_CHECK_TOAST_ID,

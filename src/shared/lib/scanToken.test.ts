@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { extractScannerToken, isForeignScanUrl, normalizeScannerCandidates } from "./scanToken";
+import {
+  extractScannerToken,
+  isForeignScanUrl,
+  latinizeKeyboardLayout,
+  normalizeScanKey,
+  normalizeScannerCandidates,
+  scanKeyCandidates,
+} from "./scanToken";
+
+/** Rus tartibida skanerlangan hex token (raqamlar o'zgarmaydi). */
+const latinToRussian = (value: string) =>
+  value.replace(/[a-f]/g, (char) => ({ a: "ф", b: "и", c: "с", d: "в", e: "у", f: "а" })[char] ?? char);
 
 describe("extractScannerToken", () => {
   it("extracts the token from a /scan/ URL or path", () => {
@@ -28,6 +39,54 @@ describe("normalizeScannerCandidates", () => {
 
   it("returns an empty list for blank input", () => {
     expect(normalizeScannerCandidates("")).toEqual([]);
+  });
+});
+
+describe("latinizeKeyboardLayout", () => {
+  it("rus tartibi — tugma bo'yicha, tovush bo'yicha emas", () => {
+    expect(latinizeKeyboardLayout("3с9в1а")).toBe("3c9d1f");
+    expect(latinizeKeyboardLayout("фисвуа")).toBe("abcdef");
+  });
+
+  it("registr saqlanadi (Caps Lock + kirill tartib)", () => {
+    expect(latinizeKeyboardLayout("ФИСВУА")).toBe("ABCDEF");
+  });
+
+  it("o'zbek kirill tartibi: ў, қ, ғ, ҳ tugmalari", () => {
+    expect(latinizeKeyboardLayout("ўқғҳ")).toBe("os-=");
+    expect(latinizeKeyboardLayout("ИЕИғ1")).toBe("BTB-1");
+  });
+
+  it("kirill tartibda yozilgan havola qaytadi: «Ж» — «:», «.» — «/», «ю» — «.»", () => {
+    expect(latinizeKeyboardLayout("реезыЖ..удсршюгя.ысфт.фис")).toBe("https://elchi.uz/scan/abc");
+  });
+
+  it("kirill harfi bo'lmasa qiymat tegilmaydi (lotindagi «.» «/» ga aylanmaydi)", () => {
+    expect(latinizeKeyboardLayout("a.b,C-1")).toBe("a.b,C-1");
+    expect(latinizeKeyboardLayout("1234567")).toBe("1234567");
+  });
+});
+
+describe("normalizeScanKey va scanKeyCandidates", () => {
+  const token = "3c9d1f8e571cc6f19d6f2d26";
+
+  it("kichik, KATTA, aralash va kirill yozuv bir xil kalitga keladi", () => {
+    expect(normalizeScanKey(token)).toBe(token);
+    expect(normalizeScanKey(token.toUpperCase())).toBe(token);
+    expect(normalizeScanKey("3C9d1F8E571cc6F19d6f2D26")).toBe(token);
+    expect(normalizeScanKey(latinToRussian(token))).toBe(token);
+    expect(normalizeScanKey(latinToRussian(token).toUpperCase())).toBe(token);
+  });
+
+  it("skanerlangan qiymat va xarita kaliti bir xil shaklda", () => {
+    const key = normalizeScanKey(token);
+    expect(scanKeyCandidates(token.toUpperCase())).toContain(key);
+    expect(scanKeyCandidates(latinToRussian(token))).toContain(key);
+    expect(scanKeyCandidates(`https://elchi.uz/scan/${token.toUpperCase()}`)).toContain(key);
+  });
+
+  it("boshqa ekranlar yordamchisi o'zgarmagan: kirill nomzod qo'shilmaydi", () => {
+    expect(normalizeScannerCandidates("фисвуа", "https://elchi.uz")).toEqual(["фисвуа"]);
   });
 });
 

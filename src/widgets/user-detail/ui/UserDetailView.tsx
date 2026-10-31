@@ -10,6 +10,8 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import type { ExpenseProofCondition, Order, User, UserStatus } from "../../../entities/user/types/user";
 import { TransferCourierButton } from "../../../features/courier-transfer-branch";
+import { canManagePasswordSms } from "../../../features/user/password-sms/model/passwordSms";
+import { ResetPasswordSmsButton } from "../../../features/user/password-sms/ui/ResetPasswordSmsButton";
 import { runUserRequest } from "../../../features/user/lib/userRequest";
 import { readViewerBranch } from "../../../features/user/lib/viewerBranch";
 import { UpdateUserModal } from "../../../features/user/update-user/ui/UpdateUserModal";
@@ -146,8 +148,15 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const [showEdit, setShowEdit] = useState(false);
-  const { updateUser, updateMarketAddOrder, updateMarketExpenseProof, updateMarketCancelledHandoverQr } = useUser();
+  const {
+    updateUser,
+    updateMarketAddOrder,
+    updateMarketExpenseProof,
+    updateMarketCancelledHandoverQr,
+    updateMarketExtraCost,
+  } = useUser();
   const currentRole = useSelector((state: RootState) => state.role.role);
+  const viewerId = useSelector((state: RootState) => state.role.id);
   const viewerBranchName = useSelector((state: RootState) => readViewerBranch(state.user.user).name);
 
   const canManagePrivilegedToggles = currentRole === "admin" || currentRole === "superadmin";
@@ -160,6 +169,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
+  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). Menejerga begona kuryer
+  // backend tomonida 403 — matni tasdiq oynasida.
+  const canResetPassword = String(viewerId ?? "") !== String(user.id) && canManagePasswordSms(currentRole, user.role);
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
@@ -208,6 +220,31 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
       successMessage: nextValue
         ? t("marketAddOrderEnabled", { defaultValue: "Market uchun buyurtma qo'shish yoqildi" })
         : t("marketAddOrderDisabled", { defaultValue: "Market uchun buyurtma qo'shish o'chirildi" }),
+      errorMessage: editError,
+    });
+  };
+
+  const marketExtraCostEnabled = user.extra_cost_enabled === true;
+  const marketExtraCostApproval = user.extra_cost_requires_approval !== false;
+
+  const handleToggleMarketExtraCost = async () => {
+    if (!isMarket || !canManagePrivilegedToggles) return;
+    const nextValue = !marketExtraCostEnabled;
+    await runUserRequest({
+      t,
+      request: () => updateMarketExtraCost.mutateAsync({ id: user.id, extra_cost_enabled: nextValue }),
+      successMessage: nextValue ? t("marketExtraCostEnabled") : t("marketExtraCostDisabled"),
+      errorMessage: editError,
+    });
+  };
+
+  const handleToggleMarketExtraCostApproval = async () => {
+    if (!isMarket || !canManagePrivilegedToggles) return;
+    const nextValue = !marketExtraCostApproval;
+    await runUserRequest({
+      t,
+      request: () => updateMarketExtraCost.mutateAsync({ id: user.id, extra_cost_requires_approval: nextValue }),
+      successMessage: nextValue ? t("marketExtraCostApprovalEnabled") : t("marketExtraCostApprovalDisabled"),
       errorMessage: editError,
     });
   };
@@ -277,6 +314,18 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
       {canTransferCourier ? (
         <TransferCourierButton variant="secondary" courierId={user.id} courierName={user.name} />
       ) : null}
+      {canResetPassword ? (
+        <ResetPasswordSmsButton
+          user={{
+            id: String(user.id),
+            name: user.name,
+            phoneNumber: user.phone_number ?? null,
+            role: user.role,
+            roleLabel,
+          }}
+          viewerRole={currentRole}
+        />
+      ) : null}
       <Button leftIcon={Pencil} onClick={() => setShowEdit(true)}>
         {t("edit")}
       </Button>
@@ -315,6 +364,22 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
             />
             {canManagePrivilegedToggles ? (
               <>
+                <SettingSwitch
+                  title={t("v2.detail.marketExtraCost")}
+                  description={t("v2.detail.marketExtraCostHint")}
+                  checked={marketExtraCostEnabled}
+                  busy={updateMarketExtraCost.isPending}
+                  disabled={updateMarketExtraCost.isPending}
+                  onToggle={() => void handleToggleMarketExtraCost()}
+                />
+                <SettingSwitch
+                  title={t("v2.detail.marketExtraCostApproval")}
+                  description={t("v2.detail.marketExtraCostApprovalHint")}
+                  checked={marketExtraCostApproval}
+                  busy={updateMarketExtraCost.isPending}
+                  disabled={updateMarketExtraCost.isPending || !marketExtraCostEnabled}
+                  onToggle={() => void handleToggleMarketExtraCostApproval()}
+                />
                 <div className="flex flex-col gap-0.5 border-t border-border px-5 pb-1 pt-4 max-md:px-4">
                   <h3 className="m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted">
                     {t("v2.detail.proofTitle")}

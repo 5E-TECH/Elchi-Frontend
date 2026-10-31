@@ -106,9 +106,15 @@ const pickRole = async (user: User, name: string) => {
 };
 
 const fill = async (user: User, container: HTMLElement, name: string, value: string) => {
+  // aidsxJ2H: parol maydoni faqat «Qo'lda kiritish» da (sukut — «Tizim yaratsin va SMS yuborsin»).
+  if (name === "password" && !container.querySelector('input[name="password"]')) {
+    await user.click(screen.getByRole("radio", { name: /^Qo'lda kiritish/ }));
+  }
   const input = container.querySelector<HTMLInputElement>(`input[name="${name}"]`);
   if (!input) throw new Error(`input not found: ${name}`);
   await user.type(input, value);
+  // xtXKLUwT: «Qo'lda kiritish» — parol + takror maydoni.
+  if (name === "password") await fill(user, container, "passwordRepeat", value);
 };
 
 const save = (user: User) => user.click(screen.getByRole("button", { name: "Saqlash" }));
@@ -148,7 +154,8 @@ describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
     expect(screen.getByRole("radio", { name: /^Logist/ })).toHaveAccessibleName(
       "Logist Buyurtmalar va holat tarixi, moliyasiz",
     );
-    expect(screen.getByText("Kirish ma'lumotlarini o'zingiz bering")).toBeInTheDocument();
+    // aidsxJ2H: sukut — parolni tizim yaratadi va SMS yuboradi (maket `superadmin-users-create-password-sms`).
+    expect(screen.getByText("Login va parol SMS orqali boradi")).toBeInTheDocument();
     expect(screen.getByRole("form", { name: "Admin qo'shish" })).toBeInTheDocument();
   });
 
@@ -207,6 +214,8 @@ describe("CreateUserForm — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10
       name: "Yangi Admin",
       phone_number: "+998901234567",
       password: "Secret-2026x",
+      password_mode: "manual",
+      must_change_password: true,
       salary: 5000000,
       payment_day: 15,
     });
@@ -248,6 +257,8 @@ describe("CreateUserForm — har rol payload'i", () => {
       name: "Menejer Bir",
       phone_number: "+998901112233",
       password: "Secret-2026x",
+      password_mode: "manual",
+      must_change_password: true,
       branch_id: "15",
       tariff_home: 10000,
       tariff_center: 8000,
@@ -286,6 +297,8 @@ describe("CreateUserForm — har rol payload'i", () => {
       name: "Ro'yxatchi Bir",
       phone_number: "+998907778899",
       password: "Secret-2026x",
+      password_mode: "manual",
+      must_change_password: true,
       salary: 3000000,
       payment_day: 5,
       branch_id: "1",
@@ -314,6 +327,8 @@ describe("CreateUserForm — har rol payload'i", () => {
       phone_number: "+998934552017",
       username: "zarafshon_market",
       password: "zarafshon26",
+      password_mode: "manual",
+      must_change_password: true,
       tariff_home: 35000,
       tariff_center: 25000,
       default_tariff: "center",
@@ -381,6 +396,8 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
       name: "Azamat To'g'ayev",
       phone_number: "+998946273051",
       password: "urgut-2026x",
+      password_mode: "manual",
+      must_change_password: true,
       branch_id: "44",
       tariff_home: 20000,
       tariff_center: 15000,
@@ -480,7 +497,9 @@ describe("CreateUserForm — kuryer «Ish hududi» (DtKKY0V8, maketlar `*-users-
     expect(mocks.createCourier).toHaveBeenCalledWith({
       name: "Sardor Qodirov",
       phone_number: "+998931184625",
+      password_mode: "manual",
       password: "kuryer2026",
+      must_change_password: true,
       branch_id: "15",
       district_id: "201",
       tariff_home: 20000,
@@ -563,6 +582,8 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
       name: "Aziz Rahimov",
       phone_number: "+998901234567",
       password: "logist2026",
+      password_mode: "manual",
+      must_change_password: true,
       salary: 6000000,
       payment_day: 10,
     });
@@ -591,6 +612,8 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
       name: "Aziz Rahimov",
       phone_number: "+998901234567",
       password: "logist2026",
+      password_mode: "manual",
+      must_change_password: true,
       salary: 6000000,
     });
     expect(await screen.findByText("Bu telefon raqam allaqachon mavjud")).toBeInTheDocument();

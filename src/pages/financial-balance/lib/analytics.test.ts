@@ -129,3 +129,31 @@ describe("Tarix filtrlari (URL) va eksport paramlari", () => {
     expect(buildHistoryExportParams(filters)).toEqual({ from_date: "2026-10-01" });
   });
 });
+
+describe("buildWaterfall — server davr boshi (qzjTMWPb)", () => {
+  it("o'tgan davrda ham boshi va oxiri `financial-balance/daily` dan chiziladi", () => {
+    const result = buildWaterfall({
+      currentBalance: 999,
+      netChange: 50,
+      positive: [{ sourceType: "sell", amount: 80, percent: 100 }],
+      negative: [{ sourceType: "bills", amount: 30, percent: 100 }],
+      reachesToday: false,
+      periodBalances: { opening: 100, closing: 150 },
+    });
+    expect(result.withTotals).toBe(true);
+    expect(result.steps[0]).toMatchObject({ kind: "start", amount: 100 });
+    expect(result.steps.at(-1)).toMatchObject({ kind: "end", amount: 150 });
+  });
+
+  it("server qoldig'i noma'lum — avvalgi qoida: o'tgan davrda boshi/oxiri yo'q", () => {
+    const result = buildWaterfall({
+      currentBalance: 999,
+      netChange: 50,
+      positive: [],
+      negative: [],
+      reachesToday: false,
+      periodBalances: { opening: null, closing: null },
+    });
+    expect(result.withTotals).toBe(false);
+  });
+});

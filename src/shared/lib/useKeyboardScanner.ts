@@ -70,10 +70,10 @@ export const readScannerKey = (event: KeyboardEvent): string | null => {
  * Skaner tinglamaydigan joy (`data-scanner-ignore`): qo'lda kiritish maydoni — odam tez yozib Enter bossa,
  * bufer uni «skan» deb olib, formani to'xtatib qo'ymasin (forma o'zi yuboradi).
  */
-const isIgnoredTarget = (target: EventTarget | null) =>
+export const isIgnoredTarget = (target: EventTarget | null) =>
   target instanceof Element && target.closest("[data-scanner-ignore]") !== null;
 
-const isEditableTarget = (target: EventTarget | null) => {
+export const isEditableTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
 
   const tagName = target.tagName.toLowerCase();

@@ -800,6 +800,12 @@
     "branches": "Branches",
     "hqCouriers": "HQ couriers",
     "receiveSplit": "Branches {{branches}}, HQ couriers {{couriers}}",
+    "branchCount": "Branches: {{value}}",
+    "hqCourierCount": "HQ couriers: {{value}}",
+    "marketCount": "Markets: {{value}}",
+    "marketNumber": "Market #{{id}}",
+    "otherMarkets": "{{value}} more",
+    "otherMarketsShare": "other markets ({{value}}) {{percent}}",
     "courierCount": "From branch couriers · held by {{count}} couriers",
     "courierCountShort": "held by {{count}} couriers",
     "otherCouriers": "Others",
@@ -1228,5 +1234,113 @@
       }
     },
     "resultReport": "Shift report"
+  }
+  ,"v2Daily": {
+    "today": "Today",
+    "income": "Income",
+    "expense": "Expense",
+    "net": "Net flow",
+    "netChange": "Net change",
+    "vsYesterday": "vs yesterday",
+    "vsYesterdayCourier": "vs yesterday · money not handed over",
+    "sparkCaption": "End-of-day balance",
+    "sparkCaptionDays": "End-of-day balance · {{count}} days",
+    "vsYesterdayCashbox": "vs yesterday · main cashbox",
+    "vsPeriodStart": "vs period start ({{date}})",
+    "selectedDay": "{{date}} · selected",
+    "pendingHint": "The daily balance is still being prepared",
+    "table": {
+      "date": "Date",
+      "net": "Net"
+    },
+    "kpi": {
+      "sparkLabel": "{{name}}, last {{count}} days: today {{last}}"
+    },
+    "flow": {
+      "title": "Cash flow",
+      "subtitle": "Daily income and expense · {{range}} · {{cashbox}}",
+      "subtitleEmpty": "Daily income and expense · {{cashbox}}",
+      "viewLabel": "Cash flow view",
+      "totalIncome": "Total income",
+      "totalExpense": "Total expense",
+      "operations": "{{value}} operations",
+      "retained": "{{percent}} of income stayed in the cashbox",
+      "netLegend": "Net flow (income − expense)",
+      "aria": "{{cashbox}} cash flow, {{range}}: total income {{income}}, total expense {{expense}}, net flow {{net}}",
+      "filterNote": "Filters apply to the cash flow chart and the operations history",
+      "empty": "No income or expense in this period",
+      "emptyHint": "Choose another period or filter",
+      "loading": "Loading chart",
+      "loadError": "Could not load daily data"
+    },
+    "managerFlow": {
+      "title": "Cashbox flow",
+      "subtitle": "{{cashbox}} · daily income and expense · {{range}}",
+      "subtitleEmpty": "{{cashbox}} · daily income and expense",
+      "viewLabel": "Cashbox flow view",
+      "income": "Income · {{count}} days",
+      "expense": "Expense · {{count}} days",
+      "note": "Cancellations and costs count as expense",
+      "aria": "{{cashbox}}, {{range}}, daily income and expense: total income {{income}}, total expense {{expense}}, net change {{net}}"
+    },
+    "state": {
+      "title": "Cashbox position",
+      "subtitle": "Current position · {{time}}",
+      "subtitleNow": "Current position",
+      "positive": "Positive",
+      "negative": "Negative",
+      "formula": "Net position = cashbox + to receive − to give",
+      "cash": "In cashbox",
+      "receive": "To receive",
+      "give": "To give",
+      "net": "Net position",
+      "cashFull": "Cashbox amount",
+      "receiveFull": "To receive",
+      "giveFull": "To give",
+      "aria": "Net position {{net}}: cashbox amount {{cash}}, plus to receive {{receive}}, minus to give {{give}}",
+      "loadError": "Could not load the cashbox position"
+    },
+    "trend": {
+      "title": "Balance trend",
+      "subtitle": "{{cashbox}} · end-of-day balance · last {{count}} days",
+      "viewLabel": "Balance trend view",
+      "chartLabel": "Cashbox balance at end of day, {{from}} – {{to}}: from {{first}} to {{last}}"
+    },
+    "ledger": {
+      "title": "Ledger balance",
+      "subtitle": "Balance at the end of each day · {{range}}",
+      "viewLabel": "Ledger balance view",
+      "chartLabel": "Ledger balance, {{from}} – {{to}}: from {{first}} to {{last}}",
+      "current": "Current balance",
+      "currentHint": "as of {{time}}",
+      "periodEnd": "At period end",
+      "start": "At period start",
+      "startHint": "at the end of {{date}}",
+      "entries": "{{value}} entries",
+      "peak": "Peak",
+      "note": "The ledger balance is calculated from these entries only. The overall balance ({{total}}) comes from the cashbox, money in transit and debt to markets.",
+      "noteNoTotal": "The ledger balance is calculated from these entries only. The overall balance comes from the cashbox, money in transit and debt to markets."
+    },
+    "dailyLedger": {
+      "title": "Daily income and expense",
+      "subtitle": "How much entered and left the ledger each day · {{range}}",
+      "subtitleEmpty": "How much entered and left the ledger each day",
+      "viewLabel": "Daily income and expense view",
+      "aria": "Daily income and expense, {{range}}: total income {{income}}, total expense {{expense}}, net {{net}}"
+    },
+    "my": {
+      "balanceChart": "end-of-day balance · {{range}}",
+      "viewLabel": "Overall balance view",
+      "chartLabel": "Cashbox balance at end of day, {{from}} – {{to}}: from {{first}} to {{last}}",
+      "flowCourier": "Cashbox flow",
+      "flowMarket": "Period flow",
+      "flowSub": "{{range}} · by income and expense source",
+      "start": "Period start",
+      "end": "Current balance",
+      "other": "Other",
+      "incomeStep": "Income",
+      "expenseStep": "Expense",
+      "flowAria": "{{range}}: {{steps}}"
+    }
   }
 }

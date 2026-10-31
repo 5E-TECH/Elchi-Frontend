@@ -80,6 +80,9 @@ export interface User {
   can_add_extra_cost?: boolean;
   can_sell_cancel?: boolean;
   cancelled_handover_qr_required?: boolean;
+  /** Market bo'yicha qo'shimcha xarajat (w2bDrE3i): yangi market — yopiq, eski marketlar — ochiq. */
+  extra_cost_enabled?: boolean;
+  extra_cost_requires_approval?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
@@ -159,13 +162,50 @@ export interface UserListResponse {
   };
 }
 
+// ==================== PASSWORD MODE (aidsxJ2H) ====================
+
+/**
+ * aidsxJ2H: yaratishda parolni qanday berish. `generate_sms` (backend sukuti) — tizim 12 belgili tasodifiy parol
+ * yaratadi va telefonga SMS qiladi, `password` YUBORILMAYDI (400), `must_change_password` doim `true` (`false` — 400).
+ * `manual` — `password` majburiy, SMS yo'q, `must_change_password` ixtiyoriy.
+ */
+export type PasswordMode = "generate_sms" | "manual";
+
+/** Barcha yaratish so'rovlaridagi parol maydonlari (`POST /admins|registrators|logists|couriers|managers|markets`). */
+export interface CreateUserPasswordFields {
+  password_mode?: PasswordMode;
+  /** Faqat `manual` da. */
+  password?: string;
+  /** Faqat `manual` da (`generate_sms` da yuborilmaydi — doim `true`). */
+  must_change_password?: boolean;
+}
+
+/** Vaqtinchalik parol SMS'ining yetkazish holati (`password_sms.status`). */
+export type PasswordSmsStatus = "pending" | "sent" | "delivered" | "failed";
+
+/**
+ * Yaratish / `resend-sms` / `sms-status` javobidagi `password_sms` (PAROL YO'Q). `failure_reason` — mashina kodi
+ * (`sms_disabled`, `daily_cap_exceeded`, `provider_not_configured`, `invalid_phone`, `template_error`,
+ * `notification_unavailable`, `provider_rejected`, `provider_unavailable`, `not_delivered`, `staging_blocked`),
+ * `failure_message` — o'zbekcha sabab.
+ */
+export interface PasswordSms {
+  status: PasswordSmsStatus;
+  failure_reason: string | null;
+  failure_message: string | null;
+  requested_at: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  resend_available_at: string | null;
+  resends_left_today: number | null;
+}
+
 // ==================== CREATE ADMIN ====================
 
 // Admin yaratish uchun request body
-export interface CreateAdminRequest {
+export interface CreateAdminRequest extends CreateUserPasswordFields {
   name: string; // Admin ismi
   phone_number: string; // Telefon raqam (+998...)
-  password: string; // Parol
   salary: number; // Maosh (so'm)
   payment_day: number; // To'lov kuni (1-31)
 }
@@ -174,10 +214,9 @@ export interface CreateRegistratorRequest extends CreateAdminRequest {
   branch_id: string;
 }
 
-export interface CreateManagerRequest {
+export interface CreateManagerRequest extends CreateUserPasswordFields {
   name: string;
   phone_number: string;
-  password: string;
   salary?: number;
   payment_day?: number;
   tariff_home?: number;
@@ -194,11 +233,10 @@ export interface CreateAdminResponse {
 // ==================== CREATE MARKET ====================
 
 // Market yaratish uchun request body
-export interface CreateMarketRequest {
+export interface CreateMarketRequest extends CreateUserPasswordFields {
   name: string; // Market nomi
   phone_number: string; // Telefon (+998...)
   username: string; // Username
-  password: string; // Parol
   tariff_home: number; // Uyga tarif (so'm)
   tariff_center: number; // Markazga tarif (so'm)
   default_tariff: "address" | "center"; // Asosiy tarif turi
@@ -214,11 +252,10 @@ export interface CreateMarketResponse {
 
 // `region_id` yo'q: gateway `CreateCourierRequestDto` da bu maydon yo'q (400 «should not exist») — kuryer hududi
 // filial biriktiruvidan keladi (LG-2 tozalash).
-export interface CreateCourierRequest {
+export interface CreateCourierRequest extends CreateUserPasswordFields {
   branch_id?: string;
   name: string; // Kuryer ismi
   phone_number: string; // Telefon (+998...)
-  password: string; // Parol
   salary?: number;
   payment_day?: number;
   tariff_home?: number; // Uyga tarif (so'm)
@@ -233,10 +270,9 @@ export interface CreateCourierRequest {
  * `POST /logists` (superadmin, admin; dzyVftBx) — admin naqshi: ism, telefon, parol, maosh (majburiy), to'lov kuni
  * (ixtiyoriy). `branch_id` yo'q — logist filialga biriktirilmaydi, viloyatlar `POST /region/logist/bulk` bilan.
  */
-export interface CreateLogistRequest {
+export interface CreateLogistRequest extends CreateUserPasswordFields {
   name: string;
   phone_number: string;
-  password: string;
   salary: number;
   payment_day?: number;
 }
@@ -255,6 +291,12 @@ export interface UpdateUserRequest {
   phone_number?: string;
   username?: string;
   password?: string;
+  /**
+   * aidsxJ2H: O'Z parolini almashtirishda (`PATCH /auth/my-profile`, o'zini `PATCH /users/:id`) `password` bilan
+   * MAJBURIY — joriy parol (yo'q — 400 `OLD_PASSWORD_REQUIRED`, noto'g'ri — 400 `OLD_PASSWORD_INVALID`).
+   * Admin boshqa foydalanuvchi parolini o'rnatganda yuborilmaydi.
+   */
+  old_password?: string;
   status?: UserStatus;
   salary?: number;
   payment_day?: number;

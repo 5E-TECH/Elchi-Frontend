@@ -9,18 +9,35 @@ const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   delete: vi.fn(),
   refreshAccessToken: vi.fn(),
+  logoutAndRedirect: vi.fn(),
 }));
 vi.mock("../../shared/api/api", () => ({
   api: { get: mocks.get, patch: mocks.patch, post: mocks.post, delete: mocks.delete },
 }));
-vi.mock("../../auth/authService", () => ({ refreshAccessToken: mocks.refreshAccessToken }));
+vi.mock("../../auth/authService", () => ({
+  refreshAccessToken: mocks.refreshAccessToken,
+  logoutAndRedirect: mocks.logoutAndRedirect,
+}));
 
 import PasswordChangePrompt from "./PasswordChangePrompt";
 import {
   clearPasswordChangeFlag,
   isPasswordChangePromptOpen,
+  requirePasswordChange,
   syncPasswordChangeFlag,
 } from "../../auth/passwordChange";
+import tokenStorage from "../../auth/tokenStorage";
+
+/** Imzosiz soxta JWT (faqat payload o'qiladi). */
+const fakeJwt = (payload: Record<string, unknown>) =>
+  `x.${window.btoa(JSON.stringify(payload)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_")}.y`;
+
+/** aidsxJ2H: «Joriy parol» · «Yangi parol» · «Yangi parolni takrorlang». */
+const passwordFields = (dialog: HTMLElement) => ({
+  current: within(dialog).getByPlaceholderText("Joriy parolni kiriting"),
+  first: within(dialog).getByPlaceholderText("Yangi parolni kiriting"),
+  second: within(dialog).getByPlaceholderText("Parolni yana bir bor kiriting"),
+});
 
 const authed = (role: string) =>
   ({
@@ -38,6 +55,50 @@ const authed = (role: string) =>
 const passwordPatches = () =>
   mocks.patch.mock.calls.filter(([url]) => url === "auth/my-profile").map(([, body]) => body);
 
+describe("«Yangi parol o'rnating» — matn holatga mos (aidsxJ2H)", () => {
+  beforeEach(() => {
+    clearPasswordChangeFlag();
+    window.sessionStorage.clear();
+    tokenStorage.setAccessToken(null);
+  });
+  afterEach(() => {
+    act(() => clearPasswordChangeFlag());
+    tokenStorage.setAccessToken(null);
+  });
+
+  it("vaqtinchalik parol (`pwd_forced`): «talablarga mos emas» matni va «Keyinroq» yo'q, Esc yopmaydi", async () => {
+    const token = fakeJwt({ id: "1", role: "courier", pwd_change: true, pwd_forced: true });
+    tokenStorage.setAccessToken(token);
+    act(() => syncPasswordChangeFlag({ must_change_password: true, accessToken: token }));
+    renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("courier") });
+
+    const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
+    expect(within(dialog).getByText(/Siz vaqtinchalik parol bilan kirdingiz/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/talablariga mos emas/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/administrator bergan vaqtinchalik/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Joriy (vaqtinchalik) parol")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Keyinroq" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Yopish" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "Yangi parol o'rnating" })).toBeInTheDocument();
+  });
+
+  it("zaif parol + darvoza (403, `pwd_forced` yo'q): bloklaydi, lekin «vaqtinchalik» deyilmaydi", async () => {
+    tokenStorage.setAccessToken(fakeJwt({ id: "1", role: "courier", pwd_change: true }));
+    act(() => requirePasswordChange());
+    renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("courier") });
+
+    const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
+    expect(within(dialog).getByText(/talablariga mos emas/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/vaqtinchalik/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Joriy parol")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Keyinroq" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+  });
+});
+
 describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
   beforeEach(() => {
     clearPasswordChangeFlag();
@@ -47,6 +108,7 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
       data: { statusCode: 200, data: { id: "1", name: "Jasur Kuryer", phone_number: "+998901112233", role: "market" } },
     });
     mocks.refreshAccessToken.mockReset().mockResolvedValue("new-token");
+    mocks.logoutAndRedirect.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => clearPasswordChangeFlag());
@@ -66,7 +128,8 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     ).toBeInTheDocument();
     expect(within(dialog).getByText(/Kamida 10 ta belgi\. Oddiy/)).toBeInTheDocument();
 
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "Namuna123");
     await userEvent.type(second, "Namuna123");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
@@ -79,18 +142,19 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("saqlansa: PATCH auth/my-profile { password } → POST auth/refresh → bayroq tozalanadi, oyna yopiladi", async () => {
+  it("saqlansa: PATCH auth/my-profile { old_password, password } → POST auth/refresh → bayroq tozalanadi, oyna yopiladi", async () => {
     act(() => syncPasswordChangeFlag({ must_change_password: true }));
     renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("market") });
 
     const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
     expect(within(dialog).getByText(/Kamida 8 ta belgi\. Oddiy/)).toBeInTheDocument();
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "Bozor-2026x");
     await userEvent.type(second, "Bozor-2026x");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
-    await waitFor(() => expect(passwordPatches()).toEqual([{ password: "Bozor-2026x" }]));
+    await waitFor(() => expect(passwordPatches()).toEqual([{ old_password: "Eski-parol1", password: "Bozor-2026x" }]));
     await waitFor(() => expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(isPasswordChangePromptOpen()).toBe(false);
@@ -106,7 +170,8 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("market") });
 
     const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
-    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    const { current, first, second } = passwordFields(dialog);
+    await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "qwerty123");
     await userEvent.type(second, "qwerty123");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
@@ -114,5 +179,71 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     expect(await within(dialog).findAllByText("Parol juda oddiy — boshqa parol tanlang")).not.toHaveLength(0);
     expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
     expect(isPasswordChangePromptOpen()).toBe(true);
+  });
+  describe("aidsxJ2H — majburiy rejim (parolni admin / tizim bergan)", () => {
+    it("token `pwd_forced` — oyna bloklovchi: «Keyinroq» / «Yopish» yo'q, Esc yopmaydi; «Chiqish» — logout", async () => {
+      const token = fakeJwt({ id: "1", role: "courier", pwd_change: true, pwd_forced: true });
+      tokenStorage.setAccessToken(token);
+      act(() => syncPasswordChangeFlag({ must_change_password: true, accessToken: token }));
+      renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("courier") });
+
+      const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
+      expect(within(dialog).getByText(/vaqtinchalik parol bilan kirdingiz/)).toBeInTheDocument();
+      expect(within(dialog).getByText("Joriy (vaqtinchalik) parol")).toBeInTheDocument();
+      expect(within(dialog).getByText("SMS orqali kelgan yoki administrator bergan parol")).toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Keyinroq" })).not.toBeInTheDocument();
+      expect(within(dialog).queryByRole("button", { name: "Yopish" })).not.toBeInTheDocument();
+
+      await userEvent.keyboard("{Escape}");
+      expect(screen.getByRole("dialog", { name: "Yangi parol o'rnating" })).toBeInTheDocument();
+      expect(isPasswordChangePromptOpen()).toBe(true);
+
+      await userEvent.click(within(dialog).getByRole("button", { name: "Chiqish" }));
+      await waitFor(() => expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1));
+      tokenStorage.setAccessToken(null);
+    });
+
+    it("403 PASSWORD_CHANGE_REQUIRED ham majburiy: saqlansa { old_password, password } → refresh → oyna yopiladi", async () => {
+      act(() => requirePasswordChange());
+      renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("courier") });
+
+      const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
+      expect(within(dialog).queryByRole("button", { name: "Keyinroq" })).not.toBeInTheDocument();
+      const { current, first, second } = passwordFields(dialog);
+      await userEvent.type(current, "Vaqtinchalik9");
+      await userEvent.type(first, "Ozimniki-2026");
+      await userEvent.type(second, "Ozimniki-2026");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+
+      await waitFor(() =>
+        expect(passwordPatches()).toEqual([{ old_password: "Vaqtinchalik9", password: "Ozimniki-2026" }]),
+      );
+      await waitFor(() => expect(mocks.refreshAccessToken).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(isPasswordChangePromptOpen()).toBe(false);
+      expect(mocks.logoutAndRedirect).not.toHaveBeenCalled();
+    });
+
+    it("400 OLD_PASSWORD_INVALID — «Joriy parol» ostida, oyna ochiq, chiqarilmaydi", async () => {
+      mocks.patch.mockRejectedValue({
+        isAxiosError: true,
+        response: { status: 400, data: { statusCode: 400, message: "Joriy parol noto'g'ri", code: "OLD_PASSWORD_INVALID" } },
+      });
+      act(() => requirePasswordChange());
+      renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("market") });
+
+      const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
+      const { current, first, second } = passwordFields(dialog);
+      await userEvent.type(current, "Notogri-parol");
+      await userEvent.type(first, "Bozor-2026x");
+      await userEvent.type(second, "Bozor-2026x");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+
+      expect(await within(dialog).findByText("Joriy parol noto'g'ri")).toBeInTheDocument();
+      expect(current).toHaveAttribute("aria-invalid", "true");
+      expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
+      expect(mocks.logoutAndRedirect).not.toHaveBeenCalled();
+      expect(isPasswordChangePromptOpen()).toBe(true);
+    });
   });
 });

@@ -800,6 +800,12 @@
     "branches": "Filiallar",
     "hqCouriers": "HQ kuryerlari",
     "receiveSplit": "Filiallar {{branches}}, HQ kuryerlari {{couriers}}",
+    "branchCount": "{{value}} ta filial",
+    "hqCourierCount": "{{value}} ta HQ kuryeri",
+    "marketCount": "{{value}} ta marketga",
+    "marketNumber": "Market #{{id}}",
+    "otherMarkets": "Yana {{value}} ta",
+    "otherMarketsShare": "yana {{value}} ta market {{percent}}",
     "courierCount": "Filial kuryerlaridan · {{count}} ta kuryerda",
     "courierCountShort": "{{count}} ta kuryerda",
     "otherCouriers": "Boshqa",
@@ -1228,5 +1234,113 @@
       }
     },
     "resultReport": "Smena hisoboti"
+  }
+  ,"v2Daily": {
+    "today": "Bugun",
+    "income": "Kirim",
+    "expense": "Chiqim",
+    "net": "Sof oqim",
+    "netChange": "Sof o'zgarish",
+    "vsYesterday": "kechaga nisbatan",
+    "vsYesterdayCourier": "kechaga nisbatan · topshirilmagan pul",
+    "sparkCaption": "Kun oxiridagi qoldiq",
+    "sparkCaptionDays": "Kun oxiridagi qoldiq · {{count}} kun",
+    "vsYesterdayCashbox": "kechaga nisbatan · asosiy kassa",
+    "vsPeriodStart": "davr boshiga nisbatan ({{date}})",
+    "selectedDay": "{{date}} · tanlangan",
+    "pendingHint": "Kunlik qoldiq hali tayyorlanmoqda",
+    "table": {
+      "date": "Sana",
+      "net": "Sof"
+    },
+    "kpi": {
+      "sparkLabel": "{{name}}, oxirgi {{count}} kun: bugun {{last}}"
+    },
+    "flow": {
+      "title": "Pul oqimi",
+      "subtitle": "Kunlik kirim va chiqim · {{range}} · {{cashbox}}",
+      "subtitleEmpty": "Kunlik kirim va chiqim · {{cashbox}}",
+      "viewLabel": "Pul oqimi ko'rinishi",
+      "totalIncome": "Jami kirim",
+      "totalExpense": "Jami chiqim",
+      "operations": "{{value}} ta operatsiya",
+      "retained": "kirimning {{percent}}i kassada qoldi",
+      "netLegend": "Sof oqim (kirim − chiqim)",
+      "aria": "{{cashbox}} pul oqimi, {{range}}: jami kirim {{income}}, jami chiqim {{expense}}, sof oqim {{net}}",
+      "filterNote": "Filtr pul oqimi grafigi va operatsiyalar tarixiga qo'llanadi",
+      "empty": "Bu davrda kirim va chiqim yo'q",
+      "emptyHint": "Boshqa davr yoki filtrni tanlang",
+      "loading": "Grafik yuklanmoqda",
+      "loadError": "Kunlik ma'lumotni yuklab bo'lmadi"
+    },
+    "managerFlow": {
+      "title": "Kassa oqimi",
+      "subtitle": "{{cashbox}} · kunlik kirim va chiqim · {{range}}",
+      "subtitleEmpty": "{{cashbox}} · kunlik kirim va chiqim",
+      "viewLabel": "Kassa oqimi ko'rinishi",
+      "income": "Kirim · {{count}} kun",
+      "expense": "Chiqim · {{count}} kun",
+      "note": "Bekor qilish va xarajatlar chiqimga kiradi",
+      "aria": "{{cashbox}}, {{range}}, kunlik kirim va chiqim: jami kirim {{income}}, jami chiqim {{expense}}, sof o'zgarish {{net}}"
+    },
+    "state": {
+      "title": "Kassa holati",
+      "subtitle": "Hozirgi holat · {{time}}",
+      "subtitleNow": "Hozirgi holat",
+      "positive": "Ijobiy",
+      "negative": "Salbiy",
+      "formula": "Sof holat = kassa + qabul qilinishi kerak − berilishi kerak",
+      "cash": "Kassada",
+      "receive": "Qabul qilinadi",
+      "give": "Beriladi",
+      "net": "Sof holat",
+      "cashFull": "Kassadagi summa",
+      "receiveFull": "Qabul qilinishi kerak",
+      "giveFull": "Berilishi kerak",
+      "aria": "Sof holat {{net}}: kassadagi summa {{cash}}, qabul qilinishi kerak {{receive}} qo'shiladi, berilishi kerak {{give}} ayriladi",
+      "loadError": "Kassa holatini yuklab bo'lmadi"
+    },
+    "trend": {
+      "title": "Balans dinamikasi",
+      "subtitle": "{{cashbox}} · kun oxiridagi qoldiq · oxirgi {{count}} kun",
+      "viewLabel": "Balans dinamikasi ko'rinishi",
+      "chartLabel": "Kassa balansi, kun oxirida, {{from}} – {{to}}: {{first}} dan {{last}} gacha"
+    },
+    "ledger": {
+      "title": "Daftar qoldig'i",
+      "subtitle": "Har kun oxiridagi qoldiq · {{range}}",
+      "viewLabel": "Daftar qoldig'i ko'rinishi",
+      "chartLabel": "Daftar qoldig'i, {{from}} – {{to}}: {{first}} dan {{last}} gacha",
+      "current": "Hozirgi qoldiq",
+      "currentHint": "{{time}} holatiga",
+      "periodEnd": "Davr oxirida",
+      "start": "Davr boshida",
+      "startHint": "{{date}} oxirida",
+      "entries": "{{value}} ta yozuv",
+      "peak": "Eng yuqori",
+      "note": "Daftar qoldig'i faqat shu yozuvlar bo'yicha hisoblanadi. Umumiy balans ({{total}}) esa kassa, yo'ldagi pul va marketlar qarzidan olinadi.",
+      "noteNoTotal": "Daftar qoldig'i faqat shu yozuvlar bo'yicha hisoblanadi. Umumiy balans esa kassa, yo'ldagi pul va marketlar qarzidan olinadi."
+    },
+    "dailyLedger": {
+      "title": "Kunlik kirim va chiqim",
+      "subtitle": "Har kuni daftarga qancha kirdi va qancha chiqdi · {{range}}",
+      "subtitleEmpty": "Har kuni daftarga qancha kirdi va qancha chiqdi",
+      "viewLabel": "Kunlik kirim va chiqim ko'rinishi",
+      "aria": "Kunlik kirim va chiqim, {{range}}: jami kirim {{income}}, jami chiqim {{expense}}, sof {{net}}"
+    },
+    "my": {
+      "balanceChart": "kun oxiridagi qoldiq · {{range}}",
+      "viewLabel": "Umumiy balans ko'rinishi",
+      "chartLabel": "Kassa qoldig'i, kun oxirida, {{from}} – {{to}}: {{first}} dan {{last}} gacha",
+      "flowCourier": "Kassa oqimi",
+      "flowMarket": "Davr oqimi",
+      "flowSub": "{{range}} · kirim va chiqim manbalari bo'yicha",
+      "start": "Davr boshi",
+      "end": "Joriy balans",
+      "other": "Boshqa",
+      "incomeStep": "Kirim",
+      "expenseStep": "Chiqim",
+      "flowAria": "{{range}}: {{steps}}"
+    }
   }
 }
