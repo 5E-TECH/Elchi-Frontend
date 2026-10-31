@@ -48,6 +48,7 @@ vi.mock("../../entities/payments", async (importOriginal) => ({
     useGetCurrentShift: () => ({ isSuccess: false, data: undefined }),
     openShift: { mutateAsync: vi.fn(), isPending: false },
     useGetCashBoxMain: () => ({ data: undefined, isLoading: false }),
+    useGetPaymentsMeta: () => ({ data: undefined, isLoading: false, isError: false }),
   }),
 }));
 

@@ -283,7 +283,8 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
  *  - Sarlavha «To'lovlar» + amallar: superadmin/admin — «Marketga to'lov» (berilishi kerak oynasi) va asosiy
  *    «Pul qabul qilish» (qabul oynasi); menejer — faqat «Kuryerdan qabul qilish» (kuryer oynasi). Maketdagi
  *    «HQ'ga o'tkazish» yo'q — ega qarori #7 (IjqTYQks, 2026-10-25): HQ filial pulini o'zi oladi.
- *  - Ko'rsatkichlar (`PaymentSummaryCards`) — manbalari o'zgarmagan: all-info, menejer settlement / payable-to-hq.
+ *  - Ko'rsatkichlar (`PaymentSummaryCards`): all-info, menejer settlement / payable-to-hq; superadmin/admin sanoqlari va
+ *    top-marketlar — payments-meta (uzWcMR1C).
  *  - Menejer: «Kuryerlardagi pul» (o'z kuryerlari, `GET /couriers` — `status=active` YO'Q).
  *  - «Operatsiyalar tarixi»: tablar Barchasi / Kirim / Chiqim (`operation_type`), filtrlar — To'lov sanasi
  *    (`from_date`/`to_date`, `YYYY-MM-DD`, Toshkent kuni), Manba turi, Kassa turi, Yaratgan; telefonda sana +

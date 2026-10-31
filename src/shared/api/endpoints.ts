@@ -258,6 +258,8 @@ export const API_ENDPOINTS = {
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox
     CASHBOX_ALL_INFO: "finance/cashbox/all-info",
+    // uzWcMR1C — /payments KPI meta (faqat superadmin/admin): filiallar, HQ kuryerlari, marketlar soni, top-marketlar.
+    CASHBOX_PAYMENTS_META: "finance/cashbox/payments-meta",
     CASHBOX_MAIN: "finance/cashbox/main",
     CASHBOX_BALANCE: "finance/cashbox/balance", // PATCH update balance + history
     CASHBOX_FINANCIAL_BALANCE: "finance/cashbox/financial-balanse", // backend spelling
