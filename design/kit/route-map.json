@@ -1507,7 +1507,7 @@
     {
       "path": "/notifications",
       "section": "notifications",
-      "title": "Bildirishnomalar — Telegram guruhlari",
+      "title": "Bildirishnoma sozlamalari — Telegram guruhlari",
       "components": [
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",

@@ -1752,12 +1752,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Bildirishnomalar
 
-#### `/notifications` — Bildirishnomalar — Telegram guruhlari
+#### `/notifications` — Bildirishnoma sozlamalari — Telegram guruhlari
 
 - **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/pages/notifications/ui/NotificationRowMenu.tsx` · `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` · `src/features/telegram-link/ui/LinkQrPanel.tsx` · `src/features/telegram-link/ui/LinkCountdown.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin, admin
-- **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin, admin
+- **Menyuda:** «Bildirishnoma sozlamalari» (`notifications`) — superadmin, admin
 - **Holat:** v2
 - **Izoh:** Dizayn v2 (G2 + NG-A): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), planshetda (< 1024) «Xabar turi» va «Sana» ustunlari yashirin (tur — market nomi ostida, sana — guruh ID ostida), «Holat» ustuni (Faol / Nofaol + nofaollik sababi — NG-C, G085w5Qr: inactive_reason kicked/left — qizil «Nofaol» + «Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring», chat_not_found — qizil + «Guruh topilmadi — ulanishni o'chirib, qayta ulang», blocked_on_send — qizil + «Bot guruhga xabar yubora olmadi — …» (maketda yo'q matn), manual — neytral «Qo'lda nofaol qilingan», null yoki noma'lum qiymat — neytral umumiy izoh «Xabarlar bu guruhga yuborilmayapti» (D1); inactive_at bo'lsa ostida «Nofaol bo'lgan: {sana}» — maketda yo'q, vazifa bo'yicha; xuddi shu matn telefon kartasida, qator varag'ida va foydalanuvchi tafsilotidagi «Telegram guruhi» kartasida; faollashtirish tasdig'ida ogohlantirish sababga qarab — bot chiqarilgan: maketdagi «Bot guruhdan chiqarilgan», qo'lda / noma'lum: umumiy «Bot guruhda ekanini tekshiring»; «shu tur ulangan, lekin nofaol» oynasida ham sababli matn), market nomlari GET /markets dan (qatorda faqat market_id). Qator menyusi (NotificationRowMenu, 64 px ustun): desktopda popover, telefonda pastki varaqa (bandlar ≥ 52 px, kebab 44 px) — faol guruhda «Nofaol qilish», nofaolida «Faollashtirish», so'ng «O'chirish»; nofaol qilish (danger) va faollashtirish (ogohlantirish bilan) — tasdiq oynalari, ikkalasi faqat PATCH /notifications/:id {is_active} (features/notification-toggle); o'chirish — tasdiq oynasi (maket matni). Xato matnlari faqat i18n (backend message ko'rsatilmaydi). Qo'shish oynasi maketdagi bot havolasi formasi (*-create-dialog; qo'lda guruh ID formasi yo'q) — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi» xabari — *-connected); shu (market, tur) ulangan bo'lsa havola berilmaydi. «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlandi (NG-S4). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason — NG-C); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications superadmin + admin — NG-A); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (*-create-exists-inactive-dialog → *-activate-dialog — NG-B); NG-S4 — faqat bot havolasi (*-create-link-dialog, *-create-expired-dialog — NG-B). NG-B (2026-10-21): havola tayyor — QR oq ramkada (desktopda chapda, telefonda qadamlardan keyin), «Telegram bor telefonda» qadami, ajratgich ostida teskari sanoq (LinkCountdown inline, role=timer, progresssiz) va «Guruh ulanishi kutilmoqda…»; faol ulanishda — «avval eskisini ro'yxatdan o'chiring» (tahrirlash yo'q); nofaol ulanishda — asosiy tugma «Faollashtirish» → ochiq oyna ustida tasdiq (features/notification-toggle), muvaffaqiyatda oyna yopiladi, bekor qilinsa fokus tugmaga qaytadi; havola xatosi — faqat i18n matn (403 / boshqa).
 
@@ -3545,7 +3545,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+19) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
-| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
+| Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
@@ -3570,7 +3570,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
-| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
+| Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
 
 ### manager — Menejer

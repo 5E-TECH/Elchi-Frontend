@@ -3,6 +3,7 @@ import {
   House,
   Warehouse,
   Plug,
+  Send,
   Wrench,
   ShoppingBag,
   Mail,
@@ -17,7 +18,6 @@ import {
   Wallet,
   Scale,
   ScrollText,
-  Bell,
   Building2,
   Truck,
   Zap,
@@ -97,7 +97,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapIcon, label: "regions" },
-    { to: "/notifications", icon: Bell, label: "notifications" },
+    { to: "/notifications", icon: Send, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
     { to: "/integrations", icon: Plug, label: "integrations" },
     // Avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2). Marketga to'lov
@@ -122,7 +122,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/integrations", icon: Plug, label: "integrations" },
     // NG-A (ega NG-S2): Telegram guruhlari adminga ham — maketdagi menyu (`roles.json`, «Tizim» guruhi).
-    { to: "/notifications", icon: Bell, label: "notifications" },
+    { to: "/notifications", icon: Send, label: "notifications" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
