@@ -53,6 +53,14 @@ const openConfirm = async (props: HarnessProps = {}) => {
 };
 
 describe("ConfirmDialog — tuzilma", () => {
+  it("`lead` — asosiy matn, ob'ekt kartasidan oldin", () => {
+    render(
+      <ConfirmDialog open title="Sarlavha" lead="Asosiy matn" details="Karta" confirmLabel="Tasdiqlash" onCancel={vi.fn()} onConfirm={vi.fn()} />,
+    );
+    const lead = screen.getByText("Asosiy matn");
+    expect(lead.compareDocumentPosition(screen.getByText("Karta")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("alertdialog: nom, izoh; fokus «Bekor qilish» da (xavfsiz tugma)", async () => {
     const { dialog } = await openConfirm();
     expect(dialog).toHaveAttribute("aria-modal", "true");

@@ -41,8 +41,12 @@ export const OTHER_ORDER = {
 /**
  * `options.items` — ro'yxatni har so'rovda qaytaradigan funksiya (sukut: qop + boshqa posilka). Testda ro'yxatni
  * o'zgartirib «Yangilash» qilish uchun (masalan boshqa joyda qabul qilingan posilka chiqib ketadi).
+ * `options.batches` — javobdagi `meta.batches` (qop hisobi, backend Sm3LZ6EN).
  */
-export const mockIncomingApi = async (page: Page, options: { items?: () => unknown[] } = {}) => {
+export const mockIncomingApi = async (
+  page: Page,
+  options: { items?: () => unknown[]; batches?: unknown[] } = {},
+) => {
   const leaked: string[] = [];
   const received: string[][] = [];
   await page.context().route("**/*", async (route) => {
@@ -60,7 +64,8 @@ export const mockIncomingApi = async (page: Page, options: { items?: () => unkno
     }
     if (path === "orders/external") {
       const items = options.items?.() ?? [...BATCH_ORDERS, OTHER_ORDER];
-      return reply(route, { statusCode: 200, data: items, total: items.length });
+      const meta = options.batches ? { meta: { batches: options.batches } } : {};
+      return reply(route, { statusCode: 200, data: items, total: items.length, ...meta });
     }
     if (path === "orders/external/receive-by-scan" && request.method() === "POST") {
       const tokens = (request.postDataJSON() as { tokens: string[] }).tokens;

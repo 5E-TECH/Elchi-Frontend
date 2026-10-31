@@ -1,9 +1,9 @@
-// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo
+// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo, superadmin-neworders-incoming-scan-partial, admin-neworders-incoming-scan-partial, manager-new-orders-incoming-scan-partial, registrator-new-orders-incoming-scan-partial, superadmin-neworders-incoming-scan-partial-confirm-dialog, admin-neworders-incoming-scan-partial-confirm-dialog, manager-new-orders-incoming-scan-partial-confirm-dialog, registrator-new-orders-incoming-scan-partial-confirm-dialog
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
+import { Check, Circle, Inbox, Info, RefreshCw, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { canReceiveExternalOrders } from "../../app/lib/access";
 import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
@@ -37,8 +37,11 @@ import {
   Skeleton,
   SkeletonTable,
   TONE_SOFT,
+  useConfirm,
 } from "../../shared/ui/primitives";
 import {
+  bagProgressIndex,
+  bagProgressOf,
   countBags,
   countReceivedByBag,
   districtName,
@@ -48,9 +51,11 @@ import {
   keepScannedInList,
   orderLabel,
   parcelToken,
+  partialBagsInScan,
 } from "./lib";
 import { applyScanDraft, readScanDraft, writeScanDraft } from "./scanDraft";
 import IncomingTable from "./ui/IncomingTable";
+import PartialBagsAlert from "./ui/PartialBagsAlert";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
 
@@ -116,6 +121,12 @@ const orderDetail = (order: IncomingOrder) =>
  * (desktopda «Skanerlash») shu sahifaning maqsadini ochadi. Kamera o'qigan kod `ScanInput` dagi AYNAN
  * `handleScan` ga tushadi (faqat belgilaydi, qabul — sahifadagi «Qabul qilish»). Kamera ichida manba
  * almashtiriladi (`/new-orders/incoming/:id`, kamera ochiq qoladi); qop to'liq emas bo'lsa — ogohlantirish.
+ *
+ * CHALA QOP (DamKku7C, ega S2 · S3 · S5, maketlar `*-incoming-scan-partial`, `*-partial-confirm-dialog`): sonlar —
+ * backend `meta.batches` (ilgari qabul qilinganlar + kutayotganlar), frontend o'zi sanamaydi: ro'yxatda faqat `new`
+ * posilkalar bor va ilgari bittalab qabul qilingan a'zo soxta kamomad bo'lib ko'rinardi. Hamkor hajmni aytmagan
+ * qopda ogohlantirish yo'q. Chala qop QR'i — sariq xabar va xato ovozi, to'liq qop — yashil. Qabulda tasdiq yetarli:
+ * yetishmagan posilka kutilayotgan bo'lib qoladi, hamkorga avtomatik xabar yo'q.
  */
 const IncomingOrdersPage = () => {
   const { t, i18n } = useTranslation("common");
@@ -123,6 +134,7 @@ const IncomingOrdersPage = () => {
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const allowed = useSelector(canReceiveExternalOrders);
+  const confirm = useConfirm();
   const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -186,6 +198,10 @@ const IncomingOrdersPage = () => {
   const byBatch = useMemo(() => indexByBatch(orders), [orders]);
   const byToken = useMemo(() => indexByToken(orders), [orders]);
 
+  /** Qop tokeni → hisobi («2/3», chala qop). */
+  const bags = useMemo(() => bagProgressIndex(query.data?.batches ?? []), [query.data]);
+  const partialBags = useMemo(() => [...bags.values()].filter((bag) => bag.missing > 0), [bags]);
+
   /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
   const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
 
@@ -245,7 +261,9 @@ const IncomingOrdersPage = () => {
    */
   const markBatch = (members: IncomingOrder[], size: number | null) => {
     const fresh = members.filter((order) => !scannedIds.has(order.id) && String(order.qr_code_token ?? "").trim());
-    const total = Math.max(size ?? 0, members.length);
+    const bag = bagProgressOf(members[0], bags);
+    // Ilgari qabul qilinganlar ro'yxatda yo'q va kamomad emas: kutilgani — hamkor aytgani minus ular.
+    const total = Math.max(bag ? bag.size - bag.received : (size ?? 0), members.length);
     if (!fresh.length) {
       const text = t("incomingBatchAlready", { size: total, count: members.length });
       void playScanFeedback("error", text);
@@ -260,12 +278,16 @@ const IncomingOrdersPage = () => {
     setScannedTokens((prev) => [...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]);
     setBagTokens((prev) => new Set([...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]));
     const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
-    const text = t("incomingBatchMarked", { size: total, count: marked });
-    void playScanFeedback("success", text);
+    const partial = bag !== null && bag.missing > 0;
+    const text = partial
+      ? t("incoming.partialScan", { bag: bag.label, arrived: bag.arrived, size: bag.size })
+      : t("incomingBatchMarked", { size: total, count: marked });
+    void playScanFeedback(partial ? "error" : "success", text);
     setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
       text,
+      detail: partial ? t("incoming.partialScanDetail", { marked, missing: bag.missing }) : undefined,
       // «Olib tashlash» — faqat shu skan belgilaganlar (oldin bittalab skanerlanganlar qoladi).
       undoIds: fresh.map((order) => order.id),
     });
@@ -356,8 +378,74 @@ const IncomingOrdersPage = () => {
     },
   });
 
-  const handleReceive = () => {
+  /** Chala qopdan posilka bor — avval tasdiq (ega S2). `true` — qabul davom etadi. */
+  const confirmPartialBags = () => {
+    const scannedBags = partialBagsInScan(orders, scannedIds, bags);
+    if (!scannedBags.length) return Promise.resolve(true);
+    const value = (count: number) => formatNumberLocalized(count, { language });
+    const bagsCount = value(scannedBags.length);
+    const left = orders.length - scannedIds.size;
+    return confirm({
+      title: t("incoming.partialConfirmTitle", { value: bagsCount }),
+      description: t("incoming.partialConfirmContext", { source: cameraSource, value: value(scannedIds.size) }),
+      lead: t("incoming.partialConfirmLead", { value: bagsCount }),
+      icon: TriangleAlert,
+      iconTone: "warning",
+      size: "md",
+      closable: true,
+      confirmLabel: t("incoming.partialConfirmAction"),
+      confirmIcon: Check,
+      details: (
+        <ul className="m-0 flex list-none flex-col p-0">
+          {scannedBags.map((bag, index) => (
+            <li
+              key={bag.token}
+              className={cx(
+                "flex flex-wrap items-center justify-between gap-x-3 gap-y-1",
+                index > 0 && "mt-3 border-t border-border pt-3",
+              )}
+            >
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-semibold [overflow-wrap:anywhere]">{t("incoming.bagLabel", { bag: bag.label })}</span>
+                <span className="text-[13px] text-text-muted">
+                  {t("incoming.partialConfirmBag", { size: bag.size, arrived: bag.arrived, scanned: bag.scanned })}
+                </span>
+              </span>
+              <Badge tone="warning" dot>
+                {t("incoming.partialConfirmMissing", { value: value(bag.missing) })}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ),
+      children: (
+        <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[13px] text-text-muted">
+          <li className="flex items-start gap-2">
+            <Info size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span className="min-w-0">
+              {t("incoming.partialConfirmReceive", {
+                scanned: value(scannedIds.size),
+                missing: value(scannedBags.reduce((sum, bag) => sum + bag.missing, 0)),
+              })}
+            </span>
+          </li>
+          {left > 0 ? (
+            <li className="flex items-start gap-2">
+              <Circle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <span className="min-w-0">{t("incoming.partialConfirmLeft", { value: value(left) })}</span>
+            </li>
+          ) : null}
+        </ul>
+      ),
+    });
+  };
+
+  const handleReceive = async () => {
     if (!scannedTokens.length) return;
+    if (!(await confirmPartialBags())) {
+      inputRef.current?.focus();
+      return;
+    }
     // Qop skani belgilagan va hali ro'yxatda turganlar (qopdagi posilka olib tashlangan bo'lsa — sanalmaydi).
     const sentByBag = new Set(scannedTokens.filter((token) => bagTokens.has(token)));
 
@@ -601,7 +689,7 @@ const IncomingOrdersPage = () => {
               disabled={scannedCount === 0}
               loading={receiveByScan.isPending}
               loadingText={t("incomingReceiving")}
-              onClick={handleReceive}
+              onClick={() => void handleReceive()}
             >
               {t("incoming.receive", { count: scannedCount })}
               <span className="max-md:hidden">{t("incoming.receiveUnit", { count: scannedCount })}</span>
@@ -696,6 +784,8 @@ const IncomingOrdersPage = () => {
         </div>
       ) : null}
 
+      {listReady && partialBags.length > 0 ? <PartialBagsAlert bags={partialBags} /> : null}
+
       <Card
         padding="none"
         title={t("incoming.listTitle")}
@@ -742,7 +832,13 @@ const IncomingOrdersPage = () => {
           )}
         >
           {(_data, { isRefetching }) => (
-            <IncomingTable orders={orders} scannedIds={scannedIds} onUnscan={handleRowUnscan} busy={isRefetching} />
+            <IncomingTable
+              orders={orders}
+              scannedIds={scannedIds}
+              bags={bags}
+              onUnscan={handleRowUnscan}
+              busy={isRefetching}
+            />
           )}
         </QueryBoundary>
       </Card>
