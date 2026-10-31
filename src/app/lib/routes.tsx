@@ -299,8 +299,9 @@ const DashboardEntry = () => {
 
 /**
  * Buyurtma yaratish "Qabul va yaratish" sahifasiga ko'chdi. Eski `/orders/add`
- * havolasi (xatcho'p, eski tugma) yangi joyga o'tadi — tanlangan market
- * (`location.state.selectedMarket`) yo'qolmaydi.
+ * havolasi (xatcho'p, eski tugma) va Telegram botining eski «Kabinetda yaratish»
+ * havolasi `/orders/create` (PIJN1lGp gacha yuborilgan xabarlar) yangi joyga o'tadi —
+ * tanlangan market (`location.state.selectedMarket`) yo'qolmaydi.
  */
 export const LegacyOrderCreateRedirect = () => {
   const location = useLocation();
@@ -770,6 +771,7 @@ const AppRouter = () => {
                   ),
                 },
                 { path: "add", element: <LegacyOrderCreateRedirect /> },
+                { path: "create", element: <LegacyOrderCreateRedirect /> },
                 {
                   path: ":orderId",
                   element: (

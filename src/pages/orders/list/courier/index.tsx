@@ -239,6 +239,8 @@ const STATUS_TAB_MAP: Record<string, CourierOrdersTab> = {
 
 /** URL kalitlari — umumiy buyurtmalar ro'yxati bilan bir xil (`OrderFilters` → `ORDER_FILTER_KEYS`). */
 const SEARCH_PARAM = "orderSearch";
+/** Telegram botining eski havolalaridagi qidiruv kaliti (`/orders?search=EL-…`, PIJN1lGp gacha) — `orderSearch` ga ko'chadi. */
+const LEGACY_SEARCH_PARAM = "search";
 const DATE_FROM_PARAM = "startDay";
 const DATE_TO_PARAM = "endDay";
 /** Qidiruv yozilgach so'rov kechikishi (umumiy ro'yxatdagi `FilterSearch` bilan bir xil). */
@@ -392,10 +394,14 @@ const CourierOrders = () => {
 
   useEffect(() => {
     if (!getParam("status")) setParam("status", "waiting");
+    const legacySearch = getParam(LEGACY_SEARCH_PARAM);
+    if (legacySearch != null) {
+      setMultipleParams({ [SEARCH_PARAM]: getParam(SEARCH_PARAM) ?? legacySearch, [LEGACY_SEARCH_PARAM]: "" });
+    }
   }, []);
 
   // ─── Qidiruv va sana (URL'da; bekor qilingan tabda qo'llanmaydi — u yerda maydonlar yo'q) ─────────
-  const urlSearch = getParam(SEARCH_PARAM) ?? "";
+  const urlSearch = getParam(SEARCH_PARAM) ?? getParam(LEGACY_SEARCH_PARAM) ?? "";
   const dateFrom = getParam(DATE_FROM_PARAM) ?? "";
   const dateTo = getParam(DATE_TO_PARAM) ?? "";
   const [searchDraft, setSearchDraft] = useState(urlSearch);

@@ -170,6 +170,14 @@ describe("Kuryer buyurtmalari — sarlavha, tablar va so'rov (v2)", () => {
     expect(lastCall()).toMatchObject({ search: "EL-100081" });
   });
 
+  it("PIJN1lGp: botning eski havolasi `?search=EL-…` — `orderSearch` ga ko'chadi va so'rovga ketadi", async () => {
+    renderPage("/orders?status=waiting&search=EL-100081");
+    expect(lastCall()).toMatchObject({ search: "EL-100081" });
+    await waitFor(() => expect(search().get("orderSearch")).toBe("EL-100081"));
+    expect(search().get("search")).toBeNull();
+    expect(search().get("status")).toBe("waiting");
+  });
+
   it("sana oralig'i URL'dan `startDate` / `endDate` bo'lib ketadi; bekor qilinganlarda qidiruv va sana yuborilmaydi", async () => {
     const user = userEvent.setup();
     state.rows = [order("1001", "Laylo Hasanova", { status: "cancelled" })];

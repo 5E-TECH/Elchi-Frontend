@@ -1218,7 +1218,7 @@
         "groupHints": {
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
-          "markets": "Only payments to them"
+          "markets": "Only payments to them · Telegram — to the owner's private chat"
         },
         "channels": {
           "telegram": "Telegram",

@@ -23,6 +23,7 @@ import {
   LEGACY_DATE_FROM_KEY,
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
+  LEGACY_SEARCH_KEY,
   matchOrderStatusTab,
   normalizeOrderSearch,
   ORDER_FILTER_KEYS,
@@ -327,7 +328,7 @@ const Orders = () => {
   // Noto'g'ri sana (`?startDay=falonchi`) va bo'sh / «№53» qidiruv API'ga xom ketmaydi (D-08, D-11).
   const urlDateFrom = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY]);
   const urlDateTo = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY]);
-  const urlSearch = normalizeOrderSearch(urlParams[ORDER_FILTER_KEYS.search]);
+  const urlSearch = normalizeOrderSearch(urlParams[ORDER_FILTER_KEYS.search] ?? urlParams[LEGACY_SEARCH_KEY]);
   const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
   const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
   const sortConfig: DataTableSort | null =
@@ -344,6 +345,15 @@ const Orders = () => {
       setMultipleParams({
         [ORDER_STATUS_URL_KEY]: urlParams[LEGACY_ORDER_STATUS_URL_KEY],
         [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      });
+    }
+  }, [setMultipleParams, urlParams]);
+
+  useEffect(() => {
+    if (!urlParams[ORDER_FILTER_KEYS.search] && urlParams[LEGACY_SEARCH_KEY]) {
+      setMultipleParams({
+        [ORDER_FILTER_KEYS.search]: urlParams[LEGACY_SEARCH_KEY],
+        [LEGACY_SEARCH_KEY]: "",
       });
     }
   }, [setMultipleParams, urlParams]);
@@ -960,6 +970,7 @@ const Orders = () => {
       [ORDER_FILTER_KEYS.dateTo]: "",
       [ORDER_FILTER_KEYS.search]: "",
       [LEGACY_DATE_FROM_KEY]: "",
+      [LEGACY_SEARCH_KEY]: "",
       [LEGACY_DATE_TO_KEY]: "",
       ...(activeStatusTab === "custom" ? { [ORDER_STATUS_URL_KEY]: "", [LEGACY_ORDER_STATUS_URL_KEY]: "" } : {}),
       page: "1",

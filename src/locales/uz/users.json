@@ -601,10 +601,10 @@
     "loadError": "Guruhlar holatini yuklab bo'lmadi",
     "loadErrorText": "Qayta urinib ko'ring.",
     "piiLabel": "Guruhda mijoz ismi va telefoni",
-    "piiHint": "O'chirilsa, guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
+    "piiHint": "O'chirilsa, guruhlardagi yangi va bekor qilingan buyurtmalar xabarlarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
     "piiSaved": "Saqlandi",
-    "piiShown": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
-    "piiHidden": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+    "piiShown": "Guruhlardagi yangi va bekor qilingan buyurtmalar xabarlarida mijoz ismi va telefoni ko'rinadi",
+    "piiHidden": "Guruhlardagi yangi va bekor qilingan buyurtmalar xabarlarida mijoz ismi va telefoni yashiriladi",
     "piiSaveError": "Saqlanmadi",
     "piiSaveErrorText": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring."
   },

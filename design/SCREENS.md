@@ -2119,6 +2119,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/integrations/incoming` | `/new-orders/incoming` | — |
 | `/partners` | `/integrations/partners` | — |
 | `/orders/add` | `/new-orders/create` | — |
+| `/orders/create` | `/new-orders/create` | — |
 | `/orders/:orderId` | `/orders/edit/:orderId` | `canViewOrders` |
 | `/new-orders/external` | `/integrations/sources` | `canCreateOrdersByRoleAndBranchType` |
 | `/new-orders/external/:id` | `/integrations/sources` | `canCreateOrdersByRoleAndBranchType` |

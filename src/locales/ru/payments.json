@@ -1218,7 +1218,7 @@
         "groupHints": {
           "superadmin": "Полный отчёт и файл",
           "couriers": "Только свои операции",
-          "markets": "Только выплаты им"
+          "markets": "Только выплаты им · Telegram — в личный чат владельца"
         },
         "channels": {
           "telegram": "Telegram",

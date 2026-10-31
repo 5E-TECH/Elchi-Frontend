@@ -601,10 +601,10 @@
     "loadError": "Could not load the group status",
     "loadErrorText": "Please try again.",
     "piiLabel": "Customer name and phone in the group",
-    "piiHint": "When off, the customer's name and phone are hidden on order cards in the group. Changes are saved instantly.",
+    "piiHint": "When off, the customer's name and phone are hidden in new and cancelled order messages in the groups. Changes are saved instantly.",
     "piiSaved": "Saved",
-    "piiShown": "Customer name and phone are shown on order cards in the group",
-    "piiHidden": "Customer name and phone are hidden on order cards in the group",
+    "piiShown": "Customer name and phone are shown in new and cancelled order messages in the groups",
+    "piiHidden": "Customer name and phone are hidden in new and cancelled order messages in the groups",
     "piiSaveError": "Not saved",
     "piiSaveErrorText": "Could not save the setting. Please try again."
   },
