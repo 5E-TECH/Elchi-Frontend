@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { refreshCashboxQueries, shift } from "../../entities/payments";
+import { refreshCashboxQueries, refreshReceiptQueries, shift } from "../../entities/payments";
 import { formatTimeLocalized } from "../../shared/lib/formatDateTime";
 import { notify } from "../../shared/lib/notify";
 
@@ -11,7 +11,9 @@ import { notify } from "../../shared/lib/notify";
  *  - `finance.shift.auto_closed` — smena jadval bo'yicha avtomatik yopildi (kassirga xabar ham);
  *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi);
  *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
- *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi.
+ *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi;
+ *  - `finance.receipt.checked` — chekning AI tahlili tugadi (QlLf33Ma): chek tafsiloti va kassa tarixi qayta o'qiladi,
+ *    natija sahifa yangilanmay ko'rinadi.
  *
  * ⚠️ Modul `RealtimeSync` da socket.io bilan birga DINAMIK yuklanadi (kirgandan keyin): statik import moliya
  * modulini ilova kirish bo'lagiga qo'shib, /login ni og'irlashtirardi (login-performance byudjeti).
@@ -21,6 +23,7 @@ export const FINANCE_EVENTS = [
   "finance.shift.auto_closed",
   "finance.shift.account_checked",
   "finance.cashbox.card_changed",
+  "finance.receipt.checked",
 ] as const;
 
 export type FinanceEvent = (typeof FINANCE_EVENTS)[number];
@@ -47,6 +50,10 @@ export const refreshShiftQueries = (client: QueryClient) =>
 export const handleFinanceEvent = (client: QueryClient, t: TFunction, event: FinanceEvent, payload: unknown) => {
   if (event === "finance.cashbox.card_changed") {
     void refreshCashboxQueries(client);
+    return;
+  }
+  if (event === "finance.receipt.checked") {
+    void refreshReceiptQueries(client);
     return;
   }
   void refreshShiftQueries(client);

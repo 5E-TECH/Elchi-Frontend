@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview
+// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, superadmin-payments-overview-receipts
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Inbox, ListFilter } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getCashboxTypeLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
 import type { PaymentAck } from "./paymentAck";
+import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
+import { toReceiptRef, type ReceiptRef } from "../../../entities/payments/receipt";
 
 // ─── Types (boshqa «Moliya» fayllari import qiladi — o'zgarmaydi, faqat additiv) ───────────────
 
@@ -56,6 +58,8 @@ export interface PaymentRow {
    */
   expense_category_id?: string | null;
   expense_category_name?: string | null;
+  /** QlLf33Ma — biriktirilgan chek: superadmin/admin/menejerga, boshqa rollarda kalit yo'q; chek yo'q — `null`. */
+  receipt?: ReceiptRef | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {
@@ -205,7 +209,11 @@ const PaymentHistoryTable = ({
     (row: PaymentRow) => {
       const category = getExpenseCategoryName(row);
       const title = sourceTitle(row);
-      return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: dateText(row) });
+      const label = t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: dateText(row) });
+      const receipt = toReceiptRef(row.receipt);
+      return receipt
+        ? `${label}, ${t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) })}`
+        : label;
     },
     [dateText, sourceTitle, t],
   );
@@ -250,10 +258,11 @@ const PaymentHistoryTable = ({
           );
           return (
             <>
-              {category ? (
+              {category || row.receipt ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   {title}
                   {category}
+                  <ReceiptRowBadge receipt={row.receipt} />
                 </div>
               ) : (
                 title
@@ -326,6 +335,7 @@ const PaymentHistoryTable = ({
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {operationBadge(row)}
             {categoryBadge(row)}
+            <ReceiptRowBadge receipt={row.receipt} />
             <span className="text-[13px] text-text-muted">
               <span className="whitespace-nowrap">{dateText(row)}</span> · {actorName(row)}
             </span>

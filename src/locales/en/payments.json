@@ -1444,6 +1444,103 @@
         "ai": "AI analysis turns off too — if you turn the photo back on, turn AI on separately",
         "kept": "Saved receipts and AI results stay in the history"
       }
+    },
+    "status": {
+      "match": "Matched",
+      "mismatch": "Difference",
+      "unreadable": "Unreadable",
+      "pending": "Analysing",
+      "error": "Error",
+      "disabled": "AI off",
+      "none": "No receipt",
+      "stale": "No result",
+      "prefix": "Receipt:",
+      "aria": "Receipt: {{status}}"
+    },
+    "filter": {
+      "label": "Receipt status",
+      "noneHint": "Manual expenses and «Transfer» to HQ only"
+    },
+    "section": {
+      "title": "Receipt",
+      "compare": "Amount comparison",
+      "onReceipt": "On receipt",
+      "entered": "Entered",
+      "difference": "Difference",
+      "date": "Receipt date",
+      "recipient": "Recipient",
+      "payer": "Payer",
+      "bank": "Bank",
+      "reference": "Transaction number",
+      "confidence": "Confidence",
+      "uploadedBy": "Uploaded by: {{value}}",
+      "checkedAt": "AI checked: {{value}}",
+      "pendingText": "AI is reading the receipt… The result usually appears within a minute — no need to refresh the page.",
+      "staleText": "No AI result — the analysis took more than 3 minutes. Start the re-analysis.",
+      "unreadableText": "AI could not read the amount: the photo is blurry, cropped or not a receipt. Check the photo yourself.",
+      "errorText": "AI analysis failed: the service did not respond. Start the re-analysis.",
+      "disabledText": "AI analysis was off when the receipt was saved — the amount was not compared.",
+      "attemptsOver": "Attempts used up: {{attempts}} / {{max}}",
+      "loading": "Loading receipt",
+      "loadError": "Could not load the receipt data",
+      "retry": "Try again"
+    },
+    "flags": {
+      "title": "AI warnings · {{n}}",
+      "duplicate_photo": {
+        "title": "Duplicate photo",
+        "text": "This photo was also uploaded for another operation"
+      },
+      "duplicate_reference": {
+        "title": "Duplicate transaction number",
+        "text": "This number appeared on another receipt in the last 90 days"
+      },
+      "date_far": {
+        "title": "Distant date",
+        "text": "The receipt date ({{date}}) differs from the operation by more than 3 days"
+      },
+      "card_mismatch": {
+        "title": "Card mismatch",
+        "text": "The recipient card (··{{last4}}) does not match the HQ cards",
+        "textExpense": "The payer card (··{{last4}}) does not match the cashbox card"
+      }
+    },
+    "reanalyze": {
+      "title": "Confirm re-analysis",
+      "description": "AI reads the receipt again and compares it with the entered amount. The new result replaces the previous one.",
+      "operation": "Operation",
+      "entered": "Entered amount",
+      "current": "Current result",
+      "attempts": "Attempts",
+      "confirm": "Re-analyse",
+      "sending": "Sending…",
+      "success": "The receipt was sent for re-analysis — the result will update in the history.",
+      "errors": {
+        "RECEIPT_AI_PENDING": {
+          "title": "Analysis not finished yet",
+          "text": "This receipt is being analysed — wait for the result."
+        },
+        "RECEIPT_AI_ATTEMPTS_EXHAUSTED": {
+          "title": "Attempts used up",
+          "text": "This receipt was analysed 5 times — no attempts left."
+        },
+        "RECEIPT_AI_DISABLED": {
+          "title": "AI analysis is off",
+          "text": "«AI analysis» is off in settings — re-analysis is not possible."
+        },
+        "RECEIPT_ALREADY_MATCHED": {
+          "title": "Receipt matched",
+          "text": "No re-analysis needed."
+        },
+        "offline": {
+          "title": "No internet connection",
+          "text": "The request did not get through. Press again once you are back online."
+        },
+        "generic": {
+          "title": "Re-analysis did not start",
+          "text": "Try again a little later."
+        }
+      }
     }
   }
 }

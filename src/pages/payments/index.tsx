@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, manager-payments-overview-shift-closed
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
-import { ArrowDownLeft, ArrowUpRight, CreditCard, Info, ListFilter, Timer, User, Wallet, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CreditCard, Info, ListFilter, Receipt, Timer, User, Wallet, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useCashBox } from "../../entities/payments";
+import { RECEIPT_FILTER_STATUSES, useCashBox } from "../../entities/payments";
 import { useFinanceCoverage } from "../../entities/payments/financeCoverage";
 import {
   closingPoints,
@@ -165,15 +165,18 @@ type PaymentsFilters = {
   source_type: string;
   cashbox_type: string;
   created_by: string;
+  /** «Chek holati» (QlLf33Ma) — faqat superadmin/admin; noma'lum qiymat yoki menejer — bo'sh. */
+  receipt_status: string;
   from_date: string;
   to_date: string;
 };
-type SelectFilterKey = "source_type" | "cashbox_type" | "created_by";
+type SelectFilterKey = "source_type" | "cashbox_type" | "created_by" | "receipt_status";
 /** Tabdan tashqari filtrlar («Filtrlarni tozalash» shularni tozalaydi; tab — o'zining «Barchasi»). */
 const CLEARABLE: Record<Exclude<keyof PaymentsFilters, "operation_type">, string> = {
   source_type: "",
   cashbox_type: "",
   created_by: "",
+  receipt_status: "",
   from_date: "",
   to_date: "",
 };
@@ -231,6 +234,7 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
     source_type: values.source_type,
     cashbox_type: values.cashbox_type,
     created_by: values.created_by,
+    receipt_status: values.receipt_status,
   });
   const [draft, setDraft] = useState(pick(initial));
   const [prevOpen, setPrevOpen] = useState(open);
@@ -255,7 +259,7 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
             variant="secondary"
             size="lg"
             className="max-md:flex-none!"
-            onClick={() => setDraft({ source_type: "", cashbox_type: "", created_by: "" })}
+            onClick={() => setDraft({ source_type: "", cashbox_type: "", created_by: "", receipt_status: "" })}
           >
             {t("ui:filters.reset")}
           </Button>
@@ -359,6 +363,11 @@ const Payments = () => {
       source_type: allParams.source_type ?? "",
       cashbox_type: allParams.cashbox_type ?? "",
       created_by: allParams.created_by ?? "",
+      // Noto'g'ri qiymat 400, menejerga filtr 403 berardi — so'rovga ketmaydi.
+      receipt_status:
+        !isManagerRole && (RECEIPT_FILTER_STATUSES as readonly string[]).includes(allParams.receipt_status ?? "")
+          ? allParams.receipt_status
+          : "",
       // Noto'g'ri sana e'tiborsiz qoldiriladi (so'rovga ketmaydi).
       from_date: ISO_DAY.test(allParams.from_date ?? "") ? allParams.from_date : "",
       to_date: ISO_DAY.test(allParams.to_date ?? "") ? allParams.to_date : "",
@@ -368,8 +377,10 @@ const Payments = () => {
       allParams.created_by,
       allParams.from_date,
       allParams.operation_type,
+      allParams.receipt_status,
       allParams.source_type,
       allParams.to_date,
+      isManagerRole,
     ],
   );
   const filtersFromUrlKey = useMemo(() => JSON.stringify(filtersFromUrl), [filtersFromUrl]);
@@ -609,6 +620,16 @@ const Payments = () => {
     [role, t],
   );
 
+  const receiptStatusOptions = useMemo<SelectOption[]>(
+    () =>
+      RECEIPT_FILTER_STATUSES.map((value) => ({
+        value,
+        label: t(`receipt.status.${value}`),
+        description: value === "none" ? t("receipt.filter.noneHint") : undefined,
+      })),
+    [t],
+  );
+
   const pagination = useMemo(
     () =>
       normalizePagination(
@@ -670,6 +691,17 @@ const Payments = () => {
       loading: creatorsLoading,
       searchable: creatorOptions.length > 8,
     },
+    // «Chek holati» — faqat superadmin va admin (menejerda belgilar bor, filtr yo'q).
+    ...(isManagerRole
+      ? []
+      : [
+          {
+            key: "receipt_status" as const,
+            label: t("receipt.filter.label"),
+            icon: Receipt,
+            options: receiptStatusOptions,
+          },
+        ]),
   ];
   const selectActive = selectFields.filter((field) => filtersFromUrl[field.key]).length;
   const dateActive = filtersFromUrl.from_date || filtersFromUrl.to_date ? 1 : 0;

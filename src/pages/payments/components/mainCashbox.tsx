@@ -77,6 +77,7 @@ import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } fro
 import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
 import BalanceTrendCard from "./BalanceTrendCard";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
@@ -841,6 +842,9 @@ const MainCashbox = () => {
     return category ? <ExpenseCategoryBadge name={category} /> : null;
   };
 
+  // «Chek» belgisi (QlLf33Ma) — superadmin va admin; menejerning filial kassasida yo'q (maket `…-main-cashbox-receipts`).
+  const receiptBadge = (row: PaymentRow) => (isManagerRole ? null : <ReceiptRowBadge receipt={row.receipt} />);
+
   const operationBadge = (row: PaymentRow) => {
     const direction = rowDirection(row);
     if (!direction) return <span className="text-text-muted">—</span>;
@@ -895,6 +899,7 @@ const MainCashbox = () => {
       cell: (row) => {
         const sub = rowCounterparty(row);
         const category = categoryBadge(row);
+        const receipt = receiptBadge(row);
         const title = (
           <Pressable
             onClick={() => setSelectedRow(row)}
@@ -906,10 +911,11 @@ const MainCashbox = () => {
         return (
           <>
             {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
-            {category ? (
+            {category || (receipt && row.receipt) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 {title}
                 {category}
+                {receipt}
               </div>
             ) : (
               title
@@ -982,6 +988,7 @@ const MainCashbox = () => {
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
           {categoryBadge(row)}
+          {receiptBadge(row)}
           <span className="text-[13px] text-text-muted">
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>
