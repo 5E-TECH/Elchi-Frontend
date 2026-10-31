@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   updateMarketAddOrder: vi.fn(),
   updateMarketExpenseProof: vi.fn(),
   updateMarketCancelledHandoverQr: vi.fn(),
+  updateMarketExtraCost: vi.fn(),
   updateMarketTelegramGroupPii: vi.fn(),
 }));
 
@@ -26,6 +27,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     updateMarketAddOrder: { mutateAsync: mocks.updateMarketAddOrder, isPending: false },
     updateMarketExpenseProof: { mutateAsync: mocks.updateMarketExpenseProof, isPending: false },
     updateMarketCancelledHandoverQr: { mutateAsync: mocks.updateMarketCancelledHandoverQr, isPending: false },
+    updateMarketExtraCost: { mutateAsync: mocks.updateMarketExtraCost, isPending: false },
     updateMarketTelegramGroupPii: { mutateAsync: mocks.updateMarketTelegramGroupPii, isPending: false },
     useGetUserById: () => ({ data: undefined, isLoading: false }),
     updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
@@ -253,6 +255,38 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     );
   });
 
+  it("market: «Qo'shimcha xarajat» — yopiq marketni ochadi, tasdiq kaliti yopiqda bosilmaydi (w2bDrE3i)", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { extra_cost_enabled: false }), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: "Qo'shimcha xarajat" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("switch", { name: "Market tasdig'i" })).toBeDisabled();
+    await user.click(toggle);
+
+    await waitFor(() =>
+      expect(mocks.updateMarketExtraCost).toHaveBeenCalledWith({ id: "201", extra_cost_enabled: true }),
+    );
+    expect(await screen.findByText("Market uchun qo'shimcha xarajat yoqildi")).toBeInTheDocument();
+  });
+
+  it("market: «Market tasdig'i» — `extra_cost_requires_approval` (false bo'lmasa yoqiq hisoblanadi)", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { extra_cost_enabled: true }), "admin");
+
+    const toggle = screen.getByRole("switch", { name: "Market tasdig'i" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    await user.click(toggle);
+
+    await waitFor(() =>
+      expect(mocks.updateMarketExtraCost).toHaveBeenCalledWith({
+        id: "201",
+        extra_cost_requires_approval: false,
+      }),
+    );
+    expect(await screen.findByText("Qo'shimcha xarajat endi tasdiqsiz yoziladi")).toBeInTheDocument();
+  });
+
   it("market: isbot shartlari — ro'yxatga qo'shadi va olib tashlaydi", async () => {
     const user = userEvent.setup();
     renderView(makeUser("market", { expense_proof_conditions: ["sell_any"] }), "superadmin");
@@ -311,6 +345,7 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
 
     expect(screen.getByRole("switch", { name: "Buyurtma qo'shish" })).toBeDisabled();
     expect(screen.queryByText("Rasm yoki video isbot")).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Qo'shimcha xarajat" })).not.toBeInTheDocument();
   });
 
   it("«Ruxsatlar» da «Guruhda mijoz ismi va telefoni» kaliti yo'q — u «Telegram guruhi» kartasiga ko'chdi (TG-B S3)", () => {

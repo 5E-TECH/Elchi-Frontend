@@ -80,6 +80,9 @@ export interface User {
   can_add_extra_cost?: boolean;
   can_sell_cancel?: boolean;
   cancelled_handover_qr_required?: boolean;
+  /** Market bo'yicha qo'shimcha xarajat (w2bDrE3i): yangi market — yopiq, eski marketlar — ochiq. */
+  extra_cost_enabled?: boolean;
+  extra_cost_requires_approval?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni

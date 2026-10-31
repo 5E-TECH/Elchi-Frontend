@@ -34,6 +34,16 @@ const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false
 const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../entities/payments")>()),
   useCashBox: () => ({

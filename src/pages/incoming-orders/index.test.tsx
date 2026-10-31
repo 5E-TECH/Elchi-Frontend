@@ -269,6 +269,112 @@ describe("IncomingOrdersPage large sources", () => {
 });
 
 /**
+ * TOKEN REGISTRI VA TARTIBI (rQX8TqRV): skanerda Caps Lock yoqiq, yorliq katta harfli yoki OS da kirill tartibi —
+ * posilka baribir topiladi, serverga esa asl token ketadi (backend tokenni aniq solishtiradi).
+ */
+describe("IncomingOrdersPage — token normallashtirish", () => {
+  const TOKEN = "c9f6d82e571cc6f19d6f2d26";
+  /** Rus tartibida skanerlangan token: harf — o'sha tugmaning kirill belgisi. */
+  const CYRILLIC = "с9а6в82у571сс6а19в6а2в26";
+  const BAG = "3733ff7bd1e2c4a5b6c7d8e9";
+
+  const mockList = () =>
+    apiGetMock.mockImplementation((url: string) => {
+      if (url !== "orders/external") return Promise.resolve({ data: [] });
+      return Promise.resolve({
+        data: {
+          data: [
+            { id: "o-1", order_number: 1251133, qr_code_token: TOKEN, customer: { name: "Birinchi mijoz" } },
+            { id: "o-2", order_number: 1251134, qr_code_token: "aaaa1111", external_batch_token: BAG, external_batch_size: 2, customer: { name: "Qop mijoz 1" } },
+            { id: "o-3", order_number: 1251135, qr_code_token: "bbbb2222", external_batch_token: BAG, external_batch_size: 2, customer: { name: "Qop mijoz 2" } },
+          ],
+          total: 3,
+        },
+      });
+    });
+  const scan = (value: string) => {
+    const input = screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.submit(input.closest("form")!);
+  };
+  const scanLookups = () => apiGetMock.mock.calls.filter(([url]) => String(url).startsWith("scan/"));
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    mockList();
+  });
+
+  it.each([
+    ["KATTA harf", TOKEN.toUpperCase()],
+    ["aralash registr", "C9f6D82e571CC6f19d6F2d26"],
+    ["kirill tartibi", CYRILLIC],
+    ["kirill tartibi + Caps Lock", CYRILLIC.toUpperCase()],
+    ["KATTA harfli havola", `https://elchi.uz/scan/${TOKEN.toUpperCase()}`],
+  ])("⭐ %s — posilka topiladi, serverga asl token ketadi", async (_name, value) => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(value);
+
+    expect(await screen.findByText(/1251133 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+    expect(scanLookups()).toEqual([]);
+
+    apiPostMock.mockResolvedValue({ data: { data: { received: 1, unmatched: [] } } });
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("orders/external/receive-by-scan", { tokens: [TOKEN] }));
+  });
+
+  it("boshqa yozuvdagi takroriy skan — «allaqachon», hisob o'zgarmaydi", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(TOKEN);
+    await screen.findByText(/1251133 — ro'yxatga qo'shildi/);
+    scan(TOKEN.toUpperCase());
+
+    expect(await screen.findByText(/1251133 — allaqachon skanerlangan/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+  });
+
+  it.each([
+    ["KATTA harfda", BAG.toUpperCase()],
+    ["kirill tartibida", "3733аа7ив1у2с4ф5и6с7в8у9"],
+  ])("qop tokeni %s ham ro'yxatning o'zidan topiladi", async (_name, value) => {
+    renderPage();
+    await screen.findByText("Qop mijoz 2");
+
+    scan(value);
+    expect(await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi")).toBeInTheDocument();
+    expect(scannedProgress()).toBe("2 / 3");
+    expect(scanLookups()).toEqual([]);
+  });
+
+  it("ro'yxatda yo'q qop: avval skanerlangan yozuv, keyin kichik harflisi so'raladi", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan("BEGONA9999");
+
+    expect(
+      await screen.findByText("Bu QR ro'yxatda topilmadi — posilka boshqa hamkordanmi yoki allaqachon qabul qilinganmi?"),
+    ).toBeInTheDocument();
+    expect(scanLookups().map(([url]) => url)).toEqual(["scan/BEGONA9999", "scan/begona9999"]);
+  });
+
+  it("kamera ro'yxati token bo'yicha posilkani topadi (kirill tartibda skanerlangan bo'lsa ham)", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(CYRILLIC);
+
+    await waitFor(() => expect(getActiveScanTarget()?.list?.map((item) => item.key)).toEqual(["o-1"]));
+  });
+});
+
+/**
  * QOP (BATCH) SKANI (CbKnJLZO). Andijon E2E: qop tokeni 30d2894f58d3f89170a612c8,
  * qopda 6 posilka (1251162..1251167), har biri o'z QR tokeni bilan.
  */
@@ -408,6 +514,14 @@ describe("IncomingOrdersPage — qop (batch) yorlig'i", () => {
  * «Qabul qilish — N ta posilka» yagona asosiy tugma, oxirgi skan natijasi va qisman qabul xabari.
  */
 describe("IncomingOrdersPage — dizayn v2", () => {
+  // Belgi faqat brauzer oynasi faol bo'lganda chiqadi; jsdom da `document.hasFocus()` doim `false`.
+  beforeEach(() => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const items = [
     { id: "o-1", order_number: 10263, qr_code_token: "tok-1", total_price: 175000, customer: { name: "Rustam Jo'rayev", district: { name: "Olmazor tumani" } } },
     { id: "o-2", order_number: 10264, qr_code_token: "tok-2", total_price: 520000, customer: { name: "Gulchehra Saidova" } },
@@ -630,6 +744,278 @@ describe("IncomingOrdersPage — kamera (markaziy «Skaner» tugmasi)", () => {
     act(() => target().switcher!.onSelect("122"));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/new-orders/incoming/122"));
     await waitFor(() => expect(target().id).toBe("incoming:122"));
+  });
+});
+
+/**
+ * eo3eeJxs: USB skaner fokusdan qat'i nazar tinglaydi (`tizim-scanner`), F5 skanlarni o'chirmaydi va «USB skaner
+ * tayyor» belgisi faqat ekran haqiqatan tinglayotganda ko'rinadi.
+ */
+describe("IncomingOrdersPage — USB skaner fokussiz, F5, «tayyor» belgisi", () => {
+  const items = ["tok-11", "tok-22", "tok-33"].map((qr_code_token, index) => ({
+    id: `o-${index + 1}`,
+    order_number: 2000 + index,
+    qr_code_token,
+    customer: { name: `Mijoz ${index + 1}` },
+  }));
+  let list = items;
+  const DRAFT_KEY = "elchi:incoming-scan:v1:user-1:121";
+  const userState = {
+    role: { id: "user-1", role: "admin", region: null, name: "Admin" },
+    user: { user: { id: "user-1", role: "admin" }, isAuthenticated: true, accessToken: null, loading: false, isAppInitializing: false, error: null },
+  } as never;
+  const otherUserState = {
+    role: { id: "user-2", role: "admin", region: null, name: "Admin" },
+    user: { user: { id: "user-2", role: "admin" }, isAuthenticated: true, accessToken: null, loading: false, isAppInitializing: false, error: null },
+  } as never;
+
+  const render = (state: never = userState) =>
+    renderWithProviders(
+      <Routes>
+        <Route path="/new-orders/incoming/:marketId" element={<IncomingOrdersPage />} />
+      </Routes>,
+      { route: "/new-orders/incoming/121", preloadedState: state },
+    );
+  const field = () => screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+  const scanInField = (value: string) => {
+    fireEvent.change(field(), { target: { value } });
+    fireEvent.submit(field().closest("form")!);
+  };
+  /** Skaner: harflar pauzasiz + Enter. Qaytgan qiymat `false` — Enter ushlangan (`preventDefault`). */
+  const usbScan = (value: string, target: Element = document.activeElement ?? document.body) => {
+    for (const key of value) fireEvent.keyDown(target, { key });
+    return fireEvent.keyDown(target, { key: "Enter", code: "Enter" });
+  };
+  const badge = () => screen.queryByText("USB skaner tayyor");
+
+  beforeEach(() => {
+    list = items;
+    window.localStorage.clear();
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    apiGetMock.mockImplementation((url: string) =>
+      Promise.resolve(url === "orders/external" ? { data: { data: list, total: list.length } } : { data: [] }),
+    );
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    window.localStorage.clear();
+    document.querySelectorAll("[data-test-extra]").forEach((element) => element.remove());
+  });
+
+  it("⭐ fokus bo'sh joyda: skan tutiladi, posilka belgilanadi, xabar chiqadi", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    act(() => field().blur());
+    expect(document.activeElement).toBe(document.body);
+
+    act(() => void usbScan("tok-22"));
+
+    expect(await screen.findByText(/2001 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+  });
+
+  it("⭐ fokus tugmada: Enter tugmani bosmaydi, skan belgilanadi", async () => {
+    const user = userEvent.setup();
+    render();
+    await screen.findByText("Mijoz 3");
+    const refresh = screen.getByRole("button", { name: "Yangilash" });
+    await user.click(refresh);
+    await waitFor(() => expect(field()).toHaveFocus());
+    await waitFor(() => expect(ordersCalls().length).toBe(2));
+    act(() => refresh.focus());
+
+    let notPrevented = true;
+    act(() => {
+      notPrevented = usbScan("tok-11", refresh);
+    });
+
+    expect(notPrevented).toBe(false);
+    expect(await screen.findByText(/2000 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    expect(ordersCalls().length).toBe(2);
+  });
+
+  it("fokus maydonda: skan bir marta tushadi (ikki yo'l ustma-ust emas)", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+
+    act(() => void usbScan("tok-11", field()));
+    expect(scannedProgress()).toBe("0 / 3");
+
+    scanInField("tok-11");
+    expect(await screen.findByText(/2000 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+  });
+
+  it("qisqa qiymat skan emas: Enter ushlanmaydi, xabar chiqmaydi", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    act(() => field().blur());
+
+    let notPrevented = false;
+    act(() => {
+      notPrevented = usbScan("ab");
+    });
+
+    expect(notPrevented).toBe(true);
+    expect(screen.queryByText(/Bu QR ro'yxatda topilmadi/)).not.toBeInTheDocument();
+    expect(scannedProgress()).toBe("0 / 3");
+  });
+
+  it("⭐ modal ochiq: skaner ushlamaydi, belgi yo'q; yopilgach yana tinglaydi", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    act(() => field().blur());
+    expect(badge()).toBeInTheDocument();
+
+    const modal = document.createElement("div");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("data-test-extra", "");
+    act(() => document.body.append(modal));
+    await waitFor(() => expect(badge()).not.toBeInTheDocument());
+
+    act(() => void usbScan("tok-11"));
+    expect(scannedProgress()).toBe("0 / 3");
+
+    act(() => modal.remove());
+    await waitFor(() => expect(badge()).toBeInTheDocument());
+    act(() => void usbScan("tok-11"));
+    expect(await screen.findByText(/2000 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+  });
+
+  it("⭐ boshqa maydonga matn yozilmoqda: skaner ushlamaydi, belgi yo'q", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    const other = document.createElement("input");
+    other.setAttribute("data-test-extra", "");
+    document.body.append(other);
+
+    act(() => other.focus());
+    expect(badge()).not.toBeInTheDocument();
+    act(() => void usbScan("tok-11", other));
+    expect(scannedProgress()).toBe("0 / 3");
+
+    act(() => field().focus());
+    expect(badge()).toBeInTheDocument();
+  });
+
+  it("⭐ kamera ochiq: oyna skanerni to'smaydi, belgi turadi", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    const camera = document.createElement("div");
+    camera.setAttribute("data-scanner-camera", "");
+    camera.setAttribute("data-test-extra", "");
+    camera.innerHTML = '<div role="dialog" aria-modal="true"></div>';
+    act(() => document.body.append(camera));
+    act(() => field().blur());
+
+    expect(badge()).toBeInTheDocument();
+    act(() => void usbScan("tok-11"));
+    expect(await screen.findByText(/2000 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+  });
+
+  it("⭐ brauzer oynasi faol emas: belgi yo'q, qaytganda chiqadi", async () => {
+    render();
+    await screen.findByText("Mijoz 3");
+    expect(badge()).toBeInTheDocument();
+
+    vi.mocked(document.hasFocus).mockReturnValue(false);
+    act(() => void window.dispatchEvent(new Event("blur")));
+    expect(badge()).not.toBeInTheDocument();
+
+    vi.mocked(document.hasFocus).mockReturnValue(true);
+    act(() => void window.dispatchEvent(new Event("focus")));
+    expect(badge()).toBeInTheDocument();
+  });
+
+  it("ro'yxat tayyor bo'lmasa belgi yo'q, lekin fokussiz skan jim yo'qolmaydi", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      url === "orders/external" ? Promise.reject(serverError) : Promise.resolve({ data: [] }),
+    );
+    render();
+    await screen.findByText("Buyurtma xizmati javob bermadi");
+    act(() => field().blur());
+    expect(badge()).not.toBeInTheDocument();
+
+    act(() => void usbScan("tok-11"));
+
+    expect(await screen.findByText(/Ro'yxat hali yuklanmagan/)).toBeInTheDocument();
+  });
+
+  it("⭐ F5: skanlar tiklanadi, qabul faqat ro'yxatda hali bor tokenlar bilan, keyin qoralama o'chadi", async () => {
+    const user = userEvent.setup();
+    const first = render();
+    await screen.findByText("Mijoz 3");
+    scanInField("tok-11");
+    scanInField("tok-22");
+    await waitFor(() => expect(scannedProgress()).toBe("2 / 3"));
+    await waitFor(() => expect(window.localStorage.getItem(DRAFT_KEY)).toContain("tok-22"));
+    first.unmount();
+
+    // Sahifa ochilguncha o-2 boshqa joyda qabul qilindi.
+    list = items.filter((order) => order.id !== "o-2");
+    render();
+    await screen.findByText("Mijoz 3");
+
+    await waitFor(() => expect(scannedProgress()).toBe("1 / 2"));
+    apiPostMock.mockResolvedValue({ data: { data: { received: 1, unmatched: [] } } });
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("orders/external/receive-by-scan", { tokens: ["tok-11"] }));
+    await waitFor(() => expect(window.localStorage.getItem(DRAFT_KEY)).toBeNull());
+  });
+
+  it("F5: «Olib tashlash» qoralamaga ham yoziladi", async () => {
+    const user = userEvent.setup();
+    const first = render();
+    await screen.findByText("Mijoz 3");
+    scanInField("tok-11");
+    scanInField("tok-33");
+    await waitFor(() => expect(scannedProgress()).toBe("2 / 3"));
+    await user.click(screen.getByRole("button", { name: "№2000 ni ro'yxatdan olib tashlash" }));
+    await waitFor(() => expect(scannedProgress()).toBe("1 / 3"));
+    first.unmount();
+
+    render();
+    await screen.findByText("Mijoz 3");
+
+    await waitFor(() => expect(scannedProgress()).toBe("1 / 3"));
+  });
+
+  it("boshqa foydalanuvchi qurilmadagi qoralamani ko'rmaydi", async () => {
+    const first = render();
+    await screen.findByText("Mijoz 3");
+    scanInField("tok-11");
+    await waitFor(() => expect(window.localStorage.getItem(DRAFT_KEY)).toContain("tok-11"));
+    first.unmount();
+
+    render(otherUserState);
+    await screen.findByText("Mijoz 3");
+
+    expect(scannedProgress()).toBe("0 / 3");
+    expect(window.localStorage.getItem(DRAFT_KEY)).toContain("tok-11");
+  });
+
+  it("ro'yxat yuklanguncha qoralama o'chirilmaydi: xato bo'lsa, qayta urinishdan keyin tiklanadi", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ tokens: ["tok-33"], bagTokens: [], at: Date.now() }));
+    let failing = true;
+    apiGetMock.mockImplementation((url: string) => {
+      if (url !== "orders/external") return Promise.resolve({ data: [] });
+      return failing ? Promise.reject(serverError) : Promise.resolve({ data: { data: items, total: items.length } });
+    });
+
+    render();
+    await screen.findByText("Buyurtma xizmati javob bermadi");
+    expect(window.localStorage.getItem(DRAFT_KEY)).toContain("tok-33");
+
+    failing = false;
+    await user.click(screen.getByRole("button", { name: /Qayta urinish/ }));
+
+    await screen.findByText("Mijoz 3");
+    await waitFor(() => expect(scannedProgress()).toBe("1 / 3"));
   });
 });
 

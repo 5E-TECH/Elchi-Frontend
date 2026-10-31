@@ -1,12 +1,21 @@
 // dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, manager-payments-overview-shift-closed
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
-import { ArrowDownLeft, ArrowUpRight, CreditCard, ListFilter, Timer, User, Wallet, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CreditCard, Info, ListFilter, Timer, User, Wallet, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCashBox } from "../../entities/payments";
 import { useFinanceCoverage } from "../../entities/payments/financeCoverage";
+import {
+  closingPoints,
+  dayOverDay,
+  lastDaysRange,
+  toDailyRange,
+  useFinanceHistoryDaily,
+  type FinanceDailyParams,
+} from "../../entities/payments/financeDaily";
 import { useUser } from "../../entities/user/api/userApi";
+import { cx } from "../../shared/lib/cx";
 import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -36,6 +45,8 @@ import { useCashboxShift } from "./components/lib/useCashboxShift";
 import OpenShiftFlow from "./components/OpenShiftFlow";
 import ShiftBanner from "./components/ShiftBanner";
 import { getCashboxTypeLabel, getPaymentSourceTitle } from "./components/paymentSourceType";
+import CashFlowCard from "./components/CashFlowCard";
+import CashStateCard from "./components/CashStateCard";
 
 const DEFAULT_PAYMENTS_LIMIT = 10;
 
@@ -290,7 +301,9 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
  *    (`from_date`/`to_date`, `YYYY-MM-DD`, Toshkent kuni), Manba turi, Kassa turi, Yaratgan; telefonda sana +
  *    «Filtrlar» varaqasi va faol filtr chiplari. Har filtr 1-sahifa bilan BITTA URL yangilanishida yoziladi.
  *    Tab sonlari chizilmaydi (API faqat joriy so'rov jamini beradi).
- * Maketdagi «Pul oqimi», «Kassa holati», «Kassa oqimi» (Taklif) — chizilmaydi.
+ *  - qzjTMWPb: superadmin/admin — filtrlar kartalar ostida (grafik va tarixga qo'llanadi), «Pul oqimi» (`GET
+ *    /finance/history/daily`, filtrlar bilan; sana bo'lmasa — oxirgi 14 kun) va «Kassa holati» (all-info). Menejer —
+ *    «Kassa oqimi» (oxirgi 14 kun, tarix filtrlariga bog'liq emas — maket) va «kechaga nisbatan» + 14 kunlik chiziq.
  *
  * Smena (CB-2, ega javobi CB-S4 — hamma kassada majburiy; maket `manager-payments-overview-shift-closed`): menejer
  * filial kassasida smena yo'q (`useCashboxShift` → `closed`) — sarlavha izohi «… · smena yopiq», «HQ'ga
@@ -376,7 +389,8 @@ const Payments = () => {
   const { useGetUser } = useUser();
 
   // ── Ko'rsatkichlar manbai (o'zgarmagan) ──────────────────────────────────────
-  const { data: cashboxInfo, isLoading: cashboxLoading } = useGetCashBoxInfo();
+  const cashboxInfoQuery = useGetCashBoxInfo();
+  const { data: cashboxInfo, isLoading: cashboxLoading } = cashboxInfoQuery;
   const { data: managerSettlementInfo } = useGetManagerSettlement(isManagerRole);
   const { data: managerPayableInfo } = useGetManagerPayableToHq(isManagerRole);
   // Menejer: o'z kuryerlari sahifa ochilganda («Qabul qilinishi kerak» kartasi va «Kuryerlardagi pul»).
@@ -606,6 +620,36 @@ const Payments = () => {
   );
   const historyRows = historyData ? (historyData?.data?.items ?? []) : undefined;
 
+  // ── qzjTMWPb: kunlik oqim ────────────────────────────────────────────
+  // Superadmin/admin — sahifa filtrlari (`history/daily` ma'nosi `GET /finance/history` bilan bir xil). Kassa turi
+  // tanlanmasa backend Asosiy kassani oladi — sarlavha ham shuni aytadi. Menejer — o'z filiali, maketda filtrsiz.
+  const flowParams = useMemo<FinanceDailyParams>(() => {
+    const range = toDailyRange(isManagerRole ? {} : { from: filtersFromUrl.from_date, to: filtersFromUrl.to_date });
+    const base: FinanceDailyParams = { from_date: range.from, to_date: range.to };
+    if (isManagerRole) return base;
+    if (filtersFromUrl.cashbox_type) base.cashbox_type = filtersFromUrl.cashbox_type;
+    if (filtersFromUrl.operation_type) base.operation_type = filtersFromUrl.operation_type;
+    if (filtersFromUrl.source_type) base.source_type = filtersFromUrl.source_type;
+    if (filtersFromUrl.created_by) base.created_by = filtersFromUrl.created_by;
+    return base;
+  }, [filtersFromUrl, isManagerRole]);
+  const flowCashboxLabel = isManagerRole
+    ? t("v2Overview.mainCashbox")
+    : filtersFromUrl.cashbox_type
+      ? getCashboxTypeLabel(filtersFromUrl.cashbox_type, t, role)
+      : t("v2Overview.mainCashbox");
+  // Menejer: «Kassadagi summa» kartasi — «kechaga nisbatan» va 14 kunlik chiziq. Xato / snapshot yo'q — chizilmaydi.
+  const trendParams = useMemo<FinanceDailyParams>(() => {
+    const range = lastDaysRange(14);
+    return { from_date: range.from, to_date: range.to };
+  }, []);
+  const managerTrendQuery = useFinanceHistoryDaily(trendParams, isManagerRole);
+  const managerTrend = useMemo(() => {
+    const days = managerTrendQuery.data?.days;
+    if (!days) return null;
+    return { change: dayOverDay(days), series: closingPoints(days).map((point) => point.balance) };
+  }, [managerTrendQuery.data]);
+
   // ── Filtrlar ko'rinishi ──────────────────────────────────────────────────────
   const all = t("ui:select.all");
   const selectFields: ReadonlyArray<{
@@ -695,8 +739,13 @@ const Payments = () => {
       };
     });
 
+  // Superadmin/admin: filtrlar kartadan tashqarida — grafik va tarix ustida (maket); menejer — tarix kartasi ichida.
   const toolbar: ReactNode = isPhone ? (
-    <div role="group" aria-label={t("v2Overview.history.filters")} className="flex flex-col gap-3 px-4 py-4">
+    <div
+      role="group"
+      aria-label={t("v2Overview.history.filters")}
+      className={cx("flex flex-col gap-3", isManagerRole && "px-4 py-4")}
+    >
       {dateRange("w-full")}
       <Button
         variant="secondary"
@@ -736,11 +785,17 @@ const Payments = () => {
     <div
       role="group"
       aria-label={t("v2Overview.history.filters")}
-      className="flex flex-wrap items-center gap-3 px-5 py-4"
+      className={cx("flex flex-wrap items-center gap-3", isManagerRole && "px-5 py-4")}
     >
       {dateRange("min-w-0 flex-[1_1_260px]")}
       {selectFields.map(selectFilter)}
       {clearLink}
+      {isManagerRole ? null : (
+        <span className="ml-auto inline-flex items-center gap-1.5 text-[13px] text-text-muted max-lg:hidden">
+          <Info aria-hidden="true" size={16} className="shrink-0" />
+          {t("v2Daily.flow.filterNote")}
+        </span>
+      )}
     </div>
   );
 
@@ -784,18 +839,43 @@ const Payments = () => {
         couriers={isManagerRole ? managerCouriers.options : undefined}
         couriersLoading={isManagerRole && managerCouriers.isLoading}
         hqName={hqName}
+        mainTrend={managerTrend}
       />
 
-      {isManagerRole ? (
-        <CourierMoneyCard
-          couriers={managerCouriers.options}
-          total={courierCashboxTotal}
-          loading={managerCouriers.isLoading}
-          isError={managerCouriers.isError}
-          onRetry={managerCouriers.refetch}
-          onOpenAll={() => openPicker("courier")}
+      {isManagerRole ? null : toolbar}
+
+      <div className="flex flex-wrap items-stretch gap-4">
+        <CashFlowCard
+          variant={isManagerRole ? "manager" : "staff"}
+          params={flowParams}
+          cashboxLabel={flowCashboxLabel}
+          className="flex-[2_1_560px]"
         />
-      ) : null}
+        {isManagerRole ? (
+          <div className="flex min-w-0 flex-[1_1_320px] flex-col [&>*]:flex-1">
+            <CourierMoneyCard
+              couriers={managerCouriers.options}
+              total={courierCashboxTotal}
+              loading={managerCouriers.isLoading}
+              isError={managerCouriers.isError}
+              onRetry={managerCouriers.refetch}
+              onOpenAll={() => openPicker("courier")}
+            />
+          </div>
+        ) : (
+          <CashStateCard
+            cash={mainCashboxTotal}
+            receive={courierCashboxTotal}
+            give={marketCashboxTotal}
+            loading={cashboxLoading}
+            isError={Boolean(cashboxInfoQuery.isError) || (!cashboxLoading && !cashboxData)}
+            error={cashboxInfoQuery.error}
+            onRetry={() => void cashboxInfoQuery.refetch?.()}
+            updatedAt={cashboxInfoQuery.dataUpdatedAt}
+            className="flex-[1_1_320px]"
+          />
+        )}
+      </div>
 
       <Card ref={historyCardRef} as="section" padding="none" aria-label={t("v2Overview.history.label")}>
         <Tabs<OperationTab>
@@ -805,7 +885,7 @@ const Payments = () => {
           ariaLabel={t("v2Overview.history.tabs")}
           listClassName="px-3"
         />
-        {toolbar}
+        {isManagerRole ? toolbar : null}
         <PaymentHistoryTable
           data={historyRows}
           isLoading={historyLoading}

@@ -13,6 +13,16 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 const myCashboxParams = vi.hoisted(() => [] as unknown[]);
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments", () => ({
   useCashBox: () => ({
     useGetCashboxMyCashbox: (params: unknown) => {

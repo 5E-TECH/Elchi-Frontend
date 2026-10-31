@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
+import { isFinanceDailyForbidden, toDailyRange, useFinancialBalanceDaily } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
 import { getThisMonthRange, getThisWeekRange, getTodayRange, toISODate, type ISODateRange } from "../../../shared/lib/dateRange";
 import { formatDateTimeLocalized, type DateInput } from "../../../shared/lib/formatDateTime";
@@ -50,6 +51,7 @@ import {
 } from "../lib/analytics";
 import { extractFinancialLedgerItems, readCurrentBalance } from "../lib/financialBalance";
 import { toSourceTypeLabel } from "../lib/historyRow";
+import DailyLedgerCard from "./DailyLedgerCard";
 import LedgerFlow from "./LedgerFlow";
 
 /** Top tranzaksiyalar sahifasi (server sahifalashi; backend `limit` ni 100 ga qisadi). */
@@ -196,7 +198,8 @@ interface AnalysisTabProps {
  *
  * Davr: sana oralig'i + «Bugun / Bu hafta / Bu oy / Barchasi» (ega qarori Q7: «Yil» o'rniga «Barchasi» =
  * sana paramsiz). Sukut — bugun. Sana `YYYY-MM-DD` (C2: backend Toshkent kuni deb oladi).
- * «Kunlik kirim va chiqim» maketda «Taklif» — chizilmaydi.
+ * «Kunlik kirim va chiqim» va sharshara boshi — `GET /finance/financial-balance/daily` (qzjTMWPb): «Barchasi»da grafik
+ * oxirgi 14 kun (endpoint ≤ 366 kun), 403 da karta yashirinadi va sharshara avvalgi hisobga qaytadi.
  */
 const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPresetChange }: AnalysisTabProps) => {
   const { t, i18n } = useTranslation("payments");
@@ -255,6 +258,28 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPr
   const positiveBuckets = useMemo(() => normalizeApiBuckets(analytics, "positive"), [analytics]);
   const negativeBuckets = useMemo(() => normalizeApiBuckets(analytics, "negative"), [analytics]);
   const currentBalance = readCurrentBalance(analytics);
+
+  // Kunlik agregat: `range` tanlangan davr, «Barchasi» — oxirgi 14 kun. Davr boshi/oxiri faqat aynan shu davr bo'lsa.
+  const dailyRange = useMemo(() => toDailyRange({ from: range.from, to: range.to }), [range.from, range.to]);
+  const dailyQuery = useFinancialBalanceDaily(dailyRange);
+  const dailyData = dailyQuery.isError ? null : (dailyQuery.data ?? null);
+  const periodBalances = useMemo(
+    () =>
+      dailyData && dailyData.from === range.from && dailyData.to === range.to
+        ? { opening: dailyData.ledger.openingBalance, closing: dailyData.ledger.closingBalance }
+        : null,
+    [dailyData, range.from, range.to],
+  );
+  const dailyCard =
+    dailyQuery.isError && isFinanceDailyForbidden(dailyQuery.error) ? null : (
+      <DailyLedgerCard
+        data={dailyData}
+        isLoading={dailyQuery.isLoading}
+        isError={dailyQuery.isError}
+        error={dailyQuery.error}
+        onRetry={() => void dailyQuery.refetch()}
+      />
+    );
 
   const today = toISODate(new Date());
   const reachesToday = !range.to || range.to >= today;
@@ -392,14 +417,18 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPr
           </Card>
         }
         empty={
-          <LedgerFlow
-            currentBalance={null}
-            summary={summary}
-            positive={positiveBuckets}
-            negative={negativeBuckets}
-            reachesToday={reachesToday}
-            periodText={periodText}
-          />
+          <div className="flex flex-col gap-6 max-md:gap-4">
+            <LedgerFlow
+              currentBalance={null}
+              summary={summary}
+              positive={positiveBuckets}
+              negative={negativeBuckets}
+              reachesToday={reachesToday}
+              periodBalances={periodBalances}
+              periodText={periodText}
+            />
+            {dailyCard}
+          </div>
         }
         error={(error, retry) => <ErrorState framed size="chart" error={error} onRetry={retry} />}
       >
@@ -411,9 +440,11 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPr
               positive={positiveBuckets}
               negative={negativeBuckets}
               reachesToday={reachesToday}
+              periodBalances={periodBalances}
               periodText={periodText}
               dimmed={isRefetching}
             />
+            {dailyCard}
             <div className="flex flex-wrap items-stretch gap-4">
               <ImpactRank direction="positive" buckets={positiveBuckets} total={summary.positiveTotal} />
               <ImpactRank direction="negative" buckets={negativeBuckets} total={summary.negativeTotal} />

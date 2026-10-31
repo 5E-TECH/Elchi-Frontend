@@ -1,14 +1,22 @@
 // dizayn-v2: superadmin-balance-overview, admin-balance-overview, superadmin-balance-history, admin-balance-history, superadmin-balance-analysis, admin-balance-analysis
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Download, Info, Plus, Scale, Store, Truck, Wallet } from "lucide-react";
 import { useCashBox } from "../../entities/payments";
+import {
+  balanceTrend,
+  lastDaysRange,
+  useFinancialBalanceDaily,
+  type BalanceSnapshot,
+  type BalanceTrend,
+} from "../../entities/payments/financeDaily";
 import { API_ENDPOINTS } from "../../shared/api/endpoints";
 import { getTodayRange, type ISODateRange } from "../../shared/lib/dateRange";
 import { downloadXlsx, getExportErrorMessage } from "../../shared/lib/exportFile";
-import { formatCompactMoneyLocalized } from "../../shared/lib/formatMoney";
+import { MINUS_SIGN, formatCompactMoneyLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
+import { Sparkline } from "../../shared/ui/charts";
 import {
   Badge,
   Button,
@@ -38,6 +46,9 @@ type FinancialBalanceTab = (typeof FINANCIAL_BALANCE_TABS)[number];
 
 const TABS_ID = "financial-balance-tabs";
 
+/** KPI «14 kunlik chiziq» davri (maket). */
+const TREND_DAYS = 14;
+
 const isFinancialBalanceTab = (value: string | null): value is FinancialBalanceTab =>
   FINANCIAL_BALANCE_TABS.includes(value as FinancialBalanceTab);
 
@@ -48,7 +59,8 @@ const isFinancialBalanceTab = (value: string | null): value is FinancialBalanceT
  *
  * Har tabda: sarlavha («Excelga yuklash» — faol tab paramlari bilan; «Yozuv qo'shish» — qo'lda daftar
  * yozuvi), 4 ko'rsatkich (kassa, yo'ldagi pul, marketlar qarzi, umumiy balans) va formula izohi, tablar
- * (`?tab=`). KPI kunlik o'zgarishi va 14 kunlik chizig'i maketda «Taklif» (kunlik snapshot yo'q) — chizilmaydi.
+ * (`?tab=`). KPI «kechaga nisbatan» va 14 kunlik chiziq — `GET /finance/financial-balance/daily` (qzjTMWPb): kechagi
+ * snapshot `null` bo'lsa (backfill kuni, snapshot hali yo'q, 403 yoki xato) delta chizilmaydi, chiziq o'sha nuqtasiz.
  * «AI xarajat» (`?tab=ai`, Celz3rKJ) — `GET /ai-usage/dashboard` + `/ai-usage/ai-orders`; tab ochilgandagina so'raladi.
  */
 const FinancialBalance = () => {
@@ -107,16 +119,71 @@ const FinancialBalance = () => {
     }
   };
 
+  const dailyRange = useMemo(() => lastDaysRange(TREND_DAYS), []);
+  const dailyQuery = useFinancialBalanceDaily(dailyRange);
+  const dailyDays = dailyQuery.isError ? undefined : dailyQuery.data?.days;
+
   const compact = (value: number) => splitCompact(formatCompactMoneyLocalized(value, { language }));
   const total = data?.currentSituation ?? 0;
   const isNegative = total < 0;
   const marketsDebt = -Math.abs(data?.markets.marketsTotalBalans ?? 0);
 
   const kpis = [
-    { key: "cash", label: t("v2Balance.kpi.cash"), icon: Wallet, value: data?.main.balance ?? 0 },
-    { key: "receivable", label: t("v2Balance.kpi.receivable"), icon: Truck, value: data?.receivable ?? 0 },
-    { key: "markets", label: t("v2Balance.kpi.marketsDebt"), icon: Store, value: marketsDebt },
+    {
+      key: "cash",
+      label: t("v2Balance.kpi.cash"),
+      icon: Wallet,
+      value: data?.main.balance ?? 0,
+      goodWhen: "up" as const,
+      pick: (snapshot: BalanceSnapshot) => snapshot.mainBalance,
+    },
+    {
+      key: "receivable",
+      label: t("v2Balance.kpi.receivable"),
+      icon: Truck,
+      value: data?.receivable ?? 0,
+      goodWhen: "none" as const,
+      pick: (snapshot: BalanceSnapshot) => snapshot.inTransit,
+    },
+    {
+      // Delta — qarz MIQDORI bo'yicha: qarz o'sishi (+) yomon (maket `.is-up.is-bad`).
+      key: "markets",
+      label: t("v2Balance.kpi.marketsDebt"),
+      icon: Store,
+      value: marketsDebt,
+      goodWhen: "down" as const,
+      pick: (snapshot: BalanceSnapshot) => (snapshot.marketsDebt === null ? null : Math.abs(snapshot.marketsDebt)),
+      live: Math.abs(marketsDebt),
+    },
   ];
+
+  const trendOf = (pick: (snapshot: BalanceSnapshot) => number | null, live: number): BalanceTrend | null =>
+    data && dailyDays ? balanceTrend(dailyDays, pick, live) : null;
+
+  /** Delta (foiz; kecha 0 bo'lsa — summa), izoh va 14 kunlik chiziq. Ma'lumot yo'q — hech biri chizilmaydi. */
+  const trendProps = (name: string, trend: BalanceTrend | null) => {
+    const change = trend?.change ?? null;
+    const compactAmount = change ? formatCompactMoneyLocalized(Math.abs(change.amount), { language }) : "";
+    return {
+      delta: change ? (change.percent ?? change.amount) : null,
+      deltaText:
+        change && change.percent === null
+          ? `${change.amount > 0 ? "+" : change.amount < 0 ? MINUS_SIGN : ""}${compactAmount}`
+          : undefined,
+      hint: change ? t("v2Daily.vsYesterday") : undefined,
+      children:
+        trend && trend.series.length >= 2 ? (
+          <Sparkline
+            values={trend.series}
+            label={t("v2Daily.kpi.sparkLabel", {
+              name,
+              count: trend.series.length,
+              last: formatCompactMoneyLocalized(trend.series[trend.series.length - 1], { language }),
+            })}
+          />
+        ) : undefined,
+    };
+  };
 
   const tabs = [
     { value: "overview" as const, label: t("v2Balance.tabs.overview") },
@@ -159,6 +226,8 @@ const FinancialBalance = () => {
                 value={value.value}
                 unit={value.unit}
                 valueTone={kpi.value < 0 ? "danger" : undefined}
+                goodWhen={kpi.goodWhen}
+                {...trendProps(kpi.label, trendOf(kpi.pick, kpi.live ?? kpi.value))}
               />
             );
           })}
@@ -179,6 +248,7 @@ const FinancialBalance = () => {
             value={totalValue.value}
             unit={totalValue.unit}
             valueTone={isNegative ? "danger" : undefined}
+            {...trendProps(t("v2Balance.kpi.total"), trendOf((snapshot) => snapshot.currentSituation, total))}
           />
         </section>
         <p className="m-0 flex items-start gap-2 text-xs leading-[18px] text-text-subtle">
@@ -237,7 +307,7 @@ const FinancialBalance = () => {
             </Card>
           ) : null
         ) : activeTab === "history" ? (
-          <HistoryTab />
+          <HistoryTab generalBalance={data ? total : null} />
         ) : activeTab === "ai" ? (
           <AiCostTab />
         ) : (

@@ -6,16 +6,19 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { normalizeCashboxShift, useCashBox } from "../../../entities/payments";
+import type { DayChange } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import {
   CURRENCY_LABEL,
+  MINUS_SIGN,
   formatCompactMoneyLocalized,
   formatMoneyLocalized,
   formatNumberLocalized,
   formatPercentLocalized,
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
+import { DeltaChip, Sparkline } from "../../../shared/ui/charts";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import {
   Badge,
@@ -40,7 +43,8 @@ import type { ReceiveOption } from "./lib/receiveOptions";
  *    3-kartada «N ta marketga» va top-market chizig'i (payments-meta, uzWcMR1C — to'liq ro'yxat so'ralmaydi, spec §7).
  *  - menejer: qiymatlar to'liq; 2-kartada kuryerlar soni va ulush chizig'i (top-2 + «Boshqa»), 3-kartada
  *    kassaga nisbat (o'lchagich) va «Kassada qoladi» + «Yetarli» / «Yetarli emas». Telefonda — bitta «Kassa
- *    xulosasi» kartasi (maket `el-show-mobile`). Delta «kechaga nisbatan» va sparkline chizilmaydi (API yo'q).
+ *    xulosasi» kartasi (maket `el-show-mobile`). 1-kartada «kechaga nisbatan» va 14 kunlik chiziq (`mainTrend`,
+ *    qzjTMWPb — `GET /finance/history/daily`); noma'lum bo'lsa chizilmaydi.
  * Yuklanishda qiymat o'rnida skelet; xato — sahifa ishlayveradi (qiymat 0, avvalgidek jim).
  *
  * `CourierMoneyCard` — menejerning «Kuryerlardagi pul» reytingi.
@@ -63,6 +67,8 @@ type PaymentSummaryCardsProps = {
   couriersLoading?: boolean;
   /** Menejer: HQ filiali nomi («Toshkent HQ'ga …»); noma'lum — «HQ'ga …». */
   hqName?: string | null;
+  /** Menejer: «kechaga nisbatan» va 14 kunlik qoldiq. `null` — noma'lum (chizilmaydi). */
+  mainTrend?: { change: DayChange | null; series: readonly number[] } | null;
 };
 
 /** «Bekzod Normurodov» → «Bekzod N.» (maket legendasi). */
@@ -161,6 +167,7 @@ const PaymentSummaryCards = ({
   couriers = NO_COURIERS,
   couriersLoading = false,
   hqName = null,
+  mainTrend = null,
 }: PaymentSummaryCardsProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -202,6 +209,27 @@ const PaymentSummaryCards = ({
   });
   const holdersCount = shares.positive.length;
 
+  // ─── Menejer: «kechaga nisbatan» + 14 kunlik chiziq (qzjTMWPb) ───────────────
+  const mainChange = mainTrend?.change ?? null;
+  const mainChangeText = mainChange
+    ? `${mainChange.amount > 0 ? "+" : ""}${
+        mainChange.amount < 0
+          ? `${MINUS_SIGN}${formatCompactMoneyLocalized(-mainChange.amount, { language, withCurrency: false })}`
+          : formatCompactMoneyLocalized(mainChange.amount, { language, withCurrency: false })
+      }`
+    : null;
+  const mainSpark =
+    mainTrend && mainTrend.series.length >= 2 ? (
+      <Sparkline
+        values={mainTrend.series}
+        label={t("v2Daily.kpi.sparkLabel", {
+          name: t("v2Overview.cashboxAmount"),
+          count: mainTrend.series.length,
+          last: money(mainTrend.series[mainTrend.series.length - 1]),
+        })}
+      />
+    ) : null;
+
   // ─── Menejer: berilishi kerak / kassa ────────────────────────────────────────
   const givePercent = mainTotal > 0 ? (marketTotal / mainTotal) * 100 : null;
   const remains = mainTotal - marketTotal;
@@ -237,6 +265,13 @@ const PaymentSummaryCards = ({
                 <span className="ml-1 text-[13px] font-semibold text-text-muted">{currency}</span>
               </span>
             )}
+            {mainChange && mainChangeText ? (
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+                <DeltaChip value={mainChange.amount} goodWhen="none" text={mainChangeText} />
+                <span>{t("v2Daily.vsYesterday")}</span>
+              </span>
+            ) : null}
+            {mainSpark}
           </Link>
           <div className="flex flex-col px-4">
             <Pressable
@@ -309,7 +344,13 @@ const PaymentSummaryCards = ({
           unit={currency}
           loading={loading}
           href="/payments/main-cashbox"
-        />
+          delta={mainChange?.amount ?? null}
+          deltaText={mainChangeText ?? undefined}
+          goodWhen="none"
+          hint={mainChange ? t("v2Daily.vsYesterdayCashbox") : undefined}
+        >
+          {mainSpark}
+        </StatCard>
         <StatCard
           label={t("v2Overview.toReceive")}
           icon={Truck}

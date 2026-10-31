@@ -4,13 +4,16 @@ import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
+import type { RootState } from "../../app/config/store";
 import { canReceiveExternalOrders } from "../../app/lib/access";
-import { extractScannerToken } from "../../shared/lib/scanToken";
+import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
 // ham ishlaydi.
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { useScannerListening } from "../../shared/lib/useScannerListening";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -35,7 +38,18 @@ import {
   SkeletonTable,
   TONE_SOFT,
 } from "../../shared/ui/primitives";
-import { countBags, countReceivedByBag, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
+import {
+  countBags,
+  countReceivedByBag,
+  districtName,
+  findByScanKeys,
+  indexByBatch,
+  indexByToken,
+  keepScannedInList,
+  orderLabel,
+  parcelToken,
+} from "./lib";
+import { applyScanDraft, readScanDraft, writeScanDraft } from "./scanDraft";
 import IncomingTable from "./ui/IncomingTable";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
@@ -54,6 +68,9 @@ import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/Sc
 /** «Olib tashlandi» xabari — bitta `id` (ketma-ket olib tashlashda yangisi eskisining o'rnida), 5 soniya (ega S4). */
 const UNSCAN_TOAST_ID = "incoming-unscan";
 const UNSCAN_TOAST_MS = 5000;
+
+/** Bundan qisqa qiymat fokussiz yo'lda skan emas, odam bosgan tugma (`useOrderQrScanner` dagi chegara). */
+const KEYBOARD_SCAN_MIN_LENGTH = 6;
 
 /** `.el-overline` · `.el-stat-value` · `.el-stat-unit` (CODE-MAP 0.2, 2.4). */
 const OVERLINE = "text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
@@ -89,6 +106,11 @@ const orderDetail = (order: IncomingOrder) =>
  * maydoni, «Kelgan» / «Skanerlangan», chiziq, oxirgi skan natijasi) va «Kelgan posilkalar»
  * jadvali. «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
  *
+ * USB SKANER (`tizim-scanner`: doim tinglaydi, fokusdan qat'i nazar; eo3eeJxs). Fokus maydonda bo'lsa kod maydonga
+ * yoziladi va `ScanInput` yuboradi, boshqa joyda bo'lsa bosishlarni `useKeyboardScanner` tutadi, ikkalasi bitta
+ * `handleScan` ga tushadi. Modal ochiq yoki boshqa maydonga matn yozilayotganda skaner ushlanmaydi va «USB skaner
+ * tayyor» belgisi ham ko'rinmaydi (`useScannerListening`).
+ *
  * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-neworders-incoming-scan-camera`,
  * `manager-new-orders-incoming-scan-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi
  * (desktopda «Skanerlash») shu sahifaning maqsadini ochadi. Kamera o'qigan kod `ScanInput` dagi AYNAN
@@ -101,8 +123,10 @@ const IncomingOrdersPage = () => {
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const allowed = useSelector(canReceiveExternalOrders);
+  const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const listening = useScannerListening(inputRef);
   /**
    * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
    *
@@ -158,35 +182,14 @@ const IncomingOrdersPage = () => {
   const hasServerResponse = Boolean((query.error as { response?: unknown } | null)?.response);
   const listErrorReason = hasServerResponse ? getBackendErrorMessage(query.error) : undefined;
 
-  /**
-   * Qop (batch) tokeni → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat
-   * `new` holatidagilar, ya'ni oldin bittalab qabul qilinganlar bu yerda yo'q:
-   * qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
-   */
-  const byBatch = useMemo(() => {
-    const map = new Map<string, IncomingOrder[]>();
-    for (const order of orders) {
-      const token = String(order.external_batch_token ?? "").trim();
-      if (!token) continue;
-      map.set(token, [...(map.get(token) ?? []), order]);
-    }
-    return map;
-  }, [orders]);
-
-  /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
-  const byToken = useMemo(() => {
-    const map = new Map<string, IncomingOrder>();
-    for (const order of orders) {
-      const token = parcelToken(order);
-      if (token) map.set(token, order);
-    }
-    return map;
-  }, [orders]);
+  /** Skan kaliti → qop a'zolari / buyurtma. Har skanda qayta qurilmaydi. */
+  const byBatch = useMemo(() => indexByBatch(orders), [orders]);
+  const byToken = useMemo(() => indexByToken(orders), [orders]);
 
   /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
   const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
 
-  // Skaner klaviatura sifatida ishlaydi — maydon doim fokusda turishi kerak.
+  // Sahifa ochilganda kod maydonda ko'rinib tursin. Fokus boshqa joyga o'tsa ham skan yo'qolmaydi (`useKeyboardScanner`).
   useEffect(() => {
     if (allowed) inputRef.current?.focus();
   }, [allowed]);
@@ -208,6 +211,26 @@ const IncomingOrdersPage = () => {
       if (memberIds.length !== lastBag.memberIds.length) setLastBag(memberIds.length ? { ...lastBag, memberIds } : null);
     }
   }
+
+  /**
+   * F5 DAN KEYIN SKANLAR TIKLANADI (eo3eeJxs, `scanDraft.ts`). Ro'yxat VA foydalanuvchi kelgach bir marta o'qiladi:
+   * ro'yxatsiz qaysi posilka hali kutayotgani noma'lum, sessiya esa sahifadan keyin tiklanadi. Tiklanguncha
+   * yozilmaydi — aks holda boshlang'ich bo'sh ro'yxat saqlangan qoralamani o'chirib yuborardi.
+   */
+  const [draftUserId, setDraftUserId] = useState<string | null>(null);
+  if (userId && draftUserId !== userId && query.data) {
+    setDraftUserId(userId);
+    const draft = readScanDraft(userId, String(marketId));
+    if (draft) {
+      const restored = applyScanDraft(orders, draft);
+      setScannedIds(restored.ids);
+      setScannedTokens(restored.tokens);
+      setBagTokens(restored.bagTokens);
+    }
+  }
+  useEffect(() => {
+    if (userId && draftUserId === userId) writeScanDraft(userId, String(marketId), scannedTokens, [...bagTokens]);
+  }, [bagTokens, draftUserId, marketId, scannedTokens, userId]);
 
   /** Ro'yxatdagi (hozirgi) posilkalar — «Qaytarish» kechikib bosilsa, ro'yxatdan chiqqan posilka qaytmasin. */
   const liveIdsRef = useRef<ReadonlySet<string>>(new Set());
@@ -252,9 +275,14 @@ const IncomingOrdersPage = () => {
    * Ro'yxatda na posilka, na qop topilmadi — server qop tokenini biladimi?
    * (`GET /scan/:token` qop qidiruvi.) Faqat moslik bo'lmaganda so'raladi:
    * oddiy skan avvalgidek serverga bormaydi.
+   *
+   * Backend tokenni aniq solishtiradi va qop tokeni katta harfli bo'lishi ham mumkin (`BTB-…`), shuning uchun
+   * avval skanerlangan yozuvi, topilmasa kichik harflisi so'raladi.
    */
   const resolveRemoteBatch = async (token: string) => {
-    const batch = await fetchExternalBatchScan(token).catch(() => null);
+    const lookup = (value: string) => fetchExternalBatchScan(value).catch(() => null);
+    const lowered = token.toLowerCase();
+    const batch = (await lookup(token)) ?? (lowered === token ? null : await lookup(lowered));
     const members = batch
       ? orders.filter((order) =>
           batch.members.some(
@@ -273,7 +301,8 @@ const IncomingOrdersPage = () => {
   };
 
   const handleScan = (raw: string) => {
-    const token = extractScannerToken(raw) ?? raw.trim();
+    const latin = latinizeKeyboardLayout(raw);
+    const token = extractScannerToken(latin) ?? latin.trim();
     if (!token) return;
 
     // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
@@ -284,9 +313,10 @@ const IncomingOrdersPage = () => {
       return;
     }
 
-    const order = byToken.get(token);
+    const keys = scanKeyCandidates(raw, window.location.origin);
+    const order = findByScanKeys(byToken, keys);
     if (!order) {
-      const batchMembers = byBatch.get(token);
+      const batchMembers = findByScanKeys(byBatch, keys);
       if (batchMembers?.length) {
         const size = Number(batchMembers[0].external_batch_size);
         markBatch(batchMembers, Number.isFinite(size) && size > 0 ? size : batchMembers.length);
@@ -307,7 +337,8 @@ const IncomingOrdersPage = () => {
 
     void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`);
     setScannedIds((prev) => new Set(prev).add(order.id));
-    setScannedTokens((prev) => [...prev, token]);
+    // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
+    setScannedTokens((prev) => [...prev, parcelToken(order)]);
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
@@ -315,6 +346,15 @@ const IncomingOrdersPage = () => {
       undoIds: [order.id],
     });
   };
+
+  useKeyboardScanner({
+    enabled: allowed && listening,
+    onScan: (value) => {
+      if (value.length < KEYBOARD_SCAN_MIN_LENGTH && !value.includes("/scan/")) return false;
+      handleScan(value);
+      return true;
+    },
+  });
 
   const handleReceive = () => {
     if (!scannedTokens.length) return;
@@ -435,7 +475,7 @@ const IncomingOrdersPage = () => {
   // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
   const cameraList: ScanTargetListItem[] = [...scannedTokens]
     .reverse()
-    .map((token) => byToken.get(token))
+    .map((token) => byToken.get(normalizeScanKey(token)))
     .filter((order): order is IncomingOrder => Boolean(order))
     .map((order) => ({
       key: order.id,
@@ -581,7 +621,7 @@ const IncomingOrdersPage = () => {
               label={t("incoming.scanInputLabel")}
             />
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 max-md:hidden">
-              {scannerReady ? (
+              {scannerReady && listening ? (
                 <Badge tone="success" dot role="status">
                   {t("incoming.scannerReady")}
                 </Badge>

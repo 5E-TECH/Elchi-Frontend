@@ -45,6 +45,16 @@ const userByIdCalls = vi.hoisted(() => [] as unknown[]);
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const idleQuery = { data: undefined, isLoading: false, refetch: vi.fn() };
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments", async (importOriginal) => {
   const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
   return {

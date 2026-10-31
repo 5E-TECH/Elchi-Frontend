@@ -2,6 +2,7 @@
  * Kiruvchi posilkalar ekranining sof mantiqi — React'siz, testga qulay.
  */
 import type { IncomingOrder, IncomingSource, ReceiveByScanResult } from "../../entities/incoming-orders";
+import { normalizeScanKey } from "../../shared/lib/scanToken";
 
 /**
  * Qabulda qop bo'yicha qabul qilingan posilkalar soni (r8EGkLrP): qop skani belgilagan tokenlardan server
@@ -105,6 +106,43 @@ const textOf = (value: unknown): string => (typeof value === "string" || typeof 
 
 /** Posilkaning o'z QR tokeni (bo'sh bo'lsa — `""`). */
 export const parcelToken = (order: IncomingOrder): string => textOf(order.qr_code_token);
+
+/**
+ * Skan kaliti → posilka (`normalizeScanKey`). Skanerlangan qiymat ham shu kalitga keltiriladi (`scanKeyCandidates`),
+ * shuning uchun KATTA harfli, aralash registrli yoki kirill tartibida yozilgan token ham topiladi (rQX8TqRV).
+ * ⚠️ Kalit faqat solishtirish uchun: serverga `parcelToken` ketadi, backend tokenni aniq solishtiradi.
+ */
+export const indexByToken = (orders: readonly IncomingOrder[]): Map<string, IncomingOrder> => {
+  const map = new Map<string, IncomingOrder>();
+  for (const order of orders) {
+    const key = normalizeScanKey(parcelToken(order));
+    if (key) map.set(key, order);
+  }
+  return map;
+};
+
+/**
+ * Qop tokeni kaliti → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat `new` holatidagilar, ya'ni oldin
+ * bittalab qabul qilinganlar bu yerda yo'q: qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
+ */
+export const indexByBatch = (orders: readonly IncomingOrder[]): Map<string, IncomingOrder[]> => {
+  const map = new Map<string, IncomingOrder[]>();
+  for (const order of orders) {
+    const key = normalizeScanKey(textOf(order.external_batch_token));
+    if (!key) continue;
+    map.set(key, [...(map.get(key) ?? []), order]);
+  }
+  return map;
+};
+
+/** Birinchi mos kelgan kalit bo'yicha qiymat (`scanKeyCandidates` tartibida); moslik bo'lmasa — `undefined`. */
+export const findByScanKeys = <T>(index: ReadonlyMap<string, T>, keys: readonly string[]): T | undefined => {
+  for (const key of keys) {
+    const value = index.get(key);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+};
 
 /**
  * Qop kaliti — qoplarni sanash uchun: qop QR tokeni (`external_batch_token`), bo'lmasa hamkor qop id'si

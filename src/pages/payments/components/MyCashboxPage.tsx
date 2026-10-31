@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useCashBox } from "../../../entities/payments";
+import { toDailyRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
 import { toISODate } from "../../../shared/lib/dateRange";
 import { formatDateTimeLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
@@ -51,6 +52,8 @@ import {
   type DataTableSort,
 } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import { ViewToggle, type ChartView } from "../../../shared/ui/charts";
+import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { readBranchName, readDisplayName } from "../../../widgets/header/model/userIdentity";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import type { PaymentHistoryActor, PaymentRow } from "./patmentHistoryTable";
@@ -65,6 +68,14 @@ import { paymentAckAudienceOf, paymentAckKeys, toPaymentAck } from "./paymentAck
 import { PaymentAckBadge } from "./PaymentAckBadge";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
+import {
+  ClosingSpark,
+  MyBalanceDelta,
+  MyBalanceTrend,
+  MyCashFlow,
+  isDailyAvailable,
+  type DailyQueryState,
+} from "./MyCashboxDaily";
 
 /**
  * O'Z KASSAM — `/cash-box` (dizayn v2): market («To'lovlar»), kuryer («Kassa») va menejer (filial kassasi).
@@ -76,8 +87,9 @@ import { getExpenseCategoryName } from "./lib/expenseCategory";
  * Tuzilma: sarlavha + sana oralig'i (bo'sh — «Barchasi»); «Umumiy balans» kartasi (balans + ko'z, izoh, «Kassa
  * egasi» / «Qarshi tomon» | «Kassa turi», «Bugun» kirim/chiqim chiziqlari); «Operatsiyalar tarixi» — tablar
  * «Barchasi» / «To'lov o'tkazmalari» (`sourceTypes`), jadval (telefonda kartalar), mijoz tomonida 10 tadan
- * sahifalash, qatordan tafsilot. Maketdagi «Taklif» belgili grafiklar (balans chizig'i, «Davr oqimi», «Kassa
- * oqimi», «Filialga topshirildi», «kechaga nisbatan» + sparkline) API'da yo'q — chizilmaydi.
+ * sahifalash, qatordan tafsilot. Balans chizig'i, «kechaga nisbatan» / «davr boshiga nisbatan», «Kassa oqimi» / «Davr
+ * oqimi» — `GET finance/history/daily` (qzjTMWPb, `MyCashboxDaily.tsx`); kuryerda chiziq telefonda yashirin (maket).
+ * «Filialga topshirildi» grafigi («Taklif») API'da yo'q — chizilmaydi.
  *
  * Ma'lumot: `GET finance/cashbox/my-cashbox` — `{ cashbox, cashboxHistory }`; sana `YYYY-MM-DD` (backend Toshkent
  * kuni deb oladi, C2 / CODE-22). «Bugun» bloki filtrga bog'liq emas: asosiy so'rov bugunni to'liq qamrasa (tab
@@ -332,11 +344,17 @@ type BalanceCardProps = {
   today: TodayTotals | null;
   todayUnavailable: boolean;
   language: string;
+  daily: DailyQueryState;
+  /** Tarix qatorlari — sharshara manbalari uchun. */
+  rows: readonly PaymentRow[];
 };
 
-const BalanceCard = ({ role, balance, ownerName, today, todayUnavailable, language }: BalanceCardProps) => {
+const BalanceCard = ({ role, balance, ownerName, today, todayUnavailable, language, daily, rows }: BalanceCardProps) => {
   const { t } = useTranslation("payments");
   const [visible, setVisible] = useState(true);
+  const [view, setView] = useState<ChartView>("chart");
+  const dailyAvailable = isDailyAvailable(daily);
+  const dailyRange = daily.data ? formatRangeShort({ from: daily.data.from, to: daily.data.to }) : null;
   const titleId = useId();
   const todayId = useId();
   const OwnerIcon = ROLE_ICON[role];
@@ -347,11 +365,21 @@ const BalanceCard = ({ role, balance, ownerName, today, todayUnavailable, langua
     <Card as="section" padding="none" aria-labelledby={titleId}>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(280px,360px)] max-lg:grid-cols-1">
         <div className="flex min-w-0 flex-col gap-4 p-5 max-md:gap-3.5 max-md:p-4">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 id={titleId} className="text-base font-bold text-text">
-              {t("v2MyCashbox.balance.title")}
-            </h2>
-            <p className="text-[13px] text-text-muted">{t(`v2MyCashbox.balance.hint.${role}`)}</p>
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+            <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-0.5">
+              <h2 id={titleId} className="text-base font-bold text-text">
+                {t("v2MyCashbox.balance.title")}
+              </h2>
+              <p className="text-[13px] text-text-muted">
+                {t(`v2MyCashbox.balance.hint.${role}`)}
+                {dailyRange ? ` · ${t("v2Daily.my.balanceChart", { range: dailyRange })}` : ""}
+              </p>
+            </div>
+            {dailyAvailable && daily.data ? (
+              <span className={role === "courier" ? "max-md:hidden" : undefined}>
+                <ViewToggle value={view} onChange={setView} ariaLabel={t("v2Daily.my.viewLabel")} />
+              </span>
+            ) : null}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-3">
@@ -382,6 +410,23 @@ const BalanceCard = ({ role, balance, ownerName, today, todayUnavailable, langua
               onClick={() => setVisible((value) => !value)}
             />
           </div>
+
+          <MyBalanceDelta query={daily} role={role} hidden={!visible} language={language} />
+
+          <div className={role === "courier" ? "min-w-0 max-md:hidden" : "min-w-0"}>
+            <MyBalanceTrend query={daily} view={view} hidden={!visible} />
+          </div>
+
+          {/* Kuryer telefonda grafik o'rnida — chiziq (maket `courier-cashbox-my-all`, «kechaga nisbatan» ostida). */}
+          {role === "courier" && visible && !daily.isError && daily.data ? (
+            <ClosingSpark
+              days={daily.data.days}
+              name={t("v2MyCashbox.balance.title")}
+              caption={t("v2Daily.sparkCaption")}
+              language={language}
+              className="md:hidden"
+            />
+          ) : null}
 
           {note ? (
             <p className="flex items-start gap-2 text-xs text-text-subtle">
@@ -418,6 +463,7 @@ const BalanceCard = ({ role, balance, ownerName, today, todayUnavailable, langua
             {t("v2MyCashbox.balance.today")}
           </h3>
           <TodayBars totals={today} unavailable={todayUnavailable} language={language} />
+          <MyCashFlow query={daily} rows={rows} role={role} hidden={!visible} language={language} />
         </section>
       </div>
     </Card>
@@ -473,6 +519,13 @@ const MyCashboxPage = () => {
 
   const historyQuery = useGetCashboxMyCashbox(params);
   const todayQuery = useGetCashboxMyCashbox(todayParams);
+
+  // qzjTMWPb: balans chizig'i va oqimi. Sana tanlanmasa — kuryerda 8 kun (maket), boshqalarda 14 kun.
+  const dailyParams = useMemo(() => {
+    const range = toDailyRange({ from: dateFrom, to: dateTo }, isCourier ? 8 : 14);
+    return { from_date: range.from, to_date: range.to };
+  }, [dateFrom, dateTo, isCourier]);
+  const dailyQuery = useFinanceHistoryDaily(dailyParams);
 
   const todayData = todayQuery.data as CashboxResponse | undefined;
   const todayTotals = useMemo(
@@ -963,6 +1016,8 @@ const MyCashboxPage = () => {
                 today={shownToday}
                 todayUnavailable={todayQuery.isError}
                 language={language}
+                daily={dailyQuery}
+                rows={rows}
               />
 
               <Card

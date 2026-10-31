@@ -16,6 +16,7 @@ import {
   SkeletonChart,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
+import { buildTicks } from "./lib/chartScale";
 import { parseIsoDate, toIsoDate, type DailyBalancePoint } from "./lib/mainCashboxStats";
 
 /**
@@ -41,30 +42,15 @@ type Props = {
   isError?: boolean;
   error?: unknown;
   onRetry?: () => void;
+  /** Grafik mazmuni (ekran o'quvchi) — boshqa kassa/daftar uchun; sukut «Asosiy kassa balansi…». */
+  chartLabelKey?: string;
+  /** Jadval nomi; sukut «Kun oxiridagi qoldiq». */
+  tableLabel?: string;
+  /** Bo'sh holat izohi (masalan kunlik qoldiq hali tayyorlanmoqda). */
+  emptyHint?: string;
 };
 
 const MASK = "••••••";
-
-/** «Yumaloq» qadam: 1 · 2 · 2,5 · 5 · 10 × 10ⁿ (maket o'qi: 0 · 10 mln · 20 mln · 30 mln). */
-const niceStep = (raw: number) => {
-  if (!(raw > 0)) return 1;
-  const power = 10 ** Math.floor(Math.log10(raw));
-  const unit = raw / power;
-  const nice = unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10;
-  return nice * power;
-};
-
-/** Y o'qi chiziqlari: 0 dan (manfiy qoldiq bo'lsa — undan pastdan) yumaloq qadam bilan, ~3–4 bo'lak. */
-const buildTicks = (values: readonly number[]) => {
-  const max = Math.max(0, ...values);
-  const min = Math.min(0, ...values);
-  const step = niceStep((max - min) / 3);
-  const start = Math.floor(min / step) * step;
-  const end = Math.max(start + step, Math.ceil(max / step) * step);
-  const ticks: number[] = [];
-  for (let value = start; value <= end + step / 2; value += step) ticks.push(value);
-  return ticks;
-};
 
 const AXIS_TICK = { fill: "var(--color-text-subtle)", fontSize: 12 } as const;
 
@@ -113,10 +99,14 @@ const MainCashboxBalanceChart = ({
   isError = false,
   error,
   onRetry,
+  chartLabelKey = "v2MainCashbox.balance.chartLabel",
+  tableLabel,
+  emptyHint,
 }: Props) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const todayKey = toIsoDate(new Date());
+  const tableName = tableLabel ?? t("v2MainCashbox.balance.tableLabel");
 
   const axisDate = (value: string) => {
     if (value === todayKey) return t("v2MainCashbox.balance.today");
@@ -186,7 +176,7 @@ const MainCashboxBalanceChart = ({
         size="chart"
         icon={ChartLine}
         title={t("v2MainCashbox.balance.chartEmpty")}
-        description={t("v2MainCashbox.balance.chartEmptyHint")}
+        description={emptyHint ?? t("v2MainCashbox.balance.chartEmptyHint")}
       />
     );
   }
@@ -199,8 +189,8 @@ const MainCashboxBalanceChart = ({
           columns={columns}
           density="compact"
           getRowKey={(row) => row.date}
-          label={t("v2MainCashbox.balance.tableLabel")}
-          cardsLabel={t("v2MainCashbox.balance.tableLabel")}
+          label={tableName}
+          cardsLabel={tableName}
           renderCard={(row) => (
             <div className="flex flex-col gap-1 px-4 py-3 text-sm">
               <div className="flex justify-between gap-2">
@@ -226,7 +216,7 @@ const MainCashboxBalanceChart = ({
   const first = points[0];
   const last = points[points.length - 1];
   const lastIndex = points.length - 1;
-  const ariaLabel = t("v2MainCashbox.balance.chartLabel", {
+  const ariaLabel = t(chartLabelKey, {
     from: fullDate(first.date),
     to: fullDate(last.date),
     first: money(first.balance),

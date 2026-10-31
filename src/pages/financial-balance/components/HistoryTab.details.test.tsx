@@ -6,6 +6,16 @@ const mocks = vi.hoisted(() => ({
   history: {} as unknown,
 }));
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({
     useGetFinancialBalanceHistory: () => ({ data: mocks.history, isLoading: false, isError: false, refetch: vi.fn() }),
