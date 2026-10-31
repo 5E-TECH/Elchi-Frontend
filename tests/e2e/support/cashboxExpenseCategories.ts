@@ -288,6 +288,12 @@ export const mockCashboxCategoriesApi = async (
       return reply(route, wrap({ category }, 200, "Kategoriya yangilandi"));
     }
 
+    // Chek rasmi o'chiq (QlLf33Ma): bu spec kategoriya haqida, chek maydoni — vitest `QlLf33Ma-receipt.test.tsx`.
+    if (path === "finance/receipt-settings" && method === "GET") {
+      const off = { photo_required: false, ai_enabled: false };
+      return reply(route, wrap({ manual_expense: off, hq_transfer: off, updated_at: null, updated_by: null }));
+    }
+
     // ── Qo'lda kirim / chiqim ──
     if ((path === "finance/cashbox/spend" || path === "finance/cashbox/fill") && method === "PATCH") {
       const kind = path.endsWith("spend") ? "spend" : "fill";

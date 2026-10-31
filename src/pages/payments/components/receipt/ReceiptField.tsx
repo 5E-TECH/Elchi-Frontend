@@ -117,7 +117,7 @@ const ReceiptField = ({ receipt, viewerDescription }: { receipt: ReceiptFieldCon
       required={receipt.required}
       labelAside={
         canOpenSettings ? (
-          <Link to="/payments/shift-settings" className={buttonClasses({ variant: "ghost", size: "sm", className: "-mr-2" })}>
+          <Link to="/payments/shift-settings" className={buttonClasses({ variant: "ghost", size: "sm", className: "-mr-1" })}>
             <Settings aria-hidden="true" size={16} />
             {t("receipt.field.settings")}
           </Link>

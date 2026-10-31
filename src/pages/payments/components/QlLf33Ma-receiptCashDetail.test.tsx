@@ -96,8 +96,9 @@ const branchCashbox = {
   data: { cashbox: { id: "31", cashbox_type: "branch", user_id: "15", balance: 4_250_000 }, history: [] },
 };
 
-const renderAt = (type: "courier" | "branch", preloadedState: never = superadmin) => {
-  state.cashbox = type === "courier" ? courierCashbox : branchCashbox;
+const renderAt = (type: "courier" | "branch", preloadedState: never = superadmin, cashboxHistory: unknown[] = []) => {
+  const base = type === "courier" ? courierCashbox : branchCashbox;
+  state.cashbox = { ...base, data: { ...base.data, cashboxHistory } };
   return renderWithProviders(
     <Routes>
       <Route path="/payments/cash-detail/:id" element={<CashDetail />} />
@@ -159,6 +160,22 @@ beforeEach(() => {
 });
 
 describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
+  it("tarix qatorida «Chek» belgisi (cashDetail qatorni qayta quradi — `receipt` yo'qolmasin)", async () => {
+    renderAt("courier", superadmin, [
+      {
+        id: "9",
+        amount: 100000,
+        operation_type: "expense",
+        source_type: "courier_payment",
+        payment_method: "click",
+        createdAt: "2026-10-06T09:50:00.000Z",
+        receipt: { id: "601", ai_status: "mismatch" },
+      },
+    ]);
+
+    expect(await screen.findByTitle("Chek: Farq bor")).toBeInTheDocument();
+  });
+
   it("TC7: superadmin HQ kuryeri — «O'tkazma» da maydon bor, «Naqd» va «Marketga o'tkazma» da yo'q", async () => {
     const user = userEvent.setup();
     renderAt("courier");

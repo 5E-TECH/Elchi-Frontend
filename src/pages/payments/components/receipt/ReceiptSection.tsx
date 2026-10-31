@@ -95,7 +95,7 @@ const FlagsAlert = ({ receipt }: { receipt: ReceiptDetail }) => {
       <TriangleAlert aria-hidden="true" size={18} className="mt-0.5 shrink-0" />
       <div className="min-w-0 text-text">
         <div className="font-bold">{t("receipt.flags.title", { n: flags.length })}</div>
-        <ul className="m-0 mt-1 flex flex-col gap-1 pl-[18px] text-[13px]">
+        <ul className="m-0 mt-1 flex list-disc flex-col gap-1 pl-[18px] text-[13px]">
           {flags.map((flag) => (
             <li key={flag}>
               <span className="font-semibold">{t(`receipt.flags.${flag}.title`)}</span> — {flagText(flag)}
@@ -136,6 +136,8 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
             ? { icon: Info, text: t("receipt.section.disabledText"), tone: "text-text-muted" }
             : null;
 
+  // Qayta tahlil ketayotganda eski natija ko'rsatilmaydi: holat «Tahlilda», AI maydonlari yangi natija bilan chiqadi.
+  const analysing = status === "pending";
   const compared = (status === "match" || status === "mismatch") && !stale;
   const difference = ai?.difference ?? 0;
   const compare: Array<[string, ReactNode]> = [
@@ -239,7 +241,7 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
               )}
             >
               {compare.map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-2 py-1.5">
+                <div key={label} className="flex items-center justify-between gap-2 py-1.5">
                   <dt className="m-0 text-[13px] text-text">{label}</dt>
                   <dd className="m-0 font-semibold whitespace-nowrap text-text">{value}</dd>
                 </div>
@@ -250,7 +252,7 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
         </div>
       </div>
 
-      {kvRows.length > 0 ? (
+      {kvRows.length > 0 && !analysing ? (
         <dl className={KV}>
           {kvRows.map(([label, value]) => (
             <div key={label} className="contents">
@@ -261,7 +263,7 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
         </dl>
       ) : null}
 
-      <FlagsAlert receipt={receipt} />
+      {analysing ? null : <FlagsAlert receipt={receipt} />}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border pt-3">
         <span className="flex min-w-0 flex-col gap-0.5 text-xs text-text-muted">

@@ -223,6 +223,17 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
     expect(await within(box).findByText("Farq bor")).toBeInTheDocument();
   });
 
+  it("qayta tahlil ketayotganda eski AI maydonlari va bayroqlar ko'rsatilmaydi", async () => {
+    current = receipt({ ai_status: "pending", can_reanalyze: false, ai: ai({ flags: ["duplicate_photo"] }) });
+    open();
+    const box = await section();
+
+    expect(await within(box).findByText("Tahlilda")).toBeInTheDocument();
+    expect(within(box).queryByText("Agrobank")).not.toBeInTheDocument();
+    expect(within(box).queryByText(/AI ogohlantirishlari/)).not.toBeInTheDocument();
+    expect(within(box).queryByRole("group", { name: "Summalar solishtiruvi" })).not.toBeInTheDocument();
+  });
+
   it("TC4: `pending` → realtime `finance.receipt.checked` → natija sahifa yangilanmay ko'rinadi", async () => {
     current = receipt({ ai_status: "pending", can_reanalyze: false, ai: null });
     const { queryClient } = open();

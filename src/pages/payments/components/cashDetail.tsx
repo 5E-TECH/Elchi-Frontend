@@ -32,6 +32,7 @@ import {
   type CashboxPaymentResponse,
   type ReceiptKind,
 } from "../../../entities/payments";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import {
   dayOverDay,
@@ -918,6 +919,7 @@ const CashDetail = () => {
         payment_date: getHistoryDate(item),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        receipt: toReceiptRef(item["receipt"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
@@ -1596,7 +1598,7 @@ const CashDetail = () => {
       submitLoading={isSubmitting}
       submitDisabled={(isStoreTransfer && !selectedMarketId) || receipt.busy}
       receiptField={<ReceiptField receipt={receipt} viewerDescription={formTitle} />}
-      onSubmitAttempt={receipt.validate}
+      onSubmitAttempt={() => receipt.validate({ moveFocus: false })}
       commentLabel={t("v2CashDetail.form.comment")}
       commentPlaceholder={t("v2CashDetail.form.commentPlaceholder")}
       paymentTypeOptions={paymentTypeOptions}

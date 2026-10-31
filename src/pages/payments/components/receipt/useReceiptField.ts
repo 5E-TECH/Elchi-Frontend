@@ -217,13 +217,19 @@ export const useReceiptField = ({
 
   const focus = useCallback(() => setFocusRequest((current) => current + 1), []);
 
-  /** Yuborishdan oldin: rasm majburiy, lekin yo'q — maydon xatosi, so'rov ketmaydi. */
-  const validate = useCallback(() => {
-    if (!enabled || !required || draft.receiptId) return true;
-    setFieldIssue("RECEIPT_REQUIRED");
-    focus();
-    return false;
-  }, [draft.receiptId, enabled, focus, required]);
+  /**
+   * Yuborishdan oldin: rasm majburiy, lekin yo'q — maydon xatosi, so'rov ketmaydi. `moveFocus: false` — forma boshqa
+   * maydonlarining xatosi bilan birga ko'rsatish uchun (fokus birinchi xato maydonda qoladi).
+   */
+  const validate = useCallback(
+    ({ moveFocus = true }: { moveFocus?: boolean } = {}) => {
+      if (!enabled || !required || draft.receiptId) return true;
+      setFieldIssue("RECEIPT_REQUIRED");
+      if (moveFocus) focus();
+      return false;
+    },
+    [draft.receiptId, enabled, focus, required],
+  );
 
   /**
    * Operatsiya javobidagi chek xatosi. `true` — xato shu yerda ko'rsatildi (umumiy xabar kerak emas).

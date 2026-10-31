@@ -340,7 +340,7 @@ const CashboxFormPopup = ({
             description={subtitle ?? description}
             onSubmit={(event) => {
                 // Rasm xatosi boshqa maydon xatolari bilan BIRGA ko'rinsin (`handleSubmit` xatoda `submitForm` ni chaqirmaydi).
-                receipt.validate();
+                receipt.validate({ moveFocus: false });
                 return handleSubmit(submitForm)(event);
             }}
             formProps={{ noValidate: true }}

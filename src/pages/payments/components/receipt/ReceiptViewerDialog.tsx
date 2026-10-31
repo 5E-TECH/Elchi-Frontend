@@ -44,7 +44,6 @@ const ReceiptViewerDialog = ({ open, onClose, src, openUrl, description, onReloa
       title={t("receipt.viewer.title")}
       description={description}
       className="max-md:h-[92dvh]"
-      bodyClassName="max-md:flex-1"
       footer={
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <SegmentedControl<Zoom>
@@ -67,9 +66,10 @@ const ReceiptViewerDialog = ({ open, onClose, src, openUrl, description, onReloa
     >
       <div
         className={cx(
-          "relative flex min-h-[280px] overflow-auto rounded-xl bg-sunken [touch-action:pan-x_pan-y_pinch-zoom] max-md:h-full",
-          zoom === "fit" ? "max-h-[60dvh] items-center justify-center" : "max-h-[60dvh] items-start justify-start",
-          "max-md:max-h-none",
+          "relative flex min-h-[280px] overflow-auto rounded-xl bg-sunken [touch-action:pan-x_pan-y_pinch-zoom]",
+          // Telefonda varaqa to'liq balandlikda: rasm qolgan joyni to'ldiradi (sarlavha, izoh va amallardan tashqari).
+          "max-h-[60dvh] max-md:h-[calc(92dvh-300px)] max-md:max-h-none",
+          zoom === "fit" ? "items-center justify-center" : "items-start justify-start",
         )}
         tabIndex={zoom === "actual" ? 0 : undefined}
         data-testid="receipt-viewer-canvas"
