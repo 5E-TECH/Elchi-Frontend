@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **126** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **127** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -1900,7 +1900,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | v2 |
@@ -1961,7 +1961,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
+| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
 
 ### Profil, sozlamalar, bildirishnomalar qutisi
 
@@ -2241,7 +2241,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/returns` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
 | `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
-| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
+| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | qisman — Maketdagi «Market: buyurtma qo'shish ruxsati» kartasi olindi: ruxsat bitta joyda, market profilida (Ruxsatlar → Buyurtma qo'shish). Karta 941rmIn5 TC matni bo'yicha, ega tasdig'i kutilmoqda. |
 | `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops` | `src/pages/ops/index.tsx` | qisman — Maketdagi «O'z vaqtida (SLA)» va «Analitika KPI» superadmin bosh sahifasida (AnalyticsKpiSection), «Token orqali tekshirish» olindi — karta F2NzXpMv TC matni bo'yicha, ega tasdig'i kutilmoqda. |
 | `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
 | `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |

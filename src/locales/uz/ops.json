@@ -308,7 +308,7 @@
   "identity": {
     "intro": {
       "title": "Xodimlar — ro'yxatlar",
-      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish va market sozlamalarini boshqarish."
+      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish."
     },
     "lists": {
       "admins": "Adminlar",
@@ -319,17 +319,6 @@
       "email": "Email",
       "empty": "Ro'yxat bo'sh",
       "loadError": "Ro'yxatni olib bo'lmadi"
-    },
-    "market": {
-      "title": "Market: buyurtma qo'shish ruxsati",
-      "description": "Market o'zi buyurtma yarata olishi uchun ruxsat beradi",
-      "label": "Market ID",
-      "placeholder": "Market ID",
-      "hint": "Market profilidagi «Buyurtma qo'shish» ruxsati bilan bir xil",
-      "submit": "Ruxsat berish",
-      "success": "Ruxsat berildi",
-      "successMeta": "Market {{id}} endi o'zi buyurtma qo'sha oladi",
-      "error": "Ruxsat berib bo'lmadi"
     }
   },
   "system": {

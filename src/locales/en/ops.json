@@ -308,7 +308,7 @@
   "identity": {
     "intro": {
       "title": "Staff — lists",
-      "description": "View admin, manager and registrar lists and manage market settings."
+      "description": "View admin, manager and registrar lists."
     },
     "lists": {
       "admins": "Admins",
@@ -319,17 +319,6 @@
       "email": "Email",
       "empty": "The list is empty",
       "loadError": "Couldn't load the list"
-    },
-    "market": {
-      "title": "Market: permission to add orders",
-      "description": "Lets the market create orders on its own",
-      "label": "Market ID",
-      "placeholder": "Market ID",
-      "hint": "The same as the “Add orders” permission in the market profile",
-      "submit": "Grant permission",
-      "success": "Permission granted",
-      "successMeta": "Market {{id}} can now add orders on its own",
-      "error": "Couldn't grant the permission"
     }
   },
   "system": {
