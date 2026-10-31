@@ -30,6 +30,7 @@ import {
   type DataTableColumn,
   type DataTableSelection,
 } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { getDeliveryLabelKey } from "../../orders/list/courier/list/orderActionModel";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
@@ -68,6 +69,7 @@ const orderHref = (order: BatchOrder) => `/orders/edit/${order.id}`;
  * `POST transfer-batches/:id/receive-orders { orderIds }` — qabul qilinganlar ro'yxatdan yashiriladi.
  */
 const BranchBatchDetailPage = () => {
+  const isPhone = useIsPhone();
   const { branchId = "", batchId = "" } = useParams<{ branchId: string; batchId: string }>();
   const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -382,6 +384,27 @@ const BranchBatchDetailPage = () => {
     </>
   ) : null;
 
+  const receiveButton = (
+    <Button
+      size={isPhone ? "lg" : "md"}
+      compact={isPhone}
+      leftIcon={Check}
+      disabled={selectedOrderIds.size === 0}
+      loading={receiveBatchOrders.isPending}
+      loadingText={t("receiving")}
+      onClick={handleAcceptSelectedOrders}
+      className={isPhone ? "flex-1" : undefined}
+    >
+      <Trans
+        t={t}
+        i18nKey="marketOrders.receive"
+        values={{ value: count(selectedOrderIds.size) }}
+        count={selectedOrderIds.size}
+        components={{ long: <span className="max-md:hidden" /> }}
+      />
+    </Button>
+  );
+
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
       <PageHeader
@@ -396,23 +419,8 @@ const BranchBatchDetailPage = () => {
           ) : null
         }
         description={description}
-        actions={
-          <Button
-            leftIcon={Check}
-            disabled={selectedOrderIds.size === 0}
-            loading={receiveBatchOrders.isPending}
-            loadingText={t("receiving")}
-            onClick={handleAcceptSelectedOrders}
-          >
-            <Trans
-              t={t}
-              i18nKey="marketOrders.receive"
-              values={{ value: count(selectedOrderIds.size) }}
-              count={selectedOrderIds.size}
-              components={{ long: <span className="max-md:hidden" /> }}
-            />
-          </Button>
-        }
+        actions={isPhone ? undefined : receiveButton}
+        className="md:sticky md:top-0 md:z-20 md:bg-bg"
       />
 
       <Card as="section" padding="none" aria-label={t("branchBatches.detail.cardLabel")}>
@@ -505,6 +513,16 @@ const BranchBatchDetailPage = () => {
           )}
         </QueryBoundary>
       </Card>
+      {/* Telefon: asosiy amal pastki menyu ustida (`/dispatch` naqshi, Q7) — 50+ qatorda ham ko'rinadi (ndKkHjhe). Kamera —
+          markaziy «Skaner» (oqim ichida kamera tugmasi yo'q, ega qarori 2026-10-19). */}
+      {isPhone ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
+            {receiveButton}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 };
