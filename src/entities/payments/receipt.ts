@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { prepareImage, type PreparedImage } from "../../shared/lib/downscaleImage";
@@ -10,6 +10,8 @@ import { prepareImage, type PreparedImage } from "../../shared/lib/downscaleImag
  *  - `POST finance/receipts` (multipart `kind`, `photo`) → qoralama `receipt_id` (24 soat), operatsiya tanasida
  *    `receipt_id` bilan biriktiriladi. Rasm brauzerda ≤ 5 MB JPEG qilinadi (`prepareImage`, smena rasmi va AI buyurtma
  *    bilan bitta yo'l), shuning uchun 12 MB telefon surati ham o'tadi.
+ *
+ *  - `PATCH finance/receipt-settings` — faqat superadmin (`RECEIPT_AI_REQUIRES_PHOTO`: AI yoqiq + rasm o'chiq).
  *
  * Xatolar `response.data.code` da (`RECEIPT_*`, FE matnni emas, kodni tekshiradi).
  */
@@ -120,6 +122,18 @@ export const useReceiptSettings = (enabled = true) =>
     enabled,
     meta: { silentError: true },
   });
+
+export type UpdateReceiptSettingsRequest = Partial<Record<ReceiptSettingGroup, Partial<ReceiptGroupSettings>>>;
+
+/** `PATCH finance/receipt-settings` — faqat o'zgargan kalitlar; muvaffaqiyatda sozlama qayta o'qiladi. */
+export const useUpdateReceiptSettings = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateReceiptSettingsRequest) =>
+      api.patch(API_ENDPOINTS.CASHBOX.RECEIPT_SETTINGS, body).then((res) => res.data),
+    onSuccess: () => client.invalidateQueries({ queryKey: receiptSettingsKey }),
+  });
+};
 
 export type ReceiptDraft = {
   receipt_id: string;

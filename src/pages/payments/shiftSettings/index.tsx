@@ -1,8 +1,9 @@
-// dizayn-v2: superadmin-payments-shift-settings
+// dizayn-v2: superadmin-payments-shift-settings, superadmin-payments-shift-settings-receipts
 import { useMemo, useState } from "react";
 import { CreditCard, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  getReceiptErrorCode,
   useShiftCheckSettings,
   useUpdateShiftCheckSettings,
   type ShiftCheckCardSettings,
@@ -15,6 +16,7 @@ import { Button, Card, DataTable, PageHeader, QueryBoundary, type DataTableColum
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
 import { AutoCloseCard, ReportSendCard } from "./AutomationCards";
 import { CellSwitch } from "./CellSwitch";
+import { ReceiptSettingsCard, useReceiptSettingsDraft, type ReceiptSettingsDraft } from "./ReceiptSettingsCard";
 import { autoCloseDraftError, diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
 import { SwitchRow } from "../../settings/ui/settingsUi";
 
@@ -25,16 +27,19 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
  * rasm talab qilingan kartada — backend 400 qoidasi, rasm o'chsa AI ham o'chadi). «Saqlash» →
  * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Pastda «Avtomatik yopish» (y8Tqm9Ap) va «Smena
  * hisobotini yuborish» (gWI4gYkw) kartalari — `AutomationCards.tsx`; backend javobida `auto_close` / `report`
- * bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi.
+ * bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi. «Chek rasmi va AI tahlili» (QlLf33Ma) —
+ * `ReceiptSettingsCard`, alohida `PATCH finance/receipt-settings`, lekin «Saqlash» bitta: faqat o'zgargan so'rov ketadi.
  */
 
-const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
+const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; receipts: ReceiptSettingsDraft }) => {
   const { t } = useTranslation("payments");
   const update = useUpdateShiftCheckSettings();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
-  const dirty = Object.keys(body).length > 0;
+  const shiftDirty = Object.keys(body).length > 0;
+  const dirty = shiftDirty || receipts.dirty;
+  const saving = update.isPending || receipts.isSaving;
   // Avtomatik yopish yoqilgan, lekin vaqt yo'q — backend 1–12 ta kutadi; xato kartada, «Saqlash» o'chiq.
   const invalid = autoCloseDraftError(draft) !== null;
 
@@ -47,13 +52,21 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
     });
 
   const save = async () => {
-    if (!dirty || invalid || update.isPending) return;
-    try {
-      await update.mutateAsync(body);
+    if (!dirty || invalid || saving) return;
+    // Ikki bo'lim mustaqil: biri yiqilsa ikkinchisi saqlanadi, xato aniq aytiladi.
+    const results = await Promise.allSettled([
+      ...(shiftDirty ? [update.mutateAsync(body)] : []),
+      ...(receipts.dirty ? [receipts.save()] : []),
+    ]);
+    const failed = results.find((result) => result.status === "rejected");
+    if (!failed) {
       notify.success(t("shiftCheck.settings.saved"));
-    } catch (error) {
-      notify.error(t("shiftCheck.settings.saveError"), { description: getApiErrorMessage(error) || undefined });
+      return;
     }
+    const code = getReceiptErrorCode(failed.reason);
+    notify.error(t("shiftCheck.settings.saveError"), {
+      description: code ? t(`receipt.errors.${code}`) : getApiErrorMessage(failed.reason) || undefined,
+    });
   };
 
   const resultText = (card: ShiftCheckCardSettings) => {
@@ -125,7 +138,7 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
             leftIcon={Save}
             onClick={() => void save()}
             disabled={!dirty || invalid}
-            loading={update.isPending}
+            loading={saving}
             loadingText={t("shiftCheck.settings.saving")}
           >
             {t("shiftCheck.settings.save")}
@@ -195,6 +208,7 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
           <p className="m-0 px-5 py-4 text-[13px] text-text-muted">{t("shiftCheck.settings.empty")}</p>
         )}
       </Card>
+      <ReceiptSettingsCard receipts={receipts} />
       {draft.auto_close || draft.report ? (
         <div className="flex flex-wrap items-start gap-4">
           {draft.auto_close ? (
@@ -215,11 +229,12 @@ const SettingsForm = ({ settings }: { settings: ShiftCheckSettings }) => {
 
 const ShiftSettingsPage = () => {
   const query = useShiftCheckSettings();
+  const receipts = useReceiptSettingsDraft();
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
       <QueryBoundary query={query} skeleton="lines" isEmpty={() => false}>
         {/* Saqlangandan keyin server qiymatlari bilan forma qaytadan boshlanadi (kalit — sozlamalar holati). */}
-        {(settings) => <SettingsForm key={JSON.stringify(settings)} settings={settings} />}
+        {(settings) => <SettingsForm key={JSON.stringify(settings)} settings={settings} receipts={receipts} />}
       </QueryBoundary>
     </div>
   );

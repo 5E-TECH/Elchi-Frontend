@@ -1405,6 +1405,45 @@
       "failedHint": "The link may have expired — try again.",
       "retry": "Try again",
       "pinchHint": "Pinch with two fingers to zoom"
+    },
+    "settings": {
+      "title": "Receipt photo and AI analysis",
+      "subtitle": "A receipt photo is requested for manual expenses and transfers to HQ, and AI compares it with the entered amount",
+      "tableLabel": "Receipt photo and AI analysis switches",
+      "operation": "Operation",
+      "photo": "Receipt photo required",
+      "ai": "AI analysis",
+      "result": "Result",
+      "needsPhoto": "Turn on the receipt photo first",
+      "switchPhoto": "{{group}}: receipt photo required",
+      "switchAi": "{{group}}: AI analysis",
+      "resultText": {
+        "photoAi": "Receipt required, AI checks it",
+        "photo": "Receipt required, amount checked manually",
+        "none": "Receipt not requested"
+      },
+      "note": "AI works only when the receipt photo is on. Turning the photo off turns AI off too; if you turn the photo back on, turn AI on separately. The change applies to new records — saved receipts do not change.",
+      "updated": "Last change: {{value}}",
+      "groups": {
+        "manual_expense": {
+          "title": "Manual expense",
+          "hint": "Expenses from the main and branch cashboxes",
+          "offDescription": "No receipt photo will be requested for manual expenses. The change takes effect when you press «Save».",
+          "offField": "The «Receipt photo» field disappears from the form, the expense is saved without a receipt"
+        },
+        "hq_transfer": {
+          "title": "Transfer from courier and branch to HQ",
+          "hint": "Only for «Transfer» payments",
+          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ. The change takes effect when you press «Save».",
+          "offField": "The «Receipt photo» field disappears from the acceptance form, the transfer is accepted without a receipt"
+        }
+      },
+      "photoOff": {
+        "title": "Confirm turning off the receipt photo",
+        "confirm": "Turn off",
+        "ai": "AI analysis turns off too — if you turn the photo back on, turn AI on separately",
+        "kept": "Saved receipts and AI results stay in the history"
+      }
     }
   }
 }

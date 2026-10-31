@@ -1405,6 +1405,45 @@
       "failedHint": "Havola eskirgan bo'lishi mumkin — qayta urinib ko'ring.",
       "retry": "Qayta urinish",
       "pinchHint": "Ikki barmoq bilan kattalashtiring"
+    },
+    "settings": {
+      "title": "Chek rasmi va AI tahlili",
+      "subtitle": "Qo'lda chiqim va HQ'ga o'tkazmalarda chek rasmi so'raladi, AI uni kiritilgan summa bilan solishtiradi",
+      "tableLabel": "Chek rasmi va AI tahlili kalitlari",
+      "operation": "Operatsiya",
+      "photo": "Chek rasmi majburiy",
+      "ai": "AI tahlili",
+      "result": "Natija",
+      "needsPhoto": "Avval chek rasmini yoqing",
+      "switchPhoto": "{{group}}: chek rasmi majburiy",
+      "switchAi": "{{group}}: AI tahlili",
+      "resultText": {
+        "photoAi": "Chek majburiy, AI tekshiradi",
+        "photo": "Chek majburiy, summa qo'lda tekshiriladi",
+        "none": "Chek so'ralmaydi"
+      },
+      "note": "AI faqat chek rasmi yoqilganda ishlaydi. Rasm o'chirilsa, AI ham o'chadi; rasmni qayta yoqsangiz, AI ni alohida yoqing. O'zgarish keyingi yozuvlardan qo'llanadi — saqlangan cheklar o'zgarmaydi.",
+      "updated": "Oxirgi o'zgarish: {{value}}",
+      "groups": {
+        "manual_expense": {
+          "title": "Qo'lda chiqim",
+          "hint": "Asosiy va filial kassalaridan xarajat",
+          "offDescription": "Qo'lda chiqimda chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "offField": "Formada «Chek rasmi» maydoni ko'rinmaydi, xarajat cheksiz saqlanadi"
+        },
+        "hq_transfer": {
+          "title": "Kuryer va filialdan HQ'ga o'tkazma",
+          "hint": "Faqat «O'tkazma» to'lovida",
+          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "offField": "Qabul formasida «Chek rasmi» maydoni ko'rinmaydi, o'tkazma cheksiz qabul qilinadi"
+        }
+      },
+      "photoOff": {
+        "title": "Chek rasmini o'chirishni tasdiqlang",
+        "confirm": "O'chirish",
+        "ai": "AI tahlili ham o'chadi — rasmni qayta yoqsangiz, AI ni alohida yoqing",
+        "kept": "Saqlangan cheklar va AI natijalari tarixda qoladi"
+      }
     }
   }
 }
