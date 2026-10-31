@@ -29,20 +29,12 @@ import {
 } from "../../../shared/ui/primitives";
 import { UserListKpi } from "../../../widgets/user-list/ui/UserListKpi";
 import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
+import { EXTERNAL_ROLES, MANAGER_TABS, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
 
 /** Qidiruv URL'ga yozilishidan oldin kutish (avvalgi `FilterSearch` kabi). */
 const SEARCH_DEBOUNCE_MS = 500;
 const PAGE_SIZES = [10, 25, 50, 100] as const;
 
-/**
- * Rol tablari. Superadmin/admin — 9 ta, ega tartibi FY-S1 (maket `superadmin-users-list-roles`): avval xodimlar,
- * keyin tashqi hisoblar. Eski «Operatorlar» tabi olindi (backend `GET /users` da `operator` — eski rol). Menejer —
- * 4 ta (`manager-users-list`). `""` — «Hammasi».
- */
-const STAFF_ROLES = ["admin", "manager", "registrator", "courier", "logist"] as const;
-const EXTERNAL_ROLES = ["market", "market_operator", "investor"] as const;
-const STAFF_TABS = ["", ...STAFF_ROLES, ...EXTERNAL_ROLES] as const;
-const MANAGER_TABS = ["", "courier", "registrator", "market"] as const;
 /** Tab nomi kaliti: `v2.list.tabs.<kalit>` (`market_operator` → `marketOperator`). */
 const tabLabelKey = (value: string) => (value === "market_operator" ? "marketOperator" : value || "all");
 const STATUS_VALUES = ["active", "inactive"] as const;

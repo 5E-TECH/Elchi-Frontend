@@ -110,7 +110,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
   it("header, count badge, rows with market #id, type badge and pagination summary", async () => {
     renderWithProviders(<NotificationsPage />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Bildirishnomalar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Bildirishnoma sozlamalari" })).toBeInTheDocument();
     const table = await screen.findByRole("table", { name: "Ulangan Telegram guruhlari" });
     expect(within(table).getByText("Baraka Shop")).toBeInTheDocument();
     expect(within(table).getByText("#12")).toBeInTheDocument();

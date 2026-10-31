@@ -53,11 +53,7 @@ const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"))
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
 const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
-const InvestorsOpsPage = lazy(() => import("../../pages/investors-ops"));
-const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
-const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
-const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
 const OpsPage = lazy(() => import("../../pages/ops"));
 const UiKitPage = lazy(() => import("../../pages/ui-kit"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
@@ -174,7 +170,6 @@ const NotificationInboxPage = lazy(
 );
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
-const LogsPage = lazy(() => import("../../pages/logs/index"));
 const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
@@ -629,9 +624,9 @@ const AppRouter = () => {
             { path: "settings", element: <SettingsPage /> },
             {
               /**
-               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda.
-               * Eski to'g'ridan-to'g'ri marshrutlar SAQLANADI (havolalar
-               * buzilmasin), bu esa menyudan ochiladigan kirish nuqtasi.
+               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
+               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
+               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga yo'naltiradi (guard o'sha).
                */
               path: "ops",
               element: (
@@ -673,7 +668,7 @@ const AppRouter = () => {
               path: "investors-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <InvestorsOpsPage />
+                  <Navigate replace to="/ops?tab=investors" />
                 </ProtectedRoute>
               ),
             },
@@ -681,7 +676,7 @@ const AppRouter = () => {
               path: "logistics-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <LogisticsOpsPage />
+                  <Navigate replace to="/returns" />
                 </ProtectedRoute>
               ),
             },
@@ -689,7 +684,7 @@ const AppRouter = () => {
               path: "branch-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <BranchOpsPage />
+                  <Navigate replace to="/batches" />
                 </ProtectedRoute>
               ),
             },
@@ -705,7 +700,7 @@ const AppRouter = () => {
               path: "system-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <SystemOpsPage />
+                  <Navigate replace to="/ops?tab=system" />
                 </ProtectedRoute>
               ),
             },
@@ -1214,7 +1209,7 @@ const AppRouter = () => {
               path: "logs",
               element: (
                 <ProtectedRoute canActivate={canViewLogs}>
-                  <LogsPage />
+                  <Navigate replace to="/ops?tab=auth" />
                 </ProtectedRoute>
               ),
             },

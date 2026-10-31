@@ -281,10 +281,18 @@ export const useOrders = () => {
       meta: { silentError: true },
     });
 
-  // `GET orders/courier/orders`: holat, sahifa, qidiruv (ism, telefon, raqam) va sana oralig'i
-  // (`startDate` / `endDate`, YYYY-MM-DD) — openapi `findCourierOrdersLegacy`.
+  // `GET orders/courier/orders`: holat, sahifa, qidiruv (ism, telefon, raqam), sana oralig'i
+  // (`startDate` / `endDate`, YYYY-MM-DD) — openapi `findCourierOrdersLegacy`; yetkazish turi `where_deliver`.
   const useGetOrderCourier = (
-    params?: { status?: string; page?: number; limit?: number; search?: string; startDate?: string; endDate?: string },
+    params?: {
+      status?: string;
+      page?: number;
+      limit?: number;
+      search?: string;
+      startDate?: string;
+      endDate?: string;
+      where_deliver?: "center" | "address";
+    },
     refetchInterval?: (data: unknown) => number | false,
     options?: ListRefreshQueryOptions,
   ) => {

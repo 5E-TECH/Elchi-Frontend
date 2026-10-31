@@ -40,6 +40,8 @@ import { CustomerCard } from "./detail/CustomerCard";
 import { DetailAlerts } from "./detail/DetailAlerts";
 import { DetailErrorState, DetailNotFound } from "./detail/DetailErrorState";
 import { DetailHeader } from "./detail/DetailHeader";
+import { OrderPrintMenu } from "./detail/OrderPrintMenu";
+import { OrderQrCard } from "./detail/OrderQrCard";
 import { DetailSkeleton } from "./detail/DetailSkeleton";
 import {
   getLockAlertIds,
@@ -297,9 +299,11 @@ const NewOrderUpdate = () => {
   const requestDelete = useDeleteWarehouseOrder({ order, deleteOrder, onDeleted: handleBack });
 
   // ─── Sarlavha amallari (bitta asosiy — «Sotish») ───────────────────────────
+  const printMenu = order ? <OrderPrintMenu order={order} /> : null;
   const headerActions =
     order && access.layout === "default" ? (
       <>
+        {printMenu}
         {access.canDelete ? (
           <Button
             variant="danger-soft"
@@ -432,6 +436,7 @@ const NewOrderUpdate = () => {
           />
         </div>
         <PaymentCard order={detail} />
+        <OrderQrCard order={detail} />
       </div>
       <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">
         {returnPathCard}
@@ -455,6 +460,7 @@ const NewOrderUpdate = () => {
         {returnPathCard}
         <ProductsCard order={detail} showDelivery={false} />
         <PaymentCard order={detail} />
+        <OrderQrCard order={detail} />
         {proofs}
         {tracking(detail)}
       </div>
@@ -489,7 +495,7 @@ const NewOrderUpdate = () => {
         layout={access.layout}
         onBack={handleBack}
         backLabel={newOrdersBackLabel}
-        actions={headerActions}
+        actions={access.layout === "market" ? printMenu : headerActions}
         handoverMethod={handoverMethod}
         handoverAt={handoverAt}
       />

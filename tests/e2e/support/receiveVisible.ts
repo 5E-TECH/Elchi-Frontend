@@ -109,9 +109,9 @@ export const mockReceiveVisible = async (page: Page, theme: "light" | "dark" = "
 export const MARKET_PATH = "/new-orders/121";
 export const BATCH_PATH = "/new-orders/branches/7/batches/172";
 
-/** «Qabul qilish — …» — sahifa sarlavhasi (PageHeader) ichida. */
+/** ≥ 768 — sarlavhada, telefonda — pastki menyu ustidagi panelda (tugma bitta). */
 export const receiveButton = (page: Page) =>
-  page.locator("#main-content header").first().getByRole("button", { name: /^Qabul qilish/ });
+  page.locator("#main-content").getByRole("button", { name: /^Qabul qilish/ });
 
 /** Element to'liq ko'rinadigan oynada (yuqori panel va pastki menyu orasida). */
 export const expectInViewport = async (page: Page, locator: ReturnType<Page["locator"]>) => {

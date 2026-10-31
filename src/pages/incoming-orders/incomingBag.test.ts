@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { IncomingOrder } from "../../entities/incoming-orders";
-import { bagKeyOf, bagLabel, countBags, countReceivedByBag, keepScannedInList } from "./lib";
+import {
+  bagKeyOf,
+  bagLabel,
+  bagProgressIndex,
+  bagProgressOf,
+  countBags,
+  countReceivedByBag,
+  keepScannedInList,
+  partialBagsInScan,
+} from "./lib";
 
 /** «Qop» ustuni va yangilashda skan belgilarini saqlash — sof mantiq (IP-1, DamKku7C / eo3eeJxs). */
 
@@ -73,5 +82,60 @@ describe("countReceivedByBag — «Qop bo'yicha qabul qilindi» (r8EGkLrP)", () 
   it("qop skani bo'lmasa — 0; server qop tokenini o'zi ochgan bo'lsa (`batchTokens`) — qabul qilinganlarning hammasi", () => {
     expect(countReceivedByBag(new Set(), { received: 5, unmatched: [] })).toBe(0);
     expect(countReceivedByBag(new Set(), { received: 5, unmatched: [], batchTokens: ["bag-token"] })).toBe(5);
+  });
+});
+
+describe("qop hisobi — bagProgressIndex / partialBagsInScan (DamKku7C, ega S3)", () => {
+  const batch = (token: string, size: number | null, received: number, pending: number, ref: string | null = null) => ({
+    token,
+    ref,
+    size,
+    received,
+    pending,
+  });
+
+  it("keldi = ilgari qabul qilinganlar + kutayotganlar; kartadagi misol: 3 dan 1 + 1 → 2/3", () => {
+    expect(bagProgressIndex([batch("A", 3, 1, 1, "BP-24817")]).get("A")).toEqual({
+      token: "A",
+      label: "BP-24817",
+      size: 3,
+      arrived: 2,
+      received: 1,
+      missing: 1,
+    });
+  });
+
+  it("nomi: ref, bo'lmasa token boshi (`bagLabel` bilan bir xil)", () => {
+    expect(bagProgressIndex([batch("3733ff7bd1e2", 3, 0, 1)]).get("3733ff7bd1e2")?.label).toBe("3733ff7b…");
+  });
+
+  it("ilgari qabul qilingan a'zo kamomad emas: 1 + 2 = 3/3", () => {
+    expect(bagProgressIndex([batch("A", 3, 1, 2)]).get("A")?.missing).toBe(0);
+  });
+
+  it("hajmi noma'lum qop hisobga kirmaydi; hamkor kam aytgan bo'lsa ham kamomad manfiy emas", () => {
+    expect(bagProgressIndex([batch("A", null, 0, 2)]).size).toBe(0);
+    expect(bagProgressIndex([batch("B", 2, 1, 2)]).get("B")?.missing).toBe(0);
+  });
+
+  it("bagProgressOf — posilkaning qop tokeni bo'yicha; qopsiz — null", () => {
+    const bags = bagProgressIndex([batch("A", 3, 0, 2)]);
+    expect(bagProgressOf(order("1", { external_batch_token: "A" }), bags)?.arrived).toBe(2);
+    expect(bagProgressOf(order("2"), bags)).toBeNull();
+  });
+
+  it("partialBagsInScan: faqat skanerlangan posilkasi bor chala qoplar, skan soni bilan", () => {
+    const bags = bagProgressIndex([batch("A", 3, 0, 2), batch("B", 2, 0, 1), batch("C", 2, 0, 2)]);
+    const orders = [
+      order("1", { external_batch_token: "A" }),
+      order("2", { external_batch_token: "A" }),
+      order("3", { external_batch_token: "B" }),
+      order("4", { external_batch_token: "C" }),
+      order("5"),
+    ];
+    expect(partialBagsInScan(orders, new Set(["1", "2", "4", "5"]), bags).map(({ token, scanned }) => [token, scanned])).toEqual([
+      ["A", 2],
+    ]);
+    expect(partialBagsInScan(orders, new Set(["4", "5"]), bags)).toEqual([]);
   });
 });

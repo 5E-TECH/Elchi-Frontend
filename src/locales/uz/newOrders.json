@@ -629,6 +629,12 @@
       "switcherMeta": "{{value}} ta"
     }
   },
+  "orderQr": {
+    "title": "QR kod",
+    "image": "{{id}} buyurtmasining QR kodi",
+    "hint": "Yorliq yo'qolgan bo'lsa, shu kodni skanerlang",
+    "printTitle": "Buyurtma yorlig'i"
+  },
   "orderEdit": {
     "backToNewOrders": "Qabul va yaratish",
     "editOpenTitle": "Tahrirlash ochiq.",

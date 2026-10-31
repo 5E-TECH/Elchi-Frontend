@@ -6,6 +6,7 @@ import IncomingOrdersPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 import { getActiveScanTarget, resetScanTargets } from "../../shared/lib/scanner/scanTargets";
 import { toastStore } from "../../shared/lib/notify";
+import { SCAN_FEEDBACK_EVENT } from "../../shared/lib/scanner/feedback";
 
 const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;
 
@@ -1238,5 +1239,175 @@ describe("IncomingOrdersPage — «Qop» ustuni, skanni olib tashlash, yangilash
       { route: "/new-orders/incoming/121", preloadedState: stateFor("manager", "REGIONAL") },
     );
     expect(await screen.findByText("Bu sahifaga kirish huquqingiz yo'q")).toBeInTheDocument();
+  });
+});
+
+/** Chala qop (DamKku7C, ega S2 · S3 · S5, maketlar `*-incoming-scan-partial`, `*-partial-confirm-dialog`). */
+describe("IncomingOrdersPage — chala qop", () => {
+  const BAG = "3733ff7bd1e2c4a5b6c7d8e9";
+  const FULL = "aaaa7bd1e2c4a5b6c7d8e9ff";
+  const parcel = (n: number, extra: Record<string, unknown> = {}) => ({
+    id: `o-${n}`,
+    order_number: 10260 + n,
+    qr_code_token: `tok-${n}`,
+    total_price: 100000,
+    customer: { name: `Mijoz ${n}` },
+    ...extra,
+  });
+  const partialBag = { external_batch_token: BAG, external_batch_ref: "BP-24817", external_batch_size: 3 };
+  const fullBag = { external_batch_token: FULL, external_batch_size: 2 };
+  const partialMeta = { ...partialBag, received_count: 0, pending_count: 2 };
+  const fullMeta = { ...fullBag, external_batch_ref: null, received_count: 0, pending_count: 2 };
+
+  const mockList = (items: unknown[], batches?: unknown[]) =>
+    apiGetMock.mockImplementation((url: string) =>
+      url === "orders/external"
+        ? Promise.resolve({ data: { data: items, total: items.length, ...(batches ? { meta: { batches } } : {}) } })
+        : Promise.resolve({ data: [] }),
+    );
+
+  const scan = (value: string) => {
+    const input = screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.submit(input.closest("form")!);
+  };
+
+  const sounds: string[] = [];
+  const onSound = (event: Event) => sounds.push((event as CustomEvent<{ type: string }>).detail.type);
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    apiPostMock.mockResolvedValue({ data: { data: { received: 2, unmatched: [] } } });
+    sounds.length = 0;
+    window.addEventListener(SCAN_FEEDBACK_EVENT, onSound);
+  });
+  afterEach(() => window.removeEventListener(SCAN_FEEDBACK_EVENT, onSound));
+
+  it("⭐ hamkor 3 ta dedi, 2 tasi keldi — ogohlantirishda qop nomi va sonlar, qatorda «2/3»", async () => {
+    mockList([parcel(1, partialBag), parcel(2, partialBag)], [partialMeta]);
+    renderPage();
+
+    const alert = await screen.findByRole("region", { name: "1 ta qop chala keldi" });
+    expect(alert).toHaveTextContent("hamkor aytgan posilkalarning hammasi yetib kelmagan");
+    expect(alert).toHaveTextContent("Qop BP-24817 — hamkor 3 ta dedi, 2 tasi keldi");
+    expect(alert).toHaveTextContent("Yetishmagan posilka hali mashinada bo'lishi mumkin — qabul qilishdan oldin tekshiring.");
+    // Ekran o'quvchi uchun izoh bilan: faqat «2/3» emas.
+    expect(screen.getAllByText("2/3", { exact: false })[0]).toHaveTextContent("Chala qop: hamkor 3 ta dedi, 2 tasi keldi — 2/3");
+  });
+
+  it("ogohlantirish «Kelgan posilkalar» kartasidan oldin turadi", async () => {
+    mockList([parcel(1, partialBag), parcel(2, partialBag)], [partialMeta]);
+    renderPage();
+    const alert = await screen.findByRole("region", { name: "1 ta qop chala keldi" });
+    const list = screen.getByRole("heading", { name: "Kelgan posilkalar" });
+    expect(alert.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("qop to'liq — ogohlantirish yo'q, belgi neytral «2/2»", async () => {
+    mockList([parcel(1, fullBag), parcel(2, fullBag)], [fullMeta]);
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /qop chala keldi/ })).toBeNull();
+    expect(screen.getAllByText("2/2", { exact: false })[0]).toHaveTextContent("To'liq qop: 2/2");
+  });
+
+  it("hamkor hajmni aytmagan (`null`) — ogohlantirish ham, belgi ham yo'q", async () => {
+    const bag = { external_batch_token: BAG, external_batch_size: null };
+    mockList([parcel(1, bag)], [{ ...bag, received_count: 0, pending_count: 1 }]);
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /qop chala keldi/ })).toBeNull();
+    expect(screen.queryByText(/\d\/\d/)).toBeNull();
+  });
+
+  it("⭐ backend son bermasa frontend o'zi sanamaydi: ogohlantirish yo'q, tasdiqsiz qabul", async () => {
+    mockList([parcel(1, partialBag), parcel(2, partialBag)]);
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /qop chala keldi/ })).toBeNull();
+
+    scan("tok-1");
+    await userEvent.click(screen.getByRole("button", { name: /Qabul qilish — 1 ta/ }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("⭐ ilgari qabul qilingan a'zo kamomad emas: 1 + 2 = 3/3, qop QR'i yashil", async () => {
+    mockList([parcel(1, partialBag), parcel(2, partialBag)], [{ ...partialMeta, received_count: 1 }]);
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /qop chala keldi/ })).toBeNull();
+
+    scan(BAG);
+
+    const message = await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi");
+    expect(message.closest("[data-tone]")).toHaveAttribute("data-tone", "success");
+    expect(sounds).toEqual(["success"]);
+  });
+
+  it("⭐ chala qop QR'i — sariq «Qop BP-24817: 2/3 keldi» va xato ovozi; to'liq qop — yashil", async () => {
+    mockList(
+      [parcel(1, partialBag), parcel(2, partialBag), parcel(3, fullBag), parcel(4, fullBag)],
+      [partialMeta, fullMeta],
+    );
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+
+    scan(BAG);
+    const message = await screen.findByText("Qop BP-24817: 2/3 keldi");
+    expect(message.closest("[data-tone]")).toHaveAttribute("data-tone", "warning");
+    expect(message.closest("[data-tone]")).toHaveTextContent("2 ta posilka belgilandi, 1 tasi yetishmaydi");
+    expect(sounds).toEqual(["error"]);
+
+    scan(FULL);
+    const full = await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi");
+    expect(full.closest("[data-tone]")).toHaveAttribute("data-tone", "success");
+    expect(sounds).toEqual(["error", "success"]);
+  });
+
+  it("⭐ chala qopni qabul qilish — tasdiq; «Bekor qilish» so'rov yubormaydi, «Baribir qabul qilish» yuboradi", async () => {
+    const user = userEvent.setup();
+    mockList([parcel(1, partialBag), parcel(2, partialBag), parcel(3, fullBag), parcel(4, fullBag)], [partialMeta, fullMeta]);
+    renderPage();
+    expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
+    scan(BAG);
+    await screen.findByText("Qop BP-24817: 2/3 keldi");
+
+    await user.click(screen.getByRole("button", { name: /Qabul qilish — 2 ta/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: "1 ta qop chala — baribir qabul qilinsinmi?" });
+    expect(dialog).toHaveTextContent("Market #121 · 2 ta posilka skanerlangan");
+    expect(dialog).toHaveTextContent("Qabul qilinayotgan posilkalarning 1 ta qopi chala. Yetishmagani hali mashinada bo'lishi mumkin.");
+    expect(dialog).toHaveTextContent("Qop BP-24817");
+    expect(dialog).toHaveTextContent("Hamkor 3 ta dedi, 2 tasi keldi · 2 tasi skanerlangan");
+    expect(dialog).toHaveTextContent("1 ta yetishmaydi");
+    expect(dialog).toHaveTextContent(
+      "Skanerlangan 2 ta posilka qabul qilinadi. Yetishmagan 1 ta posilka kutilayotgan bo'lib qoladi — yetib kelganda shu sahifada qabul qilinadi.",
+    );
+    expect(dialog).toHaveTextContent("2 ta posilka skanerlanmagan — ro'yxatda qoladi.");
+
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(apiPostMock).not.toHaveBeenCalled();
+    expect(scannedProgress()).toBe("2 / 4");
+
+    await user.click(screen.getByRole("button", { name: /Qabul qilish — 2 ta/ }));
+    await user.click(await screen.findByRole("button", { name: "Baribir qabul qilish" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    expect(apiPostMock.mock.calls[0][1]).toEqual({ tokens: ["tok-1", "tok-2"] });
+  });
+
+  it("chala qopdan posilka skanerlanmagan bo'lsa tasdiq chiqmaydi", async () => {
+    const user = userEvent.setup();
+    mockList([parcel(1, partialBag), parcel(3, fullBag), parcel(4, fullBag)], [partialMeta, fullMeta]);
+    renderPage();
+    expect(await screen.findByRole("region", { name: "1 ta qop chala keldi" })).toBeInTheDocument();
+
+    scan(FULL);
+    await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi");
+    await user.click(screen.getByRole("button", { name: /Qabul qilish — 2 ta/ }));
+
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 });

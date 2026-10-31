@@ -193,15 +193,46 @@ describe("Kuryer buyurtmalari — sarlavha, tablar va so'rov (v2)", () => {
     expect(screen.getByRole("region", { name: "Skanerlash" })).toHaveTextContent("Skaner bilan tanlash");
   });
 
+  it("yKtzKXeM: «Yetkazish» → `where_deliver` va 1-sahifa; bekor qilinganlarda yuborilmaydi", async () => {
+    const user = userEvent.setup();
+    state.rows = [order("1001", "Laylo Hasanova", { status: "cancelled" })];
+    renderPage("/orders?status=waiting&page=3");
+
+    expect(lastCall()).not.toHaveProperty("where_deliver");
+    await user.click(screen.getByRole("combobox", { name: "Yetkazish turi" }));
+    await user.click(screen.getByRole("option", { name: "Markazgacha" }));
+    expect(lastCall()).toMatchObject({ where_deliver: "center", page: 1 });
+    expect(search().get("where_deliver")).toBe("center");
+
+    await user.click(screen.getByRole("tab", { name: "Bekor qilingan" }));
+    expect(lastCall()).toMatchObject({ status: "cancelled" });
+    expect(lastCall()).not.toHaveProperty("where_deliver");
+    expect(screen.queryByRole("combobox", { name: "Yetkazish turi" })).toBeNull();
+  });
+
+  it("yKtzKXeM: URL'dagi yaroqsiz «Yetkazish» API'ga ketmaydi va filtr hisoblanmaydi", () => {
+    renderPage("/orders?status=waiting&where_deliver=xyz");
+    expect(lastCall()).not.toHaveProperty("where_deliver");
+    expect(screen.getByRole("combobox", { name: "Yetkazish turi" })).toHaveTextContent("Yetkazish: barchasi");
+    expect(screen.queryByText("Buyurtmalar topilmadi")).toBeNull();
+  });
+
   it("filtr natija bermasa — «Buyurtmalar topilmadi» va «Filtrlarni tozalash» URL'ni tozalaydi", async () => {
     const user = userEvent.setup();
-    renderPage("/orders?status=waiting&orderSearch=zzz&startDay=2026-10-01&endDay=2026-10-08");
+    renderPage("/orders?status=waiting&orderSearch=zzz&startDay=2026-10-01&endDay=2026-10-08&where_deliver=center");
 
     expect(screen.getByText("Buyurtmalar topilmadi")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
     expect(search().get("orderSearch")).toBeNull();
     expect(search().get("startDay")).toBeNull();
+    expect(search().get("where_deliver")).toBeNull();
     expect(search().get("status")).toBe("waiting");
+  });
+
+  it("yKtzKXeM: faqat «Yetkazish» bo'yicha bo'sh natija ham «Filtrlarni tozalash» beradi", () => {
+    renderPage("/orders?status=waiting&where_deliver=address");
+    expect(screen.getByText("Buyurtmalar topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filtrlarni tozalash" })).toBeInTheDocument();
   });
 
   it("sahifa almashganda yangi javob kelguncha sahifalash va «Jami N» turadi, fokus bosilgan tugmada qoladi", async () => {

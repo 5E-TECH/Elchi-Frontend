@@ -46,6 +46,7 @@ const DETAIL = {
         id: "c1",
         name: "Ilhom Saidov",
         phoneNumber: "+998972389014",
+        districtId: "d1",
         totalOrders: 6,
         deliveredOrders: 5,
         totalRevenue: 1_110_000,
@@ -142,6 +143,9 @@ describe("RegionDetailDialog (umumiy viloyat oynasi)", () => {
 
     const couriers = await within(dialog).findByRole("list", { name: "Viloyat kuryerlari" });
     expect(within(couriers).getByText("Ilhom Saidov")).toBeInTheDocument();
+    // YD7xyjX9: kuryer o'z tumani bilan; tumani yo'q kuryerda — avvalgidek telefon.
+    expect(within(couriers).getByText("Samarqand sh.")).toBeInTheDocument();
+    expect(within(couriers).getByText(/^\+998 90 412/)).toBeInTheDocument();
     expect(within(couriers).getByText("Asosiy")).toBeInTheDocument();
     expect(within(couriers).getByText("83,3%")).toBeInTheDocument();
     expect(within(couriers).getByText("5 / 6 ta")).toBeInTheDocument();

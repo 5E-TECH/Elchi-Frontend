@@ -331,6 +331,7 @@
     "searchLabel": "Поиск заказов по имени, телефону или номеру",
     "dateLabel": "Период",
     "datePlaceholder": "Все даты",
+    "deliveryAll": "Доставка: все",
     "colOrder": "Заказ",
     "sortByDate": "Сортировать по дате",
     "colCustomer": "Клиент",

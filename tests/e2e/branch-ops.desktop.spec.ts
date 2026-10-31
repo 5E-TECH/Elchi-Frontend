@@ -10,7 +10,7 @@ import {
 } from "./support/branchOps";
 
 /**
- * FILIALLAR — OPERATSIYALAR (/branch-ops, dizayn v2 — maket `superadmin-ops-branches`): jadval konvertdan ochiladi;
+ * FILIALLAR — OPERATSIYALAR (/batches, dizayn v2 — maket `superadmin-ops-branches`): jadval konvertdan ochiladi;
  * paketni bekor qilish faqat ≥10 belgili sabab bilan va tasdiqdan keyin; 400 xabari ko'rinadi.
  */
 for (const width of [1920, 1440]) {
@@ -27,7 +27,7 @@ for (const width of [1920, 1440]) {
       await expect(rows.nth(0)).toContainText("7 ta");
       await expect(rows.nth(1)).toContainText("Xiva filiali");
       await expect(page.getByText("Yangi buyurtmali filial yo'q")).toHaveCount(0);
-      await expect(page.getByRole("main").getByRole("link", { name: "Ops vositalari" })).toHaveAttribute("href", "/ops?tab=branches");
+      await expect(page).toHaveURL(/\/batches$/);
       expect(leaked).toEqual([]);
     });
 

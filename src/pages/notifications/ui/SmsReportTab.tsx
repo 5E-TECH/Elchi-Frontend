@@ -30,6 +30,7 @@ import {
 } from "../../../shared/ui/primitives";
 import {
   buildDaily,
+  buildMonthly,
   daysBetween,
   defaultReportRange,
   reportQueryRange,
@@ -37,6 +38,8 @@ import {
   summarizeByClass,
   summarizeTotals,
   tashkentDay,
+  monthLabel,
+  type MonthlyRow,
 } from "../lib/smsReport";
 import { useIsPhoneViewport } from "../lib/useIsPhoneViewport";
 import { useDayLabel } from "../lib/useDayLabel";
@@ -53,7 +56,7 @@ const splitCompact = (text: string) => {
 const DAY_PAGE_SIZES = [10, 20, 50] as const;
 
 /** Bu qatordagi birorta SMS ham tariflanmagan — xarajat «—». */
-const untariffedRow = (row: SmsReportDay) => row.total > 0 && row.untariffed >= row.total;
+const untariffedRow = (row: Pick<SmsReportDay, "total" | "untariffed">) => row.total > 0 && row.untariffed >= row.total;
 
 /**
  * XARAJAT HISOBOTI (8auPBa1O #6), dizayn v2 — maket `superadmin-notifications-sms-report`.
@@ -62,7 +65,8 @@ const untariffedRow = (row: SmsReportDay) => row.total > 0 && row.untariffed >= 
  * `to` — keyingi kun boshi). KPI: «Jami SMS», «Bo'laklar», «Jami xarajat» (kunlik sparkline bilan; telefonda bitta
  * xulosa kartasi). Tarifsiz SMS — ogohlantirish. Grafiklar (hammasi `GET …/sms/report` qatorlaridan, spec §2.3):
  * «Yetkazilish» (yarim doira), «Kunlik SMS soni» (sinf bo'yicha ustunlar, «Grafik | Jadval»), «Xarajat turlari
- * bo'yicha», «Holat turlari bo'yicha». Pastda «Kunlar bo'yicha» jadvali (telefonda kartalar).
+ * bo'yicha», «Holat turlari bo'yicha». Pastda «Oylar bo'yicha» (FaFN0Pux, maketda yo'q, eng yaqini «Kunlar bo'yicha»;
+ * tanlangan davrdagi kun qatorlaridan) va «Kunlar bo'yicha» jadvallari (telefonda kartalar).
  */
 const SmsReportTab = () => {
   const { t, i18n } = useTranslation("sms");
@@ -163,6 +167,7 @@ const ReportBody = ({ data, from, to, rangeText, tariffs }: ReportBodyProps) => 
     [data, from, to],
   );
   const dayRows = useMemo(() => sortDayRows(data.days), [data.days]);
+  const monthRows = useMemo(() => buildMonthly(data.days), [data.days]);
   // «Kunlar bo'yicha» — mahalliy sahifalash (30 kunda 60–90 qator; API sahifalamaydi).
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(DAY_PAGE_SIZES[0]);
@@ -241,6 +246,63 @@ const ReportBody = ({ data, from, to, rangeText, tariffs }: ReportBodyProps) => 
       },
     ],
     [dayLabel, firstOfDay, money, num, t],
+  );
+
+  const monthColumns = useMemo<DataTableColumn<MonthlyRow>[]>(
+    () => [
+      {
+        id: "month",
+        header: t("report.col.month"),
+        cellClassName: "whitespace-nowrap",
+        cell: (row) => <span className="font-semibold text-text">{monthLabel(row.month)}</span>,
+      },
+      { id: "total", header: t("report.col.total"), align: "end", cell: (row) => num(row.total) },
+      { id: "delivered", header: t("report.col.delivered"), align: "end", cell: (row) => num(row.delivered) },
+      {
+        id: "failed",
+        header: t("report.col.failed"),
+        align: "end",
+        cell: (row) => (row.failed ? num(row.failed) : <span className="text-text-muted">{num(0)}</span>),
+      },
+      { id: "parts", header: t("report.col.parts"), align: "end", hideBelow: "lg", cell: (row) => num(row.parts) },
+      {
+        id: "cost",
+        header: t("report.col.cost"),
+        align: "end",
+        cell: (row) =>
+          untariffedRow(row) ? (
+            <span className="text-text-muted" title={t("report.untariffedTitle")}>
+              —<span className="sr-only"> {t("report.untariffedTitle")}</span>
+            </span>
+          ) : (
+            <span className="font-semibold text-text">{money(row.cost)}</span>
+          ),
+      },
+    ],
+    [money, num, t],
+  );
+
+  const renderMonthCard = useCallback(
+    (row: MonthlyRow) => (
+      <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <span className="font-semibold text-text">{monthLabel(row.month)}</span>
+          {untariffedRow(row) ? (
+            <span className="text-[13px] whitespace-nowrap text-text-muted">{t("report.untariffedShort")}</span>
+          ) : (
+            <span className="font-semibold whitespace-nowrap text-text">{money(row.cost)}</span>
+          )}
+        </div>
+        <span className="text-xs text-text-muted">
+          {t("report.monthCard", {
+            total: num(row.total),
+            delivered: num(row.delivered),
+            failed: num(row.failed),
+          })}
+        </span>
+      </div>
+    ),
+    [money, num, t],
   );
 
   const renderDayCard = useCallback(
@@ -402,6 +464,16 @@ const ReportBody = ({ data, from, to, rangeText, tariffs }: ReportBodyProps) => 
         <CostCard classes={classes} totalCost={totals.cost} tariffs={tariffs} />
         <StatusCard classes={classes} />
       </div>
+
+      <Card padding="none" title={t("report.monthsTitle")} description={t("report.monthsSub")}>
+        <DataTable
+          rows={monthRows}
+          columns={monthColumns}
+          getRowKey={(row) => row.month}
+          label={t("report.monthsLabel")}
+          renderCard={renderMonthCard}
+        />
+      </Card>
 
       <Card
         padding="none"

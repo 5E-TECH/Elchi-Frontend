@@ -29,6 +29,7 @@ import {
   type DataTableSelection,
   type DataTableSort,
 } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
@@ -100,6 +101,7 @@ const NewOrderDetail = () => {
   // fix3 CODE-17: REGIONAL xodimida qabul tugmasi va skaner-qabul yo'q
   // (backend transfer batch'ni doim 403 qiladi) — o'rniga /dispatch maslahati.
   const canReceive = !isMarketRole && receiveMode !== "none";
+  const isPhone = useIsPhone();
   const showReceiveViaDispatchHint = !isMarketRole && receiveMode === "none";
   const canOpenBatches = useSelector(canViewBatchesPage);
   const hasTabs = useHasNewOrdersTabs();
@@ -659,6 +661,27 @@ const NewOrderDetail = () => {
   }
 
   const receiveCount = formatNumberLocalized(selectedOrders.length, { language });
+  const receiveButton = canReceive ? (
+    <Button
+      size={isPhone ? "lg" : "md"}
+      compact={isPhone}
+      leftIcon={Check}
+      aria-haspopup="dialog"
+      disabled={selectedOrders.length === 0}
+      loading={receiveMutation.isPending}
+      loadingText={t("receiving")}
+      onClick={() => setIsReceiveConfirmOpen(true)}
+      className={isPhone ? "flex-1" : undefined}
+    >
+      <Trans
+        t={t}
+        i18nKey="marketOrders.receive"
+        values={{ value: receiveCount }}
+        count={selectedOrders.length}
+        components={{ long: <span className="max-md:hidden" /> }}
+      />
+    </Button>
+  ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
@@ -674,26 +697,8 @@ const NewOrderDetail = () => {
             </>
           ) : null
         }
-        actions={
-          canReceive ? (
-            <Button
-              leftIcon={Check}
-              aria-haspopup="dialog"
-              disabled={selectedOrders.length === 0}
-              loading={receiveMutation.isPending}
-              loadingText={t("receiving")}
-              onClick={() => setIsReceiveConfirmOpen(true)}
-            >
-              <Trans
-                t={t}
-                i18nKey="marketOrders.receive"
-                values={{ value: receiveCount }}
-                count={selectedOrders.length}
-                components={{ long: <span className="max-md:hidden" /> }}
-              />
-            </Button>
-          ) : null
-        }
+        actions={isPhone ? undefined : receiveButton}
+        className="md:sticky md:top-0 md:z-20 md:bg-bg"
       />
 
       {showReceiveViaDispatchHint ? (
@@ -733,6 +738,16 @@ const NewOrderDetail = () => {
           onCancel={() => setIsReceiveConfirmOpen(false)}
           onConfirm={handleAccepted}
         />
+      ) : null}
+      {/* Telefon: asosiy amal pastki menyu ustida (`/dispatch` naqshi, Q7) — 50+ qatorda ham ko'rinadi (ndKkHjhe). Kamera —
+          markaziy «Skaner» (oqim ichida kamera tugmasi yo'q, ega qarori 2026-10-19). */}
+      {isPhone && receiveButton ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
+            {receiveButton}
+          </div>
+        </>
       ) : null}
       {deleteDialog}
     </div>

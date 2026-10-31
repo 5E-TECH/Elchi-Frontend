@@ -52,11 +52,13 @@ import {
   PageHeader,
   Pagination,
   QueryBoundary,
+  Select,
   Skeleton,
   SkeletonTable,
   TextInput,
 } from "../../../../shared/ui/primitives";
 import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
+import { isDeliveryType, ORDER_FILTER_KEYS } from "../orderFilterModel";
 import {
   getOrdersRefetchInterval,
   ORDERS_REFRESH_INTERVAL_MS,
@@ -70,14 +72,13 @@ import { OrdersRefreshAlert } from "../OrdersRefreshAlert";
  * KURYER «BUYURTMALAR» (`/orders`, rol `courier`) — maketlar `courier-orders-pending` · `-all` ·
  * `-cancelled` · `-tab-switcher-open`; oynalar — `SellModal`, `CancelModal`, `RollbackOrderDialog`.
  *
- *  - ≥ 768: bitta karta — tablar, qidiruv + sana oralig'i (bekor qilinganda — skaner bloki va tanlov
- *    paneli), jadval, sahifalash.
+ *  - ≥ 768: bitta karta — tablar, qidiruv + sana oralig'i + «Yetkazish: barchasi» (bekor qilinganda — skaner
+ *    bloki va tanlov paneli), jadval, sahifalash.
  *  - < 768: tablar va qidiruv karta ustida (butun enda), kartada ro'yxat; bekor qilinganda tanlov —
  *    pastki menyu ustidagi panel («N ta buyurtmani pochtaga yuborish»).
  *
- * Maketdagi «Yetkazish: barchasi» filtri chizilmaydi: kuryer ro'yxati API'si (`GET orders/courier/orders`)
- * yetkazish turi bo'yicha filtrni qabul qilmaydi (faqat `status`, `search`, `startDate`, `endDate`,
- * `page`, `limit`). Tab sonlari — `GET orders/courier/orders/counts` (OR-1, 0d11ewk7).
+ * Filtrlar URL'da, `GET orders/courier/orders` ga `search`, `startDate`, `endDate`, `where_deliver` bo'lib ketadi.
+ * Tab sonlari — `GET orders/courier/orders/counts` (OR-1, 0d11ewk7).
  *
  * Yangilanish (OR-1, `../useOrdersRefresh`): 60 s va ilovaga qaytganda (ro'yxat + tab sonlari), sarlavhada
  * «Oxirgi yangilanish», «Yangilash» (telefonda ikonka tugma); yiqilsa — «Ro'yxat yangilanmadi» (telefonda
@@ -243,6 +244,7 @@ const SEARCH_PARAM = "orderSearch";
 const LEGACY_SEARCH_PARAM = "search";
 const DATE_FROM_PARAM = "startDay";
 const DATE_TO_PARAM = "endDay";
+const DELIVERY_PARAM = ORDER_FILTER_KEYS.deliveryType;
 /** Qidiruv yozilgach so'rov kechikishi (umumiy ro'yxatdagi `FilterSearch` bilan bir xil). */
 const SEARCH_DEBOUNCE_MS = 600;
 
@@ -400,10 +402,12 @@ const CourierOrders = () => {
     }
   }, []);
 
-  // ─── Qidiruv va sana (URL'da; bekor qilingan tabda qo'llanmaydi — u yerda maydonlar yo'q) ─────────
+  // ─── Qidiruv, sana va yetkazish (URL'da; bekor qilingan tabda qo'llanmaydi — u yerda maydonlar yo'q) ─────────
   const urlSearch = getParam(SEARCH_PARAM) ?? getParam(LEGACY_SEARCH_PARAM) ?? "";
   const dateFrom = getParam(DATE_FROM_PARAM) ?? "";
   const dateTo = getParam(DATE_TO_PARAM) ?? "";
+  const urlDelivery = getParam(DELIVERY_PARAM) ?? "";
+  const delivery = isDeliveryType(urlDelivery) ? urlDelivery : "";
   const [searchDraft, setSearchDraft] = useState(urlSearch);
   const [syncedSearch, setSyncedSearch] = useState(urlSearch);
   // URL tashqaridan o'zgarsa (filtrlarni tozalash, orqaga) — maydon ham yangilanadi. O'zimiz yozgan
@@ -428,9 +432,19 @@ const CourierOrders = () => {
     setMultipleParams({ [DATE_FROM_PARAM]: from, [DATE_TO_PARAM]: to, page: "1" });
   };
 
+  const handleDeliveryChange = (next: string | null) => {
+    setMultipleParams({ [DELIVERY_PARAM]: next ?? "", page: "1" });
+  };
+
   const clearFilters = () => {
     setSearchDraft("");
-    setMultipleParams({ [SEARCH_PARAM]: "", [DATE_FROM_PARAM]: "", [DATE_TO_PARAM]: "", page: "1" });
+    setMultipleParams({
+      [SEARCH_PARAM]: "",
+      [DATE_FROM_PARAM]: "",
+      [DATE_TO_PARAM]: "",
+      [DELIVERY_PARAM]: "",
+      page: "1",
+    });
   };
 
   const handleTabChange = (tabId: string) => {
@@ -469,6 +483,7 @@ const CourierOrders = () => {
     ...(withFilters && urlSearch ? { search: toOrderSearchTerm(urlSearch) } : {}),
     ...(withFilters && dateFrom ? { startDate: dateFrom } : {}),
     ...(withFilters && dateTo ? { endDate: dateTo } : {}),
+    ...(withFilters && delivery ? { where_deliver: delivery } : {}),
   };
 
   // Oyna yoki kamera ochiq — avtomatik yangilanish to'xtaydi (tasdiq pollingi davom etadi).
@@ -859,7 +874,7 @@ const CourierOrders = () => {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   const regionLabel = t(REGION_LABEL_KEYS[activeTab]);
-  const hasFilters = withFilters && Boolean(urlSearch || dateFrom || dateTo);
+  const hasFilters = withFilters && Boolean(urlSearch || dateFrom || dateTo || delivery);
   const sendLabel = t("sendSelectedToPost", { count: selectedSendableCount });
 
   // Sarlavha izohi: tabning birinchi yuklanishida skelet chizig'i (maket `courier-orders-tab-switcher-open`),
@@ -1004,13 +1019,29 @@ const CourierOrders = () => {
             {withFilters ? (
               <div className="flex flex-wrap items-center gap-3 px-5 py-4">
                 {search}
-                <DateRange
-                  value={{ from: dateFrom, to: dateTo }}
-                  onChange={handleDateChange}
-                  placeholder={t("courierList.datePlaceholder")}
-                  aria-label={t("courierList.dateLabel")}
-                  className="min-w-0 max-w-[260px] flex-[1_1_200px]"
-                />
+                <div className="flex min-w-0 max-w-[460px] flex-[1_1_400px] gap-3">
+                  <div className="min-w-0 flex-1">
+                    <DateRange
+                      value={{ from: dateFrom, to: dateTo }}
+                      onChange={handleDateChange}
+                      placeholder={t("courierList.datePlaceholder")}
+                      aria-label={t("courierList.dateLabel")}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Select
+                      options={[
+                        { value: "", label: t("courierList.deliveryAll") },
+                        { value: "address", label: t("deliveryToHome") },
+                        { value: "center", label: t("deliveryToCenter") },
+                      ]}
+                      value={delivery}
+                      onChange={handleDeliveryChange}
+                      aria-label={t("deliveryType")}
+                    />
+                  </div>
+                </div>
               </div>
             ) : (
               <div

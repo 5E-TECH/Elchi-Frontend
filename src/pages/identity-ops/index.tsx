@@ -1,29 +1,25 @@
 // dizayn-v2: superadmin-ops-identity
-import { memo, useState, type FormEvent } from "react";
-import { Check } from "lucide-react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useIdentityCoverage } from "../../entities/identity";
 import { toRows } from "../../shared/lib/toRows";
 import {
   Badge,
-  Button,
   Card,
   DataTable,
   EmptyState,
   ErrorState,
-  Field,
   QueryBoundary,
-  TextInput,
   type DataTableColumn,
   type QueryLike,
 } from "../../shared/ui/primitives";
-import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 import { useOpsErrorText } from "../ops/lib/opsErrorText";
 
 /**
  * OPS → «Xodimlar» (maket `superadmin-ops-identity`): adminlar, menejerlar, registratorlar ro'yxatlari
- * (`GET admins|managers|registrators` — konvert `{ data: { items } }`) va «Market: buyurtma qo'shish ruxsati»
- * (`PATCH markets/:id/add-order` — `addOrderToMarket.mutate({ id, data: {} })`, antd `Switch` o'rniga tugma).
+ * (`GET admins|managers|registrators` — konvert `{ data: { items } }`). «Market: buyurtma qo'shish» ruxsati — bitta
+ * joyda, market profilida (`UserDetailView` → «Ruxsatlar», 941rmIn5): bu yerdagi ID bilan ruxsat berish kartasi olindi.
  */
 
 type StaffRow = { key: string; id: string; name: string; email: string };
@@ -109,25 +105,10 @@ const StaffCard = ({ title, query }: { title: string; query: QueryLike<unknown> 
 
 const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t } = useTranslation("ops");
-  const { useGetAdmins, useGetManagers, useGetRegistrators, addOrderToMarket } = useIdentityCoverage();
-  // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
-  const errorText = useOpsErrorText();
-
+  const { useGetAdmins, useGetManagers, useGetRegistrators } = useIdentityCoverage();
   const admins = useGetAdmins(undefined, { silentError: true });
   const managers = useGetManagers(undefined, { silentError: true });
   const registrators = useGetRegistrators(undefined, { silentError: true });
-
-  const [marketId, setMarketId] = useState("");
-  const [granted, setGranted] = useState<string | null>(null);
-  const trimmed = marketId.trim();
-
-  const handleGrant = (event: FormEvent) => {
-    event.preventDefault();
-    if (!trimmed || addOrderToMarket.isPending) return;
-    setGranted(null);
-    // Backend `UpdateMarketAddOrderRequestDto` — `add_order: boolean` majburiy (bo'sh tana → 400, hxOGVwMt).
-    addOrderToMarket.mutate({ id: trimmed, data: { add_order: true } }, { onSuccess: () => setGranted(trimmed) });
-  };
 
   return (
     <OpsToolPage tabKey="identity" embedded={embedded}>
@@ -137,32 +118,6 @@ const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
         <StaffCard title={t("identity.lists.admins")} query={admins} />
         <StaffCard title={t("identity.lists.managers")} query={managers} />
         <StaffCard title={t("identity.lists.registrators")} query={registrators} />
-
-        <Card title={t("identity.market.title")} description={t("identity.market.description")} className="min-w-0">
-          <form onSubmit={handleGrant} className="flex flex-col gap-4">
-            <Field label={t("identity.market.label")} required hint={t("identity.market.hint")}>
-              <TextInput
-                inputMode="numeric"
-                value={marketId}
-                onValueChange={setMarketId}
-                placeholder={t("identity.market.placeholder")}
-              />
-            </Field>
-            <Button type="submit" leftIcon={Check} fullWidth disabled={!trimmed} loading={addOrderToMarket.isPending}>
-              {t("identity.market.submit")}
-            </Button>
-            {granted && addOrderToMarket.isSuccess ? (
-              <OpsAlert tone="success" title={t("identity.market.success")}>
-                {t("identity.market.successMeta", { id: granted })}
-              </OpsAlert>
-            ) : null}
-            {addOrderToMarket.isError ? (
-              <OpsAlert tone="danger" title={t("identity.market.error")}>
-                {errorText(addOrderToMarket.error, { action: true })}
-              </OpsAlert>
-            ) : null}
-          </form>
-        </Card>
       </div>
     </OpsToolPage>
   );

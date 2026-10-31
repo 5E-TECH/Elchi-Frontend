@@ -29,6 +29,7 @@ const getFinanceHistoryMock = vi.fn((params: unknown) => {
 });
 
 const pageState = vi.hoisted(() => ({
+  markets: { data: [] } as unknown,
   cashboxInfo: { data: {} } as unknown,
   managers: undefined as unknown,
   couriers: undefined as unknown,
@@ -156,7 +157,7 @@ vi.mock("../../entities/branch/api/useBranches", () => ({
 
 vi.mock("../../entities/markets", () => ({
   useMarkets: () => ({
-    useGetMarkets: () => ({ data: { data: [] }, isLoading: false }),
+    useGetMarkets: () => ({ data: pageState.markets, isLoading: false }),
   }),
 }));
 
@@ -210,6 +211,7 @@ const branchCouriersResponse = {
 
 beforeEach(() => {
   getFinanceHistoryMock.mockClear();
+  pageState.markets = { data: [] };
   pageState.cashboxInfo = { data: {} };
   pageState.managers = managersResponse;
   pageState.couriers = branchCouriersResponse;
@@ -572,6 +574,26 @@ describe("Payments — header and KPI cards", () => {
     open(superadmin);
     const mainCard = screen.getByRole("link", { name: /Kassadagi summa/ });
     expect(within(mainCard).getByText("Asosiy kassa")).toBeInTheDocument();
+  });
+
+  it("Spt8Cj7m: «Berilishi kerak» — 0 qoldiqli market sukut bo'yicha ko'rinmaydi, qidirilsa topiladi", async () => {
+    pageState.markets = {
+      data: [
+        { id: "1", name: "Bo'sh market", status: "active", cashbox: { balance: 0 } },
+        { id: "2", name: "Baraka Shop", status: "active", cashbox: { balance: 4_820_000 } },
+      ],
+    };
+    const user = userEvent.setup();
+    open(superadmin);
+
+    await user.click(screen.getByRole("button", { name: "Marketga to'lov" }));
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getAllByRole("option")).toHaveLength(1);
+    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("option", { name: /Bo'sh market/ })).not.toBeInTheDocument();
+
+    await user.type(within(dialog).getByRole("combobox"), "Bo'sh");
+    expect(within(dialog).getByRole("option", { name: /Bo'sh market/ })).toBeInTheDocument();
   });
 
   it("superadmin: header actions open the 'Berilishi kerak' and 'Qabul qilinishi kerak' pickers", async () => {

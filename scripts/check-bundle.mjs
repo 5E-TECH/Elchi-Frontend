@@ -1,7 +1,8 @@
-// BUNDLE DARVOZASI (z4uyw52T, 2UGfsfOl, NIFAnCvf, rzzxMItN) — `vite build` dan keyin CI'da.
+// BUNDLE DARVOZASI (z4uyw52T, 2UGfsfOl, NIFAnCvf, rzzxMItN, 1l2xJiVA) — `vite build` dan keyin CI'da.
 //   - dist/index.html da jsPDF bo'lmasin (u faqat chop etishda dinamik yuklanadi);
 //   - entry (index.html dagi barcha js+css) gzip yig'indisi byudjetdan oshmasin;
 //   - `rel="modulepreload"` havolalarining gzip yig'indisi ≤ 250 KB (har sahifada, /login da ham yuklanadi);
+//   - dist dagi barcha CSS yig'indisi ≤ 350 KB xom / 45 KB gzip (render-bloklovchi — birinchi chizish uni kutadi);
 //   - birinchi chizish skripti (`vite.config.ts` → `firstPaintPreload`): fayllari bor, /login ro'yxatida
 //     tarjimalar va antd yo'q;
 //   - dist/assets/*.js da Safari 15 dan yuqori sintaksis yo'q (`static {}`, `??=`, private maydon …) — js9ndYwA,
@@ -15,6 +16,8 @@ import { gzipSync } from "node:zlib";
 const DIST = process.argv[2] ?? "dist";
 const ENTRY_BUDGET_BYTES = 600 * 1024;
 const MODULEPRELOAD_BUDGET_BYTES = 250 * 1024;
+const CSS_RAW_BUDGET_BYTES = 350 * 1024;
+const CSS_GZIP_BUDGET_BYTES = 45 * 1024;
 // Kutilgan eager chunklar (hash'siz). Yangisi paydo bo'lsa — ko'rib chiqish kerak.
 const EXPECTED_ENTRY_CHUNKS = [
   "index.css",
@@ -53,6 +56,20 @@ console.log(`modulepreload gzip: ${(preloadTotal / 1024).toFixed(1)} KB (byudjet
 if (preloadTotal > MODULEPRELOAD_BUDGET_BYTES) {
   fail(`modulepreload havolalari ${(preloadTotal / 1024).toFixed(1)} KB gzip — byudjet ${MODULEPRELOAD_BUDGET_BYTES / 1024} KB.`);
 }
+
+const cssFiles = readdirSync(join(DIST, "assets")).filter((name) => name.endsWith(".css"));
+let cssRaw = 0;
+let cssGzip = 0;
+for (const file of cssFiles) {
+  const css = readFileSync(join(DIST, "assets", file));
+  cssRaw += css.length;
+  cssGzip += gzipSync(css, { level: 9 }).length;
+}
+console.log(
+  `CSS jami (${cssFiles.length} fayl): ${(cssRaw / 1024).toFixed(1)} KB xom / ${(cssGzip / 1024).toFixed(1)} KB gzip (byudjet ${CSS_RAW_BUDGET_BYTES / 1024} / ${CSS_GZIP_BUDGET_BYTES / 1024} KB)`,
+);
+if (cssRaw > CSS_RAW_BUDGET_BYTES) fail(`CSS jami ${(cssRaw / 1024).toFixed(1)} KB xom — byudjet ${CSS_RAW_BUDGET_BYTES / 1024} KB.`);
+if (cssGzip > CSS_GZIP_BUDGET_BYTES) fail(`CSS jami ${(cssGzip / 1024).toFixed(1)} KB gzip — byudjet ${CSS_GZIP_BUDGET_BYTES / 1024} KB.`);
 
 const firstPaint = /const f=(\{"login":\[[^\]]*\],"app":\[[^\]]*\]\})/.exec(html);
 if (!firstPaint) {

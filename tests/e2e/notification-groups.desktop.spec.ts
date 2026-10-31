@@ -11,12 +11,16 @@ import { toast } from "./support/toast";
  */
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ admin: menyuda «Bildirishnomalar», nofaol qilish → PATCH {is_active:false}, holat «Nofaol»", async ({ page }) => {
+test("⭐ admin: menyuda «Bildirishnoma sozlamalari», nofaol qilish → PATCH {is_active:false}, holat «Nofaol»", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const mock = await openNotificationGroups(page);
 
   const nav = page.getByRole("navigation").filter({ has: page.getByRole("link", { name: "Faoliyat jurnali" }) }).first();
-  await expect(nav.getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute("aria-current", "page");
+  const item = nav.getByRole("link", { name: "Bildirishnoma sozlamalari" });
+  await expect(item).toHaveAttribute("aria-current", "page");
+  // Qo'ng'iroq — faqat shaxsiy bildirishnomalar: menyu bandida boshqa ikonka (17HWafL7).
+  await expect(item.locator("svg.lucide-send")).toBeAttached();
+  await expect(item.locator("svg.lucide-bell")).toHaveCount(0);
 
   const trigger = page.getByRole("button", { name: "Baraka Shop — bekor qilingan guruhi: amallar" });
   await trigger.click();

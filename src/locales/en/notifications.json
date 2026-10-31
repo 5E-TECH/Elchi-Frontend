@@ -47,6 +47,7 @@
     "critical": "Critical"
   },
   "inboxTitle": "Notifications",
+  "inboxTitleSuperadmin": "Notification inbox",
   "inboxDescription": "Notifications you have received",
   "inbox": {
     "listLabel": "Notification list",

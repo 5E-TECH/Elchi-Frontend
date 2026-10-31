@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
-import { addDays, tashkentDay } from "../lib/smsReport";
+import { addDays, monthLabel, tashkentDay } from "../lib/smsReport";
 import SmsReportTab from "./SmsReportTab";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -151,5 +151,13 @@ describe("SmsReportTab — xarajat hisoboti", () => {
     );
     renderWithProviders(<SmsReportTab />);
     expect(await screen.findByText("Bu davrda SMS yo'q")).toBeInTheDocument();
+  });
+
+  it("FaFN0Pux: «Oylar bo'yicha» — kun qatorlari oyga yig'iladi", async () => {
+    renderWithProviders(<SmsReportTab />);
+    const table = await screen.findByRole("table", { name: "Oylar bo'yicha SMS" });
+    const month = monthLabel(yesterday.slice(0, 7));
+    expect(within(table).getByText(month)).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Oy" })).toBeInTheDocument();
   });
 });

@@ -80,6 +80,39 @@ export const buildDaily = (
   return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 };
 
+export type MonthlyRow = {
+  /** «YYYY-MM». */
+  month: string;
+  total: number;
+  delivered: number;
+  failed: number;
+  parts: number;
+  cost: number;
+  untariffed: number;
+};
+
+/** Tanlangan davrdagi kun qatorlaridan oylar kesimi (FaFN0Pux), yangisi tepada: sonlar «Kunlar bo'yicha» bilan bir xil. */
+export const buildMonthly = (rows: readonly SmsReportDay[]): MonthlyRow[] => {
+  const byMonth = new Map<string, MonthlyRow>();
+  for (const row of rows) {
+    const month = row.day.slice(0, 7);
+    const point =
+      byMonth.get(month) ??
+      ({ month, total: 0, delivered: 0, failed: 0, parts: 0, cost: 0, untariffed: 0 } satisfies MonthlyRow);
+    point.total += row.total;
+    point.delivered += row.delivered;
+    point.failed += row.failed;
+    point.parts += row.parts;
+    point.cost += Number(row.cost) || 0;
+    point.untariffed += row.untariffed;
+    byMonth.set(month, point);
+  }
+  return [...byMonth.values()].sort((a, b) => b.month.localeCompare(a.month));
+};
+
+/** «2026-10» → «10.2026». */
+export const monthLabel = (month: string) => month.split("-").reverse().join(".");
+
 export type ClassSummary = {
   messageClass: SmsMessageClass;
   total: number;

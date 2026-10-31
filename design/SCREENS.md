@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **103** · qisman: **143** · v2 ga ko'chirilgan route: **86 / 86**
+**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **146** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -74,9 +74,9 @@
 | `/mails/refused` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 5 | v2 |
 | `/mails/old` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
 | `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 42 | v2 |
-| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 10 | v2 |
+| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 11 | v2 |
 | `/batches/:id` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
-| `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 3 | v2 |
+| `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 6 | v2 |
 | `/dispatch` | Biriktirish va tezkor amal | `src/pages/dispatch/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID) | 8 | v2 |
 | `/courier-bulk` | Biriktirish va tezkor amal | `src/pages/courier-bulk/index.tsx` | manager (REGIONAL · HYBRID), courier | 7 | v2 |
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
@@ -121,16 +121,11 @@
 | `/notifications/sent` | Bildirishnomalar | `src/pages/notification-sent/index.tsx` | superadmin, admin | 12 | v2 |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 6 | v2 |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
-| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 17 | v2 |
+| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 13 | v2 |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
 | `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
-| `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | v2 |
-| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 3 | v2 |
-| `/branch-ops` | Tizim | `src/pages/branch-ops/index.tsx` | superadmin | 1 | v2 |
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
-| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 8 | v2 |
-| `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
 | `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 | `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
@@ -174,7 +169,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** qobiqsiz (kirishsiz) · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G3): kirish formasi (common-login, xato holati common-login-error) va «Sessiya tugadi» ekrani (SessionExpiredScreen — logoutAndRedirect({ reason: 'sessionExpired' }) → loginNotice; qo'lda «Chiqish» — to'g'ridan-to'g'ri forma). Sessiya banneri (SessionExpiryCountdown, taxta tizim-feedback 04) butun ilovada: DashboardLayout'da yuqori panel ostidagi shell slotiga ([data-shell-slot=banner], shared/lib/shellBannerSlot.ts) portal — sahifani pastga suradi, hech narsani yopmaydi (maket talabi bilan qo'shilgan shell sloti); ScanLayout'da oqimda, sticky. Ega savoli Q6 sukuti: «© 2026 Elchi Pochta» chizilmaydi (2026-10-16 «footer olib tashlangan»). Kirmagan foydalanuvchining noma'lum yo'li → /login (routes.tsx dagi mavjud xulq, o'zgartirilmadi).
+- **Izoh:** Dizayn v2 (G3): kirish formasi (common-login, xato holati common-login-error) va «Sessiya tugadi» ekrani (SessionExpiredScreen — logoutAndRedirect({ reason: 'sessionExpired' }) → loginNotice; qo'lda «Chiqish» — to'g'ridan-to'g'ri forma). Sessiya banneri (SessionExpiryCountdown, taxta tizim-feedback 04) butun ilovada: DashboardLayout'da yuqori panel ostidagi shell slotiga ([data-shell-slot=banner], shared/lib/shellBannerSlot.ts) portal — sahifani pastga suradi, hech narsani yopmaydi (maket talabi bilan qo'shilgan shell sloti); ScanLayout'da oqimda, sticky. Ega savoli Q6 sukuti: «© 2026 Elchi Pochta» chizilmaydi (2026-10-16 «footer olib tashlangan»). Kirmagan foydalanuvchining noma'lum yo'li → /login (routes.tsx dagi mavjud xulq, o'zgartirilmadi). Birinchi kadr (rzzxMItN): sekin tarmoqda navy tasma va logotip index.html dagi #login-shell dan JS'ni kutmasdan chiziladi (matnsiz — til hali noma'lum, faqat /login yo'lida, maketdagi joyida), React formani chizganda bitta kadrda almashadi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -246,7 +241,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/` — Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage (dizayn v2)
 
-- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/pages/dashboard/LogistDashboardPage.tsx` · `src/pages/dashboard/ui/LogistRegionSuccessCard.tsx` · `src/pages/dashboard/ui/LogistRegionsTable.tsx` · `src/widgets/dashboard-statistics/ui/DashboardHeader.tsx` · `src/widgets/dashboard-statistics/ui/DashboardGrid.tsx` · `src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx` · `src/pages/dashboard/ui/DeliveryQualityCard.tsx` · `src/pages/dashboard/ui/DeliveryResultsCard.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx` · `src/widgets/financial-analysis/ui/CashBalanceCard.tsx` · `src/widgets/dashboard-top-performers/ui/TopRankCard.tsx` · `src/widgets/dashboard-region/ui/RegionOverviewCard.tsx` · `src/widgets/dashboard-region/ui/RegionTiles.tsx` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx` · `src/pages/dashboard/ui/CourierPlanCard.tsx` · `src/pages/dashboard/ui/CourierCashCard.tsx` · `src/pages/dashboard/ui/MarketSalesCard.tsx` · `src/pages/dashboard/ui/QuickActions.tsx` · `src/pages/dashboard/ui/ExtraCostApprovals.tsx` · `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` · `src/pages/dashboard/ui/ExtraCostRejectDialog.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/shared/ui/charts/index.ts` · `src/shared/ui/Forbidden.tsx` · `src/pages/investor/InvestorDashboardPage.tsx` · `src/pages/investor/ui/MonthlyProfitCard.tsx` · `src/pages/investor/ui/InvestorListCards.tsx` · `src/pages/investor/ui/ProfitHistoryTable.tsx` · `src/pages/investor/ui/InvestorAccessState.tsx` · `src/shared/ui/charts/StackedBars.tsx` · `src/shared/ui/charts/Sparkline.tsx`
+- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/ui/AnalyticsKpiSection.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/pages/dashboard/LogistDashboardPage.tsx` · `src/pages/dashboard/ui/LogistRegionSuccessCard.tsx` · `src/pages/dashboard/ui/LogistRegionsTable.tsx` · `src/widgets/dashboard-statistics/ui/DashboardHeader.tsx` · `src/widgets/dashboard-statistics/ui/DashboardGrid.tsx` · `src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx` · `src/pages/dashboard/ui/DeliveryQualityCard.tsx` · `src/pages/dashboard/ui/DeliveryResultsCard.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx` · `src/widgets/financial-analysis/ui/CashBalanceCard.tsx` · `src/widgets/dashboard-top-performers/ui/TopRankCard.tsx` · `src/widgets/dashboard-region/ui/RegionOverviewCard.tsx` · `src/widgets/dashboard-region/ui/RegionTiles.tsx` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx` · `src/pages/dashboard/ui/CourierPlanCard.tsx` · `src/pages/dashboard/ui/CourierCashCard.tsx` · `src/pages/dashboard/ui/MarketSalesCard.tsx` · `src/pages/dashboard/ui/QuickActions.tsx` · `src/pages/dashboard/ui/ExtraCostApprovals.tsx` · `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` · `src/pages/dashboard/ui/ExtraCostRejectDialog.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/shared/ui/charts/index.ts` · `src/shared/ui/Forbidden.tsx` · `src/pages/investor/InvestorDashboardPage.tsx` · `src/pages/investor/ui/MonthlyProfitCard.tsx` · `src/pages/investor/ui/InvestorListCards.tsx` · `src/pages/investor/ui/ProfitHistoryTable.tsx` · `src/pages/investor/ui/InvestorAccessState.tsx` · `src/shared/ui/charts/StackedBars.tsx` · `src/shared/ui/charts/Sparkline.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `DashboardEntry`
 - **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet))
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — superadmin, admin, registrator, market, market_operator, courier, logist, investor
@@ -353,7 +348,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi.
+- **Izoh:** Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi. QR va yorliq (TzfF0bmQ; tafsilot maketlarida yo'q — eng yaqini: QR kartasi *-batches-detail, menyu courier-mails-detail-print-menu; joyini ega hali tasdiqlamagan): «To'lov» kartasidan keyin «QR kod» (qr_code_token yo'q — karta yo'q), sarlavhada «Chop etish» — brauzer yoki PDF 100×60 mm. Xodimlar va market; kuryerda yo'q.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -491,29 +486,29 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Chala qop va skanni olib tashlash (DamKku7C, eo3eeJxs): «Qop» ustuni (external_batch_ref, bo'lmasa external_batch_token ning 8 belgisi + «…»; «kelgan/aytilgan» — external_batch_size bilan), skanerlangan qatorda va oxirgi skan xabarida «Olib tashlash» + «Qaytarish» xabari, chala qop ogohlantirishi va qabul tasdig'i. «N tasi keldi» — qopning shu ro'yxatdagi va ilgari qabul qilingan a'zolari birga, faqat ro'yxatdagi NEW buyurtmalar emas; manba — backend GET orders/external javobida har qop uchun received_count (ega S3, 2026-10-19; Taklif · backend kerak — hozir yo'q, frontend o'zi sanamaydi). Ega qarorlari (2026-10-19): S2 — chala qop bilan qabulda tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi (hamkorga avtomatik xabar yo'q); S4 — «Olib tashlandi» xabaridagi «Qaytarish» 5 soniya (tizim-scanner 05.2); S5 — chala qop QR'i skanerlanganda oxirgi skan xabari darhol sariq («Qop BP-24817: 2/3 keldi», maket: *-incoming-scan-partial) + ogohlantirish ovozi (Sozlamalar → Skaner dagi xato ovozi) va telefonda tebranish 60·45·80 ms; to'liq qop QR'i — odatdagi yashil xabar va muvaffaqiyat ovozi.
+- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Chala qop va skanni olib tashlash (DamKku7C, eo3eeJxs): «Qop» ustuni (external_batch_ref, bo'lmasa external_batch_token ning 8 belgisi + «…»; «kelgan/aytilgan» — external_batch_size bilan), skanerlangan qatorda va oxirgi skan xabarida «Olib tashlash» + «Qaytarish» xabari, chala qop ogohlantirishi va qabul tasdig'i. «N tasi keldi» — qopning shu ro'yxatdagi va ilgari qabul qilingan a'zolari birga, faqat ro'yxatdagi NEW buyurtmalar emas; manba — backend GET orders/external javobidagi meta.batches: received_count + pending_count (ega S3, 2026-10-19; backend Sm3LZ6EN), frontend o'zi sanamaydi; hajmni hamkor aytmagan qopda ogohlantirish yo'q. Ega qarorlari (2026-10-19): S2 — chala qop bilan qabulda tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi (hamkorga avtomatik xabar yo'q); S4 — «Olib tashlandi» xabaridagi «Qaytarish» 5 soniya (tizim-scanner 05.2); S5 — chala qop QR'i skanerlanganda oxirgi skan xabari darhol sariq («Qop BP-24817: 2/3 keldi», maket: *-incoming-scan-partial) + ogohlantirish ovozi (Sozlamalar → Skaner dagi xato ovozi) va telefonda tebranish 60·45·80 ms; to'liq qop QR'i — odatdagi yashil xabar va muvaffaqiyat ovozi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan` — Kiruvchi posilkalar — skanerlab qabul | [design/fragments/superadmin--neworders-incoming-scan.html](fragments/superadmin--neworders-incoming-scan.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlab qabul — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
-| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | v2 |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/superadmin--neworders-incoming-scan-undo.html](fragments/superadmin--neworders-incoming-scan-undo.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan` — Kiruvchi posilkalarni skanerlash | [design/fragments/admin--neworders-incoming-scan.html](fragments/admin--neworders-incoming-scan.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-camera` — Kiruvchi posilkalarni skanerlash — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
-| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | v2 |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/superadmin--neworders-incoming-scan-undo.html](fragments/superadmin--neworders-incoming-scan-undo.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/manager--new-orders-incoming-scan.html](fragments/manager--new-orders-incoming-scan.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | qisman |
-| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | v2 |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/manager--new-orders-incoming-scan-undo.html](fragments/manager--new-orders-incoming-scan-undo.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/registrator--new-orders-incoming-scan.html](fragments/registrator--new-orders-incoming-scan.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | qisman |
-| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | v2 |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/manager--new-orders-incoming-scan-undo.html](fragments/manager--new-orders-incoming-scan-undo.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
@@ -550,7 +545,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
+- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). «Qabul qilish» uzun ro'yxatda doim ko'rinadi (ndKkHjhe): ≥ 768 sarlavha yopishqoq, telefonda tugma pastki menyu ustidagi panelda (/dispatch naqshi, Q7); maketdagi «Kamera bilan skanerlash» paneli yo'q (ega qarori 2026-10-19).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -611,7 +606,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
+- **Izoh:** NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). «Qabul qilish» uzun ro'yxatda doim ko'rinadi (ndKkHjhe): ≥ 768 sarlavha yopishqoq, telefonda tugma pastki menyu ustidagi panelda (/dispatch naqshi, Q7); maketdagi «Kamera bilan skanerlash» paneli yo'q (ega qarori 2026-10-19).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -805,18 +800,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/batches` — Paketlar — Yangi · Eski · Qaytarilgan
 
-- **Fayllar:** `src/pages/batches/ui/BatchesPage.tsx` · `src/pages/batches/model/batchView.ts` · `src/pages/batches/lib/batchFormat.ts` · `src/entities/batch/model/batchStatus.ts`
+- **Fayllar:** `src/pages/batches/ui/BatchesPage.tsx` · `src/pages/batches/model/batchView.ts` · `src/pages/batches/lib/batchFormat.ts` · `src/entities/batch/model/batchStatus.ts` · `src/pages/branch-ops/index.tsx` · `src/pages/ops/ui/OpsSection.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Paketlar» (`batches`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
-- **Izoh:** Tab URL'da: ?tab=new|old|return.
+- **Izoh:** Tab URL'da: ?tab=new|old|return. Superadmin uchun ro'yxat ostida «Filiallar — operatsiyalar» (pages/branch-ops, maket superadmin-ops-branches, Ops'dan ko'chgan, F2NzXpMv).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/batches` | superadmin | `superadmin-batches-new` — Paketlar — Yangi | [design/fragments/superadmin--batches-new.html](fragments/superadmin--batches-new.html) | sahifa | v2 |
 | `/batches` | superadmin | `superadmin-batches-old` — Paketlar — Eski | [design/fragments/superadmin--batches-old.html](fragments/superadmin--batches-old.html) | sahifa | v2 |
 | `/batches` | superadmin | `superadmin-batches-return` — Paketlar — Qaytarilgan | [design/fragments/superadmin--batches-return.html](fragments/superadmin--batches-return.html) | sahifa | v2 |
+| `/batches` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-new` — Paketlar — Yangi | [design/fragments/superadmin--batches-new.html](fragments/superadmin--batches-new.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-old` — Paketlar — Eski | [design/fragments/superadmin--batches-old.html](fragments/superadmin--batches-old.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-return` — Paketlar — Qaytarilgan | [design/fragments/superadmin--batches-return.html](fragments/superadmin--batches-return.html) | sahifa | v2 |
@@ -847,16 +843,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/returns` — Qaytarishlar (qaytarish paketlari ro'yxati)
 
-- **Fayllar:** `src/pages/returns/index.tsx` · `src/pages/returns/model/returnBatches.ts`
+- **Fayllar:** `src/pages/returns/index.tsx` · `src/pages/returns/model/returnBatches.ts` · `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` · `src/pages/ops/ui/OpsSection.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewReturns` (access.ts → canViewReturnsPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Menyuda:** «Qaytarishlar» (`returns`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
-- **Izoh:** Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
+- **Izoh:** Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/returns` | superadmin | `superadmin-returns-list` — Return batchlar | [design/fragments/superadmin--returns-list.html](fragments/superadmin--returns-list.html) | sahifa | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
 | `/returns` | admin | `admin-returns-list` — Return batchlar | [design/fragments/superadmin--returns-list.html](fragments/superadmin--returns-list.html) | sahifa | v2 |
 | `/returns` | manager | `manager-returns-list` — Return batchlar | [design/fragments/manager--returns-list.html](fragments/manager--returns-list.html) | sahifa | v2 |
 
@@ -1019,7 +1018,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** «To'lovlar» (`payments`) — superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Holat:** v2
-- **Izoh:** Tanlash oynalari (Qabul qilinishi kerak · Berilishi kerak · Kuryerni tanlang) — SettlementPickerDialog (kind receive | give | courier), tafsilot — FinanceHistoryDetailPopup (barcha Moliya sahifalari uchun umumiy). Birxillashtirish (spec §0.5): filtr qatori barcha rollarda tarix kartasi ichida (menejer maketi naqshi), «Sana» filtri — GET finance/history from_date/to_date. Ega qarori D1 (2026-10-17): superadmin/admin tarixi kassa tanlanmagan bo'lsa server tomonida faqat asosiy kassa (gateway sukuti cashbox_type=main); «Kassa turi» filtri boshqa kassani tanlaydi; menejerda server doim filial kassasini beradi. Tab sonlari chizilmaydi (API bermaydi, Trello GaBIPi3Z). Ruxsati yo'q rol (market, kuryer) → /cash-box.
+- **Izoh:** Tanlash oynalari (Qabul qilinishi kerak · Berilishi kerak · Kuryerni tanlang) — SettlementPickerDialog (kind receive | give | courier), tafsilot — FinanceHistoryDetailPopup (barcha Moliya sahifalari uchun umumiy). Birxillashtirish (spec §0.5): filtr qatori barcha rollarda tarix kartasi ichida (menejer maketi naqshi), «Sana» filtri — GET finance/history from_date/to_date. Ega qarori D1 (2026-10-17): superadmin/admin tarixi kassa tanlanmagan bo'lsa server tomonida faqat asosiy kassa (gateway sukuti cashbox_type=main); «Kassa turi» filtri boshqa kassani tanlaydi; menejerda server doim filial kassasini beradi. Tab sonlari chizilmaydi (API bermaydi, Trello GaBIPi3Z). Ruxsati yo'q rol (market, kuryer) → /cash-box. «Berilishi kerak»: 0 so'mli market sukut bo'yicha ko'rinmaydi, faqat qidiruvda (maketda 0 so'm qatorlar bor; Spt8Cj7m TC matni, tester 2026-10-30: «qaror kutilmaydi»).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1753,12 +1752,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Bildirishnomalar
 
-#### `/notifications` — Bildirishnomalar — Telegram guruhlari
+#### `/notifications` — Bildirishnoma sozlamalari — Telegram guruhlari
 
 - **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/pages/notifications/ui/NotificationRowMenu.tsx` · `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` · `src/features/telegram-link/ui/LinkQrPanel.tsx` · `src/features/telegram-link/ui/LinkCountdown.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin, admin
-- **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin, admin
+- **Menyuda:** «Bildirishnoma sozlamalari» (`notifications`) — superadmin, admin
 - **Holat:** v2
 - **Izoh:** Dizayn v2 (G2 + NG-A): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), planshetda (< 1024) «Xabar turi» va «Sana» ustunlari yashirin (tur — market nomi ostida, sana — guruh ID ostida), «Holat» ustuni (Faol / Nofaol + nofaollik sababi — NG-C, G085w5Qr: inactive_reason kicked/left — qizil «Nofaol» + «Bot guruhdan chiqarilgan — qayta qo'shing va faollashtiring», chat_not_found — qizil + «Guruh topilmadi — ulanishni o'chirib, qayta ulang», blocked_on_send — qizil + «Bot guruhga xabar yubora olmadi — …» (maketda yo'q matn), manual — neytral «Qo'lda nofaol qilingan», null yoki noma'lum qiymat — neytral umumiy izoh «Xabarlar bu guruhga yuborilmayapti» (D1); inactive_at bo'lsa ostida «Nofaol bo'lgan: {sana}» — maketda yo'q, vazifa bo'yicha; xuddi shu matn telefon kartasida, qator varag'ida va foydalanuvchi tafsilotidagi «Telegram guruhi» kartasida; faollashtirish tasdig'ida ogohlantirish sababga qarab — bot chiqarilgan: maketdagi «Bot guruhdan chiqarilgan», qo'lda / noma'lum: umumiy «Bot guruhda ekanini tekshiring»; «shu tur ulangan, lekin nofaol» oynasida ham sababli matn), market nomlari GET /markets dan (qatorda faqat market_id). Qator menyusi (NotificationRowMenu, 64 px ustun): desktopda popover, telefonda pastki varaqa (bandlar ≥ 52 px, kebab 44 px) — faol guruhda «Nofaol qilish», nofaolida «Faollashtirish», so'ng «O'chirish»; nofaol qilish (danger) va faollashtirish (ogohlantirish bilan) — tasdiq oynalari, ikkalasi faqat PATCH /notifications/:id {is_active} (features/notification-toggle); o'chirish — tasdiq oynasi (maket matni). Xato matnlari faqat i18n (backend message ko'rsatilmaydi). Qo'shish oynasi maketdagi bot havolasi formasi (*-create-dialog; qo'lda guruh ID formasi yo'q) — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi» xabari — *-connected); shu (market, tur) ulangan bo'lsa havola berilmaydi. «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlandi (NG-S4). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason — NG-C); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications superadmin + admin — NG-A); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (*-create-exists-inactive-dialog → *-activate-dialog — NG-B); NG-S4 — faqat bot havolasi (*-create-link-dialog, *-create-expired-dialog — NG-B). NG-B (2026-10-21): havola tayyor — QR oq ramkada (desktopda chapda, telefonda qadamlardan keyin), «Telegram bor telefonda» qadami, ajratgich ostida teskari sanoq (LinkCountdown inline, role=timer, progresssiz) va «Guruh ulanishi kutilmoqda…»; faol ulanishda — «avval eskisini ro'yxatdan o'chiring» (tahrirlash yo'q); nofaol ulanishda — asosiy tugma «Faollashtirish» → ochiq oyna ustida tasdiq (features/notification-toggle), muvaffaqiyatda oyna yopiladi, bekor qilinsa fokus tugmaga qaytadi; havola xatosi — faqat i18n matn (403 / boshqa).
 
@@ -1863,7 +1862,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign` — SMS — Kampaniya | [design/fragments/superadmin--notifications-sms-campaign.html](fragments/superadmin--notifications-sms-campaign.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-confirm-dialog` — SMS kampaniyani tasdiqlash | [design/fragments/superadmin--notifications-sms-campaign-confirm-dialog.html](fragments/superadmin--notifications-sms-campaign-confirm-dialog.html) | oyna | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | v2 |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | qisman |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-segment` — SMS — Kampaniya: mijozlar segmenti va yuborish vaqti<br>↳ `src/pages/notifications/ui/CampaignPage.tsx` | [design/fragments/superadmin--notifications-sms-campaign-segment.html](fragments/superadmin--notifications-sms-campaign-segment.html) | sahifa | qisman |
 | `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | v2 |
@@ -1889,24 +1888,20 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)
 
-- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx`
+- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
 - **Holat:** v2
-- **Izoh:** Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 10 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs.
+- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /integrations-ops, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga, /logistics-ops va /branch-ops — 2026-10-31 dan /returns va /batches ga yo'naltiradi; «Logistika» va «Filiallar» tablari o'sha sahifalarga ko'chdi (faqat superadmin, F2NzXpMv, TC matni bo'yicha — maketda ops ichida, ega tasdig'i kutilmoqda), «Tizim» → «Tizim holati», «Integratsiyalar» → «Integratsiya vositalari», «Token orqali tekshirish» olindi, SLA va «Analitika KPI» superadmin bosh sahifasiga ko'chdi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
+| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | v2 |
@@ -1955,47 +1950,6 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 |---|---|---|---|---|---|
 | `/integrations-ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 
-#### `/investors-ops` — Ops — Investorlar
-
-- **Fayllar:** `src/pages/investors-ops/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/investors-ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
-
-#### `/logistics-ops` — Ops — Logistika (qaytarish so'rovlari)
-
-- **Fayllar:** `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/lib/returnRequestRows.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
-
-#### `/branch-ops` — Ops — Filiallar (paketni bekor qilish)
-
-- **Fayllar:** `src/pages/branch-ops/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Paketni bekor qilish — tasdiq oynasi.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/branch-ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
-
 #### `/identity-ops` — Ops — Xodimlar ro'yxatlari
 
 - **Fayllar:** `src/pages/identity-ops/index.tsx`
@@ -2007,40 +1961,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
-
-#### `/system-ops` — Ops — Tizim
-
-- **Fayllar:** `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/charts.tsx` · `src/pages/system-ops/lib/systemOps.ts` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/system-ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-down` — Ops — Tizim: xizmatlar ishlamayapti<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-down.html](fragments/superadmin--ops-system-down.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-critical` — Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-critical.html](fragments/superadmin--ops-system-critical.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-ai-config` — Ops — Tizim: kalit nomi noto'g'ri, noma'lum model<br>↳ `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-ai-config.html](fragments/superadmin--ops-system-ai-config.html) | sahifa | v2 |
-| `/system-ops` | superadmin | `superadmin-ops-system-ai-cap` — Ops — Tizim: AI kunlik limiti tugadi<br>↳ `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-ai-cap.html](fragments/superadmin--ops-system-ai-cap.html) | sahifa | v2 |
-
-#### `/logs` — Ops — Kirish diagnostikasi (POST /auth/refresh sinovi; eski nomi «Loglar», jurnal emas)
-
-- **Fayllar:** `src/pages/logs/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewLogs` (access.ts → canViewLogs)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/logs` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
+| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
 
 ### Profil, sozlamalar, bildirishnomalar qutisi
 
@@ -2097,7 +2018,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → qo'ng'iroqcha; telefon menyusi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). KI-2 (2026-10-21, ega javobi KI-S3): «Ilovani o'rnatish» kartasi (InstallAppCard placement=inbox, features/pwa-install) — barcha rollarda, push blokidan keyin, doim (yopishsiz; maketdagidek faqat «O'rnatish»), faqat ilova o'rnatilmagan va o'rnatish mumkin bo'lsa: Android/kompyuter — «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt; brauzer oynasi oldin yopilgan bo'lsa — brauzer menyusidan o'rnatish izohi, notify.info) — courier-inbox-pwa-install; iPhone/iPad — «Elchi'ni bosh ekranga qo'shing» + «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS Safari tabida PushManager yo'q — push bloki o'zi chiqmaydi, uning o'rnida o'rnatish kartasi turadi. O'rnatilgan yoki qo'llab-quvvatlanmaydigan brauzerda karta yo'q (holat — Sozlamalar → Bildirishnomalar → «Ilova»).
+- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Sarlavha: superadminda «Bildirishnomalar qutisi» (maket superadmin-notifications-inbox, 17HWafL7 — ega savoli 9 sukuti o'rniga), boshqa rollarda «Bildirishnomalar»; «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). KI-2 (2026-10-21, ega javobi KI-S3): «Ilovani o'rnatish» kartasi (InstallAppCard placement=inbox, features/pwa-install) — barcha rollarda, push blokidan keyin, doim (yopishsiz; maketdagidek faqat «O'rnatish»), faqat ilova o'rnatilmagan va o'rnatish mumkin bo'lsa: Android/kompyuter — «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt; brauzer oynasi oldin yopilgan bo'lsa — brauzer menyusidan o'rnatish izohi, notify.info) — courier-inbox-pwa-install; iPhone/iPad — «Elchi'ni bosh ekranga qo'shing» + «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS Safari tabida PushManager yo'q — push bloki o'zi chiqmaydi, uning o'rnida o'rnatish kartasi turadi. O'rnatilgan yoki qo'llab-quvvatlanmaydigan brauzerda karta yo'q (holat — Sozlamalar → Bildirishnomalar → «Ilova»).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2118,6 +2039,10 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/integrations` | `/integrations/connections?scope=partner` | — |
 | `/integrations/incoming` | `/new-orders/incoming` | — |
 | `/partners` | `/integrations/partners` | — |
+| `/investors-ops` | `/ops?tab=investors` | `canViewOpsPages` |
+| `/logistics-ops` | `/returns` | `canViewOpsPages` |
+| `/branch-ops` | `/batches` | `canViewOpsPages` |
+| `/system-ops` | `/ops?tab=system` | `canViewOpsPages` |
 | `/orders/add` | `/new-orders/create` | — |
 | `/orders/create` | `/new-orders/create` | — |
 | `/orders/:orderId` | `/orders/edit/:orderId` | `canViewOrders` |
@@ -2130,6 +2055,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/new-orders/integrations/:id` | `/integrations/sources/:id` | `canCreateOrdersByRoleAndBranchType` |
 | `/payments/shift-report/:id` | `/payments/shifts/:id` | — |
 | `/notification` | `/notifications` | — |
+| `/logs` | `/ops?tab=auth` | `canViewLogs` |
 | `*` | `/404` | — |
 
 ## 4. Maket → kod (teskari, rollar bo'yicha)
@@ -2138,7 +2064,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-287 ta maket · kodda bor: 242 · kodda yo'q: 45
+287 ta maket · kodda bor: 244 · kodda yo'q: 43
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2172,8 +2098,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda qop yorlig'i bor («Qop» ustuni, telefon kartasida «Qop …», xulosa «N ta · M ta qop»), skanni olib tashlash va «Qaytarish» — v2; «2/3» belgisi va «N ta qop chala keldi» bloki — backend kerak (har qop uchun received_count, BD2-7 → IP-2). «Kamera» / «Kamera bilan skanerlash» tugmalari chizilmaydi (ega qarori 2026-10-19 — markaziy «Skaner»). |
 | `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
-| `superadmin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
-| `superadmin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `superadmin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
+| `superadmin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `superadmin-neworders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda bor (IP-1): qatordagi Undo2 «Olib tashlash», skan xabarida «Olib tashlash» (qop skanida faqat shu skan belgilaganlar), 5 soniyalik «Qaytarish» xabari. Farq: xabar umumiy notify bilan — maketdagi Undo2 ikonka va ikkinchi darajali «Qaytarish» tugmasi o'rniga info ikonka va havola-tugma (Toaster'ni kengaytirish — umumiy qatlam, ega roziligi kerak). |
 | `superadmin-neworders-branches` | Filial batchlari — filiallar | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `superadmin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
@@ -2305,27 +2231,27 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-sms-campaign` | SMS — Kampaniya | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-campaign-confirm-dialog` | SMS kampaniyani tasdiqlash | oyna | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
-| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | qisman — Maketda yo'q «Oylar bo'yicha» kartasi qo'shilgan (eng yaqini «Kunlar bo'yicha»): tanlangan davrdagi kun qatorlaridan. Karta FaFN0Pux TC matni bo'yicha, joyini ega tasdiqlashi kerak. |
 | `superadmin-notifications-sms-settings` | SMS — Sozlamalar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
-| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | v2 |
-| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
-| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops`, `/logistics-ops` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
-| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
-| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | v2 |
-| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
-| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | v2 |
-| `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-error` | Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-critical` | Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-ai-config` | Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-system-ai-cap` | Ops — Tizim: AI kunlik limiti tugadi | sahifa | `/ops`, `/system-ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
-| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops`, `/logs` | `src/pages/ops/index.tsx`, `src/pages/logs/index.tsx` | v2 |
+| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
+| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/returns` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
+| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
+| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
+| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | qisman — Maketdagi «Market: buyurtma qo'shish ruxsati» kartasi olindi: ruxsat bitta joyda, market profilida (Ruxsatlar → Buyurtma qo'shish). Karta 941rmIn5 TC matni bo'yicha, ega tasdig'i kutilmoqda. |
+| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops` | `src/pages/ops/index.tsx` | qisman — Maketdagi «O'z vaqtida (SLA)» va «Analitika KPI» superadmin bosh sahifasida (AnalyticsKpiSection), «Token orqali tekshirish» olindi — karta F2NzXpMv TC matni bo'yicha, ega tasdig'i kutilmoqda. |
+| `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-error` | Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-critical` | Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-ai-config` | Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | sahifa | `/ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-system-ai-cap` | Ops — Tizim: AI kunlik limiti tugadi | sahifa | `/ops` | `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
+| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
 | `superadmin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `superadmin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `superadmin-notifications-send-audience` | Xabar yuborish — auditoriya konstruktori | sahifa | `/notifications/send` | `src/entities/notification-campaign/ui/AudienceBuilder.tsx` | qisman — Kodda bor (KM-2): «Kimga» — Bitta odam · Tanlangan ro'yxat · Auditoriya · Hamma («Rol» olindi); «Auditoriya» doim kampaniya (POST /notifications/campaigns + Idempotency-Key, KM-S1): «Saqlangan segment» (tanlash, o'chirish — tasdiq bilan), «Turi» Mijoz · Market · Xodim, «Xodim rollari» (admin, menejer, registrator, kuryer, logist — KM-S2), «Mijoz filtrlari» (CustomerSegmentFilters, «dan – gacha» — bildirishnoma segmentida max_orders bor), jonli son (POST notifications/audience/preview, debounce; segmentsiz include_customers yuborilmaydi — «Filtrsiz» belgisi bilan confirm_all_customers), «Namunani ko'rish», «Segmentni saqlash»; «Kanal» — Ilova ichida · Ochiq ekranga · Push (son — foydalanuvchi, qurilma emas) · Telegram «Kampaniyada yo'q»; «Mazmun»da guruh kaliti yo'q; «Yuborish» ostida «Darhol · kampaniya · N ta qabul qiluvchi». «Yuborish vaqti» va «Kampaniyalar tarixi» — KM-3 (-send-schedule). Yo'q: SMS kartasi («Taklif · backend kerak» — KM-5). Farq: saqlangan segmentni o'chirish tugmasi ro'yxat bandi ichida emas, maydon yonida (tanlangan segment uchun). |
@@ -2432,7 +2358,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-171 ta maket · kodda bor: 157 · kodda yo'q: 14
+171 ta maket · kodda bor: 159 · kodda yo'q: 12
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2450,8 +2376,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `admin-neworders-incoming-scan` | Kiruvchi posilkalarni skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda qop yorlig'i bor («Qop» ustuni, telefon kartasida «Qop …», xulosa «N ta · M ta qop»), skanni olib tashlash va «Qaytarish» — v2; «2/3» belgisi va «N ta qop chala keldi» bloki — backend kerak (har qop uchun received_count, BD2-7 → IP-2). «Kamera» / «Kamera bilan skanerlash» tugmalari chizilmaydi (ega qarori 2026-10-19 — markaziy «Skaner»). |
 | `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
-| `admin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
-| `admin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `admin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
+| `admin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `admin-neworders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda bor (IP-1): qatordagi Undo2 «Olib tashlash», skan xabarida «Olib tashlash» (qop skanida faqat shu skan belgilaganlar), 5 soniyalik «Qaytarish» xabari. Farq: xabar umumiy notify bilan — maketdagi Undo2 ikonka va ikkinchi darajali «Qaytarish» tugmasi o'rniga info ikonka va havola-tugma (Toaster'ni kengaytirish — umumiy qatlam, ega roziligi kerak). |
 | `admin-neworders-branches` | Filial batchlari tabi | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `admin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
@@ -2610,7 +2536,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-93 ta maket · kodda bor: 85 · kodda yo'q: 8
+93 ta maket · kodda bor: 87 · kodda yo'q: 6
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2647,8 +2573,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `manager-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda qop yorlig'i bor («Qop» ustuni, telefon kartasida «Qop …», xulosa «N ta · M ta qop»), skanni olib tashlash va «Qaytarish» — v2; «2/3» belgisi va «N ta qop chala keldi» bloki — backend kerak (har qop uchun received_count, BD2-7 → IP-2). «Kamera» / «Kamera bilan skanerlash» tugmalari chizilmaydi (ega qarori 2026-10-19 — markaziy «Skaner»). |
 | `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
-| `manager-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
-| `manager-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `manager-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
+| `manager-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `manager-new-orders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda bor (IP-1): qatordagi Undo2 «Olib tashlash», skan xabarida «Olib tashlash» (qop skanida faqat shu skan belgilaganlar), 5 soniyalik «Qaytarish» xabari. Farq: xabar umumiy notify bilan — maketdagi Undo2 ikonka va ikkinchi darajali «Qaytarish» tugmasi o'rniga info ikonka va havola-tugma (Toaster'ni kengaytirish — umumiy qatlam, ega roziligi kerak). |
 | `manager-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `manager-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
@@ -2710,7 +2636,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### registrator — Registrator
 
-54 ta maket · kodda bor: 51 · kodda yo'q: 3
+54 ta maket · kodda bor: 53 · kodda yo'q: 1
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2728,8 +2654,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `registrator-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda qop yorlig'i bor («Qop» ustuni, telefon kartasida «Qop …», xulosa «N ta · M ta qop»), skanni olib tashlash va «Qaytarish» — v2; «2/3» belgisi va «N ta qop chala keldi» bloki — backend kerak (har qop uchun received_count, BD2-7 → IP-2). «Kamera» / «Kamera bilan skanerlash» tugmalari chizilmaydi (ega qarori 2026-10-19 — markaziy «Skaner»). |
 | `registrator-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». Registrator — menejer bilan bir xil kamera (ScannerHost, markaziy «Skaner»); kameraning o'z ishi (Trello v1eLN2tV) alohida. |
-| `registrator-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
-| `registrator-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `registrator-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
+| `registrator-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `registrator-new-orders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda bor (IP-1): qatordagi Undo2 «Olib tashlash», skan xabarida «Olib tashlash» (qop skanida faqat shu skan belgilaganlar), 5 soniyalik «Qaytarish» xabari. Farq: xabar umumiy notify bilan — maketdagi Undo2 ikonka va ikkinchi darajali «Qaytarish» tugmasi o'rniga info ikonka va havola-tugma (Toaster'ni kengaytirish — umumiy qatlam, ega roziligi kerak). |
 | `registrator-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan. |
 | `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
@@ -3087,7 +3013,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/branch-dashboard/ui/BranchCards.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` | `/branch-dashboard` |
-| `src/pages/branch-ops/index.tsx` | `/branch-ops` |
+| `src/pages/branch-ops/index.tsx` | `/batches` |
 | `src/pages/branches/ui/BranchDetailPage.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsCards.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsSection.tsx` | `/branches/:id` |
@@ -3106,6 +3032,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/dashboard/DashboardPage.tsx` | `/` |
 | `src/pages/dashboard/LogistDashboardPage.tsx` | `/` |
 | `src/pages/dashboard/MarketDashboardPage.tsx` | `/` |
+| `src/pages/dashboard/ui/AnalyticsKpiSection.tsx` | `/` |
 | `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` | `/` |
 | `src/pages/dashboard/ui/CourierCashCard.tsx` | `/` |
 | `src/pages/dashboard/ui/CourierPlanCard.tsx` | `/` |
@@ -3201,11 +3128,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/investor/ui/InvestorListCards.tsx` | `/` |
 | `src/pages/investor/ui/MonthlyProfitCard.tsx` | `/` |
 | `src/pages/investor/ui/ProfitHistoryTable.tsx` | `/`, `/profits` |
-| `src/pages/investors-ops/index.tsx` | `/investors-ops` |
-| `src/pages/logistics-ops/index.tsx` | `/logistics-ops`, `/ops` |
-| `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/logistics-ops` |
-| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/ops`, `/logistics-ops` |
-| `src/pages/logs/index.tsx` | `/logs` |
+| `src/pages/investors-ops/index.tsx` | `/ops` |
+| `src/pages/logistics-ops/index.tsx` | `/returns` |
+| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/returns` |
+| `src/pages/logs/index.tsx` | `/ops` |
 | `src/pages/mails/components/MailSummaryStats.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsListBody.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsTable.tsx` | `/mails/today`, `/mails/refused`, `/mails/old` |
@@ -3303,6 +3229,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/notifications/ui/sms/SmsReportCharts.tsx` | `/notifications/sms` |
 | `src/pages/ops/index.tsx` | `/ops` |
 | `src/pages/ops/tabs.ts` | `/ops` |
+| `src/pages/ops/ui/OpsSection.tsx` | `/batches`, `/returns` |
 | `src/pages/ops/ui/OpsToolPage.tsx` | `/ops` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
@@ -3490,12 +3417,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/settings/ui/ScannerPanel.tsx` | `/settings` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
 | `src/pages/settings/ui/settingsUi.tsx` | `/settings`, `/payments/shift-settings` |
-| `src/pages/system-ops/index.tsx` | `/system-ops` |
-| `src/pages/system-ops/lib/aiStatus.ts` | `/system-ops` |
-| `src/pages/system-ops/lib/systemOps.ts` | `/system-ops` |
-| `src/pages/system-ops/ui/AiStatusCard.tsx` | `/system-ops`, `/ops` |
-| `src/pages/system-ops/ui/HealthCard.tsx` | `/system-ops`, `/ops` |
-| `src/pages/system-ops/ui/charts.tsx` | `/system-ops` |
+| `src/pages/system-ops/index.tsx` | `/ops` |
+| `src/pages/system-ops/lib/aiStatus.ts` | `/ops` |
+| `src/pages/system-ops/ui/AiStatusCard.tsx` | `/ops` |
+| `src/pages/system-ops/ui/HealthCard.tsx` | `/ops` |
 | `src/pages/tg-scan/index.tsx` | `/tg/scan` |
 | `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |
@@ -3613,19 +3538,19 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+6) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
-| Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+2) |
-| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` |
+| Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
+| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` (+3) |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+19) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
-| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
+| Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
-| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+16) |
+| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+12) |
 
 Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
@@ -3646,7 +3571,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
-| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
+| Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
 
 ### manager — Menejer

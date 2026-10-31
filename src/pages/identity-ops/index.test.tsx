@@ -1,17 +1,14 @@
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import IdentityOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
-import { expectNoRawBackendText, expectRequestBody, mockEnvelope, mockRejection } from "../../test/mockEnvelope";
+import { expectNoRawBackendText, mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 
 const apiGetMock = vi.fn();
-const apiPatchMock = vi.fn();
 
 vi.mock("../../shared/api/api", () => ({
   api: {
     get: (...a: unknown[]) => apiGetMock(...a),
-    patch: (...a: unknown[]) => apiPatchMock(...a),
     post: (...a: unknown[]) => vi.fn()(...a),
   },
 }));
@@ -19,10 +16,8 @@ vi.mock("../../shared/api/api", () => ({
 describe("IdentityOps page", () => {
   beforeEach(() => {
     apiGetMock.mockReset();
-    apiPatchMock.mockReset();
     // Haqiqiy konvert: `GET admins|managers|registrators` → `{ statusCode, message, data: { items } }`.
     apiGetMock.mockResolvedValue(mockEnvelope({ items: [] }));
-    apiPatchMock.mockResolvedValue(mockEnvelope({ id: "m1", add_order: true }, { message: "Market updated" }));
   });
 
   it('renders header "Xodimlar — ro\'yxatlar"', () => {
@@ -39,40 +34,16 @@ describe("IdentityOps page", () => {
     );
   });
 
-  it('typing Market ID and clicking «Ruxsat berish» calls api.patch with "markets/m1/add-order" and shows the result', async () => {
-    const user = userEvent.setup();
+  it("market ruxsati bu yerda yo'q: u market profilida, bitta joyda (941rmIn5)", () => {
     renderWithProviders(<IdentityOpsPage />);
-
-    expect(screen.getByRole("button", { name: "Ruxsat berish" })).toBeDisabled();
-    await user.type(screen.getByRole("textbox", { name: /Market ID/ }), "m1");
-    await user.click(screen.getByRole("button", { name: "Ruxsat berish" }));
-
-    await waitFor(() => expect(apiPatchMock).toHaveBeenCalledTimes(1));
-    // Backend DTO `add_order: boolean` majburiy — bo'sh tana 400 qaytarardi (hxOGVwMt, NJJ2qc72).
-    expectRequestBody(apiPatchMock, "markets/m1/add-order", { add_order: true });
-    expect(await screen.findByText("Ruxsat berildi")).toBeInTheDocument();
-    expect(screen.getByText("Market m1 endi o'zi buyurtma qo'sha oladi")).toBeInTheDocument();
-  });
-
-  it("so'rov rad etildi (400): «Ruxsat berildi» chiqmaydi, i18n matn, xom backend matni yo'q, tugma yana bosiladi", async () => {
-    apiPatchMock.mockRejectedValueOnce(mockRejection(400));
-    const user = userEvent.setup();
-    renderWithProviders(<IdentityOpsPage />);
-
-    await user.type(screen.getByRole("textbox", { name: /Market ID/ }), "m2");
-    await user.click(screen.getByRole("button", { name: "Ruxsat berish" }));
-
-    await waitFor(() => expect(apiPatchMock).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Ruxsat berish" })).toBeEnabled());
-    expect(screen.queryByText("Ruxsat berildi")).toBeNull();
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
-    expectNoRawBackendText();
+    expect(screen.queryByText("Market: buyurtma qo'shish ruxsati")).toBeNull();
+    expect(screen.queryByRole("textbox", { name: /Market ID/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ruxsat berish" })).toBeNull();
   });
 
   it("so'rov rad etildi (ro'yxatlar 403/400) — i18n matn, xom backend matni yo'q", async () => {
     apiGetMock.mockImplementation((url: string) =>
-      Promise.reject(mockRejection(url === "admins" ? 403 : 400)),
+      Promise.reject(url === "admins" ? mockRejection(403) : mockRejection(400)),
     );
     renderWithProviders(<IdentityOpsPage />);
 
