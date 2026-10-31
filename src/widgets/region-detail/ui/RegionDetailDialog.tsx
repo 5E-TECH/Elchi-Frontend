@@ -298,11 +298,9 @@ const RegionDetailDialog = ({
   const rankItems = rankDistricts.map(districtItem);
 
   const courierItems: RankItem[] = couriers.map((courier) => {
-    // YD7xyjX9: kuryer tumani birinchi — telefonda joy yetmasa raqam kesiladi, tuman emas.
+    // YD7xyjX9: tuman alohida qatorda — bitta qatorda telefonda summa kesilib «· 1» bo'lib qolardi.
     const districtName = districts.find((district) => district.id === courier.districtId)?.name;
-    const MetaIcon = districtName ? MapPin : Phone;
-    const meta = [
-      districtName,
+    const contact = [
       courier.phone ? formatPhone(courier.phone) : null,
       showRevenue && courier.revenue != null ? money(courier.revenue) : null,
     ]
@@ -320,12 +318,23 @@ const RegionDetailDialog = ({
       badge: courier.isPrimary
         ? { label: t("v2.detail.couriers.primary"), tone: "neutral" }
         : undefined,
-      meta: meta ? (
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <MetaIcon size={14} aria-hidden="true" className="shrink-0" />
-          <span className="truncate">{meta}</span>
-        </span>
-      ) : undefined,
+      meta:
+        districtName || contact ? (
+          <span className="flex min-w-0 flex-col gap-0.5">
+            {districtName ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <MapPin size={14} aria-hidden="true" className="shrink-0" />
+                <span className="truncate">{districtName}</span>
+              </span>
+            ) : null}
+            {contact ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <Phone size={14} aria-hidden="true" className="shrink-0" />
+                <span className="truncate">{contact}</span>
+              </span>
+            ) : null}
+          </span>
+        ) : undefined,
     };
   });
   const smallSample = couriers.some(
