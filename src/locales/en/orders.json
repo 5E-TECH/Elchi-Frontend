@@ -331,6 +331,7 @@
     "searchLabel": "Search orders by name, phone or number",
     "dateLabel": "Date range",
     "datePlaceholder": "All dates",
+    "deliveryAll": "Delivery: all",
     "colOrder": "Order",
     "sortByDate": "Sort by date",
     "colCustomer": "Customer",

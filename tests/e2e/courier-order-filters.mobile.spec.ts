@@ -20,6 +20,7 @@ test("⭐ faqat qidiruv: joyiga sig'adi va ro'yxatni toraytiradi", async ({ page
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(390);
   await expect(page.getByRole("button", { name: /Sana oralig'i/ })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Yetkazish turi" })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

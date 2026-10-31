@@ -2,7 +2,8 @@ import type { Page, Route } from "@playwright/test";
 
 /**
  * Kuryer buyurtmalari filtrlari (yKtzKXeM) — soxta backend `GET orders/courier/orders` ni o'zi filtrlaydi
- * (`search` — ism, telefon, raqam; `startDate`/`endDate` — kun; sahifalash) va har so'rov parametrlarini saqlaydi.
+ * (`search` — ism, telefon, raqam; `startDate`/`endDate` — kun; `where_deliver`; sahifalash) va har so'rov
+ * parametrlarini saqlaydi.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -22,13 +23,13 @@ const reply = (route: Route, body: unknown) =>
 /** Toshkent kuni — ilova `startDate` ni shu bo'yicha yuboradi. */
 export const tashkentToday = () => new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 10);
 
-const order = (id: number, name: string, phone: string, day: string) => ({
+const order = (id: number, name: string, phone: string, day: string, whereDeliver = "address") => ({
   id: String(id),
   created_at: `${day}T08:00:00.000Z`,
   status: "waiting",
   total_price: 310_000,
   to_be_paid: 280_000,
-  where_deliver: "address",
+  where_deliver: whereDeliver,
   product_quantity: 1,
   market: { name: "Ipak Yo'li Savdo" },
   customer: { name, phone_number: phone },
@@ -41,7 +42,7 @@ export const OLD_DAY = "2026-01-15";
 
 const ORDERS = [
   order(10234, "Feruza Mirzayeva", "+998993057164", tashkentToday()),
-  order(10235, "Jasur Karimov", "+998901112233", OLD_DAY),
+  order(10235, "Jasur Karimov", "+998901112233", OLD_DAY, "center"),
   ...Array.from({ length: 21 }, (_, i) =>
     order(11000 + i, `Mijoz ${i + 1}`, `+9989055500${String(i).padStart(2, "0")}`, OLD_DAY),
   ),
@@ -54,7 +55,8 @@ const matches = (row: (typeof ORDERS)[number], params: URLSearchParams) => {
   return (
     hay.includes(search) &&
     day >= (params.get("startDate") ?? "0000") &&
-    day <= (params.get("endDate") ?? "9999")
+    day <= (params.get("endDate") ?? "9999") &&
+    row.where_deliver === (params.get("where_deliver") ?? row.where_deliver)
   );
 };
 

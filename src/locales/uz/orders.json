@@ -331,6 +331,7 @@
     "searchLabel": "Buyurtmalarni ism, telefon yoki raqam bo'yicha qidirish",
     "dateLabel": "Sana oralig'i",
     "datePlaceholder": "Barcha sanalar",
+    "deliveryAll": "Yetkazish: barchasi",
     "colOrder": "Buyurtma",
     "sortByDate": "Sana bo'yicha saralash",
     "colCustomer": "Mijoz",
