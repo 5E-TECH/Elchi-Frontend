@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
+import type { RootState } from "../../app/config/store";
 import { canReceiveExternalOrders } from "../../app/lib/access";
 import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
@@ -11,6 +12,8 @@ import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyC
 // ham ishlaydi.
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { useScannerListening } from "../../shared/lib/useScannerListening";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -46,6 +49,7 @@ import {
   orderLabel,
   parcelToken,
 } from "./lib";
+import { applyScanDraft, readScanDraft, writeScanDraft } from "./scanDraft";
 import IncomingTable from "./ui/IncomingTable";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
@@ -64,6 +68,9 @@ import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/Sc
 /** «Olib tashlandi» xabari — bitta `id` (ketma-ket olib tashlashda yangisi eskisining o'rnida), 5 soniya (ega S4). */
 const UNSCAN_TOAST_ID = "incoming-unscan";
 const UNSCAN_TOAST_MS = 5000;
+
+/** Bundan qisqa qiymat fokussiz yo'lda skan emas, odam bosgan tugma (`useOrderQrScanner` dagi chegara). */
+const KEYBOARD_SCAN_MIN_LENGTH = 6;
 
 /** `.el-overline` · `.el-stat-value` · `.el-stat-unit` (CODE-MAP 0.2, 2.4). */
 const OVERLINE = "text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
@@ -99,6 +106,11 @@ const orderDetail = (order: IncomingOrder) =>
  * maydoni, «Kelgan» / «Skanerlangan», chiziq, oxirgi skan natijasi) va «Kelgan posilkalar»
  * jadvali. «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
  *
+ * USB SKANER (`tizim-scanner`: doim tinglaydi, fokusdan qat'i nazar; eo3eeJxs). Fokus maydonda bo'lsa kod maydonga
+ * yoziladi va `ScanInput` yuboradi, boshqa joyda bo'lsa bosishlarni `useKeyboardScanner` tutadi, ikkalasi bitta
+ * `handleScan` ga tushadi. Modal ochiq yoki boshqa maydonga matn yozilayotganda skaner ushlanmaydi va «USB skaner
+ * tayyor» belgisi ham ko'rinmaydi (`useScannerListening`).
+ *
  * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-neworders-incoming-scan-camera`,
  * `manager-new-orders-incoming-scan-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi
  * (desktopda «Skanerlash») shu sahifaning maqsadini ochadi. Kamera o'qigan kod `ScanInput` dagi AYNAN
@@ -111,8 +123,10 @@ const IncomingOrdersPage = () => {
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const allowed = useSelector(canReceiveExternalOrders);
+  const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const listening = useScannerListening(inputRef);
   /**
    * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
    *
@@ -175,7 +189,7 @@ const IncomingOrdersPage = () => {
   /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
   const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
 
-  // Skaner klaviatura sifatida ishlaydi — maydon doim fokusda turishi kerak.
+  // Sahifa ochilganda kod maydonda ko'rinib tursin. Fokus boshqa joyga o'tsa ham skan yo'qolmaydi (`useKeyboardScanner`).
   useEffect(() => {
     if (allowed) inputRef.current?.focus();
   }, [allowed]);
@@ -197,6 +211,26 @@ const IncomingOrdersPage = () => {
       if (memberIds.length !== lastBag.memberIds.length) setLastBag(memberIds.length ? { ...lastBag, memberIds } : null);
     }
   }
+
+  /**
+   * F5 DAN KEYIN SKANLAR TIKLANADI (eo3eeJxs, `scanDraft.ts`). Ro'yxat VA foydalanuvchi kelgach bir marta o'qiladi:
+   * ro'yxatsiz qaysi posilka hali kutayotgani noma'lum, sessiya esa sahifadan keyin tiklanadi. Tiklanguncha
+   * yozilmaydi — aks holda boshlang'ich bo'sh ro'yxat saqlangan qoralamani o'chirib yuborardi.
+   */
+  const [draftUserId, setDraftUserId] = useState<string | null>(null);
+  if (userId && draftUserId !== userId && query.data) {
+    setDraftUserId(userId);
+    const draft = readScanDraft(userId, String(marketId));
+    if (draft) {
+      const restored = applyScanDraft(orders, draft);
+      setScannedIds(restored.ids);
+      setScannedTokens(restored.tokens);
+      setBagTokens(restored.bagTokens);
+    }
+  }
+  useEffect(() => {
+    if (userId && draftUserId === userId) writeScanDraft(userId, String(marketId), scannedTokens, [...bagTokens]);
+  }, [bagTokens, draftUserId, marketId, scannedTokens, userId]);
 
   /** Ro'yxatdagi (hozirgi) posilkalar — «Qaytarish» kechikib bosilsa, ro'yxatdan chiqqan posilka qaytmasin. */
   const liveIdsRef = useRef<ReadonlySet<string>>(new Set());
@@ -312,6 +346,15 @@ const IncomingOrdersPage = () => {
       undoIds: [order.id],
     });
   };
+
+  useKeyboardScanner({
+    enabled: allowed && listening,
+    onScan: (value) => {
+      if (value.length < KEYBOARD_SCAN_MIN_LENGTH && !value.includes("/scan/")) return false;
+      handleScan(value);
+      return true;
+    },
+  });
 
   const handleReceive = () => {
     if (!scannedTokens.length) return;
@@ -578,7 +621,7 @@ const IncomingOrdersPage = () => {
               label={t("incoming.scanInputLabel")}
             />
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 max-md:hidden">
-              {scannerReady ? (
+              {scannerReady && listening ? (
                 <Badge tone="success" dot role="status">
                   {t("incoming.scannerReady")}
                 </Badge>
