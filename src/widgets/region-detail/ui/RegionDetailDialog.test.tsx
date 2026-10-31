@@ -46,6 +46,7 @@ const DETAIL = {
         id: "c1",
         name: "Ilhom Saidov",
         phoneNumber: "+998972389014",
+        districtId: "d1",
         totalOrders: 6,
         deliveredOrders: 5,
         totalRevenue: 1_110_000,
@@ -142,6 +143,9 @@ describe("RegionDetailDialog (umumiy viloyat oynasi)", () => {
 
     const couriers = await within(dialog).findByRole("list", { name: "Viloyat kuryerlari" });
     expect(within(couriers).getByText("Ilhom Saidov")).toBeInTheDocument();
+    // YD7xyjX9: kuryer o'z tumani bilan; tumani yo'q kuryerda — avvalgidek telefon.
+    expect(within(couriers).getByText(/^Samarqand sh\. · \+998/)).toBeInTheDocument();
+    expect(within(couriers).getByText(/^\+998 90 412/)).toBeInTheDocument();
     expect(within(couriers).getByText("Asosiy")).toBeInTheDocument();
     expect(within(couriers).getByText("83,3%")).toBeInTheDocument();
     expect(within(couriers).getByText("5 / 6 ta")).toBeInTheDocument();
@@ -218,7 +222,7 @@ describe("RegionDetailDialog (umumiy viloyat oynasi)", () => {
     expect(within(kpis).queryByText("Umumiy tushum")).not.toBeInTheDocument();
     expect(within(kpis).getByText("77,4%")).toBeInTheDocument();
     // Kuryer qatorida telefon qoladi, summa yo'q; tuman qatorida faqat foiz.
-    expect(within(couriers).getByText("+998 97 238 90 14")).toBeInTheDocument();
+    expect(within(couriers).getByText("Samarqand sh. · +998 97 238 90 14")).toBeInTheDocument();
     const rank = within(dialog).getByRole("list", { name: "Tumanlar, buyurtmalar soni bo'yicha" });
     expect(within(rank).getByText("81,8%")).toBeInTheDocument();
     expect(dialog).not.toHaveTextContent("so'm");

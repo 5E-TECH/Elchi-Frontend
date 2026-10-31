@@ -298,7 +298,11 @@ const RegionDetailDialog = ({
   const rankItems = rankDistricts.map(districtItem);
 
   const courierItems: RankItem[] = couriers.map((courier) => {
+    // YD7xyjX9: kuryer tumani birinchi — telefonda joy yetmasa raqam kesiladi, tuman emas.
+    const districtName = districts.find((district) => district.id === courier.districtId)?.name;
+    const MetaIcon = districtName ? MapPin : Phone;
     const meta = [
+      districtName,
       courier.phone ? formatPhone(courier.phone) : null,
       showRevenue && courier.revenue != null ? money(courier.revenue) : null,
     ]
@@ -318,7 +322,7 @@ const RegionDetailDialog = ({
         : undefined,
       meta: meta ? (
         <span className="inline-flex min-w-0 items-center gap-1.5">
-          <Phone size={14} aria-hidden="true" className="shrink-0" />
+          <MetaIcon size={14} aria-hidden="true" className="shrink-0" />
           <span className="truncate">{meta}</span>
         </span>
       ) : undefined,
