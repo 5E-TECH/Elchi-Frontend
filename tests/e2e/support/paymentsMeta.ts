@@ -1,4 +1,5 @@
 import { test, type Page } from "@playwright/test";
+import { HISTORY_DAILY_PATH, historyDaily } from "./financeDaily";
 import { setupShellSession } from "./shellSession";
 
 /**
@@ -39,6 +40,8 @@ const PAGE_DATA = {
   },
   "finance/cashbox/main": { cashbox: { id: "1", balance: 24_615_000, balance_cash: 18_240_000, balance_card: 6_375_000 } },
   "finance/shift/current": { shift: { id: "31", status: "open", opened_by: "2" }, required: true },
+  // qzjTMWPb: «Pul oqimi» kartasi (bu testlarning mavzusi emas — xato holati chiqmasin).
+  [HISTORY_DAILY_PATH]: historyDaily(),
 };
 
 export const openPayments = async (

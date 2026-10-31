@@ -64,6 +64,19 @@ const setCurrentShift = (shift: Record<string, unknown> | null) => {
   pageState.shiftListeners.forEach((listener) => listener());
 };
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+// «Kassa holati» kartasi KPI matnlarini takrorlaydi — alohida testda (`CashStateCard.test.tsx`).
+vi.mock("./components/CashStateCard", () => ({ default: () => null }));
+
+vi.mock("../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../entities/payments", async (importOriginal) => {
   const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
   return {
