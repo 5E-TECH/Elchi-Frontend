@@ -1,0 +1,38 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
+{
+  "canCreateOrders": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/PICKUP manager/HYBRID market market_operator",
+  "canCreateProducts": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID",
+  "canDispatchPostToBranch": "superadmin admin registrator/HQ",
+  "canHandoverCancelledToMarket": "superadmin admin registrator/HQ",
+  "canManageDeliveryTariffs": "superadmin admin",
+  "canManageExpenseCategories": "superadmin",
+  "canManageShiftSettings": "superadmin",
+  "canManageWarehouses": "superadmin admin",
+  "canReceiveExternalOrders": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/PICKUP manager/HYBRID",
+  "canReceiveRefusedMail": "superadmin admin registrator/HQ manager/HQ manager/REGIONAL manager/HYBRID",
+  "canSendNotifications": "superadmin admin",
+  "canViewAdminDashboard": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID operator",
+  "canViewAllWarehouses": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID",
+  "canViewBatchesPage": "superadmin admin manager/HQ manager/PICKUP manager/HYBRID",
+  "canViewBranches": "superadmin",
+  "canViewCourierBulkPage": "manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID",
+  "canViewDispatchPage": "superadmin admin registrator/HQ registrator/REGIONAL registrator/HYBRID manager/REGIONAL manager/HYBRID",
+  "canViewFinancialBalance": "superadmin admin",
+  "canViewInvestorCabinet": "investor",
+  "canViewLogs": "superadmin",
+  "canViewMails": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID",
+  "canViewMarketOperators": "market",
+  "canViewMyEarnings": "market_operator",
+  "canViewNotifications": "superadmin admin",
+  "canViewOrders": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID market market_operator",
+  "canViewPaymentsPage": "superadmin admin manager/HQ manager/REGIONAL manager/HYBRID",
+  "canViewProducts": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID market market_operator",
+  "canViewRegionStats": "superadmin admin manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID logist",
+  "canViewReturnsPage": "superadmin admin manager/HQ manager/PICKUP manager/HYBRID",
+  "canViewUiKit": "superadmin",
+  "canViewUsers": "superadmin admin manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID",
+  "canViewWarehouses": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/REGIONAL manager/HYBRID",
+}
+`;
