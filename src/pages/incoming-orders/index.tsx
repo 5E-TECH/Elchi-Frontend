@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
 import { canReceiveExternalOrders } from "../../app/lib/access";
-import { extractScannerToken } from "../../shared/lib/scanToken";
+import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
 // ham ishlaydi.
@@ -35,7 +35,17 @@ import {
   SkeletonTable,
   TONE_SOFT,
 } from "../../shared/ui/primitives";
-import { countBags, countReceivedByBag, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
+import {
+  countBags,
+  countReceivedByBag,
+  districtName,
+  findByScanKeys,
+  indexByBatch,
+  indexByToken,
+  keepScannedInList,
+  orderLabel,
+  parcelToken,
+} from "./lib";
 import IncomingTable from "./ui/IncomingTable";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
@@ -158,30 +168,9 @@ const IncomingOrdersPage = () => {
   const hasServerResponse = Boolean((query.error as { response?: unknown } | null)?.response);
   const listErrorReason = hasServerResponse ? getBackendErrorMessage(query.error) : undefined;
 
-  /**
-   * Qop (batch) tokeni → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat
-   * `new` holatidagilar, ya'ni oldin bittalab qabul qilinganlar bu yerda yo'q:
-   * qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
-   */
-  const byBatch = useMemo(() => {
-    const map = new Map<string, IncomingOrder[]>();
-    for (const order of orders) {
-      const token = String(order.external_batch_token ?? "").trim();
-      if (!token) continue;
-      map.set(token, [...(map.get(token) ?? []), order]);
-    }
-    return map;
-  }, [orders]);
-
-  /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
-  const byToken = useMemo(() => {
-    const map = new Map<string, IncomingOrder>();
-    for (const order of orders) {
-      const token = parcelToken(order);
-      if (token) map.set(token, order);
-    }
-    return map;
-  }, [orders]);
+  /** Skan kaliti → qop a'zolari / buyurtma. Har skanda qayta qurilmaydi. */
+  const byBatch = useMemo(() => indexByBatch(orders), [orders]);
+  const byToken = useMemo(() => indexByToken(orders), [orders]);
 
   /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
   const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
@@ -252,9 +241,14 @@ const IncomingOrdersPage = () => {
    * Ro'yxatda na posilka, na qop topilmadi — server qop tokenini biladimi?
    * (`GET /scan/:token` qop qidiruvi.) Faqat moslik bo'lmaganda so'raladi:
    * oddiy skan avvalgidek serverga bormaydi.
+   *
+   * Backend tokenni aniq solishtiradi va qop tokeni katta harfli bo'lishi ham mumkin (`BTB-…`), shuning uchun
+   * avval skanerlangan yozuvi, topilmasa kichik harflisi so'raladi.
    */
   const resolveRemoteBatch = async (token: string) => {
-    const batch = await fetchExternalBatchScan(token).catch(() => null);
+    const lookup = (value: string) => fetchExternalBatchScan(value).catch(() => null);
+    const lowered = token.toLowerCase();
+    const batch = (await lookup(token)) ?? (lowered === token ? null : await lookup(lowered));
     const members = batch
       ? orders.filter((order) =>
           batch.members.some(
@@ -273,7 +267,8 @@ const IncomingOrdersPage = () => {
   };
 
   const handleScan = (raw: string) => {
-    const token = extractScannerToken(raw) ?? raw.trim();
+    const latin = latinizeKeyboardLayout(raw);
+    const token = extractScannerToken(latin) ?? latin.trim();
     if (!token) return;
 
     // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
@@ -284,9 +279,10 @@ const IncomingOrdersPage = () => {
       return;
     }
 
-    const order = byToken.get(token);
+    const keys = scanKeyCandidates(raw, window.location.origin);
+    const order = findByScanKeys(byToken, keys);
     if (!order) {
-      const batchMembers = byBatch.get(token);
+      const batchMembers = findByScanKeys(byBatch, keys);
       if (batchMembers?.length) {
         const size = Number(batchMembers[0].external_batch_size);
         markBatch(batchMembers, Number.isFinite(size) && size > 0 ? size : batchMembers.length);
@@ -307,7 +303,8 @@ const IncomingOrdersPage = () => {
 
     void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`);
     setScannedIds((prev) => new Set(prev).add(order.id));
-    setScannedTokens((prev) => [...prev, token]);
+    // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
+    setScannedTokens((prev) => [...prev, parcelToken(order)]);
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
@@ -435,7 +432,7 @@ const IncomingOrdersPage = () => {
   // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
   const cameraList: ScanTargetListItem[] = [...scannedTokens]
     .reverse()
-    .map((token) => byToken.get(token))
+    .map((token) => byToken.get(normalizeScanKey(token)))
     .filter((order): order is IncomingOrder => Boolean(order))
     .map((order) => ({
       key: order.id,

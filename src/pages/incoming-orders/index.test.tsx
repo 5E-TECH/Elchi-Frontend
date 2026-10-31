@@ -269,6 +269,112 @@ describe("IncomingOrdersPage large sources", () => {
 });
 
 /**
+ * TOKEN REGISTRI VA TARTIBI (rQX8TqRV): skanerda Caps Lock yoqiq, yorliq katta harfli yoki OS da kirill tartibi —
+ * posilka baribir topiladi, serverga esa asl token ketadi (backend tokenni aniq solishtiradi).
+ */
+describe("IncomingOrdersPage — token normallashtirish", () => {
+  const TOKEN = "c9f6d82e571cc6f19d6f2d26";
+  /** Rus tartibida skanerlangan token: harf — o'sha tugmaning kirill belgisi. */
+  const CYRILLIC = "с9а6в82у571сс6а19в6а2в26";
+  const BAG = "3733ff7bd1e2c4a5b6c7d8e9";
+
+  const mockList = () =>
+    apiGetMock.mockImplementation((url: string) => {
+      if (url !== "orders/external") return Promise.resolve({ data: [] });
+      return Promise.resolve({
+        data: {
+          data: [
+            { id: "o-1", order_number: 1251133, qr_code_token: TOKEN, customer: { name: "Birinchi mijoz" } },
+            { id: "o-2", order_number: 1251134, qr_code_token: "aaaa1111", external_batch_token: BAG, external_batch_size: 2, customer: { name: "Qop mijoz 1" } },
+            { id: "o-3", order_number: 1251135, qr_code_token: "bbbb2222", external_batch_token: BAG, external_batch_size: 2, customer: { name: "Qop mijoz 2" } },
+          ],
+          total: 3,
+        },
+      });
+    });
+  const scan = (value: string) => {
+    const input = screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.submit(input.closest("form")!);
+  };
+  const scanLookups = () => apiGetMock.mock.calls.filter(([url]) => String(url).startsWith("scan/"));
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    mockList();
+  });
+
+  it.each([
+    ["KATTA harf", TOKEN.toUpperCase()],
+    ["aralash registr", "C9f6D82e571CC6f19d6F2d26"],
+    ["kirill tartibi", CYRILLIC],
+    ["kirill tartibi + Caps Lock", CYRILLIC.toUpperCase()],
+    ["KATTA harfli havola", `https://elchi.uz/scan/${TOKEN.toUpperCase()}`],
+  ])("⭐ %s — posilka topiladi, serverga asl token ketadi", async (_name, value) => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(value);
+
+    expect(await screen.findByText(/1251133 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+    expect(scanLookups()).toEqual([]);
+
+    apiPostMock.mockResolvedValue({ data: { data: { received: 1, unmatched: [] } } });
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("orders/external/receive-by-scan", { tokens: [TOKEN] }));
+  });
+
+  it("boshqa yozuvdagi takroriy skan — «allaqachon», hisob o'zgarmaydi", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(TOKEN);
+    await screen.findByText(/1251133 — ro'yxatga qo'shildi/);
+    scan(TOKEN.toUpperCase());
+
+    expect(await screen.findByText(/1251133 — allaqachon skanerlangan/)).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 3");
+  });
+
+  it.each([
+    ["KATTA harfda", BAG.toUpperCase()],
+    ["kirill tartibida", "3733аа7ив1у2с4ф5и6с7в8у9"],
+  ])("qop tokeni %s ham ro'yxatning o'zidan topiladi", async (_name, value) => {
+    renderPage();
+    await screen.findByText("Qop mijoz 2");
+
+    scan(value);
+    expect(await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi")).toBeInTheDocument();
+    expect(scannedProgress()).toBe("2 / 3");
+    expect(scanLookups()).toEqual([]);
+  });
+
+  it("ro'yxatda yo'q qop: avval skanerlangan yozuv, keyin kichik harflisi so'raladi", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan("BEGONA9999");
+
+    expect(
+      await screen.findByText("Bu QR ro'yxatda topilmadi — posilka boshqa hamkordanmi yoki allaqachon qabul qilinganmi?"),
+    ).toBeInTheDocument();
+    expect(scanLookups().map(([url]) => url)).toEqual(["scan/BEGONA9999", "scan/begona9999"]);
+  });
+
+  it("kamera ro'yxati token bo'yicha posilkani topadi (kirill tartibda skanerlangan bo'lsa ham)", async () => {
+    renderPage();
+    await screen.findByText("Birinchi mijoz");
+
+    scan(CYRILLIC);
+
+    await waitFor(() => expect(getActiveScanTarget()?.list?.map((item) => item.key)).toEqual(["o-1"]));
+  });
+});
+
+/**
  * QOP (BATCH) SKANI (CbKnJLZO). Andijon E2E: qop tokeni 30d2894f58d3f89170a612c8,
  * qopda 6 posilka (1251162..1251167), har biri o'z QR tokeni bilan.
  */

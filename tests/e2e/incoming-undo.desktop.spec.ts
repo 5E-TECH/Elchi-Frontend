@@ -87,4 +87,21 @@ test.describe("Kiruvchi posilkalar — olib tashlash va yangilash, 1440px", () =
     await expect(page.getByText("1 buyurtma qabul qilindi")).toBeVisible();
     expect(received).toEqual([[BATCH_ORDERS[0].qr_code_token]]);
   });
+
+  test("⭐ rQX8TqRV: KATTA harfli va kirill tartibidagi token topiladi, serverga asl token ketadi", async ({ page }) => {
+    const { received } = await mockIncomingApi(page);
+    await openIncoming(page);
+    const [upper, cyrillic] = BATCH_ORDERS;
+
+    await scanToken(page, upper.qr_code_token.toUpperCase());
+    await expectScanned(page, 1, 7);
+
+    // `2afcc394ca289bf23aee44d1` rus tartibida: a → ф, b → и, c → с, d → в, e → у, f → а.
+    await scanToken(page, cyrillic.qr_code_token.replace(/[a-f]/g, (char) => "фисвуа"["abcdef".indexOf(char)]));
+    await expectScanned(page, 2, 7);
+
+    await page.getByRole("button", { name: "Qabul qilish — 2 ta posilka" }).click();
+    await expect(page.getByText("2 buyurtma qabul qilindi")).toBeVisible();
+    expect(received).toEqual([[upper.qr_code_token, cyrillic.qr_code_token]]);
+  });
 });
