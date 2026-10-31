@@ -47,6 +47,7 @@
     "critical": "Критический"
   },
   "inboxTitle": "Уведомления",
+  "inboxTitleSuperadmin": "Входящие уведомления",
   "inboxDescription": "Полученные вами уведомления",
   "inbox": {
     "listLabel": "Список уведомлений",

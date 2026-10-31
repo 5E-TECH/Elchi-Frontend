@@ -78,9 +78,13 @@ afterEach(() => {
 });
 
 describe("NotificationInboxPage — sarlavha amallari", () => {
-  it.each(["superadmin", "admin"])("%s: «SMS» va «Xabar yuborish» havolalari bor", (role) => {
+  // 17HWafL7: superadmin menyusida «Bildirishnomalar» — Telegram guruhlari, shaxsiy quti maketda boshqa nomda.
+  it.each([
+    ["superadmin", "Bildirishnomalar qutisi"],
+    ["admin", "Bildirishnomalar"],
+  ])("%s: sarlavha «%s», «SMS» va «Xabar yuborish» havolalari bor", (role, title) => {
     render(role);
-    expect(screen.getByRole("heading", { level: 1, name: "Bildirishnomalar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Xabar yuborish" })).toHaveAttribute(
       "href",
       "/notifications/send",

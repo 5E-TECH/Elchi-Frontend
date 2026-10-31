@@ -3,6 +3,7 @@ import { Bell, BellOff, BellRing, CheckCheck, MessageSquareText, Send } from "lu
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import type { RootState } from "../../../app/config/store";
 import { canSendNotifications } from "../../../app/lib/access";
 import { useUnreadCount } from "../../../entities/notification-inbox";
 import { useMarkAllInboxRead } from "../../../features/notification-inbox";
@@ -82,7 +83,8 @@ const PushStateBlock = ({ push }: { push: PushControl }) => {
 /**
  * BILDIRISHNOMALAR QUTISI (`/inbox`, barcha rollar) — maketlar `common-inbox`, `superadmin-notifications-inbox`,
  * `courier-inbox-list` va push tushuntirish oynalari. Spec D4: layout bitta, xulq rolga ko'ra —
- * sarlavha «Bildirishnomalar»; amallar: push so'ralmagan bo'lsa «Bildirishnomalarni yoqish», «Barchasini o'qilgan
+ * sarlavha superadminda «Bildirishnomalar qutisi» (maket `superadmin-notifications-inbox`: menyudagi «Bildirishnomalar» —
+ * Telegram guruhlari), boshqalarda «Bildirishnomalar»; amallar: push so'ralmagan bo'lsa «Bildirishnomalarni yoqish», «Barchasini o'qilgan
  * deb belgilash», yubora oladiganlarga (`canSendNotifications`) «SMS» va «Xabar yuborish» (asosiy).
  * Push holat bloki (bloklangan / yoqilgan) sarlavha ostida; so'ng «Ilovani o'rnatish» kartasi (KI-2, maketlar
  * `courier-inbox-pwa-install` / `courier-inbox-pwa-ios-dialog`, barcha rollar, doim — yopishsiz, ilova o'rnatilmagan va
@@ -93,6 +95,7 @@ const PushStateBlock = ({ push }: { push: PushControl }) => {
 const NotificationInboxPage = () => {
   const { t } = useTranslation("notifications");
   const canSend = useSelector(canSendNotifications);
+  const isSuperadmin = useSelector((state: RootState) => state.role.role === "superadmin");
   const push = usePushControl();
   const markAllRead = useMarkAllInboxRead();
   const unread = useUnreadCount().data;
@@ -109,7 +112,7 @@ const NotificationInboxPage = () => {
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
       <PageHeader
-        title={t("inboxTitle")}
+        title={t(isSuperadmin ? "inboxTitleSuperadmin" : "inboxTitle")}
         description={t("inboxDescription")}
         actions={
           <>
