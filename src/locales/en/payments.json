@@ -1218,7 +1218,7 @@
         "groupHints": {
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
-          "markets": "Only payments to them"
+          "markets": "Only payments to them · Telegram — to the owner's private chat"
         },
         "channels": {
           "telegram": "Telegram",
@@ -1341,6 +1341,206 @@
       "incomeStep": "Income",
       "expenseStep": "Expense",
       "flowAria": "{{range}}: {{steps}}"
+    }
+  },
+  "receipt": {
+    "field": {
+      "label": "Receipt photo",
+      "settings": "Settings",
+      "upload": "Upload receipt photo",
+      "formats": "JPG, PNG or WEBP · up to 5 MB",
+      "pickAnother": "Tap to choose another photo",
+      "hint": "After saving, AI compares the amount on the receipt with the entered amount",
+      "aiOff": "AI analysis is off — the receipt is only stored",
+      "offline": "No internet — upload the photo once you are back online",
+      "settingsLoading": "Loading settings",
+      "preparing": "Preparing…",
+      "uploading": "Uploading… {{percent}}%",
+      "uploadingAria": "Uploading receipt photo",
+      "cancel": "Stop upload",
+      "uploaded": "Uploaded",
+      "failed": "Upload failed",
+      "retry": "Try again",
+      "replace": "Replace receipt photo",
+      "remove": "Remove receipt photo",
+      "zoom": "Enlarge receipt photo",
+      "compressed": "Large photos are reduced first: {{from}} → {{to}}"
+    },
+    "confirm": {
+      "label": "Receipt",
+      "attached": "Attached"
+    },
+    "notify": {
+      "withAi": "{{message}}. The receipt is being analysed by AI — the result will appear in the history."
+    },
+    "errors": {
+      "RECEIPT_REQUIRED": "Upload the receipt photo",
+      "RECEIPT_NOT_FOUND": "Receipt not found or attached to another operation — upload the photo again",
+      "RECEIPT_ALREADY_USED": "Receipt not found or attached to another operation — upload the photo again",
+      "RECEIPT_NOT_OWNER": "Another employee uploaded this receipt — upload the photo again",
+      "RECEIPT_KIND_MISMATCH": "This receipt does not fit the operation — upload the photo again",
+      "RECEIPT_NOT_APPLICABLE": "Receipts do not apply to this operation",
+      "RECEIPT_DISABLED": "The receipt photo is turned off for this operation",
+      "RECEIPT_AI_REQUIRES_PHOTO": "AI analysis works only when the receipt photo is on",
+      "RECEIPT_ALREADY_MATCHED": "The receipt matched — no re-analysis needed",
+      "RECEIPT_AI_DISABLED": "«AI analysis» is off in settings — re-analysis is not possible",
+      "RECEIPT_AI_PENDING": "This receipt is being analysed — wait for the result",
+      "RECEIPT_AI_ATTEMPTS_EXHAUSTED": "This receipt was analysed 5 times — no attempts left",
+      "file": {
+        "type": "Upload JPG, PNG or WEBP only",
+        "size": "The photo must not exceed 5 MB",
+        "heic": "Could not read the HEIC photo — upload JPG or PNG",
+        "decode": "Could not read the photo — choose another one"
+      }
+    },
+    "viewer": {
+      "title": "Receipt photo",
+      "zoomLabel": "Photo size",
+      "fit": "Fit",
+      "actual": "100%",
+      "open": "Open in a new window",
+      "alt": "Receipt photo",
+      "loading": "Loading photo…",
+      "failed": "Could not open the photo",
+      "failedHint": "The link may have expired — try again.",
+      "retry": "Try again",
+      "pinchHint": "Pinch with two fingers to zoom"
+    },
+    "settings": {
+      "title": "Receipt photo and AI analysis",
+      "subtitle": "A receipt photo is requested for manual expenses and transfers to HQ, and AI compares it with the entered amount",
+      "tableLabel": "Receipt photo and AI analysis switches",
+      "operation": "Operation",
+      "photo": "Receipt photo required",
+      "ai": "AI analysis",
+      "result": "Result",
+      "needsPhoto": "Turn on the receipt photo first",
+      "switchPhoto": "{{group}}: receipt photo required",
+      "switchAi": "{{group}}: AI analysis",
+      "resultText": {
+        "photoAi": "Receipt required, AI checks it",
+        "photo": "Receipt required, amount checked manually",
+        "none": "Receipt not requested"
+      },
+      "note": "AI works only when the receipt photo is on. Turning the photo off turns AI off too; if you turn the photo back on, turn AI on separately. The change applies to new records — saved receipts do not change.",
+      "updated": "Last change: {{value}}",
+      "groups": {
+        "manual_expense": {
+          "title": "Manual expense",
+          "hint": "Expenses from the main and branch cashboxes",
+          "offDescription": "No receipt photo will be requested for manual expenses. The change takes effect when you press «Save».",
+          "offField": "The «Receipt photo» field disappears from the form, the expense is saved without a receipt"
+        },
+        "hq_transfer": {
+          "title": "Transfer from courier and branch to HQ",
+          "hint": "Only for «Transfer» payments",
+          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ. The change takes effect when you press «Save».",
+          "offField": "The «Receipt photo» field disappears from the acceptance form, the transfer is accepted without a receipt"
+        }
+      },
+      "photoOff": {
+        "title": "Confirm turning off the receipt photo",
+        "confirm": "Turn off",
+        "ai": "AI analysis turns off too — if you turn the photo back on, turn AI on separately",
+        "kept": "Saved receipts and AI results stay in the history"
+      }
+    },
+    "status": {
+      "match": "Matched",
+      "mismatch": "Difference",
+      "unreadable": "Unreadable",
+      "pending": "Analysing",
+      "error": "Error",
+      "disabled": "AI off",
+      "none": "No receipt",
+      "stale": "No result",
+      "prefix": "Receipt:",
+      "aria": "Receipt: {{status}}"
+    },
+    "filter": {
+      "label": "Receipt status",
+      "noneHint": "Manual expenses and «Transfer» to HQ only"
+    },
+    "section": {
+      "title": "Receipt",
+      "compare": "Amount comparison",
+      "onReceipt": "On receipt",
+      "entered": "Entered",
+      "difference": "Difference",
+      "date": "Receipt date",
+      "recipient": "Recipient",
+      "payer": "Payer",
+      "bank": "Bank",
+      "reference": "Transaction number",
+      "confidence": "Confidence",
+      "uploadedBy": "Uploaded by: {{value}}",
+      "checkedAt": "AI checked: {{value}}",
+      "pendingText": "AI is reading the receipt… The result usually appears within a minute — no need to refresh the page.",
+      "staleText": "No AI result — the analysis took more than 3 minutes. Start the re-analysis.",
+      "unreadableText": "AI could not read the amount: the photo is blurry, cropped or not a receipt. Check the photo yourself.",
+      "errorText": "AI analysis failed: the service did not respond. Start the re-analysis.",
+      "disabledText": "AI analysis was off when the receipt was saved — the amount was not compared.",
+      "attemptsOver": "Attempts used up: {{attempts}} / {{max}}",
+      "loading": "Loading receipt",
+      "loadError": "Could not load the receipt data",
+      "retry": "Try again"
+    },
+    "flags": {
+      "title": "AI warnings · {{n}}",
+      "duplicate_photo": {
+        "title": "Duplicate photo",
+        "text": "This photo was also uploaded for another operation"
+      },
+      "duplicate_reference": {
+        "title": "Duplicate transaction number",
+        "text": "This number appeared on another receipt in the last 90 days"
+      },
+      "date_far": {
+        "title": "Distant date",
+        "text": "The receipt date ({{date}}) differs from the operation by more than 3 days"
+      },
+      "card_mismatch": {
+        "title": "Card mismatch",
+        "text": "The recipient card (··{{last4}}) does not match the HQ cards",
+        "textExpense": "The payer card (··{{last4}}) does not match the cashbox card"
+      }
+    },
+    "reanalyze": {
+      "title": "Confirm re-analysis",
+      "description": "AI reads the receipt again and compares it with the entered amount. The new result replaces the previous one.",
+      "operation": "Operation",
+      "entered": "Entered amount",
+      "current": "Current result",
+      "attempts": "Attempts",
+      "confirm": "Re-analyse",
+      "sending": "Sending…",
+      "success": "The receipt was sent for re-analysis — the result will update in the history.",
+      "errors": {
+        "RECEIPT_AI_PENDING": {
+          "title": "Analysis not finished yet",
+          "text": "This receipt is being analysed — wait for the result."
+        },
+        "RECEIPT_AI_ATTEMPTS_EXHAUSTED": {
+          "title": "Attempts used up",
+          "text": "This receipt was analysed 5 times — no attempts left."
+        },
+        "RECEIPT_AI_DISABLED": {
+          "title": "AI analysis is off",
+          "text": "«AI analysis» is off in settings — re-analysis is not possible."
+        },
+        "RECEIPT_ALREADY_MATCHED": {
+          "title": "Receipt matched",
+          "text": "No re-analysis needed."
+        },
+        "offline": {
+          "title": "No internet connection",
+          "text": "The request did not get through. Press again once you are back online."
+        },
+        "generic": {
+          "title": "Re-analysis did not start",
+          "text": "Try again a little later."
+        }
+      }
     }
   }
 }

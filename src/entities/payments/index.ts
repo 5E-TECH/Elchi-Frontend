@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { SHIFT_CLOSE_TIMEOUT_MS, type CloseShiftAccount } from "./shiftAccountCheck";
+import type { ReceiptRef } from "./receipt";
 
 export const cashbox = "cashbox";
 export const shift = "shift";
@@ -93,6 +94,8 @@ export interface FinanceHistoryDetail {
   /** Elchi Pochta №1 — qo'lda chiqimning xarajat kategoriyasi (ID va yozilgan paytdagi nom), bo'lmasa `null`. */
   expense_category_id?: string | null;
   expense_category_name?: string | null;
+  /** QlLf33Ma — chek (superadmin/admin/menejerga; `id`, `ai_status` + to'liq maydonlar — `useReceipt` o'qiydi). */
+  receipt?: ReceiptRef | null;
   cashbox?: FinanceHistoryCashbox | null;
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;
@@ -592,3 +595,4 @@ export const useCashBox = () => {
 };
 
 export * from "./shiftAccountCheck";
+export * from "./receipt";

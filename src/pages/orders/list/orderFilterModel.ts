@@ -46,6 +46,8 @@ export const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 /** Eski sana kalitlari — o'qiladi, yozishda tozalanadi. */
 export const LEGACY_DATE_FROM_KEY = "orderDateFrom";
 export const LEGACY_DATE_TO_KEY = "orderDateTo";
+/** Telegram bot guruh kartasining eski havolasi (`/orders?search=<id>`, PIJN1lGp gacha) — o'qiladi, `orderSearch` ga ko'chadi. */
+export const LEGACY_SEARCH_KEY = "search";
 
 /**
  * «Holat» filtridagi variantlar — maketdagi tartibda (`superadmin-orders-filters-mobile`: Yangi, Yaratilgan,

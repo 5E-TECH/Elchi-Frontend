@@ -256,6 +256,12 @@ export const API_ENDPOINTS = {
     SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
     // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
     CARDS: "finance/cashbox/cards",
+    // QlLf33Ma — kassa cheki: sozlamalar (GET — superadmin/admin/menejer, PATCH — faqat superadmin), rasm yuklash
+    // (multipart `kind`, `photo` → qoralama `receipt_id`), tafsilot va qayta tahlil.
+    RECEIPT_SETTINGS: "finance/receipt-settings",
+    RECEIPTS: "finance/receipts",
+    RECEIPT: (id: string | number) => `finance/receipts/${id}`,
+    RECEIPT_REANALYZE: (id: string | number) => `finance/receipts/${id}/reanalyze`,
   },
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox

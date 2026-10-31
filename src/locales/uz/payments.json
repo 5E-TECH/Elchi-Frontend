@@ -1218,7 +1218,7 @@
         "groupHints": {
           "superadmin": "To'liq hisobot va ilova",
           "couriers": "Faqat o'z operatsiyalari",
-          "markets": "Faqat o'ziga to'lovlar"
+          "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga"
         },
         "channels": {
           "telegram": "Telegram",
@@ -1341,6 +1341,206 @@
       "incomeStep": "Kirim",
       "expenseStep": "Chiqim",
       "flowAria": "{{range}}: {{steps}}"
+    }
+  },
+  "receipt": {
+    "field": {
+      "label": "Chek rasmi",
+      "settings": "Sozlamalar",
+      "upload": "Chek rasmini yuklash",
+      "formats": "JPG, PNG yoki WEBP · 5 MB gacha",
+      "pickAnother": "Bosing va boshqa rasm tanlang",
+      "hint": "Saqlangach AI chekdagi summani kiritilgan summa bilan solishtiradi",
+      "aiOff": "AI tahlili o'chiq — chek faqat saqlanadi",
+      "offline": "Internet yo'q — aloqa tiklangach rasmni yuklang",
+      "settingsLoading": "Sozlama yuklanmoqda",
+      "preparing": "Tayyorlanmoqda…",
+      "uploading": "Yuklanmoqda… {{percent}}%",
+      "uploadingAria": "Chek rasmi yuklanmoqda",
+      "cancel": "Yuklashni to'xtatish",
+      "uploaded": "Yuklandi",
+      "failed": "Yuklab bo'lmadi",
+      "retry": "Qayta urinish",
+      "replace": "Chek rasmini almashtirish",
+      "remove": "Chek rasmini olib tashlash",
+      "zoom": "Chek rasmini kattalashtirish",
+      "compressed": "Katta surat avval kichraytiriladi: {{from}} → {{to}}"
+    },
+    "confirm": {
+      "label": "Chek",
+      "attached": "Biriktirildi"
+    },
+    "notify": {
+      "withAi": "{{message}}. Chek AI tahlilida — natija tarixda ko'rinadi."
+    },
+    "errors": {
+      "RECEIPT_REQUIRED": "Chek rasmini yuklang",
+      "RECEIPT_NOT_FOUND": "Chek topilmadi yoki boshqa operatsiyaga biriktirilgan — rasmni qayta yuklang",
+      "RECEIPT_ALREADY_USED": "Chek topilmadi yoki boshqa operatsiyaga biriktirilgan — rasmni qayta yuklang",
+      "RECEIPT_NOT_OWNER": "Bu chekni boshqa xodim yuklagan — rasmni qayta yuklang",
+      "RECEIPT_KIND_MISMATCH": "Chek bu operatsiyaga mos emas — rasmni qayta yuklang",
+      "RECEIPT_NOT_APPLICABLE": "Bu operatsiyada chek qo'llanmaydi",
+      "RECEIPT_DISABLED": "Bu operatsiya uchun chek rasmi o'chirilgan",
+      "RECEIPT_AI_REQUIRES_PHOTO": "AI tahlili faqat chek rasmi yoqilganda ishlaydi",
+      "RECEIPT_ALREADY_MATCHED": "Chek mos keldi — qayta tahlil kerak emas",
+      "RECEIPT_AI_DISABLED": "Sozlamalarda «AI tahlili» o'chiq — qayta tahlil qilib bo'lmaydi",
+      "RECEIPT_AI_PENDING": "Bu chek hozir tahlil qilinmoqda — natijani kuting",
+      "RECEIPT_AI_ATTEMPTS_EXHAUSTED": "Bu chek 5 marta tahlil qilindi — boshqa urinish yo'q",
+      "file": {
+        "type": "Faqat JPG, PNG yoki WEBP rasm yuklang",
+        "size": "Rasm hajmi 5 MB dan oshmasin",
+        "heic": "HEIC rasmni o'qib bo'lmadi — JPG yoki PNG yuklang",
+        "decode": "Rasmni o'qib bo'lmadi — boshqa rasm tanlang"
+      }
+    },
+    "viewer": {
+      "title": "Chek rasmi",
+      "zoomLabel": "Rasm o'lchami",
+      "fit": "Moslash",
+      "actual": "100%",
+      "open": "Yangi oynada ochish",
+      "alt": "Chek rasmi",
+      "loading": "Rasm yuklanmoqda…",
+      "failed": "Rasmni ochib bo'lmadi",
+      "failedHint": "Havola eskirgan bo'lishi mumkin — qayta urinib ko'ring.",
+      "retry": "Qayta urinish",
+      "pinchHint": "Ikki barmoq bilan kattalashtiring"
+    },
+    "settings": {
+      "title": "Chek rasmi va AI tahlili",
+      "subtitle": "Qo'lda chiqim va HQ'ga o'tkazmalarda chek rasmi so'raladi, AI uni kiritilgan summa bilan solishtiradi",
+      "tableLabel": "Chek rasmi va AI tahlili kalitlari",
+      "operation": "Operatsiya",
+      "photo": "Chek rasmi majburiy",
+      "ai": "AI tahlili",
+      "result": "Natija",
+      "needsPhoto": "Avval chek rasmini yoqing",
+      "switchPhoto": "{{group}}: chek rasmi majburiy",
+      "switchAi": "{{group}}: AI tahlili",
+      "resultText": {
+        "photoAi": "Chek majburiy, AI tekshiradi",
+        "photo": "Chek majburiy, summa qo'lda tekshiriladi",
+        "none": "Chek so'ralmaydi"
+      },
+      "note": "AI faqat chek rasmi yoqilganda ishlaydi. Rasm o'chirilsa, AI ham o'chadi; rasmni qayta yoqsangiz, AI ni alohida yoqing. O'zgarish keyingi yozuvlardan qo'llanadi — saqlangan cheklar o'zgarmaydi.",
+      "updated": "Oxirgi o'zgarish: {{value}}",
+      "groups": {
+        "manual_expense": {
+          "title": "Qo'lda chiqim",
+          "hint": "Asosiy va filial kassalaridan xarajat",
+          "offDescription": "Qo'lda chiqimda chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "offField": "Formada «Chek rasmi» maydoni ko'rinmaydi, xarajat cheksiz saqlanadi"
+        },
+        "hq_transfer": {
+          "title": "Kuryer va filialdan HQ'ga o'tkazma",
+          "hint": "Faqat «O'tkazma» to'lovida",
+          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "offField": "Qabul formasida «Chek rasmi» maydoni ko'rinmaydi, o'tkazma cheksiz qabul qilinadi"
+        }
+      },
+      "photoOff": {
+        "title": "Chek rasmini o'chirishni tasdiqlang",
+        "confirm": "O'chirish",
+        "ai": "AI tahlili ham o'chadi — rasmni qayta yoqsangiz, AI ni alohida yoqing",
+        "kept": "Saqlangan cheklar va AI natijalari tarixda qoladi"
+      }
+    },
+    "status": {
+      "match": "Mos keldi",
+      "mismatch": "Farq bor",
+      "unreadable": "O'qib bo'lmadi",
+      "pending": "Tahlilda",
+      "error": "Xato",
+      "disabled": "AI o'chiq",
+      "none": "Chek yo'q",
+      "stale": "Natija kelmadi",
+      "prefix": "Chek:",
+      "aria": "Chek: {{status}}"
+    },
+    "filter": {
+      "label": "Chek holati",
+      "noneHint": "Faqat qo'lda chiqim va HQ'ga «O'tkazma»"
+    },
+    "section": {
+      "title": "Chek",
+      "compare": "Summalar solishtiruvi",
+      "onReceipt": "Chekda",
+      "entered": "Kiritilgan",
+      "difference": "Farq",
+      "date": "Chek sanasi",
+      "recipient": "Oluvchi",
+      "payer": "To'lovchi",
+      "bank": "Bank",
+      "reference": "Tranzaksiya raqami",
+      "confidence": "Ishonch",
+      "uploadedBy": "Yukladi: {{value}}",
+      "checkedAt": "AI tekshirdi: {{value}}",
+      "pendingText": "AI chekni o'qimoqda… Natija odatda bir daqiqada chiqadi — sahifani yangilash shart emas.",
+      "staleText": "AI natijasi kelmadi — tahlil 3 daqiqadan oshdi. Qayta tahlilni boshlang.",
+      "unreadableText": "AI chekdagi summani o'qiy olmadi: rasm xira, qirqilgan yoki chek emas. Rasmni ko'z bilan tekshiring.",
+      "errorText": "AI tahlili ishlamadi: xizmat javob bermadi. Qayta tahlilni boshlang.",
+      "disabledText": "Chek saqlanganda AI tahlili o'chiq edi — summa solishtirilmagan.",
+      "attemptsOver": "Urinishlar tugadi: {{attempts}} / {{max}}",
+      "loading": "Chek yuklanmoqda",
+      "loadError": "Chek ma'lumotini yuklab bo'lmadi",
+      "retry": "Qayta urinish"
+    },
+    "flags": {
+      "title": "AI ogohlantirishlari · {{n}} ta",
+      "duplicate_photo": {
+        "title": "Takroriy rasm",
+        "text": "Shu rasm boshqa operatsiyaga ham yuklangan"
+      },
+      "duplicate_reference": {
+        "title": "Takroriy tranzaksiya raqami",
+        "text": "Bu raqam oxirgi 90 kunda boshqa chekda uchragan"
+      },
+      "date_far": {
+        "title": "Sana uzoq",
+        "text": "Chek sanasi ({{date}}) operatsiyadan 3 kundan ko'proq farq qiladi"
+      },
+      "card_mismatch": {
+        "title": "Karta mos emas",
+        "text": "Oluvchi kartasi (··{{last4}}) HQ kartalariga mos emas",
+        "textExpense": "To'lovchi kartasi (··{{last4}}) kassa kartasiga mos emas"
+      }
+    },
+    "reanalyze": {
+      "title": "Qayta tahlilni tasdiqlang",
+      "description": "AI chekni qaytadan o'qiydi va kiritilgan summa bilan solishtiradi. Yangi natija kelgach avvalgisi almashtiriladi.",
+      "operation": "Operatsiya",
+      "entered": "Kiritilgan summa",
+      "current": "Joriy natija",
+      "attempts": "Urinishlar",
+      "confirm": "Qayta tahlil",
+      "sending": "Yuborilmoqda…",
+      "success": "Chek qayta tahlilga yuborildi — natija tarixda yangilanadi.",
+      "errors": {
+        "RECEIPT_AI_PENDING": {
+          "title": "Tahlil hali tugamagan",
+          "text": "Bu chek hozir tahlil qilinmoqda — natijani kuting."
+        },
+        "RECEIPT_AI_ATTEMPTS_EXHAUSTED": {
+          "title": "Urinishlar tugadi",
+          "text": "Bu chek 5 marta tahlil qilindi — boshqa urinish yo'q."
+        },
+        "RECEIPT_AI_DISABLED": {
+          "title": "AI tahlili o'chirilgan",
+          "text": "Sozlamalarda «AI tahlili» o'chiq — qayta tahlil qilib bo'lmaydi."
+        },
+        "RECEIPT_ALREADY_MATCHED": {
+          "title": "Chek mos keldi",
+          "text": "Qayta tahlil kerak emas."
+        },
+        "offline": {
+          "title": "Internet aloqasi yo'q",
+          "text": "So'rov yetib bormadi. Aloqa tiklangach qayta bosing."
+        },
+        "generic": {
+          "title": "Qayta tahlil boshlanmadi",
+          "text": "Birozdan keyin qayta urinib ko'ring."
+        }
+      }
     }
   }
 }

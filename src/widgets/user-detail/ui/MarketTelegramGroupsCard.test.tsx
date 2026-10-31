@@ -555,7 +555,7 @@ describe("MarketTelegramGroupsCard — «Guruhda mijoz ismi va telefoni» (S3)",
     const control = screen.getByRole("switch", piiName);
     expect(control).toHaveAttribute("aria-checked", "true");
     expect(control).toHaveAccessibleDescription(
-      "O'chirilsa, guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
+      "O'chirilsa, guruhlardagi yangi va bekor qilingan buyurtmalar xabarlarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
     );
 
     await user.click(control);

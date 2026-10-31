@@ -1,8 +1,13 @@
 import {
+  RECEIPT_SETTING_GROUPS,
   SHIFT_REPORT_RECIPIENT_GROUPS,
+  type ReceiptGroupSettings,
+  type ReceiptSettingGroup,
+  type ReceiptSettings,
   type ShiftAutoCloseSettings,
   type ShiftCheckSettings,
   type ShiftReportSendSettings,
+  type UpdateReceiptSettingsRequest,
   type UpdateShiftSettingsRequest,
 } from "../../../entities/payments";
 
@@ -97,6 +102,23 @@ export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): Updat
     if (Object.keys(recipients).length) patch.recipients = recipients;
     if (next.format !== before.format) patch.format = next.format;
     if (Object.keys(patch).length) body.report = patch;
+  }
+  return body;
+};
+
+/** Chek sozlamalari qoralamasi (QlLf33Ma). */
+export type ReceiptDraft = Record<ReceiptSettingGroup, ReceiptGroupSettings>;
+
+/** `PATCH finance/receipt-settings`: faqat o'zgargan kalitlar (bo'sh — o'zgarish yo'q). */
+export const diffReceiptSettings = (base: ReceiptSettings, draft: ReceiptDraft): UpdateReceiptSettingsRequest => {
+  const body: UpdateReceiptSettingsRequest = {};
+  for (const group of RECEIPT_SETTING_GROUPS) {
+    const before = base[group];
+    const after = draft[group];
+    const changes: Partial<ReceiptGroupSettings> = {};
+    if (after.photo_required !== before.photo_required) changes.photo_required = after.photo_required;
+    if (after.ai_enabled !== before.ai_enabled) changes.ai_enabled = after.ai_enabled;
+    if (Object.keys(changes).length) body[group] = changes;
   }
   return body;
 };

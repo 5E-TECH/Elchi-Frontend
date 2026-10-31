@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-main-cashbox-fill-dialog, admin-payments-cashbox-form-dialog, manager-payments-cashbox-form-dialog
+// dizayn-v2: superadmin-payments-main-cashbox-fill-dialog, admin-payments-cashbox-form-dialog, manager-payments-cashbox-form-dialog, superadmin-payments-main-cashbox-expense-receipt-dialog, superadmin-payments-main-cashbox-expense-receipt-confirm, admin-payments-cashbox-form-dialog-receipt, manager-payments-cashbox-form-dialog-receipt
 import { memo, useEffect, useId, useMemo, useRef, type ReactNode } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -22,6 +22,8 @@ import {
     type SelectOption,
 } from "../../../shared/ui/primitives";
 import { parseAmountInput } from "./lib/amountInput";
+import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
+import { useReceiptField } from "./receipt/useReceiptField";
 
 /**
  * «KASSANI TO'LDIRISH» / «KASSADAN XARAJAT» OYNASI — asosiy kassa (dizayn v2, maketlar
@@ -51,6 +53,11 @@ import { parseAmountInput } from "./lib/amountInput";
  * `manageCategoriesTo`) maydon o'chiq va
  * «Xarajatni saqlash» bloklanadi; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat tozalanadi va
  * qaytadan tanlash so'raladi.
+ *
+ * «Chek rasmi» (QlLf33Ma) — FAQAT `variant="spend"`, kategoriya va izoh orasida (`receipt/ReceiptField`, sozlama
+ * `manual_expense`): rasm yoqiq — maydon majburiy, rasmsiz forma yuborilmaydi; o'chiq — maydon va tasdiqdagi «Chek»
+ * qatori yo'q. Yuklanayotganda «Xarajatni saqlash» o'chiq. Payload'ga `receipt_id`; tasdiqda «Chek: Biriktirildi».
+ * Operatsiya `RECEIPT_*` bilan rad etilsa `onSubmit` `{ receiptError }` qaytaradi — xato maydon ostida, oyna ochiq.
  */
 
 interface CashboxFormValues {
@@ -68,7 +75,12 @@ export type CashboxFormPayload = {
     comment?: string;
     /** Faqat `spend` (raqamli satr ID) — chiqimda majburiy. */
     expense_category_id?: string;
+    /** Faqat `spend`, chek biriktirilgan bo'lsa (QlLf33Ma). */
+    receipt_id?: string;
 };
+
+/** `onSubmit` natijasi: chek xatosi bo'lsa oyna ochiq qoladi, xato maydon ostida chiqadi. */
+export type CashboxFormResult = { receiptError?: unknown } | void;
 
 interface CashboxFormPopupProps {
     isOpen: boolean;
@@ -91,7 +103,7 @@ interface CashboxFormPopupProps {
     requireComment?: boolean;
     isLoading?: boolean;
     /** Tasdiqdan KEYIN chaqiriladi. */
-    onSubmit: (data: CashboxFormPayload) => void | Promise<unknown>;
+    onSubmit: (data: CashboxFormPayload) => CashboxFormResult | Promise<CashboxFormResult>;
     /** `fill` — kirim (Plus), `spend` — chiqim (Minus). */
     variant?: "fill" | "spend";
     subtitle?: string;
@@ -141,6 +153,9 @@ const CashboxFormPopup = ({
     const submittingRef = useRef(false);
     // Xarajat kategoriyasi — faqat chiqimda (va u yerda majburiy).
     const withCategory = variant === "spend";
+    // Chek rasmi — faqat chiqimda (kirimda maydon ham, sozlama so'rovi ham yo'q).
+    const receipt = useReceiptField({ kind: withCategory ? "manual_expense" : null, active: isOpen });
+    const { reset: resetReceipt } = receipt;
 
     // Xato matnlari chaqiruvchidan (maketdagi izoh matni) yoki eski kalitlar.
     const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
@@ -182,6 +197,8 @@ const CashboxFormPopup = ({
 
     const hasTypeOptions = sourceTypes.length > 0;
     const busy = isLoading;
+    /** Rasm yuklanmoqda yoki sozlama o'qilmoqda — saqlash kutadi. */
+    const receiptBusy = receipt.busy;
 
     // ── Xarajat kategoriyasi (faqat chiqim) ─────────────────────────────────────
     const categoriesQuery = useExpenseCategories({ enabled: isOpen && withCategory });
@@ -215,20 +232,23 @@ const CashboxFormPopup = ({
     const handleClose = () => {
         if (busy) return;
         reset();
+        resetReceipt();
         onClose();
     };
 
     useEffect(() => {
         if (!isOpen) {
             reset();
+            resetReceipt();
         }
-    }, [isOpen, reset]);
+    }, [isOpen, reset, resetReceipt]);
 
     const typeName = (value?: string) =>
         sourceTypes.find((item) => String(item.id) === value)?.name ?? value ?? "";
 
     const submitForm = async (values: CashboxFormValues) => {
-        if (submittingRef.current || busy) return;
+        if (submittingRef.current || busy || receiptBusy) return;
+        if (!receipt.validate()) return;
         submittingRef.current = true;
         try {
             const category = withCategory
@@ -240,6 +260,7 @@ const CashboxFormPopup = ({
                 ...(values.type ? { type: values.type } : {}),
                 ...(comment ? { comment } : {}),
                 ...(category ? { expense_category_id: category.id } : {}),
+                ...(receipt.receiptId ? { receipt_id: receipt.receiptId } : {}),
             };
 
             if (confirmCopy) {
@@ -254,6 +275,9 @@ const CashboxFormPopup = ({
                     rows: [
                         { label: t("v2MainCashbox.confirm.cashbox"), value: confirmCopy.cashboxLabel },
                         ...(category ? [{ label: t("v2MainCashbox.confirm.category"), value: category.name }] : []),
+                        ...(payload.receipt_id
+                            ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }]
+                            : []),
                         ...(payload.comment
                             ? [{ label: t("v2MainCashbox.confirm.comment"), value: payload.comment, stacked: true }]
                             : []),
@@ -264,7 +288,8 @@ const CashboxFormPopup = ({
                 if (!ok) return;
             }
 
-            await onSubmit(payload);
+            const result = await onSubmit(payload);
+            if (result && result.receiptError) receipt.applyServerError(result.receiptError);
         } finally {
             submittingRef.current = false;
         }
@@ -313,7 +338,11 @@ const CashboxFormPopup = ({
             icon={Icon}
             title={title}
             description={subtitle ?? description}
-            onSubmit={handleSubmit(submitForm)}
+            onSubmit={(event) => {
+                // Rasm xatosi boshqa maydon xatolari bilan BIRGA ko'rinsin (`handleSubmit` xatoda `submitForm` ni chaqirmaydi).
+                receipt.validate({ moveFocus: false });
+                return handleSubmit(submitForm)(event);
+            }}
             formProps={{ noValidate: true }}
             footer={
                 <>
@@ -323,7 +352,7 @@ const CashboxFormPopup = ({
                     <Button
                         type="submit"
                         leftIcon={Icon}
-                        disabled={categoriesUnavailable}
+                        disabled={categoriesUnavailable || receiptBusy}
                         loading={busy}
                         loadingText={t("v2MainCashbox.form.saving")}
                     >
@@ -414,6 +443,8 @@ const CashboxFormPopup = ({
                     />
                 </Field>
             ) : null}
+
+            {withCategory ? <ReceiptField receipt={receipt} viewerDescription={title} /> : null}
 
             <Field
                 label={t("v2MainCashbox.form.comment")}

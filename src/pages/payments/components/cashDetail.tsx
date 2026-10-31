@@ -26,7 +26,13 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { DeltaChip } from "../../../shared/ui/charts";
 import { ClosingSpark } from "./MyCashboxDaily";
 import type { PaymentRow } from "./patmentHistoryTable";
-import { useCashBox, type CashboxPaymentResponse } from "../../../entities/payments";
+import {
+  readLinkedReceiptStatus,
+  useCashBox,
+  type CashboxPaymentResponse,
+  type ReceiptKind,
+} from "../../../entities/payments";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import {
   dayOverDay,
@@ -59,6 +65,8 @@ import PaymentHistoryList, { historyRowView } from "./PaymentHistoryList";
 import OpenShiftFlow from "./OpenShiftFlow";
 import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
+import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
+import { useReceiptField } from "./receipt/useReceiptField";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -719,6 +727,21 @@ const CashDetail = () => {
   const selectedPaymentType = watch("paymentType");
   const selectedMarketId = watch("marketId");
   const isStoreTransfer = selectedPaymentType === "click_to_market";
+  /**
+   * CHEK RASMI (QlLf33Ma, 7-bosqich): faqat superadmin/admin'ning HQ'ga qabulida — kuryer (HQ) va filial sahifasi —
+   * va faqat «O'tkazma» (`click`) da. Naqd, «Marketga o'tkazma» va menejerning kuryer qabulida maydon YO'Q (backend
+   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat `click` da yuboriladi;
+   * `receipt_id` idempotentlik barmoq iziga KIRMAYDI.
+   */
+  const receiptKind: ReceiptKind | null = isCurrentManagerRole
+    ? null
+    : type === "courier"
+      ? "courier_to_hq"
+      : type === "branch"
+        ? "branch_to_hq"
+        : null;
+  const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
+  const { reset: resetReceipt } = receipt;
   // C14 / FE-PAY-08: "O'tkazma"da "karta egasi" tanlovi YO'Q — kuryer, market
   // va filial → HQ uchun ham. Kassa yagona (per-person karta yo'q), DTO'larda
   // `source_user_id` yo'q va qiymat hech qachon yuborilmasdi.
@@ -759,6 +782,7 @@ const CashDetail = () => {
       transferSourceId: "",
       comment: "",
     });
+    resetReceipt();
   };
 
   /** Kassa, tarix va (HQ filial sahifasida) filial summasini qayta o'qish. */
@@ -895,6 +919,7 @@ const CashDetail = () => {
         payment_date: getHistoryDate(item),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        receipt: toReceiptRef(item["receipt"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
@@ -1023,6 +1048,10 @@ const CashDetail = () => {
     }
   };
 
+  /** Muvaffaqiyat matni: chek AI tahliliga ketgan bo'lsa — shu haqda ham (maket `…-expense-receipt-confirm`). */
+  const paymentSuccessText = (message: string, response: unknown) =>
+    readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message;
+
   /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi
    * `Idempotency-Key` bilan. Kalit to'lovning barmoq iziga bog'langan va javob
@@ -1049,8 +1078,10 @@ const CashDetail = () => {
       response = await send(idempotencyKey);
     } catch (error) {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
-      // faqat bir marta o'tkazadi.
-      notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+      // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
+      if (!receipt.applyServerError(error)) {
+        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+      }
       refetchShiftAfterPaymentError();
       if (isUncertainPaymentError(error)) {
         // Javob kelmadi — pul o'tgan bo'lishi mumkin: forma o'sha eski balans
@@ -1075,7 +1106,7 @@ const CashDetail = () => {
       return;
     }
 
-    notify.success(t("common:success"), { description: successMessage });
+    notify.success(t("common:success"), { description: paymentSuccessText(successMessage, response) });
     await refreshAfterPayment(amount);
   };
 
@@ -1086,6 +1117,8 @@ const CashDetail = () => {
     const comment = values.comment?.trim() || "";
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
+    // Chek barmoq iziga kirmaydi: `payment` dan tashqarida, faqat so'rov tanasida.
+    const receiptBody = receipt.receiptId ? { receipt_id: receipt.receiptId } : {};
 
     if (type === "branch") {
       // Filial ID si — URL'dagi `id` (fix3 dan oldingidek; FE-PAY-01
@@ -1099,7 +1132,7 @@ const CashDetail = () => {
         fingerprint: branchToMainPaymentFingerprint(payment),
         send: (idempotencyKey) =>
           createPaymentBranchToMain.mutateAsync({
-            data: { ...payment, payment_date: paymentDate, comment },
+            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
             idempotencyKey,
           }),
         amount,
@@ -1137,15 +1170,17 @@ const CashDetail = () => {
       let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
       try {
         response = await createPaymentCourier.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment },
+          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
           idempotencyKey,
         });
       } catch (error) {
         // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
-        // faqat bir marta o'tkazadi.
-        notify.error(t("common:error"), {
-          description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
-        });
+        // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
+        if (!receipt.applyServerError(error)) {
+          notify.error(t("common:error"), {
+            description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
+          });
+        }
         refetchShiftAfterPaymentError();
         if (isUncertainPaymentError(error)) {
           // Javob kelmadi (504 / tarmoq) — pul o'tgan bo'lishi mumkin: boshqa
@@ -1176,7 +1211,7 @@ const CashDetail = () => {
         await refetchCashbox();
         return;
       }
-      notify.success(t("common:success"), { description: t("receivePaymentSuccess") });
+      notify.success(t("common:success"), { description: paymentSuccessText(t("receivePaymentSuccess"), response) });
       await refreshAfterPayment(amount);
       return;
     }
@@ -1361,6 +1396,8 @@ const CashDetail = () => {
       return;
     }
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
+    // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
+    if (receipt.busy || !receipt.validate()) return;
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
     paymentLockRef.current = true;
@@ -1381,6 +1418,7 @@ const CashDetail = () => {
         transfer: getPaymentTransfer(),
         rows: [
           ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
+          ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
           ...(comment ? [{ label: t("v2CashDetail.confirm.comment"), value: comment, stacked: true }] : []),
         ],
         confirmLabel: t("v2CashDetail.confirm.confirm"),
@@ -1558,7 +1596,9 @@ const CashDetail = () => {
       marketOptions={marketOptions}
       marketLoading={marketsLoading}
       submitLoading={isSubmitting}
-      submitDisabled={isStoreTransfer && !selectedMarketId}
+      submitDisabled={(isStoreTransfer && !selectedMarketId) || receipt.busy}
+      receiptField={<ReceiptField receipt={receipt} viewerDescription={formTitle} />}
+      onSubmitAttempt={() => receipt.validate({ moveFocus: false })}
       commentLabel={t("v2CashDetail.form.comment")}
       commentPlaceholder={t("v2CashDetail.form.commentPlaceholder")}
       paymentTypeOptions={paymentTypeOptions}

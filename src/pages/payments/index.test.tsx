@@ -316,6 +316,27 @@ describe("Payments filters", () => {
     );
   });
 
+  it("QlLf33Ma: «Chek holati» URL'ga yoziladi va GET /finance/history ga `receipt_status` ketadi", async () => {
+    const user = userEvent.setup();
+    open("/payments");
+    await user.click(screen.getByLabelText("Chek holati"));
+    expect(await screen.findByText("Faqat qo'lda chiqim va HQ'ga «O'tkazma»")).toBeInTheDocument();
+    await user.click(await screen.findByRole("option", { name: "Farq bor" }));
+
+    await waitFor(() => expect(currentSearch()).toContain("receipt_status=mismatch"));
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ receipt_status: "mismatch", page: 1 }),
+    );
+  });
+
+  it("QlLf33Ma: noto'g'ri `receipt_status` so'rovga ketmaydi (backend 400)", async () => {
+    open("/payments?receipt_status=bad");
+    await waitFor(() => expect(getFinanceHistoryMock).toHaveBeenCalled());
+    for (const [params] of getFinanceHistoryMock.mock.calls) {
+      expect(params).not.toHaveProperty("receipt_status");
+    }
+  });
+
   it("sends the date filter from the URL as from_date / to_date (YYYY-MM-DD); a malformed date is ignored", async () => {
     const { unmount } = open("/payments?from_date=2026-10-01&to_date=2026-10-08");
 
@@ -657,6 +678,12 @@ describe("Payments — header and KPI cards", () => {
       within(card).getByText("Yana 1 ta kuryerda pul yo'q · ulush = kuryer summasi / musbat qoldiqlar jami"),
     ).toBeInTheDocument();
     expect(within(card).getByRole("button", { name: "Barcha kuryerlar · 4 ta" })).toBeInTheDocument();
+  });
+
+  it("manager: «Chek holati» filtri yo'q (QlLf33Ma: belgilar bor, filtr — superadmin va admin)", () => {
+    open(manager);
+
+    expect(screen.queryByLabelText("Chek holati")).not.toBeInTheDocument();
   });
 
   it("manager: «HQ'ga o'tkazish» is never shown (ega qarori #7 — HQ takes the branch money itself)", () => {

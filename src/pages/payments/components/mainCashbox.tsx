@@ -61,16 +61,23 @@ import {
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 import { useUser } from "../../../entities/user/api/userApi";
-import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
+import {
+  getReceiptErrorCode,
+  normalizeCashboxShift,
+  readLinkedReceiptStatus,
+  useCashBox,
+  type CashboxShift,
+} from "../../../entities/payments";
 import { dayOverDay, lastDaysRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
 import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
-import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
+import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
 import BalanceTrendCard from "./BalanceTrendCard";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
@@ -649,16 +656,22 @@ const MainCashbox = () => {
    * kategoriyasiz chiqimni 400 bilan rad etadi — uning matni xabarda chiqadi. D3 — `Idempotency-Key` barmoq iziga
    * bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta yuborilganda backend uni
    * bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi). Kategoriya bilan chiqim rad
-   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi.
+   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi. Chek (QlLf33Ma): `receipt_id`
+   * barmoq iziga KIRMAYDI (rasm almashsa ham xarajat ikki marta yozilmaydi); `RECEIPT_*` rad etilsa natija oynaga
+   * qaytadi (`receiptError`) — xato «Chek rasmi» maydoni ostida, umumiy xabarsiz.
    */
   const submitManualOperation = useCallback(
-    async (operation: ManualOperation, { amount, type, comment, expense_category_id }: CashboxFormPayload) => {
+    async (
+      operation: ManualOperation,
+      { amount, type, comment, expense_category_id, receipt_id }: CashboxFormPayload,
+    ): Promise<CashboxFormResult> => {
       if (manualPendingRef.current) return;
       manualPendingRef.current = true;
       const mutation = operation === "fill" ? cashboxFill : cashboxSpand;
       const close = operation === "fill" ? () => setIsRefillPopupOpen(false) : () => setIsSpendPopupOpen(false);
       const fingerprint = manualOperationFingerprint(operation, currentUserId || normalizedRole, amount, type);
       const categoryId = operation === "spend" ? expense_category_id : undefined;
+      const receiptId = operation === "spend" ? receipt_id : undefined;
       try {
         const idempotencyKey = takePaymentKey(fingerprint);
         let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
@@ -669,11 +682,13 @@ const MainCashbox = () => {
               type,
               ...(comment ? { comment } : {}),
               ...(categoryId ? { expense_category_id: categoryId } : {}),
+              ...(receiptId ? { receipt_id: receiptId } : {}),
             },
             idempotencyKey,
           });
         } catch (error) {
           // Kalit saqlanadi: aynan shu operatsiya qayta yuborilsa backend uni bir marta yozadi.
+          if (operation === "spend" && getReceiptErrorCode(error)) return { receiptError: error };
           notify.error(t("common:error"), {
             description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
           });
@@ -695,8 +710,10 @@ const MainCashbox = () => {
           await refetchCashboxState();
           return;
         }
+        const message = t(operation === "fill" ? "fillSuccess" : "spendSuccess");
         notify.success(t("common:success"), {
-          description: t(operation === "fill" ? "fillSuccess" : "spendSuccess"),
+          description:
+            readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message,
         });
         close();
       } finally {
@@ -825,6 +842,9 @@ const MainCashbox = () => {
     return category ? <ExpenseCategoryBadge name={category} /> : null;
   };
 
+  // «Chek» belgisi (QlLf33Ma) — superadmin va admin; menejerning filial kassasida yo'q (maket `…-main-cashbox-receipts`).
+  const receiptBadge = (row: PaymentRow) => (isManagerRole ? null : <ReceiptRowBadge receipt={row.receipt} />);
+
   const operationBadge = (row: PaymentRow) => {
     const direction = rowDirection(row);
     if (!direction) return <span className="text-text-muted">—</span>;
@@ -879,6 +899,7 @@ const MainCashbox = () => {
       cell: (row) => {
         const sub = rowCounterparty(row);
         const category = categoryBadge(row);
+        const receipt = receiptBadge(row);
         const title = (
           <Pressable
             onClick={() => setSelectedRow(row)}
@@ -890,10 +911,11 @@ const MainCashbox = () => {
         return (
           <>
             {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
-            {category ? (
+            {category || (receipt && row.receipt) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 {title}
                 {category}
+                {receipt}
               </div>
             ) : (
               title
@@ -966,6 +988,7 @@ const MainCashbox = () => {
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
           {categoryBadge(row)}
+          {receiptBadge(row)}
           <span className="text-[13px] text-text-muted">
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>

@@ -11,6 +11,7 @@ describe("realtimeFinance", () => {
       "finance.shift.auto_closed",
       "finance.shift.account_checked",
       "finance.cashbox.card_changed",
+      "finance.receipt.checked",
     ]);
   });
 
