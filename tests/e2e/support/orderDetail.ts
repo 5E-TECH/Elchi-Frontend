@@ -104,6 +104,11 @@ export const mockOrderDetailApi = async (
       return reply(route, wrap(options.profile ?? { id: "1", role: "admin", name: "E2E admin", status: "active" }));
     }
     if (path === `orders/${order.id}`) return reply(route, wrap(order));
+    if (path.startsWith("orders/qr-code/")) {
+      return path === `orders/qr-code/${String(order.qr_code_token)}`
+        ? reply(route, wrap(order))
+        : reply(route, { statusCode: 404, message: "Buyurtma topilmadi" }, 404);
+    }
     const extra = options.extraOrders?.find((item) => path === `orders/${item.id}`);
     if (extra) return reply(route, wrap(extra));
     if (path === `orders/${order.id}/tracking` && options.trackingError) {

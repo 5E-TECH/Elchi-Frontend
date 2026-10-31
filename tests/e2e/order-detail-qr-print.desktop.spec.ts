@@ -26,6 +26,75 @@ test("⭐ QR ko'rinadi va skaner o'qiganda buyurtma tokeni chiqadi", async ({ pa
   expect(leaked).toEqual([]);
 });
 
+test("⭐ tungi mavzuda ham QR o'qiladi (fon va ramka bilan)", async ({ page }) => {
+  // Mavzu serverdagi `appearance.theme` dan sinxronlanadi (SettingsSync).
+  const settings = { appearance: { theme: "dark", themeChosen: true, language: "uz" } };
+  await mockOrderDetailApi(
+    page,
+    { ...ORDER_95, qr_code_token: TOKEN },
+    { profile: { ...SUPERADMIN, settings } },
+  );
+  await openOrderDetail(page, "95");
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+  const qr = page.getByRole("img", { name: /buyurtmasining QR kodi/ });
+  await expect(qr.locator("path")).toBeAttached();
+  expect(await readQr(page, qr.locator(".."))).toBe(TOKEN);
+});
+
+test("⭐ «Brauzer orqali»: 100×60 mm yorliq, tashqi buyurtma nomi chekda, popup yo'q", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const printed: Array<{ size?: string; pages: number; text: string }> = [];
+    (window as unknown as { __printed: typeof printed }).__printed = printed;
+    new MutationObserver((records) => {
+      for (const record of records)
+        for (const node of record.addedNodes) {
+          if (!(node instanceof HTMLIFrameElement)) continue;
+          node.addEventListener("load", () => {
+            node.contentWindow!.print = () => {
+              const doc = node.contentDocument!;
+              printed.push({
+                size: /@page\{size:([^;]+);/.exec(doc.querySelector("style")?.textContent ?? "")?.[1],
+                pages: doc.querySelectorAll(".p").length,
+                text: doc.body.textContent ?? "",
+              });
+            };
+          });
+        }
+    }).observe(document, { childList: true, subtree: true });
+  });
+  await mockOrderDetailApi(
+    page,
+    {
+      ...ORDER_95,
+      qr_code_token: TOKEN,
+      items: [{ id: "i1", quantity: 2, product: null, product_name: "Kabel USB-C" }],
+    },
+    { profile: SUPERADMIN },
+  );
+  await openOrderDetail(page, "95");
+  let popups = 0;
+  page.on("popup", () => (popups += 1));
+
+  await page.getByRole("button", { name: "Chop etish" }).click();
+  await page.getByRole("menuitem", { name: /Brauzer orqali chop etish/ }).click();
+
+  const printed = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __printed: Array<{ size?: string; pages: number; text: string }> })
+          .__printed,
+    );
+  await expect.poll(async () => (await printed()).length, { timeout: 60_000 }).toBe(1);
+  const [label] = await printed();
+  expect(label.size).toBe("100mm 60mm");
+  expect(label.pages).toBe(1);
+  expect(label.text).toContain("Aliyev Vali");
+  expect(label.text).toContain("Kabel USB-C ×2");
+  expect(popups).toBe(0);
+});
+
 test("⭐ token yo'q — QR kartasi yo'q, «Chop etish» qoladi", async ({ page }) => {
   await mockOrderDetailApi(page, { ...ORDER_95, qr_code_token: null }, { profile: SUPERADMIN });
   await openOrderDetail(page, "95");
