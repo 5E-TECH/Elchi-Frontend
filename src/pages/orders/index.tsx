@@ -353,7 +353,7 @@ const Orders = () => {
     (tabId: string) => {
       const tab = ORDER_STATUS_TABS.find((item) => item.id === tabId);
       if (!tab) return;
-      setSelectedCancelledIds(new Set());
+      setSelectedCancelledIds((previous) => (previous.size > 0 ? new Set() : previous));
       dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: [...tab.statuses] }));
       setMultipleParams({
         [ORDER_STATUS_URL_KEY]: tab.statuses.join(","),
@@ -437,8 +437,10 @@ const Orders = () => {
     }
 
     previousFiltersKeyRef.current = filtersKey;
-    resetPagination(LIMIT);
-  }, [filtersKey, resetPagination]);
+    // Sahifa 1 bo'lsa chaqirilmaydi: `setSearchParams` URL o'zgarmasa ham navigatsiya qiladi, butun daraxt ikkinchi
+    // marta chiziladi. Tanlangan «Sahifadagi qatorlar soni» saqlanadi (F4RSPBwx: 100 → 10 ga tushib ortiqcha so'rov ketardi).
+    if (page !== 1) resetPagination(limit);
+  }, [filtersKey, limit, page, resetPagination]);
 
   // Saralash o'zgarganda sahifani 1 ga qaytarish — aks holda foydalanuvchi
   // masalan 3-sahifada turib narx bo'yicha saralasa, u yerdagi tasodifiy
