@@ -47,6 +47,14 @@ export const inactiveReasonKey = (reason: NotificationInactiveReason | null | un
 };
 
 /**
+ * (BOT-3 #6) Market guruhni bir martalik kod bilan o'zi qayta ulay oladigan sabablar — Telegram tomonida yuz bergan
+ * (backend `RECONNECTABLE_INACTIVE_REASONS`): shu guruhga botni qayta qo'shib kod yuborilsa, ulanish qayta yoqiladi.
+ * `manual` (admin o'chirgan) va sababsiz (`null`) — faqat admin «Bildirishnomalar» bo'limida faollashtiradi.
+ */
+export const isReconnectableInactiveReason = (reason: NotificationInactiveReason | null | undefined): boolean =>
+  reason === "kicked" || reason === "left" || reason === "blocked_on_send" || reason === "chat_not_found";
+
+/**
  * «Nofaol» belgisi toni (DESIGN_SYSTEM §8, maket `*-notifications-telegram-groups`): bot guruhga yetolmaydi — `danger`
  * (amal kerak: botni qayta qo'shish yoki qayta ulash); qo'lda nofaol qilingan yoki sabab noma'lum — `neutral` (D1).
  * Rang har doim «Nofaol» so'zi va sabab matni bilan birga.

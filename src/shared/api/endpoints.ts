@@ -44,6 +44,13 @@ export const API_ENDPOINTS = {
     // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
     // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
     ROLE: (id: string | number) => `users/${id}/role`,
+    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — faqat o'zi
+    // yaratgan kuryer; o'ziga — 403). POST (tanasiz) → `{ user_id, must_change_password, password_sms }` — YANGI
+    // parol + SMS, foydalanuvchi sessiyalari yopiladi; 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT
+    // (kuniga 5), `retry_after_seconds`.
+    PASSWORD_RESEND_SMS: (id: string | number) => `users/${id}/password/resend-sms`,
+    // GET → `{ user_id, must_change_password, password_sms | null }` — oxirgi parol SMS'ining jonli holati.
+    PASSWORD_SMS_STATUS: (id: string | number) => `users/${id}/password/sms-status`,
   },
   // Rol katalogi (FY-2, K3scaE0W; superadmin, admin, menejer): GET → { items, changeable_roles }. Yorliqlar faqat
   // o'zbekcha — frontend faqat `changeable_roles` ni oladi, nomlar i18n'dan.
@@ -251,6 +258,8 @@ export const API_ENDPOINTS = {
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox
     CASHBOX_ALL_INFO: "finance/cashbox/all-info",
+    // uzWcMR1C — /payments KPI meta (faqat superadmin/admin): filiallar, HQ kuryerlari, marketlar soni, top-marketlar.
+    CASHBOX_PAYMENTS_META: "finance/cashbox/payments-meta",
     CASHBOX_MAIN: "finance/cashbox/main",
     CASHBOX_BALANCE: "finance/cashbox/balance", // PATCH update balance + history
     CASHBOX_FINANCIAL_BALANCE: "finance/cashbox/financial-balanse", // backend spelling

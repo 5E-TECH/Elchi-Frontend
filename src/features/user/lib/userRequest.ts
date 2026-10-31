@@ -5,8 +5,11 @@ import { notify } from "../../../shared/lib/notify";
 
 export interface UserRequestOptions<T> {
   request: () => Promise<T>;
-  /** Muvaffaqiyat xabarining tavsifi («Admin yaratish», «"Ali" muvaffaqiyatli yangilandi!»). */
-  successMessage: string;
+  /**
+   * Muvaffaqiyat xabarining tavsifi («Admin yaratish», «"Ali" muvaffaqiyatli yangilandi!»). `null` — xabar yo'q
+   * (natijani chaqiruvchi o'zi ko'rsatadi, masalan aidsxJ2H «Foydalanuvchi yaratildi» oynasi).
+   */
+  successMessage: string | null;
   /** Backend matni bo'lmasa — xato tavsifi. */
   errorMessage?: string;
   onSuccess?: (data: T) => void;
@@ -51,7 +54,7 @@ export const runUserRequest = async <T>({
     onError?.(error);
     return undefined;
   }
-  notify.success(t("success", { ns: "common" }), { description: successMessage });
+  if (successMessage !== null) notify.success(t("success", { ns: "common" }), { description: successMessage });
   onSuccess?.(data);
   return data;
 };

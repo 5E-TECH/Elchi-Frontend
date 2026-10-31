@@ -138,6 +138,41 @@ export interface HqCourierReceivablesResponse {
   };
 }
 
+/** GET /finance/cashbox/payments-meta — soni va summasi; manba javob bermasa blok `null`. */
+export interface PaymentsMetaTotals {
+  count: number;
+  amount: number;
+}
+
+export interface PaymentsMetaTopMarket {
+  market_id: string;
+  cashbox_id: string;
+  /** identity javob bermasa `null`. */
+  name: string | null;
+  amount: number;
+  /** % ulush (`payable.amount` ga nisbatan). */
+  share: number;
+}
+
+/** uzWcMR1C — /payments KPI meta: SQL COUNT/SUM + top N, ro'yxat so'ralmaydi (superadmin/admin). */
+export interface PaymentsMetaResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    receivable: {
+      amount: number;
+      branches: PaymentsMetaTotals | null;
+      hq_couriers: PaymentsMetaTotals | null;
+    };
+    payable: {
+      markets_count: number;
+      amount: number;
+      top_markets: PaymentsMetaTopMarket[];
+      others: PaymentsMetaTotals & { share: number };
+    } | null;
+  };
+}
+
 /**
  * Pul o'tkazmasi so'rovi (kuryerdan qabul qilish, marketga to'lov, filial →
  * HQ). `idempotencyKey` bitta mantiqiy to'lov uchun o'zgarmaydi
@@ -395,6 +430,19 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
+  /**
+   * uzWcMR1C — KPI meta sanoqlari. Kalit `cashbox` prefiksi ostida: to'lovdan keyin `refreshCashboxQueries` yangilaydi.
+   * `silentError`: 403 yoki xatoda global xabar yo'q — sanoq shunchaki chizilmaydi (kartalar all-info'dan ishlayveradi).
+   */
+  const useGetPaymentsMeta = (enabled: boolean = true) =>
+    useQuery<PaymentsMetaResponse>({
+      queryKey: [cashbox, "payments-meta"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.CASHBOX_PAYMENTS_META, { params: { top: 3 } }).then((res) => res.data),
+      enabled,
+      meta: { silentError: true },
+    });
+
   // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat oyna ochilganda o'qiydi (sukut o'zgarmagan).
   const useGetCashBoxMain = (params?: any, enabled: boolean = true) =>
     useQuery({
@@ -525,6 +573,7 @@ export const useCashBox = () => {
     useGetCashboxMyCashbox,
     useGetCashBoxHistoryById,
     useGetCashBoxMain,
+    useGetPaymentsMeta,
     useGetHqCourierReceivables,
     createPaymentCourier,
     createPaymentBranchToMain,

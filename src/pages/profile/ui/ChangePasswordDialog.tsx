@@ -1,6 +1,6 @@
 // dizayn-v2: common-profile-password-dialog
 import { useRef, useState, type FormEvent } from "react";
-import { Check, Eye, EyeOff, Lock, TriangleAlert } from "lucide-react";
+import { Check, Eye, EyeOff, Lock, LogOut, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -18,6 +18,7 @@ import {
   getPasswordPolicyServerMessage,
   passwordMinLength,
 } from "../../../shared/lib/passwordPolicy";
+import { getOldPasswordErrorKind } from "../../../shared/lib/oldPassword";
 
 type ChangePasswordDialogProps = {
   open: boolean;
@@ -29,15 +30,28 @@ type ChangePasswordDialogProps = {
    * o'rniga «Keyinroq». Saqlangach `onChanged` (token yangilash, bayroqni tozalash).
    */
   variant?: "change" | "required";
+  /**
+   * aidsxJ2H: majburiy rejim (parolni admin / tizim bergan — `pwd_forced`, yoki 403 `PASSWORD_CHANGE_REQUIRED`) —
+   * oyna bloklovchi: «Keyinroq» / «Yopish» yo'q, Esc va fon yopmaydi; o'rniga «Chiqish» (`onSignOut`).
+   */
+  forced?: boolean;
+  /**
+   * aidsxJ2H: foydalanuvchi vaqtinchalik parol bilan kirgan (`pwd_forced`) — izoh va «Joriy (vaqtinchalik) parol»
+   * yorlig'i shu holat uchun. Bloklashdan alohida: zaif parol + `PASSWORD_CHANGE_GATE` da oyna bloklaydi, matni NDmZMzCP niki.
+   */
+  temporary?: boolean;
+  onSignOut?: () => void | Promise<void>;
   onChanged?: () => void | Promise<void>;
 };
 
-type Errors = { password?: string; repeat?: string };
+type Errors = { oldPassword?: string; password?: string; repeat?: string };
 
 /**
  * «PAROLNI O'ZGARTIRISH» — maket `common-profile-password-dialog` (telefonda pastki varaqa — `Dialog` o'zi).
  *
- * `PATCH /auth/my-profile { password }` → backend BOSHQA barcha qurilmalarni darhol chiqaradi, shu qurilma tizimda
+ * `PATCH /auth/my-profile { old_password, password }` (aidsxJ2H: joriy parol MAJBURIY — yo'q / noto'g'ri bo'lsa
+ * 400 `OLD_PASSWORD_REQUIRED` / `OLD_PASSWORD_INVALID`, 401 emas — chiqarilmaydi, xato «Joriy parol» ostida; yangisi
+ * joriysi bilan bir xil — 400, «Yangi parol» ostida) → backend BOSHQA barcha qurilmalarni darhol chiqaradi, shu qurilma tizimda
  * qoladi (2026-10-23; avval hamma sessiya yopilib, shu yerdan ham chiqarilardi) → «Parol almashtirildi — boshqa
  * qurilmalardan chiqildi», oyna yopiladi; «Sessiyalar» ro'yxati qayta so'raladi (`updateMyProfile` →
  * `queryKeys.accountSessions`). Ikki marta yuborilmaydi (`submittingRef`).
@@ -51,6 +65,9 @@ export const ChangePasswordDialog = ({
   name,
   phone,
   variant = "change",
+  forced = false,
+  temporary = false,
+  onSignOut,
   onChanged,
 }: ChangePasswordDialogProps) => {
   const { t } = useTranslation(["profile", "users", "common", "auth"]);
@@ -58,6 +75,10 @@ export const ChangePasswordDialog = ({
   const role = useSelector((state: RootState) => state.role.role);
   const minLength = passwordMinLength(role);
   const required = variant === "required";
+  const blocking = required && forced;
+  const [oldPassword, setOldPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +92,8 @@ export const ChangePasswordDialog = ({
   if (wasOpen !== open) {
     setWasOpen(open);
     if (open) {
+      setOldPassword("");
+      setShowOld(false);
       setPassword("");
       setRepeat("");
       setShowPassword(false);
@@ -80,16 +103,28 @@ export const ChangePasswordDialog = ({
   }
 
   const close = () => {
-    if (busy) return;
+    if (busy || blocking) return;
     onClose();
+  };
+
+  const signOut = async () => {
+    if (busy || signingOut) return;
+    setSigningOut(true);
+    try {
+      await onSignOut?.();
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   const validate = (): Errors => {
     const next: Errors = {};
+    if (!oldPassword) next.oldPassword = t("auth:currentPassword.required");
     // Faqat bo'shliqdan iborat parol — bo'sh hisoblanadi (eski `UpdateUserModal`: `password.trim()` bo'sh → yuborilmaydi).
     const issue = checkPasswordPolicy(password, role);
     if (issue === "required") next.password = t("profile:password.required");
     else if (issue) next.password = t(`auth:passwordPolicy.${issue}`, { min: minLength });
+    else if (oldPassword && password === oldPassword) next.password = t("auth:currentPassword.sameAsOld");
     if (!repeat) next.repeat = t("profile:password.repeatRequired");
     else if (repeat !== password) next.repeat = t("profile:password.mismatch");
     return next;
@@ -100,12 +135,12 @@ export const ChangePasswordDialog = ({
     if (submittingRef.current) return;
     const next = validate();
     setErrors(next);
-    if (next.password || next.repeat) return;
+    if (next.oldPassword || next.password || next.repeat) return;
 
     submittingRef.current = true;
     setBusy(true);
     try {
-      await updateMyProfile.mutateAsync({ password });
+      await updateMyProfile.mutateAsync({ old_password: oldPassword, password });
       notify.success(
         required ? t("auth:mustChange.success") : t("profile:password.changedOthersSignedOut"),
         required ? { description: t("profile:password.changedOthersSignedOut") } : undefined,
@@ -113,6 +148,12 @@ export const ChangePasswordDialog = ({
       await onChanged?.();
       onClose();
     } catch (error) {
+      // aidsxJ2H: joriy parol yo'q / noto'g'ri — 400 (chiqarilmaydi), xato «Joriy parol» ostida, umumiy xabarsiz.
+      const oldKind = getOldPasswordErrorKind(error);
+      if (oldKind) {
+        setErrors({ oldPassword: t(oldKind === "required" ? "auth:currentPassword.required" : "auth:currentPassword.invalid") });
+        return;
+      }
       const fieldMessage =
         normalizeBackendFieldMessage(extractBackendFieldErrors(error).password) ??
         getPasswordPolicyServerMessage(error);
@@ -144,12 +185,15 @@ export const ChangePasswordDialog = ({
       open={open}
       onClose={close}
       busy={busy}
+      closable={!blocking}
+      dismissible={!blocking}
+      closeOnOverlay={!blocking}
       size="sm"
       icon={Lock}
       title={required ? t("auth:mustChange.title") : t("profile:password.title")}
       description={
         required ? (
-          t("auth:mustChange.description")
+          t(temporary ? "auth:mustChange.forcedDescription" : "auth:mustChange.description")
         ) : (
           <>
             {name} · <span className="whitespace-nowrap">{formatPhone(phone)}</span>
@@ -160,15 +204,46 @@ export const ChangePasswordDialog = ({
       formProps={{ noValidate: true }}
       footer={
         <>
-          <Button variant="secondary" onClick={close} disabled={busy}>
-            {required ? t("auth:mustChange.later") : t("profile:password.cancel")}
-          </Button>
+          {blocking ? (
+            <Button
+              variant="secondary"
+              leftIcon={LogOut}
+              onClick={() => void signOut()}
+              loading={signingOut}
+              disabled={busy}
+            >
+              {t("auth:mustChange.signOut")}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={close} disabled={busy}>
+              {required ? t("auth:mustChange.later") : t("profile:password.cancel")}
+            </Button>
+          )}
           <Button type="submit" loading={busy} loadingText={t("profile:password.saving")}>
             {t("profile:password.submit")}
           </Button>
         </>
       }
     >
+      {/* aidsxJ2H: joriy parol (vaqtinchalik parolda — SMS'dagi yoki administrator bergan parol). */}
+      <Field
+        label={t(temporary ? "auth:currentPassword.temporaryLabel" : "auth:currentPassword.label")}
+        required
+        hint={temporary ? t("auth:currentPassword.temporaryHint") : undefined}
+        error={errors.oldPassword}
+      >
+        <TextInput
+          type={showOld ? "text" : "password"}
+          autoComplete="current-password"
+          value={oldPassword}
+          onValueChange={(value) => {
+            setOldPassword(value);
+            if (errors.oldPassword) setErrors((prev) => ({ ...prev, oldPassword: undefined }));
+          }}
+          placeholder={t("auth:currentPassword.placeholder")}
+          suffix={visibilityToggle(showOld, () => setShowOld((value) => !value))}
+        />
+      </Field>
       <Field
         label={t("profile:password.new")}
         required

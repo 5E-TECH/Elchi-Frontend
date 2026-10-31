@@ -195,6 +195,31 @@ describe("UserDetailView — kuryerni boshqa filialga o'tkazish tugmasi", () => 
   );
 });
 
+describe("UserDetailView — «Parolni tiklash va SMS yuborish» (xtXKLUwT)", () => {
+  const action = { name: "Parolni tiklash va SMS yuborish" };
+  const stateOf = (role: string, id = "1") => ({ role: { id, role, region: null, name: "Ko'ruvchi" } }) as never;
+  const person = (role: UserRole, id = "91") => makeUser(role, { id });
+
+  it.each<[string, UserRole, boolean]>([
+    ["superadmin", "admin", true],
+    ["superadmin", "market", true],
+    ["admin", "courier", true],
+    ["admin", "admin", false],
+    ["manager", "courier", true],
+    ["manager", "market", false],
+    ["registrator", "courier", false],
+    ["superadmin", "customer", false],
+  ])("%s → %s: %s", (viewer, target, visible) => {
+    renderWithProviders(<UserDetailView user={person(target)} />, { preloadedState: stateOf(viewer) });
+    expect(screen.queryAllByRole("button", action)).toHaveLength(visible ? 1 : 0);
+  });
+
+  it("o'zi uchun ko'rinmaydi (backend 403 — parol profilda almashtiriladi)", () => {
+    renderWithProviders(<UserDetailView user={person("admin", "7")} />, { preloadedState: stateOf("superadmin", "7") });
+    expect(screen.queryByRole("button", action)).not.toBeInTheDocument();
+  });
+});
+
 describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
   beforeEach(() => {
     Object.values(mocks).forEach((fn) => fn.mockReset().mockResolvedValue({ statusCode: 200 }));

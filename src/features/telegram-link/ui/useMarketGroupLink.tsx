@@ -36,8 +36,9 @@ export type UseMarketGroupLinkOptions = {
   marketName: string;
   /**
    * Ulanishni oynada kuzatish (oyna ochiq va havola amalda ekan har 4 s): `marketId` bilan (superadmin/admin) —
-   * `GET /notifications?market_id&group_type`, qator paydo bo'lsa; `marketId` siz (market o'zi, TG-C) —
-   * `GET /notifications/me/telegram-groups`, shu tur `linked` bo'lsa. Ikkalasida oyna o'zi yopiladi, «Guruh ulandi».
+   * `GET /notifications?market_id&group_type`, faol qator paydo bo'lsa; `marketId` siz (market o'zi, TG-C) —
+   * `GET /notifications/me/telegram-groups`, shu tur ulangan va faol bo'lsa (BOT-3 #6: nofaol guruhni «Qayta ulash» —
+   * qator allaqachon bor, faqat faollashganini kutadi). Ikkalasida oyna o'zi yopiladi, «Guruh ulandi».
    */
   watch?: boolean;
   /**
@@ -107,9 +108,9 @@ export const useMarketGroupLink = ({
     // shu sessiyada olingan javob hisoblanadi.
     watchedQuery.dataUpdatedAt >= session.openedAt &&
     (watchingSelf
-      ? (myGroupsQuery.data ?? []).some((row) => row.group_type === session.groupType && row.linked)
+      ? (myGroupsQuery.data ?? []).some((row) => row.group_type === session.groupType && row.linked && row.is_active)
       : (connectionQuery.data?.data ?? []).some(
-          (row) => row.market_id === String(marketId) && row.group_type === session.groupType,
+          (row) => row.market_id === String(marketId) && row.group_type === session.groupType && row.is_active,
         ));
 
   // Guruh paydo bo'ldi — oyna yopiladi (holat render paytida moslanadi), xabar va yangilash — effektda bir marta.

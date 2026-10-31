@@ -115,7 +115,10 @@ test("«Logist yaratish» → «Logist» roli → POST /logists → shu sahifa y
   );
   await form.locator('input[name="fullName"]').fill("Lola Karimova");
   await form.locator('input[name="phone"]').fill("901112233");
+  // aidsxJ2H: sukut — «Tizim yaratsin va SMS yuborsin»; bu oqim — qo'lda parol (avvalgi xulq).
+  await form.getByText("Qo'lda kiritish", { exact: true }).click();
   await form.locator('input[name="password"]').fill("lola2026ok");
+  await form.locator('input[name="passwordRepeat"]').fill("lola2026ok");
   await form.locator('input[name="salary"]').fill("6000000");
   await form.getByRole("button", { name: "Saqlash" }).click();
 
@@ -123,7 +126,14 @@ test("«Logist yaratish» → «Logist» roli → POST /logists → shu sahifa y
   await expect(page).toHaveURL(/\/regions\/logist-assignment\?logist=57$/);
   await expect(page.getByRole("heading", { name: "Lola Karimova viloyatlari" })).toBeVisible();
   expect(mock.creates).toEqual([
-    { name: "Lola Karimova", phone_number: "+998901112233", password: "lola2026ok", salary: 6000000 },
+    {
+      name: "Lola Karimova",
+      phone_number: "+998901112233",
+      password_mode: "manual",
+      password: "lola2026ok",
+      must_change_password: true,
+      salary: 6000000,
+    },
   ]);
   expect(mock.leaked).toEqual([]);
 });

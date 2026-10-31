@@ -8,8 +8,9 @@ const PasswordChangePromptDialog = lazy(() => import("./PasswordChangePromptDial
 
 /**
  * NDmZMzCP «Yangi parol o'rnating»: login / refresh javobida `must_change_password: true` (yoki darvoza yoqilganda
- * `403 PASSWORD_CHANGE_REQUIRED`) — kirgan foydalanuvchiga parol almashtirish oynasi. Bloklamaydi: «Keyinroq» bilan
- * yopiladi (shu tab sessiyasida qayta chiqmaydi), ilovaning qolgan qismi ishlayveradi.
+ * `403 PASSWORD_CHANGE_REQUIRED`) — kirgan foydalanuvchiga parol almashtirish oynasi. Zaif eski parol bayrog'ida
+ * bloklamaydi: «Keyinroq» bilan yopiladi (shu tab sessiyasida qayta chiqmaydi), ilovaning qolgan qismi ishlayveradi.
+ * aidsxJ2H: parolni admin / tizim bergan bo'lsa (`pwd_forced`, 403) — bloklovchi, faqat «Chiqish».
  */
 const PasswordChangePrompt = () => {
   const open = usePasswordChangePrompt();
