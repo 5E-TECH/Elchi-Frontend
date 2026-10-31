@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **125** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **113** · qisman: **126** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -74,9 +74,9 @@
 | `/mails/refused` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 5 | v2 |
 | `/mails/old` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
 | `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 42 | v2 |
-| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 10 | v2 |
+| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 11 | v2 |
 | `/batches/:id` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
-| `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 3 | v2 |
+| `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 6 | v2 |
 | `/dispatch` | Biriktirish va tezkor amal | `src/pages/dispatch/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID) | 8 | v2 |
 | `/courier-bulk` | Biriktirish va tezkor amal | `src/pages/courier-bulk/index.tsx` | manager (REGIONAL · HYBRID), courier | 7 | v2 |
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
@@ -121,7 +121,7 @@
 | `/notifications/sent` | Bildirishnomalar | `src/pages/notification-sent/index.tsx` | superadmin, admin | 12 | v2 |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 6 | v2 |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
-| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 17 | v2 |
+| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 13 | v2 |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
 | `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
@@ -241,7 +241,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/` — Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage (dizayn v2)
 
-- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/pages/dashboard/LogistDashboardPage.tsx` · `src/pages/dashboard/ui/LogistRegionSuccessCard.tsx` · `src/pages/dashboard/ui/LogistRegionsTable.tsx` · `src/widgets/dashboard-statistics/ui/DashboardHeader.tsx` · `src/widgets/dashboard-statistics/ui/DashboardGrid.tsx` · `src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx` · `src/pages/dashboard/ui/DeliveryQualityCard.tsx` · `src/pages/dashboard/ui/DeliveryResultsCard.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx` · `src/widgets/financial-analysis/ui/CashBalanceCard.tsx` · `src/widgets/dashboard-top-performers/ui/TopRankCard.tsx` · `src/widgets/dashboard-region/ui/RegionOverviewCard.tsx` · `src/widgets/dashboard-region/ui/RegionTiles.tsx` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx` · `src/pages/dashboard/ui/CourierPlanCard.tsx` · `src/pages/dashboard/ui/CourierCashCard.tsx` · `src/pages/dashboard/ui/MarketSalesCard.tsx` · `src/pages/dashboard/ui/QuickActions.tsx` · `src/pages/dashboard/ui/ExtraCostApprovals.tsx` · `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` · `src/pages/dashboard/ui/ExtraCostRejectDialog.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/shared/ui/charts/index.ts` · `src/shared/ui/Forbidden.tsx` · `src/pages/investor/InvestorDashboardPage.tsx` · `src/pages/investor/ui/MonthlyProfitCard.tsx` · `src/pages/investor/ui/InvestorListCards.tsx` · `src/pages/investor/ui/ProfitHistoryTable.tsx` · `src/pages/investor/ui/InvestorAccessState.tsx` · `src/shared/ui/charts/StackedBars.tsx` · `src/shared/ui/charts/Sparkline.tsx`
+- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/ui/AnalyticsKpiSection.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/pages/dashboard/LogistDashboardPage.tsx` · `src/pages/dashboard/ui/LogistRegionSuccessCard.tsx` · `src/pages/dashboard/ui/LogistRegionsTable.tsx` · `src/widgets/dashboard-statistics/ui/DashboardHeader.tsx` · `src/widgets/dashboard-statistics/ui/DashboardGrid.tsx` · `src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx` · `src/pages/dashboard/ui/DeliveryQualityCard.tsx` · `src/pages/dashboard/ui/DeliveryResultsCard.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx` · `src/widgets/financial-analysis/ui/CashBalanceCard.tsx` · `src/widgets/dashboard-top-performers/ui/TopRankCard.tsx` · `src/widgets/dashboard-region/ui/RegionOverviewCard.tsx` · `src/widgets/dashboard-region/ui/RegionTiles.tsx` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx` · `src/pages/dashboard/ui/CourierPlanCard.tsx` · `src/pages/dashboard/ui/CourierCashCard.tsx` · `src/pages/dashboard/ui/MarketSalesCard.tsx` · `src/pages/dashboard/ui/QuickActions.tsx` · `src/pages/dashboard/ui/ExtraCostApprovals.tsx` · `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` · `src/pages/dashboard/ui/ExtraCostRejectDialog.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/shared/ui/charts/index.ts` · `src/shared/ui/Forbidden.tsx` · `src/pages/investor/InvestorDashboardPage.tsx` · `src/pages/investor/ui/MonthlyProfitCard.tsx` · `src/pages/investor/ui/InvestorListCards.tsx` · `src/pages/investor/ui/ProfitHistoryTable.tsx` · `src/pages/investor/ui/InvestorAccessState.tsx` · `src/shared/ui/charts/StackedBars.tsx` · `src/shared/ui/charts/Sparkline.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `DashboardEntry`
 - **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet))
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — superadmin, admin, registrator, market, market_operator, courier, logist, investor
@@ -800,18 +800,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/batches` — Paketlar — Yangi · Eski · Qaytarilgan
 
-- **Fayllar:** `src/pages/batches/ui/BatchesPage.tsx` · `src/pages/batches/model/batchView.ts` · `src/pages/batches/lib/batchFormat.ts` · `src/entities/batch/model/batchStatus.ts`
+- **Fayllar:** `src/pages/batches/ui/BatchesPage.tsx` · `src/pages/batches/model/batchView.ts` · `src/pages/batches/lib/batchFormat.ts` · `src/entities/batch/model/batchStatus.ts` · `src/pages/branch-ops/index.tsx` · `src/pages/ops/ui/OpsSection.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Paketlar» (`batches`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
-- **Izoh:** Tab URL'da: ?tab=new|old|return.
+- **Izoh:** Tab URL'da: ?tab=new|old|return. Superadmin uchun ro'yxat ostida «Filiallar — operatsiyalar» (pages/branch-ops, maket superadmin-ops-branches, Ops'dan ko'chgan, F2NzXpMv).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/batches` | superadmin | `superadmin-batches-new` — Paketlar — Yangi | [design/fragments/superadmin--batches-new.html](fragments/superadmin--batches-new.html) | sahifa | v2 |
 | `/batches` | superadmin | `superadmin-batches-old` — Paketlar — Eski | [design/fragments/superadmin--batches-old.html](fragments/superadmin--batches-old.html) | sahifa | v2 |
 | `/batches` | superadmin | `superadmin-batches-return` — Paketlar — Qaytarilgan | [design/fragments/superadmin--batches-return.html](fragments/superadmin--batches-return.html) | sahifa | v2 |
+| `/batches` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-new` — Paketlar — Yangi | [design/fragments/superadmin--batches-new.html](fragments/superadmin--batches-new.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-old` — Paketlar — Eski | [design/fragments/superadmin--batches-old.html](fragments/superadmin--batches-old.html) | sahifa | v2 |
 | `/batches` | admin | `admin-batches-return` — Paketlar — Qaytarilgan | [design/fragments/superadmin--batches-return.html](fragments/superadmin--batches-return.html) | sahifa | v2 |
@@ -842,16 +843,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/returns` — Qaytarishlar (qaytarish paketlari ro'yxati)
 
-- **Fayllar:** `src/pages/returns/index.tsx` · `src/pages/returns/model/returnBatches.ts`
+- **Fayllar:** `src/pages/returns/index.tsx` · `src/pages/returns/model/returnBatches.ts` · `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` · `src/pages/ops/ui/OpsSection.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewReturns` (access.ts → canViewReturnsPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Menyuda:** «Qaytarishlar» (`returns`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
-- **Izoh:** Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
+- **Izoh:** Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/returns` | superadmin | `superadmin-returns-list` — Return batchlar | [design/fragments/superadmin--returns-list.html](fragments/superadmin--returns-list.html) | sahifa | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
+| `/returns` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
 | `/returns` | admin | `admin-returns-list` — Return batchlar | [design/fragments/superadmin--returns-list.html](fragments/superadmin--returns-list.html) | sahifa | v2 |
 | `/returns` | manager | `manager-returns-list` — Return batchlar | [design/fragments/manager--returns-list.html](fragments/manager--returns-list.html) | sahifa | v2 |
 
@@ -1884,24 +1888,20 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)
 
-- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/lib/returnRequestRows.ts` · `src/pages/branch-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/charts.tsx` · `src/pages/system-ops/lib/systemOps.ts` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
+- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
 - **Holat:** v2
-- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 10 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /integrations-ops, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /logistics-ops, /branch-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga yo'naltiradi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
+- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /integrations-ops, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga, /logistics-ops va /branch-ops — 2026-10-31 dan /returns va /batches ga yo'naltiradi; «Logistika» va «Filiallar» tablari o'sha sahifalarga ko'chdi (faqat superadmin, F2NzXpMv, TC matni bo'yicha — maketda ops ichida, ega tasdig'i kutilmoqda), «Tizim» → «Tizim holati», «Integratsiyalar» → «Integratsiya vositalari», «Token orqali tekshirish» olindi, SLA va «Analitika KPI» superadmin bosh sahifasiga ko'chdi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | v2 |
@@ -2040,8 +2040,8 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/integrations/incoming` | `/new-orders/incoming` | — |
 | `/partners` | `/integrations/partners` | — |
 | `/investors-ops` | `/ops?tab=investors` | `canViewOpsPages` |
-| `/logistics-ops` | `/ops?tab=logistics` | `canViewOpsPages` |
-| `/branch-ops` | `/ops?tab=branches` | `canViewOpsPages` |
+| `/logistics-ops` | `/returns` | `canViewOpsPages` |
+| `/branch-ops` | `/batches` | `canViewOpsPages` |
 | `/system-ops` | `/ops?tab=system` | `canViewOpsPages` |
 | `/orders/add` | `/new-orders/create` | — |
 | `/orders/:orderId` | `/orders/edit/:orderId` | `canViewOrders` |
@@ -2237,12 +2237,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
 | `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
-| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
-| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
-| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
-| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
+| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/returns` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
+| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
+| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
-| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops` | `src/pages/ops/index.tsx` | qisman — Maketdagi «O'z vaqtida (SLA)» va «Analitika KPI» superadmin bosh sahifasida (AnalyticsKpiSection), «Token orqali tekshirish» olindi — karta F2NzXpMv TC matni bo'yicha, ega tasdig'i kutilmoqda. |
 | `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
 | `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
 | `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops` | `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | v2 |
@@ -3012,7 +3012,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/branch-dashboard/ui/BranchCards.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` | `/branch-dashboard` |
-| `src/pages/branch-ops/index.tsx` | `/ops` |
+| `src/pages/branch-ops/index.tsx` | `/batches` |
 | `src/pages/branches/ui/BranchDetailPage.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsCards.tsx` | `/branches/:id` |
 | `src/pages/branches/ui/BranchMetricsSection.tsx` | `/branches/:id` |
@@ -3031,6 +3031,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/dashboard/DashboardPage.tsx` | `/` |
 | `src/pages/dashboard/LogistDashboardPage.tsx` | `/` |
 | `src/pages/dashboard/MarketDashboardPage.tsx` | `/` |
+| `src/pages/dashboard/ui/AnalyticsKpiSection.tsx` | `/` |
 | `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` | `/` |
 | `src/pages/dashboard/ui/CourierCashCard.tsx` | `/` |
 | `src/pages/dashboard/ui/CourierPlanCard.tsx` | `/` |
@@ -3127,9 +3128,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/investor/ui/MonthlyProfitCard.tsx` | `/` |
 | `src/pages/investor/ui/ProfitHistoryTable.tsx` | `/`, `/profits` |
 | `src/pages/investors-ops/index.tsx` | `/ops` |
-| `src/pages/logistics-ops/index.tsx` | `/ops` |
-| `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/ops` |
-| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/ops` |
+| `src/pages/logistics-ops/index.tsx` | `/returns` |
+| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/returns` |
 | `src/pages/logs/index.tsx` | `/ops` |
 | `src/pages/mails/components/MailSummaryStats.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsListBody.tsx` | `/mails/today`, `/mails/refused` |
@@ -3228,6 +3228,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/notifications/ui/sms/SmsReportCharts.tsx` | `/notifications/sms` |
 | `src/pages/ops/index.tsx` | `/ops` |
 | `src/pages/ops/tabs.ts` | `/ops` |
+| `src/pages/ops/ui/OpsSection.tsx` | `/batches`, `/returns` |
 | `src/pages/ops/ui/OpsToolPage.tsx` | `/ops` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
@@ -3417,10 +3418,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/settings/ui/settingsUi.tsx` | `/settings`, `/payments/shift-settings` |
 | `src/pages/system-ops/index.tsx` | `/ops` |
 | `src/pages/system-ops/lib/aiStatus.ts` | `/ops` |
-| `src/pages/system-ops/lib/systemOps.ts` | `/ops` |
 | `src/pages/system-ops/ui/AiStatusCard.tsx` | `/ops` |
 | `src/pages/system-ops/ui/HealthCard.tsx` | `/ops` |
-| `src/pages/system-ops/ui/charts.tsx` | `/ops` |
 | `src/pages/tg-scan/index.tsx` | `/tg/scan` |
 | `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |
@@ -3538,8 +3537,8 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+6) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
-| Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+2) |
-| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` |
+| Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
+| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` (+3) |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
@@ -3550,7 +3549,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
-| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+16) |
+| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+12) |
 
 Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 

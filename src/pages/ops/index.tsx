@@ -1,10 +1,10 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-logistics, superadmin-ops-branches, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
+// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
 import { Suspense, lazy, useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Card, getPanelId, getTabId, PageHeader, Select, SkeletonLines, Tabs } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, OPS_TABS } from "./tabs";
+import { DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, MOVED_OPS_TABS, OPS_TABS } from "./tabs";
 import { OpsTabBoundary } from "./ui/OpsToolPage";
 
 /**
@@ -16,8 +16,9 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * kamdan-kam ochiladi.
  *
  * Eski `/finance-operators`, `/integrations-ops`, `/identity-ops` marshrutlari o'z sarlavhasi va «← Ops vositalari»
- * havolasi bilan chiziladi; `/investors-ops`, `/logistics-ops`, `/branch-ops`, `/system-ops`, `/logs` — shu hubning
- * tabiga yo'naltiradi (F2NzXpMv, bhitm9do). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
+ * havolasi bilan chiziladi; `/investors-ops`, `/system-ops`, `/logs` — shu hubning tabiga yo'naltiradi (F2NzXpMv,
+ * bhitm9do). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi. «Logistika» — `/returns` ichida,
+ * «Filiallar» — `/batches` ichida (F2NzXpMv, faqat superadmin): eski yo'l ham, `?tab=` ham o'sha yerga olib boradi.
  * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
  * «Yetkazish narxi» (`pages/delivery-tariffs`) — «Hududlar» bo'limining sahifasi, hub uni ham `embedded` bilan chizadi.
  *
@@ -32,8 +33,6 @@ const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
 const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
 const IntegrationsOpsPage = lazy(() => import("../integrations-ops"));
 const InvestorsOpsPage = lazy(() => import("../investors-ops"));
-const LogisticsOpsPage = lazy(() => import("../logistics-ops"));
-const BranchOpsPage = lazy(() => import("../branch-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
 const AuthDiagnosticsPage = lazy(() => import("../logs"));
@@ -45,9 +44,7 @@ const CONTENT: Record<string, OpsPanel> = {
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
   integrations: IntegrationsOpsPage,
   investors: InvestorsOpsPage,
-  logistics: LogisticsOpsPage,
   [DELIVERY_PRICING_TAB]: DeliveryPricingPage,
-  branches: BranchOpsPage,
   identity: IdentityOpsPage,
   system: SystemOpsPage,
   auth: AuthDiagnosticsPage,
@@ -70,6 +67,7 @@ const OpsPage = () => {
     return TABS.some((tab) => tab.key === fromUrl) ? (fromUrl as string) : fallbackTab;
   }, [searchParams, fallbackTab]);
 
+  const movedTo = MOVED_OPS_TABS[searchParams.get("tab") ?? ""];
   const active = TABS.find((tab) => tab.key === activeKey) ?? TABS[0];
   const activeLabel = t(active.labelKey);
   const Panel = CONTENT[active.key];
@@ -86,6 +84,8 @@ const OpsPage = () => {
     label: t(tab.labelKey),
     title: tab.legacyPath ? t("hub.legacyPath", { path: tab.legacyPath }) : undefined,
   }));
+
+  if (movedTo) return <Navigate replace to={movedTo} />;
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">

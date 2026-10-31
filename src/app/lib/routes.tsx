@@ -624,8 +624,8 @@ const AppRouter = () => {
             {
               /**
                * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
-               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/logistics-ops`, `/branch-ops`,
-               * `/system-ops`, `/logs` — shu hubning tabiga yo'naltiradi (eski havola buzilmaydi, guard o'sha).
+               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
+               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga yo'naltiradi (guard o'sha).
                */
               path: "ops",
               element: (
@@ -675,7 +675,7 @@ const AppRouter = () => {
               path: "logistics-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <Navigate replace to="/ops?tab=logistics" />
+                  <Navigate replace to="/returns" />
                 </ProtectedRoute>
               ),
             },
@@ -683,7 +683,7 @@ const AppRouter = () => {
               path: "branch-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <Navigate replace to="/ops?tab=branches" />
+                  <Navigate replace to="/batches" />
                 </ProtectedRoute>
               ),
             },

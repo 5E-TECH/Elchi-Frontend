@@ -36,6 +36,9 @@ export const mockOpsHub = async (page: Page, role: Role) => {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
     if (path === "auth/my-profile") return reply(route, { statusCode: 200, data: PROFILES[role] });
+    if (path === "analytics/kpi") {
+      return reply(route, { statusCode: 200, data: { averageOrderValue: 236400, onTimeRate: 82.6, deliveryCount: 40, marketRating: [] } });
+    }
     if (request.method() !== "GET") leaked.push(`${request.method()} ${path}`);
     return reply(route, { statusCode: 200, data: [] });
   });
@@ -57,15 +60,14 @@ export const mockOpsHub = async (page: Page, role: Role) => {
 /** Hub'ga yo'naltiriladigan eski yo'llar: `tab` — `?tab=`, `label` — tab nomi, `panel` — panel sarlavhasi. */
 export const OPS_REDIRECTS = [
   { from: "/investors-ops", tab: "investors", label: "Investorlar", panel: "Investorlar" },
-  {
-    from: "/logistics-ops",
-    tab: "logistics",
-    label: "Logistika",
-    panel: "Logistika — qaytarish so'rovlari",
-  },
-  { from: "/branch-ops", tab: "branches", label: "Filiallar", panel: "Filiallar — operatsiyalar" },
-  { from: "/system-ops", tab: "system", label: "Tizim", panel: "Tizim — xizmatlar va analitika" },
+  { from: "/system-ops", tab: "system", label: "Tizim holati", panel: "Tizim holati — xizmatlar va AI" },
   { from: "/logs", tab: "auth", label: "Kirish diagnostikasi", panel: "Kirish diagnostikasi" },
+];
+
+/** Ish sahifasiga ko'chgan vositalar (F2NzXpMv): eski yo'l ham, `?tab=` ham shu sahifaga olib boradi. */
+export const OPS_MOVED = [
+  { from: "/logistics-ops", tab: "logistics", to: "/returns", panel: "Logistika — qaytarish so'rovlari" },
+  { from: "/branch-ops", tab: "branches", to: "/batches", panel: "Filiallar — operatsiyalar" },
 ];
 
 /** Sahifa — hub (`?tab=` to'g'ri, sarlavha «Ops vositalari», tab paneli ochilgan), eski alohida sahifa emas. */

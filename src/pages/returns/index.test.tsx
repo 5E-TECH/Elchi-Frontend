@@ -19,6 +19,9 @@ vi.mock("../../shared/api/api", () => ({
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
 
+// Superadmin bo'limi o'z testida (`pages/ops/movedTools.test.tsx`, `pages/logistics-ops`).
+vi.mock("../logistics-ops", () => ({ default: () => null }));
+
 type Params = Record<string, unknown>;
 
 const local = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).toISOString();

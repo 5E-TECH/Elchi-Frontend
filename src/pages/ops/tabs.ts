@@ -55,12 +55,6 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "investors-ops",
   },
   {
-    key: "logistics",
-    labelKey: "tabs.logistics",
-    legacyPath: "/logistics-ops",
-    pageDir: "logistics-ops",
-  },
-  {
     /**
      * Yetkazish narxi (ega 2026-10-25): tariflar, hisob qoidalari — «Hajm bo'yicha hisoblash chegarasi»
      * (`volumetric_from_kg`) ham, kalkulyator, tarix. Mazmuni `/delivery-tariffs` bilan AYNI (`DeliveryTariffsContent`).
@@ -70,12 +64,6 @@ export const OPS_TABS: OpsTabMeta[] = [
     key: DELIVERY_PRICING_TAB,
     labelKey: "tabs.deliveryPricing",
     pageDir: "delivery-tariffs",
-  },
-  {
-    key: "branches",
-    labelKey: "tabs.branches",
-    legacyPath: "/branch-ops",
-    pageDir: "branch-ops",
   },
   {
     key: "identity",
@@ -108,6 +96,15 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "logs",
   },
 ];
+
+/**
+ * Hub'dan ko'chgan tablar (F2NzXpMv): vosita ish sahifasi ichida, faqat superadmin ko'radi. Eski
+ * `/ops?tab=<key>` havolasi yangi joyga o'tadi.
+ */
+export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
+  logistics: "/returns",
+  branches: "/batches",
+};
 
 /** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */
 export const getOpsTab = (key: string): OpsTabMeta => OPS_TABS.find((tab) => tab.key === key) ?? OPS_TABS[0];

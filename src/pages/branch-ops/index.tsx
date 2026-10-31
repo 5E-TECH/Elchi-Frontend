@@ -22,7 +22,7 @@ import { useOpsErrorText } from "../ops/lib/opsErrorText";
 import { getErrorStatus } from "../../shared/lib/errorKind";
 
 /**
- * OPS → «Filiallar» (maket `superadmin-ops-branches`): yangi buyurtmali filiallar (`GET branches/new-orders`,
+ * «Filiallar — operatsiyalar» (maket `superadmin-ops-branches`), `/batches` ichida, faqat superadmin (F2NzXpMv): yangi buyurtmali filiallar (`GET branches/new-orders`,
  * konvert `{ statusCode, message, data: [...] }`) va paketni bekor qilish (`POST transfer-batches/:id/cancel`
  * — `{ reason }`, faqat tasdiqdan keyin; sabab kamida 10 belgi — backend shunday rad etadi).
  */
@@ -32,7 +32,7 @@ const MIN_REASON_LENGTH = 10;
 
 type BranchWithNewOrders = { id: string; name: string; new_orders_count: number };
 
-const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
+const BranchOpsPage = () => {
   const { t } = useTranslation("ops");
   const { useGetNewOrders, cancelBatch } = useBranchCoverage();
   const confirm = useConfirm();
@@ -86,7 +86,7 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   };
 
   return (
-    <OpsToolPage tabKey="branches" embedded={embedded}>
+    <OpsToolPage tabKey="branches" embedded>
       <OpsIntro title={t("branches.intro.title")} description={t("branches.intro.description")} />
 
       <div className="flex flex-wrap items-start gap-6 max-md:gap-4">

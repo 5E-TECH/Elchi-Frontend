@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "../../../shared/lib/cx";
 
 /**
- * «Tizim» tabining kichik grafiklari (maket `superadmin-ops-system`, CODE-MAP 2.9):
+ * «Analitika KPI» ning kichik grafiklari (maket `superadmin-ops-system`, CODE-MAP 2.9):
  *  - `SlaGauge` — `.el-gauge` (312×176 SVG yarim doira; zona ≥ 70 success · 40–70 warning · < 40 danger;
  *    trek — zona `*-soft`, yoy — zona rangi, strelka `text`, markaz doirasi `surface` chegarali);
  *  - `KpiRing` — `.el-ring` (72 px halqa: trek `action-soft`, yoy `chart-1`, markazda foiz).

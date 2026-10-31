@@ -33,7 +33,7 @@ import {
 import { ApproveReturnSummary } from "./ui/ApproveReturnSummary";
 
 /**
- * OPS → «Logistika» (maket `superadmin-ops-logistics`): qaytarish so'rovlari (`GET post/return-requests/list`
+ * «Qaytarish so'rovlari» (maket `superadmin-ops-logistics`), `/returns` ichida, faqat superadmin (F2NzXpMv): qaytarish so'rovlari (`GET post/return-requests/list`
  * — kuryer bo'yicha guruhlangan `data.groups[].orders`) va tanlanganlarini tasdiqlash
  * (`POST post/return-requests/approve` — FAQAT `{ order_ids }`, fix3b CODE-09).
  *
@@ -51,7 +51,7 @@ const STATUS_TONE: Record<string, Tone> = { waiting: "warning", on_the_road: "ne
 /** Natija xabarida nomi bilan sanaladigan o'tkazib yuborilgan buyurtmalar (qolgani — «va yana N ta»). */
 const SKIPPED_LISTED = 3;
 
-const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
+const LogisticsOpsPage = () => {
   const { t, i18n } = useTranslation(["ops", "returns"]);
   const isPhone = useIsPhone();
   const confirm = useConfirm();
@@ -191,7 +191,7 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const allSelected = rows.length > 0 && selectedRows.length === rows.length;
 
   return (
-    <OpsToolPage tabKey="logistics" embedded={embedded}>
+    <OpsToolPage tabKey="logistics" embedded>
       <OpsIntro
         title={t("returns:opsReturnRequests.title")}
         description={t("returns:opsReturnRequests.description")}

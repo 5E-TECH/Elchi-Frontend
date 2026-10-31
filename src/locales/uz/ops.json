@@ -12,13 +12,11 @@
   "tabs": {
     "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
-    "integrations": "Integratsiyalar",
+    "integrations": "Integratsiya vositalari",
     "investors": "Investorlar",
-    "logistics": "Logistika",
     "deliveryPricing": "Yetkazish narxi",
-    "branches": "Filiallar",
     "identity": "Xodimlar",
-    "system": "Tizim",
+    "system": "Tizim holati",
     "auth": "Kirish diagnostikasi"
   },
   "common": {
@@ -336,8 +334,8 @@
   },
   "system": {
     "intro": {
-      "title": "Tizim — xizmatlar va analitika",
-      "description": "Xizmatlar holati, AI sozlamalari, analitika ko'rsatkichlari va QR-token tekshirish."
+      "title": "Tizim holati — xizmatlar va AI",
+      "description": "Xizmatlar holati va AI sozlamalari."
     },
     "health": {
       "title": "Tizim holati",
@@ -634,50 +632,6 @@
       "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi",
       "loadErrorText": "Analitika xizmati javob bermadi.",
       "loadingLabel": "Analitika ko'rsatkichlari yuklanmoqda"
-    },
-    "scan": {
-      "title": "Token orqali tekshirish",
-      "description": "QR token qaysi buyurtma, paket yoki pochtaga tegishli ekanini ko'rsatadi",
-      "label": "Token",
-      "placeholder": "Token kiriting",
-      "submit": "Tekshirish",
-      "result": "Natija",
-      "types": {
-        "order": "Buyurtma",
-        "batch": "Paket",
-        "post": "Pochta",
-        "market_cancelled_handover": "Bekor qilinganlarni topshirish"
-      },
-      "notFound": "Topilmadi",
-      "notFoundHint": "Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.",
-      "error": "Tokenni tekshirib bo'lmadi",
-      "errorText": "Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.",
-      "empty": "Natijada ko'rsatiladigan maydon yo'q",
-      "fields": {
-        "id": "ID",
-        "status": "Holat",
-        "qr_code_token": "QR token",
-        "name": "Nomi",
-        "customer_name": "Mijoz",
-        "phone_number": "Telefon",
-        "total_price": "Summa",
-        "total_amount": "Jami summa",
-        "amount": "Summa",
-        "orders_count": "Buyurtmalar",
-        "order_count": "Buyurtmalar",
-        "from_branch": "Qayerdan",
-        "to_branch": "Qayerga",
-        "source_branch": "Qayerdan",
-        "destination_branch": "Qayerga",
-        "region": "Viloyat",
-        "district": "Tuman",
-        "market": "Market",
-        "courier": "Kuryer",
-        "created_at": "Yaratilgan",
-        "createdAt": "Yaratilgan",
-        "updated_at": "Yangilangan",
-        "updatedAt": "Yangilangan"
-      }
     }
   },
   "auth": {

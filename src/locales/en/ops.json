@@ -12,13 +12,11 @@
   "tabs": {
     "finance": "Finance operators",
     "expenseCategories": "Expense categories",
-    "integrations": "Integrations",
+    "integrations": "Integration tools",
     "investors": "Investors",
-    "logistics": "Logistics",
     "deliveryPricing": "Delivery pricing",
-    "branches": "Branches",
     "identity": "Staff",
-    "system": "System",
+    "system": "System status",
     "auth": "Sign-in diagnostics"
   },
   "common": {
@@ -336,8 +334,8 @@
   },
   "system": {
     "intro": {
-      "title": "System — services and analytics",
-      "description": "Service health, AI settings, analytics indicators and the QR token check."
+      "title": "System status — services and AI",
+      "description": "Service status and AI settings."
     },
     "health": {
       "title": "System health",
@@ -634,50 +632,6 @@
       "loadError": "Couldn't load analytics indicators",
       "loadErrorText": "The analytics service didn't respond.",
       "loadingLabel": "Loading analytics indicators"
-    },
-    "scan": {
-      "title": "Check by token",
-      "description": "Shows which order, package or mail a QR token belongs to",
-      "label": "Token",
-      "placeholder": "Enter a token",
-      "submit": "Check",
-      "result": "Result",
-      "types": {
-        "order": "Order",
-        "batch": "Package",
-        "post": "Mail",
-        "market_cancelled_handover": "Cancelled handover"
-      },
-      "notFound": "Not found",
-      "notFoundHint": "No order, package or mail was found for this token.",
-      "error": "Couldn't check the token",
-      "errorText": "The server didn't respond or returned an error. Try again a bit later.",
-      "empty": "The result has no fields to show",
-      "fields": {
-        "id": "ID",
-        "status": "Status",
-        "qr_code_token": "QR token",
-        "name": "Name",
-        "customer_name": "Customer",
-        "phone_number": "Phone",
-        "total_price": "Amount",
-        "total_amount": "Total amount",
-        "amount": "Amount",
-        "orders_count": "Orders",
-        "order_count": "Orders",
-        "from_branch": "From",
-        "to_branch": "To",
-        "source_branch": "From",
-        "destination_branch": "To",
-        "region": "Region",
-        "district": "District",
-        "market": "Market",
-        "courier": "Courier",
-        "created_at": "Created",
-        "createdAt": "Created",
-        "updated_at": "Updated",
-        "updatedAt": "Updated"
-      }
     }
   },
   "auth": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPS_TABS } from "./tabs";
+import { MOVED_OPS_TABS, OPS_TABS } from "./tabs";
 import {
   SIDEBAR_CONFIG,
   SIDEBAR_GROUP_BY_PATH,
@@ -51,10 +51,13 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  */
 const extraOpsPages = ["finance-operators", "logs", "expense-categories", "delivery-tariffs"];
 
+/** Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/returns` va `/batches` ichida chiziladi. */
+const movedOpsPages = ["logistics-ops", "branch-ops"];
+
 const discoveredDirs = [
-  ...Object.keys(opsPageModules).map(
-    (path) => path.replace("../", "").replace("/index.tsx", ""),
-  ),
+  ...Object.keys(opsPageModules)
+    .map((path) => path.replace("../", "").replace("/index.tsx", ""))
+    .filter((dir) => !movedOpsPages.includes(dir)),
   ...extraOpsPages,
 ].sort();
 
@@ -68,6 +71,11 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     for (const tab of OPS_TABS) {
       expect(discoveredDirs, `${tab.key} tabi`).toContain(tab.pageDir);
     }
+  });
+
+  it("ko'chgan tablar hub'da yo'q va yangi manzili bor", () => {
+    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "logistics"]);
+    expect(OPS_TABS.filter((tab) => tab.key in MOVED_OPS_TABS)).toEqual([]);
   });
 
   it("tab kalitlari va eski marshrutlar takrorlanmaydi", () => {

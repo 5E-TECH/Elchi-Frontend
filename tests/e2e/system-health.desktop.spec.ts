@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { CRITICAL, KPI_OK, PARTIAL, healthCard, mockSystemOpsApi, openSystemOps, readiness } from "./support/systemOps";
+import { CRITICAL, PARTIAL, healthCard, mockSystemOpsApi, openSystemOps, readiness } from "./support/systemOps";
 
 /**
  * OPS → TIZIM (/ops?tab=system, OS-1 — maketlar `superadmin-ops-system[-partial|-critical|-error|-down]`):
  * «Tizim holati» `GET /health/readiness` dan (503 ham javob), xom backend matni chiqmaydi, «Yangilash» va
- * «Qayta urinish» qayta so'raydi, KPI xatosi — danger ogohlantirish.
+ * «Qayta urinish» qayta so'raydi.
  */
 test.describe("Ops → Tizim — Tizim holati — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -65,22 +65,5 @@ test.describe("Ops → Tizim — Tizim holati — 1440px", () => {
     await card.getByRole("button", { name: "Qayta urinish" }).click();
     await expect(card.getByText("Hamma xizmatlar ishlayapti")).toBeVisible();
     expect(calls.health).toBe(3);
-  });
-
-  test("⭐ KPI xatosi: «Analitika ko'rsatkichlarini olib bo'lmadi» (xom matnsiz), «Qayta urinish» — KPI chiziladi", async ({ page }) => {
-    await mockSystemOpsApi(page, {
-      kpi: [
-        { status: 500, body: { statusCode: 500, message: "analytics RPC failed (raw)" } },
-        { status: 500, body: { statusCode: 500, message: "analytics RPC failed (raw)" } },
-        KPI_OK,
-      ],
-    });
-    await openSystemOps(page);
-    const alert = page.getByRole("alert").filter({ hasText: "Analitika ko'rsatkichlarini olib bo'lmadi" });
-    await expect(alert).toBeVisible({ timeout: 30_000 });
-    await expect(alert).toContainText("Analitika xizmati javob bermadi.");
-    await expect(page.getByText("analytics RPC failed (raw)")).toHaveCount(0);
-    await alert.getByRole("button", { name: "Qayta urinish" }).click();
-    await expect(page.getByText("236 400 so'm")).toBeVisible();
   });
 });

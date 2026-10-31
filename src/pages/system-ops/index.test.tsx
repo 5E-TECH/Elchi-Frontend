@@ -14,22 +14,6 @@ vi.mock("../../shared/api/api", () => ({
   api: { get: (...a: unknown[]) => apiGetMock(...a) },
 }));
 
-/** `analytics-service` KPI konverti (backend `origin/main`): `{ statusCode, message: "KPI stats", data }`. */
-const KPI = mockEnvelope(
-  {
-    averageOrderValue: 236400,
-    averageFulfillmentHours: 18.4,
-    onTimeRate: 82.6,
-    cancellationRate: 7.5,
-    courierEfficiency: 12.4,
-    marketRating: [],
-    marketRatingMeta: {},
-    degraded: false,
-    failed_parts: [],
-  },
-  { message: "KPI stats" },
-);
-
 type Probe = { status: string; latency_ms?: number; error?: string };
 
 /**
@@ -51,16 +35,13 @@ const readiness = (overrides: Record<string, Probe> = {}, latency = 19) => {
 
 const mockApi = ({
   health = () => Promise.resolve(readiness()),
-  kpi = () => Promise.resolve(KPI),
   other,
 }: {
   health?: () => Promise<unknown>;
-  kpi?: () => Promise<unknown>;
   other?: (url: string) => Promise<unknown> | undefined;
 } = {}) => {
   apiGetMock.mockImplementation((url: string) => {
     if (url === "health/readiness") return health();
-    if (url === "analytics/kpi") return kpi();
     return other?.(url) ?? Promise.resolve(mockEnvelope({}));
   });
 };
@@ -75,30 +56,22 @@ describe("SystemOps page", () => {
 
   it("kirish kartasi maket matni bilan; «← Ops vositalari» havolasi", () => {
     renderWithProviders(<SystemOpsPage />);
-    expect(screen.getByText("Tizim — xizmatlar va analitika")).toBeInTheDocument();
-    expect(
-      screen.getByText("Xizmatlar holati, AI sozlamalari, analitika ko'rsatkichlari va QR-token tekshirish."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Tizim holati — xizmatlar va AI")).toBeInTheDocument();
+    expect(screen.getByText("Xizmatlar holati va AI sozlamalari.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=system");
   });
 
-  it("tartib: kirish → Tizim holati → AI holati → SLA + KPI → Token tekshirish", async () => {
+  it("tartib: kirish → Tizim holati → AI holati; KPI va token tekshiruvi yo'q (F2NzXpMv)", async () => {
     renderWithProviders(<SystemOpsPage />);
     await screen.findByText("Hamma xizmatlar ishlayapti");
-    await screen.findByText("236 400 so'm");
-    const wanted = [
-      "Tizim — xizmatlar va analitika",
+    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent).slice(0, 3)).toEqual([
+      "Tizim holati — xizmatlar va AI",
       "Tizim holati",
       "AI holati",
-      "O'z vaqtida (SLA)",
-      "Analitika KPI",
-      "Token orqali tekshirish",
-    ];
-    const headings = screen
-      .getAllByRole("heading", { level: 2 })
-      .map((h) => h.textContent ?? "")
-      .filter((text) => wanted.includes(text));
-    expect(headings).toEqual(wanted);
+    ]);
+    expect(screen.queryByText("Analitika KPI")).toBeNull();
+    expect(screen.queryByText("Token orqali tekshirish")).toBeNull();
+    expect(apiGetMock).not.toHaveBeenCalledWith("analytics/kpi", expect.anything());
   });
 
   it("readiness: `health/readiness` so'raladi, 200 va 503 javob deb qabul qilinadi; liveness so'ralmaydi", async () => {
@@ -415,135 +388,10 @@ describe("SystemOps page", () => {
     await waitFor(() => expect(calls()).toBe(2));
   });
 
-  it("yrLt5oMi: davrda yetkazish yo'q (`deliveryCount: 0`) — SLA «—» va neytral «O'lchanmagan», «Past» emas", async () => {
-    mockApi({
-      kpi: () =>
-        Promise.resolve(
-          mockEnvelope(
-            { averageOrderValue: 0, averageFulfillmentHours: 0, onTimeRate: 0, deliveryCount: 0, cancellationRate: 0, courierEfficiency: 0, marketRating: [] },
-            { message: "KPI stats" },
-          ),
-        ),
-    });
+  it("so'rov rad etildi (403): o'z matnimiz, xom backend matni yo'q", async () => {
+    mockApi({ health: () => Promise.reject(mockRejection(403)) });
     renderWithProviders(<SystemOpsPage />);
-
-    expect(
-      await screen.findByRole("img", {
-        name: "O'z vaqtida yetkazish (SLA): o'lchanmagan — bu davrda yetkazilgan buyurtma yo'q",
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("O'lchanmagan · yetkazish yo'q")).toBeInTheDocument();
-    expect(screen.queryByText("Past · 70% dan kam")).toBeNull();
-  });
-
-  it("KPI: SLA gauge, bekor qilish darajasi, o'rtacha qiymat va vaqt; kuryer — o'rtacha buyurtma soni (D3)", async () => {
-    renderWithProviders(<SystemOpsPage />);
-
-    expect(
-      await screen.findByRole("img", { name: "O'z vaqtida yetkazish (SLA): 82,6% — 24 soat ichida yetkazilgan buyurtmalar ulushi" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Yaxshi · 70% va undan yuqori")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Bekor qilish darajasi 7,5%" })).toBeInTheDocument();
-    expect(screen.getByText("236 400 so'm")).toBeInTheDocument();
-    expect(screen.getByText("18 soat 24 daq")).toBeInTheDocument();
-    expect(screen.getByText("O'rtacha 12,4 ta buyurtma")).toBeInTheDocument();
-    expect(screen.queryByText("12,4%")).toBeNull();
-    expect(screen.getByText("Ma'lumot yo'q — reyting hali hisoblanmagan")).toBeInTheDocument();
-  });
-
-  it("KPI xatosi: danger ogohlantirish, xom matn yo'q; «Qayta urinish» qayta yuklaydi", async () => {
-    const user = userEvent.setup();
-    let attempt = 0;
-    mockApi({
-      kpi: () => {
-        attempt += 1;
-        return attempt === 1
-          ? Promise.reject(mockRejection(500))
-          : Promise.resolve(KPI);
-      },
-    });
-    renderWithProviders(<SystemOpsPage />);
-    const title = await screen.findByText("Analitika ko'rsatkichlarini olib bo'lmadi");
-    const alert = title.closest<HTMLElement>("[role='alert']");
-    expect(alert).not.toBeNull();
-    expect(alert).toHaveTextContent("Analitika xizmati javob bermadi.");
-    expectNoRawBackendText();
-    expect(screen.getByRole("region", { name: "Analitika KPI" })).toBeInTheDocument();
-
-    await user.click(within(alert as HTMLElement).getByRole("button", { name: "Qayta urinish" }));
-    expect(await screen.findByText("236 400 so'm")).toBeInTheDocument();
-    // Tugma yo'qoldi — fokus «Analitika KPI» kartasiga.
-    await waitFor(() => expect(screen.getByRole("region", { name: "Analitika KPI" })).toHaveFocus());
-  });
-
-  it("token xatosi (500): xom backend matni chiqmaydi — o'z matnimiz", async () => {
-    const user = userEvent.setup();
-    mockApi({
-      other: (url) =>
-        url.startsWith("scan/")
-          ? Promise.reject(mockRejection(500))
-          : undefined,
-    });
-    renderWithProviders(<SystemOpsPage />);
-    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t1");
-    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
-    expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
-    expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
-    expectNoRawBackendText();
-  });
-
-  it("types scan token and clicks Tekshirish — calls api.get with scan/t1 and lists the result fields", async () => {
-    const user = userEvent.setup();
-    mockApi({
-      other: (url) =>
-        url === "scan/t1"
-          ? Promise.resolve({
-              data: { type: "batch", data: { id: "124", status: "RECEIVED", qr_code_token: "BTB-7F3K29QX", orders: [{}, {}] } },
-            })
-          : undefined,
-    });
-    renderWithProviders(<SystemOpsPage />);
-
-    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t1");
-    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
-
-    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("scan/t1"));
-    const result = await screen.findByRole("status", { name: "Natija" });
-    expect(within(result).getByText("Paket")).toBeInTheDocument();
-    expect(within(result).getByText("Qabul qilingan")).toBeInTheDocument();
-    expect(within(result).getByText("BTB-7F3K29QX")).toBeInTheDocument();
-    expect(within(result).getByText("2 ta")).toBeInTheDocument();
-    // Xom JSON chiqmaydi.
-    expect(screen.queryByText(/"type"/)).toBeNull();
-  });
-
-  it("404 — «Topilmadi»", async () => {
-    const user = userEvent.setup();
-    mockApi({
-      other: (url) =>
-        url.startsWith("scan/") ? Promise.reject(mockRejection(404)) : undefined,
-    });
-    renderWithProviders(<SystemOpsPage />);
-
-    await user.type(screen.getByRole("searchbox", { name: "Token" }), "nope");
-    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
-
-    expect(await screen.findByText("Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.")).toBeInTheDocument();
-    expectNoRawBackendText();
-  });
-
-  it("so'rov rad etildi (token 400) — o'z matnimiz, xom backend matni yo'q", async () => {
-    const user = userEvent.setup();
-    mockApi({
-      other: (url) => (url.startsWith("scan/") ? Promise.reject(mockRejection(400)) : undefined),
-    });
-    renderWithProviders(<SystemOpsPage />);
-
-    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t-bad");
-    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
-
-    expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
-    expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
+    expect(await screen.findByText("Tizim holatini olib bo'lmadi")).toBeInTheDocument();
     expectNoRawBackendText();
   });
 

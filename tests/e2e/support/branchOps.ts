@@ -1,7 +1,7 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * `/ops?tab=branches` e2e uchun soxta backend (superadmin). Hech qanday so'rov
+ * `/batches` ichidagi «Filiallar — operatsiyalar» e2e uchun soxta backend (superadmin). Hech qanday so'rov
  * serverga ketmaydi; ruxsatsiz yozuvchi so'rov `leaked` ga tushadi.
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
@@ -65,7 +65,7 @@ export const mockBranchOpsApi = async (
 };
 
 export const openBranchOps = async (page: Page) => {
-  await page.goto("/ops?tab=branches");
+  await page.goto("/batches");
   await expect(page.getByRole("heading", { name: "Filiallar — operatsiyalar" })).toBeVisible({ timeout: 60_000 });
 };
 

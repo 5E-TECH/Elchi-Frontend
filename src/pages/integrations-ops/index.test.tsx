@@ -26,9 +26,9 @@ describe("IntegrationsOps page", () => {
     apiPostMock.mockResolvedValue(mockEnvelope({ processed: 0 }, { message: "Sync started" }));
   });
 
-  it("renders the page title 'Integratsiyalar' with the back link and the intro card", () => {
+  it("renders the page title 'Integratsiya vositalari' with the back link and the intro card", () => {
     renderWithProviders(<IntegrationsOpsPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "Integratsiyalar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Integratsiya vositalari" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=integrations");
     expect(screen.getByRole("heading", { name: "Integratsiyalar — operatsiyalar" })).toBeInTheDocument();
   });

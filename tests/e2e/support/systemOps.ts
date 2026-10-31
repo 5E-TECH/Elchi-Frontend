@@ -201,7 +201,7 @@ export const mockSystemOpsApi = async (
 
 export const openSystemOps = async (page: Page) => {
   await page.goto("/ops?tab=system");
-  await expect(page.getByRole("heading", { name: "Tizim — xizmatlar va analitika" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Tizim holati — xizmatlar va AI" })).toBeVisible({ timeout: 60_000 });
 };
 
 export const healthCard = (page: Page) => page.getByRole("region", { name: "Tizim holati" });

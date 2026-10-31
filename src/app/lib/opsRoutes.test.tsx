@@ -10,8 +10,8 @@ import AppRouter from "./routes";
  * va «Kirish diagnostikasi» (`/logs`) — FAQAT superadmin; «Faoliyat jurnali» (`/activity-logs`) — superadmin va admin.
  * Boshqa rol — shell ichida 403.
  *
- * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/investors-ops`, `/logistics-ops`, `/branch-ops`, `/system-ops`, `/logs`
- * alohida sahifa emas — `/ops?tab=<k>` ga yo'naltiradi; guard o'sha, admin hubga ham, tabga ham o'tmaydi.
+ * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/investors-ops`, `/system-ops`, `/logs` — `/ops?tab=<k>` ga, ko'chgan
+ * `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga yo'naltiradi; guard o'sha, admin ularga o'tmaydi.
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
@@ -36,6 +36,8 @@ vi.mock("../../pages/ops", async () => {
   };
   return { default: OpsHubStub };
 });
+vi.mock("../../pages/returns", () => stub("Ops sahifasi /returns"));
+vi.mock("../../pages/batches", () => stub("Ops sahifasi /batches"));
 vi.mock("../../pages/finance-operators", () => stub("Ops sahifasi /finance-operators"));
 vi.mock("../../pages/integrations-ops", () => stub("Ops sahifasi /integrations-ops"));
 vi.mock("../../pages/identity-ops", () => stub("Ops sahifasi /identity-ops"));
@@ -45,8 +47,8 @@ const OPS_PATHS = ["/ops", "/finance-operators", "/integrations-ops", "/identity
 
 const OPS_REDIRECTS = [
   ["/investors-ops", "/ops?tab=investors"],
-  ["/logistics-ops", "/ops?tab=logistics"],
-  ["/branch-ops", "/ops?tab=branches"],
+  ["/logistics-ops", "/returns"],
+  ["/branch-ops", "/batches"],
   ["/system-ops", "/ops?tab=system"],
   ["/logs", "/ops?tab=auth"],
 ];
@@ -86,7 +88,7 @@ describe("Ops vositalari — faqat superadmin (F2NzXpMv)", () => {
     ).toBeInTheDocument();
   });
 
-  it.each(OPS_REDIRECTS)("superadmin: %s → %s (bitta eshik — hub)", async (path, target) => {
+  it.each(OPS_REDIRECTS)("superadmin: %s → %s (bitta eshik)", async (path, target) => {
     renderAt(path, "superadmin");
     expect(
       await screen.findByText(`Ops sahifasi ${target}`, undefined, { timeout: 5000 }),

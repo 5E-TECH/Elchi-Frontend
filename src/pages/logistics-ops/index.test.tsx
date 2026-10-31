@@ -82,7 +82,7 @@ describe("LogisticsOps page", () => {
     expect(screen.getByText("Kuryer Ali")).toBeInTheDocument();
   });
 
-  it("v2: «← Ops vositalari», holat yorliqlari (maket), tanlov paneli va «Tanlovni bekor qilish»", async () => {
+  it("v2: `/returns` ichida — o'z sarlavhasi yo'q; holat yorliqlari (maket), tanlov paneli va «Tanlovni bekor qilish»", async () => {
     const user = userEvent.setup();
     apiGetMock.mockResolvedValue(
       mockEnvelope({
@@ -101,7 +101,7 @@ describe("LogisticsOps page", () => {
     );
     renderWithProviders(<LogisticsOpsPage />);
 
-    expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=logistics");
+    expect(screen.queryByRole("link", { name: /Ops vositalari/ })).toBeNull();
     expect(await screen.findByText("Kuryer qabul qilmagan")).toBeInTheDocument();
     expect(screen.getByText("Kuryer qo'lida")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "№9001" })).toHaveAttribute("href", "/orders/edit/9001");
