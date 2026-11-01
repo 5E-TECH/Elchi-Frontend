@@ -66,7 +66,7 @@ export const RECEIPT_SAMPLES = {
     address: "Navoiy ko'chasi 14-uy, 3-xonadon, Urgut bozori yonida",
     items: [item("Smart soat X8 Pro", 1), item("Quvvatlagich 20W", 2)],
     comment: "Soat 18:00 dan keyin qo'ng'iroq qiling",
-    operator_phone: "+998712001122",
+    problem_contacts: [{ phone: "+998712001122" }],
     ...baraka,
   },
   /** 01 «Markazgacha, qisman to'langan». */
@@ -170,7 +170,7 @@ export const RECEIPT_SAMPLES = {
     },
     address: "Navoiy ko'chasi 14-uy, 3-xonadon",
     items: [item("Smart soat X8 Pro", 1)],
-    operator_phone: "+998712001122",
+    problem_contacts: [{ phone: "+998712001122" }],
     ...baraka,
   },
   /** 01.B a — qo'shimcha telefon. */

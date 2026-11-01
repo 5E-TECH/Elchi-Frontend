@@ -34,9 +34,8 @@ export interface ApiOrder {
   customer: { id: string; name: string; phone_number: string; extra_number?: string | null; district?: { name: string }; region?: { name: string } };
   district?: { name: string };
   region?: { name: string };
-  /** 1mOjtOVC: chekdagi «Muammo bo'lsa» — operator telefonlari (`GET /orders`, `GET /orders/:id`). */
-  operator_phone?: string | null;
-  secondary_operator_phone?: string | null;
-  /** Market (`{ id, name, phone_number }`) — chekda jo'natuvchi va zaxira aloqa raqami. */
+  /** T7: chekdagi «Muammo bo'lsa» — viloyat logisti yoki umumiy raqam (`GET /orders`, `GET /orders/:id`). */
+  problem_contacts?: { name?: string | null; phone?: string | null; source?: string | null }[] | null;
+  /** Market (`{ id, name, phone_number }`) — chekda jo'natuvchi. */
   market?: { id?: string; name?: string | null; phone_number?: string | null } | null;
 }

@@ -2,16 +2,12 @@ import { formatPhone } from "../../../shared/lib/formatPhone";
 
 /**
  * CHEKDAGI ALOQA MAYDONLARI (1mOjtOVC → HJ5sLHiz): jsPDF'siz yengil modul, statik import qilinadi.
- * Maket `tizim-receipts` 10-band: «Muammo bo'lsa» — operator telefoni (+ ikkinchi operator raqami), u bo'lmasa — market
- * telefoni. Logist / kuryer zaxirasi yo'q (eski yorliqdagi «Logist» qatori bilan birga olib tashlandi).
- *
- * T7 (QPq2C1co) bu manbani `problem_contacts` ga almashtiradi — shuning uchun alohida modul.
+ * T7 (QPq2C1co): «Muammo bo'lsa» — buyurtma viloyati logisti, u bo'lmasa umumiy raqam (`problem_contacts`, backend
+ * tanlaydi). Operator va market raqami chekka chiqmaydi; raqam yo'q — o'ng qism chizilmaydi.
  */
 
 export interface ReceiptContactSource {
-  operator_phone?: string | null;
-  secondary_operator_phone?: string | null;
-  market?: { phone_number?: string | null } | null;
+  problem_contacts?: { phone?: string | null }[] | null;
 }
 
 /**
@@ -40,14 +36,12 @@ export const formatReceiptPhone = (value?: string | null) => {
   return raw && /\d/.test(raw) ? formatPhone(raw) : "";
 };
 
-/** «Muammo bo'lsa» raqamlari: operator(lar), u bo'lmasa — market; takrorsiz. Hech biri yo'q — `[]` (o'ng qism chiqmaydi). */
+/** «Muammo bo'lsa» raqamlari (`problem_contacts`), takrorsiz. Hech biri yo'q — `[]` (o'ng qism chizilmaydi). */
 export const getReceiptContactPhones = (order: ReceiptContactSource): string[] => {
-  const operators = [order.operator_phone, order.secondary_operator_phone]
-    .map(formatReceiptPhone)
+  const phones = (order.problem_contacts ?? [])
+    .map((contact) => formatReceiptPhone(contact?.phone))
     .filter(Boolean);
-  if (operators.length > 0) return Array.from(new Set(operators));
-  const market = formatReceiptPhone(order.market?.phone_number);
-  return market ? [market] : [];
+  return Array.from(new Set(phones));
 };
 
 /** Bitta satr («…, …»): eski chaqiruvlar uchun. Bo'sh — `""`. */

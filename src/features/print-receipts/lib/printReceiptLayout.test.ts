@@ -551,8 +551,7 @@ describe("empty fields, QR, contacts", () => {
   it("two «Muammo bo'lsa» numbers stay whole; the sender is shortened and the band wraps to two lines (ega qarori 4)", () => {
     const [label] = layout({
       ...RECEIPT_SAMPLES.main,
-      operator_phone: "+998901234567",
-      secondary_operator_phone: "+998991981929",
+      problem_contacts: [{ phone: "+998901234567" }, { phone: "+998991981929" }],
       market: {
         name: "Juda uzun nomli market — Toshkent shahar Chilonzor filiali ombori",
         phone_number: null,
