@@ -101,9 +101,8 @@ export interface PostOrder {
   status: OrderStatus;
   comment: string | null;
   operator: string | null;
-  /** 1mOjtOVC: chek uchun operator telefonlari (bo'lmasa — `null`). */
-  operator_phone?: string | null;
-  secondary_operator_phone?: string | null;
+  /** T7: chekdagi «Muammo bo'lsa» — viloyat logisti yoki umumiy raqam. */
+  problem_contacts?: { name?: string | null; phone?: string | null; source?: string | null }[] | null;
   post_id: string | null;
   canceled_post_id?: string | null;
   sold_at?: string | null;
