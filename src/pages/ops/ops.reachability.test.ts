@@ -74,7 +74,7 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
   });
 
   it("ko'chgan tablar hub'da yo'q va yangi manzili bor", () => {
-    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "logistics"]);
+    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "integrations", "logistics"]);
     expect(OPS_TABS.filter((tab) => tab.key in MOVED_OPS_TABS)).toEqual([]);
   });
 

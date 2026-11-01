@@ -10,7 +10,7 @@ export interface OpsTabMeta {
   labelKey: string;
   /**
    * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut — eski havola yoki xatcho'p buzilmaydi:
-   * `/finance-operators`, `/integrations-ops`, `/identity-ops` o'z sarlavhasi bilan chiziladi, qolganlari
+   * `/finance-operators`, `/identity-ops` o'z sarlavhasi bilan chiziladi, qolganlari
    * (`routes.tsx`) `/ops?tab=<key>` ga yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat
    * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
    */
@@ -41,12 +41,6 @@ export const OPS_TABS: OpsTabMeta[] = [
     key: EXPENSE_CATEGORIES_TAB,
     labelKey: "tabs.expenseCategories",
     pageDir: "expense-categories",
-  },
-  {
-    key: "integrations",
-    labelKey: "tabs.integrations",
-    legacyPath: "/integrations-ops",
-    pageDir: "integrations-ops",
   },
   {
     key: "investors",
@@ -98,12 +92,14 @@ export const OPS_TABS: OpsTabMeta[] = [
 ];
 
 /**
- * Hub'dan ko'chgan tablar (F2NzXpMv): vosita ish sahifasi ichida, faqat superadmin ko'radi. Eski
- * `/ops?tab=<key>` havolasi yangi joyga o'tadi.
+ * Hub'dan ko'chgan tablar: logistika va filiallar vositasi ish sahifasi ichida, faqat superadmin ko'radi
+ * (F2NzXpMv); integratsiya vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD).
+ * Eski `/ops?tab=<key>` havolasi yangi joyga o'tadi.
  */
 export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
   logistics: "/returns",
   branches: "/batches",
+  integrations: "/integrations",
 };
 
 /** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */

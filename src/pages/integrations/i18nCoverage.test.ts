@@ -19,7 +19,7 @@ import en from "../../locales/en/integrations.json";
 type Dict = Record<string, string>;
 
 /**
- * Ichma-ich bo'limlar (dizayn v2: `console.*`, `legacyPartners.*`, `legacySources.*`) nuqtali kalitga
+ * Ichma-ich bo'limlar (dizayn v2: `console.*`, `legacySources.*`) nuqtali kalitga
  * yoyiladi — i18next ularni `t("console.kpiTitle")` bilan o'qiydi, tekshiruvlar esa har barg qiymatga
  * xuddi tekis kalitdek qo'llanadi (bo'lim ichida ham uch til teng bo'lishi shart).
  */
@@ -37,6 +37,24 @@ const flatten = (value: Record<string, unknown>, prefix = ""): Dict =>
 const UZ = flatten(uz);
 const RU = flatten(ru);
 const EN = flatten(en);
+
+/**
+ * Eski xato: kodda bor, tarjima faylida hech qachon bo'lmagan kalitlar — ekranda xom matn chiqadi (masalan «Sozlamalar»
+ * panelidagi sinov bo'limi sarlavhasi). Ro'yxat faqat QISQARADI: kalit qo'shilsa shu yerdan olinishi shart.
+ */
+const KNOWN_MISSING = new Set([
+  "console.sandboxIntro",
+  "console.typeChangeHint",
+  "console.unlinked",
+  "console.wzCreatedShort",
+  "console.wzTestedShort",
+  "setSandboxCard",
+]);
+
+const SOURCES = import.meta.glob(
+  ["./**/*.{ts,tsx}", "../new_orders/external_orders/**/*.{ts,tsx}", "!./**/*.test.{ts,tsx}", "!../new_orders/external_orders/**/*.test.{ts,tsx}"],
+  { eager: true, query: "?raw", import: "default" },
+) as Record<string, string>;
 
 /**
  * Ruscha qiymatda kirill BO'LMASLIGI oqlangan kalitlar.
@@ -105,6 +123,23 @@ describe("⭐ integrations i18n — uch til teng", () => {
     for (const [key, value] of Object.entries(EN)) {
       expect(uzbekMarker.test(value), `en.${key} hali o'zbekcha: ${value}`).toBe(false);
     }
+  });
+
+  it("⭐ kodda yozilgan har `t(\"kalit\")` tarjima faylida bor", () => {
+    /**
+     * Uch til tengligi buni USHLAMAYDI: kalit uchalasidan birga o'chirilsa testlar yashil, ekranda esa xom
+     * `legacyPartners.legacyBadge` chiqadi — `/partners` o'chirilganda `/integrations/sources` belgisi aynan shunday
+     * buzilgan edi (Dj70iDbD). Boshqa namespace'dagi (`{ ns: … }`) chaqiruvlar hisobga olinmaydi.
+     */
+    const files = Object.entries(SOURCES).filter(([, source]) => source.includes('useTranslation("integrations")'));
+    expect(files.length).toBeGreaterThan(15);
+    const missing = files.flatMap(([file, source]) =>
+      [...source.matchAll(/\bt\(\s*"([^"]+)"([^)]*)/g)]
+        .filter(([, key, rest]) => !rest.includes("ns:") && !(key in UZ))
+        .map(([, key]) => ({ file, key })),
+    );
+    expect(missing.filter(({ key }) => !KNOWN_MISSING.has(key))).toEqual([]);
+    expect([...new Set(missing.map(({ key }) => key))].sort()).toEqual([...KNOWN_MISSING].sort());
   });
 
   it("⭐ interpolatsiya nomlari uch tilda AYNI", () => {

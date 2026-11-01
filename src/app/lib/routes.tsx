@@ -52,7 +52,6 @@ const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
-const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const OpsPage = lazy(() => import("../../pages/ops"));
 const UiKitPage = lazy(() => import("../../pages/ui-kit"));
@@ -136,7 +135,6 @@ const IncomingOrdersPage = lazy(
 const IncomingSourcePicker = lazy(
   () => import("../../pages/incoming-orders/SourcePicker"),
 );
-const PartnersPage = lazy(() => import("../../pages/partners"));
 const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
@@ -526,10 +524,6 @@ const AppRouter = () => {
                    * biror narsani yangi yuzadan qilolmasa, eski manzil
                    * orqali ishlay oladi.
                    */
-                  path: "partners",
-                  element: <PartnersPage />,
-                },
-                {
                   path: "sources",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
@@ -568,12 +562,6 @@ const AppRouter = () => {
                   element: <Navigate replace to="/new-orders/incoming" />,
                 },
               ],
-            },
-            {
-              // ESKI YO'L — saqlanadi. Tashqi hujjatlarda, xatcho'plarda va
-              // Telegram xabarlarida bo'lishi mumkin.
-              path: "partners",
-              element: <Navigate replace to="/integrations/partners" />,
             },
             {
               path: "branch-dashboard",
@@ -626,7 +614,8 @@ const AppRouter = () => {
               /**
                * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
                * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
-               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga yo'naltiradi (guard o'sha).
+               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga, `/integrations-ops` —
+               * `/integrations` ga yo'naltiradi (guard o'sha).
                */
               path: "ops",
               element: (
@@ -660,7 +649,7 @@ const AppRouter = () => {
               path: "integrations-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <IntegrationsOpsPage />
+                  <Navigate replace to="/integrations" />
                 </ProtectedRoute>
               ),
             },

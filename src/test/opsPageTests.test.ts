@@ -73,7 +73,7 @@ describe("ops sahifalari test qoplami (LJt0G1y1)", () => {
 
   it("barcha *-ops sahifalari topildi (qo'riqchi bo'sh ro'yxatda yurmasin)", () => {
     expect([...pages.keys()].sort()).toEqual(
-      expect.arrayContaining(["branch-ops", "identity-ops", "integrations-ops", "investors-ops", "logistics-ops", "system-ops"]),
+      expect.arrayContaining(["branch-ops", "identity-ops", "investors-ops", "logistics-ops", "system-ops"]),
     );
   });
 

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **146** · v2 ga ko'chirilgan route: **81 / 81**
+**79 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **151** · v2 ga ko'chirilgan route: **79 / 79**
 
 ## Qanday ishlatiladi
 
@@ -109,10 +109,9 @@
 | `/delivery-tariffs` | Hududlar | `src/pages/delivery-tariffs/index.tsx` | superadmin, admin | 4 | v2 |
 | `/branches` | Filiallar | `src/pages/branches/ui/BranchesPage.tsx` | superadmin | 3 | v2 |
 | `/branches/:id` | Filiallar | `src/pages/branches/ui/BranchDetailPage.tsx` | superadmin | 2 | v2 |
-| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 29 | v2 |
+| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 32 | v2 |
 | `/integrations/new` | Integratsiyalar | `src/pages/integrations/CatalogPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/new/:typeKey` | Integratsiyalar | `src/pages/integrations/wizard/ConnectWizard.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
-| `/integrations/partners` | Integratsiyalar | `src/pages/partners/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | v2 |
 | `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
 | `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
@@ -121,10 +120,9 @@
 | `/notifications/sent` | Bildirishnomalar | `src/pages/notification-sent/index.tsx` | superadmin, admin | 12 | v2 |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 6 | v2 |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
-| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 13 | v2 |
+| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 12 | v2 |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
-| `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
 | `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
@@ -1622,7 +1620,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | superadmin | `superadmin-integrations-marketplace-console` — Integratsiyalar — Marketplace | [design/fragments/superadmin--integrations-marketplace-console.html](fragments/superadmin--integrations-marketplace-console.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-settings` — Ulanish — Sozlamalar paneli<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/superadmin--integrations-panel-settings.html](fragments/superadmin--integrations-panel-settings.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-shipments` — Ulanish — Posilkalar paneli<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/superadmin--integrations-panel-shipments.html](fragments/superadmin--integrations-panel-shipments.html) | sahifa | v2 |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | qisman |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-settlement` — Ulanish — Hisob-kitob paneli<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx`, `src/pages/integrations/panels/settlement/RemittancesSection.tsx` | [design/fragments/superadmin--integrations-panel-settlement.html](fragments/superadmin--integrations-panel-settlement.html) | sahifa | qisman |
 | `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-dialog.html](fragments/superadmin--integrations-settlement-pay-dialog.html) | oyna | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-overpay-dialog.html](fragments/superadmin--integrations-settlement-pay-overpay-dialog.html) | oyna | v2 |
@@ -1632,12 +1630,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-security` — Ulanish — Xavfsizlik paneli<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-panel-security.html](fragments/superadmin--integrations-panel-security.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-rotate-key-dialog` — Kalitni yangilash (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-rotate-key-dialog.html](fragments/superadmin--integrations-rotate-key-dialog.html) | oyna | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-new-partner-dialog` — Yangi hamkor (modal)<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/superadmin--integrations-new-partner-dialog.html](fragments/superadmin--integrations-new-partner-dialog.html) | oyna | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-legacy-partners` — Partner API hamkorlari (eski sahifa) | [design/fragments/superadmin--integrations-legacy-partners.html](fragments/superadmin--integrations-legacy-partners.html) | sahifa | qisman |
+| `/integrations/connections` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | qisman |
 | `/integrations/connections` | admin | `admin-integrations-partners` — Integratsiyalar — Hamkorlar | [design/fragments/admin--integrations-partners.html](fragments/admin--integrations-partners.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-external` — Integratsiyalar — Tashqi tizimlar | [design/fragments/admin--integrations-external.html](fragments/admin--integrations-external.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-marketplace` — Integratsiyalar — Marketplace | [design/fragments/admin--integrations-marketplace.html](fragments/admin--integrations-marketplace.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-settings` — Ulanish — Sozlamalar<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/admin--integrations-conn-settings.html](fragments/admin--integrations-conn-settings.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-shipments` — Ulanish — Posilkalar<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/admin--integrations-conn-shipments.html](fragments/admin--integrations-conn-shipments.html) | sahifa | v2 |
-| `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | qisman |
 | `/integrations/connections` | admin | `admin-integrations-conn-settlement` — Ulanish — Hisob-kitob<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx`, `src/pages/integrations/panels/settlement/RemittancesSection.tsx` | [design/fragments/admin--integrations-conn-settlement.html](fragments/admin--integrations-conn-settlement.html) | sahifa | qisman |
 | `/integrations/connections` | admin | `admin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-dialog.html](fragments/admin--integrations-settlement-pay-dialog.html) | oyna | v2 |
 | `/integrations/connections` | admin | `admin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-overpay-dialog.html](fragments/admin--integrations-settlement-pay-overpay-dialog.html) | oyna | v2 |
@@ -1646,6 +1646,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | admin | `admin-integrations-conn-control` — Ulanish — Ish rejimi<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/admin--integrations-conn-control.html](fragments/admin--integrations-conn-control.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-new-partner-dialog` — Yangi hamkor oynasi<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/admin--integrations-new-partner-dialog.html](fragments/admin--integrations-new-partner-dialog.html) | oyna | v2 |
+| `/integrations/connections` | admin | `admin-integrations-legacy-partners` — Partner API hamkorlari (eski) | [design/fragments/admin--integrations-legacy-partners.html](fragments/admin--integrations-legacy-partners.html) | sahifa | qisman |
 | `/integrations/connections` | manager | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
 | `/integrations/connections` | registrator | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
 
@@ -1680,27 +1681,6 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/new/:typeKey` | admin | `admin-integrations-wizard` — Ulash ustasi | [design/fragments/admin--integrations-wizard.html](fragments/admin--integrations-wizard.html) | sahifa | v2 |
 | `/integrations/new/:typeKey` | manager | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | v2 |
 | `/integrations/new/:typeKey` | registrator | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | v2 |
-
-#### `/integrations/partners` — Partner API hamkorlari (eski sahifa, zaxira)
-
-- **Fayllar:** `src/pages/partners/index.tsx`
-- **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira. Ega savoli 6 — sukut: guard o'zgarmaydi (market/kuryer URL bilan ochsa API 403 → sahifadagi xato holati). Dizayn v2 (G2): «Eski sahifa» belgisi, webhook jurnali — DataTable expandable (qator ochiladi), hamkorni o'chirish va kalitni almashtirish — tasdiq oynasi.
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/integrations/partners` | superadmin | `superadmin-integrations-legacy-partners` — Partner API hamkorlari (eski sahifa) | [design/fragments/superadmin--integrations-legacy-partners.html](fragments/superadmin--integrations-legacy-partners.html) | sahifa | v2 |
-| `/integrations/partners` | admin | `admin-integrations-legacy-partners` — Partner API hamkorlari (eski) | [design/fragments/admin--integrations-legacy-partners.html](fragments/admin--integrations-legacy-partners.html) | sahifa | v2 |
-| `/integrations/partners` | manager | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
-| `/integrations/partners` | registrator | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
-| `/integrations/partners` | market | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
-| `/integrations/partners` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
-| `/integrations/partners` | courier | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
-| `/integrations/partners` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
-| `/integrations/partners` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/integrations/sources` — Tashqi manbalar (eski: integratsiyalar ro'yxati)
 
@@ -1893,12 +1873,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
 - **Holat:** v2
-- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /integrations-ops, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga, /logistics-ops va /branch-ops — 2026-10-31 dan /returns va /batches ga yo'naltiradi; «Logistika» va «Filiallar» tablari o'sha sahifalarga ko'chdi (faqat superadmin, F2NzXpMv, TC matni bo'yicha — maketda ops ichida, ega tasdig'i kutilmoqda), «Tizim» → «Tizim holati», «Integratsiyalar» → «Integratsiya vositalari», «Token orqali tekshirish» olindi, SLA va «Analitika KPI» superadmin bosh sahifasiga ko'chdi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
+- **Izoh:** Har tab o'z sahifasini (OPS_TABS → pageDir) `embedded` rejimda (sarlavhasiz panel) chizadi. Desktopda 7 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». To'g'ridan-to'g'ri yo'llar: /finance-operators, /identity-ops — ega savoli 1 sukuti bo'yicha o'sha panel + «← Ops vositalari» (/ops?tab=<k>); /investors-ops, /system-ops, /logs — 2026-10-30 dan /ops?tab=<k> ga, /integrations-ops — 2026-11-01 dan /integrations ga (Dj70iDbD), /logistics-ops va /branch-ops — 2026-10-31 dan /returns va /batches ga yo'naltiradi; «Logistika» va «Filiallar» tablari o'sha sahifalarga ko'chdi (faqat superadmin, F2NzXpMv, TC matni bo'yicha — maketda ops ichida, ega tasdig'i kutilmoqda), «Tizim» → «Tizim holati», «Integratsiyalar» → «Integratsiya vositalari», «Token orqali tekshirish» olindi, SLA va «Analitika KPI» superadmin bosh sahifasiga ko'chdi (kartalar F2NzXpMv «ikki eshik», bhitm9do; guard o'sha, eski havola buzilmaydi). «Xarajat kategoriyalari» (?tab=expense-categories, Elchi Pochta №1; 2026-10-23 da «Asosiy kassa» sarlavhasidagi tugma + oynadan ko'chirildi; moliya guruhida — «Moliya operatorlari» dan keyin) — hub ichida tug'ilgan tab, to'g'ridan-to'g'ri eski yo'li yo'q (tab maslahatida «Eski manzil» yo'q): OpsIntro + «Kategoriyalar» kartasi (son, bitta asosiy amal «Kategoriya qo'shish» — ro'yxat yuklanmaguncha o'chiq; faol kategoriyalar sort_order bo'yicha: tartib raqami, nom, «Nimalar kiradi», Pencil / qizil Trash2), qo'shish / tahrirlash oynasi (Nomi *, Nimalar kiradi, Tartib raqami; tahrirda faqat o'zgargan maydonlar; 409 — «Nomi» ostida, 404 — xabar), o'chirish — useConfirm (danger, tarix nomni saqlaydi); bo'sh / xato / yuklanish — QueryBoundary. GET|POST|PATCH|DELETE finance/cashbox/expense-categories (CRUD faqat superadmin). Maket yo'q — eng yaqini: superadmin-ops-investors (ro'yxat kartasi + qo'shish), qator amallari va o'chirish tasdig'i superadmin-products-delete-dialog, forma tizim-states-forms. «Kassadan xarajat» oynasida faol kategoriya yo'q bo'lsa superadmin havolasi shu tabga olib keladi. «Yetkazish narxi» (?tab=delivery-pricing, ega 2026-10-25 — «qaysi hajmdan boshlab narx hajmga qarab hisoblanadi» boshqaruvi Ops vositalarida; «Logistika» dan keyin) — /delivery-tariffs sahifasi (pages/delivery-tariffs) `embedded` bilan: sarlavha va «← Hududlar» o'rniga OpsIntro («Yetkazish narxi — tariflar va hisob qoidalari», «Xuddi shu bo'lim: Hududlar → Yetkazish tariflari»), tanasi — o'sha DeliveryTariffsContent (tariflar + «O'zgartirish» oynasi, «Hisob qoidalari» — «Hajm bo'yicha hisoblash chegarasi» (volumetric_from_kg) ham, kalkulyator, tarix). To'g'ridan-to'g'ri eski ops yo'li yo'q (tab maslahatida «Eski manzil» yo'q): /delivery-tariffs — Hududlar bo'limining o'z sahifasi (admin ham). Maket yo'q — eng yaqini: superadmin-regions-delivery-tariffs. ?tab=logistics: Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck. ?tab=branches: Paketni bekor qilish — tasdiq oynasi. ?tab=system: «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4). OS-2: «AI holati» — GET ai/status (silentError) + gateway bayrog'i GET orders/ai-availability (enabled:false → «AI o'chiq», maket yo'q — eng yaqini *-ops-system-error); dollar — formatUsdLocalized (en «$12.40» — ega javob bermagan, sukut); «80% dan oshdi» — backend sukuti AI_CAP_WARN_RATIO 0,8; xato 504 — ichki ogohlantirish (*-down), boshqasi — bo'sh holat (*-critical); limit holati o'qilmasa (cap.state unknown) — «Noma'lum» + ogohlantirish (maket yo'q). *-critical bo'sh holati — maketdagidek neytral ikonka (EmptyState, ErrorState emas). Maketdagi ogohlantirish badge'laridagi lucide circle-alert («80% dan oshdi», yozilmagan chaqiruvlar) o'rniga ikonka reyestridagi TriangleAlert (reyestrda CircleAlert yo'q); circle-help o'rniga CircleQuestionMark. ?tab=auth: Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | qisman |
@@ -1936,19 +1915,6 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/finance-operators` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
-
-#### `/integrations-ops` — Ops — Integratsiyalar
-
-- **Fayllar:** `src/pages/integrations-ops/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
-- **Rollar:** superadmin
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `/integrations-ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 
 #### `/identity-ops` — Ops — Xodimlar ro'yxatlari
 
@@ -2038,7 +2004,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 |---|---|---|
 | `/integrations` | `/integrations/connections?scope=partner` | — |
 | `/integrations/incoming` | `/new-orders/incoming` | — |
-| `/partners` | `/integrations/partners` | — |
+| `/integrations-ops` | `/integrations` | `canViewOpsPages` |
 | `/investors-ops` | `/ops?tab=investors` | `canViewOpsPages` |
 | `/logistics-ops` | `/returns` | `canViewOpsPages` |
 | `/branch-ops` | `/batches` | `canViewOpsPages` |
@@ -2197,7 +2163,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-marketplace-console` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `superadmin-integrations-panel-settings` | Ulanish — Sozlamalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
 | `superadmin-integrations-panel-shipments` | Ulanish — Posilkalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
-| `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
+| `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | qisman — Maketga qo'shimcha (Dj70iDbD): «Hamkor» filtri («Barcha hamkorlar» — umumiy jurnal, qatorda hamkor nomi; shu holatda «Natija · 24 soat» yashirin) va «Webhook ma'lumoti» ochiladigan qatori — ikkalasi superadmin-integrations-legacy-partners dan. Ega tasdig'i kutilmoqda. |
 | `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx`, `src/pages/integrations/panels/settlement/RemittancesSection.tsx` | qisman — Ism kutadi (BD2-10, IS-4): «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak (javobda faqat created_by / cancelled_by id), bekor qilingan eski yozuvda operatorning kassa tanlovi saqlanmaydi → «Kassa: eski yozuv». Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»; IS-2: «To'lov» ustuni / telefonda «… · To'lov №N · …», ortiqcha summa ogohlantirishi va «To'lov yozildi» natija oynasi; IS-3: «Olingan to'lovlar» — sana oralig'i, «Faol · Bekor qilingan · Barchasi», jadval / telefonda kartalar, «Holat · kassa», bekor qilish oynasi; «To'lov №N» — shu bo'limga o'tish). |
 | `superadmin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
 | `superadmin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
@@ -2209,7 +2175,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-new-partner-dialog` | Yangi hamkor (modal) | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
 | `superadmin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
 | `superadmin-integrations-wizard` | Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
-| `superadmin-integrations-legacy-partners` | Partner API hamkorlari (eski sahifa) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | v2 |
+| `superadmin-integrations-legacy-partners` | Partner API hamkorlari (eski sahifa) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Sahifa olindi (Dj70iDbD, karta TC matni bo'yicha): hamkor amallari konsolda (yaratish, Sozlamalar, Xavfsizlik, Ish rejimi), «Webhook yetkazish jurnali» — «Hodisalar» panelida. /partners va /integrations/partners — 404. Maket taqdiri ega bilan kelishilishi kerak. |
 | `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
 | `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | v2 |
 | `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | v2 |
@@ -2236,7 +2202,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
-| `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
+| `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Tab olindi (Dj70iDbD, karta TC matni bo'yicha): qarzlar — ulanishning «Hisob-kitob» panelida (faqat ulanish kesimida, barcha ulanishlar ro'yxati yo'q), navbat — «Ish rejimi» panelida. /integrations-ops va /ops?tab=integrations → /integrations. Maket taqdiri ega bilan kelishilishi kerak. |
 | `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
 | `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/returns` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
@@ -2469,7 +2435,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-marketplace` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `admin-integrations-conn-settings` | Ulanish — Sozlamalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
 | `admin-integrations-conn-shipments` | Ulanish — Posilkalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
-| `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
+| `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | qisman — Maketga qo'shimcha (Dj70iDbD): superadmin bilan bir xil — «Hamkor» filtri va «Webhook ma'lumoti». Ega tasdig'i kutilmoqda. |
 | `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx`, `src/pages/integrations/panels/settlement/RemittancesSection.tsx` | qisman — Ism kutadi (BD2-10, IS-4): «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak (javobda faqat created_by / cancelled_by id), bekor qilingan eski yozuvda operatorning kassa tanlovi saqlanmaydi → «Kassa: eski yozuv». Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»; IS-2: «To'lov» ustuni / telefonda «… · To'lov №N · …», ortiqcha summa ogohlantirishi va «To'lov yozildi» natija oynasi; IS-3: «Olingan to'lovlar» — sana oralig'i, «Faol · Bekor qilingan · Barchasi», jadval / telefonda kartalar, «Holat · kassa», bekor qilish oynasi; «To'lov №N» — shu bo'limga o'tish). |
 | `admin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
 | `admin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
@@ -2480,7 +2446,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-new-partner-dialog` | Yangi hamkor oynasi | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
 | `admin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
 | `admin-integrations-wizard` | Ulash ustasi | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
-| `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | v2 |
+| `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Sahifa olindi (Dj70iDbD): superadmin bilan bir xil. Maket taqdiri ega bilan kelishilishi kerak. |
 | `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
 | `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
@@ -3093,7 +3059,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/incoming-orders/ui/SourcesTable.tsx` | `/new-orders/incoming` |
 | `src/pages/incoming-orders/ui/sourceFormat.ts` | `/new-orders/incoming` |
 | `src/pages/incoming-orders/ui/sourceVisuals.tsx` | `/new-orders/incoming` |
-| `src/pages/integrations-ops/index.tsx` | `/integrations-ops` |
 | `src/pages/integrations/CatalogPage.tsx` | `/integrations/new` |
 | `src/pages/integrations/ConnectionFields.tsx` | `/integrations/connections`, `/integrations/new/:typeKey` |
 | `src/pages/integrations/ConnectionsPage.tsx` | `/integrations/connections` |
@@ -3268,7 +3233,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/orders/list/courier/list/tabs.tsx` | `/orders` |
 | `src/pages/orders/list/orderFilterModel.ts` | `/orders` |
 | `src/pages/orders/list/useOrdersRefresh.ts` | `/orders` |
-| `src/pages/partners/index.tsx` | `/integrations/partners` |
 | `src/pages/payments/components/BalanceTrendCard.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/CashFlowCard.tsx` | `/payments` |
 | `src/pages/payments/components/CashStateCard.tsx` | `/payments` |
@@ -3548,9 +3512,9 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
 | Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+14) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+16) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
-| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+12) |
+| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+11) |
 
 Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 
@@ -3570,7 +3534,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+6) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+14) |
 | Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
 

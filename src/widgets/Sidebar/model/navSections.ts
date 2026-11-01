@@ -152,7 +152,6 @@ export const getTileAccessibleName = (compact: string, full: string): string | u
 const ACTIVE_ALIASES_BY_PATH: Record<string, readonly string[]> = {
   "/ops": [
     "/finance-operators",
-    "/integrations-ops",
     "/investors-ops",
     "/logistics-ops",
     "/branch-ops",

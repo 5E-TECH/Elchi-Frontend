@@ -88,7 +88,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
     vi.restoreAllMocks();
   });
 
-  it("8 ta tab: nomlar real menyu bilan to'qnashmaydi, «Xarajat kategoriyalari» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
+  it("7 ta tab: nomlar real menyu bilan to'qnashmaydi, «Xarajat kategoriyalari» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
     renderWithProviders(<OpsPage />, { route: "/ops?tab=system" });
 
     const tablist = screen.getByRole("tablist", { name: "Ops bo'limlari" });
@@ -96,7 +96,6 @@ describe("Ops page — tablar (dizayn v2)", () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "Moliya operatorlari",
       "Xarajat kategoriyalari",
-      "Integratsiya vositalari",
       "Investorlar",
       "Yetkazish narxi",
       "Xodimlar",

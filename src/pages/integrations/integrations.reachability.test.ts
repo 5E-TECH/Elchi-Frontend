@@ -18,8 +18,9 @@ import { SIDEBAR_CONFIG, SIDEBAR_GROUP_BY_PATH } from "../../widgets/Sidebar/mod
  * nimani qo'riqlamay, "tekshirilgan" tuyg'usini berardi. Shuning uchun
  * o'sha tekshiruvlar va modulning o'zi olib tashlandi.
  *
- * Eski marshrutlar (`/integrations/partners`, `/integrations/sources`)
- * routes.tsx da SAQLANADI — xatcho'plar buzilmaydi.
+ * Eski `/integrations/sources` marshruti routes.tsx da SAQLANADI — xatcho'plar
+ * buzilmaydi. `/partners` va `/integrations/partners` olib tashlangan (Dj70iDbD):
+ * amallari konsolda, umumiy jurnal — «Hodisalar» panelida.
  */
 describe("Integratsiyalar uyi — navigatsiya butunligi", () => {
   it("menyuda `/integrations` bandi bor (aks holda uy yetim qoladi)", () => {
@@ -36,8 +37,7 @@ describe("Integratsiyalar uyi — navigatsiya butunligi", () => {
 
   it("eski `/partners` bandi menyudan OLIB TASHLANGAN", () => {
     // Bir tushuncha ikki joyda turmasligi kerak — aynan shu chalkashlik
-    // tuzatilayotgan muammo edi. Marshrut redirect bilan yashaydi, lekin
-    // menyuda ko'rinmaydi.
+    // tuzatilayotgan muammo edi.
     const allItems = Object.values(SIDEBAR_CONFIG).flat();
 
     expect(allItems.some((item) => item.to === "/partners")).toBe(false);

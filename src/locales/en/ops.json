@@ -12,7 +12,6 @@
   "tabs": {
     "finance": "Finance operators",
     "expenseCategories": "Expense categories",
-    "integrations": "Integration tools",
     "investors": "Investors",
     "deliveryPricing": "Delivery pricing",
     "identity": "Staff",
@@ -156,38 +155,6 @@
     "intro": {
       "title": "Delivery pricing — tariffs and calculation rules",
       "description": "Tariffs, calculation rules (including the volumetric pricing threshold), price calculator and change history. The same section: Regions → Delivery tariffs (admins see it too)."
-    }
-  },
-  "integrations": {
-    "intro": {
-      "title": "Integrations — operations",
-      "description": "Integration operations: receivables and synchronization."
-    },
-    "receivables": {
-      "title": "Receivables",
-      "description": "Amounts the carrier collected from customers and owes us",
-      "id": "ID",
-      "amount": "Amount",
-      "status": "Status",
-      "statuses": {
-        "pending": "Pending",
-        "settled": "Closed",
-        "cancelled": "Cancelled"
-      },
-      "summary": "{{from}}–{{to}} of {{total}}",
-      "empty": "No receivables",
-      "emptyHint": "A receivable appears here when the carrier sells an order.",
-      "loadError": "Couldn't load receivables"
-    },
-    "sync": {
-      "title": "Synchronization",
-      "description": "Pull the integration data again right now",
-      "label": "Integration ID",
-      "placeholder": "Integration ID",
-      "submit": "Synchronize",
-      "success": "Synchronization completed",
-      "successMeta": "Integration {{id}} · {{time}}",
-      "error": "Synchronization failed"
     }
   },
   "investors": {

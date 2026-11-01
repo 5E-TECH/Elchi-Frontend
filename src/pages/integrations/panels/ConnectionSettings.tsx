@@ -119,8 +119,11 @@ const ConnectionSettings = ({
     }
 
     try {
+      let requeued = 0;
       if (isPartner) {
-        await updatePartner.mutateAsync({ id: connection.id, dto: payload as never });
+        const res = await updatePartner.mutateAsync({ id: connection.id, dto: payload as never });
+        // `webhook_url` qo'yilganda backend kutib turgan hodisalarni navbatga qaytaradi — bu son JIM o'tmasin.
+        requeued = Number((res as { data?: { requeued_webhooks?: number } })?.data?.requeued_webhooks ?? 0);
       } else {
         /**
          * `external_integrations` yangilashda `slug` va `type` ni ham kutadi (backend `Object.assign`
@@ -132,7 +135,7 @@ const ConnectionSettings = ({
           payload: { slug: String(raw.slug ?? ""), type: String(raw.type ?? "api"), ...payload } as never,
         });
       }
-      notify.success(t("savedOk"));
+      notify.success(requeued ? t("console.savedRequeued", { count: requeued }) : t("savedOk"));
       onSaved();
     } catch (error) {
       notify.error(getBackendErrorMessage(error) || t("saveFailed"));

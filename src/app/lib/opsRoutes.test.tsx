@@ -39,13 +39,14 @@ vi.mock("../../pages/ops", async () => {
 vi.mock("../../pages/returns", () => stub("Ops sahifasi /returns"));
 vi.mock("../../pages/batches", () => stub("Ops sahifasi /batches"));
 vi.mock("../../pages/finance-operators", () => stub("Ops sahifasi /finance-operators"));
-vi.mock("../../pages/integrations-ops", () => stub("Ops sahifasi /integrations-ops"));
+vi.mock("../../pages/integrations", () => stub("Ops sahifasi /integrations"));
 vi.mock("../../pages/identity-ops", () => stub("Ops sahifasi /identity-ops"));
 vi.mock("../../pages/activity-logs", () => stub("Faoliyat jurnali sahifasi"));
 
-const OPS_PATHS = ["/ops", "/finance-operators", "/integrations-ops", "/identity-ops"];
+const OPS_PATHS = ["/ops", "/finance-operators", "/identity-ops"];
 
 const OPS_REDIRECTS = [
+  ["/integrations-ops", "/integrations"],
   ["/investors-ops", "/ops?tab=investors"],
   ["/logistics-ops", "/returns"],
   ["/branch-ops", "/batches"],

@@ -12,7 +12,6 @@
   "tabs": {
     "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
-    "integrations": "Integratsiya vositalari",
     "investors": "Investorlar",
     "deliveryPricing": "Yetkazish narxi",
     "identity": "Xodimlar",
@@ -156,38 +155,6 @@
     "intro": {
       "title": "Yetkazish narxi — tariflar va hisob qoidalari",
       "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
-    }
-  },
-  "integrations": {
-    "intro": {
-      "title": "Integratsiyalar — operatsiyalar",
-      "description": "Integratsiya operatsiyalari: debitorlik qarzlari va sinxronizatsiya."
-    },
-    "receivables": {
-      "title": "Debitorlik qarzlari",
-      "description": "Tashuvchi mijozdan yig'gan va bizga o'tkazishi kerak bo'lgan summalar",
-      "id": "ID",
-      "amount": "Summa",
-      "status": "Holat",
-      "statuses": {
-        "pending": "Kutilmoqda",
-        "settled": "Yopilgan",
-        "cancelled": "Bekor qilingan"
-      },
-      "summary": "{{from}}–{{to}} / {{total}} ta",
-      "empty": "Debitorlik qarzlari yo'q",
-      "emptyHint": "Tashuvchi buyurtmani sotganda qarz shu yerda paydo bo'ladi.",
-      "loadError": "Debitorlik qarzlarini yuklab bo'lmadi"
-    },
-    "sync": {
-      "title": "Sinxronizatsiya",
-      "description": "Integratsiya ma'lumotlarini hozir qayta tortib olish",
-      "label": "Integratsiya ID",
-      "placeholder": "Integratsiya ID",
-      "submit": "Sinxronlash",
-      "success": "Sinxronizatsiya muvaffaqiyatli bajarildi",
-      "successMeta": "Integratsiya {{id}} · {{time}}",
-      "error": "Sinxronizatsiya bajarilmadi"
     }
   },
   "investors": {

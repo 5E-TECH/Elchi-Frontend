@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
+// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-investors, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
 import { Suspense, lazy, useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
@@ -15,7 +15,7 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * bandlari menyuni cho'zib yuborardi, shu bois ular BITTA sahifada tab bo'lib yig'ildi — bu ekranlar
  * kamdan-kam ochiladi.
  *
- * Eski `/finance-operators`, `/integrations-ops`, `/identity-ops` marshrutlari o'z sarlavhasi va «← Ops vositalari»
+ * Eski `/finance-operators`, `/identity-ops` marshrutlari o'z sarlavhasi va «← Ops vositalari»
  * havolasi bilan chiziladi; `/investors-ops`, `/system-ops`, `/logs` — shu hubning tabiga yo'naltiradi (F2NzXpMv,
  * bhitm9do). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi. «Logistika» — `/returns` ichida,
  * «Filiallar» — `/batches` ichida (F2NzXpMv, faqat superadmin): eski yo'l ham, `?tab=` ham o'sha yerga olib boradi.
@@ -31,7 +31,6 @@ type OpsPanel = ComponentType<{ embedded?: boolean }>;
 
 const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
 const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
-const IntegrationsOpsPage = lazy(() => import("../integrations-ops"));
 const InvestorsOpsPage = lazy(() => import("../investors-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
@@ -42,7 +41,6 @@ const DeliveryPricingPage = lazy(() => import("../delivery-tariffs"));
 const CONTENT: Record<string, OpsPanel> = {
   finance: FinanceOperatorsPage,
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
-  integrations: IntegrationsOpsPage,
   investors: InvestorsOpsPage,
   [DELIVERY_PRICING_TAB]: DeliveryPricingPage,
   identity: IdentityOpsPage,
