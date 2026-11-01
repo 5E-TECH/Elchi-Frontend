@@ -79,6 +79,12 @@ export const canViewOrders: Predicate = hasRole(
   "manager",
 );
 
+/**
+ * «Bekor qilish sabablari» hisoboti (GNWDKvmZ): superadmin va admin — filtr bilan, menejer va market — o'z doirasi.
+ * Kartada boshqa rol yozilmagan.
+ */
+export const canViewCancelReasons: Predicate = hasRole("superadmin", "admin", "manager", "market");
+
 /** Menejerlarda: HQ · REGIONAL · HYBRID (PICKUP da YO'Q edi). */
 export const canViewMails: Predicate = anyOf(
   hasRole("superadmin", "admin", "registrator", "courier"),

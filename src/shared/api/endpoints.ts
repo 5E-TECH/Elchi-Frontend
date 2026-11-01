@@ -139,6 +139,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    CANCEL_REASON_STATS: "orders/cancel-reasons/stats", // GET ?startDate&endDate&market_id|branch_id — sabablar kesimi
     EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)

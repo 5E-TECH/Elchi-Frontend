@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
 import {
+  canViewCancelReasons,
   canViewOrders,
   canViewMails,
   canViewUsers,
@@ -147,6 +148,7 @@ const ConnectWizardPage = lazy(
 );
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
+const CancelReasonsPage = lazy(() => import("../../pages/orders/cancel-reasons"));
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
 const Region = lazy(() => import("../../pages/region/index"));
@@ -751,6 +753,15 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute canActivate={canViewOrders}>
                       <NewOrderUpdate />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  // `:orderId` dan oldin: maket va menyu bandi yo'q, kirish `/orders` sarlavhasidan (GNWDKvmZ).
+                  path: "cancel-reasons",
+                  element: (
+                    <ProtectedRoute canActivate={canViewCancelReasons}>
+                      <CancelReasonsPage />
                     </ProtectedRoute>
                   ),
                 },

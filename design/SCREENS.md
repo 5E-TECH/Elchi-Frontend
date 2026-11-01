@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**79 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **151** · v2 ga ko'chirilgan route: **79 / 79**
+**80 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **151** · v2 ga ko'chirilgan route: **80 / 80**
 
 ## Qanday ishlatiladi
 
@@ -55,6 +55,7 @@
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 22 | v2 |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 4 | v2 |
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
+| `/orders/cancel-reasons` | Buyurtmalar | `src/pages/orders/cancel-reasons/index.tsx` | superadmin, admin, manager, market | 0 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
@@ -338,6 +339,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | courier | `courier-orders-pending-special-categories` — Buyurtmalar — Kutilayotganlar, maxsus belgilar | [design/fragments/courier--orders-pending-special-categories.html](fragments/courier--orders-pending-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | logist | `logist-orders-list` — Buyurtmalar — faqat ko'rish | [design/fragments/logist--orders-list.html](fragments/logist--orders-list.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
+
+#### `/orders/cancel-reasons` — Bekor qilish sabablari (hisobot)
+
+- **Fayllar:** `src/pages/orders/cancel-reasons/index.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewCancelReasons` (access.ts → canViewCancelReasons)
+- **Rollar:** superadmin, admin, manager, market
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** GNWDKvmZ, PUvKXWVw: GET /orders/cancel-reasons/stats, sabablar kesimi (HBarList). Menyu bandi yo'q, kirish /orders sarlavhasidagi havoladan; joyi va maket ega tasdig'i kutilmoqda. Filtrlar faqat superadmin va adminda. group_by qatorlari shakli kartada yo'q, ishlatilmaydi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/orders/cancel-reasons` | superadmin | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | admin | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | manager | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | market | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
 
 #### `/orders/edit/:orderId` — Buyurtma tafsiloti va tahrirlash (alohida «detail» marshruti yo'q — tafsilot shu sahifa)
 
@@ -3196,6 +3213,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/ops/tabs.ts` | `/ops` |
 | `src/pages/ops/ui/OpsSection.tsx` | `/batches`, `/returns` |
 | `src/pages/ops/ui/OpsToolPage.tsx` | `/ops` |
+| `src/pages/orders/cancel-reasons/index.tsx` | `/orders/cancel-reasons` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
 | `src/pages/orders/create/model/useOrderSource.ts` | `/new-orders/create` |
