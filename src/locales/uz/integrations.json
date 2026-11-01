@@ -790,7 +790,12 @@
     "payloadTitle": "Webhook ma'lumoti",
     "payloadCreatedAt": "Yaratilgan · {{at}}",
     "payloadStoppedAfter": "{{count}} urinishdan keyin to'xtatildi",
-    "savedRequeued": "Hamkor sozlamalari saqlandi — kutib turgan {{count}} ta hodisa navbatga qaytarildi"
+    "savedRequeued": "Hamkor sozlamalari saqlandi — kutib turgan {{count}} ta hodisa navbatga qaytarildi",
+    "sandboxIntro": "Yoqilsa, har hodisaning nusxasi sinov manziliga ham yuboriladi. Asosiy yetkazish o'zgarmaydi, sinov xatosi unga ta'sir qilmaydi. Nusxa faqat birinchi urinishda ketadi.",
+    "typeChangeHint": "Noto'g'ri tasniflangan ulanishni tuzatish uchun. Odatda kerak bo'lmaydi.",
+    "unlinked": "bog'lanmagan",
+    "wzCreatedShort": "Ulanish yaratildi",
+    "wzTestedShort": "Sinaldi"
   },
   "legacySources": {
     "active": "Faol",
@@ -1010,5 +1015,6 @@
       "already": "To'lov allaqachon bekor qilingan",
       "alreadyDesc": "Hech narsa o'zgarmadi — ro'yxat yangilandi."
     }
-  }
+  },
+  "setSandboxCard": "Sinov rejimi"
 }

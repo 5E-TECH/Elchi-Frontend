@@ -63,6 +63,11 @@ test.describe("Eski sahifa amallari konsolda — 1440px", () => {
     const { leaked, writes } = await mockPartnerJournal(page);
     await page.goto(panel("settings"));
 
+    // Tarjimasi yo'qolgan kalit xom matn bo'lib chiqardi (`setSandboxCard`, `console.sandboxIntro`).
+    const content = page.locator("[data-shell-slot=content]");
+    await expect(content.getByText("Yoqilsa, har hodisaning nusxasi sinov manziliga ham yuboriladi.", { exact: false })).toBeVisible({ timeout: 60_000 });
+    await expect(content.getByText(/setSandboxCard|console\.sandboxIntro/)).toHaveCount(0);
+
     await page.getByRole("textbox", { name: /Webhook manzili/ }).first().fill("https://partner.example.com/hook", { timeout: 60_000 });
     await page.getByRole("button", { name: "Sinash" }).first().click();
     await expect.poll(() => writes.map(({ call }) => call)).toEqual(["POST admin/partners/1/webhook-test"]);

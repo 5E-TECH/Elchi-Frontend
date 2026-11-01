@@ -38,19 +38,6 @@ const UZ = flatten(uz);
 const RU = flatten(ru);
 const EN = flatten(en);
 
-/**
- * Eski xato: kodda bor, tarjima faylida hech qachon bo'lmagan kalitlar — ekranda xom matn chiqadi (masalan «Sozlamalar»
- * panelidagi sinov bo'limi sarlavhasi). Ro'yxat faqat QISQARADI: kalit qo'shilsa shu yerdan olinishi shart.
- */
-const KNOWN_MISSING = new Set([
-  "console.sandboxIntro",
-  "console.typeChangeHint",
-  "console.unlinked",
-  "console.wzCreatedShort",
-  "console.wzTestedShort",
-  "setSandboxCard",
-]);
-
 const SOURCES = import.meta.glob(
   ["./**/*.{ts,tsx}", "../new_orders/external_orders/**/*.{ts,tsx}", "!./**/*.test.{ts,tsx}", "!../new_orders/external_orders/**/*.test.{ts,tsx}"],
   { eager: true, query: "?raw", import: "default" },
@@ -136,10 +123,9 @@ describe("⭐ integrations i18n — uch til teng", () => {
     const missing = files.flatMap(([file, source]) =>
       [...source.matchAll(/\bt\(\s*"([^"]+)"([^)]*)/g)]
         .filter(([, key, rest]) => !rest.includes("ns:") && !(key in UZ))
-        .map(([, key]) => ({ file, key })),
+        .map(([, key]) => `${file}: ${key}`),
     );
-    expect(missing.filter(({ key }) => !KNOWN_MISSING.has(key))).toEqual([]);
-    expect([...new Set(missing.map(({ key }) => key))].sort()).toEqual([...KNOWN_MISSING].sort());
+    expect(missing).toEqual([]);
   });
 
   it("⭐ interpolatsiya nomlari uch tilda AYNI", () => {

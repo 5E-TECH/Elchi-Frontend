@@ -790,7 +790,12 @@
     "payloadTitle": "Webhook data",
     "payloadCreatedAt": "Created · {{at}}",
     "payloadStoppedAfter": "Stopped after {{count}} attempts",
-    "savedRequeued": "Partner settings saved — {{count}} waiting events were put back in the queue"
+    "savedRequeued": "Partner settings saved — {{count}} waiting events were put back in the queue",
+    "sandboxIntro": "When on, a copy of every event also goes to the test URL. The main delivery does not change and test errors do not affect it. The copy is sent on the first attempt only.",
+    "typeChangeHint": "To fix a misclassified connection. Usually not needed.",
+    "unlinked": "not linked",
+    "wzCreatedShort": "Connection created",
+    "wzTestedShort": "Tested"
   },
   "legacySources": {
     "active": "Active",
@@ -1010,5 +1015,6 @@
       "already": "Payment already cancelled",
       "alreadyDesc": "Nothing changed — the list was refreshed."
     }
-  }
+  },
+  "setSandboxCard": "Test mode"
 }
