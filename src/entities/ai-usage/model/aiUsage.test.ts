@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aiUsageParams, normalizeAiOrders, normalizeAiUsageDashboard } from "./aiUsage";
+import { aiUsageParams, normalizeAiMargin, normalizeAiOrders, normalizeAiUsageDashboard } from "./aiUsage";
 
 describe("AI xarajat paneli (Celz3rKJ) — normalizatsiya", () => {
   it("summary (son, satr emas), feature/model kesimi (xarajat bo'yicha), Toshkent kunlari, manba ulushi", () => {
@@ -84,5 +84,55 @@ describe("AI xarajat paneli (Celz3rKJ) — normalizatsiya", () => {
     expect(aiUsageParams({ from: "2026-10-01", to: "2026-10-26" })).toEqual({ fromDate: "2026-10-01", toDate: "2026-10-26" });
     expect(aiUsageParams({ from: "", to: "" })).toEqual({});
     expect(aiUsageParams(null)).toEqual({});
+  });
+});
+
+describe("normalizeAiMargin (NFiXfmq6)", () => {
+  it("⭐ `totals` va market qatorlari: son satr bo'lsa ham son, eng past marja birinchi", () => {
+    const report = normalizeAiMargin({
+      statusCode: 200,
+      data: {
+        totals: { chargedUzs: "12000", costUzs: "15000", marginUzs: "-3000", aiOrders: "40", marginNegative: true },
+        markets: [
+          { marketId: 7, marketName: "Baraka", chargedUzs: "10000", costUzs: "4000", marginUzs: "6000", aiOrders: 30, marginNegative: false },
+          { marketId: "9", marketName: "Nur", chargedUzs: 2000, costUzs: 11000, marginUzs: -9000, aiOrders: 10, marginNegative: true },
+        ],
+      },
+    });
+
+    expect(report).toMatchObject({ chargedUzs: 12_000, costUzs: 15_000, marginUzs: -3_000, aiOrders: 40, negative: true });
+    expect(report.markets.map((row) => [row.marketId, row.marginUzs, row.negative])).toEqual([
+      ["9", -9_000, true],
+      ["7", 6_000, false],
+    ]);
+  });
+
+  it("⭐ `marginUzs` kelmasa — olingan minus tannarx, manfiylik sonning o'zidan", () => {
+    const report = normalizeAiMargin({ data: { markets: [{ marketId: 1, chargedUzs: 300, costUzs: 500 }] } });
+
+    expect(report.markets[0]).toMatchObject({ marginUzs: -200, negative: true, marketName: null });
+  });
+
+  it("backend bayrog'i ustun: `marginNegative: true`", () => {
+    const report = normalizeAiMargin({ data: { totals: { chargedUzs: 100, costUzs: 100, marginUzs: 0, marginNegative: true } } });
+
+    expect(report).toMatchObject({ marginUzs: 0, negative: true });
+  });
+
+  it("⭐ bo'sh yoki tushunarsiz javob — nol va bo'sh ro'yxat, soxta raqam yo'q", () => {
+    const empty = { chargedUzs: 0, costUzs: 0, marginUzs: 0, aiOrders: 0, negative: false, markets: [] };
+
+    expect(normalizeAiMargin(null)).toEqual(empty);
+    expect(normalizeAiMargin({ data: [] })).toEqual(empty);
+    expect(normalizeAiMargin({ data: { markets: "?", totals: null } })).toEqual(empty);
+  });
+
+  it("`marketId` siz qator chiqarib tashlanadi; snake_case maydon ham o'qiladi", () => {
+    const report = normalizeAiMargin({
+      data: { perMarket: [{ chargedUzs: 5 }, { market_id: 3, market_name: "Ipak", chargedUzs: 5, costUzs: 1 }] },
+    });
+
+    expect(report.markets).toHaveLength(1);
+    expect(report.markets[0]).toMatchObject({ marketId: "3", marketName: "Ipak", marginUzs: 4 });
   });
 });

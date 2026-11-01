@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeAiOrders, normalizeAiUsageDashboard } from "../../../entities/ai-usage";
+import { normalizeAiMargin, normalizeAiOrders, normalizeAiUsageDashboard } from "../../../entities/ai-usage";
 import { renderWithProviders } from "../../../test/test-utils";
 import FinancialBalance from "../index";
 
@@ -13,6 +13,7 @@ import FinancialBalance from "../index";
 const mocks = vi.hoisted(() => ({
   dashboard: vi.fn(),
   orders: vi.fn(),
+  margin: vi.fn(),
 }));
 
 // qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
@@ -29,6 +30,7 @@ vi.mock("../../../entities/ai-usage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../entities/ai-usage")>()),
   useAiUsageDashboard: (...args: unknown[]) => mocks.dashboard(...args),
   useAiOrders: (...args: unknown[]) => mocks.orders(...args),
+  useAiMargin: (...args: unknown[]) => mocks.margin(...args),
 }));
 
 vi.mock("../../../entities/payments", () => ({
@@ -112,11 +114,24 @@ const query = (data: unknown, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
+const marginPayload = normalizeAiMargin({
+  statusCode: 200,
+  data: {
+    totals: { chargedUzs: 12_000, costUzs: 15_000, marginUzs: -3_000, aiOrders: 40, marginNegative: true },
+    markets: [
+      { marketId: 7, marketName: "Baraka Shop", chargedUzs: 10_000, costUzs: 4_000, marginUzs: 6_000, aiOrders: 30, marginNegative: false },
+      { marketId: 9, marketName: "Nur Market", chargedUzs: 2_000, costUzs: 11_000, marginUzs: -9_000, aiOrders: 10, marginNegative: true },
+    ],
+  },
+});
+
 beforeEach(() => {
   mocks.dashboard.mockReset();
   mocks.orders.mockReset();
+  mocks.margin.mockReset();
   mocks.dashboard.mockReturnValue(query(dashboardPayload()));
   mocks.orders.mockReturnValue(query(ordersPayload));
+  mocks.margin.mockReturnValue(query(marginPayload));
 });
 
 describe("Balans → «AI xarajat» (Celz3rKJ)", () => {
@@ -217,5 +232,58 @@ describe("Balans → «AI xarajat» (Celz3rKJ)", () => {
     expect(screen.getByText("AI xarajatini yuklab bo'lmadi")).toBeInTheDocument();
     await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
     expect(refetch).toHaveBeenCalled();
+  });
+});
+
+/** NFiXfmq6 — «olingan narx va tannarx» bir ekranda: manfiy marja danger tokenida, bo'sh davr xatosiz. */
+describe("Balans → «AI xarajat» → marja (NFiXfmq6)", () => {
+  const marginCard = async () => {
+    renderWithProviders(<FinancialBalance />, { route: "/financial-balance?tab=ai" });
+    const heading = await screen.findByRole("heading", { name: "Marja — marketlar kesimida" });
+    return heading.closest("section") as HTMLElement;
+  };
+
+  it("⭐ eng past marja birinchi; manfiy marja minus belgi va danger token bilan, musbati oddiy", async () => {
+    const card = await marginCard();
+    const table = within(card).getByRole("table", { name: "Marja — marketlar kesimida" });
+    const [, first, second] = within(table).getAllByRole("row");
+
+    expect(first).toHaveTextContent("Nur Market");
+    const negative = within(first).getByText(/[-−]9.000 so'm/);
+    expect(negative).toHaveClass("text-danger-fg");
+    expect(second).toHaveTextContent("Baraka Shop");
+    const positive = within(second).getByText(/\+6.000 so'm/);
+    expect(positive).not.toHaveClass("text-danger-fg");
+    expect(positive).toHaveClass("text-text");
+  });
+
+  it("jami qatorida ham manfiy marja danger tonida", async () => {
+    const card = await marginCard();
+    const total = within(card).getByText("Marja", { selector: "dt" }).parentElement as HTMLElement;
+    expect(within(total).getByText(/[-−]3.000 so'm/)).toHaveClass("text-danger-fg");
+  });
+
+  it("⭐ bo'sh davr — xatosiz EmptyState, jadval yo'q", async () => {
+    mocks.margin.mockReturnValue(query(normalizeAiMargin({ statusCode: 200, data: { totals: { chargedUzs: 0, costUzs: 0, marginUzs: 0 }, markets: [] } })));
+    const card = await marginCard();
+
+    expect(within(card).getByText("Bu davrda AI to'lovi va xarajati yo'q")).toBeInTheDocument();
+    expect(within(card).queryByRole("table")).toBeNull();
+  });
+
+  it("⭐ marja so'rovi yiqilsa — faqat shu blokda xato, KPI va buyurtmalar joyida", async () => {
+    mocks.margin.mockReturnValue(query(undefined, { isError: true, error: new Error("500") }));
+    const card = await marginCard();
+
+    expect(within(card).getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "AI xarajati ko'rsatkichlari" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "AI buyurtmalar" })).toBeInTheDocument();
+  });
+
+  it("market nomi kelmasa — raqami bilan", async () => {
+    mocks.margin.mockReturnValue(query(normalizeAiMargin({ data: { markets: [{ marketId: 12, chargedUzs: 300, costUzs: 100 }] } })));
+    const card = await marginCard();
+
+    expect(within(card).getByRole("cell", { name: "Market #12" })).toBeInTheDocument();
   });
 });

@@ -74,6 +74,22 @@
     "sub": "{{calls}} ta · {{usd}}"
   },
   "rateNote": "So'mdagi xarajat har chaqiruv paytidagi kurs bilan yozilgan. Hozirgi kurs: 1 $ = {{rate}}",
+  "margin": {
+    "title": "Marja — marketlar kesimida",
+    "subtitle": "Marketdan olingan narx va haqiqiy AI xarajati · {{range}}",
+    "loading": "Marja yuklanmoqda",
+    "empty": "Bu davrda AI to'lovi va xarajati yo'q",
+    "emptyDescription": "Marketlar AI bilan buyurtma yaratganda shu yerda chiqadi",
+    "marketId": "Market #{{id}}",
+    "cardMeta": "{{orders}} ta AI buyurtma · olingan {{charged}} · xarajat {{cost}}",
+    "col": {
+      "market": "Market",
+      "orders": "AI buyurtmalar",
+      "charged": "Olingan",
+      "cost": "Xarajat",
+      "margin": "Marja"
+    }
+  },
   "orders": {
     "title": "AI buyurtmalar",
     "subtitle": "AI yordamida yaratilgan buyurtmalar · eng yangisi birinchi",

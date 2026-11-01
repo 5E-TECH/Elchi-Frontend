@@ -74,6 +74,22 @@
     "sub": "{{calls}} calls · {{usd}}"
   },
   "rateNote": "Costs in UZS are recorded at the rate at the time of each call. Current rate: 1 $ = {{rate}}",
+  "margin": {
+    "title": "Margin by market",
+    "subtitle": "Price charged to the market vs real AI cost · {{range}}",
+    "loading": "Loading margin",
+    "empty": "No AI charges or costs in this period",
+    "emptyDescription": "Shows up here once markets create orders with AI",
+    "marketId": "Market #{{id}}",
+    "cardMeta": "{{orders}} AI orders · charged {{charged}} · cost {{cost}}",
+    "col": {
+      "market": "Market",
+      "orders": "AI orders",
+      "charged": "Charged",
+      "cost": "Cost",
+      "margin": "Margin"
+    }
+  },
   "orders": {
     "title": "AI orders",
     "subtitle": "Orders created with AI · newest first",

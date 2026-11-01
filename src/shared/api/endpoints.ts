@@ -319,6 +319,7 @@ export const API_ENDPOINTS = {
   AI_USAGE: {
     DASHBOARD: "ai-usage/dashboard", // GET ?fromDate&toDate (YYYY-MM-DD, Toshkent; sukut — oxirgi 30 kun)
     AI_ORDERS: "ai-usage/ai-orders", // GET ?fromDate&toDate&limit (1..100)
+    MARGIN: "ai-usage/margin", // GET ?fromDate&toDate&marketId — olingan narx va tannarx, market kesimida
   },
 
   // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──

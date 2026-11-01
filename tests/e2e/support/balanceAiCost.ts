@@ -71,6 +71,16 @@ const dashboard = (params: URLSearchParams, failSources: boolean) => {
   };
 };
 
+/** Marja: bitta market zararda (manfiy marja danger tonida), jami ham manfiy. */
+const margin = {
+  totals: { chargedUzs: 12_000, costUzs: 15_000, marginUzs: -3_000, aiOrders: 40, cacheSavedUzs: 13_915, marginNegative: true },
+  markets: [
+    { marketId: 7, marketName: "Baraka Shop", chargedUzs: 10_000, costUzs: 4_000, marginUzs: 6_000, aiOrders: 30, marginNegative: false },
+    { marketId: 9, marketName: "Nur Market", chargedUzs: 2_000, costUzs: 11_000, marginUzs: -9_000, aiOrders: 10, marginNegative: true },
+  ],
+  alerts: [],
+};
+
 const aiOrders = {
   total: 2,
   limit: 100,
@@ -124,7 +134,7 @@ export const openAiCost = async (
   };
   const reply = (route: Route, data: unknown) =>
     route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify({ statusCode: 200, message: "ok", data }) });
-  const requests = { dashboard: [] as URLSearchParams[], orders: [] as URLSearchParams[], leaked: [] as string[] };
+  const requests = { dashboard: [] as URLSearchParams[], orders: [] as URLSearchParams[], margin: [] as URLSearchParams[], leaked: [] as string[] };
 
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
@@ -147,6 +157,10 @@ export const openAiCost = async (
     if (path === "ai-usage/dashboard") {
       requests.dashboard.push(url.searchParams);
       return reply(route, dashboard(url.searchParams, failSources));
+    }
+    if (path === "ai-usage/margin") {
+      requests.margin.push(url.searchParams);
+      return reply(route, margin);
     }
     if (path === "ai-usage/ai-orders") {
       requests.orders.push(url.searchParams);

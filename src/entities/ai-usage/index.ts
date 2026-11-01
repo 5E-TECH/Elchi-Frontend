@@ -2,15 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import type { ISODateRange } from "../../shared/lib/dateRange";
-import { aiUsageParams, normalizeAiOrders, normalizeAiUsageDashboard } from "./model/aiUsage";
+import { aiUsageParams, normalizeAiMargin, normalizeAiOrders, normalizeAiUsageDashboard } from "./model/aiUsage";
 
 export {
   ORDER_SOURCE_KEYS,
   aiUsageParams,
+  normalizeAiMargin,
   normalizeAiOrders,
   normalizeAiUsageDashboard,
 } from "./model/aiUsage";
 export type {
+  AiMarginReport,
+  AiMarginRow,
   AiOrderItem,
   AiOrderSources,
   AiOrdersList,
@@ -50,6 +53,18 @@ export const useAiOrders = (range: ISODateRange | null, enabled = true) =>
       api
         .get(API_ENDPOINTS.AI_USAGE.AI_ORDERS, { params: { ...aiUsageParams(range), limit: AI_ORDERS_LIMIT } })
         .then((res) => normalizeAiOrders(res.data)),
+    enabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    meta: { silentError: true },
+  });
+
+/** `GET /ai-usage/margin` (NFiXfmq6) — olingan narx va tannarx market kesimida; xatoni blokning o'zi chizadi. */
+export const useAiMargin = (range: ISODateRange | null, enabled = true) =>
+  useQuery({
+    queryKey: ["ai-usage", "margin", aiUsageParams(range)],
+    queryFn: () =>
+      api.get(API_ENDPOINTS.AI_USAGE.MARGIN, { params: aiUsageParams(range) }).then((res) => normalizeAiMargin(res.data)),
     enabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,

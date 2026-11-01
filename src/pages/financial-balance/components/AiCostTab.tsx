@@ -5,8 +5,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   ORDER_SOURCE_KEYS,
+  useAiMargin,
   useAiOrders,
   useAiUsageDashboard,
+  type AiMarginReport,
+  type AiMarginRow,
   type AiOrderItem,
   type AiOrderSources,
   type AiUsageDay,
@@ -24,6 +27,7 @@ import {
   formatMoneyLocalized,
   formatNumberLocalized,
   formatPercentLocalized,
+  formatSignedMoneyLocalized,
   formatUsdLocalized,
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
@@ -49,7 +53,8 @@ import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 /**
  * «AI XARAJAT» TABI (Celz3rKJ) — `/financial-balance?tab=ai` (superadmin, admin). Backend: `GET /ai-usage/dashboard`
  * (xarajat USD/so'm, funksiya va model kesimi, Toshkent kuni bo'yicha trend, buyurtma manbasi) va
- * `GET /ai-usage/ai-orders` (AI buyurtmalar). Karta matni bo'yicha alohida sahifa EMAS — «Balans» ichida tab
+ * `GET /ai-usage/ai-orders` (AI buyurtmalar), `GET /ai-usage/margin` (marja market kesimida, NFiXfmq6 — o'z so'rovi:
+ * yiqilsa qolgan tab ishlayveradi). Karta matni bo'yicha alohida sahifa EMAS — «Balans» ichida tab
  * (BeePost naqshi).
  *
  * Maket yo'q (dizayn ziddiyati: maketda faqat «Umumiy ko'rinish · Tarix · Tahlil») — eng yaqini
@@ -108,6 +113,7 @@ const AiCostTab = () => {
 
   const dashboardQuery = useAiUsageDashboard(range);
   const ordersQuery = useAiOrders(range);
+  const marginQuery = useAiMargin(range);
 
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const compact = (value: number) => formatCompactMoneyLocalized(value, { language });
@@ -272,6 +278,8 @@ const AiCostTab = () => {
           );
         }}
       </QueryBoundary>
+
+      <AiMarginCard query={marginQuery} rangeText={rangeText} />
 
       <AiOrdersCard query={ordersQuery} />
     </div>
@@ -529,6 +537,90 @@ const AiOrdersCard = ({ query }: { query: ReturnType<typeof useAiOrders> }) => {
                 </Link>
               )}
             />
+          </>
+        )}
+      </QueryBoundary>
+    </Card>
+  );
+};
+
+// ─── Marja ────────────────────────────
+
+const AiMarginCard = ({ query, rangeText }: { query: ReturnType<typeof useAiMargin>; rangeText: string }) => {
+  const { t, i18n } = useTranslation("aiUsage");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const marketName = (row: AiMarginRow) => row.marketName ?? t("margin.marketId", { id: row.marketId });
+  /** Manfiy marja: minus belgili matn + danger token (rang yolg'iz turmaydi). */
+  const marginText = ({ marginUzs, negative }: Pick<AiMarginReport, "marginUzs" | "negative">) => (
+    <span className={cx("font-semibold whitespace-nowrap", negative ? "text-danger-fg" : "text-text")}>
+      {formatSignedMoneyLocalized(marginUzs, { language })}
+    </span>
+  );
+
+  const columns: DataTableColumn<AiMarginRow>[] = [
+    { id: "market", header: t("margin.col.market"), cell: (row) => <span className="font-semibold">{marketName(row)}</span> },
+    { id: "orders", header: t("margin.col.orders"), align: "end", cell: (row) => formatNumberLocalized(row.aiOrders, { language }) },
+    { id: "charged", header: t("margin.col.charged"), align: "end", cell: (row) => money(row.chargedUzs) },
+    { id: "cost", header: t("margin.col.cost"), align: "end", cell: (row) => money(row.costUzs) },
+    { id: "margin", header: t("margin.col.margin"), align: "end", cell: marginText },
+  ];
+
+  return (
+    <Card padding="none" title={t("margin.title")} description={t("margin.subtitle", { range: rangeText })}>
+      <QueryBoundary
+        query={query}
+        isEmpty={(report) => report.markets.length === 0 && report.chargedUzs === 0 && report.costUzs === 0}
+        loadingLabel={t("margin.loading")}
+        loading={
+          <SkeletonTable
+            framed={false}
+            columns={[t("margin.col.market"), t("margin.col.charged"), t("margin.col.cost"), t("margin.col.margin")]}
+            rows={3}
+          />
+        }
+        empty={<EmptyState icon={Receipt} title={t("margin.empty")} description={t("margin.emptyDescription")} />}
+        error={(error, retry) => <ErrorState error={error} onRetry={retry} />}
+      >
+        {(report, { isRefetching }) => (
+          <>
+            <dl className="grid grid-cols-3 gap-4 px-5 py-4 max-md:grid-cols-1 max-md:gap-2 max-md:px-4">
+              {[
+                { key: "charged", value: money(report.chargedUzs) },
+                { key: "cost", value: money(report.costUzs) },
+                { key: "margin", value: marginText(report) },
+              ].map(({ key, value }) => (
+                <div key={key} className="flex min-w-0 flex-col gap-0.5 max-md:flex-row max-md:items-baseline max-md:justify-between max-md:gap-3">
+                  <dt className="text-[13px] text-text-muted">{t(`margin.col.${key}`)}</dt>
+                  <dd className="font-semibold text-text">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {report.markets.length > 0 ? (
+              <DataTable
+                rows={report.markets}
+                columns={columns}
+                getRowKey={(row) => row.marketId}
+                label={t("margin.title")}
+                cardsLabel={t("margin.title")}
+                busy={isRefetching}
+                renderCard={(row) => (
+                  <div className="flex flex-col gap-1 px-4 py-3 text-sm">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 font-semibold [overflow-wrap:anywhere]">{marketName(row)}</span>
+                      {marginText(row)}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      {t("margin.cardMeta", {
+                        orders: formatNumberLocalized(row.aiOrders, { language }),
+                        charged: money(row.chargedUzs),
+                        cost: money(row.costUzs),
+                      })}
+                    </span>
+                  </div>
+                )}
+              />
+            ) : null}
           </>
         )}
       </QueryBoundary>
