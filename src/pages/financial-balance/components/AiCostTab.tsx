@@ -250,12 +250,14 @@ const AiCostTab = () => {
                 >
                   <FeatureTable rows={dashboard.byFeature} featureLabel={featureLabel} />
                 </Card>
-                <Card divided={false} className="min-w-0 flex-[2_1_320px]" title={t("models.title")} description={t("models.subtitle")}>
+                {/* 440px dan tor kartada «Modellar» qiymati chiziqqa joy qoldirmaydi — ostiga tushadi. */}
+                <Card divided={false} className="min-w-0 flex-[2_1_440px]" title={t("models.title")} description={t("models.subtitle")}>
                   {dashboard.byModel.length === 0 ? (
                     <EmptyState size="inline" icon={Cpu} title={t("models.empty")} />
                   ) : (
                     <HBarList
                       ariaLabel={t("models.title")}
+                      valueWidth="13rem"
                       rows={dashboard.byModel.map((row) => ({
                         id: row.model,
                         label: row.model,

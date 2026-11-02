@@ -31,6 +31,8 @@ export interface HBarListProps {
   expandable?: boolean;
   /** Shkala maksimumi (sukut — eng katta qiymat; foizda 100 bering). */
   max?: number;
+  /** Qiymat matni uchun joy (sukut `9rem`). Matn uzun ro'yxatda kattaroq: chiziqlar nisbati buzilmaydi. */
+  valueWidth?: string;
   className?: string;
 }
 
@@ -38,7 +40,7 @@ export interface HBarListProps {
  * GORIZONTAL USTUNLAR (`.el-hbars`, `.el-hbar`): nom · chiziq + «qiymat · izoh». Uzun nomlar uchun
  * (marketlar, filiallar). Oddiy div (recharts emas). Ro'yxat — grafikning o'zi jadval tuzilmasida.
  */
-export const HBarList = ({ rows, ariaLabel, limit, mobileLimit, expandable = false, max, className }: HBarListProps) => {
+export const HBarList = ({ rows, ariaLabel, limit, mobileLimit, expandable = false, max, valueWidth = "9rem", className }: HBarListProps) => {
   const { t } = useTranslation("dashboard");
   const [expanded, setExpanded] = useState(false);
   const scaleMax = max ?? Math.max(0, ...rows.map((row) => row.value));
@@ -71,10 +73,11 @@ export const HBarList = ({ rows, ariaLabel, limit, mobileLimit, expandable = fal
               <span className="flex min-w-0 items-center gap-2">
                 <span
                   aria-hidden="true"
-                  className={cx("block h-4 min-w-0.5 flex-none rounded-r-[4px]", CHART_FILL[row.tone ?? "action"])}
-                  style={{ width: `calc((100% - 9rem) * ${(width / 100).toFixed(4)})` }}
+                  className={cx("block h-4 min-w-0.5 rounded-r-[4px]", CHART_FILL[row.tone ?? "action"])}
+                  style={{ width: `calc((100% - ${valueWidth}) * ${(width / 100).toFixed(4)})` }}
                 />
-                <span className="whitespace-nowrap font-semibold text-text">
+                {/* Qiymat ajratilgan joydan uzun bo'lsa ham qator kartadan chiqmaydi: chiziq siqiladi. */}
+                <span className="flex-none whitespace-nowrap font-semibold text-text">
                   {row.display}
                   {row.sub ? <span className="font-normal text-text-muted"> · {row.sub}</span> : null}
                 </span>

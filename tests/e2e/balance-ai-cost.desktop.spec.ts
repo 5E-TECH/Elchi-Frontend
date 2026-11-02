@@ -80,3 +80,22 @@ for (const theme of ["light", "dark"] as const) {
     expect(requests.leaked).toEqual([]);
   });
 }
+
+/** «Modellar» qatori uzun: sahifa surilmaydi va chiziqlar qiymat nisbatini (3:1) saqlaydi. */
+for (const width of [768, 1024, 1100, 1279, 1280, 1360, 1440]) {
+  test(`${width}px: «Modellar» sig'adi, chiziqlar nisbati to'g'ri`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const { tab } = await openAiCost(page);
+    await tab.click();
+    const models = page.getByRole("list", { name: "Modellar" });
+    await expect(models.getByRole("listitem")).toHaveCount(2);
+
+    expect(await noHorizontalScroll(page)).toBe(true);
+    const [first, second] = await models.getByRole("listitem").evaluateAll((rows) =>
+      rows.map((row) => row.querySelector("[aria-hidden=true]")!.getBoundingClientRect().width),
+    );
+    expect(first / second).toBeGreaterThan(2.8);
+    expect(first / second).toBeLessThan(3.2);
+  });
+}
+
