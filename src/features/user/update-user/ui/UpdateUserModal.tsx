@@ -18,7 +18,7 @@ import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
-  passwordMinLength,
+  PASSWORD_MIN_LENGTH,
 } from "../../../../shared/lib/passwordPolicy";
 import { getOldPasswordErrorKind } from "../../../../shared/lib/oldPassword";
 import { notify } from "../../../../shared/lib/notify";
@@ -364,11 +364,11 @@ export const UpdateUserModal = memo(({
       fail("phone", t("phoneValidation"));
     }
 
-    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz.
+    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 6 belgi, katta va kichik harf, raqam, boshida/oxirida bo'shliqsiz.
     if (values.password) {
-      const passwordIssue = checkPasswordPolicy(values.password, effectiveRole);
+      const passwordIssue = checkPasswordPolicy(values.password);
       if (passwordIssue && passwordIssue !== "required") {
-        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(effectiveRole) }));
+        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: PASSWORD_MIN_LENGTH }));
       }
       // aidsxJ2H: o'z paroli — joriy parol majburiy (backend 400 OLD_PASSWORD_REQUIRED), yangisi undan farqli.
       if (isSelf && values.password.trim()) {
@@ -803,7 +803,7 @@ export const UpdateUserModal = memo(({
                 render={({ field, fieldState }) => (
                   <Field
                     label={t("v2.edit.newPassword")}
-                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: passwordMinLength(effectiveRole) })}`}
+                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: PASSWORD_MIN_LENGTH })}`}
                     error={fieldState.error?.message}
                   >
                     <TextInput

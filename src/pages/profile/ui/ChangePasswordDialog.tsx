@@ -2,8 +2,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Check, Eye, EyeOff, Lock, LogOut, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
@@ -16,7 +14,7 @@ import { Button, Dialog, Field, IconButton, TextInput } from "../../../shared/ui
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
-  passwordMinLength,
+  PASSWORD_MIN_LENGTH,
 } from "../../../shared/lib/passwordPolicy";
 import { getOldPasswordErrorKind } from "../../../shared/lib/oldPassword";
 
@@ -55,7 +53,7 @@ type Errors = { oldPassword?: string; password?: string; repeat?: string };
  * qoladi (2026-10-23; avval hamma sessiya yopilib, shu yerdan ham chiqarilardi) → «Parol almashtirildi — boshqa
  * qurilmalardan chiqildi», oyna yopiladi; «Sessiyalar» ro'yxati qayta so'raladi (`updateMyProfile` →
  * `queryKeys.accountSessions`). Ikki marta yuborilmaydi (`submittingRef`).
- * Tekshiruv (NDmZMzCP siyosati, `shared/lib/passwordPolicy`): bo'sh emas, kamida 8 (xodim — 10) belgi, boshida /
+ * Tekshiruv (NDmZMzCP siyosati, `shared/lib/passwordPolicy`): bo'sh emas, kamida 6 belgi, katta va kichik harf, raqam, boshida /
  * oxirida bo'shliq yo'q, takrori mos (mos kelsa — yashil «Parollar mos keladi»). Oddiy / ketma-ket / telefonga teng
  * parolni server rad etadi — 400 matni maydon ostida.
  */
@@ -72,8 +70,7 @@ export const ChangePasswordDialog = ({
 }: ChangePasswordDialogProps) => {
   const { t } = useTranslation(["profile", "users", "common", "auth"]);
   const { updateMyProfile } = useUser();
-  const role = useSelector((state: RootState) => state.role.role);
-  const minLength = passwordMinLength(role);
+  const minLength = PASSWORD_MIN_LENGTH;
   const required = variant === "required";
   const blocking = required && forced;
   const [oldPassword, setOldPassword] = useState("");
@@ -121,7 +118,7 @@ export const ChangePasswordDialog = ({
     const next: Errors = {};
     if (!oldPassword) next.oldPassword = t("auth:currentPassword.required");
     // Faqat bo'shliqdan iborat parol — bo'sh hisoblanadi (eski `UpdateUserModal`: `password.trim()` bo'sh → yuborilmaydi).
-    const issue = checkPasswordPolicy(password, role);
+    const issue = checkPasswordPolicy(password);
     if (issue === "required") next.password = t("profile:password.required");
     else if (issue) next.password = t(`auth:passwordPolicy.${issue}`, { min: minLength });
     else if (oldPassword && password === oldPassword) next.password = t("auth:currentPassword.sameAsOld");

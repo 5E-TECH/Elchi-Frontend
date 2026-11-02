@@ -120,6 +120,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapIcon, label: "regions" },
+    // Ega 2026-11-02: filial yaratish adminga ham (backend `@Roles(SUPERADMIN, ADMIN)`).
+    { to: "/branches", icon: Building2, label: "branches" },
     { to: "/integrations", icon: Plug, label: "integrations" },
     // NG-A (ega NG-S2): Telegram guruhlari adminga ham — maketdagi menyu (`roles.json`, «Tizim» guruhi).
     { to: "/notifications", icon: Send, label: "notifications" },

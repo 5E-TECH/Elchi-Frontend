@@ -25,7 +25,7 @@ const getStoredViewMode = (): BranchViewMode => {
 };
 
 /**
- * FILIALLAR — `/branches` (faqat superadmin, `canViewBranches`), dizayn v2.
+ * FILIALLAR — `/branches` (superadmin va admin, `canViewBranches`), dizayn v2.
  * Ro'yxat (daraxt · jadval · kartalar) — `BranchListWidget`; «+ Yangi filial» — `BranchFormModal`,
  * «Tahrirlash» — `BranchEditModal` (ikkalasi bitta v2 `BranchFormDialog` ko'rinishida).
  */

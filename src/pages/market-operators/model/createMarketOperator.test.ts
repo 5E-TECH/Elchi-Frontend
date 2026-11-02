@@ -9,18 +9,18 @@ describe("buildCreateMarketOperatorPayload", () => {
       buildCreateMarketOperatorPayload({
         name: "  Ali   Valiyev  ",
         phone_number: "+998 90 123 45 67",
-        password: "secret123",
+        password: "Secret123",
       }),
     ).toEqual({
       name: "Ali Valiyev",
       phone_number: "+998901234567",
-      password: "secret123",
+      password: "Secret123",
     });
   });
 });
 
 describe("validateCreateOperator", () => {
-  const valid = { name: "Nodira Aliyeva", phone_number: "+998974551820", password: "nodira25" };
+  const valid = { name: "Nodira Aliyeva", phone_number: "+998974551820", password: "Nodira25" };
 
   it("to'g'ri forma — xatosiz", () => {
     expect(validateCreateOperator(valid)).toEqual({});

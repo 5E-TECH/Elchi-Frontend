@@ -56,7 +56,7 @@ import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
-  passwordMinLength,
+  PASSWORD_MIN_LENGTH,
 } from "../../../../shared/lib/passwordPolicy";
 import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 import { runUserRequest } from "../../lib/userRequest";
@@ -343,13 +343,13 @@ export const CreateUserForm = memo(() => {
 
     // NDmZMzCP: kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz; qolganini (oddiy / ketma-ket / telefon) server.
     // aidsxJ2H: faqat «Qo'lda kiritish» da — SMS rejimida parolni tizim yaratadi.
-    const passwordIssue = values.passwordMode === "manual" ? checkPasswordPolicy(values.password, role) : null;
+    const passwordIssue = values.passwordMode === "manual" ? checkPasswordPolicy(values.password) : null;
     if (passwordIssue === "required") {
       setError("password", { message: t("passwordRequired") });
       valid = false;
     } else if (passwordIssue) {
       setError("password", {
-        message: t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(role) }),
+        message: t(`auth:passwordPolicy.${passwordIssue}`, { min: PASSWORD_MIN_LENGTH }),
       });
       valid = false;
     }
@@ -736,7 +736,7 @@ export const CreateUserForm = memo(() => {
         <Field
           label={t("v2.create.fields.password")}
           required
-          hint={t("auth:passwordPolicy.hint", { min: passwordMinLength(role) })}
+          hint={t("auth:passwordPolicy.hint", { min: PASSWORD_MIN_LENGTH })}
           error={fieldState.error?.message}
         >
           <TextInput

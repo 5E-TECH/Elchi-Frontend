@@ -17,7 +17,7 @@ import { BranchDetailWidget } from "../../../widgets/branch-detail";
 import BranchMetricsSection from "./BranchMetricsSection";
 
 /**
- * FILIAL TAFSILOTI — `/branches/:id` (faqat superadmin). Filial va uning xodimlari parallel so'raladi;
+ * FILIAL TAFSILOTI — `/branches/:id` (superadmin va admin). Filial va uning xodimlari parallel so'raladi;
  * yuklanishda skelet (sarlavha, ma'lumot kartasi, xodimlar jadvali), topilmasa — «Filial topilmadi»,
  * boshqa xatoda — `ErrorState` + «Qayta urinish»; har holatda «← Filiallar». Filial topilgach —
  * «Filial ko'rsatkichlari» (`BranchMetricsSection`, o'z so'rovi va holatlari bilan).

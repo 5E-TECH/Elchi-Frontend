@@ -191,27 +191,27 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     await fill(user, container, "centerRate", "20000");
     await user.click(screen.getByRole("radio", { name: "Markazgacha" }));
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
-    expect(await screen.findByText("Parol kamida 8 ta belgidan iborat bo'lsin")).toBeInTheDocument();
+    expect(await screen.findByText("Parol kamida 6 ta belgidan iborat bo'lsin")).toBeInTheDocument();
     expect(mocks.createMarket).not.toHaveBeenCalled();
 
     await user.clear(container.querySelector<HTMLInputElement>('input[name="password"]')!);
-    await fill(user, container, "password", "zarafshon26");
+    await fill(user, container, "password", "Zarafshon26");
     // xtXKLUwT: takror maydoni — bo'sh va mos kelmasa yuborilmaydi; so'rovga kirmaydi.
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(await screen.findByText("Parolni qayta kiriting")).toBeInTheDocument();
-    await fill(user, container, "passwordRepeat", "zarafshon27");
+    await fill(user, container, "passwordRepeat", "Zarafshon27");
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(await screen.findByText("Parollar mos kelmadi")).toBeInTheDocument();
     expect(mocks.createMarket).not.toHaveBeenCalled();
     await user.clear(container.querySelector<HTMLInputElement>('input[name="passwordRepeat"]')!);
-    await fill(user, container, "passwordRepeat", "zarafshon26");
+    await fill(user, container, "passwordRepeat", "Zarafshon26");
     await user.click(mustChange);
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.createMarket).toHaveBeenCalledTimes(1));
     expect(mocks.createMarket.mock.calls[0][0]).toMatchObject({
       password_mode: "manual",
-      password: "zarafshon26",
+      password: "Zarafshon26",
       must_change_password: false,
     });
     expect(mocks.createMarket.mock.calls[0][0]).not.toHaveProperty("passwordRepeat");

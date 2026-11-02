@@ -301,6 +301,12 @@
      }
     },
     {
+     "key": "branches",
+     "label": "Filiallar",
+     "icon": "i12",
+     "group": "Ma'lumotnoma"
+    },
+    {
      "key": "integrations",
      "label": "Integratsiyalar",
      "icon": "i13",

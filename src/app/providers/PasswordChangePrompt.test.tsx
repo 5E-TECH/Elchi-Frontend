@@ -118,7 +118,7 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("bayroq bilan oyna; kuryer uchun 10 belgi qoidasi; «Keyinroq» — yopiladi va qayta chiqmaydi", async () => {
+  it("bayroq bilan oyna; parol qoidasi (6 belgi, katta va kichik harf, raqam); «Keyinroq» — yopiladi va qayta chiqmaydi", async () => {
     act(() => syncPasswordChangeFlag({ must_change_password: true }));
     renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("courier") });
 
@@ -126,14 +126,14 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     expect(
       within(dialog).getByText(/Joriy parolingiz yangi xavfsizlik talablariga mos emas/),
     ).toBeInTheDocument();
-    expect(within(dialog).getByText(/Kamida 10 ta belgi\. Oddiy/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Kamida 6 ta belgi: 1 ta katta harf/)).toBeInTheDocument();
 
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Eski-parol1");
-    await userEvent.type(first, "Namuna123");
-    await userEvent.type(second, "Namuna123");
+    await userEvent.type(first, "namuna123");
+    await userEvent.type(second, "namuna123");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
-    expect(within(dialog).getByText("Parol kamida 10 ta belgidan iborat bo'lsin")).toBeInTheDocument();
+    expect(within(dialog).getByText("Parolda kamida 1 ta katta harf bo'lsin")).toBeInTheDocument();
     expect(passwordPatches()).toEqual([]);
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Keyinroq" }));
@@ -147,7 +147,7 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     renderWithProviders(<PasswordChangePrompt />, { preloadedState: authed("market") });
 
     const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
-    expect(within(dialog).getByText(/Kamida 8 ta belgi\. Oddiy/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Kamida 6 ta belgi: 1 ta katta harf/)).toBeInTheDocument();
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Eski-parol1");
     await userEvent.type(first, "Bozor-2026x");
@@ -172,8 +172,8 @@ describe("«Yangi parol o'rnating» (NDmZMzCP must_change_password)", () => {
     const dialog = await screen.findByRole("dialog", { name: "Yangi parol o'rnating" });
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Eski-parol1");
-    await userEvent.type(first, "qwerty123");
-    await userEvent.type(second, "qwerty123");
+    await userEvent.type(first, "Qwerty123");
+    await userEvent.type(second, "Qwerty123");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
     expect(await within(dialog).findAllByText("Parol juda oddiy — boshqa parol tanlang")).not.toHaveLength(0);
