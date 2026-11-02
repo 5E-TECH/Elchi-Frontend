@@ -35,6 +35,7 @@ import {
   type SatoEditorError,
 } from "../../ui/sato/useSatoCodeEditor";
 import { classifyDistrictSatoError, validateDistrictSatoCode } from "../../model/districtSatoCode";
+import { findOfficialSatoByName, normalizeOfficialSato } from "../../model/officialSato";
 import {
   filterBoardRegions,
   normalizeBoardRegions,
@@ -95,6 +96,8 @@ const RegionDistrictsPage = () => {
   const [newName, setNewName] = useState("");
   const [newRegionId, setNewRegionId] = useState<string | null>(null);
   const [newCode, setNewCode] = useState("");
+  /** Kodni admin o'zi yozdi yoki ro'yxatdan tanladi; aks holda kod nomga mos rasmiy tumandan olinadi. */
+  const [codeTouched, setCodeTouched] = useState(false);
   const [createErrors, setCreateErrors] = useState<CreateErrors>({});
   const codeErrorText = useSatoEditorErrorText();
   const lookupOwner = useSatoCodeOwner();
@@ -113,6 +116,21 @@ const RegionDistrictsPage = () => {
     meta: { silentError: true },
   });
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
+  // Admin SOATO kodini yoddan bilmaydi: viloyatning rasmiy ro'yxati — tanlash va nom bo'yicha kodni o'zi qo'yish.
+  // Kalit `district-sato` bilan boshlanadi — tuman qo'shilsa/o'chsa `DEPENDENT_KEYS` bilan birga eskiradi.
+  const officialQuery = useQuery({
+    queryKey: ["district-sato", "official", newRegionId],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.DISTRICTS.SATO_OFFICIAL(newRegionId ?? ""))
+        .then((res) => normalizeOfficialSato(res.data)),
+    enabled: canManage && Boolean(newRegionId),
+    meta: { silentError: true },
+  });
+  const freeOfficial = useMemo(
+    () => (officialQuery.data ?? []).filter((item) => !item.takenBy),
+    [officialQuery.data],
+  );
 
   const refresh = useCallback(
     () =>
@@ -145,6 +163,7 @@ const RegionDistrictsPage = () => {
     onSuccess: async (_data, { name, regionName, code }) => {
       setNewName("");
       setNewCode("");
+      setCodeTouched(false);
       setCreateErrors({});
       notify.success(t("districts.createSuccess"), {
         description: t("v2.districts.create.doneText", { name, region: regionName, code }),
@@ -265,9 +284,21 @@ const RegionDistrictsPage = () => {
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const canCreate = newName.trim().length > 0 && Boolean(newRegionId) && !createDistrict.isPending;
   const newRegion = regions.find((region) => region.id === newRegionId) ?? null;
+  // Kod yozilmagan bo'lsa — nomga mos rasmiy tuman kodi («O'rtachirchiq» → 1727253).
+  const autoOfficial = codeTouched ? null : findOfficialSatoByName(freeOfficial, newName);
+  const effectiveCode = codeTouched ? newCode : (autoOfficial?.satoCode ?? "");
+  const pickedOfficial = freeOfficial.find((item) => item.satoCode === effectiveCode.trim()) ?? null;
+  const pickOfficial = (satoCode: string) => {
+    const item = freeOfficial.find((entry) => entry.satoCode === satoCode);
+    if (!item) return;
+    setNewName(item.name);
+    setNewCode(item.satoCode);
+    setCodeTouched(true);
+    setCreateErrors((current) => ({ ...current, name: undefined, code: undefined }));
+  };
   const submitNew = () => {
     if (!canCreate || !newRegion) return;
-    const code = newCode.trim();
+    const code = effectiveCode.trim();
     // Klientda so'rovdan oldin: bo'sh, 7 raqam emas, viloyat prefiksi mos emas (viloyatda kod yo'q — tekshirilmaydi).
     const codeError = validateDistrictSatoCode(code, newRegion.satoCode);
     if (codeError) {
@@ -286,7 +317,8 @@ const RegionDistrictsPage = () => {
     setNewRegionId(regionId);
     // Viloyat almashsa: eski viloyat xatosi va prefiks xatosi ketadi; to'liq kod yangi viloyatga mos kelmasa — darhol.
     const region = regions.find((item) => item.id === regionId);
-    const mismatch = newCode.trim() ? validateDistrictSatoCode(newCode, region?.satoCode) : null;
+    // Avtomatik kod yangi viloyat ro'yxatidan qayta olinadi — faqat qo'lda yozilgani tekshiriladi.
+    const mismatch = codeTouched && newCode.trim() ? validateDistrictSatoCode(newCode, region?.satoCode) : null;
     setCreateErrors((current) => ({
       ...current,
       region: undefined,
@@ -298,11 +330,13 @@ const RegionDistrictsPage = () => {
             : current.code,
     }));
   };
-  const codeHint = !newRegion
-    ? t("v2.districts.create.codeHintNoRegion")
-    : newRegion.satoCode
-      ? t("v2.districts.create.codeHint", { region: newRegion.name, prefix: newRegion.satoCode })
-      : t("v2.districts.create.codeHintNoPrefix");
+  const codeHint = pickedOfficial
+    ? t("v2.districts.create.codeOfficial", { name: pickedOfficial.name })
+    : !newRegion
+      ? t("v2.districts.create.codeHintNoRegion")
+      : newRegion.satoCode
+        ? t("v2.districts.create.codeHint", { region: newRegion.name, prefix: newRegion.satoCode })
+        : t("v2.districts.create.codeHintNoPrefix");
   const saveRename = (district: { id: string; name: string }) => {
     const name = editingName.trim();
     if (!name || name === district.name) {
@@ -385,9 +419,11 @@ const RegionDistrictsPage = () => {
               mode="number"
               maxLength={7}
               autoComplete="off"
-              value={newCode}
+              value={effectiveCode}
               onValueChange={(value) => {
                 setNewCode(value);
+                // Bo'shatilsa — yana nomga mos rasmiy kod taklif qilinadi.
+                setCodeTouched(value.trim() !== "");
                 if (createErrors.code) setCreateErrors((current) => ({ ...current, code: undefined }));
               }}
             />
@@ -409,6 +445,35 @@ const RegionDistrictsPage = () => {
               {t("districts.add")}
             </Button>
           </div>
+          <Field
+            className="col-span-full"
+            label={t("v2.districts.create.official")}
+            hint={t("v2.districts.create.officialHint")}
+          >
+            <Select
+              searchable
+              value={pickedOfficial?.satoCode ?? null}
+              disabled={!newRegion || officialQuery.isError}
+              loading={officialQuery.isFetching}
+              placeholder={
+                !newRegion
+                  ? t("v2.districts.create.officialNoRegion")
+                  : officialQuery.isError
+                    ? t("v2.districts.create.officialError")
+                    : officialQuery.isSuccess && freeOfficial.length === 0
+                      ? t("v2.districts.create.officialEmpty")
+                      : t("v2.districts.create.officialPlaceholder", { total: freeOfficial.length })
+              }
+              noOptionsText={t("v2.districts.create.officialEmpty")}
+              options={freeOfficial.map((item) => ({
+                value: item.satoCode,
+                label: item.name,
+                description: item.satoCode,
+                searchText: `${item.name} ${item.satoCode}`,
+              }))}
+              onChange={(value) => value && pickOfficial(value)}
+            />
+          </Field>
         </form>
       </Card>
 

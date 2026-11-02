@@ -122,6 +122,8 @@ export const API_ENDPOINTS = {
     SATO_MATCH_PREVIEW: "district/sato-match/preview", // GET
     SATO_MATCH_APPLY: "district/sato-match/apply", // POST (superadmin)
     SATO_BY_CODE: (satoCode: string | number) => `district/sato/${satoCode}`, // GET
+    // GET — viloyatning rasmiy SOATO tumanlari {items: [{name, sato_code, taken_by}]} (admin/superadmin)
+    SATO_OFFICIAL: (regionId: string | number) => `district/sato-official/${regionId}`,
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
     // POST {target_district_id} — tuman boshqasiga qo'shiladi va o'chadi (admin/superadmin; DM-1)
     MERGE: (districtId: string | number) => `district/${districtId}/merge`,

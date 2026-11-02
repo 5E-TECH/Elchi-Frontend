@@ -361,7 +361,14 @@
         "codeHint": "7 digits, starting with the {{region}} code {{prefix}}",
         "codeHintNoPrefix": "7 digits",
         "codeHintNoRegion": "7 digits. Choose a region first.",
-        "doneText": "{{name}} · {{region}} · {{code}}"
+        "doneText": "{{name}} · {{region}} · {{code}}",
+        "official": "Pick from the official list",
+        "officialHint": "Picking a district fills in its name and SATO code. For a new district that is not on the list, enter the code by hand.",
+        "officialPlaceholder": "Search or pick a district ({{total}})",
+        "officialNoRegion": "Choose a region first",
+        "officialError": "The list did not load, enter the code by hand",
+        "officialEmpty": "All official districts of this region are already added",
+        "codeOfficial": "From the official SATO list: {{name}}"
       },
       "duplicateName": "This region already has a district with this name",
       "rows": {

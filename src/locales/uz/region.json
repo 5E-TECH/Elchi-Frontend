@@ -361,7 +361,14 @@
         "codeHint": "7 ta raqam, {{region}} kodi {{prefix}} bilan boshlanadi",
         "codeHintNoPrefix": "7 ta raqam",
         "codeHintNoRegion": "7 ta raqam. Avval viloyatni tanlang.",
-        "doneText": "{{name}} · {{region}} · {{code}}"
+        "doneText": "{{name}} · {{region}} · {{code}}",
+        "official": "Rasmiy ro'yxatdan tanlash",
+        "officialHint": "Tanlasangiz tuman nomi va SATO kodi o'zi yoziladi. Ro'yxatda yo'q yangi tuman uchun kodni qo'lda kiriting.",
+        "officialPlaceholder": "Tumanni qidiring yoki tanlang ({{total}} ta)",
+        "officialNoRegion": "Avval viloyatni tanlang",
+        "officialError": "Ro'yxat yuklanmadi, kodni qo'lda kiriting",
+        "officialEmpty": "Bu viloyatning rasmiy tumanlari hammasi qo'shilgan",
+        "codeOfficial": "Rasmiy SOATO ro'yxatidan: {{name}}"
       },
       "duplicateName": "Bu viloyatda shu nomli tuman bor",
       "rows": {
