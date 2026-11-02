@@ -6,6 +6,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RootState } from "../../../../app/config/store";
+import { DISTRICT_KEY } from "../../../../entities/logistics/api/logisticsApi";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
@@ -148,7 +149,9 @@ const RegionDistrictsPage = () => {
       notify.success(t("districts.createSuccess"), {
         description: t("v2.districts.create.doneText", { name, region: regionName, code }),
       });
-      await refresh();
+      // Yangi tuman geografik tuman ro'yxatlarida ham (`useGetDistricts` — `GET region/:id`: buyurtma yaratish,
+      // manzil, filtrlar) darhol chiqsin; ko'chirish bu ro'yxatni o'zgartirmaydi.
+      await Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: [DISTRICT_KEY] })]);
     },
     // Xato maydon ostida (server matni ko'rsatilmaydi); sababi noma'lum bo'lsa — umumiy xabar.
     onError: async (error, { regionName, regionPrefix, code }) => {
@@ -156,10 +159,12 @@ const RegionDistrictsPage = () => {
         notify.error(t("districts.createError"), { description: t("v2.sato.add.failedText") });
       const server = classifyDistrictSatoError(error);
       if (server.kind === "conflict") {
-        // 409 sababsiz: nom yoki kod band — kod egasi so'raladi (404 — kod bo'sh, demak nom band).
+        // 409 sababsiz: nom yoki kod band — kod egasi so'raladi (200 — kod band, egasi o'qilmasa ham; 404 — kod
+        // bo'sh, demak nom band). Umumiy xabar faqat so'rovning o'zi yiqilsa (5xx, aloqa).
         const owner = await lookupOwner(code);
         if (owner.kind === "owner")
           setCreateErrors({ code: { kind: "taken", district: owner.name, region: owner.regionName } });
+        else if (owner.kind === "taken") setCreateErrors({ code: { kind: "takenUnknown" } });
         else if (owner.kind === "none") setCreateErrors({ name: t("v2.districts.duplicateName") });
         else failed();
       } else if (server.kind === "regionMissing") {

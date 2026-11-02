@@ -2,6 +2,8 @@
 import { useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { Info, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
+import { DISTRICT_KEY } from "../../../../entities/logistics/api/logisticsApi";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { notify } from "../../../../shared/lib/notify";
@@ -54,6 +56,7 @@ const AddDistrictForm = ({
   fallbackFocus,
 }: Props & { row: SatoMissingRow }) => {
   const { t } = useTranslation("region");
+  const queryClient = useQueryClient();
   const codeErrorText = useSatoEditorErrorText();
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(row.satoName);
@@ -112,19 +115,27 @@ const AddDistrictForm = ({
       const server = classifyDistrictSatoError(cause);
       if (server.kind === "conflict") {
         // Backend 409 ikki xil: shu viloyatda shu nom bor yoki kod band — kod egasi so'raladi, server matni o'qilmaydi.
+        // 200 — kod band (egasi o'qilmasa ham «Bu kod boshqa tumanga yozilgan»), 404 — kod bo'sh, demak nom band.
         const owner = await lookupOwner(trimmedCode);
         const taken: SatoEditorError | undefined =
-          owner.kind === "owner" ? { kind: "taken", district: owner.name, region: owner.regionName } : undefined;
+          owner.kind === "owner"
+            ? { kind: "taken", district: owner.name, region: owner.regionName }
+            : owner.kind === "taken"
+              ? { kind: "takenUnknown" }
+              : undefined;
         // Backend: shu viloyatda aynan shu nom (trim) — o'xshash nom emas.
         const key = trimmedName.toLocaleLowerCase("uz");
         const nameTaken = districts.some(
           (district) => district.region?.id === regionId && district.name.trim().toLocaleLowerCase("uz") === key,
         );
         if (owner.kind === "unknown" && !nameTaken) {
-          // Kod egasini bilib bo'lmadi — «nom band» deb noto'g'ri aytilmaydi.
+          // Kod egasini so'rab bo'lmadi (5xx, aloqa) — «nom band» deb noto'g'ri aytilmaydi.
           notify.error(t("v2.sato.add.failed"), { description: t("v2.sato.add.failedText") });
         } else {
-          setErrors({ code: taken, name: nameTaken || !taken ? t("v2.sato.add.nameTaken") : undefined });
+          setErrors({
+            code: taken,
+            name: nameTaken || owner.kind === "none" ? t("v2.sato.add.nameTaken") : undefined,
+          });
         }
       } else if (server.kind === "regionMissing") {
         setErrors({ region: t("v2.sato.add.regionMissing") });
@@ -144,7 +155,11 @@ const AddDistrictForm = ({
     });
     setSaving(false);
     setOpen(false);
-    await onAdded().catch(() => undefined);
+    // Yangi tuman geografik tuman ro'yxatlarida ham (`useGetDistricts` — buyurtma yaratish, manzil, filtrlar) chiqsin.
+    await Promise.all([
+      onAdded().catch(() => undefined),
+      queryClient.invalidateQueries({ queryKey: [DISTRICT_KEY] }),
+    ]);
   };
 
   const setField = (field: keyof Errors, setter: (value: string) => void) => (value: string) => {

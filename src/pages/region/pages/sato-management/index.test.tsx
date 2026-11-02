@@ -1000,6 +1000,22 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(calls("district/sato-match/preview")).toBe(2);
   });
 
+  it("qo'shilgach geografik tumanlar keshi (`useGetDistricts` — [\"districts\", regionId]) ham eskiradi", async () => {
+    api.post.mockResolvedValue({ data: { statusCode: 201, data: { id: "300" } } });
+    const user = userEvent.setup();
+    const { queryClient } = open("superadmin", "?tab=sato");
+    queryClient.setQueryData(["districts", "6"], [{ id: "14", name: "Urgut sh." }]);
+    await screen.findByText("Tuman 01");
+    await user.click(statusTab(/^Bazada yo'q/));
+    await user.click(await screen.findByRole("button", { name: "Urgut tumani — tuman qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Tuman qo'shish" });
+    expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(false);
+
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await screen.findByText("Tuman qo'shildi")).toBeInTheDocument();
+    await waitFor(() => expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(true));
+  });
+
   it("ExK28CiS: kod majburiy — bo'sh nom/kod, 7 raqam emas, viloyat prefiksi mos emas — so'rov ketmaydi", async () => {
     api.post.mockResolvedValue({ data: { statusCode: 201, data: {} } });
     const user = userEvent.setup();
@@ -1092,6 +1108,20 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(await within(dialog).findByText("Bu viloyatda shu nomli tuman bor")).toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: /Tuman nomi/ })).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("dialog", { name: "Tuman qo'shish" })).toBeInTheDocument();
+  });
+
+  it("409 + kod egasi 200, lekin tuman o'qilmadi — «Bu kod boshqa tumanga yozilgan» kod maydonida, xabarsiz", async () => {
+    api.post.mockRejectedValue(httpError(409, "District sato_code already exists"));
+    mockGets({ "district/sato/1718236": () => ok({}) });
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await within(dialog).findByText("Bu kod boshqa tumanga yozilgan")).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "SATO kodi" })).toHaveAttribute("aria-invalid", "true");
+    expect(within(dialog).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText("Tumanni qo'shib bo'lmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText(/already exists/)).not.toBeInTheDocument();
   });
 
   it("409 + kod egasini so'rash 5xx — «nom band» deb noto'g'ri aytilmaydi: umumiy xabar, maydon xatosi yo'q", async () => {
