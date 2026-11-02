@@ -22,6 +22,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canViewDispatchPage": "superadmin admin registrator/HQ registrator/REGIONAL registrator/HYBRID manager/REGIONAL manager/HYBRID",
   "canViewFinancialBalance": "superadmin admin",
   "canViewInvestorCabinet": "investor",
+  "canViewInvestorControl": "superadmin",
   "canViewLogs": "superadmin",
   "canViewMails": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID",
   "canViewMarketOperators": "market",

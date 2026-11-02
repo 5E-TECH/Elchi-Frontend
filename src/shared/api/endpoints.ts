@@ -411,6 +411,8 @@ export const API_ENDPOINTS = {
     ME_INVESTMENTS: "investors/me/investments", // GET ?from_date&to_date&page&limit — invested_at DESC
     ME_PROFITS: "investors/me/profits", // GET ?is_paid&page&limit — period_start DESC
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
+    // vpKijXce: superadmin nazorati — javob `ME_DASHBOARD` bilan AYNAN bir xil (backend spec TC7), ?months=1..36.
+    DASHBOARD: (investorId: string | number) => `investors/${investorId}/dashboard`,
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,
   },

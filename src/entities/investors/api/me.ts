@@ -45,6 +45,22 @@ export const useInvestorMe = (options?: Options) =>
     ...silentErrorMeta(options),
   });
 
+/**
+ * Superadmin nazorati (vpKijXce): boshqa investorning KPI va oylik foydasi — `GET investors/:id/dashboard?months=`.
+ * Backend javobi investorning o'z ko'rinishi bilan AYNAN bir xil (spec TC7), shuning uchun o'sha normalizatsiya.
+ */
+export const useInvestorDashboardOf = (investorId: string, months: InvestorMonthsWindow, options?: Options) =>
+  useQuery<InvestorDashboard>({
+    queryKey: ["investors", investorId, "dashboard", months] as const,
+    queryFn: ({ signal }) =>
+      api
+        .get(API_ENDPOINTS.INVESTORS.DASHBOARD(investorId), { params: { months }, signal })
+        .then((response) => toInvestorDashboard(response.data)),
+    placeholderData: keepPreviousData,
+    enabled: (options?.enabled ?? true) && investorId !== "",
+    ...silentErrorMeta(options),
+  });
+
 /** KPI + oylik foyda (`GET investors/me/dashboard?months=`). Oyna almashganda eski grafik turib turadi. */
 export const useInvestorDashboard = (months: InvestorMonthsWindow, options?: Options) =>
   useQuery<InvestorDashboard>({

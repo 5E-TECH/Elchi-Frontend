@@ -4,6 +4,13 @@
     "cabinet": "Investor kabineti",
     "cabinetOf": "Investor kabineti · {{name}}"
   },
+  "control": {
+    "back": "Investorlar",
+    "badge": "Nazorat · faqat o'qish",
+    "description": "Investor o'z kabinetida ko'radigan ko'rsatkichlar",
+    "listsNote": "Investitsiyalar va foyda tarixi ro'yxati faqat investorning o'z kabinetida ko'rinadi.",
+    "notFound": "Investor topilmadi"
+  },
   "allLink": "Barchasi",
   "kpi": {
     "label": "Asosiy ko'rsatkichlar",

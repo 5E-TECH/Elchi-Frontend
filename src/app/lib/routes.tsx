@@ -28,6 +28,7 @@ import {
   canViewUiKit,
   canViewMarketOperators,
   canViewInvestorCabinet,
+  canViewInvestorControl,
   canViewRegionStats,
   canViewMyEarnings,
   canManageDeliveryTariffs,
@@ -75,6 +76,8 @@ const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDa
 const MyEarningsPage = lazy(() => import("../../pages/my-earnings"));
 // IN-2: investor ro'yxatlari — «Investitsiyalar» va «Foyda tarixi» (o'z chunk'lari).
 const InvestmentsPage = lazy(() => import("../../pages/investor/InvestmentsPage"));
+// vpKijXce: superadmin nazorati — investor kabineti faqat o'qish uchun.
+const InvestorControlPage = lazy(() => import("../../pages/investor/InvestorControlPage"));
 const ProfitsPage = lazy(() => import("../../pages/investor/ProfitsPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
@@ -290,6 +293,17 @@ const DashboardEntry = () => {
   }
 
   return <ForbiddenPage />;
+};
+
+/** `/investor` (vpKijXce): investor — o'z kabineti `/`; superadmin — Ops investorlar ro'yxati; boshqa rol — 403. */
+const InvestorEntryRedirect = () => {
+  const role = useSelector((state: RootState) => state.role.role);
+  if (role === "investor") return <Navigate replace to="/" />;
+  return (
+    <ProtectedRoute canActivate={canViewInvestorControl}>
+      <Navigate replace to="/ops?tab=investors" />
+    </ProtectedRoute>
+  );
 };
 
 /**
@@ -1085,6 +1099,22 @@ const AppRouter = () => {
                   <FinancialBalance />
                 </ProtectedRoute>
               ),
+            },
+            {
+              // vpKijXce: `/investor` — investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga (u yerdan
+              // «Kabinetni ko'rish»); `/investor/:id` — kabinet nazorat uchun, faqat o'qish.
+              path: "investor",
+              children: [
+                { index: true, element: <InvestorEntryRedirect /> },
+                {
+                  path: ":investorId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewInvestorControl}>
+                      <InvestorControlPage />
+                    </ProtectedRoute>
+                  ),
+                },
+              ],
             },
             // IN-2: investor kabineti ro'yxatlari — faqat investor (`canViewInvestorCabinet`; backend `@Roles(INVESTOR)`).
             {

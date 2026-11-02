@@ -46,7 +46,8 @@
     "hasSelfCashboxAccess": { "source": "routes.tsx → hasSelfCashboxAccess", "roles": { "manager": "", "market": "", "courier": "" } },
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} },
     "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } },
-    "canViewInvestorCabinet": { "source": "access.ts → canViewInvestorCabinet", "roles": { "investor": "" } }
+    "canViewInvestorCabinet": { "source": "access.ts → canViewInvestorCabinet", "roles": { "investor": "" } },
+    "canViewInvestorControl": { "source": "access.ts → canViewInvestorControl", "roles": { "superadmin": "" } }
   },
   "sections": [
     { "id": "shell", "title": "Qobiq — yon menyu, yuqori panel, pastki menyu" },
@@ -238,6 +239,35 @@
         "investor": "Investor bosh sahifasi (vpKijXce, mDfjKeQi; IN-1 da qurildi — src/pages/investor/InvestorDashboardPage.tsx, grafik StackedBars) — boshqa rollar kabi «/» da, DashboardEntry investorni InvestorDashboardPage ga beradi (alohida /investor yo'li yo'q). Ma'lumot: GET investors/me/dashboard?months=6|12|24 (1..36, sukut 12) — KPI summary (total_invested, investments_count, last_invested_at → «Mening investitsiyam»; current_percentage → «Ulush» — foyda stavkasi; total_paid_profit, last_paid_at → «To'langan foyda»; total_unpaid_profit → «Kutilayotgan foyda») + monthly [{ month, paid_amount, unpaid_amount }] — ustunli grafik (To'langan · Kutilmoqda, steklangan) va jadval egizagi (dashboard-home-table; telefonda kartalar, oyda ikkala qism > 0 bo'lsa ikkalasi alohida qatorda). «So'nggi investitsiyalar» — GET investors/me/investments?limit=3, «Foyda tarixi» — GET investors/me/profits?limit=5 (tartib serverda qat'iy: invested_at DESC / period_start DESC — sarlavhada saralash tugmasi yo'q). Holatlar: yuklanish — skelet (telefonda kartalar skeleti), bo'sh — KPI 0 va grafik o'rnida EmptyState (davr va Grafik | Jadval boshqaruvlari yashirin), xato — ErrorState + «Qayta urinish» (ro'yxat bloklari mustaqil), 403 (investor profili nofaol) — dashboard-forbidden, 404 (login investor profiliga bog'lanmagan) — dashboard-not-linked; 409 (bitta loginga bir nechta investor profili) — o'sha not-linked ko'rinishi, matn «Hisobingizga bir nechta investor profili ulangan — administrator tuzatishi kerak». Pul — formatMoney / formatCompactMoney, foiz — formatPercentLocalized."
       },
       "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), canViewAdminDashboard rollari (superadmin, admin, registrator, kuryer, eski operator) → DashboardPage (kuryer — alohida tarmoq isCourier), logist → LogistDashboardPage (LG-1, o'z viloyatlari, pulsiz), investor → InvestorDashboardPage (IN-1), market_operator → MarketDashboardPage variant=operator (MO-2, xarajat tasdiqlarisiz), qolgan har rol (menyusiz eski rollar) — 403 ForbiddenPage (ROL-0, sizish yopildi — mDfjKeQi). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». 2026-10-26 (backend batch D) chizildi: KPI «Yo'qotilgan daromad» (orders.lostRevenue, l9NNdsCH), KPI 14 kunlik sparkline va delta — joriy javobning previous/series bo'lagidan (DwrMygfo, ikkinchi so'rovsiz; kuryerda hamon alohida so'rov), «Maqsad · 80%» (targets.successRate), «Moliyaviy tahlil» qatori «Sof foyda» (revenue profitValues/totalProfit), «Barchasi»da kpi va revenue all=true (XdKajqLe, clamped — «oxirgi N kun» izohi). Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — SA/admin: javobdagi previous (DwrMygfo; «Barchasi»da yo'q), kuryer: oldingi davr uchun ikkinchi so'rov; Q2 gauge belgisi — targets.successRate bo'lsa «Maqsad · 80%», aks holda «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» — maketdagidek «Sof foyda» qatori (l9NNdsCH), izoh «Sof foyda = market tarifi − kuryer va filial ulushi» (backend formulasi); Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati», «Moliyaviy tahlil» (oylik, solishtirishsiz) va «Kassa» all=true bilan chiziladi (XdKajqLe). Ega tasdig'i 2026-10-19 (small-p1 S3): «Ilovani o'rnatish» taklifi kuryer bosh sahifasida bir marta (yopiladi, courier-dashboard-pwa-install); Sozlamalar va Bildirishnomalarda doim. 2crjWf7v: superadmin bosh sahifasi oxirida «Kvitansiya yetkazilishi» (GET /telegram/dm-delivery, faqat superadmin; maket yo'q — eng yaqini superadmin-notifications-sms-report «Yetkazilish» o'lchagichi; ega qarori kutilmoqda): spidometr delivery_ratio, «Yetdi» / «Xato», «Qamrov» reach_ratio, navbat va «Yuborilmadi» sabablari; davr — bosh sahifa davri (bo'sh — oxirgi 30 kun)."
+    },
+    {
+      "path": "/investor",
+      "entry": "faqat URL (karta matnidagi manzil): investor → / (o'z kabineti), superadmin → /ops?tab=investors",
+      "section": "finance",
+      "title": "Investor kabineti — kirish nuqtasi (vpKijXce)",
+      "components": ["src/app/lib/routes.tsx"],
+      "roles": {
+        "superadmin": "vpKijXce: /ops?tab=investors ga yo'naltiradi (u yerda «Kabinetni ko'rish»)",
+        "investor": "/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1)"
+      },
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Yo'naltirish, o'z ekrani yo'q — maket kerak emas",
+        "investor": "Yo'naltirish, o'z ekrani yo'q — maket kerak emas"
+      },
+      "note": "Karta vpKijXce TC «Superadmin ham /investor sahifasini ochib ko'ra oladi (nazorat uchun)». Boshqa rol — 403."
+    },
+    {
+      "path": "/investor/:investorId",
+      "entry": "Ops → «Investorlar» ro'yxatidagi «Kabinetni ko'rish»",
+      "section": "finance",
+      "title": "Investor kabineti — superadmin nazorati, faqat o'qish (vpKijXce)",
+      "components": ["src/pages/investor/InvestorControlPage.tsx", "src/pages/investor/InvestorDashboardPage.tsx"],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q — eng yaqini: investor-dashboard-home"
+      },
+      "note": "GET investors/:id/dashboard (SUPERADMIN, ADMIN; javob investors/me/dashboard bilan AYNAN bir xil — backend spec TC7): KPI va «Oylik foyda». Ro'yxatlar (investors/me/*) faqat investorga ochiq — o'rnida izoh. Sarlavhada «Nazorat · faqat o'qish» va «← Investorlar». 404 — «Investor topilmadi» (investor holat ekrani va «Chiqish» yo'q). Ega savoli (Shodiyor, 2026-10-21) ochiq — sahifa karta TC matni bo'yicha."
     },
     {
       "path": "/investments",
@@ -1935,6 +1965,7 @@
     "courier-mails-detail-print-menu-special-disabled": "T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: tanlovda maxsus belgi yo'q — band aria-disabled + izoh «Tanlanganlarda maxsus belgi yo'q» (PrintModeSelect option.disabled)."
   },
   "partialViews": {
+    "superadmin-ops-investors": "Maketga qo'shimcha (vpKijXce): ro'yxat qatorida «Kabinetni ko'rish» → /investor/:id (investor kabineti, faqat o'qish). Ega tasdig'i kutilmoqda.",
     "superadmin-integrations-panel-events": "Maketga qo'shimcha (Dj70iDbD): «Hamkor» filtri («Barcha hamkorlar» — umumiy jurnal, qatorda hamkor nomi; shu holatda «Natija · 24 soat» yashirin) va «Webhook ma'lumoti» ochiladigan qatori — ikkalasi superadmin-integrations-legacy-partners dan. Ega tasdig'i kutilmoqda.",
     "admin-integrations-conn-log": "Maketga qo'shimcha (Dj70iDbD): superadmin bilan bir xil — «Hamkor» filtri va «Webhook ma'lumoti». Ega tasdig'i kutilmoqda.",
     "superadmin-integrations-legacy-partners": "Sahifa olindi (Dj70iDbD, karta TC matni bo'yicha): hamkor amallari konsolda (yaratish, Sozlamalar, Xavfsizlik, Ish rejimi), «Webhook yetkazish jurnali» — «Hodisalar» panelida. /partners va /integrations/partners — 404. Maket taqdiri ega bilan kelishilishi kerak.",
