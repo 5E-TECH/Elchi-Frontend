@@ -387,3 +387,63 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
     expect(screen.getByTestId("mail-detail-sub")).toHaveTextContent(/1 ta buyurtma/);
   });
 });
+
+describe("MailDetailPage — holatsiz havola qabul qilingan pochtaga: faqat qabul qiluvchi qabul qiladi (vaICniE4)", () => {
+  beforeEach(() => {
+    mocks.receivePostMutateAsync.mockReset();
+    mocks.useMailDetail.mockClear();
+  });
+
+  it("menejer o'z kuryerining qabul qilingan pochtasini holatsiz ochsa (buyurtma / skan havolasi) — faqat o'qish, qabul yo'q", async () => {
+    withOrders(
+      [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
+      { id: POST_ID, status: "received", courier_id: "119" },
+    );
+    renderPage(managerState);
+
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current" });
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    // Yo'ldagi qatorgacha qisqartirilmaydi — pochtaning hamma joriy buyurtmasi ko'rinadi.
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^101,102$/);
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/hali yo'lda/)).not.toBeInTheDocument();
+    expect(mocks.receivePostMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("kuryer boshqa kuryerning qabul qilingan pochtasini holatsiz ochsa — faqat o'qish", async () => {
+    withOrders([order("102", "on the road", { in_post_now: true })], { id: POST_ID, status: "received", courier_id: "501" });
+    renderPage(courierState);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+  });
+
+  it("qabul qiluvchi holatsiz havolada avvalgidek qabul qiladi: kuryer — o'z pochtasi, menejer — filial o'tkazmasi", async () => {
+    const user = userEvent.setup();
+    withOrders(
+      [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
+      { id: POST_ID, status: "received", courier_id: COURIER_ID },
+    );
+    mocks.receivePostMutateAsync.mockResolvedValue({ statusCode: 200, data: [{ id: "102" }], not_received_order_ids: [] });
+    const { unmount } = renderPage(courierState);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("false");
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^102$/);
+    await user.click(screen.getByRole("button", { name: "test-select-all" }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
+    await waitFor(() =>
+      expect(mocks.receivePostMutateAsync).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["102"] } }),
+    );
+    unmount();
+
+    withOrders(
+      [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
+      { id: POST_ID, status: "received", courier_id: "0" },
+    );
+    renderPage(managerState);
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("false");
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^102$/);
+    expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeInTheDocument();
+  });
+});

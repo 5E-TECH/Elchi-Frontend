@@ -13,7 +13,7 @@ import {
   useReceiveCanceledPost,
   useReceivePost,
 } from "../../../entities/mails";
-import { isInPostNow } from "../../../entities/mails/lib/postHistory";
+import { isHistoryView, isInPostNow } from "../../../entities/mails/lib/postHistory";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { canDispatchPostToBranch } from "../../../app/lib/access";
@@ -62,10 +62,12 @@ import { DuplicatePhonesAlert } from "./ui/DuplicatePhonesAlert";
 import { useMailPrintOptions } from "./ui/printOptions";
 import { getPostStatusBadge } from "./lib/postStatus";
 import {
+  postTotalsFromOrders,
   printOrders,
   printPostReceipt,
   toPostReceiptSource,
   type OrderPrintMode,
+  type PostTotals,
   type PrintMode,
 } from "./lib/printMode";
 import { resolveDispatchRegionId } from "./lib/dispatchRegion";
@@ -300,24 +302,38 @@ const MailDetailPage = () => {
    * pochtaning qabul qiluvchisiga: kuryer — `post.courier_id` o'zi bo'lsa;
    * menejer — filial o'tkazmasi pochtasida (`courier_id` yo'q yoki `'0'`).
    * Menejer o'z kuryerining qabul qilingan pochtasini (backend endi unga
-   * `branch_id` yozadi) faqat ko'radi — kuryer posilkalarini qabul qilmaydi.
+   * `branch_id` yozadi va `receivePost` ni o'tkazadi) faqat ko'radi — kuryer
+   * posilkalarini qabul qilmaydi: eski pochtada qabul qayta ochilmaydi,
+   * holatsiz havolada (buyurtma sahifasidagi «Pochta», skanerdagi «Pochtani
+   * ochish») esa sahifa eski pochtadagidek faqat o'qish uchun
+   * (`isForeignReceivedPost`).
    */
   const postCourierId = toText(postMeta?.courier_id);
   const viewerId = toText(user?.id);
   const isPostReceiver = isCourier
     ? Boolean(viewerId) && postCourierId === viewerId
     : isBranchReceiverManager && (!postCourierId || postCourierId === "0");
+  const isReceivedPost = String(postMeta?.status ?? "").toLowerCase() === "received";
   const hasStuckOnTheRoadOrders =
     isOldMailView &&
     !isRefusedDetail &&
     isPostReceiver &&
     hasOnTheRoadOrders(currentOrdersFromPost);
-  const isOldDetail = (isOldMailView && !hasStuckOnTheRoadOrders) || isAllBatchesDetail;
+  /** Holat (eski pochta yoki «Hamma batchlar») bo'yicha faqat o'qish. */
+  const isOldByState = (isOldMailView && !hasStuckOnTheRoadOrders) || isAllBatchesDetail;
   const isRegularRefusedDetail =
-    !isOldDetail &&
+    !isOldByState &&
     currentOrdersFromPost.length > 0 &&
     currentOrdersFromPost.every((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
   const isEffectiveRefusedDetail = isRefusedDetail || isRegularRefusedDetail;
+  /**
+   * Holatsiz ochilgan qabul qilingan (RECEIVED) oddiy pochta, ko'ruvchi — uning qabul qiluvchisi bo'lmagan kuryer
+   * yoki menejer: qabul rejimi ochilmaydi (aks holda yo'ldagi qator «Pochtani qabul qilish» bilan chiqadi), sahifa
+   * eski pochtadagidek faqat o'qish uchun.
+   */
+  const isForeignReceivedPost =
+    !isOldByState && !isEffectiveRefusedDetail && isCourierLikeReceiver && isReceivedPost && !isPostReceiver;
+  const isOldDetail = isOldByState || isForeignReceivedPost;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
   // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
@@ -937,8 +953,19 @@ const MailDetailPage = () => {
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
+  // vaICniE4: «Pochta cheki» ish rejimida faqat hozir pochtadagi qatorlardan; javob tarix (`view=all`) bo'lib qolsa
+  // server jamlari sobiq a'zolarni ham qo'shgan — jami joriy qatorlardan. Eski pochta (tarix) — server javobicha
+  // (pochta cheki va qayta chop etishdagi son — F3-6/F3-7 ega qarori).
+  const postReceiptOrders = isOldDetail ? regularOrdersFromPost : currentOrdersFromPost;
+  const postReceiptTotals = useMemo<PostTotals | null | undefined>(
+    () =>
+      !isOldDetail && isHistoryView(regularResponse?.data)
+        ? postTotalsFromOrders(currentOrdersFromPost)
+        : regularResponse?.data,
+    [currentOrdersFromPost, isOldDetail, regularResponse],
+  );
   // HJ5sLHiz: «Pochta cheki» (qop uchun) — pochtaning o'z ma'lumoti bor oddiy pochtada (rad etilganda emas).
-  const canPrintPostReceipt = Boolean(postId) && !isEffectiveRefusedDetail && regularOrdersFromPost.length > 0;
+  const canPrintPostReceipt = Boolean(postId) && !isEffectiveRefusedDetail && postReceiptOrders.length > 0;
   const printOptions = useMailPrintOptions({ withPostReceipt: canPrintPostReceipt });
   // «Chop etish» (tanlanganlar): hech narsa tanlanmasa ham «Pochta cheki» ishlaydi, buyurtma cheklari — o'chiq.
   const selectedPrintOptions = useMailPrintOptions({
@@ -957,8 +984,8 @@ const MailDetailPage = () => {
         const source = toPostReceiptSource({
           postId,
           post: postMeta,
-          orders: regularOrdersFromPost,
-          totals: regularResponse?.data,
+          orders: postReceiptOrders,
+          totals: postReceiptTotals,
           regionName: regionLabel,
         });
         void runReceiptPrint({
@@ -976,7 +1003,7 @@ const MailDetailPage = () => {
         print: () => printOrders(mode, printTargets),
       });
     },
-    [postId, postMeta, regionLabel, regularOrdersFromPost, regularResponse, runReceiptPrint],
+    [postId, postMeta, postReceiptOrders, postReceiptTotals, regionLabel, runReceiptPrint],
   );
 
   const handlePrint = useCallback(

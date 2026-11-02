@@ -84,6 +84,18 @@ const adminState = {
   },
 } as never;
 
+const managerState = {
+  role: { id: "300", role: "manager", region: null, name: "Menejer" },
+  user: {
+    user: { id: "300", role: "manager", branch: { id: "15", type: "REGIONAL" } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+} as never;
+
 const detailCalls = () => apiGet.mock.calls.filter(([url]) => url === DETAIL_URL);
 
 const renderApp = (route: string | { pathname: string; state?: unknown }) =>
@@ -157,6 +169,35 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     });
 
     await expectOnlyCurrentOrders();
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+  });
+
+  it("menejer «Pochta #78» havolasi bilan kuryerining qabul qilingan pochtasini ochsa — faqat o'qish, qabul yo'q", async () => {
+    const user = userEvent.setup();
+    const courierPost = { ...POST, courier_id: "93" };
+    const onTheRoad = { ...row("102"), status: "on the road" };
+    apiGet.mockImplementation((url: string, config?: { params?: { view?: string } }) =>
+      url === DETAIL_URL && config?.params?.view === "current"
+        ? Promise.resolve({
+            data: { statusCode: 200, message: "ok", data: { allOrdersByPostId: [row("101"), onTheRoad], post: courierPost, ...totals(2) } },
+          })
+        : Promise.reject(new Error(`unexpected ${url}`)),
+    );
+    renderWithProviders(
+      <Routes>
+        <Route path="/orders/edit/:id" element={<OrderMeta order={ORDER} role="manager" canOpenMails />} />
+        <Route path="/mails/:id" element={<MailDetailPage />} />
+      </Routes>,
+      { route: "/orders/edit/95", preloadedState: managerState },
+    );
+
+    await user.click(screen.getByTestId("meta-post").querySelector("a")!);
+
+    expect(await screen.findByText("Mijoz 102")).toBeInTheDocument();
+    expect(screen.getByText("Mijoz 101")).toBeInTheDocument();
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    expect(screen.queryByRole("checkbox", { name: "№102 ni tanlash" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
     expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
   });
 
