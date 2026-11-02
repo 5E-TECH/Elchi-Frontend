@@ -27,7 +27,11 @@ import DistrictBoard from "../../ui/DistrictBoard";
 import DistrictDeleteBlockedDialog from "../../ui/DistrictDeleteBlockedDialog";
 import DistrictMergeDialog from "../../ui/DistrictMergeDialog";
 import { useDistrictMerge } from "../../ui/useDistrictMerge";
-import { filterBoardRegions } from "../../model/boardModel";
+import {
+  filterBoardRegions,
+  normalizeBoardRegions,
+  type BoardRegionItem,
+} from "../../model/boardModel";
 import {
   deleteBlockedUsage,
   districtUsageKey,
@@ -37,41 +41,20 @@ import {
   type MergeDistrict,
 } from "../../model/districtMerge";
 
-type DistrictItem = { id: string; name: string };
-type RegionWithDistricts = { id: string; name: string; districts: DistrictItem[] };
-
-/** GET /region → viloyatlar va ularga (assigned_region bo'yicha) biriktirilgan tumanlar. */
-const toRegionsWithDistricts = (payload: unknown): RegionWithDistricts[] => {
-  const record = (payload ?? {}) as { data?: unknown };
-  const body = record.data ?? payload;
-  const raw = Array.isArray(body)
-    ? body
-    : Array.isArray((body as { items?: unknown })?.items)
-      ? (body as { items: unknown[] }).items
-      : [];
-  return raw.map((item) => {
-    const region = item as { id?: string | number; name?: string; districts?: unknown[] };
-    return {
-      id: String(region.id ?? ""),
-      name: region.name ?? "—",
-      districts: (Array.isArray(region.districts) ? region.districts : [])
-        .map((d) => {
-          const district = d as { id?: string | number; name?: string };
-          return { id: String(district.id ?? ""), name: district.name ?? "—" };
-        })
-        .filter((district) => district.id)
-        .sort((a, b) => a.name.localeCompare(b.name, "uz")),
-    };
-  });
-};
-
 const REGIONS_KEY = ["region-districts-admin"];
 /**
  * Tumanlar o'zgarsa boshqa ekranlar keshi ham eskiradi: tuman tanlagichlari (`useRegionDistrictCatalog`,
- * 5 daqiqa), viloyat statistikasi (`region-stats`) va SATO tabi (`district-sato`: preview + `/district`, SA-2) —
- * birlashtirilgan/o'chirilgan tuman qolib ketmasin (SATO tabida unga kod yozish yoki birlashtirish taklif qilinmasin).
+ * 5 daqiqa), viloyat statistikasi (`region-stats`), SATO tabi (`district-sato`: preview + `/district`, SA-2) —
+ * birlashtirilgan/o'chirilgan tuman qolib ketmasin (SATO tabida unga kod yozish yoki birlashtirish taklif qilinmasin) —
+ * va `/regions/sato-management` dagi o'tkazish doskasi (`regions/with-districts`; ko'chirilgan tuman o'sha doskada
+ * ham yangi viloyatida turadi, kGvjztpY).
  */
-const DEPENDENT_KEYS = [["region-district-catalog"], ["region-stats"], ["district-sato"]];
+const DEPENDENT_KEYS = [
+  ["region-district-catalog"],
+  ["region-stats"],
+  ["district-sato"],
+  ["regions", "with-districts"],
+];
 
 /**
  * TUMANLAR BOSHQARUVI (superadmin va admin — ega S1, DM-1): 14 viloyat va ularning tumanlari, tuman qo'shish
@@ -99,7 +82,7 @@ const RegionDistrictsPage = () => {
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
     queryFn: () =>
-      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => toRegionsWithDistricts(res.data)),
+      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeBoardRegions(res.data)),
     enabled: canManage,
     // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
     meta: { silentError: true },
@@ -183,8 +166,8 @@ const RegionDistrictsPage = () => {
     }) => api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId }),
     onMutate: async ({ districtId, fromRegionId, toRegionId }) => {
       await queryClient.cancelQueries({ queryKey: REGIONS_KEY });
-      const snapshot = queryClient.getQueryData<RegionWithDistricts[]>(REGIONS_KEY);
-      queryClient.setQueryData<RegionWithDistricts[]>(REGIONS_KEY, (current = []) => {
+      const snapshot = queryClient.getQueryData<BoardRegionItem[]>(REGIONS_KEY);
+      queryClient.setQueryData<BoardRegionItem[]>(REGIONS_KEY, (current = []) => {
         const district = current
           .find((r) => r.id === fromRegionId)
           ?.districts.find((d) => d.id === districtId);
@@ -233,7 +216,7 @@ const RegionDistrictsPage = () => {
     if (!canCreate || !newRegionId) return;
     createDistrict.mutate({ name: newName.trim(), region_id: newRegionId });
   };
-  const saveRename = (district: DistrictItem) => {
+  const saveRename = (district: { id: string; name: string }) => {
     const name = editingName.trim();
     if (!name || name === district.name) {
       setEditingId(null);

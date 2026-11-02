@@ -165,16 +165,66 @@ describe("RegionSatoManagementPage (v2) — «Tumanlarni o'tkazish» tabi", () =
   });
 
   it("moves a dragged district with PATCH /district/:id {assigned_region} and shows the success toast", async () => {
+    let resolvePatch: (value: unknown) => void = () => undefined;
+    api.patch.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePatch = resolve;
+      }),
+    );
     open();
     await screen.findByText("Chilonzor");
 
     act(() => drag("2", "6"));
 
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" }));
+    // Optimistik: server javobidan oldin yangi viloyatda turadi.
     expect(
       within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
     ).toBeInTheDocument();
+    await act(async () => resolvePatch({ data: { statusCode: 200 } }));
     expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+  });
+
+  it("kGvjztpY: ustunlar `assignedDistricts` dan; o'tkazilgach doska va bog'liq keshlar qayta yuklanadi, tuman yangi joyida", async () => {
+    const geo = { id: "1", name: "Toshkent shahri" };
+    // Geografik `districts` o'zgarmaydi (Chilonzor doim Toshkentda) — biriktirilganlar PATCH dan keyin o'zgaradi.
+    const regionsPayload = (moved: boolean) =>
+      REGIONS.map((region) => ({
+        ...region,
+        assignedDistricts:
+          region.id === "1"
+            ? [
+                ...(moved ? [] : [{ id: "2", name: "Chilonzor", region: geo }]),
+                { id: "3", name: "Mirobod", region: geo },
+              ]
+            : region.id === "6"
+              ? [
+                  ...(moved ? [{ id: "2", name: "Chilonzor", region: geo }] : []),
+                  { id: "179", name: "Samarqand shahri", region: { id: "6", name: "Samarqand viloyati" } },
+                ]
+              : [],
+      }));
+    mockGets({ region: () => ok(regionsPayload(api.patch.mock.calls.length > 0)) });
+    const { queryClient } = open();
+    await screen.findByText("Chilonzor");
+    // Boshqa ekranlarning keshi: tumanlar sahifasi (DM-1), tuman tanlagichi, viloyat statistikasi.
+    const dependent = [["region-districts-admin"], ["region-district-catalog", "1"], ["region-stats", undefined]];
+    for (const key of dependent) queryClient.setQueryData(key, []);
+
+    act(() => drag("2", "6"));
+
+    expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+    for (const key of dependent)
+      await waitFor(() => expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(calls("region")).toBe(2));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Toshkent shahri" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Umumiy son" })).toHaveTextContent("Tumanlar 3");
   });
 
   it("reloads the list and keeps the district in place when the move fails", async () => {

@@ -170,6 +170,68 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("kGvjztpY: after a successful move the refetch (assignedDistricts) keeps the district in the target region", async () => {
+    // Backend 2026-11-01: `districts` — geografik (Chilonzor hali Toshkentda), `assignedDistricts` — biriktirilgan.
+    const moved = [
+      {
+        ...REGIONS[0],
+        assignedDistricts: [{ id: "3", name: "Mirobod", region: { id: "1", name: "Toshkent shahri" } }],
+      },
+      {
+        ...REGIONS[1],
+        assignedDistricts: [
+          { id: "2", name: "Chilonzor", region: { id: "1", name: "Toshkent shahri" } },
+          { id: "179", name: "Samarqand shahri", region: { id: "6", name: "Samarqand viloyati" } },
+        ],
+      },
+    ];
+    const { queryClient } = open();
+    await screen.findByText("Chilonzor");
+    // SATO sahifasidagi o'tkazish doskasi keshi ham eskiradi.
+    const boardKey = ["regions", "with-districts"];
+    queryClient.setQueryData(boardKey, []);
+    const getsBefore = api.get.mock.calls.length;
+    api.get.mockResolvedValue({ data: { statusCode: 200, data: moved } });
+
+    act(() => drag("2", "6"));
+
+    expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+    expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" });
+    await waitFor(() => expect(api.get.mock.calls.length).toBeGreaterThan(getsBefore));
+    await waitFor(() => expect(queryClient.getQueryState(boardKey)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    // Qayta yuklangandan keyin ham — Samarqandda (eski viloyatiga «sakrab» qaytmaydi).
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Toshkent shahri" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("districts-count")).toHaveTextContent("3");
+  });
+
+  it("kGvjztpY: a failed move rolls back to the snapshot on the assignedDistricts path too", async () => {
+    const assigned = REGIONS.map((region) => ({ ...region, assignedDistricts: region.districts }));
+    api.get.mockResolvedValue({ data: { statusCode: 200, data: assigned } });
+    api.patch.mockRejectedValue(
+      Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
+    );
+    open();
+    await screen.findByText("Chilonzor");
+
+    act(() => drag("2", "6"));
+
+    expect((await screen.findAllByText("O'tkazib bo'lmadi — tuman joyiga qaytarildi")).length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("region", { name: "Toshkent shahri" })).getByText("Chilonzor"),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+  });
+
   it("load error is shown on the page (ErrorState) and is not toasted globally again", async () => {
     api.get.mockRejectedValue(
       Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
