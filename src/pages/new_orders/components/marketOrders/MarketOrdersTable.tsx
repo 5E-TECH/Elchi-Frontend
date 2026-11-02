@@ -42,6 +42,8 @@ type MarketOrdersTableProps = {
   onDelete: (order: MarketOrder) => void;
   label: string;
   busy?: boolean;
+  /** Shu marketda telefon raqami takrorlangan yangi buyurtmalar (`findDuplicatePhoneGroups`) — qatorda belgi. */
+  duplicateIds?: ReadonlySet<string>;
 };
 
 /** Havola ko'rinishidagi ikonka-tugma (`.el-iconbtn`, ghost): `IconButton` bilan bir xil o'lcham va ton. */
@@ -87,6 +89,7 @@ export const MarketOrdersTable = ({
   onDelete,
   label,
   busy,
+  duplicateIds,
 }: MarketOrdersTableProps) => {
   const { t, i18n } = useTranslation(["newOrders", "orders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -185,6 +188,11 @@ export const MarketOrdersTable = ({
             <div className="whitespace-nowrap text-[13px] text-text-muted">
               {formatPhone(order.customer?.phone_number) || "—"}
             </div>
+            {duplicateIds?.has(String(order.id)) ? (
+              <Badge tone="warning" className="mt-1">
+                {t("marketOrders.duplicatePhoneBadge")}
+              </Badge>
+            ) : null}
             {keepsProducts ? (
               <div className="hidden whitespace-nowrap text-[13px] text-text-muted max-lg:block">
                 {readOrderDistrict(order) ?? order.address ?? "—"}
@@ -249,7 +257,7 @@ export const MarketOrdersTable = ({
         cell: (order) => <div className="inline-flex items-center gap-0.5">{rowActions(order, "sm")}</div>,
       },
     ];
-  }, [compactKeeps, dateTime, deliveryBadge, editHref, isStaff, money, paidLine, qty, rowActions, t]);
+  }, [compactKeeps, dateTime, deliveryBadge, duplicateIds, editHref, isStaff, money, paidLine, qty, rowActions, t]);
 
   const renderCard = useCallback(
     (order: MarketOrder) => {
@@ -274,6 +282,11 @@ export const MarketOrdersTable = ({
             {name}
             <span className="whitespace-nowrap font-semibold text-text">{money(order.total_price)}</span>
           </span>
+          {duplicateIds?.has(String(order.id)) ? (
+            <Badge tone="warning" className="self-start">
+              {t("marketOrders.duplicatePhoneBadge")}
+            </Badge>
+          ) : null}
           <span className="text-[13px] text-text-muted">
             №{order.id}
             {district ? ` · ${district}` : null}
@@ -289,7 +302,7 @@ export const MarketOrdersTable = ({
         </div>
       );
     },
-    [dateTime, deliveryBadge, editHref, isStaff, money, paidLine, qty, rowActions, selection],
+    [dateTime, deliveryBadge, duplicateIds, editHref, isStaff, money, paidLine, qty, rowActions, selection, t],
   );
 
   return (
