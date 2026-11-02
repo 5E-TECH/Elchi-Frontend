@@ -1,3 +1,5 @@
+import { isInPostNow } from "../../../../entities/mails/lib/postHistory";
+
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -28,6 +30,9 @@ export const extractNotReceivedOrderIds = (response: unknown): string[] => {
  * "Eski" (qabul qilingan) pochtada hamon yo'lda (ON_THE_ROAD) buyurtma bormi
  * (fix3b LC-11). Eski yozuvlarda pochta RECEIVED bo'lib qolgan, ichida esa
  * qabul qilinmagan posilka bor — u holda qabul qilish qayta ochiladi.
+ * Faqat HOZIR pochtadagi qatorlar sanaladi (#618: `view=all` da sobiq a'zo
+ * `in_post_now: false` — u boshqa pochtada yo'lda bo'lsa ham bu pochtaniki emas).
  */
-export const hasOnTheRoadOrders = (orders: ReadonlyArray<{ status?: string | null }>) =>
-  orders.some((order) => order.status === "on the road");
+export const hasOnTheRoadOrders = (
+  orders: ReadonlyArray<{ status?: string | null; in_post_now?: boolean | null }>,
+) => orders.some((order) => order.status === "on the road" && isInPostNow(order));

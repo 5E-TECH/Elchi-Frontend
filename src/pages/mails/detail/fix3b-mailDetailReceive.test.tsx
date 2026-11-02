@@ -71,13 +71,14 @@ vi.mock("./ui/OrdersTable", () => ({
 
 const POST_ID = "7";
 
-const order = (id: string, status: string) => ({
+const order = (id: string, status: string, history?: { in_post_now: boolean; current_post_id?: string | null }) => ({
   id,
   status,
   region_id: "12",
   where_deliver: "address",
   total_price: 100000,
   district: { id: "5", name: "Guliston", region_id: "12", region: { name: "Sirdaryo" } },
+  ...history,
 });
 
 const managerState = {
@@ -96,16 +97,35 @@ const superadminState = {
   role: { id: "1", role: "superadmin", region: null, name: "Superadmin" },
 } as never;
 
-const withOrders = (rows: ReturnType<typeof order>[]) => {
+const COURIER_ID = "500";
+const courierState = {
+  role: { id: COURIER_ID, role: "courier", region: null, name: "Kuryer" },
+  user: {
+    user: { id: COURIER_ID, role: "courier", branch: { id: "15", type: "REGIONAL" } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+} as never;
+
+/** `data.post` — pochtaning o'z ma'lumoti (qabul qiluvchini aniqlash: `courier_id`). */
+type PostMeta = { id: string; status: string; courier_id?: string | null; view?: string };
+
+const withOrders = (rows: ReturnType<typeof order>[], post?: PostMeta) => {
+  const { view, ...postMeta } = post ?? ({} as PostMeta);
   mocks.useMailDetail.mockImplementation((postId: string) => ({
-    data: postId ? { data: { allOrdersByPostId: rows } } : undefined,
+    data: postId
+      ? { data: { allOrdersByPostId: rows, ...(post ? { post: postMeta } : {}), ...(view ? { view } : {}) } }
+      : undefined,
     isLoading: false,
     isError: false,
     refetch: vi.fn().mockResolvedValue({ data: { data: { allOrdersByPostId: rows } } }),
   }));
 };
 
-const renderPage = (preloadedState: never, route = `/mails/${POST_ID}`) =>
+const renderPage = (preloadedState: never, route: string | { pathname: string; state?: unknown } = `/mails/${POST_ID}`) =>
   renderWithProviders(
     <Routes>
       <Route path="/mails/:id" element={<MailDetailPage />} />
@@ -130,6 +150,12 @@ describe("receiveResult helpers (fix3b LC-11)", () => {
   it("hasOnTheRoadOrders", () => {
     expect(hasOnTheRoadOrders([{ status: "waiting" }, { status: "on the road" }])).toBe(true);
     expect(hasOnTheRoadOrders([{ status: "waiting" }])).toBe(false);
+  });
+
+  it("hasOnTheRoadOrders — faqat hozir pochtadagi qator (#618: sobiq a'zo sanalmaydi)", () => {
+    expect(hasOnTheRoadOrders([{ status: "on the road", in_post_now: false }])).toBe(false);
+    expect(hasOnTheRoadOrders([{ status: "on the road", in_post_now: true }])).toBe(true);
+    expect(hasOnTheRoadOrders([{ status: "on the road", in_post_now: null }])).toBe(true);
   });
 });
 
@@ -239,5 +265,125 @@ describe("MailDetailPage — RECEIVED pochtadagi yo'ldagi qoldiq (fix3b LC-11)",
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
     expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
     expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, backend #618)", () => {
+  beforeEach(() => {
+    mocks.receivePostMutateAsync.mockReset();
+    mocks.useMailDetail.mockClear();
+  });
+
+  it("eski pochta view'siz so'raladi (server sukuti), holatsiz havola — view=current", () => {
+    withOrders([order("101", "waiting")], { id: POST_ID, status: "received", courier_id: "0" });
+    const { unmount } = renderPage(managerState, `/mails/${POST_ID}?view=old`);
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: undefined });
+    expect(mocks.useMailDetail).not.toHaveBeenCalledWith(POST_ID, { view: "current" });
+    unmount();
+
+    mocks.useMailDetail.mockClear();
+    renderPage(managerState);
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current" });
+  });
+
+  it("sobiq a'zo (in_post_now: false) boshqa pochtada yo'lda bo'lsa ham qabul qayta ochilmaydi — «Faqat o'qish»", async () => {
+    withOrders(
+      [
+        order("101", "waiting", { in_post_now: true }),
+        order("102", "on the road", { in_post_now: false, current_post_id: "88" }),
+      ],
+      { id: POST_ID, status: "received", courier_id: "0", view: "all" },
+    );
+    renderPage(managerState, `/mails/${POST_ID}?view=old`);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    // Tarix — pochtaga kirgan hamma buyurtma (sobiq a'zo ham) ko'rinadi.
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^101,102$/);
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/hali yo'lda/)).not.toBeInTheDocument();
+  });
+
+  it("menejer o'z kuryerining qabul qilingan pochtasida (courier_id — kuryer) qolib ketgan qatorni qabul qilmaydi", async () => {
+    withOrders(
+      [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
+      { id: POST_ID, status: "received", courier_id: "119" },
+    );
+    renderPage(managerState, `/mails/${POST_ID}?view=old`);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/hali yo'lda/)).not.toBeInTheDocument();
+  });
+
+  it("menejer filial o'tkazmasi pochtasida (courier_id '0') qolib ketgan qatorni qabul qiladi", async () => {
+    withOrders(
+      [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
+      { id: POST_ID, status: "received", courier_id: "0" },
+    );
+    renderPage(managerState, `/mails/${POST_ID}?view=old`);
+
+    expect(await screen.findByText("1 ta buyurtma hali yo'lda")).toBeInTheDocument();
+    expect(screen.getByTestId("orders-readonly")).toHaveTextContent("false");
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^102$/);
+  });
+
+  it("kuryerning o'z pochtasi: hozir pochtadagi yo'ldagi qatorlar qabulni qayta ochadi, sobiq a'zo — yo'q (`courier-mails-detail-print-menu`)", async () => {
+    const user = userEvent.setup();
+    withOrders(
+      [
+        order("101", "waiting", { in_post_now: true }),
+        order("102", "on the road", { in_post_now: true }),
+        order("103", "on the road", { in_post_now: true }),
+        order("104", "on the road", { in_post_now: false, current_post_id: "88" }),
+      ],
+      { id: POST_ID, status: "received", courier_id: COURIER_ID },
+    );
+    mocks.receivePostMutateAsync.mockResolvedValue({ statusCode: 200, data: [], not_received_order_ids: [] });
+    renderPage(courierState, { pathname: `/mails/${POST_ID}`, state: { fromTab: "old", view: "old" } });
+
+    expect(await screen.findByText("2 ta buyurtma hali yo'lda")).toBeInTheDocument();
+    expect(
+      screen.getByText("Pochta qabul qilingan deb belgilangan, lekin bu buyurtmalar qabul qilinmagan — ularni qabul qiling."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Eski pochtalar/ })).toBeInTheDocument();
+    expect(screen.getByTestId("orders-readonly")).toHaveTextContent("false");
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^102,103$/);
+
+    await user.click(screen.getByRole("button", { name: "test-select-all" }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
+
+    await waitFor(() =>
+      expect(mocks.receivePostMutateAsync).toHaveBeenCalledWith({
+        postId: POST_ID,
+        payload: { order_ids: ["102", "103"] },
+      }),
+    );
+  });
+
+  it("kuryer filial o'tkazmasi (courier_id '0') yoki boshqa kuryer pochtasida qabulni qayta ochmaydi", async () => {
+    withOrders([order("102", "on the road", { in_post_now: true })], { id: POST_ID, status: "received", courier_id: "0" });
+    const { unmount } = renderPage(courierState, `/mails/${POST_ID}?view=old`);
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+    unmount();
+
+    withOrders([order("102", "on the road", { in_post_now: true })], { id: POST_ID, status: "received", courier_id: "501" });
+    renderPage(courierState, `/mails/${POST_ID}?view=old`);
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+  });
+
+  it("amal rejimida (jo'natish) javobga sobiq a'zo tushib qolsa ham — ro'yxatda va sonda yo'q", async () => {
+    withOrders(
+      [order("101", "received", { in_post_now: true }), order("102", "received", { in_post_now: false, current_post_id: "88" })],
+      { id: POST_ID, status: "new" },
+    );
+    renderPage(superadminState);
+
+    expect(await screen.findByTestId("orders-ids")).toHaveTextContent(/^101$/);
+    expect(screen.getByTestId("mail-detail-sub")).toHaveTextContent(/1 ta buyurtma/);
   });
 });
