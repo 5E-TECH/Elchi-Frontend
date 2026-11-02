@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack
+// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt
 import { memo, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import {
   type FinanceHistoryActor,
   type FinanceHistoryDetail,
 } from "../../../entities/payments";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
@@ -40,6 +41,7 @@ import {
 import { PaymentAckBadge } from "./PaymentAckBadge";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
+import ReceiptSection from "./receipt/ReceiptSection";
 
 /**
  * KASSA TARIXI YOZUVI TAFSILOTI — «Moliya» sahifalarining umumiy oynasi (dizayn v2).
@@ -200,6 +202,9 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   // matn ko'ruvchiga qarab (KI-S1): kuryer — «Siz tasdiqlagansiz», xodim — «Kuryer tasdiqladi».
   const paymentAck = toPaymentAck(current?.payment_ack);
   const paymentAckAudience = paymentAckAudienceOf(viewerRole);
+
+  // Chek (QlLf33Ma): kuryer, market va boshqa rollarda `receipt` kaliti kelmaydi — bo'lim chiqmaydi.
+  const receiptId = toReceiptRef(detail?.receipt)?.id ?? toReceiptRef(current?.receipt)?.id ?? null;
 
   const order = detail?.order ?? null;
   const orderId = order?.id != null ? String(order.id) : "";
@@ -384,6 +389,18 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           </div>
         ) : null}
       </div>
+
+      {receiptId ? (
+        <ReceiptSection
+          receiptId={receiptId}
+          operation={[
+            getPaymentSourceTitle(display.source_type, t, { role: viewerRole, cashboxType: display.cashbox_type }),
+            dateText,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        />
+      ) : null}
 
       {canFetch && isLoading ? (
         <div role="status" aria-label={t("v2HistoryDetail.loading")}>

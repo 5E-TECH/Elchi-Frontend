@@ -45,10 +45,32 @@ const userByIdCalls = vi.hoisted(() => [] as unknown[]);
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const idleQuery = { data: undefined, isLoading: false, refetch: vi.fn() };
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments", async (importOriginal) => {
   const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
   return {
     ...(await importOriginal<typeof import("../../../entities/payments")>()),
+    // Chek rasmi o'chiq — bu testlar formaning o'zi haqida (chek: QlLf33Ma-receipt.test.tsx).
+    useReceiptSettings: () => ({
+      data: {
+        manual_expense: { photo_required: false, ai_enabled: false },
+        hq_transfer: { photo_required: false, ai_enabled: false },
+        updated_at: null,
+        updated_by: null,
+      },
+      isLoading: false,
+      refetch: vi.fn(),
+    }),
+    useUploadReceipt: () => ({ mutateAsync: vi.fn() }),
     useCashBox: () => ({
       useGetCurrentShift: () => {
         useSyncExternalStore(

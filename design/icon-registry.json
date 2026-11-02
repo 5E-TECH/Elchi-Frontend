@@ -720,7 +720,7 @@
     {
      "concept": "Hujjat",
      "icon": "FileText",
-     "usage": "Yorliq va hisobot hujjati, chop etish shabloni, paket varag'i",
+     "usage": "Yorliq va hisobot hujjati, chop etish shabloni, paket varag'i, «Faqat maxsus yorliqlar» menyu bandi — maxsus belgi «Hujjat» uchun emas (u — Files)",
      "replaces": []
     },
     {
@@ -1043,6 +1043,54 @@
      "replaces": [
       "EyeClosed"
      ]
+    }
+   ]
+  },
+  {
+   "title": "Maxsus belgilar",
+   "note": "Buyurtmaning maxsus belgilari (T8, ega qarori): ro'yxat va tafsilotdagi neytral badge va tanlash chipida 14 px, kategoriya yorlig'ida katta va faqat qora. Belgi rangsiz — ma'no ikonka va so'zda. Tartib kanonik.",
+   "items": [
+    {
+     "concept": "Sinadigan",
+     "icon": "Wine",
+     "usage": "Maxsus belgi «Sinadigan» (fragile): badge, tanlash chipi va kategoriya yorlig'i — shisha, keramika",
+     "replaces": []
+    },
+    {
+     "concept": "Diniy kitob",
+     "icon": "BookOpen",
+     "usage": "Maxsus belgi «Diniy kitob» (religious_book): badge, tanlash chipi va kategoriya yorlig'i — Qur'on, diniy adabiyot",
+     "replaces": []
+    },
+    {
+     "concept": "Suyuqlik",
+     "icon": "Droplet",
+     "usage": "Maxsus belgi «Suyuqlik» (liquid): badge, tanlash chipi va kategoriya yorlig'i — to'kilsa, qo'shni posilkalar ham buziladi",
+     "replaces": []
+    },
+    {
+     "concept": "Tez buziladigan",
+     "icon": "Hourglass",
+     "usage": "Maxsus belgi «Tez buziladigan» (perishable): badge, tanlash chipi va kategoriya yorlig'i — oziq-ovqat, gul, dori",
+     "replaces": []
+    },
+    {
+     "concept": "Elektronika (batareyali)",
+     "icon": "BatteryCharging",
+     "usage": "Maxsus belgi «Elektronika (batareyali)» (battery): badge, tanlash chipi va kategoriya yorlig'i — urilgan litiy batareya yonadi",
+     "replaces": []
+    },
+    {
+     "concept": "Og'ir yuk",
+     "icon": "Weight",
+     "usage": "Maxsus belgi «Og'ir yuk» (heavy): badge, tanlash chipi va kategoriya yorlig'i — ostidagi posilkalarni ezadi",
+     "replaces": []
+    },
+    {
+     "concept": "Hujjat (maxsus belgi)",
+     "icon": "Files",
+     "usage": "Maxsus belgi «Hujjat» (documents): badge, tanlash chipi va kategoriya yorlig'i — bukilgan yoki boshqaga berilgan hujjat tiklanmaydi; hujjat fayli va chop etish shabloni uchun emas (u — FileText)",
+     "replaces": []
     }
    ]
   }

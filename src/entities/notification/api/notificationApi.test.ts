@@ -76,8 +76,8 @@ describe("getMyTelegramGroups (KJNHAlGW, TG-C)", () => {
       data: {
         statusCode: 200,
         data: [
-          { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked" },
-          { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null },
+          { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked", linked_by: "9", linked_by_owner: true },
+          { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null, linked_by: "37", linked_by_owner: false },
         ],
       },
     });
@@ -86,8 +86,8 @@ describe("getMyTelegramGroups (KJNHAlGW, TG-C)", () => {
 
     expect(mocks.get).toHaveBeenCalledWith("notifications/me/telegram-groups");
     expect(result).toEqual([
-      { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null },
-      { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked" },
+      { group_type: "create", linked: true, is_active: true, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: null, linked_by_owner: false },
+      { group_type: "cancel", linked: true, is_active: false, linked_at: "2026-10-06T09:00:00.000Z", inactive_reason: "kicked", linked_by_owner: true },
     ]);
   });
 
@@ -101,8 +101,9 @@ describe("getMyTelegramGroups (KJNHAlGW, TG-C)", () => {
       },
     });
     expect(await getMyTelegramGroups()).toEqual([
-      { group_type: "create", linked: false, is_active: false, linked_at: null, inactive_reason: null },
-      { group_type: "cancel", linked: true, is_active: false, linked_at: null, inactive_reason: null },
+      { group_type: "create", linked: false, is_active: false, linked_at: null, inactive_reason: null, linked_by_owner: null },
+      // Eski backend (`linked_by_owner` yo'q) — noma'lum, ogohlantirish chiqmaydi.
+      { group_type: "cancel", linked: true, is_active: false, linked_at: null, inactive_reason: null, linked_by_owner: null },
     ]);
 
     mocks.get.mockResolvedValue({ data: { data: {} } });

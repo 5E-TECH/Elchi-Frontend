@@ -61,15 +61,24 @@ import {
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 import { useUser } from "../../../entities/user/api/userApi";
-import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
+import {
+  getReceiptErrorCode,
+  normalizeCashboxShift,
+  readLinkedReceiptStatus,
+  useCashBox,
+  type CashboxShift,
+} from "../../../entities/payments";
+import { dayOverDay, lastDaysRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
 import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
-import CashboxFormPopup, { type CashboxFormPayload } from "./CashboxFormPopup";
+import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } from "./CashboxFormPopup";
 import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
+import BalanceTrendCard from "./BalanceTrendCard";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
 import ShiftBanner from "./ShiftBanner";
@@ -118,7 +127,8 @@ import {
  *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
  *    grafigi (`Grafik | Jadval`), ko'z tugmasi summalarni yashiradi. «Tezkor amallar»: qabul (SA/admin — filial
  *    yoki HQ kuryeri, menejer — kuryer), «Marketga to'lov» (faqat SA/admin — backend menejerga 403), xarajat,
- *    to'ldirish; smena ochiq — «Smena ochiq · … dan · Ochgan xodim: <ism>» bloki.
+ *    to'ldirish; smena ochiq — «Smena ochiq · … dan · Ochgan xodim: <ism>» bloki. Menejer (maket): sof oqim o'rnida
+ *    «kechaga nisbatan», grafik alohida «Balans dinamikasi» kartasida (`BalanceTrendCard`, qzjTMWPb).
  *  - «Bugun / Bu hafta / Bu oy» (telefonda bitta karta + segment), «Pul qayerdan keldi, qayerga ketdi»
  *    (bu oy, manba turi bo'yicha), «Operatsiyalar tarixi» (sana filtri, jadval → telefonda kartalar, tafsilot).
  *
@@ -448,6 +458,16 @@ const MainCashbox = () => {
     [draftHistoryFrom, draftHistoryTo, isStaffRole],
   );
   const historyQuery = useGetFinanceHistory(historyParams);
+  // Menejer (maket): «kechaga nisbatan» — bugungi − kechagi `closing_balance` (qzjTMWPb). Noma'lum bo'lsa chizilmaydi.
+  const dayChangeParams = useMemo(() => {
+    const range = lastDaysRange(2);
+    return { from_date: range.from, to_date: range.to };
+  }, []);
+  const dayChangeQuery = useFinanceHistoryDaily(dayChangeParams, isManagerRole);
+  const dayChange = useMemo(
+    () => (dayChangeQuery.data ? dayOverDay(dayChangeQuery.data.days) : null),
+    [dayChangeQuery.data],
+  );
   const historyLoading = Boolean(historyQuery.isLoading);
   const historyFetching = Boolean(historyQuery.isFetching);
   const historyIsError = Boolean(historyQuery.isError);
@@ -636,16 +656,22 @@ const MainCashbox = () => {
    * kategoriyasiz chiqimni 400 bilan rad etadi — uning matni xabarda chiqadi. D3 — `Idempotency-Key` barmoq iziga
    * bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta yuborilganda backend uni
    * bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi). Kategoriya bilan chiqim rad
-   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi.
+   * etilsa (o'chirilgan kategoriya — 400 va backend matni) tanlov ro'yxati qayta o'qiladi. Chek (QlLf33Ma): `receipt_id`
+   * barmoq iziga KIRMAYDI (rasm almashsa ham xarajat ikki marta yozilmaydi); `RECEIPT_*` rad etilsa natija oynaga
+   * qaytadi (`receiptError`) — xato «Chek rasmi» maydoni ostida, umumiy xabarsiz.
    */
   const submitManualOperation = useCallback(
-    async (operation: ManualOperation, { amount, type, comment, expense_category_id }: CashboxFormPayload) => {
+    async (
+      operation: ManualOperation,
+      { amount, type, comment, expense_category_id, receipt_id }: CashboxFormPayload,
+    ): Promise<CashboxFormResult> => {
       if (manualPendingRef.current) return;
       manualPendingRef.current = true;
       const mutation = operation === "fill" ? cashboxFill : cashboxSpand;
       const close = operation === "fill" ? () => setIsRefillPopupOpen(false) : () => setIsSpendPopupOpen(false);
       const fingerprint = manualOperationFingerprint(operation, currentUserId || normalizedRole, amount, type);
       const categoryId = operation === "spend" ? expense_category_id : undefined;
+      const receiptId = operation === "spend" ? receipt_id : undefined;
       try {
         const idempotencyKey = takePaymentKey(fingerprint);
         let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
@@ -656,11 +682,13 @@ const MainCashbox = () => {
               type,
               ...(comment ? { comment } : {}),
               ...(categoryId ? { expense_category_id: categoryId } : {}),
+              ...(receiptId ? { receipt_id: receiptId } : {}),
             },
             idempotencyKey,
           });
         } catch (error) {
           // Kalit saqlanadi: aynan shu operatsiya qayta yuborilsa backend uni bir marta yozadi.
+          if (operation === "spend" && getReceiptErrorCode(error)) return { receiptError: error };
           notify.error(t("common:error"), {
             description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
           });
@@ -682,8 +710,10 @@ const MainCashbox = () => {
           await refetchCashboxState();
           return;
         }
+        const message = t(operation === "fill" ? "fillSuccess" : "spendSuccess");
         notify.success(t("common:success"), {
-          description: t(operation === "fill" ? "fillSuccess" : "spendSuccess"),
+          description:
+            readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message,
         });
         close();
       } finally {
@@ -812,6 +842,9 @@ const MainCashbox = () => {
     return category ? <ExpenseCategoryBadge name={category} /> : null;
   };
 
+  // «Chek» belgisi (QlLf33Ma) — superadmin va admin; menejerning filial kassasida yo'q (maket `…-main-cashbox-receipts`).
+  const receiptBadge = (row: PaymentRow) => (isManagerRole ? null : <ReceiptRowBadge receipt={row.receipt} />);
+
   const operationBadge = (row: PaymentRow) => {
     const direction = rowDirection(row);
     if (!direction) return <span className="text-text-muted">—</span>;
@@ -866,6 +899,7 @@ const MainCashbox = () => {
       cell: (row) => {
         const sub = rowCounterparty(row);
         const category = categoryBadge(row);
+        const receipt = receiptBadge(row);
         const title = (
           <Pressable
             onClick={() => setSelectedRow(row)}
@@ -877,10 +911,11 @@ const MainCashbox = () => {
         return (
           <>
             {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
-            {category ? (
+            {category || (receipt && row.receipt) ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 {title}
                 {category}
+                {receipt}
               </div>
             ) : (
               title
@@ -953,6 +988,7 @@ const MainCashbox = () => {
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
           {categoryBadge(row)}
+          {receiptBadge(row)}
           <span className="text-[13px] text-text-muted">
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>
@@ -1032,19 +1068,23 @@ const MainCashbox = () => {
             onClick={() => setBalanceVisible((value) => !value)}
             className="shrink-0 max-md:size-11"
           />
-          <SegmentedControl<BalanceChartView>
-            ariaLabel={t("v2MainCashbox.balance.view")}
-            value={balanceView}
-            onValueChange={setBalanceView}
-            className="max-md:min-w-0 max-md:flex-1"
-            options={[
-              { value: "chart", label: t("v2MainCashbox.balance.chart"), icon: ChartColumn },
-              { value: "table", label: t("v2MainCashbox.balance.table"), icon: List },
-            ]}
-          />
+          {/* Menejerda grafik alohida «Balans dinamikasi» kartasida (maket) — bu yerda egizak kerak emas. */}
+          {isManagerRole ? null : (
+            <SegmentedControl<BalanceChartView>
+              ariaLabel={t("v2MainCashbox.balance.view")}
+              value={balanceView}
+              onValueChange={setBalanceView}
+              className="max-md:min-w-0 max-md:flex-1"
+              options={[
+                { value: "chart", label: t("v2MainCashbox.balance.chart"), icon: ChartColumn },
+                { value: "table", label: t("v2MainCashbox.balance.table"), icon: List },
+              ]}
+            />
+          )}
         </div>
       </div>
-      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+      {/* Menejerda grafik yo'q: qiymat va taqsimot ustma-ust (maket), karta teng ikki ustunning birida. */}
+      <div className={cx("flex items-start gap-x-8 gap-y-4", isManagerRole ? "flex-col [&>*]:w-full [&>*]:flex-none" : "flex-wrap")}>
         <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-1">
           <span className="text-[13px] font-semibold text-text-muted">{t("v2MainCashbox.balance.total")}</span>
           {balanceLoading ? (
@@ -1055,27 +1095,41 @@ const MainCashbox = () => {
               unit={balanceVisible ? currency : undefined}
             />
           )}
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
-            {historyLoading ? (
-              <Skeleton shape="line" width={96} height={22} />
-            ) : historyIsError ? (
-              // Tarix yuklanmadi — bugungi oqim noma'lum («0 so'm» deb ko'rsatilmaydi).
-              <span className="inline-flex h-[22px] items-center rounded-md bg-sunken px-1.5 text-xs font-bold text-text-muted">
-                —
+          {isManagerRole ? (
+            dayChange ? (
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+                <span
+                  className="inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-md bg-sunken px-1.5 text-xs font-bold text-text-muted"
+                >
+                  <TrendingUp aria-hidden="true" size={14} className={dayChange.amount < 0 ? "-scale-y-100" : undefined} />
+                  {balanceVisible ? formatSignedMoneyLocalized(dayChange.amount, { language, withCurrency: false }) : MASK}
+                </span>
+                <span>{t("v2Daily.vsYesterday")}</span>
               </span>
-            ) : (
-              <span
-                className={cx(
-                  "inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-md px-1.5 text-xs font-bold",
-                  deltaClass,
-                )}
-              >
-                <TrendingUp aria-hidden="true" size={14} className={todayNet < 0 ? "-scale-y-100" : undefined} />
-                {balanceVisible ? formatSignedMoneyLocalized(todayNet, { language }) : MASK}
-              </span>
-            )}
-            <span>{t("v2MainCashbox.balance.todayNet")}</span>
-          </span>
+            ) : null
+          ) : (
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+              {historyLoading ? (
+                <Skeleton shape="line" width={96} height={22} />
+              ) : historyIsError ? (
+                // Tarix yuklanmadi — bugungi oqim noma'lum («0 so'm» deb ko'rsatilmaydi).
+                <span className="inline-flex h-[22px] items-center rounded-md bg-sunken px-1.5 text-xs font-bold text-text-muted">
+                  —
+                </span>
+              ) : (
+                <span
+                  className={cx(
+                    "inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-md px-1.5 text-xs font-bold",
+                    deltaClass,
+                  )}
+                >
+                  <TrendingUp aria-hidden="true" size={14} className={todayNet < 0 ? "-scale-y-100" : undefined} />
+                  {balanceVisible ? formatSignedMoneyLocalized(todayNet, { language }) : MASK}
+                </span>
+              )}
+              <span>{t("v2MainCashbox.balance.todayNet")}</span>
+            </span>
+          )}
         </div>
         <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
           {balanceLoading ? (
@@ -1127,15 +1181,17 @@ const MainCashbox = () => {
           )}
         </div>
       </div>
-      <MainCashboxBalanceChart
-        points={balancePoints}
-        view={balanceView}
-        hidden={!balanceVisible}
-        isLoading={Boolean(mainCashboxQuery.isLoading)}
-        isError={Boolean(mainCashboxQuery.isError)}
-        error={mainCashboxQuery.error}
-        onRetry={() => void mainCashboxQuery.refetch?.()}
-      />
+      {isManagerRole ? null : (
+        <MainCashboxBalanceChart
+          points={balancePoints}
+          view={balanceView}
+          hidden={!balanceVisible}
+          isLoading={Boolean(mainCashboxQuery.isLoading)}
+          isError={Boolean(mainCashboxQuery.isError)}
+          error={mainCashboxQuery.error}
+          onRetry={() => void mainCashboxQuery.refetch?.()}
+        />
+      )}
     </Card>
   );
 
@@ -1553,13 +1609,16 @@ const MainCashbox = () => {
         />
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className={cx("grid gap-4", isManagerRole ? "lg:grid-cols-2" : "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
         {balanceCard}
         {actionsCard}
       </div>
 
       {periodCards}
       {mobilePeriodCard}
+      {isManagerRole ? (
+        <BalanceTrendCard cashboxLabel={t("v2Overview.mainCashbox")} hidden={!balanceVisible} />
+      ) : null}
       {sourcesCard}
       {historyCard}
 

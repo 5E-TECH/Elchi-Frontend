@@ -187,6 +187,24 @@ describe("/tg/scan — Telegram skan Mini App", () => {
     expect(camera.calls).toHaveLength(0);
   });
 
+  it("BOT-2: 403 TELEGRAM_COURIER_ONLY on sign-in shows the courier-only state and keeps the camera off", async () => {
+    routes["auth/telegram"] = (config) => {
+      const error = httpError(config, 403, "Forbidden");
+      (error.response!.data as Record<string, unknown>).code = "TELEGRAM_COURIER_ONLY";
+      throw error;
+    };
+    const webApp = makeWebApp();
+    setWebApp(webApp);
+    renderWithProviders(<TgScanPage />, { route: "/tg/scan" });
+
+    expect(await screen.findByText("Skaner faqat kuryerlar uchun")).toBeInTheDocument();
+    expect(screen.queryByText("Kirib bo'lmadi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(camera.calls).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Yopish" }));
+    expect(webApp.close).toHaveBeenCalled();
+  });
+
   it("a decode assigns the order with the Mini App JWT, bumps the counter and shows district + customer", async () => {
     const webApp = await renderReady();
     routes["orders/scan-assign"] = () => assigned(ORDER_53);

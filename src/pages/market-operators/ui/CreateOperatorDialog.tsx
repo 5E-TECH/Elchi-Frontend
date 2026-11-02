@@ -39,7 +39,7 @@ type CreateOperatorDialogProps = {
 /**
  * «OPERATOR QO'SHISH» (maket `market-operators-create-dialog`; telefonda pastki varaqa — `Dialog` o'zi).
  *
- * Ism familiya · Telefon (+998) · Parol (ko'rsatish/yashirish, kamida 4 belgi) · ixtiyoriy «Komissiya» (ega MO-S5:
+ * Ism familiya · Telefon (+998) · Parol (ko'rsatish/yashirish, kamida 6 belgi, katta va kichik harf, raqam) · ixtiyoriy «Komissiya» (ega MO-S5:
  * Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). Backend bilan ikki so'rov: avval `POST /market-operators`
  * (faqat 3 maydon — `forbidNonWhitelisted`), so'ng qiymat bo'lsa `PATCH :id/commission`. PATCH yiqilsa operator
  * baribir qo'shilgan: oyna yopiladi, «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash» (Komissiya oynasi).

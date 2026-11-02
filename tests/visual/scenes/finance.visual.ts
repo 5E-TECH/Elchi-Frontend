@@ -24,6 +24,8 @@ defineScene({
   api: {
     ...MAIN_CASHBOX,
     "GET finance/history": fixture("finance/history-payments.json"),
+    // qzjTMWPb: «Pul oqimi» — 14 kun (FIXED_NOW bilan tugaydi).
+    "GET finance/history/daily": fixture("finance/history-daily.json"),
     // «Yaratgan» filtri variantlari.
     "GET users": fixture("finance/staff-users.json"),
   },
@@ -48,6 +50,7 @@ defineScene({
   maket: ["market-cashbox-my"],
   api: {
     "GET finance/cashbox/my-cashbox": fixture("cash-box/my-cashbox.json"),
+    "GET finance/history/daily": fixture("finance/history-daily.json"),
   },
 });
 
@@ -58,5 +61,7 @@ defineScene({
   maket: ["superadmin-balance-overview"],
   api: {
     "GET finance/cashbox/financial-balanse": fixture("financial-balance/balance.json"),
+    // qzjTMWPb: KPI delta va 14 kunlik chiziq; 02–09.10 — `backfill` (yo'ldagi pul / umumiy balans nuqtalari yo'q).
+    "GET finance/financial-balance/daily": fixture("financial-balance/daily.json"),
   },
 });

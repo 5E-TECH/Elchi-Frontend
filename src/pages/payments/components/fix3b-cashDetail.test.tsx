@@ -34,8 +34,30 @@ const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false
 const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
+
 vi.mock("../../../entities/payments", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../entities/payments")>()),
+  // Chek rasmi o'chiq — bu testlar formaning o'zi haqida (chek: QlLf33Ma-receipt.test.tsx).
+  useReceiptSettings: () => ({
+    data: {
+      manual_expense: { photo_required: false, ai_enabled: false },
+      hq_transfer: { photo_required: false, ai_enabled: false },
+      updated_at: null,
+      updated_by: null,
+    },
+    isLoading: false,
+    refetch: vi.fn(),
+  }),
+  useUploadReceipt: () => ({ mutateAsync: vi.fn() }),
   useCashBox: () => ({
     // CB-2: smena ochiq (qulf yo'q) — forma testlari smenaga bog'liq emas.
     useGetCurrentShift: () => ({

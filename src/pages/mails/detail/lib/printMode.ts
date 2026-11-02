@@ -34,6 +34,24 @@ export interface PostTotals {
   centerOrders?: { centerOrdersTotalPrice?: number | null } | null;
 }
 
+/**
+ * Qatorlardan jamlar — backend `getPostOrders` hisobi bilan bir xil (`where_deliver: "address"` — uy, qolgani —
+ * markaz). Javob tarix (`view=all`) bo'lsa server jamlari sobiq a'zolarni ham qo'shadi; ish rejimida jami shu bilan
+ * faqat hozir pochtadagi qatorlardan olinadi (vaICniE4).
+ */
+export const postTotalsFromOrders = (
+  orders: ReadonlyArray<Pick<PostOrder, "where_deliver" | "total_price">>,
+): PostTotals => {
+  let homeOrdersTotalPrice = 0;
+  let centerOrdersTotalPrice = 0;
+  for (const order of orders) {
+    const price = Number(order.total_price ?? 0) || 0;
+    if (order.where_deliver === "address") homeOrdersTotalPrice += price;
+    else centerOrdersTotalPrice += price;
+  }
+  return { homeOrders: { homeOrdersTotalPrice }, centerOrders: { centerOrdersTotalPrice } };
+};
+
 const totalOf = (totals?: PostTotals | null): number | null => {
   const home = totals?.homeOrders?.homeOrdersTotalPrice;
   const center = totals?.centerOrders?.centerOrdersTotalPrice;

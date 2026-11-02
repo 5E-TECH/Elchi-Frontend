@@ -51,6 +51,24 @@ test("order-service javob bermadi (`orderSources: null`) — manba joyida xato, 
   await expect(page.getByRole("region", { name: "AI xarajati ko'rsatkichlari" })).toContainText("156,9 ming so'm");
 });
 
+test("⭐ marja: `/ai-usage/margin` davr bilan, zarar ko'rgan market birinchi va qizil", async ({ page }) => {
+  const { tab, requests } = await openAiCost(page);
+  await tab.click();
+
+  const table = page.getByRole("table", { name: "Marja — marketlar kesimida" });
+  const first = table.getByRole("row").nth(1);
+  await expect(first).toContainText("Nur Market");
+  const loss = first.getByText(/[-−]9.000 so'm/);
+  await expect(loss).toBeVisible();
+  const lossColor = await loss.evaluate((node) => getComputedStyle(node).color);
+  const profitColor = await table.getByRole("row").nth(2).getByText(/\+6.000 so'm/).evaluate((node) => getComputedStyle(node).color);
+  expect(lossColor).not.toBe(profitColor);
+
+  expect(requests.margin.at(-1)?.get("fromDate")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(requests.margin.at(-1)?.get("fromDate")).toBe(requests.dashboard.at(-1)?.get("fromDate"));
+  expect(requests.leaked).toEqual([]);
+});
+
 for (const theme of ["light", "dark"] as const) {
   test(`1440px (${theme}): «AI xarajat» tabi — toshishsiz`, async ({ page }, testInfo) => {
     const { tab, requests } = await openAiCost(page, { theme });
@@ -62,3 +80,22 @@ for (const theme of ["light", "dark"] as const) {
     expect(requests.leaked).toEqual([]);
   });
 }
+
+/** «Modellar» qatori uzun: sahifa surilmaydi va chiziqlar qiymat nisbatini (3:1) saqlaydi. */
+for (const width of [768, 1024, 1100, 1279, 1280, 1360, 1440]) {
+  test(`${width}px: «Modellar» sig'adi, chiziqlar nisbati to'g'ri`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const { tab } = await openAiCost(page);
+    await tab.click();
+    const models = page.getByRole("list", { name: "Modellar" });
+    await expect(models.getByRole("listitem")).toHaveCount(2);
+
+    expect(await noHorizontalScroll(page)).toBe(true);
+    const [first, second] = await models.getByRole("listitem").evaluateAll((rows) =>
+      rows.map((row) => row.querySelector("[aria-hidden=true]")!.getBoundingClientRect().width),
+    );
+    expect(first / second).toBeGreaterThan(2.8);
+    expect(first / second).toBeLessThan(3.2);
+  });
+}
+

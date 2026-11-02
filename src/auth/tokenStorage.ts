@@ -173,6 +173,16 @@ export const tokenStorage = {
     return { id: payload.id ? String(payload.id) : null, role: String(payload.role) };
   },
 
+  /**
+   * aidsxJ2H: parolni admin / tizim bergan (vaqtinchalik SMS paroli yoki «birinchi kirishda almashtirsin») — token
+   * claim'i `pwd_forced: true`. Gateway bunday tokenda parol almashtirilmaguncha boshqa API'ni 403
+   * `PASSWORD_CHANGE_REQUIRED` qiladi — «Yangi parol o'rnating» oynasi bloklovchi bo'ladi. Imzo tekshirilmaydi (faqat UI).
+   */
+  isPasswordChangeForced(token: string | null = accessToken): boolean {
+    if (!token) return false;
+    return decodeJwtPayload(token)?.pwdForced === true;
+  },
+
   clear() {
     this.setAccessToken(null);
     this.clearSessionMetadata();
@@ -180,7 +190,7 @@ export const tokenStorage = {
   },
 };
 
-const decodeJwtPayload = (token: string): (AuthIdentity & { sid?: unknown }) | null => {
+const decodeJwtPayload = (token: string): (AuthIdentity & { sid?: unknown; pwdForced?: boolean }) | null => {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
@@ -196,12 +206,14 @@ const decodeJwtPayload = (token: string): (AuthIdentity & { sid?: unknown }) | n
       role?: string;
       roles?: string[];
       sid?: unknown;
+      pwd_forced?: unknown;
     };
 
     return {
       id: decoded.id ?? decoded.sub,
       role: decoded.role ?? decoded.roles?.[0],
       sid: decoded.sid,
+      pwdForced: decoded.pwd_forced === true,
     };
   } catch {
     return null;

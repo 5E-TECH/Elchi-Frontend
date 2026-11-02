@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { SHIFT_CLOSE_TIMEOUT_MS, type CloseShiftAccount } from "./shiftAccountCheck";
+import type { ReceiptRef } from "./receipt";
 
 export const cashbox = "cashbox";
 export const shift = "shift";
@@ -93,6 +94,8 @@ export interface FinanceHistoryDetail {
   /** Elchi Pochta №1 — qo'lda chiqimning xarajat kategoriyasi (ID va yozilgan paytdagi nom), bo'lmasa `null`. */
   expense_category_id?: string | null;
   expense_category_name?: string | null;
+  /** QlLf33Ma — chek (superadmin/admin/menejerga; `id`, `ai_status` + to'liq maydonlar — `useReceipt` o'qiydi). */
+  receipt?: ReceiptRef | null;
   cashbox?: FinanceHistoryCashbox | null;
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;
@@ -135,6 +138,41 @@ export interface HqCourierReceivablesResponse {
     items: HqCourierReceivable[];
     total: number;
     hq_branch_id: string;
+  };
+}
+
+/** GET /finance/cashbox/payments-meta — soni va summasi; manba javob bermasa blok `null`. */
+export interface PaymentsMetaTotals {
+  count: number;
+  amount: number;
+}
+
+export interface PaymentsMetaTopMarket {
+  market_id: string;
+  cashbox_id: string;
+  /** identity javob bermasa `null`. */
+  name: string | null;
+  amount: number;
+  /** % ulush (`payable.amount` ga nisbatan). */
+  share: number;
+}
+
+/** uzWcMR1C — /payments KPI meta: SQL COUNT/SUM + top N, ro'yxat so'ralmaydi (superadmin/admin). */
+export interface PaymentsMetaResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    receivable: {
+      amount: number;
+      branches: PaymentsMetaTotals | null;
+      hq_couriers: PaymentsMetaTotals | null;
+    };
+    payable: {
+      markets_count: number;
+      amount: number;
+      top_markets: PaymentsMetaTopMarket[];
+      others: PaymentsMetaTotals & { share: number };
+    } | null;
   };
 }
 
@@ -395,6 +433,19 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
+  /**
+   * uzWcMR1C — KPI meta sanoqlari. Kalit `cashbox` prefiksi ostida: to'lovdan keyin `refreshCashboxQueries` yangilaydi.
+   * `silentError`: 403 yoki xatoda global xabar yo'q — sanoq shunchaki chizilmaydi (kartalar all-info'dan ishlayveradi).
+   */
+  const useGetPaymentsMeta = (enabled: boolean = true) =>
+    useQuery<PaymentsMetaResponse>({
+      queryKey: [cashbox, "payments-meta"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.CASHBOX_PAYMENTS_META, { params: { top: 3 } }).then((res) => res.data),
+      enabled,
+      meta: { silentError: true },
+    });
+
   // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat oyna ochilganda o'qiydi (sukut o'zgarmagan).
   const useGetCashBoxMain = (params?: any, enabled: boolean = true) =>
     useQuery({
@@ -525,6 +576,7 @@ export const useCashBox = () => {
     useGetCashboxMyCashbox,
     useGetCashBoxHistoryById,
     useGetCashBoxMain,
+    useGetPaymentsMeta,
     useGetHqCourierReceivables,
     createPaymentCourier,
     createPaymentBranchToMain,
@@ -543,3 +595,4 @@ export const useCashBox = () => {
 };
 
 export * from "./shiftAccountCheck";
+export * from "./receipt";

@@ -207,6 +207,49 @@ describe("MailDetailPage v2 — chek (HJ5sLHiz)", () => {
   });
 });
 
+describe("MailDetailPage v2 — «Pochta cheki» tarix javobida (vaICniE4, backend #618)", () => {
+  beforeEach(() => {
+    mocks.useRefused.mockReturnValue({ data: undefined, isLoading: false, isError: false });
+    mocks.printPackageReceipt.mockReset().mockResolvedValue({ orders: 0, pages: 1, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+  });
+
+  it("ish rejimida javob `view=all` bo'lib qolsa — son va jami faqat hozir pochtadagi qatorlardan, server jamlaridan emas", async () => {
+    const user = userEvent.setup();
+    const rows = [
+      { ...order("101", "received", 185000), in_post_now: true },
+      { ...order("102", "received", 240000), where_deliver: "center", in_post_now: true },
+      { ...order("103", "sold", 999000), in_post_now: false, current_post_id: "88" },
+    ];
+    mocks.useMailDetail.mockImplementation((postId: string) => ({
+      data: postId
+        ? {
+            data: {
+              allOrdersByPostId: rows,
+              post: { id: POST_ID, status: "new", qr_code_token: "POST-1a2b3c4d5e6f7a8b9c" },
+              view: "all",
+              history_incomplete: false,
+              // Server jamlari sobiq a'zoni (№103) ham qo'shgan.
+              homeOrders: { homeOrders: 2, homeOrdersTotalPrice: 1_184_000 },
+              centerOrders: { centerOrders: 1, centerOrdersTotalPrice: 240000 },
+            },
+          }
+        : undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    }));
+    renderPage(stateFor("superadmin"));
+
+    await user.click(screen.getByRole("button", { name: "Chop etish 0" }));
+    await user.click(screen.getByRole("menuitem", { name: /Pochta cheki/ }));
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "post", id: POST_ID, ordersCount: 2, totalPrice: 425000 }),
+      { sheet: "thermal", output: "browser" },
+    );
+  });
+});
+
 describe("MailDetailPage v2 — rejimlar", () => {
   beforeEach(() => {
     mocks.useRefused.mockReturnValue({ data: undefined, isLoading: false, isError: false });

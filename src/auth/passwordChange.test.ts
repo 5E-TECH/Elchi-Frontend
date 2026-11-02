@@ -3,12 +3,20 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearPasswordChangeFlag,
   dismissPasswordChangePrompt,
+  isPasswordChangeForced,
   isPasswordChangePromptOpen,
+  isTemporaryPassword,
   requirePasswordChange,
   responseErrorCode,
   syncPasswordChangeFlag,
+  syncPasswordChangeFromToken,
   usePasswordChangePrompt,
 } from "./passwordChange";
+import tokenStorage from "./tokenStorage";
+
+/** Imzosiz soxta JWT (faqat payload o'qiladi). */
+const fakeJwt = (payload: Record<string, unknown>) =>
+  `x.${window.btoa(JSON.stringify(payload)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_")}.y`;
 
 describe("passwordChange (NDmZMzCP «Yangi parol o'rnating» bayrog'i)", () => {
   beforeEach(() => {
@@ -48,5 +56,67 @@ describe("passwordChange (NDmZMzCP «Yangi parol o'rnating» bayrog'i)", () => {
     expect(responseErrorCode({ data: { code: "PASSWORD_CHANGE_REQUIRED" } })).toBe("PASSWORD_CHANGE_REQUIRED");
     expect(responseErrorCode({ message: "x" })).toBeUndefined();
     expect(responseErrorCode(null)).toBeUndefined();
+  });
+  describe("aidsxJ2H — majburiy rejim", () => {
+    it("token `pwd_forced` — majburiy, «Keyinroq» ishlamaydi; bayroq tushsa — oddiy holat", () => {
+      syncPasswordChangeFlag({
+        must_change_password: true,
+        accessToken: fakeJwt({ id: "7", role: "courier", pwd_change: true, pwd_forced: true }),
+      });
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(isPasswordChangeForced()).toBe(true);
+      dismissPasswordChangePrompt();
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(window.sessionStorage.getItem("elchi_pwd_change_dismissed")).toBeNull();
+
+      syncPasswordChangeFlag({ must_change_password: false, accessToken: fakeJwt({ id: "7", role: "courier" }) });
+      expect(isPasswordChangePromptOpen()).toBe(false);
+      expect(isPasswordChangeForced()).toBe(false);
+    });
+
+    it("`pwd_forced` siz (zaif eski parol) — majburiy emas; 403 PASSWORD_CHANGE_REQUIRED — majburiy qiladi va refresh uni tushirmaydi", () => {
+      syncPasswordChangeFlag({ must_change_password: true, accessToken: fakeJwt({ id: "7", pwd_change: true }) });
+      expect(isPasswordChangeForced()).toBe(false);
+      dismissPasswordChangePrompt();
+      expect(isPasswordChangePromptOpen()).toBe(false);
+
+      requirePasswordChange();
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(isPasswordChangeForced()).toBe(true);
+      // Darvoza env bilan yoqilgan (token'da `pwd_forced` yo'q) — refresh bayroqni saqlasa, majburiy qoladi.
+      syncPasswordChangeFlag({ must_change_password: true, accessToken: fakeJwt({ id: "7", pwd_change: true }) });
+      expect(isPasswordChangeForced()).toBe(true);
+
+      clearPasswordChangeFlag();
+      expect(isPasswordChangeForced()).toBe(false);
+      expect(isPasswordChangePromptOpen()).toBe(false);
+    });
+
+    it("sahifa yangilanganda: `pwd_forced` token'dan bloklovchi oyna tiklanadi; oddiy token — tegmaydi", () => {
+      syncPasswordChangeFromToken(fakeJwt({ id: "7", role: "courier" }));
+      syncPasswordChangeFromToken(null);
+      expect(isPasswordChangePromptOpen()).toBe(false);
+
+      syncPasswordChangeFromToken(fakeJwt({ id: "7", role: "courier", pwd_change: true, pwd_forced: true }));
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(isPasswordChangeForced()).toBe(true);
+    });
+
+    it("vaqtinchalik parol faqat `pwd_forced` da: zaif parol + 403 — bloklaydi, lekin vaqtinchalik emas", () => {
+      tokenStorage.setAccessToken(fakeJwt({ id: "7", role: "courier", pwd_change: true }));
+      requirePasswordChange();
+      expect(isPasswordChangeForced()).toBe(true);
+      expect(isTemporaryPassword()).toBe(false);
+
+      tokenStorage.setAccessToken(fakeJwt({ id: "7", role: "courier", pwd_change: true, pwd_forced: true }));
+      expect(isTemporaryPassword()).toBe(true);
+      tokenStorage.setAccessToken(null);
+    });
+
+    it("buzilgan token — majburiy emas (xato yo'q)", () => {
+      syncPasswordChangeFlag({ must_change_password: true, accessToken: "not-a-jwt" });
+      expect(isPasswordChangePromptOpen()).toBe(true);
+      expect(isPasswordChangeForced()).toBe(false);
+    });
   });
 });

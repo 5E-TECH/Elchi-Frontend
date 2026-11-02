@@ -23,3 +23,13 @@ export const describeTgScanError = (error: unknown): TgScanErrorInfo => {
   if (status != null && status < 500 && message) return { kind: "message", message };
   return { kind: "unknown", message: null };
 };
+
+/** BOT-2: Mini App kirishi faqat kuryerga — boshqa rol `POST /auth/telegram` da 403 `TELEGRAM_COURIER_ONLY`. */
+export const TELEGRAM_COURIER_ONLY_CODE = "TELEGRAM_COURIER_ONLY";
+
+export const isTelegramCourierOnlyError = (error: unknown): boolean => {
+  if (getErrorStatus(error) !== 403) return false;
+  const data = (error as { response?: { data?: { code?: unknown; data?: { code?: unknown } | null } } } | null)
+    ?.response?.data;
+  return (data?.code ?? data?.data?.code) === TELEGRAM_COURIER_ONLY_CODE;
+};

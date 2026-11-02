@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildWaterfall, normalizeApiBuckets, readTopImpactsPagination, toPlotPercent } from "./analytics";
+import {
+  buildWaterfall,
+  normalizeApiBuckets,
+  normalizeLedgerRows,
+  readTopImpactsPagination,
+  toPlotPercent,
+} from "./analytics";
 import { normalizeFinancialBalance } from "./financialBalance";
 import { buildHistoryExportParams, readHistoryFilters } from "./historyFilters";
 
@@ -80,6 +86,27 @@ describe("analytics javobi", () => {
     });
     expect(readTopImpactsPagination(undefined, 2, 10)).toEqual({ total: 0, page: 2, limit: 10 });
   });
+
+  // guzrGySp: top-impacts qatorida backend `created_by_user: {id, name, role} | null` (history bilan bir xil).
+  it("normalizeLedgerRows — «Kiritgan»: ism `created_by_user` dan, foydalanuvchi yo'q — `#id`, muallifsiz — avtomatik", () => {
+    const rows = normalizeLedgerRows([
+      {
+        id: "1",
+        source_type: "manual_income",
+        amount: 500_000,
+        created_by: "7",
+        created_by_user: { id: "7", name: "Dilnoza Karimova", role: "admin" },
+      },
+      { id: "2", source_type: "manual_expense", amount: 200_000, created_by: "9", created_by_user: null },
+      { id: "3", source_type: "sell_profit", amount: 30_000, created_by: null, created_by_user: null },
+    ]);
+
+    expect(rows.map(({ actor, automatic }) => ({ actor, automatic }))).toEqual([
+      { actor: "Dilnoza Karimova", automatic: false },
+      { actor: "#9", automatic: false },
+      { actor: "", automatic: true },
+    ]);
+  });
 });
 
 describe("Balans tarkibi uchun `chain` (additiv)", () => {
@@ -100,5 +127,33 @@ describe("Tarix filtrlari (URL) va eksport paramlari", () => {
     );
     expect(filters).toEqual({ fromDate: "2026-10-01", toDate: "", sourceType: "" });
     expect(buildHistoryExportParams(filters)).toEqual({ from_date: "2026-10-01" });
+  });
+});
+
+describe("buildWaterfall — server davr boshi (qzjTMWPb)", () => {
+  it("o'tgan davrda ham boshi va oxiri `financial-balance/daily` dan chiziladi", () => {
+    const result = buildWaterfall({
+      currentBalance: 999,
+      netChange: 50,
+      positive: [{ sourceType: "sell", amount: 80, percent: 100 }],
+      negative: [{ sourceType: "bills", amount: 30, percent: 100 }],
+      reachesToday: false,
+      periodBalances: { opening: 100, closing: 150 },
+    });
+    expect(result.withTotals).toBe(true);
+    expect(result.steps[0]).toMatchObject({ kind: "start", amount: 100 });
+    expect(result.steps.at(-1)).toMatchObject({ kind: "end", amount: 150 });
+  });
+
+  it("server qoldig'i noma'lum — avvalgi qoida: o'tgan davrda boshi/oxiri yo'q", () => {
+    const result = buildWaterfall({
+      currentBalance: 999,
+      netChange: 50,
+      positive: [],
+      negative: [],
+      reachesToday: false,
+      periodBalances: { opening: null, closing: null },
+    });
+    expect(result.withTotals).toBe(false);
   });
 });

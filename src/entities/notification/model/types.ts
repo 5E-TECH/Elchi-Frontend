@@ -41,6 +41,11 @@ export interface MyTelegramGroupStatus {
   linked_at: string | null;
   /** Nofaol sababi (G085w5Qr); faol, ulanmagan yoki sababi noma'lum bo'lsa — `null`. */
   inactive_reason: NotificationInactiveReason | null;
+  /**
+   * (BOT-2) Guruhni market egasining o'zi ulaganmi: `true` — ha; `false` — boshqa xodim (avval operator ham ulay
+   * olardi, admin) — egaga ogohlantirish; `null` — ulanmagan yoki noma'lum (eski ulanish, eski backend).
+   */
+  linked_by_owner: boolean | null;
 }
 
 /** `GET /notifications` query (OpenAPI: market_id, group_type, is_active, page, limit). */

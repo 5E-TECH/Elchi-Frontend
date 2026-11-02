@@ -15,6 +15,8 @@
  * Qidiruv, viloyat filtri va sahifalash — klientda (API sahifalamaydi, ~200 tuman).
  */
 
+import { isDistrictSatoCode } from "./districtSatoCode";
+
 export type SatoRegionRef = { id: string; name: string; satoCode: string | null };
 
 export type SatoDistrict = {
@@ -57,6 +59,11 @@ export type SatoDistrictRow = {
   name: string;
   regionId: string | null;
   regionName: string;
+  /**
+   * Geografik viloyatning SOATO kodi (4 raqam) — kod shu bilan boshlanishi kerak (`PATCH district/sato/:id`
+   * prefiksi `region_id` bo'yicha, ExK28CiS); viloyatda kod yo'q bo'lsa `null`.
+   */
+  regionSatoCode?: string | null;
   /** Saqlangan kod (`/district`). */
   satoCode: string | null;
   /** «Topildi»: preview topgan, hali saqlanmagan kod. */
@@ -186,6 +193,7 @@ const toRow = (district: SatoDistrict, extra?: Partial<SatoDistrictRow>): SatoDi
   name: district.name,
   regionId: district.region?.id ?? null,
   regionName: district.region?.name ?? "—",
+  regionSatoCode: district.region?.satoCode ?? null,
   satoCode: district.satoCode,
   ...extra,
 });
@@ -295,15 +303,20 @@ export const buildAdminSatoView = (
   hasCode: districts.filter((district) => district.satoCode).map((district) => toRow(district)).sort(byName),
 });
 
-/** Viloyat filtri variantlari — `/district` dagi viloyatlar, nom bo'yicha. */
-export const satoRegionOptions = (districts: readonly SatoDistrict[]): { value: string; label: string }[] => {
-  const regions = new Map<string, string>();
+/** Viloyat varianti: filtr va «Tuman qo'shish» oynasi (`satoCode` — kod prefiksi tekshiruvi uchun). */
+export type SatoRegionOption = { value: string; label: string; satoCode: string | null };
+
+/** Viloyat filtri variantlari — `/district` dagi viloyatlar (SOATO kodi bilan), nom bo'yicha. */
+export const satoRegionOptions = (districts: readonly SatoDistrict[]): SatoRegionOption[] => {
+  const regions = new Map<string, SatoRegionOption>();
   for (const district of districts) {
-    if (district.region && !regions.has(district.region.id)) regions.set(district.region.id, district.region.name);
+    const region = district.region;
+    if (!region) continue;
+    const known = regions.get(region.id);
+    if (!known) regions.set(region.id, { value: region.id, label: region.name, satoCode: region.satoCode });
+    else if (!known.satoCode && region.satoCode) known.satoCode = region.satoCode;
   }
-  return [...regions.entries()]
-    .map(([value, label]) => ({ value, label }))
-    .sort((a, b) => collator.compare(a.label, b.label));
+  return [...regions.values()].sort((a, b) => collator.compare(a.label, b.label));
 };
 
 /** Qidiruv uchun: kichik harf, apostrof turlari bitta (`O‘zbek`, `O'zbek`, `O`zbek`). */
@@ -341,8 +354,8 @@ export const paginateSatoRows = <T>(rows: readonly T[], page: number, pageSize: 
   return { page: current, totalPages, items: rows.slice((current - 1) * size, current * size) };
 };
 
-/** Backend DTO: `sato_code` — `^\d+$`. */
-export const isValidSatoCode = (value: string): boolean => /^\d+$/.test(value.trim());
+/** Backend (2026-11-01, ExK28CiS): `sato_code` — aniq 7 raqam (`^\d{7}$`); prefiks — `districtSatoCode.ts`. */
+export const isValidSatoCode = isDistrictSatoCode;
 
 /** «Mos keldi» meter'i: mos kelganlar / bazadagi jami (0–100). */
 export const satoMatchedPercent = (stats: SatoPreviewStats): number =>

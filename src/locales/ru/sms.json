@@ -284,6 +284,10 @@
     "statusDelivered": "{{value}} доставлено",
     "statusPending": "{{value}} ожидает",
     "statusFailed": "{{value}} ошибок",
+    "monthsTitle": "По месяцам",
+    "monthsSub": "Выбранный период по месяцам",
+    "monthsLabel": "SMS по месяцам",
+    "monthCard": "{{total}} шт. · доставлено {{delivered}} · ошибок {{failed}}",
     "daysTitle": "По дням",
     "daysSub": "Каждый день и тип сообщений — отдельная строка",
     "daysLabel": "SMS по дням",
@@ -292,6 +296,7 @@
     "dayCard": "{{total}} шт. · {{delivered}} доставлено · {{failed}} ошибок · {{parts}} частей",
     "daysPagination": "{{from}}–{{to}} из {{total}} строк",
     "col": {
+      "month": "Месяц",
       "day": "День",
       "class": "Тип",
       "total": "Кол-во",

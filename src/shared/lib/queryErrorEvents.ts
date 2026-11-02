@@ -7,7 +7,9 @@ import { getBackendErrorMessage } from "./backendError";
  * hodisani chiqaradi, NotificationProvider esa bildirishnoma ko'rsatadi.
  *
  * Chiqarilmaydi: tarmoq xatosi (interceptor o'zi "Tarmoq xatosi" ko'rsatadi),
- * 401 (token yangilash oqimi) va `meta.silentError` bilan belgilangan fon
+ * 401 (token yangilash oqimi), 403 `PASSWORD_CHANGE_REQUIRED` (aidsxJ2H —
+ * «Yangi parol o'rnating» oynasi o'zi tushuntiradi, sahifadagi har so'rov uchun
+ * «Ruxsat yo'q» chiqmasin) va `meta.silentError` bilan belgilangan fon
  * so'rovlari (masalan har daqiqada so'raladigan o'qilmaganlar soni).
  */
 export const QUERY_ERROR_EVENT = "elchi:query-error";
@@ -28,11 +30,17 @@ export type QueryErrorSource = { queryHash: string; getObserversCount: () => num
 /** Global xabar bergan so'rovlar — `emitQueryRecovered` faqat ular uchun hodisa chiqaradi (har muvaffaqiyatda emas). */
 const reportedHashes = new Set<string>();
 
+const isPasswordChangeRequired = (data: unknown) => {
+  const record = data as { code?: unknown; data?: { code?: unknown } | null } | null | undefined;
+  return (record?.code ?? record?.data?.code) === "PASSWORD_CHANGE_REQUIRED";
+};
+
 export const emitQueryError = (error: unknown, meta?: Record<string, unknown>, query?: QueryErrorSource) => {
   if (typeof window === "undefined" || meta?.silentError) return;
   if (!axios.isAxiosError(error)) return;
   const status = error.response?.status;
   if (!status || status === 401) return;
+  if (status === 403 && isPasswordChangeRequired(error.response?.data)) return;
   if (query && query.getObserversCount() === 0) return;
   if (query) reportedHashes.add(query.queryHash);
   window.dispatchEvent(

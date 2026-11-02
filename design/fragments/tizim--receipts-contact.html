@@ -1,0 +1,267 @@
+<div style="max-width: 1440px; margin: 0 auto; padding: 32px 48px 72px; display: flex; flex-direction: column; gap: 56px">
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<a class="el-back" href="@receipts" style="align-self: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Chek va paket cheki</a>
+<header style="background: var(--sidebar); border: 1px solid var(--border); border-radius: 20px; padding: 40px; display: flex; flex-wrap: wrap; gap: 32px 48px; align-items: flex-end; justify-content: space-between">
+  <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0; flex: 1 1 520px">
+    <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline" style="color: var(--sidebar-muted)">Dizayn tizimi · 16 · Chop etish</span>
+      <h1 class="el-h1" style="color: var(--sidebar-text)">Chek — «Muammo bo'lsa» raqami</h1>
+      <p style="color: var(--sidebar-text); max-width: 680px">Yorliqdagi «Muammo bo'lsa» endi buyurtma viloyati logistining raqami. Kuryer, qabul qiluvchi va mijoz muammo bo'lsa logistga qo'ng'iroq qiladi; market va operator raqami yorliqqa chiqmaydi.</p>
+    </div>
+  </div>
+  <dl style="display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0; max-width: 452px">
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Manba</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">problem_contacts · ≤ 2 ta</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Ajratgich</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">«, » · takrorsiz</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Bo'sh</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">O'ng qism chiqmaydi</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Yangilanish</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">1 daqiqa ichida</dd></div>
+  </dl>
+</header>
+</div>
+
+<section aria-labelledby="s-rule" style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+  <span class="el-overline">01</span>
+  <h2 class="el-h1" id="s-rule">Qoida — raqam qayerdan olinadi</h2>
+  <p class="el-sub" style="max-width: 960px">Backend har buyurtma uchun <span class="el-code">problem_contacts</span> ni hisoblab beradi (ko'pi bilan 2 ta). Frontend uni faqat chop etadi: takrorsiz, «, » bilan, o'zi boshqa raqam qidirmaydi. Birinchi topilgan qadam ishlatiladi.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<section class="el-card" aria-labelledby="c-steps" style="flex: 3 1 560px; min-width: 0; overflow: hidden">
+  <div class="el-card-head"><h3 class="el-h2" id="c-steps">Tartib</h3><span class="el-small el-muted">Yuqoridan pastga, birinchi topilgani</span></div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<li style="display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; ">
+<span class="el-cam-pin" style="position: static" aria-hidden="true">1</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Buyurtma viloyati</span><span class="el-small el-muted"><span class="el-code">order.region_id</span>; yo'q bo'lsa — mijoz tumanining viloyati. Market yoki kuryer viloyati emas.</span></div>
+<span class="el-kbd" style="white-space: nowrap; height: auto; min-height: 22px">region_id</span>
+</li>
+<li style="display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; border-top: 1px solid var(--border); ">
+<span class="el-cam-pin" style="position: static" aria-hidden="true">2</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Shu viloyatning faol logisti</span><span class="el-small el-muted">«Logistlarni biriktirish»dagi logist. Nofaol yoki biriktirilmagan bo'lsa — keyingi qadam.</span></div>
+<span class="el-kbd" style="white-space: nowrap; height: auto; min-height: 22px">1 ta</span>
+</li>
+<li style="display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; border-top: 1px solid var(--border); ">
+<span class="el-cam-pin" style="position: static" aria-hidden="true">3</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Umumiy raqamlar</span><span class="el-small el-muted">«Market mas'ullari» sahifasidagi zaxira raqamlar (Elchi yordam xizmati).</span></div>
+<span class="el-kbd" style="white-space: nowrap; height: auto; min-height: 22px">0–2 ta</span>
+</li>
+<li style="display: flex; gap: 16px; align-items: flex-start; padding: 14px 20px; border-top: 1px solid var(--border); ">
+<span class="el-cam-pin" style="position: static" aria-hidden="true">4</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Hech biri yo'q</span><span class="el-small el-muted">100×60 va A4 da «Muammo bo'lsa» qismi chiqmaydi — «Jo'natuvchi» butun qatorni oladi. «-» chop etilmaydi.</span></div>
+<span class="el-kbd" style="white-space: nowrap; height: auto; min-height: 22px">0 ta</span>
+</li>
+</ol>
+  <div style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px">
+    <p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; flex: none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Logist raqami umumiy raqam bilan bir xil bo'lsa — bitta marta chiqadi.</span></p>
+    <p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; flex: none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Market mas'uli yorliqqa chiqmaydi — u faqat tizimda, market uchun (ega qarori).</span></p>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="c-ex" style="flex: 2 1 420px; min-width: 0; overflow: hidden">
+  <div class="el-card-head"><h3 class="el-h2" id="c-ex">Misollar</h3><span class="el-small el-muted">Umumiy raqamlar: 2 ta</span></div>
+  <div class="el-table-wrap">
+  <table class="el-table is-compact">
+    <thead><tr><th>Buyurtma viloyati</th><th>Logist</th><th>Yorliqda</th></tr></thead>
+    <tbody>
+      <tr><td class="el-strong">Toshkent vil.</td><td style="white-space: nowrap">Dilnoza Karimova</td><td style="white-space: nowrap">+998 91 234 56 78</td></tr>
+      <tr><td class="el-strong">Toshkent sh.</td><td style="white-space: nowrap">Sherzod Nazarov</td><td style="white-space: nowrap">+998 93 345 67 89</td></tr>
+      <tr><td class="el-strong">Samarqand</td><td style="white-space: nowrap">Aziz Rahimov</td><td style="white-space: nowrap">+998 90 123 45 67</td></tr>
+      <tr><td class="el-strong">Andijon</td><td class="el-muted">Yo'q</td><td><span style="white-space: nowrap">+998 71 200 11 22,</span> <span style="white-space: nowrap">+998 71 200 33 44</span></td></tr>
+      <tr><td class="el-strong">Viloyat noma'lum</td><td class="el-muted">—</td><td>Umumiy raqamlar; ular ham yo'q — chiqmaydi</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+</div>
+</section>
+
+<section aria-labelledby="s-samples" style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+  <span class="el-overline">02</span>
+  <h2 class="el-h1" id="s-samples">Namunalar</h2>
+  <p class="el-sub" style="max-width: 960px">Yorliq tartibi o'zgarmaydi — faqat pastki banddagi raqam manbasi. Maketlar haqiqiy o'lchamda, 1 mm = 5 px; qog'oz har ikki mavzuda oq.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><h3 class="el-h3">a) Logist bor — Toshkent viloyati</h3><span class="el-badge el-tone-neutral">Asosiy</span></div>
+  <span class="el-xs el-muted">100×60 mm · Chilonzor Market → Zangiota tumani · logist Dilnoza Karimova</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; padding: 32px 40px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div style="position: relative; flex: none">
+<div class="el-theme-light" aria-label="Buyurtma cheki №10236, termal 100×60 mm — Toshkent viloyati" style="position: relative; width: 502px; height: 302px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <span style="position: absolute; left: 10px; top: 22px; font-size: 31.8px; line-height: 35px; font-weight: 700; white-space: nowrap">№10236</span>
+  <div style="position: absolute; left: 186px; top: 17px; width: 161px; height: 40px; padding: 0 6px; border: 2px solid var(--text); border-radius: 6px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center"><span style="font-size: 28.2px; line-height: 30px; font-weight: 700; white-space: nowrap">232 500<span style="font-size: 14.1px"> so'm</span></span></div>
+  <span aria-hidden="true" style="position: absolute; left: 10px; top: 60px; width: 337px; height: 2px; background: var(--text)"></span>
+  <span style="position: absolute; left: 10px; top: 66px; width: 337px; font-size: 22.9px; line-height: 27px; white-space: nowrap"><span style="font-weight: 700">Kamron Ahmedov</span></span>
+  <span style="position: absolute; left: 10px; top: 93px; width: 337px; font-size: 22.9px; line-height: 27px; white-space: nowrap"><span style="font-weight: 700">+998 93 118 20 47</span></span>
+  <span style="position: absolute; left: 10px; top: 124px; width: 337px; font-size: 17.6px; line-height: 21px; white-space: nowrap"><span style="font-weight: 700">Toshkent vil. · Zangiota tumani</span></span>
+  <span style="position: absolute; left: 10px; top: 145px; width: 337px; font-size: 15.9px; line-height: 19px; white-space: nowrap"><span style="font-weight: 500">Eshonguzar, Bog'bon ko'chasi, 7-uy,</span></span>
+  <span style="position: absolute; left: 10px; top: 164px; width: 337px; font-size: 15.9px; line-height: 19px; white-space: nowrap"><span style="font-weight: 500">maktab yonida</span></span>
+  <span style="position: absolute; left: 10px; top: 210px; width: 480px; font-size: 15.0px; line-height: 18px; white-space: nowrap"><span style="font-weight: 600">Ayollar sumkasi, charm ×1, Hamyon ×1</span></span>
+  <span style="position: absolute; left: 10px; top: 228px; width: 480px; font-size: 15.0px; line-height: 18px; white-space: nowrap"><span style="font-weight: 700">Izoh: </span><span style="font-weight: 500">Soat 18:00 dan keyin qo'ng'iroq qiling</span></span>
+  <span aria-hidden="true" style="position: absolute; left: 10px; top: 206px; width: 480px; height: 1px; background: var(--text)"></span>
+  <div style="position: absolute; left: 370px; top: 20px"><svg width="110" height="110" viewBox="0 0 29 29" role="img" aria-label="№10236 QR kodi" shape-rendering="crispEdges" style="display: block"><path fill="var(--text)" d="M0 0h7v1h-7zM8 0h1v1h-1zM11 0h1v1h-1zM13 0h3v1h-3zM19 0h1v1h-1zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h3v1h-3zM13 1h1v1h-1zM16 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM11 2h1v1h-1zM13 2h2v1h-2zM16 2h1v1h-1zM18 2h3v1h-3zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM16 3h2v1h-2zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM12 4h2v1h-2zM15 4h2v1h-2zM18 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h2v1h-2zM16 7h1v1h-1zM20 7h1v1h-1zM2 8h3v1h-3zM6 8h1v1h-1zM8 8h1v1h-1zM11 8h2v1h-2zM15 8h1v1h-1zM18 8h1v1h-1zM21 8h3v1h-3zM26 8h3v1h-3zM0 9h1v1h-1zM2 9h1v1h-1zM7 9h1v1h-1zM10 9h2v1h-2zM13 9h2v1h-2zM17 9h8v1h-8zM28 9h1v1h-1zM0 10h1v1h-1zM2 10h2v1h-2zM6 10h1v1h-1zM9 10h1v1h-1zM11 10h2v1h-2zM14 10h5v1h-5zM20 10h2v1h-2zM26 10h2v1h-2zM0 11h2v1h-2zM4 11h2v1h-2zM12 11h1v1h-1zM14 11h2v1h-2zM18 11h1v1h-1zM22 11h4v1h-4zM4 12h6v1h-6zM13 12h4v1h-4zM19 12h1v1h-1zM21 12h1v1h-1zM26 12h2v1h-2zM1 13h1v1h-1zM3 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM16 13h1v1h-1zM19 13h2v1h-2zM22 13h3v1h-3zM28 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h6v1h-6zM13 14h2v1h-2zM16 14h3v1h-3zM20 14h1v1h-1zM23 14h5v1h-5zM2 15h1v1h-1zM10 15h4v1h-4zM16 15h6v1h-6zM25 15h1v1h-1zM0 16h4v1h-4zM5 16h2v1h-2zM9 16h1v1h-1zM11 16h1v1h-1zM18 16h1v1h-1zM20 16h2v1h-2zM23 16h1v1h-1zM26 16h1v1h-1zM0 17h3v1h-3zM4 17h2v1h-2zM7 17h1v1h-1zM10 17h3v1h-3zM14 17h2v1h-2zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h1v1h-1zM27 17h2v1h-2zM0 18h1v1h-1zM2 18h1v1h-1zM4 18h5v1h-5zM11 18h3v1h-3zM15 18h1v1h-1zM20 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM4 19h2v1h-2zM7 19h1v1h-1zM9 19h1v1h-1zM13 19h2v1h-2zM17 19h2v1h-2zM20 19h1v1h-1zM24 19h1v1h-1zM27 19h1v1h-1zM0 20h1v1h-1zM3 20h4v1h-4zM9 20h1v1h-1zM11 20h1v1h-1zM14 20h1v1h-1zM20 20h9v1h-9zM8 21h1v1h-1zM10 21h2v1h-2zM14 21h4v1h-4zM19 21h2v1h-2zM24 21h2v1h-2zM28 21h1v1h-1zM0 22h7v1h-7zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h1v1h-1zM17 22h4v1h-4zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM11 23h2v1h-2zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h2v1h-2zM11 24h3v1h-3zM20 24h8v1h-8zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h4v1h-4zM13 25h1v1h-1zM16 25h1v1h-1zM23 25h1v1h-1zM26 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM12 26h1v1h-1zM14 26h3v1h-3zM19 26h1v1h-1zM21 26h2v1h-2zM24 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM15 27h1v1h-1zM17 27h2v1h-2zM20 27h2v1h-2zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM11 28h1v1h-1zM16 28h1v1h-1zM19 28h1v1h-1zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1z"/></svg></div>
+  <div style="position: absolute; left: 361px; top: 148px; width: 128px; height: 30px; display: flex; align-items: center; justify-content: center; background: var(--text); border-radius: 6px">
+    <span class="el-overline" style="font-size: 15.0px; line-height: 18px; font-weight: 700; letter-spacing: .02em; color: var(--surface); white-space: nowrap">Markazgacha</span>
+  </div>
+  <span style="position: absolute; left: 361px; top: 183px; width: 128px; text-align: center; font-size: 14.1px; line-height: 18px; font-weight: 700; white-space: nowrap">07.10.2026</span>
+  <div style="position: absolute; left: 10px; top: 268px; width: 480px; height: 22px; border-top: 1px solid var(--text); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; font-size: 14.1px; line-height: 18px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Chilonzor Market</span></span>
+    <span style="flex: none"><span style="font-weight: 500">Muammo bo'lsa:</span> <span style="font-weight: 700">+998 91 234 56 78</span></span>
+  </div>
+</div>
+<span class="el-cam-pin" style="left: -40px; top: 268px" aria-hidden="true">10</span>
+</div>
+</div>
+<p class="el-small el-muted">Jo'natuvchi — market nomi (o'zgarmaydi). «Muammo bo'lsa» — buyurtma viloyati logisti; market mas'uli (Chilonzor Market uchun — Bobur Xolmatov) bu yerda chiqmaydi.</p>
+</div>
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><h3 class="el-h3">b) Logist yo'q — ikki umumiy raqam</h3></div>
+  <span class="el-xs el-muted">Andijon · pastki band, 96 mm · 2 qator</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; padding: 24px 32px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div class="el-theme-light" aria-label="Pastki band: ikki umumiy raqam, ikki qatorda" style="position: relative; width: 502px; height: 62px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <div style="position: absolute; left: 10px; top: 10px; width: 480px; height: 40px; border-top: 1px solid var(--text); display: flex; flex-direction: column; justify-content: flex-end; font-size: 14.1px; line-height: 18px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Baraka Shop</span></span>
+    <span style="align-self: flex-end"><span style="font-weight: 500">Muammo bo'lsa:</span> <span style="font-weight: 700">+998 71 200 11 22, +998 71 200 33 44</span></span>
+  </div>
+</div>
+</div>
+<p class="el-state-label" style="text-align: left">Ikkala raqam to'liq chiqadi, «Jo'natuvchi» «…» bilan qisqaradi; nomga 12 mm dan kam joy qolsa — band 2 qatorga o'tadi (ega qarori 4)</p>
+</div>
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><h3 class="el-h3">c) Bitta umumiy raqam</h3></div>
+  <span class="el-xs el-muted">Logist yo'q, zaxirada 1 ta raqam</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; padding: 24px 32px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div class="el-theme-light" aria-label="Pastki band: bitta umumiy raqam" style="position: relative; width: 502px; height: 44px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <div style="position: absolute; left: 10px; top: 10px; width: 480px; height: 22px; border-top: 1px solid var(--text); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; font-size: 14.1px; line-height: 18px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Baraka Shop</span></span>
+    <span style="flex: none"><span style="font-weight: 500">Muammo bo'lsa:</span> <span style="font-weight: 700">+998 71 200 11 22</span></span>
+  </div>
+</div>
+</div>
+<p class="el-state-label" style="text-align: left">Market nomi to'liq sig'adi</p>
+</div>
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><h3 class="el-h3">d) Hech biri yo'q</h3></div>
+  <span class="el-xs el-muted">Logist ham, umumiy raqam ham yo'q</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: center; padding: 24px 32px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div class="el-theme-light" aria-label="Pastki band: raqam yo'q" style="position: relative; width: 502px; height: 44px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <div style="position: absolute; left: 10px; top: 10px; width: 480px; height: 22px; border-top: 1px solid var(--text); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; font-size: 14.1px; line-height: 18px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Baraka Shop</span></span>
+  </div>
+</div>
+</div>
+<p class="el-state-label" style="text-align: left">«Muammo bo'lsa» chiqmaydi — «-» ham yozilmaydi</p>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><h3 class="el-h3">e) A4 varaq — bitta katak</h3></div>
+  <span class="el-xs el-muted">Ofis printeri · 12 ta chek, 2 × 6 · katak 100×47,5 mm · pastki band 7 pt</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px">
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: center; padding: 32px 40px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div class="el-theme-light" aria-label="A4 varaq katagi, buyurtma cheki №10236 — Toshkent viloyati" style="position: relative; width: 502px; height: 239.5px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <span style="position: absolute; left: 15px; top: 23px; font-size: 28.2px; line-height: 31px; font-weight: 700; white-space: nowrap">№10236</span>
+  <div style="position: absolute; left: 222px; top: 17px; width: 140px; height: 37px; padding: 0 5px; border: 2px solid var(--text); border-radius: 6px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center"><span style="font-size: 24.7px; line-height: 27px; font-weight: 700; white-space: nowrap">232 500<span style="font-size: 12.3px"> so'm</span></span></div>
+  <span aria-hidden="true" style="position: absolute; left: 15px; top: 57px; width: 347px; height: 2px; background: var(--text)"></span>
+  <span style="position: absolute; left: 15px; top: 62px; width: 347px; font-size: 17.6px; line-height: 21px; white-space: nowrap"><span style="font-weight: 700">Kamron Ahmedov</span></span>
+  <span style="position: absolute; left: 15px; top: 83px; width: 347px; font-size: 17.6px; line-height: 21px; white-space: nowrap"><span style="font-weight: 700">+998 93 118 20 47</span></span>
+  <span style="position: absolute; left: 15px; top: 108px; width: 347px; font-size: 14.1px; line-height: 17px; white-space: nowrap"><span style="font-weight: 700">Toshkent vil. · Zangiota tumani</span></span>
+  <span style="position: absolute; left: 15px; top: 125px; width: 347px; font-size: 13.2px; line-height: 16px; white-space: nowrap"><span style="font-weight: 500">Eshonguzar, Bog'bon ko'chasi, 7-uy, maktab yonida</span></span>
+  <span style="position: absolute; left: 15px; top: 148px; width: 347px; font-size: 12.3px; line-height: 15px; white-space: nowrap"><span style="font-weight: 600">Ayollar sumkasi, charm ×1, Hamyon ×1</span></span>
+  <span style="position: absolute; left: 15px; top: 163px; width: 347px; font-size: 12.3px; line-height: 15px; white-space: nowrap"><span style="font-weight: 700">Izoh: </span><span style="font-weight: 500">Soat 18:00 dan keyin qo'ng'iroq qiling</span></span>
+  <span aria-hidden="true" style="position: absolute; left: 15px; top: 144px; width: 347px; height: 1px; background: var(--text)"></span>
+  <div style="position: absolute; left: 382px; top: 17px"><svg width="100" height="100" viewBox="0 0 29 29" role="img" aria-label="№10236 QR kodi" shape-rendering="crispEdges" style="display: block"><path fill="var(--text)" d="M0 0h7v1h-7zM8 0h1v1h-1zM11 0h1v1h-1zM13 0h3v1h-3zM19 0h1v1h-1zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h3v1h-3zM13 1h1v1h-1zM16 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h2v1h-2zM11 2h1v1h-1zM13 2h2v1h-2zM16 2h1v1h-1zM18 2h3v1h-3zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM16 3h2v1h-2zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM12 4h2v1h-2zM15 4h2v1h-2zM18 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h2v1h-2zM16 7h1v1h-1zM20 7h1v1h-1zM2 8h3v1h-3zM6 8h1v1h-1zM8 8h1v1h-1zM11 8h2v1h-2zM15 8h1v1h-1zM18 8h1v1h-1zM21 8h3v1h-3zM26 8h3v1h-3zM0 9h1v1h-1zM2 9h1v1h-1zM7 9h1v1h-1zM10 9h2v1h-2zM13 9h2v1h-2zM17 9h8v1h-8zM28 9h1v1h-1zM0 10h1v1h-1zM2 10h2v1h-2zM6 10h1v1h-1zM9 10h1v1h-1zM11 10h2v1h-2zM14 10h5v1h-5zM20 10h2v1h-2zM26 10h2v1h-2zM0 11h2v1h-2zM4 11h2v1h-2zM12 11h1v1h-1zM14 11h2v1h-2zM18 11h1v1h-1zM22 11h4v1h-4zM4 12h6v1h-6zM13 12h4v1h-4zM19 12h1v1h-1zM21 12h1v1h-1zM26 12h2v1h-2zM1 13h1v1h-1zM3 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM16 13h1v1h-1zM19 13h2v1h-2zM22 13h3v1h-3zM28 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h6v1h-6zM13 14h2v1h-2zM16 14h3v1h-3zM20 14h1v1h-1zM23 14h5v1h-5zM2 15h1v1h-1zM10 15h4v1h-4zM16 15h6v1h-6zM25 15h1v1h-1zM0 16h4v1h-4zM5 16h2v1h-2zM9 16h1v1h-1zM11 16h1v1h-1zM18 16h1v1h-1zM20 16h2v1h-2zM23 16h1v1h-1zM26 16h1v1h-1zM0 17h3v1h-3zM4 17h2v1h-2zM7 17h1v1h-1zM10 17h3v1h-3zM14 17h2v1h-2zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h1v1h-1zM27 17h2v1h-2zM0 18h1v1h-1zM2 18h1v1h-1zM4 18h5v1h-5zM11 18h3v1h-3zM15 18h1v1h-1zM20 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM4 19h2v1h-2zM7 19h1v1h-1zM9 19h1v1h-1zM13 19h2v1h-2zM17 19h2v1h-2zM20 19h1v1h-1zM24 19h1v1h-1zM27 19h1v1h-1zM0 20h1v1h-1zM3 20h4v1h-4zM9 20h1v1h-1zM11 20h1v1h-1zM14 20h1v1h-1zM20 20h9v1h-9zM8 21h1v1h-1zM10 21h2v1h-2zM14 21h4v1h-4zM19 21h2v1h-2zM24 21h2v1h-2zM28 21h1v1h-1zM0 22h7v1h-7zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h1v1h-1zM17 22h4v1h-4zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM11 23h2v1h-2zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h2v1h-2zM11 24h3v1h-3zM20 24h8v1h-8zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h4v1h-4zM13 25h1v1h-1zM16 25h1v1h-1zM23 25h1v1h-1zM26 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM12 26h1v1h-1zM14 26h3v1h-3zM19 26h1v1h-1zM21 26h2v1h-2zM24 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM15 27h1v1h-1zM17 27h2v1h-2zM20 27h2v1h-2zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM11 28h1v1h-1zM16 28h1v1h-1zM19 28h1v1h-1zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1z"/></svg></div>
+  <div style="position: absolute; left: 376px; top: 136px; width: 112px; height: 25px; display: flex; align-items: center; justify-content: center; background: var(--text); border-radius: 6px"><span class="el-overline" style="font-size: 12.3px; line-height: 16px; font-weight: 700; letter-spacing: .02em; color: var(--surface); white-space: nowrap">Markazgacha</span></div>
+  <span style="position: absolute; left: 376px; top: 165px; width: 112px; text-align: center; font-size: 13.2px; line-height: 16px; font-weight: 700">07.10.2026</span>
+  <div style="position: absolute; left: 15px; top: 196px; width: 470px; height: 24px; border-top: 1px solid var(--text); display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 12.3px; line-height: 16px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Chilonzor Market</span></span>
+    <span style="flex: none"><span style="font-weight: 500">Muammo bo'lsa:</span> <span style="font-weight: 700">+998 91 234 56 78</span></span>
+  </div>
+</div>
+</div>
+<p class="el-state-label" style="text-align: left">Logist bor — 100×60 dagi raqamning o'zi (a)</p>
+</div>
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: center; padding: 32px 40px; background: var(--sunken); border-radius: 14px; min-width: 0">
+<div class="el-theme-light" aria-label="A4 varaq katagi, buyurtma cheki №10246 — raqam yo'q" style="position: relative; width: 502px; height: 239.5px; flex: none; overflow: hidden; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong)">
+  <span style="position: absolute; left: 15px; top: 23px; font-size: 28.2px; line-height: 31px; font-weight: 700; white-space: nowrap">№10246</span>
+  <div style="position: absolute; left: 222px; top: 17px; width: 140px; height: 37px; padding: 0 5px; border: 2px solid var(--text); border-radius: 6px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center"><span style="font-size: 24.7px; line-height: 27px; font-weight: 700; white-space: nowrap">279 000<span style="font-size: 12.3px"> so'm</span></span></div>
+  <span aria-hidden="true" style="position: absolute; left: 15px; top: 57px; width: 347px; height: 2px; background: var(--text)"></span>
+  <span style="position: absolute; left: 15px; top: 62px; width: 347px; font-size: 17.6px; line-height: 21px; white-space: nowrap"><span style="font-weight: 700">Bekzod Aliyev</span></span>
+  <span style="position: absolute; left: 15px; top: 83px; width: 347px; font-size: 17.6px; line-height: 21px; white-space: nowrap"><span style="font-weight: 700">+998 94 615 30 08</span></span>
+  <span style="position: absolute; left: 15px; top: 108px; width: 347px; font-size: 15.9px; line-height: 19px; white-space: nowrap"><span style="font-weight: 700">Andijon · Asaka tumani</span></span>
+  <span style="position: absolute; left: 15px; top: 127px; width: 347px; font-size: 14.1px; line-height: 17px; white-space: nowrap"><span style="font-weight: 500">Navro'z ko'chasi 41-uy</span></span>
+  <span style="position: absolute; left: 15px; top: 151px; width: 347px; font-size: 13.2px; line-height: 16px; white-space: nowrap"><span style="font-weight: 600">Simsiz quloqchin ×1</span></span>
+  <span aria-hidden="true" style="position: absolute; left: 15px; top: 147px; width: 347px; height: 1px; background: var(--text)"></span>
+  <div style="position: absolute; left: 382px; top: 17px"><svg width="100" height="100" viewBox="0 0 29 29" role="img" aria-label="№10246 QR kodi" shape-rendering="crispEdges" style="display: block"><path fill="var(--text)" d="M0 0h7v1h-7zM8 0h1v1h-1zM14 0h3v1h-3zM19 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM13 1h1v1h-1zM15 1h4v1h-4zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h3v1h-3zM13 2h5v1h-5zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h4v1h-4zM14 3h2v1h-2zM18 3h3v1h-3zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h2v1h-2zM14 4h3v1h-3zM18 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h2v1h-2zM12 5h2v1h-2zM15 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM12 7h1v1h-1zM16 7h2v1h-2zM19 7h1v1h-1zM3 8h1v1h-1zM6 8h1v1h-1zM9 8h3v1h-3zM13 8h1v1h-1zM15 8h1v1h-1zM17 8h2v1h-2zM23 8h3v1h-3zM27 8h2v1h-2zM0 9h4v1h-4zM5 9h1v1h-1zM7 9h2v1h-2zM13 9h1v1h-1zM15 9h2v1h-2zM20 9h3v1h-3zM25 9h1v1h-1zM28 9h1v1h-1zM2 10h2v1h-2zM5 10h3v1h-3zM9 10h1v1h-1zM12 10h4v1h-4zM17 10h5v1h-5zM23 10h1v1h-1zM25 10h2v1h-2zM1 11h1v1h-1zM4 11h2v1h-2zM7 11h5v1h-5zM15 11h3v1h-3zM19 11h1v1h-1zM21 11h1v1h-1zM25 11h4v1h-4zM3 12h2v1h-2zM6 12h2v1h-2zM10 12h1v1h-1zM13 12h1v1h-1zM15 12h2v1h-2zM20 12h1v1h-1zM22 12h1v1h-1zM25 12h1v1h-1zM28 12h1v1h-1zM0 13h1v1h-1zM2 13h4v1h-4zM8 13h3v1h-3zM13 13h2v1h-2zM18 13h3v1h-3zM25 13h1v1h-1zM0 14h3v1h-3zM4 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM15 14h2v1h-2zM20 14h1v1h-1zM22 14h1v1h-1zM28 14h1v1h-1zM0 15h1v1h-1zM2 15h2v1h-2zM5 15h1v1h-1zM9 15h3v1h-3zM13 15h3v1h-3zM17 15h3v1h-3zM25 15h1v1h-1zM1 16h3v1h-3zM5 16h2v1h-2zM8 16h1v1h-1zM10 16h6v1h-6zM23 16h1v1h-1zM2 17h2v1h-2zM5 17h1v1h-1zM9 17h2v1h-2zM12 17h3v1h-3zM16 17h3v1h-3zM20 17h1v1h-1zM22 17h1v1h-1zM26 17h3v1h-3zM0 18h1v1h-1zM2 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM11 18h2v1h-2zM18 18h1v1h-1zM20 18h1v1h-1zM22 18h3v1h-3zM27 18h2v1h-2zM4 19h1v1h-1zM8 19h2v1h-2zM12 19h2v1h-2zM15 19h1v1h-1zM17 19h2v1h-2zM20 19h2v1h-2zM27 19h2v1h-2zM0 20h1v1h-1zM3 20h1v1h-1zM5 20h4v1h-4zM10 20h1v1h-1zM12 20h1v1h-1zM14 20h1v1h-1zM16 20h2v1h-2zM20 20h7v1h-7zM8 21h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM14 21h1v1h-1zM20 21h1v1h-1zM24 21h2v1h-2zM28 21h1v1h-1zM0 22h7v1h-7zM10 22h1v1h-1zM13 22h1v1h-1zM15 22h3v1h-3zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM13 23h2v1h-2zM16 23h5v1h-5zM24 23h1v1h-1zM26 23h3v1h-3zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM9 24h2v1h-2zM12 24h1v1h-1zM15 24h1v1h-1zM20 24h5v1h-5zM27 24h2v1h-2zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h2v1h-2zM11 25h1v1h-1zM13 25h1v1h-1zM17 25h1v1h-1zM19 25h1v1h-1zM22 25h1v1h-1zM24 25h1v1h-1zM26 25h1v1h-1zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM9 26h1v1h-1zM13 26h2v1h-2zM23 26h2v1h-2zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM11 27h2v1h-2zM15 27h2v1h-2zM19 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM10 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM20 28h6v1h-6zM27 28h1v1h-1z"/></svg></div>
+  <div style="position: absolute; left: 376px; top: 136px; width: 112px; height: 25px; display: flex; align-items: center; justify-content: center; background: var(--text); border-radius: 6px"><span class="el-overline" style="font-size: 12.3px; line-height: 16px; font-weight: 700; letter-spacing: .02em; color: var(--surface); white-space: nowrap">Uygacha</span></div>
+  <span style="position: absolute; left: 376px; top: 165px; width: 112px; text-align: center; font-size: 13.2px; line-height: 16px; font-weight: 700">23.10.2026</span>
+  <div style="position: absolute; left: 15px; top: 196px; width: 470px; height: 24px; border-top: 1px solid var(--text); display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 12.3px; line-height: 16px; white-space: nowrap">
+    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">Jo'natuvchi:</span> <span style="font-weight: 700">Baraka Shop</span></span>
+  </div>
+</div>
+</div>
+<p class="el-state-label" style="text-align: left">Hech biri yo'q — «Muammo bo'lsa» chiqmaydi, «Jo'natuvchi» butun qatorda</p>
+</div>
+</div>
+</div>
+<p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; flex: none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Brauzer orqali chop etishda ham xuddi shu pastki band va shu qoida. Paket va pochta chekida «Muammo bo'lsa» yo'q — o'zgarmaydi.</span></p>
+</section>
+
+<section aria-labelledby="s-who" style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+  <span class="el-overline">03</span>
+  <h2 class="el-h1" id="s-who">Kim chop etadi va raqamni qayerda ko'radi</h2>
+  <p class="el-sub" style="max-width: 960px">Yorliqni har kim chop etsa ham undagi raqam bir xil — buyurtma viloyati logisti. Tizimdagi aloqa esa rolga bog'liq.</p>
+</div>
+<section class="el-card" aria-labelledby="c-who" style="overflow: hidden">
+  <div class="el-card-head"><h3 class="el-h2" id="c-who">Yorliqda va tizimda</h3><a class="el-btn el-btn-link" href="@contact-card" style="display: inline-flex; align-items: center; gap: 6px; min-height: 32px">Tizimdagi aloqa — Aloqa kartasi<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
+  <div class="el-table-wrap">
+  <table class="el-table is-compact">
+    <thead><tr><th style="width: 240px">Rol</th><th>Chop etilgan yorliqda</th><th>Tizimda (ekranda)</th></tr></thead>
+    <tbody>
+      <tr><td class="el-strong">Kuryer, menejer</td><td>Buyurtma viloyati logisti</td><td>«Viloyatingiz logisti» kartasi (o'z viloyati) · tafsilotda «Muammo bo'lsa» (buyurtma viloyati). Market telefoni yo'q</td></tr>
+      <tr><td class="el-strong">Market, market operatori</td><td>Buyurtma viloyati logisti — market uchun emas, kuryer va mijoz uchun</td><td>«Elchi mas'ulingiz» — biriktirilgan yoki sukut mas'ul, bo'lmasa umumiy raqam</td></tr>
+      <tr><td class="el-strong">Superadmin, admin, ro'yxatchi, logist</td><td>Buyurtma viloyati logisti</td><td>Tafsilotda «Muammo bo'lsa» va market telefoni</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+</section>
+
+<section aria-labelledby="s-diff" style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+  <span class="el-overline">04</span>
+  <h2 class="el-h1" id="s-diff">Hozir → yangi</h2>
+  <p class="el-sub" style="max-width: 960px">Faqat «Muammo bo'lsa» manbasi o'zgaradi; chek tartibi, shriftlar va qolgan maydonlar — «Chek va paket cheki» bo'yicha.</p>
+</div>
+<section class="el-card" aria-labelledby="c-diff">
+  <div class="el-card-head"><h3 class="el-h2" id="c-diff">Hozir → Yangi</h3><span class="el-small el-muted">6 ta farq</span></div>
+  <div class="el-table-wrap">
+  <table class="el-table is-compact">
+    <thead><tr><th style="width: 220px">Joy</th><th>Hozir</th><th style="width: 40px"><span class="el-sr">Yo'nalish</span></th><th>Yangi</th></tr></thead>
+    <tbody>
+      <tr><td class="el-strong">Manba (100×60, A4, brauzer)</td><td class="el-muted">Operator telefoni → market telefoni</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Viloyat logisti → umumiy raqam</td></tr>
+      <tr><td class="el-strong">Raqam yo'q</td><td class="el-muted">«Muammo bo'lsa» qismi chiqmaydi</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>O'zgarmaydi — o'ng qism chiqmaydi, «-» yozilmaydi</td></tr>
+      <tr><td class="el-strong">Printer server</td><td class="el-muted"><span class="el-code">POST /printer/thermal-pdf</span>, <span class="el-code">/printer/receipt</span>: operator → market</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Xuddi shu qoida — faqat problem_contacts; bo'sh bo'lsa chiqmaydi</td></tr>
+      <tr><td class="el-strong">Eski backend</td><td class="el-muted">—</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>problem_contacts kelmasa — chiqmaydi; market raqamiga qaytmaydi</td></tr>
+      <tr><td class="el-strong">Chop etilgan yorliq</td><td class="el-muted">—</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>O'zgarmaydi. Logist almashsa yoki viloyat o'zgarsa — keyingi chopdan yangi raqam (≤ 1 daqiqa)</td></tr>
+      <tr><td class="el-strong">Market chop etsa</td><td class="el-muted">Operator yoki market raqami</td><td style="color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></td><td>Viloyat logisti; market mas'uli yorliqqa chiqmaydi</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+</section>
+
+</div>

@@ -198,10 +198,11 @@ describe("satoModel — qidiruv, filtr, sahifalash", () => {
   });
 
   it("viloyat variantlari — nom bo'yicha, takrorsiz", () => {
+    // `satoCode` — «Tuman qo'shish» oynasida kod prefiksi tekshiruvi (ExK28CiS).
     expect(satoRegionOptions(districts)).toEqual([
-      { value: "6", label: "Samarqand" },
-      { value: "1", label: "Toshkent sh." },
-      { value: "2", label: "Toshkent viloyati" },
+      { value: "6", label: "Samarqand", satoCode: "1718" },
+      { value: "1", label: "Toshkent sh.", satoCode: "1726" },
+      { value: "2", label: "Toshkent viloyati", satoCode: "1727" },
     ]);
   });
 
@@ -215,11 +216,21 @@ describe("satoModel — qidiruv, filtr, sahifalash", () => {
 });
 
 describe("satoModel — kod va KPI", () => {
-  it("faqat raqam (DTO ^\\d+$)", () => {
+  it("aniq 7 raqam (backend 2026-11-01 — `^\\d{7}$`, ExK28CiS)", () => {
     expect(isValidSatoCode("1727401")).toBe(true);
     expect(isValidSatoCode(" 1727401 ")).toBe(true);
     expect(isValidSatoCode("")).toBe(false);
     expect(isValidSatoCode("17-27")).toBe(false);
+    expect(isValidSatoCode("172740")).toBe(false);
+    expect(isValidSatoCode("17274011")).toBe(false);
+  });
+
+  it("qator — geografik viloyat SOATO kodi (`regionSatoCode`, muharrir prefiksi)", () => {
+    const view = buildAdminSatoView(normalizeSatoDistricts(DISTRICTS));
+    expect(view.noCode.find((row) => row.kind === "district" && row.name === "Urgut sh.")).toMatchObject({
+      regionId: "6",
+      regionSatoCode: "1718",
+    });
   });
 
   it("muharrir qiymati: saqlangan kod, bo'lmasa topilgan", () => {
@@ -424,5 +435,13 @@ describe("region.json v2.sato — uch til", () => {
     expect(tree.title).toBe("Tumanlar va SATO kodlari");
     expect((tree.tabs as Tree).found).toBe("Topildi");
     expect((tree.editor as Tree).taken).toBe("Bu kod band: {{district}}, {{region}}");
+    // ExK28CiS: 7 raqam va viloyat prefiksi.
+    expect((tree.editor as Tree).hint).toBe("7 ta raqam, {{prefix}} bilan boshlanadi");
+    expect((tree.editor as Tree).hintNoPrefix).toBe("7 ta raqam, masalan 1727401");
+    expect((tree.editor as Tree).invalid).toBe("Kod 7 ta raqamdan iborat bo'lishi kerak");
+    expect((tree.editor as Tree).prefix).toBe("Kod {{prefix}} bilan boshlanishi kerak — {{region}} kodi");
+    expect((tree.add as Tree).codeHint).toBe(
+      "7 ta raqam, {{region}} kodi {{prefix}} bilan boshlanadi. Bitta kod faqat bitta tumanga yoziladi.",
+    );
   });
 });

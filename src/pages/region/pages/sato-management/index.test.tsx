@@ -165,16 +165,66 @@ describe("RegionSatoManagementPage (v2) — «Tumanlarni o'tkazish» tabi", () =
   });
 
   it("moves a dragged district with PATCH /district/:id {assigned_region} and shows the success toast", async () => {
+    let resolvePatch: (value: unknown) => void = () => undefined;
+    api.patch.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePatch = resolve;
+      }),
+    );
     open();
     await screen.findByText("Chilonzor");
 
     act(() => drag("2", "6"));
 
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" }));
+    // Optimistik: server javobidan oldin yangi viloyatda turadi.
     expect(
       within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
     ).toBeInTheDocument();
+    await act(async () => resolvePatch({ data: { statusCode: 200 } }));
     expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+  });
+
+  it("kGvjztpY: ustunlar `assignedDistricts` dan; o'tkazilgach doska va bog'liq keshlar qayta yuklanadi, tuman yangi joyida", async () => {
+    const geo = { id: "1", name: "Toshkent shahri" };
+    // Geografik `districts` o'zgarmaydi (Chilonzor doim Toshkentda) — biriktirilganlar PATCH dan keyin o'zgaradi.
+    const regionsPayload = (moved: boolean) =>
+      REGIONS.map((region) => ({
+        ...region,
+        assignedDistricts:
+          region.id === "1"
+            ? [
+                ...(moved ? [] : [{ id: "2", name: "Chilonzor", region: geo }]),
+                { id: "3", name: "Mirobod", region: geo },
+              ]
+            : region.id === "6"
+              ? [
+                  ...(moved ? [{ id: "2", name: "Chilonzor", region: geo }] : []),
+                  { id: "179", name: "Samarqand shahri", region: { id: "6", name: "Samarqand viloyati" } },
+                ]
+              : [],
+      }));
+    mockGets({ region: () => ok(regionsPayload(api.patch.mock.calls.length > 0)) });
+    const { queryClient } = open();
+    await screen.findByText("Chilonzor");
+    // Boshqa ekranlarning keshi: tumanlar sahifasi (DM-1), tuman tanlagichi, viloyat statistikasi.
+    const dependent = [["region-districts-admin"], ["region-district-catalog", "1"], ["region-stats", undefined]];
+    for (const key of dependent) queryClient.setQueryData(key, []);
+
+    act(() => drag("2", "6"));
+
+    expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+    for (const key of dependent)
+      await waitFor(() => expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(calls("region")).toBe(2));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Toshkent shahri" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Umumiy son" })).toHaveTextContent("Tumanlar 3");
   });
 
   it("reloads the list and keeps the district in place when the move fails", async () => {
@@ -316,7 +366,8 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (superadmin)", () =
     const input = screen.getByRole("textbox", { name: "Tuman 01 — SATO kodi" });
     expect(input).toHaveValue("1726200");
     expect(input).toHaveFocus();
-    expect(screen.getByText("Faqat raqamlar, masalan 1727401")).toBeInTheDocument();
+    // ExK28CiS: ko'rsatma — 7 raqam va geografik viloyat (Toshkent sh.) kodi.
+    expect(screen.getByText("7 ta raqam, 1726 bilan boshlanadi")).toBeInTheDocument();
     // Bir vaqtda bitta qator: boshqa qatorlarda maydon yo'q.
     expect(screen.getAllByRole("textbox", { name: /— SATO kodi$/ })).toHaveLength(1);
 
@@ -374,7 +425,7 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (superadmin)", () =
     expect(enter).toHaveTextContent("Kod kiritish");
     await user.click(enter);
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
-    expect(screen.getByText("Faqat raqamlar kiriting, masalan 1727401")).toBeInTheDocument();
+    expect(screen.getByText("SATO kodini kiriting")).toBeInTheDocument();
     expect(api.patch).not.toHaveBeenCalled();
 
     await user.type(screen.getByRole("textbox", { name: "Urgut sh. — SATO kodi" }), "1718236");
@@ -387,6 +438,57 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (superadmin)", () =
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(screen.queryByRole("textbox", { name: "Uchtepa tumani — SATO kodi" })).not.toBeInTheDocument();
     expect(api.patch).toHaveBeenCalledTimes(1);
+  });
+
+  it("ExK28CiS: 7 raqam emas yoki geografik viloyat prefiksi mos emas — so'rovsiz maydon xatosi", async () => {
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(statusTab(/^Topilmadi/));
+    await user.click(await screen.findByRole("button", { name: "Kod kiritish: Urgut sh." }));
+    const input = screen.getByRole("textbox", { name: "Urgut sh. — SATO kodi" });
+    // Urgut sh. — Samarqand (1718): ko'rsatma shu prefiks bilan.
+    expect(screen.getByText("7 ta raqam, 1718 bilan boshlanadi")).toBeInTheDocument();
+
+    await user.type(input, "171823{Enter}");
+    expect(screen.getByText("Kod 7 ta raqamdan iborat bo'lishi kerak")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+
+    await user.clear(input);
+    await user.type(input, "1726236{Enter}");
+    expect(screen.getByText("Kod 1718 bilan boshlanishi kerak — Samarqand kodi")).toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it("ExK28CiS: server 400 `region_prefix_mismatch` — `expected_prefix` bilan prefiks xatosi; sababsiz 400 — format", async () => {
+    api.patch.mockRejectedValueOnce(
+      Object.assign(new Error("fail"), {
+        isAxiosError: true,
+        response: {
+          status: 400,
+          data: {
+            message: "Tuman SOATO kodi viloyat SOATO kodi (1718) bilan boshlanishi kerak",
+            data: { reason: "region_prefix_mismatch", details: { expected_prefix: "1718" } },
+          },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(statusTab(/^Topilmadi/));
+    await user.click(await screen.findByRole("button", { name: "Kod kiritish: Urgut sh." }));
+    const input = screen.getByRole("textbox", { name: "Urgut sh. — SATO kodi" });
+    await user.type(input, "1718236{Enter}");
+    expect(await screen.findByText("Kod 1718 bilan boshlanishi kerak — Samarqand kodi")).toBeInTheDocument();
+    expect(screen.queryByText(/viloyat SOATO kodi/)).not.toBeInTheDocument();
+
+    api.patch.mockRejectedValueOnce(httpError(400, "Tuman SOATO kodi aniq 7 ta raqamdan iborat bo'lishi kerak"));
+    await user.type(input, "{Backspace}7{Enter}");
+    expect(await screen.findByText("Kod 7 ta raqamdan iborat bo'lishi kerak")).toBeInTheDocument();
+    expect(screen.queryByText(/aniq 7 ta/)).not.toBeInTheDocument();
   });
 
   it("«Takroriy nomlar» (guruh sarlavhasi, «Birlashtirish») va «Bazada yo'q» («Tuman qo'shish») tablari", async () => {
@@ -488,6 +590,25 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (admin)", () => {
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/sato/14", { sato_code: "1718236" }));
     await waitFor(() => expect(calls("district")).toBe(2));
     expect(calls("district/sato-match/preview")).toBe(0);
+  });
+
+  it("ExK28CiS (admin): «Kodi bor» — boshqa viloyat prefiksi so'rovsiz rad etiladi, mosi saqlanadi", async () => {
+    const user = userEvent.setup();
+    open("admin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(screen.getByRole("tab", { name: /^Kodi bor/ }));
+    await user.click(await screen.findByRole("button", { name: "Yashnobod tumani — SATO kodini o'zgartirish" }));
+    const input = screen.getByRole("textbox", { name: "Yashnobod tumani — SATO kodi" });
+    expect(screen.getByText("7 ta raqam, 1726 bilan boshlanadi")).toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "1727262{Enter}");
+    expect(screen.getByText("Kod 1726 bilan boshlanishi kerak — Toshkent sh. kodi")).toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
+
+    await user.clear(input);
+    await user.type(input, "1726291{Enter}");
+    await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/sato/13", { sato_code: "1726291" }));
   });
 
   it("«Kodsiz» bo'sh — «Hamma tumanda SATO kodi bor»; yuklash xatosi — «Tumanlarni yuklab bo'lmadi»", async () => {
@@ -863,7 +984,9 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(name).toHaveFocus();
     expect(within(dialog).getByRole("combobox", { name: /Viloyat/ })).toHaveTextContent("Samarqand");
     expect(within(dialog).getByRole("textbox", { name: "SATO kodi" })).toHaveValue("1718236");
-    expect(within(dialog).getByText("Faqat raqamlar. Bitta kod faqat bitta tumanga yoziladi.")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("7 ta raqam, Samarqand kodi 1718 bilan boshlanadi. Bitta kod faqat bitta tumanga yoziladi."),
+    ).toBeInTheDocument();
     expect(within(dialog).getByRole("note")).toHaveTextContent(
       "Bazada «Urgut sh.» bor. Agar bu o'sha tuman bo'lsa, yangisini qo'shmang — «Topilmadi» tabida unga kodni kiriting.",
     );
@@ -877,24 +1000,93 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(calls("district/sato-match/preview")).toBe(2);
   });
 
-  it("tekshiruv: bo'sh nom, harfli kod — so'rov ketmaydi; kodsiz — `sato_code` yuborilmaydi", async () => {
+  it("qo'shilgach geografik tumanlar keshi (`useGetDistricts` — [\"districts\", regionId]) ham eskiradi", async () => {
+    api.post.mockResolvedValue({ data: { statusCode: 201, data: { id: "300" } } });
+    const user = userEvent.setup();
+    const { queryClient } = open("superadmin", "?tab=sato");
+    queryClient.setQueryData(["districts", "6"], [{ id: "14", name: "Urgut sh." }]);
+    await screen.findByText("Tuman 01");
+    await user.click(statusTab(/^Bazada yo'q/));
+    await user.click(await screen.findByRole("button", { name: "Urgut tumani — tuman qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Tuman qo'shish" });
+    expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(false);
+
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await screen.findByText("Tuman qo'shildi")).toBeInTheDocument();
+    await waitFor(() => expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(true));
+  });
+
+  it("ExK28CiS: kod majburiy — bo'sh nom/kod, 7 raqam emas, viloyat prefiksi mos emas — so'rov ketmaydi", async () => {
     api.post.mockResolvedValue({ data: { statusCode: 201, data: {} } });
     const user = userEvent.setup();
     const dialog = await openAdd(user);
     const name = within(dialog).getByRole("textbox", { name: /Tuman nomi/ });
     const code = within(dialog).getByRole("textbox", { name: "SATO kodi" });
+    // Maket: «SATO kodi *» — majburiy.
+    expect(code).toHaveAttribute("aria-required", "true");
     await user.clear(name);
     await user.clear(code);
-    await user.type(code, "17a");
     await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
     expect(within(dialog).getByText("Tuman nomini kiriting")).toBeInTheDocument();
-    expect(within(dialog).getByText("Faqat raqamlar kiriting, masalan 1718236")).toBeInTheDocument();
-    expect(api.post).not.toHaveBeenCalled();
+    expect(within(dialog).getByText("SATO kodini kiriting")).toBeInTheDocument();
 
     await user.type(name, "Yangi tuman");
-    await user.clear(code);
+    // Harflar yozilmaydi (faqat raqamlar maydoni); 6 raqam — format xatosi.
+    await user.type(code, "17a1823");
+    expect(code).toHaveValue("171823");
     await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6" }));
+    expect(within(dialog).getByText("Kod 7 ta raqamdan iborat bo'lishi kerak")).toBeInTheDocument();
+
+    // Samarqand (1718) tanlangan, kod Toshkent sh. (1726) niki.
+    await user.clear(code);
+    await user.type(code, "1726236");
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(within(dialog).getByText("Kod 1718 bilan boshlanishi kerak — Samarqand kodi")).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+
+    // Viloyat almashsa — kod yangi viloyatga mos: xato yo'qoladi va yuboriladi.
+    await user.click(within(dialog).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Toshkent sh." }));
+    expect(within(dialog).queryByText(/bilan boshlanishi kerak/)).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByText("7 ta raqam, Toshkent sh. kodi 1726 bilan boshlanadi. Bitta kod faqat bitta tumanga yoziladi."),
+    ).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "1", sato_code: "1726236" }),
+    );
+  });
+
+  it("ExK28CiS: mos kelmaydigan viloyatga almashsa — prefiks xatosi so'rovsiz darhol; server 400 — `expected_prefix` bilan", async () => {
+    api.post.mockRejectedValue(
+      Object.assign(new Error("fail"), {
+        isAxiosError: true,
+        response: {
+          status: 400,
+          data: {
+            message: "Tuman SOATO kodi viloyat SOATO kodi (1718) bilan boshlanishi kerak",
+            data: { reason: "region_prefix_mismatch", details: { expected_prefix: "1718" } },
+          },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Toshkent sh." }));
+    expect(within(dialog).getByText("Kod 1726 bilan boshlanishi kerak — Toshkent sh. kodi")).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "SATO kodi" })).toHaveAttribute("aria-invalid", "true");
+    expect(api.post).not.toHaveBeenCalled();
+
+    // Qaytib Samarqand — klient o'tkazadi, server esa prefiksni rad etdi (masalan, viloyat kodi yangilangan).
+    await user.click(within(dialog).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Samarqand" }));
+    expect(within(dialog).queryByText(/bilan boshlanishi kerak/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await within(dialog).findByText("Kod 1718 bilan boshlanishi kerak — Samarqand kodi")).toBeInTheDocument();
+    expect(screen.queryByText(/viloyat SOATO kodi/)).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Tuman qo'shish" })).toBeInTheDocument();
   });
 
   it("409: kod band (egasi so'raladi) — kod maydonida; egasi yo'q — nom maydonida; server matni yo'q", async () => {
@@ -916,6 +1108,20 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(await within(dialog).findByText("Bu viloyatda shu nomli tuman bor")).toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: /Tuman nomi/ })).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("dialog", { name: "Tuman qo'shish" })).toBeInTheDocument();
+  });
+
+  it("409 + kod egasi 200, lekin tuman o'qilmadi — «Bu kod boshqa tumanga yozilgan» kod maydonida, xabarsiz", async () => {
+    api.post.mockRejectedValue(httpError(409, "District sato_code already exists"));
+    mockGets({ "district/sato/1718236": () => ok({}) });
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await within(dialog).findByText("Bu kod boshqa tumanga yozilgan")).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "SATO kodi" })).toHaveAttribute("aria-invalid", "true");
+    expect(within(dialog).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText("Tumanni qo'shib bo'lmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText(/already exists/)).not.toBeInTheDocument();
   });
 
   it("409 + kod egasini so'rash 5xx — «nom band» deb noto'g'ri aytilmaydi: umumiy xabar, maydon xatosi yo'q", async () => {

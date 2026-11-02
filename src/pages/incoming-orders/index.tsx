@@ -1,16 +1,19 @@
-// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo
+// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo, superadmin-neworders-incoming-scan-partial, admin-neworders-incoming-scan-partial, manager-new-orders-incoming-scan-partial, registrator-new-orders-incoming-scan-partial, superadmin-neworders-incoming-scan-partial-confirm-dialog, admin-neworders-incoming-scan-partial-confirm-dialog, manager-new-orders-incoming-scan-partial-confirm-dialog, registrator-new-orders-incoming-scan-partial-confirm-dialog
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
+import { Check, Circle, Inbox, Info, RefreshCw, TriangleAlert } from "lucide-react";
+import type { RootState } from "../../app/config/store";
 import { canReceiveExternalOrders } from "../../app/lib/access";
-import { extractScannerToken } from "../../shared/lib/scanToken";
+import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
 // ham ishlaydi.
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { useScannerListening } from "../../shared/lib/useScannerListening";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -34,9 +37,25 @@ import {
   Skeleton,
   SkeletonTable,
   TONE_SOFT,
+  useConfirm,
 } from "../../shared/ui/primitives";
-import { countBags, countReceivedByBag, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
+import {
+  bagProgressIndex,
+  bagProgressOf,
+  countBags,
+  countReceivedByBag,
+  districtName,
+  findByScanKeys,
+  indexByBatch,
+  indexByToken,
+  keepScannedInList,
+  orderLabel,
+  parcelToken,
+  partialBagsInScan,
+} from "./lib";
+import { applyScanDraft, readScanDraft, writeScanDraft } from "./scanDraft";
 import IncomingTable from "./ui/IncomingTable";
+import PartialBagsAlert from "./ui/PartialBagsAlert";
 import ScanInput from "./ui/ScanInput";
 import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
 
@@ -54,6 +73,9 @@ import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/Sc
 /** «Olib tashlandi» xabari — bitta `id` (ketma-ket olib tashlashda yangisi eskisining o'rnida), 5 soniya (ega S4). */
 const UNSCAN_TOAST_ID = "incoming-unscan";
 const UNSCAN_TOAST_MS = 5000;
+
+/** Bundan qisqa qiymat fokussiz yo'lda skan emas, odam bosgan tugma (`useOrderQrScanner` dagi chegara). */
+const KEYBOARD_SCAN_MIN_LENGTH = 6;
 
 /** `.el-overline` · `.el-stat-value` · `.el-stat-unit` (CODE-MAP 0.2, 2.4). */
 const OVERLINE = "text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
@@ -89,11 +111,22 @@ const orderDetail = (order: IncomingOrder) =>
  * maydoni, «Kelgan» / «Skanerlangan», chiziq, oxirgi skan natijasi) va «Kelgan posilkalar»
  * jadvali. «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
  *
+ * USB SKANER (`tizim-scanner`: doim tinglaydi, fokusdan qat'i nazar; eo3eeJxs). Fokus maydonda bo'lsa kod maydonga
+ * yoziladi va `ScanInput` yuboradi, boshqa joyda bo'lsa bosishlarni `useKeyboardScanner` tutadi, ikkalasi bitta
+ * `handleScan` ga tushadi. Modal ochiq yoki boshqa maydonga matn yozilayotganda skaner ushlanmaydi va «USB skaner
+ * tayyor» belgisi ham ko'rinmaydi (`useScannerListening`).
+ *
  * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-neworders-incoming-scan-camera`,
  * `manager-new-orders-incoming-scan-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi
  * (desktopda «Skanerlash») shu sahifaning maqsadini ochadi. Kamera o'qigan kod `ScanInput` dagi AYNAN
  * `handleScan` ga tushadi (faqat belgilaydi, qabul — sahifadagi «Qabul qilish»). Kamera ichida manba
  * almashtiriladi (`/new-orders/incoming/:id`, kamera ochiq qoladi); qop to'liq emas bo'lsa — ogohlantirish.
+ *
+ * CHALA QOP (DamKku7C, ega S2 · S3 · S5, maketlar `*-incoming-scan-partial`, `*-partial-confirm-dialog`): sonlar —
+ * backend `meta.batches` (ilgari qabul qilinganlar + kutayotganlar), frontend o'zi sanamaydi: ro'yxatda faqat `new`
+ * posilkalar bor va ilgari bittalab qabul qilingan a'zo soxta kamomad bo'lib ko'rinardi. Hamkor hajmni aytmagan
+ * qopda ogohlantirish yo'q. Chala qop QR'i — sariq xabar va xato ovozi, to'liq qop — yashil. Qabulda tasdiq yetarli:
+ * yetishmagan posilka kutilayotgan bo'lib qoladi, hamkorga avtomatik xabar yo'q.
  */
 const IncomingOrdersPage = () => {
   const { t, i18n } = useTranslation("common");
@@ -101,8 +134,11 @@ const IncomingOrdersPage = () => {
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const allowed = useSelector(canReceiveExternalOrders);
+  const confirm = useConfirm();
+  const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const listening = useScannerListening(inputRef);
   /**
    * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
    *
@@ -158,35 +194,18 @@ const IncomingOrdersPage = () => {
   const hasServerResponse = Boolean((query.error as { response?: unknown } | null)?.response);
   const listErrorReason = hasServerResponse ? getBackendErrorMessage(query.error) : undefined;
 
-  /**
-   * Qop (batch) tokeni → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat
-   * `new` holatidagilar, ya'ni oldin bittalab qabul qilinganlar bu yerda yo'q:
-   * qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
-   */
-  const byBatch = useMemo(() => {
-    const map = new Map<string, IncomingOrder[]>();
-    for (const order of orders) {
-      const token = String(order.external_batch_token ?? "").trim();
-      if (!token) continue;
-      map.set(token, [...(map.get(token) ?? []), order]);
-    }
-    return map;
-  }, [orders]);
+  /** Skan kaliti → qop a'zolari / buyurtma. Har skanda qayta qurilmaydi. */
+  const byBatch = useMemo(() => indexByBatch(orders), [orders]);
+  const byToken = useMemo(() => indexByToken(orders), [orders]);
 
-  /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
-  const byToken = useMemo(() => {
-    const map = new Map<string, IncomingOrder>();
-    for (const order of orders) {
-      const token = parcelToken(order);
-      if (token) map.set(token, order);
-    }
-    return map;
-  }, [orders]);
+  /** Qop tokeni → hisobi («2/3», chala qop). */
+  const bags = useMemo(() => bagProgressIndex(query.data?.batches ?? []), [query.data]);
+  const partialBags = useMemo(() => [...bags.values()].filter((bag) => bag.missing > 0), [bags]);
 
   /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
   const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
 
-  // Skaner klaviatura sifatida ishlaydi — maydon doim fokusda turishi kerak.
+  // Sahifa ochilganda kod maydonda ko'rinib tursin. Fokus boshqa joyga o'tsa ham skan yo'qolmaydi (`useKeyboardScanner`).
   useEffect(() => {
     if (allowed) inputRef.current?.focus();
   }, [allowed]);
@@ -209,6 +228,26 @@ const IncomingOrdersPage = () => {
     }
   }
 
+  /**
+   * F5 DAN KEYIN SKANLAR TIKLANADI (eo3eeJxs, `scanDraft.ts`). Ro'yxat VA foydalanuvchi kelgach bir marta o'qiladi:
+   * ro'yxatsiz qaysi posilka hali kutayotgani noma'lum, sessiya esa sahifadan keyin tiklanadi. Tiklanguncha
+   * yozilmaydi — aks holda boshlang'ich bo'sh ro'yxat saqlangan qoralamani o'chirib yuborardi.
+   */
+  const [draftUserId, setDraftUserId] = useState<string | null>(null);
+  if (userId && draftUserId !== userId && query.data) {
+    setDraftUserId(userId);
+    const draft = readScanDraft(userId, String(marketId));
+    if (draft) {
+      const restored = applyScanDraft(orders, draft);
+      setScannedIds(restored.ids);
+      setScannedTokens(restored.tokens);
+      setBagTokens(restored.bagTokens);
+    }
+  }
+  useEffect(() => {
+    if (userId && draftUserId === userId) writeScanDraft(userId, String(marketId), scannedTokens, [...bagTokens]);
+  }, [bagTokens, draftUserId, marketId, scannedTokens, userId]);
+
   /** Ro'yxatdagi (hozirgi) posilkalar — «Qaytarish» kechikib bosilsa, ro'yxatdan chiqqan posilka qaytmasin. */
   const liveIdsRef = useRef<ReadonlySet<string>>(new Set());
   useEffect(() => {
@@ -222,7 +261,9 @@ const IncomingOrdersPage = () => {
    */
   const markBatch = (members: IncomingOrder[], size: number | null) => {
     const fresh = members.filter((order) => !scannedIds.has(order.id) && String(order.qr_code_token ?? "").trim());
-    const total = Math.max(size ?? 0, members.length);
+    const bag = bagProgressOf(members[0], bags);
+    // Ilgari qabul qilinganlar ro'yxatda yo'q va kamomad emas: kutilgani — hamkor aytgani minus ular.
+    const total = Math.max(bag ? bag.size - bag.received : (size ?? 0), members.length);
     if (!fresh.length) {
       const text = t("incomingBatchAlready", { size: total, count: members.length });
       void playScanFeedback("error", text);
@@ -237,12 +278,16 @@ const IncomingOrdersPage = () => {
     setScannedTokens((prev) => [...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]);
     setBagTokens((prev) => new Set([...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]));
     const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
-    const text = t("incomingBatchMarked", { size: total, count: marked });
-    void playScanFeedback("success", text);
+    const partial = bag !== null && bag.missing > 0;
+    const text = partial
+      ? t("incoming.partialScan", { bag: bag.label, arrived: bag.arrived, size: bag.size })
+      : t("incomingBatchMarked", { size: total, count: marked });
+    void playScanFeedback(partial ? "error" : "success", text);
     setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
       text,
+      detail: partial ? t("incoming.partialScanDetail", { marked, missing: bag.missing }) : undefined,
       // «Olib tashlash» — faqat shu skan belgilaganlar (oldin bittalab skanerlanganlar qoladi).
       undoIds: fresh.map((order) => order.id),
     });
@@ -252,9 +297,14 @@ const IncomingOrdersPage = () => {
    * Ro'yxatda na posilka, na qop topilmadi — server qop tokenini biladimi?
    * (`GET /scan/:token` qop qidiruvi.) Faqat moslik bo'lmaganda so'raladi:
    * oddiy skan avvalgidek serverga bormaydi.
+   *
+   * Backend tokenni aniq solishtiradi va qop tokeni katta harfli bo'lishi ham mumkin (`BTB-…`), shuning uchun
+   * avval skanerlangan yozuvi, topilmasa kichik harflisi so'raladi.
    */
   const resolveRemoteBatch = async (token: string) => {
-    const batch = await fetchExternalBatchScan(token).catch(() => null);
+    const lookup = (value: string) => fetchExternalBatchScan(value).catch(() => null);
+    const lowered = token.toLowerCase();
+    const batch = (await lookup(token)) ?? (lowered === token ? null : await lookup(lowered));
     const members = batch
       ? orders.filter((order) =>
           batch.members.some(
@@ -273,7 +323,8 @@ const IncomingOrdersPage = () => {
   };
 
   const handleScan = (raw: string) => {
-    const token = extractScannerToken(raw) ?? raw.trim();
+    const latin = latinizeKeyboardLayout(raw);
+    const token = extractScannerToken(latin) ?? latin.trim();
     if (!token) return;
 
     // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
@@ -284,9 +335,10 @@ const IncomingOrdersPage = () => {
       return;
     }
 
-    const order = byToken.get(token);
+    const keys = scanKeyCandidates(raw, window.location.origin);
+    const order = findByScanKeys(byToken, keys);
     if (!order) {
-      const batchMembers = byBatch.get(token);
+      const batchMembers = findByScanKeys(byBatch, keys);
       if (batchMembers?.length) {
         const size = Number(batchMembers[0].external_batch_size);
         markBatch(batchMembers, Number.isFinite(size) && size > 0 ? size : batchMembers.length);
@@ -307,7 +359,8 @@ const IncomingOrdersPage = () => {
 
     void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`);
     setScannedIds((prev) => new Set(prev).add(order.id));
-    setScannedTokens((prev) => [...prev, token]);
+    // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
+    setScannedTokens((prev) => [...prev, parcelToken(order)]);
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
@@ -316,8 +369,83 @@ const IncomingOrdersPage = () => {
     });
   };
 
-  const handleReceive = () => {
+  useKeyboardScanner({
+    enabled: allowed && listening,
+    onScan: (value) => {
+      if (value.length < KEYBOARD_SCAN_MIN_LENGTH && !value.includes("/scan/")) return false;
+      handleScan(value);
+      return true;
+    },
+  });
+
+  /** Chala qopdan posilka bor — avval tasdiq (ega S2). `true` — qabul davom etadi. */
+  const confirmPartialBags = () => {
+    const scannedBags = partialBagsInScan(orders, scannedIds, bags);
+    if (!scannedBags.length) return Promise.resolve(true);
+    const value = (count: number) => formatNumberLocalized(count, { language });
+    const bagsCount = value(scannedBags.length);
+    const left = orders.length - scannedIds.size;
+    return confirm({
+      title: t("incoming.partialConfirmTitle", { value: bagsCount }),
+      description: t("incoming.partialConfirmContext", { source: cameraSource, value: value(scannedIds.size) }),
+      lead: t("incoming.partialConfirmLead", { value: bagsCount }),
+      icon: TriangleAlert,
+      iconTone: "warning",
+      size: "md",
+      closable: true,
+      confirmLabel: t("incoming.partialConfirmAction"),
+      confirmIcon: Check,
+      details: (
+        <ul className="m-0 flex list-none flex-col p-0">
+          {scannedBags.map((bag, index) => (
+            <li
+              key={bag.token}
+              className={cx(
+                "flex flex-wrap items-center justify-between gap-x-3 gap-y-1",
+                index > 0 && "mt-3 border-t border-border pt-3",
+              )}
+            >
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-semibold [overflow-wrap:anywhere]">{t("incoming.bagLabel", { bag: bag.label })}</span>
+                <span className="text-[13px] text-text-muted">
+                  {t("incoming.partialConfirmBag", { size: bag.size, arrived: bag.arrived, scanned: bag.scanned })}
+                </span>
+              </span>
+              <Badge tone="warning" dot>
+                {t("incoming.partialConfirmMissing", { value: value(bag.missing) })}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ),
+      children: (
+        <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[13px] text-text-muted">
+          <li className="flex items-start gap-2">
+            <Info size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span className="min-w-0">
+              {t("incoming.partialConfirmReceive", {
+                scanned: value(scannedIds.size),
+                missing: value(scannedBags.reduce((sum, bag) => sum + bag.missing, 0)),
+              })}
+            </span>
+          </li>
+          {left > 0 ? (
+            <li className="flex items-start gap-2">
+              <Circle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <span className="min-w-0">{t("incoming.partialConfirmLeft", { value: value(left) })}</span>
+            </li>
+          ) : null}
+        </ul>
+      ),
+    });
+  };
+
+  const handleReceive = async () => {
     if (!scannedTokens.length) return;
+    if (!(await confirmPartialBags())) {
+      inputRef.current?.focus();
+      return;
+    }
     // Qop skani belgilagan va hali ro'yxatda turganlar (qopdagi posilka olib tashlangan bo'lsa — sanalmaydi).
     const sentByBag = new Set(scannedTokens.filter((token) => bagTokens.has(token)));
 
@@ -435,7 +563,7 @@ const IncomingOrdersPage = () => {
   // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
   const cameraList: ScanTargetListItem[] = [...scannedTokens]
     .reverse()
-    .map((token) => byToken.get(token))
+    .map((token) => byToken.get(normalizeScanKey(token)))
     .filter((order): order is IncomingOrder => Boolean(order))
     .map((order) => ({
       key: order.id,
@@ -561,7 +689,7 @@ const IncomingOrdersPage = () => {
               disabled={scannedCount === 0}
               loading={receiveByScan.isPending}
               loadingText={t("incomingReceiving")}
-              onClick={handleReceive}
+              onClick={() => void handleReceive()}
             >
               {t("incoming.receive", { count: scannedCount })}
               <span className="max-md:hidden">{t("incoming.receiveUnit", { count: scannedCount })}</span>
@@ -581,7 +709,7 @@ const IncomingOrdersPage = () => {
               label={t("incoming.scanInputLabel")}
             />
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 max-md:hidden">
-              {scannerReady ? (
+              {scannerReady && listening ? (
                 <Badge tone="success" dot role="status">
                   {t("incoming.scannerReady")}
                 </Badge>
@@ -656,6 +784,8 @@ const IncomingOrdersPage = () => {
         </div>
       ) : null}
 
+      {listReady && partialBags.length > 0 ? <PartialBagsAlert bags={partialBags} /> : null}
+
       <Card
         padding="none"
         title={t("incoming.listTitle")}
@@ -702,7 +832,13 @@ const IncomingOrdersPage = () => {
           )}
         >
           {(_data, { isRefetching }) => (
-            <IncomingTable orders={orders} scannedIds={scannedIds} onUnscan={handleRowUnscan} busy={isRefetching} />
+            <IncomingTable
+              orders={orders}
+              scannedIds={scannedIds}
+              bags={bags}
+              onUnscan={handleRowUnscan}
+              busy={isRefetching}
+            />
           )}
         </QueryBoundary>
       </Card>

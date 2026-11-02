@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-batches-new, superadmin-batches-old, superadmin-batches-return, admin-batches-new, admin-batches-old, admin-batches-return, manager-batches-new, manager-batches-old, manager-batches-return
-import { memo, useCallback, useMemo } from "react";
+import { lazy, memo, useCallback, useMemo } from "react";
 import { ArrowRight, ChevronRight, Inbox } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -25,6 +25,7 @@ import {
   type DataTableColumn,
   type TabItem,
 } from "../../../shared/ui/primitives";
+import { OpsSection } from "../../ops/ui/OpsSection";
 import { formatBatchDisplayId } from "../lib/batchFormat";
 import {
   BATCH_TAB_KEYS,
@@ -36,6 +37,9 @@ import {
   type BatchDetailLocationState,
   type BatchTabKey,
 } from "../model/batchView";
+
+/** «Filiallar — operatsiyalar» — faqat superadmin (F2NzXpMv, Ops'dan ko'chgan); kodi alohida bo'lakda. */
+const BranchOpsPage = lazy(() => import("../../branch-ops"));
 
 /** Havola ko'rinishidagi ikonka-tugma (`.el-iconbtn-sm`, ghost) — telefonda 44 px. */
 const ICON_LINK =
@@ -378,6 +382,12 @@ const BatchesPage = () => {
           )}
         </QueryBoundary>
       </Card>
+
+      {role === "superadmin" ? (
+        <OpsSection>
+          <BranchOpsPage />
+        </OpsSection>
+      ) : null}
     </div>
   );
 };

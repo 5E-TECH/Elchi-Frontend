@@ -25,7 +25,7 @@ Qoidalar: [`AGENTS.md`](../AGENTS.md) va [`docs/DESIGN_SYSTEM.md`](../docs/DESIG
 | `kit/AUTHORING.md` | maketlar qanday chizilgan: qoidalar, matn standarti, holat → ton, grafik qoidalari (v3–v6 bo'limlari) |
 | `kit/heights.json` | yig'ilgan artboard o'lchamlari (build uchun) |
 | `kit/route-map.json` | route → sahifa fayllari, rol → maket bog'lanishi (qo'lda yuritiladi). `SCREENS.md` shundan yaratiladi |
-| `icon-registry.json` | kanonik `lucide-react` ikonkalari (132 ta, 12 guruh) va eski sinonimlarning o'rnini bosuvchilari |
+| `icon-registry.json` | kanonik `lucide-react` ikonkalari (140 ta, 13 guruh) va eski sinonimlarning o'rnini bosuvchilari |
 | `assets/_blob/` | maketdagi logotiplar |
 | `tools/*.mjs` | `build` (yig'ish), `shoot` (skrinshot), `preview` (brauzerda ro'yxat), `serve` (statik server), `screens` (`SCREENS.md` ni yaratish va tekshirish; `screens.test.mjs` shu tekshiruvni `npm test` da yuradi) |
 | [`SCREENS.md`](SCREENS.md) | route / sahifa fayli → maket ekrani jadvali (avtomatik: `npm run design:screens`, qo'lda tahrirlanmaydi) |

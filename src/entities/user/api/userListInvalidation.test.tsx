@@ -53,6 +53,7 @@ const CASES: Case[] = [
   ["updateMarketAddOrder", (m) => m.updateMarketAddOrder.mutateAsync({ id: "5", add_order: true })],
   ["updateMarketExpenseProof", (m) => m.updateMarketExpenseProof.mutateAsync({ id: "5", expense_proof_conditions: [] })],
   ["updateMarketCancelledHandoverQr", (m) => m.updateMarketCancelledHandoverQr.mutateAsync({ id: "5", cancelled_handover_qr_required: true })],
+  ["updateMarketExtraCost", (m) => m.updateMarketExtraCost.mutateAsync({ id: "5", extra_cost_enabled: true })],
   ["updateMarketTelegramGroupPii", (m) => m.updateMarketTelegramGroupPii.mutateAsync({ id: "5", tg_group_show_customer_pii: true })],
   ["deleteUser", (m) => m.deleteUser.mutateAsync("5")],
 ];

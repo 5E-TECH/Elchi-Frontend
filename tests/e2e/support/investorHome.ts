@@ -138,6 +138,8 @@ export const RAW_BACKEND_MESSAGE = "investor profile is not available (e2e raw)"
 export type InvestorHomeMock = {
   /** `investors/me/dashboard` ga ketgan `months` qiymatlari. */
   months: string[];
+  /** vpKijXce: superadmin nazorati — `investors/:id/dashboard` so'rovlari (`7:12`). */
+  control: string[];
   /** Ro'yxat so'rovlarining query satri (`investors/me/investments?…`, `investors/me/profits?…`). */
   lists: string[];
   requested: string[];
@@ -150,10 +152,12 @@ export type InvestorHomeOptions = {
   status?: 403 | 404 | 409 | 500;
   dashboardOnly?: boolean;
   theme?: "light" | "dark";
+  /** vpKijXce: kim kiradi (sukut — investor). Superadmin `investors/:id/dashboard` ni ko'radi. */
+  role?: "investor" | "superadmin" | "admin";
 };
 
-export const mockInvestorHome = async (page: Page, { empty = false, status, dashboardOnly = false, theme }: InvestorHomeOptions = {}) => {
-  const mock: InvestorHomeMock = { months: [], lists: [], requested: [], leaked: [] };
+export const mockInvestorHome = async (page: Page, { empty = false, status, dashboardOnly = false, theme, role = "investor" }: InvestorHomeOptions = {}) => {
+  const mock: InvestorHomeMock = { months: [], control: [], lists: [], requested: [], leaked: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -172,15 +176,25 @@ export const mockInvestorHome = async (page: Page, { empty = false, status, dash
       return reply(
         route,
         wrap({
-          id: "42",
-          role: "investor",
-          name: "Habibulla Nazirov",
+          id: role === "investor" ? "42" : "1",
+          role,
+          name: role === "investor" ? "Habibulla Nazirov" : "Bosh admin",
           status: "active",
           ...(theme ? { settings: { appearance: { theme, themeChosen: true } } } : {}),
         }),
       );
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 3 }));
+    const controlled = /^investors\/(\d+)\/dashboard$/.exec(path);
+    if (controlled) {
+      const months = url.searchParams.get("months") ?? "";
+      mock.control.push(`${controlled[1]}:${months}`);
+      if (status) return reply(route, { statusCode: status, message: RAW_BACKEND_MESSAGE, error: "Error" }, status);
+      return reply(route, wrap(dashboard(Number(months || 12), empty)));
+    }
+    if (path === "investors") {
+      return reply(route, wrap({ items: [{ id: 7, name: "Habibulla Nazirov", phone_number: "+998901112233" }], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } }));
+    }
     if (path.startsWith("investors/me/")) {
       const isDashboard = path === "investors/me/dashboard";
       if (isDashboard) mock.months.push(url.searchParams.get("months") ?? "");

@@ -14,6 +14,7 @@ vi.mock("../../shared/api/api", () => ({ api: apiMock }));
 
 const HQ_COURIERS_URL = "finance/cashbox/hq-couriers";
 const PAYMENT_COURIER_URL = "finance/cashbox/payment/courier";
+const PAYMENTS_META_URL = "finance/cashbox/payments-meta";
 
 const createWrapper = () => {
   const client = new QueryClient({
@@ -81,6 +82,38 @@ describe("useCashBox — courier payment and HQ couriers", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(apiMock.get).toHaveBeenCalledWith(HQ_COURIERS_URL);
+  });
+
+  it("useGetPaymentsMeta: top 3, disabled → no request, refetched after a payment, silent on error", async () => {
+    const paymentsMetaGets = () => apiMock.get.mock.calls.filter(([url]) => url === PAYMENTS_META_URL);
+    const disabled = renderHook(() => useCashBox().useGetPaymentsMeta(false), { wrapper: createWrapper() });
+    expect(disabled.result.current.fetchStatus).toBe("idle");
+    expect(paymentsMetaGets()).toEqual([]);
+
+    const { result } = renderHook(
+      () => {
+        const cashBox = useCashBox();
+        return { meta: cashBox.useGetPaymentsMeta(true), pay: cashBox.createPaymentCourier };
+      },
+      { wrapper: createWrapper() },
+    );
+    await waitFor(() => expect(result.current.meta.isSuccess).toBe(true));
+    expect(paymentsMetaGets()).toEqual([[PAYMENTS_META_URL, { params: { top: 3 } }]]);
+
+    await act(() =>
+      result.current.pay.mutateAsync({ data: { courier_id: "263", amount: 1000 }, idempotencyKey: "key-263-3" }),
+    );
+    await waitFor(() => expect(paymentsMetaGets()).toHaveLength(2));
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    apiMock.get.mockRejectedValueOnce(new Error("403"));
+    const failing = renderHook(() => useCashBox().useGetPaymentsMeta(true), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    });
+    await waitFor(() => expect(failing.result.current.isError).toBe(true));
+    expect(client.getQueryCache().getAll()[0]?.meta).toEqual({ silentError: true });
   });
 
   it("refetches the HQ courier list after a courier payment (query key under the cashbox prefix)", async () => {

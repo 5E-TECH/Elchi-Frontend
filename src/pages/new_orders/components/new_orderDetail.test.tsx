@@ -492,3 +492,25 @@ describe("NewOrderDetail — market roli (o'z ro'yxati)", () => {
     expect(await screen.findByText("EDIT PAGE")).toBeInTheDocument();
   });
 });
+
+describe("NewOrderDetail — takroriy telefon raqami ogohlantirishi", () => {
+  it("bitta raqamga ikki yangi buyurtma — ogohlantirish va qatorlarda «Takroriy raqam»", async () => {
+    const [first, second] = baseOrders();
+    mocks.orders = [first, { ...second, customer: { id: "c9", name: "Ali aka", phone_number: "90 111 22 33" } }];
+    renderPage("registrator");
+
+    const alert = await screen.findByTestId("market-orders-duplicate-phones");
+    expect(alert).toHaveTextContent("Takroriy telefon raqamlar aniqlandi");
+    expect(alert).toHaveTextContent("1 ta telefon raqam bir nechta yangi buyurtmada takrorlanmoqda");
+    expect(alert).toHaveTextContent("№o1, №o2");
+    expect(alert).toHaveTextContent("Ali, Ali aka");
+    expect(screen.getAllByText("Takroriy raqam").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("raqamlar har xil — ogohlantirish chiqmaydi", async () => {
+    renderPage("registrator");
+    await screen.findByRole("button", { name: "Barchasini tanlash" });
+    expect(screen.queryByTestId("market-orders-duplicate-phones")).not.toBeInTheDocument();
+    expect(screen.queryByText("Takroriy raqam")).not.toBeInTheDocument();
+  });
+});

@@ -2,28 +2,31 @@
 import { useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { Info, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
+import { DISTRICT_KEY } from "../../../../entities/logistics/api/logisticsApi";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { notify } from "../../../../shared/lib/notify";
 import { Button, Dialog, Field, Select, TextInput } from "../../../../shared/ui/primitives";
-import { httpStatusOf } from "../../model/districtMerge";
+import { classifyDistrictSatoError, validateDistrictSatoCode } from "../../model/districtSatoCode";
 import {
   findSimilarSatoDistrict,
-  isValidSatoCode,
-  normalizeSatoOwner,
   type SatoDistrict,
   type SatoMissingRow,
+  type SatoRegionOption,
   type SatoTab,
 } from "../../model/satoModel";
-import { useSatoEditorErrorText, type SatoEditorError } from "./useSatoCodeEditor";
+import { useSatoCodeOwner } from "../useSatoCodeOwner";
+import { satoClientError, useSatoEditorErrorText, type SatoEditorError } from "./useSatoCodeEditor";
 
-type Errors = { name?: string; region?: string; code?: string };
+type Errors = { name?: string; region?: string; code?: SatoEditorError };
 
 type Props = {
   /** «Bazada yo'q» qatori (`null` — oyna yopiq). */
   row: SatoMissingRow | null;
   districts: readonly SatoDistrict[];
-  regionOptions: readonly { value: string; label: string }[];
+  /** Viloyatlar (`satoCode` — kod prefiksi tekshiruvi; yo'q bo'lsa prefiks tekshirilmaydi). */
+  regionOptions: readonly SatoRegionOption[];
   /** O'xshash tuman qaysi tabda (ogohlantirishdagi «… tabida unga kodni kiriting»). */
   tabOf: (districtId: string) => SatoTab | null;
   onClose: () => void;
@@ -36,8 +39,9 @@ type Props = {
 /**
  * «TUMAN QO'SHISH» (superadmin, «Bazada yo'q» qatoridan): nom, viloyat (`sato_code` prefiksidan, zaxira — nomi) va
  * kod rasmiy ro'yxatdan to'ldiriladi. Shu viloyatda o'xshash nomli tuman bo'lsa — ogohlantirish. `POST district
- * {name, region_id, sato_code}`; 409 — maydon xatolari (kod band: egasi `GET district/sato/:code`; aks holda — shu
- * nomli tuman bor), 404 — viloyat topilmadi. Server matni ko'rsatilmaydi.
+ * {name, region_id, sato_code}` — kod MAJBURIY (ExK28CiS): 7 raqam, TANLANGAN viloyat kodi bilan boshlanadi (klientda
+ * so'rovdan oldin; 400 `region_prefix_mismatch` — kod maydonida); 409 — maydon xatolari (kod band: egasi
+ * `GET district/sato/:code`; aks holda — shu nomli tuman bor), 404 — viloyat topilmadi. Server matni ko'rsatilmaydi.
  */
 export const SatoAddDistrictDialog = (props: Props) =>
   props.row ? <AddDistrictForm key={props.row.satoCode} {...props} row={props.row} /> : null;
@@ -52,6 +56,7 @@ const AddDistrictForm = ({
   fallbackFocus,
 }: Props & { row: SatoMissingRow }) => {
   const { t } = useTranslation("region");
+  const queryClient = useQueryClient();
   const codeErrorText = useSatoEditorErrorText();
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(row.satoName);
@@ -74,9 +79,12 @@ const AddDistrictForm = ({
     [fallbackFocus, origin],
   );
 
+  const lookupOwner = useSatoCodeOwner();
   const similar = findSimilarSatoDistrict(districts, { name, regionId });
   const similarTab = similar ? tabOf(similar.id) : null;
-  const regionName = regionOptions.find((option) => option.value === regionId)?.label ?? row.regionName;
+  const region = regionOptions.find((option) => option.value === regionId);
+  const regionName = region?.label ?? row.regionName;
+  const regionPrefix = region?.satoCode ?? null;
 
   const close = () => {
     if (!saving) setOpen(false);
@@ -90,7 +98,9 @@ const AddDistrictForm = ({
     const next: Errors = {};
     if (!trimmedName) next.name = t("v2.sato.add.nameRequired");
     if (!regionId) next.region = t("v2.sato.add.regionRequired");
-    if (trimmedCode && !isValidSatoCode(trimmedCode)) next.code = t("v2.sato.add.codeInvalid");
+    // Kod majburiy: 7 raqam va tanlangan viloyat prefiksi (viloyat tanlanmagan bo'lsa — faqat format).
+    const codeError = validateDistrictSatoCode(trimmedCode, regionId ? regionPrefix : null);
+    if (codeError) next.code = satoClientError(codeError, regionName);
     setErrors(next);
     if (Object.keys(next).length > 0 || !regionId) return;
 
@@ -99,40 +109,40 @@ const AddDistrictForm = ({
       await api.post(API_ENDPOINTS.DISTRICTS.BASE, {
         name: trimmedName,
         region_id: regionId,
-        ...(trimmedCode ? { sato_code: trimmedCode } : {}),
+        sato_code: trimmedCode,
       });
     } catch (cause) {
-      const status = httpStatusOf(cause);
-      if (status === 409) {
+      const server = classifyDistrictSatoError(cause);
+      if (server.kind === "conflict") {
         // Backend 409 ikki xil: shu viloyatda shu nom bor yoki kod band — kod egasi so'raladi, server matni o'qilmaydi.
-        let codeError: SatoEditorError | null = null;
-        let ownerUnknown = false;
-        if (trimmedCode) {
-          try {
-            const owner = normalizeSatoOwner((await api.get(API_ENDPOINTS.DISTRICTS.SATO_BY_CODE(trimmedCode))).data);
-            if (owner) codeError = { kind: "taken", district: owner.name, region: owner.regionName };
-          } catch (lookupError) {
-            // 404 — kod egasi yo'q, demak nom band. Boshqa xato (5xx, aloqa) — sabab noma'lum.
-            if (httpStatusOf(lookupError) !== 404) ownerUnknown = true;
-          }
-        }
+        // 200 — kod band (egasi o'qilmasa ham «Bu kod boshqa tumanga yozilgan»), 404 — kod bo'sh, demak nom band.
+        const owner = await lookupOwner(trimmedCode);
+        const taken: SatoEditorError | undefined =
+          owner.kind === "owner"
+            ? { kind: "taken", district: owner.name, region: owner.regionName }
+            : owner.kind === "taken"
+              ? { kind: "takenUnknown" }
+              : undefined;
         // Backend: shu viloyatda aynan shu nom (trim) — o'xshash nom emas.
         const key = trimmedName.toLocaleLowerCase("uz");
         const nameTaken = districts.some(
           (district) => district.region?.id === regionId && district.name.trim().toLocaleLowerCase("uz") === key,
         );
-        if (ownerUnknown && !nameTaken) {
-          // Kod egasini bilib bo'lmadi — «nom band» deb noto'g'ri aytilmaydi.
+        if (owner.kind === "unknown" && !nameTaken) {
+          // Kod egasini so'rab bo'lmadi (5xx, aloqa) — «nom band» deb noto'g'ri aytilmaydi.
           notify.error(t("v2.sato.add.failed"), { description: t("v2.sato.add.failedText") });
-          setSaving(false);
-          return;
+        } else {
+          setErrors({
+            code: taken,
+            name: nameTaken || owner.kind === "none" ? t("v2.sato.add.nameTaken") : undefined,
+          });
         }
-        setErrors({
-          code: codeError ? (codeErrorText(codeError) ?? undefined) : undefined,
-          name: nameTaken || !codeError ? t("v2.sato.add.nameTaken") : undefined,
-        });
-      } else if (status === 404) {
+      } else if (server.kind === "regionMissing") {
         setErrors({ region: t("v2.sato.add.regionMissing") });
+      } else if (server.kind === "prefix" || server.kind === "format") {
+        // Prefiks — serverdagi `details.expected_prefix` ustun (klient bilgani zaxira).
+        const prefix = server.kind === "prefix" ? (server.expectedPrefix ?? regionPrefix) : null;
+        setErrors({ code: prefix ? { kind: "prefix", prefix, region: regionName } : { kind: "format" } });
       } else {
         notify.error(t("v2.sato.add.failed"), { description: t("v2.sato.add.failedText") });
       }
@@ -145,13 +155,20 @@ const AddDistrictForm = ({
     });
     setSaving(false);
     setOpen(false);
-    await onAdded().catch(() => undefined);
+    // Yangi tuman geografik tuman ro'yxatlarida ham (`useGetDistricts` — buyurtma yaratish, manzil, filtrlar) chiqsin.
+    await Promise.all([
+      onAdded().catch(() => undefined),
+      queryClient.invalidateQueries({ queryKey: [DISTRICT_KEY] }),
+    ]);
   };
 
   const setField = (field: keyof Errors, setter: (value: string) => void) => (value: string) => {
     setter(value);
     if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }));
   };
+  const codeHint = regionPrefix
+    ? t("v2.sato.add.codeHint", { region: regionName, prefix: regionPrefix })
+    : t("v2.sato.add.codeHintNoPrefix");
 
   return (
     <Dialog
@@ -191,20 +208,34 @@ const AddDistrictForm = ({
           options={regionOptions}
           value={regionId}
           onChange={(value) => {
-            setRegionId(value || null);
-            if (errors.region) setErrors((current) => ({ ...current, region: undefined }));
+            const nextId = value || null;
+            setRegionId(nextId);
+            // Viloyat almashsa — kod yangi viloyat prefiksiga darhol tekshiriladi (so'rovsiz, maket «…-add-dialog»).
+            const nextRegion = regionOptions.find((option) => option.value === nextId);
+            const prefix = nextRegion?.satoCode ?? null;
+            const mismatch = code.trim() ? validateDistrictSatoCode(code, prefix) : null;
+            setErrors((current) => ({
+              ...current,
+              region: undefined,
+              code:
+                mismatch?.kind === "prefix"
+                  ? satoClientError(mismatch, nextRegion?.label ?? null)
+                  : current.code?.kind === "prefix"
+                    ? undefined
+                    : current.code,
+            }));
           }}
           placeholder={t("v2.sato.add.regionPlaceholder")}
           searchable={regionOptions.length > 8}
         />
       </Field>
-      <Field label={t("v2.sato.add.code")} hint={t("v2.sato.add.codeHint")} error={errors.code}>
+      <Field label={t("v2.sato.add.code")} required hint={codeHint} error={codeErrorText(errors.code ?? null) ?? undefined}>
         <TextInput
+          mode="number"
+          maxLength={7}
           value={code}
           onValueChange={setField("code", setCode)}
-          inputMode="numeric"
           autoComplete="off"
-          className="tabular-nums"
         />
       </Field>
       {similar ? (

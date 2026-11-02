@@ -96,6 +96,8 @@ export type ConfirmContent = {
   confirmIcon?: IconSlot;
   /** Yuklanish paytidagi tugma matni («O'chirilmoqda…»). */
   loadingLabel?: string;
+  /** Asosiy matn — `details` dan oldin (maket `*-incoming-scan-partial-confirm-dialog`). */
+  lead?: ReactNode;
   /** Ob'ekt kartasi (nom, izoh, summa) — `sunken` qutida. */
   details?: ReactNode;
   /** Katta summa (pul o'tkazmasi). */
@@ -191,6 +193,8 @@ const useConfirmParts = (
 
   const body = (
     <>
+      {content.lead != null ? <p className="m-0 text-sm text-text">{content.lead}</p> : null}
+
       {content.details != null ? (
         <div id={state.detailsId} className="min-w-0 rounded-xl bg-sunken px-4 py-3 text-sm text-text">
           {content.details}

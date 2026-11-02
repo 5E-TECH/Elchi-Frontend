@@ -12,13 +12,10 @@
   "tabs": {
     "finance": "Finance operators",
     "expenseCategories": "Expense categories",
-    "integrations": "Integrations",
     "investors": "Investors",
-    "logistics": "Logistics",
     "deliveryPricing": "Delivery pricing",
-    "branches": "Branches",
     "identity": "Staff",
-    "system": "System",
+    "system": "System status",
     "auth": "Sign-in diagnostics"
   },
   "common": {
@@ -160,38 +157,6 @@
       "description": "Tariffs, calculation rules (including the volumetric pricing threshold), price calculator and change history. The same section: Regions → Delivery tariffs (admins see it too)."
     }
   },
-  "integrations": {
-    "intro": {
-      "title": "Integrations — operations",
-      "description": "Integration operations: receivables and synchronization."
-    },
-    "receivables": {
-      "title": "Receivables",
-      "description": "Amounts the carrier collected from customers and owes us",
-      "id": "ID",
-      "amount": "Amount",
-      "status": "Status",
-      "statuses": {
-        "pending": "Pending",
-        "settled": "Closed",
-        "cancelled": "Cancelled"
-      },
-      "summary": "{{from}}–{{to}} of {{total}}",
-      "empty": "No receivables",
-      "emptyHint": "A receivable appears here when the carrier sells an order.",
-      "loadError": "Couldn't load receivables"
-    },
-    "sync": {
-      "title": "Synchronization",
-      "description": "Pull the integration data again right now",
-      "label": "Integration ID",
-      "placeholder": "Integration ID",
-      "submit": "Synchronize",
-      "success": "Synchronization completed",
-      "successMeta": "Integration {{id}} · {{time}}",
-      "error": "Synchronization failed"
-    }
-  },
   "investors": {
     "intro": {
       "title": "Investors",
@@ -205,7 +170,10 @@
       "summary": "{{from}}–{{to}} of {{total}} investors",
       "empty": "No investors",
       "emptyHint": "Add a new investor with the form on the right.",
-      "loadError": "Couldn't load the investor list"
+      "loadError": "Couldn't load the investor list",
+      "open": "View cabinet",
+      "openAria": "{{name}} — view cabinet",
+      "actions": "Actions"
     },
     "create": {
       "title": "New investor",
@@ -310,7 +278,7 @@
   "identity": {
     "intro": {
       "title": "Staff — lists",
-      "description": "View admin, manager and registrar lists and manage market settings."
+      "description": "View admin, manager and registrar lists."
     },
     "lists": {
       "admins": "Admins",
@@ -321,23 +289,12 @@
       "email": "Email",
       "empty": "The list is empty",
       "loadError": "Couldn't load the list"
-    },
-    "market": {
-      "title": "Market: permission to add orders",
-      "description": "Lets the market create orders on its own",
-      "label": "Market ID",
-      "placeholder": "Market ID",
-      "hint": "The same as the “Add orders” permission in the market profile",
-      "submit": "Grant permission",
-      "success": "Permission granted",
-      "successMeta": "Market {{id}} can now add orders on its own",
-      "error": "Couldn't grant the permission"
     }
   },
   "system": {
     "intro": {
-      "title": "System — services and analytics",
-      "description": "Service health, AI settings, analytics indicators and the QR token check."
+      "title": "System status — services and AI",
+      "description": "Service status and AI settings."
     },
     "health": {
       "title": "System health",
@@ -634,50 +591,6 @@
       "loadError": "Couldn't load analytics indicators",
       "loadErrorText": "The analytics service didn't respond.",
       "loadingLabel": "Loading analytics indicators"
-    },
-    "scan": {
-      "title": "Check by token",
-      "description": "Shows which order, package or mail a QR token belongs to",
-      "label": "Token",
-      "placeholder": "Enter a token",
-      "submit": "Check",
-      "result": "Result",
-      "types": {
-        "order": "Order",
-        "batch": "Package",
-        "post": "Mail",
-        "market_cancelled_handover": "Cancelled handover"
-      },
-      "notFound": "Not found",
-      "notFoundHint": "No order, package or mail was found for this token.",
-      "error": "Couldn't check the token",
-      "errorText": "The server didn't respond or returned an error. Try again a bit later.",
-      "empty": "The result has no fields to show",
-      "fields": {
-        "id": "ID",
-        "status": "Status",
-        "qr_code_token": "QR token",
-        "name": "Name",
-        "customer_name": "Customer",
-        "phone_number": "Phone",
-        "total_price": "Amount",
-        "total_amount": "Total amount",
-        "amount": "Amount",
-        "orders_count": "Orders",
-        "order_count": "Orders",
-        "from_branch": "From",
-        "to_branch": "To",
-        "source_branch": "From",
-        "destination_branch": "To",
-        "region": "Region",
-        "district": "District",
-        "market": "Market",
-        "courier": "Courier",
-        "created_at": "Created",
-        "createdAt": "Created",
-        "updated_at": "Updated",
-        "updatedAt": "Updated"
-      }
     }
   },
   "auth": {

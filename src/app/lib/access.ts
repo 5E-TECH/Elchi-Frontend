@@ -79,6 +79,18 @@ export const canViewOrders: Predicate = hasRole(
   "manager",
 );
 
+/**
+ * «Bekor qilish sabablari» hisoboti (GNWDKvmZ): superadmin va admin — filtr bilan, menejer va market — o'z doirasi.
+ * Kartada boshqa rol yozilmagan.
+ */
+export const canViewCancelReasons: Predicate = hasRole("superadmin", "admin", "manager", "market");
+
+/**
+ * Investor kabinetini nazorat uchun ko'rish (vpKijXce): `/investor/:id`. Backend `investors/:id/dashboard` adminga
+ * ham ochiq, lekin kirish nuqtasi — Ops «Investorlar» (faqat superadmin), shuning uchun karta matnidagidek superadmin.
+ */
+export const canViewInvestorControl: Predicate = hasRole("superadmin");
+
 /** Menejerlarda: HQ · REGIONAL · HYBRID (PICKUP da YO'Q edi). */
 export const canViewMails: Predicate = anyOf(
   hasRole("superadmin", "admin", "registrator", "courier"),
@@ -109,7 +121,8 @@ export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
  */
 export const canManageExpenseCategories: Predicate = hasRole("superadmin");
 
-export const canViewBranches: Predicate = hasRole("superadmin");
+/** Filiallar (`/branches`, yaratish va tahrirlash) — backend `branches` endpointlari `@Roles(SUPERADMIN, ADMIN)` bilan bir xil (ega 2026-11-02). */
+export const canViewBranches: Predicate = hasRole("superadmin", "admin");
 
 export const canViewLogs: Predicate = hasRole("superadmin");
 

@@ -47,6 +47,7 @@
     "critical": "Muhim"
   },
   "inboxTitle": "Bildirishnomalar",
+  "inboxTitleSuperadmin": "Bildirishnomalar qutisi",
   "inboxDescription": "Sizga kelgan bildirishnomalar",
   "inbox": {
     "listLabel": "Bildirishnomalar ro'yxati",

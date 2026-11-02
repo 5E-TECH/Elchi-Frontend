@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_MARKET_ORDERS_SORT,
+  findDuplicatePhoneGroups,
   matchesMarketOrderSearch,
   pickUnselectedPreview,
   readMarketName,
@@ -155,5 +156,29 @@ describe("marketOrdersModel — nomlar", () => {
     expect(readUserBranchName({ branch: { name: "Urgut filiali" } })).toBe("Urgut filiali");
     expect(readUserBranchName({ id: "1" })).toBeNull();
     expect(readUserBranchName(null)).toBeNull();
+  });
+});
+
+describe("marketOrdersModel — takroriy telefon raqami (BeePost «Takroriy telefon raqamlar aniqlandi»)", () => {
+  it("bitta raqamdagi yangi buyurtmalar guruhlanadi; yozilish shakli farq qilmaydi", () => {
+    const rows = [
+      order({ id: "1", customer: { id: "a", name: "Ali", phone_number: "+998901112233" } }),
+      order({ id: "2", customer: { id: "b", name: "Ali aka", phone_number: "90 111 22 33" } }),
+      order({ id: "3", customer: { id: "c", name: "Vali", phone_number: "+998935556677" } }),
+    ];
+    const result = findDuplicatePhoneGroups(rows);
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0].orders.map((row) => row.id)).toEqual(["1", "2"]);
+    expect([...result.orderIds]).toEqual(["1", "2"]);
+  });
+
+  it("faqat yangi holatdagilar; to'liq bo'lmagan raqam hisobga olinmaydi", () => {
+    const rows = [
+      order({ id: "1", customer: { id: "a", name: "Ali", phone_number: "+998901112233" } }),
+      order({ id: "2", status: "received", customer: { id: "a", name: "Ali", phone_number: "+998901112233" } }),
+      order({ id: "3", customer: { id: "b", name: "X", phone_number: "1234" } }),
+      order({ id: "4", customer: { id: "c", name: "Y", phone_number: "1234" } }),
+    ];
+    expect(findDuplicatePhoneGroups(rows).groups).toEqual([]);
   });
 });

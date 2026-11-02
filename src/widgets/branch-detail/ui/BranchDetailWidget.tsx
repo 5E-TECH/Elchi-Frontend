@@ -34,7 +34,7 @@ const STAT_ICON = "inline-flex size-9 shrink-0 items-center justify-center round
 type InfoItem = { key: string; icon: LucideIcon; label: string; value: string; sub: string };
 
 /**
- * FILIAL TAFSILOTI — `/branches/:id` (faqat superadmin), dizayn v2 (maket `superadmin-branches-detail`).
+ * FILIAL TAFSILOTI — `/branches/:id` (superadmin va admin), dizayn v2 (maket `superadmin-branches-detail`).
  *
  * Sarlavha: «← Filiallar», nom + holat badge'i, «{kod} · {tur} · Yuqori filial: {nom}» (yuqori filial —
  * havola), amallar «Tahrirlash» (secondary) va «Xodim qo'shish» (asosiy). «Filial ma'lumotlari» kartasi:

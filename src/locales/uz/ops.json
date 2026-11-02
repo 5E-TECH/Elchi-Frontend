@@ -12,13 +12,10 @@
   "tabs": {
     "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
-    "integrations": "Integratsiyalar",
     "investors": "Investorlar",
-    "logistics": "Logistika",
     "deliveryPricing": "Yetkazish narxi",
-    "branches": "Filiallar",
     "identity": "Xodimlar",
-    "system": "Tizim",
+    "system": "Tizim holati",
     "auth": "Kirish diagnostikasi"
   },
   "common": {
@@ -160,38 +157,6 @@
       "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
     }
   },
-  "integrations": {
-    "intro": {
-      "title": "Integratsiyalar — operatsiyalar",
-      "description": "Integratsiya operatsiyalari: debitorlik qarzlari va sinxronizatsiya."
-    },
-    "receivables": {
-      "title": "Debitorlik qarzlari",
-      "description": "Tashuvchi mijozdan yig'gan va bizga o'tkazishi kerak bo'lgan summalar",
-      "id": "ID",
-      "amount": "Summa",
-      "status": "Holat",
-      "statuses": {
-        "pending": "Kutilmoqda",
-        "settled": "Yopilgan",
-        "cancelled": "Bekor qilingan"
-      },
-      "summary": "{{from}}–{{to}} / {{total}} ta",
-      "empty": "Debitorlik qarzlari yo'q",
-      "emptyHint": "Tashuvchi buyurtmani sotganda qarz shu yerda paydo bo'ladi.",
-      "loadError": "Debitorlik qarzlarini yuklab bo'lmadi"
-    },
-    "sync": {
-      "title": "Sinxronizatsiya",
-      "description": "Integratsiya ma'lumotlarini hozir qayta tortib olish",
-      "label": "Integratsiya ID",
-      "placeholder": "Integratsiya ID",
-      "submit": "Sinxronlash",
-      "success": "Sinxronizatsiya muvaffaqiyatli bajarildi",
-      "successMeta": "Integratsiya {{id}} · {{time}}",
-      "error": "Sinxronizatsiya bajarilmadi"
-    }
-  },
   "investors": {
     "intro": {
       "title": "Investorlar",
@@ -205,7 +170,10 @@
       "summary": "{{from}}–{{to}} / {{total}} ta investor",
       "empty": "Investorlar yo'q",
       "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",
-      "loadError": "Investorlar ro'yxatini olib bo'lmadi"
+      "loadError": "Investorlar ro'yxatini olib bo'lmadi",
+      "open": "Kabinetni ko'rish",
+      "openAria": "{{name}} — kabinetni ko'rish",
+      "actions": "Amallar"
     },
     "create": {
       "title": "Yangi investor",
@@ -310,7 +278,7 @@
   "identity": {
     "intro": {
       "title": "Xodimlar — ro'yxatlar",
-      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish va market sozlamalarini boshqarish."
+      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish."
     },
     "lists": {
       "admins": "Adminlar",
@@ -321,23 +289,12 @@
       "email": "Email",
       "empty": "Ro'yxat bo'sh",
       "loadError": "Ro'yxatni olib bo'lmadi"
-    },
-    "market": {
-      "title": "Market: buyurtma qo'shish ruxsati",
-      "description": "Market o'zi buyurtma yarata olishi uchun ruxsat beradi",
-      "label": "Market ID",
-      "placeholder": "Market ID",
-      "hint": "Market profilidagi «Buyurtma qo'shish» ruxsati bilan bir xil",
-      "submit": "Ruxsat berish",
-      "success": "Ruxsat berildi",
-      "successMeta": "Market {{id}} endi o'zi buyurtma qo'sha oladi",
-      "error": "Ruxsat berib bo'lmadi"
     }
   },
   "system": {
     "intro": {
-      "title": "Tizim — xizmatlar va analitika",
-      "description": "Xizmatlar holati, AI sozlamalari, analitika ko'rsatkichlari va QR-token tekshirish."
+      "title": "Tizim holati — xizmatlar va AI",
+      "description": "Xizmatlar holati va AI sozlamalari."
     },
     "health": {
       "title": "Tizim holati",
@@ -634,50 +591,6 @@
       "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi",
       "loadErrorText": "Analitika xizmati javob bermadi.",
       "loadingLabel": "Analitika ko'rsatkichlari yuklanmoqda"
-    },
-    "scan": {
-      "title": "Token orqali tekshirish",
-      "description": "QR token qaysi buyurtma, paket yoki pochtaga tegishli ekanini ko'rsatadi",
-      "label": "Token",
-      "placeholder": "Token kiriting",
-      "submit": "Tekshirish",
-      "result": "Natija",
-      "types": {
-        "order": "Buyurtma",
-        "batch": "Paket",
-        "post": "Pochta",
-        "market_cancelled_handover": "Bekor qilinganlarni topshirish"
-      },
-      "notFound": "Topilmadi",
-      "notFoundHint": "Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.",
-      "error": "Tokenni tekshirib bo'lmadi",
-      "errorText": "Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.",
-      "empty": "Natijada ko'rsatiladigan maydon yo'q",
-      "fields": {
-        "id": "ID",
-        "status": "Holat",
-        "qr_code_token": "QR token",
-        "name": "Nomi",
-        "customer_name": "Mijoz",
-        "phone_number": "Telefon",
-        "total_price": "Summa",
-        "total_amount": "Jami summa",
-        "amount": "Summa",
-        "orders_count": "Buyurtmalar",
-        "order_count": "Buyurtmalar",
-        "from_branch": "Qayerdan",
-        "to_branch": "Qayerga",
-        "source_branch": "Qayerdan",
-        "destination_branch": "Qayerga",
-        "region": "Viloyat",
-        "district": "Tuman",
-        "market": "Market",
-        "courier": "Kuryer",
-        "created_at": "Yaratilgan",
-        "createdAt": "Yaratilgan",
-        "updated_at": "Yangilangan",
-        "updatedAt": "Yangilangan"
-      }
     }
   },
   "auth": {

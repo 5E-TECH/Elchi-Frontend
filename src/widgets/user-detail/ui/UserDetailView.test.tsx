@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   updateMarketAddOrder: vi.fn(),
   updateMarketExpenseProof: vi.fn(),
   updateMarketCancelledHandoverQr: vi.fn(),
+  updateMarketExtraCost: vi.fn(),
   updateMarketTelegramGroupPii: vi.fn(),
 }));
 
@@ -26,6 +27,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     updateMarketAddOrder: { mutateAsync: mocks.updateMarketAddOrder, isPending: false },
     updateMarketExpenseProof: { mutateAsync: mocks.updateMarketExpenseProof, isPending: false },
     updateMarketCancelledHandoverQr: { mutateAsync: mocks.updateMarketCancelledHandoverQr, isPending: false },
+    updateMarketExtraCost: { mutateAsync: mocks.updateMarketExtraCost, isPending: false },
     updateMarketTelegramGroupPii: { mutateAsync: mocks.updateMarketTelegramGroupPii, isPending: false },
     useGetUserById: () => ({ data: undefined, isLoading: false }),
     updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
@@ -195,6 +197,31 @@ describe("UserDetailView — kuryerni boshqa filialga o'tkazish tugmasi", () => 
   );
 });
 
+describe("UserDetailView — «Parolni tiklash va SMS yuborish» (xtXKLUwT)", () => {
+  const action = { name: "Parolni tiklash va SMS yuborish" };
+  const stateOf = (role: string, id = "1") => ({ role: { id, role, region: null, name: "Ko'ruvchi" } }) as never;
+  const person = (role: UserRole, id = "91") => makeUser(role, { id });
+
+  it.each<[string, UserRole, boolean]>([
+    ["superadmin", "admin", true],
+    ["superadmin", "market", true],
+    ["admin", "courier", true],
+    ["admin", "admin", false],
+    ["manager", "courier", true],
+    ["manager", "market", false],
+    ["registrator", "courier", false],
+    ["superadmin", "customer", false],
+  ])("%s → %s: %s", (viewer, target, visible) => {
+    renderWithProviders(<UserDetailView user={person(target)} />, { preloadedState: stateOf(viewer) });
+    expect(screen.queryAllByRole("button", action)).toHaveLength(visible ? 1 : 0);
+  });
+
+  it("o'zi uchun ko'rinmaydi (backend 403 — parol profilda almashtiriladi)", () => {
+    renderWithProviders(<UserDetailView user={person("admin", "7")} />, { preloadedState: stateOf("superadmin", "7") });
+    expect(screen.queryByRole("button", action)).not.toBeInTheDocument();
+  });
+});
+
 describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
   beforeEach(() => {
     Object.values(mocks).forEach((fn) => fn.mockReset().mockResolvedValue({ statusCode: 200 }));
@@ -226,6 +253,38 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
         cancelled_handover_qr_required: false,
       }),
     );
+  });
+
+  it("market: «Qo'shimcha xarajat» — yopiq marketni ochadi, tasdiq kaliti yopiqda bosilmaydi (w2bDrE3i)", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { extra_cost_enabled: false }), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: "Qo'shimcha xarajat" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("switch", { name: "Market tasdig'i" })).toBeDisabled();
+    await user.click(toggle);
+
+    await waitFor(() =>
+      expect(mocks.updateMarketExtraCost).toHaveBeenCalledWith({ id: "201", extra_cost_enabled: true }),
+    );
+    expect(await screen.findByText("Market uchun qo'shimcha xarajat yoqildi")).toBeInTheDocument();
+  });
+
+  it("market: «Market tasdig'i» — `extra_cost_requires_approval` (false bo'lmasa yoqiq hisoblanadi)", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { extra_cost_enabled: true }), "admin");
+
+    const toggle = screen.getByRole("switch", { name: "Market tasdig'i" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    await user.click(toggle);
+
+    await waitFor(() =>
+      expect(mocks.updateMarketExtraCost).toHaveBeenCalledWith({
+        id: "201",
+        extra_cost_requires_approval: false,
+      }),
+    );
+    expect(await screen.findByText("Qo'shimcha xarajat endi tasdiqsiz yoziladi")).toBeInTheDocument();
   });
 
   it("market: isbot shartlari — ro'yxatga qo'shadi va olib tashlaydi", async () => {
@@ -286,6 +345,7 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
 
     expect(screen.getByRole("switch", { name: "Buyurtma qo'shish" })).toBeDisabled();
     expect(screen.queryByText("Rasm yoki video isbot")).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Qo'shimcha xarajat" })).not.toBeInTheDocument();
   });
 
   it("«Ruxsatlar» da «Guruhda mijoz ismi va telefoni» kaliti yo'q — u «Telegram guruhi» kartasiga ko'chdi (TG-B S3)", () => {

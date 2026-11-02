@@ -366,6 +366,25 @@ export const useUser = () => {
     },
   });
 
+  /** (w2bDrE3i) Market bo'yicha qo'shimcha xarajat: ochiq yoki yopiq va market tasdig'i. */
+  const updateMarketExtraCost = useMutation({
+    mutationFn: ({
+      id,
+      ...policy
+    }: {
+      id: string;
+      extra_cost_enabled?: boolean;
+      extra_cost_requires_approval?: boolean;
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.EXTRA_COST(id), policy)
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      void invalidateUserLists();
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   const updateMarketCancelledHandoverQr = useMutation({
     mutationFn: ({
       id,
@@ -450,6 +469,7 @@ export const useUser = () => {
     updateMarketAddOrder,
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
+    updateMarketExtraCost,
     updateMarketTelegramGroupPii,
     deleteUser,
   };

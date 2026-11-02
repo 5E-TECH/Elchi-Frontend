@@ -646,7 +646,17 @@
       "checkFailed": "Could not check — scan again",
       "switcherTitle": "Choose a market",
       "switcherMeta": "{{value}}"
-    }
+    },
+    "duplicateTitle": "Duplicate phone numbers found",
+    "duplicateBody_one": "{{value}} phone number repeats in several new orders. Check before receiving.",
+    "duplicateBody_other": "{{value}} phone numbers repeat in several new orders. Check before receiving.",
+    "duplicatePhoneBadge": "Duplicate number"
+  },
+  "orderQr": {
+    "title": "QR code",
+    "image": "QR code of order {{id}}",
+    "hint": "If the label is lost, scan this code",
+    "printTitle": "Order label"
   },
   "orderEdit": {
     "backToNewOrders": "Intake and creation",

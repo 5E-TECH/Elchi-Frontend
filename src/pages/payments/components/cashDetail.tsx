@@ -23,9 +23,24 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { DeltaChip } from "../../../shared/ui/charts";
+import { ClosingSpark } from "./MyCashboxDaily";
 import type { PaymentRow } from "./patmentHistoryTable";
-import { useCashBox, type CashboxPaymentResponse } from "../../../entities/payments";
+import {
+  readLinkedReceiptStatus,
+  useCashBox,
+  type CashboxPaymentResponse,
+  type ReceiptKind,
+} from "../../../entities/payments";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
+import {
+  dayOverDay,
+  lastDaysRange,
+  toDailyRange,
+  useFinanceHistoryDaily,
+  type FinanceDailyParams,
+} from "../../../entities/payments/financeDaily";
 import { useMarkets } from "../../../entities/markets";
 import { useBranches } from "../../../entities/branch/api/useBranches";
 import { useTranslation } from "react-i18next";
@@ -50,6 +65,8 @@ import PaymentHistoryList, { historyRowView } from "./PaymentHistoryList";
 import OpenShiftFlow from "./OpenShiftFlow";
 import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
+import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
+import { useReceiptField } from "./receipt/useReceiptField";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -58,6 +75,7 @@ import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
 import { formatPhone } from "../../../shared/lib/formatPhone";
+import { toISODate } from "../../../shared/lib/dateRange";
 import { formatDateLocalized, formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
   CURRENCY_LABEL,
@@ -89,6 +107,10 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const FULL_LIST_LIMIT = 10000;
+/** Tafsilot tarixi bitta sahifasi: qatorlar shu songa yetsa ro'yxat kesilgan bo'lishi mumkin (M5). */
+const HISTORY_PAGE_LIMIT = 100;
+/** Menejer kuryer kartasidagi chiziq davri (maket: 7 kun). */
+const COURIER_TREND_DAYS = 7;
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -440,7 +462,7 @@ const CashDetail = () => {
     () => ({
       with_history: true,
       page: 1,
-      limit: 100,
+      limit: HISTORY_PAGE_LIMIT,
       ...(isCourierDetailRequest && {
         cashbox_type: "couriers",
       }),
@@ -457,7 +479,7 @@ const CashDetail = () => {
   const branchHistoryParams = useMemo(
     () => ({
       page: 1,
-      limit: 100,
+      limit: HISTORY_PAGE_LIMIT,
       ...(id
         ? isHqBranchReceiveRequest
           ? { source_user_id: id, cashbox_type: "main" }
@@ -470,7 +492,7 @@ const CashDetail = () => {
   const branchOwnHistoryParams = useMemo(
     () => ({
       page: 1,
-      limit: 100,
+      limit: HISTORY_PAGE_LIMIT,
       ...(id ? { user_id: id, cashbox_type: "branch" } : {}),
       ...dateParams,
     }),
@@ -705,6 +727,21 @@ const CashDetail = () => {
   const selectedPaymentType = watch("paymentType");
   const selectedMarketId = watch("marketId");
   const isStoreTransfer = selectedPaymentType === "click_to_market";
+  /**
+   * CHEK RASMI (QlLf33Ma, 7-bosqich): faqat superadmin/admin'ning HQ'ga qabulida — kuryer (HQ) va filial sahifasi —
+   * va faqat «O'tkazma» (`click`) da. Naqd, «Marketga o'tkazma» va menejerning kuryer qabulida maydon YO'Q (backend
+   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat `click` da yuboriladi;
+   * `receipt_id` idempotentlik barmoq iziga KIRMAYDI.
+   */
+  const receiptKind: ReceiptKind | null = isCurrentManagerRole
+    ? null
+    : type === "courier"
+      ? "courier_to_hq"
+      : type === "branch"
+        ? "branch_to_hq"
+        : null;
+  const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
+  const { reset: resetReceipt } = receipt;
   // C14 / FE-PAY-08: "O'tkazma"da "karta egasi" tanlovi YO'Q — kuryer, market
   // va filial → HQ uchun ham. Kassa yagona (per-person karta yo'q), DTO'larda
   // `source_user_id` yo'q va qiymat hech qachon yuborilmasdi.
@@ -745,6 +782,7 @@ const CashDetail = () => {
       transferSourceId: "",
       comment: "",
     });
+    resetReceipt();
   };
 
   /** Kassa, tarix va (HQ filial sahifasida) filial summasini qayta o'qish. */
@@ -881,6 +919,7 @@ const CashDetail = () => {
         payment_date: getHistoryDate(item),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        receipt: toReceiptRef(item["receipt"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
@@ -907,6 +946,50 @@ const CashDetail = () => {
         : historyRows,
     [historyRows, viewedCashboxId],
   );
+
+  // M5 (qzjTMWPb): «Davr boshida» va davr jami serverdan (`GET /finance/history/daily`), yuklangan 100 qatordan emas.
+  // Sana tanlanmagan bo'lsa davr = eng eski yuklangan kundan bugungacha. Doira `cash-detail` so'rovlari bilan bir xil;
+  // menejer gateway'da faqat o'z filiali va kuryerlarini oladi (market so'ralsa filial qaytardi — shuning uchun yopiq).
+  const dailyCashboxType = isCourierDetailRequest ? "couriers" : isMarketDetailRequest ? "markets" : isBranchDetailRequest ? "branch" : null;
+  const viewerRoleName = String(currentRole).toLowerCase();
+  const canReadDaily =
+    viewerRoleName === "superadmin" || viewerRoleName === "admin" || (isCurrentManagerRole && !isMarketDetailRequest);
+  const oldestLoadedDay = useMemo(() => {
+    const times = movementRows.map(createdTime).filter((time) => time > 0);
+    return times.length > 0 ? toISODate(new Date(Math.min(...times))) : "";
+  }, [movementRows]);
+  const dailyFrom = selectedDateFrom || oldestLoadedDay;
+  const dailyParams = useMemo<FinanceDailyParams>(() => {
+    const range = toDailyRange({ from: dailyFrom, to: selectedDateTo });
+    return {
+      from_date: range.from,
+      to_date: range.to,
+      user_id: id ?? undefined,
+      cashbox_type: dailyCashboxType ?? undefined,
+      ...(historyTab === "payments" && { source_types: PAYMENT_HISTORY_SOURCE_TYPES }),
+    };
+  }, [dailyCashboxType, dailyFrom, historyTab, id, selectedDateTo]);
+  const dailyQuery = useFinanceHistoryDaily(dailyParams, Boolean(id && dailyFrom && dailyCashboxType && canReadDaily));
+  const dailySummary = useMemo<MovementSummary | null>(() => {
+    const daily = dailyQuery.isError ? null : dailyQuery.data;
+    // 366 kundan uzun davr qisqartirilgan — bu davrning boshi emas.
+    if (!daily || daily.from !== dailyFrom) return null;
+    return {
+      start: daily.openingBalance,
+      now: daily.closingBalance,
+      income: daily.totals.income,
+      expense: daily.totals.expense,
+    };
+  }, [dailyFrom, dailyQuery.data, dailyQuery.isError]);
+
+  // Menejer: kuryer kartasida «kechaga nisbatan» va 7 kunlik chiziq (maket `manager-payments-cash-detail-courier`).
+  const courierTrendParams = useMemo<FinanceDailyParams>(() => {
+    const range = lastDaysRange(COURIER_TREND_DAYS);
+    return { from_date: range.from, to_date: range.to, user_id: id ?? undefined, cashbox_type: "couriers" };
+  }, [id]);
+  const courierTrendQuery = useFinanceHistoryDaily(courierTrendParams, Boolean(id) && isCourierReceiveDetail);
+  const courierTrendDays = courierTrendQuery.isError ? undefined : courierTrendQuery.data?.days;
+  const courierDayChange = useMemo(() => (courierTrendDays ? dayOverDay(courierTrendDays) : null), [courierTrendDays]);
 
   const income = useMemo(
     () =>
@@ -965,6 +1048,10 @@ const CashDetail = () => {
     }
   };
 
+  /** Muvaffaqiyat matni: chek AI tahliliga ketgan bo'lsa — shu haqda ham (maket `…-expense-receipt-confirm`). */
+  const paymentSuccessText = (message: string, response: unknown) =>
+    readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message;
+
   /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi
    * `Idempotency-Key` bilan. Kalit to'lovning barmoq iziga bog'langan va javob
@@ -991,8 +1078,10 @@ const CashDetail = () => {
       response = await send(idempotencyKey);
     } catch (error) {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
-      // faqat bir marta o'tkazadi.
-      notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+      // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
+      if (!receipt.applyServerError(error)) {
+        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+      }
       refetchShiftAfterPaymentError();
       if (isUncertainPaymentError(error)) {
         // Javob kelmadi — pul o'tgan bo'lishi mumkin: forma o'sha eski balans
@@ -1017,7 +1106,7 @@ const CashDetail = () => {
       return;
     }
 
-    notify.success(t("common:success"), { description: successMessage });
+    notify.success(t("common:success"), { description: paymentSuccessText(successMessage, response) });
     await refreshAfterPayment(amount);
   };
 
@@ -1028,6 +1117,8 @@ const CashDetail = () => {
     const comment = values.comment?.trim() || "";
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
+    // Chek barmoq iziga kirmaydi: `payment` dan tashqarida, faqat so'rov tanasida.
+    const receiptBody = receipt.receiptId ? { receipt_id: receipt.receiptId } : {};
 
     if (type === "branch") {
       // Filial ID si — URL'dagi `id` (fix3 dan oldingidek; FE-PAY-01
@@ -1041,7 +1132,7 @@ const CashDetail = () => {
         fingerprint: branchToMainPaymentFingerprint(payment),
         send: (idempotencyKey) =>
           createPaymentBranchToMain.mutateAsync({
-            data: { ...payment, payment_date: paymentDate, comment },
+            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
             idempotencyKey,
           }),
         amount,
@@ -1079,15 +1170,17 @@ const CashDetail = () => {
       let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
       try {
         response = await createPaymentCourier.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment },
+          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
           idempotencyKey,
         });
       } catch (error) {
         // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
-        // faqat bir marta o'tkazadi.
-        notify.error(t("common:error"), {
-          description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
-        });
+        // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
+        if (!receipt.applyServerError(error)) {
+          notify.error(t("common:error"), {
+            description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
+          });
+        }
         refetchShiftAfterPaymentError();
         if (isUncertainPaymentError(error)) {
           // Javob kelmadi (504 / tarmoq) — pul o'tgan bo'lishi mumkin: boshqa
@@ -1118,7 +1211,7 @@ const CashDetail = () => {
         await refetchCashbox();
         return;
       }
-      notify.success(t("common:success"), { description: t("receivePaymentSuccess") });
+      notify.success(t("common:success"), { description: paymentSuccessText(t("receivePaymentSuccess"), response) });
       await refreshAfterPayment(amount);
       return;
     }
@@ -1303,6 +1396,8 @@ const CashDetail = () => {
       return;
     }
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
+    // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
+    if (receipt.busy || !receipt.validate()) return;
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
     paymentLockRef.current = true;
@@ -1323,6 +1418,7 @@ const CashDetail = () => {
         transfer: getPaymentTransfer(),
         rows: [
           ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
+          ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
           ...(comment ? [{ label: t("v2CashDetail.confirm.comment"), value: comment, stacked: true }] : []),
         ],
         confirmLabel: t("v2CashDetail.confirm.confirm"),
@@ -1399,6 +1495,25 @@ const CashDetail = () => {
       <div className="flex flex-col gap-1">
         <span className="text-[13px] font-semibold text-text-muted">{balanceLabel}</span>
         <MoneyFigure value={displayBalance} hidden={!balanceVisible} />
+        {balanceVisible && courierDayChange ? (
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+            <DeltaChip
+              value={courierDayChange.amount}
+              goodWhen="none"
+              text={formatSignedMoneyLocalized(courierDayChange.amount, { withCurrency: false })}
+            />
+            <span>{t("v2Daily.vsYesterdayCourier")}</span>
+          </span>
+        ) : null}
+        {balanceVisible && courierTrendDays ? (
+          <ClosingSpark
+            days={courierTrendDays}
+            name={t("v2CashDetail.movement.title")}
+            caption={t("v2Daily.sparkCaptionDays", { count: COURIER_TREND_DAYS })}
+            language={i18n.resolvedLanguage ?? i18n.language}
+            className="mt-2.5"
+          />
+        ) : null}
       </div>
 
       {isManagerBranchView && managerKassaTotal !== undefined ? (
@@ -1481,7 +1596,9 @@ const CashDetail = () => {
       marketOptions={marketOptions}
       marketLoading={marketsLoading}
       submitLoading={isSubmitting}
-      submitDisabled={isStoreTransfer && !selectedMarketId}
+      submitDisabled={(isStoreTransfer && !selectedMarketId) || receipt.busy}
+      receiptField={<ReceiptField receipt={receipt} viewerDescription={formTitle} />}
+      onSubmitAttempt={() => receipt.validate({ moveFocus: false })}
       commentLabel={t("v2CashDetail.form.comment")}
       commentPlaceholder={t("v2CashDetail.form.commentPlaceholder")}
       paymentTypeOptions={paymentTypeOptions}
@@ -1547,6 +1664,8 @@ const CashDetail = () => {
             expense={expense}
             viewerRole={currentRole}
             continuous={historyTab === "all"}
+            summary={dailySummary}
+            truncated={movementRows.length >= HISTORY_PAGE_LIMIT}
           />
         ) : null}
       </div>
@@ -1772,6 +1891,9 @@ type MovementPoint = {
 
 type MovementRow = { row: PaymentRow; index: number };
 
+/** Server davr xulosasi (M5). `start`/`now` — snapshot hali yo'q bo'lsa `null`. */
+type MovementSummary = { start: number | null; now: number | null; income: number; expense: number };
+
 const createdTime = (row: PaymentRow) => {
   const time = Date.parse(row.createdAt || row.created_at || row.payment_date || "");
   return Number.isFinite(time) ? time : 0;
@@ -1791,6 +1913,10 @@ const dayKey = (value: string) => formatDateLocalized(value);
  * har operatsiyadan keyingi qoldiqning pog'onali chizig'i («Grafik | Jadval»). Qatorlarda `balance_after` bo'lmasa —
  * grafik yashiriladi, ko'rsatkichlar qoladi. `continuous=false` («To'lov o'tkazmalari» — qatorlar ketma-ket emas,
  * oradagi sotuvlar tushib qolgan): qoldiq zanjiri («Davr boshida», «Hozir», grafik) chizilmaydi — faqat Kirim/Chiqim.
+ *
+ * Davr boshi va jami — `summary` (server, M5). U yo'q bo'lsa (xato, 403, kutilmoqda) yuklangan qatorlardan, lekin
+ * ro'yxat 100 qatorda kesilgan bo'lsa (`truncated`) bunday hisob yolg'on — «—» ko'rsatiladi. Grafik oxirgi yuklangan
+ * qatorlarni chizadi: u davr boshidan boshlanmasa birinchi nuqta «Davr boshida» deb atalmaydi.
  */
 const BalanceMovement = ({
   rows,
@@ -1799,6 +1925,8 @@ const BalanceMovement = ({
   expense,
   viewerRole,
   continuous = true,
+  summary = null,
+  truncated = false,
 }: {
   rows: PaymentRow[];
   type: CashDetailType;
@@ -1806,6 +1934,8 @@ const BalanceMovement = ({
   expense: number;
   viewerRole?: string | null;
   continuous?: boolean;
+  summary?: MovementSummary | null;
+  truncated?: boolean;
 }) => {
   const { t, i18n } = useTranslation("payments");
   const language = resolveMoneyLanguage(i18n.resolvedLanguage ?? i18n.language);
@@ -1818,9 +1948,15 @@ const BalanceMovement = ({
   const hasBalances = continuous && ordered.every(({ row }) => typeof row.balance_after === "number");
   const oldest = ordered[0]?.row;
   const newest = ordered.at(-1)?.row;
-  const start =
+  const localStart =
     hasBalances && oldest ? (oldest.balance_after as number) - getHistoryRowSignedAmount(oldest, viewerRole) : undefined;
-  const now = hasBalances && newest ? (newest.balance_after as number) : undefined;
+  const localNow = hasBalances && newest ? (newest.balance_after as number) : undefined;
+  const start = summary?.start ?? (truncated ? undefined : localStart);
+  const now = summary?.now ?? localNow;
+  // Grafikning birinchi nuqtasi haqiqatan davr boshi bo'lsagina «Davr boshida» nuqtasi qo'shiladi.
+  const chartStart = localStart !== undefined && localStart === start ? localStart : undefined;
+  const totalIncome = summary?.income ?? (truncated ? undefined : income);
+  const totalExpense = summary?.expense ?? (truncated ? undefined : expense);
 
   // O'qda har kun bir marta (kunning birinchi nuqtasida), oxirgi nuqta — «Hozir» (maket).
   let previousDay = "";
@@ -1831,15 +1967,19 @@ const BalanceMovement = ({
     return dayLabel(date);
   };
   const points: MovementPoint[] =
-    hasBalances && start !== undefined && oldest
+    hasBalances && oldest
       ? [
-          {
-            key: "start",
-            axis: axisLabel(getHistoryRowDate(oldest)),
-            balance: start,
-            title: t("v2CashDetail.movement.start"),
-            change: null,
-          },
+          ...(chartStart === undefined
+            ? []
+            : [
+                {
+                  key: "start",
+                  axis: axisLabel(getHistoryRowDate(oldest)),
+                  balance: chartStart,
+                  title: t("v2CashDetail.movement.start"),
+                  change: null,
+                },
+              ]),
           ...ordered.map(({ row }, position) => {
             const date = getHistoryRowDate(row);
             const label = axisLabel(date);
@@ -1884,8 +2024,18 @@ const BalanceMovement = ({
   ];
 
   const flowStats = [
-    { key: "income", label: t("v2CashDetail.movement.income"), value: formatSignedMoneyLocalized(income), tone: "text-success-fg" },
-    { key: "expense", label: t("v2CashDetail.movement.expense"), value: formatSignedMoneyLocalized(-expense), tone: "text-danger-fg" },
+    {
+      key: "income",
+      label: t("v2CashDetail.movement.income"),
+      value: totalIncome === undefined ? "—" : formatSignedMoneyLocalized(totalIncome),
+      tone: totalIncome === undefined ? "text-text-muted" : "text-success-fg",
+    },
+    {
+      key: "expense",
+      label: t("v2CashDetail.movement.expense"),
+      value: totalExpense === undefined ? "—" : formatSignedMoneyLocalized(-totalExpense),
+      tone: totalExpense === undefined ? "text-text-muted" : "text-danger-fg",
+    },
   ];
   const stats = continuous
     ? [
@@ -1933,8 +2083,8 @@ const BalanceMovement = ({
             role="img"
             aria-label={t("v2CashDetail.movement.chartLabel", {
               start: shown(start),
-              income: formatMoneyLocalized(income),
-              expense: formatMoneyLocalized(expense),
+              income: totalIncome === undefined ? "—" : formatMoneyLocalized(totalIncome),
+              expense: totalExpense === undefined ? "—" : formatMoneyLocalized(totalExpense),
               now: shown(now),
             })}
             className="h-60 w-full min-w-0 max-md:h-[150px]"

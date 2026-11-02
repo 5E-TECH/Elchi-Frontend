@@ -4,6 +4,16 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
+import type { PostOrderMembership } from "./lib/postHistory";
+
+export {
+  getPostOrderLocation,
+  isHistoryView,
+  isInPostNow,
+  type PostOrderLocation,
+  type PostOrderLocationKind,
+  type PostOrderMembership,
+} from "./lib/postHistory";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
@@ -94,16 +104,16 @@ export interface PostOrder {
   product_quantity: number;
   where_deliver: WhereDeliver;
   total_price: number;
-  to_be_paid: number;
-  paid_amount: number;
+  /** Sof kuryerning eski pochtasida boshqa kuryerdagi sobiq a'zo qatoridan olib tashlanadi (#618) — yo'q bo'lishi mumkin. */
+  to_be_paid?: number;
+  paid_amount?: number;
   /** Mijoz onlayn to'lagan qism; kelmasa — 0 (chekdagi summa = `total_price − paid_online_amount`). */
   paid_online_amount?: number | null;
   status: OrderStatus;
   comment: string | null;
   operator: string | null;
-  /** 1mOjtOVC: chek uchun operator telefonlari (bo'lmasa — `null`). */
-  operator_phone?: string | null;
-  secondary_operator_phone?: string | null;
+  /** T7: chekdagi «Muammo bo'lsa» — viloyat logisti yoki umumiy raqam. */
+  problem_contacts?: { name?: string | null; phone?: string | null; source?: string | null }[] | null;
   post_id: string | null;
   canceled_post_id?: string | null;
   sold_at?: string | null;
@@ -118,6 +128,14 @@ export interface PostOrder {
   customer?: Customer;
   district?: District;
   region?: RegionWithDistricts;
+  /**
+   * Pochta tarixi (#618) — faqat `view=all` qatorlarida: `in_post_now` (`false` — sobiq a'zo), kirgan / chiqqan vaqt,
+   * buyurtmaning hozirgi pochtalari. `view=current` javobida yo'q (o'qish — `lib/postHistory`).
+   */
+  in_post_now?: boolean | null;
+  membership?: PostOrderMembership | null;
+  current_post_id?: string | null;
+  current_canceled_post_id?: string | null;
 }
 
 export interface HomeOrders {
@@ -147,6 +165,12 @@ export interface MailDetailPost {
   region?: { id: string; name: string } | null;
 }
 
+/**
+ * `GET post/orders/:id` ko'rinishi (#618): `current` — faqat hozir pochtadagilar; `all` — pochtaga har qachon
+ * kirganlar. Berilmasa server qabul qilingan pochtaga (`received`, `canceled_received`) `all` beradi.
+ */
+export type MailDetailView = "current" | "all";
+
 export interface MailDetailData {
   allOrdersByPostId: PostOrder[];
   homeOrders: HomeOrders;
@@ -157,6 +181,10 @@ export interface MailDetailData {
    * u holda sahifa router state / buyurtmalardan oladi.
    */
   post?: MailDetailPost | null;
+  /** #618: faqat `view=all` javobida `"all"`; kalit yo'q — joriy (`current`) javob. */
+  view?: MailDetailView;
+  /** #618: faqat `view=all` da; `true` — tarix to'liq olinmadi (ro'yxat to'liq emas). */
+  history_incomplete?: boolean;
 }
 
 export interface MailDetailResponse {
@@ -422,14 +450,6 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const useGetTodayMailsCourier = (id: string) =>
-    useQuery({
-      queryKey: [MAILS_KEY, "new", id],
-      queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(id)).then((res) => res.data),
-      enabled: !!id,
-      retry: false,
-    });
-
   const useGetRefusedMailsCourierByPostId = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-detail", id],
@@ -543,19 +563,27 @@ export const useMails = () => {
     useGetOldMails,
     fetchOldMails,
     useGetNewMailsCourier,
-    useGetTodayMailsCourier,
     useGetRefusedMailsCourier,
     useGetRefusedMailsCourierByPostId
   };
 };
 
-export const useMailDetail = (postId: string) =>
-  useQuery<MailDetailResponse>({
-    queryKey: [MAILS_KEY, "detail", postId],
-    queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId)).then((res) => res.data),
+/**
+ * Pochta tafsiloti (`GET post/orders/:id`). `view` berilsa — so'rovda ham, kesh kalitida ham (oxirgi bo'lak);
+ * berilmasa — parametrsiz (server sukuti). Amal rejimlari `current` so'raydi, eski pochta (tarix) — sukut.
+ */
+export const useMailDetail = (postId: string, options?: { view?: MailDetailView }) => {
+  const view = options?.view;
+  return useQuery<MailDetailResponse>({
+    queryKey: view ? [MAILS_KEY, "detail", postId, view] : [MAILS_KEY, "detail", postId],
+    queryFn: () => {
+      const url = API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId);
+      return (view ? api.get(url, { params: { view } }) : api.get(url)).then((res) => res.data);
+    },
     enabled: !!postId,
     retry: false,
   });
+};
 
 /** `POST /post/delete` javobi. */
 export interface DeleteOrdersFromPostResult {

@@ -3,20 +3,30 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { notify } from "../../../../shared/lib/notify";
-import { httpStatusOf } from "../../model/districtMerge";
 import {
-  isValidSatoCode,
-  normalizeSatoOwner,
-  satoDraftFor,
-  type SatoDistrictRow,
-} from "../../model/satoModel";
+  classifyDistrictSatoError,
+  validateDistrictSatoCode,
+  type DistrictSatoClientError,
+} from "../../model/districtSatoCode";
+import { satoDraftFor, type SatoDistrictRow } from "../../model/satoModel";
+import { useSatoCodeOwner } from "../useSatoCodeOwner";
 
-/** Saqlash xatosi: raqam emas · kod band (egasi ma'lum / noma'lum) · boshqa xato. Server matni ko'rsatilmaydi. */
+/**
+ * Kod xatosi (muharrir, «Tuman qo'shish» oynasi, tumanlar sahifasi): bo'sh · 7 raqam emas · viloyat prefiksi mos
+ * emas (ExK28CiS) · kod band (egasi ma'lum / noma'lum) · boshqa xato. Server matni ko'rsatilmaydi.
+ */
 export type SatoEditorError =
-  | { kind: "invalid" }
+  | { kind: "required" }
+  | { kind: "format" }
+  /** `region` — prefiksi kutilgan viloyat nomi (noma'lum bo'lsa `null`). */
+  | { kind: "prefix"; prefix: string; region: string | null }
   | { kind: "taken"; district: string; region: string | null }
   | { kind: "takenUnknown" }
   | { kind: "failed" };
+
+/** Klient tekshiruvi natijasi → kod xatosi (`region` — prefiks kimniki). */
+export const satoClientError = (error: DistrictSatoClientError, region: string | null): SatoEditorError =>
+  error.kind === "prefix" ? { kind: "prefix", prefix: error.expectedPrefix, region } : error;
 
 export type SatoCodeEditorState = {
   editingId: string | null;
@@ -39,6 +49,8 @@ const editTriggerOf = (id: string) =>
 
 /**
  * Inline kod muharriri (bir vaqtda bitta qator): `PATCH district/sato/:id { sato_code }` (admin + superadmin).
+ * So'rovdan oldin: 7 raqam va tumanning GEOGRAFIK viloyati prefiksi (backend ham shu bo'yicha tekshiradi, ExK28CiS).
+ * 400 `region_prefix_mismatch` — prefiks xatosi (`details.expected_prefix`), boshqa 400 — format xatosi.
  * 409 («kod band») bo'lsa `GET district/sato/:code` bilan egasi olinadi → «Bu kod band: <tuman>, <viloyat>».
  * Muvaffaqiyatda — xabar, muharrir yopiladi, `onSaved` (preview va `/district` birga qayta yuklanadi).
  */
@@ -98,33 +110,40 @@ export const useSatoCodeEditor = ({
   }, []);
 
   const errorText = useSatoEditorErrorText();
+  const lookupOwner = useSatoCodeOwner();
 
   const save = useCallback(
     async (row: SatoDistrictRow) => {
       const code = draft.trim();
-      if (!isValidSatoCode(code)) {
-        setError({ kind: "invalid" });
+      // O'zgarmagan kod — so'rovsiz yopiladi (eski qoidada saqlangan kod ham to'silmaydi).
+      if (code && code === row.satoCode) {
+        stop(row.id);
         return;
       }
-      if (code === row.satoCode) {
-        stop(row.id);
+      const regionName = row.regionId ? row.regionName : null;
+      const clientError = validateDistrictSatoCode(code, row.regionSatoCode);
+      if (clientError) {
+        setError(satoClientError(clientError, regionName));
         return;
       }
       setSaving(true);
       try {
         await api.patch(API_ENDPOINTS.DISTRICTS.SATO_UPDATE(row.id), { sato_code: code });
       } catch (cause) {
-        const status = httpStatusOf(cause);
+        const server = classifyDistrictSatoError(cause);
         let next: SatoEditorError = { kind: "failed" };
-        if (status === 400) next = { kind: "invalid" };
-        if (status === 409) {
-          next = { kind: "takenUnknown" };
-          try {
-            const owner = normalizeSatoOwner((await api.get(API_ENDPOINTS.DISTRICTS.SATO_BY_CODE(code))).data);
-            if (owner && owner.id !== row.id) next = { kind: "taken", district: owner.name, region: owner.regionName };
-          } catch {
-            // Egasini olib bo'lmadi — umumiy «kod band» matni.
-          }
+        if (server.kind === "format") next = { kind: "format" };
+        if (server.kind === "prefix") {
+          const prefix = server.expectedPrefix ?? row.regionSatoCode ?? null;
+          next = prefix ? { kind: "prefix", prefix, region: regionName } : { kind: "format" };
+        }
+        if (server.kind === "conflict") {
+          // Egasini olib bo'lmasa (yoki o'zi chiqsa) — umumiy «kod band» matni.
+          const owner = await lookupOwner(code);
+          next =
+            owner.kind === "owner" && owner.id !== row.id
+              ? { kind: "taken", district: owner.name, region: owner.regionName }
+              : { kind: "takenUnknown" };
         }
         setSaving(false);
         // Muharrir ochiq — xato maydon ostida; so'rov davomida yopilgan bo'lsa (qidiruv, tab, boshqa qator) —
@@ -151,7 +170,7 @@ export const useSatoCodeEditor = ({
       // Fokus qayta yuklashdan KEYIN: qator boshqa tabga o'tgan bo'lsa — qidiruv maydoniga (eskisi o'chib ketadi).
       if (stillEditing && editingRef.current === null) setFocusTarget({ id: row.id, fallback: true });
     },
-    [draft, errorText, onSaved, setFocusTarget, stop, t],
+    [draft, errorText, lookupOwner, onSaved, setFocusTarget, stop, t],
   );
 
   const errorMessage = errorText(error);
@@ -166,7 +185,12 @@ export const useSatoEditorErrorText = () => {
   const { t } = useTranslation("region");
   return useCallback((error: SatoEditorError | null): string | null => {
     if (!error) return null;
-    if (error.kind === "invalid") return t("v2.sato.editor.invalid");
+    if (error.kind === "required") return t("v2.sato.editor.required");
+    if (error.kind === "format") return t("v2.sato.editor.invalid");
+    if (error.kind === "prefix")
+      return error.region
+        ? t("v2.sato.editor.prefix", { prefix: error.prefix, region: error.region })
+        : t("v2.sato.editor.prefixNoRegion", { prefix: error.prefix });
     if (error.kind === "taken")
       return error.region
         ? t("v2.sato.editor.taken", { district: error.district, region: error.region })

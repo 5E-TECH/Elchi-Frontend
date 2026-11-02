@@ -1,0 +1,167 @@
+{
+  "statusCode": 200,
+  "message": "Kunlik kirim/chiqim",
+  "data": {
+    "timezone": "Asia/Tashkent",
+    "from": "2026-10-02",
+    "to": "2026-10-15",
+    "scope": {
+      "cashbox_type": "main",
+      "cashbox_ids": null
+    },
+    "filtered": false,
+    "balance_status": "ok",
+    "last_snapshot_date": "2026-10-14",
+    "opening_balance": -1420000,
+    "closing_balance": 24615000,
+    "totals": {
+      "income": 66320000,
+      "expense": 40285000,
+      "net": 26035000,
+      "income_count": 112,
+      "expense_count": 70
+    },
+    "days": [
+      {
+        "date": "2026-10-02",
+        "income": 3200000,
+        "expense": 2100000,
+        "net": 1100000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": -1420000,
+        "closing_balance": -320000
+      },
+      {
+        "date": "2026-10-03",
+        "income": 4150000,
+        "expense": 3050000,
+        "net": 1100000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": -320000,
+        "closing_balance": 780000
+      },
+      {
+        "date": "2026-10-04",
+        "income": 2980000,
+        "expense": 1980000,
+        "net": 1000000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 780000,
+        "closing_balance": 1780000
+      },
+      {
+        "date": "2026-10-05",
+        "income": 3680000,
+        "expense": 2700000,
+        "net": 980000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 1780000,
+        "closing_balance": 2760000
+      },
+      {
+        "date": "2026-10-06",
+        "income": 5120000,
+        "expense": 3650000,
+        "net": 1470000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 2760000,
+        "closing_balance": 4230000
+      },
+      {
+        "date": "2026-10-07",
+        "income": 4310000,
+        "expense": 2875000,
+        "net": 1435000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 4230000,
+        "closing_balance": 5665000
+      },
+      {
+        "date": "2026-10-08",
+        "income": 2540000,
+        "expense": 1640000,
+        "net": 900000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 5665000,
+        "closing_balance": 6565000
+      },
+      {
+        "date": "2026-10-09",
+        "income": 7920000,
+        "expense": 4860000,
+        "net": 3060000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 6565000,
+        "closing_balance": 9625000
+      },
+      {
+        "date": "2026-10-10",
+        "income": 8450000,
+        "expense": 5210000,
+        "net": 3240000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 9625000,
+        "closing_balance": 12865000
+      },
+      {
+        "date": "2026-10-11",
+        "income": 6830000,
+        "expense": 4345000,
+        "net": 2485000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 12865000,
+        "closing_balance": 15350000
+      },
+      {
+        "date": "2026-10-12",
+        "income": 3680000,
+        "expense": 2700000,
+        "net": 980000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 15350000,
+        "closing_balance": 16330000
+      },
+      {
+        "date": "2026-10-13",
+        "income": 3140000,
+        "expense": 1150000,
+        "net": 1990000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 16330000,
+        "closing_balance": 18320000
+      },
+      {
+        "date": "2026-10-14",
+        "income": 3350000,
+        "expense": 1625000,
+        "net": 1725000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 18320000,
+        "closing_balance": 20045000
+      },
+      {
+        "date": "2026-10-15",
+        "income": 6970000,
+        "expense": 2400000,
+        "net": 4570000,
+        "income_count": 8,
+        "expense_count": 5,
+        "opening_balance": 20045000,
+        "closing_balance": 24615000
+      }
+    ]
+  }
+}

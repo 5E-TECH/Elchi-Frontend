@@ -19,6 +19,9 @@ describe("notification-dispatch status (ega S3 ranglari)", () => {
     expect(deliveryBucket("queued")).toBe("queued");
     expect(deliveryBucket("pending")).toBe("queued");
     expect(deliveryBucket("accepted")).toBe("queued");
+    // BOT-3c: Telegram outbox qayta urinmoqda / yubormoqda — hali yo'lda.
+    expect(deliveryBucket("retrying")).toBe("queued");
+    expect(deliveryBucket("sending")).toBe("queued");
     expect(deliveryBucket("failed")).toBe("failed");
     expect(deliveryBucket("no_provider")).toBe("no_provider");
     for (const status of ["skipped", "not_eligible", "no_subscription", "blocked"]) {
@@ -94,6 +97,9 @@ describe("notification-dispatch status (ega S3 ranglari)", () => {
   it("is live while running or while an external channel is still queued", () => {
     expect(isDispatchLive("running", null)).toBe(true);
     expect(isDispatchLive("partial", { telegram: { queued: 1, sent: 3 } })).toBe(true);
+    // BOT-3c: DM'lar queued → retrying o'tsa ham tafsilot jonli qoladi; badge «Navbatda», «Yuborildi» emas.
+    expect(isDispatchLive("partial", { telegram: { retrying: 2, sent: 3 } })).toBe(true);
+    expect(channelBadge(bucketCounts({ sent: 3, retrying: 2 }))).toMatchObject({ labelKey: "dispatch.delivery.queued" });
     expect(isDispatchLive("sent", { in_app: { pending: 1 }, telegram: { sent: 4 } })).toBe(false);
     expect(isDispatchLive("failed", null)).toBe(false);
   });

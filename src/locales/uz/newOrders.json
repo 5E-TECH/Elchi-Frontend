@@ -627,7 +627,16 @@
       "checkFailed": "Tekshirib bo'lmadi — qayta skanerlang",
       "switcherTitle": "Marketni tanlang",
       "switcherMeta": "{{value}} ta"
-    }
+    },
+    "duplicateTitle": "Takroriy telefon raqamlar aniqlandi",
+    "duplicateBody": "{{value}} ta telefon raqam bir nechta yangi buyurtmada takrorlanmoqda. Qabul qilishdan oldin tekshiring.",
+    "duplicatePhoneBadge": "Takroriy raqam"
+  },
+  "orderQr": {
+    "title": "QR kod",
+    "image": "{{id}} buyurtmasining QR kodi",
+    "hint": "Yorliq yo'qolgan bo'lsa, shu kodni skanerlang",
+    "printTitle": "Buyurtma yorlig'i"
   },
   "orderEdit": {
     "backToNewOrders": "Qabul va yaratish",

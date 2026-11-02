@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { AI_WEAK, aiCard, mockSystemOpsApi, openSystemOps } from "./support/systemOps";
 
-/** /system-ops «AI holati» — 390px: kartalar bitta ustunda, gorizontal skroll yo'q, matn ≥ 12px, tugma ≥ 44px. */
+/** /ops?tab=system «AI holati» — 390px: kartalar bitta ustunda, gorizontal skroll yo'q, matn ≥ 12px, tugma ≥ 44px. */
 test.describe("Ops → Tizim — AI holati — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 

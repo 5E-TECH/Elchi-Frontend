@@ -6,16 +6,19 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { normalizeCashboxShift, useCashBox } from "../../../entities/payments";
+import type { DayChange } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import {
   CURRENCY_LABEL,
+  MINUS_SIGN,
   formatCompactMoneyLocalized,
   formatMoneyLocalized,
   formatNumberLocalized,
   formatPercentLocalized,
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
+import { DeltaChip, Sparkline } from "../../../shared/ui/charts";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import {
   Badge,
@@ -27,6 +30,7 @@ import {
   Skeleton,
   StatCard,
 } from "../../../shared/ui/primitives";
+import { normalizePaymentsMeta } from "./lib/paymentsMeta";
 import type { ReceiveOption } from "./lib/receiveOptions";
 
 /**
@@ -35,11 +39,12 @@ import type { ReceiveOption } from "./lib/receiveOptions";
  * Tartib maketdagidek: «Kassadagi summa» (→ asosiy kassa) · «Qabul qilinishi kerak» (→ qabul oynasi) ·
  * «Berilishi kerak» (superadmin/admin — market oynasi; menejer — HQ kassasi sahifasi, faqat ko'rish).
  *  - superadmin/admin: qiymatlar ixcham («24,6 mln so'm»); 1-kartada smena holati va naqd/karta chizig'i,
- *    2-kartada filiallar / HQ kuryerlari chizig'i (all-info); 3-karta — faqat summa (top marketlar «Taklif»
- *    emas, lekin sahifa ochilishida to'liq ro'yxat so'ralmaydi — spec §7).
+ *    2-kartada «N ta filial · N ta HQ kuryeri» (payments-meta) va filiallar / HQ kuryerlari chizig'i (all-info);
+ *    3-kartada «N ta marketga» va top-market chizig'i (payments-meta, uzWcMR1C — to'liq ro'yxat so'ralmaydi, spec §7).
  *  - menejer: qiymatlar to'liq; 2-kartada kuryerlar soni va ulush chizig'i (top-2 + «Boshqa»), 3-kartada
  *    kassaga nisbat (o'lchagich) va «Kassada qoladi» + «Yetarli» / «Yetarli emas». Telefonda — bitta «Kassa
- *    xulosasi» kartasi (maket `el-show-mobile`). Delta «kechaga nisbatan» va sparkline chizilmaydi (API yo'q).
+ *    xulosasi» kartasi (maket `el-show-mobile`). 1-kartada «kechaga nisbatan» va 14 kunlik chiziq (`mainTrend`,
+ *    qzjTMWPb — `GET /finance/history/daily`); noma'lum bo'lsa chizilmaydi.
  * Yuklanishda qiymat o'rnida skelet; xato — sahifa ishlayveradi (qiymat 0, avvalgidek jim).
  *
  * `CourierMoneyCard` — menejerning «Kuryerlardagi pul» reytingi.
@@ -62,6 +67,8 @@ type PaymentSummaryCardsProps = {
   couriersLoading?: boolean;
   /** Menejer: HQ filiali nomi («Toshkent HQ'ga …»); noma'lum — «HQ'ga …». */
   hqName?: string | null;
+  /** Menejer: «kechaga nisbatan» va 14 kunlik qoldiq. `null` — noma'lum (chizilmaydi). */
+  mainTrend?: { change: DayChange | null; series: readonly number[] } | null;
 };
 
 /** «Bekzod Normurodov» → «Bekzod N.» (maket legendasi). */
@@ -123,7 +130,7 @@ const SegmentBar = ({ segments, label, thin = false }: { segments: Segment[]; la
 const Legend = ({ segments, small = false }: { segments: Segment[]; small?: boolean }) => (
   <span className={cx("flex flex-wrap items-center gap-x-3 gap-y-1.5 text-text-muted", small ? "text-xs" : "text-[13px]")}>
     {segments.map((segment) => (
-      <span key={segment.key} className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span key={segment.key} className="inline-flex max-w-full min-w-0 items-center gap-2 whitespace-nowrap">
         <span aria-hidden="true" className={cx("size-2.5 shrink-0 rounded-[3px]", segment.color)} />
         {segment.label}
       </span>
@@ -160,6 +167,7 @@ const PaymentSummaryCards = ({
   couriers = NO_COURIERS,
   couriersLoading = false,
   hqName = null,
+  mainTrend = null,
 }: PaymentSummaryCardsProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -201,6 +209,27 @@ const PaymentSummaryCards = ({
   });
   const holdersCount = shares.positive.length;
 
+  // ─── Menejer: «kechaga nisbatan» + 14 kunlik chiziq (qzjTMWPb) ───────────────
+  const mainChange = mainTrend?.change ?? null;
+  const mainChangeText = mainChange
+    ? `${mainChange.amount > 0 ? "+" : ""}${
+        mainChange.amount < 0
+          ? `${MINUS_SIGN}${formatCompactMoneyLocalized(-mainChange.amount, { language, withCurrency: false })}`
+          : formatCompactMoneyLocalized(mainChange.amount, { language, withCurrency: false })
+      }`
+    : null;
+  const mainSpark =
+    mainTrend && mainTrend.series.length >= 2 ? (
+      <Sparkline
+        values={mainTrend.series}
+        label={t("v2Daily.kpi.sparkLabel", {
+          name: t("v2Overview.cashboxAmount"),
+          count: mainTrend.series.length,
+          last: money(mainTrend.series[mainTrend.series.length - 1]),
+        })}
+      />
+    ) : null;
+
   // ─── Menejer: berilishi kerak / kassa ────────────────────────────────────────
   const givePercent = mainTotal > 0 ? (marketTotal / mainTotal) * 100 : null;
   const remains = mainTotal - marketTotal;
@@ -236,6 +265,13 @@ const PaymentSummaryCards = ({
                 <span className="ml-1 text-[13px] font-semibold text-text-muted">{currency}</span>
               </span>
             )}
+            {mainChange && mainChangeText ? (
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+                <DeltaChip value={mainChange.amount} goodWhen="none" text={mainChangeText} />
+                <span>{t("v2Daily.vsYesterday")}</span>
+              </span>
+            ) : null}
+            {mainSpark}
           </Link>
           <div className="flex flex-col px-4">
             <Pressable
@@ -308,7 +344,13 @@ const PaymentSummaryCards = ({
           unit={currency}
           loading={loading}
           href="/payments/main-cashbox"
-        />
+          delta={mainChange?.amount ?? null}
+          deltaText={mainChangeText ?? undefined}
+          goodWhen="none"
+          hint={mainChange ? t("v2Daily.vsYesterdayCashbox") : undefined}
+        >
+          {mainSpark}
+        </StatCard>
         <StatCard
           label={t("v2Overview.toReceive")}
           icon={Truck}
@@ -374,6 +416,9 @@ const toFinite = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+/** KPI izoh qatori o'rnida (18 px qator: sakrash yo'q). */
+const MetaSkeleton = () => <Skeleton width={128} className="my-[3px]" />;
+
 type StaffSummaryCardsProps = Pick<
   PaymentSummaryCardsProps,
   "marketTotal" | "mainTotal" | "courierTotal" | "loading" | "onCardClick" | "receiveSplit"
@@ -384,7 +429,9 @@ type StaffSummaryCardsProps = Pick<
  *  - smena holati — `GET /finance/shift/current` (asosiy kassa smenasi, «Asosiy kassa» sahifasi bilan bir xil
  *    so'rov va kesh; javob kelmaguncha / xatoda meta faqat «Asosiy kassa»);
  *  - naqd / karta — `GET /finance/cashbox/main?fromDate=toDate=bugun` (`cashbox.balance_cash/balance_card`;
- *    tarix qatorlari bugungi kun bilan cheklangan — javob yengil).
+ *    tarix qatorlari bugungi kun bilan cheklangan — javob yengil);
+ *  - sanoqlar va top-marketlar — `GET /finance/cashbox/payments-meta` (uzWcMR1C). Manba javob bermagan blok, 403 yoki
+ *    xatoda sanoq chizilmaydi (yolg'on «0 ta» yo'q), kartalar all-info bilan ishlayveradi.
  */
 const StaffSummaryCards = ({
   marketTotal,
@@ -400,10 +447,14 @@ const StaffSummaryCards = ({
   const role = useSelector((state: RootState) => state.role.role);
   const normalizedRole = String(role).toLowerCase();
   const isStaff = normalizedRole === "superadmin" || normalizedRole === "admin";
-  const { useGetCurrentShift, useGetCashBoxMain } = useCashBox();
+  const { useGetCurrentShift, useGetCashBoxMain, useGetPaymentsMeta } = useCashBox();
   const currentShiftQuery = useGetCurrentShift(isStaff);
   const today = useMemo(() => getTodayRange(), []);
   const mainCashboxQuery = useGetCashBoxMain({ fromDate: today.from, toDate: today.to });
+  const metaQuery = useGetPaymentsMeta(isStaff);
+  const metaLoading = isStaff && metaQuery.isLoading;
+  // Qayta so'rov yiqilsa eski sanoq yangi summalar yonida qolmaydi.
+  const meta = normalizePaymentsMeta(metaQuery.isError ? undefined : metaQuery.data);
 
   const currentShift = normalizeCashboxShift(asRecord(asRecord(currentShiftQuery.data).data).shift);
   const shiftState: "open" | "closed" | null =
@@ -416,6 +467,7 @@ const StaffSummaryCards = ({
 
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const compactNumber = (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false });
+  const count = (value: number) => formatNumberLocalized(value, { language });
   /** Ixcham qiymat: raqam `value` ga, «mln so'm» `unit` ga (maket: `24,6` + `mln so'm`). */
   const compactParts = (value: number) => {
     const text = compactNumber(value);
@@ -486,6 +538,61 @@ const StaffSummaryCards = ({
         ]
       : null;
 
+  const receiveMeta =
+    [
+      meta.branches ? t("v2Overview.branchCount", { value: count(meta.branches.count) }) : null,
+      meta.hqCouriers ? t("v2Overview.hqCourierCount", { value: count(meta.hqCouriers.count) }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+  const payable = meta.payable;
+  const giveMeta = payable ? t("v2Overview.marketCount", { value: count(payable.marketsCount) }) : undefined;
+  const others = payable?.others ?? null;
+  const topMarkets = (payable?.topMarkets ?? []).map((market) => ({
+    ...market,
+    label: market.name ?? t("v2Overview.marketNumber", { id: market.marketId }),
+  }));
+  const giveSegments: Segment[] | null =
+    topMarkets.length > 0
+      ? [
+          ...topMarkets.map((market, index) => ({
+            key: market.marketId,
+            value: market.amount,
+            color: SEGMENT_COLORS[index],
+            label: (
+              <>
+                <span className="min-w-0 truncate" title={market.label}>
+                  {market.label}
+                </span>
+                <span className="shrink-0 font-semibold text-text">{compactNumber(market.amount)}</span>
+              </>
+            ),
+          })),
+          ...(others
+            ? [
+                {
+                  key: "others",
+                  value: others.amount,
+                  color: "bg-chart-muted",
+                  label: (
+                    <>
+                      {t("v2Overview.otherMarkets", { value: count(others.count) })}{" "}
+                      <span className="font-semibold text-text">{compactNumber(others.amount)}</span>
+                    </>
+                  ),
+                },
+              ]
+            : []),
+        ]
+      : null;
+  const wholePercent = (value: number) => formatPercentLocalized(value, { language, fractionDigits: 0 });
+  const giveShareLabel = [
+    ...topMarkets.map((market) => `${market.label} ${wholePercent(market.share)}`),
+    ...(others
+      ? [t("v2Overview.otherMarketsShare", { value: count(others.count), percent: wholePercent(others.share) })]
+      : []),
+  ].join(", ");
+
   return (
     <section
       aria-label={t("v2Overview.kpiLabel")}
@@ -516,6 +623,7 @@ const StaffSummaryCards = ({
         value={receive.value}
         unit={receive.unit}
         loading={loading}
+        hint={metaLoading ? <MetaSkeleton /> : receiveMeta}
         onClick={() => onCardClick(null, "received")}
       >
         {receiveSegments ? (
@@ -537,8 +645,18 @@ const StaffSummaryCards = ({
         value={give.value}
         unit={give.unit}
         loading={loading}
+        hint={metaLoading ? <MetaSkeleton /> : giveMeta}
         onClick={() => onCardClick(null, "given")}
-      />
+      >
+        {giveSegments ? (
+          <span className="flex flex-col gap-2">
+            <SegmentBar segments={giveSegments} label={giveShareLabel} />
+            <Legend segments={giveSegments} />
+          </span>
+        ) : metaLoading ? (
+          <Skeleton width="100%" height={10} />
+        ) : null}
+      </StatCard>
     </section>
   );
 };
