@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-neworders-market-orders, superadmin-neworders-receive-confirm-dialog, admin-neworders-market-detail, admin-neworders-market-confirm-dialog, manager-new-orders-market-detail, manager-new-orders-receive-confirm-dialog, manager-new-orders-delete-confirm-dialog, registrator-new-orders-market-detail, registrator-new-orders-market-detail-receive-dialog, registrator-new-orders-market-detail-delete-dialog, market-new-orders-list, market-new-orders-delete-dialog
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Check, Info, ScanLine, SearchX } from "lucide-react";
+import { AlertTriangle, Check, Info, ScanLine, SearchX } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -15,6 +15,7 @@ import {
 } from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
@@ -29,6 +30,7 @@ import {
   type DataTableSelection,
   type DataTableSort,
 } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
@@ -44,6 +46,7 @@ import { MarketOrdersTable } from "./marketOrders/MarketOrdersTable";
 import { SelectionBar } from "./marketOrders/SelectionBar";
 import {
   DEFAULT_MARKET_ORDERS_SORT,
+  findDuplicatePhoneGroups,
   matchesMarketOrderSearch,
   pickUnselectedPreview,
   readMarketName,
@@ -100,6 +103,7 @@ const NewOrderDetail = () => {
   // fix3 CODE-17: REGIONAL xodimida qabul tugmasi va skaner-qabul yo'q
   // (backend transfer batch'ni doim 403 qiladi) — o'rniga /dispatch maslahati.
   const canReceive = !isMarketRole && receiveMode !== "none";
+  const isPhone = useIsPhone();
   const showReceiveViaDispatchHint = !isMarketRole && receiveMode === "none";
   const canOpenBatches = useSelector(canViewBatchesPage);
   const hasTabs = useHasNewOrdersTabs();
@@ -136,6 +140,7 @@ const NewOrderDetail = () => {
     () => sortMarketOrders(orders.filter((order) => matchesMarketOrderSearch(order, search)), sort),
     [orders, search, sort],
   );
+  const duplicates = useMemo(() => findDuplicatePhoneGroups(orders), [orders]);
 
   // Sarlavhadagi market nomi: buyurtmadan; ro'yxat bo'sh bo'lsa — marketlar ro'yxati (kesh «Marketlar» bilan umumiy).
   const nameFromOrders = readMarketName(rawOrders, undefined, marketId);
@@ -612,6 +617,7 @@ const NewOrderDetail = () => {
             onDelete={setDeleteTarget}
             label={t("marketOrders.tableLabel")}
             busy={ordersQuery.isFetching}
+            duplicateIds={duplicates.orderIds}
           />
         ) : (
           <EmptyState
@@ -628,6 +634,40 @@ const NewOrderDetail = () => {
       }
     </QueryBoundary>
   );
+
+  // BeePost «Takroriy telefon raqamlar aniqlandi»: bitta raqamga bir nechta yangi buyurtma — qabuldan oldin tekshirish
+  // uchun ogohlantirish (qabul to'xtamaydi). Qidiruvdan qat'i nazar butun ro'yxat bo'yicha.
+  const duplicateAlert =
+    duplicates.groups.length > 0 ? (
+      <DetailAlert
+        tone="warning"
+        icon={AlertTriangle}
+        role="status"
+        titleBlock
+        title={t("marketOrders.duplicateTitle")}
+        data-testid="market-orders-duplicate-phones"
+      >
+        <p>
+          {t("marketOrders.duplicateBody", {
+            count: duplicates.groups.length,
+            value: formatNumberLocalized(duplicates.groups.length, { language }),
+          })}
+        </p>
+        <ul className="mt-1 flex flex-col gap-0.5 text-[13px]">
+          {duplicates.groups.map((group) => {
+            const names = [...new Set(group.orders.map((order) => order.customer?.name?.trim()).filter(Boolean))];
+            return (
+              <li key={group.phone}>
+                <span className="font-semibold">{formatPhone(group.phone) || group.phone}</span>
+                {" — "}
+                {group.orders.map((order) => `№${order.id}`).join(", ")}
+                {names.length > 0 ? ` · ${names.join(", ")}` : null}
+              </li>
+            );
+          })}
+        </ul>
+      </DetailAlert>
+    ) : null;
 
   const deleteDialog = (
     <DeleteOrderDialog
@@ -650,6 +690,7 @@ const NewOrderDetail = () => {
           title={hasTabs ? undefined : t("marketOrders.marketHeadTitle")}
         >
           <NewOrdersTabs />
+          {duplicateAlert ? <div className="px-5 pt-4 max-md:px-4">{duplicateAlert}</div> : null}
           {toolbar}
           {list}
         </Card>
@@ -659,6 +700,27 @@ const NewOrderDetail = () => {
   }
 
   const receiveCount = formatNumberLocalized(selectedOrders.length, { language });
+  const receiveButton = canReceive ? (
+    <Button
+      size={isPhone ? "lg" : "md"}
+      compact={isPhone}
+      leftIcon={Check}
+      aria-haspopup="dialog"
+      disabled={selectedOrders.length === 0}
+      loading={receiveMutation.isPending}
+      loadingText={t("receiving")}
+      onClick={() => setIsReceiveConfirmOpen(true)}
+      className={isPhone ? "flex-1" : undefined}
+    >
+      <Trans
+        t={t}
+        i18nKey="marketOrders.receive"
+        values={{ value: receiveCount }}
+        count={selectedOrders.length}
+        components={{ long: <span className="max-md:hidden" /> }}
+      />
+    </Button>
+  ) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
@@ -674,26 +736,8 @@ const NewOrderDetail = () => {
             </>
           ) : null
         }
-        actions={
-          canReceive ? (
-            <Button
-              leftIcon={Check}
-              aria-haspopup="dialog"
-              disabled={selectedOrders.length === 0}
-              loading={receiveMutation.isPending}
-              loadingText={t("receiving")}
-              onClick={() => setIsReceiveConfirmOpen(true)}
-            >
-              <Trans
-                t={t}
-                i18nKey="marketOrders.receive"
-                values={{ value: receiveCount }}
-                count={selectedOrders.length}
-                components={{ long: <span className="max-md:hidden" /> }}
-              />
-            </Button>
-          ) : null
-        }
+        actions={isPhone ? undefined : receiveButton}
+        className="md:sticky md:top-0 md:z-20 md:bg-bg"
       />
 
       {showReceiveViaDispatchHint ? (
@@ -701,6 +745,8 @@ const NewOrderDetail = () => {
           {t("receiveViaDispatchHint")}
         </DetailAlert>
       ) : null}
+
+      {duplicateAlert}
 
       <Card as="section" padding="none" aria-label={t("marketOrders.cardLabel", { market: cardTitle })}>
         {toolbar}
@@ -733,6 +779,16 @@ const NewOrderDetail = () => {
           onCancel={() => setIsReceiveConfirmOpen(false)}
           onConfirm={handleAccepted}
         />
+      ) : null}
+      {/* Telefon: asosiy amal pastki menyu ustida (`/dispatch` naqshi, Q7) — 50+ qatorda ham ko'rinadi (ndKkHjhe). Kamera —
+          markaziy «Skaner» (oqim ichida kamera tugmasi yo'q, ega qarori 2026-10-19). */}
+      {isPhone && receiveButton ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
+            {receiveButton}
+          </div>
+        </>
       ) : null}
       {deleteDialog}
     </div>

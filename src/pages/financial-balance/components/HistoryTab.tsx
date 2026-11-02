@@ -44,6 +44,7 @@ import {
 } from "../lib/historyFilters";
 import { orderLink, toHistoryRow, toSourceTypeLabel, type HistoryRow } from "../lib/historyRow";
 import FinancialHistoryDetail from "./FinancialHistoryDetail";
+import LedgerBalanceCard from "./LedgerBalanceCard";
 
 const PAGE_SIZES = [10, 25, 50, 100] as const;
 
@@ -69,10 +70,10 @@ const normalizePagination = (raw: Record<string, unknown> | undefined, fallbackP
  * Filtrlar (`role=group` «Tarix filtrlari»): sana oralig'i + «Manba turi» — faqat URL'da
  * (`HISTORY_PARAM_PREFIX`), noto'g'ri sana/tur e'tiborsiz qoldiriladi, filtr o'zgarsa 1-sahifa (bitta
  * `setSearchParams` chaqiruvi). «Yozuvlar» kartasi: server sahifalashli jadval (telefonda kartalar),
- * qatorni bosish yoki «›» — `FinancialHistoryDetail`. «Daftar qoldig'i» grafigi maketda «Taklif» —
- * chizilmaydi. «Excelga yuklash» va «Yozuv qo'shish» — sahifa sarlavhasida (`index.tsx`).
+ * qatorni bosish yoki «›» — `FinancialHistoryDetail`. «Daftar qoldig'i» grafigi — `LedgerBalanceCard` (qzjTMWPb).
+ * «Excelga yuklash» va «Yozuv qo'shish» — sahifa sarlavhasida (`index.tsx`).
  */
-const HistoryTab = () => {
+const HistoryTab = ({ generalBalance = null }: { generalBalance?: number | null }) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [selected, setSelected] = useState<HistoryRow | null>(null);
@@ -343,6 +344,8 @@ const HistoryTab = () => {
           />
         </Field>
       </div>
+
+      <LedgerBalanceCard fromDate={fromDate} toDate={toDate} generalBalance={generalBalance} />
 
       <Card
         ref={historyCardRef}

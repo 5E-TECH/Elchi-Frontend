@@ -45,6 +45,8 @@ export interface OrderDetailCustomer {
 }
 
 export interface OrderDetail extends EditableOrderSnapshot {
+  /** Yorliqdagi QR mazmuni (`qr_code_token`); yo'q bo'lsa QR kartasi chizilmaydi. */
+  qr_code_token?: string | null;
   id: string;
   status: string;
   where_deliver: string;

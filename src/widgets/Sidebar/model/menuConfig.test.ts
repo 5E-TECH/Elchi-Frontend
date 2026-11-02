@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   Banknote,
   Bell,
+  Send,
   Building2,
   HandCoins,
   PiggyBank,
@@ -309,6 +310,7 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     i12: Building2,
     i13: Plug,
     i14: Bell,
+    Send,
     i15: ScrollText,
     i16: Wrench,
     i17: Truck,

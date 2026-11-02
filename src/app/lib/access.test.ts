@@ -95,7 +95,7 @@ const MATRIX: Record<string, string> = {
   canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
   canViewNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
-  canViewBranches: "✓    —   —   —   —   —   —   —   —   —   —   —   —",
+  canViewBranches: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —   —   —   —",
   // rg = filial turi noma'lum registrator → rad (routes.tsx guardi bilan bir xil).
   canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —   —   —   —",

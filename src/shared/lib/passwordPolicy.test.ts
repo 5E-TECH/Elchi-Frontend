@@ -3,9 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
-  passwordMinLength,
   PASSWORD_MIN_LENGTH,
-  STAFF_PASSWORD_MIN_LENGTH,
 } from "./passwordPolicy";
 
 const axiosError = (status: number, data: unknown) =>
@@ -18,33 +16,35 @@ const axiosError = (status: number, data: unknown) =>
   });
 
 describe("passwordPolicy (NDmZMzCP — backend libs/common/src/security/password-policy.ts)", () => {
-  it("xodimlar (kuryer ham) — 10, market / market operatori / investor / mijoz / noma'lum — 8", () => {
-    for (const role of ["superadmin", "admin", "manager", "registrator", "operator", "logist", "branch", "courier", "COURIER"]) {
-      expect(passwordMinLength(role)).toBe(STAFF_PASSWORD_MIN_LENGTH);
-    }
-    for (const role of ["market", "marketing", "market_operator", "investor", "customer", null, undefined, ""]) {
-      expect(passwordMinLength(role)).toBe(PASSWORD_MIN_LENGTH);
-    }
+  it("ega qarori 2026-11-02: hamma rol uchun kamida 6 belgi", () => {
+    expect(PASSWORD_MIN_LENGTH).toBe(6);
+    expect(checkPasswordPolicy("Nam12")).toBe("tooShort");
+    expect(checkPasswordPolicy("Nam123")).toBeNull();
   });
 
   it("bo'sh, qisqa, chekka bo'shliq va 72 baytdan uzun parol rad etiladi", () => {
-    expect(checkPasswordPolicy("", "courier")).toBe("required");
-    expect(checkPasswordPolicy("    ", "market")).toBe("required");
-    expect(checkPasswordPolicy("Namuna123", "courier")).toBe("tooShort"); // 9 < 10
-    expect(checkPasswordPolicy("Namuna123", "market")).toBeNull(); // 9 ≥ 8
-    expect(checkPasswordPolicy("Nam1234", "market")).toBe("tooShort");
-    expect(checkPasswordPolicy(" Namuna1234", "admin")).toBe("edgeSpaces");
-    expect(checkPasswordPolicy("Namuna1234 ", "admin")).toBe("edgeSpaces");
-    expect(checkPasswordPolicy("o'".repeat(30) + "ўўўўўўўў", "admin")).toBe("tooLong");
-    expect(checkPasswordPolicy("Kuchli-Parol-2026", "superadmin")).toBeNull();
+    expect(checkPasswordPolicy("")).toBe("required");
+    expect(checkPasswordPolicy("    ")).toBe("required");
+    expect(checkPasswordPolicy(" Namuna1234")).toBe("edgeSpaces");
+    expect(checkPasswordPolicy("Namuna1234 ")).toBe("edgeSpaces");
+    expect(checkPasswordPolicy("o'".repeat(30) + "ўўўўўўўў")).toBe("tooLong");
+    expect(checkPasswordPolicy("Kuchli-Parol-2026")).toBeNull();
+  });
+
+  it("katta harf, kichik harf va raqam majburiy (kirill harfi ham harf)", () => {
+    expect(checkPasswordPolicy("namuna12")).toBe("noUpper");
+    expect(checkPasswordPolicy("NAMUNA12")).toBe("noLower");
+    expect(checkPasswordPolicy("Namunacha")).toBe("noDigit");
+    expect(checkPasswordPolicy("QWERT12345")).toBe("noLower");
+    expect(checkPasswordPolicy("Намуна12")).toBeNull();
   });
 
   it("server 400 parol xabari maydon uchun olinadi, boshqa xato — yo'q", () => {
     expect(
       getPasswordPolicyServerMessage(
-        axiosError(400, { statusCode: 400, message: ["Parol kamida 10 belgidan iborat bo'lishi kerak"] }),
+        axiosError(400, { statusCode: 400, message: ["Parol kamida 6 belgidan iborat bo'lishi kerak"] }),
       ),
-    ).toBe("Parol kamida 10 belgidan iborat bo'lishi kerak");
+    ).toBe("Parol kamida 6 belgidan iborat bo'lishi kerak");
     expect(
       getPasswordPolicyServerMessage(axiosError(400, { message: "Parol juda oddiy — boshqa parol tanlang" })),
     ).toBe("Parol juda oddiy — boshqa parol tanlang");

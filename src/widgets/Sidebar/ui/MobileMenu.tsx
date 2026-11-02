@@ -578,7 +578,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
       {
         to: "/inbox",
         icon: Bell,
-        label: inboxClashes ? t("inbox") : t("notifications"),
+        label: inboxClashes ? t("inbox") : t("personalNotifications"),
         count,
         countLabel: count ? t("newCount", { count: unreadCount }) : undefined,
       },

@@ -8,6 +8,8 @@
  *    hisoblanmaydi). `orderSources: null` + `degraded` — order-service javob bermadi (xarajat baribir keladi).
  *  - `GET /ai-usage/ai-orders?fromDate&toDate&limit` (1..100): `{ from, to, total, limit, items, degraded }`.
  *    Xarajat DRAFT darajasida (`draftOrders` — bitta AI so'rovdan chiqqan buyurtmalar). Mijoz ismi/telefoni yo'q.
+ *  - `GET /ai-usage/margin?fromDate&toDate` (NFiXfmq6): `totals` + market qatorlari — `chargedUzs`, `costUzs`,
+ *    `marginUzs`, `aiOrders`, `marginNegative`. Marja bir xil davrdagi olingan narx va tannarx ayirmasi.
  *
  * Bu fayl — sof normalizatsiya (UI'siz): son satr kelsa ham son, yo'q maydon — 0 yoki `null`.
  */
@@ -225,6 +227,47 @@ export const normalizeAiOrders = (payload: unknown): AiOrdersList => {
     items,
     degraded: data.degraded === true,
   };
+};
+
+export interface AiMarginRow {
+  marketId: string;
+  marketName: string | null;
+  chargedUzs: number;
+  costUzs: number;
+  marginUzs: number;
+  aiOrders: number;
+  negative: boolean;
+}
+
+export interface AiMarginReport {
+  chargedUzs: number;
+  costUzs: number;
+  marginUzs: number;
+  aiOrders: number;
+  negative: boolean;
+  /** Eng past marja birinchi — zarar ko'rayotgan market ro'yxat boshida. */
+  markets: AiMarginRow[];
+}
+
+/** Marja: backend bergani, bermasa `olingan − tannarx`; manfiylik backend bayrog'i yoki sonning o'zidan. */
+const readMargin = (row: UnknownRecord) => {
+  const chargedUzs = num(row.chargedUzs);
+  const costUzs = num(row.costUzs);
+  const marginUzs = nullableNum(row.marginUzs) ?? chargedUzs - costUzs;
+  return { chargedUzs, costUzs, marginUzs, aiOrders: num(row.aiOrders), negative: row.marginNegative === true || marginUzs < 0 };
+};
+
+export const normalizeAiMargin = (payload: unknown): AiMarginReport => {
+  const data = unwrap(payload);
+  const markets = rows(data.markets ?? data.perMarket ?? data.byMarket)
+    .map((row) => ({
+      marketId: text(row.marketId ?? row.market_id) ?? "",
+      marketName: text(row.marketName ?? row.market_name),
+      ...readMargin(row),
+    }))
+    .filter((row) => row.marketId !== "")
+    .sort((a, b) => a.marginUzs - b.marginUzs);
+  return { ...readMargin(asRecord(data.totals) ?? {}), markets };
 };
 
 /** Kunlar oralig'i (`YYYY-MM-DD`) → so'rov parametrlari (`fromDate` / `toDate`). Bo'sh — backend sukuti (30 kun). */

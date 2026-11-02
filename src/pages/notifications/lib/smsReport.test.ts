@@ -3,9 +3,11 @@ import type { SmsReport, SmsReportDay } from "../../../entities/sms";
 import {
   addDays,
   buildDaily,
+  buildMonthly,
   daysBetween,
   defaultReportRange,
   deliveryZone,
+  monthLabel,
   reportQueryRange,
   sortDayRows,
   summarizeByClass,
@@ -144,5 +146,39 @@ describe("smsReport — yig'indilar", () => {
       "2026-10-07/promo",
       "2026-10-07/security",
     ]);
+  });
+});
+
+describe("buildMonthly / monthLabel (FaFN0Pux)", () => {
+  const row = (day: string, message_class: SmsReportDay["message_class"], total: number, cost: number): SmsReportDay => ({
+    day,
+    message_class,
+    total,
+    delivered: total - 1,
+    failed: 1,
+    parts: total * 2,
+    cost,
+    untariffed: 0,
+  });
+
+  it("sinflar va kunlar bir oyga yig'iladi, yangi oy tepada", () => {
+    expect(
+      buildMonthly([
+        row("2026-09-30", "promo", 5, 100),
+        row("2026-10-01", "transactional", 3, 30),
+        row("2026-10-02", "promo", 2, 20),
+      ]),
+    ).toEqual([
+      { month: "2026-10", total: 5, delivered: 3, failed: 2, parts: 10, cost: 50, untariffed: 0 },
+      { month: "2026-09", total: 5, delivered: 4, failed: 1, parts: 10, cost: 100, untariffed: 0 },
+    ]);
+  });
+
+  it("qator yo'q — bo'sh", () => {
+    expect(buildMonthly([])).toEqual([]);
+  });
+
+  it("oy yorlig'i", () => {
+    expect(monthLabel("2026-10")).toBe("10.2026");
   });
 });

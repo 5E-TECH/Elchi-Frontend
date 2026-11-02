@@ -282,6 +282,10 @@
     "statusDelivered": "{{value}} yetkazildi",
     "statusPending": "{{value}} kutilmoqda",
     "statusFailed": "{{value}} xato",
+    "monthsTitle": "Oylar bo'yicha",
+    "monthsSub": "Tanlangan davr oy kesimida",
+    "monthsLabel": "Oylar bo'yicha SMS",
+    "monthCard": "{{total}} ta · yetkazildi {{delivered}} · xato {{failed}}",
     "daysTitle": "Kunlar bo'yicha",
     "daysSub": "Har kun va xabar turi alohida qator",
     "daysLabel": "Kunlar bo'yicha SMS",
@@ -290,6 +294,7 @@
     "dayCard": "{{total}} ta · {{delivered}} yetkazildi · {{failed}} xato · {{parts}} bo'lak",
     "daysPagination": "{{from}}–{{to}} / {{total}} ta qator",
     "col": {
+      "month": "Oy",
       "day": "Kun",
       "class": "Turi",
       "total": "Soni",

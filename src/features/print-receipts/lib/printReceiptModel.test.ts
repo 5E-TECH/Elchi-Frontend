@@ -225,8 +225,7 @@ describe("receipt fields (TZ F3)", () => {
       id: "6",
       order_number: "—",
       extra_number: "-",
-      operator_phone: "—",
-      secondary_operator_phone: " - ",
+      problem_contacts: [{ phone: "—" }, { phone: " - " }],
       customer: { name: "Dilnoza", phone_number: "-", extra_number: "—" },
       market: { name: "Baraka Shop", phone_number: "null" },
     });
@@ -236,9 +235,9 @@ describe("receipt fields (TZ F3)", () => {
     const fallback = toReceiptOrderModel({
       id: "7",
       extra_number: "–",
-      operator_phone: "-",
+      problem_contacts: [{ phone: "-" }, { phone: "+998712001122" }],
       customer: { phone_number: " — ", extra_number: "998991981929" },
-      market: { phone_number: "+998712001122" },
+      market: { phone_number: "+998909998877" },
     });
     expect(fallback).toMatchObject({
       phone: "",

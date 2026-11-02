@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
 import {
+  canViewCancelReasons,
   canViewOrders,
   canViewMails,
   canViewUsers,
@@ -27,6 +28,7 @@ import {
   canViewUiKit,
   canViewMarketOperators,
   canViewInvestorCabinet,
+  canViewInvestorControl,
   canViewRegionStats,
   canViewMyEarnings,
   canManageDeliveryTariffs,
@@ -52,12 +54,7 @@ const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
-const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
-const InvestorsOpsPage = lazy(() => import("../../pages/investors-ops"));
-const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
-const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
-const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
 const OpsPage = lazy(() => import("../../pages/ops"));
 const UiKitPage = lazy(() => import("../../pages/ui-kit"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
@@ -79,6 +76,8 @@ const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDa
 const MyEarningsPage = lazy(() => import("../../pages/my-earnings"));
 // IN-2: investor ro'yxatlari — «Investitsiyalar» va «Foyda tarixi» (o'z chunk'lari).
 const InvestmentsPage = lazy(() => import("../../pages/investor/InvestmentsPage"));
+// vpKijXce: superadmin nazorati — investor kabineti faqat o'qish uchun.
+const InvestorControlPage = lazy(() => import("../../pages/investor/InvestorControlPage"));
 const ProfitsPage = lazy(() => import("../../pages/investor/ProfitsPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
@@ -140,7 +139,6 @@ const IncomingOrdersPage = lazy(
 const IncomingSourcePicker = lazy(
   () => import("../../pages/incoming-orders/SourcePicker"),
 );
-const PartnersPage = lazy(() => import("../../pages/partners"));
 const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
@@ -153,6 +151,7 @@ const ConnectWizardPage = lazy(
 );
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
+const CancelReasonsPage = lazy(() => import("../../pages/orders/cancel-reasons"));
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
 const Region = lazy(() => import("../../pages/region/index"));
@@ -174,7 +173,6 @@ const NotificationInboxPage = lazy(
 );
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
-const LogsPage = lazy(() => import("../../pages/logs/index"));
 const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
@@ -226,9 +224,9 @@ const canViewDispatch = canViewDispatchPage;
 const canViewBatches = canViewBatchesPage;
 const canViewReturns = canViewReturnsPage;
 
-// Internal ops/maintenance screens (settlement, *-ops). Backend RBAC already
-// 403s their write endpoints, but these dev forms must not be reachable by URL
-// for non-admins. Admin/superadmin only. (Audit I17.)
+// «Faoliyat jurnali» (`/activity-logs`) — admin va superadmin (maket `admin-activity-logs-list`). Ops vositalari
+// (`/ops`, `*-ops`, `/finance-operators`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), `/logs` —
+// `canViewLogs` (faqat superadmin). Backend yozish yo'llarini o'zi 403 qiladi; bu faqat UI darvozasi (Audit I17, F2NzXpMv).
 const canViewOps = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
@@ -243,6 +241,8 @@ const canViewAdminNewOrderTabs = (state: RootState) => {
   return role === "admin" || role === "superadmin";
 };
 
+// Ops vositalari — `/ops` (hub) va to'g'ridan-to'g'ri `*-ops`, `/finance-operators`: FAQAT superadmin (maketlar
+// `superadmin-ops-*`; admin menyusida «Ops vositalari» yo'q). Ichki dev/texnik shakllar — URL orqali ham yopiq.
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewCourierBulk = canViewCourierBulkPage;
 
@@ -295,10 +295,22 @@ const DashboardEntry = () => {
   return <ForbiddenPage />;
 };
 
+/** `/investor` (vpKijXce): investor — o'z kabineti `/`; superadmin — Ops investorlar ro'yxati; boshqa rol — 403. */
+const InvestorEntryRedirect = () => {
+  const role = useSelector((state: RootState) => state.role.role);
+  if (role === "investor") return <Navigate replace to="/" />;
+  return (
+    <ProtectedRoute canActivate={canViewInvestorControl}>
+      <Navigate replace to="/ops?tab=investors" />
+    </ProtectedRoute>
+  );
+};
+
 /**
  * Buyurtma yaratish "Qabul va yaratish" sahifasiga ko'chdi. Eski `/orders/add`
- * havolasi (xatcho'p, eski tugma) yangi joyga o'tadi — tanlangan market
- * (`location.state.selectedMarket`) yo'qolmaydi.
+ * havolasi (xatcho'p, eski tugma) va Telegram botining eski «Kabinetda yaratish»
+ * havolasi `/orders/create` (PIJN1lGp gacha yuborilgan xabarlar) yangi joyga o'tadi —
+ * tanlangan market (`location.state.selectedMarket`) yo'qolmaydi.
  */
 export const LegacyOrderCreateRedirect = () => {
   const location = useLocation();
@@ -407,6 +419,11 @@ const AppRouter = () => {
   const { pathname } = useLocation();
   const isSignedIn = useSelector((state: RootState) => state.user.isAuthenticated);
   const standaloneErrorPage = standaloneErrorPageFor(pathname);
+  // `/payments` ↔ `/cash-box`: har biri faqat ikkinchisiga KIRA OLADIGAN rolni o'sha yerga yuboradi, qolgani — 403.
+  // Avval ikkala guard bir-biriga qaytarardi: ikkalasiga ham ruxsati yo'q rol (registrator, logist, market operatori,
+  // investor) qo'lda yozilgan manzilda ikki sahifa orasida cheksiz aylanardi.
+  const canOpenCashbox = useSelector(hasSelfCashboxAccess);
+  const canOpenPayments = useSelector(isPaymentsManager);
 
   const routes = useRoutes([
     { path: "/login", element: <Login /> },
@@ -523,10 +540,6 @@ const AppRouter = () => {
                    * biror narsani yangi yuzadan qilolmasa, eski manzil
                    * orqali ishlay oladi.
                    */
-                  path: "partners",
-                  element: <PartnersPage />,
-                },
-                {
                   path: "sources",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
@@ -565,12 +578,6 @@ const AppRouter = () => {
                   element: <Navigate replace to="/new-orders/incoming" />,
                 },
               ],
-            },
-            {
-              // ESKI YO'L — saqlanadi. Tashqi hujjatlarda, xatcho'plarda va
-              // Telegram xabarlarida bo'lishi mumkin.
-              path: "partners",
-              element: <Navigate replace to="/integrations/partners" />,
             },
             {
               path: "branch-dashboard",
@@ -621,9 +628,10 @@ const AppRouter = () => {
             { path: "settings", element: <SettingsPage /> },
             {
               /**
-               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda.
-               * Eski to'g'ridan-to'g'ri marshrutlar SAQLANADI (havolalar
-               * buzilmasin), bu esa menyudan ochiladigan kirish nuqtasi.
+               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
+               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
+               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga, `/integrations-ops` —
+               * `/integrations` ga yo'naltiradi (guard o'sha).
                */
               path: "ops",
               element: (
@@ -657,7 +665,7 @@ const AppRouter = () => {
               path: "integrations-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <IntegrationsOpsPage />
+                  <Navigate replace to="/integrations" />
                 </ProtectedRoute>
               ),
             },
@@ -665,7 +673,7 @@ const AppRouter = () => {
               path: "investors-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <InvestorsOpsPage />
+                  <Navigate replace to="/ops?tab=investors" />
                 </ProtectedRoute>
               ),
             },
@@ -673,7 +681,7 @@ const AppRouter = () => {
               path: "logistics-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <LogisticsOpsPage />
+                  <Navigate replace to="/returns" />
                 </ProtectedRoute>
               ),
             },
@@ -681,7 +689,7 @@ const AppRouter = () => {
               path: "branch-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <BranchOpsPage />
+                  <Navigate replace to="/batches" />
                 </ProtectedRoute>
               ),
             },
@@ -697,7 +705,7 @@ const AppRouter = () => {
               path: "system-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <SystemOpsPage />
+                  <Navigate replace to="/ops?tab=system" />
                 </ProtectedRoute>
               ),
             },
@@ -762,7 +770,17 @@ const AppRouter = () => {
                     </ProtectedRoute>
                   ),
                 },
+                {
+                  // `:orderId` dan oldin: maket va menyu bandi yo'q, kirish `/orders` sarlavhasidan (GNWDKvmZ).
+                  path: "cancel-reasons",
+                  element: (
+                    <ProtectedRoute canActivate={canViewCancelReasons}>
+                      <CancelReasonsPage />
+                    </ProtectedRoute>
+                  ),
+                },
                 { path: "add", element: <LegacyOrderCreateRedirect /> },
+                { path: "create", element: <LegacyOrderCreateRedirect /> },
                 {
                   path: ":orderId",
                   element: (
@@ -988,7 +1006,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <Payments />
                     </ProtectedRoute>
@@ -999,7 +1017,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <MainCashbox />
                     </ProtectedRoute>
@@ -1010,7 +1028,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <CashDetail />
                     </ProtectedRoute>
@@ -1021,7 +1039,7 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={isPaymentsManager}
-                      redirectTo="/cash-box"
+                      redirectTo={canOpenCashbox ? "/cash-box" : "/403"}
                     >
                       <ShiftReportPage />
                     </ProtectedRoute>
@@ -1043,7 +1061,7 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute
                   canActivate={hasSelfCashboxAccess}
-                  redirectTo="/payments"
+                  redirectTo={canOpenPayments ? "/payments" : "/403"}
                 >
                   <MyCashboxPage />
                 </ProtectedRoute>
@@ -1081,6 +1099,22 @@ const AppRouter = () => {
                   <FinancialBalance />
                 </ProtectedRoute>
               ),
+            },
+            {
+              // vpKijXce: `/investor` — investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga (u yerdan
+              // «Kabinetni ko'rish»); `/investor/:id` — kabinet nazorat uchun, faqat o'qish.
+              path: "investor",
+              children: [
+                { index: true, element: <InvestorEntryRedirect /> },
+                {
+                  path: ":investorId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewInvestorControl}>
+                      <InvestorControlPage />
+                    </ProtectedRoute>
+                  ),
+                },
+              ],
             },
             // IN-2: investor kabineti ro'yxatlari — faqat investor (`canViewInvestorCabinet`; backend `@Roles(INVESTOR)`).
             {
@@ -1205,7 +1239,7 @@ const AppRouter = () => {
               path: "logs",
               element: (
                 <ProtectedRoute canActivate={canViewLogs}>
-                  <LogsPage />
+                  <Navigate replace to="/ops?tab=auth" />
                 </ProtectedRoute>
               ),
             },

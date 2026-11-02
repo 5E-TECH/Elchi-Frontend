@@ -282,6 +282,10 @@
     "statusDelivered": "{{value}} delivered",
     "statusPending": "{{value}} pending",
     "statusFailed": "{{value}} failed",
+    "monthsTitle": "By month",
+    "monthsSub": "Selected period by month",
+    "monthsLabel": "SMS by month",
+    "monthCard": "{{total}} sent · delivered {{delivered}} · failed {{failed}}",
     "daysTitle": "By day",
     "daysSub": "Each day and message type on its own row",
     "daysLabel": "SMS by day",
@@ -290,6 +294,7 @@
     "dayCard": "{{total}} · {{delivered}} delivered · {{failed}} failed · {{parts}} parts",
     "daysPagination": "{{from}}–{{to}} of {{total}} rows",
     "col": {
+      "month": "Month",
       "day": "Day",
       "class": "Type",
       "total": "Count",

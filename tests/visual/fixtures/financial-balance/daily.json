@@ -1,0 +1,404 @@
+{
+  "statusCode": 200,
+  "message": "Kunlik moliyaviy balans",
+  "data": {
+    "timezone": "Asia/Tashkent",
+    "from": "2026-10-02",
+    "to": "2026-10-15",
+    "last_snapshot_date": "2026-10-14",
+    "previous_day": {
+      "date": "2026-10-01",
+      "snapshot": null
+    },
+    "ledger": {
+      "opening_balance": 4097000,
+      "closing_balance": 12989000,
+      "income": 13273000,
+      "expense": 4381000,
+      "net": 8892000,
+      "count": 196,
+      "peak": {
+        "date": "2026-10-14",
+        "balance": 15805000
+      }
+    },
+    "days": [
+      {
+        "date": "2026-10-02",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-02T19:05:00.000Z",
+          "main_balance": 21500000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 11100000,
+          "market_payable_total": 11100000,
+          "markets_debt": -11100000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 4497000
+        },
+        "ledger": {
+          "opening_balance": 4097000,
+          "closing_balance": 4497000,
+          "income": 420000,
+          "expense": 20000,
+          "net": 400000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-03",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-03T19:05:00.000Z",
+          "main_balance": 22100000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 11800000,
+          "market_payable_total": 11800000,
+          "markets_debt": -11800000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 4982000
+        },
+        "ledger": {
+          "opening_balance": 4497000,
+          "closing_balance": 4982000,
+          "income": 510000,
+          "expense": 25000,
+          "net": 485000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-04",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-04T19:05:00.000Z",
+          "main_balance": 21800000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 12800000,
+          "market_payable_total": 12800000,
+          "markets_debt": -12800000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 5347000
+        },
+        "ledger": {
+          "opening_balance": 4982000,
+          "closing_balance": 5347000,
+          "income": 380000,
+          "expense": 15000,
+          "net": 365000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-05",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-05T19:05:00.000Z",
+          "main_balance": 22600000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 12100000,
+          "market_payable_total": 12100000,
+          "markets_debt": -12100000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 5957000
+        },
+        "ledger": {
+          "opening_balance": 5347000,
+          "closing_balance": 5957000,
+          "income": 640000,
+          "expense": 30000,
+          "net": 610000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-06",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-06T19:05:00.000Z",
+          "main_balance": 22800000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 12600000,
+          "market_payable_total": 12600000,
+          "markets_debt": -12600000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 6707000
+        },
+        "ledger": {
+          "opening_balance": 5957000,
+          "closing_balance": 6707000,
+          "income": 790000,
+          "expense": 40000,
+          "net": 750000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-07",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-07T19:05:00.000Z",
+          "main_balance": 22350000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 13350000,
+          "market_payable_total": 13350000,
+          "markets_debt": -13350000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 7142000
+        },
+        "ledger": {
+          "opening_balance": 6707000,
+          "closing_balance": 7142000,
+          "income": 455000,
+          "expense": 20000,
+          "net": 435000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-08",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-08T19:05:00.000Z",
+          "main_balance": 23050000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 12150000,
+          "market_payable_total": 12150000,
+          "markets_debt": -12150000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 7507000
+        },
+        "ledger": {
+          "opening_balance": 7142000,
+          "closing_balance": 7507000,
+          "income": 380000,
+          "expense": 15000,
+          "net": 365000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-09",
+        "snapshot": {
+          "source": "backfill",
+          "captured_at": "2026-10-09T19:05:00.000Z",
+          "main_balance": 23400000,
+          "main_balance_cash": null,
+          "main_balance_card": null,
+          "chain_receivable": null,
+          "provider_receivable": null,
+          "in_transit": null,
+          "market_cashbox_total": 11250000,
+          "market_payable_total": 11250000,
+          "markets_debt": -11250000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": null,
+          "ledger_balance": 8179500
+        },
+        "ledger": {
+          "opening_balance": 7507000,
+          "closing_balance": 8179500,
+          "income": 672500,
+          "expense": 0,
+          "net": 672500,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-10",
+        "snapshot": {
+          "source": "live",
+          "captured_at": "2026-10-10T19:05:00.000Z",
+          "main_balance": 22750000,
+          "main_balance_cash": 16750000,
+          "main_balance_card": 6000000,
+          "chain_receivable": 10000000,
+          "provider_receivable": 3000000,
+          "in_transit": 13000000,
+          "market_cashbox_total": 12000000,
+          "market_payable_total": 12000000,
+          "markets_debt": -12000000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": 23400000,
+          "ledger_balance": 8900500
+        },
+        "ledger": {
+          "opening_balance": 8179500,
+          "closing_balance": 8900500,
+          "income": 721000,
+          "expense": 0,
+          "net": 721000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-11",
+        "snapshot": {
+          "source": "live",
+          "captured_at": "2026-10-11T19:05:00.000Z",
+          "main_balance": 23200000,
+          "main_balance_cash": 17200000,
+          "main_balance_card": 6000000,
+          "chain_receivable": 10400000,
+          "provider_receivable": 3000000,
+          "in_transit": 13400000,
+          "market_cashbox_total": 12950000,
+          "market_payable_total": 12950000,
+          "markets_debt": -12950000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": 23700000,
+          "ledger_balance": 9520000
+        },
+        "ledger": {
+          "opening_balance": 8900500,
+          "closing_balance": 9520000,
+          "income": 619500,
+          "expense": 0,
+          "net": 619500,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-12",
+        "snapshot": {
+          "source": "live",
+          "captured_at": "2026-10-12T19:05:00.000Z",
+          "main_balance": 24000000,
+          "main_balance_cash": 18000000,
+          "main_balance_card": 6000000,
+          "chain_receivable": 9600000,
+          "provider_receivable": 3000000,
+          "in_transit": 12600000,
+          "market_cashbox_total": 13350000,
+          "market_payable_total": 13350000,
+          "markets_debt": -13350000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": 23900000,
+          "ledger_balance": 9917000
+        },
+        "ledger": {
+          "opening_balance": 9520000,
+          "closing_balance": 9917000,
+          "income": 397000,
+          "expense": 0,
+          "net": 397000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-13",
+        "snapshot": {
+          "source": "live",
+          "captured_at": "2026-10-13T19:05:00.000Z",
+          "main_balance": 23300000,
+          "main_balance_cash": 17300000,
+          "main_balance_card": 6000000,
+          "chain_receivable": 9300000,
+          "provider_receivable": 3000000,
+          "in_transit": 12300000,
+          "market_cashbox_total": 12250000,
+          "market_payable_total": 12250000,
+          "markets_debt": -12250000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": 23600000,
+          "ledger_balance": 10696000
+        },
+        "ledger": {
+          "opening_balance": 9917000,
+          "closing_balance": 10696000,
+          "income": 779000,
+          "expense": 0,
+          "net": 779000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-14",
+        "snapshot": {
+          "source": "live",
+          "captured_at": "2026-10-14T19:05:00.000Z",
+          "main_balance": 23700000,
+          "main_balance_cash": 17700000,
+          "main_balance_card": 6000000,
+          "chain_receivable": 9150000,
+          "provider_receivable": 3000000,
+          "in_transit": 12150000,
+          "market_cashbox_total": 12340000,
+          "market_payable_total": 12340000,
+          "markets_debt": -12340000,
+          "courier_cashbox_total": 9000000,
+          "branch_cashbox_total": 1000000,
+          "current_situation": 23510000,
+          "ledger_balance": 15805000
+        },
+        "ledger": {
+          "opening_balance": 10696000,
+          "closing_balance": 15805000,
+          "income": 5810000,
+          "expense": 701000,
+          "net": 5109000,
+          "count": 14
+        }
+      },
+      {
+        "date": "2026-10-15",
+        "snapshot": null,
+        "ledger": {
+          "opening_balance": 15805000,
+          "closing_balance": 12989000,
+          "income": 699000,
+          "expense": 3515000,
+          "net": -2816000,
+          "count": 14
+        }
+      }
+    ]
+  }
+}

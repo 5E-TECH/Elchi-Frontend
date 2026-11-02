@@ -497,7 +497,7 @@ describe("MobileMenu — bildirishnomalar", () => {
   it("Telegram guruhlari (`/notifications`) superadmin va admin menyusida (NG-A); u yerda quti «Bildirishnomalar qutisi»", () => {
     for (const role of ["superadmin", "admin"]) {
       const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
-      expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
+      expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnoma sozlamalari" })).toHaveAttribute(
         "href",
         "/notifications",
       );

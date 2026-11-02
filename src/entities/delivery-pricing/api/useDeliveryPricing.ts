@@ -47,16 +47,18 @@ export type DeliveryQuoteState = {
 };
 
 /**
- * `POST /delivery/quote/by-tariff` — uchala tarif bo'yicha taxminiy narx (hududsiz). `item` — to'g'ri o'lchov yoki
- * `null` (so'rov ketmaydi). O'zgarishdan keyin ~400 ms kutadi; yangi javob kelguncha oldingi narx turadi
- * (`isUpdating`). Xato global xabarsiz (`silentError`) — blok o'zi «Narxni hisoblab bo'lmadi» deydi.
+ * `POST /delivery/quote/by-tariff` — uchala tarif bo'yicha taxminiy narx (hududsiz). `item` — to'g'ri o'lchov, bitta
+ * posilkadagi o'lchovlar ro'yxati (buyurtma: har dona — alohida element, 6NYcXvGy) yoki `null` / bo'sh ro'yxat (so'rov
+ * ketmaydi). O'zgarishdan keyin ~400 ms kutadi; yangi javob kelguncha oldingi narx turadi (`isUpdating`). Xato global
+ * xabarsiz (`silentError`) — blok o'zi «Narxni hisoblab bo'lmadi» deydi.
  */
 export const useDeliveryQuoteByTariff = (
-  item: DeliveryMeasureItem | null,
+  item: DeliveryMeasureItem | DeliveryMeasureItem[] | null,
   { enabled = true, express = false }: { enabled?: boolean; express?: boolean } = {},
 ): DeliveryQuoteState => {
+  const items = item === null ? [] : Array.isArray(item) ? item : [item];
   // Satr kaliti: har render yangi obyekt kutishni qayta boshlamasin.
-  const key = item && enabled ? JSON.stringify({ items: [item], ...(express ? { express } : {}) }) : null;
+  const key = items.length > 0 && enabled ? JSON.stringify({ items, ...(express ? { express } : {}) }) : null;
   const debouncedKey = useDebouncedValue(key, QUOTE_DEBOUNCE_MS);
   const body = useMemo<DeliveryQuoteByTariffRequest | null>(
     () => (debouncedKey ? (JSON.parse(debouncedKey) as DeliveryQuoteByTariffRequest) : null),

@@ -170,7 +170,7 @@ describe("SettlementPickerDialog", () => {
   });
 
   describe("Spt8Cj7m: summa bo'yicha kamayish tartibida, manfiy oxirida (maketlar *-payments-to-*-dialog)", () => {
-    it("give: eng katta qarzdor tepada, «Nofaol» — summasiga qarab, 0 va manfiy pastda", async () => {
+    it("give: eng katta qarzdor tepada, «Nofaol» — summasiga qarab, manfiy pastda, 0 qoldiqli — faqat qidiruvda", async () => {
       state.markets = {
         data: {
           data: [
@@ -190,9 +190,23 @@ describe("SettlementPickerDialog", () => {
         "Baraka Shop",
         "Ipak Yo'li Savdo",
         "Grand Moda",
-        "QA Market",
         "Qarzdor market",
       ]);
+
+      await userEvent.setup().type(within(dialog).getByRole("combobox"), "QA Mar");
+      expect(within(dialog).getByRole("option", { name: /QA Market/ })).toBeInTheDocument();
+    });
+
+    it("give: hamma market 0 qoldiqli — «topilmadi» emas, bo'sh ro'yxat holati", async () => {
+      state.markets = {
+        data: { data: [{ id: "1", name: "QA Market", status: "active", cashbox: { balance: 0 } }] },
+        isLoading: false,
+        isError: false,
+      };
+      open("give");
+      const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+      expect(within(dialog).queryByRole("option")).not.toBeInTheDocument();
+      expect(within(dialog).getByText("Qarzdorlik yo'q")).toBeInTheDocument();
     });
 
     it("courier (menejer): kuryerlar summa bo'yicha, manfiy oxirida", async () => {

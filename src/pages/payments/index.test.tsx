@@ -29,6 +29,7 @@ const getFinanceHistoryMock = vi.fn((params: unknown) => {
 });
 
 const pageState = vi.hoisted(() => ({
+  markets: { data: [] } as unknown,
   cashboxInfo: { data: {} } as unknown,
   managers: undefined as unknown,
   couriers: undefined as unknown,
@@ -50,6 +51,9 @@ const pageState = vi.hoisted(() => ({
   shiftListeners: new Set<() => void>(),
   mainCashbox: undefined as unknown,
   mainCashboxParams: [] as unknown[],
+  /** uzWcMR1C — `useGetPaymentsMeta` holati va `enabled` qiymatlari. */
+  paymentsMeta: { data: undefined, isLoading: false, isError: false } as { data: unknown; isLoading: boolean; isError: boolean },
+  paymentsMetaEnabled: [] as boolean[],
 }));
 /** CB-2: `POST finance/shift/open` (menejer «To'lovlar» — smena yopiq). */
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
@@ -60,6 +64,19 @@ const setCurrentShift = (shift: Record<string, unknown> | null) => {
   pageState.shiftVersion += 1;
   pageState.shiftListeners.forEach((listener) => listener());
 };
+
+// qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+// «Kassa holati» kartasi KPI matnlarini takrorlaydi — alohida testda (`CashStateCard.test.tsx`).
+vi.mock("./components/CashStateCard", () => ({ default: () => null }));
+
+vi.mock("../../entities/payments/financeDaily", async (importOriginal) => {
+  const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
+  return {
+    ...(await importOriginal<object>()),
+    useFinanceHistoryDaily: forbidden,
+    useFinancialBalanceDaily: forbidden,
+  };
+});
 
 vi.mock("../../entities/payments", async (importOriginal) => {
   const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
@@ -95,6 +112,10 @@ vi.mock("../../entities/payments", async (importOriginal) => {
         if (!enabled) return { data: undefined, isLoading: false, isSuccess: false };
         pageState.mainCashboxParams.push(params);
         return { data: pageState.mainCashbox, isLoading: false, isSuccess: pageState.mainCashbox !== undefined };
+      },
+      useGetPaymentsMeta: (enabled: boolean) => {
+        pageState.paymentsMetaEnabled.push(enabled);
+        return enabled ? pageState.paymentsMeta : { data: undefined, isLoading: false, isError: false };
       },
       openShift: openShiftMutation,
     }),
@@ -136,7 +157,7 @@ vi.mock("../../entities/branch/api/useBranches", () => ({
 
 vi.mock("../../entities/markets", () => ({
   useMarkets: () => ({
-    useGetMarkets: () => ({ data: { data: [] }, isLoading: false }),
+    useGetMarkets: () => ({ data: pageState.markets, isLoading: false }),
   }),
 }));
 
@@ -190,6 +211,7 @@ const branchCouriersResponse = {
 
 beforeEach(() => {
   getFinanceHistoryMock.mockClear();
+  pageState.markets = { data: [] };
   pageState.cashboxInfo = { data: {} };
   pageState.managers = managersResponse;
   pageState.couriers = branchCouriersResponse;
@@ -202,6 +224,8 @@ beforeEach(() => {
   pageState.userByIdCalls = [];
   pageState.mainCashbox = undefined;
   pageState.mainCashboxParams = [];
+  pageState.paymentsMeta = { data: undefined, isLoading: false, isError: false };
+  pageState.paymentsMetaEnabled = [];
 });
 
 describe("Payments filters", () => {
@@ -290,6 +314,27 @@ describe("Payments filters", () => {
     expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ source_type: "sell", page: 1 }),
     );
+  });
+
+  it("QlLf33Ma: «Chek holati» URL'ga yoziladi va GET /finance/history ga `receipt_status` ketadi", async () => {
+    const user = userEvent.setup();
+    open("/payments");
+    await user.click(screen.getByLabelText("Chek holati"));
+    expect(await screen.findByText("Faqat qo'lda chiqim va HQ'ga «O'tkazma»")).toBeInTheDocument();
+    await user.click(await screen.findByRole("option", { name: "Farq bor" }));
+
+    await waitFor(() => expect(currentSearch()).toContain("receipt_status=mismatch"));
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ receipt_status: "mismatch", page: 1 }),
+    );
+  });
+
+  it("QlLf33Ma: noto'g'ri `receipt_status` so'rovga ketmaydi (backend 400)", async () => {
+    open("/payments?receipt_status=bad");
+    await waitFor(() => expect(getFinanceHistoryMock).toHaveBeenCalled());
+    for (const [params] of getFinanceHistoryMock.mock.calls) {
+      expect(params).not.toHaveProperty("receipt_status");
+    }
   });
 
   it("sends the date filter from the URL as from_date / to_date (YYYY-MM-DD); a malformed date is ignored", async () => {
@@ -400,6 +445,124 @@ describe("Payments — header and KPI cards", () => {
     expect(within(screen.getByRole("button", { name: /Berilishi kerak/ })).getByText("13,5")).toBeInTheDocument();
   });
 
+  describe("KPI meta (uzWcMR1C, `*-payments-overview`)", () => {
+    const paymentsMeta = (data: unknown) => ({ data: { statusCode: 200, data }, isLoading: false, isError: false });
+    const fullMeta = {
+      receivable: {
+        amount: 9_870_000,
+        branches: { count: 5, amount: 8_770_000 },
+        hq_couriers: { count: 2, amount: 1_100_000 },
+      },
+      payable: {
+        markets_count: 6,
+        amount: 13_458_000,
+        top_markets: [
+          { market_id: "101", cashbox_id: "55", name: "Baraka Shop", amount: 4_820_000, share: 35.8 },
+          { market_id: "102", cashbox_id: "56", name: "Nur Elektronika", amount: 3_146_000, share: 23.4 },
+          { market_id: "103", cashbox_id: "57", name: null, amount: 2_260_000, share: 16.8 },
+        ],
+        others: { count: 3, amount: 3_232_000, share: 24 },
+      },
+    };
+    const receiveCard = () => screen.getByRole("button", { name: /Qabul qilinishi kerak/ });
+    const giveCard = () => screen.getByRole("button", { name: /Berilishi kerak/ });
+
+    it("superadmin: counts, top-market segbar and legend from the aggregate", () => {
+      pageState.paymentsMeta = paymentsMeta(fullMeta);
+      open(superadmin);
+
+      expect(pageState.paymentsMetaEnabled).toContain(true);
+      expect(within(receiveCard()).getByText("5 ta filial · 2 ta HQ kuryeri")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("6 ta marketga")).toBeInTheDocument();
+      expect(
+        within(giveCard()).getByRole("img", {
+          name: "Baraka Shop 36%, Nur Elektronika 23%, Market #103 17%, yana 3 ta market 24%",
+        }),
+      ).toBeInTheDocument();
+      expect(within(giveCard()).getByText("Baraka Shop")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("4,8 mln")).toBeInTheDocument();
+      // `name: null` (identity javob bermadi) — bo'sh yorliq emas.
+      expect(within(giveCard()).getByText("Market #103")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("Yana 3 ta")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("3,2 mln")).toBeInTheDocument();
+    });
+
+    it("admin: asks for the aggregate too", () => {
+      pageState.paymentsMeta = paymentsMeta(fullMeta);
+      open({ role: { id: "2", role: "admin", region: null, name: "Admin" } } as never);
+      expect(within(giveCard()).getByText("6 ta marketga")).toBeInTheDocument();
+    });
+
+    it("no «Yana N ta» when every market is in the top", () => {
+      pageState.paymentsMeta = paymentsMeta({
+        ...fullMeta,
+        payable: {
+          ...fullMeta.payable,
+          markets_count: 3,
+          others: { count: 0, amount: 0, share: 0 },
+        },
+      });
+      open(superadmin);
+      expect(within(giveCard()).getByText("3 ta marketga")).toBeInTheDocument();
+      expect(within(giveCard()).queryByText(/^Yana/)).not.toBeInTheDocument();
+    });
+
+    it("a backend `null` block is skipped, not shown as 0", () => {
+      pageState.paymentsMeta = paymentsMeta({
+        receivable: { amount: 8_770_000, branches: { count: 5, amount: 8_770_000 }, hq_couriers: null },
+        payable: null,
+      });
+      open(superadmin);
+      expect(within(receiveCard()).getByText("5 ta filial")).toBeInTheDocument();
+      expect(screen.queryByText(/HQ kuryeri$/)).not.toBeInTheDocument();
+      expect(within(giveCard()).queryByText(/ta marketga/)).not.toBeInTheDocument();
+      expect(within(giveCard()).queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("a real zero from the backend stays a zero", () => {
+      pageState.paymentsMeta = paymentsMeta({
+        receivable: {
+          amount: 769_000,
+          branches: { count: 2, amount: 769_000 },
+          hq_couriers: { count: 0, amount: 0 },
+        },
+        payable: { markets_count: 0, amount: 0, top_markets: [], others: { count: 0, amount: 0, share: 0 } },
+      });
+      open(superadmin);
+      expect(within(receiveCard()).getByText("2 ta filial · 0 ta HQ kuryeri")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("0 ta marketga")).toBeInTheDocument();
+      expect(within(giveCard()).queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("403 or error: cards keep working, counts simply do not appear (also over stale data)", () => {
+      pageState.cashboxInfo = {
+        data: { kassadagi_summa: 24_615_000, olinishi_kerak: 9_870_000, berilishi_kerak: 13_458_000 },
+      };
+      pageState.paymentsMeta = { ...paymentsMeta(fullMeta), isError: true };
+      open(superadmin);
+      expect(within(receiveCard()).getByText("9,9")).toBeInTheDocument();
+      expect(within(giveCard()).getByText("13,5")).toBeInTheDocument();
+      expect(screen.queryByText(/ta filial/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/ta marketga/)).not.toBeInTheDocument();
+      expect(within(giveCard()).queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("loading: skeleton in place of counts, no «0 ta»", () => {
+      pageState.paymentsMeta = { data: undefined, isLoading: true, isError: false };
+      open(superadmin);
+      expect(giveCard().querySelectorAll("[data-skeleton]")).toHaveLength(2);
+      expect(receiveCard().querySelectorAll("[data-skeleton]")).toHaveLength(1);
+      expect(screen.queryByText(/0 ta/)).not.toBeInTheDocument();
+    });
+
+    it("manager: the aggregate is never requested (superadmin/admin only)", () => {
+      pageState.paymentsMeta = paymentsMeta(fullMeta);
+      open(manager);
+      expect(pageState.paymentsMetaEnabled).not.toContain(true);
+      expect(screen.queryByText(/ta marketga/)).not.toBeInTheDocument();
+    });
+  });
+
   it("superadmin: shift/current without a shift → «Asosiy kassa · smena yopiq»", () => {
     pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: false } } };
     open(superadmin);
@@ -411,6 +574,26 @@ describe("Payments — header and KPI cards", () => {
     open(superadmin);
     const mainCard = screen.getByRole("link", { name: /Kassadagi summa/ });
     expect(within(mainCard).getByText("Asosiy kassa")).toBeInTheDocument();
+  });
+
+  it("Spt8Cj7m: «Berilishi kerak» — 0 qoldiqli market sukut bo'yicha ko'rinmaydi, qidirilsa topiladi", async () => {
+    pageState.markets = {
+      data: [
+        { id: "1", name: "Bo'sh market", status: "active", cashbox: { balance: 0 } },
+        { id: "2", name: "Baraka Shop", status: "active", cashbox: { balance: 4_820_000 } },
+      ],
+    };
+    const user = userEvent.setup();
+    open(superadmin);
+
+    await user.click(screen.getByRole("button", { name: "Marketga to'lov" }));
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getAllByRole("option")).toHaveLength(1);
+    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("option", { name: /Bo'sh market/ })).not.toBeInTheDocument();
+
+    await user.type(within(dialog).getByRole("combobox"), "Bo'sh");
+    expect(within(dialog).getByRole("option", { name: /Bo'sh market/ })).toBeInTheDocument();
   });
 
   it("superadmin: header actions open the 'Berilishi kerak' and 'Qabul qilinishi kerak' pickers", async () => {
@@ -495,6 +678,12 @@ describe("Payments — header and KPI cards", () => {
       within(card).getByText("Yana 1 ta kuryerda pul yo'q · ulush = kuryer summasi / musbat qoldiqlar jami"),
     ).toBeInTheDocument();
     expect(within(card).getByRole("button", { name: "Barcha kuryerlar · 4 ta" })).toBeInTheDocument();
+  });
+
+  it("manager: «Chek holati» filtri yo'q (QlLf33Ma: belgilar bor, filtr — superadmin va admin)", () => {
+    open(manager);
+
+    expect(screen.queryByLabelText("Chek holati")).not.toBeInTheDocument();
   });
 
   it("manager: «HQ'ga o'tkazish» is never shown (ega qarori #7 — HQ takes the branch money itself)", () => {

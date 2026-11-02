@@ -22,7 +22,7 @@ import {
 import { loadAppLocales } from "../i18n";
 import { deviceIdHeaders } from "./deviceId";
 import { deviceNameHeaders } from "./deviceName";
-import { clearPasswordChangeFlag, syncPasswordChangeFlag } from "./passwordChange";
+import { clearPasswordChangeFlag, syncPasswordChangeFlag, syncPasswordChangeFromToken } from "./passwordChange";
 
 type LoginCredentials = {
   phone_number: string;
@@ -647,6 +647,8 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
       if (accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
         accessToken = await refreshAccessToken();
       }
+      // aidsxJ2H: vaqtinchalik parol bilan sahifa yangilansa — bloklovchi oyna qayta ochiladi.
+      syncPasswordChangeFromToken(accessToken);
 
       try {
         await fetchMyProfileWithRetry(accessToken);

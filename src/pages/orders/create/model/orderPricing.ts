@@ -80,6 +80,12 @@ export type CatalogProduct = {
   photo?: string | null;
   file?: string | null;
   url?: string | null;
+  /** O'lchov (6FLyjO6j; eski mahsulotda bo'lmasligi mumkin) — taxminiy yetkazish narxi uchun (6NYcXvGy). */
+  weight_kg?: number | string | null;
+  length_cm?: number | string | null;
+  width_cm?: number | string | null;
+  height_cm?: number | string | null;
+  volumetric_enabled?: boolean | null;
 };
 
 /** Mahsulot narxi (so'm) yoki `null` — kiritilmagan, bo'sh yoki noto'g'ri. `0` — haqiqiy narx (bepul). */

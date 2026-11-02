@@ -4,6 +4,13 @@
     "cabinet": "Investor account",
     "cabinetOf": "Investor account · {{name}}"
   },
+  "control": {
+    "back": "Investors",
+    "badge": "Oversight · read-only",
+    "description": "The figures the investor sees in their own cabinet",
+    "listsNote": "The investments and profit history lists are only visible in the investor's own cabinet.",
+    "notFound": "Investor not found"
+  },
   "allLink": "View all",
   "kpi": {
     "label": "Key figures",

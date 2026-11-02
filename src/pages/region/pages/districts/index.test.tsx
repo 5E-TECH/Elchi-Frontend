@@ -16,12 +16,13 @@ const REGIONS = [
   {
     id: "1",
     name: "Toshkent shahri",
+    sato_code: "1726",
     districts: [
       { id: "2", name: "Chilonzor" },
       { id: "3", name: "Mirobod" },
     ],
   },
-  { id: "6", name: "Samarqand viloyati", districts: [{ id: "179", name: "Samarqand shahri" }] },
+  { id: "6", name: "Samarqand viloyati", sato_code: "1718", districts: [{ id: "179", name: "Samarqand shahri" }] },
 ];
 
 const Where = () => <span data-testid="path">{useLocation().pathname}</span>;
@@ -78,21 +79,63 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     expect(screen.getByTestId("districts-count")).toHaveTextContent("3");
   });
 
-  it("adds a district with POST /district and refetches the list", async () => {
+  it("adds a district with POST /district {name, region_id, sato_code} and refetches the list (ExK28CiS)", async () => {
     const user = userEvent.setup();
     open();
     await screen.findByText("Chilonzor");
 
     const form = screen.getByRole("region", { name: "Yangi tuman qo'shish" });
-    await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), "Yangi tuman");
+    const name = within(form).getByRole("textbox", { name: /Tuman nomi/ });
+    const code = within(form).getByRole("textbox", { name: /SATO kodi/ });
+    await user.type(name, "  Yangi tuman ");
     await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
     await user.click(await screen.findByRole("option", { name: "Samarqand viloyati" }));
+    await user.type(code, "1718240");
     await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
 
     await waitFor(() =>
-      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6" }),
+      expect(api.post).toHaveBeenCalledWith("district", {
+        name: "Yangi tuman",
+        region_id: "6",
+        sato_code: "1718240",
+      }),
     );
+    expect(await screen.findByText("Tuman qo'shildi")).toBeInTheDocument();
+    expect(screen.getByText("Yangi tuman · Samarqand viloyati · 1718240")).toBeInTheDocument();
+    // Forma tozalanadi (viloyat — keyingi tuman uchun qoladi), doska qayta yuklanadi.
+    expect(name).toHaveValue("");
+    expect(code).toHaveValue("");
+    await waitFor(() => expect(api.get.mock.calls.filter(([url]) => url === "region")).toHaveLength(2));
+  });
+
+  it("after a create the geographic districts cache (`useGetDistricts` — [\"districts\", regionId]) is invalidated too", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = open();
+    queryClient.setQueryData(["districts", "6"], [{ id: "179", name: "Samarqand shahri" }]);
+    await screen.findByText("Chilonzor");
+    expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(false);
+
+    const form = screen.getByRole("region", { name: "Yangi tuman qo'shish" });
+    await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), "Yangi tuman");
+    await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Samarqand viloyati" }));
+    await user.type(within(form).getByRole("textbox", { name: /SATO kodi/ }), "1718240");
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+
+    expect(await screen.findByText("Tuman qo'shildi")).toBeInTheDocument();
+    await waitFor(() => expect(queryClient.getQueryState(["districts", "6"])?.isInvalidated).toBe(true));
+  });
+
+  it("a move does not invalidate the geographic districts cache (a move does not change GET region/:id)", async () => {
+    const { queryClient } = open();
+    queryClient.setQueryData(["districts", "1"], [{ id: "2", name: "Chilonzor" }]);
+    await screen.findByText("Chilonzor");
+
+    act(() => drag("2", "6"));
+
+    expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+    expect(queryClient.getQueryState(["districts", "1"])?.isInvalidated).toBe(false);
   });
 
   it("renames a district with PATCH /district/name/:id", async () => {
@@ -170,6 +213,68 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("kGvjztpY: after a successful move the refetch (assignedDistricts) keeps the district in the target region", async () => {
+    // Backend 2026-11-01: `districts` — geografik (Chilonzor hali Toshkentda), `assignedDistricts` — biriktirilgan.
+    const moved = [
+      {
+        ...REGIONS[0],
+        assignedDistricts: [{ id: "3", name: "Mirobod", region: { id: "1", name: "Toshkent shahri" } }],
+      },
+      {
+        ...REGIONS[1],
+        assignedDistricts: [
+          { id: "2", name: "Chilonzor", region: { id: "1", name: "Toshkent shahri" } },
+          { id: "179", name: "Samarqand shahri", region: { id: "6", name: "Samarqand viloyati" } },
+        ],
+      },
+    ];
+    const { queryClient } = open();
+    await screen.findByText("Chilonzor");
+    // SATO sahifasidagi o'tkazish doskasi keshi ham eskiradi.
+    const boardKey = ["regions", "with-districts"];
+    queryClient.setQueryData(boardKey, []);
+    const getsBefore = api.get.mock.calls.length;
+    api.get.mockResolvedValue({ data: { statusCode: 200, data: moved } });
+
+    act(() => drag("2", "6"));
+
+    expect(await screen.findByText("Tuman boshqa viloyatga o'tkazildi")).toBeInTheDocument();
+    expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" });
+    await waitFor(() => expect(api.get.mock.calls.length).toBeGreaterThan(getsBefore));
+    await waitFor(() => expect(queryClient.getQueryState(boardKey)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    // Qayta yuklangandan keyin ham — Samarqandda (eski viloyatiga «sakrab» qaytmaydi).
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Toshkent shahri" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("districts-count")).toHaveTextContent("3");
+  });
+
+  it("kGvjztpY: a failed move rolls back to the snapshot on the assignedDistricts path too", async () => {
+    const assigned = REGIONS.map((region) => ({ ...region, assignedDistricts: region.districts }));
+    api.get.mockResolvedValue({ data: { statusCode: 200, data: assigned } });
+    api.patch.mockRejectedValue(
+      Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
+    );
+    open();
+    await screen.findByText("Chilonzor");
+
+    act(() => drag("2", "6"));
+
+    expect((await screen.findAllByText("O'tkazib bo'lmadi — tuman joyiga qaytarildi")).length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("region", { name: "Toshkent shahri" })).getByText("Chilonzor"),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).queryByText("Chilonzor"),
+    ).not.toBeInTheDocument();
+  });
+
   it("load error is shown on the page (ErrorState) and is not toasted globally again", async () => {
     api.get.mockRejectedValue(
       Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
@@ -194,20 +299,202 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     expect(api.get).not.toHaveBeenCalled();
   });
 
-  it("shows a translated message (not the server text) when a name already exists (409)", async () => {
+  it("shows a translated message (not the server text) when a name already exists (409, code owner 404)", async () => {
     const user = userEvent.setup();
     api.post.mockRejectedValue(httpError(409, "District already exists in this region"));
+    api.get.mockImplementation((url: string) =>
+      url === "district/sato/1726240"
+        ? Promise.reject(httpError(404, "Tuman topilmadi"))
+        : Promise.resolve({ data: { statusCode: 200, data: REGIONS } }),
+    );
     open();
     await screen.findByText("Chilonzor");
 
     const form = screen.getByRole("region", { name: "Yangi tuman qo'shish" });
-    await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), "Chilonzor");
+    await fillCreate(user, form, { name: "Chilonzor", region: "Toshkent shahri", code: "1726240" });
+
+    const name = within(form).getByRole("textbox", { name: /Tuman nomi/ });
+    expect(await within(form).findByText("Bu viloyatda shu nomli tuman bor")).toBeInTheDocument();
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(api.get).toHaveBeenCalledWith("district/sato/1726240");
+    expect(screen.queryByText(/District already exists/)).not.toBeInTheDocument();
+    // Qiymatlar saqlanadi; nom o'zgarsa xato yo'qoladi.
+    expect(name).toHaveValue("Chilonzor");
+    await user.type(name, " tumani");
+    expect(within(form).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+  });
+});
+
+/** «Yangi tuman qo'shish» kartasini to'ldirib, «Qo'shish» ni bosadi. */
+const fillCreate = async (
+  user: ReturnType<typeof userEvent.setup>,
+  form: HTMLElement,
+  { name, region, code }: { name: string; region?: string; code?: string },
+) => {
+  await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), name);
+  if (region) {
+    await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: region }));
+  }
+  if (code) await user.type(within(form).getByRole("textbox", { name: /SATO kodi/ }), code);
+  await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+};
+
+describe("RegionDistrictsPage — «Yangi tuman qo'shish»: SATO kodi majburiy (ExK28CiS)", () => {
+  const SIRDARYO = { id: "11", name: "Sirdaryo viloyati", sato_code: null, districts: [] };
+  beforeEach(() => {
+    api.get.mockImplementation((url: string) =>
+      url === "region"
+        ? Promise.resolve({ data: { statusCode: 200, data: [...REGIONS, SIRDARYO] } })
+        : Promise.reject(httpError(404, "Tuman topilmadi")),
+    );
+    api.post.mockResolvedValue({ data: { statusCode: 201 } });
+  });
+  afterEach(() => vi.clearAllMocks());
+
+  const openForm = async () => {
+    open();
+    await screen.findByText("Chilonzor");
+    return screen.getByRole("region", { name: "Yangi tuman qo'shish" });
+  };
+
+  it("«SATO kodi *» — majburiy, faqat raqam, 7 belgi; ko'rsatma viloyatga qarab", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    const code = within(form).getByRole("textbox", { name: /SATO kodi/ });
+    expect(code).toHaveAttribute("aria-required", "true");
+    expect(code).toHaveAttribute("inputmode", "numeric");
+    expect(code).toHaveAttribute("maxlength", "7");
+    expect(within(form).getByText("7 ta raqam. Avval viloyatni tanlang.")).toBeInTheDocument();
+
+    await user.type(code, "17a26");
+    expect(code).toHaveValue("1726");
     await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
     await user.click(await screen.findByRole("option", { name: "Toshkent shahri" }));
-    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    expect(within(form).getByText("7 ta raqam, Toshkent shahri kodi 1726 bilan boshlanadi")).toBeInTheDocument();
 
-    expect((await screen.findAllByText("Bu viloyatda shu nomli tuman bor")).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/District already exists/)).not.toBeInTheDocument();
+    // Viloyatda kod yo'q — prefiks aytilmaydi.
+    await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Sirdaryo viloyati" }));
+    expect(within(form).getByText("7 ta raqam")).toBeInTheDocument();
+  });
+
+  it("klient tekshiruvi: bo'sh kod, 7 raqam emas, boshqa viloyat prefiksi — POST ketmaydi, xato kod maydonida", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    const code = within(form).getByRole("textbox", { name: /SATO kodi/ });
+
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Toshkent shahri" });
+    expect(within(form).getByText("SATO kodini kiriting")).toBeInTheDocument();
+    expect(code).toHaveAttribute("aria-invalid", "true");
+
+    await user.type(code, "172624");
+    expect(within(form).queryByText("SATO kodini kiriting")).not.toBeInTheDocument();
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    expect(within(form).getByText("Kod 7 ta raqamdan iborat bo'lishi kerak")).toBeInTheDocument();
+
+    await user.clear(code);
+    await user.type(code, "1718240");
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    expect(within(form).getByText("Kod 1726 bilan boshlanishi kerak — Toshkent shahri kodi")).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+
+    // Mos viloyatga almashsa — prefiks xatosi yo'qoladi; Samarqand kodi 1718 — yuboriladi.
+    await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: "Samarqand viloyati" }));
+    expect(within(form).queryByText(/bilan boshlanishi kerak/)).not.toBeInTheDocument();
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6", sato_code: "1718240" }),
+    );
+  });
+
+  it("viloyatda kod yo'q — prefiks tekshirilmaydi; server 400 region_prefix_mismatch — `expected_prefix` bilan", async () => {
+    api.post.mockRejectedValue(
+      httpError(400, "Tuman SOATO kodi viloyat SOATO kodi (1724) bilan boshlanishi kerak", {
+        reason: "region_prefix_mismatch",
+        details: { expected_prefix: "1724" },
+      }),
+    );
+    const user = userEvent.setup();
+    const form = await openForm();
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Sirdaryo viloyati", code: "1718240" });
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "11", sato_code: "1718240" }),
+    );
+    expect(await within(form).findByText("Kod 1724 bilan boshlanishi kerak — Sirdaryo viloyati kodi")).toBeInTheDocument();
+    expect(screen.queryByText(/viloyat SOATO kodi/)).not.toBeInTheDocument();
+    expect(within(form).getByRole("textbox", { name: /SATO kodi/ })).toHaveValue("1718240");
+  });
+
+  it("409 + kod egasi topildi — «Bu kod band: <tuman>, <viloyat>» kod maydonida (server matnisiz)", async () => {
+    api.post.mockRejectedValue(httpError(409, "Bunday SOATO kodli tuman allaqachon mavjud"));
+    api.get.mockImplementation((url: string) =>
+      url === "district/sato/1726262"
+        ? Promise.resolve({
+            data: { statusCode: 200, data: { id: "12", name: "Yangihayot tumani", region: { name: "Toshkent sh." } } },
+          })
+        : Promise.resolve({ data: { statusCode: 200, data: REGIONS } }),
+    );
+    const user = userEvent.setup();
+    const form = await openForm();
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Toshkent shahri", code: "1726262" });
+
+    expect(await within(form).findByText("Bu kod band: Yangihayot tumani, Toshkent sh.")).toBeInTheDocument();
+    expect(within(form).getByRole("textbox", { name: /SATO kodi/ })).toHaveAttribute("aria-invalid", "true");
+    expect(within(form).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText(/allaqachon mavjud/)).not.toBeInTheDocument();
+  });
+
+  it("409 + kod egasi 200, lekin javobda tuman o'qilmadi — «Bu kod boshqa tumanga yozilgan» kod maydonida, xabarsiz", async () => {
+    api.post.mockRejectedValue(httpError(409));
+    api.get.mockImplementation((url: string) =>
+      url === "district/sato/1726262"
+        ? Promise.resolve({ data: { statusCode: 200, data: {} } })
+        : Promise.resolve({ data: { statusCode: 200, data: REGIONS } }),
+    );
+    const user = userEvent.setup();
+    const form = await openForm();
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Toshkent shahri", code: "1726262" });
+
+    expect(await within(form).findByText("Bu kod boshqa tumanga yozilgan")).toBeInTheDocument();
+    expect(api.get).toHaveBeenCalledWith("district/sato/1726262");
+    expect(within(form).getByRole("textbox", { name: /SATO kodi/ })).toHaveAttribute("aria-invalid", "true");
+    expect(within(form).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+    expect(within(form).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tumanni qo'shib bo'lmadi")).not.toBeInTheDocument();
+  });
+
+  it("409 + kod egasini so'rash 5xx — umumiy xabar, «nom band» deb taxmin qilinmaydi", async () => {
+    api.post.mockRejectedValue(httpError(409));
+    api.get.mockImplementation((url: string) =>
+      url === "region"
+        ? Promise.resolve({ data: { statusCode: 200, data: REGIONS } })
+        : Promise.reject(httpError(503, "Service Unavailable")),
+    );
+    const user = userEvent.setup();
+    const form = await openForm();
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Toshkent shahri", code: "1726262" });
+
+    expect((await screen.findAllByText("Tumanni qo'shib bo'lmadi")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Qayta urinib ko'ring.").length).toBeGreaterThan(0);
+    expect(within(form).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+    expect(within(form).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("404 — «Viloyat topilmadi — ro'yxatni yangilang» viloyat maydonida; boshqa xato — umumiy xabar", async () => {
+    api.post.mockRejectedValueOnce(httpError(404, "Viloyat topilmadi"));
+    const user = userEvent.setup();
+    const form = await openForm();
+    await fillCreate(user, form, { name: "Yangi tuman", region: "Toshkent shahri", code: "1726240" });
+    expect(await within(form).findByText("Viloyat topilmadi — ro'yxatni yangilang")).toBeInTheDocument();
+    expect(screen.queryByText(/^Viloyat topilmadi$/)).not.toBeInTheDocument();
+
+    api.post.mockRejectedValueOnce(httpError(500, "Internal server error"));
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    expect((await screen.findAllByText("Tumanni qo'shib bo'lmadi")).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Internal server error/)).not.toBeInTheDocument();
   });
 });
 
@@ -557,5 +844,127 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     expect(await screen.findByRole("dialog", { name: "Tumanlar birlashtirildi" })).toBeInTheDocument();
     expect(api.post).toHaveBeenCalledTimes(2);
     expect(api.post).toHaveBeenLastCalledWith("district/2/merge", { target_district_id: "3" }, { timeout: 125_000 });
+  });
+});
+
+describe("RegionDistrictsPage — «Yangi tuman qo'shish»: rasmiy SOATO ro'yxati (kodni admin bilmaydi)", () => {
+  const TOSH_VIL = { id: "14", name: "Toshkent", sato_code: "1727", districts: [{ id: "40", name: "Bekobod" }] };
+  const OFFICIAL = [
+    { name: "O'rtachirchiq tumani", sato_code: "1727253", taken_by: null },
+    { name: "Bo'ka tumani", sato_code: "1727220", taken_by: null },
+    { name: "Bekobod tumani", sato_code: "1727224", taken_by: { kind: "district", id: "40", name: "Bekobod" } },
+  ];
+  beforeEach(() => {
+    api.get.mockImplementation((url: string) => {
+      if (url === "region") return Promise.resolve({ data: { statusCode: 200, data: [...REGIONS, TOSH_VIL] } });
+      if (url === "district/sato-official/14")
+        return Promise.resolve({
+          data: { statusCode: 200, data: { region_id: "14", region_sato_code: "1727", items: OFFICIAL } },
+        });
+      return Promise.reject(httpError(404, "Tuman topilmadi"));
+    });
+    api.post.mockResolvedValue({ data: { statusCode: 201 } });
+  });
+  afterEach(() => vi.clearAllMocks());
+
+  const openForm = async () => {
+    open();
+    await screen.findByText("Chilonzor");
+    return screen.getByRole("region", { name: "Yangi tuman qo'shish" });
+  };
+  const chooseRegion = async (user: ReturnType<typeof userEvent.setup>, form: HTMLElement, region: string) => {
+    await user.click(within(form).getByRole("combobox", { name: /Viloyat/ }));
+    await user.click(await screen.findByRole("option", { name: region }));
+  };
+
+  it("nom yozilsa kod rasmiy ro'yxatdan o'zi tushadi: «O'rtachirchiq» → 1727253", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    const code = within(form).getByRole("textbox", { name: /SATO kodi/ });
+
+    await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), "O'rtachirchiq");
+    await chooseRegion(user, form, "Toshkent");
+    await waitFor(() => expect(code).toHaveValue("1727253"));
+    expect(within(form).getByText("Rasmiy SOATO ro'yxatidan: O'rtachirchiq tumani")).toBeInTheDocument();
+    expect(api.get).toHaveBeenCalledWith("district/sato-official/14");
+
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", {
+        name: "O'rtachirchiq",
+        region_id: "14",
+        sato_code: "1727253",
+      }),
+    );
+  });
+
+  it("ro'yxatdan tanlansa nom va kod to'ladi; band kod ro'yxatda yo'q", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    const picker = within(form).getByRole("combobox", { name: /Rasmiy ro'yxatdan tanlash/ });
+    expect(picker).toHaveAttribute("placeholder", "Avval viloyatni tanlang");
+
+    await chooseRegion(user, form, "Toshkent");
+    await waitFor(() => expect(picker).toHaveAttribute("placeholder", "Tumanni qidiring yoki tanlang (2 ta)"));
+    await user.click(picker);
+    expect(await screen.findByRole("option", { name: /O'rtachirchiq tumani/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Bekobod tumani/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: /Bo'ka tumani/ }));
+
+    expect(within(form).getByRole("textbox", { name: /Tuman nomi/ })).toHaveValue("Bo'ka tumani");
+    expect(within(form).getByRole("textbox", { name: /SATO kodi/ })).toHaveValue("1727220");
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", {
+        name: "Bo'ka tumani",
+        region_id: "14",
+        sato_code: "1727220",
+      }),
+    );
+  });
+
+  it("qo'lda yozilgan kod ustun; ro'yxatda yo'q nom — kod qo'lda", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    const name = within(form).getByRole("textbox", { name: /Tuman nomi/ });
+    const code = within(form).getByRole("textbox", { name: /SATO kodi/ });
+
+    await user.type(name, "Yangi shahar");
+    await chooseRegion(user, form, "Toshkent");
+    await waitFor(() =>
+      expect(within(form).getByRole("combobox", { name: /Rasmiy ro'yxatdan tanlash/ })).toHaveAttribute(
+        "placeholder",
+        "Tumanni qidiring yoki tanlang (2 ta)",
+      ),
+    );
+    expect(code).toHaveValue("");
+
+    await user.type(code, "1727999");
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", {
+        name: "Yangi shahar",
+        region_id: "14",
+        sato_code: "1727999",
+      }),
+    );
+  });
+
+  it("ro'yxat yuklanmasa — tanlash o'chadi, kod qo'lda kiritiladi", async () => {
+    const user = userEvent.setup();
+    const form = await openForm();
+    await chooseRegion(user, form, "Samarqand viloyati");
+    const picker = within(form).getByRole("combobox", { name: /Rasmiy ro'yxatdan tanlash/ });
+    await waitFor(() =>
+      expect(picker).toHaveAttribute("placeholder", "Ro'yxat yuklanmadi, kodni qo'lda kiriting"),
+    );
+    expect(picker).toBeDisabled();
+
+    await user.type(within(form).getByRole("textbox", { name: /Tuman nomi/ }), "Yangi tuman");
+    await user.type(within(form).getByRole("textbox", { name: /SATO kodi/ }), "1718240");
+    await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6", sato_code: "1718240" }),
+    );
   });
 });

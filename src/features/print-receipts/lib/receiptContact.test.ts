@@ -7,36 +7,33 @@ import {
   getReceiptContactPhones,
 } from "./receiptContact";
 
-describe("receipt contact fields (1mOjtOVC, HJ5sLHiz: maket tizim-receipts 10-band)", () => {
-  it("prefers operator_phone (+ secondary operator) over the market phone, v2 phone format, no duplicates", () => {
+describe("receipt contact fields (T7 QPq2C1co: «Muammo bo'lsa» — viloyat logisti)", () => {
+  it("prints the region logist from problem_contacts, v2 phone format, no duplicates", () => {
+    expect(getReceiptContactPhones({ problem_contacts: [{ phone: "+998901234567" }] })).toEqual([
+      "+998 90 123 45 67",
+    ]);
     expect(
       getReceiptContactPhones({
-        operator_phone: "+998901234567",
-        secondary_operator_phone: "998991981929",
-        market: { phone_number: "+998712001122" },
+        problem_contacts: [{ phone: "+998901234567" }, { phone: "998991981929" }],
       }),
     ).toEqual(["+998 90 123 45 67", "+998 99 198 19 29"]);
-    expect(getReceiptContactPhone({ secondary_operator_phone: "991981929" })).toBe(
-      "+998 99 198 19 29",
-    );
     expect(
       getReceiptContactPhone({
-        operator_phone: "901234567",
-        secondary_operator_phone: "+998901234567",
+        problem_contacts: [{ phone: "901234567" }, { phone: "+998901234567" }],
       }),
     ).toBe("+998 90 123 45 67");
   });
 
-  it("falls back to the market phone only (no logist / courier); empty when nothing is known", () => {
-    expect(
-      getReceiptContactPhone({ operator_phone: null, market: { phone_number: "+998712001122" } }),
-    ).toBe("+998 71 200 11 22");
-    // Eski zaxira (logist / kuryer) olib tashlangan: maketda «Logist» qatori yo'q.
-    const legacy = { courier: { phone_number: "905554433" } } as Parameters<
-      typeof getReceiptContactPhones
-    >[0];
+  it("never prints the operator, market or courier phone; empty when no contact is known", () => {
+    const legacy = {
+      operator_phone: "+998901234567",
+      secondary_operator_phone: "+998991981929",
+      market: { phone_number: "+998712001122" },
+      courier: { phone_number: "905554433" },
+    } as Parameters<typeof getReceiptContactPhones>[0];
     expect(getReceiptContactPhones(legacy)).toEqual([]);
-    expect(getReceiptContactPhone({ operator_phone: " ", market: null })).toBe("");
+    expect(getReceiptContactPhone({ problem_contacts: null })).toBe("");
+    expect(getReceiptContactPhone({ problem_contacts: [] })).toBe("");
   });
 
   it("formats the courier / driver line and omits it when null", () => {
@@ -57,17 +54,13 @@ describe("receipt contact fields (1mOjtOVC, HJ5sLHiz: maket tizim-receipts 10-ba
     expect(cleanReceiptValue("Baraka-Shop")).toBe("Baraka-Shop");
     expect(formatReceiptPhone(" 998901234567 ")).toBe("+998 90 123 45 67");
 
-    // Operator raqamlari «-» / «—» — market raqami zaxira; hech biri yo'q — bo'sh.
+    // «-» / «—» raqam emas: faqat haqiqiy raqam qoladi.
     expect(
       getReceiptContactPhones({
-        operator_phone: "-",
-        secondary_operator_phone: "—",
-        market: { phone_number: "+998712001122" },
+        problem_contacts: [{ phone: "-" }, { phone: "—" }, { phone: "+998712001122" }],
       }),
     ).toEqual(["+998 71 200 11 22"]);
-    expect(
-      getReceiptContactPhones({ operator_phone: "—", market: { phone_number: " - " } }),
-    ).toEqual([]);
+    expect(getReceiptContactPhones({ problem_contacts: [{ phone: " - " }] })).toEqual([]);
     expect(formatReceiptPerson({ name: "—", phone_number: "-" })).toBe("");
     expect(formatReceiptPerson({ name: "Jasur", phone_number: "—" })).toBe("Jasur");
   });

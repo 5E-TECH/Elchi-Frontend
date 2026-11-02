@@ -11,7 +11,7 @@ vi.mock("../../../../features/print-receipts", () => ({
   printPackageReceipt: mocks.printPackageReceipt,
 }));
 
-const { printOrders, printPostReceipt, printPostWithOrders, toPostReceiptSource } =
+const { postTotalsFromOrders, printOrders, printPostReceipt, printPostWithOrders, toPostReceiptSource } =
   await import("./printMode");
 
 const order = (patch: Partial<PostOrder> = {}) =>
@@ -109,5 +109,18 @@ describe("pochta chop etish usullari → features/print-receipts (HJ5sLHiz, TZ F
       output: "browser",
       leadingPackage: source,
     });
+  });
+
+  it("qatorlardan jamlar (vaICniE4): uy — `address`, qolgani — markaz (backend hisobi); bo'sh ro'yxat — 0", () => {
+    const totals = postTotalsFromOrders([
+      order({ total_price: 185_000 }),
+      order({ id: "o2", where_deliver: "center", total_price: 240_000 }),
+      order({ id: "o3", total_price: undefined as unknown as number }),
+    ]);
+    expect(totals).toEqual({
+      homeOrders: { homeOrdersTotalPrice: 185_000 },
+      centerOrders: { centerOrdersTotalPrice: 240_000 },
+    });
+    expect(toPostReceiptSource({ postId: "1", orders: [], totals: postTotalsFromOrders([]) }).totalPrice).toBe(0);
   });
 });

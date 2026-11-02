@@ -28,6 +28,8 @@ interface LedgerFlowProps {
   negative: SourceBucket[];
   /** Davr bugungacha (yoki «Barchasi») — davr boshi/oxiri hisoblanadi. */
   reachesToday: boolean;
+  /** Serverdagi davr boshi/oxiri qoldig'i (`financial-balance/daily`) — o'tgan davrda ham sharshara boshi bor. */
+  periodBalances?: { opening: number | null; closing: number | null } | null;
   /** Sarlavha ostidagi davr matni («01.10 – 08.10.2026» yoki «barcha vaqt»). */
   periodText: string;
   /** Fonda yangilanmoqda — grafik xiralashadi (`tizim-loading`). */
@@ -41,7 +43,16 @@ type View = "chart" | "table";
  * 4 son (daftar qoldig'i, musbat/manfiy ta'sir, sof o'zgarish), sharshara — davr boshi → har kirim manbasi
  * (+) → har chiqim manbasi (−) → hozir; telefonda ro'yxat varianti; «Grafik | Jadval» egizagi.
  */
-const LedgerFlow = ({ currentBalance, summary, positive, negative, reachesToday, periodText, dimmed }: LedgerFlowProps) => {
+const LedgerFlow = ({
+  currentBalance,
+  summary,
+  positive,
+  negative,
+  reachesToday,
+  periodBalances = null,
+  periodText,
+  dimmed,
+}: LedgerFlowProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [view, setView] = useState<View>("chart");
@@ -52,8 +63,8 @@ const LedgerFlow = ({ currentBalance, summary, positive, negative, reachesToday,
   const compactSigned = (value: number) => (value > 0 ? `+${compact(value)}` : compact(value));
 
   const waterfall = useMemo(
-    () => buildWaterfall({ currentBalance, netChange: summary.netTotal, positive, negative, reachesToday }),
-    [currentBalance, negative, positive, reachesToday, summary.netTotal],
+    () => buildWaterfall({ currentBalance, netChange: summary.netTotal, positive, negative, reachesToday, periodBalances }),
+    [currentBalance, negative, periodBalances, positive, reachesToday, summary.netTotal],
   );
 
   const stepName = (step: WaterfallStep) =>

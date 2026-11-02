@@ -31,7 +31,7 @@ import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource
 import { hasNoTariffs, readProductImageUrl, readProductPrice, tariffFor, type CatalogProduct } from "../model/orderPricing";
 import { CreateAlert } from "./CreateAlert";
 import { CustomerPhoneSuggest, type CustomerSuggestScope } from "./CustomerPhoneSuggest";
-import { ExistingCustomerNotice } from "./ExistingCustomerNotice";
+import { ExistingCustomerNotice, TypedPhoneNewOrdersNotice } from "./ExistingCustomerNotice";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 
@@ -403,6 +403,12 @@ const Step2Combined = () => {
             )}
           />
           <ExistingCustomerNotice
+            isMarketRole={isMarketRole}
+            marketId={isMarketRole ? ownMarketId : productSourceMarketId || null}
+            marketName={catalogOwner}
+          />
+          <TypedPhoneNewOrdersNotice
+            scope={suggestScope}
             isMarketRole={isMarketRole}
             marketId={isMarketRole ? ownMarketId : productSourceMarketId || null}
             marketName={catalogOwner}

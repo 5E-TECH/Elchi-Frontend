@@ -37,11 +37,11 @@ describe("BranchOps page", () => {
     apiPostMock.mockResolvedValue(mockEnvelope({ id: "b1", status: "CANCELLED" }, { message: "Batch cancelled" }));
   });
 
-  it("renders the intro \"Filiallar — operatsiyalar\" and the «← Ops vositalari» link on the direct route", () => {
+  it("renders the intro \"Filiallar — operatsiyalar\" without its own page header: it lives inside /batches", () => {
     renderWithProviders(<BranchOpsPage />);
     expect(screen.getByRole("heading", { name: "Filiallar — operatsiyalar" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Filiallar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=branches");
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Ops vositalari/ })).toBeNull();
   });
 
   it("calls api.get with \"branches/new-orders\" on mount", async () => {

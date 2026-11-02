@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-integrations-panel-events, admin-integrations-conn-log
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   History,
@@ -7,6 +7,7 @@ import {
   CircleCheck,
   CircleX,
   Clock,
+  FileText,
   Inbox,
   List,
   RefreshCw,
@@ -14,7 +15,7 @@ import {
   ShieldAlert,
   Wallet,
 } from "lucide-react";
-import { usePartnerActions, usePartnerWebhooks, type PartnerWebhookRow } from "../../../entities/partners";
+import { usePartnerActions, usePartners, usePartnerWebhooks, type PartnerWebhookRow } from "../../../entities/partners";
 import { useSyncHistory, type SyncHistoryRow } from "../../../entities/integrations/syncHistory";
 import {
   INVALID_SIGNATURE_FILTER,
@@ -35,13 +36,16 @@ import {
   DataTable,
   EmptyState,
   ErrorState,
+  Field,
   IconButton,
   Pagination,
   QueryBoundary,
   SegmentedControl,
+  Select,
   SkeletonTable,
   StatusBadge,
   type DataTableColumn,
+  type SelectOption,
   type Tone,
 } from "../../../shared/ui/primitives";
 import { useStatusLabel } from "../statusLabel";
@@ -72,11 +76,17 @@ const STATUS_TAG: Record<string, { tone: Tone; labelKey: string }> = {
 
 const PAGE_SIZE = 20;
 
+/** «Hamkor» filtrining «Barcha hamkorlar» qiymati — so'rovga `partner_id` qo'shilmaydi. */
+const ALL_PARTNERS = "all";
+
 type LogView = "payments" | "inbound" | "outbound";
 
 const ConnectionLog = ({ connection, metrics }: { connection: Connection; metrics?: ConnectionMetrics }) => {
-  /** Hamkorda YAGONA ko'rinish bor (biz yuborgan hodisalar) — almashtirgich ko'rsatish shovqin bo'lardi. */
-  if (connection.kind === "partner") return <InboundLog connection={connection} metrics={metrics} />;
+  /**
+   * Hamkorda YAGONA ko'rinish bor (biz yuborgan hodisalar) — almashtirgich ko'rsatish shovqin bo'lardi.
+   * `key`: boshqa hamkor ochilganda filtr, sahifa va ochiq ma'lumot oldingi hamkordan qolmaydi.
+   */
+  if (connection.kind === "partner") return <InboundLog key={connection.uid} connection={connection} metrics={metrics} />;
   return <OutboundViews connection={connection} />;
 };
 
@@ -362,18 +372,36 @@ const IncomingWebhookLog = ({ connection, switcher }: { connection: Connection; 
   );
 };
 
-/** BIZ yuborgan webhooklar (`partner_webhook_outbox`). */
+/**
+ * BIZ yuborgan webhooklar (`partner_webhook_outbox`). Sukut bo'yicha ochiq hamkor; «Barcha hamkorlar» —
+ * umumiy yetkazish jurnali (maket `*-integrations-legacy-partners`, eski `/integrations/partners` dan ko'chgan):
+ * yiqilgan hodisani har hamkorni birma-bir ochmasdan topish uchun.
+ */
 const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?: ConnectionMetrics }) => {
   const { t, i18n } = useTranslation("integrations");
   const language = i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
   const statusLabel = useStatusLabel();
+  const [partner, setPartner] = useState(connection.id);
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [openPayload, setOpenPayload] = useState<string | null>(null);
 
-  const webhooks = usePartnerWebhooks({ partner_id: connection.id, status, page, limit: PAGE_SIZE }, { silentError: true });
+  const partners = usePartners({ silentError: true }).data;
+  const partnerNames = useMemo(() => new Map((partners ?? []).map((item) => [String(item.id), item.name])), [partners]);
+  const allPartners = partner === ALL_PARTNERS;
+
+  const webhooks = usePartnerWebhooks(
+    { partner_id: allPartners ? undefined : partner, status, page, limit: PAGE_SIZE },
+    { silentError: true },
+  );
   const { retryWebhook } = usePartnerActions();
   const rows = webhooks.data?.data ?? [];
+  const partnerOf = (r: PartnerWebhookRow) => partnerNames.get(String(r.partner_id)) ?? r.partner_id;
+  const partnerOptions: SelectOption[] = [
+    { value: ALL_PARTNERS, label: t("console.allPartners") },
+    ...(partners ?? []).map((item) => ({ value: String(item.id), label: item.name })),
+  ];
 
   const retry = async (id: string) => {
     try {
@@ -420,11 +448,47 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
         {t("logRetryBtn")}
       </Button>
     );
+  const payloadToggle = (r: PartnerWebhookRow, asButton: boolean) => {
+    const open = openPayload === String(r.id);
+    const toggle = () => setOpenPayload(open ? null : String(r.id));
+    const controls = open ? `partner-payload-${r.id}` : undefined;
+    return asButton ? (
+      <Button variant="ghost" size="sm" aria-expanded={open} aria-controls={controls} onClick={toggle} className="self-start max-md:min-h-11">
+        {t("console.payloadShort")}
+      </Button>
+    ) : (
+      <IconButton
+        size="sm"
+        icon={FileText}
+        label={t("console.payloadAria", { ref: orderNo(r) || r.external_order_id })}
+        aria-expanded={open}
+        aria-controls={controls}
+        onClick={toggle}
+      />
+    );
+  };
+  const payloadPanel = (r: PartnerWebhookRow) => (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-[.04em] text-text-muted">{t("console.payloadTitle")}</span>
+        <span className="text-xs text-text-muted">
+          {r.status === "permanently_failed"
+            ? t("console.payloadStoppedAfter", { count: num(r.attempts ?? 0) })
+            : t("console.payloadCreatedAt", { at: formatDateTimeLocalized(r.created_at, { language }) })}
+        </span>
+      </div>
+      <pre className="max-h-72 overflow-auto rounded-[10px] border border-border bg-surface p-3 font-mono text-xs leading-5 text-text">
+        {JSON.stringify(r.payload ?? {}, null, 2)}
+      </pre>
+    </div>
+  );
 
   const columns: DataTableColumn<PartnerWebhookRow>[] = [
     { id: "time", header: t("colTime"), cell: (r) => <span className="whitespace-nowrap">{formatDateTimeLocalized(r.created_at, { language })}</span> },
+    ...(allPartners ? [{ id: "partner", header: t("console.colPartner"), cell: partnerOf }] : []),
     { id: "status", header: t("colStatus"), cell: statusBadge },
-    { id: "attempts", header: t("colAttempt"), align: "end", hideBelow: "lg", cell: (r) => <span className="tabular-nums">{num(r.attempts ?? 0)}</span> },
+    /* < 1280 yon menyu bilan joy yetmaydi: ustunlar yashiriladi, buyurtma «Hodisa» katagida qoladi. */
+    { id: "attempts", header: t("colAttempt"), align: "end", className: "max-xl:hidden", cell: (r) => <span className="tabular-nums">{num(r.attempts ?? 0)}</span> },
     {
       id: "event",
       header: t("colEvent"),
@@ -433,11 +497,11 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
           <span>
             {eventText(r)} <span className="font-semibold">{orderNo(r)}</span>
           </span>
-          <span className="font-mono text-xs text-text-muted lg:hidden">{r.external_order_id}</span>
+          <span className="font-mono text-xs text-text-muted xl:hidden">{r.external_order_id}</span>
         </div>
       ),
     },
-    { id: "order", header: t("colOrder"), hideBelow: "lg", cell: (r) => <span className="font-mono text-[13px]">{r.external_order_id || "—"}</span> },
+    { id: "order", header: t("colOrder"), className: "max-xl:hidden", cell: (r) => <span className="font-mono text-[13px]">{r.external_order_id || "—"}</span> },
     {
       id: "error",
       header: t("colError"),
@@ -451,7 +515,17 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
           <span className="text-text-muted">—</span>
         ),
     },
-    { id: "action", header: t("colAction"), cell: (r) => retryButton(r, false) },
+    {
+      id: "action",
+      header: t("colAction"),
+      cell: (r) => (
+        <div className="flex items-center gap-1">
+          {payloadToggle(r, false)}
+          <span className="contents max-xl:hidden">{retryButton(r, false)}</span>
+          <span className="contents xl:hidden">{retryButton(r, true)}</span>
+        </div>
+      ),
+    },
   ];
 
   /* ── «Natija · 24 soat» — metrikadan (bitta so'rov, konsol bilan AYNI raqam). ── */
@@ -470,7 +544,8 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
           actions={<RefreshButton loading={webhooks.isFetching} onClick={() => void webhooks.refetch()} />}
         />
       </PanelSection>
-      {metrics ? (
+      {/* Metrika ochiq ulanishniki — boshqa hamkor yoki umumiy jurnal yonida noto'g'ri raqam bo'lardi. */}
+      {metrics && partner === connection.id ? (
         <ColumnGrid>
           <ChartBlock
             title={t("console.resultTitle")}
@@ -503,22 +578,36 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
         </ColumnGrid>
       ) : null}
       <PanelSection className="pb-4">
-        <FilterChips
-          ariaLabel={t("console.deliveryFilterAria")}
-          value={status}
-          onChange={(v) => {
-            setStatus(v);
-            // Filtr o'zgarganda sahifa boshiga — aks holda 3-sahifada turib filtr almashsa bo'sh ro'yxat ko'rinardi.
-            setPage(1);
-          }}
-          options={[
-            { value: "all", label: t("filterAll") },
-            { value: "completed", label: t(STATUS_TAG.completed.labelKey), icon: CircleCheck },
-            { value: "pending", label: t(STATUS_TAG.pending.labelKey), icon: Clock },
-            { value: "awaiting_config", label: t(STATUS_TAG.awaiting_config.labelKey), icon: ShieldAlert },
-            { value: "permanently_failed", label: t(STATUS_TAG.permanently_failed.labelKey), icon: CircleX },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterChips
+            ariaLabel={t("console.deliveryFilterAria")}
+            value={status}
+            onChange={(v) => {
+              setStatus(v);
+              // Filtr o'zgarganda sahifa boshiga — aks holda 3-sahifada turib filtr almashsa bo'sh ro'yxat ko'rinardi.
+              setPage(1);
+            }}
+            options={[
+              { value: "all", label: t("filterAll") },
+              { value: "completed", label: t(STATUS_TAG.completed.labelKey), icon: CircleCheck },
+              { value: "pending", label: t(STATUS_TAG.pending.labelKey), icon: Clock },
+              { value: "awaiting_config", label: t(STATUS_TAG.awaiting_config.labelKey), icon: ShieldAlert },
+              { value: "permanently_failed", label: t(STATUS_TAG.permanently_failed.labelKey), icon: CircleX },
+            ]}
+            className="flex-[1_1_auto]"
+          />
+          <Field label={t("console.partnerFilterAria")} hideLabel labelAs="span" className="min-w-0 flex-[0_1_260px] max-md:flex-[1_1_100%]">
+            <Select
+              options={partnerOptions}
+              value={partner}
+              onChange={(value) => {
+                setPartner(value ?? connection.id);
+                setPage(1);
+              }}
+              placeholder={connection.name}
+            />
+          </Field>
+        </div>
       </PanelSection>
       <QueryBoundary
         query={{ data: webhooks.data ? rows : undefined, isLoading: webhooks.isLoading, isError: webhooks.isError, error: webhooks.error, refetch: webhooks.refetch }}
@@ -535,6 +624,14 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
             label={t("console.sentEventsTitle")}
             density="tablet-tight"
             busy={isRefetching}
+            expandable={{
+              toggle: "none",
+              isExpanded: (r) => openPayload === String(r.id),
+              onToggle: (r, next) => setOpenPayload(next ? String(r.id) : null),
+              render: payloadPanel,
+              panelId: (r) => `partner-payload-${r.id}`,
+              expandedClassName: "bg-row-hover",
+            }}
             renderCard={(r) => (
               <div className="flex min-w-0 items-start gap-3 px-4 py-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -542,12 +639,13 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
                   <span className="flex flex-wrap items-center gap-2">
                     {statusBadge(r)}
                     <span className="text-xs text-text-muted">
-                      {[orderNo(r), r.external_order_id, formatDateTimeLocalized(r.created_at, { language }), t("console.attemptsShort", { count: num(r.attempts ?? 0) })]
+                      {[allPartners ? partnerOf(r) : "", orderNo(r), r.external_order_id, formatDateTimeLocalized(r.created_at, { language }), t("console.attemptsShort", { count: num(r.attempts ?? 0) })]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
                   </span>
                   {r.last_error ? <span className={cx("[overflow-wrap:anywhere] text-xs text-danger-fg")}>{r.last_error}</span> : null}
+                  {payloadToggle(r, true)}
                 </div>
                 {r.status === "completed" ? null : <div className="flex-none">{retryButton(r, true)}</div>}
               </div>

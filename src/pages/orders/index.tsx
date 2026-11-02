@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, Plus, Send } from "lucide-react";
+import { Download, Info, ListX, Plus, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,7 @@ import {
   LEGACY_DATE_FROM_KEY,
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
+  LEGACY_SEARCH_KEY,
   matchOrderStatusTab,
   normalizeOrderSearch,
   ORDER_FILTER_KEYS,
@@ -43,7 +44,7 @@ import { OrdersRefreshAlert } from "./list/OrdersRefreshAlert";
 import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
-import { canCreateOrders } from "../../app/lib/access";
+import { canCreateOrders, canViewCancelReasons } from "../../app/lib/access";
 import CourierOrders from "./list/courier/index";
 import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
@@ -274,6 +275,7 @@ const Orders = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const canCreate = useSelector(canCreateOrders);
+  const canSeeCancelReasons = useSelector(canViewCancelReasons);
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -327,7 +329,7 @@ const Orders = () => {
   // Noto'g'ri sana (`?startDay=falonchi`) va bo'sh / «№53» qidiruv API'ga xom ketmaydi (D-08, D-11).
   const urlDateFrom = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY]);
   const urlDateTo = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY]);
-  const urlSearch = normalizeOrderSearch(urlParams[ORDER_FILTER_KEYS.search]);
+  const urlSearch = normalizeOrderSearch(urlParams[ORDER_FILTER_KEYS.search] ?? urlParams[LEGACY_SEARCH_KEY]);
   const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
   const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
   const sortConfig: DataTableSort | null =
@@ -348,12 +350,21 @@ const Orders = () => {
     }
   }, [setMultipleParams, urlParams]);
 
+  useEffect(() => {
+    if (!urlParams[ORDER_FILTER_KEYS.search] && urlParams[LEGACY_SEARCH_KEY]) {
+      setMultipleParams({
+        [ORDER_FILTER_KEYS.search]: urlParams[LEGACY_SEARCH_KEY],
+        [LEGACY_SEARCH_KEY]: "",
+      });
+    }
+  }, [setMultipleParams, urlParams]);
+
   // Holat tabi: holat va 1-sahifa bitta URL yangilanishida (ortiqcha so'rov ketmasin).
   const handleStatusTabChange = useCallback(
     (tabId: string) => {
       const tab = ORDER_STATUS_TABS.find((item) => item.id === tabId);
       if (!tab) return;
-      setSelectedCancelledIds(new Set());
+      setSelectedCancelledIds((previous) => (previous.size > 0 ? new Set() : previous));
       dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: [...tab.statuses] }));
       setMultipleParams({
         [ORDER_STATUS_URL_KEY]: tab.statuses.join(","),
@@ -437,8 +448,10 @@ const Orders = () => {
     }
 
     previousFiltersKeyRef.current = filtersKey;
-    resetPagination(LIMIT);
-  }, [filtersKey, resetPagination]);
+    // Sahifa 1 bo'lsa chaqirilmaydi: `setSearchParams` URL o'zgarmasa ham navigatsiya qiladi, butun daraxt ikkinchi
+    // marta chiziladi. Tanlangan «Sahifadagi qatorlar soni» saqlanadi (F4RSPBwx: 100 → 10 ga tushib ortiqcha so'rov ketardi).
+    if (page !== 1) resetPagination(limit);
+  }, [filtersKey, limit, page, resetPagination]);
 
   // Saralash o'zgarganda sahifani 1 ga qaytarish — aks holda foydalanuvchi
   // masalan 3-sahifada turib narx bo'yicha saralasa, u yerdagi tasodifiy
@@ -960,6 +973,7 @@ const Orders = () => {
       [ORDER_FILTER_KEYS.dateTo]: "",
       [ORDER_FILTER_KEYS.search]: "",
       [LEGACY_DATE_FROM_KEY]: "",
+      [LEGACY_SEARCH_KEY]: "",
       [LEGACY_DATE_TO_KEY]: "",
       ...(activeStatusTab === "custom" ? { [ORDER_STATUS_URL_KEY]: "", [LEGACY_ORDER_STATUS_URL_KEY]: "" } : {}),
       page: "1",
@@ -1095,6 +1109,12 @@ const Orders = () => {
             >
               {t("ordersList.exportExcel")}
             </Button>
+            {canSeeCancelReasons ? (
+              <Link to="/orders/cancel-reasons" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <ListX aria-hidden="true" size={16} strokeWidth={2} />
+                {t("cancelReasonStats.title")}
+              </Link>
+            ) : null}
             {canCreate ? (
               <Link to="/new-orders/create" className={buttonClasses({ compact: true })}>
                 <Plus aria-hidden="true" size={16} strokeWidth={2} />

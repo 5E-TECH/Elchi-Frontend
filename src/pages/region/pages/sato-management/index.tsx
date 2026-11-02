@@ -21,7 +21,7 @@ import {
   getTabId,
 } from "../../../../shared/ui/primitives";
 import DistrictBoard from "../../ui/DistrictBoard";
-import { filterBoardRegions } from "../../model/boardModel";
+import { filterBoardRegions, normalizeBoardRegions, type BoardRegionItem } from "../../model/boardModel";
 import {
   buildAdminSatoView,
   buildSuperadminSatoView,
@@ -35,70 +35,14 @@ import { SatoApplyAction } from "../../ui/sato/SatoApplyDialog";
 import { SatoCodesPanel } from "../../ui/sato/SatoCodesPanel";
 import { SatoKpiRow } from "../../ui/sato/SatoKpiRow";
 
-type District = {
-  id: string;
-  name: string;
-  region_id: string;
-};
-
-type Region = {
-  id: string;
-  name: string;
-  districts: District[];
-};
-
-const toArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? value : []);
-
-/** GET /region → viloyatlar va biriktirilgan tumanlar (`assignedDistricts`, bo'lmasa `districts`). */
-const normalizeSatoRegions = (payload: unknown): Region[] => {
-  const source = payload as
-    { data?: unknown[] | { data?: unknown[]; items?: unknown[] } } | undefined;
-
-  const raw = Array.isArray(source?.data)
-    ? source.data
-    : Array.isArray((source?.data as { data?: unknown[] })?.data)
-      ? (source?.data as { data: unknown[] }).data
-      : Array.isArray((source?.data as { items?: unknown[] })?.items)
-        ? (source?.data as { items: unknown[] }).items
-        : [];
-
-  return raw.map((item) => {
-    const region = item as {
-      id?: string | number;
-      name?: string;
-      assignedDistricts?: unknown[];
-      districts?: unknown[];
-    };
-
-    const districtsRaw = Array.isArray(region.assignedDistricts)
-      ? region.assignedDistricts
-      : toArray(region.districts);
-
-    const districts = districtsRaw.map((district) => {
-      const d = district as { id?: string | number; name?: string; region_id?: string | number };
-      return {
-        id: String(d.id ?? ""),
-        name: d.name ?? "—",
-        region_id: String(d.region_id ?? region.id ?? ""),
-      };
-    });
-
-    return {
-      id: String(region.id ?? ""),
-      name: region.name ?? "—",
-      districts: districts.filter((d) => d.id),
-    };
-  });
-};
-
 const REGIONS_KEY = ["regions", "with-districts"];
 /** SATO tabi: preview (superadmin) va `/district` — har doim BIRGA qayta yuklanadi (bitta prefiks). */
 const SATO_KEY = ["district-sato"] as const;
 const SATO_DISTRICTS_KEY = [...SATO_KEY, "districts"] as const;
 const SATO_PREVIEW_KEY = [...SATO_KEY, "preview"] as const;
 /**
- * Tuman qo'shilsa yoki birlashtirilsa (SA-2) eskiradigan boshqa keshlar: o'tkazish taxtasi, tumanlar sahifasi
- * (DM-1), tuman tanlagichlari va viloyat statistikasi.
+ * Tuman qo'shilsa, birlashtirilsa (SA-2) yoki boshqa viloyatga o'tkazilsa (kGvjztpY) eskiradigan boshqa keshlar:
+ * o'tkazish taxtasi, tumanlar sahifasi (DM-1), tuman tanlagichlari va viloyat statistikasi.
  */
 const DISTRICT_DEPENDENT_KEYS = [REGIONS_KEY, ["region-districts-admin"], ["region-district-catalog"], ["region-stats"]];
 
@@ -110,7 +54,7 @@ const useRegionsQuery = (enabled: boolean) =>
   useQuery({
     queryKey: REGIONS_KEY,
     queryFn: () =>
-      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeSatoRegions(res.data)),
+      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeBoardRegions(res.data)),
     enabled,
     refetchOnWindowFocus: false,
     // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
@@ -119,8 +63,8 @@ const useRegionsQuery = (enabled: boolean) =>
 
 /**
  * TUMANLARNI O'TKAZISH (sukut tab): tumanni sudrab boshqa viloyatga tashlash (telefonda «⇆» → viloyat tanlash
- * oynasi). PATCH `district/:id {assigned_region}` — optimistik; xato bo'lsa xabar va ro'yxat serverdan qayta
- * yuklanadi (tuman joyida qoladi).
+ * oynasi). PATCH `district/:id {assigned_region}` — optimistik; muvaffaqiyatda doska va bog'liq keshlar qayta
+ * yuklanadi, xato bo'lsa xabar va ro'yxat serverdan qayta yuklanadi (tuman joyida qoladi).
  */
 const MoveDistrictsTab = ({ regionsQuery }: { regionsQuery: ReturnType<typeof useRegionsQuery> }) => {
   const { t } = useTranslation("region");
@@ -131,7 +75,7 @@ const MoveDistrictsTab = ({ regionsQuery }: { regionsQuery: ReturnType<typeof us
   const filteredRegions = useMemo(() => filterBoardRegions(regions, search), [regions, search]);
 
   const moveDistrictOptimistic = (districtId: string, fromRegionId: string, toRegionId: string) => {
-    queryClient.setQueryData<Region[]>(REGIONS_KEY, (current) => {
+    queryClient.setQueryData<BoardRegionItem[]>(REGIONS_KEY, (current) => {
       if (!current) return current;
       const district = current
         .find((r) => r.id === fromRegionId)
@@ -143,7 +87,7 @@ const MoveDistrictsTab = ({ regionsQuery }: { regionsQuery: ReturnType<typeof us
         if (region.id === toRegionId)
           return {
             ...region,
-            districts: [...region.districts, { ...district, region_id: toRegionId }],
+            districts: [...region.districts, district],
           };
         return region;
       });
@@ -154,11 +98,18 @@ const MoveDistrictsTab = ({ regionsQuery }: { regionsQuery: ReturnType<typeof us
     if (!districtId || !fromRegionId || !toRegionId || fromRegionId === toRegionId) return;
 
     setMovingId(districtId);
+    // Oldingi o'tkazishdan keyingi qayta yuklash optimistik holatni eski ro'yxat bilan bosib ketmasin.
+    await queryClient.cancelQueries({ queryKey: REGIONS_KEY });
     moveDistrictOptimistic(districtId, fromRegionId, toRegionId);
 
     try {
       await api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId });
       notify.success(t("sato.moveSuccess"));
+      // Ko'chirilgan tuman boshqa ekranlarda ham yangi viloyatida: doska (`assignedDistricts`), tumanlar sahifasi,
+      // tuman tanlagichlari va statistika. SATO tabi o'zgarmaydi (prefiks — geografik viloyat bo'yicha).
+      void Promise.all(
+        DISTRICT_DEPENDENT_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
     } catch {
       notify.error(t("sato.moveError"), { description: t("v2.sato.moveErrorText") });
       await regionsQuery.refetch();

@@ -36,6 +36,7 @@ import { useNotifications } from "../entities/notification/api/useNotifications"
 import { useInboxList } from "../entities/notification-inbox/api/useInbox";
 import { usePartners, usePartnerWebhooks } from "../entities/partners";
 import { useFinanceCoverage } from "../entities/payments/financeCoverage";
+import { useReceipt, useReceiptSettings } from "../entities/payments/receipt";
 import {
   useSmsAccounts,
   useSmsCampaigns,
@@ -111,6 +112,9 @@ const S = { silentError: true } as const;
 
 describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", () => {
   it.each<[string, () => { isError: boolean }]>([
+    // QlLf33Ma: xato kartada / «Chek» bo'limida, forma esa rasmni majburiy deb hisoblaydi.
+    ["useReceiptSettings", () => useReceiptSettings()],
+    ["useReceipt", () => useReceipt("501")],
     // Integratsiyalar
     ["integratsiya metrikasi", () => useIntegrationMetrics(undefined, S)],
     ["integratsiyalar ro'yxati", () => useGetIntegrations({ limit: 100 }, S)],

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { vi } from "vitest";
 import { createTestStore } from "../../test/test-utils";
-import { toReturnRequestsMailResponse, useMails } from "./index";
+import { toReturnRequestsMailResponse, useMailDetail, useMails } from "./index";
 
 const apiMock = vi.hoisted(() => ({
   get: vi.fn(),
@@ -300,5 +300,49 @@ describe("toReturnRequestsMailResponse", () => {
       limit: 0,
     });
     expect(toReturnRequestsMailResponse({ data: { data: [{ id: "1" }] } }).data.data).toEqual([]);
+  });
+});
+
+describe("useMailDetail — ko'rinish (backend #618)", () => {
+  const DETAIL_URL = "post/orders/78";
+  const renderDetail = (view?: "current" | "all") => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useMailDetail("78", view ? { view } : undefined), { wrapper: Wrapper });
+    return { client, ...hook };
+  };
+
+  beforeEach(() => {
+    apiMock.get.mockReset();
+    apiMock.get.mockResolvedValue({ data: { statusCode: 200, message: "ok", data: { allOrdersByPostId: [] } } });
+  });
+
+  it("view berilmasa — parametrsiz (server sukuti), kesh kaliti [mails, detail, id]", async () => {
+    const { client, result } = renderDetail();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledTimes(1);
+    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL);
+    expect(client.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([["mails", "detail", "78"]]);
+  });
+
+  it("view=current — so'rovda va kesh kalitining oxirida", async () => {
+    const { client, result } = renderDetail("current");
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL, { params: { view: "current" } });
+    expect(client.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([
+      ["mails", "detail", "78", "current"],
+    ]);
+  });
+
+  it("qabul / jo'natishdan keyingi invalidatsiya (prefiks [mails, detail, id]) view'li kalitni ham yangilaydi", async () => {
+    const { client, result } = renderDetail("current");
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    await act(() => client.invalidateQueries({ queryKey: ["mails", "detail", "78"] }));
+    await waitFor(() => expect(apiMock.get).toHaveBeenCalledTimes(2));
   });
 });

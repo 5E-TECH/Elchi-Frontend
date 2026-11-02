@@ -12,6 +12,10 @@ for (const theme of ["light", "dark"] as const) {
     const orders = page.locator("section", { has: page.getByRole("heading", { name: "AI buyurtmalar" }) });
     await orders.scrollIntoViewIfNeeded();
     await expect(orders.getByRole("link", { name: /№EL-100081/ })).toBeVisible();
+    // Marja: telefonda kartalar, zarar ko'rgan market birinchi.
+    const margin = page.getByRole("list", { name: "Marja — marketlar kesimida" });
+    await expect(margin.getByRole("listitem").first()).toContainText("Nur Market");
+    await expect(margin.getByRole("listitem").first()).toContainText(/[-−]9.000 so'm/);
     // «Grafik | Jadval» → jadval telefonda kartalar (gorizontal skroll yo'q).
     await page.getByRole("radio", { name: "Jadval" }).click();
     expect(await noHorizontalScroll(page)).toBe(true);

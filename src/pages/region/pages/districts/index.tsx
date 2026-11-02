@@ -6,6 +6,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RootState } from "../../../../app/config/store";
+import { DISTRICT_KEY } from "../../../../entities/logistics/api/logisticsApi";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
@@ -27,7 +28,19 @@ import DistrictBoard from "../../ui/DistrictBoard";
 import DistrictDeleteBlockedDialog from "../../ui/DistrictDeleteBlockedDialog";
 import DistrictMergeDialog from "../../ui/DistrictMergeDialog";
 import { useDistrictMerge } from "../../ui/useDistrictMerge";
-import { filterBoardRegions } from "../../model/boardModel";
+import { useSatoCodeOwner } from "../../ui/useSatoCodeOwner";
+import {
+  satoClientError,
+  useSatoEditorErrorText,
+  type SatoEditorError,
+} from "../../ui/sato/useSatoCodeEditor";
+import { classifyDistrictSatoError, validateDistrictSatoCode } from "../../model/districtSatoCode";
+import { findOfficialSatoByName, normalizeOfficialSato } from "../../model/officialSato";
+import {
+  filterBoardRegions,
+  normalizeBoardRegions,
+  type BoardRegionItem,
+} from "../../model/boardModel";
 import {
   deleteBlockedUsage,
   districtUsageKey,
@@ -37,46 +50,38 @@ import {
   type MergeDistrict,
 } from "../../model/districtMerge";
 
-type DistrictItem = { id: string; name: string };
-type RegionWithDistricts = { id: string; name: string; districts: DistrictItem[] };
+/** «Yangi tuman qo'shish» maydon xatolari (maydon o'zgarguncha turadi). */
+type CreateErrors = { name?: string; region?: string; code?: SatoEditorError };
 
-/** GET /region → viloyatlar va ularga (assigned_region bo'yicha) biriktirilgan tumanlar. */
-const toRegionsWithDistricts = (payload: unknown): RegionWithDistricts[] => {
-  const record = (payload ?? {}) as { data?: unknown };
-  const body = record.data ?? payload;
-  const raw = Array.isArray(body)
-    ? body
-    : Array.isArray((body as { items?: unknown })?.items)
-      ? (body as { items: unknown[] }).items
-      : [];
-  return raw.map((item) => {
-    const region = item as { id?: string | number; name?: string; districts?: unknown[] };
-    return {
-      id: String(region.id ?? ""),
-      name: region.name ?? "—",
-      districts: (Array.isArray(region.districts) ? region.districts : [])
-        .map((d) => {
-          const district = d as { id?: string | number; name?: string };
-          return { id: String(district.id ?? ""), name: district.name ?? "—" };
-        })
-        .filter((district) => district.id)
-        .sort((a, b) => a.name.localeCompare(b.name, "uz")),
-    };
-  });
+type CreateDistrictVars = {
+  name: string;
+  regionId: string;
+  regionName: string;
+  /** Viloyat SOATO kodi — server `expected_prefix` bermasa zaxira. */
+  regionPrefix: string | null;
+  code: string;
 };
 
 const REGIONS_KEY = ["region-districts-admin"];
 /**
  * Tumanlar o'zgarsa boshqa ekranlar keshi ham eskiradi: tuman tanlagichlari (`useRegionDistrictCatalog`,
- * 5 daqiqa), viloyat statistikasi (`region-stats`) va SATO tabi (`district-sato`: preview + `/district`, SA-2) —
- * birlashtirilgan/o'chirilgan tuman qolib ketmasin (SATO tabida unga kod yozish yoki birlashtirish taklif qilinmasin).
+ * 5 daqiqa), viloyat statistikasi (`region-stats`), SATO tabi (`district-sato`: preview + `/district`, SA-2) —
+ * birlashtirilgan/o'chirilgan tuman qolib ketmasin (SATO tabida unga kod yozish yoki birlashtirish taklif qilinmasin) —
+ * va `/regions/sato-management` dagi o'tkazish doskasi (`regions/with-districts`; ko'chirilgan tuman o'sha doskada
+ * ham yangi viloyatida turadi, kGvjztpY).
  */
-const DEPENDENT_KEYS = [["region-district-catalog"], ["region-stats"], ["district-sato"]];
+const DEPENDENT_KEYS = [
+  ["region-district-catalog"],
+  ["region-stats"],
+  ["district-sato"],
+  ["regions", "with-districts"],
+];
 
 /**
  * TUMANLAR BOSHQARUVI (superadmin va admin — ega S1, DM-1): 14 viloyat va ularning tumanlari, tuman qo'shish
- * (POST `district`), nomini tahrirlash (PATCH `district/name/:id`), boshqa viloyatga sudrab / telefonda
- * «⇆» bilan o'tkazish (PATCH `district/:id {assigned_region}`, optimistik — xatoda joyiga qaytadi) va
+ * (POST `district {name, region_id, sato_code}` — SOATO kodi majburiy, 7 raqam, viloyat kodi bilan boshlanadi;
+ * xatolar maydonlar ostida, ExK28CiS), nomini tahrirlash (PATCH `district/name/:id`), boshqa viloyatga sudrab /
+ * telefonda «⇆» bilan o'tkazish (PATCH `district/:id {assigned_region}`, optimistik — xatoda joyiga qaytadi) va
  * o'chirish (`useConfirm`, DELETE `district/:id`). O'chirish 400 bersa (bog'langan yozuvlar bor) — «Tumanni
  * o'chirib bo'lmaydi» oynasi → «Tumanni birlashtirish» (`POST district/:id/merge`, maqsad — shu viloyatdan).
  * Xabarlarda faqat i18n matn (server matni ko'rsatilmaydi).
@@ -90,6 +95,12 @@ const RegionDistrictsPage = () => {
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newRegionId, setNewRegionId] = useState<string | null>(null);
+  const [newCode, setNewCode] = useState("");
+  /** Kodni admin o'zi yozdi yoki ro'yxatdan tanladi; aks holda kod nomga mos rasmiy tumandan olinadi. */
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [createErrors, setCreateErrors] = useState<CreateErrors>({});
+  const codeErrorText = useSatoEditorErrorText();
+  const lookupOwner = useSatoCodeOwner();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
@@ -99,12 +110,27 @@ const RegionDistrictsPage = () => {
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
     queryFn: () =>
-      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => toRegionsWithDistricts(res.data)),
+      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeBoardRegions(res.data)),
     enabled: canManage,
     // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
     meta: { silentError: true },
   });
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
+  // Admin SOATO kodini yoddan bilmaydi: viloyatning rasmiy ro'yxati — tanlash va nom bo'yicha kodni o'zi qo'yish.
+  // Kalit `district-sato` bilan boshlanadi — tuman qo'shilsa/o'chsa `DEPENDENT_KEYS` bilan birga eskiradi.
+  const officialQuery = useQuery({
+    queryKey: ["district-sato", "official", newRegionId],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.DISTRICTS.SATO_OFFICIAL(newRegionId ?? ""))
+        .then((res) => normalizeOfficialSato(res.data)),
+    enabled: canManage && Boolean(newRegionId),
+    meta: { silentError: true },
+  });
+  const freeOfficial = useMemo(
+    () => (officialQuery.data ?? []).filter((item) => !item.takenBy),
+    [officialQuery.data],
+  );
 
   const refresh = useCallback(
     () =>
@@ -127,19 +153,47 @@ const RegionDistrictsPage = () => {
     [],
   );
   const merge = useDistrictMerge(refresh);
-  /** 409 — shu viloyatda shu nomli tuman bor (qo'shish, nomini o'zgartirish); qolgani — umumiy matn. */
+  /** 409 — shu viloyatda shu nomli tuman bor (nomini o'zgartirish); qolgani — umumiy matn. */
   const showError = (error: unknown, fallbackKey: string, conflictKey?: string) =>
     notify.error(t(conflictKey && httpStatusOf(error) === 409 ? conflictKey : fallbackKey));
 
   const createDistrict = useMutation({
-    mutationFn: (payload: { name: string; region_id: string }) =>
-      api.post(API_ENDPOINTS.DISTRICTS.BASE, payload),
-    onSuccess: async () => {
+    mutationFn: ({ name, regionId, code }: CreateDistrictVars) =>
+      api.post(API_ENDPOINTS.DISTRICTS.BASE, { name, region_id: regionId, sato_code: code }),
+    onSuccess: async (_data, { name, regionName, code }) => {
       setNewName("");
-      notify.success(t("districts.createSuccess"));
-      await refresh();
+      setNewCode("");
+      setCodeTouched(false);
+      setCreateErrors({});
+      notify.success(t("districts.createSuccess"), {
+        description: t("v2.districts.create.doneText", { name, region: regionName, code }),
+      });
+      // Yangi tuman geografik tuman ro'yxatlarida ham (`useGetDistricts` — `GET region/:id`: buyurtma yaratish,
+      // manzil, filtrlar) darhol chiqsin; ko'chirish bu ro'yxatni o'zgartirmaydi.
+      await Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: [DISTRICT_KEY] })]);
     },
-    onError: (error) => showError(error, "districts.createError", "v2.districts.duplicateName"),
+    // Xato maydon ostida (server matni ko'rsatilmaydi); sababi noma'lum bo'lsa — umumiy xabar.
+    onError: async (error, { regionName, regionPrefix, code }) => {
+      const failed = () =>
+        notify.error(t("districts.createError"), { description: t("v2.sato.add.failedText") });
+      const server = classifyDistrictSatoError(error);
+      if (server.kind === "conflict") {
+        // 409 sababsiz: nom yoki kod band — kod egasi so'raladi (200 — kod band, egasi o'qilmasa ham; 404 — kod
+        // bo'sh, demak nom band). Umumiy xabar faqat so'rovning o'zi yiqilsa (5xx, aloqa).
+        const owner = await lookupOwner(code);
+        if (owner.kind === "owner")
+          setCreateErrors({ code: { kind: "taken", district: owner.name, region: owner.regionName } });
+        else if (owner.kind === "taken") setCreateErrors({ code: { kind: "takenUnknown" } });
+        else if (owner.kind === "none") setCreateErrors({ name: t("v2.districts.duplicateName") });
+        else failed();
+      } else if (server.kind === "regionMissing") {
+        setCreateErrors({ region: t("v2.sato.add.regionMissing") });
+      } else if (server.kind === "prefix" || server.kind === "format") {
+        // Prefiks — serverdagi `details.expected_prefix` ustun.
+        const prefix = server.kind === "prefix" ? (server.expectedPrefix ?? regionPrefix) : null;
+        setCreateErrors({ code: prefix ? { kind: "prefix", prefix, region: regionName } : { kind: "format" } });
+      } else failed();
+    },
   });
 
   const renameDistrict = useMutation({
@@ -183,8 +237,8 @@ const RegionDistrictsPage = () => {
     }) => api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId }),
     onMutate: async ({ districtId, fromRegionId, toRegionId }) => {
       await queryClient.cancelQueries({ queryKey: REGIONS_KEY });
-      const snapshot = queryClient.getQueryData<RegionWithDistricts[]>(REGIONS_KEY);
-      queryClient.setQueryData<RegionWithDistricts[]>(REGIONS_KEY, (current = []) => {
+      const snapshot = queryClient.getQueryData<BoardRegionItem[]>(REGIONS_KEY);
+      queryClient.setQueryData<BoardRegionItem[]>(REGIONS_KEY, (current = []) => {
         const district = current
           .find((r) => r.id === fromRegionId)
           ?.districts.find((d) => d.id === districtId);
@@ -229,11 +283,61 @@ const RegionDistrictsPage = () => {
 
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const canCreate = newName.trim().length > 0 && Boolean(newRegionId) && !createDistrict.isPending;
-  const submitNew = () => {
-    if (!canCreate || !newRegionId) return;
-    createDistrict.mutate({ name: newName.trim(), region_id: newRegionId });
+  const newRegion = regions.find((region) => region.id === newRegionId) ?? null;
+  // Kod yozilmagan bo'lsa — nomga mos rasmiy tuman kodi («O'rtachirchiq» → 1727253).
+  const autoOfficial = codeTouched ? null : findOfficialSatoByName(freeOfficial, newName);
+  const effectiveCode = codeTouched ? newCode : (autoOfficial?.satoCode ?? "");
+  const pickedOfficial = freeOfficial.find((item) => item.satoCode === effectiveCode.trim()) ?? null;
+  const pickOfficial = (satoCode: string) => {
+    const item = freeOfficial.find((entry) => entry.satoCode === satoCode);
+    if (!item) return;
+    setNewName(item.name);
+    setNewCode(item.satoCode);
+    setCodeTouched(true);
+    setCreateErrors((current) => ({ ...current, name: undefined, code: undefined }));
   };
-  const saveRename = (district: DistrictItem) => {
+  const submitNew = () => {
+    if (!canCreate || !newRegion) return;
+    const code = effectiveCode.trim();
+    // Klientda so'rovdan oldin: bo'sh, 7 raqam emas, viloyat prefiksi mos emas (viloyatda kod yo'q — tekshirilmaydi).
+    const codeError = validateDistrictSatoCode(code, newRegion.satoCode);
+    if (codeError) {
+      setCreateErrors((current) => ({ ...current, code: satoClientError(codeError, newRegion.name) }));
+      return;
+    }
+    createDistrict.mutate({
+      name: newName.trim(),
+      regionId: newRegion.id,
+      regionName: newRegion.name,
+      regionPrefix: newRegion.satoCode,
+      code,
+    });
+  };
+  const changeRegion = (regionId: string | null) => {
+    setNewRegionId(regionId);
+    // Viloyat almashsa: eski viloyat xatosi va prefiks xatosi ketadi; to'liq kod yangi viloyatga mos kelmasa — darhol.
+    const region = regions.find((item) => item.id === regionId);
+    // Avtomatik kod yangi viloyat ro'yxatidan qayta olinadi — faqat qo'lda yozilgani tekshiriladi.
+    const mismatch = codeTouched && newCode.trim() ? validateDistrictSatoCode(newCode, region?.satoCode) : null;
+    setCreateErrors((current) => ({
+      ...current,
+      region: undefined,
+      code:
+        mismatch?.kind === "prefix" && region
+          ? satoClientError(mismatch, region.name)
+          : current.code?.kind === "prefix"
+            ? undefined
+            : current.code,
+    }));
+  };
+  const codeHint = pickedOfficial
+    ? t("v2.districts.create.codeOfficial", { name: pickedOfficial.name })
+    : !newRegion
+      ? t("v2.districts.create.codeHintNoRegion")
+      : newRegion.satoCode
+        ? t("v2.districts.create.codeHint", { region: newRegion.name, prefix: newRegion.satoCode })
+        : t("v2.districts.create.codeHintNoPrefix");
+  const saveRename = (district: { id: string; name: string }) => {
     const name = editingName.trim();
     if (!name || name === district.name) {
       setEditingId(null);
@@ -272,39 +376,104 @@ const RegionDistrictsPage = () => {
       />
 
       <Card title={t("v2.districts.create.title")} divided={false}>
+        {/*
+          1440: bitta qator (nom 2 · viloyat 1 · kod 180 px · tugma); 768: 2×2; 390: ustma-ust, tugma to'liq enli.
+          Qatorlar tepadan tekislanadi — ko'rsatma/xato maydon ostida, tugma yorliq balandligidagi bo'sh joy bilan
+          maydonlar qatorida turadi.
+        */}
         <form
-          className="grid grid-cols-[minmax(0,1fr)_minmax(0,340px)_auto] items-end gap-3 max-md:grid-cols-1"
+          noValidate
+          className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_180px_auto] items-start gap-3 max-lg:grid-cols-2 max-md:grid-cols-1"
           onSubmit={(event) => {
             event.preventDefault();
             submitNew();
           }}
         >
-          <Field label={t("v2.districts.create.name")} required>
+          <Field label={t("v2.districts.create.name")} required error={createErrors.name}>
             <TextInput
               value={newName}
               placeholder={t("districts.newName")}
-              onChange={(event) => setNewName(event.target.value)}
+              autoComplete="off"
+              onChange={(event) => {
+                setNewName(event.target.value);
+                if (createErrors.name) setCreateErrors((current) => ({ ...current, name: undefined }));
+              }}
             />
           </Field>
-          <Field label={t("v2.districts.create.region")} required>
+          <Field label={t("v2.districts.create.region")} required error={createErrors.region}>
             <Select
               searchable
               value={newRegionId}
               placeholder={t("districts.newRegion")}
               options={regions.map((region) => ({ value: region.id, label: region.name }))}
-              onChange={(value) => setNewRegionId(value)}
+              onChange={(value) => changeRegion(value || null)}
             />
           </Field>
-          <Button
-            type="submit"
-            variant="primary"
-            leftIcon={Plus}
-            disabled={!canCreate}
-            loading={createDistrict.isPending}
-            className="max-md:w-full"
+          <Field
+            label={t("v2.districts.create.code")}
+            required
+            hint={codeHint}
+            error={codeErrorText(createErrors.code ?? null) ?? undefined}
           >
-            {t("districts.add")}
-          </Button>
+            <TextInput
+              mode="number"
+              maxLength={7}
+              autoComplete="off"
+              value={effectiveCode}
+              onValueChange={(value) => {
+                setNewCode(value);
+                // Bo'shatilsa — yana nomga mos rasmiy kod taklif qilinadi.
+                setCodeTouched(value.trim() !== "");
+                if (createErrors.code) setCreateErrors((current) => ({ ...current, code: undefined }));
+              }}
+            />
+          </Field>
+          <div className="flex flex-col gap-1.5 justify-self-start max-md:justify-self-stretch">
+            {/* Yorliq o'rnidagi bo'sh joy (telefonda yo'q): tugma maydonlar bilan bir chiziqda. */}
+            <span aria-hidden="true" className="invisible text-[13px] font-semibold max-md:hidden">
+              {"\u00a0"}
+            </span>
+            <Button
+              type="submit"
+              variant="primary"
+              leftIcon={Plus}
+              disabled={!canCreate}
+              loading={createDistrict.isPending}
+              loadingText={t("v2.sato.add.saving")}
+              className="max-md:w-full"
+            >
+              {t("districts.add")}
+            </Button>
+          </div>
+          <Field
+            className="col-span-full"
+            label={t("v2.districts.create.official")}
+            hint={t("v2.districts.create.officialHint")}
+          >
+            <Select
+              searchable
+              value={pickedOfficial?.satoCode ?? null}
+              disabled={!newRegion || officialQuery.isError}
+              loading={officialQuery.isFetching}
+              placeholder={
+                !newRegion
+                  ? t("v2.districts.create.officialNoRegion")
+                  : officialQuery.isError
+                    ? t("v2.districts.create.officialError")
+                    : officialQuery.isSuccess && freeOfficial.length === 0
+                      ? t("v2.districts.create.officialEmpty")
+                      : t("v2.districts.create.officialPlaceholder", { total: freeOfficial.length })
+              }
+              noOptionsText={t("v2.districts.create.officialEmpty")}
+              options={freeOfficial.map((item) => ({
+                value: item.satoCode,
+                label: item.name,
+                description: item.satoCode,
+                searchText: `${item.name} ${item.satoCode}`,
+              }))}
+              onChange={(value) => value && pickOfficial(value)}
+            />
+          </Field>
         </form>
       </Card>
 

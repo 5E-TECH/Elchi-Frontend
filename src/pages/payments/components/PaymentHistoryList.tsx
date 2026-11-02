@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt
 import { memo, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,8 @@ import {
 } from "../../../shared/ui/primitives";
 import { PaymentAckBadge } from "./PaymentAckBadge";
 import { paymentAckAudienceOf, paymentAckKeys } from "./paymentAck";
+import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 
 /**
  * KASSA OPERATSIYALARI RO'YXATI — dizayn v2 (maket `*-payments-cash-detail-*`, «Operatsiyalar tarixi»
@@ -135,6 +137,7 @@ const HistoryRow = memo(
     const labelTitle = comment.isRollback ? `${title} (${t("v2CashDetail.list.rollback")})` : title;
     // Qo'lda chiqimning xarajat kategoriyasi (Elchi Pochta №1) — belgilar qatorida va tugma nomida.
     const category = getExpenseCategoryName(row);
+    const receipt = toReceiptRef(row.receipt);
 
     return (
       <li>
@@ -149,6 +152,7 @@ const HistoryRow = memo(
             }),
             category ? `${t("v2Common.category")}: ${category}` : "",
             ackKeys ? t(ackKeys.label) : "",
+            receipt ? t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) }) : "",
           ]
             .filter(Boolean)
             .join(", ")}
@@ -172,9 +176,10 @@ const HistoryRow = memo(
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
                 kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
                 `.el-badge` — 24px (`md`). */}
-            {comment.isRollback || row.payment_ack || category ? (
+            {comment.isRollback || row.payment_ack || category || receipt ? (
               <span className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                 {category ? <ExpenseCategoryBadge name={category} /> : null}
+                <ReceiptRowBadge receipt={row.receipt} />
                 {comment.isRollback ? (
                   <Badge variant="outline">
                     {t("v2CashDetail.list.rollback")}

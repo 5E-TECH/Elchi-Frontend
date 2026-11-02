@@ -35,7 +35,10 @@ export interface LedgerRow {
   sourceType: string;
   /** Tizim yozgan (`created_by` yo'q) — «Avtomatik». */
   automatic: boolean;
-  /** Kim kiritgan: ism, bo'lmasa `#id` (top-impacts javobida ism yo'q — `#id`). */
+  /**
+   * Kim kiritgan: `created_by_user.name` (top-impacts ham history kabi `created_by_user: {id, name, role} | null`
+   * beradi — guzrGySp, backend 0c27571), foydalanuvchi topilmasa (`null`) — `#id`.
+   */
   actor: string;
   amount: number;
   signedAmount: number;
@@ -151,9 +154,10 @@ export interface Waterfall {
 }
 
 /**
- * Davr boshi = hozirgi qoldiq − sof o'zgarish (maket izohi). Bu faqat davr BUGUNGACHA davom etsa
- * to'g'ri: o'tgan davrda undan keyingi yozuvlar ham hozirgi qoldiqqa kirgan — shunda (va
- * `currentBalance` yo'q bo'lsa) boshi/oxiri chizilmaydi, faqat ta'sirlar noldan yig'iladi.
+ * Davr boshi/oxiri server agregatidan (`periodBalances`, `financial-balance/daily`, qzjTMWPb) — o'tgan davr uchun ham
+ * aniq. U yo'q bo'lsa: davr boshi = hozirgi qoldiq − sof o'zgarish (maket izohi); bu faqat davr BUGUNGACHA davom etsa
+ * to'g'ri: o'tgan davrda undan keyingi yozuvlar ham hozirgi qoldiqqa kirgan — shunda (va `currentBalance` yo'q
+ * bo'lsa) boshi/oxiri chizilmaydi, faqat ta'sirlar noldan yig'iladi.
  */
 export const buildWaterfall = (input: {
   currentBalance: number | null;
@@ -162,9 +166,14 @@ export const buildWaterfall = (input: {
   negative: SourceBucket[];
   /** Davr bugungacha (yoki «Barchasi»). */
   reachesToday: boolean;
+  /** Serverdagi davr boshi / oxiri qoldig'i (ikkalasi ham ma'lum bo'lsa ustun). */
+  periodBalances?: { opening: number | null; closing: number | null } | null;
 }): Waterfall => {
-  const withTotals = input.currentBalance !== null && input.reachesToday;
-  const start = withTotals ? (input.currentBalance as number) - input.netChange : 0;
+  const opening = input.periodBalances?.opening ?? null;
+  const closing = input.periodBalances?.closing ?? null;
+  const fromServer = opening !== null && closing !== null;
+  const withTotals = fromServer || (input.currentBalance !== null && input.reachesToday);
+  const start = fromServer ? opening : withTotals ? (input.currentBalance as number) - input.netChange : 0;
   const steps: WaterfallStep[] = [];
   let level = start;
 
@@ -192,7 +201,7 @@ export const buildWaterfall = (input: {
     level -= bucket.amount;
   }
   if (withTotals) {
-    const end = input.currentBalance as number;
+    const end = fromServer ? closing : (input.currentBalance as number);
     steps.push({ key: "end", kind: "end", sourceType: null, amount: end, from: 0, to: end });
   }
 

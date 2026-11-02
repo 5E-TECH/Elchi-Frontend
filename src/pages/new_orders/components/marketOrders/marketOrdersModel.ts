@@ -132,3 +132,31 @@ export const readUserBranchName = (user: unknown): string | null => {
   const raw = user as UserWithBranch;
   return text(raw?.branch?.branch?.name) || text(raw?.branch?.name) || null;
 };
+
+/** «Yangi» holatlar — takroriy raqam faqat shular orasida qidiriladi (BeePost `today-orders/orderview` bilan bir xil). */
+const NEW_ORDER_STATUSES = new Set(["created", "new"]);
+
+export type DuplicatePhoneGroup = { phone: string; orders: MarketOrder[] };
+
+/**
+ * Bitta mijoz raqamiga shu marketda bir nechta yangi buyurtma — takroriy bo'lishi mumkin (BeePost «Takroriy telefon
+ * raqamlar aniqlandi»). Raqam oxirgi 9 raqami bo'yicha solishtiriladi: «+998», bo'shliq va chiziqcha farq qilmaydi.
+ * Faqat ogohlantirish uchun — qabul to'xtamaydi.
+ */
+export const findDuplicatePhoneGroups = (orders: readonly MarketOrder[]) => {
+  const byPhone = new Map<string, MarketOrder[]>();
+  for (const order of orders) {
+    if (!NEW_ORDER_STATUSES.has(text(order.status).toLowerCase())) continue;
+    const phone = digits(order.customer?.phone_number).slice(-9);
+    if (phone.length < 9) continue;
+    byPhone.set(phone, [...(byPhone.get(phone) ?? []), order]);
+  }
+  const groups: DuplicatePhoneGroup[] = [];
+  const orderIds = new Set<string>();
+  for (const list of byPhone.values()) {
+    if (list.length < 2) continue;
+    groups.push({ phone: list[0].customer?.phone_number ?? "", orders: list });
+    for (const order of list) orderIds.add(String(order.id));
+  }
+  return { groups, orderIds };
+};

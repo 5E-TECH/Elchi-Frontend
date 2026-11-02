@@ -379,6 +379,14 @@ describe("Orders list search", () => {
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
+
+  it("PIJN1lGp: botning eski `?search=` havolasi `orderSearch` ga ko'chadi va so'rovga ketadi", async () => {
+    open("/orders?search=ali");
+
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "ali" }));
+    await waitFor(() => expect(currentSearch().get("orderSearch")).toBe("ali"));
+    expect(currentSearch().get("search")).toBeNull();
+  });
 });
 
 describe("Orders list search by exact order number", () => {

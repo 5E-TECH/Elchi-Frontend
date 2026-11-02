@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { AI_CAP, AI_CONFIG, aiCard, aiFlag, aiStatus, healthCard, mockSystemOpsApi, openSystemOps } from "./support/systemOps";
 
 /**
- * OPS → TIZIM → «AI HOLATI» (/system-ops, OS-2 — maketlar `superadmin-ops-system[-ai-cap|-ai-config|-down]`):
+ * OPS → TIZIM → «AI HOLATI» (/ops?tab=system, OS-2 — maketlar `superadmin-ops-system[-ai-cap|-ai-config|-down]`):
  * `GET ai/status` + gateway bayrog'i `GET orders/ai-availability`; dollar «12,40 $» (S4); limitni oshirish tugmasi yo'q
  * (S2); kalit yo'q / noto'g'ri — «AI o'chiq» (S3); xom backend matni chiqmaydi.
  */
@@ -23,14 +23,13 @@ test.describe("Ops → Tizim — AI holati — 1440px", () => {
     await expect(card.getByRole("meter", { name: "Bugungi AI limiti: 5,82 $ sarflandi, 25,00 $ dan 23%" })).toBeVisible();
     await expect(card.getByRole("button")).toHaveCount(0);
 
-    // Tartib (OS-1 3-band): Tizim holati → AI holati → SLA.
+    // Tartib (OS-1 3-band): Tizim holati → AI holati.
     await expect(healthCard(page).getByText("Hamma xizmatlar ishlayapti")).toBeVisible();
     const order = await page
       .getByRole("heading", { level: 2 })
       .evaluateAll((els) => els.map((el) => el.textContent ?? ""));
     const index = (name: string) => order.indexOf(name);
     expect(index("Tizim holati")).toBeLessThan(index("AI holati"));
-    expect(index("AI holati")).toBeLessThan(index("O'z vaqtida (SLA)"));
 
     // Bir qatorda 4 karta (1440px).
     const tops = await tiles.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));

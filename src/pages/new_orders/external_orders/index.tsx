@@ -499,7 +499,7 @@ const ExternalOrdersPage = () => {
         back="/integrations"
         backLabel={t("pageTitle")}
         title={t("legacySources.title")}
-        meta={<Badge title={t("legacyPartners.legacyHint")}>{t("legacyPartners.legacyBadge")}</Badge>}
+        meta={<Badge title={t("legacySources.legacyHint")}>{t("legacySources.legacyBadge")}</Badge>}
         description={t("legacySources.subtitle")}
         actions={
           <>

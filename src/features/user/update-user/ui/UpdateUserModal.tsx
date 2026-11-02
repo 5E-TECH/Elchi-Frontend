@@ -18,8 +18,9 @@ import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
-  passwordMinLength,
+  PASSWORD_MIN_LENGTH,
 } from "../../../../shared/lib/passwordPolicy";
+import { getOldPasswordErrorKind } from "../../../../shared/lib/oldPassword";
 import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
@@ -85,6 +86,8 @@ interface UpdateUserFormValues {
   name: string;
   phone: string;
   password: string;
+  /** aidsxJ2H: o'z parolini almashtirishda joriy parol (`old_password`) — faqat `isSelf` va yangi parol kiritilsa. */
+  oldPassword: string;
   status: string;
   username: string;
   salary: string;
@@ -102,6 +105,7 @@ const INITIAL_VALUES: UpdateUserFormValues = {
   name: "",
   phone: "",
   password: "",
+  oldPassword: "",
   status: "",
   username: "",
   salary: "",
@@ -120,6 +124,7 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
   phone_number: "phone",
   username: "username",
   password: "password",
+  old_password: "oldPassword",
   status: "status",
   salary: "salary",
   payment_day: "payment_day",
@@ -262,6 +267,8 @@ export const UpdateUserModal = memo(({
   // `CHANGEABLE_ROLES`; o'z rolini o'zgartirish — 400).
   const canChangeRole = authRole === "superadmin" && !isOwnProfile && !isSelf && isChangeableUserRole(role);
   const selectedRole = watch("role");
+  // aidsxJ2H: «Joriy parol» maydoni o'z parolini almashtirayotganda (yangi parol kiritilgach) chiqadi.
+  const passwordValue = watch("password") ?? "";
   // Rolga bog'liq maydonlar (menejer tariflari) tanlangan rol bo'yicha.
   const effectiveRole = canChangeRole && isChangeableUserRole(selectedRole) ? selectedRole : role;
   // Maosh va to'lov kuni: admin, menejer, ro'yxatchi va logist (FY-1, `POST /logists` ham maosh oladi).
@@ -311,6 +318,7 @@ export const UpdateUserModal = memo(({
       name: userData.name ?? "",
       phone: userData.phone_number ? toUzbekistanPhoneValue(userData.phone_number) : "",
       password: "",
+      oldPassword: "",
       status: userData.status ?? "",
       username: userData.username ?? "",
       salary: userData.salary != null ? toDigits(userData.salary) : "",
@@ -356,11 +364,16 @@ export const UpdateUserModal = memo(({
       fail("phone", t("phoneValidation"));
     }
 
-    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 8 (xodim — 10) belgi, boshida/oxirida bo'shliqsiz.
+    // NDmZMzCP: yangi parol (bo'sh — o'zgarmaydi) — kamida 6 belgi, katta va kichik harf, raqam, boshida/oxirida bo'shliqsiz.
     if (values.password) {
-      const passwordIssue = checkPasswordPolicy(values.password, effectiveRole);
+      const passwordIssue = checkPasswordPolicy(values.password);
       if (passwordIssue && passwordIssue !== "required") {
-        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: passwordMinLength(effectiveRole) }));
+        fail("password", t(`auth:passwordPolicy.${passwordIssue}`, { min: PASSWORD_MIN_LENGTH }));
+      }
+      // aidsxJ2H: o'z paroli — joriy parol majburiy (backend 400 OLD_PASSWORD_REQUIRED), yangisi undan farqli.
+      if (isSelf && values.password.trim()) {
+        if (!values.oldPassword) fail("oldPassword", t("auth:currentPassword.required"));
+        else if (values.oldPassword === values.password.trim()) fail("password", t("auth:currentPassword.sameAsOld"));
       }
     }
 
@@ -522,7 +535,11 @@ export const UpdateUserModal = memo(({
       payload.phone_number = rawPhone;
     }
 
-    if (values.password.trim()) payload.password = values.password.trim();
+    if (values.password.trim()) {
+      payload.password = values.password.trim();
+      // aidsxJ2H: o'zini tahrirlash — `old_password` bilan (admin boshqa foydalanuvchiga — kerak emas).
+      if (isSelf) payload.old_password = values.oldPassword;
+    }
     if (!isOwnProfile && values.status && values.status !== userData.status) {
       payload.status = values.status as UpdateUserRequest["status"];
     }
@@ -644,6 +661,15 @@ export const UpdateUserModal = memo(({
       errorMessage: t("editUserError"),
       onError: (error) => {
         applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
+        // aidsxJ2H: 400 OLD_PASSWORD_REQUIRED / OLD_PASSWORD_INVALID — «Joriy parol» ostida (chiqarilmaydi).
+        const oldKind = getOldPasswordErrorKind(error);
+        if (oldKind) {
+          setError("oldPassword", {
+            type: "server",
+            message: t(oldKind === "required" ? "auth:currentPassword.required" : "auth:currentPassword.invalid"),
+          });
+          return;
+        }
         const passwordMessage = getPasswordPolicyServerMessage(error);
         if (passwordMessage) setError("password", { type: "server", message: passwordMessage });
       },
@@ -777,7 +803,7 @@ export const UpdateUserModal = memo(({
                 render={({ field, fieldState }) => (
                   <Field
                     label={t("v2.edit.newPassword")}
-                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: passwordMinLength(effectiveRole) })}`}
+                    hint={`${t("v2.edit.newPasswordHint")}. ${t("auth:passwordPolicy.hint", { min: PASSWORD_MIN_LENGTH })}`}
                     error={fieldState.error?.message}
                   >
                     <TextInput
@@ -799,6 +825,31 @@ export const UpdateUserModal = memo(({
                           onClick={() => setShowPassword((previous) => !previous)}
                         />
                       }
+                    />
+                  </Field>
+                )}
+              />
+            ) : null}
+            {!isCustomer && isSelf && passwordValue.trim() ? (
+              <Controller
+                control={control}
+                name="oldPassword"
+                render={({ field, fieldState }) => (
+                  <Field
+                    label={t("auth:currentPassword.label")}
+                    required
+                    hint={t("auth:currentPassword.editHint")}
+                    error={fieldState.error?.message}
+                  >
+                    <TextInput
+                      type={showPassword ? "text" : "password"}
+                      name={field.name}
+                      ref={field.ref}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder={t("auth:currentPassword.placeholder")}
+                      autoComplete="current-password"
                     />
                   </Field>
                 )}

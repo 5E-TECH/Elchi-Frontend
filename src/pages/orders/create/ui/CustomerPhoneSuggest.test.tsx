@@ -294,6 +294,31 @@ describe("CS-A — telefon bo'yicha mijoz taklifi (desktop)", () => {
     expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue("Shahnoza Abdullayeva");
   });
 
+  it("raqam qo'lda to'liq yozilsa (taklif tanlanmasa ham) — yangi buyurtma ogohlantirishi chiqadi, maydonlar to'lmaydi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "903456721");
+    await user.keyboard("{Escape}");
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Bu mijozda yangi buyurtma bor");
+    expect(alert).toHaveTextContent("Shahnoza Abdullayeva uchun sizda yangi holatdagi 1 ta buyurtma bor.");
+    expect(within(alert).getByRole("link", { name: "Buyurtma №10260 ni yangi oynada ochish" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue("");
+    expect(screen.queryByText("Mavjud mijoz")).not.toBeInTheDocument();
+  });
+
+  it("qo'lda yozilgan raqam yangi buyurtmasiz mijozniki — ogohlantirish yo'q", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "903456705");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(suggestCalls().length).toBeGreaterThan(0));
+    expect(screen.queryByText("Bu mijozda yangi buyurtma bor")).not.toBeInTheDocument();
+  });
+
   it("«Bekor qilish» — tanlashdan oldingi qiymatlar qaytadi, blok yo'qoladi", async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
@@ -364,7 +389,12 @@ describe("CS-A — telefon bo'yicha mijoz taklifi (desktop)", () => {
 
 describe("CS-A — market almashtirilsa (review B2)", () => {
   it("1-qadamda boshqa market tanlansa — mavjud mijoz bog'lanishi uziladi (eski market sonlari va havolalari qolmaydi), maydonlar qoladi", async () => {
-    mocks.get.mockImplementation(apiGetWithMarkets);
+    // Taklif market bo'yicha: Nur Elektronika'da (id 4) Shahnozaning yangi buyurtmasi yo'q.
+    mocks.get.mockImplementation((url: string, config?: { params?: { market_id?: unknown } }) =>
+      url === "customers/suggest" && String(config?.params?.market_id) === "4"
+        ? ok([{ ...SHAHNOZA, orders_count: 0, new_orders_count: 0, has_new_orders: false, new_order_ids: [] }])
+        : apiGetWithMarkets(url),
+    );
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: adminState });
 

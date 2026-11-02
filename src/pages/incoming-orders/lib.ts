@@ -1,7 +1,8 @@
 /**
  * Kiruvchi posilkalar ekranining sof mantiqi — React'siz, testga qulay.
  */
-import type { IncomingOrder, IncomingSource, ReceiveByScanResult } from "../../entities/incoming-orders";
+import type { IncomingBatch, IncomingOrder, IncomingSource, ReceiveByScanResult } from "../../entities/incoming-orders";
+import { normalizeScanKey } from "../../shared/lib/scanToken";
 
 /**
  * Qabulda qop bo'yicha qabul qilingan posilkalar soni (r8EGkLrP): qop skani belgilagan tokenlardan server
@@ -107,6 +108,43 @@ const textOf = (value: unknown): string => (typeof value === "string" || typeof 
 export const parcelToken = (order: IncomingOrder): string => textOf(order.qr_code_token);
 
 /**
+ * Skan kaliti → posilka (`normalizeScanKey`). Skanerlangan qiymat ham shu kalitga keltiriladi (`scanKeyCandidates`),
+ * shuning uchun KATTA harfli, aralash registrli yoki kirill tartibida yozilgan token ham topiladi (rQX8TqRV).
+ * ⚠️ Kalit faqat solishtirish uchun: serverga `parcelToken` ketadi, backend tokenni aniq solishtiradi.
+ */
+export const indexByToken = (orders: readonly IncomingOrder[]): Map<string, IncomingOrder> => {
+  const map = new Map<string, IncomingOrder>();
+  for (const order of orders) {
+    const key = normalizeScanKey(parcelToken(order));
+    if (key) map.set(key, order);
+  }
+  return map;
+};
+
+/**
+ * Qop tokeni kaliti → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat `new` holatidagilar, ya'ni oldin
+ * bittalab qabul qilinganlar bu yerda yo'q: qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
+ */
+export const indexByBatch = (orders: readonly IncomingOrder[]): Map<string, IncomingOrder[]> => {
+  const map = new Map<string, IncomingOrder[]>();
+  for (const order of orders) {
+    const key = normalizeScanKey(textOf(order.external_batch_token));
+    if (!key) continue;
+    map.set(key, [...(map.get(key) ?? []), order]);
+  }
+  return map;
+};
+
+/** Birinchi mos kelgan kalit bo'yicha qiymat (`scanKeyCandidates` tartibida); moslik bo'lmasa — `undefined`. */
+export const findByScanKeys = <T>(index: ReadonlyMap<string, T>, keys: readonly string[]): T | undefined => {
+  for (const key of keys) {
+    const value = index.get(key);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+};
+
+/**
  * Qop kaliti — qoplarni sanash uchun: qop QR tokeni (`external_batch_token`), bo'lmasa hamkor qop id'si
  * (`external_batch_ref`); qopsiz posilka — `null`.
  */
@@ -126,6 +164,55 @@ export const bagLabel = (order: IncomingOrder): string | null => {
   const token = textOf(order.external_batch_token);
   if (!token) return null;
   return token.length > BAG_TOKEN_CHARS ? `${token.slice(0, BAG_TOKEN_CHARS)}…` : token;
+};
+
+/* ─── Qop hisobi: «2/3», chala qop (DamKku7C, ega S3) ──────────────────────────── */
+
+/** Hamkor hajmini aytgan qop. Hajmi noma'lum qop bu yerga tushmaydi: «chala» deyishga asos yo'q. */
+export type BagProgress = {
+  token: string;
+  /** Ekrandagi nom (`bagLabel` bilan bir xil qoida). */
+  label: string;
+  /** Hamkor aytgan son. */
+  size: number;
+  /** Keldi: ilgari qabul qilinganlar + hali kutayotganlar. */
+  arrived: number;
+  received: number;
+  /** Yetishmaydi; 0 — qop to'liq. */
+  missing: number;
+};
+
+/** Qop tokeni → hisobi. Faqat backend bergan sonlardan: ro'yxatdagi qatorlardan sanalmaydi. */
+export const bagProgressIndex = (batches: readonly IncomingBatch[]): Map<string, BagProgress> => {
+  const index = new Map<string, BagProgress>();
+  for (const { token, ref, size, received, pending } of batches) {
+    if (!size) continue;
+    const arrived = received + pending;
+    const label = bagLabel({ id: token, external_batch_ref: ref, external_batch_token: token }) ?? token;
+    index.set(token, { token, label, size, arrived, received, missing: Math.max(size - arrived, 0) });
+  }
+  return index;
+};
+
+export const bagProgressOf = (order: IncomingOrder, bags: ReadonlyMap<string, BagProgress>): BagProgress | null =>
+  bags.get(textOf(order.external_batch_token)) ?? null;
+
+/** Chala qop va undan skanerlangan posilkalar soni (qabul tasdig'i). */
+export type ScannedPartialBag = BagProgress & { scanned: number };
+
+/** Skanerlangan posilkalar tegishli chala qoplar; skanerlanmagan chala qop qabulga tegishli emas. */
+export const partialBagsInScan = (
+  orders: readonly IncomingOrder[],
+  scannedIds: ReadonlySet<string>,
+  bags: ReadonlyMap<string, BagProgress>,
+): ScannedPartialBag[] => {
+  const scanned = new Map<string, number>();
+  for (const order of orders) {
+    if (!scannedIds.has(order.id)) continue;
+    const bag = bagProgressOf(order, bags);
+    if (bag && bag.missing > 0) scanned.set(bag.token, (scanned.get(bag.token) ?? 0) + 1);
+  }
+  return [...scanned].map(([token, count]) => ({ ...bags.get(token)!, scanned: count }));
 };
 
 /** Ro'yxatdagi qoplar soni (xulosa «N ta · M ta qop»). */

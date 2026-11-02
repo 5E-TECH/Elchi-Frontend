@@ -42,6 +42,20 @@ describe("useDeliveryQuoteByTariff — ~400 ms kutish, faqat to'g'ri o'lchov", (
     expect(mocks.post).not.toHaveBeenCalled();
   });
 
+  it("o'lchovlar ro'yxati (buyurtma, 6NYcXvGy) — bitta so'rovda hammasi; bo'sh ro'yxat — so'rov yo'q", async () => {
+    const empty = renderHook(() => useDeliveryQuoteByTariff([]), { wrapper });
+    expect(empty.result.current.status).toBe("idle");
+    const { result } = renderHook(
+      () => useDeliveryQuoteByTariff([item(1.2), item(1.2), item(0.5)]),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    expect(mocks.post).toHaveBeenCalledTimes(1);
+    expect(mocks.post).toHaveBeenCalledWith("delivery/quote/by-tariff", {
+      items: [item(1.2), item(1.2), item(0.5)],
+    });
+  });
+
   it("ochilganda tayyor o'lchov (tahrirlash oynasi) — darhol so'raladi", async () => {
     const { result } = renderHook(() => useDeliveryQuoteByTariff(item(1.2)), { wrapper });
     await waitFor(() => expect(result.current.status).toBe("success"));

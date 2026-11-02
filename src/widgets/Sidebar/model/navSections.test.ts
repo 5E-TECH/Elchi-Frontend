@@ -194,7 +194,6 @@ describe("getActiveNavTo — faol band (maketdagi menuKey)", () => {
 
   it.each([
     "/finance-operators",
-    "/integrations-ops",
     "/investors-ops",
     "/logistics-ops",
     "/branch-ops",
@@ -281,5 +280,14 @@ describe("market_operator — «Buyurtma yaratish» yorlig'i (MO-2 → MO-3 shar
     const entry = toNavEntry("market", { to: "/new-orders", label: "newOrders", icon: Inbox });
     expect(entry.labelKey).toBe("newOrders");
     expect(entry.shortLabelKey).toBe("createShort");
+  });
+});
+
+describe("«Integratsiyalar» bandi — bitta nom (Dj70iDbD)", () => {
+  it.each(["superadmin", "admin"])("%s: band «Ma'lumotnoma» ichida, alohida guruh sarlavhasi yo'q", (role) => {
+    const sections = getNavSections(role);
+
+    expect(sections.map((section) => section.id)).not.toContain("integrations");
+    expect(sections.find((section) => section.id === "directory")?.items.map((item) => item.to)).toContain("/integrations");
   });
 });

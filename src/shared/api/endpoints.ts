@@ -44,6 +44,13 @@ export const API_ENDPOINTS = {
     // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
     // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
     ROLE: (id: string | number) => `users/${id}/role`,
+    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — faqat o'zi
+    // yaratgan kuryer; o'ziga — 403). POST (tanasiz) → `{ user_id, must_change_password, password_sms }` — YANGI
+    // parol + SMS, foydalanuvchi sessiyalari yopiladi; 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT
+    // (kuniga 5), `retry_after_seconds`.
+    PASSWORD_RESEND_SMS: (id: string | number) => `users/${id}/password/resend-sms`,
+    // GET → `{ user_id, must_change_password, password_sms | null }` — oxirgi parol SMS'ining jonli holati.
+    PASSWORD_SMS_STATUS: (id: string | number) => `users/${id}/password/sms-status`,
   },
   // Rol katalogi (FY-2, K3scaE0W; superadmin, admin, menejer): GET → { items, changeable_roles }. Yorliqlar faqat
   // o'zbekcha — frontend faqat `changeable_roles` ni oladi, nomlar i18n'dan.
@@ -66,6 +73,8 @@ export const API_ENDPOINTS = {
     BASE: "markets", // GET list / POST create
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
+    // PATCH { extra_cost_enabled?, extra_cost_requires_approval? } — w2bDrE3i, faqat superadmin va admin
+    EXTRA_COST: (id: string | number) => `admin/markets/${id}`,
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
     // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
     // superadmin, admin, market — faqat o'zinikini)
@@ -113,6 +122,8 @@ export const API_ENDPOINTS = {
     SATO_MATCH_PREVIEW: "district/sato-match/preview", // GET
     SATO_MATCH_APPLY: "district/sato-match/apply", // POST (superadmin)
     SATO_BY_CODE: (satoCode: string | number) => `district/sato/${satoCode}`, // GET
+    // GET — viloyatning rasmiy SOATO tumanlari {items: [{name, sato_code, taken_by}]} (admin/superadmin)
+    SATO_OFFICIAL: (regionId: string | number) => `district/sato-official/${regionId}`,
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
     // POST {target_district_id} — tuman boshqasiga qo'shiladi va o'chadi (admin/superadmin; DM-1)
     MERGE: (districtId: string | number) => `district/${districtId}/merge`,
@@ -130,6 +141,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    CANCEL_REASON_STATS: "orders/cancel-reasons/stats", // GET ?startDate&endDate&market_id|branch_id — sabablar kesimi
     EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
@@ -200,10 +212,13 @@ export const API_ENDPOINTS = {
     REASSIGN: (id: string | number) => `post/reassign/${id}`, // PATCH reassign sent post to another courier
     RECEIVE_ORDER: (id: string | number) => `post/receive/order/${id}`, // PATCH receive order (courier)
     RECEIVE_SCAN: (id: string | number) => `post/receive/scan/${id}`, // PATCH receive post with scanner (courier)
-    ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`,
+    ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`, // GET ?view=current|all (#618)
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     BY_ID: (postId: string | number) => `post/${postId}`, // GET / PATCH send post (superadmin) / DELETE (superadmin)
     RECEIVE: (postId: string | number) => `post/receive/${postId}`, // PATCH receive post (branch/courier)
+    // Backend #618: pochtaga kirgan buyurtmalar (ro'yxat va ruxsat doirasi `GET post/orders/:id?view=all` bilan bir xil).
+    ORDERS_XLSX: (postId: string | number) => `post/${postId}/orders.xlsx`, // GET Excel (blob, Content-Disposition)
+    RECEIPT: (postId: string | number) => `post/${postId}/receipt`, // GET pochta cheki (HTML), ?format=80mm|a4
   },
 
   // ── Transfer batches (branch staff) — guide §8 ───────────────────────────
@@ -247,10 +262,18 @@ export const API_ENDPOINTS = {
     SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
     // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
     CARDS: "finance/cashbox/cards",
+    // QlLf33Ma — kassa cheki: sozlamalar (GET — superadmin/admin/menejer, PATCH — faqat superadmin), rasm yuklash
+    // (multipart `kind`, `photo` → qoralama `receipt_id`), tafsilot va qayta tahlil.
+    RECEIPT_SETTINGS: "finance/receipt-settings",
+    RECEIPTS: "finance/receipts",
+    RECEIPT: (id: string | number) => `finance/receipts/${id}`,
+    RECEIPT_REANALYZE: (id: string | number) => `finance/receipts/${id}/reanalyze`,
   },
   FINANCE: {
     CASHBOX_BASE: "finance/cashbox", // POST create cashbox
     CASHBOX_ALL_INFO: "finance/cashbox/all-info",
+    // uzWcMR1C — /payments KPI meta (faqat superadmin/admin): filiallar, HQ kuryerlari, marketlar soni, top-marketlar.
+    CASHBOX_PAYMENTS_META: "finance/cashbox/payments-meta",
     CASHBOX_MAIN: "finance/cashbox/main",
     CASHBOX_BALANCE: "finance/cashbox/balance", // PATCH update balance + history
     CASHBOX_FINANCIAL_BALANCE: "finance/cashbox/financial-balanse", // backend spelling
@@ -261,6 +284,8 @@ export const API_ENDPOINTS = {
     // HQ kuryerlari (superadmin/admin "Qabul qilinishi kerak" ro'yxati uchun)
     HQ_COURIERS: "finance/cashbox/hq-couriers",
     HISTORY: "finance/history",
+    // qzjTMWPb — kunlik kirim/chiqim va kun boshi/oxiri qoldig'i (rollar va doira `finance/history` bilan bir xil).
+    HISTORY_DAILY: "finance/history/daily",
     HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
     HEALTH: "finance/health",
     // Financial ledger
@@ -268,6 +293,8 @@ export const API_ENDPOINTS = {
     FINANCIAL_BALANCE_HISTORY: "finance/financial-balance/history", // GET ledger + current balance
     FINANCIAL_BALANCE_ANALYTICS: "finance/financial-balance/analytics",
     FINANCIAL_BALANCE_TOP_IMPACTS: "finance/financial-balance/top-impacts",
+    // qzjTMWPb — kunlik snapshot (KPI delta, 14 kunlik chiziq) va P&L daftari (superadmin/admin).
+    FINANCIAL_BALANCE_DAILY: "finance/financial-balance/daily",
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
@@ -298,6 +325,7 @@ export const API_ENDPOINTS = {
   AI_USAGE: {
     DASHBOARD: "ai-usage/dashboard", // GET ?fromDate&toDate (YYYY-MM-DD, Toshkent; sukut — oxirgi 30 kun)
     AI_ORDERS: "ai-usage/ai-orders", // GET ?fromDate&toDate&limit (1..100)
+    MARGIN: "ai-usage/margin", // GET ?fromDate&toDate&marketId — olingan narx va tannarx, market kesimida
   },
 
   // ── Products / Catalog (xodim boshqaradi; market va operator — faqat o'qiydi, MH-1) ──
@@ -388,6 +416,8 @@ export const API_ENDPOINTS = {
     ME_INVESTMENTS: "investors/me/investments", // GET ?from_date&to_date&page&limit — invested_at DESC
     ME_PROFITS: "investors/me/profits", // GET ?is_paid&page&limit — period_start DESC
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
+    // vpKijXce: superadmin nazorati — javob `ME_DASHBOARD` bilan AYNAN bir xil (backend spec TC7), ?months=1..36.
+    DASHBOARD: (investorId: string | number) => `investors/${investorId}/dashboard`,
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,
   },

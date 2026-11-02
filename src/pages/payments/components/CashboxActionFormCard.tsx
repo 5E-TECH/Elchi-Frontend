@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt
 import { memo, useId, type ReactNode } from "react";
 import { Controller } from "react-hook-form";
 import type {
@@ -70,6 +70,8 @@ interface CashboxActionFormCardProps {
   infoAlert?: ReactNode;
   /** Forma tepasidagi ogohlantirish (masalan «Tekshiruv xizmati javob bermadi»). */
   alert?: ReactNode;
+  /** «To'lov turi» ostidagi «Chek rasmi» maydoni (QlLf33Ma: HQ'ga «O'tkazma» qabuli). */
+  receiptField?: ReactNode;
   paymentTypeLabel: string;
   /** v1 radiogroup izohi — e'tiborsiz (radio kartalar `legend` bilan nomlanadi). */
   paymentTypePlaceholder?: string;
@@ -95,6 +97,8 @@ interface CashboxActionFormCardProps {
   errors: FieldErrors<CashboxActionFormValues>;
   handleSubmit: UseFormHandleSubmit<CashboxActionFormValues>;
   onSubmit: (values: CashboxActionFormValues) => void;
+  /** Yuborish bosilganda (forma xatolari bilan birga): «Chek rasmi» xatosi ham shu paytda chiqsin. */
+  onSubmitAttempt?: () => void;
 }
 
 const PAYMENT_TYPE_ICONS: Record<string, LucideIcon> = {
@@ -125,6 +129,7 @@ const CashboxActionFormCard = ({
   amountHint,
   infoAlert,
   alert,
+  receiptField,
   paymentTypeLabel,
   commentLabel,
   commentPlaceholder,
@@ -141,6 +146,7 @@ const CashboxActionFormCard = ({
   errors,
   handleSubmit,
   onSubmit,
+  onSubmitAttempt,
 }: CashboxActionFormCardProps) => {
   const { t } = useTranslation("payments");
   const titleId = useId();
@@ -153,7 +159,10 @@ const CashboxActionFormCard = ({
       <form
         noValidate
         aria-labelledby={titleId}
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={(event) => {
+          onSubmitAttempt?.();
+          return handleSubmit(onSubmit)(event);
+        }}
         className="flex flex-col gap-5"
       >
         {alert}
@@ -237,6 +246,8 @@ const CashboxActionFormCard = ({
             </fieldset>
           )}
         />
+
+        {receiptField}
 
         {showMarketSelect ? (
           <Controller

@@ -138,6 +138,10 @@ beforeEach(() => {
         },
       };
     }
+    if (url === "finance/receipt-settings") {
+      // Chek rasmi o'chiq — bu testlar kategoriya haqida (chek: QlLf33Ma-receipt.test.tsx).
+      return { data: { statusCode: 200, message: "ok", data: { manual_expense: { photo_required: false, ai_enabled: false } } } };
+    }
     if (url === CATEGORIES_URL) {
       if (categoriesFail) throw httpError(500, "Internal server error");
       return { data: { statusCode: 200, message: "Xarajat kategoriyalari", data: { items: categoryRows } } };

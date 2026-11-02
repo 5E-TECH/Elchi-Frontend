@@ -44,3 +44,24 @@ describe("index.html zaxira bloki", () => {
     expect(style).not.toMatch(/#(576adb|7c3aed|6366f1|7c5cff|8b5cf6)/i);
   });
 });
+
+/** rzzxMItN — `/login` da logotip JS'ni kutmaydi; boshqa yo'llarda shell ko'rinmaydi. */
+describe("index.html /login birinchi kadri", () => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const shell = doc.querySelector("#root > #login-shell");
+
+  it("#root ichida (createRoot o'zi tozalaydi), matnsiz, ekran o'quvchidan yashirin", () => {
+    expect(shell).not.toBeNull();
+    expect(shell?.getAttribute("aria-hidden")).toBe("true");
+    expect(shell?.textContent?.trim()).toBe("");
+    expect(shell?.querySelector("img")?.getAttribute("alt")).toBe("");
+  });
+
+  it("sukut yashirin; ko'rinishi — faqat mavzu skripti `/login` da qo'ygan klass bilan", () => {
+    expect(html).toMatch(/#login-shell\s*\{\s*display:\s*none;/);
+    expect(html).toMatch(/\.login-first-paint #login-shell\s*\{\s*display:\s*flex;/);
+    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
+    expect(script).toContain("/^\\/login\\/?$/i.test(location.pathname)");
+    expect(script).toContain('classList.add("login-first-paint")');
+  });
+});

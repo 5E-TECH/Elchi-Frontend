@@ -19,11 +19,15 @@ const reply = (route: Route, body: unknown, status = 200) =>
 
 const district = (id: string, name: string) => ({ id, name });
 
-/** `GET /region` — viloyatlar va ularga biriktirilgan tumanlar (maketdagi Andijon). */
+/**
+ * `GET /region` — viloyatlar va ularga biriktirilgan tumanlar (maketdagi Andijon). `assignedDistricts` yo'q (eski
+ * backend shakli) — doska geografik `districts` ga qaytadi (kGvjztpY); `sato_code` — yangi tuman kodi prefiksi.
+ */
 export const REGIONS = [
   {
     id: "2",
     name: "Andijon",
+    sato_code: "1703",
     districts: [
       district("21", "Andijon sh."),
       district("22", "Asaka tumani"),
@@ -34,6 +38,7 @@ export const REGIONS = [
   {
     id: "1",
     name: "Toshkent sh.",
+    sato_code: "1726",
     districts: [district("11", "Chilonzor tumani"), district("12", "Mirobod tumani")],
   },
 ];
@@ -116,10 +121,15 @@ export const MANUAL_FIX: MergeReply = {
 export const mockDistrictsApi = async (
   page: Page,
   merge: () => MergeReply,
-  { theme = "light" }: { theme?: "light" | "dark" } = {},
+  {
+    theme = "light",
+    create = () => ({ status: 201, body: { statusCode: 201, message: "New district added", data: { id: "300" } } }),
+  }: { theme?: "light" | "dark"; create?: () => MergeReply } = {},
 ) => {
   const leaked: string[] = [];
   const mergeBodies: { path: string; body: unknown }[] = [];
+  /** `POST district` tanalari («Yangi tuman qo'shish», ExK28CiS). */
+  const creates: unknown[] = [];
   const deletes: string[] = [];
   let regionCalls = 0;
   let merged = false;
@@ -172,6 +182,11 @@ export const mockDistrictsApi = async (
       if (result.status < 400) merged = true;
       return reply(route, result.body, result.status);
     }
+    if (path === "district" && request.method() === "POST") {
+      creates.push(request.postDataJSON());
+      const result = create();
+      return reply(route, result.body, result.status);
+    }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
@@ -186,7 +201,7 @@ export const mockDistrictsApi = async (
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, mergeBodies, deletes, regionCalls: () => regionCalls };
+  return { leaked, mergeBodies, deletes, creates, regionCalls: () => regionCalls };
 };
 
 export const openDistricts = async (page: Page) => {

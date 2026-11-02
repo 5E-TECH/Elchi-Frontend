@@ -25,6 +25,9 @@ const toItems = (value: unknown): Named[] => {
 
 const toOptions = (items: Named[]): FilterOption[] => items.map((item) => ({ value: String(item.id), label: item.name }));
 
+/** API javobidan (market, filial) `Select` variantlari. */
+export const toFilterOptions = (value: unknown): FilterOption[] => toOptions(toItems(value));
+
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : null;
 

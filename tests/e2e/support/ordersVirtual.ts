@@ -31,6 +31,8 @@ const ORDERS = Array.from({ length: ORDER_COUNT }, (_, i) => ({
 }));
 
 export const mockHundredOrders = async (page: Page) => {
+  /** `GET orders` so'rovlari parametrlari — tartib bo'yicha. */
+  const requests: URLSearchParams[] = [];
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -44,6 +46,7 @@ export const mockHundredOrders = async (page: Page) => {
     }
     if (request.method() !== "GET") return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
     if (path === "orders") {
+      requests.push(url.searchParams);
       const limit = Number(url.searchParams.get("limit") ?? 25);
       const items = ORDERS.slice(0, limit);
       return reply(route, { statusCode: 200, data: items, total: ORDERS.length, page: 1, limit });
@@ -58,6 +61,7 @@ export const mockHundredOrders = async (page: Page) => {
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
+  return { requests };
 };
 
 /** Hujjatdagi barcha DOM tugunlari. */

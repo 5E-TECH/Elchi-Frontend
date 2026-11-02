@@ -45,10 +45,25 @@ export type IncomingOrdersParams = {
   market_id?: string;
 };
 
+/**
+ * Qop hisobi (`GET orders/external` → `meta.batches`, backend Sm3LZ6EN, ega S3). Sonlar butun qop bo'yicha: sahifa,
+ * holat va sana kesmaydi. `received` — ilgari qabul qilinganlar, `pending` — hali kutayotganlar, keldi = ikkisi birga.
+ * `size` — hamkor aytgani (`null` — aytmagan). Frontend qopni o'zi sanamaydi: ro'yxatda faqat `new` posilkalar bor.
+ */
+export type IncomingBatch = {
+  token: string;
+  ref: string | null;
+  size: number | null;
+  received: number;
+  pending: number;
+};
+
 export type IncomingOrdersList = {
   items: IncomingOrder[];
   /** Server aytgan jami son (bo'lmasa — yuklangan qatorlar soni). */
   total: number;
+  /** Ro'yxatda uchragan qoplar; backend bermasa — bo'sh («chala qop» aytilmaydi). */
+  batches: IncomingBatch[];
 };
 
 export const incomingOrdersKey = "incoming-external-orders";
@@ -71,10 +86,42 @@ const readTotal = (raw: unknown): number | undefined => {
   return Number.isFinite(value) ? value : undefined;
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+const asText = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
+
+/** Son maydoni: kelmagan yoki son bo'lmagan qiymat — `null`. */
+const asCount = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const count = Number(value);
+  return Number.isFinite(count) && count >= 0 ? count : null;
+};
+
+/**
+ * `meta.batches` ni javob qobig'idan ochadi. Soni kelmagan yozuv tashlanadi: yo'q sonni 0 deb olish soxta
+ * «chala qop» ogohlantirishini chiqarardi.
+ */
+export const extractIncomingBatches = (raw: unknown): IncomingBatch[] => {
+  const body = raw as { meta?: { batches?: unknown }; data?: { meta?: { batches?: unknown } } } | undefined;
+  const list = body?.meta?.batches ?? body?.data?.meta?.batches;
+  if (!Array.isArray(list)) return [];
+  return list.flatMap((item) => {
+    const record = asRecord(item);
+    const token = asText(record?.external_batch_token);
+    const received = asCount(record?.received_count);
+    const pending = asCount(record?.pending_count);
+    if (!token || received === null || pending === null) return [];
+    const size = asCount(record?.external_batch_size);
+    return [{ token, ref: asText(record?.external_batch_ref) || null, size: size || null, received, pending }];
+  });
+};
+
 export const fetchAllIncomingOrders = async (
   params?: IncomingOrdersParams,
 ): Promise<IncomingOrdersList> => {
   const items: IncomingOrder[] = [];
+  const batches = new Map<string, IncomingBatch>();
   let total: number | undefined;
 
   for (let page = 1; page <= INCOMING_MAX_PAGES; page += 1) {
@@ -83,6 +130,7 @@ export const fetchAllIncomingOrders = async (
     });
     const pageItems = extractIncomingOrders(res.data);
     items.push(...pageItems);
+    for (const batch of extractIncomingBatches(res.data)) batches.set(batch.token, batch);
     total = readTotal(res.data) ?? total;
 
     if (pageItems.length < INCOMING_PAGE_LIMIT || (total !== undefined && items.length >= total)) {
@@ -90,7 +138,7 @@ export const fetchAllIncomingOrders = async (
     }
   }
 
-  return { items, total: total ?? items.length };
+  return { items, total: total ?? items.length, batches: [...batches.values()] };
 };
 
 export const useIncomingExternalOrders = (params?: IncomingOrdersParams) =>
@@ -268,11 +316,6 @@ export type ExternalBatchScan = {
   members: Array<{ id: string | null; token: string | null }>;
   size: number | null;
 };
-
-const asRecord = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-
-const asText = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
 
 /**
  * Qop tokenini server orqali aniqlash (ro'yxatda moslik topilmaganda zaxira yo'l).

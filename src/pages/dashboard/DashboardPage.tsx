@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-dashboard-main, admin-dashboard-main, registrator-dashboard-main, courier-dashboard-home, courier-dashboard-pwa-install
 import { Banknote, CircleCheck, CircleX, Package, ReceiptText, TrendingDown, Trophy, Truck, Wallet } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
@@ -59,6 +59,8 @@ import CourierCashCard from "./ui/CourierCashCard";
 import CourierPlanCard from "./ui/CourierPlanCard";
 import DeliveryQualityCard from "./ui/DeliveryQualityCard";
 import DeliveryResultsCard from "./ui/DeliveryResultsCard";
+
+const AnalyticsKpiSection = lazy(() => import("./ui/AnalyticsKpiSection"));
 
 /**
  * BOSH SAHIFA — superadmin, admin, registrator, kuryer (va operator). Market — `MarketDashboardPage`,
@@ -661,6 +663,14 @@ const DashboardPage = () => {
             periodLabel={periodText}
             variant={isRegistrator ? "registrator" : "full"}
           />
+        </DeferredMount>
+      ) : null}
+      {/* F2NzXpMv: SLA va «Analitika KPI» — faqat superadmin, Ops → «Tizim» dan ko'chgan (kodi alohida bo'lakda). */}
+      {normalizedRole === "superadmin" ? (
+        <DeferredMount minHeight={360}>
+          <Suspense fallback={null}>
+            <AnalyticsKpiSection />
+          </Suspense>
         </DeferredMount>
       ) : null}
       {/* 2crjWf7v: «Kvitansiya yetkazilishi» — faqat superadmin (`GET /telegram/dm-delivery`, boshqa rolga 403). */}

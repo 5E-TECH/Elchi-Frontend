@@ -9,8 +9,9 @@ export interface OpsTabMeta {
   /** Tab nomi — `ops` namespace kaliti (`ops:tabs.<key>`). */
   labelKey: string;
   /**
-   * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut.
-   * SAQLANADI — eski havola yoki xatcho'p buzilmasin. Markaz ichida tug'ilgan tabda (masalan «Xarajat
+   * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut — eski havola yoki xatcho'p buzilmaydi:
+   * `/finance-operators`, `/identity-ops` o'z sarlavhasi bilan chiziladi, qolganlari
+   * (`routes.tsx`) `/ops?tab=<key>` ga yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat
    * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
    */
   legacyPath?: string;
@@ -42,22 +43,10 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "expense-categories",
   },
   {
-    key: "integrations",
-    labelKey: "tabs.integrations",
-    legacyPath: "/integrations-ops",
-    pageDir: "integrations-ops",
-  },
-  {
     key: "investors",
     labelKey: "tabs.investors",
     legacyPath: "/investors-ops",
     pageDir: "investors-ops",
-  },
-  {
-    key: "logistics",
-    labelKey: "tabs.logistics",
-    legacyPath: "/logistics-ops",
-    pageDir: "logistics-ops",
   },
   {
     /**
@@ -69,12 +58,6 @@ export const OPS_TABS: OpsTabMeta[] = [
     key: DELIVERY_PRICING_TAB,
     labelKey: "tabs.deliveryPricing",
     pageDir: "delivery-tariffs",
-  },
-  {
-    key: "branches",
-    labelKey: "tabs.branches",
-    legacyPath: "/branch-ops",
-    pageDir: "branch-ops",
   },
   {
     key: "identity",
@@ -97,9 +80,9 @@ export const OPS_TABS: OpsTabMeta[] = [
      * tekshirmoqchi bo'lgan operator "Loglar"ni bosib, token yangilash
      * tugmasini ko'rardi va haqiqiy jurnalni (`/activity-logs`) topolmasdi.
      *
-     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Marshrut (`/logs`)
-     * saqlanadi, faqat menyudan olib tashlandi. Dizayn v2 da yorlig'i —
-     * «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
+     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Menyudan olib tashlandi,
+     * eski marshrut (`/logs`) shu tabga yo'naltiradi (bhitm9do). Dizayn v2 da
+     * yorlig'i — «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
      */
     key: "auth",
     labelKey: "tabs.auth",
@@ -107,6 +90,17 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "logs",
   },
 ];
+
+/**
+ * Hub'dan ko'chgan tablar: logistika va filiallar vositasi ish sahifasi ichida, faqat superadmin ko'radi
+ * (F2NzXpMv); integratsiya vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD).
+ * Eski `/ops?tab=<key>` havolasi yangi joyga o'tadi.
+ */
+export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
+  logistics: "/returns",
+  branches: "/batches",
+  integrations: "/integrations",
+};
 
 /** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */
 export const getOpsTab = (key: string): OpsTabMeta => OPS_TABS.find((tab) => tab.key === key) ?? OPS_TABS[0];
