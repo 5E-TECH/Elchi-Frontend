@@ -559,7 +559,9 @@
       "warehouseReturnedByActor": "{{actor}} принял(а) посылку — товар возвращён на склад, остаток восстановлен",
       "postReceived": "{{actor}} принял(а) почту",
       "postReceivedAtBranch": "{{actor}} принял(а) почту — {{branch}}",
-      "dispatchToNamedBranch": "{{actor}} отправил {{post}} из HQ в {{branch}}"
+      "dispatchToNamedBranch": "{{actor}} отправил {{post}} из HQ в {{branch}}",
+      "postBranchReassigned": "{{actor}} перевёл {{post}} в другой филиал: {{from}} → {{to}}",
+      "postBranchReassignedShort": "{{actor}} перевёл {{post}} в другой филиал"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -620,7 +622,8 @@
       "cancelledPostReceived": "Отмененный заказ принят",
       "returnRequested": "Запрошен возврат",
       "returnedToMarket": "Передан маркету",
-      "warehouseReturned": "Возвращён на склад"
+      "warehouseReturned": "Возвращён на склад",
+      "postBranchReassigned": "Переведён в другой филиал"
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",

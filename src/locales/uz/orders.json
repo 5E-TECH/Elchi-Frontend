@@ -559,7 +559,9 @@
       "warehouseReturnedByActor": "{{actor}} posilkani qabul qildi — mahsulot omborga qaytdi, qoldiq tiklandi",
       "postReceived": "{{actor}} pochtani qabul qildi",
       "postReceivedAtBranch": "{{actor}} pochtani qabul qildi — {{branch}}",
-      "dispatchToNamedBranch": "{{actor}} {{post}}ni HQ'dan {{branch}}ga jo'natdi"
+      "dispatchToNamedBranch": "{{actor}} {{post}}ni HQ'dan {{branch}}ga jo'natdi",
+      "postBranchReassigned": "{{actor}} {{post}}ni boshqa filialga o'tkazdi: {{from}} → {{to}}",
+      "postBranchReassignedShort": "{{actor}} {{post}}ni boshqa filialga o'tkazdi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -620,7 +622,8 @@
       "cancelledPostReceived": "Bekor buyurtma qabul qilindi",
       "returnRequested": "Qaytarish so'raldi",
       "returnedToMarket": "Marketga topshirildi",
-      "warehouseReturned": "Omborga qaytdi"
+      "warehouseReturned": "Omborga qaytdi",
+      "postBranchReassigned": "Boshqa filialga o'tkazildi"
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",

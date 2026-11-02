@@ -317,3 +317,44 @@ describe("describeTrackingEvent — pochta qabuli va metadata (vbu7Wr3o)", () =>
     expect(v.details.map((detail) => detail.value)).not.toContain("qr");
   });
 });
+
+/** Jo'natilgan, hali qabul qilinmagan pochta boshqa filialga o'tkazildi (`post_branch_reassigned`, holat o'zgarmaydi). */
+describe("describeTrackingEvent — pochta boshqa filialga o'tkazildi", () => {
+  const admin = { name: "TEST Claude admin", role: "admin" };
+
+  it("«Admin … pochtani boshqa filialga o'tkazdi: A → B», xom «Post Branch Reassigned» emas, izoh takrorlanmaydi", () => {
+    const v = view({
+      action: "post_branch_reassigned",
+      changed_by: "520",
+      changed_by_role: "admin",
+      actor: admin,
+      from_status: "on the road",
+      to_status: "on the road",
+      note: "Pochta #96 Toshkent shahar Shodiyor aka filialidan Chilonzor filiali (Bahodir) filialiga o'tkazildi",
+      metadata: {
+        post_id: "96",
+        from_branch_id: "10",
+        from_branch_name: "Toshkent shahar Shodiyor aka",
+        to_branch_id: "11",
+        to_branch_name: "Chilonzor filiali (Bahodir)",
+      },
+    });
+    expect(sentence(v)).toBe(
+      "Admin TEST Claude admin pochtani boshqa filialga o'tkazdi: Toshkent shahar Shodiyor aka → Chilonzor filiali (Bahodir)",
+    );
+    expect(v.actionName).toBe("Boshqa filialga o'tkazildi");
+    expect(v.note).toBe("");
+  });
+
+  it("filial nomlari yo'q eski yozuv — qisqa jumla", () => {
+    const v = view({
+      action: "post_branch_reassigned",
+      changed_by_role: "admin",
+      actor: admin,
+      from_status: "on the road",
+      to_status: "on the road",
+      metadata: { post_id: "96" },
+    });
+    expect(sentence(v)).toBe("Admin TEST Claude admin pochtani boshqa filialga o'tkazdi");
+  });
+});

@@ -518,6 +518,13 @@ const getSentenceTemplate = (
     if (place) return dynamic("cancelledPostReceivedAtPlace", { place });
     return dynamic(isHqReceiver ? "cancelledPostReceivedAtHq" : "cancelledPostReceivedAtBranch");
   }
+  // Jo'natilgan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi): metadata `{ from_branch_name, to_branch_name }`.
+  if (normalizeKey(event.action) === "post_branch_reassigned") {
+    const metadata = isRecord(event.metadata) ? event.metadata : {};
+    const from = cleanBranchLabel(metadata.from_branch_name);
+    const to = cleanBranchLabel(metadata.to_branch_name);
+    return from && to ? dynamic("postBranchReassigned", { post, from, to }) : dynamic("postBranchReassignedShort", { post });
+  }
   if (normalizeKey(event.action) === "created" || (!oldStatus && (newStatus === "new" || newStatus === "created"))) {
     return dynamic("createdByActor");
   }

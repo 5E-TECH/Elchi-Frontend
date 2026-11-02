@@ -559,7 +559,9 @@
       "warehouseReturnedByActor": "{{actor}} received the parcel — the items went back to the warehouse, stock restored",
       "postReceived": "{{actor}} received the post",
       "postReceivedAtBranch": "{{actor}} received the post — {{branch}}",
-      "dispatchToNamedBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}}"
+      "dispatchToNamedBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}}",
+      "postBranchReassigned": "{{actor}} moved {{post}} to another branch: {{from}} → {{to}}",
+      "postBranchReassignedShort": "{{actor}} moved {{post}} to another branch"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -620,7 +622,8 @@
       "cancelledPostReceived": "Cancelled order received",
       "returnRequested": "Return requested",
       "returnedToMarket": "Handed to market",
-      "warehouseReturned": "Returned to warehouse"
+      "warehouseReturned": "Returned to warehouse",
+      "postBranchReassigned": "Moved to another branch"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",

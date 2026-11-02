@@ -20,4 +20,6 @@ export const actionLabelMap: Record<string, string> = {
   cancelled_market_handover_manual: "tracking.action.returnedToMarket",
   // 6kHnNH9j: ombor buyurtmasi bekor — posilka ombor filialida qabul qilinib, mahsulot o'sha omborga qaytdi.
   warehouse_returned: "tracking.action.warehouseReturned",
+  // Jo'natilgan, hali qabul qilinmagan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi — yo'lda).
+  post_branch_reassigned: "tracking.action.postBranchReassigned",
 };
