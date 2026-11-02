@@ -161,6 +161,9 @@ export const canViewDispatchPage: Predicate = anyOf(
  * registratorlari va menejerlar tugmani ko'rmaydi — ular uchun server doim
  * 403 qaytaradi.
  */
+/** Jo'natilgan, hali qabul qilinmagan pochtani boshqa filialga o'tkazish — faqat superadmin/admin (backend bilan bir xil). */
+export const canReassignPostToBranch: Predicate = hasRole("superadmin", "admin");
+
 export const canDispatchPostToBranch: Predicate = anyOf(
   hasRole("superadmin", "admin"),
   (state) => roleOf(state) === "registrator" && branchTypeOf(state) === "HQ",

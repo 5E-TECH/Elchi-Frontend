@@ -749,6 +749,7 @@
         "src/pages/mails/detail/ui/OrderRow.tsx",
         "src/pages/mails/detail/ui/SendButton.tsx",
         "src/pages/mails/detail/ui/SendPostModal.tsx",
+        "src/pages/mails/detail/ui/TransferPostBranchModal.tsx",
         "src/pages/mails/detail/ui/DeleteFromPostDialog.tsx",
         "src/pages/mails/detail/ui/printOptions.tsx",
         "src/pages/mails/detail/lib/printMode.ts",

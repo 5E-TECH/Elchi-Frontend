@@ -310,6 +310,18 @@
       "chipLabel": "{{phone}} raqamli {{value}} ta buyurtmani ko'rsatish: {{ids}}",
       "rowBadge": "Takroriy raqam",
       "rowBadgeTitle": "Shu raqamga yana: {{ids}}"
+    },
+    "transferDialog": {
+      "open": "Filialga o'tkazish",
+      "title": "Pochtani boshqa filialga o'tkazish",
+      "description": "Pochta hozir «{{branch}}» filialiga jo'natilgan, hali qabul qilinmagan. Pochta va undagi {{value}} ta buyurtma tanlangan filialga o'tadi.",
+      "descriptionNoBranch": "Pochta hali qabul qilinmagan. Pochta va undagi {{value}} ta buyurtma tanlangan filialga o'tadi.",
+      "legend": "Shu viloyatdagi boshqa faol filiallar",
+      "submit": "O'tkazish",
+      "submitting": "O'tkazilmoqda…",
+      "success": "Pochta {{name}} filialiga o'tkazildi.",
+      "error": "Pochtani o'tkazib bo'lmadi",
+      "noOtherBranch": "Bu viloyatda boshqa faol filial yo'q."
     }
   }
 }

@@ -502,6 +502,8 @@ export const API_ENDPOINTS = {
     WITH_SENT_BATCHES: "branches/with-sent-batches",
     TRANSFER_BATCHES: "branches/transfer-batches", // POST create batches from requester branch
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
+    // POST {destination_branch_id} — jo'natilgan, hali qabul qilinmagan pochta boshqa filialga (superadmin/admin)
+    POST_REASSIGN: (postId: string | number) => `branches/posts/${postId}/reassign`,
     // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
     DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
     // Markaziy ombor (Pa1KaXmj): HQ filiali — «Ombor ochish» oynasi uchun (SUPERADMIN/ADMIN, pul maydonlarisiz;

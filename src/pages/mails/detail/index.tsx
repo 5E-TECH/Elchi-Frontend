@@ -2,7 +2,7 @@
 import { Fragment, memo, useDeferredValue, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowRightLeft, CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
@@ -16,7 +16,7 @@ import {
 import { isHistoryView, isInPostNow } from "../../../entities/mails/lib/postHistory";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-import { canDispatchPostToBranch } from "../../../app/lib/access";
+import { canDispatchPostToBranch, canReassignPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import {
   countReceiptsWithoutQr,
@@ -57,6 +57,7 @@ import MailStatCards from "./ui/MailStatCards";
 import OrdersTable, { type OrdersTableColumn } from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
+import TransferPostBranchModal from "./ui/TransferPostBranchModal";
 import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
 import { DuplicatePhonesAlert } from "./ui/DuplicatePhonesAlert";
 import { useMailPrintOptions } from "./ui/printOptions";
@@ -222,6 +223,7 @@ const MailDetailPage = () => {
   // (backend bilan bir xil). Boshqa registratorlar uchun server doim 403
   // qaytaradi, shuning uchun ularga "jo'natish" tugmasi ko'rsatilmaydi.
   const canDispatchToBranch = useSelector(canDispatchPostToBranch);
+  const canReassignPost = useSelector(canReassignPostToBranch);
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -949,6 +951,47 @@ const MailDetailPage = () => {
       });
   }, [selectedIds, postId, regionId, isCheckingCouriers, t]);
 
+  // ─── Eski pochta → «Filialga o'tkazish» ───────────────────────────────────
+  // HQ pochtani adashib boshqa filialga jo'natgan, u filial hali qabul qilmagan (pochta «Jo'natilgan», kuryersiz,
+  // ichida yo'ldagi buyurtma bor): superadmin/admin uni shu viloyatning boshqa filialiga o'tkazadi. Qolgan
+  // shartlarni (birorta buyurtma qabul qilinmagan, tuman qamrovi) backend tekshiradi va matn bilan rad etadi.
+  const postBranchId = toText(postMeta?.branch_id);
+  const canTransferPost =
+    canReassignPost &&
+    isOldDetail &&
+    !isEffectiveRefusedDetail &&
+    String(postMeta?.status ?? "").toLowerCase() === "sent" &&
+    (postCourierId === "" || postCourierId === "0") &&
+    Boolean(postBranchId) &&
+    currentOrdersFromPost.some((order: PostOrder) => order.status === "on the road");
+  const [transferTarget, setTransferTarget] = useState<{ branches: Branch[]; currentName: string | null } | null>(
+    null,
+  );
+  const [isLoadingTransfer, setIsLoadingTransfer] = useState(false);
+  const handleOpenTransfer = useCallback(() => {
+    if (!canTransferPost || !regionId || isLoadingTransfer) return;
+    setIsLoadingTransfer(true);
+    getDispatchDestinations({ region_id: String(regionId) })
+      .then((response) => {
+        const inRegion = (response?.data ?? []).filter(
+          (branch) => String(branch.region?.id ?? "") === String(regionId) && branch.status === "active",
+        );
+        const branches = inRegion.filter((branch) => String(branch.id) !== postBranchId);
+        if (branches.length === 0) {
+          notify.error(t("common:error"), { description: t("detailPage.transferDialog.noOtherBranch") });
+          return;
+        }
+        const currentName = inRegion.find((branch) => String(branch.id) === postBranchId)?.name ?? null;
+        setTransferTarget({ branches, currentName });
+      })
+      .catch((error: unknown) => {
+        notify.error(t("common:error"), {
+          description: getBackendErrorMessage(error) ?? t("branchesLoadError"),
+        });
+      })
+      .finally(() => setIsLoadingTransfer(false));
+  }, [canTransferPost, regionId, isLoadingTransfer, postBranchId, t]);
+
   const selectedOrders = useMemo(
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
@@ -1218,7 +1261,20 @@ const MailDetailPage = () => {
 
   // Sarlavha amallari: telefonda kuryer uchun yo'q (chop etish — kartada, qabul — pastki panelda).
   const headerActions = isOldDetail
-    ? null
+    ? canTransferPost
+      ? (
+          <Button
+            variant="secondary"
+            leftIcon={ArrowRightLeft}
+            loading={isLoadingTransfer}
+            disabled={!regionId}
+            onClick={handleOpenTransfer}
+            className="max-md:w-full"
+          >
+            {t("detailPage.transferDialog.open")}
+          </Button>
+        )
+      : null
     : isReadOnlyRefusedCourier
       ? isPhone || orders.length === 0
         ? null
@@ -1440,6 +1496,21 @@ const MailDetailPage = () => {
           regionName={regionLabel}
         />
       )}
+
+      {/* Eski pochta → boshqa filialga o'tkazish (faqat ochilganda — hook shu yerda chaqiriladi) */}
+      {transferTarget && canTransferPost ? (
+        <TransferPostBranchModal
+          postId={postId ?? ""}
+          currentBranchName={transferTarget.currentName}
+          branches={transferTarget.branches}
+          orderCount={currentOrdersFromPost.length}
+          onClose={() => setTransferTarget(null)}
+          onSuccess={() => {
+            setTransferTarget(null);
+            void refetchRegularDetail();
+          }}
+        />
+      ) : null}
 
       <DeleteFromPostDialog
         open={isDeleteConfirmOpen}

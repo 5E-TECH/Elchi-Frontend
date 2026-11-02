@@ -730,6 +730,28 @@ export const useDispatchPostToBranch = () => {
   });
 };
 
+/**
+ * Jo'natilgan, hali qabul qilinmagan pochtani boshqa filialga o'tkazish (eski pochta → «Filialga o'tkazish»):
+ * `POST branches/posts/:id/reassign {destination_branch_id}`. Pochta id'si o'zgarmaydi; pochta va buyurtmalar
+ * ro'yxatlari (eski/yangi pochtalar, buyurtmalar) eskiradi.
+ */
+export const useReassignPostToBranch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId, destinationBranchId }: { postId: string; destinationBranchId: string }) =>
+      api
+        .post(API_ENDPOINTS.BRANCHES.POST_REASSIGN(postId), {
+          destination_branch_id: destinationBranchId,
+        })
+        .then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+};
+
 // ─── Receive Post Payload ─────────────────────────────────────────────────────
 export interface ReceivePostPayload {
   order_ids: string[];
