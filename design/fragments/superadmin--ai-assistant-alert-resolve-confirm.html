@@ -1,0 +1,311 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">AI moliyaviy yordamchi</h1>
+    <p class="el-sub">Kassa, qarzlar va xarajatlar bo'yicha savol, hisobot, ogohlantirish va tavsiyalar. Yordamchi faqat ma'lumot o'qiydi.</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-secondary" href="@ai-assistant-settings-rules-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>Sozlamalar</a>
+  </div>
+</div>
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="AI yordamchi bo'limlari">
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant" style="text-decoration: none; color: var(--text-muted)">Suhbat</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-reports" style="text-decoration: none; color: var(--text-muted)">Hisobotlar</a>
+  <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ai-assistant-alerts" style="text-decoration: none; color: var(--text)">Ogohlantirishlar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-recommendations" style="text-decoration: none; color: var(--text-muted)">Tavsiyalar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-usage" style="text-decoration: none; color: var(--text-muted)">Sarf</a>
+</nav>
+<a class="el-input el-select el-show-mobile" href="@ai-assistant-tab-select" aria-haspopup="listbox" aria-expanded="false" aria-label="Bo'lim: Ogohlantirishlar" style="text-decoration: none; color: var(--text)"><span class="el-strong">Ogohlantirishlar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></a>
+<div class="el-alert el-tone-danger" role="status">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+  <div class="el-alert-body" style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <div class="el-alert-title">2 ta jiddiy ogohlantirish ko'rib chiqilmagan</div>
+      <span class="el-small">Kuryer qarzi o'smoqda · Chek yoki karta farqi</span>
+    </div>
+    <button class="el-btn el-btn-link el-btn-sm" type="button" aria-pressed="false">Faqat jiddiylar</button>
+  </div>
+</div>
+
+<div class="el-hide-mobile" role="group" aria-label="Ogohlantirishlar filtrlari" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+    <div class="el-seg" role="group" aria-label="Holat">
+      <button type="button" aria-pressed="true">Barchasi</button>
+      <button type="button" aria-pressed="false">Yangi <span class="el-tab-count">3</span></button>
+      <button type="button" aria-pressed="false">Ko'rildi <span class="el-tab-count">3</span></button>
+      <button type="button" aria-pressed="false">Hal qilindi</button>
+      <button type="button" aria-pressed="false">Ahamiyatsiz</button>
+    </div>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; max-width: 260px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Jiddiylik: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Jiddiylik:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; max-width: 260px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Turi: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Turi:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+</div>
+<div class="el-show-mobile" style="flex-direction: column">
+  <div role="group" aria-label="Ogohlantirishlar filtrlari" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+    <button class="el-input el-select" type="button" style="width: auto; min-width: 0" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat: barchasi"><span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="el-btn el-btn-secondary" type="button" aria-expanded="false" style="min-width: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>Filtrlar</button>
+  </div>
+</div>
+
+<section class="el-card" aria-labelledby="al-list-title" style="overflow: hidden">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="al-list-title">Ogohlantirishlar</h2>
+      <p class="el-small el-muted">Qoidalar har 30 daqiqada va kunlik hisobdan keyin tekshiriladi</p>
+    </div>
+    <span class="el-badge el-tone-neutral">22 ta</span>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th style="width: 112px">Jiddiylik</th>
+          <th>Ogohlantirish</th>
+          <th>Holat</th>
+          <th class="el-num el-hide-tablet">Takror</th>
+          <th class="el-hide-tablet">Oxirgi marta</th>
+          <th class="el-hide-tablet" style="width: 56px"><span class="el-sr">Ochish</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan</a><div class="el-cell-sub" style="white-space: normal">Kuryer qarzi o'smoqda · Toshkent HQ</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bugun, 14:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm</a><div class="el-cell-sub" style="white-space: normal">Smena kamomadi · Samarqand filiali</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">3 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bugun, 13:45</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog-receipt" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Chekda farq bor — Urgut filiali yoqilg'i xarajati, karta mos emas</a><div class="el-cell-sub" style="white-space: normal">Chek yoki karta farqi · Urgut filiali</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bugun, 11:10</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog-receipt" aria-haspopup="dialog" aria-label="«Chekda farq bor — Urgut filiali yoqilg'i xarajati, karta mos emas» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar</a><div class="el-cell-sub" style="white-space: normal">G'ayrioddiy xarajat · Farg'ona filiali</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kecha, 18:20</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Nur Elektronika — 9 kundan beri to'lov yo'q, qarz 3 120 000 so'm</a><div class="el-cell-sub" style="white-space: normal">Market to'lovi kechikmoqda</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">2 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kecha, 09:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«Nur Elektronika — 9 kundan beri to'lov yo'q, qarz 3 120 000 so'm» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">Urgut filiali kassasida 6 400 000 so'm — HQ'ga 4 kundan beri o'tkazma yo'q</a><div class="el-cell-sub" style="white-space: normal">HQ'ga o'tkazma kechikmoqda · Urgut filiali</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">21.10.2026, 10:30</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«Urgut filiali kassasida 6 400 000 so'm — HQ'ga 4 kundan beri o'tkazma yo'q» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">20.10 kuni sof foyda −380 000 so'm</a><div class="el-cell-sub" style="white-space: normal">Zarar · butun tizim</div></td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Hal qilindi</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">21.10.2026, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«20.10 kuni sof foyda −380 000 so'm» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span></td>
+          <td><a class="el-cell-title" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="display: block; min-width: 240px; text-decoration: none; color: var(--text)">12–18 oktabr haftasida 14 ta tuzatish — 30 kunlik o'rtachadan 2,3 barobar</a><div class="el-cell-sub" style="white-space: normal">Tuzatishlar ko'paydi</div></td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Ahamiyatsiz</span></td>
+          <td class="el-num el-hide-tablet" style="white-space: nowrap">1 marta</td>
+          <td class="el-hide-tablet" style="white-space: nowrap">19.10.2026, 08:30</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" aria-label="«12–18 oktabr haftasida 14 ta tuzatish — 30 kunlik o'rtachadan 2,3 barobar» ogohlantirishini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+        <span class="el-cell-title">Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan</span>
+        <span class="el-small el-muted">Kuryer qarzi o'smoqda · Toshkent HQ · <span style="white-space: nowrap">Bugun, 14:00</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+        <span class="el-cell-title">Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm</span>
+        <span class="el-small el-muted">Smena kamomadi · Samarqand filiali · 3 marta · <span style="white-space: nowrap">Bugun, 13:45</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog-receipt" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+        <span class="el-cell-title">Chekda farq bor — Urgut filiali yoqilg'i xarajati, karta mos emas</span>
+        <span class="el-small el-muted">Chek yoki karta farqi · Urgut filiali · <span style="white-space: nowrap">Bugun, 11:10</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></span>
+        <span class="el-cell-title">Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar</span>
+        <span class="el-small el-muted">G'ayrioddiy xarajat · Farg'ona filiali · <span style="white-space: nowrap">Kecha, 18:20</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></span>
+        <span class="el-cell-title">Nur Elektronika — 9 kundan beri to'lov yo'q, qarz 3 120 000 so'm</span>
+        <span class="el-small el-muted">Market to'lovi kechikmoqda · 2 marta · <span style="white-space: nowrap">Kecha, 09:00</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span></span>
+        <span class="el-cell-title">Urgut filiali kassasida 6 400 000 so'm — HQ'ga 4 kundan beri o'tkazma yo'q</span>
+        <span class="el-small el-muted">HQ'ga o'tkazma kechikmoqda · Urgut filiali · <span style="white-space: nowrap">21.10.2026, 10:30</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Jiddiy</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Hal qilindi</span></span>
+        <span class="el-cell-title">20.10 kuni sof foyda −380 000 so'm</span>
+        <span class="el-small el-muted">Zarar · butun tizim · <span style="white-space: nowrap">21.10.2026, 08:00</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-alert-dialog" aria-haspopup="dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Ahamiyatsiz</span></span>
+        <span class="el-cell-title">12–18 oktabr haftasida 14 ta tuzatish — 30 kunlik o'rtachadan 2,3 barobar</span>
+        <span class="el-small el-muted">Tuzatishlar ko'paydi · <span style="white-space: nowrap">19.10.2026, 08:30</span></span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+  </div>
+  <div class="el-card-foot el-pagination">
+    <span>1–8 / 22 ta ogohlantirish</span>
+    <nav class="el-pages" aria-label="Sahifalar">
+      <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="el-page" type="button" aria-current="page">1</button><button class="el-page" type="button">2</button><button class="el-page" type="button">3</button>
+      <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </nav>
+  </div>
+</section>
+<p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Yordamchi faqat ogohlantiradi — pul amali tegishli bo'limning o'zida qilinadi.</span></p>
+
+<div class="el-overlay" style="position: absolute; z-index: 30; flex-direction: column; justify-content: safe center; gap: 16px; padding: clamp(0px, (100cqw - 767.5px) * 999, clamp(16px, 6vw, 96px)) clamp(0px, (100cqw - 767.5px) * 999, 16px) clamp(0px, (100cqw - 767.5px) * 999, 16px)">
+  <span class="el-show-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="ad-title" aria-describedby="ad-desc" style="width: min(720px, 100%); max-height: calc(100% - 64px); overflow: hidden">
+    <div class="el-dialog-head">
+      <span aria-hidden="true" style="flex: none; width: 40px; height: 40px; border-radius: 999px; background: var(--warning-soft); color: var(--warning-fg); display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="ad-title">Samarqand filiali kassasida 3 smena ketma-ket kamomad</h2>
+        <p class="el-small el-muted" id="ad-desc">Smena kamomadi · birinchi: 21.10.2026, 20:50 · oxirgi: Bugun, 13:45</p>
+      </div>
+      <a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-alerts" aria-label="Yopish" style="margin: -4px -8px 0 0; color: var(--text-muted)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; margin: 0 -4px; padding: 0 4px">
+    <div style="display: flex; flex-wrap: wrap; gap: 6px 8px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Diqqat</span><span class="el-badge el-badge-dot el-tone-warning">Ko'rildi</span><span class="el-badge el-tone-neutral">3 marta takrorlandi</span></div>
+    <dl style="margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--sunken); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px 24px"><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Kassa</dt><dd class="el-strong" style="margin: 0">Samarqand filiali kassasi</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Jami kamomad</dt><dd class="el-strong" style="margin: 0"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−445 000 so'm</span></dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Qoida</dt><dd class="el-strong" style="margin: 0">Bir smenada 50 000 so'mdan ko'p yoki 3 smena ketma-ket kamomad</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Smenani yopgan</dt><dd class="el-strong" style="margin: 0">Sardor Mirzayev</dd></div></dl>
+    <section aria-labelledby="ad-ev" style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px"><h3 class="el-h3" id="ad-ev">Dalillar · 3 ta yozuv</h3><span class="el-xs el-muted">Uchala smenani Sardor Mirzayev yopgan</span></div>
+      <div class="el-table-wrap el-hide-mobile" style="border: 1px solid var(--border); border-radius: 12px">
+        <table class="el-table is-compact" aria-labelledby="ad-ev">
+          <thead><tr><th>Smena</th><th class="el-hide-tablet">Yopgan</th><th class="el-num">Kutilgan</th><th class="el-num">Sanalgan</th><th class="el-num">Farq</th><th style="width: 48px"><span class="el-sr">Smena hisobotini ochish</span></th></tr></thead>
+          <tbody>
+            <tr><td><a class="el-cell-title" href="@payments-shift-report" style="text-decoration: none; color: var(--text); white-space: nowrap">21.10.2026, 20:50</a></td><td class="el-hide-tablet el-muted" style="white-space: nowrap">Sardor Mirzayev</td><td class="el-num" style="white-space: nowrap">4 860 000 so'm</td><td class="el-num" style="white-space: nowrap">4 740 000 so'm</td><td class="el-num" style="white-space: nowrap"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−120 000 so'm</span></td><td style="width: 48px; padding-left: 0; padding-right: 8px"><a class="el-iconbtn el-iconbtn-sm" href="@payments-shift-report" aria-label="21.10.2026, 20:50 smena hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td></tr><tr><td><a class="el-cell-title" href="@payments-shift-report" style="text-decoration: none; color: var(--text); white-space: nowrap">Kecha, 20:55</a></td><td class="el-hide-tablet el-muted" style="white-space: nowrap">Sardor Mirzayev</td><td class="el-num" style="white-space: nowrap">3 920 000 so'm</td><td class="el-num" style="white-space: nowrap">3 835 000 so'm</td><td class="el-num" style="white-space: nowrap"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−85 000 so'm</span></td><td style="width: 48px; padding-left: 0; padding-right: 8px"><a class="el-iconbtn el-iconbtn-sm" href="@payments-shift-report" aria-label="Kecha, 20:55 smena hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td></tr><tr><td><a class="el-cell-title" href="@payments-shift-report" style="text-decoration: none; color: var(--text); white-space: nowrap">Bugun, 13:40</a></td><td class="el-hide-tablet el-muted" style="white-space: nowrap">Sardor Mirzayev</td><td class="el-num" style="white-space: nowrap">5 310 000 so'm</td><td class="el-num" style="white-space: nowrap">5 070 000 so'm</td><td class="el-num" style="white-space: nowrap"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−240 000 so'm</span></td><td style="width: 48px; padding-left: 0; padding-right: 8px"><a class="el-iconbtn el-iconbtn-sm" href="@payments-shift-report" aria-label="Bugun, 13:40 smena hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td></tr>
+          </tbody>
+          <tfoot><tr><td class="el-strong" style="background: var(--sunken); border-top: 1px solid var(--border)">Jami</td><td class="el-hide-tablet" style="background: var(--sunken); border-top: 1px solid var(--border)"></td><td style="background: var(--sunken); border-top: 1px solid var(--border)"></td><td style="background: var(--sunken); border-top: 1px solid var(--border)"></td><td class="el-num" style="background: var(--sunken); border-top: 1px solid var(--border)"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−445 000 so'm</span></td><td style="background: var(--sunken); border-top: 1px solid var(--border)"></td></tr></tfoot>
+        </table>
+      </div>
+      <div class="el-list el-show-mobile" aria-labelledby="ad-ev" style="flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+        <a class="el-list-item" href="@payments-shift-report" style="text-decoration: none; color: var(--text); align-items: flex-start; padding: 12px 14px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title" style="min-width: 0">21.10.2026, 20:50</span><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−120 000 so'm</span></div>
+            <span class="el-cell-sub" style="white-space: normal">Kutilgan 4 860 000 · sanalgan 4 740 000 so'm</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <a class="el-list-item" href="@payments-shift-report" style="text-decoration: none; color: var(--text); align-items: flex-start; padding: 12px 14px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title" style="min-width: 0">Kecha, 20:55</span><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−85 000 so'm</span></div>
+            <span class="el-cell-sub" style="white-space: normal">Kutilgan 3 920 000 · sanalgan 3 835 000 so'm</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <a class="el-list-item" href="@payments-shift-report" style="text-decoration: none; color: var(--text); align-items: flex-start; padding: 12px 14px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title" style="min-width: 0">Bugun, 13:40</span><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−240 000 so'm</span></div>
+            <span class="el-cell-sub" style="white-space: normal">Kutilgan 5 310 000 · sanalgan 5 070 000 so'm</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <div class="el-list-item" style="min-height: 48px; padding: 12px 14px; background: var(--sunken); justify-content: space-between"><span class="el-strong">Jami · 3 smena</span><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−445 000 so'm</span></div>
+      </div>
+    </section>
+    <section aria-labelledby="ad-ai" style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: var(--sunken)">
+      <div style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span><h3 class="el-h3" id="ad-ai">AI izohi</h3><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Bugun, 14:20</span></div>
+      <p class="el-small">Uchala kamomad ham «Humo virtual» kartasida: naqd to'g'ri sanalgan, karta qoldig'i har gal kam kiritilgan. Ehtimol, kechki tushum smena yopilgandan keyin kartaga tushmoqda. Smena hisobotidagi karta rasmlarini solishtiring.</p>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </section>
+    <div class="el-field">
+      <label class="el-label" for="ad-note">Izoh</label>
+      <textarea class="el-input el-textarea" id="ad-note" rows="3" maxlength="500" placeholder="Nima qilindi? Masalan: kartadagi tushum keyingi kuni kelgan" aria-describedby="ad-note-h" style="min-height: 72px; height: 72px; resize: none">Kartadagi tushum keyingi kuni kelgan, Sardor Mirzayev bilan tekshirildi.</textarea>
+      <span class="el-hint" id="ad-note-h">«Hal qilindi» uchun majburiy · 3–500 belgi · faoliyat jurnaliga yoziladi</span>
+    </div>
+    </div>
+    <div class="el-dialog-foot el-hide-mobile" style="padding-top: 16px; border-top: 1px solid var(--border); justify-content: space-between; align-items: center">
+      <a class="el-btn el-btn-link" href="@payments-shift-report" style="gap: 6px">Smena hisobotiga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto">
+        <button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Ahamiyatsiz</button>
+        <a class="el-btn el-btn-primary" href="@ai-assistant-alert-resolve-confirm" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Hal qilindi</a>
+      </div>
+    </div>
+    <div class="el-dialog-foot el-show-mobile" style="padding-top: 16px; border-top: 1px solid var(--border); flex-direction: column; align-items: stretch">
+      <a class="el-btn el-btn-primary" href="@ai-assistant-alert-resolve-confirm" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Hal qilindi</a>
+      <button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Ahamiyatsiz</button>
+      <a class="el-btn el-btn-link" href="@payments-shift-report" style="gap: 6px">Smena hisobotiga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+    </div>
+  </div>
+  <span class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+</div>
+<div class="el-overlay" style="position: absolute; z-index: 40; flex-direction: column; justify-content: safe center; gap: 16px; padding: clamp(0px, (100cqw - 767.5px) * 999, 260px) clamp(0px, (100cqw - 767.5px) * 999, 16px) clamp(0px, (100cqw - 767.5px) * 999, 16px)">
+  <span class="el-show-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+  <div class="el-dialog" role="alertdialog" aria-modal="true" aria-labelledby="rv-title" aria-describedby="rv-desc" style="width: min(440px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+        <h2 class="el-h2" id="rv-title">Ogohlantirish hal qilindimi?</h2>
+        <p class="el-small el-muted" id="rv-desc">Samarqand filiali · smena kamomadi <span style="white-space: nowrap; color: var(--danger-fg)">−445 000 so'm</span></p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-label">Izoh</span>
+      <p class="el-small" style="padding: 12px 16px; border-radius: 12px; background: var(--sunken)">Kartadagi tushum keyingi kuni kelgan, Sardor Mirzayev bilan tekshirildi.</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+      <li style="display: flex; gap: 10px; align-items: flex-start"><span style="display: inline-flex; margin-top: 1px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="el-small">Holat «Hal qilindi»ga o'tadi va faoliyat jurnaliga yoziladi.</span></li><li style="display: flex; gap: 10px; align-items: flex-start"><span style="display: inline-flex; margin-top: 1px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="el-small">Muammo qaytsa, yangi ogohlantirish ochiladi.</span></li>
+    </ul>
+    <div class="el-dialog-foot">
+      <a class="el-btn el-btn-secondary" href="@ai-assistant-alert-dialog">Orqaga</a>
+      <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Hal qilindi deb belgilash</button>
+    </div>
+  </div>
+  <span class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+</div>

@@ -1,0 +1,364 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">AI moliyaviy yordamchi</h1>
+    <p class="el-sub">Kassa, qarzlar va xarajatlar bo'yicha savol, hisobot, ogohlantirish va tavsiyalar. Yordamchi faqat ma'lumot o'qiydi.</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-secondary" href="@ai-assistant-settings-budget-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>Sozlamalar</a>
+  </div>
+</div>
+
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="AI yordamchi bo'limlari">
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant" style="text-decoration: none; color: var(--text-muted)">Suhbat</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-reports" style="text-decoration: none; color: var(--text-muted)">Hisobotlar</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-alerts" style="text-decoration: none; color: var(--text-muted)">Ogohlantirishlar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-recommendations" style="text-decoration: none; color: var(--text-muted)">Tavsiyalar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ai-assistant-usage" style="text-decoration: none; color: var(--text)">Sarf</a>
+</nav>
+<a class="el-input el-select el-show-mobile" href="@ai-assistant-tab-select" aria-haspopup="listbox" aria-expanded="false" aria-label="Bo'lim: Sarf" style="text-decoration: none; color: var(--text)"><span class="el-strong">Sarf</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></a>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+  <button class="el-input el-select" type="button" style="flex: 1 1 220px; max-width: 260px; width: auto; min-width: clamp(0px, (767.5px - 100cqw) * 999, 100%)" aria-haspopup="listbox" aria-expanded="false" aria-label="Oy: oktabr 2026"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Oktabr 2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  <span class="el-small el-muted">Kunlar Toshkent vaqti bo'yicha</span>
+</div>
+
+<section class="el-card" aria-labelledby="us-budget">
+  <div class="el-card-head" style="flex-wrap: wrap">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 240px">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <h2 class="el-h2" id="us-budget">Oktabr budjeti</h2>
+        <span class="el-small el-muted">AI maslahatchi · buyurtma AI'sidan alohida</span>
+      </div>
+    </div>
+    <a class="el-btn el-btn-secondary el-btn-sm" href="@ai-assistant-budget-raise-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Budjetni oshirish</a>
+  </div>
+  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px"><span class="el-kpi-value">605 440<span class="el-kpi-unit">so'm</span></span><span class="el-small el-muted" style="white-space: nowrap">/ 1 280 000 so'm</span></span>
+        <span class="el-small el-muted">47,30 $ / 100,00 $</span>
+      </div>
+      <span class="el-h2">47%</span>
+    </div>
+    <div class="el-meter is-thick" role="meter" aria-label="Oktabr budjeti: 1 280 000 so'mdan 605 440 so'm sarflangan, 47%. Ogohlantirish chegarasi 80%" aria-valuemin="0" aria-valuemax="1280000" aria-valuenow="605440" style="margin-top: 4px"><span style="width: 47.3%"></span><span class="el-meter-target" style="left: 80%"></span></div>
+    <span class="el-xs el-muted">Tik chiziq — 80% ogohlantirish chegarasi (1 024 000 so'm): xabar keladi, chuqur tahlil o'chadi</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px">
+      <div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--sunken); min-width: 0">
+        <span class="el-xs el-muted">Qoldi</span>
+        <span class="el-strong">674 560 so'm</span>
+        <span class="el-xs el-muted">52,70 $</span>
+      </div>
+      <div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--sunken); min-width: 0">
+        <span class="el-xs el-muted">Yangilanadi</span>
+        <span class="el-strong">01.11.2026, 00:00</span>
+        <span class="el-xs el-muted">9 kundan keyin</span>
+      </div>
+      <div style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--sunken); min-width: 0">
+        <span class="el-xs el-muted">Chuqur tahlil</span>
+        <span class="el-strong">3 / 10</span>
+        <span class="el-xs el-muted">bu oy ishlatildi</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="el-kpi-row" aria-label="Oktabr sarfi xulosasi">
+  <div class="el-kpi">
+    <div class="el-kpi-top"><span class="el-kpi-label">Bugun</span><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span></div>
+    <div class="el-kpi-value">41 600<span class="el-kpi-unit">so'm</span></div>
+    <div class="el-kpi-meta"><span>3,25 $ · kunlik chegara 128 000 so'm</span></div>
+  </div>
+  <div class="el-kpi">
+    <div class="el-kpi-top"><span class="el-kpi-label">Kunlik o'rtacha</span><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span></div>
+    <div class="el-kpi-value">26 320<span class="el-kpi-unit">so'm</span></div>
+    <div class="el-kpi-meta"><span>2,06 $ · 23 kun</span></div>
+  </div>
+  <div class="el-kpi">
+    <div class="el-kpi-top"><span class="el-kpi-label">Keshdan tejaldi</span><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span></div>
+    <div class="el-kpi-value">120 320<span class="el-kpi-unit">so'm</span></div>
+    <div class="el-kpi-meta"><span>9,40 $ · takror savollar bepul</span></div>
+  </div>
+  <div class="el-kpi">
+    <div class="el-kpi-top"><span class="el-kpi-label">Chaqiruvlar</span><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg></span></div>
+    <div class="el-kpi-value">985<span class="el-kpi-unit">ta</span></div>
+    <div class="el-kpi-meta"><span>bu oy · 6 ta funksiya</span></div>
+  </div>
+</section>
+
+<section class="el-card el-chart" aria-labelledby="us-daily">
+  <div class="el-chart-head">
+    <div class="el-chart-titles"><h2 class="el-chart-title" id="us-daily">Kunlik sarf</h2><p class="el-chart-sub">Oktabr 2026 · so'mda</p></div>
+    <div class="el-chart-controls"><div class="el-viewtoggle" role="group" aria-label="Kunlik sarf ko'rinishi"><button type="button" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Grafik</button><button type="button" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>Jadval</button></div></div>
+  </div>
+  <div class="el-hide-mobile" style="flex-direction: column; gap: 8px; min-width: 0">
+  <div class="el-plot" role="img" aria-label="Oktabr kunlik sarfi, 01–23.10.2026: odatda 9 – 36 ming so'm; eng ko'pi 20.10 (58 880 so'm) va 13.10 (49 920 so'm); bugun 41 600 so'm. Hech bir kun kunlik chegaraga (128 000 so'm) yetmadi" style="--plot-h: 260px">
+  <div class="el-axis-y" aria-hidden="true"><span style="top: 100%">0</span><span style="top: 66.67%">20 ming</span><span style="top: 33.33%">40 ming</span><span style="top: 0%">60 ming</span></div>
+  <div class="el-bars" style="--plot-h: 260px; gap: 8px"><span class="el-gridline is-base" style="top: 100%"></span><span class="el-gridline" style="top: 66.67%"></span><span class="el-gridline" style="top: 33.33%"></span><span class="el-gridline" style="top: 0%"></span><div class="el-bars-col"><span class="el-bars-bar" style="height: 34.1%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 44.8%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 25.6%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 19.2%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 51.2%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 46.9%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 40.5%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 55.5%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 49.1%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 23.5%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 17.1%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 57.6%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 83.2%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 46.9%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 42.7%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 51.2%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 21.3%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 14.9%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 59.7%"></span></div><div class="el-bars-col is-hover"><span class="el-bars-bar" style="height: 98.1%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 32.0%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 24.5%"></span></div><div class="el-bars-col"><span class="el-bars-bar" style="height: 69.3%"></span></div><button class="el-hit" type="button" aria-label="01.10.2026, payshanba: 20 480 so'm (1,60 $)" style="left: 0.00%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="02.10.2026, juma: 26 880 so'm (2,10 $)" style="left: 4.35%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="03.10.2026, shanba: 15 360 so'm (1,20 $)" style="left: 8.70%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="04.10.2026, yakshanba: 11 520 so'm (0,90 $)" style="left: 13.04%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="05.10.2026, dushanba: 30 720 so'm (2,40 $)" style="left: 17.39%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="06.10.2026, seshanba: 28 160 so'm (2,20 $)" style="left: 21.74%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="07.10.2026, chorshanba: 24 320 so'm (1,90 $)" style="left: 26.09%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="08.10.2026, payshanba: 33 280 so'm (2,60 $)" style="left: 30.43%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="09.10.2026, juma: 29 440 so'm (2,30 $)" style="left: 34.78%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="10.10.2026, shanba: 14 080 so'm (1,10 $)" style="left: 39.13%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="11.10.2026, yakshanba: 10 240 so'm (0,80 $)" style="left: 43.48%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="12.10.2026, dushanba: 34 560 so'm (2,70 $)" style="left: 47.83%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="13.10.2026, seshanba: 49 920 so'm (3,90 $)" style="left: 52.17%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="14.10.2026, chorshanba: 28 160 so'm (2,20 $)" style="left: 56.52%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="15.10.2026, payshanba: 25 600 so'm (2,00 $)" style="left: 60.87%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="16.10.2026, juma: 30 720 so'm (2,40 $)" style="left: 65.22%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="17.10.2026, shanba: 12 800 so'm (1,00 $)" style="left: 69.57%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="18.10.2026, yakshanba: 8 960 so'm (0,70 $)" style="left: 73.91%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="19.10.2026, dushanba: 35 840 so'm (2,80 $)" style="left: 78.26%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="20.10.2026, seshanba: 58 880 so'm (4,60 $)" style="left: 82.61%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="21.10.2026, chorshanba: 19 200 so'm (1,50 $)" style="left: 86.96%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="22.10.2026, payshanba: 14 720 so'm (1,15 $)" style="left: 91.30%; width: 4.35%"></button><button class="el-hit" type="button" aria-label="Bugun, 23.10.2026, juma: 41 600 so'm (3,25 $)" style="left: 95.65%; width: 4.35%"></button><div class="el-tip el-hide-mobile" role="status" style="right: calc(15.22% + 20px); top: 8px">
+    <span class="el-tip-title">20.10.2026, seshanba</span>
+    <div class="el-tip-row"><span class="el-tip-key is-box" style="background: var(--chart-1)"></span><span class="el-tip-value">58 880 so'm</span><span class="el-tip-label">4,60 $</span></div>
+    <div class="el-tip-sep"></div>
+    <div class="el-tip-row"><span class="el-tip-label">Oyning eng ko'p kuni</span></div>
+    <div class="el-tip-row"><span class="el-tip-label">Kunlik chegaraning 46%</span></div>
+  </div></div>
+  <span></span>
+  <div class="el-bars-labels" aria-hidden="true" style="gap: 8px"><span>01.10</span><span></span><span></span><span></span><span></span><span></span><span></span><span>08.10</span><span></span><span></span><span></span><span></span><span></span><span></span><span>15.10</span><span></span><span></span><span></span><span></span><span></span><span></span><span><span class="el-hide-tablet">22.10</span></span><span class="is-current" style="text-align: right; overflow: visible; direction: rtl">Bugun</span></div>
+  </div>
+  </div>
+  <div class="el-show-mobile" style="flex-direction: column; gap: 8px; min-width: 0">
+    <span class="el-xs el-muted">Oxirgi 7 kun · ming so'm</span>
+    <div style="display: flex; flex-direction: column; gap: 8px; --plot-h-phone: 180px" role="img" aria-label="Oxirgi 7 kun sarfi: 17.10 — 12 800, 18.10 — 8 960, 19.10 — 35 840, 20.10 — 58 880, 21.10 — 19 200, kecha — 14 720, bugun — 41 600 so'm">
+      <div class="el-bars" style="--plot-h: 180px"><span class="el-gridline is-base" style="top: 100%"></span><div class="el-bars-col"><span class="el-bars-value">12,8</span><span class="el-bars-bar" style="height: 19.7%"></span></div><div class="el-bars-col"><span class="el-bars-value">9,0</span><span class="el-bars-bar" style="height: 13.8%"></span></div><div class="el-bars-col"><span class="el-bars-value">35,8</span><span class="el-bars-bar" style="height: 55.1%"></span></div><div class="el-bars-col"><span class="el-bars-value">58,9</span><span class="el-bars-bar" style="height: 90.6%"></span></div><div class="el-bars-col"><span class="el-bars-value">19,2</span><span class="el-bars-bar" style="height: 29.5%"></span></div><div class="el-bars-col"><span class="el-bars-value">14,7</span><span class="el-bars-bar" style="height: 22.6%"></span></div><div class="el-bars-col"><span class="el-bars-value">41,6</span><span class="el-bars-bar" style="height: 64.0%"></span></div></div>
+      <div class="el-bars-labels" aria-hidden="true"><span>17.10</span><span>18.10</span><span>19.10</span><span>20.10</span><span>21.10</span><span>Kecha</span><span class="is-current">Bugun</span></div>
+    </div>
+  </div>
+  <p class="el-chart-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Kunlik chegara 128 000 so'm (10 $) — bu oy birorta kun unga yetmadi</p>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<section class="el-card" aria-labelledby="us-feat" style="flex: 2 1 560px; overflow: hidden">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="us-feat">Funksiyalar bo'yicha</h2>
+      <p class="el-small el-muted">Model va chaqiruvlar soni · oktabr 2026</p>
+    </div>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table is-compact">
+      <thead><tr><th scope="col">Funksiya</th><th scope="col" class="el-hide-tablet">Model</th><th scope="col" class="el-num">Chaqiruvlar</th><th scope="col" class="el-num">Sarf</th><th scope="col">Ulush</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="el-cell-title">Suhbat</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sonnet 5.5</div></td>
+          <td class="el-num">412 ta</td>
+          <td class="el-num"><div class="el-strong">384 000 so'm</div><div class="el-cell-sub">30,00 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Suhbat: sarf ulushi 63,4%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="63.4" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 63.4%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">63,4%</span></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Hisobotlar</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sonnet 5.5</div><div class="el-cell-sub">kechki paket</div></td>
+          <td class="el-num">29 ta</td>
+          <td class="el-num"><div class="el-strong">115 200 so'm</div><div class="el-cell-sub">9,00 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Hisobotlar: sarf ulushi 19,0%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="19" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 19%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">19,0%</span></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Suhbat — chuqur tahlil</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Opus 5.5</div></td>
+          <td class="el-num">3 ta</td>
+          <td class="el-num"><div class="el-strong">57 600 so'm</div><div class="el-cell-sub">4,50 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Suhbat — chuqur tahlil: sarf ulushi 9,5%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="9.5" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 9.5%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">9,5%</span></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Ogohlantirish izohlari</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sonnet 5.5</div></td>
+          <td class="el-num">14 ta</td>
+          <td class="el-num"><div class="el-strong">32 000 so'm</div><div class="el-cell-sub">2,50 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Ogohlantirish izohlari: sarf ulushi 5,3%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5.3" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 5.3%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">5,3%</span></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Telegram xulosasi</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Haiku 5.5</div></td>
+          <td class="el-num">29 ta</td>
+          <td class="el-num"><div class="el-strong">10 240 so'm</div><div class="el-cell-sub">0,80 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Telegram xulosasi: sarf ulushi 1,7%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.7" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 1.7%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">1,7%</span></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Savolni tasniflash</td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Haiku 5.5</div></td>
+          <td class="el-num">498 ta</td>
+          <td class="el-num"><div class="el-strong">6 400 so'm</div><div class="el-cell-sub">0,50 $</div></td>
+          <td><div style="display: flex; align-items: center; gap: 8px; min-width: 120px"><div class="el-meter is-thin" role="meter" aria-label="Savolni tasniflash: sarf ulushi 1,1%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.1" style="flex: 1 1 64px; --meter-track: var(--sunken)"><span style="width: 1.1%"></span></div><span class="el-small" style="min-width: 44px; text-align: right">1,1%</span></div></td>
+        </tr>
+      </tbody>
+      <tfoot><tr><td class="el-strong" style="background: var(--sunken); border-top: 1px solid var(--border); white-space: nowrap">Jami · 6 ta funksiya</td><td class="el-hide-tablet" style="background: var(--sunken); border-top: 1px solid var(--border)"></td><td class="el-num el-strong" style="background: var(--sunken); border-top: 1px solid var(--border)">985 ta</td><td class="el-num" style="background: var(--sunken); border-top: 1px solid var(--border)"><div class="el-strong">605 440 so'm</div><div class="el-cell-sub">47,30 $</div></td><td class="el-small" style="background: var(--sunken); border-top: 1px solid var(--border)">budjetning 47%</td></tr></tfoot>
+    </table>
+  </div>
+  <ul class="el-show-mobile" aria-label="Funksiyalar bo'yicha sarf" style="list-style: none; margin: 0; padding: 4px 16px 8px; flex-direction: column">
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Suhbat</span><span class="el-strong" style="white-space: nowrap">384 000 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Suhbat: sarf ulushi 63,4%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="63.4" style="--meter-track: var(--sunken)"><span style="width: 63.4%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Sonnet 5.5 · 412 ta</span><span class="el-xs el-muted" style="white-space: nowrap">30,00 $ · 63,4%</span></div>
+    </li>
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border)">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Hisobotlar</span><span class="el-strong" style="white-space: nowrap">115 200 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Hisobotlar: sarf ulushi 19,0%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="19" style="--meter-track: var(--sunken)"><span style="width: 19%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Sonnet 5.5 · kechki paket · 29 ta</span><span class="el-xs el-muted" style="white-space: nowrap">9,00 $ · 19,0%</span></div>
+    </li>
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border)">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Suhbat — chuqur tahlil</span><span class="el-strong" style="white-space: nowrap">57 600 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Suhbat — chuqur tahlil: sarf ulushi 9,5%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="9.5" style="--meter-track: var(--sunken)"><span style="width: 9.5%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Opus 5.5 · 3 ta</span><span class="el-xs el-muted" style="white-space: nowrap">4,50 $ · 9,5%</span></div>
+    </li>
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border)">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Ogohlantirish izohlari</span><span class="el-strong" style="white-space: nowrap">32 000 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Ogohlantirish izohlari: sarf ulushi 5,3%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5.3" style="--meter-track: var(--sunken)"><span style="width: 5.3%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Sonnet 5.5 · 14 ta</span><span class="el-xs el-muted" style="white-space: nowrap">2,50 $ · 5,3%</span></div>
+    </li>
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border)">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Telegram xulosasi</span><span class="el-strong" style="white-space: nowrap">10 240 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Telegram xulosasi: sarf ulushi 1,7%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.7" style="--meter-track: var(--sunken)"><span style="width: 1.7%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Haiku 5.5 · 29 ta</span><span class="el-xs el-muted" style="white-space: nowrap">0,80 $ · 1,7%</span></div>
+    </li>
+    <li style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border)">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span class="el-strong" style="min-width: 0">Savolni tasniflash</span><span class="el-strong" style="white-space: nowrap">6 400 so'm</span></div>
+      <div class="el-meter" role="meter" aria-label="Savolni tasniflash: sarf ulushi 1,1%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1.1" style="--meter-track: var(--sunken)"><span style="width: 1.1%"></span></div>
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-xs el-muted">Haiku 5.5 · 498 ta</span><span class="el-xs el-muted" style="white-space: nowrap">0,50 $ · 1,1%</span></div>
+    </li>
+    <li style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border)"><span class="el-strong">Jami · 985 ta</span><span style="display: flex; flex-direction: column; align-items: flex-end"><span class="el-strong" style="white-space: nowrap">605 440 so'm</span><span class="el-xs el-muted">47,30 $</span></span></li>
+  </ul>
+</section>
+<section class="el-card" aria-labelledby="us-save" style="flex: 1 1 340px">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="us-save">Qanday tejaladi</h2>
+      <p class="el-small el-muted">Bu oy keshdan 120 320 so'm (9,40 $) tejaldi</p>
+    </div>
+  </div>
+  <ul class="el-card-pad" style="list-style: none; margin: 0; display: flex; flex-direction: column; gap: 14px">
+    <li class="el-small" style="display: flex; align-items: flex-start; gap: 10px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span>Takror savol keshdan bepul: o'tgan davr 30 kun, bugungi ma'lumot 10 daqiqa saqlanadi</span></li>
+    <li class="el-small" style="display: flex; align-items: flex-start; gap: 10px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span>Oddiy qadamlar (savolni tasniflash, Telegram xulosasi) arzon modelda</span></li>
+    <li class="el-small" style="display: flex; align-items: flex-start; gap: 10px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span>Rejali hisobotlar kechasi paket bilan yoziladi — yarim narxda</span></li>
+    <li class="el-small" style="display: flex; align-items: flex-start; gap: 10px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span>AI xom yozuvlarni emas, kunlik yig'indini o'qiydi</span></li>
+  </ul>
+</section>
+</div>
+
+<p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Buyurtma AI'si sarfi bu budjetga kirmaydi — u alohida hisoblanadi: <a href="@balance-overview" style="font-weight: 600; white-space: nowrap">Balans → AI xarajat</a></span></p>
+
+<section class="el-hide-mobile" aria-labelledby="us-states" style="display: flex; flex-direction: column; gap: 12px; padding-top: 24px; border-top: 1px solid var(--border)">
+  <h2 class="el-overline" id="us-states">Boshqa holatlar</h2>
+  <div class="el-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); align-items: stretch">
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div class="el-alert el-tone-warning" role="status"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="el-alert-body" style="display: flex; flex-direction: column; gap: 4px"><div class="el-alert-title">Budjetning 80% i sarflandi</div><span class="el-small">1 024 000 / 1 280 000 so'm (80 $ / 100 $). Chuqur tahlil 01.11.2026 gacha o'chirildi, oddiy savollar ishlaydi.</span><a class="el-btn el-btn-secondary el-btn-sm" href="@ai-assistant-budget-raise-dialog" aria-haspopup="dialog" style="align-self: flex-start; margin-top: 4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Budjetni oshirish</a></div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px"><span class="el-small el-strong" style="white-space: nowrap">1 024 000 / 1 280 000 so'm</span><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>80% dan oshdi</span></div>
+          <div class="el-meter is-thick is-warning" role="meter" aria-label="Oktabr budjeti: 1 280 000 so'mdan 1 024 000 so'm sarflangan, 80%" aria-valuemin="0" aria-valuemax="1280000" aria-valuenow="1024000"><span style="width: 80%"></span><span class="el-meter-target" style="left: 80%"></span></div>
+        </div>
+      </div>
+      <figcaption class="el-state-label">80% — ogohlantirish (budjet kartasi tepasida)</figcaption>
+    </figure>
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div class="el-alert el-tone-danger" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><div class="el-alert-body" style="display: flex; flex-direction: column; gap: 4px"><div class="el-alert-title">Oylik budjet tugadi</div><span class="el-small">AI javoblari 01.11.2026, 00:00 gacha to'xtadi. Kunlik hisob, qoidalar va KPI ishlayveradi; hisobotlar faqat raqamlar bilan.</span><a class="el-btn el-btn-secondary el-btn-sm" href="@ai-assistant-budget-raise-dialog" aria-haspopup="dialog" style="align-self: flex-start; margin-top: 4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Budjetni oshirish</a></div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px"><span class="el-small el-strong" style="white-space: nowrap">1 280 000 / 1 280 000 so'm</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Tugadi</span></div>
+          <div class="el-meter is-thick is-danger" role="meter" aria-label="Oktabr budjeti: 1 280 000 so'm to'liq sarflangan, 100%" aria-valuemin="0" aria-valuemax="1280000" aria-valuenow="1280000"><span style="width: 100%"></span><span class="el-meter-target" style="left: 80%"></span></div>
+        </div>
+      </div>
+      <figcaption class="el-state-label">100% — budjet tugadi</figcaption>
+    </figure>
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-h3">Oktabr budjeti</span><span class="el-xs el-muted">Bir martalik oshirish · faqat shu oy</span></span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px"><span class="el-small el-strong" style="white-space: nowrap">605 440 / 1 536 000 so'm</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>20 $ · 31.10 gacha</span></div>
+          <div class="el-meter is-thick" role="meter" aria-label="Oktabr budjeti: 1 536 000 so'mdan 605 440 so'm sarflangan, 39%" aria-valuemin="0" aria-valuemax="1536000" aria-valuenow="605440"><span style="width: 39.4%"></span><span class="el-meter-target" style="left: 80%"></span></div>
+          <span class="el-xs el-muted">47,30 $ / 120,00 $ · 39% · 01.11.2026 da 100 $ ga qaytadi</span>
+        </div>
+      </div>
+      <figcaption class="el-state-label">Budjet bir martalik oshirilgan</figcaption>
+    </figure>
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div class="el-chart-empty" style="min-height: 180px"><span class="el-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span><p class="el-empty-title">Bu oy hali sarf yo'q</p><p class="el-empty-text">Noyabr 2026 · birinchi savol yoki hisobotdan keyin kunlik sarf shu yerda chiziladi.</p></div>
+      </div>
+      <figcaption class="el-state-label">Yangi oy — hali sarf yo'q</figcaption>
+    </figure>
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div style="display: flex; flex-direction: column; gap: 10px"><span class="el-skel-line el-shimmer" style="width: 40%"></span><span class="el-skel-line el-shimmer" style="width: 24%"></span></div>
+        <div class="el-chart-loading" aria-busy="true" aria-label="Kunlik sarf yuklanmoqda" style="min-height: 150px"><span class="el-shimmer" style="height: 46%"></span><span class="el-shimmer" style="height: 62%"></span><span class="el-shimmer" style="height: 38%"></span><span class="el-shimmer" style="height: 70%"></span><span class="el-shimmer" style="height: 55%"></span><span class="el-shimmer" style="height: 66%"></span><span class="el-shimmer" style="height: 48%"></span><span class="el-shimmer" style="height: 74%"></span><span class="el-shimmer" style="height: 40%"></span><span class="el-shimmer" style="height: 58%"></span></div>
+      </div>
+      <figcaption class="el-state-label">Yuklanmoqda</figcaption>
+    </figure>
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 20px; min-height: 220px">
+        <div class="el-chart-empty" style="min-height: 180px"><span class="el-empty-icon" style="color: var(--danger-fg); background: var(--danger-soft)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><p class="el-empty-title">Sarfni yuklab bo'lmadi</p><p class="el-empty-text">Internet aloqasini tekshiring va qayta urinib ko'ring.</p><button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta urinish</button></div>
+      </div>
+      <figcaption class="el-state-label">Xato — ma'lumot kelmadi</figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="el-overlay" style="position: absolute; z-index: 30; flex-direction: column; justify-content: safe center; gap: 16px; padding: clamp(0px, (100cqw - 767.5px) * 999, clamp(16px, 6vw, 96px)) clamp(0px, (100cqw - 767.5px) * 999, 16px) clamp(0px, (100cqw - 767.5px) * 999, 16px)">
+  <span class="el-show-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="st-title" aria-describedby="st-desc" style="width: min(720px, 100%); max-height: calc(100% - 64px); overflow: hidden">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="st-title">AI yordamchi sozlamalari</h2>
+        <p class="el-small el-muted" id="st-desc">Faqat superadmin · har o'zgarish faoliyat jurnaliga yoziladi</p>
+      </div>
+      <a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-usage" aria-label="Yopish" style="margin: -4px -8px 0 0; color: var(--text-muted)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+    <nav class="el-tabs el-hide-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="flex: none; margin: 0 -24px; padding: 0 24px">
+      <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-settings-dialog" style="text-decoration: none; color: var(--text-muted)">Hisobotlar</a>
+      <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-settings-rules-dialog" style="text-decoration: none; color: var(--text-muted)">Qoidalar</a>
+      <a class="el-tab" role="tab" aria-selected="true" href="@ai-assistant-settings-budget-dialog" style="text-decoration: none; color: var(--text)">Budjet</a>
+      <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-settings-dialog" style="text-decoration: none; color: var(--text-muted)">Bilim bazasi</a>
+    </nav>
+    <a class="el-input el-select el-show-mobile" href="#" aria-haspopup="listbox" aria-label="Sozlamalar bo'limi: Budjet" style="flex: none; text-decoration: none; color: var(--text)"><span class="el-strong">Budjet</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></a>
+    <div role="tabpanel" aria-label="Budjet" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; margin: 0 -4px; padding: 0 4px">
+      <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>«Qoidalar» bo'limida yana 2 ta o'zgarish bor — hammasi birga saqlanadi.</span></p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px 20px">
+        <div class="el-field">
+          <label class="el-label" for="sb-month">Oylik budjet <span class="el-req">*</span></label>
+          <div style="position: relative; display: flex; align-items: center"><input class="el-input is-focus" id="sb-month" type="text" inputmode="numeric" autocomplete="off" value="120" aria-describedby="sb-month-h" style="padding-right: 56px"><span class="el-muted" style="position: absolute; right: 12px">$</span></div>
+          <span class="el-hint" id="sb-month-h">≈ 1 536 000 so'm · avval 100 $ · 10–500 $</span>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="sb-warn">Ogohlantirish chegarasi</label>
+          <div style="position: relative; display: flex; align-items: center"><input class="el-input" id="sb-warn" type="text" inputmode="numeric" autocomplete="off" value="80" aria-describedby="sb-warn-h" style="padding-right: 56px"><span class="el-muted" style="position: absolute; right: 12px">%</span></div>
+          <span class="el-hint" id="sb-warn-h">≈ 1 228 800 so'mda xabar keladi, chuqur tahlil o'chadi</span>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="sb-day">Kunlik chegara</label>
+          <div style="position: relative; display: flex; align-items: center"><input class="el-input" id="sb-day" type="text" inputmode="numeric" autocomplete="off" value="10" aria-describedby="sb-day-h" style="padding-right: 56px"><span class="el-muted" style="position: absolute; right: 12px">$</span></div>
+          <span class="el-hint" id="sb-day-h">≈ 128 000 so'm · bir kunda bundan ko'p sarflanmaydi</span>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="sb-deep">Chuqur tahlil oyiga</label>
+          <div style="position: relative; display: flex; align-items: center"><input class="el-input" id="sb-deep" type="text" inputmode="numeric" autocomplete="off" value="10" aria-describedby="sb-deep-h" style="padding-right: 56px"><span class="el-muted" style="position: absolute; right: 12px">ta</span></div>
+          <span class="el-hint" id="sb-deep-h">Bu oy 3 tasi ishlatilgan</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+          <p class="el-small">Budjet tugasa: AI javoblari, hisobot matni va izohlar to'xtaydi (qattiq chegara). Kunlik hisob, ogohlantirish qoidalari va KPI ishlayveradi. Yangi oyning 1-sanasida qayta yoqiladi.</p>
+          <p class="el-xs el-muted">Summalar dollarda — xizmat narxi dollarda hisoblanadi; so'mdagi qiymat kurs bo'yicha (1 $ = 12 800 so'm).</p>
+          <p class="el-xs el-muted">Bir martalik oshirish — «Sarf» → «Budjetni oshirish» (oyiga 50 $ gacha).</p>
+        </div>
+      </div>
+    </div>
+    <div class="el-dialog-foot" style="padding-top: 16px; border-top: 1px solid var(--border)">
+      <a class="el-btn el-btn-secondary" href="@ai-assistant-usage">Bekor qilish</a>
+      <a class="el-btn el-btn-primary" href="@ai-assistant-settings-confirm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Saqlash</a>
+    </div>
+  </div>
+  <span class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+</div>
+<div class="el-overlay" style="position: absolute; z-index: 40; flex-direction: column; justify-content: safe center; gap: 16px; padding: clamp(0px, (100cqw - 767.5px) * 999, 200px) clamp(0px, (100cqw - 767.5px) * 999, 16px) clamp(0px, (100cqw - 767.5px) * 999, 16px)">
+  <span class="el-show-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+  <div class="el-dialog" role="alertdialog" aria-modal="true" aria-labelledby="sc-title" aria-describedby="sc-desc" style="width: min(480px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+        <h2 class="el-h2" id="sc-title">Sozlamalarni saqlaysizmi?</h2>
+        <p class="el-small el-muted" id="sc-desc">3 ta o'zgarish · faoliyat jurnaliga yoziladi</p>
+      </div>
+    </div>
+    <dl style="margin: 0; padding: 4px 16px; border-radius: 12px; background: var(--sunken); display: flex; flex-direction: column">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Oylik budjet</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right"><span style="display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px 6px"><span class="el-muted" style="font-weight: 400">1 280 000</span><span class="el-muted" style="display: inline-flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>1 536 000 so'm</span></span><span class="el-xs el-muted" style="display: block; font-weight: 400">100 $ → 120 $ · Budjet</span></dd></div>
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Smena kamomadi chegarasi</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right"><span style="display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px 6px"><span class="el-muted" style="font-weight: 400">50 000</span><span class="el-muted" style="display: inline-flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>30 000 so'm</span></span><span class="el-xs el-muted" style="display: block; font-weight: 400">Qoidalar</span></dd></div>
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Tuzatishlar ko'paydi</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right"><span style="display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px 6px"><span class="el-muted" style="font-weight: 400">Yoqilgan</span><span class="el-muted" style="display: inline-flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>O'chirilgan</span></span><span class="el-xs el-muted" style="display: block; font-weight: 400">Qoidalar</span></dd></div>
+</dl>
+    <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>O'chirilgan qoida bo'yicha ogohlantirish chiqmaydi. Budjet o'zgarishi darhol, shu oydan amal qiladi.</span></p>
+    <div class="el-dialog-foot">
+      <a class="el-btn el-btn-secondary" href="@ai-assistant-settings-budget-dialog">Orqaga</a>
+      <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Saqlash</button>
+    </div>
+  </div>
+  <span class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+</div>

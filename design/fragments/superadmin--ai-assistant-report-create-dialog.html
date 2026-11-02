@@ -1,0 +1,300 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">AI moliyaviy yordamchi</h1>
+    <p class="el-sub">Kassa, qarzlar va xarajatlar bo'yicha savol, hisobot, ogohlantirish va tavsiyalar. Yordamchi faqat ma'lumot o'qiydi.</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-secondary" href="@ai-assistant-settings-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>Sozlamalar</a>
+    <a class="el-btn el-btn-primary" href="@ai-assistant-report-create-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Hisobot tayyorlash</a>
+  </div>
+</div>
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="AI yordamchi bo'limlari">
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant" style="text-decoration: none; color: var(--text-muted)">Suhbat</a>
+  <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ai-assistant-reports" style="text-decoration: none; color: var(--text)">Hisobotlar</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-alerts" style="text-decoration: none; color: var(--text-muted)">Ogohlantirishlar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-recommendations" style="text-decoration: none; color: var(--text-muted)">Tavsiyalar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-usage" style="text-decoration: none; color: var(--text-muted)">Sarf</a>
+</nav>
+<a class="el-input el-select el-show-mobile" href="@ai-assistant-tab-select" aria-haspopup="listbox" aria-expanded="false" aria-label="Bo'lim: Hisobotlar" style="text-decoration: none; color: var(--text)"><span class="el-strong">Hisobotlar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></a>
+
+<div class="el-hide-mobile" style="display: flex; flex-direction: column; gap: 10px">
+  <div role="group" aria-label="Hisobotlar filtrlari" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+    <div class="el-seg" role="group" aria-label="Hisobot turi">
+      <button type="button" aria-pressed="true">Barchasi</button>
+      <button type="button" aria-pressed="false">Kunlik</button>
+      <button type="button" aria-pressed="false">Haftalik</button>
+      <button type="button" aria-pressed="false">Oylik</button>
+      <button type="button" aria-pressed="false">So'rov bo'yicha</button>
+    </div>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; max-width: 260px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v4"/><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M3 10h5"/><path d="M8 2v4"/><circle cx="16" cy="16" r="6"/></svg><span>Keyingisi: kunlik — ertaga, 08:00 · haftalik — 26.10, 08:00 · oylik — 01.11, 09:00</span></p>
+</div>
+<div class="el-show-mobile" style="flex-direction: column; gap: 10px">
+  <div role="group" aria-label="Hisobotlar filtrlari" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+    <button class="el-input el-select" type="button" style="width: auto; min-width: 0" aria-haspopup="listbox" aria-expanded="false" aria-label="Turi: barchasi"><span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden"><span class="el-muted">Turi:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="el-input el-select" type="button" style="width: auto; min-width: 0" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat: barchasi"><span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v4"/><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M3 10h5"/><path d="M8 2v4"/><circle cx="16" cy="16" r="6"/></svg><span>Keyingisi: kunlik — ertaga, 08:00 · haftalik — 26.10, 08:00 · oylik — 01.11, 09:00</span></p>
+</div>
+
+<section class="el-card" aria-labelledby="rp-list-title" style="overflow: hidden">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="rp-list-title">Hisobotlar</h2>
+      <p class="el-small el-muted">Eng yangisi yuqorida · narx so'mda</p>
+    </div>
+    <span class="el-badge el-tone-neutral">58 ta</span>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Hisobot</th>
+          <th class="el-hide-tablet">Turi</th>
+          <th>Holat</th>
+          <th class="el-num">Narx</th>
+          <th class="el-hide-tablet">Tayyorlandi</th>
+          <th class="el-hide-tablet" style="width: 56px"><span class="el-sr">Ochish</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); white-space: nowrap">So'rov bo'yicha hisobot</a><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Chuqur</span></span><div class="el-cell-sub">01.10–22.10.2026</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">So'rov bo'yicha</td>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Tayyorlanmoqda</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">Bugun, 14:02 dan</div></td>
+          <td class="el-num"><span class="el-subtle">—</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-subtle">—</span></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail-states" aria-label="«So'rov bo'yicha hisobot» (01.10–22.10.2026) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Kunlik hisobot</a></span><div class="el-cell-sub">22.10.2026, payshanba</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kunlik</td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></td>
+          <td class="el-num"><div>3 072 so'm</div><div class="el-cell-sub">0,24 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bugun, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail" aria-label="«Kunlik hisobot» (22.10.2026, payshanba) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Kunlik hisobot</a></span><div class="el-cell-sub">21.10.2026, chorshanba</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kunlik</td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></td>
+          <td class="el-num"><div>2 816 so'm</div><div class="el-cell-sub">0,22 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kecha, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail" aria-label="«Kunlik hisobot» (21.10.2026, chorshanba) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); white-space: nowrap">Kunlik hisobot</a></span><div class="el-cell-sub">20.10.2026, seshanba</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Kunlik</td>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span><span class="el-badge el-tone-neutral">Faqat raqamlar</span></span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">AI matni yozilmadi</div></td>
+          <td class="el-num"><div>0 so'm</div><div class="el-cell-sub">0,00 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">21.10.2026, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail-states" aria-label="«Kunlik hisobot» (20.10.2026, seshanba) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Haftalik hisobot</a></span><div class="el-cell-sub">12.10–18.10.2026</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Haftalik</td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></td>
+          <td class="el-num"><div>7 680 so'm</div><div class="el-cell-sub">0,60 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">19.10.2026, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail" aria-label="«Haftalik hisobot» (12.10–18.10.2026) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); white-space: nowrap">So'rov bo'yicha hisobot</a></span><div class="el-cell-sub">01.08–31.08.2026</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">So'rov bo'yicha</td>
+          <td><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">Qayta tayyorlang</div></td>
+          <td class="el-num"><span class="el-subtle">—</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">17.10.2026, 11:20</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail-states" aria-label="«So'rov bo'yicha hisobot» (01.08–31.08.2026) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Haftalik hisobot</a></span><div class="el-cell-sub">05.10–11.10.2026</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Haftalik</td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></td>
+          <td class="el-num"><div>7 040 so'm</div><div class="el-cell-sub">0,55 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">12.10.2026, 08:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail" aria-label="«Haftalik hisobot» (05.10–11.10.2026) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><a class="el-cell-title" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Oylik hisobot · Sentyabr 2026</a></span><div class="el-cell-sub">01.09–30.09.2026</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Oylik</td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></td>
+          <td class="el-num"><div>30 720 so'm</div><div class="el-cell-sub">2,40 $</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">01.10.2026, 09:00</td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-report-detail" aria-label="«Oylik hisobot · Sentyabr 2026» (01.09–30.09.2026) hisobotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">So'rov bo'yicha hisobot</span><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Tayyorlanmoqda</span></div>
+        <span class="el-small el-muted">01.10–22.10.2026</span>
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Chuqur</span></span>
+        <span class="el-small">Bugun, 14:02 dan</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Kunlik hisobot</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">22.10.2026, payshanba</span>
+        
+        <span class="el-small">3 072 so'm · Bugun, 08:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Kunlik hisobot</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">21.10.2026, chorshanba</span>
+        
+        <span class="el-small">2 816 so'm · Kecha, 08:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Kunlik hisobot</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">20.10.2026, seshanba</span>
+        <span style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">Faqat raqamlar</span></span>
+        <span class="el-small">0 so'm · 21.10.2026, 08:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Haftalik hisobot</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">12.10–18.10.2026</span>
+        
+        <span class="el-small">7 680 so'm · 19.10.2026, 08:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail-states" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">So'rov bo'yicha hisobot</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span></div>
+        <span class="el-small el-muted">01.08–31.08.2026</span>
+        
+        <span class="el-small">Qayta tayyorlang · 17.10.2026, 11:20</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Haftalik hisobot</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">05.10–11.10.2026</span>
+        
+        <span class="el-small">7 040 so'm · 12.10.2026, 08:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a class="el-list-item" href="@ai-assistant-report-detail" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 8px"><span class="el-cell-title">Oylik hisobot · Sentyabr 2026</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tayyor</span></div>
+        <span class="el-small el-muted">01.09–30.09.2026</span>
+        
+        <span class="el-small">30 720 so'm · 01.10.2026, 09:00</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+  </div>
+  <div class="el-card-foot el-pagination">
+    <span>1–8 / 58 ta hisobot</span>
+    <nav class="el-pages" aria-label="Sahifalar">
+      <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="el-page" type="button" aria-current="page">1</button><button class="el-page" type="button">2</button><button class="el-page" type="button">3</button><span class="el-subtle" aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px">…</span><button class="el-page" type="button">8</button>
+      <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </nav>
+  </div>
+</section>
+
+<div class="el-overlay" style="position: absolute; z-index: 30; flex-direction: column; justify-content: safe center; gap: 16px; padding: clamp(0px, (100cqw - 767.5px) * 999, clamp(16px, 6vw, 96px)) clamp(0px, (100cqw - 767.5px) * 999, 16px) clamp(0px, (100cqw - 767.5px) * 999, 16px)">
+  <span class="el-show-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="rc-title" aria-describedby="rc-desc" style="width: min(560px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="rc-title">Hisobot tayyorlash</h2>
+        <p class="el-small el-muted" id="rc-desc">Tanlangan davr bo'yicha AI tahlili · 92 kungacha</p>
+      </div>
+      <a class="el-iconbtn el-iconbtn-sm" href="@ai-assistant-reports" aria-label="Yopish" style="margin: -4px -8px 0 0; color: var(--text-muted)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+    <form id="rc-form" style="display: flex; flex-direction: column; gap: 20px">
+      <div class="el-field">
+        <span class="el-label" id="rc-period-l">Davr <span class="el-req">*</span></span>
+        <button class="el-input el-select" type="button" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="rc-period-l" aria-describedby="rc-period-h"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.10 – 22.10.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        <span class="el-hint" id="rc-period-h">22 kun · oxirgi kun — kecha (bugungi kun ertaga hisoblanadi)</span>
+      </div>
+      <fieldset style="border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <legend class="el-label" style="padding: 0; margin-bottom: 8px">Tahlil chuqurligi</legend>
+        <label class="el-choice-card is-selected">
+          <input class="el-radio" type="radio" name="rc-depth" value="standard" checked aria-describedby="rc-d1" style="margin-top: 2px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+            <span class="el-strong">Oddiy</span>
+            <span class="el-small el-muted" id="rc-d1">Xulosa, topilmalar, xavflar va tavsiyalar</span>
+          </span>
+        </label>
+        <label class="el-choice-card">
+          <input class="el-radio" type="radio" name="rc-depth" value="deep" aria-describedby="rc-d2" style="margin-top: 2px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+            <span class="el-strong" style="display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Chuqur</span>
+            <span class="el-small el-muted" id="rc-d2">Eng kuchli model, batafsil sabablar va reja · <span style="white-space: nowrap">≈ 25 600 so'm</span> · <span style="white-space: nowrap">bu oy 3 / 10</span></span>
+          </span>
+        </label>
+      </fieldset>
+      <dl aria-label="Narx bahosi" style="margin: 0; padding: 4px 16px; border-radius: 12px; background: var(--sunken); display: flex; flex-direction: column"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Taxminiy narx</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">≈ 12 800 so'm<span class="el-xs el-muted" style="display: block; font-weight: 400">1,00 $ · oddiy tahlil, 22 kun</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Ko'pi bilan</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">25 600 so'm<span class="el-xs el-muted" style="display: block; font-weight: 400">2,00 $ · haqiqiy narx bundan oshmaydi</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Budjet qoldig'i</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">674 560 so'm<span class="el-xs el-muted" style="display: block; font-weight: 400">52,70 $</span></dd></div></dl>
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span style="flex: none; display: inline-flex; color: var(--text-muted); margin-top: 1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+        <p class="el-small el-muted">Tayyor bo'lgach bildirishnoma keladi (Telegram ulangan bo'lsa — u yerga ham). Aniq narx tayyor hisobotda yoziladi.</p>
+      </div>
+    </form>
+    <div class="el-dialog-foot">
+      <a class="el-btn el-btn-secondary" href="@ai-assistant-reports">Bekor qilish</a>
+      <button class="el-btn el-btn-primary" type="submit" form="rc-form">Tayyorlash</button>
+    </div>
+  </div>
+
+  <section class="el-popover el-hide-tablet" aria-labelledby="rc-states" style="width: min(560px, 100%)">
+    <h2 class="el-overline" id="rc-states">Boshqa holatlar</h2>
+    <span class="el-state-label" style="text-align: left">«Chuqur» tanlab «Tayyorlash» bosilsa — tasdiq oynasi</span>
+    <div role="alertdialog" aria-labelledby="rc-deep-t" aria-describedby="rc-deep-d" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <span class="el-stat-icon" style="flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <h3 class="el-h3" id="rc-deep-t">Chuqur tahlil bilan tayyorlansinmi?</h3>
+          <p class="el-small el-muted" id="rc-deep-d">Hisobot eng kuchli model bilan yoziladi — oddiydan qimmatroq. Haqiqiy narx ko'rsatilgan chegaradan oshmaydi.</p>
+        </div>
+      </div>
+      <dl style="margin: 0; padding: 4px 16px; border-radius: 12px; background: var(--sunken); display: flex; flex-direction: column"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Davr</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">01.10–22.10.2026<span class="el-xs el-muted" style="display: block; font-weight: 400">22 kun</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Narxi</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">≈ 25 600 so'm<span class="el-xs el-muted" style="display: block; font-weight: 400">51 200 so'mgacha · 2,00 $ / 4,00 $ gacha</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Chuqur tahlil</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Bu oy 3 / 10 · yana 7 ta</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Budjet qoldig'i</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">674 560 so'm<span class="el-xs el-muted" style="display: block; font-weight: 400">52,70 $</span></dd></div></dl>
+      <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px">
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button">Bekor qilish</button>
+        <button class="el-btn el-btn-primary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Chuqur tahlil bilan tayyorlash</button>
+      </div>
+    </div>
+    <div class="el-divider"></div>
+    <span class="el-state-label" style="text-align: left">Davr 92 kundan uzun</span>
+    <div class="el-field">
+      <span class="el-label" id="rc-long-l">Davr <span class="el-req">*</span></span>
+      <button class="el-input el-select is-invalid" type="button" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="rc-long-l" aria-invalid="true" aria-describedby="rc-long-e"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.06 – 22.10.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      <span class="el-error-text" id="rc-long-e">Davr 92 kundan oshmasin — 144 kun tanlandi</span>
+    </div>
+    <div class="el-divider"></div>
+    <span class="el-state-label" style="text-align: left">Shu davr allaqachon tayyorlanmoqda (409)</span>
+    <div class="el-alert el-tone-warning" role="status"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><div class="el-alert-body" style="display: flex; flex-direction: column; gap: 4px"><div class="el-alert-title">Bu davr uchun hisobot tayyorlanmoqda</div><span class="el-small">01.10–22.10.2026 · chuqur · Bugun, 14:02 da so'ralgan. Yangisi tayyorlanmaydi.</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail-states" style="align-self: flex-start; gap: 6px; padding: 0">Hisobotni ochish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></div></div>
+    <div class="el-divider"></div>
+    <span class="el-state-label" style="text-align: left">Oylik budjet tugagan (429)</span>
+    <div class="el-alert el-tone-danger" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg><div class="el-alert-body" style="display: flex; flex-direction: column; gap: 4px"><div class="el-alert-title">Oylik AI budjeti tugagan</div><span class="el-small">Yangi hisobot 01.11.2026 dan yoki budjet oshirilgach.</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-budget-raise-dialog" aria-haspopup="dialog" style="align-self: flex-start; gap: 6px; padding: 0">Budjetni oshirish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></div></div>
+    <div class="el-divider"></div>
+    <span class="el-state-label" style="text-align: left">Yuborildi — oyna yopiladi, xabar chiqadi</span>
+    <div class="el-toast" role="status" style="min-width: 0; max-width: 100%; width: 100%">
+          <span style="color: var(--success-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span class="el-strong">Hisobot navbatga qo'shildi</span>
+            <span class="el-small el-muted">Taxminiy narx 12 800 so'm (1,00 $). Tayyor bo'lgach xabar keladi.</span>
+          </div>
+        </div>
+  </section>
+  <span class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 auto"></span>
+</div>
