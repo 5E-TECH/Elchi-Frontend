@@ -953,8 +953,8 @@ const MailDetailPage = () => {
 
   // ─── Eski pochta → «Filialga o'tkazish» ───────────────────────────────────
   // HQ pochtani adashib boshqa filialga jo'natgan, u filial hali qabul qilmagan (pochta «Jo'natilgan», kuryersiz,
-  // ichida yo'ldagi buyurtma bor): superadmin/admin uni shu viloyatning boshqa filialiga o'tkazadi. Qolgan
-  // shartlarni (birorta buyurtma qabul qilinmagan, tuman qamrovi) backend tekshiradi va matn bilan rad etadi.
+  // hamma buyurtma yo'lda): superadmin/admin uni shu viloyatning boshqa filialiga o'tkazadi. Qolgan shartlarni
+  // («kelmadi» belgisi, tuman qamrovi, shu orada qabul) backend tekshiradi va matn bilan rad etadi.
   const postBranchId = toText(postMeta?.branch_id);
   const canTransferPost =
     canReassignPost &&
@@ -963,7 +963,9 @@ const MailDetailPage = () => {
     String(postMeta?.status ?? "").toLowerCase() === "sent" &&
     (postCourierId === "" || postCourierId === "0") &&
     Boolean(postBranchId) &&
-    currentOrdersFromPost.some((order: PostOrder) => order.status === "on the road");
+    // Filial qabul qila boshlagan pochta (birorta buyurtma «kutilmoqda») o'tkazilmaydi — tugma ham yo'q.
+    currentOrdersFromPost.length > 0 &&
+    currentOrdersFromPost.every((order: PostOrder) => order.status === "on the road");
   const [transferTarget, setTransferTarget] = useState<{ branches: Branch[]; currentName: string | null } | null>(
     null,
   );

@@ -219,6 +219,12 @@ describe("Eski pochta → «Filialga o'tkazish»", () => {
     expect(transferButton()).toBeNull();
   });
 
+  it("tugma yo'q: filial qabul qila boshlagan (bittasi «kutilmoqda»)", () => {
+    withPost(SENT_POST, [order("101"), order("102", "waiting")]);
+    renderPage("admin");
+    expect(transferButton()).toBeNull();
+  });
+
   it("tugma yo'q: pochtada yo'ldagi buyurtma qolmagan (hammasi qabul qilingan)", () => {
     withPost(SENT_POST, [order("101", "waiting")]);
     renderPage("admin");

@@ -314,8 +314,8 @@
     "transferDialog": {
       "open": "Move to another branch",
       "title": "Move the post to another branch",
-      "description": "The post was sent to «{{branch}}» and has not been received yet. The post and its {{value}} orders will move to the branch you choose.",
-      "descriptionNoBranch": "The post has not been received yet. The post and its {{value}} orders will move to the branch you choose.",
+      "description": "The post was sent to «{{branch}}» and has not been received yet. The post and all its orders ({{value}}) will move to the branch you choose.",
+      "descriptionNoBranch": "The post has not been received yet. The post and all its orders ({{value}}) will move to the branch you choose.",
       "legend": "Other active branches in this region",
       "submit": "Move",
       "submitting": "Moving…",
