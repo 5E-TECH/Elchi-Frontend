@@ -209,10 +209,13 @@ export const API_ENDPOINTS = {
     REASSIGN: (id: string | number) => `post/reassign/${id}`, // PATCH reassign sent post to another courier
     RECEIVE_ORDER: (id: string | number) => `post/receive/order/${id}`, // PATCH receive order (courier)
     RECEIVE_SCAN: (id: string | number) => `post/receive/scan/${id}`, // PATCH receive post with scanner (courier)
-    ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`,
+    ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`, // GET ?view=current|all (#618)
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     BY_ID: (postId: string | number) => `post/${postId}`, // GET / PATCH send post (superadmin) / DELETE (superadmin)
     RECEIVE: (postId: string | number) => `post/receive/${postId}`, // PATCH receive post (branch/courier)
+    // Backend #618: pochtaga kirgan buyurtmalar (ro'yxat va ruxsat doirasi `GET post/orders/:id?view=all` bilan bir xil).
+    ORDERS_XLSX: (postId: string | number) => `post/${postId}/orders.xlsx`, // GET Excel (blob, Content-Disposition)
+    RECEIPT: (postId: string | number) => `post/${postId}/receipt`, // GET pochta cheki (HTML), ?format=80mm|a4
   },
 
   // ── Transfer batches (branch staff) — guide §8 ───────────────────────────
