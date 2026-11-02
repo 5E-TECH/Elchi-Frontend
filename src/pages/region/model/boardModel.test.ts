@@ -32,6 +32,7 @@ describe("normalizeBoardRegions (kGvjztpY)", () => {
       {
         id: "10",
         name: "Toshkent viloyati",
+        satoCode: "1727",
         districts: [
           { id: "6", name: "Bekobod tumani", geoRegionId: "10", geoRegionName: "Toshkent viloyati" },
         ],
@@ -39,6 +40,7 @@ describe("normalizeBoardRegions (kGvjztpY)", () => {
       {
         id: "1",
         name: "Toshkent sh.",
+        satoCode: "1726",
         // Nom bo'yicha: Angren sh. birinchi; geografik viloyati — Toshkent viloyati (SATO prefiksi shundan).
         districts: [
           { id: "5", name: "Angren sh.", geoRegionId: "10", geoRegionName: "Toshkent viloyati" },
@@ -95,12 +97,23 @@ describe("normalizeBoardRegions (kGvjztpY)", () => {
       {
         id: "2",
         name: "Andijon",
+        satoCode: null,
         districts: [
           { id: "21", name: "Andijon sh.", geoRegionId: "2", geoRegionName: "Andijon" },
           { id: "22", name: "Asaka tumani", geoRegionId: "2", geoRegionName: "Andijon" },
         ],
       },
     ]);
+  });
+
+  it("viloyat SOATO kodi (`sato_code`) saqlanadi — yangi tuman kodi prefiksi (ExK28CiS); bo'sh kod — `null`", () => {
+    const regions = normalizeBoardRegions({
+      data: [
+        { id: "1", name: "Toshkent sh.", sato_code: " 1726 ", districts: [] },
+        { id: "2", name: "Yangi viloyat", sato_code: "", districts: [] },
+      ],
+    });
+    expect(regions.map((region) => region.satoCode)).toEqual(["1726", null]);
   });
 
   it("bo'sh `assignedDistricts` — bo'sh ustun (`districts` ga qaytilmaydi: hamma tumani boshqa viloyatga o'tgan)", () => {
@@ -112,7 +125,7 @@ describe("normalizeBoardRegions (kGvjztpY)", () => {
 
   it("konvert turlari: massiv, `{data}`, `{data:{data}}`, `{data:{items}}`, `{items}`; noto'g'ri javob — bo'sh", () => {
     const list = [{ id: "1", name: "X", districts: [] }];
-    const expected = [{ id: "1", name: "X", districts: [] }];
+    const expected = [{ id: "1", name: "X", satoCode: null, districts: [] }];
     expect(normalizeBoardRegions(list)).toEqual(expected);
     expect(normalizeBoardRegions({ data: list })).toEqual(expected);
     expect(normalizeBoardRegions({ data: { data: list } })).toEqual(expected);

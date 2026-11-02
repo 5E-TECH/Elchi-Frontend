@@ -8,6 +8,14 @@ import { useSatoEditorErrorText, type SatoCodeEditorState } from "./useSatoCodeE
 
 type EditorProps = { row: SatoDistrictRow; editor: SatoCodeEditorState };
 
+/** Ko'rsatma: «7 ta raqam, 1726 bilan boshlanadi» (geografik viloyat kodi, ExK28CiS); kod noma'lum — namuna bilan. */
+const useEditorHint = (row: SatoDistrictRow) => {
+  const { t } = useTranslation("region");
+  return row.regionSatoCode
+    ? t("v2.sato.editor.hint", { prefix: row.regionSatoCode })
+    : t("v2.sato.editor.hintNoPrefix");
+};
+
 /*
  * Saqlash paytida maydon `readOnly` (`disabled` EMAS): o'chirilgan fokusli element fokusni `<body>` ga beradi va
  * 409/400/500 dan keyin Esc/Enter ishlamay qoladi. Enter — `saving` bilan himoyalangan.
@@ -27,12 +35,13 @@ const useKeys = ({ row, editor }: EditorProps) => (event: KeyboardEvent<HTMLInpu
 export const SatoCodeField = ({ row, editor }: EditorProps) => {
   const { t } = useTranslation("region");
   const errorText = useSatoEditorErrorText()(editor.error);
+  const hint = useEditorHint(row);
   const onKeyDown = useKeys({ row, editor });
   return (
     <Field
       label={t("v2.sato.editor.fieldAria", { name: row.name })}
       hideLabel
-      hint={errorText ? undefined : t("v2.sato.editor.hint")}
+      hint={errorText ? undefined : hint}
       error={errorText ?? undefined}
       className="min-w-0 max-w-[420px]"
     >
@@ -78,13 +87,14 @@ export const SatoCodeActions = ({ row, editor }: EditorProps) => {
 export const SatoCodeEditorBlock = ({ row, editor }: EditorProps) => {
   const { t } = useTranslation("region");
   const errorText = useSatoEditorErrorText()(editor.error);
+  const hint = useEditorHint(row);
   const onKeyDown = useKeys({ row, editor });
   return (
     <div className="flex flex-col gap-1 rounded-xl bg-sunken p-3">
       <Field
         label={t("v2.sato.editor.label")}
         required
-        hint={errorText ? undefined : t("v2.sato.editor.hint")}
+        hint={errorText ? undefined : hint}
         error={errorText ?? undefined}
       >
         <TextInput

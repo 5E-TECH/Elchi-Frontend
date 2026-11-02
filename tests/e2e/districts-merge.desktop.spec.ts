@@ -193,3 +193,37 @@ test("503 manual_fix → «Birlashtirish chala qoldi»: qaytmaganlar, «Qayta ur
   await expect(page).toHaveURL(/\/activity-logs$/);
   expect(mock.mergeBodies).toHaveLength(1);
 });
+
+test("ExK28CiS: «Yangi tuman qo'shish» — SATO kodi majburiy, prefiks so'rovsiz tekshiriladi → POST {name, region_id, sato_code}", async ({ page }) => {
+  const mock = await mockDistrictsApi(page, () => ({ status: 200, body: MERGED }));
+  await openDistricts(page);
+  const form = page.getByRole("region", { name: "Yangi tuman qo'shish" });
+  const code = form.getByRole("textbox", { name: /SATO kodi/ });
+  await expect(form.getByText("7 ta raqam. Avval viloyatni tanlang.")).toBeVisible();
+
+  await form.getByRole("textbox", { name: /Tuman nomi/ }).fill("Xonobod sh.");
+  await form.getByRole("combobox", { name: /Viloyat/ }).click();
+  await page.getByRole("option", { name: "Andijon" }).click();
+  await expect(form.getByText("7 ta raqam, Andijon kodi 1703 bilan boshlanadi")).toBeVisible();
+
+  // 1440: bitta qator — nom, viloyat, kod va tugma bir chiziqda (maydonlar tepasi teng).
+  const tops = await Promise.all(
+    [form.getByRole("textbox", { name: /Tuman nomi/ }), code, form.getByRole("button", { name: "Qo'shish" })].map(
+      async (locator) => Math.round((await locator.boundingBox())!.y),
+    ),
+  );
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(2);
+
+  await code.fill("1726240");
+  await form.getByRole("button", { name: "Qo'shish" }).click();
+  await expect(form.getByText("Kod 1703 bilan boshlanishi kerak — Andijon kodi")).toBeVisible();
+  expect(mock.creates).toEqual([]);
+
+  await code.fill("1703230");
+  await form.getByRole("button", { name: "Qo'shish" }).click();
+  await expect(toast(page, "Tuman qo'shildi")).toBeVisible();
+  await expect(toast(page, "Xonobod sh. · Andijon · 1703230")).toBeVisible();
+  expect(mock.creates).toEqual([{ name: "Xonobod sh.", region_id: "2", sato_code: "1703230" }]);
+  await expect(code).toHaveValue("");
+  expect(mock.leaked).toEqual([]);
+});

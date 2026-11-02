@@ -96,3 +96,37 @@ test("390: «Birlashtirish chala qoldi» — pastki varaqa, ≥ 44 px", async ({
   await expect(stranded.first()).toContainText("Izboskan tumanida qoldi: №7001, №7002, №7015, №7023, №7040 va yana 9 ta");
   await expect(manual.getByRole("list", { name: "Bo'z tumaniga qaytarilganlar" })).toHaveCount(0);
 });
+
+test("ExK28CiS 390: «Yangi tuman qo'shish» — maydonlar ustma-ust, tugma to'liq enli ≥ 44 px, kod xatosi maydon ostida", async ({
+  page,
+}) => {
+  const mock = await mockDistrictsApi(page, () => ({ status: 200, body: MERGED }));
+  await openDistricts(page);
+  const form = page.getByRole("region", { name: "Yangi tuman qo'shish" });
+  const name = form.getByRole("textbox", { name: /Tuman nomi/ });
+  const code = form.getByRole("textbox", { name: /SATO kodi/ });
+  const submit = form.getByRole("button", { name: "Qo'shish" });
+
+  await name.fill("Xonobod sh.");
+  await form.getByRole("combobox", { name: /Viloyat/ }).click();
+  await page.getByRole("option", { name: "Andijon" }).click();
+  await code.fill("1726240");
+  await submit.click();
+  await expect(form.getByText("Kod 1703 bilan boshlanishi kerak — Andijon kodi")).toBeVisible();
+  expect(mock.creates).toEqual([]);
+
+  const nameBox = (await name.boundingBox())!;
+  const codeBox = (await code.boundingBox())!;
+  const submitBox = (await submit.boundingBox())!;
+  const formBox = (await form.boundingBox())!;
+  expect(codeBox.y).toBeGreaterThan(nameBox.y + nameBox.height);
+  expect(submitBox.y).toBeGreaterThan(codeBox.y + codeBox.height);
+  expect(submitBox.height).toBeGreaterThanOrEqual(44 - 0.01);
+  expect(codeBox.height).toBeGreaterThanOrEqual(44 - 0.01);
+  // Tugma karta ichki kengligida (chekkalar ~20 px).
+  expect(submitBox.width).toBeGreaterThan(formBox.width - 60);
+  // iOS: maydon shrifti 16 px (fokusda sahifa kattalashmasin).
+  expect(await code.evaluate((el) => getComputedStyle(el).fontSize)).toBe("16px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  expect(mock.leaked).toEqual([]);
+});

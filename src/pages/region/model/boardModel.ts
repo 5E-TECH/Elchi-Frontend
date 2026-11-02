@@ -11,6 +11,8 @@ export type BoardDistrictItem = {
 export type BoardRegionItem = {
   id: string;
   name: string;
+  /** Viloyat SOATO kodi (4 raqam, `GET /region` `sato_code`) — yangi tuman kodi shu bilan boshlanadi; yo'q — `null`. */
+  satoCode: string | null;
   districts: BoardDistrictItem[];
 };
 
@@ -67,7 +69,7 @@ export const normalizeBoardRegions = (payload: unknown): BoardRegionItem[] =>
       })
       .filter((district) => district.id)
       .sort(byName);
-    return { id, name, districts };
+    return { id, name, satoCode: asText(region.sato_code)?.trim() ?? null, districts };
   });
 
 /** Viloyat + tumanlar doskasi qidiruvi: viloyat nomi mos kelsa — hamma tumanlari, aks holda mos tumanlar. */

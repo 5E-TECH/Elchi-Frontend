@@ -32,6 +32,7 @@ import {
   type SatoDistrict,
   type SatoDuplicateGroup,
   type SatoMissingRow,
+  type SatoRegionOption,
   type SatoRow,
   type SatoTab,
   type SatoTabRows,
@@ -58,7 +59,8 @@ type Props = {
   rows: SatoTabRows | null;
   /** «Takroriy nomlar» tab soni — guruhlar (yozuvlar emas). */
   duplicateGroups?: number;
-  regionOptions: readonly { value: string; label: string }[];
+  /** Viloyatlar (filtr; `satoCode` — «Tuman qo'shish» oynasidagi kod prefiksi). */
+  regionOptions: readonly SatoRegionOption[];
   query: { isLoading: boolean; isError: boolean; error: unknown; isFetching: boolean; refetch: () => unknown };
   /** Kod saqlangach: preview va `/district` birga qayta yuklanadi. */
   onSaved: () => Promise<unknown>;
