@@ -6259,6 +6259,330 @@
    "fragment": "superadmin--regions-delivery-tariff-edit-dialog",
    "order": 201.6,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries",
+   "menuKey": "payments",
+   "title": "Maosh jadvali",
+   "fragment": "superadmin--payments-salaries",
+   "order": 68.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-loading",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — yuklanmoqda",
+   "fragment": "superadmin--payments-salaries-loading",
+   "order": 68.11,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-empty",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — bu davrda maoshli xodim yo'q",
+   "fragment": "superadmin--payments-salaries-empty",
+   "order": 68.12,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-error",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — yuklab bo'lmadi",
+   "fragment": "superadmin--payments-salaries-error",
+   "order": 68.13,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-filters-mobile",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — filtr paneli (telefon)",
+   "fragment": "superadmin--payments-salaries-filters-mobile",
+   "order": 68.14,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-shift-closed",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — smena yopiq (to'lov qulf)",
+   "fragment": "superadmin--payments-salaries-shift-closed",
+   "order": 68.15,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-paid",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — to'lovdan keyin (xabar)",
+   "fragment": "superadmin--payments-salaries-paid",
+   "order": 68.16,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-bonus-dialog",
+   "menuKey": "payments",
+   "title": "Bonus qo'shish (oyna)",
+   "fragment": "superadmin--payments-salaries-bonus-dialog",
+   "order": 68.17,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-deduction-dialog",
+   "menuKey": "payments",
+   "title": "Ushlanma yozish (oyna)",
+   "fragment": "superadmin--payments-salaries-deduction-dialog",
+   "order": 68.18,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries",
+   "menuKey": "payments",
+   "title": "Maosh jadvali",
+   "fragment": "admin--payments-salaries",
+   "order": 186.6,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-loading",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — yuklanmoqda",
+   "fragment": "superadmin--payments-salaries-loading",
+   "order": 186.61,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-empty",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — bu davrda maoshli xodim yo'q",
+   "fragment": "superadmin--payments-salaries-empty",
+   "order": 186.62,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-error",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — yuklab bo'lmadi",
+   "fragment": "superadmin--payments-salaries-error",
+   "order": 186.63,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-filters-mobile",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — filtr paneli (telefon)",
+   "fragment": "superadmin--payments-salaries-filters-mobile",
+   "order": 186.64,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-shift-closed",
+   "menuKey": "payments",
+   "title": "Maosh jadvali — smena yopiq (to'lov qulf)",
+   "fragment": "superadmin--payments-salaries-shift-closed",
+   "order": 186.65,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-bonus-dialog",
+   "menuKey": "payments",
+   "title": "Bonus qo'shish (oyna)",
+   "fragment": "superadmin--payments-salaries-bonus-dialog",
+   "order": 186.66,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-deduction-dialog",
+   "menuKey": "payments",
+   "title": "Ushlanma yozish (oyna)",
+   "fragment": "superadmin--payments-salaries-deduction-dialog",
+   "order": 186.67,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-employee",
+   "menuKey": "payments",
+   "title": "Xodim maosh tarixi",
+   "fragment": "superadmin--payments-salaries-employee",
+   "order": 68.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-pay-dialog",
+   "menuKey": "payments",
+   "title": "Maosh to'lash — avans, naqd (oyna)",
+   "fragment": "superadmin--payments-salaries-pay-dialog",
+   "order": 68.21,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-pay-dialog-card",
+   "menuKey": "payments",
+   "title": "Maosh to'lash — karta tanlash (oyna)",
+   "fragment": "superadmin--payments-salaries-pay-dialog-card",
+   "order": 68.22,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-pay-overpay-dialog",
+   "menuKey": "payments",
+   "title": "Maosh to'lash — ortiqcha summa (oyna)",
+   "fragment": "superadmin--payments-salaries-pay-overpay-dialog",
+   "order": 68.23,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-pay-insufficient",
+   "menuKey": "payments",
+   "title": "Maosh to'lash — kassada naqd yetarli emas (oyna)",
+   "fragment": "superadmin--payments-salaries-pay-insufficient",
+   "order": 68.24,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-pay-confirm",
+   "menuKey": "payments",
+   "title": "Maosh to'lovini tasdiqlash",
+   "fragment": "superadmin--payments-salaries-pay-confirm",
+   "order": 68.25,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-salaries-reverse-dialog",
+   "menuKey": "payments",
+   "title": "Maosh yozuvini bekor qilish (faqat superadmin)",
+   "fragment": "superadmin--payments-salaries-reverse-dialog",
+   "order": 68.26,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-employee",
+   "menuKey": "payments",
+   "title": "Xodim maosh tarixi (bekor qilishsiz)",
+   "fragment": "admin--payments-salaries-employee",
+   "order": 186.7,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-pay-dialog",
+   "menuKey": "payments",
+   "title": "Maosh to'lash — avans, naqd (oyna)",
+   "fragment": "superadmin--payments-salaries-pay-dialog",
+   "order": 186.71,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-salaries-pay-confirm",
+   "menuKey": "payments",
+   "title": "Maosh to'lovini tasdiqlash",
+   "fragment": "superadmin--payments-salaries-pay-confirm",
+   "order": 186.72,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-salaries-entry",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — «Maosh to'lash» tezkor amali",
+   "fragment": "superadmin--payments-main-cashbox-salaries-entry",
+   "order": 62.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-main-cashbox-salaries-entry",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — «Maosh to'lash» tezkor amali",
+   "fragment": "admin--payments-main-cashbox-salaries-entry",
+   "order": 181.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-salary",
+   "menuKey": "users",
+   "title": "Xodim tafsiloti — «Maosh tarixi» havolasi",
+   "fragment": "superadmin--users-detail-salary",
+   "order": 82.7,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-salary",
+   "menuKey": "users",
+   "title": "Xodim tafsiloti — «Maosh tarixi» havolasi",
+   "fragment": "superadmin--users-detail-salary",
+   "order": 200.7,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "profile-salary",
+   "menuKey": "profile",
+   "title": "Profil — «Maosh tarixi» kartasi",
+   "fragment": "courier--profile-salary",
+   "order": 399.6,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "profile-salary",
+   "menuKey": "profile",
+   "title": "Profil — «Maosh tarixi» kartasi",
+   "fragment": "manager--profile-salary",
+   "order": 399.7,
+   "kind": "page"
+  },
+  {
+   "role": "tizim",
+   "viewId": "salary-messages",
+   "menuKey": "salary-messages",
+   "title": "Maosh xabarlari — tizim bildirishnomalari",
+   "fragment": "tizim--salary-messages",
+   "order": 14.5,
+   "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "balance-entry-dialog-salary",
+   "menuKey": "balance",
+   "title": "Qo'lda yozuv — «Maosh» tanlangan (Maosh jadvaliga yo'naltirish)",
+   "fragment": "superadmin--balance-entry-dialog-salary",
+   "order": 71.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "balance-entry-dialog-salary",
+   "menuKey": "balance",
+   "title": "Qo'lda yozuv — «Maosh» tanlangan (Maosh jadvaliga yo'naltirish)",
+   "fragment": "superadmin--balance-entry-dialog-salary",
+   "order": 190.1,
+   "kind": "dialog"
   }
  ],
  "groupTitles": {
@@ -6276,7 +6600,8 @@
    "shift-report-messages": "Smena hisoboti xabarlari (Telegram, tizim)",
    "scan-feedback": "Skaner natijasi: rang effekti va ovoz",
    "receipts": "Chek va paket cheki",
-   "product-labels": "Mahsulot stikeri (QR, shtrix kod)"
+   "product-labels": "Mahsulot stikeri (QR, shtrix kod)",
+   "salary-messages": "Maosh xabarlari (tizim)"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",
@@ -6331,7 +6656,8 @@
    "users": "Foydalanuvchilar · HQ, Viloyat, Qabul punkti, Aralash",
    "regions": "Hududlar · HQ, Viloyat, Qabul punkti, Aralash",
    "scan": "Skaner (kamera va natija)",
-   "warehouse": "Ombor · Viloyat, Aralash"
+   "warehouse": "Ombor · Viloyat, Aralash",
+   "profile": "Profil"
   },
   "registrator": {
    "dashboard": "Bosh sahifa",
@@ -6366,7 +6692,8 @@
    "payments": "Kassa",
    "regions": "Hududlar",
    "scan": "Skanerlash (barcha holatlar)",
-   "inbox": "Bildirishnomalar"
+   "inbox": "Bildirishnomalar",
+   "profile": "Profil"
   },
   "logist": {
    "dashboard": "Bosh sahifa",
