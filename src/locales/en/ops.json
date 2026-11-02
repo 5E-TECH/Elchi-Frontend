@@ -170,7 +170,10 @@
       "summary": "{{from}}–{{to}} of {{total}} investors",
       "empty": "No investors",
       "emptyHint": "Add a new investor with the form on the right.",
-      "loadError": "Couldn't load the investor list"
+      "loadError": "Couldn't load the investor list",
+      "open": "View cabinet",
+      "openAria": "{{name}} — view cabinet",
+      "actions": "Actions"
     },
     "create": {
       "title": "New investor",

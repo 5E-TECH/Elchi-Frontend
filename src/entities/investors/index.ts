@@ -162,6 +162,7 @@ export const useInvestors = () => {
 export {
   investorMeKeys,
   useInvestorDashboard,
+  useInvestorDashboardOf,
   useInvestorInvestments,
   useInvestorMe,
   useInvestorProfits,

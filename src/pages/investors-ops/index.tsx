@@ -1,5 +1,6 @@
 // dizayn-v2: superadmin-ops-investors
 import { memo, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useInvestors } from "../../entities/investors";
@@ -7,6 +8,7 @@ import { formatPhone } from "../../shared/lib/formatPhone";
 import { isCompleteUzbekistanPhone } from "../../shared/lib/phone";
 import {
   Badge,
+  buttonClasses,
   Button,
   Card,
   DataTable,
@@ -78,6 +80,17 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   };
 
   const phoneText = (value: string) => (value ? formatPhone(value) : "—");
+  // vpKijXce: kabinet nazorat uchun (`/investor/:id`, faqat o'qish).
+  const cabinetLink = (row: InvestorRow) =>
+    row.id ? (
+      <Link
+        to={`/investor/${row.id}`}
+        aria-label={t("investors.list.openAria", { name: row.name || row.id })}
+        className={buttonClasses({ variant: "secondary", size: "sm", className: "max-md:min-h-11" })}
+      >
+        {t("investors.list.open")}
+      </Link>
+    ) : null;
 
   const columns: DataTableColumn<InvestorRow>[] = [
     {
@@ -88,6 +101,12 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     },
     { id: "name", header: t("investors.list.name"), cell: (row) => <span className="font-semibold">{row.name || "—"}</span> },
     { id: "phone", header: t("investors.list.phone"), cell: (row) => <span className="whitespace-nowrap">{phoneText(row.phone)}</span> },
+    {
+      id: "open",
+      header: <span className="sr-only">{t("investors.list.actions")}</span>,
+      align: "end",
+      cell: (row) => cabinetLink(row),
+    },
   ];
 
   return (
@@ -140,6 +159,7 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                       <span className="text-[13px] text-text-muted">{phoneText(row.phone)}</span>
                     </div>
                     <span className="shrink-0 text-xs text-text-muted">{t("common.idValue", { id: row.id || "—" })}</span>
+                    {cabinetLink(row)}
                   </div>
                 )}
               />

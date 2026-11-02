@@ -185,5 +185,9 @@ export const openAiCost = async (
   return { tab, requests };
 };
 
+/** Skroll `main` ichida: `document` o'lchanmasa toshish ko'rinmay qoladi. */
 export const noHorizontalScroll = (page: Page) =>
-  page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  page.evaluate(() => {
+    const main = document.querySelector("main:has([data-shell-slot=content])");
+    return document.documentElement.scrollWidth <= window.innerWidth && (!main || main.scrollWidth <= main.clientWidth);
+  });

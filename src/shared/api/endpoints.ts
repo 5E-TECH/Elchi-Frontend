@@ -139,6 +139,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    CANCEL_REASON_STATS: "orders/cancel-reasons/stats", // GET ?startDate&endDate&market_id|branch_id — sabablar kesimi
     EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
@@ -413,6 +414,8 @@ export const API_ENDPOINTS = {
     ME_INVESTMENTS: "investors/me/investments", // GET ?from_date&to_date&page&limit — invested_at DESC
     ME_PROFITS: "investors/me/profits", // GET ?is_paid&page&limit — period_start DESC
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
+    // vpKijXce: superadmin nazorati — javob `ME_DASHBOARD` bilan AYNAN bir xil (backend spec TC7), ?months=1..36.
+    DASHBOARD: (investorId: string | number) => `investors/${investorId}/dashboard`,
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,
   },

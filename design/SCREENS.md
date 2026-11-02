@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**79 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **151** · v2 ga ko'chirilgan route: **79 / 79**
+**82 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **152** · v2 ga ko'chirilgan route: **81 / 82**
 
 ## Qanday ishlatiladi
 
@@ -55,6 +55,7 @@
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 22 | v2 |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 4 | v2 |
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
+| `/orders/cancel-reasons` | Buyurtmalar | `src/pages/orders/cancel-reasons/index.tsx` | superadmin, admin, manager, market | 0 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
@@ -82,6 +83,8 @@
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 11 | v2 |
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
+| `/investor` | Moliya | `src/app/lib/routes.tsx` | superadmin (vpKijXce: /ops?tab=investors ga yo'naltiradi (u yerda «Kabinetni ko'rish»)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1)) | 0 | eski |
+| `/investor/:investorId` | Moliya | `src/pages/investor/InvestorControlPage.tsx` | superadmin | 0 | v2 |
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
 | `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 32 | v2 |
@@ -338,6 +341,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | courier | `courier-orders-pending-special-categories` — Buyurtmalar — Kutilayotganlar, maxsus belgilar | [design/fragments/courier--orders-pending-special-categories.html](fragments/courier--orders-pending-special-categories.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | logist | `logist-orders-list` — Buyurtmalar — faqat ko'rish | [design/fragments/logist--orders-list.html](fragments/logist--orders-list.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
+
+#### `/orders/cancel-reasons` — Bekor qilish sabablari (hisobot)
+
+- **Fayllar:** `src/pages/orders/cancel-reasons/index.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewCancelReasons` (access.ts → canViewCancelReasons)
+- **Rollar:** superadmin, admin, manager, market
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** GNWDKvmZ, PUvKXWVw: GET /orders/cancel-reasons/stats, sabablar kesimi (HBarList). Menyu bandi yo'q, kirish /orders sarlavhasidagi havoladan; joyi va maket ega tasdig'i kutilmoqda. Filtrlar faqat superadmin va adminda. group_by qatorlari shakli kartada yo'q, ishlatilmaydi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/orders/cancel-reasons` | superadmin | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | admin | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | manager | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
+| `/orders/cancel-reasons` | market | — Maket yo'q — eng yaqini: tizim-charts | — | — | v2 |
 
 #### `/orders/edit/:orderId` — Buyurtma tafsiloti va tahrirlash (alohida «detail» marshruti yo'q — tafsilot shu sahifa)
 
@@ -979,6 +998,33 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/tg/scan` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 ### Moliya — to'lovlar, kassa, balans
+
+#### `/investor` — Investor kabineti — kirish nuqtasi (vpKijXce)
+
+- **Fayllar:** `src/app/lib/routes.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `InvestorEntryRedirect`
+- **Rollar:** superadmin (vpKijXce: /ops?tab=investors ga yo'naltiradi (u yerda «Kabinetni ko'rish»)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1))
+- **Menyuda:** yo'q — faqat URL (karta matnidagi manzil): investor → / (o'z kabineti), superadmin → /ops?tab=investors
+- **Holat:** eski
+- **Izoh:** Karta vpKijXce TC «Superadmin ham /investor sahifasini ochib ko'ra oladi (nazorat uchun)». Boshqa rol — 403.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/investor` | superadmin | — Yo'naltirish, o'z ekrani yo'q — maket kerak emas | — | — | eski |
+| `/investor` | investor | — Yo'naltirish, o'z ekrani yo'q — maket kerak emas | — | — | eski |
+
+#### `/investor/:investorId` — Investor kabineti — superadmin nazorati, faqat o'qish (vpKijXce)
+
+- **Fayllar:** `src/pages/investor/InvestorControlPage.tsx` · `src/pages/investor/InvestorDashboardPage.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewInvestorControl` (access.ts → canViewInvestorControl)
+- **Rollar:** superadmin
+- **Menyuda:** yo'q — Ops → «Investorlar» ro'yxatidagi «Kabinetni ko'rish»
+- **Holat:** v2
+- **Izoh:** GET investors/:id/dashboard (SUPERADMIN, ADMIN; javob investors/me/dashboard bilan AYNAN bir xil — backend spec TC7): KPI va «Oylik foyda». Ro'yxatlar (investors/me/*) faqat investorga ochiq — o'rnida izoh. Sarlavhada «Nazorat · faqat o'qish» va «← Investorlar». 404 — «Investor topilmadi» (investor holat ekrani va «Chiqish» yo'q). Ega savoli (Shodiyor, 2026-10-21) ochiq — sahifa karta TC matni bo'yicha.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/investor/:investorId` | superadmin | — Maket yo'q — eng yaqini: investor-dashboard-home | — | — | v2 |
 
 #### `/investments` — Investitsiyalar — investorning o'z investitsiyalari (dizayn v2, IN-2)
 
@@ -1878,7 +1924,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | qisman |
 | `/ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish<br>↳ `src/pages/system-ops/ui/HealthCard.tsx`, `src/pages/system-ops/ui/AiStatusCard.tsx` | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | v2 |
@@ -2203,7 +2249,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Tab olindi (Dj70iDbD, karta TC matni bo'yicha): qarzlar — ulanishning «Hisob-kitob» panelida (faqat ulanish kesimida, barcha ulanishlar ro'yxati yo'q), navbat — «Ish rejimi» panelida. /integrations-ops va /ops?tab=integrations → /integrations. Maket taqdiri ega bilan kelishilishi kerak. |
-| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | v2 |
+| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops` | `src/pages/ops/index.tsx` | qisman — Maketga qo'shimcha (vpKijXce): ro'yxat qatorida «Kabinetni ko'rish» → /investor/:id (investor kabineti, faqat o'qish). Ega tasdig'i kutilmoqda. |
 | `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/returns` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
 | `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
@@ -2892,7 +2938,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 
 | Fayl | Route(lar) |
 |---|---|
-| `src/app/lib/routes.tsx` | `/`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId` |
+| `src/app/lib/routes.tsx` | `/`, `/investor`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId` |
 | `src/auth/SessionExpiryCountdown.tsx` | `/login` |
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
@@ -3086,7 +3132,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/integrations/wizard/ConnectWizard.tsx` | `/integrations/new/:typeKey` |
 | `src/pages/integrations/wizard/steps.ts` | `/integrations/new/:typeKey` |
 | `src/pages/investor/InvestmentsPage.tsx` | `/investments` |
-| `src/pages/investor/InvestorDashboardPage.tsx` | `/` |
+| `src/pages/investor/InvestorControlPage.tsx` | `/investor/:investorId` |
+| `src/pages/investor/InvestorDashboardPage.tsx` | `/`, `/investor/:investorId` |
 | `src/pages/investor/ProfitsPage.tsx` | `/profits` |
 | `src/pages/investor/model/listSearch.ts` | `/investments`, `/profits` |
 | `src/pages/investor/ui/InvestorAccessState.tsx` | `/`, `/investments`, `/profits` |
@@ -3196,6 +3243,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/ops/tabs.ts` | `/ops` |
 | `src/pages/ops/ui/OpsSection.tsx` | `/batches`, `/returns` |
 | `src/pages/ops/ui/OpsToolPage.tsx` | `/ops` |
+| `src/pages/orders/cancel-reasons/index.tsx` | `/orders/cancel-reasons` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
 | `src/pages/orders/create/model/useOrderSource.ts` | `/new-orders/create` |

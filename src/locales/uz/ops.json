@@ -170,7 +170,10 @@
       "summary": "{{from}}–{{to}} / {{total}} ta investor",
       "empty": "Investorlar yo'q",
       "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",
-      "loadError": "Investorlar ro'yxatini olib bo'lmadi"
+      "loadError": "Investorlar ro'yxatini olib bo'lmadi",
+      "open": "Kabinetni ko'rish",
+      "openAria": "{{name}} — kabinetni ko'rish",
+      "actions": "Amallar"
     },
     "create": {
       "title": "Yangi investor",

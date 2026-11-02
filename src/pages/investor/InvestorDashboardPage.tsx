@@ -8,6 +8,7 @@ import { splitCompactMoney } from "../../entities/dashboard/lib/period";
 import {
   investorAccessProblem,
   useInvestorDashboard,
+  useInvestorDashboardOf,
   useInvestorInvestments,
   useInvestorProfits,
   type InvestorDashboard,
@@ -15,9 +16,10 @@ import {
   type InvestorSummary,
 } from "../../entities/investors";
 import { formatDateLocalized } from "../../shared/lib/formatDateTime";
+import { getErrorStatus } from "../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import type { ChartView } from "../../shared/ui/charts";
-import { Card, ErrorState, PageHeader, StatCard } from "../../shared/ui/primitives";
+import { Badge, Card, ErrorState, PageHeader, StatCard } from "../../shared/ui/primitives";
 import { KpiRow } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
 import { loadErrorText } from "./lib/format";
 import { InvestorAccessState } from "./ui/InvestorAccessState";
@@ -42,22 +44,29 @@ const RECENT_PROFITS = { limit: 5 } as const;
  *    bog'liq emas), «Oylik foyda» kartasi boshqaruvlari bilan joyida, xato faqat grafik o'rnida — boshqa davrga qaytish
  *    mumkin (butun karta xatosi faqat birinchi yuklanishda, maket `investor-dashboard-error`).
  * Xom backend matni ko'rsatilmaydi; pul — `formatMoney`, sana — `formatDateLocalized`.
+ *
+ * NAZORAT (`investorId`, vpKijXce): superadmin `/investor/:id` da shu kabinetni faqat o'qiydi — `GET
+ * investors/:id/dashboard` (javob investorniki bilan bir xil). Ro'yxatlar (`investors/me/*`) faqat investorga ochiq,
+ * so'ralmaydi; 403/404/409 holat ekrani (ichida «Chiqish») ko'rsatilmaydi — superadmin tizimdan chiqarilmasin.
  */
-const InvestorDashboardPage = ({ now }: { now?: Date }) => {
+const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: string }) => {
   const { t, i18n } = useTranslation(["investor", "ui"]);
   const language = i18n.language;
   const [months, setMonths] = useState<InvestorMonthsWindow>(12);
   const [view, setView] = useState<ChartView>("chart");
+  const control = investorId !== undefined;
 
-  const dashboard = useInvestorDashboard(months, { silentError: true });
-  const investments = useInvestorInvestments(RECENT_INVESTMENTS, { silentError: true });
-  const profits = useInvestorProfits(RECENT_PROFITS, { silentError: true });
+  const ownDashboard = useInvestorDashboard(months, { silentError: true, enabled: !control });
+  const otherDashboard = useInvestorDashboardOf(investorId ?? "", months, { silentError: true, enabled: control });
+  const dashboard = control ? otherDashboard : ownDashboard;
+  const investments = useInvestorInvestments(RECENT_INVESTMENTS, { silentError: true, enabled: !control });
+  const profits = useInvestorProfits(RECENT_PROFITS, { silentError: true, enabled: !control });
   const fallbackName = useSelector((state: RootState) => state.user.user?.name || state.role.name || "");
   // Oxirgi muvaffaqiyatli javob: `keepPreviousData` yangi davr xato bo'lganda eski ma'lumotni tashlaydi (TanStack v5).
   const [lastGood, setLastGood] = useState<InvestorDashboard | undefined>(undefined);
   if (dashboard.data && dashboard.data !== lastGood) setLastGood(dashboard.data);
 
-  const problem = investorAccessProblem(dashboard.error);
+  const problem = control ? null : investorAccessProblem(dashboard.error);
   const retryAll = () => {
     void dashboard.refetch();
     void investments.refetch();
@@ -74,7 +83,7 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
   }
 
   const data = dashboard.data ?? lastGood;
-  const name = data?.investor?.name || fallbackName;
+  const name = data?.investor?.name || (control ? "" : fallbackName);
   const loading = dashboard.isPending && !data;
   // Hech qachon yuklanmagan bo'lsa — butun karta xatosi; aks holda xato faqat «Oylik foyda» grafigi o'rnida.
   const failed = dashboard.isError && !data;
@@ -83,17 +92,27 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
-      <PageHeader
-        title={t("home.title")}
-        description={name ? t("home.cabinetOf", { name }) : t("home.cabinet")}
-      />
+      {control ? (
+        <PageHeader
+          back="/ops?tab=investors"
+          backLabel={t("control.back")}
+          title={name ? t("home.cabinetOf", { name }) : t("home.cabinet")}
+          meta={<Badge>{t("control.badge")}</Badge>}
+          description={t("control.description")}
+        />
+      ) : (
+        <PageHeader
+          title={t("home.title")}
+          description={name ? t("home.cabinetOf", { name }) : t("home.cabinet")}
+        />
+      )}
 
       {failed ? (
         <Card title={t("monthly.errorCard")} padding="none">
           <ErrorState
             error={dashboard.error}
-            title={t("monthly.errorTitle")}
-            description={`${loadErrorText(t, dashboard.error)} ${t("monthly.errorBelow")}`}
+            title={control && getErrorStatus(dashboard.error) === 404 ? t("control.notFound") : t("monthly.errorTitle")}
+            description={`${loadErrorText(t, dashboard.error)} ${control ? "" : t("monthly.errorBelow")}`.trim()}
             onRetry={retryDashboard}
             retrying={dashboard.isFetching}
           />
@@ -124,7 +143,11 @@ const InvestorDashboardPage = ({ now }: { now?: Date }) => {
         </>
       )}
 
-      <InvestorListCards investments={investments} profits={profits} />
+      {control ? (
+        <p className="text-[13px] text-text-muted">{t("control.listsNote")}</p>
+      ) : (
+        <InvestorListCards investments={investments} profits={profits} />
+      )}
     </div>
   );
 };
