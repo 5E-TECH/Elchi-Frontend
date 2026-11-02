@@ -115,7 +115,8 @@ export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
  */
 export const canManageExpenseCategories: Predicate = hasRole("superadmin");
 
-export const canViewBranches: Predicate = hasRole("superadmin");
+/** Filiallar (`/branches`, yaratish va tahrirlash) — backend `branches` endpointlari `@Roles(SUPERADMIN, ADMIN)` bilan bir xil (ega 2026-11-02). */
+export const canViewBranches: Predicate = hasRole("superadmin", "admin");
 
 export const canViewLogs: Predicate = hasRole("superadmin");
 

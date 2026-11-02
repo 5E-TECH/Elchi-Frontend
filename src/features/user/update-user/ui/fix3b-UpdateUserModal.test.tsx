@@ -324,7 +324,7 @@ describe("UpdateUserModal — dizayn v2 oynasi (maket `superadmin-users-edit-dia
     expect(dialog).toHaveAccessibleDescription("Baraka Shop · Market");
     expect(screen.getByText("Asosiy ma'lumotlar")).toBeInTheDocument();
     expect(screen.getByText("Market ma'lumotlari")).toBeInTheDocument();
-    expect(screen.getByText(/^Bo'sh qoldirilsa, parol o'zgarmaydi\. Kamida 8 ta belgi/)).toBeInTheDocument();
+    expect(screen.getByText(/^Bo'sh qoldirilsa, parol o'zgarmaydi\. Kamida 6 ta belgi: 1 ta katta harf/)).toBeInTheDocument();
     expect(screen.getByText("Nofaol qilishdan oldin tasdiq so'raladi")).toBeInTheDocument();
     // Eski `home` qiymati — «Uygacha» (API `address`).
     expect(screen.getByRole("combobox", { name: "Asosiy tarif" })).toHaveTextContent("Uygacha");

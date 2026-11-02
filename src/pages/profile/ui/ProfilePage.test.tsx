@@ -25,7 +25,7 @@ import { UserDetailView } from "../../../widgets/user-detail/ui/UserDetailView";
 
 /**
  * `/profile` (dizayn v2, maketlar `common-profile`, `common-profile-password-dialog`): ma'lumot kartasi, maosh
- * (faqat maoshli xodimda), parol oynasi (≥ 8 belgi — NDmZMzCP, takror mos; saqlangach boshqa qurilmalar chiqadi, shu qurilma
+ * (faqat maoshli xodimda), parol oynasi (≥ 6 belgi, katta va kichik harf, raqam — NDmZMzCP, takror mos; saqlangach boshqa qurilmalar chiqadi, shu qurilma
  * qoladi — «Sessiyalar» qayta so'raladi) va tahrirlash oynasi
  * (faqat o'zgargan maydonlar). Shuningdek o'z Telegram'ini botga ulash (BreQwksC) va marketda «Guruhda mijoz
  * ismi va telefoni» kaliti (ysBqD9Nx) — ikkalasi faqat shu sahifada (o'z profili).
@@ -146,13 +146,13 @@ describe("Profil — parolni o'zgartirish", () => {
     await userEvent.type(second, "abc");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     expect(
-      within(dialog).getByText("Parol kamida 8 ta belgidan iborat bo'lsin"),
+      within(dialog).getByText("Parol kamida 6 ta belgidan iborat bo'lsin"),
     ).toBeInTheDocument();
 
     await userEvent.clear(first);
-    await userEvent.type(first, "namuna12");
+    await userEvent.type(first, "Namuna12");
     await userEvent.clear(second);
-    await userEvent.type(second, "namuna13");
+    await userEvent.type(second, "Namuna13");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
     expect(within(dialog).getByText("Parollar mos kelmadi")).toBeInTheDocument();
 
@@ -190,12 +190,12 @@ describe("Profil — parolni o'zgartirish", () => {
     expect(first).toHaveAttribute("type", "text");
 
     await userEvent.type(current, "Eski-parol1");
-    await userEvent.type(first, "namuna12");
-    await userEvent.type(second, "namuna12");
+    await userEvent.type(first, "Namuna12");
+    await userEvent.type(second, "Namuna12");
     expect(within(dialog).getByText("Parollar mos keladi")).toBeInTheDocument();
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
-    await waitFor(() => expect(patchCalls()).toEqual([{ old_password: "Eski-parol1", password: "namuna12" }]));
+    await waitFor(() => expect(patchCalls()).toEqual([{ old_password: "Eski-parol1", password: "Namuna12" }]));
     expect(await screen.findByText("Parol almashtirildi — boshqa qurilmalardan chiqildi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Parolni o'zgartirish" })).not.toBeInTheDocument());
     // Backend boshqa qurilmalarni chiqardi — «Sessiyalar» qayta so'raladi; shu qurilma tizimda qoladi.
@@ -215,8 +215,8 @@ describe("Profil — parolni o'zgartirish", () => {
     const dialog = await openDialog();
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Eski-parol1");
-    await userEvent.type(first, "11111111");
-    await userEvent.type(second, "11111111");
+    await userEvent.type(first, "Aaaaaa11");
+    await userEvent.type(second, "Aaaaaa11");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
     expect(await within(dialog).findByText("Parol juda oddiy")).toBeInTheDocument();
@@ -235,8 +235,8 @@ describe("Profil — parolni o'zgartirish", () => {
     const dialog = await openDialog();
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Notogri-parol1");
-    await userEvent.type(first, "namuna12");
-    await userEvent.type(second, "namuna12");
+    await userEvent.type(first, "Namuna12");
+    await userEvent.type(second, "Namuna12");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
     expect(await within(dialog).findByText(text)).toBeInTheDocument();
@@ -256,8 +256,8 @@ describe("Profil — parolni o'zgartirish", () => {
     const dialog = await openDialog();
     const { current, first, second } = passwordFields(dialog);
     await userEvent.type(current, "Eski-parol1");
-    await userEvent.type(first, "namuna12");
-    await userEvent.type(second, "namuna12");
+    await userEvent.type(first, "Namuna12");
+    await userEvent.type(second, "Namuna12");
     await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
 
     expect(await within(dialog).findAllByText("Yangi parol joriy paroldan farq qilishi kerak")).not.toHaveLength(0);

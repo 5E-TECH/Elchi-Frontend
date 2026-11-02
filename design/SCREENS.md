@@ -1595,7 +1595,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/pages/branches/ui/BranchesPage.tsx` · `src/widgets/branch-list/ui/BranchListWidget.tsx` · `src/widgets/branch-list/ui/BranchSummaryCard.tsx` · `src/widgets/branch-list/ui/BranchTree.tsx` · `src/widgets/branch-list/ui/BranchTable.tsx` · `src/widgets/branch-list/ui/BranchCards.tsx` · `src/widgets/branch-list/ui/BranchRowMenu.tsx` · `src/features/branch-create/ui/BranchFormModal.tsx` · `src/features/branch/ui/BranchFormDialog.tsx` · `src/features/branch-edit/ui/BranchEditModal.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBranches` (access.ts → canViewBranches)
 - **Rollar:** superadmin
-- **Menyuda:** «Filiallar» (`branches`) — superadmin
+- **Menyuda:** «Filiallar» (`branches`) — superadmin, admin
 - **Holat:** v2
 - **Izoh:** Tahrirlash oynasi — yaratish oynasi bilan bir xil forma (BranchFormDialog; maket yo'q — eng yaqini superadmin-branches-create-dialog).
 
@@ -3552,6 +3552,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+6) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
+| Filiallar | `branches` | `/branches` | `/branches` | — | — |
 | Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+14) |
 | Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |

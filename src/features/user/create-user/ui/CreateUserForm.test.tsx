@@ -315,7 +315,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await fill(user, container, "fullName", "Zarafshon Market");
     await fill(user, container, "phone", "934552017");
     await fill(user, container, "username", "zarafshon_market");
-    await fill(user, container, "password", "zarafshon26");
+    await fill(user, container, "password", "Zarafshon26");
     await user.click(screen.getByRole("radio", { name: "Markazgacha" }));
     await fill(user, container, "homeRate", "35000");
     await fill(user, container, "centerRate", "25000");
@@ -326,7 +326,7 @@ describe("CreateUserForm — har rol payload'i", () => {
       name: "Zarafshon Market",
       phone_number: "+998934552017",
       username: "zarafshon_market",
-      password: "zarafshon26",
+      password: "Zarafshon26",
       password_mode: "manual",
       must_change_password: true,
       tariff_home: 35000,
@@ -342,7 +342,7 @@ describe("CreateUserForm — har rol payload'i", () => {
     await fill(user, container, "fullName", "Zarafshon Market");
     await fill(user, container, "phone", "934552017");
     await fill(user, container, "username", "zarafshon_market");
-    await fill(user, container, "password", "zarafshon26");
+    await fill(user, container, "password", "Zarafshon26");
     await fill(user, container, "homeRate", "35000");
     await fill(user, container, "centerRate", "25000");
     await save(user);
@@ -386,7 +386,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await fill(user, container, "fullName", "Azamat To'g'ayev");
     await fill(user, container, "phone", "946273051");
-    await fill(user, container, "password", "urgut-2026x");
+    await fill(user, container, "password", "Urgut-2026x");
     await fill(user, container, "homeRate", "20000");
     await fill(user, container, "centerRate", "15000");
     await save(user);
@@ -395,7 +395,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     expect(mocks.createCourier).toHaveBeenCalledWith({
       name: "Azamat To'g'ayev",
       phone_number: "+998946273051",
-      password: "urgut-2026x",
+      password: "Urgut-2026x",
       password_mode: "manual",
       must_change_password: true,
       branch_id: "44",
@@ -441,7 +441,7 @@ describe("CreateUserForm — kuryer «Ish hududi» (DtKKY0V8, maketlar `*-users-
   const fillCourier = async (user: User, container: HTMLElement) => {
     await fill(user, container, "fullName", "Sardor Qodirov");
     await fill(user, container, "phone", "931184625");
-    await fill(user, container, "password", "kuryer2026");
+    await fill(user, container, "password", "Kuryer2026");
     await fill(user, container, "homeRate", "20000");
     await fill(user, container, "centerRate", "15000");
   };
@@ -498,7 +498,7 @@ describe("CreateUserForm — kuryer «Ish hududi» (DtKKY0V8, maketlar `*-users-
       name: "Sardor Qodirov",
       phone_number: "+998931184625",
       password_mode: "manual",
-      password: "kuryer2026",
+      password: "Kuryer2026",
       must_change_password: true,
       branch_id: "15",
       district_id: "201",
@@ -547,7 +547,7 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
   const fillLogist = async (user: User, container: HTMLElement) => {
     await fill(user, container, "fullName", "Aziz Rahimov");
     await fill(user, container, "phone", "901234567");
-    await fill(user, container, "password", "logist2026");
+    await fill(user, container, "password", "Logist2026");
   };
 
   it("forma: «Logist qo'shish», maosh majburiy, to'lov kuni ixtiyoriy, «Viloyatlar» izohi; POST → «Logist biriktirish»", async () => {
@@ -581,7 +581,7 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
     expect(mocks.createLogist).toHaveBeenCalledWith({
       name: "Aziz Rahimov",
       phone_number: "+998901234567",
-      password: "logist2026",
+      password: "Logist2026",
       password_mode: "manual",
       must_change_password: true,
       salary: 6000000,
@@ -611,7 +611,7 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
     expect(mocks.createLogist).toHaveBeenCalledWith({
       name: "Aziz Rahimov",
       phone_number: "+998901234567",
-      password: "logist2026",
+      password: "Logist2026",
       password_mode: "manual",
       must_change_password: true,
       salary: 6000000,
