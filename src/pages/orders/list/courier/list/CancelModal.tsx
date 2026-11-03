@@ -12,6 +12,7 @@ import {
   ExtraCostPendingAlert,
   ExtraCostSentAlert,
 } from "../../../../../entities/orders/ui/ExtraCostApprovalAlerts";
+import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
 import {
   isProofRequiredByConditions,
   toKnownAmount,
@@ -60,6 +61,8 @@ type Props = {
   awaitingApproval?: boolean;
   /** Maket varianti (sukut `courier`; menejer ro'yxati — `manager`). */
   variant?: OrderActionVariant;
+  /** Amal rad etildi — backend sababi oyna ichida (2KisY7DL); keyingi yuborishda yoki yopilganda tozalanadi. */
+  error?: string | null;
 };
 
 const REASON_LABEL_KEYS: Record<CancelReason, string> = {
@@ -81,6 +84,7 @@ const CancelDialog = ({
   isLoading = false,
   awaitingApproval = false,
   variant,
+  error,
 }: CancelDialogProps) => {
   const { t } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
@@ -127,7 +131,9 @@ const CancelDialog = ({
   const isProofMissing = cancelRequiresMedia && !proof;
   const commentRequired = cancelReasonNeedsComment(reason);
   const reasonReady = isCancelReasonComplete(reason, comment);
-  const showExtraNotice = extraCostAmount > 0;
+  // 2KisY7DL: tasdiqsiz marketda menejerga «market tasdig'idan o'tadi» eslatmasi yo'q (sotish oynasidagidek).
+  const approvalRequired = !isManager || order.market?.extra_cost_requires_approval !== false;
+  const showExtraNotice = approvalRequired && extraCostAmount > 0;
 
   const reasonOptions: SelectOption<CancelReason>[] = CANCEL_REASONS.map((value) => ({
     value,
@@ -290,6 +296,7 @@ const CancelDialog = ({
         error={proofError || undefined}
         onFileChange={handleProofChange}
       />
+      {error ? <OrderActionErrorAlert message={error} /> : null}
     </Dialog>
   );
 };

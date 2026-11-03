@@ -27,6 +27,7 @@ import {
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
 import { getMarketPaidMax, readMarketPaidBase, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
+import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
 import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
   getDeliveryLabelKey,
@@ -93,6 +94,8 @@ type SellModalProps = {
   restrictExtraCostToCenter?: boolean;
   /** Maket varianti (sukut `courier`; menejer ro'yxati — `manager`). */
   variant?: OrderActionVariant;
+  /** Amal rad etildi — backend sababi oyna ichida (2KisY7DL); keyingi yuborishda yoki yopilganda tozalanadi. */
+  error?: string | null;
 };
 
 /** `.el-label` — `Field` siz yorliq (qo'shimcha xarajat yozilmaydigan holat, mahsulotlar ro'yxati). */
@@ -152,6 +155,7 @@ const SellDialog = ({
   awaitingApproval = false,
   restrictExtraCostToCenter = false,
   variant,
+  error,
 }: SellDialogProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
@@ -182,11 +186,15 @@ const SellDialog = ({
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
+  // 2KisY7DL: tasdiqsiz market (`extra_cost_requires_approval: false`) — menejer xarajati tasdiqsiz, kuryer chegarasida
+  // o'tadi (backend 04e1ad9): «market tasdig'idan o'tadi» eslatmasi yo'q, uyga yetkazishda xarajat yo'q (kuryer
+  // izohi). Maydon kelmasa — avvalgidek.
+  const approvalRequired = !isManager || order.market?.extra_cost_requires_approval !== false;
   // Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
   // kuryerni bekorga cheklamaymiz — backend baribir tekshiradi.
   const deliveryType = typeof order.where_deliver === "string" ? order.where_deliver.trim() : "";
   const isExtraCostBlocked =
-    restrictExtraCostToCenter && deliveryType !== "" && deliveryType !== "center";
+    (restrictExtraCostToCenter || !approvalRequired) && deliveryType !== "" && deliveryType !== "center";
   const effectiveExtraCost = isExtraCostBlocked ? 0 : toAmount(extraCost);
   const operationTotal = isPartial
     ? totalPrice === "" ? null : Number(totalPrice)
@@ -350,7 +358,7 @@ const SellDialog = ({
 
   const deliveryKey = getDeliveryLabelKey(order.where_deliver);
   const subtitle = [`№${order.id}`, order.market?.name, deliveryKey ? t(deliveryKey) : null].filter(Boolean).join(" · ");
-  const showExtraNotice = !isExtraCostBlocked && toAmount(extraCost) > 0;
+  const showExtraNotice = approvalRequired && !isExtraCostBlocked && toAmount(extraCost) > 0;
 
   // ── Market tasdig'i kutilmoqda (maket `courier-orders-action-approval-pending`) ──────────────
   if (awaitingApproval) {
@@ -399,7 +407,7 @@ const SellDialog = ({
     <Field
       label={t("extraCost")}
       // Menejer maketi: maydon ostida qisqa eslatma; summa yozilgach — to'liq ogohlantirish bloki.
-      hint={isManager && !showExtraNotice ? t("extraCostApprovalHint") : undefined}
+      hint={isManager && approvalRequired && !showExtraNotice ? t("extraCostApprovalHint") : undefined}
     >
       <TextInput
         mode="money"
@@ -654,6 +662,7 @@ const SellDialog = ({
         onToggle={() => setIsPartial((value) => !value)}
       />
       {fields}
+      {error ? <OrderActionErrorAlert message={error} /> : null}
     </Dialog>
   );
 };

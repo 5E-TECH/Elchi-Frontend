@@ -208,6 +208,66 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     expect(await screen.findByText("Buyurtma bekor qilindi")).toBeInTheDocument();
   });
 
+  // 2KisY7DL: tasdiqsiz marketda menejer kuryer chegarasida — 400 sababi oyna ichida (toast oyna ortida qolardi).
+  const badRequest = (message: string) =>
+    new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
+      status: 400,
+      data: { message },
+    } as AxiosResponse);
+
+  it("2KisY7DL: sotish 400 — sabab oyna ichida bir marta, oyna ochiq; qayta ochilganda tozalangan", async () => {
+    const user = userEvent.setup();
+    const reason = "Qo'shimcha xarajat maksimal 30 000 so'm bo'lishi mumkin";
+    sellMutate.mockImplementation((_vars: unknown, options?: MutateOptions) => options?.onError?.(badRequest(reason)));
+    renderPage();
+
+    await user.click(rowAction("№10293 ni sotish"));
+    let dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    await user.type(within(dialog).getByLabelText("Qo'shimcha xarajat"), "50000");
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(reason);
+    expect(screen.getAllByText(reason)).toHaveLength(1);
+    expect(screen.queryByText("Buyurtma sotildi")).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
+    await user.click(rowAction("№10293 ni sotish"));
+    dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("2KisY7DL: bekor qilish 400 — sabab oyna ichida, oyna ochiq", async () => {
+    const user = userEvent.setup();
+    const reason = "Qo'shimcha xarajat o'z xizmat haqqingizdan (25 000 so'm) oshmasligi kerak";
+    cancelMutate.mockImplementation((_vars: unknown, options?: MutateOptions) => options?.onError?.(badRequest(reason)));
+    renderPage();
+
+    await user.click(rowAction("№10293 ni bekor qilish"));
+    const dialog = await screen.findByRole("dialog", { name: "Buyurtmani bekor qilish" });
+    await user.click(within(dialog).getByRole("combobox", { name: /^Sabab/ }));
+    await user.click(await screen.findByRole("option", { name: "Mijoz javob bermadi" }));
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(reason);
+    expect(screen.getAllByText(reason)).toHaveLength(1);
+    expect(screen.getByRole("dialog", { name: "Buyurtmani bekor qilish" })).toBeInTheDocument();
+  });
+
+  it("2KisY7DL: javobsiz tarmoq xatosi oynada chiqmaydi (global «Tarmoq xatosi» yetarli)", async () => {
+    const user = userEvent.setup();
+    sellMutate.mockImplementation((_vars: unknown, options?: MutateOptions) =>
+      options?.onError?.(new AxiosError("Network Error", "ERR_NETWORK")),
+    );
+    renderPage();
+
+    await user.click(rowAction("№10293 ni sotish"));
+    const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
+
+    expect(sellMutate).toHaveBeenCalledTimes(1);
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("xarajat bilan sotish market tasdig'iga tushsa — oyna «Market tasdig'i kutilmoqda», xabar yo'q", async () => {
     const user = userEvent.setup();
     sellMutate.mockImplementation((_vars: unknown, options?: MutateOptions) =>

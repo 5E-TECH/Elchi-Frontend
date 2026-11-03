@@ -141,6 +141,8 @@ export const readOrderMarket = (order: OrderDetail | null) => {
     expense_proof_conditions: Array.isArray(raw.expense_proof_conditions)
       ? raw.expense_proof_conditions.filter((item): item is string => typeof item === "string")
       : null,
+    extra_cost_requires_approval:
+      typeof raw.extra_cost_requires_approval === "boolean" ? raw.extra_cost_requires_approval : null,
   };
 };
 
@@ -250,7 +252,11 @@ export const buildActionOrder = (order: OrderDetail | null) => {
     total_price: order.total_price,
     where_deliver: order.where_deliver,
     product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-    market: { name: market?.name ?? "-", expense_proof_conditions: market?.expense_proof_conditions ?? null },
+    market: {
+      name: market?.name ?? "-",
+      expense_proof_conditions: market?.expense_proof_conditions ?? null,
+      extra_cost_requires_approval: market?.extra_cost_requires_approval ?? null,
+    },
     customer: { name: order.customer.name, phone_number: order.customer.phone_number },
     district: { name: getDistrictName(order) ?? "—" },
     region: { name: getRegionName(order) ?? "—" },

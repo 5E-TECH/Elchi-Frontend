@@ -13,6 +13,7 @@ import {
   useCancelHandoverMethodLabel,
 } from "../../../entities/order";
 import { useOrders } from "../../../entities/orders";
+import { useActionDialogError } from "../../../entities/orders/actionDialogError";
 import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import {
   getActivePendingApproval,
@@ -185,19 +186,30 @@ const NewOrderUpdate = () => {
     [t],
   );
 
+  // 2KisY7DL: sotish / qisman sotish / bekor rad etilsa sabab oyna ichida (toast oyna ortida qolardi).
+  const { message: sellErrorMessage, show: showSellError, clear: clearSellError } = useActionDialogError(
+    t("orderActionError", { ns: "orders" }),
+  );
+  const { message: cancelErrorMessage, show: showCancelError, clear: clearCancelError } = useActionDialogError(
+    t("orderActionError", { ns: "orders" }),
+  );
+
   const closeSellModal = useCallback(() => {
     setIsSellOpen(false);
     setIsApprovalRequested(false);
-  }, []);
+    clearSellError();
+  }, [clearSellError]);
 
   const closeCancelModal = useCallback(() => {
     setIsCancelOpen(false);
     setIsApprovalRequested(false);
-  }, []);
+    clearCancelError();
+  }, [clearCancelError]);
 
   const handleSell = useCallback(
     (id: string, payload: SellOrderPayload) => {
       const target = actionOrder ?? { id };
+      clearSellError();
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -217,11 +229,11 @@ const NewOrderUpdate = () => {
             });
             if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
           },
-          onError: showActionError,
+          onError: showSellError,
         },
       );
     },
-    [SellOrder, actionOrder, closeSellModal, refreshTracking, showActionError, t],
+    [SellOrder, actionOrder, clearSellError, closeSellModal, refreshTracking, showSellError, t],
   );
 
   const handlePartlySell = useCallback(
@@ -236,6 +248,7 @@ const NewOrderUpdate = () => {
       },
     ) => {
       const target = actionOrder ?? { id };
+      clearSellError();
       PartlySellOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -251,16 +264,17 @@ const NewOrderUpdate = () => {
               },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
-          onError: showActionError,
+          onError: showSellError,
         },
       );
     },
-    [PartlySellOrder, actionOrder, closeSellModal, refreshTracking, showActionError],
+    [PartlySellOrder, actionOrder, clearSellError, closeSellModal, refreshTracking, showSellError],
   );
 
   const handleCancel = useCallback(
     (id: string, payload: CancelOrderPayload) => {
       const target = actionOrder ?? { id };
+      clearCancelError();
       CancelOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -276,11 +290,11 @@ const NewOrderUpdate = () => {
               },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
-          onError: showActionError,
+          onError: showCancelError,
         },
       );
     },
-    [CancelOrder, actionOrder, closeCancelModal, refreshTracking, showActionError],
+    [CancelOrder, actionOrder, clearCancelError, closeCancelModal, refreshTracking, showCancelError],
   );
 
   const handleRollback = useCallback((targetStatus: RollbackTarget) => {
@@ -552,6 +566,7 @@ const NewOrderUpdate = () => {
         onClose={closeSellModal}
         onSell={handleSell}
         onPartlySell={handlePartlySell}
+        error={sellErrorMessage}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
         awaitingApproval={isApprovalRequested}
         variant="manager"
@@ -561,6 +576,7 @@ const NewOrderUpdate = () => {
         open={isCancelOpen}
         onClose={closeCancelModal}
         onCancel={handleCancel}
+        error={cancelErrorMessage}
         isLoading={CancelOrder.isPending}
         awaitingApproval={isApprovalRequested}
         variant="manager"

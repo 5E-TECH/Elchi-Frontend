@@ -66,7 +66,7 @@ describe("buildActionOrder — sotish/bekor qilish oynalari uchun", () => {
         items: [{ id: "124", quantity: 2, product_id: null, product_name: "tv", product: null }],
       }),
     );
-    expect(action?.market).toEqual({ name: "-", expense_proof_conditions: null });
+    expect(action?.market).toEqual({ name: "-", expense_proof_conditions: null, extra_cost_requires_approval: null });
     expect(action?.items[0]).toMatchObject({ id: "124", product_id: null, product: { id: null, name: "tv" } });
     expect(action?.product_quantity).toBe(2);
   });
