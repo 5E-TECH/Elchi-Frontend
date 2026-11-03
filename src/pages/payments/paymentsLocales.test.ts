@@ -9,6 +9,7 @@ import en from "../../locales/en/payments.json";
  * kalitlar to'plami uchala tilda bir xil bo'lishi qulflanadi.
  */
 type Dict = Record<string, string>;
+const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
 const UZ = uz as unknown as Dict;
 const RU = ru as unknown as Dict;
 const EN = en as unknown as Dict;
@@ -74,10 +75,13 @@ describe("payments locales", () => {
 
   it("has the same NESTED key set (v2 objects) in uz, ru and en, with no empty values", () => {
     // Yuqori darajadagi tekshiruv ichki obyektlar (`v2Common.*` …) farqini ko'rmaydi — chuqur solishtirish.
-    const flatten = (value: unknown, prefix = ""): string[] =>
+    const flattenRaw = (value: unknown, prefix = ""): string[] =>
       Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
-        child && typeof child === "object" ? flatten(child, `${prefix}${key}.`) : [`${prefix}${key}`],
+        child && typeof child === "object" ? flattenRaw(child, `${prefix}${key}.`) : [`${prefix}${key}`],
       );
+    // Ko'plik qo'shimchalari tilga qarab farq qiladi (uz — asosiy kalit, ru `_one/_few/_many/_other`, en
+    // `_one/_other`; T6 «N kun») — asosiy kalit bo'yicha solishtiriladi, shakllar to'liqligi pastdagi testda.
+    const flatten = (value: unknown) => [...new Set(flattenRaw(value).map((key) => key.replace(PLURAL_SUFFIX, "")))];
     const leaves = (value: unknown, prefix = ""): Array<[string, unknown]> =>
       Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
         child && typeof child === "object" ? leaves(child, `${prefix}${key}.`) : [[`${prefix}${key}`, child]],
@@ -91,6 +95,29 @@ describe("payments locales", () => {
         .filter(([key]) => key.startsWith("v2Common.") || key.startsWith("v2Overview.") || key.startsWith("v2Picker.") || key.startsWith("v2HistoryDetail."))
         .forEach(([key, text]) => expect(String(text).trim(), key).toBeTruthy());
     });
+  });
+
+  it("plural keys: uz has none, ru has one / few / many / other, en has one / other (T6 «N kun»)", () => {
+    const pluralGroups = (value: unknown, prefix = ""): Map<string, string[]> => {
+      const groups = new Map<string, string[]>();
+      const walk = (node: unknown, path: string) => {
+        for (const [key, child] of Object.entries(node as Record<string, unknown>)) {
+          if (child && typeof child === "object") walk(child, `${path}${key}.`);
+          else if (PLURAL_SUFFIX.test(key)) {
+            const base = `${path}${key.replace(PLURAL_SUFFIX, "")}`;
+            groups.set(base, [...(groups.get(base) ?? []), key.slice(key.lastIndexOf("_") + 1)].sort());
+          }
+        }
+      };
+      walk(value, prefix);
+      return groups;
+    };
+    expect([...pluralGroups(uz).keys()]).toEqual([]);
+    const ruGroups = pluralGroups(ru);
+    const enGroups = pluralGroups(en);
+    expect([...ruGroups.keys()].sort()).toEqual([...enGroups.keys()].sort());
+    for (const forms of ruGroups.values()) expect(forms).toEqual(["few", "many", "one", "other"]);
+    for (const forms of enGroups.values()) expect(forms).toEqual(["one", "other"]);
   });
 
   it("keeps the mockup Uzbek wording of the v2 /payments texts", () => {

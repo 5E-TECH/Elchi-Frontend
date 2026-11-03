@@ -51,13 +51,13 @@ const CHIP =
 const CHIP_X =
   "inline-flex size-5 items-center justify-center rounded-full text-text-muted hover:text-text max-md:relative max-md:after:absolute max-md:after:-inset-3 max-md:after:content-['']";
 
-const IconBox = ({ icon: Icon }: { icon: LucideIcon }) => (
+export const IconBox = ({ icon: Icon }: { icon: LucideIcon }) => (
   <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-sunken text-text-muted">
     <Icon aria-hidden="true" size={18} />
   </span>
 );
 
-const CardTitle = ({ icon, title }: { icon: LucideIcon; title: string }) => (
+export const CardTitle = ({ icon, title }: { icon: LucideIcon; title: string }) => (
   <span className="inline-flex items-center gap-3">
     <IconBox icon={icon} />
     {title}

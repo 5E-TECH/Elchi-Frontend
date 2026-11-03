@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-shift-settings, superadmin-payments-shift-settings-receipts
+// dizayn-v2: superadmin-payments-shift-settings, superadmin-payments-shift-settings-receipts, superadmin-payments-shift-settings-correction
 import { useMemo, useState } from "react";
 import { CreditCard, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,11 +11,14 @@ import {
 } from "../../../entities/payments";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { cx } from "../../../shared/lib/cx";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { Button, Card, DataTable, PageHeader, QueryBoundary, type DataTableColumn } from "../../../shared/ui/primitives";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
 import { AutoCloseCard, ReportSendCard } from "./AutomationCards";
 import { CellSwitch } from "./CellSwitch";
+import { PaymentCorrectionCard } from "./PaymentCorrectionCard";
+import { usePaymentCorrectionDraft, type PaymentCorrectionDraft } from "./paymentCorrectionDraft";
 import { ReceiptSettingsCard, useReceiptSettingsDraft, type ReceiptSettingsDraft } from "./ReceiptSettingsCard";
 import { autoCloseDraftError, diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
 import { SwitchRow } from "../../settings/ui/settingsUi";
@@ -29,19 +32,33 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
  * hisobotini yuborish» (gWI4gYkw) kartalari — `AutomationCards.tsx`; backend javobida `auto_close` / `report`
  * bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi. «Chek rasmi va AI tahlili» (QlLf33Ma) —
  * `ReceiptSettingsCard`, alohida `PATCH finance/receipt-settings`, lekin «Saqlash» bitta: faqat o'zgargan so'rov ketadi.
+ * Eng pastda «To'lovlarni tuzatish muddati» (T6-FE-3, 2wgTzcG0) — `PaymentCorrectionCard`, o'z so'rovi
+ * (`GET/PATCH finance/payment-corrections/settings`), shuning uchun `auto_close` / `report` bo'lmasa ham chiziladi;
+ * o'sha «Saqlash» bilan ketadi, «Kunlar soni» yaroqsiz bo'lsa «Saqlash» o'chiq.
  */
 
-const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; receipts: ReceiptSettingsDraft }) => {
-  const { t } = useTranslation("payments");
+const SettingsForm = ({
+  settings,
+  receipts,
+  correction,
+}: {
+  settings: ShiftCheckSettings;
+  receipts: ReceiptSettingsDraft;
+  correction: PaymentCorrectionDraft;
+}) => {
+  const { t, i18n } = useTranslation("payments");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const update = useUpdateShiftCheckSettings();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
   const shiftDirty = Object.keys(body).length > 0;
-  const dirty = shiftDirty || receipts.dirty;
-  const saving = update.isPending || receipts.isSaving;
+  const dirty = shiftDirty || receipts.dirty || correction.dirty;
+  const saving = update.isPending || receipts.isSaving || correction.isSaving;
   // Avtomatik yopish yoqilgan, lekin vaqt yo'q — backend 1–12 ta kutadi; xato kartada, «Saqlash» o'chiq.
-  const invalid = autoCloseDraftError(draft) !== null;
+  const autoCloseInvalid = autoCloseDraftError(draft) !== null;
+  // «Kunlar soni» 1–365 butun son emas — xato maydon ostida, «Saqlash» o'chiq.
+  const invalid = autoCloseInvalid || correction.invalid;
 
   const setCard = (cardId: string, patch: Partial<Draft["cards"][string]>) =>
     setDraft((current) => {
@@ -53,14 +70,26 @@ const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; re
 
   const save = async () => {
     if (!dirty || invalid || saving) return;
-    // Ikki bo'lim mustaqil: biri yiqilsa ikkinchisi saqlanadi, xato aniq aytiladi.
+    // Uch bo'lim mustaqil: biri yiqilsa qolganlari saqlanadi, xato aniq aytiladi (yiqilganining qoralamasi qoladi).
+    const correctionDays = correction.dirty ? correction.days : null;
     const results = await Promise.allSettled([
       ...(shiftDirty ? [update.mutateAsync(body)] : []),
       ...(receipts.dirty ? [receipts.save()] : []),
+      ...(correction.dirty ? [correction.save()] : []),
     ]);
     const failed = results.find((result) => result.status === "rejected");
     if (!failed) {
-      notify.success(t("shiftCheck.settings.saved"));
+      notify.success(
+        t("shiftCheck.settings.saved"),
+        correctionDays !== null
+          ? {
+              description: t("paymentCorrection.settings.saved", {
+                count: correctionDays,
+                value: formatNumberLocalized(correctionDays, { language }),
+              }),
+            }
+          : undefined,
+      );
       return;
     }
     const code = getReceiptErrorCode(failed.reason);
@@ -214,7 +243,7 @@ const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; re
           {draft.auto_close ? (
             <AutoCloseCard
               value={draft.auto_close}
-              timesError={invalid}
+              timesError={autoCloseInvalid}
               onChange={(auto_close) => setDraft((current) => ({ ...current, auto_close }))}
             />
           ) : null}
@@ -223,6 +252,7 @@ const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; re
           ) : null}
         </div>
       ) : null}
+      <PaymentCorrectionCard correction={correction} />
     </>
   );
 };
@@ -230,11 +260,15 @@ const SettingsForm = ({ settings, receipts }: { settings: ShiftCheckSettings; re
 const ShiftSettingsPage = () => {
   const query = useShiftCheckSettings();
   const receipts = useReceiptSettingsDraft();
+  const correction = usePaymentCorrectionDraft();
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
-      <QueryBoundary query={query} skeleton="lines" isEmpty={() => false}>
+      {/* QueryBoundary o'zi bitta `div` — kartalar orasidagi 24 / 16 px oraliq shu o'ramda (maketdagidek). */}
+      <QueryBoundary query={query} skeleton="lines" isEmpty={() => false} className="flex flex-col gap-6 max-md:gap-4">
         {/* Saqlangandan keyin server qiymatlari bilan forma qaytadan boshlanadi (kalit — sozlamalar holati). */}
-        {(settings) => <SettingsForm key={JSON.stringify(settings)} settings={settings} receipts={receipts} />}
+        {(settings) => (
+          <SettingsForm key={JSON.stringify(settings)} settings={settings} receipts={receipts} correction={correction} />
+        )}
       </QueryBoundary>
     </div>
   );

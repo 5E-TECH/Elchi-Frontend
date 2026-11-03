@@ -1574,6 +1574,23 @@
       "relatedOriginalSub": "Asl to'lov · #{{id}} · {{date}}",
       "relatedOriginal": "asl to'lov",
       "relatedAria": "Bog'liq yozuv: {{parts}}, tafsilotni ochish"
+    },
+    "settings": {
+      "title": "To'lovlarni tuzatish muddati",
+      "subtitle": "Shu muddat ichida superadmin kuryerdan olingan pulni yoki marketga to'lovni qaytaradi yoki summasini tahrirlaydi",
+      "period": "Muddat",
+      "days": "{{value}} kun",
+      "custom": "Boshqa",
+      "hint": "Sukut — 30 kun. Muddat to'lov qilingan paytdan hisoblanadi; tahrirlangan to'lovda — birinchi to'lovdan.",
+      "customLabel": "Kunlar soni",
+      "customSuffix": "kun",
+      "customHint": "1 dan 365 gacha",
+      "customError": "1 dan 365 gacha butun son kiriting",
+      "note": "Faqat kuryerdan qabul qilingan pul va marketga berilgan to'lovlar. Sotuv, maosh, qo'lda kirim va chiqim tuzatilmaydi. Muddat qisqartirilsa, darhol barcha to'lovlarga qo'llanadi.",
+      "updated": "Oxirgi o'zgarish: {{value}}",
+      "neverChanged": "Sukut qiymati — hali hech kim o'zgartirmagan",
+      "loadError": "Muddatni yuklab bo'lmadi",
+      "saved": "To'lovlarni tuzatish muddati: {{value}} kun."
     }
   }
 }

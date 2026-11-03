@@ -68,3 +68,40 @@ test("⭐ finance.cashbox.card_changed: kassa 2 s ichida qayta so'raladi, smena 
   await expect(page.getByText(/Smena avtomatik yopildi/)).toHaveCount(0);
   expect(await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)).toBe(true);
 });
+
+test("⭐ T6 finance.payment.corrected: kassa va tarix 2 s ichida qayta so'raladi, smena holati so'ralmaydi, xabar yo'q", async ({ page }) => {
+  const { state, emit } = await mockRealtime(page);
+  await page.goto("/payments/main-cashbox");
+  await expect.poll(() => state.auth.length, { timeout: 90_000 }).toBe(1);
+  await expect.poll(() => shiftRequests(state.requests), { timeout: 60_000 }).toBeGreaterThan(0);
+  await expect
+    .poll(() => state.requests.filter((path) => path.startsWith("finance/history")).length, { timeout: 60_000 })
+    .toBeGreaterThan(0);
+  await page.evaluate(() => ((window as unknown as { __noReload: boolean }).__noReload = true));
+  // Sahifa ochilishidagi so'rovlar tinchisin — keyingi farq faqat hodisadan.
+  await page.waitForTimeout(1_000);
+  const shiftBefore = shiftRequests(state.requests);
+  const cashboxBefore = state.requests.filter((path) => path.startsWith("finance/cashbox")).length;
+  const historyBefore = state.requests.filter((path) => path.startsWith("finance/history")).length;
+
+  // Backend payload'i summasiz (FRONTEND_CHANGELOG 2026-10-30 «T6») — sahifa REST'dan qayta o'qiydi.
+  emit("finance.payment.corrected", {
+    correction_id: "12",
+    action: "reverse",
+    payment_kind: "courier_payment",
+    cashbox_type: "main",
+    cashbox_ids: ["1", "7"],
+    at: "2026-11-03T07:00:00.000Z",
+  });
+
+  await expect
+    .poll(() => state.requests.filter((path) => path.startsWith("finance/cashbox")).length, { timeout: 2_000 })
+    .toBeGreaterThan(cashboxBefore);
+  await expect
+    .poll(() => state.requests.filter((path) => path.startsWith("finance/history")).length, { timeout: 2_000 })
+    .toBeGreaterThan(historyBefore);
+  expect(shiftRequests(state.requests)).toBe(shiftBefore);
+  expect(state.requests).not.toContain("finance/payment-corrections/settings");
+  await expect(page.getByText(/Smena avtomatik yopildi/)).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)).toBe(true);
+});

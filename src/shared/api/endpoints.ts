@@ -292,6 +292,8 @@ export const API_ENDPOINTS = {
     // qzjTMWPb — kunlik kirim/chiqim va kun boshi/oxiri qoldig'i (rollar va doira `finance/history` bilan bir xil).
     HISTORY_DAILY: "finance/history/daily",
     HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
+    // T6 (2wgTzcG0) — «To'lovlarni tuzatish muddati»: GET/PATCH { window_days } (faqat SUPERADMIN; 1–365, JSON son).
+    PAYMENT_CORRECTION_SETTINGS: "finance/payment-corrections/settings",
     HEALTH: "finance/health",
     // Financial ledger
     FINANCIAL_BALANCE_ENTRIES: "finance/financial-balance/entries", // POST manual ledger entry

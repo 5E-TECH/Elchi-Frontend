@@ -13,7 +13,12 @@ import { notify } from "../../shared/lib/notify";
  *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
  *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi;
  *  - `finance.receipt.checked` — chekning AI tahlili tugadi (QlLf33Ma): chek tafsiloti va kassa tarixi qayta o'qiladi,
- *    natija sahifa yangilanmay ko'rinadi.
+ *    natija sahifa yangilanmay ko'rinadi;
+ *  - `finance.payment.corrected` — to'lov qaytarildi yoki summasi tahrirlandi (T6-FE-3, 2wgTzcG0; payload summasiz:
+ *    `{ correction_id, action, payment_kind, cashbox_type, branch_id?, cashbox_ids, at }`): faqat kassa so'rovlari
+ *    (qoldiqlar, tarix, ochiq tafsilot) REST'dan qayta o'qiladi, smena holati so'ralmaydi, xabar yo'q. Filial qabul
+ *    qilgan to'lovda hodisa superadmin/adminga kelmaydi (backend xonalari) — tuzatish so'rovining o'zi kassani
+ *    yangilashi kerak (T6-FE-2).
  *
  * ⚠️ Modul `RealtimeSync` da socket.io bilan birga DINAMIK yuklanadi (kirgandan keyin): statik import moliya
  * modulini ilova kirish bo'lagiga qo'shib, /login ni og'irlashtirardi (login-performance byudjeti).
@@ -24,6 +29,7 @@ export const FINANCE_EVENTS = [
   "finance.shift.account_checked",
   "finance.cashbox.card_changed",
   "finance.receipt.checked",
+  "finance.payment.corrected",
 ] as const;
 
 export type FinanceEvent = (typeof FINANCE_EVENTS)[number];
@@ -44,11 +50,11 @@ export const refreshShiftQueries = (client: QueryClient) =>
   ]);
 
 /**
- * Hodisa: so'rovlar yangilanadi (karta hodisasida — faqat kassa, smena holati qayta so'ralmaydi); avtomatik
- * yopilganda kassirga «Smena avtomatik yopildi — HH:MM».
+ * Hodisa: so'rovlar yangilanadi (karta hodisasida va to'lov tuzatilganda — faqat kassa, smena holati qayta
+ * so'ralmaydi); avtomatik yopilganda kassirga «Smena avtomatik yopildi — HH:MM».
  */
 export const handleFinanceEvent = (client: QueryClient, t: TFunction, event: FinanceEvent, payload: unknown) => {
-  if (event === "finance.cashbox.card_changed") {
+  if (event === "finance.cashbox.card_changed" || event === "finance.payment.corrected") {
     void refreshCashboxQueries(client);
     return;
   }

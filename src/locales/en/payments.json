@@ -1574,6 +1574,25 @@
       "relatedOriginalSub": "Original payment · #{{id}} · {{date}}",
       "relatedOriginal": "original payment",
       "relatedAria": "Related entry: {{parts}}, open details"
+    },
+    "settings": {
+      "title": "Payment correction window",
+      "subtitle": "Within this window a superadmin can reverse money received from a courier or a payment to a market, or correct its amount",
+      "period": "Window",
+      "days_one": "{{value}} day",
+      "days_other": "{{value}} days",
+      "custom": "Other",
+      "hint": "Default — 30 days. Counted from the payment time; for a corrected payment — from the first payment.",
+      "customLabel": "Number of days",
+      "customSuffix": "days",
+      "customHint": "From 1 to 365",
+      "customError": "Enter a whole number from 1 to 365",
+      "note": "Only money received from couriers and payments to markets. Sales, salaries, manual income and expenses can't be corrected. A shorter window applies to all payments immediately.",
+      "updated": "Last change: {{value}}",
+      "neverChanged": "Default value — nobody has changed it yet",
+      "loadError": "Couldn't load the window",
+      "saved_one": "Payment correction window: {{value}} day.",
+      "saved_other": "Payment correction window: {{value}} days."
     }
   }
 }

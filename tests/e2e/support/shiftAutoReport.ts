@@ -7,6 +7,10 @@ import { test, type Page, type Route } from "@playwright/test";
  *  - `GET finance/shift/31/report` — avtomatik yopilgan smena (`close_reason: auto`), hisobot 1-raund yuborilgan:
  *    superadmin (Telegram + tizim), 2 kuryer (bittasida «Telegram ulanmagan»), market guruhi;
  *  - `POST finance/shift/31/report/resend` — yoziladi (`resends`), raund oshadi;
+ *  - `GET finance/payment-corrections/settings` (T6-FE-3, 2wgTzcG0) — `{ window_days, updated_by, updated_at }`
+ *    (sukut 30, hech kim o'zgartirmagan; `options.correction` bilan boshqasi); `PATCH` — tanasi yoziladi
+ *    (`correctionPatches`), backenddek tekshiriladi: faqat JSON butun son 1–365, aks holda 400 (kodsiz);
+ *    `GET users/7` — «Shodiyor Ergashev» («Oxirgi o'zgarish» ismi);
  *  - boshqa yozish so'rovlari taqiqlangan (`leaked`).
  */
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
@@ -40,7 +44,16 @@ const roundDeliveries = (round: number) => [
   delivery(round, { recipient_id: "21", recipient_name: "Baraka Shop", recipient_kind: "market", channel: "in_app" }),
 ];
 
-export const mockShiftAutoReport = async (page: Page) => {
+export type PaymentCorrectionSettingsMock = {
+  window_days: number;
+  updated_by: string | null;
+  updated_at: string | null;
+};
+
+export const mockShiftAutoReport = async (
+  page: Page,
+  options: { correction?: Partial<PaymentCorrectionSettingsMock> } = {},
+) => {
   const origin = appOrigin();
   const cors = {
     "access-control-allow-origin": origin,
@@ -70,6 +83,8 @@ export const mockShiftAutoReport = async (page: Page) => {
     },
     round: 1,
     patches: [] as unknown[],
+    correction: { window_days: 30, updated_by: null, updated_at: null, ...options.correction } as PaymentCorrectionSettingsMock,
+    correctionPatches: [] as unknown[],
     resends: 0,
     leaked: [] as string[],
   };
@@ -102,6 +117,17 @@ export const mockShiftAutoReport = async (page: Page) => {
       if (body.report?.format) state.settings.report.format = body.report.format;
       return reply(route, wrap(state.settings));
     }
+    if (path === "finance/payment-corrections/settings" && request.method() === "PATCH") {
+      const body = request.postDataJSON() as { window_days?: unknown };
+      state.correctionPatches.push(body);
+      const days = body.window_days;
+      const valid = typeof days === "number" && Number.isInteger(days) && days >= 1 && days <= 365;
+      if (!valid || Object.keys(body).length !== 1) {
+        return reply(route, { statusCode: 400, message: "window_days 1…365 oralig'idagi butun son bo'lishi kerak" }, 400);
+      }
+      state.correction = { window_days: days, updated_by: "7", updated_at: new Date().toISOString() };
+      return reply(route, { statusCode: 200, message: "Payment correction settings updated", data: state.correction });
+    }
     if (path === "finance/shift/31/report/resend" && request.method() === "POST") {
       state.resends += 1;
       state.round += 1;
@@ -112,6 +138,8 @@ export const mockShiftAutoReport = async (page: Page) => {
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
     }
     if (path === "finance/shift/settings") return reply(route, wrap(state.settings));
+    if (path === "finance/payment-corrections/settings") return reply(route, wrap(state.correction));
+    if (path === "users/7") return reply(route, wrap({ id: "7", name: "Shodiyor Ergashev", role: "superadmin" }));
     if (path === "finance/shift/31/report") {
       return reply(
         route,
