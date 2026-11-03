@@ -34,6 +34,7 @@ import {
 } from "../../../entities/payments";
 import { toReceiptRef } from "../../../entities/payments/receipt";
 import {
+  compareHistoryIdDesc,
   historyRowDate,
   isPaymentReversalRow,
   PAYMENT_REVERSAL_SOURCE_TYPE,
@@ -243,9 +244,11 @@ const mergeHistoryRows = (...groups: Record<string, unknown>[][]) => {
     const leftDate = Date.parse(getHistoryDate(left) ?? "");
     const rightDate = Date.parse(getHistoryDate(right) ?? "");
 
+    // Teng vaqt (tuzatish: teskari yozuv va yangi to'lov bir tranzaksiyada) — katta ID tepada (T6, C1).
     return (
       (Number.isFinite(rightDate) ? rightDate : 0) -
-      (Number.isFinite(leftDate) ? leftDate : 0)
+        (Number.isFinite(leftDate) ? leftDate : 0) ||
+      compareHistoryIdDesc(left["id"], right["id"])
     );
   });
 };

@@ -235,7 +235,7 @@ const marketReversal = () => ({
 
 /**
  * Yangi to'lov: backend asl `payment_date` ni nusxalaydi (PCS:671,701) — ro'yxatda tuzatish vaqti (`createdAt`)
- * ko'rinishi va tepada turishi kerak (C1).
+ * ko'rinishi va tepada turishi kerak (C1); teskari yozuv bilan vaqt teng — tartib ID dan (`compareHistoryIdDesc`).
  */
 const marketReplacement = () => ({
   id: "4522",
@@ -249,8 +249,8 @@ const marketReplacement = () => ({
   balance_after: 5_035_000,
   createdByUser: SUPERADMIN,
   payment_date: MARKET_PAID_AT,
-  // Teskari yozuvdan bir soniya keyin (backend avval teskari yozuvni yozadi).
-  createdAt: new Date(Date.parse(MARKET_EDITED_AT) + 1000).toISOString(),
+  // Teskari yozuv bilan bir tranzaksiyada — vaqt bir xil; tepada turishi ID tartibidan (4522 > 4521).
+  createdAt: MARKET_EDITED_AT,
   transfer_id: "c7a2d1ef-0000-4000-8000-000000004522",
   reverses_history_id: null,
   correction: {

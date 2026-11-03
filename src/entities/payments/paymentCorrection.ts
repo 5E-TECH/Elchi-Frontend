@@ -197,3 +197,17 @@ export const historyRowDate = (row: HistoryDateRow | null | undefined): string =
   if (record(row.correction)?.role === "replacement" && created) return created;
   return row.payment_date || created;
 };
+
+/**
+ * Bir xil vaqtli tarix qatorlari tartibi (T6): tuzatish teskari yozuv va yangi to'lovni bitta tranzaksiyada, bir xil
+ * vaqt bilan yozadi; yangi to'lov keyin qo'shiladi — bigint ID si katta. Shuning uchun teng vaqtda katta (yangi) ID
+ * tepada: «Tuzatilgan» «Teskari yozuv» ustida (maket, C1). Raqamli bo'lmagan ID (virtual qator, mahalliy kalit) — 0
+ * (tartib saqlanadi). Saralash qiyoslagichiga ikkinchi kalit: `(right - left) || compareHistoryIdDesc(l.id, r.id)`.
+ */
+export const compareHistoryIdDesc = (left: unknown, right: unknown): number => {
+  const l = String(left ?? "");
+  const r = String(right ?? "");
+  if (!/^\d+$/.test(l) || !/^\d+$/.test(r)) return 0;
+  if (l.length !== r.length) return r.length - l.length;
+  return l < r ? 1 : l > r ? -1 : 0;
+};

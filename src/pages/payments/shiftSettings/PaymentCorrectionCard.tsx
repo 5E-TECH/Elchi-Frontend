@@ -22,6 +22,9 @@ import { CUSTOM, type PaymentCorrectionDraft, type SegmentValue } from "./paymen
  * Qoralama sahifa darajasida — `usePaymentCorrectionDraft` (`paymentCorrectionDraft.ts`).
  */
 
+/** «Muddat» maydoni id si — izoh `${id}-hint` radioguruhga `aria-describedby` bilan ulanadi. */
+const PERIOD_FIELD_ID = "payment-correction-period";
+
 export const PaymentCorrectionCard = ({ correction }: { correction: PaymentCorrectionDraft }) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -105,9 +108,17 @@ export const PaymentCorrectionCard = ({ correction }: { correction: PaymentCorre
       >
         {() => (
           <div className="flex max-w-[640px] flex-col gap-4">
-            <Field label={t("paymentCorrection.settings.period")} labelAs="span" hint={t("paymentCorrection.settings.hint")}>
+            {/* Izoh guruhga bog'lanadi (ekran o'quvchi aytadi): `SegmentedControl` Field kontekstini o'qimaydi — id
+                qo'lda (karta sahifada bitta, xato holati yo'q — `${id}-hint` doim bor). */}
+            <Field
+              id={PERIOD_FIELD_ID}
+              label={t("paymentCorrection.settings.period")}
+              labelAs="span"
+              hint={t("paymentCorrection.settings.hint")}
+            >
               <SegmentedControl<SegmentValue>
                 ariaLabel={t("paymentCorrection.settings.period")}
+                aria-describedby={`${PERIOD_FIELD_ID}-hint`}
                 className="self-start"
                 options={options}
                 value={segment}

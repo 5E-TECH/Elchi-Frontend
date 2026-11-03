@@ -1,4 +1,5 @@
 import {
+  isPaymentReversalRow,
   toPaymentCorrection,
   type PaymentCorrectionBadgeKind,
 } from "../../../../entities/payments/paymentCorrection";
@@ -43,7 +44,11 @@ const idText = (value: unknown) => {
 /** «Ko'rinish»: `overview` — sarlavha bilan («#id · {tur} qaytarildi»), `short` — «#id qaytarildi». */
 export type ReversalRefVariant = "overview" | "short";
 
-/** Teskari yozuv qatorining pastki qatori; boshqa qator (yoki asl ID noma'lum) — `null`. */
+/**
+ * Teskari yozuv qatorining pastki qatori; boshqa qator (yoki asl ID noma'lum) — `null`. `correction` kelmasa
+ * (backend qidiruvi yiqildi — fail-open), lekin qator teskari yozuv bo'lsa (belgi kabi manba turidan) — asl ID
+ * `reverses_history_id` dan, amal noma'lum: qisqa «#4512 qaytarildi» (ikkala ko'rinishda; sabab chiqmaydi).
+ */
 export const reversalRefText = (
   row: CorrectionRow,
   t: Translate,
@@ -51,7 +56,11 @@ export const reversalRefText = (
   variant: ReversalRefVariant,
 ): string | null => {
   const correction = toPaymentCorrection(row.correction);
-  if (!correction || correction.role !== "reversal") return null;
+  if (!correction) {
+    const id = isPaymentReversalRow(row) ? idText(row.reverses_history_id) : null;
+    return id ? t("paymentCorrection.list.reversed", { id }) : null;
+  }
+  if (correction.role !== "reversal") return null;
   const id = idText(row.reverses_history_id) ?? correction.related?.id ?? correction.related_history_id;
   if (!id) return null;
   if (correction.action === "edit") return t("paymentCorrection.list.edited", { id });

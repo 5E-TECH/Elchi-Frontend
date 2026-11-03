@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected
 import { memo, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { canViewOrders } from "../../../app/lib/access";
@@ -16,6 +16,7 @@ import { toReceiptRef } from "../../../entities/payments/receipt";
 import {
   correctionBadgeKindOf,
   historyRowDate,
+  paymentCorrectionBadgeKind,
   toPaymentCorrection,
   type PaymentCorrectionRelated,
 } from "../../../entities/payments/paymentCorrection";
@@ -74,8 +75,10 @@ import ReceiptSection from "./receipt/ReceiptSection";
  * yozuv ID si («Operatsiyalar tarixi · #4498 · Bugun, 13:05»); «Summa» yonida tuzatish belgisi (summa chizilmaydi —
  * ega qarori); xulosadan keyin «Qaytarish va tahrir» bloki (`PaymentCorrectionSection`) — ro'yxat qatoridan darhol,
  * tafsilot kelgach undan (qator eskirgan bo'lishi mumkin); «Bog'liq yozuv» shu oynada o'sha kassadagi juft yozuvni
- * ochadi (`related.id`). «Tuzatilgan» yozuv sanasi — tuzatish vaqti (`historyRowDate`, C1). Teskari yozuvda «Izoh»
- * sababni takrorlasa — yashiriladi (C6). Amallar (N2) bu yerda yo'q.
+ * ochadi (`related.id`; ro'yxatda bo'lsa — o'sha qator, `rows`, aks holda sintetik qator). «Tuzatilgan» yozuv
+ * sanasi — tuzatish vaqti (`historyRowDate`, C1). Teskari yozuvda «Izoh» sababni takrorlasa — yashiriladi (C6).
+ * `correction` kelmagan teskari yozuv (backend fail-open) — belgi manba turidan (ro'yxatdagidek), blok yo'q.
+ * Amallar (N2) bu yerda yo'q.
  */
 
 interface Props {
@@ -83,6 +86,11 @@ interface Props {
   onClose: () => void;
   /** Kuryer `/cash-box` maketida «Kassa turi» qatori yo'q. */
   hideCashboxType?: boolean;
+  /**
+   * Ro'yxatning yuklangan qatorlari: «Bog'liq yozuv» juft yozuvi shu yerda bo'lsa — o'sha qator ochiladi (ro'yxatdan
+   * ochilgandagidek: `payment_ack`, izoh, chek …). Topilmasa — sintetik qator.
+   */
+  rows?: readonly PaymentRow[];
 }
 
 type Party = Partial<FinanceHistoryActor> | null | undefined;
@@ -125,7 +133,7 @@ const DT = "text-text-muted";
 const DD = "m-0 min-w-0 break-words font-semibold text-text";
 const SUNKEN = "rounded-xl bg-sunken";
 
-const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false }: Props) => {
+const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false, rows }: Props) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const viewerRole = useSelector((state: RootState) => state.role.role);
@@ -234,21 +242,35 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const rawComment = display.comment?.trim();
   const comment =
     rawComment && correction?.role === "reversal" && rawComment === correction.reason.trim() ? "" : rawComment;
-  const correctionKind = correction ? correctionBadgeKindOf(correction.role, correction.action) : null;
+  // `correction` kelmagan teskari yozuv (backend fail-open) — belgi manba turidan, ro'yxatdagidek; blok chiqmaydi.
+  const correctionKind = correction
+    ? correctionBadgeKindOf(correction.role, correction.action)
+    : paymentCorrectionBadgeKind({ source_type: display.source_type });
   const correctionCashboxType = display.cashbox_type;
 
-  // «Bog'liq yozuv»: o'sha kassadagi juft oyoq — sintetik qator (`GET finance/history/:id` qolganini beradi).
+  // «Bog'liq yozuv»: o'sha kassadagi juft oyoq. Ro'yxatdan ochilgan qatorning o'zi — unga qaytiladi; ro'yxatda bor —
+  // o'sha qator (kvitansiya javobi, izoh, chek saqlanadi); yo'q — sintetik qator (`GET finance/history/:id` qolganini beradi).
   const openRelated = (related: PaymentCorrectionRelated, event: MouseEvent<HTMLButtonElement>) => {
     const panel = event.currentTarget.closest<HTMLElement>("[aria-modal='true']");
-    setRelatedRow({
-      id: related.id,
-      amount: related.amount,
-      operation_type: related.operation_type ?? undefined,
-      source_type: related.source_type || undefined,
-      cashbox_id: current.cashbox_id ?? current.cashbox?.id,
-      cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
-      createdAt: related.created_at ?? undefined,
+    const currentCashboxId = getHistoryCashboxId(current);
+    const listed = rows?.find((item) => {
+      if (String(item.id) !== related.id) return false;
+      const itemCashboxId = getHistoryCashboxId(item);
+      return !itemCashboxId || !currentCashboxId || itemCashboxId === currentCashboxId;
     });
+    if (row && String(row.id) === related.id) setRelatedRow(null);
+    else
+      setRelatedRow(
+        listed ?? {
+          id: related.id,
+          amount: related.amount,
+          operation_type: related.operation_type ?? undefined,
+          source_type: related.source_type || undefined,
+          cashbox_id: current.cashbox_id ?? current.cashbox?.id,
+          cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
+          createdAt: related.created_at ?? undefined,
+        },
+      );
     // Yangi mazmun boshidan ko'rinsin, fokus oynada qolsin (bosilgan qator DOM'dan ketadi).
     const body = panel?.querySelector<HTMLElement>("[data-dialog-body]");
     if (body) body.scrollTop = 0;
@@ -419,10 +441,14 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
       size="lg"
       icon={direction === "expense" ? ArrowUpRight : direction === "income" ? ArrowDownLeft : Receipt}
       title={title}
+      // Sana bir qatorda (telefonda «Bugun, 13:05» bo'linmaydi — maket).
       description={
-        canFetch
-          ? t("v2HistoryDetail.subtitleWithId", { id: current.id, date: dateText })
-          : t("v2HistoryDetail.subtitle", { date: dateText })
+        <Trans
+          t={t}
+          i18nKey={canFetch ? "v2HistoryDetail.subtitleWithId" : "v2HistoryDetail.subtitle"}
+          values={canFetch ? { id: current.id, date: dateText } : { date: dateText }}
+          components={{ date: <span className="whitespace-nowrap" /> }}
+        />
       }
       closeLabel={t("v2HistoryDetail.close")}
       initialFocus="panel"

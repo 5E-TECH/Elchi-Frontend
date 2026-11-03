@@ -646,6 +646,25 @@ describe("MyCashboxPage — to'lov tuzatish (T6)", () => {
     ).toBeInTheDocument();
   });
 
+  it("teng vaqt (bir tranzaksiya): «Tuzatilgan» «Teskari yozuv» ustida — katta ID tepada; o'sishda — teskari", async () => {
+    // Backend teskari yozuv va yangi to'lovni bir xil vaqt bilan yozadi; javobda teskari yozuv oldin keladi.
+    const rows = marketRows().map((row) => (row.id === "4522" ? { ...row, createdAt: at(8, 15) } : row));
+    respond("markets", 5_035_000, rows);
+    const user = userEvent.setup();
+    renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("market") });
+
+    const table = await historyTable();
+    const order = () =>
+      within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.querySelector("[data-payment-correction]")?.getAttribute("data-payment-correction"));
+    expect(order()).toEqual(["replacement", "reversal", "edited"]);
+
+    await user.click(within(table).getByRole("button", { name: /^Sana/ }));
+    expect(order()).toEqual(["edited", "reversal", "replacement"]);
+  });
+
   it("market telefoni: belgi sarlavha qatorida, karta nomi maketdagidek", async () => {
     const restore = phoneMedia();
     try {

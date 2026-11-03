@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareHistoryIdDesc,
   correctionBadgeKindOf,
   historyRowDate,
   isPaymentReversalRow,
@@ -125,5 +126,34 @@ describe("historyRowDate (C1)", () => {
     expect(historyRowDate({ correction: { role: "replacement" }, payment_date: paid })).toBe(paid);
     expect(historyRowDate({})).toBe("");
     expect(historyRowDate(null)).toBe("");
+  });
+});
+
+describe("compareHistoryIdDesc (teng vaqtda ID bo'yicha)", () => {
+  it("katta (yangi) bigint ID oldin; uzunligi har xil — son bo'yicha, satr emas", () => {
+    expect(compareHistoryIdDesc("4522", "4521")).toBeLessThan(0);
+    expect(compareHistoryIdDesc("4521", "4522")).toBeGreaterThan(0);
+    expect(compareHistoryIdDesc("10000", "9999")).toBeLessThan(0);
+    expect(compareHistoryIdDesc(4522, "4522")).toBe(0);
+    expect(compareHistoryIdDesc("9007199254740993", "9007199254740992")).toBeLessThan(0);
+  });
+
+  it("raqamli bo'lmagan ID — 0 (tartib saqlanadi)", () => {
+    expect(compareHistoryIdDesc("pending-4498", "4498")).toBe(0);
+    expect(compareHistoryIdDesc(undefined, "4498")).toBe(0);
+    expect(compareHistoryIdDesc(null, null)).toBe(0);
+  });
+
+  it("teskari yozuv va yangi to'lov bir xil vaqtda: «Tuzatilgan» tepada", () => {
+    const at = "2026-10-08T10:10:00.000Z";
+    const rows = [
+      { id: "4521", correction: { role: "reversal" }, payment_date: null, createdAt: at },
+      { id: "4522", correction: { role: "replacement" }, payment_date: "2026-10-08T08:05:00.000Z", createdAt: at },
+    ];
+    const sorted = [...rows].sort(
+      (left, right) =>
+        Date.parse(historyRowDate(right)) - Date.parse(historyRowDate(left)) || compareHistoryIdDesc(left.id, right.id),
+    );
+    expect(sorted.map((row) => row.id)).toEqual(["4522", "4521"]);
   });
 });
