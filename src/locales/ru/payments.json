@@ -144,6 +144,7 @@
   "financialBalanceSourceSalary": "Зарплата",
   "financialBalanceSourceCorrection": "Корректировка (rollback)",
   "financialBalanceSourceBills": "Счета-фактуры",
+  "paymentReversal": "Отмена платежа",
   "report": "Отчет",
   "commentPlaceholder": "Комментарий...",
   "paymentType": "Тип оплаты",
@@ -699,7 +700,8 @@
       "sell": "Продажа",
       "cancel": "Отмена",
       "extraCost": "Доп. расход",
-      "bills": "Счета-фактуры"
+      "bills": "Счета-фактуры",
+      "paymentReversal": "Отмена платежа"
     },
     "roles": {
       "courier": "Курьер",
@@ -718,6 +720,7 @@
     "expenseTitle": "Расходная операция",
     "operationTitle": "Операция",
     "subtitle": "История операций · {{date}}",
+    "subtitleWithId": "История операций · #{{id}} · {{date}}",
     "amount": "Сумма",
     "balanceAfter": "Баланс после операции",
     "sourceType": "Тип источника",
@@ -1541,6 +1544,36 @@
           "text": "Попробуйте ещё раз чуть позже."
         }
       }
+    }
+  },
+  "paymentCorrection": {
+    "badge": {
+      "reversed": "Отменён",
+      "edited": "Изменён",
+      "reversal": "Сторно",
+      "replacement": "Исправлен"
+    },
+    "list": {
+      "reversedOf": "#{{id}} · отменён: {{title}}",
+      "reversed": "#{{id}} отменён",
+      "edited": "#{{id}} · сумма исправлена",
+      "insteadOf": "вместо #{{id}}",
+      "labelTitle": "{{title}}, {{badge}}"
+    },
+    "detail": {
+      "title": "Отмена и исправление",
+      "action": "Действие",
+      "actionEdit": "Сумма исправлена",
+      "actionReverse": "Полностью отменён",
+      "amount": "Сумма",
+      "date": "Дата",
+      "by": "Кто",
+      "reason": "Причина",
+      "related": "Связанная запись",
+      "relatedSub": "#{{id}} · {{date}}",
+      "relatedOriginalSub": "Исходный платёж · #{{id}} · {{date}}",
+      "relatedOriginal": "исходный платёж",
+      "relatedAria": "Связанная запись: {{parts}}, открыть детали"
     }
   }
 }

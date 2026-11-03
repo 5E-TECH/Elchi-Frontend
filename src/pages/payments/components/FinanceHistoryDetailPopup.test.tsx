@@ -8,6 +8,8 @@ import { renderWithProviders } from "../../../test/test-utils";
 const detailState = vi.hoisted(() => ({
   calls: [] as Array<{ id: string | null; enabled: boolean }>,
   result: { data: undefined, isLoading: false, isError: false } as Record<string, unknown>,
+  /** T6: ID bo'yicha javob («Bog'liq yozuv» boshqa yozuvni so'raydi); yo'q bo'lsa — `result`. */
+  byId: {} as Record<string, Record<string, unknown>>,
   refetch: vi.fn(),
 }));
 
@@ -15,7 +17,7 @@ vi.mock("../../../entities/payments", () => ({
   useCashBox: () => ({
     useGetFinanceHistoryById: (id: string | null, enabled: boolean) => {
       detailState.calls.push({ id, enabled });
-      return { ...detailState.result, refetch: detailState.refetch };
+      return { ...((id && detailState.byId[id]) || detailState.result), refetch: detailState.refetch };
     },
   }),
 }));
@@ -72,6 +74,7 @@ const valueOf = (dialog: HTMLElement, label: string) => term(dialog, label).next
 beforeEach(() => {
   detailState.calls = [];
   detailState.result = { data: undefined, isLoading: false, isError: false };
+  detailState.byId = {};
   detailState.refetch.mockClear();
 });
 
@@ -304,5 +307,267 @@ describe("FinanceHistoryDetailPopup — xarajat kategoriyasi (Elchi Pochta №1)
     open({ ...spendRow, expense_category_id: null, expense_category_name: null });
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
     expect(within(dialog).queryByText("Kategoriya", { selector: "dt" })).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * T6-FE-1 (XXyAZ9ge) — «Qaytarish va tahrir» bloki (maketlar `*-history-detail-dialog-corrected`, `…-replacement`):
+ * izohda `#id`, «Summa» yonida belgi (summa chizilmaydi), blok xulosadan keyin (qatordan darhol, tafsilot
+ * kelgach undan), «Bog'liq yozuv» shu oynada `related.id` ni ochadi; «Tuzatilgan» sanasi — tuzatish vaqti (C1);
+ * teskari yozuvda sababni takrorlovchi «Izoh» yashirin (C6). Barcha rollarga, sabab bilan.
+ */
+describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
+  const PAID = "2026-10-08T08:05:00.000Z"; // Bugun, 13:05 (Toshkent)
+  const EDITED = "2026-10-08T10:10:00.000Z"; // Bugun, 15:10
+  const EDIT_REASON = "Marketga 2 000 000 so'm o'tkazilgan, summa xato kiritilgan";
+  const REVERSE_REASON = "Boshqa kuryer tanlab yuborilgan — pul Rustam Qosimovdan olingan";
+
+  const editCorrection = (role: string, related: Record<string, unknown> | null, extra: Record<string, unknown> = {}) => ({
+    id: "13",
+    action: "edit",
+    payment_kind: "market_payment",
+    role,
+    reason: EDIT_REASON,
+    created_by_name: "Shodiyor Ergashev",
+    created_at: EDITED,
+    original_amount: 2_400_000,
+    new_amount: 2_000_000,
+    related_history_id: related ? String(related.id) : null,
+    related,
+    ...extra,
+  });
+  const replacementRelated = {
+    id: "4522", source_type: "market_payment", role: "replacement", operation_type: "expense", amount: 2_000_000, created_at: EDITED,
+  };
+  const originalRelated = {
+    id: "4498", source_type: "market_payment", role: "original", operation_type: "expense", amount: 2_400_000, created_at: PAID,
+  };
+
+  const editedRow = (overrides: Partial<PaymentRow> = {}): PaymentRow => ({
+    id: "4498",
+    amount: 2_400_000,
+    balance_after: 22_215_000,
+    operation_type: "expense",
+    cashbox_id: "1",
+    source_type: "market_payment",
+    cashbox_type: "main",
+    payment_method: "click",
+    payment_date: PAID,
+    createdAt: PAID,
+    comment: "Oktabr, 1-hafta hisobi",
+    source_user: { id: "101", name: "Baraka Shop", role: "market" },
+    correction: editCorrection("original", replacementRelated) as unknown as PaymentRow["correction"],
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-08T13:00:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const section = (dialog: HTMLElement) =>
+    within(dialog).getByRole("region", { name: "Qaytarish va tahrir" });
+  const kv = (scope: HTMLElement, label: string) =>
+    within(scope).getByText(label, { selector: "dt" }).nextElementSibling as HTMLElement;
+
+  it("tahrirlangan asl to'lov: #id izohda, «Tahrirlangan» belgisi, blok va «Bog'liq yozuv»", async () => {
+    open(editedRow());
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).getByText("Operatsiyalar tarixi · #4498 · Bugun, 13:05")).toBeInTheDocument();
+
+    const badge = within(dialog).getByText("Tahrirlangan");
+    expect(badge).toHaveAttribute("data-payment-correction", "edited");
+    expect(badge.parentElement).toHaveTextContent(/^SummaTahrirlangan$/);
+    // Ega qarori: summa chizilmaydi, xiralashmaydi.
+    const amount = dialog.querySelector("[data-history-amount]") as HTMLElement;
+    expect(amount).toHaveClass("text-danger-fg");
+    expect(amount.className).not.toMatch(/line-through|opacity/);
+
+    const block = section(dialog);
+    expect(kv(block, "Amal")).toHaveTextContent("Summa tahrirlandi");
+    expect(kv(block, "Summa")).toHaveTextContent("2 400 000 so'm → 2 000 000 so'm");
+    expect(kv(block, "Sana")).toHaveTextContent("Bugun, 15:10");
+    expect(kv(block, "Kim")).toHaveTextContent("Shodiyor Ergashev");
+    expect(kv(block, "Sabab")).toHaveTextContent(EDIT_REASON);
+    expect(kv(block, "Sabab")).toHaveClass("font-medium");
+    const related = within(block).getByRole("button", {
+      name: "Bog'liq yozuv: Market to'lovi, Tuzatilgan, #4522, −2 000 000 so'm, tafsilotni ochish",
+    });
+    expect(related).toHaveTextContent("#4522 · Bugun, 15:10");
+    // Blok xulosadan keyin, asosiy `dl` dan oldin.
+    const mainTerm = within(dialog).getByText("Manba turi", { selector: "dt" });
+    expect(block.compareDocumentPosition(mainTerm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(dialog).getByText("Oktabr, 1-hafta hisobi")).toBeInTheDocument();
+  });
+
+  it("«Bog'liq yozuv» shu oynada related.id ni ochadi (GET finance/history/4522)", async () => {
+    detailState.byId["4522"] = {
+      data: {
+        data: {
+          id: "4522",
+          amount: 2_000_000,
+          balance_after: 25_015_000,
+          cashbox_id: "1",
+          cashbox: { id: "1", balance: 25_015_000, cashbox_type: "main" },
+          operation_type: "expense",
+          source_type: "market_payment",
+          payment_method: "click",
+          payment_date: PAID,
+          createdAt: EDITED,
+          comment: "Oktabr, 1-hafta hisobi",
+          correction: editCorrection("replacement", originalRelated),
+        },
+      },
+      isLoading: false,
+      isError: false,
+    };
+    const user = userEvent.setup();
+    open(editedRow());
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    await user.click(within(dialog).getByRole("button", { name: /^Bog'liq yozuv: Market to'lovi, Tuzatilgan/ }));
+
+    expect(detailState.calls).toContainEqual({ id: "4522", enabled: true });
+    expect(within(dialog).getByText("Operatsiyalar tarixi · #4522 · Bugun, 15:10")).toBeInTheDocument();
+    expect(within(dialog).getByText("Tuzatilgan")).toHaveAttribute("data-payment-correction", "replacement");
+    // C1: «Tuzatilgan» to'lov sanasi — tuzatish vaqti (backend asl payment_date ni nusxalaydi).
+    expect(valueOf(dialog, "To'lov sanasi")).toHaveTextContent("Bugun, 15:10");
+    expect(
+      within(section(dialog)).getByRole("button", {
+        name: "Bog'liq yozuv: asl to'lov, Market to'lovi, Tahrirlangan, #4498, −2 400 000 so'm, tafsilotni ochish",
+      }),
+    ).toHaveTextContent("Asl to'lov · #4498 · Bugun, 13:05");
+    expect(dialog).toHaveTextContent("25 015 000 so'm");
+  });
+
+  it("teskari yozuv: Summa qatori yo'q, sababni takrorlovchi «Izoh» yashirin (C6)", async () => {
+    open(
+      editedRow({
+        id: "4521",
+        operation_type: "income",
+        source_type: "payment_reversal",
+        payment_date: undefined,
+        createdAt: EDITED,
+        comment: ` ${EDIT_REASON} `,
+        reverses_history_id: "4498",
+        correction: editCorrection("reversal", originalRelated) as unknown as PaymentRow["correction"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    expect(within(dialog).getByText("Teskari yozuv")).toBeInTheDocument();
+    const block = section(dialog);
+    expect(within(block).queryByText("Summa", { selector: "dt" })).not.toBeInTheDocument();
+    expect(kv(block, "Sabab")).toHaveTextContent(EDIT_REASON);
+    expect(within(dialog).queryByText("Izoh")).not.toBeInTheDocument();
+    expect(valueOf(dialog, "Manba turi")).toHaveTextContent("To'lovni qaytarish");
+    expect(
+      within(block).getByRole("button", { name: /^Bog'liq yozuv: asl to'lov, Market to'lovi, Tahrirlangan, #4498/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("teskari yozuvdagi boshqa izoh ko'rinadi", async () => {
+    open(
+      editedRow({
+        id: "4521",
+        operation_type: "income",
+        source_type: "payment_reversal",
+        comment: "Boshqa izoh",
+        correction: editCorrection("reversal", originalRelated) as unknown as PaymentRow["correction"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Izoh")).toBeInTheDocument();
+    expect(within(dialog).getByText("Boshqa izoh")).toBeInTheDocument();
+  });
+
+  it("kuryer (o'z kassasi): «Qaytarildi», sabab ko'rinadi, bog'liq teskari yozuv «+»", async () => {
+    open(
+      {
+        id: "4512",
+        amount: 1_850_000,
+        balance_after: 0,
+        operation_type: "expense",
+        cashbox_id: "70",
+        source_type: "courier_payment",
+        cashbox_type: "couriers",
+        payment_method: "cash",
+        createdAt: "2026-10-08T09:32:00.000Z",
+        comment: "Kunlik topshiriq",
+        correction: {
+          id: "12",
+          action: "reverse",
+          payment_kind: "courier_payment",
+          role: "original",
+          reason: REVERSE_REASON,
+          created_by_name: null,
+          created_at: "2026-10-08T11:40:00.000Z",
+          original_amount: 1_850_000,
+          new_amount: null,
+          related_history_id: "4530",
+          related: {
+            id: "4530", source_type: "payment_reversal", role: "reversal", operation_type: "income", amount: 1_850_000,
+            created_at: "2026-10-08T11:40:00.000Z",
+          },
+        } as unknown as PaymentRow["correction"],
+      },
+      "courier",
+      { hideCashboxType: true },
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).getByText("Qaytarildi")).toHaveAttribute("data-payment-correction", "reversed");
+    const block = section(dialog);
+    expect(kv(block, "Amal")).toHaveTextContent("To'liq qaytarildi");
+    expect(kv(block, "Summa")).toHaveTextContent(/^1 850 000 so'm$/);
+    // Ism qidiruvi yiqilgan (null) — «—».
+    expect(kv(block, "Kim")).toHaveTextContent("—");
+    expect(kv(block, "Sabab")).toHaveTextContent(REVERSE_REASON);
+    const related = within(block).getByRole("button", {
+      name: "Bog'liq yozuv: To'lovni qaytarish, Teskari yozuv, #4530, +1 850 000 so'm, tafsilotni ochish",
+    });
+    expect(within(related).getByText("+1 850 000 so'm")).toHaveClass("text-success-fg");
+  });
+
+  it("market: bog'liq yozuv sarlavhasi market nuqtai nazaridan, related yo'q — «Bog'liq yozuv» yo'q", async () => {
+    open(editedRow({ cashbox_type: "markets", cashbox_id: "55" }), "market");
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(section(dialog)).getByRole("button", { name: /^Bog'liq yozuv: HQ'dan marketga o'tkazma, Tuzatilgan, #4522/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("related yo'q — «Bog'liq yozuv» bo'limi chizilmaydi, qolgan blok bor", async () => {
+    open(editedRow({ correction: editCorrection("original", null) as unknown as PaymentRow["correction"] }), "admin");
+    const dialog = await screen.findByRole("dialog");
+    expect(section(dialog)).toBeInTheDocument();
+    expect(within(dialog).queryByText("Bog'liq yozuv")).not.toBeInTheDocument();
+  });
+
+  it("tafsilotdagi tuzatish eskirgan qatordan ustun", async () => {
+    detailState.result = {
+      data: {
+        data: {
+          id: "4498",
+          amount: 2_400_000,
+          cashbox_id: "1",
+          cashbox: { id: "1", balance: 22_215_000, cashbox_type: "main" },
+          correction: editCorrection("original", replacementRelated),
+        },
+      },
+      isLoading: false,
+      isError: false,
+    };
+    open(editedRow({ correction: null }), "manager");
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Tahrirlangan")).toBeInTheDocument();
+    expect(section(dialog)).toBeInTheDocument();
+  });
+
+  it("tuzatilmagan yozuv: belgi va blok yo'q; virtual qatorda #id yo'q", async () => {
+    open(editedRow({ correction: null }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.querySelector("[data-payment-correction]")).toBeNull();
+    expect(within(dialog).queryByRole("region", { name: "Qaytarish va tahrir" })).not.toBeInTheDocument();
   });
 });

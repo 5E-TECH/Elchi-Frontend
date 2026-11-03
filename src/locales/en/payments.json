@@ -144,6 +144,7 @@
   "financialBalanceSourceSalary": "Salary",
   "financialBalanceSourceCorrection": "Correction (rollback)",
   "financialBalanceSourceBills": "Invoices",
+  "paymentReversal": "Payment reversal",
   "report": "Report",
   "commentPlaceholder": "Comment...",
   "paymentType": "Payment type",
@@ -699,7 +700,8 @@
       "sell": "Sale",
       "cancel": "Cancellation",
       "extraCost": "Extra cost",
-      "bills": "Invoices"
+      "bills": "Invoices",
+      "paymentReversal": "Payment reversal"
     },
     "roles": {
       "courier": "Courier",
@@ -718,6 +720,7 @@
     "expenseTitle": "Expense operation",
     "operationTitle": "Operation",
     "subtitle": "Operation history · {{date}}",
+    "subtitleWithId": "Operation history · #{{id}} · {{date}}",
     "amount": "Amount",
     "balanceAfter": "Balance after the operation",
     "sourceType": "Source type",
@@ -1541,6 +1544,36 @@
           "text": "Try again a little later."
         }
       }
+    }
+  },
+  "paymentCorrection": {
+    "badge": {
+      "reversed": "Reversed",
+      "edited": "Edited",
+      "reversal": "Reversal entry",
+      "replacement": "Corrected"
+    },
+    "list": {
+      "reversedOf": "#{{id}} · {{title}} reversed",
+      "reversed": "#{{id}} reversed",
+      "edited": "#{{id}} · amount corrected",
+      "insteadOf": "replaces #{{id}}",
+      "labelTitle": "{{title}}, {{badge}}"
+    },
+    "detail": {
+      "title": "Reversal and correction",
+      "action": "Action",
+      "actionEdit": "Amount corrected",
+      "actionReverse": "Fully reversed",
+      "amount": "Amount",
+      "date": "Date",
+      "by": "By",
+      "reason": "Reason",
+      "related": "Related entry",
+      "relatedSub": "#{{id}} · {{date}}",
+      "relatedOriginalSub": "Original payment · #{{id}} · {{date}}",
+      "relatedOriginal": "original payment",
+      "relatedAria": "Related entry: {{parts}}, open details"
     }
   }
 }

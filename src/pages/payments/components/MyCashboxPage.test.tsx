@@ -230,7 +230,8 @@ describe("MyCashboxPage — kuryer", () => {
 
     await user.click(screen.getByRole("tab", { name: "To'lov o'tkazmalari" }));
     await waitFor(() =>
-      expect(api.calls).toContainEqual({ sourceTypes: "courier_payment,market_payment,branch_to_main" }),
+      // T6: teskari yozuv (`payment_reversal`) ham — maket `courier-cashbox-my-transfers-corrected`.
+      expect(api.calls).toContainEqual({ sourceTypes: "courier_payment,market_payment,branch_to_main,payment_reversal" }),
     );
     // Tab o'zgarsa ham «Bugun» — bugungi barcha qatorlar (sourceTypes'siz).
     expect(api.calls).toContainEqual({ fromDate: "2026-10-08", toDate: "2026-10-08" });
@@ -481,6 +482,220 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
       expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
     } finally {
       window.matchMedia = matchMedia;
+    }
+  });
+});
+
+/**
+ * T6-FE-1 (XXyAZ9ge) — `/cash-box` da to'lov tuzatish (maketlar `market-cashbox-my-corrected`,
+ * `courier-cashbox-my-transfers-corrected`): `correction` `toPaymentRows` dan o'tadi, belgi sarlavha yonida (market
+ * telefonida — sarlavha qatorida, kuryer telefonida — uchinchi qator oxirida, kvitansiya javobidan oldin), teskari
+ * yozuv ostida sabab emas — havola; «Tuzatilgan» — tuzatish vaqti va tepada (C1); summa o'zgarmaydi (ega qarori).
+ */
+describe("MyCashboxPage — to'lov tuzatish (T6)", () => {
+  const EDIT_REASON = "Marketga 2 000 000 so'm o'tkazilgan, summa xato kiritilgan";
+  const REVERSE_REASON = "Boshqa kuryer tanlab yuborilgan — pul Rustam Qosimovdan olingan";
+  const correction = (role: string, action: string, related: Params, extra: Params = {}) => ({
+    id: "13",
+    action,
+    payment_kind: action === "edit" ? "market_payment" : "courier_payment",
+    role,
+    reason: action === "edit" ? EDIT_REASON : REVERSE_REASON,
+    created_by_name: "Shodiyor Ergashev",
+    created_at: at(8, 15),
+    original_amount: action === "edit" ? 2_400_000 : 1_850_000,
+    new_amount: action === "edit" ? 2_000_000 : null,
+    related_history_id: related.id,
+    related,
+    ...extra,
+  });
+  const superadmin = { id: 1, name: "Shodiyor Ergashev", role: "superadmin" };
+
+  const marketRows = (): Params[] => [
+    {
+      id: "4521",
+      operation_type: "income",
+      source_type: "payment_reversal",
+      amount: 2_400_000,
+      payment_method: "click",
+      comment: EDIT_REASON,
+      balance_after: 7_035_000,
+      createdByUser: superadmin,
+      payment_date: null,
+      createdAt: at(8, 15),
+      reverses_history_id: "4498",
+      transfer_id: "t-4521",
+      correction: correction("reversal", "edit", {
+        id: "4498", source_type: "market_payment", role: "original", operation_type: "expense", amount: 2_400_000, created_at: at(8, 13),
+      }),
+    },
+    {
+      id: "4498",
+      operation_type: "expense",
+      source_type: "market_payment",
+      amount: 2_400_000,
+      payment_method: "click",
+      comment: "Oktabr, 1-hafta hisobi",
+      balance_after: 4_635_000,
+      createdByUser: superadmin,
+      payment_date: at(8, 13),
+      createdAt: at(8, 13),
+      transfer_id: "t-4498",
+      correction: correction("original", "edit", {
+        id: "4522", source_type: "market_payment", role: "replacement", operation_type: "expense", amount: 2_000_000, created_at: at(8, 15),
+      }),
+    },
+    {
+      // Backend asl `payment_date` (13:00) ni nusxalaydi — ro'yxatda tuzatish vaqti va eng tepada (C1).
+      id: "4522",
+      operation_type: "expense",
+      source_type: "market_payment",
+      amount: 2_000_000,
+      payment_method: "click",
+      comment: "Oktabr, 1-hafta hisobi",
+      balance_after: 5_035_000,
+      createdByUser: superadmin,
+      payment_date: at(8, 13),
+      createdAt: new Date(2026, 9, 8, 15, 1).toISOString(),
+      transfer_id: "t-4522",
+      correction: correction("replacement", "edit", {
+        id: "4498", source_type: "market_payment", role: "original", operation_type: "expense", amount: 2_400_000, created_at: at(8, 13),
+      }),
+    },
+  ];
+
+  const courierRows = (): Params[] => [
+    {
+      id: "4530",
+      operation_type: "income",
+      source_type: "payment_reversal",
+      amount: 1_850_000,
+      payment_method: "cash",
+      cashbox_type: "couriers",
+      comment: REVERSE_REASON,
+      balance_after: 1_850_000,
+      createdByUser: superadmin,
+      payment_date: null,
+      createdAt: at(8, 16),
+      reverses_history_id: "4512",
+      correction: correction("reversal", "reverse", {
+        id: "4512", source_type: "courier_payment", role: "original", operation_type: "expense", amount: 1_850_000, created_at: at(8, 14),
+      }),
+    },
+    {
+      id: "4512",
+      operation_type: "expense",
+      source_type: "courier_payment",
+      amount: 1_850_000,
+      payment_method: "cash",
+      cashbox_type: "couriers",
+      comment: "Kunlik topshiriq",
+      balance_after: 0,
+      payment_ack: "confirmed",
+      createdByUser: superadmin,
+      createdAt: at(8, 14),
+      correction: correction("original", "reverse", {
+        id: "4530", source_type: "payment_reversal", role: "reversal", operation_type: "income", amount: 1_850_000, created_at: at(8, 16),
+      }),
+    },
+  ];
+
+  const phoneMedia = () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    return () => {
+      window.matchMedia = original;
+    };
+  };
+
+  it("market jadvali: «Tuzatilgan» tepada (tuzatish vaqti), belgilar, havolalar; sabab ro'yxatda yo'q", async () => {
+    respond("markets", 5_035_000, marketRows());
+    renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("market") });
+
+    const table = await historyTable();
+    const [first, second, third] = within(table).getAllByRole("row").slice(1);
+    expect(first.querySelector("[data-payment-correction]")).toHaveAttribute("data-payment-correction", "replacement");
+    expect(first).toHaveTextContent("Bugun, 15:01");
+    expect(first).toHaveTextContent("Oktabr, 1-hafta hisobi · #4498 o'rniga");
+    expect(within(first).getByText("Tuzatilgan")).toBeInTheDocument();
+
+    expect(within(second).getByText("Teskari yozuv")).toHaveAttribute("data-payment-correction", "reversal");
+    expect(second).toHaveTextContent("To'lovni qaytarish");
+    expect(second).toHaveTextContent("#4498 · summa tahrirlandi");
+    expect(second).toHaveTextContent("+2 400 000 so'm");
+    expect(table).not.toHaveTextContent(EDIT_REASON);
+
+    expect(within(third).getByText("Tahrirlangan")).toHaveAttribute("data-payment-correction", "edited");
+    expect(third).toHaveTextContent("Bugun, 13:00");
+    // Ega qarori: tuzatilgan to'lov summasi oddiy qatordagidek — chizilmaydi, xiralashmaydi.
+    const amount = within(third).getByText("−2 400 000 so'm");
+    expect(amount.className).toBe("whitespace-nowrap font-semibold text-danger-fg");
+    expect(third.querySelector(".line-through")).toBeNull();
+    // Tugma nomi: «{sarlavha}, {belgi} ({sana}) tafsilotini ochish».
+    expect(
+      within(third).getByRole("button", { name: "HQ'dan marketga o'tkazma, Tahrirlangan (Bugun, 13:00) tafsilotini ochish" }),
+    ).toBeInTheDocument();
+  });
+
+  it("market telefoni: belgi sarlavha qatorida, karta nomi maketdagidek", async () => {
+    const restore = phoneMedia();
+    try {
+      respond("markets", 5_035_000, marketRows());
+      renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("market") });
+
+      const card = await screen.findByRole("button", {
+        name: "HQ'dan marketga o'tkazma, Tuzatilgan (Oktabr, 1-hafta hisobi · #4498 o'rniga), O'tkazma, Chiqim −2 000 000 so'm, balans 5 035 000 so'm, Bugun, 15:01",
+      });
+      const badge = within(card).getByText("Tuzatilgan");
+      expect(badge.parentElement).toHaveTextContent(/^HQ'dan marketga o'tkazmaTuzatilgan$/);
+      expect(
+        screen.getByRole("button", { name: /^To'lovni qaytarish, Teskari yozuv \(#4498 · summa tahrirlandi\), O'tkazma, Kirim \+2 400 000 so'm/ }),
+      ).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("kuryer: «#4512 qaytarildi · Shodiyor Ergashev», telefonda belgi uchinchi qator oxirida (javobdan oldin)", async () => {
+    respond("couriers", 1_850_000, courierRows());
+    const { unmount } = renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("courier") });
+
+    const table = await historyTable();
+    const [reversal, original] = within(table).getAllByRole("row").slice(1);
+    expect(reversal).toHaveTextContent("#4512 qaytarildi · Shodiyor Ergashev");
+    expect(within(reversal).getByText("Shodiyor Ergashev").tagName).toBe("STRONG");
+    expect(reversal).not.toHaveTextContent(REVERSE_REASON);
+    expect(within(original).getByText("Qaytarildi")).toHaveAttribute("data-payment-correction", "reversed");
+    expect(original).toHaveTextContent("Qabul qildi: Shodiyor Ergashev · Kunlik topshiriq");
+    unmount();
+
+    const restore = phoneMedia();
+    try {
+      respond("couriers", 1_850_000, courierRows());
+      renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("courier") });
+      const reversalCard = await screen.findByRole("button", {
+        name: /^To'lovni qaytarish, Teskari yozuv \(#4512 qaytarildi · Shodiyor Ergashev\)/,
+      });
+      const line = within(reversalCard).getByText("Teskari yozuv").parentElement as HTMLElement;
+      expect(line).toHaveTextContent("#4512 qaytarildi · Shodiyor ErgashevTeskari yozuv");
+
+      const originalCard = screen.getByRole("button", { name: /^Kuryerdan filialga o'tkazma, Qaytarildi \(/ });
+      const correctionBadge = within(originalCard).getByText("Qaytarildi");
+      const ack = within(originalCard).getByText("Siz tasdiqlagansiz");
+      const comment = within(originalCard).getByText("Kunlik topshiriq");
+      expect(comment.compareDocumentPosition(correctionBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(correctionBadge.compareDocumentPosition(ack) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    } finally {
+      restore();
     }
   });
 });

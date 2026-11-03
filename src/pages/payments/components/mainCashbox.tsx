@@ -69,6 +69,7 @@ import {
   type CashboxShift,
 } from "../../../entities/payments";
 import { dayOverDay, lastDaysRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
+import { paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCorrection";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
@@ -78,6 +79,8 @@ import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
+import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
+import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
 import BalanceTrendCard from "./BalanceTrendCard";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
@@ -831,10 +834,25 @@ const MainCashbox = () => {
   const rowDirection = (row: PaymentRow) => getViewerOperationType(row, normalizedRole);
   const rowCounterparty = (row: PaymentRow) =>
     resolvePaymentCounterparty(row, (id) => t("v2Common.orderNumber", { id }));
-  // Kartaning nomi (aria-label) ichidagini almashtiradi — xarajat kategoriyasi ham aytilsin.
+  /**
+   * T6 (maket yo'q — eng yaqini `superadmin-payments-overview-corrected`): teskari yozuv ostida sabab o'rniga
+   * «#4512 · Kuryer to'lovi qaytarildi», «Tuzatilgan» ostida qarshi tomon + «#4498 o'rniga».
+   */
+  const rowSubLine = (row: PaymentRow) => {
+    const reversal = reversalRefText(
+      row,
+      t,
+      { role: normalizedRole, cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType },
+      "overview",
+    );
+    return reversal
+      ? { text: reversal, insteadOf: null }
+      : { text: rowCounterparty(row), insteadOf: replacementRefText(row, t) };
+  };
+  // Kartaning nomi (aria-label) ichidagini almashtiradi — tuzatish belgisi (T6) va xarajat kategoriyasi ham aytilsin.
   const openLabel = (row: PaymentRow) => {
     const category = getExpenseCategoryName(row);
-    const title = rowSourceTitle(row);
+    const title = correctionLabelTitle(rowSourceTitle(row), paymentCorrectionBadgeKind(row), t);
     return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: rowDateText(row) });
   };
   const categoryBadge = (row: PaymentRow) => {
@@ -897,9 +915,10 @@ const MainCashbox = () => {
       id: "source",
       header: t("v2MainCashbox.history.columns.source"),
       cell: (row) => {
-        const sub = rowCounterparty(row);
+        const sub = rowSubLine(row);
         const category = categoryBadge(row);
         const receipt = receiptBadge(row);
+        const correctionKind = paymentCorrectionBadgeKind(row);
         const title = (
           <Pressable
             onClick={() => setSelectedRow(row)}
@@ -911,16 +930,27 @@ const MainCashbox = () => {
         return (
           <>
             {/* Xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida neytral belgi, joy yetmasa ostida. */}
-            {category || (receipt && row.receipt) ? (
+            {category || (receipt && row.receipt) || correctionKind ? (
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 {title}
+                <PaymentCorrectionBadge kind={correctionKind} />
                 {category}
                 {receipt}
               </div>
             ) : (
               title
             )}
-            {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
+            {sub.text || sub.insteadOf ? (
+              <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
+                {sub.text}
+                {sub.insteadOf ? (
+                  <>
+                    {sub.text ? " · " : null}
+                    <span className="whitespace-nowrap">{sub.insteadOf}</span>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
             <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
           </>
         );
@@ -973,7 +1003,8 @@ const MainCashbox = () => {
   // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge (+ xarajat kategoriyasi) +
   // sana · yaratgan.
   const renderHistoryCard = (row: PaymentRow) => {
-    const sub = [rowCounterparty(row), paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
+    const line = rowSubLine(row);
+    const sub = [line.text, line.insteadOf, paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
     return (
       <Pressable
         aria-label={openLabel(row)}
@@ -987,6 +1018,7 @@ const MainCashbox = () => {
         {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
+          <PaymentCorrectionBadge kind={paymentCorrectionBadgeKind(row)} />
           {categoryBadge(row)}
           {receiptBadge(row)}
           <span className="text-[13px] text-text-muted">

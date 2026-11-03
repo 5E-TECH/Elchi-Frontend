@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-shift-closed, manager-payments-cash-detail-branch-shift-closed
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-shift-closed, manager-payments-cash-detail-branch-shift-closed, superadmin-payments-cash-detail-courier-corrected
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -33,6 +33,12 @@ import {
   type ReceiptKind,
 } from "../../../entities/payments";
 import { toReceiptRef } from "../../../entities/payments/receipt";
+import {
+  historyRowDate,
+  isPaymentReversalRow,
+  PAYMENT_REVERSAL_SOURCE_TYPE,
+  toPaymentCorrection,
+} from "../../../entities/payments/paymentCorrection";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import {
   dayOverDay,
@@ -151,14 +157,14 @@ const getActorDisplayName = (actor: PaymentRow["user"]) =>
   actor?.full_name?.trim() ||
   [actor?.first_name, actor?.last_name].filter(Boolean).join(" ").trim();
 
+/** Qator vaqti: `payment_date` → `createdAt`; «Tuzatilgan» — tuzatish vaqti (T6, C1 — `historyRowDate`). */
 const getHistoryDate = (item: Record<string, unknown>) =>
-  toOptionalString(item["payment_date"]) ??
-  toOptionalString(item["paymentDate"]) ??
-  toOptionalString(item["createdAt"]) ??
-  toOptionalString(item["created_at"]) ??
-  toOptionalString(item["updatedAt"]) ??
-  toOptionalString(item["updated_at"]) ??
-  toOptionalString(item["date"]);
+  historyRowDate({
+    correction: item["correction"],
+    payment_date: toOptionalString(item["payment_date"]) ?? toOptionalString(item["paymentDate"]),
+    createdAt: toOptionalString(item["createdAt"]) ?? toOptionalString(item["created_at"]),
+  }) ||
+  (toOptionalString(item["updatedAt"]) ?? toOptionalString(item["updated_at"]) ?? toOptionalString(item["date"]));
 
 const reduceBalanceTowardsZero = (balance: number, amount: number) =>
   balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
@@ -294,14 +300,17 @@ const isCourierToBranchHistoryItem = (item: Record<string, unknown>) => {
     "courier_to_branch",
     "courier_to_manager",
     "courier_to_branch_manager",
+    // T6: kuryer to'lovining teskari yozuvi — menejerning «To'lov o'tkazmalari» tabida ham (maket `…-corrected`).
+    PAYMENT_REVERSAL_SOURCE_TYPE,
   ].includes(normalizedSourceType ?? "");
 };
 
 const isIncomeHistoryItem = (item: Record<string, unknown>) =>
   String(item["operation_type"] ?? "").trim().toLowerCase() === "income";
 
+/** «To'lov o'tkazmalari» manbalari; T6 — teskari yozuv (`payment_reversal`) ham (maket «To'lov o'tkazmalari · 3»). */
 const PAYMENT_HISTORY_SOURCE_TYPES =
-  "courier_payment,market_payment,branch_to_main";
+  "courier_payment,market_payment,branch_to_main,payment_reversal";
 
 type CashDetailType = "market" | "courier" | "branch";
 
@@ -843,7 +852,13 @@ const CashDetail = () => {
 
   const historyRows = useMemo<PaymentRow[]>(() => {
     const courierTransferHistory = cashboxHistory.filter(isCourierToBranchHistoryItem);
-    const courierReceivedHistory = courierTransferHistory.filter(isIncomeHistoryItem);
+    // «Qabul qilingan» (kirim) o'tkazmalar bo'lsa — faqat ular va teskari yozuvlar (T6: teskari yozuv kuryer kassasida
+    // kirim, u yolg'iz o'zi bu tanlovni yoqib, asl chiqim qatorlarini yashirmasin).
+    const courierReceivedHistory = courierTransferHistory.some(
+      (item) => isIncomeHistoryItem(item) && !isPaymentReversalRow(item),
+    )
+      ? courierTransferHistory.filter((item) => isIncomeHistoryItem(item) || isPaymentReversalRow(item))
+      : [];
     const visibleHistory = isBranchDetailRequest
       ? historyTab === "payments"
         ? cashboxHistory.filter(isActualBranchToHqPaymentItem)
@@ -920,6 +935,10 @@ const CashDetail = () => {
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
         receipt: toReceiptRef(item["receipt"]),
+        // T6 — tuzatish belgisi va tafsilotdagi blok uchun.
+        transfer_id: toOptionalString(item["transfer_id"]) ?? null,
+        reverses_history_id: toOptionalString(item["reverses_history_id"]) ?? null,
+        correction: toPaymentCorrection(item["correction"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],

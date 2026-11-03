@@ -1,4 +1,4 @@
-// dizayn-v2: market-cashbox-my, courier-cashbox-my-all, courier-cashbox-my-transfers, courier-cashbox-my-transfers-ack
+// dizayn-v2: market-cashbox-my, courier-cashbox-my-all, courier-cashbox-my-transfers, courier-cashbox-my-transfers-ack, market-cashbox-my-corrected, courier-cashbox-my-transfers-corrected
 // Menejer varianti: maket yo'q — eng yaqini market-cashbox-my (route-map roleNotes; «(maket yo'q) market-cashbox-my»).
 import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -20,6 +20,12 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useCashBox } from "../../../entities/payments";
 import { toDailyRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
+import {
+  historyRowDate,
+  isPaymentReversalRow,
+  paymentCorrectionBadgeKind,
+  toPaymentCorrection,
+} from "../../../entities/payments/paymentCorrection";
 import { cx } from "../../../shared/lib/cx";
 import { toISODate } from "../../../shared/lib/dateRange";
 import { formatDateTimeLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
@@ -66,6 +72,8 @@ import {
 } from "./paymentSourceType";
 import { paymentAckAudienceOf, paymentAckKeys, toPaymentAck } from "./paymentAck";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
+import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import {
@@ -99,14 +107,24 @@ import {
  * Yo'nalish ko'ruvchi nuqtai nazaridan (`getViewerOperationType`, ega qarori D2, 2026-10-17): marketning o'z
  * kassasida HQ → market o'tkazmasi (`market_payment`) — «Chiqim −» (market balansi = Elchining qarzi, to'lov uni
  * kamaytiradi; backend ham market kassasiga `expense` yozadi). Tafsilot oynasi ham shu yo'nalishni ko'rsatadi.
+ *
+ * T6 «To'lov tuzatish» (XXyAZ9ge, maketlar `market-cashbox-my-corrected`, `courier-cashbox-my-transfers-corrected`;
+ * menejer — maket yo'q, eng yaqini `market-cashbox-my-corrected`): tuzatish belgisi sarlavhadan keyin (kuryer
+ * telefonida — uchinchi qator oxirida, kvitansiya javobidan oldin), teskari yozuv ostida izoh (= sabab) o'rniga
+ * «#4498 · summa tahrirlandi» / «#4512 qaytarildi · {kim}», «Tuzatilgan» da « · #4498 o'rniga». «To'lov
+ * o'tkazmalari» tabi `payment_reversal` ni ham so'raydi. «Tuzatilgan» sanasi va tartibi — tuzatish vaqti
+ * (`historyRowDate`, C1). Summa va balans o'zgarmaydi (ega qarori).
  */
 
 type CashboxRole = "market" | "manager" | "courier";
 type HistoryTab = "all" | "payments";
 type Direction = "income" | "expense";
 
-/** «To'lov o'tkazmalari» (Oldi-berdi) manbalari — backend `sourceTypes` (o'zgarmaydi). */
-const PAYMENT_HISTORY_SOURCE_TYPES = "courier_payment,market_payment,branch_to_main";
+/**
+ * «To'lov o'tkazmalari» (Oldi-berdi) manbalari — backend `sourceTypes`. T6: teskari yozuv (`payment_reversal`) ham —
+ * aks holda qaytarilgan to'lovning teskari yozuvi bu tabda ko'rinmaydi (maket `courier-cashbox-my-transfers-corrected`).
+ */
+const PAYMENT_HISTORY_SOURCE_TYPES = "courier_payment,market_payment,branch_to_main,payment_reversal";
 
 const PAGE_SIZE = 10;
 const MASK = "••••••";
@@ -149,10 +167,16 @@ const toOptionalString = (value: unknown): string | undefined => {
   return text ? text : undefined;
 };
 
+/** Saralash vaqti (xom qator): `payment_date` → `createdAt`; «Tuzatilgan» — tuzatish vaqti (T6, C1). */
 const getHistoryDate = (item: Record<string, unknown>) =>
-  String(item["payment_date"] ?? item["createdAt"] ?? item["created_at"] ?? "");
+  historyRowDate({
+    correction: item["correction"],
+    payment_date: toOptionalString(item["payment_date"]),
+    createdAt: toOptionalString(item["createdAt"]),
+    created_at: toOptionalString(item["created_at"]),
+  });
 
-const rowDate = (row: PaymentRow) => row.payment_date || row.createdAt || row.created_at || "";
+const rowDate = (row: PaymentRow) => historyRowDate(row);
 
 const rowTime = (row: PaymentRow) => {
   const time = Date.parse(rowDate(row));
@@ -214,6 +238,10 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
           toOptionalString(item["created_at"]),
         comment: toOptionalString(item["comment"]),
         payment_ack: toPaymentAck(item["payment_ack"]),
+        // T6 — tuzatish belgisi va tafsilotdagi blok uchun.
+        transfer_id: toOptionalString(item["transfer_id"]) ?? null,
+        reverses_history_id: toOptionalString(item["reverses_history_id"]) ?? null,
+        correction: toPaymentCorrection(item["correction"]),
         // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
         expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
         expense_category_name: toOptionalString(item["expense_category_name"]) ?? null,
@@ -630,6 +658,18 @@ const MyCashboxPage = () => {
     ) : null;
 
   /**
+   * T6 to'lov tuzatish belgisi («Qaytarildi» · «Tahrirlangan» · «Teskari yozuv» · «Tuzatilgan») — «Tuzatish»
+   * (bekor qilish, `correctionBadge`) dan alohida.
+   */
+  const paymentCorrectionBadge = (row: PaymentRow) => <PaymentCorrectionBadge kind={paymentCorrectionBadgeKind(row)} />;
+  /** Teskari yozuv pastki qatori: kuryerda «#4512 qaytarildi», market / menejerda «#4512 · {tur} qaytarildi». */
+  const reversalRef = (row: PaymentRow) =>
+    reversalRefText(row, t, { role, cashboxType: row.cashbox_type }, isCourier ? "short" : "overview");
+  /** Teskari yozuvni yaratgan (superadmin) — kuryer maketida havoladan keyin qalin. */
+  const reversalActor = (row: PaymentRow) =>
+    getPaymentActorName(row.created_by_user ?? row.createdByUser) || toPaymentCorrection(row.correction)?.created_by_name || "";
+
+  /**
    * Kuryer kvitansiyasi javobi (2crjWf7v): faqat `courier_payment` qatorida, javob bo'lsa. Matn ko'ruvchiga qarab
    * (KI-S1): kuryer — o'z javobi («Siz tasdiqlagansiz» / «Siz: noto'g'ri», maket `courier-cashbox-my-transfers-ack`),
    * market va menejer — «Kuryer tasdiqladi» / «Kuryer: noto'g'ri». Balandligi «Tuzatish» bilan birga maketdagi
@@ -656,15 +696,27 @@ const MyCashboxPage = () => {
     );
   };
 
-  /** «Manba» ostidagi qator: «Buyurtma №…» · «Qabul qildi: …» · izoh (maket). */
+  /**
+   * «Manba» ostidagi qator: «Buyurtma №…» · «Qabul qildi: …» · izoh (maket). T6: teskari yozuvda — havola (kuryerda
+   * + yaratgan), izoh (= sabab) emas; «Tuzatilgan» da oxirida «#id o'rniga».
+   */
   const subParts = (row: PaymentRow) => {
     const parts: ReactNode[] = [];
+    const reversal = reversalRef(row);
+    if (reversal) {
+      parts.push(reversal);
+      const actor = isCourier ? reversalActor(row) : "";
+      if (actor) parts.push(<strong className="font-semibold text-text">{actor}</strong>);
+      return parts;
+    }
     const id = orderId(row);
     if (id) parts.push(t("v2Common.orderNumber", { id }));
     const received = receivedByNode(row);
     if (received) parts.push(received);
     const comment = row.comment?.trim();
     if (comment) parts.push(comment);
+    const insteadOf = replacementRefText(row, t);
+    if (insteadOf) parts.push(<span className="whitespace-nowrap">{insteadOf}</span>);
     return parts;
   };
 
@@ -682,22 +734,28 @@ const MyCashboxPage = () => {
     // Telefon kartasining nomi (aria-label) belgilarni ham aytsin — «Tuzatish», kvitansiya javobi (2crjWf7v).
     // Kuryerda — kartadagi tartibda (maket `courier-cashbox-my-transfers-ack`): «Qabul qildi» → izoh → javob oxirida.
     const ack = ackText(row);
-    const comment = row.comment?.trim() ?? "";
+    const reversal = reversalRef(row);
+    const comment = reversal ? "" : (row.comment?.trim() ?? "");
     return [
       isCorrection(row) ? t("v2MyCashbox.history.correction") : "",
       isCourier ? "" : ack,
       id ? t("v2Common.orderNumber", { id }) : "",
       received ? `${t("v2MyCashbox.history.receivedBy")} ${received}` : "",
+      reversal ?? "",
+      reversal && isCourier ? reversalActor(row) : "",
       comment,
+      replacementRefText(row, t) ?? "",
       isCourier ? ack : "",
     ]
       .filter(Boolean)
       .join(" · ");
   };
 
+  /** Sarlavha + T6 belgisi: «HQ'dan marketga o'tkazma, Tuzatilgan» (tugma va karta nomi uchun). */
+  const labelTitle = (row: PaymentRow) => correctionLabelTitle(sourceTitle(row), paymentCorrectionBadgeKind(row), t);
   const openTitle = (row: PaymentRow) => {
     const id = orderId(row);
-    return id ? t("v2MyCashbox.history.openTitleWithOrder", { title: sourceTitle(row), id }) : sourceTitle(row);
+    return id ? t("v2MyCashbox.history.openTitleWithOrder", { title: sourceTitle(row), id }) : labelTitle(row);
   };
   const openLabel = (row: PaymentRow) => t("v2Common.openDetail", { title: openTitle(row), date: dateText(row) });
 
@@ -705,7 +763,7 @@ const MyCashboxPage = () => {
     const sub = subPlainText(row);
     const value = direction(row);
     const category = getExpenseCategoryName(row);
-    const title = category ? `${sourceTitle(row)} · ${category}` : sourceTitle(row);
+    const title = category ? `${labelTitle(row)} · ${category}` : labelTitle(row);
     return t("v2MyCashbox.history.cardLabel", {
       title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
@@ -748,6 +806,7 @@ const MyCashboxPage = () => {
               >
                 {sourceTitle(row)}
               </Pressable>
+              {paymentCorrectionBadge(row)}
               {categoryBadge(row)}
               {correctionBadge(row)}
               {ackBadge(row)}
@@ -835,17 +894,33 @@ const MyCashboxPage = () => {
           </span>
           {balanceLine}
         </span>
-        {isCorrection(row) || row.payment_ack || receiverName(row) || row.comment?.trim() ? (
+        {isCorrection(row) ||
+        row.payment_ack ||
+        receiverName(row) ||
+        row.comment?.trim() ||
+        paymentCorrectionBadgeKind(row) ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-muted">
             {correctionBadge(row)}
-            {receivedByNode(row)}
-            {row.comment?.trim() ? (
-              <span className="inline-flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
-                <span className="sr-only">{t("v2MyCashbox.history.comment")} </span>
-                <MessageSquare aria-hidden="true" size={14} className="shrink-0" />
-                {row.comment.trim()}
-              </span>
-            ) : null}
+            {isPaymentReversalRow(row) && reversalRef(row) ? (
+              // T6 (maket `courier-cashbox-my-transfers-corrected`): «#4512 qaytarildi · **Shodiyor Ergashev**».
+              <span className="min-w-0 [overflow-wrap:anywhere]">{joinParts(subParts(row))}</span>
+            ) : (
+              <>
+                {receivedByNode(row)}
+                {row.comment?.trim() ? (
+                  <span className="inline-flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
+                    <span className="sr-only">{t("v2MyCashbox.history.comment")} </span>
+                    <MessageSquare aria-hidden="true" size={14} className="shrink-0" />
+                    {row.comment.trim()}
+                  </span>
+                ) : null}
+                {replacementRefText(row, t) ? (
+                  <span className="whitespace-nowrap">{replacementRefText(row, t)}</span>
+                ) : null}
+              </>
+            )}
+            {/* T6 belgisi — izohdan keyin, kvitansiya javobidan oldin (maketda ikkalasi birga chizilmagan; B3). */}
+            {paymentCorrectionBadge(row)}
             {/* Kvitansiya javobi — oxirida (maket `courier-cashbox-my-transfers-ack`: «Qabul qildi» → izoh → belgi). */}
             {ackBadge(row)}
           </span>
@@ -856,6 +931,7 @@ const MyCashboxPage = () => {
         <span className="flex w-full min-w-0 items-start justify-between gap-2">
           <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
             <span className="font-semibold">{sourceTitle(row)}</span>
+            {paymentCorrectionBadge(row)}
             {categoryBadge(row)}
             {correctionBadge(row)}
             {ackBadge(row)}

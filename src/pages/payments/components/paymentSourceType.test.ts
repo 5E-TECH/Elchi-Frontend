@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import i18n from "../../../i18n";
+import ruPayments from "../../../locales/ru/payments.json";
+import enPayments from "../../../locales/en/payments.json";
 import {
   getCashboxTypeLabel,
   getPaymentMethodLabel,
@@ -56,6 +58,22 @@ describe("v2 kassa tarixi yorliqlari (maket matnlari)", () => {
     expect(getPaymentSourceTitle("new_backend_source", t)).toBe("New Backend Source");
     expect(getPaymentSourceTitle("", t)).toBe("—");
     expect(getPaymentSourceTitle(null, t)).toBe("—");
+  });
+
+  it("T6: teskari yozuv (payment_reversal) — «To'lovni qaytarish», uchala tilda (inglizcha «Payment Reversal» emas)", () => {
+    // ru/en to'plamlari testda yuklanmaydi (dangasa) — kalit fayldan to'g'ridan-to'g'ri o'qiladi.
+    const fromBundle = (bundle: object) => (key: string) =>
+      String(key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], bundle) ?? key);
+    expect(getPaymentSourceTitle("payment_reversal", t, { role: "superadmin", cashboxType: "main" })).toBe(
+      "To'lovni qaytarish",
+    );
+    expect(getPaymentSourceTitle("payment_reversal", t, { role: "market" })).toBe("To'lovni qaytarish");
+    expect(getPaymentSourceTitle("payment_reversal", fromBundle(ruPayments))).toBe("Отмена платежа");
+    expect(getPaymentSourceTitle("payment_reversal", fromBundle(enPayments))).toBe("Payment reversal");
+    expect(getPaymentSourceTypeLabel("payment_reversal", t)).toBe("To'lovni qaytarish");
+    expect(getPaymentSourceTypeLabel("payment_reversal", fromBundle(ruPayments))).toBe("Отмена платежа");
+    // Teskari yozuv o'z yo'nalishida (market ko'ruvchisi uchun faqat `market_payment` almashadi).
+    expect(getViewerOperationType({ operation_type: "income", source_type: "payment_reversal" }, "market")).toBe("income");
   });
 
   it("getPaymentMethodLabel: naqd, o'tkazma, marketga o'tkazma, payme, noma'lum", () => {

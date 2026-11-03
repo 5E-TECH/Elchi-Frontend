@@ -1,4 +1,5 @@
 import type { PaymentRow } from "../patmentHistoryTable";
+import { historyRowDate } from "../../../../entities/payments/paymentCorrection";
 
 /**
  * «ASOSIY KASSA» HISOBLARI — sahifadagi davr kartalari («Bugun / Bu hafta / Bu oy»), «Pul qayerdan keldi,
@@ -42,8 +43,11 @@ export const parseIsoDate = (value: string): Date | null => {
   return new Date(year, month - 1, day);
 };
 
-/** Operatsiya sanasi (davr kartalari va jadval): `payment_date` → `createdAt` → `created_at`. */
-export const rowDateValue = (row: PaymentRow) => row.payment_date || row.createdAt || row.created_at || "";
+/**
+ * Operatsiya sanasi (davr kartalari va jadval): `payment_date` → `createdAt` → `created_at`; «Tuzatilgan» (T6) —
+ * tuzatish vaqti (`historyRowDate`, C1: yangi to'lov tuzatish paytida yozilgan, teskari yozuv bilan bir davrda).
+ */
+export const rowDateValue = (row: PaymentRow) => historyRowDate(row);
 
 /** Davr boshi: bugun · shu hafta dushanbasi · oyning 1-kuni (eski `buildRangeStart`). */
 export const buildRangeStart = (type: PeriodKey, now: Date = new Date()) => {

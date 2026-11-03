@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt
-import { memo, useMemo, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected
+import { memo, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -13,6 +13,12 @@ import {
   type FinanceHistoryDetail,
 } from "../../../entities/payments";
 import { toReceiptRef } from "../../../entities/payments/receipt";
+import {
+  correctionBadgeKindOf,
+  historyRowDate,
+  toPaymentCorrection,
+  type PaymentCorrectionRelated,
+} from "../../../entities/payments/paymentCorrection";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
@@ -39,6 +45,8 @@ import {
   getViewerOperationType,
 } from "./paymentSourceType";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
+import { PaymentCorrectionSection } from "./PaymentCorrectionSection";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 import ReceiptSection from "./receipt/ReceiptSection";
@@ -61,6 +69,13 @@ import ReceiptSection from "./receipt/ReceiptSection";
  *
  * Yo'nalish ko'ruvchi nuqtai nazaridan (`getViewerOperationType`, ega qarori D2): market o'z kassasida HQ → market
  * o'tkazmasini «Chiqim −» ko'radi — ro'yxatdagi kabi.
+ *
+ * T6 «To'lov tuzatish» (XXyAZ9ge, maketlar `*-history-detail-dialog-corrected`, `…-replacement`): sarlavha izohida
+ * yozuv ID si («Operatsiyalar tarixi · #4498 · Bugun, 13:05»); «Summa» yonida tuzatish belgisi (summa chizilmaydi —
+ * ega qarori); xulosadan keyin «Qaytarish va tahrir» bloki (`PaymentCorrectionSection`) — ro'yxat qatoridan darhol,
+ * tafsilot kelgach undan (qator eskirgan bo'lishi mumkin); «Bog'liq yozuv» shu oynada o'sha kassadagi juft yozuvni
+ * ochadi (`related.id`). «Tuzatilgan» yozuv sanasi — tuzatish vaqti (`historyRowDate`, C1). Teskari yozuvda «Izoh»
+ * sababni takrorlasa — yashiriladi (C6). Amallar (N2) bu yerda yo'q.
  */
 
 interface Props {
@@ -120,7 +135,14 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   // Yopilish harakati (200 ms) davomida oxirgi qator ko'rinib turadi.
   const [shownRow, setShownRow] = useState<PaymentRow | null>(row);
   if (row && row !== shownRow) setShownRow(row);
-  const current = row ?? shownRow;
+  // T6 «Bog'liq yozuv»: o'sha oynada juft yozuv (qatorning o'rnini bosadi). Ro'yxatdan boshqa qator ochilsa — tashlanadi.
+  const [relatedRow, setRelatedRow] = useState<PaymentRow | null>(null);
+  const [baseRow, setBaseRow] = useState<PaymentRow | null>(row);
+  if (row !== baseRow) {
+    setBaseRow(row);
+    if (row) setRelatedRow(null);
+  }
+  const current = relatedRow ?? row ?? shownRow;
   const open = row != null;
 
   const rowId = current?.id ?? null;
@@ -134,6 +156,12 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const isMismatchedDetail = Boolean(rowCashboxId && detailCashboxId && rowCashboxId !== detailCashboxId);
   const detail = isMismatchedDetail ? null : fetchedDetail;
 
+  // T6: tuzatish — avval tafsilotdan (tuzatishdan keyin ro'yxat qatori eskirgan bo'ladi), bo'lmasa qatordan.
+  const correction = useMemo(
+    () => toPaymentCorrection(detail && detail.correction !== undefined ? detail.correction : current?.correction),
+    [current, detail],
+  );
+
   // Qator ustun (ro'yxatdagi yo'nalish/summa bilan bir xil), bo'sh maydon — tafsilotdan.
   const display = useMemo(() => {
     if (!current) return null;
@@ -143,12 +171,18 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
       balance_after: current.balance_after ?? detail?.balance_after,
       source_type: current.source_type ?? detail?.source_type ?? undefined,
       payment_method: current.payment_method ?? detail?.payment_method ?? undefined,
-      payment_date: current.payment_date ?? detail?.payment_date ?? current.createdAt ?? detail?.createdAt,
+      // «Tuzatilgan» — tuzatish vaqti (C1, `historyRowDate`), qolganlari — to'lov sanasi, bo'lmasa yaratilgan vaqt.
+      payment_date: historyRowDate({
+        correction,
+        payment_date: current.payment_date ?? detail?.payment_date,
+        createdAt: current.createdAt ?? detail?.createdAt,
+        created_at: current.created_at,
+      }),
       comment: current.comment ?? detail?.comment ?? undefined,
       expense_category_name: getExpenseCategoryName(current) ?? getExpenseCategoryName(detail),
       cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
     };
-  }, [current, detail]);
+  }, [correction, current, detail]);
 
   const direction = getViewerOperationType(display, viewerRole);
   const isIncome = direction === "income";
@@ -196,7 +230,30 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const partyName = getPaymentActorName(party) || (party?.id != null ? `#${party.id}` : "");
   const partyRole = roleLabel(party?.role) ?? roleLabel(display.cashbox_type);
   const partyPhone = party?.phone_number?.trim() || party?.phone?.trim() || "";
-  const comment = display.comment?.trim();
+  // C6: teskari yozuvda backend `comment` ga sababni yozadi — blokdagi «Sabab» bilan bir xil bo'lsa «Izoh» chiqmaydi.
+  const rawComment = display.comment?.trim();
+  const comment =
+    rawComment && correction?.role === "reversal" && rawComment === correction.reason.trim() ? "" : rawComment;
+  const correctionKind = correction ? correctionBadgeKindOf(correction.role, correction.action) : null;
+  const correctionCashboxType = display.cashbox_type;
+
+  // «Bog'liq yozuv»: o'sha kassadagi juft oyoq — sintetik qator (`GET finance/history/:id` qolganini beradi).
+  const openRelated = (related: PaymentCorrectionRelated, event: MouseEvent<HTMLButtonElement>) => {
+    const panel = event.currentTarget.closest<HTMLElement>("[aria-modal='true']");
+    setRelatedRow({
+      id: related.id,
+      amount: related.amount,
+      operation_type: related.operation_type ?? undefined,
+      source_type: related.source_type || undefined,
+      cashbox_id: current.cashbox_id ?? current.cashbox?.id,
+      cashbox_type: current.cashbox_type ?? current.cashbox?.cashbox_type ?? detail?.cashbox?.cashbox_type,
+      createdAt: related.created_at ?? undefined,
+    });
+    // Yangi mazmun boshidan ko'rinsin, fokus oynada qolsin (bosilgan qator DOM'dan ketadi).
+    const body = panel?.querySelector<HTMLElement>("[data-dialog-body]");
+    if (body) body.scrollTop = 0;
+    panel?.focus();
+  };
   // 2crjWf7v: kuryerning bot kvitansiyasiga javobi — faqat «Kuryerdan qabul» qatorida (ro'yxat qatoridan;
   // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maket `manager-payments-history-detail-dialog-ack`;
   // matn ko'ruvchiga qarab (KI-S1): kuryer — «Siz tasdiqlagansiz», xodim — «Kuryer tasdiqladi».
@@ -355,11 +412,18 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
     <Dialog
       open={open}
       onClose={onClose}
-      onExited={() => setShownRow(null)}
+      onExited={() => {
+        setShownRow(null);
+        setRelatedRow(null);
+      }}
       size="lg"
       icon={direction === "expense" ? ArrowUpRight : direction === "income" ? ArrowDownLeft : Receipt}
       title={title}
-      description={t("v2HistoryDetail.subtitle", { date: dateText })}
+      description={
+        canFetch
+          ? t("v2HistoryDetail.subtitleWithId", { id: current.id, date: dateText })
+          : t("v2HistoryDetail.subtitle", { date: dateText })
+      }
       closeLabel={t("v2HistoryDetail.close")}
       initialFocus="panel"
       footer={
@@ -370,7 +434,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
     >
       <div className={cx(SUNKEN, "flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4")}>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[13px] font-semibold text-text-muted">{t("v2HistoryDetail.amount")}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-[13px] font-semibold text-text-muted">{t("v2HistoryDetail.amount")}</span>
+            <PaymentCorrectionBadge kind={correctionKind} />
+          </span>
           <span
             data-history-amount=""
             className={cx(
@@ -389,6 +456,15 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           </div>
         ) : null}
       </div>
+
+      {correction ? (
+        <PaymentCorrectionSection
+          correction={correction}
+          viewerRole={viewerRole}
+          cashboxType={correctionCashboxType}
+          onOpenRelated={openRelated}
+        />
+      ) : null}
 
       {receiptId ? (
         <ReceiptSection

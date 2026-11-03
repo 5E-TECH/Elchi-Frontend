@@ -144,6 +144,7 @@
   "financialBalanceSourceSalary": "Maosh",
   "financialBalanceSourceCorrection": "Tuzatish",
   "financialBalanceSourceBills": "Hisob-fakturalar",
+  "paymentReversal": "To'lovni qaytarish",
   "report": "Hisobot",
   "commentPlaceholder": "Izoh...",
   "paymentType": "To'lov turi",
@@ -699,7 +700,8 @@
       "sell": "Sotuv",
       "cancel": "Bekor qilish",
       "extraCost": "Qo'shimcha xarajat",
-      "bills": "Hisob-fakturalar"
+      "bills": "Hisob-fakturalar",
+      "paymentReversal": "To'lovni qaytarish"
     },
     "roles": {
       "courier": "Kuryer",
@@ -718,6 +720,7 @@
     "expenseTitle": "Chiqim operatsiyasi",
     "operationTitle": "Operatsiya",
     "subtitle": "Operatsiyalar tarixi · {{date}}",
+    "subtitleWithId": "Operatsiyalar tarixi · #{{id}} · {{date}}",
     "amount": "Summa",
     "balanceAfter": "Operatsiyadan keyingi balans",
     "sourceType": "Manba turi",
@@ -1541,6 +1544,36 @@
           "text": "Birozdan keyin qayta urinib ko'ring."
         }
       }
+    }
+  },
+  "paymentCorrection": {
+    "badge": {
+      "reversed": "Qaytarildi",
+      "edited": "Tahrirlangan",
+      "reversal": "Teskari yozuv",
+      "replacement": "Tuzatilgan"
+    },
+    "list": {
+      "reversedOf": "#{{id}} · {{title}} qaytarildi",
+      "reversed": "#{{id}} qaytarildi",
+      "edited": "#{{id}} · summa tahrirlandi",
+      "insteadOf": "#{{id}} o'rniga",
+      "labelTitle": "{{title}}, {{badge}}"
+    },
+    "detail": {
+      "title": "Qaytarish va tahrir",
+      "action": "Amal",
+      "actionEdit": "Summa tahrirlandi",
+      "actionReverse": "To'liq qaytarildi",
+      "amount": "Summa",
+      "date": "Sana",
+      "by": "Kim",
+      "reason": "Sabab",
+      "related": "Bog'liq yozuv",
+      "relatedSub": "#{{id}} · {{date}}",
+      "relatedOriginalSub": "Asl to'lov · #{{id}} · {{date}}",
+      "relatedOriginal": "asl to'lov",
+      "relatedAria": "Bog'liq yozuv: {{parts}}, tafsilotni ochish"
     }
   }
 }

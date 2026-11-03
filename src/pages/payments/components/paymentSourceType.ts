@@ -20,6 +20,7 @@ const SOURCE_TYPE_KEYS: Record<string, string> = {
   cancel: "cancelOperation",
   extra_cost: "extraCost",
   bills: "financialBalanceSourceBills",
+  payment_reversal: "paymentReversal",
 };
 
 const humanizeSourceType = (value: string) =>
@@ -76,6 +77,8 @@ const V2_SOURCE_KEYS: Record<string, string> = {
   cancel: "v2Common.sourceType.cancel",
   extra_cost: "v2Common.sourceType.extraCost",
   bills: "v2Common.sourceType.bills",
+  // T6: teskari yozuv (backend `payment_reversal`, faqat ichki tur) — «To'lovni qaytarish».
+  payment_reversal: "v2Common.sourceType.paymentReversal",
 };
 
 /**

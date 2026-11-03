@@ -1139,6 +1139,87 @@ describe("CashDetail — kuryer kvitansiyasi javobi tarixda (2crjWf7v)", () => {
 });
 
 /**
+ * T6-FE-1 (XXyAZ9ge) — kassa tafsilotida to'lov tuzatish (maket `superadmin-payments-cash-detail-courier-corrected`):
+ * `historyRows` `correction` / `reverses_history_id` ni o'tkazadi, «To'lov o'tkazmalari» `payment_reversal` ni ham
+ * so'raydi, menejerning kuryer tabida teskari yozuv qoladi (mijoz filtri tashlamaydi).
+ */
+describe("CashDetail — to'lov tuzatish (T6)", () => {
+  afterEach(() => {
+    cashboxState.response = undefined;
+    cashboxState.calls = [];
+  });
+
+  const REASON = "Boshqa kuryer tanlab yuborilgan — pul Rustam Qosimovdan olingan";
+  const correction = (role: string, related: Record<string, unknown>) => ({
+    id: "12",
+    action: "reverse",
+    payment_kind: "courier_payment",
+    role,
+    reason: REASON,
+    created_by_name: "Shodiyor Ergashev",
+    created_at: "2026-10-17T11:40:00.000Z",
+    original_amount: 1_850_000,
+    new_amount: null,
+    related_history_id: related.id,
+    related: { ...related, amount: 1_850_000, created_at: "2026-10-17T11:40:00.000Z" },
+  });
+  const history = [
+    {
+      id: "4530",
+      cashbox_id: "70",
+      amount: 1_850_000,
+      operation_type: "income",
+      source_type: "payment_reversal",
+      payment_method: "cash",
+      comment: REASON,
+      created_by_user: { id: "1", name: "Shodiyor Ergashev", role: "superadmin" },
+      createdAt: "2026-10-17T11:40:00.000Z",
+      reverses_history_id: "4512",
+      correction: correction("reversal", { id: "4512", source_type: "courier_payment", role: "original", operation_type: "expense" }),
+    },
+    {
+      id: "4512",
+      cashbox_id: "70",
+      amount: 1_850_000,
+      operation_type: "expense",
+      source_type: "courier_payment",
+      payment_method: "cash",
+      comment: "Kunlik topshiriq",
+      created_by_user: { id: "7", name: "Mohira Qodirova", role: "manager" },
+      createdAt: "2026-10-17T09:32:00.000Z",
+      correction: correction("original", { id: "4530", source_type: "payment_reversal", role: "reversal", operation_type: "income" }),
+    },
+  ];
+
+  it("superadmin: belgilar va «#4512 qaytarildi» (sabab emas); «To'lov o'tkazmalari» payment_reversal ni so'raydi", async () => {
+    cashboxState.response = courierDetailResponse({ history });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    const reversal = screen.getByRole("button", { name: /^To'lovni qaytarish, Teskari yozuv, #4512 qaytarildi, Kirim/ });
+    expect(within(reversal).getByText("Teskari yozuv")).toHaveAttribute("data-payment-correction", "reversal");
+    expect(reversal).not.toHaveTextContent(REASON);
+    const original = screen.getByRole("button", { name: /^Kuryer to'lovi, Qaytarildi, Chiqim/ });
+    expect(within(original).getByText("Qaytarildi")).toHaveAttribute("data-payment-correction", "reversed");
+
+    await user.click(screen.getByRole("radio", { name: "To'lov o'tkazmalari" }));
+    expect(lastCashboxParams()).toEqual(
+      expect.objectContaining({ sourceTypes: "courier_payment,market_payment,branch_to_main,payment_reversal" }),
+    );
+  });
+
+  it("menejer, «To'lov o'tkazmalari»: teskari yozuv va asl to'lov qoladi", async () => {
+    cashboxState.response = courierDetailResponse({ history });
+    openWithoutState("/payments/cash-detail/263?type=courier", manager);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("radio", { name: "To'lov o'tkazmalari" }));
+    expect(screen.getByRole("button", { name: /^To'lovni qaytarish, Teskari yozuv, #4512 qaytarildi/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Kuryerdan filialga o'tkazma, Qaytarildi, Chiqim/ })).toBeInTheDocument();
+  });
+});
+
+/**
  * CB-2 (kfdfYDik, ega javobi CB-S4 — smena hamma kassada majburiy): smena yo'q bo'lsa forma o'rnida «Smena
  * boshlanmagan» bloki + «Smenani ochish» (ayni ochish oynasi); tarix va balans o'zgarmaydi. Maketlar
  * `manager-payments-cash-detail-{courier,branch}-shift-closed`; superadmin/admin — eng yaqini shu (asosiy kassa).

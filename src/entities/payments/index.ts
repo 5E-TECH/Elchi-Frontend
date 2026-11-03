@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { SHIFT_CLOSE_TIMEOUT_MS, type CloseShiftAccount } from "./shiftAccountCheck";
 import type { ReceiptRef } from "./receipt";
+import type { PaymentCorrectable, PaymentCorrection } from "./paymentCorrection";
 
 export const cashbox = "cashbox";
 export const shift = "shift";
@@ -103,6 +104,14 @@ export interface FinanceHistoryDetail {
   sourceUser?: FinanceHistoryActor | null;
   created_by_user?: FinanceHistoryActor | null;
   createdByUser?: FinanceHistoryActor | null;
+  /** T6 — to'lovning barcha kassalardagi oyoqlari uchun umumiy kalit; to'lov emas yoki eski yozuv — `null`. */
+  transfer_id?: string | null;
+  /** T6 — teskari yozuvda (`payment_reversal`) qaytarilgan asl oyoq ID si, boshqa qatorlarda `null`. */
+  reverses_history_id?: string | null;
+  /** T6 — tuzatish ko'rinishi (barcha rollarga; `toPaymentCorrection` bilan o'qiladi). */
+  correction?: PaymentCorrection | null;
+  /** T6 — faqat superadmin tafsilotida (N2); boshqa rollarda kalit yo'q. */
+  correctable?: PaymentCorrectable | null;
 }
 
 export interface FinanceHistoryDetailResponse {
@@ -596,3 +605,4 @@ export const useCashBox = () => {
 
 export * from "./shiftAccountCheck";
 export * from "./receipt";
+export * from "./paymentCorrection";

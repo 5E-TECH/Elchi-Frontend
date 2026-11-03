@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt, superadmin-payments-cash-detail-courier-corrected
 import { memo, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +32,9 @@ import { PaymentAckBadge } from "./PaymentAckBadge";
 import { paymentAckAudienceOf, paymentAckKeys } from "./paymentAck";
 import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
 import { toReceiptRef } from "../../../entities/payments/receipt";
+import { historyRowDate, paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCorrection";
+import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
+import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
 
 /**
  * KASSA OPERATSIYALARI RO'YXATI — dizayn v2 (maket `*-payments-cash-detail-*`, «Operatsiyalar tarixi»
@@ -44,6 +47,10 @@ import { toReceiptRef } from "../../../entities/payments/receipt";
  *
  * Yo'nalish ko'ruvchiga bog'liq (`getViewerOperationType`, ega qarori D2): marketning o'z kassasida
  * `market_payment` — chiqim; boshqa rollarda qatorning `operation_type` i.
+ *
+ * T6 (XXyAZ9ge, maket `superadmin-payments-cash-detail-courier-corrected`; market va filial kassasi — maket yo'q, eng
+ * yaqini shu): tuzatish belgisi belgilar qatorida (birinchi), teskari yozuvda izoh (= sabab) o'rniga «#4512 qaytarildi»,
+ * «Tuzatilgan» da izohdan keyin « · #4498 o'rniga»; tugma nomida «{sarlavha}, {belgi}, {havola}». Summa o'zgarmaydi.
  *
  * `pageSize` dan ko'p qator bo'lsa — mijoz tomonida sahifalash (`Pagination`).
  * `withContainer` (sukut) — o'z kartasi bilan; `false` — ota karta ichida (cash-detail).
@@ -89,7 +96,8 @@ const getHistoryRowTitle = (row: PaymentRow, t: Translate, viewerRole?: string |
     : title;
 };
 
-const getHistoryRowDate = (row: PaymentRow) => row.payment_date || row.createdAt || row.created_at || "";
+/** Sana: `payment_date` → `createdAt`; «Tuzatilgan» — tuzatish vaqti (T6, C1). */
+const getHistoryRowDate = (row: PaymentRow) => historyRowDate(row);
 
 /**
  * Qator ko'rinishi yordamchilari — cash-detail «Balans harakati» (grafik/jadval) ro'yxat bilan aynan bir xil
@@ -127,14 +135,25 @@ const HistoryRow = memo(
         ? getPaymentActorName(row.source_user ?? row.sourceUser)
         : "";
     const comment = splitRollback(row.comment);
-    const extra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
+    // T6: teskari yozuvda izoh — sabab (blokda ko'rinadi), ro'yxatda o'rniga asl yozuvga havola.
+    const viewer = { role: viewerRole, cashboxType: row.cashbox_type ?? row.cashbox?.cashbox_type };
+    const reversalRef = reversalRefText(row, t, viewer, "short");
+    const insteadOf = replacementRefText(row, t);
+    const correctionKind = paymentCorrectionBadgeKind(row);
+    const baseExtra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
+    const extra = reversalRef ?? [baseExtra, insteadOf].filter(Boolean).join(" · ");
     const date = formatDateTimeLocalized(getHistoryRowDate(row));
     const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
     // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish» — sarlavhadan keyin qavsda; kvitansiya
     // javobi (2crjWf7v, KI-S1) — maketdagidek oxirida: «…, Bugun, 09:10, Kuryer: noto'g'ri».
     const ackAudience = paymentAckAudienceOf(viewerRole);
     const ackKeys = paymentAckKeys(row.payment_ack, ackAudience);
-    const labelTitle = comment.isRollback ? `${title} (${t("v2CashDetail.list.rollback")})` : title;
+    const labelTitle = [
+      correctionLabelTitle(comment.isRollback ? `${title} (${t("v2CashDetail.list.rollback")})` : title, correctionKind, t),
+      reversalRef ?? insteadOf ?? "",
+    ]
+      .filter(Boolean)
+      .join(", ");
     // Qo'lda chiqimning xarajat kategoriyasi (Elchi Pochta №1) — belgilar qatorida va tugma nomida.
     const category = getExpenseCategoryName(row);
     const receipt = toReceiptRef(row.receipt);
@@ -176,8 +195,9 @@ const HistoryRow = memo(
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
                 kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
                 `.el-badge` — 24px (`md`). */}
-            {comment.isRollback || row.payment_ack || category || receipt ? (
+            {comment.isRollback || row.payment_ack || category || receipt || correctionKind ? (
               <span className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                <PaymentCorrectionBadge kind={correctionKind} />
                 {category ? <ExpenseCategoryBadge name={category} /> : null}
                 <ReceiptRowBadge receipt={row.receipt} />
                 {comment.isRollback ? (

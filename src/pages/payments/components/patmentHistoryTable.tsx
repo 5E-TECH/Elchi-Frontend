@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, superadmin-payments-overview-receipts
+// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, superadmin-payments-overview-receipts, superadmin-payments-overview-corrected
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Inbox, ListFilter } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +26,13 @@ import { getCashboxTypeLabel, getPaymentSourceTitle, getViewerOperationType } fr
 import type { PaymentAck } from "./paymentAck";
 import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
 import { toReceiptRef, type ReceiptRef } from "../../../entities/payments/receipt";
+import {
+  historyRowDate,
+  paymentCorrectionBadgeKind,
+  type PaymentCorrection,
+} from "../../../entities/payments/paymentCorrection";
+import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
+import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
 
 // ─── Types (boshqa «Moliya» fayllari import qiladi — o'zgarmaydi, faqat additiv) ───────────────
 
@@ -60,6 +67,15 @@ export interface PaymentRow {
   expense_category_name?: string | null;
   /** QlLf33Ma — biriktirilgan chek: superadmin/admin/menejerga, boshqa rollarda kalit yo'q; chek yo'q — `null`. */
   receipt?: ReceiptRef | null;
+  /** T6 — to'lov oyoqlarining umumiy kaliti (`null` — to'lov emas yoki eski yozuv). */
+  transfer_id?: string | null;
+  /** T6 — teskari yozuvda qaytarilgan asl oyoq ID si. */
+  reverses_history_id?: string | null;
+  /**
+   * T6 — tuzatish ko'rinishi (barcha rollarga): belgi «Qaytarildi» / «Tahrirlangan» / «Teskari yozuv» / «Tuzatilgan»
+   * va tafsilotdagi blok. Xom javobdan keladi — har doim `toPaymentCorrection` bilan o'qiladi.
+   */
+  correction?: PaymentCorrection | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {
@@ -112,7 +128,8 @@ interface PaymentHistoryTableProps {
 
 const PAGE_SIZES = [10, 20, 50, 100] as const;
 
-const rowDate = (row: PaymentRow) => row.payment_date || row.createdAt || row.created_at || "";
+/** Sana: `payment_date` → `createdAt`; «Tuzatilgan» — tuzatish vaqti (T6, C1). */
+const rowDate = (row: PaymentRow) => historyRowDate(row);
 
 const rowCashboxType = (row: PaymentRow) => row.cashbox_type || row.cashbox?.cashbox_type;
 
@@ -131,6 +148,11 @@ const actorName = (row: PaymentRow) => {
  * kartalar: «sarlavha · summa», «qarshi tomon · kassa», «badge · sana · yaratgan». Tablar va filtrlar —
  * sahifada (karta boshida). Holatlar: skelet, bo'sh («Operatsiyalar topilmadi»; filtr bo'lsa — tozalash),
  * xato + «Qayta urinish».
+ *
+ * T6 (XXyAZ9ge, maket `superadmin-payments-overview-corrected`; admin va menejer — maket yo'q, eng yaqini shu):
+ * tuzatish belgisi «Manba» da sarlavhadan keyin (telefonda — «Kirim/Chiqim» belgisidan keyin), teskari yozuv
+ * ostida sabab o'rniga «#4512 · Kuryer to'lovi qaytarildi», «Tuzatilgan» ostida « · #4498 o'rniga». Summa
+ * o'zgarmaydi (ega qarori — chizilmaydi, xiralashmaydi).
  */
 const PaymentHistoryTable = ({
   data,
@@ -172,6 +194,19 @@ const PaymentHistoryTable = ({
     [t],
   );
   const direction = useCallback((row: PaymentRow) => getViewerOperationType(row, viewerRole), [viewerRole]);
+  /**
+   * «Manba» ostidagi qator (T6): teskari yozuvda — asl yozuvga havola (sabab emas), «Tuzatilgan» da — qarshi tomon +
+   * «#id o'rniga» (alohida, bir qatorda); qolganlarida — qarshi tomon.
+   */
+  const subLine = useCallback(
+    (row: PaymentRow) => {
+      const reversal = reversalRefText(row, t, { role: viewerRole, cashboxType: rowCashboxType(row) }, "overview");
+      return reversal
+        ? { text: reversal, insteadOf: null }
+        : { text: counterparty(row), insteadOf: replacementRefText(row, t) };
+    },
+    [counterparty, t, viewerRole],
+  );
 
   const operationBadge = useCallback(
     (row: PaymentRow) => {
@@ -204,11 +239,12 @@ const PaymentHistoryTable = ({
     [direction, language],
   );
 
-  // Kartaning nomi (aria-label) ichidagini almashtiradi — xarajat kategoriyasi (Elchi Pochta №1) ham aytilsin.
+  // Kartaning nomi (aria-label) ichidagini almashtiradi — tuzatish belgisi (T6) va xarajat kategoriyasi (Elchi Pochta
+  // №1) ham aytilsin: «Kuryer to'lovi, Qaytarildi (Bugun, 14:32) tafsilotini ochish».
   const openLabel = useCallback(
     (row: PaymentRow) => {
       const category = getExpenseCategoryName(row);
-      const title = sourceTitle(row);
+      const title = correctionLabelTitle(sourceTitle(row), paymentCorrectionBadgeKind(row), t);
       const label = t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: dateText(row) });
       const receipt = toReceiptRef(row.receipt);
       return receipt
@@ -246,8 +282,9 @@ const PaymentHistoryTable = ({
         id: "source",
         header: t("v2Overview.history.columns.source"),
         cell: (row) => {
-          const sub = counterparty(row);
+          const sub = subLine(row);
           const category = categoryBadge(row);
+          const correctionKind = paymentCorrectionBadgeKind(row);
           const title = (
             <Pressable
               onClick={() => setSelectedRow(row)}
@@ -258,16 +295,27 @@ const PaymentHistoryTable = ({
           );
           return (
             <>
-              {category || row.receipt ? (
+              {category || row.receipt || correctionKind ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   {title}
+                  <PaymentCorrectionBadge kind={correctionKind} />
                   {category}
                   <ReceiptRowBadge receipt={row.receipt} />
                 </div>
               ) : (
                 title
               )}
-              {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
+              {sub.text || sub.insteadOf ? (
+                <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
+                  {sub.text}
+                  {sub.insteadOf ? (
+                    <>
+                      {sub.text ? " · " : null}
+                      <span className="whitespace-nowrap">{sub.insteadOf}</span>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           );
         },
@@ -314,13 +362,15 @@ const PaymentHistoryTable = ({
         ),
       },
     ],
-    [amountNode, cashboxLabel, categoryBadge, counterparty, dateText, isManager, openLabel, operationBadge, sourceTitle, t],
+    [amountNode, cashboxLabel, categoryBadge, dateText, isManager, openLabel, operationBadge, sourceTitle, subLine, t],
   );
 
-  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · kassa · badge + sana · yaratgan.
+  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · kassa · badge (+ tuzatish belgisi) +
+  // sana · yaratgan.
   const renderCard = useCallback(
     (row: PaymentRow) => {
-      const sub = [counterparty(row), rowCashboxType(row) ? cashboxLabel(row) : null].filter(Boolean).join(" · ");
+      const line = subLine(row);
+      const sub = [line.text, line.insteadOf, rowCashboxType(row) ? cashboxLabel(row) : null].filter(Boolean).join(" · ");
       return (
         <Pressable
           aria-label={openLabel(row)}
@@ -334,6 +384,7 @@ const PaymentHistoryTable = ({
           {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {operationBadge(row)}
+            <PaymentCorrectionBadge kind={paymentCorrectionBadgeKind(row)} />
             {categoryBadge(row)}
             <ReceiptRowBadge receipt={row.receipt} />
             <span className="text-[13px] text-text-muted">
@@ -343,7 +394,7 @@ const PaymentHistoryTable = ({
         </Pressable>
       );
     },
-    [amountNode, cashboxLabel, categoryBadge, counterparty, dateText, openLabel, operationBadge, sourceTitle],
+    [amountNode, cashboxLabel, categoryBadge, dateText, openLabel, operationBadge, sourceTitle, subLine],
   );
 
   const total = pagination?.total ?? data?.length ?? 0;
