@@ -2,6 +2,7 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../shared/api/endpoints";
 import { BASE_URL } from "../../../shared/const";
+import { isScannerSound, type StoredScannerSound } from "../../../shared/lib/preferencesStorage";
 
 /**
  * SKAN MINI APP'NING O'Z HTTP MIJOZI (MWYaqprw).
@@ -106,6 +107,30 @@ export const loginWithTelegram = async (initData: string): Promise<TelegramAuthR
     user: user
       ? { id: text(user.id) ?? undefined, name: text(user.name), role: text(user.role) }
       : null,
+  };
+};
+
+export type ScannerSoundPrefs = {
+  success: StoredScannerSound | null;
+  error: StoredScannerSound | null;
+  /** «Ovoz» kaliti (Sozlamalar → Skaner); kelmasa — `null`, qurilmadagi qiymat qoladi. */
+  sound: boolean | null;
+};
+
+/**
+ * JX0EBpa7: kuryerning skaner ovozi sozlamasi (`GET auth/my-profile` → `data.settings.scanner`). Telegram ichidagi
+ * brauzer xotirasi asosiy ilovanikidan alohida — Mini App'da ham hisobdagi ovoz chalinsin va «Ovoz» o'chiq bo'lsa
+ * jim tursin. Noma'lum ovoz ID — `null` (sukut qoladi).
+ */
+export const fetchScannerSoundPrefs = async (accessToken: string): Promise<ScannerSoundPrefs> => {
+  const response = await tgScanHttp.get(API_ENDPOINTS.AUTH.MY_PROFILE, { headers: authHeaders(accessToken) });
+  const scanner = asRow(asRow(unwrapData(response.data)?.settings)?.scanner);
+  const sounds = asRow(scanner?.sounds);
+  const feedback = asRow(scanner?.feedback);
+  return {
+    success: isScannerSound(sounds?.success) ? sounds.success : null,
+    error: isScannerSound(sounds?.error) ? sounds.error : null,
+    sound: typeof feedback?.sound === "boolean" ? feedback.sound : null,
   };
 };
 

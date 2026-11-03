@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { myProfileQuery } from "../../shared/api/myProfile";
 import { tokenStorage } from "../../auth/tokenStorage";
+import { isScannerSound, type StoredScannerSound } from "../../shared/lib/preferencesStorage";
 import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
@@ -19,7 +20,7 @@ import {
 
 export type ThemeMode = "light" | "dark";
 export type Language = "uz" | "ru" | "en";
-export type ScannerSoundId = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
+export type ScannerSoundId = StoredScannerSound;
 /** Skaner ochilganda yoqiladigan kamera: orqa (tavsiya) yoki old. */
 export type ScannerCameraFacing = "environment" | "user";
 /** Skaner ramkasi: kichik · o'rta (sukut) · katta. */
@@ -169,6 +170,10 @@ const readBool = (value: unknown, fallback: boolean): boolean =>
 const readClock = (value: unknown, fallback: ClockTime): ClockTime =>
   typeof value === "string" && CLOCK_TIME.test(value) ? value : fallback;
 
+/** JX0EBpa7: noma'lum ovoz ID (eskirgan yoki buzilgan qiymat) — sukut ovozi, oyna bo'sh qolmaydi. */
+const readSound = (value: unknown, fallback: ScannerSoundId): ScannerSoundId =>
+  isScannerSound(value) ? value : fallback;
+
 const readFacing = (value: unknown): ScannerCameraFacing =>
   value === "environment" || value === "user" ? value : DEFAULT_SETTINGS.scanner.camera.facing;
 
@@ -243,9 +248,8 @@ export const mergeSettings = (raw: unknown): AppSettings => {
     },
     scanner: {
       sounds: {
-        success:
-          s.scanner?.sounds?.success ?? DEFAULT_SETTINGS.scanner.sounds.success,
-        error: s.scanner?.sounds?.error ?? DEFAULT_SETTINGS.scanner.sounds.error,
+        success: readSound(s.scanner?.sounds?.success, DEFAULT_SETTINGS.scanner.sounds.success),
+        error: readSound(s.scanner?.sounds?.error, DEFAULT_SETTINGS.scanner.sounds.error),
       },
       camera: {
         facing: readFacing(s.scanner?.camera?.facing),

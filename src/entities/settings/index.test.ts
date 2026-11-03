@@ -216,3 +216,23 @@ describe("preferencesStorage — kamera ko'zgusi", () => {
     set.mockRestore();
   });
 });
+
+describe("scanner.sounds — JX0EBpa7 yumshoq ovozlar va zaxira", () => {
+  it("yangi ovoz ID'lari saqlanadi va o'qiladi", () => {
+    const { scanner } = mergeSettings({ scanner: { sounds: { success: "marimba", error: "glass" } } });
+    expect(scanner.sounds).toEqual({ success: "marimba", error: "glass" });
+  });
+
+  it("eski ID'lar buzilmaydi", () => {
+    const { scanner } = mergeSettings({ scanner: { sounds: { success: "bell", error: "digital" } } });
+    expect(scanner.sounds).toEqual({ success: "bell", error: "digital" });
+  });
+
+  it("noma'lum yoki buzuq ID — sukut (classic), boshqa sozlamalar tegilmaydi", () => {
+    const { scanner } = mergeSettings({
+      scanner: { sounds: { success: "eski-ovoz", error: 42 }, feedback: { sound: false } },
+    });
+    expect(scanner.sounds).toEqual({ success: "classic", error: "classic" });
+    expect(scanner.feedback.sound).toBe(false);
+  });
+});

@@ -390,3 +390,82 @@ describe("/tg/scan — Telegram skan Mini App", () => {
     expect(within(sheet).getByText("№10191 · Lobar Yusupova")).toBeInTheDocument();
   });
 });
+
+describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
+  /** Soxta WebAudio: chalingan notalar (osilator boshlang'ich chastotasi) yoziladi. */
+  const played: number[] = [];
+  class FakeAudioContext {
+    state = "running";
+    currentTime = 0;
+    destination = {};
+    createDynamicsCompressor() {
+      const param = { value: 0 };
+      return { threshold: param, knee: param, ratio: param, attack: param, release: param, connect: () => undefined };
+    }
+    createGain() {
+      return {
+        gain: { value: 0, setValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined },
+        connect: () => undefined,
+      };
+    }
+    createOscillator() {
+      return {
+        type: "sine",
+        frequency: { setValueAtTime: (value: number) => played.push(value), exponentialRampToValueAtTime: () => undefined },
+        connect: () => undefined,
+        start: () => undefined,
+        stop: () => undefined,
+        addEventListener: () => undefined,
+      };
+    }
+    resume() {
+      return Promise.resolve();
+    }
+  }
+
+  beforeEach(() => {
+    played.length = 0;
+    window.localStorage.clear();
+    Object.defineProperty(window, "AudioContext", { configurable: true, writable: true, value: FakeAudioContext });
+  });
+  afterEach(() => {
+    Reflect.deleteProperty(window, "AudioContext");
+    Reflect.deleteProperty(navigator, "vibrate");
+  });
+
+  it("hisobdagi ovoz (Mini App tokeni bilan o'qiladi) qabulda chalinadi; tebranish faqat Telegram'da", async () => {
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
+    routes["auth/my-profile"] = () => ({ data: { settings: { scanner: { sounds: { success: "marimba", error: "glass" } } } } });
+    routes["orders/scan-assign"] = () => assigned(ORDER_53);
+    const webApp = await renderReady();
+    await waitFor(() => expect(window.localStorage.getItem("scanner-success-sound")).toBe("marimba"));
+    expect(header(requestsTo("auth/my-profile")[0], "Authorization")).toBe("Bearer tg.jwt.token");
+
+    await decode("ORD-abc");
+    await screen.findByText("№10191 qabul qilindi");
+    await waitFor(() => expect(played).toEqual([523.25, 783.99]));
+    expect(webApp.HapticFeedback.notificationOccurred).toHaveBeenCalledWith("success");
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it("hisobda «Ovoz» o'chiq — Mini App jim", async () => {
+    routes["auth/my-profile"] = () => ({ data: { settings: { scanner: { feedback: { sound: false } } } } });
+    routes["orders/scan-assign"] = () => assigned(ORDER_53);
+    await renderReady();
+    await waitFor(() => expect(window.localStorage.getItem("scanner-sound-enabled")).toBe("false"));
+
+    await decode("ORD-abc");
+    await screen.findByText("№10191 qabul qilindi");
+    expect(played).toEqual([]);
+  });
+
+  it("profil o'qilmasa — sukut ovozi (classic), skan oqimi to'xtamaydi", async () => {
+    routes["orders/scan-assign"] = () => assigned(ORDER_53);
+    await renderReady();
+
+    await decode("ORD-abc");
+    await screen.findByText("№10191 qabul qilindi");
+    await waitFor(() => expect(played).toEqual([784, 1175]));
+  });
+});

@@ -29,6 +29,7 @@ import {
   type TelegramWebApp,
 } from "../model/telegramWebApp";
 import { useScanAssign, type ScanFeedback } from "../model/useScanAssign";
+import { useTgScanSound } from "../model/scanSound";
 import { useScanEntryText } from "../model/useScanEntryText";
 import {
   CameraBottom,
@@ -97,12 +98,15 @@ export const TgScanner = ({ webApp, accessToken, onSessionExpired }: TgScannerPr
   const [feedLive, setFeedLive] = useState(false);
   const finishing = finish.status !== "idle";
 
+  // JX0EBpa7: natija ovozi — asosiy ilovadagi skaner ovozi bilan bir xil.
+  const playSound = useTgScanSound(accessToken);
   const { entries, acceptedOrderIds, pendingCount, feedback, flash, handleScan, settle } = useScanAssign({
     accessToken,
     webApp,
     // Ro'yxat varag'i ochiq bo'lsa skanlar e'tiborsiz (natija varaq ortida ko'rinmay qolmasin); kamera ishlayveradi.
     enabled: !finishing && !listOpen,
     onSessionExpired,
+    onFeedback: playSound,
   });
 
   const handleCameraDecode = useCallback((value: string) => handleScan(value, "camera"), [handleScan]);

@@ -2,6 +2,7 @@ import {
   readStoredScannerErrorSound,
   readStoredScannerFeedbackPrefs,
   readStoredScannerSuccessSound,
+  STORED_SCANNER_SOUNDS,
   type StoredScannerSound,
 } from "../preferencesStorage";
 
@@ -93,16 +94,18 @@ export type ScanFeedbackDetail = {
 
 export const SCAN_FEEDBACK_EVENT = "elchi:scan-feedback";
 
-type Tone = {
+export type Tone = {
   frequency: number;
   start: number;
   duration: number;
   volume: number;
   oscillator: OscillatorType;
   endFrequency?: number;
+  /** Chertilgan tovush: tez ko'tarilib, oxirigacha so'nadi (ushlab turilmaydi) — yumshoq to'plamlar. */
+  pluck?: boolean;
 };
 
-export const SCANNER_SOUND_IDS: ScannerSoundId[] = ["classic", "soft", "digital", "bell", "pulse", "bright"];
+export const SCANNER_SOUND_IDS: ScannerSoundId[] = [...STORED_SCANNER_SOUNDS];
 
 const SUCCESS_TONES: Record<ScannerSoundId, Tone[]> = {
   classic: [
@@ -133,6 +136,33 @@ const SUCCESS_TONES: Record<ScannerSoundId, Tone[]> = {
     { frequency: 1568, endFrequency: 2093, start: 0, duration: 0.085, volume: 0.2, oscillator: "triangle" },
     { frequency: 2349, endFrequency: 3136, start: 0.075, duration: 0.12, volume: 0.15, oscillator: "sine" },
     { frequency: 3520, start: 0.185, duration: 0.055, volume: 0.08, oscillator: "sine" },
+  ],
+  // JX0EBpa7 — yumshoq to'plamlar: ≤ 250 ms, past ovoz, faqat sine/triangle.
+  chime: [
+    { frequency: 659.25, start: 0, duration: 0.16, volume: 0.13, oscillator: "sine", pluck: true },
+    { frequency: 987.77, start: 0.07, duration: 0.18, volume: 0.11, oscillator: "sine", pluck: true },
+    { frequency: 1975.5, start: 0.07, duration: 0.12, volume: 0.025, oscillator: "sine", pluck: true },
+  ],
+  drop: [
+    { frequency: 520, endFrequency: 1040, start: 0, duration: 0.09, volume: 0.14, oscillator: "sine", pluck: true },
+    { frequency: 780, endFrequency: 1560, start: 0.1, duration: 0.12, volume: 0.11, oscillator: "sine", pluck: true },
+  ],
+  marimba: [
+    { frequency: 523.25, start: 0, duration: 0.12, volume: 0.15, oscillator: "triangle", pluck: true },
+    { frequency: 783.99, start: 0.09, duration: 0.15, volume: 0.13, oscillator: "triangle", pluck: true },
+  ],
+  bubble: [
+    { frequency: 300, endFrequency: 900, start: 0, duration: 0.07, volume: 0.13, oscillator: "sine", pluck: true },
+    { frequency: 450, endFrequency: 1350, start: 0.09, duration: 0.08, volume: 0.11, oscillator: "sine", pluck: true },
+  ],
+  glass: [
+    { frequency: 1318.5, start: 0, duration: 0.18, volume: 0.08, oscillator: "sine", pluck: true },
+    { frequency: 2637, start: 0, duration: 0.12, volume: 0.02, oscillator: "sine", pluck: true },
+    { frequency: 1760, start: 0.08, duration: 0.17, volume: 0.07, oscillator: "sine", pluck: true },
+  ],
+  breeze: [
+    { frequency: 392, endFrequency: 440, start: 0, duration: 0.14, volume: 0.12, oscillator: "sine" },
+    { frequency: 523.25, endFrequency: 587.33, start: 0.08, duration: 0.16, volume: 0.1, oscillator: "sine" },
   ],
 };
 
@@ -170,6 +200,62 @@ const ERROR_TONES: Record<ScannerSoundId, Tone[]> = {
     { frequency: 622, start: 0.185, duration: 0.07, volume: 0.3, oscillator: "triangle" },
     { frequency: 311, endFrequency: 294, start: 0.275, duration: 0.11, volume: 0.34, oscillator: "sawtooth" },
   ],
+  // JX0EBpa7 — yumshoq xato: pastga tushuvchi ikki nota, keskin (square/sawtooth) to'lqinsiz.
+  chime: [
+    { frequency: 587.33, start: 0, duration: 0.14, volume: 0.13, oscillator: "sine", pluck: true },
+    { frequency: 440, start: 0.09, duration: 0.16, volume: 0.13, oscillator: "sine", pluck: true },
+  ],
+  drop: [
+    { frequency: 600, endFrequency: 300, start: 0, duration: 0.11, volume: 0.14, oscillator: "sine", pluck: true },
+    { frequency: 450, endFrequency: 225, start: 0.12, duration: 0.12, volume: 0.13, oscillator: "sine", pluck: true },
+  ],
+  marimba: [
+    { frequency: 392, start: 0, duration: 0.12, volume: 0.15, oscillator: "triangle", pluck: true },
+    { frequency: 311.13, start: 0.1, duration: 0.15, volume: 0.15, oscillator: "triangle", pluck: true },
+  ],
+  bubble: [
+    { frequency: 500, endFrequency: 250, start: 0, duration: 0.08, volume: 0.13, oscillator: "sine", pluck: true },
+    { frequency: 380, endFrequency: 190, start: 0.11, duration: 0.1, volume: 0.13, oscillator: "sine", pluck: true },
+  ],
+  glass: [
+    { frequency: 987.77, start: 0, duration: 0.14, volume: 0.09, oscillator: "sine", pluck: true },
+    { frequency: 739.99, start: 0.1, duration: 0.15, volume: 0.09, oscillator: "sine", pluck: true },
+  ],
+  breeze: [
+    { frequency: 349.23, endFrequency: 329.63, start: 0, duration: 0.12, volume: 0.12, oscillator: "sine" },
+    { frequency: 293.66, endFrequency: 261.63, start: 0.1, duration: 0.14, volume: 0.12, oscillator: "sine" },
+  ],
+};
+
+/**
+ * «Takror» (allaqachon o'qilgan / qayta skan) — yumshoq to'plamlarda o'z ohangi: bir xil nota ikki marta, qisqa.
+ * Eski 6 ta ovozda avvalgidek muvaffaqiyat ohangi chalinadi.
+ */
+const DUPLICATE_TONES: Partial<Record<ScannerSoundId, Tone[]>> = {
+  chime: [
+    { frequency: 880, start: 0, duration: 0.07, volume: 0.09, oscillator: "sine", pluck: true },
+    { frequency: 880, start: 0.1, duration: 0.09, volume: 0.09, oscillator: "sine", pluck: true },
+  ],
+  drop: [
+    { frequency: 700, endFrequency: 1100, start: 0, duration: 0.08, volume: 0.1, oscillator: "sine", pluck: true },
+    { frequency: 700, endFrequency: 1100, start: 0.11, duration: 0.08, volume: 0.1, oscillator: "sine", pluck: true },
+  ],
+  marimba: [
+    { frequency: 659.25, start: 0, duration: 0.08, volume: 0.11, oscillator: "triangle", pluck: true },
+    { frequency: 659.25, start: 0.1, duration: 0.1, volume: 0.11, oscillator: "triangle", pluck: true },
+  ],
+  bubble: [
+    { frequency: 400, endFrequency: 1000, start: 0, duration: 0.06, volume: 0.1, oscillator: "sine", pluck: true },
+    { frequency: 400, endFrequency: 1000, start: 0.09, duration: 0.06, volume: 0.1, oscillator: "sine", pluck: true },
+  ],
+  glass: [
+    { frequency: 1318.5, start: 0, duration: 0.07, volume: 0.07, oscillator: "sine", pluck: true },
+    { frequency: 1318.5, start: 0.1, duration: 0.08, volume: 0.07, oscillator: "sine", pluck: true },
+  ],
+  breeze: [
+    { frequency: 440, start: 0, duration: 0.07, volume: 0.09, oscillator: "sine" },
+    { frequency: 440, start: 0.1, duration: 0.08, volume: 0.09, oscillator: "sine" },
+  ],
 };
 
 const MISSING_TONES: Tone[] = [
@@ -178,9 +264,13 @@ const MISSING_TONES: Tone[] = [
   { frequency: 520, endFrequency: 440, start: 0.21, duration: 0.11, volume: 0.19, oscillator: "sine" },
 ];
 
-const getFeedbackTones = (type: ScanFeedbackType): Tone[] => {
+/** Natija turi uchun ohanglar — tanlangan (saqlangan) ovozdan; saqlanmagan yoki noma'lum bo'lsa `classic`. */
+export const getScanFeedbackTones = (type: ScanFeedbackType): Tone[] => {
   if (type === "success") return SUCCESS_TONES[readStoredScannerSuccessSound() ?? "classic"];
-  if (type === "duplicate") return SUCCESS_TONES[readStoredScannerSuccessSound() ?? "classic"];
+  if (type === "duplicate") {
+    const sound = readStoredScannerSuccessSound() ?? "classic";
+    return DUPLICATE_TONES[sound] ?? SUCCESS_TONES[sound];
+  }
   if (type === "error") return ERROR_TONES[readStoredScannerErrorSound() ?? "classic"];
   return MISSING_TONES;
 };
@@ -212,7 +302,7 @@ const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
   const now = context.currentTime + 0.002;
   const volumeScale = type === "success" ? 0.7 : 1;
 
-  getFeedbackTones(type).forEach((tone) => {
+  getScanFeedbackTones(type).forEach((tone) => {
     const start = now + tone.start;
     const end = start + tone.duration;
     const volume = tone.volume * volumeScale;
@@ -229,7 +319,7 @@ const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
 
     toneGain.gain.setValueAtTime(0.0001, start);
     toneGain.gain.exponentialRampToValueAtTime(volume, start + 0.004);
-    toneGain.gain.setValueAtTime(volume, Math.max(start + 0.005, end - 0.025));
+    if (!tone.pluck) toneGain.gain.setValueAtTime(volume, Math.max(start + 0.005, end - 0.025));
     toneGain.gain.exponentialRampToValueAtTime(0.0001, end);
 
     activeOscillators.add(oscillator);
@@ -245,6 +335,11 @@ export type ScanSignalOptions = {
    * foydalanuvchi ohangni aniq so'ragan.
    */
   preview?: boolean;
+  /**
+   * `false` — faqat ovoz: tebranishni chaqiruvchi o'zi beradi (Telegram Mini App — `HapticFeedback`), aks holda
+   * ikki marta tebranardi.
+   */
+  vibrate?: boolean;
 };
 
 /** `playScanFeedback` qo'shimchalari: izoh qatori, oraliq qadam, ovozsiz yangilash. */
@@ -265,7 +360,7 @@ export type ScanFeedbackOptions = ScanSignalOptions & {
  */
 export const playScanSignal = (type: ScanFeedbackType, options: ScanSignalOptions = {}) => {
   const prefs = readStoredScannerFeedbackPrefs();
-  if (typeof window !== "undefined" && (prefs.vibration || options.preview)) {
+  if (typeof window !== "undefined" && options.vibrate !== false && (prefs.vibration || options.preview)) {
     window.navigator.vibrate?.(FEEDBACK_VIBRATION[type]);
   }
   if (!prefs.sound && !options.preview) return;
