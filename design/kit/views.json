@@ -7033,6 +7033,231 @@
    "fragment": "tizim--category-labels",
    "order": 17.5,
    "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-deep-confirm",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — «Chuqur tahlil» tasdig'i (narx so'mda)",
+   "fragment": "superadmin--ai-assistant-deep-confirm",
+   "order": 72.11,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-empty",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — birinchi kirish (bo'sh)",
+   "fragment": "superadmin--ai-assistant-empty",
+   "order": 72.12,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-answering",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — javob yozilmoqda («To'xtatish»)",
+   "fragment": "superadmin--ai-assistant-answering",
+   "order": 72.13,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-limit-reached",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — bugungi limit tugadi",
+   "fragment": "superadmin--ai-assistant-limit-reached",
+   "order": 72.14,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-budget-exceeded",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — oylik budjet tugadi",
+   "fragment": "superadmin--ai-assistant-budget-exceeded",
+   "order": 72.15,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-unavailable",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — AI o'chiq va xato holatlari",
+   "fragment": "superadmin--ai-assistant-unavailable",
+   "order": 72.16,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-offline",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — internet yo'q, «Aloqa uzildi»",
+   "fragment": "superadmin--ai-assistant-offline",
+   "order": 72.17,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-tab-select",
+   "menuKey": "aiAssistant",
+   "title": "Bo'lim tanlash ro'yxati (telefon)",
+   "fragment": "superadmin--ai-assistant-tab-select",
+   "order": 72.19,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-reports",
+   "menuKey": "aiAssistant",
+   "title": "Hisobotlar",
+   "fragment": "superadmin--ai-assistant-reports",
+   "order": 72.3,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-report-create-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Hisobot tayyorlash (oyna)",
+   "fragment": "superadmin--ai-assistant-report-create-dialog",
+   "order": 72.31,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-report-detail",
+   "menuKey": "aiAssistant",
+   "title": "Hisobot — Oylik · Sentyabr 2026 (zarardan chiqish rejasi)",
+   "fragment": "superadmin--ai-assistant-report-detail",
+   "order": 72.32,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-report-detail-states",
+   "menuKey": "aiAssistant",
+   "title": "Hisobot — tayyorlanmoqda va boshqa holatlar",
+   "fragment": "superadmin--ai-assistant-report-detail-states",
+   "order": 72.33,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alerts",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirishlar",
+   "fragment": "superadmin--ai-assistant-alerts",
+   "order": 72.4,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — smena kamomadi (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog",
+   "order": 72.41,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-receipt",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — chekda farq bor (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-receipt",
+   "order": 72.42,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-resolve-confirm",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirishni «Hal qilindi» deb belgilash (tasdiq)",
+   "fragment": "superadmin--ai-assistant-alert-resolve-confirm",
+   "order": 72.43,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-recommendations",
+   "menuKey": "aiAssistant",
+   "title": "Tavsiyalar",
+   "fragment": "superadmin--ai-assistant-recommendations",
+   "order": 72.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-settings-rules-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Sozlamalar — ogohlantirish qoidalari (oyna)",
+   "fragment": "superadmin--ai-assistant-settings-rules-dialog",
+   "order": 72.71,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-usage",
+   "menuKey": "aiAssistant",
+   "title": "Sarf va budjet",
+   "fragment": "superadmin--ai-assistant-usage",
+   "order": 72.6,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-budget-raise-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Budjetni oshirish (oyna)",
+   "fragment": "superadmin--ai-assistant-budget-raise-dialog",
+   "order": 72.61,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-budget-raise-confirm",
+   "menuKey": "aiAssistant",
+   "title": "Budjetni oshirish — tasdiq",
+   "fragment": "superadmin--ai-assistant-budget-raise-confirm",
+   "order": 72.62,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-settings-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Sozlamalar — hisobotlar va kanallar (oyna)",
+   "fragment": "superadmin--ai-assistant-settings-dialog",
+   "order": 72.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-settings-budget-dialog",
+   "menuKey": "aiAssistant",
+   "title": "Sozlamalar — budjet (oyna)",
+   "fragment": "superadmin--ai-assistant-settings-budget-dialog",
+   "order": 72.72,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-settings-confirm",
+   "menuKey": "aiAssistant",
+   "title": "Sozlamalarni saqlash — tasdiq",
+   "fragment": "superadmin--ai-assistant-settings-confirm",
+   "order": 72.73,
+   "kind": "dialog"
+  },
+  {
+   "role": "tizim",
+   "viewId": "ai-advisor-messages",
+   "menuKey": "ai-advisor-messages",
+   "title": "AI yordamchi — Telegram va tizim xabarlari",
+   "fragment": "tizim--ai-advisor-messages",
+   "order": 14.6,
+   "kind": "standalone"
   }
  ],
  "groupTitles": {
@@ -7052,7 +7277,8 @@
    "receipts": "Chek va paket cheki",
    "product-labels": "Mahsulot stikeri (QR, shtrix kod)",
    "category-labels": "Maxsus yorliq (kategoriya belgisi)",
-   "contact-card": "Aloqa kartasi va «Muammo bo'lsa»"
+   "contact-card": "Aloqa kartasi va «Muammo bo'lsa»",
+   "ai-advisor-messages": "AI yordamchi xabarlari (Telegram, tizim)"
   },
   "superadmin": {
    "dashboard": "Bosh sahifa",

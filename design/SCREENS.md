@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**82 ta route** (+ qobiq) · **781 ta maket** (470 sahifa, 291 oyna, 20 tizim taxtasi; 663 ta fragment fayli) · kodda yo'q: **95** · qisman: **152** · v2 ga ko'chirilgan route: **81 / 82**
+**82 ta route** (+ qobiq) · **806 ta maket** (482 sahifa, 303 oyna, 21 tizim taxtasi; 688 ta fragment fayli) · kodda yo'q: **119** · qisman: **152** · v2 ga ko'chirilgan route: **81 / 82**
 
 ## Qanday ishlatiladi
 
@@ -95,7 +95,8 @@
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
 | `/payments/shifts/:id` | Moliya | `src/pages/payments/shiftReport/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 1 | v2 |
 | `/payments/shift-settings` | Moliya | `src/pages/payments/shiftSettings/index.tsx` | superadmin | 4 | v2 |
-| `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | eski |
+| `(taklif) /ai-assistant` | Moliya | — (taklif) | superadmin | 25 | eski |
+| `(taklif) /ai-assistant/reports/:id` | Moliya | — (taklif) | superadmin | 2 | eski |
 | `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market (faqat ko'rish), market_operator (faqat ko'rish) | 21 | v2 |
 | `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator | 8 | v2 |
 | `/warehouses` | Mahsulotlar | `src/pages/warehouses/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID — o'z filiali ombori, faqat ko'rish (yXC91RRx); menyu bandi faqat GET /warehouses bo'sh bo'lmasa (XtcEyQjb)), registrator (hamma omborlar, faqat ko'rish (XtcEyQjb, ega 2026-10-24); menyuda yo'q — maket roles.json registrator.menu da «warehouse» yo'q (ega qarori kutilmoqda)) | 4 | v2 |
@@ -129,7 +130,7 @@
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
 | `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
-| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
+| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 8 | v2 |
 
 ## 2. Route bo'yicha maketlar (batafsil)
 
@@ -1262,25 +1263,52 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings-receipts` — Kassa smenasi sozlamalari · «Chek rasmi va AI tahlili» kartasi | [design/fragments/superadmin--payments-shift-settings-receipts.html](fragments/superadmin--payments-shift-settings-receipts.html) | sahifa | qisman |
 | `/payments/shift-settings` | superadmin | `superadmin-payments-shift-settings-receipts-photo-off-confirm` — Chek rasmini o'chirish — tasdiq | [design/fragments/superadmin--payments-shift-settings-receipts-photo-off-confirm.html](fragments/superadmin--payments-shift-settings-receipts-photo-off-confirm.html) | oyna | qisman |
 
-#### `(taklif) /ai-assistant` — AI moliyaviy yordamchi (taklif — kodda yo'q)
+#### `(taklif) /ai-assistant` — AI moliyaviy yordamchi — Suhbat · Hisobotlar · Ogohlantirishlar · Tavsiyalar · Sarf (taklif — kodda yo'q)
 
 - **Fayllar:** 
-- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
+- **Rollar:** superadmin
 - **Holat:** eski
-- **Izoh:** Trello 2026-10-23 (ega topshirig'i): 9-band. SUPERADMIN doim; ADMIN — superadmin ruxsat bersa (menyu bandi ham shunda). Faqat o'qiydi.
+- **Izoh:** T2 (6gKt64FN) moliyaviy AI maslahatchi. Ega qarori 1: hozircha FAQAT superadmin — admin va boshqa rollar: menyuda yo'q, sahifa 403, ai/assistant/* va ai/advisor/* → 403; «Kirish huquqi» va ai-assistant-access-dialog kerak emas (oyna eski maket sifatida saqlanadi, chat'dan havola yo'q). Kod: app/lib/access.ts → canViewAiAdvisor = hasRole("superadmin"); entities/ai-advisor, features/ai-chat (fetch + ReadableStream, credentials include, AbortController, 401 → auth/refresh bir marta), shared/lib/miniMarkdown.tsx, pages/ai-assistant. Tablar ?tab=chat|reports|alerts|recommendations|usage (telefonda Select), ogohlantirish oynasi ?alert=:id. Menyu: «Moliya» → «Balans»dan keyin «AI yordamchi» (Sparkles) — menuConfig.tsx ga qo'shilganda plannedMenu.superadmin dan olinadi. Route qo'shilganda yo'ldagi «(taklif) » olib tashlanadi va components to'ldiriladi. «Balans → AI xarajat» (buyurtma AI'si) qoladi — maslahatchi budjeti alohida (ega qarori 3).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant` — AI moliyaviy yordamchi | [design/fragments/superadmin--ai-assistant.html](fragments/superadmin--ai-assistant.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-access-dialog` — AI yordamchi — kirish huquqi (popup) | [design/fragments/superadmin--ai-assistant-access-dialog.html](fragments/superadmin--ai-assistant-access-dialog.html) | oyna | yangi (kodda yo'q) |
-| `(taklif) /ai-assistant` | admin | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | manager | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | market | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | courier | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
-| `(taklif) /ai-assistant` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | eski |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-deep-confirm` — Suhbat — «Chuqur tahlil» tasdig'i (narx so'mda) | [design/fragments/superadmin--ai-assistant-deep-confirm.html](fragments/superadmin--ai-assistant-deep-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-empty` — Suhbat — birinchi kirish (bo'sh) | [design/fragments/superadmin--ai-assistant-empty.html](fragments/superadmin--ai-assistant-empty.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-answering` — Suhbat — javob yozilmoqda («To'xtatish») | [design/fragments/superadmin--ai-assistant-answering.html](fragments/superadmin--ai-assistant-answering.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-limit-reached` — Suhbat — bugungi limit tugadi | [design/fragments/superadmin--ai-assistant-limit-reached.html](fragments/superadmin--ai-assistant-limit-reached.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-budget-exceeded` — Suhbat — oylik budjet tugadi | [design/fragments/superadmin--ai-assistant-budget-exceeded.html](fragments/superadmin--ai-assistant-budget-exceeded.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-unavailable` — Suhbat — AI o'chiq va xato holatlari | [design/fragments/superadmin--ai-assistant-unavailable.html](fragments/superadmin--ai-assistant-unavailable.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-offline` — Suhbat — internet yo'q, «Aloqa uzildi» | [design/fragments/superadmin--ai-assistant-offline.html](fragments/superadmin--ai-assistant-offline.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-tab-select` — Bo'lim tanlash ro'yxati (telefon) | [design/fragments/superadmin--ai-assistant-tab-select.html](fragments/superadmin--ai-assistant-tab-select.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-reports` — Hisobotlar | [design/fragments/superadmin--ai-assistant-reports.html](fragments/superadmin--ai-assistant-reports.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-report-create-dialog` — Hisobot tayyorlash (oyna) | [design/fragments/superadmin--ai-assistant-report-create-dialog.html](fragments/superadmin--ai-assistant-report-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-alerts` — Ogohlantirishlar | [design/fragments/superadmin--ai-assistant-alerts.html](fragments/superadmin--ai-assistant-alerts.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-alert-dialog` — Ogohlantirish — smena kamomadi (oyna) | [design/fragments/superadmin--ai-assistant-alert-dialog.html](fragments/superadmin--ai-assistant-alert-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-alert-dialog-receipt` — Ogohlantirish — chekda farq bor (oyna) | [design/fragments/superadmin--ai-assistant-alert-dialog-receipt.html](fragments/superadmin--ai-assistant-alert-dialog-receipt.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-alert-resolve-confirm` — Ogohlantirishni «Hal qilindi» deb belgilash (tasdiq) | [design/fragments/superadmin--ai-assistant-alert-resolve-confirm.html](fragments/superadmin--ai-assistant-alert-resolve-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-recommendations` — Tavsiyalar | [design/fragments/superadmin--ai-assistant-recommendations.html](fragments/superadmin--ai-assistant-recommendations.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-settings-rules-dialog` — Sozlamalar — ogohlantirish qoidalari (oyna) | [design/fragments/superadmin--ai-assistant-settings-rules-dialog.html](fragments/superadmin--ai-assistant-settings-rules-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-usage` — Sarf va budjet | [design/fragments/superadmin--ai-assistant-usage.html](fragments/superadmin--ai-assistant-usage.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-budget-raise-dialog` — Budjetni oshirish (oyna) | [design/fragments/superadmin--ai-assistant-budget-raise-dialog.html](fragments/superadmin--ai-assistant-budget-raise-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-budget-raise-confirm` — Budjetni oshirish — tasdiq | [design/fragments/superadmin--ai-assistant-budget-raise-confirm.html](fragments/superadmin--ai-assistant-budget-raise-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-settings-dialog` — Sozlamalar — hisobotlar va kanallar (oyna) | [design/fragments/superadmin--ai-assistant-settings-dialog.html](fragments/superadmin--ai-assistant-settings-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-settings-budget-dialog` — Sozlamalar — budjet (oyna) | [design/fragments/superadmin--ai-assistant-settings-budget-dialog.html](fragments/superadmin--ai-assistant-settings-budget-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | superadmin | `superadmin-ai-assistant-settings-confirm` — Sozlamalarni saqlash — tasdiq | [design/fragments/superadmin--ai-assistant-settings-confirm.html](fragments/superadmin--ai-assistant-settings-confirm.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant` | tizim taxtasi | `tizim-ai-advisor-messages` — AI yordamchi — Telegram va tizim xabarlari | [design/fragments/tizim--ai-advisor-messages.html](fragments/tizim--ai-advisor-messages.html) | taxta | qoida |
+
+#### `(taklif) /ai-assistant/reports/:id` — AI hisobot tafsiloti (taklif — kodda yo'q)
+
+- **Fayllar:** 
+- **Rollar:** superadmin
+- **Holat:** eski
+- **Izoh:** T2 (6gKt64FN): GET ai/advisor/reports/:id — kind, depth, period, status, data (KPI, qiymatni server qo'yadi), sections {summary, findings[{title, severity, evidence[]}], risks[], loss_plan[]?}, narrative_skipped, numbers_verified, model, kb_version, cost_usd. PDF/Excel eksport yo'q (TZ'da endpoint yo'q). «(taklif) » prefiksi route qo'shilganda olib tashlanadi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /ai-assistant/reports/:id` | superadmin | `superadmin-ai-assistant-report-detail` — Hisobot — Oylik · Sentyabr 2026 (zarardan chiqish rejasi) | [design/fragments/superadmin--ai-assistant-report-detail.html](fragments/superadmin--ai-assistant-report-detail.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /ai-assistant/reports/:id` | superadmin | `superadmin-ai-assistant-report-detail-states` — Hisobot — tayyorlanmoqda va boshqa holatlar | [design/fragments/superadmin--ai-assistant-report-detail-states.html](fragments/superadmin--ai-assistant-report-detail-states.html) | sahifa | yangi (kodda yo'q) |
 
 ### Mahsulotlar
 
@@ -2041,6 +2069,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/inbox` | courier | `courier-inbox-pwa-install` — Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter)<br>↳ `src/features/pwa-install/ui/InstallAppCard.tsx` | [design/fragments/courier--inbox-pwa-install.html](fragments/courier--inbox-pwa-install.html) | sahifa | v2 |
 | `/inbox` | courier | `courier-inbox-pwa-ios-dialog` — Bosh ekranga qo'shish oynasi (iPhone / iPad)<br>↳ `src/features/pwa-install/ui/IosInstallDialog.tsx` | [design/fragments/courier--inbox-pwa-ios-dialog.html](fragments/courier--inbox-pwa-ios-dialog.html) | oyna · faqat planshet + telefon | v2 |
 | `/inbox` | umumiy (barcha rollar) | `common-inbox` — Bildirishnomalar qutisi | [design/fragments/common--inbox.html](fragments/common--inbox.html) | sahifa | v2 |
+| `/inbox` | tizim taxtasi | `tizim-ai-advisor-messages` — AI yordamchi — Telegram va tizim xabarlari | [design/fragments/tizim--ai-advisor-messages.html](fragments/tizim--ai-advisor-messages.html) | taxta | qoida |
 
 ## 3. Yo'naltirishlar (eski havolalar)
 
@@ -2076,7 +2105,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-287 ta maket · kodda bor: 244 · kodda yo'q: 43
+311 ta maket · kodda bor: 244 · kodda yo'q: 67
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2309,8 +2338,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-payments-shift-report` | Smena hisoboti — kartalar, AI tekshiruvi, avtomatik yopilish | sahifa | `/payments/shifts/:id` | `src/pages/payments/shiftReport/index.tsx` | v2 |
 | `superadmin-payments-shift-settings` | Kassa smenasi sozlamalari — rasm, AI, avtomatik yopish, hisobot | sahifa | `/payments/shift-settings` | `src/pages/payments/shiftSettings/index.tsx` | v2 |
 | `superadmin-neworders-create-ai-input-images` | Buyurtma yaratish — AI: 20 tagacha rasm, avtomatik siqish | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 7-band: 20 tagacha rasm, brauzerda siqish (hozir AI_MAX_IMAGES = 3, JPEG 0,92). |
-| `superadmin-ai-assistant` | AI moliyaviy yordamchi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: AI moliyaviy yordamchi — kodda yo'q. |
-| `superadmin-ai-assistant-access-dialog` | AI yordamchi — kirish huquqi (popup) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q. |
+| `superadmin-ai-assistant` | AI moliyaviy yordamchi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: Suhbat 2.0 — tablar (Suhbat · Hisobotlar · Ogohlantirishlar · Tavsiyalar · Sarf), «Kirish huquqi» yo'q (ega qarori 1), «Keshdan · HH:mm» + «Yangilash» (force_refresh), «Chuqur tahlil» (depth deep → useConfirm), bloklar kpi/table/alert/link, «Manba», har AI matnida «AI xato qilishi mumkin», chek farqi namunasi, oylik budjet qatori. |
+| `superadmin-ai-assistant-access-dialog` | AI yordamchi — kirish huquqi (popup) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — Trello 2026-10-23 (ega topshirig'i), 9-band: adminlarga kirish huquqi — kodda yo'q. T2 ega qarori 1 (2026-10-29): hozircha faqat superadmin — bu oyna CHIZILMAYDI/kodga o'tmaydi; admin ochilsa qaytadi. |
 | `superadmin-warehouse-list` | Omborlar | sahifa | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
 | `superadmin-warehouse-create-dialog` | Ombor ochish (popup) | oyna | `/warehouses` | `src/pages/warehouses/index.tsx` | v2 |
 | `superadmin-warehouse-detail` | Ombor tafsiloti — qoldiq va harakatlar | sahifa | `/warehouses/:id` | `src/pages/warehouses/detail/index.tsx` | v2 |
@@ -2367,6 +2396,30 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-mails-detail-special-categories` | Pochta tafsiloti (jo'natish) — maxsus belgilar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: mails/detail/ui/OrdersTable.tsx — holat ustunida SpecialCategoryTags; PostOrder.special_categories (entities/mails), toApiOrder ko'chiradi. Barcha pochta rejimlarida (qabul, rad etilgan, tarix) — shunday. |
 | `superadmin-neworders-market-orders-special-print-menu` | Market yangi buyurtmalari — «Faqat maxsus yorliqlar» menyusi | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: MarketOrdersTable.tsx — Yetkazish ustunida belgilar; SelectionBar.tsx menyusida «Faqat maxsus yorliqlar» (categories_only, belgisiz tanlovda PrintModeSelect option.disabled + izoh); chekdan keyin maxsus yorliqlar avtomatik. |
 | `superadmin-neworders-market-orders-special-print-dialog` | «Maxsus yorliq chop etish» oynasi | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — T8 (EcD6EHTH) maxsus belgilar — kodda yo'q: SpecialLabelPrintDialog (Dialog) — «N ta buyurtma · M ta yorliq», belgilar chiplari (hammasi tanlangan), nusxa SegmentedControl 1·2·3, usul «Brauzer · PDF 100×60», «Chop etish»; tafsilotdagi «Maxsus yorliq chop etish» ham shu oynani ochadi (1 ta buyurtma). |
+| `superadmin-ai-assistant-deep-confirm` | Suhbat — «Chuqur tahlil» tasdig'i (narx so'mda) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: useConfirm — POST ai/assistant/messages {depth:"deep"} oldidan; narx = Opus xabar chegarasi (1,50 $) so'mda, «Bu oy: N / 10», budjet qoldig'i; bekor → so'rov ketmaydi (QM 5). |
+| `superadmin-ai-assistant-empty` | Suhbat — birinchi kirish (bo'sh) | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: suhbat yo'q (GET ai/assistant/conversations → []) — salomlashuv, tavsiya savollar (Pressable), «Faqat o'qish» izohi. |
+| `superadmin-ai-assistant-answering` | Suhbat — javob yozilmoqda («To'xtatish») | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: SSE oqimi (fetch + ReadableStream) — kiritish o'chiq, «To'xtatish» (AbortController). |
+| `superadmin-ai-assistant-limit-reached` | Suhbat — bugungi limit tugadi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: 429 {code, reset_at} — kunlik 100 savol; kiritish o'chiq + yangilanish vaqti; deep_limit varianti. |
+| `superadmin-ai-assistant-budget-exceeded` | Suhbat — oylik budjet tugadi | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: error.code advisor_budget_exceeded (+ reset_at) — kiritish o'chiq, «Budjetni oshirish». |
+| `superadmin-ai-assistant-unavailable` | Suhbat — AI o'chiq va xato holatlari | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: 503 / budjet o'qilmadi → «AI o'chiq»; javob xatosi, suhbatlar yuklanmadi, yuklanish (QueryBoundary). |
+| `superadmin-ai-assistant-offline` | Suhbat — internet yo'q, «Aloqa uzildi» | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: oflayn → kiritish o'chiq; oqim uzilsa «Aloqa uzildi» + «Qayta yuborish». |
+| `superadmin-ai-assistant-tab-select` | Bo'lim tanlash ro'yxati (telefon) | oyna · faqat telefon | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: telefonda tablar o'rnida Select (?tab=chat\|reports\|alerts\|recommendations\|usage) — ochiq ro'yxat, yangi ogohlantirish va tavsiyalar soni bilan. |
+| `superadmin-ai-assistant-reports` | Hisobotlar | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: ?tab=reports — GET ai/advisor/reports?kind&status&page&limit, DataTable + Pagination, StatusBadge (Tayyor · Tayyorlanmoqda · Navbatda · Xato), narx so'mda. |
+| `superadmin-ai-assistant-report-create-dialog` | Hisobot tayyorlash (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: Dialog + DateRange (≤ 92 kun) + chuqurlik; narx yuborishdan OLDIN (ega qarori 2026-10-29, BE 7NajBTwo): POST ai/advisor/reports/estimate → taxminiy va «ko'pi bilan» narx so'mda (USD ostida), budjet qoldig'i, blocked; «Chuqur» → useConfirm narx bilan; POST ai/advisor/reports {from, to, depth, max_cost_usd} → 202 {id, estimated_cost_usd}; 409 (running \| estimate_changed), 429. |
+| `superadmin-ai-assistant-report-detail` | Hisobot — Oylik · Sentyabr 2026 (zarardan chiqish rejasi) | sahifa | `(taklif) /ai-assistant/reports/:id` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: GET ai/advisor/reports/:id — KPI (data), StackedBars, topilmalar + dalillar, xavflar, zarardan chiqish rejasi, tavsiyalar havolasi; eksport yo'q. |
+| `superadmin-ai-assistant-report-detail-states` | Hisobot — tayyorlanmoqda va boshqa holatlar | sahifa | `(taklif) /ai-assistant/reports/:id` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: status queued\|building\|failed, narrative_skipped budget\|error, digest partial «To'liq emas», chek ma'lumoti yo'q, 404. |
+| `superadmin-ai-assistant-alerts` | Ogohlantirishlar | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: ?tab=alerts — GET ai/advisor/alerts?status&severity&rule_key&page&limit; filtrlar, DataTable + Pagination, jiddiylik matn bilan. |
+| `superadmin-ai-assistant-alert-dialog` | Ogohlantirish — smena kamomadi (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: ?alert=:id — GET alerts/:id (facts, evidence, explanation_md, occurrences), POST alerts/:id/explain, PATCH {status, note}; «Bo'limga o'tish», pul amali yo'q. |
+| `superadmin-ai-assistant-alert-dialog-receipt` | Ogohlantirish — chekda farq bor (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: R7 — chek (T3, finance.receipt.summary) yoki karta mismatch; dalil — chek tekshiruvi maydonlari. |
+| `superadmin-ai-assistant-alert-resolve-confirm` | Ogohlantirishni «Hal qilindi» deb belgilash (tasdiq) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: useConfirm — PATCH alerts/:id {status:"resolved", note 3–500}. |
+| `superadmin-ai-assistant-recommendations` | Tavsiyalar | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: ?tab=recommendations — GET/PATCH ai/advisor/recommendations (status, feedback); ta'sir formatMoney, «Foydali / Foydasiz», «Bajarildi»; pul amali yo'q. |
+| `superadmin-ai-assistant-settings-rules-dialog` | Sozlamalar — ogohlantirish qoidalari (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: GET/PATCH ai/advisor/settings → rules{R1…R8} (yoqish + chegaralar). |
+| `superadmin-ai-assistant-usage` | Sarf va budjet | sahifa | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: ?tab=usage — GET ai/advisor/usage?month + overview.budget; Meter (so'm, USD ostida), kunlik ustunlar, funksiya kesimi, kesh tejami, 80% / 100% bannerlari. |
+| `superadmin-ai-assistant-budget-raise-dialog` | Budjetni oshirish (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: POST ai/advisor/budget/raise {amount_usd 1–50, reason} → {override_usd, effective_cap_usd}; oyiga jami ≤ 50 $. |
+| `superadmin-ai-assistant-budget-raise-confirm` | Budjetni oshirish — tasdiq | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: useConfirm — eski → yangi chegara (so'm, USD ostida), sabab; audit. |
+| `superadmin-ai-assistant-settings-dialog` | Sozlamalar — hisobotlar va kanallar (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: GET/PATCH ai/advisor/settings → schedule{daily, weekly, monthly}, telegram; bilim bazasi — GET knowledge, PUT knowledge/owner-notes. |
+| `superadmin-ai-assistant-settings-budget-dialog` | Sozlamalar — budjet (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: settings.budget {monthly_usd 10–500, warn_ratio, daily_usd, deep_per_month}. |
+| `superadmin-ai-assistant-settings-confirm` | Sozlamalarni saqlash — tasdiq | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: useConfirm — o'zgarishlar ro'yxati (eski → yangi) PATCH settings oldidan; audit. |
 
 ### admin — Admin
 
@@ -2931,6 +2984,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `tizim-contact-card` | Aloqa kartasi va «Muammo bo'lsa» — holatlar | Aloqa kartasi (ContactCard): «Viloyatingiz logisti» (kuryer, menejer) va «Elchi mas'ulingiz» (market, market operatori) — anatomiya, joylar (bosh sahifa, profil, profil menyusi), holatlar (to'liq, bir nechta raqam, umumiy raqam, belgilanmagan, yuklanish, xato, oflayn «Oxirgi ma'lumot», nusxalandi); buyurtma tafsilotidagi «Muammo bo'lsa» / «Elchi mas'ulingiz» qatori; kim nimani ko'radi (market telefoni menejer, filial va kuryerga yo'q). | src/entities/contacts (useMyContacts, ContactCard — yangi), src/widgets/order-meta/ui/OrderMeta.tsx, src/widgets/header/ui/UserMenu.tsx (taklif), locales */common.json → contacts.* | `/`, `/branch-dashboard`, `/orders/edit/:orderId`, `/profile` |
 | `tizim-receipts-contact` | Chek — «Muammo bo'lsa» raqami (viloyat logisti) | Chekdagi «Muammo bo'lsa»: buyurtma viloyati logist(lar)i raqami (1–2 ta, «, » bilan) → umumiy raqamlar; ikkalasi ham yo'q — o'ng qism chiqmaydi («-» yozilmaydi); market va operator raqami yorliqqa chiqmaydi; 100×60 va A4 (12 ta) namunalari. | src/pages/new_orders/components/lib/receiptContact.ts (getReceiptContactPhone → problem_contacts), printLabelPdf.ts, src/pages/mails/detail/lib/printMode.ts | barcha sahifalar |
 | `tizim-category-labels` | Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | Maxsus yorliq (kategoriya belgisi): 7 ta belgi — Sinadigan, Diniy kitob, Suyuqlik, Tez buziladigan, Elektronika (batareyali), Og'ir yuk, Hujjat (kanonik tartib); termal 100×60, faqat qora, katta ikonka, o'zbekcha + ruscha matn (ilova tilidan qat'i nazar), pastda «№EL-… · 1/2», QR yo'q; ko'rinish — chapda qora plitada ikonka (ega tanlovi, 2026-10-29); A4 (12 ta) da buyurtma katagidan keyingi kataklar; chop etish tartibi (chek → uning maxsus yorliqlari → keyingi buyurtma); «Faqat maxsus yorliqlar» va nusxa soni. | src/entities/order/model/specialCategories.ts (yangi), src/features/print-receipts (kategoriya yorlig'i — yangi; printOrderReceipts ketma-ketligi), src/features/order-special-categories (SpecialLabelPrintDialog — yangi), design/icon-registry.json «Maxsus belgilar» | `/orders/edit/:orderId`, `/new-orders/:marketId`, `/mails/:id` |
+| `tizim-ai-advisor-messages` | AI yordamchi — Telegram va tizim xabarlari | AI maslahatchi xabarlari, faqat superadminga: hisobot tayyor (ai.advisor_report — Haiku xulosasi ≤ 600 belgi + «Hisobotni ochish»), jiddiy ogohlantirish (ai.advisor_alert — darhol; «Diqqat» — kunlik hisobotda), budjet 80% (ai.advisor_budget_warning, oyiga 1 marta) va 100% (ai.advisor_budget_exceeded); Telegram va bildirishnomalar qutisi; matnlar jadvali. | BE notification-types.ts (ai.advisor_report, ai.advisor_alert, ai.advisor_budget_warning, ai.advisor_budget_exceeded — default_audience [SUPERADMIN]), src/widgets/notification-inbox, locales */aiAdvisor.json → messages.* | `/inbox`, `(taklif) /ai-assistant` |
 
 ## 6. Fayl → route
 

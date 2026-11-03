@@ -1,0 +1,270 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">AI moliyaviy yordamchi</h1>
+    <p class="el-sub">Kassa, qarzlar va xarajatlar bo'yicha savol, hisobot, ogohlantirish va tavsiyalar. Yordamchi faqat ma'lumot o'qiydi.</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-secondary" href="@ai-assistant-settings-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>Sozlamalar</a>
+  </div>
+</div>
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="AI yordamchi bo'limlari">
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant" style="text-decoration: none; color: var(--text-muted)">Suhbat</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-reports" style="text-decoration: none; color: var(--text-muted)">Hisobotlar</a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-alerts" style="text-decoration: none; color: var(--text-muted)">Ogohlantirishlar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ai-assistant-recommendations" style="text-decoration: none; color: var(--text)">Tavsiyalar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" role="tab" aria-selected="false" href="@ai-assistant-usage" style="text-decoration: none; color: var(--text-muted)">Sarf</a>
+</nav>
+<a class="el-input el-select el-show-mobile" href="@ai-assistant-tab-select" aria-haspopup="listbox" aria-expanded="false" aria-label="Bo'lim: Tavsiyalar" style="text-decoration: none; color: var(--text)"><span class="el-strong">Tavsiyalar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></a>
+<div class="el-alert el-tone-info" role="note">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+  <div class="el-alert-body" style="display: flex; flex-direction: column; gap: 2px">
+    <div class="el-alert-title">Tavsiya — faqat maslahat</div>
+    <span class="el-small">Yordamchi tizimda hech narsani o'zgartirmaydi. «Foydali» yoki «Foydasiz» deb belgilang — keyingi hisobotlar shunga moslashadi.</span>
+  </div>
+</div>
+
+<div class="el-hide-mobile" role="group" aria-label="Tavsiyalar filtrlari" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+    <div class="el-seg" role="group" aria-label="Holat">
+      <button type="button" aria-pressed="true">Barchasi</button>
+      <button type="button" aria-pressed="false">Yangi <span class="el-tab-count">3</span></button>
+      <button type="button" aria-pressed="false">Qabul qilingan</button>
+      <button type="button" aria-pressed="false">Bajarilgan</button>
+      <button type="button" aria-pressed="false">Rad etilgan</button>
+    </div>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; max-width: 260px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Yo'nalish: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Yo'nalish:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <span class="el-small el-muted" style="margin-left: auto">6 ta tavsiya · eng yangisi yuqorida</span>
+</div>
+<div class="el-show-mobile" style="flex-direction: column">
+  <div role="group" aria-label="Tavsiyalar filtrlari" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+    <button class="el-input el-select" type="button" style="width: auto; min-width: 0" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat: barchasi"><span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="el-input el-select" type="button" style="width: auto; min-width: 0" aria-haspopup="listbox" aria-expanded="false" aria-label="Yo'nalish: barchasi"><span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden"><span class="el-muted">Yo'nalish:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+</div>
+
+<div class="el-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr)); align-items: stretch; gap: 16px">
+  <section class="el-card" aria-labelledby="r1-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Xarajat</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Oylik hisobot · Sentyabr 2026</a></div>
+      <h2 class="el-h2" id="r1-t">Yoqilg'iga filial bo'yicha oylik chegara qo'ying</h2>
+      <p>Sentyabrda yoqilg'iga 6 240 000 so'm ketdi — avgustdan 52% ko'p. Uning 71% i Urgut va Farg'ona filiallarida. Har filialga oylik chegara qo'yib, oshganda sababini so'rash xarajatni avgust darajasiga qaytaradi.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Yoqilg'i: 6 240 000 so'm, 48 ta yozuv</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Urgut va Farg'ona: 4 430 000 so'm (71%)</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>2 ta chekda farq</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; color: var(--success-fg)">≈ +1 500 000 so'm / oy</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">78%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@payments-main-cashbox" style="gap: 6px; margin-left: -4px">Asosiy kassaga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Bajarildi</button>
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="r2-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Daromad</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Oylik hisobot · Sentyabr 2026</a></div>
+      <h2 class="el-h2" id="r2-t">Farg'ona yo'nalishi tarifini qayta ko'rib chiqing</h2>
+      <p>Farg'onaga 1 840 ta buyurtmaning har biri o'rtacha 4 200 so'm sof foyda bergan — tizim o'rtachasidan 2,1 barobar kam. Kuryer tarifi market tarifiga juda yaqin.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>1 840 ta buyurtma, sentyabr</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Sof foyda: 7 728 000 so'm</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Tizim o'rtachasi: 8 800 so'm / buyurtma</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; color: var(--success-fg)">≈ +2 300 000 so'm / oy</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">64%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@balance-analysis" style="gap: 6px; margin-left: -4px">Balans tahliliga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Bajarildi</button>
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="r3-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Jarayon</span><span class="el-badge el-badge-dot el-tone-info">Yangi</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Oylik hisobot · Sentyabr 2026</a></div>
+      <h2 class="el-h2" id="r3-t">Samarqand va Farg'onada smenani karta rasmi bilan yoping</h2>
+      <p>Sentyabrdagi 9 ta kamomadning 7 tasi karta qoldig'ida. Rasm talab qilinsa, farq smena yopilayotganda ko'rinadi.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>9 smena, jami −1 120 000 so'm</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>7 tasi karta qoldig'ida</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; color: var(--success-fg)">≈ +450 000 so'm / oy</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">71%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@payments-shift-settings" style="gap: 6px; margin-left: -4px">Smena sozlamalariga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Bajarildi</button>
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="r4-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Kassa nazorati</span><span class="el-badge el-badge-dot el-tone-warning">Qabul qilindi</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Oylik hisobot · Sentyabr 2026</a></div>
+      <h2 class="el-h2" id="r4-t">Kuryerlardan pulni har 2 kunda yig'ing</h2>
+      <p>30 sentyabr holatiga kuryerlarda 12,7 mln so'm bor edi, pul o'rtacha 3,4 kun ushlanmoqda. Ikki kunlik jadval qarzni va smena kamomadini kamaytiradi.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>23 kuryer, 12,7 mln so'm</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>O'rtacha 3,4 kun</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; color: var(--success-fg)">≈ +400 000 so'm / oy</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">82%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@payments-overview" style="gap: 6px; margin-left: -4px">To'lovlarga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Bajarildi</button>
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="r5-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Tizim imkoniyati</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Bajarildi</span><span class="el-xs el-muted">15.10.2026</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Haftalik hisobot · 05.10–11.10.2026</a></div>
+      <h2 class="el-h2" id="r5-t">Market to'lovi 7 kundan kechiksa eslatma yuboring</h2>
+      <p>3 market to'lovni 7 kundan ortiq kutgan; eslatma kechikishning oldini oladi.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Nur Elektronika — 9 kun</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>3 market, jami 7 840 000 so'm</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; font-weight: 400; color: var(--text-muted)">Hisoblanmagan</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">69%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@payments-cash-detail-market" style="gap: 6px; margin-left: -4px">Market kassasiga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm is-active" type="button" aria-pressed="true" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px; color: var(--text)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="r6-t" style="display: flex; flex-direction: column">
+    <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span class="el-badge el-tone-neutral">Xavf</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Rad etildi</span><a class="el-btn el-btn-link el-btn-sm" href="@ai-assistant-report-detail" style="margin-left: auto; padding: 0">Haftalik hisobot · 12.10–18.10.2026</a></div>
+      <h2 class="el-h2" id="r6-t">Naqd xarajatlar uchun ham chek talab qiling</h2>
+      <p>12–18 oktabr haftasida 12 ta naqd xarajatning 3 tasida chek yo'q edi. Har naqd xarajatga chek rasmi talab qilinsa, farqlar tezroq topiladi.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--sunken)">
+        <span class="el-overline">Asos</span>
+        <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Naqd xarajatlar: 12 ta, 3 tasida chek yo'q</span></p><p class="el-small" style="display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none; margin-top: 2px; color: var(--text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span>Chek tekshiruvi: 44 ta, 2 farq bor</span></p>
+      </div>
+      <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Kutilgan ta'sir</dt><dd class="el-strong" style="margin: 0; color: var(--success-fg)">≈ +200 000 so'm / oy</dd></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-xs el-muted">Ishonch</dt><dd class="el-strong" style="margin: 0">41%</dd></div>
+      </dl>
+      <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.</span></p>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; gap: 8px 12px">
+      <a class="el-btn el-btn-link el-btn-sm" href="@payments-main-cashbox" style="gap: 6px; margin-left: -4px">Asosiy kassaga o'tish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <div role="group" aria-label="Tavsiyani baholash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto">
+        <button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-pressed="false" aria-label="Foydali" style="gap: 6px; min-width: 44px; padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></svg><span class="el-hide-mobile">Foydali</span></button>
+        <button class="el-btn el-btn-ghost el-btn-sm is-active" type="button" aria-pressed="true" aria-label="Foydasiz" style="gap: 6px; min-width: 44px; padding: 0 10px; color: var(--text)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/><path d="M17 14V2"/></svg><span class="el-hide-mobile">Foydasiz</span></button>
+        
+        <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="false" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="el-hide-mobile" aria-labelledby="rc-states" style="display: flex; flex-direction: column; gap: 12px; padding-top: 24px; border-top: 1px solid var(--border)">
+  <h2 class="el-overline" id="rc-states">Boshqa holatlar</h2>
+  <div class="el-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); align-items: stretch">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="el-card" style="min-height: 196px; flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-empty" style="padding: 8px 4px">
+          <span class="el-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span>
+          <p class="el-empty-title">Hozircha tavsiya yo'q</p>
+          <p class="el-empty-text">Tavsiyalar hisobot bilan chiqadi — keyingisi ertaga, 08:00.</p>
+        </div>
+      </div>
+      <p class="el-state-label">Tavsiya yo'q</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; flex-direction: column; gap: 12px; flex: 1">
+      <div class="el-card" role="status" aria-label="Tavsiyalar yuklanmoqda" style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px">
+        <div style="display: flex; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px; background: var(--border); height: 22px; border-radius: 6px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 56px; height: 12px; background: var(--border); height: 22px; border-radius: 6px"></span></div>
+        <span class="el-skel-line el-shimmer" style="display: block; width: 78%; height: 12px; background: var(--border); height: 16px"></span>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 100%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 12px; background: var(--border)"></span></div>
+      </div>
+      <div class="el-card" role="status" aria-label="Tavsiyalar yuklanmoqda" style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px">
+        <div style="display: flex; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px; background: var(--border); height: 22px; border-radius: 6px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 56px; height: 12px; background: var(--border); height: 22px; border-radius: 6px"></span></div>
+        <span class="el-skel-line el-shimmer" style="display: block; width: 78%; height: 12px; background: var(--border); height: 16px"></span>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 100%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 12px; background: var(--border)"></span></div>
+      </div>
+      </div>
+      <p class="el-state-label">Yuklanmoqda</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="el-card" style="min-height: 196px; flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-alert el-tone-danger" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><div class="el-alert-body"><div class="el-alert-title">Tavsiyalarni yuklab bo'lmadi</div><span class="el-small el-muted">Internet aloqasini tekshirib, qayta urining.</span></div></div>
+        <button class="el-btn el-btn-secondary" type="button" style="align-self: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta urinish</button>
+      </div>
+      <p class="el-state-label">Yuklab bo'lmadi</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="el-card" style="min-height: 196px; flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 20px; gap: 12px">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+          <button class="el-iconbtn el-iconbtn-sm is-active" type="button" aria-label="Boshqa amallar" aria-haspopup="menu" aria-expanded="true" style="color: var(--text)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <div class="el-menu" role="menu" aria-label="Tavsiya amallari" style="width: 100%; min-width: 0">
+            <button class="el-menu-item" type="button" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button>
+            <button class="el-menu-item" type="button" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>Rad etish</button>
+          </div>
+          <span class="el-xs el-muted" style="align-self: stretch">Holat o'zgaradi, tizimda boshqa hech narsa o'zgarmaydi</span>
+        </div>
+      </div>
+      <p class="el-state-label">«⋯» — boshqa amallar</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="el-card" style="min-height: 196px; flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 20px; gap: 12px">
+<div class="el-toast" role="status" style="min-width: 0; max-width: 100%; width: 100%">
+          <span style="color: var(--success-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span class="el-strong">Fikringiz saqlandi</span>
+            <span class="el-small el-muted">Keyingi tavsiyalarda hisobga olinadi</span>
+          </div>
+        </div>
+      </div>
+      <p class="el-state-label">«Foydali» / «Foydasiz» bosilgach — xabar</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div class="el-card" style="min-height: 196px; flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 20px; gap: 12px">
+<div class="el-toast" role="status" style="min-width: 0; max-width: 100%; width: 100%">
+          <span style="color: var(--success-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span class="el-strong">Bajarildi deb belgilandi</span>
+            <span class="el-small el-muted">Tavsiya «Bajarilgan» bo'limiga o'tdi</span>
+          </div>
+        </div>
+      </div>
+      <p class="el-state-label">«Bajarildi» bosilgach — xabar</p>
+    </div>
+  </div>
+</section>
