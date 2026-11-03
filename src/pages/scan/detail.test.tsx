@@ -355,9 +355,11 @@ describe("ScanDetailPage — menejer amallari", () => {
     renderDetail("manager", { user: { branch: { id: "1", type: "HQ" }, can_sell_cancel: true } });
     await orderHeading();
 
+    // Menejer qoidalari moduli kech yuklanadi (bir lahza «pending») — havolani KUTAMIZ, keyin amallar yo'qligini
+    // tekshiramiz (aks holda sekin CI'da `getByRole` yuklanishdan oldin ishlab, test tasodifan yiqilardi).
+    expect(await screen.findByRole("link", { name: "Buyurtma sahifasi" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Kuryerga biriktirish" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Buyurtma sahifasi" })).toBeInTheDocument();
   });
 });
 
