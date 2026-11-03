@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  getScanFeedbackTones,
   playScanFeedback,
   playScanSignal,
   SCAN_FEEDBACK_EVENT,
   SCANNER_SOUND_IDS,
   type ScanFeedbackDetail,
+  type Tone,
 } from "./feedback";
 
 const listen = () => {
@@ -37,8 +39,86 @@ describe("scanner feedback (shared/lib/scanner/feedback)", () => {
     expect(details).toEqual([]);
   });
 
-  it("sozlamalardagi 6 ta ovoz", () => {
-    expect(SCANNER_SOUND_IDS).toEqual(["classic", "soft", "digital", "bell", "pulse", "bright"]);
+  it("sozlamalardagi ovozlar: eski 6 tasi o'z o'rnida, keyin 6 ta yumshoq (JX0EBpa7)", () => {
+    expect(SCANNER_SOUND_IDS).toEqual([
+      "classic",
+      "soft",
+      "digital",
+      "bell",
+      "pulse",
+      "bright",
+      "chime",
+      "drop",
+      "marimba",
+      "bubble",
+      "glass",
+      "breeze",
+    ]);
+  });
+});
+
+describe("JX0EBpa7 — yumshoq ovoz to'plamlari", () => {
+  const SOFT = ["chime", "drop", "marimba", "bubble", "glass", "breeze"] as const;
+  const length = (tones: Tone[]) => Math.max(...tones.map((tone) => tone.start + tone.duration));
+  const pick = (success: string, error = success) => {
+    window.localStorage.setItem("scanner-success-sound", success);
+    window.localStorage.setItem("scanner-error-sound", error);
+  };
+
+  afterEach(() => window.localStorage.clear());
+
+  it.each(SOFT)("%s: muvaffaqiyat, takror va xato — ≤ 250 ms, past ovoz, keskin to'lqinsiz", (sound) => {
+    pick(sound);
+    for (const type of ["success", "duplicate", "error"] as const) {
+      const tones = getScanFeedbackTones(type);
+      expect(tones.length).toBeGreaterThan(0);
+      expect(length(tones)).toBeLessThanOrEqual(0.25 + 1e-9);
+      for (const tone of tones) {
+        expect(tone.volume).toBeLessThanOrEqual(0.15);
+        expect(["sine", "triangle"]).toContain(tone.oscillator);
+      }
+    }
+  });
+
+  it.each(SOFT)("%s: «takror» o'z ohangi (muvaffaqiyatdan farqli), xato ham boshqa", (sound) => {
+    pick(sound);
+    expect(getScanFeedbackTones("duplicate")).not.toEqual(getScanFeedbackTones("success"));
+    expect(getScanFeedbackTones("error")).not.toEqual(getScanFeedbackTones("success"));
+  });
+
+  it("muvaffaqiyat va xato alohida tanlanadi: success — marimba, error — glass", () => {
+    pick("marimba");
+    const marimbaSuccess = getScanFeedbackTones("success");
+    pick("glass");
+    const glassError = getScanFeedbackTones("error");
+
+    pick("marimba", "glass");
+    expect(getScanFeedbackTones("success")).toEqual(marimbaSuccess);
+    expect(getScanFeedbackTones("error")).toEqual(glassError);
+    expect(marimbaSuccess).not.toEqual(glassError);
+  });
+
+  it("eski ovozlar o'zgarmagan: classic ohangi va «takror» = muvaffaqiyat (avvalgidek)", () => {
+    pick("classic");
+    expect(getScanFeedbackTones("success")).toEqual([
+      { frequency: 784, endFrequency: 880, start: 0, duration: 0.13, volume: 0.22, oscillator: "triangle" },
+      { frequency: 1175, endFrequency: 1318, start: 0.105, duration: 0.16, volume: 0.18, oscillator: "sine" },
+    ]);
+    for (const sound of ["classic", "soft", "digital", "bell", "pulse", "bright"]) {
+      pick(sound);
+      expect(getScanFeedbackTones("duplicate")).toBe(getScanFeedbackTones("success"));
+    }
+  });
+
+  it("zaxira: saqlanmagan yoki noma'lum ID — classic", () => {
+    const classic = getScanFeedbackTones("success");
+    pick("eski-ovoz", "???");
+    expect(getScanFeedbackTones("success")).toEqual(classic);
+    window.localStorage.clear();
+    expect(getScanFeedbackTones("success")).toEqual(classic);
+    expect(getScanFeedbackTones("error")[0]).toEqual(
+      expect.objectContaining({ frequency: 784, oscillator: "square" }),
+    );
   });
 });
 
@@ -70,6 +150,13 @@ describe("Sozlamalar → Skaner: «Ovoz» va «Tebranish» kalitlari", () => {
     expect(vibrate).not.toHaveBeenCalled();
     playScanFeedback("success", "Qabul qilindi", undefined, { preview: true });
     expect(vibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it("`vibrate: false` (Mini App — Telegram tebratadi) — tebranish yo'q, «Tebranish» yoqiq bo'lsa ham", () => {
+    const vibrate = mockVibrate();
+    playScanSignal("success", { vibrate: false });
+    playScanSignal("error", { vibrate: false });
+    expect(vibrate).not.toHaveBeenCalled();
   });
 
   it("`silent` — faqat ekrandagi xabar (izoh qatori bilan), ovoz va tebranish yo'q", () => {

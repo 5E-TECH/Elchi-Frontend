@@ -5,8 +5,8 @@ import { useOrders } from "../../../entities/orders";
 import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import { resolveOrderActionResponse } from "../../../entities/orders/extraCostApproval";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
+import { useActionDialogError } from "../../../entities/orders/actionDialogError";
 import { buildActionOrder, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
 import { notifyOrderActionDone } from "../../orders/list/courier/list/orderActionModel";
@@ -43,28 +43,30 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
   // Market tasdig'iga tushgan amal: oyna yopilmaydi, holat ko'rsatiladi.
   const [isApprovalRequested, setIsApprovalRequested] = useState(false);
 
+  // 2KisY7DL: sotish / qisman sotish / bekor rad etilsa sabab oyna ichida (toast oyna ortida qolardi).
+  const { message: sellErrorMessage, show: showSellError, clear: clearSellError } = useActionDialogError(
+    t("orderActionError", { ns: "orders" }),
+  );
+  const { message: cancelErrorMessage, show: showCancelError, clear: clearCancelError } = useActionDialogError(
+    t("orderActionError", { ns: "orders" }),
+  );
+
   const close = useCallback(() => {
     setIsApprovalRequested(false);
+    clearSellError();
+    clearCancelError();
     onClose();
-  }, [onClose]);
+  }, [clearCancelError, clearSellError, onClose]);
 
   const complete = useCallback(() => {
     close();
     onDone();
   }, [close, onDone]);
 
-  const showActionError = useCallback(
-    (error: unknown) => {
-      notify.error(t("error", { ns: "common" }), {
-        description: getBackendErrorMessage(error) ?? t("orderActionError", { ns: "orders" }),
-      });
-    },
-    [t],
-  );
-
   const handleSell = useCallback(
     (id: string, payload: SellOrderPayload) => {
       const target = actionOrder ?? { id };
+      clearSellError();
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -82,16 +84,17 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
             });
             if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
           },
-          onError: showActionError,
+          onError: showSellError,
         },
       );
     },
-    [SellOrder, actionOrder, complete, showActionError, t],
+    [SellOrder, actionOrder, clearSellError, complete, showSellError, t],
   );
 
   const handlePartlySell = useCallback(
     (id: string, payload: PartlySellPayload) => {
       const target = actionOrder ?? { id };
+      clearSellError();
       PartlySellOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -106,16 +109,17 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
               },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
-          onError: showActionError,
+          onError: showSellError,
         },
       );
     },
-    [PartlySellOrder, actionOrder, complete, showActionError],
+    [PartlySellOrder, actionOrder, clearSellError, complete, showSellError],
   );
 
   const handleCancel = useCallback(
     (id: string, payload: CancelOrderPayload) => {
       const target = actionOrder ?? { id };
+      clearCancelError();
       CancelOrder.mutate(
         { orderId: id, data: payload },
         {
@@ -130,11 +134,11 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
               },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
-          onError: showActionError,
+          onError: showCancelError,
         },
       );
     },
-    [CancelOrder, actionOrder, complete, showActionError],
+    [CancelOrder, actionOrder, clearCancelError, complete, showCancelError],
   );
 
   return (
@@ -145,6 +149,7 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
         onClose={close}
         onSell={handleSell}
         onPartlySell={handlePartlySell}
+        error={sellErrorMessage}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
         awaitingApproval={isApprovalRequested}
         variant="manager"
@@ -154,6 +159,7 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
         open={dialog === "cancel"}
         onClose={close}
         onCancel={handleCancel}
+        error={cancelErrorMessage}
         isLoading={CancelOrder.isPending}
         awaitingApproval={isApprovalRequested}
         variant="manager"

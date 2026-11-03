@@ -1,6 +1,24 @@
 export type StoredTheme = "light" | "dark";
 export type StoredLanguage = "uz" | "ru" | "en";
-export type StoredScannerSound = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
+/**
+ * Skaner ovozlari. Birinchi 6 tasi — eski (saqlangan tanlovlar shu ID'lar bilan ishlayveradi), keyingilari — yumshoq
+ * to'plamlar (JX0EBpa7: qisqa, ≤ 250 ms, «takror» ohangi bilan). Ro'yxatda yo'q qiymat — sukut (`classic`).
+ */
+export const STORED_SCANNER_SOUNDS = [
+  "classic",
+  "soft",
+  "digital",
+  "bell",
+  "pulse",
+  "bright",
+  "chime",
+  "drop",
+  "marimba",
+  "bubble",
+  "glass",
+  "breeze",
+] as const;
+export type StoredScannerSound = (typeof STORED_SCANNER_SOUNDS)[number];
 /** Asosiy kamera: orqa (`environment`, tavsiya) yoki old (`user`). */
 export type StoredCameraFacing = "environment" | "user";
 /** Skaner ramkasi o'lchami: kichik · o'rta · katta. */
@@ -94,19 +112,11 @@ export const writeStoredDashboardComparison = (enabled: boolean) => {
   write(PREFERENCE_STORAGE_KEYS.dashboardComparison, String(enabled));
 };
 
-const normalizeScannerSound = (value: string | null): StoredScannerSound | null => {
-  if (
-    value === "classic" ||
-    value === "soft" ||
-    value === "digital" ||
-    value === "bell" ||
-    value === "pulse" ||
-    value === "bright"
-  ) {
-    return value;
-  }
-  return null;
-};
+export const isScannerSound = (value: unknown): value is StoredScannerSound =>
+  typeof value === "string" && (STORED_SCANNER_SOUNDS as readonly string[]).includes(value);
+
+const normalizeScannerSound = (value: string | null): StoredScannerSound | null =>
+  isScannerSound(value) ? value : null;
 
 export const readStoredScannerSuccessSound = (): StoredScannerSound | null =>
   normalizeScannerSound(read(PREFERENCE_STORAGE_KEYS.scannerSuccessSound));

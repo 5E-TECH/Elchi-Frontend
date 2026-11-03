@@ -1,5 +1,6 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AxiosError, type AxiosResponse } from "axios";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import NewOrderUpdate from "./new_orderUpdate";
@@ -355,10 +356,20 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
 
   it("⭐ Sell va Cancel modallariga HAQIQIY market uzatiladi (dalil sharti oldindan ko'rinsin)", () => {
     orderState.extra = {
-      market: { id: "m1", name: "Zamon Market", expense_proof_conditions: ["sell_any", "cancel_any"] },
+      market: {
+        id: "m1",
+        name: "Zamon Market",
+        expense_proof_conditions: ["sell_any", "cancel_any"],
+        extra_cost_requires_approval: false,
+      },
     };
     renderPage();
-    const expected = { name: "Zamon Market", expense_proof_conditions: ["sell_any", "cancel_any"] };
+    // 2KisY7DL: tasdiqsiz market bayrog'i ham oynaga yetadi (menejerga «market tasdig'idan o'tadi» chiqmasin).
+    const expected = {
+      name: "Zamon Market",
+      expense_proof_conditions: ["sell_any", "cancel_any"],
+      extra_cost_requires_approval: false,
+    };
     expect((sellModalProps.last?.order as unknown as { market: unknown }).market).toEqual(expected);
     expect(cancelModalProps.last?.order?.market).toEqual(expected);
   });
@@ -368,7 +379,41 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
     expect((sellModalProps.last?.order as unknown as { market: unknown }).market).toEqual({
       name: "-",
       expense_proof_conditions: null,
+      extra_cost_requires_approval: null,
     });
+  });
+});
+
+describe("NewOrderUpdate — amal rad etilsa sabab oyna ichida (2KisY7DL)", () => {
+  type ActionProps = {
+    onSell: (id: string, payload: unknown) => void;
+    onCancel: (id: string, payload: unknown) => void;
+    error?: string | null;
+  };
+  const badRequest = (message: string) =>
+    new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
+      status: 400,
+      data: { message },
+    } as AxiosResponse);
+
+  afterEach(() => idleMutation.mutate.mockReset());
+
+  it.each([
+    ["sotish", () => sellModalProps.last as unknown as ActionProps, "onSell" as const],
+    ["bekor qilish", () => cancelModalProps.last as unknown as ActionProps, "onCancel" as const],
+  ])("%s 400 — backend sababi oynaning `error` iga boradi, toast yo'q", async (_label, props, handler) => {
+    const reason = "Uyga yetkaziladigan buyurtmalarda qo'shimcha xarajat yozish mumkin emas";
+    idleMutation.mutate.mockImplementationOnce((_vars: unknown, options?: { onError?: (error: unknown) => void }) =>
+      options?.onError?.(badRequest(reason)),
+    );
+    renderPage();
+    expect(props().error ?? null).toBeNull();
+
+    act(() => props()[handler]("1251175", { extraCost: 5000, comment: "" }));
+
+    await waitFor(() => expect(props().error).toBe(reason));
+    // Oynalar bu testda stub — sabab sahifada (toastda) chiqmasligi kerak.
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
   });
 });
 

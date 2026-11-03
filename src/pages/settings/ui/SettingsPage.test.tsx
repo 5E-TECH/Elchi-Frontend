@@ -191,7 +191,7 @@ describe("SettingsPage — Interfeys va Skaner", () => {
   it("ovoz tanlash saqlanadi; «eshitib ko'rish» tanlovni o'zgartirmaydi", async () => {
     await openTab(/^Skaner/);
     const success = screen.getByRole("radiogroup", { name: "Muvaffaqiyat ovozi" });
-    expect(within(success).getAllByRole("radio")).toHaveLength(6);
+    expect(within(success).getAllByRole("radio")).toHaveLength(12);
     expect(within(success).getByRole("radio", { name: "Klassik" })).toBeChecked();
 
     await userEvent.click(
@@ -204,6 +204,22 @@ describe("SettingsPage — Interfeys va Skaner", () => {
     await userEvent.click(within(error).getByRole("radio", { name: "Raqamli" }));
     expect(mocks.mutate).toHaveBeenCalledWith({ scanner: { sounds: { error: "digital" } } });
     expect(screen.getByText("USB skaner tayyor")).toBeInTheDocument();
+  });
+
+  it("JX0EBpa7: yumshoq ovoz tanlanadi va saqlanadi (hisob + qurilma), nomlari ro'yxatda", async () => {
+    await openTab(/^Skaner/);
+    const success = screen.getByRole("radiogroup", { name: "Muvaffaqiyat ovozi" });
+    for (const name of ["Jiringcha", "Tomchi", "Marimba", "Pufakcha", "Billur", "Mayin"]) {
+      expect(within(success).getByRole("radio", { name })).toBeInTheDocument();
+    }
+    await userEvent.click(within(success).getByRole("radio", { name: "Marimba" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { success: "marimba" } } });
+    expect(window.localStorage.getItem("scanner-success-sound")).toBe("marimba");
+
+    const error = screen.getByRole("radiogroup", { name: "Xato ovozi" });
+    await userEvent.click(within(error).getByRole("radio", { name: "Billur" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { error: "glass" } } });
+    expect(window.localStorage.getItem("scanner-error-sound")).toBe("glass");
   });
 
   it("«Kamera» kartasi (maket common-settings-scanner): sukut qiymatlari va «Kamerani sinash» → /scan", async () => {

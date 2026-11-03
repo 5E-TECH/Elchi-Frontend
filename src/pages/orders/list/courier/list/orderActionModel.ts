@@ -35,7 +35,12 @@ export type ActionOrder = {
   status?: string | null;
   total_price?: number | string | null;
   where_deliver?: string | null;
-  market?: { name?: string | null; expense_proof_conditions?: string[] | null } | null;
+  /** `extra_cost_requires_approval: false` — tasdiqsiz market (2KisY7DL): menejer xarajati kuryer chegarasida, tasdiqsiz. */
+  market?: {
+    name?: string | null;
+    expense_proof_conditions?: string[] | null;
+    extra_cost_requires_approval?: boolean | null;
+  } | null;
   customer?: { name?: string | null; phone_number?: string | null } | null;
   district?: { name?: string | null } | null;
   /** Ro'yxat qatoridan keladi; oynada o'qilmaydi (qisman sotish `items` bo'yicha hisoblaydi). */

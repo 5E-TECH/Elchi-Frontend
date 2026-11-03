@@ -170,6 +170,8 @@ export interface OrderListItem {
         phone_number?: string;
         expense_proof_conditions?: string[] | null;
         cancelled_handover_qr_required?: boolean | null;
+        /** `false` — tasdiqsiz market: menejer xarajati kuryer chegarasida, tasdiqsiz (2KisY7DL, backend 04e1ad9). */
+        extra_cost_requires_approval?: boolean | null;
     };
     branch?: {
         id: string;

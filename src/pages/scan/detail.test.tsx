@@ -1,11 +1,13 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AxiosError, type AxiosResponse } from "axios";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import ScanDetailPage from "./detail";
 import { readScanHistory } from "./model/scanHistory";
 import { resetDispatchBaskets } from "../../features/dispatch-basket";
 import { renderWithProviders } from "../../test/test-utils";
+import { api } from "../../shared/api/api";
 
 const navigateMock = vi.fn();
 const feedbackMock = vi.fn();
@@ -302,6 +304,28 @@ describe("ScanDetailPage — menejer amallari", () => {
     await user.click(await screen.findByRole("button", { name: "Sotish" }));
 
     expect(await screen.findByRole("dialog", { name: "Buyurtmani sotish" })).toBeInTheDocument();
+  });
+
+  it("2KisY7DL: sotish 400 — sabab oyna ichida bir marta, oyna ochiq qoladi", async () => {
+    const user = userEvent.setup();
+    const reason = "Uyga yetkaziladigan buyurtmalarda qo'shimcha xarajat yozish mumkin emas";
+    const post = vi.spyOn(api, "post").mockRejectedValueOnce(
+      new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
+        status: 400,
+        data: { message: reason },
+      } as AxiosResponse),
+    );
+    fetchMock.mockResolvedValue({ type: "order", data: MANAGER_ORDER });
+    renderDetail("manager", { user: REGIONAL_MANAGER });
+
+    await user.click(await screen.findByRole("button", { name: "Sotish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(reason);
+    expect(screen.getAllByText(reason)).toHaveLength(1);
+    expect(post).toHaveBeenCalledWith(expect.stringContaining("orders/sell/"), expect.anything());
+    post.mockRestore();
   });
 
   it("courier-held order: info alert and no action buttons", async () => {
