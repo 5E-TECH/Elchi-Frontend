@@ -11,8 +11,10 @@ import {
   useMailDetail,
   type CanceledPostActionResult,
   type PostOrder,
+  type RequestOrderReturnResult,
   useReceiveCanceledPost,
   useReceivePost,
+  useRequestOrderReturn,
   useReturnCanceledOrders,
 } from "../../../entities/mails";
 import { isHistoryView, isInPostNow } from "../../../entities/mails/lib/postHistory";
@@ -112,6 +114,12 @@ import { useMailDetailState } from "./model/useMailDetailState";
  *    qolganlari shu pochtada qoladi (hech narsa o'zi qaytmaydi); pochtani filial jo'natgan bo'lsa — ikkinchi amal
  *    «Filialga qaytarish» (tasdiq oynasi, `POST post/cancel/return/:id`). Pochtada buyurtma qolmasa — yopiladi,
  *    sahifa kelingan ro'yxatga qaytadi. Filial menejeri (kuryer pochtasini qabul qilish) — avvalgidek;
+ *  - kuryerning jo'natilgan (`sent`) pochtasi — har yo'ldagi qatorda «Kelmagan — qaytarish» (telefonda kartaning
+ *    ostida «Bu buyurtma kelmagan — qaytarish so'rovi», BeePost kabi; ega qarori 2026-11-03): tasdiq oynasi →
+ *    `POST post/:id/orders/:orderId/return-request`, qator ro'yxatdan chiqadi, so'rov «Qaytarish»ga tushadi;
+ *    qabul qilinadigan buyurtma qolmasa — kelingan ro'yxatga qaytiladi. So'rovi bor buyurtmalar qabul
+ *    qilinadiganlar ro'yxatida (tanlov, son, skaner) yo'q — karta izohida sanaladi; ularning QR'i skanerlansa,
+ *    buyurtma ro'yxatga qaytib tanlanadi (qabul qilinsa so'rov bekor bo'ladi — backend);
  *  - kuryerning rad etilgan pochtasi — faqat o'qish, «Barchasini chop etish»;
  *  - eski pochta (tarix) — faqat o'qish; qolib ketgan yo'ldagi buyurtma bo'lsa qabul qayta ochiladi (fix3b).
  *
@@ -299,6 +307,8 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
+  /** Kuryer: qaytarish so'rovi bor, lekin QR'i shu sahifada skanerlangan buyurtmalar — yana qabul qilinadiganlar. */
+  const [reclaimedOrderIds, setReclaimedOrderIds] = useState<Set<string>>(new Set());
   const regularOrdersFromPost = useMemo(
     () => regularResponse?.data?.allOrdersByPostId ?? [],
     [regularResponse],
@@ -353,6 +363,18 @@ const MailDetailPage = () => {
     !isOldByState && !isEffectiveRefusedDetail && isCourierLikeReceiver && isReceivedPost && !isPostReceiver;
   const isOldDetail = isOldByState || isForeignReceivedPost;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
+  /**
+   * Kuryerning jo'natilgan (`sent`) pochtasi, qabul rejimi: qaytarish so'rovi bor buyurtmalar qabul
+   * qilinadiganlardan ajratiladi (karta izohida sanaladi).
+   */
+  const isCourierSentReceive =
+    isCourier &&
+    shouldReceiveCurrentPost &&
+    !isEffectiveRefusedDetail &&
+    !isOldDetail &&
+    String(postMeta?.status ?? "").toLowerCase() === "sent";
+  /** «Bu buyurtma kelmagan — qaytarish so'rovi» — faqat pochtaning o'z kuryeriga (backend ham shuni tekshiradi). */
+  const canRequestReturn = isCourierSentReceive && isPostReceiver;
   // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
   // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
   const canShowActionButton = shouldReceiveCurrentPost || isEffectiveRefusedDetail || canDispatchToBranch;
@@ -463,6 +485,10 @@ const MailDetailPage = () => {
         ) {
           return false;
         }
+        // Kuryer: qaytarish so'rovi bor buyurtma qabul qilinmaydi (QR'i skanerlanmagan bo'lsa) — izohda sanaladi.
+        if (isCourierSentReceive && order.return_requested === true && !reclaimedOrderIds.has(order.id)) {
+          return false;
+        }
 
         return true;
       }),
@@ -472,7 +498,29 @@ const MailDetailPage = () => {
       shouldReceiveCurrentPost,
       isEffectiveRefusedDetail,
       isOldDetail,
+      isCourierSentReceive,
+      reclaimedOrderIds,
     ],
+  );
+  /** Kuryerning jo'natilgan pochtasida qaytarish so'rovi yuborilgan (hali yo'ldagi) buyurtmalar — karta izohi. */
+  const requestedOrders = useMemo(
+    () =>
+      isCourierSentReceive
+        ? rawOrders.filter(
+            (order) =>
+              isInPostNow(order) &&
+              order.status === "on the road" &&
+              order.return_requested === true &&
+              !reclaimedOrderIds.has(order.id),
+          )
+        : [],
+    [isCourierSentReceive, rawOrders, reclaimedOrderIds],
+  );
+  const requestedOrderIds = useMemo(() => new Set(requestedOrders.map((order) => order.id)), [requestedOrders]);
+  /** Skaner ro'yxati: qabul qilinadiganlar + so'rovi borlar (QR'i skanerlansa, buyurtma ro'yxatga qaytadi). */
+  const scanOrders = useMemo(
+    () => (requestedOrders.length > 0 ? [...orders, ...requestedOrders] : orders),
+    [orders, requestedOrders],
   );
   const homeStats = useMemo(() => {
     const homeOrders = orders.filter(
@@ -660,6 +708,7 @@ const MailDetailPage = () => {
 
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
+  const requestOrderReturn = useRequestOrderReturn();
   const receiveCanceledPost = useReceiveCanceledPost();
   const returnCanceledOrders = useReturnCanceledOrders();
   /** Rad etilgan pochtadagi ikki amal (qabul, filialga qaytarish) bir vaqtda yurmaydi. */
@@ -734,11 +783,26 @@ const MailDetailPage = () => {
       return;
     }
 
+    // Kuryer: qaytarish so'rovi bor buyurtmaning QR'i — posilka kelgan; u qabul qilinadiganlarga qaytib tanlanadi
+    // (bloklanmaydi: qabul qilinsa backend so'rovni bekor qiladi).
+    const reclaimed = requestedOrderIds.has(order.id);
+    if (reclaimed) {
+      setReclaimedOrderIds((prev) => new Set(prev).add(order.id));
+      setSentOrderIds((prev) => {
+        if (!prev.has(order.id)) return prev;
+        const next = new Set(prev);
+        next.delete(order.id);
+        return next;
+      });
+    }
     selectOne(order.id);
     touchRecentScan(`order:${order.id}`);
     void playScanFeedback("success", t("detailPage.cameraSelected", { id: order.id }));
-    scanNotify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
-  }, [selectOne, selectedIds, t, touchRecentScan]);
+    scanNotify.success(t("orderSelected"), {
+      description: reclaimed ? t("detailPage.requestReturn.scannedRequested", { id: order.id }) : `#${order.id}`,
+      duration: reclaimed ? 4000 : 2000,
+    });
+  }, [requestedOrderIds, selectOne, selectedIds, t, touchRecentScan]);
 
   const rejectScannedCode = useCallback((rawValue: string) => {
     const code = extractScannerToken(rawValue) ?? rawValue.trim();
@@ -759,13 +823,13 @@ const MailDetailPage = () => {
         if (text) scannedIdentifiers.add(text);
       });
 
-      const matchedByIdentifier = orders.find((order) => {
+      const matchedByIdentifier = scanOrders.find((order) => {
         const orderIdentifiers = getOrderIdentifiers(order);
         return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
       });
       const comparableMatches = matchedByIdentifier
         ? []
-        : orders.filter((order) => isSameCustomerMarketOrder(scannedOrder, order));
+        : scanOrders.filter((order) => isSameCustomerMarketOrder(scannedOrder, order));
       const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
 
       if (matchedOrder) {
@@ -790,7 +854,7 @@ const MailDetailPage = () => {
         duration: 3000,
       });
     }
-  }, [orders, rejectScannedCode, selectScannedOrder, t]);
+  }, [scanOrders, rejectScannedCode, selectScannedOrder, t]);
 
   const scannerEnabled = orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier;
   // Kamera — faqat amal bor rejimda (jo'natish, qabul, rad etilganni qabul): aks holda markaziy tugma `/scan`.
@@ -831,7 +895,7 @@ const MailDetailPage = () => {
     .filter(Boolean)
     .join(" · ");
   useOrderQrScanner({
-    orders,
+    orders: scanOrders,
     enabled: !isOldDetail && !isReadOnlyRefusedCourier,
     onMatch: (order, _rawValue, source) => {
       selectScannedOrder(order);
@@ -1053,6 +1117,86 @@ const MailDetailPage = () => {
     hideHandledOrders,
     clearSelection,
     isRefusedDetail,
+    refetchRegularDetail,
+    handleBack,
+  ]);
+
+  // ─── Kuryer: «Bu buyurtma kelmagan» — qaytarish so'rovi (tasdiq bilan) ────
+  // Maket yo'q — eng yaqini: `courier-mails-detail-receive` (qator / karta), `courier-orders-pending` (danger-soft
+  // qator amali). Ega qarori 2026-11-03 (BeePost kabi). Buyurtma «yo'lda» qoladi, so'rov «Qaytarish»ga tushadi.
+  const handleRequestReturn = useCallback(async (order: PostOrder) => {
+    if (!postId || !canRequestReturn || requestOrderReturn.isPending || receivePost.isPending) return;
+    const orderId = order.id;
+    const left = orders.filter((item) => item.id !== orderId).length;
+    const place = [order.district?.name?.trim(), order.market?.name?.trim()].filter(Boolean);
+    const outcome: { result?: RequestOrderReturnResult } = {};
+    const confirmed = await confirm({
+      tone: "primary",
+      icon: RotateCcw,
+      title: t("detailPage.requestReturn.title"),
+      description: t("detailPage.requestReturn.description", { id: orderId }),
+      details: (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
+            <span className="font-semibold">
+              №{orderId} · {order.customer?.name?.trim() || "—"}
+            </span>
+            {place.length > 0 ? <span className="text-text-muted">{place.join(" · ")}</span> : null}
+          </div>
+          <div className="ml-auto flex flex-col gap-0.5 text-right">
+            <span className="text-xs text-text-muted">{t("detailPage.requestReturn.amount")}</span>
+            <span className="whitespace-nowrap font-semibold">
+              {formatMoneyLocalized(Number(order.total_price) || 0, { language })}
+            </span>
+          </div>
+        </div>
+      ),
+      consequences: [
+        { text: t("detailPage.requestReturn.consequenceRequest"), tone: "info", icon: RotateCcw },
+        { text: t("detailPage.requestReturn.consequenceHidden") },
+        left > 0
+          ? { text: t("detailPage.requestReturn.consequenceRemaining", { value: count(left) }) }
+          : { text: t("detailPage.requestReturn.consequenceLast") },
+      ],
+      confirmLabel: t("detailPage.requestReturn.confirm"),
+      confirmIcon: RotateCcw,
+      loadingLabel: t("detailPage.requestReturn.loading"),
+      errorMessage: (error) => getBackendErrorMessage(error) ?? t("detailPage.requestReturn.error"),
+      onConfirm: async () => {
+        outcome.result = await requestOrderReturn.mutateAsync({ postId, orderId });
+      },
+    });
+    const result = outcome.result;
+    if (!confirmed || !result) return;
+
+    hideHandledOrders([orderId]);
+    setReclaimedOrderIds((prev) => {
+      if (!prev.has(orderId)) return prev;
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
+    void refetchRegularDetail();
+    const remaining = result.remainingReceivable ?? left;
+    const title = t(
+      result.alreadyRequested ? "detailPage.requestReturn.alreadyRequested" : "detailPage.requestReturn.success",
+      { id: orderId },
+    );
+    const description = remaining === 0 ? t("detailPage.requestReturn.successLast") : undefined;
+    if (result.alreadyRequested) notify.info(title, { description });
+    else notify.success(title, { description });
+    if (remaining === 0) handleBack();
+  }, [
+    postId,
+    canRequestReturn,
+    requestOrderReturn,
+    receivePost.isPending,
+    orders,
+    confirm,
+    t,
+    language,
+    count,
+    hideHandledOrders,
     refetchRegularDetail,
     handleBack,
   ]);
@@ -1359,7 +1503,10 @@ const MailDetailPage = () => {
       mode={isEffectiveRefusedDetail ? "receive" : "send"}
       onSend={handleSend}
       onReceive={handleReceive}
-      disabled={isEffectiveRefusedDetail && (!canReceiveRefusedPost || returnCanceledOrders.isPending)}
+      disabled={
+        (isEffectiveRefusedDetail && (!canReceiveRefusedPost || returnCanceledOrders.isPending)) ||
+        requestOrderReturn.isPending
+      }
       isBusy={primaryIsReceive ? isReceiving : isCheckingCouriers}
       block={isCourier && isPhone}
     />
@@ -1609,8 +1756,21 @@ const MailDetailPage = () => {
               <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
               <span className="min-w-0">{t("detailPage.courierRefusedNote")}</span>
             </>
+          ) : requestedOrders.length > 0 ? (
+            <>
+              <RotateCcw aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
+              <span className="min-w-0" data-testid="mail-requested-notice">
+                {t("detailPage.requestReturn.notice", {
+                  value: count(requestedOrders.length),
+                  ids: requestedOrders.map((order) => `№${order.id}`).join(", "),
+                })}
+              </span>
+            </>
           ) : undefined
         }
+        onRequestReturn={canRequestReturn ? (order) => void handleRequestReturn(order) : undefined}
+        requestingOrderId={requestOrderReturn.isPending ? (requestOrderReturn.variables?.orderId ?? null) : null}
+        requestReturnDisabled={receivePost.isPending || requestOrderReturn.isPending}
         phoneHeaderAction={isReadOnlyRefusedCourier && isPhone && orders.length > 0 ? printAll : undefined}
         phoneSelectionAction={isCourier && isPhone ? renderPrintSelected("shrink-0", true) : undefined}
         printLabel={isCourier ? (order) => t("detailPage.printRowLabel", { id: order.id }) : undefined}

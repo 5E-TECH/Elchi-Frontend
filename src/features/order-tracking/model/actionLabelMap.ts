@@ -25,4 +25,6 @@ export const actionLabelMap: Record<string, string> = {
   // HQ rad etilgan pochtadagi bekor buyurtmani jo'natgan filialga qaytardi (holat o'zgarmaydi — `cancelled (sent)`).
   cancelled_post_returned: "tracking.action.cancelledPostReturned",
   canceled_post_returned: "tracking.action.cancelledPostReturned",
+  // Kuryer jo'natilgan pochtadagi buyurtma kelmaganini bildirdi — qaytarish so'rovi (holat o'zgarmaydi — yo'lda).
+  courier_return_requested: "tracking.action.courierReturnRequested",
 };

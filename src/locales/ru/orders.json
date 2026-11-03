@@ -564,7 +564,8 @@
       "postBranchReassignedShort": "{{actor}} перевёл {{post}} в другой филиал",
       "cancelledPostReturnedToBranch": "{{actor}} вернул отмененный заказ из HQ в филиал {{branch}}",
       "cancelledPostReturnedToNamedBranch": "{{actor}} вернул отмененный заказ из HQ в {{branch}}",
-      "cancelledPostReturnedShort": "{{actor}} вернул отмененный заказ из HQ в филиал-отправитель"
+      "cancelledPostReturnedShort": "{{actor}} вернул отмененный заказ из HQ в филиал-отправитель",
+      "courierReturnRequested": "{{actor}} сообщил(а): заказ не пришёл — отправлен запрос на возврат"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -627,7 +628,8 @@
       "returnedToMarket": "Передан маркету",
       "warehouseReturned": "Возвращён на склад",
       "postBranchReassigned": "Переведён в другой филиал",
-      "cancelledPostReturned": "Возвращён в филиал"
+      "cancelledPostReturned": "Возвращён в филиал",
+      "courierReturnRequested": "Не пришёл — запрошен возврат"
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",

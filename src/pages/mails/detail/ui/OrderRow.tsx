@@ -74,6 +74,11 @@ type OrderRowProps = {
   actions: ReactNode;
   /** Badge'lar qatori oxirida — «Takroriy raqam» (MD-1, maket `*-mails-detail-duplicates`). */
   flag?: ReactNode;
+  /**
+   * Kartaning ostida, to'liq kenglikda — kuryer: «Bu buyurtma kelmagan — qaytarish so'rovi» (maket yo'q — eng
+   * yaqini `courier-orders-pending` karta amallari: `px-4 pb-3`, karta matni `pb-2`).
+   */
+  footer?: ReactNode;
 };
 
 /** Telefon kartasi (< 768). */
@@ -89,6 +94,7 @@ const OrderRow = memo((props: OrderRowProps) => {
     meta = "place",
     showMarket = true,
     flag,
+    footer,
   } = props;
   const place = view.place(order);
   const market = view.market(order);
@@ -130,8 +136,14 @@ const OrderRow = memo((props: OrderRowProps) => {
 
   const bodyClass = "flex min-w-0 flex-1 flex-col gap-1 text-sm";
 
-  return (
-    <div className={cx("flex min-w-0 items-start gap-2 py-3 pr-4", selectable ? "pl-12" : "pl-4")}>
+  const row = (
+    <div
+      className={cx(
+        "flex min-w-0 items-start gap-2 pr-4",
+        footer ? "pb-2 pt-3" : "py-3",
+        selectable ? "pl-12" : "pl-4",
+      )}
+    >
       {href ? (
         <Link to={href} className={cx(bodyClass, "text-text no-underline")}>
           {body}
@@ -141,6 +153,14 @@ const OrderRow = memo((props: OrderRowProps) => {
       )}
       {/* Amallar ustma-ust — matnga ko'proq joy qoladi (telefonda har tugma 44 px). */}
       {actions ? <div className="-my-1 -mr-1 flex shrink-0 flex-col items-center gap-1">{actions}</div> : null}
+    </div>
+  );
+
+  if (!footer) return row;
+  return (
+    <div className="flex min-w-0 flex-col">
+      {row}
+      <div className="px-4 pb-3">{footer}</div>
     </div>
   );
 });

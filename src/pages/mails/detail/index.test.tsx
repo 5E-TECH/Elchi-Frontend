@@ -29,6 +29,7 @@ vi.mock("../../../entities/mails", () => ({
   useMails: () => ({ useGetRefusedMailsCourierByPostId: mocks.useRefusedByPostId }),
   useMailDetail: mocks.useMailDetail,
   useReceivePost: () => ({ mutateAsync: mocks.receivePostMutateAsync, isPending: false }),
+  useRequestOrderReturn: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReceiveCanceledPost: () => ({ mutateAsync: mocks.receiveCanceledMutateAsync, isPending: false }),
   useReturnCanceledOrders: () => ({ mutateAsync: mocks.returnCanceledMutateAsync, isPending: false }),
   useDeleteOrdersFromPost: () => ({ mutateAsync: vi.fn(), isPending: false }),

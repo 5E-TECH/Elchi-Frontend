@@ -486,3 +486,100 @@ describe("OrdersTable — qidiruv (MD-1)", () => {
     });
   });
 });
+
+/**
+ * Kuryer: «Bu buyurtma kelmagan — qaytarish so'rovi» (opt-in `onRequestReturn`; maket yo'q — eng yaqini
+ * `courier-orders-pending`). Jadvalda qator amallarida chop etishdan oldin, telefonda kartaning ostida.
+ */
+describe("OrdersTable — «kelmagan» qaytarish so'rovi (kuryer)", () => {
+  const ON_ROAD = [order("101", { status: "on the road" }), order("102", { status: "on the road" })];
+  const courierProps = {
+    ...base,
+    orders: ON_ROAD,
+    orderHref: null,
+    cardVariant: "courier" as const,
+    onPrintOne: vi.fn(),
+    printLabel: (item: PostOrder) => `№${item.id} yorlig'ini chop etish`,
+  };
+
+  it("jadval: «Kelmadi» / «Kelmagan — qaytarish» chop etishdan oldin; bosilsa — `onRequestReturn`, tanlov emas", async () => {
+    const user = userEvent.setup();
+    const onRequestReturn = vi.fn();
+    const onToggleOne = vi.fn();
+    renderWithProviders(
+      <OrdersTable {...courierProps} onToggleOne={onToggleOne} onRequestReturn={onRequestReturn} />,
+    );
+    expect(headers().at(-1)).toBe("Amallar");
+    const button = within(table()).getByRole("button", { name: "№101 kelmagan — qaytarish so'rovi" });
+    expect(button).toHaveAttribute("aria-haspopup", "dialog");
+    expect(within(button).getByText("Kelmadi")).toHaveClass("lg:hidden");
+    expect(within(button).getByText("Kelmagan — qaytarish")).toHaveClass("max-lg:hidden");
+    const cell = button.closest("td")!;
+    const buttons = within(cell).getAllByRole("button");
+    expect(buttons.map((item) => item.getAttribute("aria-label") ?? item.textContent)).toEqual([
+      "№101 kelmagan — qaytarish so'rovi",
+      "№101 yorlig'ini chop etish",
+    ]);
+    // Matnli tugma — ustun qat'iy 56 px emas.
+    expect(within(table()).getAllByRole("columnheader").at(-1)).toHaveClass("w-px");
+
+    await user.click(button);
+    expect(onRequestReturn).toHaveBeenCalledWith(expect.objectContaining({ id: "101" }));
+    expect(onToggleOne).not.toHaveBeenCalled();
+  });
+
+  it("so'rov yurmoqda: shu qator tugmasi yuklanmoqda, qolganlari o'chiq; prop'siz — tugma yo'q", () => {
+    const { unmount } = renderWithProviders(
+      <OrdersTable {...courierProps} onRequestReturn={vi.fn()} requestingOrderId="101" requestReturnDisabled />,
+    );
+    expect(screen.getByRole("button", { name: "№101 kelmagan — qaytarish so'rovi" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "№102 kelmagan — qaytarish so'rovi" })).toBeDisabled();
+    unmount();
+
+    renderWithProviders(<OrdersTable {...courierProps} />);
+    expect(screen.queryAllByRole("button", { name: /kelmagan — qaytarish so'rovi/ })).toHaveLength(0);
+    expect(within(table()).getAllByRole("columnheader").at(-1)).toHaveClass("w-14");
+  });
+
+  describe("telefon (< 768)", () => {
+    const original = window.matchMedia;
+    beforeEach(() => {
+      window.matchMedia = ((query: string) => ({
+        matches: query.includes("max-width: 767px"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })) as typeof window.matchMedia;
+    });
+    afterEach(() => {
+      window.matchMedia = original;
+    });
+
+    it("kartaning ostida to'liq kenglikda «Bu buyurtma kelmagan — qaytarish so'rovi»; o'ngda faqat chop etish", async () => {
+      const user = userEvent.setup();
+      const onRequestReturn = vi.fn();
+      const onToggleOne = vi.fn();
+      renderWithProviders(
+        <OrdersTable {...courierProps} onToggleOne={onToggleOne} onRequestReturn={onRequestReturn} />,
+      );
+      expect(screen.queryByRole("table")).toBeNull();
+      const button = screen.getByRole("button", { name: "№101: bu buyurtma kelmagan — qaytarish so'rovi" });
+      expect(button).toHaveTextContent(/^Bu buyurtma kelmagan — qaytarish so'rovi$/);
+      expect(button).toHaveClass("w-full");
+      const card = screen.getByRole("checkbox", { name: "№101 ni tanlash" }).closest("li")!;
+      expect(within(card).getAllByRole("button").map((item) => item.getAttribute("aria-label"))).toEqual([
+        "№101 yorlig'ini chop etish",
+        "№101: bu buyurtma kelmagan — qaytarish so'rovi",
+      ]);
+      expect(within(card).queryByRole("button", { name: "№101 kelmagan — qaytarish so'rovi" })).toBeNull();
+
+      await user.click(button);
+      expect(onRequestReturn).toHaveBeenCalledWith(expect.objectContaining({ id: "101" }));
+      expect(onToggleOne).not.toHaveBeenCalled();
+    });
+  });
+});

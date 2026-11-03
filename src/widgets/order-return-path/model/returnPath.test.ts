@@ -455,3 +455,28 @@ describe("buildReturnPath — HQ filialga qaytardi", () => {
     expect(path!.steps[5]).toMatchObject({ place: "Urgut filiali", actor: "Ravshan Ortiqov" });
   });
 });
+
+/**
+ * Kuryer jo'natilgan pochtadagi buyurtma kelmaganini bildirdi (`courier_return_requested`, holat o'zgarmaydi — `on the
+ * road`): bu bekor zanjirining qadami emas — qaytarish yo'lida soxta qadam chizilmaydi.
+ */
+describe("buildReturnPath — kuryer «kelmagan» qaytarish so'rovi", () => {
+  const requested = ev("2026-10-04T09:00:00+05:00", {
+    ...status("on the road", "on the road"),
+    action: "courier_return_requested",
+    actor: courier,
+    changed_by_role: "courier",
+    description: "Kuryer buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi",
+    metadata: { post_id: "96" },
+  });
+
+  it("bekor qilinmagan buyurtma (yo'lda, so'rov bilan) — qaytarish yo'li yo'q", () => {
+    expect(buildReturnPath([requested], { id: "10305", status: "on the road", return_requested: true })).toBeNull();
+  });
+
+  it("keyin bekor qilingan buyurtmada qadamlar o'zgarmaydi (so'rov qadami yo'q)", () => {
+    const path = buildReturnPath([requested, ...BRANCH_TO_HQ], HQ_ORDER, { hqName: "Toshkent HQ" });
+    expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "sent", "received"]);
+    expect(path!.steps.some((step) => step.id === requested.id)).toBe(false);
+  });
+});

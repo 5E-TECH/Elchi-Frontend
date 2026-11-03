@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
 import { memo, useCallback, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { Link } from "react-router-dom";
-import { EyeOff, ListChecks, Phone, ScanLine, SearchX, Trash2, X } from "lucide-react";
+import { EyeOff, ListChecks, Phone, RotateCcw, ScanLine, SearchX, Trash2, X } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
 import { OrderStatusBadge } from "../../../../entities/order";
@@ -163,6 +163,16 @@ interface OrdersTableProps {
   alert?: ReactNode;
   /** Takroriy raqamli qator: belgi maslahati («Shu raqamga yana: №…») yoki `null` — belgi va chiziq yo'q. */
   duplicateNote?: (order: PostOrder) => string | null;
+  /**
+   * Kuryer: «Bu buyurtma kelmagan — qaytarish so'rovi» (opt-in; paket tafsilotida yo'q). Jadvalda — qator amallarida
+   * chop etishdan oldin `danger-soft` sm («Kelmadi» < 1024, «Kelmagan — qaytarish»), telefonda — kartaning ostida
+   * to'liq kenglikdagi tugma. Maket yo'q — eng yaqini: `courier-orders-pending` (qator amali).
+   */
+  onRequestReturn?: (order: PostOrder) => void;
+  /** So'rovi yuborilayotgan qator — uning tugmasi `loading`. */
+  requestingOrderId?: string | null;
+  /** «Kelmagan» tugmalari vaqtincha o'chiq (qabul yoki boshqa so'rov yurmoqda). */
+  requestReturnDisabled?: boolean;
 }
 
 export type OrdersTableSearch = {
@@ -232,6 +242,9 @@ const OrdersTable = memo(
     searchInputRef,
     alert,
     duplicateNote,
+    onRequestReturn,
+    requestingOrderId = null,
+    requestReturnDisabled = false,
   }: OrdersTableProps) => {
     const { t, i18n } = useTranslation(["mails", "orders"]);
     const language = i18n.resolvedLanguage ?? i18n.language;
@@ -271,7 +284,57 @@ const OrdersTable = memo(
 
     const selectedOrders = useMemo(() => orders.filter((order) => selectedIds.has(order.id)), [orders, selectedIds]);
     const totalSum = useMemo(() => orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0), [orders]);
-    const hasActions = Boolean(onPrintOne) || (canDelete && Boolean(onDeleteOne));
+    /** Chop etish / o'chirish (telefon kartasida o'ngdagi ustun); «kelmagan» telefonda — kartaning ostida. */
+    const hasRowIconActions = Boolean(onPrintOne) || (canDelete && Boolean(onDeleteOne));
+    const hasActions = hasRowIconActions || Boolean(onRequestReturn);
+
+    /** Jadval qatoridagi «Kelmadi» / «Kelmagan — qaytarish» (maket `courier-orders-pending`: `el-btn-sm`). */
+    const requestReturnButton = useCallback(
+      (order: PostOrder) =>
+        onRequestReturn ? (
+          <Button
+            variant="danger-soft"
+            size="sm"
+            compact
+            leftIcon={RotateCcw}
+            aria-haspopup="dialog"
+            aria-label={t("detailPage.requestReturn.rowLabel", { id: order.id })}
+            loading={requestingOrderId === order.id}
+            disabled={requestReturnDisabled && requestingOrderId !== order.id}
+            onClick={() => onRequestReturn(order)}
+          >
+            <span className="lg:hidden">{t("detailPage.requestReturn.short")}</span>
+            <span className="max-lg:hidden">{t("detailPage.requestReturn.button")}</span>
+          </Button>
+        ) : null,
+      [onRequestReturn, requestReturnDisabled, requestingOrderId, t],
+    );
+
+    /**
+     * Telefon kartasining ostida — to'liq kenglikda, 44 px (BeePost matni). Uzun matn 390 px da bir qatorga sig'sin —
+     * `sm` ixcham (13 px; telefonda baribir 44 px); torroq ekranda kesilmaydi, ikki qatorga o'tadi.
+     */
+    const requestReturnFooter = useCallback(
+      (order: PostOrder) =>
+        onRequestReturn ? (
+          <Button
+            variant="danger-soft"
+            size="sm"
+            compact
+            fullWidth
+            leftIcon={RotateCcw}
+            aria-haspopup="dialog"
+            aria-label={t("detailPage.requestReturn.cardLabel", { id: order.id })}
+            loading={requestingOrderId === order.id}
+            loadingText={t("detailPage.requestReturn.loading")}
+            disabled={requestReturnDisabled && requestingOrderId !== order.id}
+            onClick={() => onRequestReturn(order)}
+          >
+            <span className="whitespace-normal">{t("detailPage.requestReturn.cardButton")}</span>
+          </Button>
+        ) : null,
+      [onRequestReturn, requestReturnDisabled, requestingOrderId, t],
+    );
 
     const deleteButton = useCallback(
       (order: PostOrder) =>
@@ -291,6 +354,8 @@ const OrdersTable = memo(
     const rowActions = useCallback(
       (order: PostOrder) => (
         <>
+          {/* Telefonda «kelmagan» tugmasi o'ngdagi ustunda emas — kartaning ostida (`requestReturnFooter`). */}
+          {isPhone ? null : requestReturnButton(order)}
           {onPrintOne ? (
             <RowPrintButton
               label={rowPrintLabel(order)}
@@ -302,7 +367,7 @@ const OrdersTable = memo(
           {deleteButton(order)}
         </>
       ),
-      [deleteButton, isCourierCard, isPhone, onPrintOne, printingOrderId, rowPrintLabel],
+      [deleteButton, isCourierCard, isPhone, onPrintOne, printingOrderId, requestReturnButton, rowPrintLabel],
     );
 
     const duplicateBadge = useCallback(
@@ -454,13 +519,16 @@ const OrdersTable = memo(
         list.push({
           id: "actions",
           header: <span className="sr-only">{t("detailPage.columns.actions")}</span>,
-          className: canDelete ? "w-[88px]" : "w-14",
+          // Matnli «Kelmagan» tugmasi bilan ustun mazmuniga qadar (qat'iy 56 px ga sig'maydi).
+          className: onRequestReturn ? "w-px" : canDelete ? "w-[88px]" : "w-14",
           cellClassName: "text-right whitespace-nowrap",
-          cell: (order) => <div className="inline-flex items-center gap-0.5">{rowActions(order)}</div>,
+          cell: (order) => (
+            <div className={cx("inline-flex items-center", onRequestReturn ? "gap-2" : "gap-0.5")}>{rowActions(order)}</div>
+          ),
         });
       }
       return list;
-    }, [canDelete, cell, columnIds, hasActions, rowActions, t]);
+    }, [canDelete, cell, columnIds, hasActions, onRequestReturn, rowActions, t]);
 
     const selection = useMemo<DataTableSelection<PostOrder> | undefined>(
       () =>
@@ -487,23 +555,25 @@ const OrdersTable = memo(
           history={isHistory}
           courier={isCourierCard}
           href={orderHref && !isCourierCard ? orderHref(order) : null}
-          actions={hasActions ? rowActions(order) : null}
+          actions={hasRowIconActions ? rowActions(order) : null}
           meta={isBatch ? "contact" : "place"}
           showMarket={showsMarket}
           flag={(() => {
             const note = duplicateNote?.(order) ?? null;
             return note ? duplicateBadge(note) : null;
           })()}
+          footer={requestReturnFooter(order)}
         />
       ),
       [
         duplicateBadge,
         duplicateNote,
-        hasActions,
+        hasRowIconActions,
         isBatch,
         isCourierCard,
         isHistory,
         orderHref,
+        requestReturnFooter,
         rowActions,
         selectable,
         showsMarket,

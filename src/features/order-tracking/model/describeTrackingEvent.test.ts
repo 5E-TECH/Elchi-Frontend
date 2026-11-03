@@ -397,3 +397,45 @@ describe("describeTrackingEvent — HQ bekor buyurtmani filialga qaytardi", () =
     expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov bekor qilingan buyurtmani HQ'dan jo'natgan filialga qaytardi");
   });
 });
+
+/**
+ * Kuryer jo'natilgan pochtadagi buyurtma kelmaganini bildirdi — qaytarish so'rovi (`courier_return_requested`, holat
+ * o'zgarmaydi — `on the road`); metadata `{ post_id }`.
+ */
+describe("describeTrackingEvent — kuryer «kelmagan» qaytarish so'rovi", () => {
+  const courier = { name: "Jasur Tursunov", role: "courier" };
+
+  it("«Kuryer … buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi», belgi, backend izohi takrorlanmaydi", () => {
+    const v = view({
+      action: "courier_return_requested",
+      changed_by: "500",
+      changed_by_role: "courier",
+      actor: courier,
+      from_status: "on the road",
+      to_status: "on the road",
+      description: "Kuryer buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi",
+      metadata: { post_id: "96" },
+    });
+    expect(sentence(v)).toBe("Kuryer Jasur Tursunov buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi");
+    expect(v.actionName).toBe("Kelmagan — qaytarish so'raldi");
+    expect(v.note).toBe("");
+    expect(v.oldStatus).toBe("on the road");
+    expect(v.newStatus).toBe("on the road");
+  });
+
+  it("ru va en: xom «Courier Return Requested» emas", () => {
+    const event = {
+      ...base,
+      action: "courier_return_requested",
+      changed_by_role: "courier",
+      actor: courier,
+      from_status: "on the road",
+      to_status: "on the road",
+    } as TrackingEvent;
+    const ru = describeTrackingEvent(event, i18n.getFixedT("ru", "orders") as never, null);
+    const en = describeTrackingEvent(event, i18n.getFixedT("en", "orders") as never, null);
+    expect(ru.actionName).toBe("Не пришёл — запрошен возврат");
+    expect(en.actionName).toBe("Not arrived — return requested");
+    expect(en.sentence.after).toBe(" reported the order did not arrive — a return request was sent");
+  });
+});

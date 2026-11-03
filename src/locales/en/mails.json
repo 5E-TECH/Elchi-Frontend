@@ -343,6 +343,28 @@
       "success": "Orders returned to «{{branch}}»: {{value}}.",
       "successClosed": "Orders returned to «{{branch}}»: {{value}}. The mail is closed — all its orders were received or returned to the branch.",
       "error": "Could not return the orders to the branch"
+    },
+    "requestReturn": {
+      "rowLabel": "№{{id}} did not arrive — return request",
+      "short": "Not arrived",
+      "button": "Not arrived — return",
+      "cardButton": "This order did not arrive — return request",
+      "cardLabel": "№{{id}}: this order did not arrive — return request",
+      "title": "Order did not arrive?",
+      "description": "№{{id}} will be marked as not delivered to you and a return request will be sent.",
+      "amount": "Amount",
+      "consequenceRequest": "The request goes to «Returns» — once approved, the order goes back to the warehouse it came from",
+      "consequenceHidden": "The order is not received and leaves this list",
+      "consequenceRemaining": "You receive the remaining orders as usual: {{value}}",
+      "consequenceLast": "Nothing will be left to receive — you go back to the mail list",
+      "confirm": "Send request",
+      "loading": "Sending…",
+      "error": "Could not send the return request",
+      "success": "Return request sent for №{{id}}",
+      "alreadyRequested": "A return request for №{{id}} was already sent",
+      "successLast": "No orders are left to receive in this mail.",
+      "notice": "Return requested for orders ({{value}}): {{ids}} — reviewed under «Returns»",
+      "scannedRequested": "A return request was sent for №{{id}} — if you receive it, the request is cancelled"
     }
   }
 }

@@ -4,7 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { vi } from "vitest";
 import { createTestStore } from "../../test/test-utils";
-import { toReturnRequestsMailResponse, useMailDetail, useMails } from "./index";
+import {
+  toRequestOrderReturnResult,
+  toReturnRequestsMailResponse,
+  useMailDetail,
+  useMails,
+  useRequestOrderReturn,
+} from "./index";
 
 const apiMock = vi.hoisted(() => ({
   get: vi.fn(),
@@ -386,5 +392,74 @@ describe("useMailDetail — ko'rinish (backend #618)", () => {
 
     await act(() => client.invalidateQueries({ queryKey: ["mails", "detail", "78"] }));
     await waitFor(() => expect(apiMock.get).toHaveBeenCalledTimes(2));
+  });
+});
+
+/**
+ * Kuryer: «Bu buyurtma kelmagan» — `POST post/:postId/orders/:orderId/return-request` (tanasiz). Javob `data`:
+ * `{ order_id, post_id, return_requested, already_requested, remaining_receivable }`.
+ */
+describe("useRequestOrderReturn — kuryer qaytarish so'rovi", () => {
+  const renderRequest = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useRequestOrderReturn(), { wrapper: Wrapper });
+    return { invalidate, ...hook };
+  };
+  const invalidatedKeys = (invalidate: ReturnType<typeof renderRequest>["invalidate"]) =>
+    invalidate.mock.calls.map(([filters]) => (filters as { queryKey: unknown[] }).queryKey);
+
+  beforeEach(() => {
+    apiMock.post.mockReset();
+  });
+
+  it("tanasiz POST shu pochta va buyurtma yo'liga; javob bir shaklga keladi; pochta, «Bugungi», «Qaytarish», buyurtmalar yangilanadi", async () => {
+    apiMock.post.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        message: "Qaytarish so'rovi yuborildi",
+        data: { order_id: 101, post_id: "7", return_requested: true, already_requested: false, remaining_receivable: 2 },
+      },
+    });
+    const { result, invalidate } = renderRequest();
+
+    let outcome: Awaited<ReturnType<typeof result.current.mutateAsync>> | undefined;
+    await act(async () => {
+      outcome = await result.current.mutateAsync({ postId: "7", orderId: "101" });
+    });
+
+    expect(apiMock.post).toHaveBeenCalledTimes(1);
+    expect(apiMock.post.mock.calls[0]).toEqual(["post/7/orders/101/return-request"]);
+    expect(outcome).toEqual({
+      orderId: "101",
+      postId: "7",
+      returnRequested: true,
+      alreadyRequested: false,
+      remainingReceivable: 2,
+    });
+    expect(invalidatedKeys(invalidate)).toEqual([["mails", "detail", "7"], ["mails", "new"], ["mails", "return"], ["orders"]]);
+  });
+
+  it("xato (409) bo'lsa ham pochta qatorlari yangilanadi", async () => {
+    apiMock.post.mockRejectedValue({ response: { status: 409, data: { message: "Buyurtma holati o'zgardi" } } });
+    const { result, invalidate } = renderRequest();
+
+    await act(async () => {
+      await result.current.mutateAsync({ postId: "7", orderId: "101" }).catch(() => undefined);
+    });
+
+    expect(invalidatedKeys(invalidate)).toContainEqual(["mails", "detail", "7"]);
+  });
+
+  it("toRequestOrderReturnResult: `already_requested`, son yo'q — `null`, id'lar so'rovdan", () => {
+    expect(
+      toRequestOrderReturnResult({ data: { return_requested: true, already_requested: true } }, { postId: "7", orderId: "101" }),
+    ).toEqual({ orderId: "101", postId: "7", returnRequested: true, alreadyRequested: true, remainingReceivable: null });
+    expect(
+      toRequestOrderReturnResult({ order_id: "102", post_id: "8", remaining_receivable: "0" }, { postId: "7", orderId: "101" }),
+    ).toMatchObject({ orderId: "102", postId: "8", remainingReceivable: 0 });
   });
 });

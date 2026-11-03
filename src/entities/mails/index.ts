@@ -140,6 +140,11 @@ export interface PostOrder {
   membership?: PostOrderMembership | null;
   current_post_id?: string | null;
   current_canceled_post_id?: string | null;
+  /**
+   * Qaytarish so'rovi bor. Kuryerning jo'natilgan (`sent`) pochtasida — kuryer «kelmagan» deb bildirgan (yoki
+   * qisman qabulda tanlamagan) buyurtma: holat «yo'lda» qoladi, so'rov «Qaytarish» bo'limida ko'rib chiqiladi.
+   */
+  return_requested?: boolean | null;
 }
 
 export interface HomeOrders {
@@ -784,6 +789,67 @@ export const useReceivePost = () => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
       });
+    },
+  });
+};
+
+/**
+ * Kuryer: «Bu buyurtma kelmagan» — qaytarish so'rovi natijasi (`POST post/:postId/orders/:orderId/return-request`
+ * javobining `data` qismi, bir shaklga keltirilgan).
+ *
+ *  - `alreadyRequested` — so'rov avval yuborilgan edi (boshqa oyna / qurilmadan), qayta yozilmadi;
+ *  - `remainingReceivable` — pochtada hali qabul qilinadigan (yo'ldagi, so'rovsiz) buyurtmalar soni;
+ *    `null` — backend bermadi (sahifa o'z ro'yxatidan sanaydi).
+ */
+export interface RequestOrderReturnResult {
+  orderId: string;
+  postId: string;
+  returnRequested: boolean;
+  alreadyRequested: boolean;
+  remainingReceivable: number | null;
+}
+
+/** Javob (`{ statusCode, message, data }` yoki to'g'ridan-to'g'ri `data`) → `RequestOrderReturnResult`. */
+export const toRequestOrderReturnResult = (
+  payload: unknown,
+  fallback: { postId: string; orderId: string },
+): RequestOrderReturnResult => {
+  const body = asRecord(payload);
+  const data = asRecord(body?.data) ?? body ?? {};
+  const remaining = Number(data.remaining_receivable);
+  return {
+    orderId: toText(data.order_id) || fallback.orderId,
+    postId: toText(data.post_id) || fallback.postId,
+    returnRequested: data.return_requested !== false,
+    alreadyRequested: data.already_requested === true,
+    remainingReceivable:
+      data.remaining_receivable != null && Number.isFinite(remaining) ? Math.max(0, remaining) : null,
+  };
+};
+
+/**
+ * Kuryer o'z jo'natilgan (`sent`) pochtasidagi yo'ldagi buyurtmani «kelmagan» deb bildiradi —
+ * `POST post/:postId/orders/:orderId/return-request` (tanasiz, faqat kuryer). Buyurtma «yo'lda» qoladi
+ * (`return_requested: true`), so'rov xodimning «Qaytarish» bo'limiga tushadi; pochta bu amal bilan yopilmaydi.
+ * Rad javoblari (matn backenddan): 404 — pochta kuryerniki emas; 400 — pochta jo'natilmagan, buyurtma qabul
+ * qilingan yoki yo'lda emas; 409 — buyurtma shu orada boshqa pochtaga o'tgan yoki o'zgargan.
+ */
+export const useRequestOrderReturn = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId, orderId }: { postId: string; orderId: string }) =>
+      api
+        .post(API_ENDPOINTS.POSTS.ORDER_RETURN_REQUEST(postId, orderId))
+        .then((res) => toRequestOrderReturnResult(res.data, { postId, orderId })),
+    // Xatoda ham (409 — shu orada qabul qilingan / boshqa pochtaga o'tgan) qatorlar yangilansin.
+    onSettled: (_data, _error, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+      // Kuryerning «Bugungi» pochtalari (`post/on-the-road`) va xodimning «Qaytarish» ro'yxati.
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+      // Buyurtma ro'yxati va tafsilotidagi «Qaytarish so'ralgan» belgisi.
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 };

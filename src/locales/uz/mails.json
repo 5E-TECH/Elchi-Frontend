@@ -343,6 +343,28 @@
       "success": "{{value}} ta buyurtma «{{branch}}» filialiga qaytarildi.",
       "successClosed": "{{value}} ta buyurtma «{{branch}}» filialiga qaytarildi. Pochta yopildi — undagi barcha buyurtmalar qabul qilindi yoki filialga qaytarildi.",
       "error": "Buyurtmalarni filialga qaytarib bo'lmadi"
+    },
+    "requestReturn": {
+      "rowLabel": "№{{id}} kelmagan — qaytarish so'rovi",
+      "short": "Kelmadi",
+      "button": "Kelmagan — qaytarish",
+      "cardButton": "Bu buyurtma kelmagan — qaytarish so'rovi",
+      "cardLabel": "№{{id}}: bu buyurtma kelmagan — qaytarish so'rovi",
+      "title": "Buyurtma kelmadimi?",
+      "description": "№{{id}} sizga kelmagan deb belgilanadi va qaytarish so'rovi yuboriladi.",
+      "amount": "Summa",
+      "consequenceRequest": "So'rov «Qaytarish» bo'limiga tushadi — tasdiqlangach buyurtma u kelgan omborga qaytadi",
+      "consequenceHidden": "Buyurtma qabul qilinmaydi va bu ro'yxatdan chiqadi",
+      "consequenceRemaining": "Qolgan {{value}} ta buyurtmani odatdagidek qabul qilasiz",
+      "consequenceLast": "Qabul qilinadigan buyurtma qolmaydi — pochtalar ro'yxatiga qaytasiz",
+      "confirm": "So'rov yuborish",
+      "loading": "Yuborilmoqda…",
+      "error": "Qaytarish so'rovini yuborib bo'lmadi",
+      "success": "№{{id}} uchun qaytarish so'rovi yuborildi",
+      "alreadyRequested": "№{{id}} uchun qaytarish so'rovi avval yuborilgan",
+      "successLast": "Pochtada qabul qilinadigan buyurtma qolmadi.",
+      "notice": "{{value}} ta buyurtma uchun qaytarish so'rovi yuborilgan: {{ids}} — «Qaytarish»da ko'rib chiqiladi",
+      "scannedRequested": "№{{id}} uchun qaytarish so'rovi yuborilgan edi — qabul qilsangiz, so'rov bekor bo'ladi"
     }
   }
 }
