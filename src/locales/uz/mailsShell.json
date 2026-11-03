@@ -30,6 +30,9 @@
     "sortAmount": "Summa bo'yicha saralash",
     "sortStatus": "Holat bo'yicha saralash"
   },
+  "cards": {
+    "label": "{{id}}, {{date}}, {{status}}, {{region}}, {{orders}}, {{amount}} — ochish"
+  },
   "summary": {
     "regions": "<b>{{value}}</b> ta viloyat",
     "mails": "<b>{{value}}</b> ta pochta",

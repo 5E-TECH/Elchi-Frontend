@@ -31,6 +31,9 @@
     "sortAmount": "Sort by amount",
     "sortStatus": "Sort by status"
   },
+  "cards": {
+    "label": "{{id}}, {{date}}, {{status}}, {{region}}, {{orders}}, {{amount}} — open"
+  },
   "summary": {
     "regions_one": "<b>{{value}}</b> region",
     "regions_other": "<b>{{value}}</b> regions",

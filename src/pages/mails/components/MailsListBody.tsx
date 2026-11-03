@@ -16,6 +16,7 @@ import {
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import type { MailsTabLayout } from "../model/mailsLayout";
 import { summarizeMailRows, type MailListRow, type MailsListQuery } from "../model/mailsLists";
+import { MailCardsGrid, MailCardsGridSkeleton, type MailCardsGridProps } from "./MailCardsGrid";
 import MailSummaryStats from "./MailSummaryStats";
 import { MailsTable, type MailsTableProps } from "./MailsTable";
 
@@ -29,6 +30,10 @@ import { MailsTable, type MailsTableProps } from "./MailsTable";
  * `page` (kuryer, sahifa fonida): `note` (izoh) → ≥ 768 uchta `StatCard`, < 768 `phoneTop` (filtr) va xulosa
  * qatori → `Card` (≥ 768 sarlavha «Qabul qilinishi kerak» + filtr, keyin saralanadigan jadval; telefonda
  * kartalar). Telefonda yuklanish — xulosa chizig'i + 3 ta karta skeleti (maket `courier-mails-tab-switcher-open`).
+ *
+ * `cards` berilsa (kuryer va HQ bo'lmagan filial menejeri, ega qarori 2026-11-03 — `model/mailsCardView.ts`):
+ * jadval o'rnida pochtalar kartalari to'ri (`MailCardsGrid`, havola `table.linkOf` dan); qolgan hammasi —
+ * asboblar qatori, xulosa / `StatCard` lar, bo'sh, xato holatlari — o'zgarmaydi, skelet karta shaklida.
  */
 type MailsListBodyProps = {
   layout: MailsTabLayout;
@@ -58,6 +63,8 @@ type MailsListBodyProps = {
   /** `page`: eng tepadagi izoh (alert). */
   note?: ReactNode;
   table: Omit<MailsTableProps<MailListRow>, "rows" | "ariaLabel" | "busy" | "className">;
+  /** Kartalar to'ri jadval o'rnida (havola — `table.linkOf`). Berilmasa — jadval. */
+  cards?: Pick<MailCardsGridProps<MailListRow>, "cardLabel" | "showCourier">;
 };
 
 const MailsListBody = ({
@@ -77,6 +84,7 @@ const MailsListBody = ({
   phoneTop,
   note,
   table,
+  cards,
 }: MailsListBodyProps) => {
   const { t } = useTranslation("mailsShell");
   const isPhone = useIsPhone();
@@ -101,10 +109,19 @@ const MailsListBody = ({
   );
 
   const renderTable = (busy: boolean, className?: string) =>
-    rows.length > 0 ? (
-      <MailsTable {...table} rows={rows} ariaLabel={ariaLabel} busy={busy} className={className} />
-    ) : (
+    rows.length === 0 ? (
       <div className={className}>{filterEmpty}</div>
+    ) : cards ? (
+      <MailCardsGrid
+        {...cards}
+        rows={rows}
+        ariaLabel={ariaLabel}
+        linkOf={table.linkOf}
+        busy={busy}
+        className={className}
+      />
+    ) : (
+      <MailsTable {...table} rows={rows} ariaLabel={ariaLabel} busy={busy} className={className} />
     );
 
   if (!isPage) {
@@ -113,7 +130,13 @@ const MailsListBody = ({
         query={query}
         keepPreviousData={false}
         loadingLabel={loadingLabel}
-        loading={<SkeletonTable framed={false} columns={tableColumns} rows={6} />}
+        loading={
+          cards ? (
+            <MailCardsGridSkeleton count={6} className="border-t border-border" />
+          ) : (
+            <SkeletonTable framed={false} columns={tableColumns} rows={6} />
+          )
+        }
         empty={emptyNode}
         error={(error, retry) => <ErrorState error={error} title={t("mails:loadError")} onRetry={retry} />}
       >
@@ -140,13 +163,11 @@ const MailsListBody = ({
   const loading = isPhone ? (
     <div className="flex flex-col gap-2.5">
       <Skeleton width={236} height={10} className="my-1 max-w-full" />
-      <Card padding="none">
-        <SkeletonList rows={3} />
-      </Card>
+      <Card padding="none">{cards ? <MailCardsGridSkeleton count={3} /> : <SkeletonList rows={3} />}</Card>
     </div>
   ) : (
     <Card padding="none">
-      <SkeletonTable framed={false} columns={tableColumns} rows={4} />
+      {cards ? <MailCardsGridSkeleton count={4} /> : <SkeletonTable framed={false} columns={tableColumns} rows={4} />}
     </Card>
   );
 

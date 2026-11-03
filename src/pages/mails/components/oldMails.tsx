@@ -46,6 +46,7 @@ import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { printPostWithOrders, toPostReceiptSource } from "../detail/lib/printMode";
+import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabLayout } from "../model/mailsLayout";
 import {
   buildOldMailsQuery,
@@ -77,6 +78,7 @@ import {
 } from "../model/oldMailsModel";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
 import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
+import { MailCardsGrid, MailCardsGridSkeleton } from "./MailCardsGrid";
 import { MailsTable, type MailsTableRow } from "./MailsTable";
 import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
 
@@ -100,6 +102,10 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * filtrlangan qatorlar, 100 talab sahifalab (`fetchAllOldMailPages`).
  * «Filial paketlari»: `GET transfer-batches` da viloyat va sana oralig'i yo'q — BARCHA sahifalar yuklanadi
  * (`fetchAllTransferBatches`), filtr, xulosa, sahifalash va Excel mijoz tomonida.
+ *
+ * Ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
+ * (`MailCardsGrid`, `useMailsCardView`) — joriy sahifa yangilari tepada, «Chekni qayta chiqarish» karta pastida
+ * (havoladan tashqarida); filtrlar, chiplar, xulosa, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
  */
 
 const PAGE_SIZES = [8, 16, 32, 64] as const;
@@ -169,6 +175,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
   const selectedBatchMode = searchParams.get(OLD_MAILS_BATCH_MODE_KEY) ?? "";
   const isAllBatchMode = canUseBatchMode && selectedBatchMode === OLD_MAILS_BATCH_MODE_ALL;
   const withCourier = !isCourier && !isAllBatchMode;
+  // Kartalar faqat pochtalarda («Filial paketlari» — admin/superadmin, ular jadvalda).
+  const cardView = useMailsCardView() && !isAllBatchMode;
   const { useGetOldMails, fetchOldMails } = useMails();
   const { useGetRegions, useGetCouriers } = useUser();
   const { page, limit, setPage, setLimit } = usePagination({
@@ -811,6 +819,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
   /* ─── Jadval, holatlar, sahifalash ──────────────────────────────────────── */
 
   const tableLabel = t(isAllBatchMode ? "old.tableBatches" : "old.tableMails");
+  // Kartalar to'ri ustidagi chiziq — faqat ustida filtr/asboblar qatori bo'lsa (kuryer telefonida karta bo'sh boshlanadi).
+  const cardsBorder = resolvedLayout === "page" && isPhone ? undefined : "border-t border-border";
   const columnsForSkeleton = [
     t(isAllBatchMode ? "old.colBatch" : "old.colMail"),
     t("old.filters.region"),
@@ -842,7 +852,13 @@ const OldMails = ({ layout }: OldMailsProps) => {
       }}
       isEmpty={() => emptyAll}
       loadingLabel={t("old.loading")}
-      loading={<SkeletonTable framed={false} rows={8} columns={columnsForSkeleton} />}
+      loading={
+        cardView ? (
+          <MailCardsGridSkeleton count={8} className={cardsBorder} />
+        ) : (
+          <SkeletonTable framed={false} rows={8} columns={columnsForSkeleton} />
+        )
+      }
       error={(error, retry) => <ErrorState error={error} title={t("old.loadError")} onRetry={retry} />}
       empty={
         <EmptyState
@@ -863,6 +879,16 @@ const OldMails = ({ layout }: OldMailsProps) => {
               {t("ui:filters.clearAll")}
             </Button>
           }
+        />
+      ) : cardView ? (
+        <MailCardsGrid<OldMailRow>
+          rows={rows}
+          ariaLabel={tableLabel}
+          linkOf={linkOf}
+          showCourier={!isCourier}
+          cardActions={cardActions}
+          busy={query.isFetching && !query.isLoading}
+          className={cardsBorder}
         />
       ) : (
         <MailsTable<OldMailRow>

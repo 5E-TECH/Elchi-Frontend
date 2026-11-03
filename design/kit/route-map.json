@@ -660,8 +660,10 @@
         "src/pages/mails/components/todaysMails.tsx",
         "src/pages/mails/components/MailsListBody.tsx",
         "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailCardsGrid.tsx",
         "src/pages/mails/components/MailSummaryStats.tsx",
         "src/pages/mails/model/mailsLists.ts",
+        "src/pages/mails/model/mailsCardView.ts",
         "src/pages/mails/model/mailsLayout.ts",
         "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
@@ -676,7 +678,7 @@
       "roleNotes": {
         "logist": "Logist (kodda yo'q): bitta ro'yxat — holat tablari Barchasi · Yangi · Jo'natilgan · Qabul qilingan · Rad etilgan; faqat ko'rish, «Summa», chek va Excel yo'q. GET /post logistga 403 — backend kerak."
       },
-      "note": "Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi)."
+      "note": "Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi). Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Filial menejeri «Bugungi»si bitta so'rovda 100 tagacha ochiq pochta oladi (sukut 8 emas)."
     },
     {
       "path": "/mails/return",
@@ -703,8 +705,10 @@
         "src/pages/mails/components/refusedMails.tsx",
         "src/pages/mails/components/MailsListBody.tsx",
         "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailCardsGrid.tsx",
         "src/pages/mails/components/MailSummaryStats.tsx",
-        "src/pages/mails/model/mailsLists.ts"
+        "src/pages/mails/model/mailsLists.ts",
+        "src/pages/mails/model/mailsCardView.ts"
       ],
       "views": {
         "superadmin": ["mails-refused"],
@@ -713,7 +717,7 @@
         "registrator": ["mails-refused"],
         "courier": ["mails-refused"]
       },
-      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select."
+      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select. Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar)."
     },
     {
       "path": "/mails/old",
@@ -724,7 +728,9 @@
         "src/pages/mails/components/oldMails.tsx",
         "src/pages/mails/components/OldMailsFiltersSheet.tsx",
         "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailCardsGrid.tsx",
         "src/pages/mails/model/oldMailsModel.ts",
+        "src/pages/mails/model/mailsCardView.ts",
         "src/pages/mails/components/lib/exportOldMailsToExcel.ts",
         "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
@@ -735,7 +741,7 @@
         "registrator": ["mails-old"],
         "courier": ["mails-old"]
       },
-      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi — «N ta pochta · M ta buyurtma · jami S» (tveJKICY: GET /post va post/courier/old-posts javobidagi orders_total, amount_total — joriy filtr bo'yicha barcha sahifalar; eski javobda — faqat «N ta pochta»); kuryer telefonida maketdagidek «Jami N ta pochta». «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida."
+      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi — «N ta pochta · M ta buyurtma · jami S» (tveJKICY: GET /post va post/courier/old-posts javobidagi orders_total, amount_total — joriy filtr bo'yicha barcha sahifalar; eski javobda — faqat «N ta pochta»); kuryer telefonida maketdagidek «Jami N ta pochta». «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida. Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Eski pochtalarda kartalar joriy server sahifasi ichida yangilari tepada, «Chekni qayta chiqarish» — karta pastida (havoladan tashqarida); sahifalash va Excel o'zgarmaydi."
     },
     {
       "path": "/mails/:id",

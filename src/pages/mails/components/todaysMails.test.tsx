@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import TodaysMails from "./todaysMails";
 import { renderWithProviders } from "../../../test/test-utils";
 import { api } from "../../../shared/api/api";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 
 const getNewMailsMock = vi.fn();
 const getNewMailsCourierMock = vi.fn();
@@ -17,6 +18,19 @@ vi.mock("../../../entities/mails", () => ({
 
 const roleState = (role: string) => ({ role: { id: "1", role, region: null, name: role } });
 
+/** Menejer filial turi bilan (HQ — jadval, qolganlari — kartalar; `model/mailsCardView.ts`). */
+const managerState = (branchType: string) => ({
+  ...roleState("manager"),
+  user: {
+    user: { id: "m-1", role: "manager", branch: { id: "1", type: branchType } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+});
+
 /** Router holati (`state`) ham ko'rinsin — tafsilotga o'tishda fix3 zaxira viloyati shu bilan boradi. */
 const LocationProbe = () => {
   const location = useLocation();
@@ -28,14 +42,28 @@ const LocationProbe = () => {
   );
 };
 
-const renderToday = (layout: "card" | "page" = "card", role = "superadmin") =>
+const renderToday = (layout: "card" | "page" = "card", role = "superadmin", state: unknown = roleState(role)) =>
   renderWithProviders(
     <>
       <TodaysMails layout={layout} />
       <LocationProbe />
     </>,
-    { route: "/mails/today", preloadedState: roleState(role) as never },
+    { route: "/mails/today", preloadedState: state as never },
   );
+
+const dateOf = (iso: string) => formatDateTimeLocalized(iso, { language: "uz" });
+
+/** Kartalar to'ridagi havolalar tartibi (har karta — bitta `<li>` ichida bitta havola). */
+const cardLinks = (list: HTMLElement) =>
+  within(list)
+    .getAllByRole("listitem")
+    .map((item) => within(item).getByRole("link"));
+
+/** Menejer zaxirasi `GET orders?status=on the road` — tarmoqqa chiqmasin. */
+const silenceManagerFallback = () => {
+  const fallbackSpy = vi.spyOn(api, "get").mockResolvedValue({ data: { data: [] } });
+  onTestFinished(() => fallbackSpy.mockRestore());
+};
 
 const mail = (id: string, region: { id: string; name: string } | null, orders: number, amount: number, createdAt: string) => ({
   id,
@@ -175,23 +203,109 @@ describe("TodaysMails", () => {
     expect(screen.getByText("Viloyat 99")).toBeInTheDocument();
   });
 
-  it("manager: «ta pochta» summary, no courier column, phone card «Pochta №X»", () => {
+  it("HQ manager keeps the table: «ta pochta» summary, no courier column, phone card «Pochta №X»", () => {
     // Menejer zaxirasi `GET orders?status=on the road` — tarmoqqa chiqmasin; xatosi keyingi testga «Internet aloqasi
     // yo'q» xabarini (ikkinchi «Qayta urinish») tashlardi.
-    const fallbackSpy = vi.spyOn(api, "get").mockResolvedValue({ data: { data: [] } });
-    onTestFinished(() => fallbackSpy.mockRestore());
+    silenceManagerFallback();
     getNewMailsMock.mockReturnValue(loaded([{ ...MAILS[0], courier: { id: "7", name: "Jasur Tursunov" } }]));
 
-    const { unmount } = renderToday("card", "manager");
+    const { unmount } = renderToday("card", "manager", managerState("HQ"));
+    expect(screen.getByRole("table", { name: "Bugungi pochtalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Bugungi pochtalar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
     expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "1 ta pochta · 18 ta buyurtma · jami 3 420 000 so'm")).toBeInTheDocument();
     unmount();
 
     mockPhone();
-    renderToday("card", "manager");
+    renderToday("card", "manager", managerState("HQ"));
     const card = screen.getByRole("link", { name: /Pochta №2486/ });
     expect(card).toHaveTextContent("Pochta №2486");
     expect(card).toHaveTextContent("Andijon · 18 ta buyurtma ·");
+  });
+
+  it.each(["superadmin", "admin", "registrator"])("%s keeps the table (HQ staff)", (role) => {
+    getNewMailsMock.mockReturnValue(loaded(MAILS));
+
+    renderToday("card", role);
+
+    expect(screen.getByRole("table", { name: "Bugungi pochtalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Bugungi pochtalar" })).not.toBeInTheDocument();
+  });
+
+  it.each(["REGIONAL", "HYBRID"])(
+    "branch manager (%s): one date card per post, newest first, summary kept, same router state",
+    async (branchType) => {
+      const user = userEvent.setup();
+      silenceManagerFallback();
+      // API tartibi aralash — kartalar sana bo'yicha kamayishda.
+      getNewMailsMock.mockReturnValue(
+        loaded([MAILS[2], { ...MAILS[0], courier: { id: "7", name: "Jasur Tursunov" } }, MAILS[1]]),
+      );
+
+      renderToday("card", "manager", managerState(branchType));
+
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "3 ta pochta · 33 ta buyurtma · jami 5 700 000 so'm")).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "Viloyat" })).toBeInTheDocument();
+
+      const list = screen.getByRole("list", { name: "Bugungi pochtalar" });
+      const links = cardLinks(list);
+      expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/2486", "/mails/2485", "/mails/2484"]);
+
+      const first = links[0];
+      expect(first).toHaveAccessibleName(
+        `Pochta №2486, ${dateOf(MAILS[0].createdAt)}, Yangi, Andijon, 18 ta buyurtma, 3 420 000 so'm — ochish`,
+      );
+      expect(within(first).getByText(dateOf(MAILS[0].createdAt))).toBeInTheDocument();
+      expect(within(first).getByText("Yangi")).toBeInTheDocument();
+      expect(within(first).getByText("Pochta №2486")).toBeInTheDocument();
+      expect(within(first).getByText("Andijon")).toBeInTheDocument();
+      expect(within(first).getByText("Kuryer: Jasur Tursunov")).toBeInTheDocument();
+      expect(within(first).getByText("18 ta buyurtma")).toBeInTheDocument();
+      expect(within(first).getByText("3 420 000 so'm")).toHaveClass("font-bold");
+      // Kuryersiz pochtada kuryer qatori yo'q.
+      expect(within(links[1]).queryByText(/Kuryer:/)).not.toBeInTheDocument();
+
+      await user.click(first);
+      expect(screen.getByTestId("location")).toHaveTextContent("/mails/2486");
+      expect(JSON.parse(screen.getByTestId("location-state").textContent ?? "null")).toEqual({
+        fromTab: "today",
+        fallbackRegionId: "1",
+        fallbackRegionName: "Andijon",
+        expectedOrderCount: 18,
+      });
+    },
+  );
+
+  it("branch manager: a post created today is titled «Bugun, HH:MM»; the region filter narrows the cards", async () => {
+    const user = userEvent.setup();
+    silenceManagerFallback();
+    const now = new Date();
+    getNewMailsMock.mockReturnValue(loaded([...MAILS, mail("2499", { id: "2", name: "Buxoro" }, 2, 50_000, now.toISOString())]));
+
+    renderToday("card", "manager", managerState("REGIONAL"));
+
+    const list = screen.getByRole("list", { name: "Bugungi pochtalar" });
+    const [newest] = cardLinks(list);
+    expect(newest).toHaveAttribute("href", "/mails/2499");
+    expect(within(newest).getByText(/^Bugun, \d{2}:\d{2}$/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    await user.click(await screen.findByRole("option", { name: "Andijon" }));
+    expect(cardLinks(screen.getByRole("list", { name: "Bugungi pochtalar" })).map((link) => link.getAttribute("href"))).toEqual([
+      "/mails/2486",
+      "/mails/2484",
+    ]);
+  });
+
+  it("branch manager: card-shaped loading skeleton", () => {
+    silenceManagerFallback();
+    getNewMailsMock.mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() });
+
+    const { container } = renderToday("card", "manager", managerState("REGIONAL"));
+
+    expect(container.querySelector('[data-query-state="loading"]')).not.toBeNull();
+    expect(container.querySelector('[data-skeleton-preset="cards"]')).not.toBeNull();
   });
 
   it("error state shows the load error with retry", async () => {
@@ -211,39 +325,49 @@ describe("TodaysMails", () => {
       getNewMailsCourierMock.mockReturnValue(loaded(MAILS));
     });
 
-    it("uses the courier endpoint, stat cards and a sortable table (newest first)", async () => {
+    it("uses the courier endpoint, stat cards and date cards (newest first) instead of the table", async () => {
       const user = userEvent.setup();
+      getNewMailsCourierMock.mockReturnValue(loaded([MAILS[1], MAILS[2], MAILS[0]]));
       renderToday("page", "courier");
 
       expect(getNewMailsCourierMock).toHaveBeenCalledWith({ enabled: true });
       expect(getNewMailsMock).toHaveBeenCalledWith({ enabled: false });
       expect(screen.getByRole("heading", { name: "Qabul qilinishi kerak" })).toBeInTheDocument();
       expect(screen.getByText("Jami summa")).toBeInTheDocument();
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
-      const table = screen.getByRole("table", { name: "Bugungi pochtalar" });
-      const firstLinks = () =>
-        within(table)
-          .getAllByRole("link")
-          .filter((link) => link.textContent?.startsWith("№"))
-          .map((link) => link.textContent);
-      expect(firstLinks()).toEqual(["№2486", "№2485", "№2484"]);
-      expect(within(table).getByRole("link", { name: "Pochta №2486ni ochish" })).toBeInTheDocument();
+      const list = screen.getByRole("list", { name: "Bugungi pochtalar" });
+      const links = cardLinks(list);
+      expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/2486", "/mails/2485", "/mails/2484"]);
+      expect(links[0]).toHaveAccessibleName(
+        `Pochta №2486, ${dateOf(MAILS[0].createdAt)}, Yangi, Andijon, 18 ta buyurtma, 3 420 000 so'm — ochish`,
+      );
+      expect(within(links[0]).getByText(dateOf(MAILS[0].createdAt))).toBeInTheDocument();
+      expect(within(links[0]).getByText("Pochta №2486")).toBeInTheDocument();
+      expect(within(links[0]).getByText("18 ta buyurtma")).toBeInTheDocument();
+      expect(within(links[0]).getByText("3 420 000 so'm")).toBeInTheDocument();
 
-      await user.click(within(table).getByRole("button", { name: /Summa/ }));
-      expect(firstLinks()).toEqual(["№2486", "№2485", "№2484"]);
-      await user.click(within(table).getByRole("button", { name: /Summa/ }));
-      expect(firstLinks()).toEqual(["№2484", "№2485", "№2486"]);
+      await user.click(links[1]);
+      expect(screen.getByTestId("location")).toHaveTextContent("/mails/2485");
+      expect(JSON.parse(screen.getByTestId("location-state").textContent ?? "null")).toEqual({
+        fromTab: "today",
+        fallbackRegionId: "2",
+        fallbackRegionName: "Buxoro",
+        expectedOrderCount: 12,
+      });
     });
 
-    it("phone: filter and summary above the card, cards titled by date", () => {
+    it("phone: filter and summary above the card, date cards in one list", () => {
       mockPhone();
       renderToday("page", "courier");
 
       expect(screen.queryByRole("heading", { name: "Qabul qilinishi kerak" })).not.toBeInTheDocument();
       expect(screen.getByRole("combobox", { name: "Viloyat" })).toBeInTheDocument();
       expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "3 ta pochta · 33 ta buyurtma · jami 5 700 000 so'm")).toBeInTheDocument();
-      const card = screen.getByRole("link", { name: /^Pochta №2486, Andijon, .*18 ta buyurtma, 3 420 000 so'm — ochish$/ });
-      expect(card).toHaveTextContent("Pochta №2486 · Andijon · 18 ta buyurtma");
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      const card = screen.getByRole("link", { name: /^Pochta №2486, .+, Yangi, Andijon, 18 ta buyurtma, 3 420 000 so'm — ochish$/ });
+      expect(card).toHaveTextContent(dateOf(MAILS[0].createdAt));
+      expect(card).toHaveTextContent("Pochta №2486");
     });
   });
 });

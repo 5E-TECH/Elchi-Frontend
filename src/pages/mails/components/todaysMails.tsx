@@ -8,6 +8,7 @@ import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Select, type SelectOption } from "../../../shared/ui/primitives";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
+import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useTodayMails, type MailListRow } from "../model/mailsLists";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
@@ -25,6 +26,8 @@ import MailsListBody from "./MailsListBody";
  *  - menejer (`manager-mails-today`): kuryer ustunisiz, xulosa «N ta pochta», telefon kartasi «Pochta №X»;
  *  - kuryer (`page`, `courier-mails-today`): 3 ta `StatCard`, «Qabul qilinishi kerak» kartasi, saralanadigan
  *    jadval; telefonda filtr va xulosa kartadan oldin.
+ *  - ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
+ *    (`MailCardsGrid`, `useMailsCardView`) — filtr, xulosa va `StatCard` lar o'z joyida; HQ menejeri — jadval.
  *
  * Holat — doim «Yangi» (info): bu ro'yxatdagi pochtalar hali qabul qilinmagan (v1 dagidek).
  * Ochish: `/mails/:id` + `{ fromTab: "today", fallbackRegionId, fallbackRegionName, expectedOrderCount }`
@@ -35,6 +38,7 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const role = useSelector((state: RootState) => state.role.role);
   const isManager = role === "manager";
+  const cardView = useMailsCardView();
   const { isCourier, mails, query } = useTodayMails();
   const [regionId, setRegionId] = useState("");
 
@@ -130,6 +134,7 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
         openLabel,
         ...(isManager ? { cardTitle: managerCardTitle, cardSub: managerCardSub } : {}),
       }}
+      cards={cardView ? { showCourier: !isCourier } : undefined}
     />
   );
 };

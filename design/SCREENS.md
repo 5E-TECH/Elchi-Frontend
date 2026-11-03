@@ -686,12 +686,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/mails/today` — Pochta — Bugungi pochtalar
 
-- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/todaysMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts` · `src/pages/mails/model/mailsLayout.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
+- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/todaysMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailCardsGrid.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts` · `src/pages/mails/model/mailsCardView.ts` · `src/pages/mails/model/mailsLayout.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Pochta» (`mails`, `/mails` orqali) — superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
 - **Holat:** v2
-- **Izoh:** Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi).
+- **Izoh:** Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi). Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Filial menejeri «Bugungi»si bitta so'rovda 100 tagacha ochiq pochta oladi (sukut 8 emas).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -723,12 +723,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/mails/refused` — Pochta — Rad etilgan pochtalar
 
-- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/refusedMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts`
+- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/refusedMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailCardsGrid.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts` · `src/pages/mails/model/mailsCardView.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select.
+- **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select. Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -741,12 +741,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/mails/old` — Pochta — Eski pochtalar (admin/superadmin: «Filial paketlari» rejimi)
 
-- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/oldMails.tsx` · `src/pages/mails/components/OldMailsFiltersSheet.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/model/oldMailsModel.ts` · `src/pages/mails/components/lib/exportOldMailsToExcel.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
+- **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/oldMails.tsx` · `src/pages/mails/components/OldMailsFiltersSheet.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailCardsGrid.tsx` · `src/pages/mails/model/oldMailsModel.ts` · `src/pages/mails/model/mailsCardView.ts` · `src/pages/mails/components/lib/exportOldMailsToExcel.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi — «N ta pochta · M ta buyurtma · jami S» (tveJKICY: GET /post va post/courier/old-posts javobidagi orders_total, amount_total — joriy filtr bo'yicha barcha sahifalar; eski javobda — faqat «N ta pochta»); kuryer telefonida maketdagidek «Jami N ta pochta». «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida.
+- **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi — «N ta pochta · M ta buyurtma · jami S» (tveJKICY: GET /post va post/courier/old-posts javobidagi orders_total, amount_total — joriy filtr bo'yicha barcha sahifalar; eski javobda — faqat «N ta pochta»); kuryer telefonida maketdagidek «Jami N ta pochta». «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida. Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Eski pochtalarda kartalar joriy server sahifasi ichida yangilari tepada, «Chekni qayta chiqarish» — karta pastida (havoladan tashqarida); sahifalash va Excel o'zgarmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -3144,6 +3144,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/logistics-ops/index.tsx` | `/returns` |
 | `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/returns` |
 | `src/pages/logs/index.tsx` | `/ops` |
+| `src/pages/mails/components/MailCardsGrid.tsx` | `/mails/today`, `/mails/refused`, `/mails/old` |
 | `src/pages/mails/components/MailSummaryStats.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsListBody.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsTable.tsx` | `/mails/today`, `/mails/refused`, `/mails/old` |
@@ -3171,6 +3172,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/mails/detail/ui/printOptions.tsx` | `/mails/:id` |
 | `src/pages/mails/index.tsx` | `/mails`, `/mails/today`, `/mails/return`, `/mails/refused`, `/mails/old` |
 | `src/pages/mails/lib/navigation.ts` | `/mails` |
+| `src/pages/mails/model/mailsCardView.ts` | `/mails/today`, `/mails/refused`, `/mails/old` |
 | `src/pages/mails/model/mailsLayout.ts` | `/mails/today` |
 | `src/pages/mails/model/mailsLists.ts` | `/mails/today`, `/mails/return`, `/mails/refused` |
 | `src/pages/mails/model/oldMailsModel.ts` | `/mails/old` |

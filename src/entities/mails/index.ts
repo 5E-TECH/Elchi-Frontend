@@ -19,6 +19,9 @@ export {
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
 
+/** Menejer «Bugungi» ro'yxati bitta so'rovda (`GET post?status=sent`): backend sahifa chegarasi — 100. */
+const MANAGER_TODAY_LIMIT = 100;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface Region {
   id: string;
@@ -435,11 +438,16 @@ export const useMails = () => {
       })
       .then((res) => res.data);
 
+  // Menejer «Bugungi»si — filialga kelayotgan BARCHA ochiq pochtalar (ro'yxat sahifalanmaydi, kartalar to'ri;
+  // sukut `limit: 8` 9-pochtadan boshlab jimgina kesardi). 100 — backend sahifa chegarasi (`OLD_MAILS_PAGE_MAX`).
+  // Parametrlar doim bir xil, shuning uchun kalit (`newMailsQueryOptions`) o'zgarmaydi.
   const useGetNewMails = (options?: { enabled?: boolean }) => {
     const query = newMailsQueryOptions({ role, branchId });
     return useQuery({
       queryKey: query.queryKey,
-      queryFn: isManagerRole ? () => getManagerScopedPosts("sent") : query.queryFn,
+      queryFn: isManagerRole
+        ? () => getManagerScopedPosts("sent", { page: 1, limit: MANAGER_TODAY_LIMIT })
+        : query.queryFn,
       enabled: options?.enabled ?? true,
     });
   };

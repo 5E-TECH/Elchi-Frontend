@@ -7,6 +7,7 @@ import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
+import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useRefusedMails, type MailListRow } from "../model/mailsLists";
 import MailsListBody from "./MailsListBody";
@@ -21,6 +22,8 @@ import MailsListBody from "./MailsListBody";
  *    qaytargan pochtalar…» + xulosa, jadval (Kuryer ustuni bilan), holat «Rad etilgan» (danger);
  *  - kuryer (`page`, `courier-mails-refused`): «faqat ko'rish» izohi, 3 ta `StatCard`, «Rad etilgan pochtalar»
  *    kartasi, saralanadigan jadval. Qabulni filial bajaradi — kuryer tafsilotda faqat o'qiydi.
+ *  - ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
+ *    (`MailCardsGrid`, `useMailsCardView`; menejer kartasida kuryer nomi); HQ menejeri — jadval.
  *
  * Ochish: `/mails/:id` + `{ fromTab: "refused", type: "refused", fallbackRegionId, fallbackRegionName,
  * expectedOrderCount }` (v1 dagidek).
@@ -29,6 +32,7 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
   const { t, i18n } = useTranslation(["mailsShell", "mails"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { isCourier, mails, query } = useRefusedMails();
+  const cardView = useMailsCardView();
 
   const status = useMemo(() => {
     const badge = getPostStatusBadge("canceled");
@@ -102,6 +106,7 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
         openLabel,
         ...(isCourier ? { cardLabel: courierCardLabel } : {}),
       }}
+      cards={cardView ? { showCourier: !isCourier, ...(isCourier ? { cardLabel: courierCardLabel } : {}) } : undefined}
     />
   );
 };

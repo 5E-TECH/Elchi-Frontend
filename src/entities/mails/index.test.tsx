@@ -247,6 +247,48 @@ describe("useMails — eski pochtalar (server filtrlari, YfrqN70i)", () => {
   });
 });
 
+describe("useMails — «Bugungi» (menejer: barcha ochiq pochtalar)", () => {
+  beforeEach(() => {
+    apiMock.get.mockReset();
+    apiMock.get.mockResolvedValue({ data: { statusCode: 200, data: { data: [], total: 0 } } });
+  });
+
+  it("manager: GET post?status=sent for the own branch with limit 100 (not the default 8), key unchanged", async () => {
+    const store = createTestStore({
+      role: { id: "198", role: "manager", region: null, name: "Manager" },
+      user: {
+        user: { id: "198", branch: { id: "15", type: "REGIONAL" } },
+        isAuthenticated: true,
+        accessToken: null,
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      } as never,
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </Provider>
+    );
+    const { result } = renderHook(() => useMails().useGetNewMails(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledTimes(1);
+    expect(apiMock.get).toHaveBeenCalledWith("post", {
+      params: { page: 1, limit: 100, status: "sent", branch_id: "15" },
+    });
+    expect(client.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([["mails", "new", "manager", "15"]]);
+  });
+
+  it("other roles keep GET post/new", async () => {
+    const { result } = renderHook(() => useMails().useGetNewMails(), { wrapper: createWrapper("admin") });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledWith("post/new");
+  });
+});
+
 describe("toReturnRequestsMailResponse", () => {
   it("shows HQ scope (or the old backend without scope) as 'center'", () => {
     const oldShape = {

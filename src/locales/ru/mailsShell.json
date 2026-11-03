@@ -33,6 +33,9 @@
     "sortAmount": "Сортировать по сумме",
     "sortStatus": "Сортировать по статусу"
   },
+  "cards": {
+    "label": "{{id}}, {{date}}, {{status}}, {{region}}, {{orders}}, {{amount}} — открыть"
+  },
   "summary": {
     "regions_one": "<b>{{value}}</b> область",
     "regions_few": "<b>{{value}}</b> области",

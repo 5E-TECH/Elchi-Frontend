@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
 import { api } from "../../../shared/api/api";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { renderWithProviders } from "../../../test/test-utils";
 import OldMails from "./oldMails";
 
@@ -124,14 +125,34 @@ const LocationProbe = () => {
   );
 };
 
-const renderOld = (role: string, route = "/mails/old", layout?: "card" | "page") =>
+/** `branchType` — foydalanuvchi filiali turi (menejer: HQ — jadval, qolganlari — kartalar; `model/mailsCardView.ts`). */
+const renderOld = (role: string, route = "/mails/old", layout?: "card" | "page", branchType?: string) =>
   renderWithProviders(
     <>
       <OldMails layout={layout} />
       <LocationProbe />
     </>,
-    { route, preloadedState: { role: { id: "1", role, region: null, name: "Test" } } },
+    {
+      route,
+      preloadedState: {
+        role: { id: "1", role, region: null, name: "Test" },
+        ...(branchType
+          ? {
+              user: {
+                user: { id: "1", role, branch: { id: "1", type: branchType } },
+                isAuthenticated: true,
+                accessToken: null,
+                loading: false,
+                isAppInitializing: false,
+                error: null,
+              },
+            }
+          : {}),
+      } as never,
+    },
   );
+
+const dateOf = (iso: string) => formatDateTimeLocalized(iso, { language: "uz" });
 
 const search = () => new URLSearchParams(screen.getByTestId("search").textContent ?? "");
 const LIST_OPTIONS = { enabled: true, keepPreviousData: true };
@@ -241,8 +262,78 @@ describe("OldMails — xodim (pochtalar)", () => {
     const { unmount } = renderOld("admin", "/mails/old", "card");
     expect(within(screen.getByRole("table", { name: "Eski pochtalar" })).getByRole("columnheader", { name: "Holati" })).toBeInTheDocument();
     unmount();
-    renderOld("manager", "/mails/old", "card");
+    renderOld("manager", "/mails/old", "card", "HQ");
     expect(within(screen.getByRole("table", { name: "Eski pochtalar" })).getByRole("columnheader", { name: "Holat" })).toBeInTheDocument();
+  });
+
+  it("branch manager: date cards (newest first in the page) with the real status, courier and the same router state", async () => {
+    const user = userEvent.setup();
+    const rows = [
+      post("80", { status: "sent", date: "2026-10-03T09:00:00.000Z", courier: null }),
+      post("82", { status: "received", date: "2026-10-06T09:00:00.000Z" }),
+      post("81", { status: "canceled", date: "2026-10-04T09:00:00.000Z", courier: { id: "7", name: "Jasur Tursunov" } }),
+    ];
+    mocks.useGetOldMails.mockReturnValue(mailsResult(rows, { total: 46, orders_total: 684, amount_total: 128_360_000 }));
+    renderOld("manager", "/mails/old?region_id=2", "card", "REGIONAL");
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    // Xulosa, filtrlar, Excel va sahifalash o'z joyida.
+    expect(summaryLine("46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Kuryer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+    expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
+
+    const list = screen.getByRole("list", { name: "Eski pochtalar" });
+    const links = within(list).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/82", "/mails/81", "/mails/80"]);
+    expect(links[1]).toHaveAccessibleName(
+      `Pochta №81, ${dateOf("2026-10-04T09:00:00.000Z")}, Rad etilgan, Buxoro, 3 ta buyurtma, 650 000 so'm — ochish`,
+    );
+    expect(within(links[1]).getByText("Kuryer: Jasur Tursunov")).toBeInTheDocument();
+    expect(within(links[0]).getByText("Qabul qilingan")).toBeInTheDocument();
+    expect(within(links[2]).getByText("Jo'natilgan")).toBeInTheDocument();
+
+    await user.click(links[1]);
+    expect(screen.getByTestId("path").textContent).toBe("/mails/81");
+    expect(JSON.parse(screen.getByTestId("state").textContent ?? "null")).toEqual({
+      fromTab: "old",
+      view: "old",
+      fromSearch: "?region_id=2",
+    });
+  });
+
+  it("branch manager: «Chekni qayta chiqarish» stays on the received card (outside the link) and prints", async () => {
+    const user = userEvent.setup();
+    const orders = [{ id: "o1", qr_code_token: "a".repeat(24) }];
+    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    const get = vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          allOrdersByPostId: orders,
+          post: { id: "90", status: "received", qr_code_token: "POST-90", createdAt: "2026-10-07T12:55:00.000Z" },
+        },
+      },
+    });
+    renderOld("manager", "/mails/old", "card", "HYBRID");
+
+    const list = screen.getByRole("list", { name: "Eski pochtalar" });
+    const reprint = within(list).getByRole("button", { name: "№90: chekni qayta chiqarish" });
+    expect(reprint).toHaveTextContent("Chekni qayta chiqarish");
+    expect(reprint.closest("a")).toBeNull();
+    // Faqat qabul qilingan pochtada.
+    expect(within(list).getAllByRole("button")).toHaveLength(1);
+
+    await user.click(reprint);
+    expect(get).toHaveBeenCalledWith("post/orders/90");
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("path").textContent).toBe("/mails/old");
+  });
+
+  it("branch manager: card-shaped loading skeleton", () => {
+    mocks.useGetOldMails.mockReturnValue(mailsResult([], {}, { data: undefined, isLoading: true }));
+    const { container } = renderOld("manager", "/mails/old", "card", "REGIONAL");
+
+    expect(container.querySelector('[data-skeleton-preset="cards"]')).not.toBeNull();
   });
 
   it("offers receipt reprint only for received mails", () => {
@@ -639,11 +730,14 @@ describe("OldMails — «Pochtalar | Filial paketlari» (D11)", () => {
     });
   });
 
-  it.each(["manager", "registrator"])("%s has no view switch and batch_mode in the URL is ignored", (role) => {
+  it.each([
+    ["manager", "list"],
+    ["registrator", "table"],
+  ])("%s has no view switch and batch_mode in the URL is ignored", (role, view) => {
     renderOld(role, "/mails/old?batch_mode=all", "card");
 
     expect(screen.queryByRole("radiogroup", { name: "Ko'rinish" })).not.toBeInTheDocument();
-    expect(screen.getByRole("table", { name: "Eski pochtalar" })).toBeInTheDocument();
+    expect(screen.getByRole(view as "list" | "table", { name: "Eski pochtalar" })).toBeInTheDocument();
     expect(mocks.fetchAllTransferBatches).not.toHaveBeenCalled();
     expect(mocks.useGetOldMails).toHaveBeenLastCalledWith(false, expect.anything(), LIST_OPTIONS);
   });
@@ -662,7 +756,7 @@ describe("OldMails — kuryer (page)", () => {
     mocks.exportOldMailsToExcel.mockReset();
   });
 
-  it("uses the courier endpoint, hides the courier filter and column, sorts and reprints with a text button", () => {
+  it("uses the courier endpoint, hides the courier filter, shows date cards and reprints with a text button", () => {
     renderOld("courier", "/mails/old?courier_id=7&region_id=2");
 
     // `courier_id` kuryerda yuborilmaydi (backend — JWT egasi).
@@ -670,11 +764,15 @@ describe("OldMails — kuryer (page)", () => {
     expect(mocks.useGetCouriers).toHaveBeenCalledWith({ status: "active", limit: 100 }, false);
     expect(screen.queryByRole("combobox", { name: "Kuryer" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Ko'rinish" })).not.toBeInTheDocument();
-    const table = screen.getByRole("table", { name: "Eski pochtalar" });
-    expect(within(table).queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
-    expect(within(table).getByTitle("Holat bo'yicha saralash")).toBeInTheDocument();
-    expect(within(table).getAllByRole("link", { name: /^№9\d$/ })).toHaveLength(3);
-    expect(screen.getByRole("button", { name: "Pochta №90: chekni qayta chiqarish" })).toHaveTextContent(
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Eski pochtalar" });
+    const links = within(list).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/90", "/mails/91", "/mails/92"]);
+    expect(within(links[0]).getByText(dateOf(MAILS[0].createdAt))).toBeInTheDocument();
+    expect(within(links[0]).getByText("Pochta №90")).toBeInTheDocument();
+    // Kuryerning o'z ro'yxatida kuryer nomi kartada yo'q.
+    expect(within(list).queryByText(/Kuryer:/)).not.toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "Pochta №90: chekni qayta chiqarish" })).toHaveTextContent(
       "Chekni qayta chiqarish",
     );
     expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
@@ -791,8 +889,8 @@ describe("OldMails — telefon (< 768)", () => {
     expect(within(sheet).getByRole("button", { name: /Natijalarni ko'rsatish/ })).not.toHaveTextContent("(");
   });
 
-  it("manager cards: «Pochta №X» title, «Kuryer: … · viloyat» sub-line (manager-mails-old)", () => {
-    renderOld("manager", "/mails/old", "card");
+  it("HQ manager cards: «Pochta №X» title, «Kuryer: … · viloyat» sub-line (manager-mails-old)", () => {
+    renderOld("manager", "/mails/old", "card", "HQ");
 
     const cards = screen.getByRole("list");
     expect(within(cards).getByText("Pochta №90")).toBeInTheDocument();
@@ -806,6 +904,15 @@ describe("OldMails — telefon (< 768)", () => {
     const line = summaryLine(/^46 ta pochta · 684 ta buyurtma/);
     expect(line.querySelector("br")).not.toBeNull();
     expect(line).toHaveTextContent("jami 128 360 000 so'm");
+  });
+
+  it("branch manager phone: one list of date cards, the reprint button outside the link", () => {
+    renderOld("manager", "/mails/old", "card", "REGIONAL");
+
+    const list = screen.getByRole("list", { name: "Eski pochtalar" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(list).getByRole("link", { name: /^Pochta №90, .+, Qabul qilingan, Buxoro, 3 ta buyurtma, 650 000 so'm — ochish$/ })).toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "№90: chekni qayta chiqarish" }).closest("a")).toBeNull();
   });
 
   it("courier phone: «Jami N ta pochta» is the server total", () => {
