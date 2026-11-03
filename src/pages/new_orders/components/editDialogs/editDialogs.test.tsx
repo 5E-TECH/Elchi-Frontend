@@ -19,6 +19,30 @@ vi.mock("../../../../entities/orders", () => ({
   useOrders: () => ({ updateNewOrder: { mutateAsync: mutations.updateNewOrder, isPending: false } }),
 }));
 
+// «Mahsulot qo'shish» katalogi (`product/market/:id`) — buyurtma marketining mahsulotlari.
+const catalog = vi.hoisted(() => ({
+  byMarket: vi.fn(),
+  data: {
+    data: [
+      { id: "p1", name: "Smartfon A15, 128 GB" },
+      { id: "p2", name: "Himoya g'ilofi" },
+      { id: "p3", name: "Quvvatlagich 20 W" },
+      { id: "p4", name: "Naushnik", isDeleted: true },
+    ],
+  } as unknown,
+}));
+
+vi.mock("../../../../entities/product", () => ({
+  PRODUCT_LIST_MAX_LIMIT: 500,
+  useProducts: () => ({
+    useGetByMarketId: (id: string | undefined, enabled?: boolean) => {
+      catalog.byMarket(id, enabled);
+      return { data: enabled ? catalog.data : undefined, isLoading: false, isError: false, isSuccess: true };
+    },
+    useGetMyProducts: () => ({ data: undefined, isLoading: false, isError: false, isSuccess: false }),
+  }),
+}));
+
 vi.mock("../../../../entities/user/api/userApi", () => ({
   useUser: () => ({ updateUser: { mutateAsync: mutations.updateUser, isPending: false } }),
 }));
@@ -353,32 +377,69 @@ describe("EditOrderDialog (maket *-orders-detail-edit-order-dialog, manager-…-
     expect(mutations.updateNewOrder).not.toHaveBeenCalled();
   });
 
-  it("⭐ D-01: oxirgi mahsulotni olib tashlab bo'lmaydi — tugma o'chiq, sababi ostida; `items: []` ketmaydi", async () => {
+  it("⭐ oxirgi mahsulot ham olib tashlanadi; bo'sh ro'yxat saqlanmaydi — `items: []` ketmaydi (D-01)", async () => {
     const user = userEvent.setup();
-    renderOrder();
-    const hint = "Kamida bitta mahsulot qolishi kerak. Buyurtma kerak bo'lmasa, uni bekor qiling.";
-    expect(screen.queryByText(hint)).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" }));
-    // Bitta qator qoldi: uning tugmasi o'chiq (sababi bilan bog'langan), fokus `body` ga emas — izohga.
-    const last = screen.getByRole("button", { name: "Himoya g'ilofi ni olib tashlash" });
-    expect(last).toBeDisabled();
-    expect(last).toHaveAccessibleDescription(hint);
-    expect(screen.getByText(hint)).toHaveFocus();
+    renderOrder({ ...baseOrder, items: [baseOrder.items[0]] });
+    const remove = screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" });
+    expect(remove).toBeEnabled();
+    await user.click(remove);
+    // Fokus «mahsulot qolmadi» xabariga — oynadan chiqib ketmaydi.
+    expect(screen.getByText("Ro'yxatda mahsulot qolmadi — pastdan mahsulot qo'shing.")).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
-    expect(mutations.updateNewOrder).toHaveBeenCalledWith({
-      orderId: "10241",
-      data: { items: [{ product_id: "p2", quantity: 2 }] },
-    });
+    expect(
+      screen.getByText(
+        "Kamida bitta mahsulot bo'lishi kerak — pastdan mahsulot qo'shing. Buyurtma kerak bo'lmasa, uni bekor qiling.",
+      ),
+    ).toBeInTheDocument();
+    expect(mutations.updateNewOrder).not.toHaveBeenCalled();
   });
 
-  it("D-01: bitta mahsulotli buyurtma — «olib tashlash» darhol o'chiq", () => {
+  it("⭐ adashgan buyurtmaga mahsulot qo'shiladi: marketning katalogi, ro'yxatdagilarsiz; saqlashda yangi qator ham ketadi", async () => {
+    const user = userEvent.setup();
     renderOrder({ ...baseOrder, items: [baseOrder.items[0]] });
-    expect(screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" })).toBeDisabled();
-    expect(
-      screen.getByText("Kamida bitta mahsulot qolishi kerak. Buyurtma kerak bo'lmasa, uni bekor qiling."),
-    ).toBeInTheDocument();
+    expect(catalog.byMarket).toHaveBeenCalledWith("m1", true);
+
+    await user.click(screen.getByRole("combobox", { name: /Mahsulot qo'shish/ }));
+    const options = (await screen.findAllByRole("option")).map((option) => option.textContent);
+    expect(options).toEqual([expect.stringContaining("Himoya g'ilofi"), expect.stringContaining("Quvvatlagich 20 W")]);
+    await user.click(screen.getByRole("option", { name: /Quvvatlagich 20 W/ }));
+
+    expect(screen.getByText("Quvvatlagich 20 W")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quvvatlagich 20 W sonini oshirish" }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    await waitFor(() =>
+      expect(mutations.updateNewOrder).toHaveBeenCalledWith({
+        orderId: "10241",
+        data: {
+          items: [
+            { product_id: "p1", quantity: 1 },
+            { product_id: "p3", quantity: 2 },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("noto'g'ri mahsulot o'chirilib, to'g'risi qo'shiladi (almashtirish)", async () => {
+    const user = userEvent.setup();
+    renderOrder({ ...baseOrder, items: [baseOrder.items[0]] });
+    await user.click(screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" }));
+    await user.click(screen.getByRole("combobox", { name: /Mahsulot qo'shish/ }));
+    await user.click(await screen.findByRole("option", { name: /Himoya g'ilofi/ }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    await waitFor(() =>
+      expect(mutations.updateNewOrder).toHaveBeenCalledWith({
+        orderId: "10241",
+        data: { items: [{ product_id: "p2", quantity: 1 }] },
+      }),
+    );
+  });
+
+  it("HQ qabul qilgan buyurtma — mahsulot qo'shish yo'q, katalog so'ralmaydi", () => {
+    renderOrder({ ...baseOrder, status: "received" });
+    expect(screen.queryByRole("combobox", { name: /Mahsulot qo'shish/ })).not.toBeInTheDocument();
+    expect(catalog.byMarket).not.toHaveBeenCalled();
   });
 
   it("⭐ D-17: summa — «.» va «-» jimgina tashlanmaydi (belgi rad, sababi ostida), 12 xonadan uzun — rad", async () => {

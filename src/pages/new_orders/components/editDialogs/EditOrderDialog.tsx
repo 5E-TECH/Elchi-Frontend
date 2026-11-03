@@ -21,6 +21,8 @@ import {
   type EditDialogProps,
   type OrderFormState,
 } from "./editDialogModel";
+import { AddOrderItemPicker } from "./AddOrderItemPicker";
+import type { CatalogItem } from "./addOrderItemModel";
 import { OrderItemsEditor } from "./OrderItemsEditor";
 import { useEditDialogSession } from "./useEditDialogSession";
 
@@ -33,8 +35,9 @@ import { useEditDialogSession } from "./useEditDialogSession";
  * (`buildOrderUpdatePayload`): HQ qabul qilgan buyurtmada mahsulot va summa, filialga jo'natilganda
  * yetkazish turi yuborilmaydi va maydoni qulf (sababi ostida).
  *
- * Kamida bitta mahsulot qoladi (D-01, `OrderItemsEditor`); summa maydoni kasr / minus / 12 xonadan uzun sonni
- * jimgina o'zgartirmaydi — rad etadi va sababini aytadi (D-17, yaratish formasidagi bilan bir xil).
+ * Mahsulot qo'shiladi (`AddOrderItemPicker`, shu market katalogi) va istalgani — oxirgisi ham — olib tashlanadi;
+ * mahsulotsiz buyurtma saqlanmaydi (D-01). Summa maydoni kasr / minus / 12 xonadan uzun sonni jimgina
+ * o'zgartirmaydi — rad etadi va sababini aytadi (D-17, yaratish formasidagi bilan bir xil).
  */
 
 const DELIVERY_OPTIONS = [
@@ -43,6 +46,19 @@ const DELIVERY_OPTIONS = [
 ] as const;
 
 type OrderDialogProps = Omit<EditDialogProps, "order"> & { order: EditDialogOrder };
+
+/** Buyurtma marketi (`market.id`, eski javobda `market_id`) — katalog shu marketdan. */
+const readMarketId = (order: EditDialogOrder): string => {
+  const market = order.market as { id?: unknown } | null | undefined;
+  const raw = market?.id ?? order.market_id;
+  return typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
+};
+
+/** Qatordagi katalog mahsuloti id'si (katalogsiz qatorda — bo'sh). */
+const productIdOf = (item: { product?: { id?: unknown } | null; product_id?: unknown }): string => {
+  const raw = item.product?.id ?? item.product_id;
+  return typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
+};
 
 const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
   const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
@@ -75,12 +91,37 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
   const removeItem = (itemId: string) =>
     setForm((prev) => ({ ...prev, items: prev.items.filter((item) => item.id !== itemId) }));
 
+  // Yangi qator — katalog mahsuloti, 1 ta; id faqat oyna ichidagi kalit (backend qatorlarni to'liq almashtiradi).
+  const addItem = (product: CatalogItem) => {
+    setItemsError(undefined);
+    setForm((prev) =>
+      prev.items.some((item) => productIdOf(item) === product.id)
+        ? prev
+        : {
+            ...prev,
+            items: [
+              ...prev.items,
+              {
+                id: `new-${product.id}`,
+                quantity: 1,
+                product: { id: product.id, name: product.name },
+                product_id: product.id,
+              },
+            ],
+          },
+    );
+  };
+  const usedProductIds = useMemo(
+    () => new Set(form.items.map((item) => productIdOf(item)).filter(Boolean)),
+    [form.items],
+  );
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (saving) return;
 
-    // Mahsulotsiz buyurtma saqlanmaydi (`items: []` ketmasin) — oyna buni o'zi ham yo'l qo'ymaydi (D-01).
-    if (!productsLocked && hasItems && form.items.length === 0) {
+    // Mahsulotsiz buyurtma saqlanmaydi (`items: []` ketmasin, D-01) — oxirgisi o'chirilgan bo'lsa, avval qo'shilsin.
+    if (!productsLocked && (hasItems || form.items.length > 0) && form.items.length === 0) {
       setItemsError(t("editDialog.itemsMinOne"));
       return;
     }
@@ -141,7 +182,7 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
         </>
       }
     >
-      {hasItems ? (
+      {hasItems || !productsLocked ? (
         <Field id={itemsFieldId} label={t("products", { ns: "orders" })} labelAs="span" error={itemsError}>
           <OrderItemsEditor
             items={form.items}
@@ -153,6 +194,16 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
           />
         </Field>
       ) : null}
+      {productsLocked ? null : (
+        <Field label={t("editDialog.addItem")} hint={t("editDialog.addItemHint")}>
+          <AddOrderItemPicker
+            marketId={readMarketId(order)}
+            usedProductIds={usedProductIds}
+            disabled={saving}
+            onAdd={addItem}
+          />
+        </Field>
+      )}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] items-start gap-4">
         <Field
           label={t("deliveryType")}

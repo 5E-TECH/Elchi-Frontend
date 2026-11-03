@@ -401,6 +401,7 @@
         "src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx",
         "src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx",
         "src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx",
+        "src/pages/new_orders/components/editDialogs/AddOrderItemPicker.tsx",
         "src/widgets/order-tracking/ui/OrderTracking.tsx",
         "src/features/order-tracking/ui/TrackingTimelineItem.tsx",
         "src/entities/order/ui/ProofGallery.tsx",
