@@ -1570,8 +1570,8 @@
       "by": "By",
       "reason": "Reason",
       "related": "Related entry",
-      "relatedSub": "#{{id}} · {{date}}",
-      "relatedOriginalSub": "Original payment · #{{id}} · {{date}}",
+      "relatedSub": "#{{id}} · <date>{{date}}</date>",
+      "relatedOriginalSub": "Original payment · #{{id}} · <date>{{date}}</date>",
       "relatedOriginal": "original payment",
       "relatedAria": "Related entry: {{parts}}, open details"
     },

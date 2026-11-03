@@ -1570,8 +1570,8 @@
       "by": "Кто",
       "reason": "Причина",
       "related": "Связанная запись",
-      "relatedSub": "#{{id}} · {{date}}",
-      "relatedOriginalSub": "Исходный платёж · #{{id}} · {{date}}",
+      "relatedSub": "#{{id}} · <date>{{date}}</date>",
+      "relatedOriginalSub": "Исходный платёж · #{{id}} · <date>{{date}}</date>",
       "relatedOriginal": "исходный платёж",
       "relatedAria": "Связанная запись: {{parts}}, открыть детали"
     },

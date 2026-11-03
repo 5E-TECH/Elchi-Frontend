@@ -1570,8 +1570,8 @@
       "by": "Kim",
       "reason": "Sabab",
       "related": "Bog'liq yozuv",
-      "relatedSub": "#{{id}} · {{date}}",
-      "relatedOriginalSub": "Asl to'lov · #{{id}} · {{date}}",
+      "relatedSub": "#{{id}} · <date>{{date}}</date>",
+      "relatedOriginalSub": "Asl to'lov · #{{id}} · <date>{{date}}</date>",
       "relatedOriginal": "asl to'lov",
       "relatedAria": "Bog'liq yozuv: {{parts}}, tafsilotni ochish"
     },

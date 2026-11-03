@@ -74,7 +74,9 @@ describe("mainCashboxStats — to'lov tuzatish (T6, C1)", () => {
       amount: 2_400_000,
       operation_type: "income",
       source_type: "payment_reversal",
-      payment_date: null,
+      // Backend teskari yozuvda `payment_date: null` beradi; `PaymentRow` da maydon ixtiyoriy (null holati —
+      // `paymentCorrection.test.ts` → `historyRowDate`).
+      payment_date: undefined,
       createdAt: local(2026, 10, 8, 10),
       correction: { role: "reversal", action: "edit" } as unknown as PaymentRow["correction"],
     });

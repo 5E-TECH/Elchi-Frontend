@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected
 import { memo, useId, type MouseEvent, type ReactNode } from "react";
 import { ChevronRight, Pencil, RotateCcw } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   correctionBadgeKindOf,
   type PaymentCorrection,
@@ -80,10 +80,15 @@ export const PaymentCorrectionSection = memo(
           });
           const date = dateTime(related.created_at);
           const isOriginal = related.role === "original";
-          const sub = t(isOriginal ? "paymentCorrection.detail.relatedOriginalSub" : "paymentCorrection.detail.relatedSub", {
-            id: related.id,
-            date,
-          });
+          // Sana bo'linmaydi (telefonda «Bugun, / 05:07» bo'lmasin) — oyna izohidagi `<date>` usuli.
+          const sub = (
+            <Trans
+              t={t}
+              i18nKey={isOriginal ? "paymentCorrection.detail.relatedOriginalSub" : "paymentCorrection.detail.relatedSub"}
+              values={{ id: related.id, date }}
+              components={{ date: <span className="whitespace-nowrap" /> }}
+            />
+          );
           const parts = [
             isOriginal ? t("paymentCorrection.detail.relatedOriginal") : "",
             title,
