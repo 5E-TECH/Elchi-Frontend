@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   dispatchMutateAsync: vi.fn(),
   receivePostMutateAsync: vi.fn(),
   receiveCanceledMutateAsync: vi.fn(),
+  returnCanceledMutateAsync: vi.fn(),
 }));
 
 vi.mock("../../../entities/branch", async (importOriginal) => ({
@@ -29,6 +30,7 @@ vi.mock("../../../entities/mails", () => ({
   useMailDetail: mocks.useMailDetail,
   useReceivePost: () => ({ mutateAsync: mocks.receivePostMutateAsync, isPending: false }),
   useReceiveCanceledPost: () => ({ mutateAsync: mocks.receiveCanceledMutateAsync, isPending: false }),
+  useReturnCanceledOrders: () => ({ mutateAsync: mocks.returnCanceledMutateAsync, isPending: false }),
   useDeleteOrdersFromPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDispatchPostToBranch: () => ({
     mutateAsync: mocks.dispatchMutateAsync,
@@ -237,7 +239,17 @@ describe("MailDetailPage — bekor qilingan pochta (o'zgarmagan)", () => {
       isLoading: false,
       isError: false,
     }));
-    mocks.receiveCanceledMutateAsync.mockResolvedValue({ statusCode: 200 });
+    // `useReceiveCanceledPost` javobni `CanceledPostActionResult` ga keltiradi (hamma buyurtma qabul qilindi).
+    mocks.receiveCanceledMutateAsync.mockResolvedValue({
+      orderIds: ["201", "202"],
+      remainingOrderIds: [],
+      requeuedPostIds: [],
+      groupedPostIds: [POST_ID],
+      postStatus: "canceled_received",
+      postClosed: true,
+      branchId: "1",
+      returnBranchId: null,
+    });
   });
 
   it("HQ registratori bekor qilingan pochtani qabul qiladi", async () => {

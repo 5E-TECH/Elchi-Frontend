@@ -2,16 +2,18 @@
 import { Fragment, memo, useDeferredValue, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRightLeft, CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowRightLeft, CircleX, Info, Lock, RotateCcw, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
   useDeleteOrdersFromPost,
   useMails,
   useMailDetail,
+  type CanceledPostActionResult,
   type PostOrder,
   useReceiveCanceledPost,
   useReceivePost,
+  useReturnCanceledOrders,
 } from "../../../entities/mails";
 import { isHistoryView, isInPostNow } from "../../../entities/mails/lib/postHistory";
 import type { RootState } from "../../../app/config/store";
@@ -41,6 +43,7 @@ import {
   SkeletonTable,
   StatCard,
   StatusBadge,
+  useConfirm,
 } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { DetailAlert } from "../../new_orders/components/detail/DetailAlert";
@@ -105,6 +108,10 @@ import { useMailDetailState } from "./model/useMailDetailState";
  *  - qabul (kuryer, filial menejeri) — faqat yo'ldagi buyurtmalar, «Pochtani qabul qilish — n ta»;
  *    kuryer telefonida tugma pastki menyu ustidagi panelda;
  *  - rad etilgan pochtani qabul qilish — info ogohlantirish, `POST post/cancel/receive/:id`;
+ *    HQ qabul qiluvchisi (admin, superadmin, HQ menejeri / registratori): faqat tanlanganlar qabul qilinadi,
+ *    qolganlari shu pochtada qoladi (hech narsa o'zi qaytmaydi); pochtani filial jo'natgan bo'lsa — ikkinchi amal
+ *    «Filialga qaytarish» (tasdiq oynasi, `POST post/cancel/return/:id`). Pochtada buyurtma qolmasa — yopiladi,
+ *    sahifa kelingan ro'yxatga qaytadi. Filial menejeri (kuryer pochtasini qabul qilish) — avvalgidek;
  *  - kuryerning rad etilgan pochtasi — faqat o'qish, «Barchasini chop etish»;
  *  - eski pochta (tarix) — faqat o'qish; qolib ketgan yo'ldagi buyurtma bo'lsa qabul qayta ochiladi (fix3b).
  *
@@ -261,6 +268,15 @@ const MailDetailPage = () => {
   });
   const refusedQuery = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const { data: refusedResponse, isLoading: refusedLoading, isError: refusedError } = refusedQuery;
+  /**
+   * HQ qabul qiluvchisi, rad etilgan rejim: qatorlar `post/orders/rejected/:id` dan, pochtaning o'zi (holat,
+   * jo'natgan filial `post.branch`, qabul joyi `post.branch_id`) — shu yordamchi `current` so'rovidan. U faqat
+   * «Filialga qaytarish» uchun: yiqilsa sahifa xato holatiga o'tmaydi, global xabar ham yo'q — tugma ko'rinmaydi.
+   */
+  const { data: refusedMetaResponse } = useMailDetail(isRefusedDetail && isHqRefusedReceiver ? postId ?? "" : "", {
+    view: "current",
+    silentError: true,
+  });
   const { apiRequest } = useAppNotification();
 
   // URL ni tozalash: /mails/:id?from=...&q=... -> /mails/:id?q=... (rejim state orqali saqlanadi; qidiruv URL'da qoladi)
@@ -364,10 +380,16 @@ const MailDetailPage = () => {
     enabled: shouldLoadRegionFallback,
     staleTime: 10_000,
   });
+  /**
+   * Shu sahifada amal bajarildi (qabul / qaytarish): pochta bo'shasa ham viloyat zaxirasi ochilmaydi — aks holda
+   * yopilgan pochtada viloyatning boshqa rad etilgan buyurtmalari «shu pochtaniki» bo'lib chiqardi.
+   */
+  const hasLocalPostAction = sentOrderIds.size > 0;
   const shouldLoadRefusedRegionFallback =
     !isAllBatchesDetail &&
     isEffectiveRefusedDetail &&
     !isOldDetail &&
+    !hasLocalPostAction &&
     !refusedLoading &&
     refusedOrdersFromPost.length === 0 &&
     Boolean(fallbackRegionId);
@@ -407,7 +429,7 @@ const MailDetailPage = () => {
     }
 
     if (isRefusedDetail) {
-      return refusedOrdersFromPost.length > 0
+      return refusedOrdersFromPost.length > 0 || hasLocalPostAction
         ? refusedOrdersFromPost
         : refusedRegionFallbackOrders;
     }
@@ -418,6 +440,7 @@ const MailDetailPage = () => {
   }, [
     isAllBatchesDetail,
     isRefusedDetail,
+    hasLocalPostAction,
     refusedOrdersFromPost,
     refusedRegionFallbackOrders,
     regularOrdersFromPost,
@@ -638,9 +661,30 @@ const MailDetailPage = () => {
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
+  const returnCanceledOrders = useReturnCanceledOrders();
+  /** Rad etilgan pochtadagi ikki amal (qabul, filialga qaytarish) bir vaqtda yurmaydi. */
+  const isRefusedActionBusy = receiveCanceledPost.isPending || returnCanceledOrders.isPending;
   const isReceiving = isEffectiveRefusedDetail
     ? receiveCanceledPost.isPending
     : receivePost.isPending;
+
+  // ─── HQ: rad etilgan pochta → «Filialga qaytarish» ────────────────────────
+  /** HQ qabul qiluvchisi rad etilgan pochtada: tanlanmaganlar pochtada qoladi, qaytarish — alohida amal. */
+  const isHqRefusedFlow = isEffectiveRefusedDetail && isHqRefusedReceiver && !isOldDetail;
+  // Pochtaning o'zi: rad etilgan rejimda — yordamchi so'rovdan, holatsiz havolada — asosiy tafsilotdan.
+  const refusedPostMeta = isRefusedDetail ? (refusedMetaResponse?.data?.post ?? null) : postMeta;
+  const senderBranchId = toText(refusedPostMeta?.branch?.id);
+  const senderBranchName = refusedPostMeta?.branch?.name?.trim() || null;
+  /**
+   * Faqat filial jo'natgan, hali ochiq (`canceled`) pochtada: jo'natgan filial (`post.branch`) bor va u qabul
+   * joyining o'zi (HQ, `post.branch_id`) emas. HQ kuryeri olib kelgan pochtada (jo'natuvchi — HQ) tugma yo'q.
+   */
+  const canReturnToSender =
+    isHqRefusedFlow &&
+    String(refusedPostMeta?.status ?? "").toLowerCase() === "canceled" &&
+    Boolean(senderBranchId) &&
+    Boolean(senderBranchName) &&
+    senderBranchId !== toText(refusedPostMeta?.branch_id);
   // Pochtadan o'chirish (yokjwjXG): faqat superadmin, faqat jo'natilmagan (NEW) pochta.
   const deleteFromPost = useDeleteOrdersFromPost();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -819,32 +863,72 @@ const MailDetailPage = () => {
     navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
   }, [fromSearch, fromTab, navigate]);
 
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+
+  /** Shu sahifada qabul qilingan / qaytarilgan buyurtmalar ro'yxatdan darhol yashiriladi. */
+  const hideHandledOrders = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    setSentOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+  }, []);
+
   // ─── Pochtani qabul qilish (kuryer, menejer, rad etilgan pochta) ─────────
   const handleReceive = useCallback(() => {
     if (selectedIds.size === 0 || !postId) return;
     const receivedIds = Array.from(selectedIds);
-    const hideReceived = (ids: string[]) => {
-      if (ids.length === 0) return;
-      setSentOrderIds((prev) => {
-        const next = new Set(prev);
-        ids.forEach((id) => next.add(id));
-        return next;
-      });
-    };
 
     if (isEffectiveRefusedDetail) {
-      apiRequest({
+      if (isRefusedActionBusy) return;
+      // Oddiy tafsilot faqat holatsiz havolada yoqilgan: rad etilgan rejimda u bo'sh id'li o'chiq so'rov
+      // (`refetch` uni baribir `post/orders/` ga yuborardi) — u yerda qatorlarni invalidatsiya yangilaydi.
+      const refreshRegularDetail = () => {
+        if (!isRefusedDetail) void refetchRegularDetail();
+      };
+      if (!isHqRefusedReceiver) {
+        // Filial menejeri (kuryer pochtasi) — avvalgidek.
+        apiRequest({
+          request: () =>
+            receiveCanceledPost.mutateAsync({
+              postId,
+              payload: { order_ids: receivedIds },
+            }),
+          successMessage: t("receiveRefusedSuccess"),
+          errorMessage: t("receiveRefusedError"),
+          onSuccess: () => {
+            hideHandledOrders(receivedIds);
+            clearSelection();
+            refreshRegularDetail();
+          },
+        });
+        return;
+      }
+      // HQ: faqat tanlanganlar qabul qilinadi, qolganlari shu pochtada qoladi (hech narsa o'zi qaytmaydi).
+      // Pochtada buyurtma qolmasa — pochta yopildi, kelingan ro'yxatga qaytiladi. Sonlar — javobdan.
+      apiRequest<CanceledPostActionResult>({
         request: () =>
           receiveCanceledPost.mutateAsync({
             postId,
             payload: { order_ids: receivedIds },
           }),
-        successMessage: t("receiveRefusedSuccess"),
+        successMessage: (result) => {
+          const value = count(result.orderIds.length || receivedIds.length);
+          if (result.postClosed === true) return t("receiveRefusedClosed", { value });
+          if (result.postClosed === false) {
+            const remaining = result.remainingOrderIds?.length ?? Math.max(0, orders.length - receivedIds.length);
+            return t("receiveRefusedPartial", { value, remaining: count(remaining) });
+          }
+          // Eski backend (`post_closed` / `post_status` yo'q) — avvalgi matn.
+          return t("receiveRefusedSuccess");
+        },
         errorMessage: t("receiveRefusedError"),
-        onSuccess: () => {
-          hideReceived(receivedIds);
+        onSuccess: (result) => {
+          hideHandledOrders(result.orderIds.length > 0 ? result.orderIds : receivedIds);
           clearSelection();
-          void refetchRegularDetail();
+          refreshRegularDetail();
+          if (result.postClosed === true) handleBack();
         },
       });
       return;
@@ -878,7 +962,7 @@ const MailDetailPage = () => {
           });
         }
 
-        hideReceived(acceptedIds);
+        hideHandledOrders(acceptedIds);
         clearSelection();
         void refetchRegularDetail();
       })
@@ -888,13 +972,89 @@ const MailDetailPage = () => {
   }, [
     selectedIds,
     postId,
+    hideHandledOrders,
     isEffectiveRefusedDetail,
+    isRefusedActionBusy,
+    isRefusedDetail,
+    isHqRefusedReceiver,
     receiveCanceledPost,
     receivePost,
     apiRequest,
     clearSelection,
     refetchRegularDetail,
+    count,
+    orders.length,
+    handleBack,
     t,
+  ]);
+
+  // ─── HQ: tanlanganlarni jo'natgan filialga qaytarish (tasdiq bilan) ───────
+  const confirm = useConfirm();
+  const handleReturnToSender = useCallback(async () => {
+    if (!postId || !canReturnToSender || !senderBranchName || selectedIds.size === 0 || isRefusedActionBusy) return;
+    const returnIds = Array.from(selectedIds);
+    const value = count(returnIds.length);
+    const left = Math.max(0, orders.length - returnIds.length);
+    // `confirm()` faqat `true/false` qaytaradi — javob shu yerga yoziladi (xato bo'lsa oyna ichida ko'rinadi).
+    const outcome: { result?: CanceledPostActionResult } = {};
+    const confirmed = await confirm({
+      tone: "primary",
+      icon: RotateCcw,
+      title: t("detailPage.returnDialog.title"),
+      description: t("detailPage.returnDialog.description", { value }),
+      transfer: {
+        from: { title: t("detailPage.returnDialog.from") },
+        to: { title: senderBranchName, meta: t("detailPage.returnDialog.toMeta") },
+      },
+      consequences: [
+        {
+          text: t("detailPage.returnDialog.consequenceBranch", { value, branch: senderBranchName }),
+          tone: "info",
+          icon: RotateCcw,
+        },
+        left > 0
+          ? { text: t("detailPage.returnDialog.consequenceRemaining", { value: count(left) }) }
+          : { text: t("detailPage.returnDialog.consequenceClosed") },
+      ],
+      confirmLabel: t("detailPage.returnDialog.confirm"),
+      confirmIcon: RotateCcw,
+      loadingLabel: t("detailPage.returnDialog.loading"),
+      errorMessage: (error) => getBackendErrorMessage(error) ?? t("detailPage.returnDialog.error"),
+      onConfirm: async () => {
+        outcome.result = await returnCanceledOrders.mutateAsync({ postId, payload: { order_ids: returnIds } });
+      },
+    });
+    const result = outcome.result;
+    if (!confirmed || !result) return;
+
+    const returnedIds = result.orderIds.length > 0 ? result.orderIds : returnIds;
+    hideHandledOrders(returnedIds);
+    clearSelection();
+    if (!isRefusedDetail) void refetchRegularDetail();
+    const closed = result.postClosed ?? result.remainingOrderIds?.length === 0;
+    notify.success(t("common:success"), {
+      description: t(closed ? "detailPage.returnDialog.successClosed" : "detailPage.returnDialog.success", {
+        value: count(returnedIds.length),
+        branch: senderBranchName,
+      }),
+    });
+    if (closed) handleBack();
+  }, [
+    postId,
+    canReturnToSender,
+    senderBranchName,
+    selectedIds,
+    isRefusedActionBusy,
+    count,
+    orders.length,
+    confirm,
+    t,
+    returnCanceledOrders,
+    hideHandledOrders,
+    clearSelection,
+    isRefusedDetail,
+    refetchRegularDetail,
+    handleBack,
   ]);
 
   // ─── Muvaffaqiyatli yuborilgandan keyin ───────────────────────────────────
@@ -1126,8 +1286,6 @@ const MailDetailPage = () => {
     [postId, deleteTargetIds, deleteFromPost, closeDeleteConfirm, clearSelection, t, navigate, refetchRegularDetail],
   );
 
-  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
-
   // ─── Yuklanish ────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading || regionFallbackLoading || refusedRegionFallbackLoading)
     return <MailDetailSkeleton />;
@@ -1201,11 +1359,27 @@ const MailDetailPage = () => {
       mode={isEffectiveRefusedDetail ? "receive" : "send"}
       onSend={handleSend}
       onReceive={handleReceive}
-      disabled={isEffectiveRefusedDetail && !canReceiveRefusedPost}
+      disabled={isEffectiveRefusedDetail && (!canReceiveRefusedPost || returnCanceledOrders.isPending)}
       isBusy={primaryIsReceive ? isReceiving : isCheckingCouriers}
       block={isCourier && isPhone}
     />
   ) : null;
+  // HQ, filial jo'natgan rad etilgan pochta: ikkinchi (secondary) amal — faqat tanlanganlarni qaytarish.
+  const returnButton =
+    showPrimaryAction && canReturnToSender ? (
+      <Button
+        variant="secondary"
+        leftIcon={RotateCcw}
+        aria-haspopup="dialog"
+        disabled={selectedCount === 0 || receiveCanceledPost.isPending}
+        loading={returnCanceledOrders.isPending}
+        loadingText={t("detailPage.returnDialog.loading")}
+        onClick={() => void handleReturnToSender()}
+        className="max-md:w-full"
+      >
+        {t("detailPage.returnButton", { value: selectedValue, count: selectedCount })}
+      </Button>
+    ) : null;
 
   // Chop etish: tanlanganlar (menyu; telefonda pastki varaqa). Kuryerning rad etilgan pochtasida — barchasi.
   // Hech narsa tanlanmagan: tugma «Pochta cheki» uchun faol (`allowEmpty`), buyurtma cheklari o'chiq (HJ5sLHiz).
@@ -1286,6 +1460,7 @@ const MailDetailPage = () => {
         : (
             <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:flex-col max-md:items-stretch">
               {renderPrintSelected("max-md:w-full")}
+              {returnButton}
               {primaryButton}
             </div>
           );
@@ -1302,8 +1477,19 @@ const MailDetailPage = () => {
     scannerEnabled && !isEffectiveRefusedDetail
       ? t(isCourier ? "detailPage.scanHintCourier" : isManager ? "detailPage.scanHintManager" : "detailPage.scanHintStaff")
       : undefined;
+  // HQ rad etilgan pochtasi: tanlanmaganlar pochtada qoladi (qaytarish tugmasi bo'lsa — u ham faqat tanlanganlarga).
+  const refusedSelectionHintKey = !isHqRefusedFlow
+    ? "detailPage.selectionHintRefused"
+    : canReturnToSender
+      ? "detailPage.selectionHintRefusedHqReturn"
+      : "detailPage.selectionHintRefusedHq";
+  const refusedAlertTextKey = !isHqRefusedFlow
+    ? "detailPage.refusedAlertText"
+    : canReturnToSender
+      ? "detailPage.refusedAlertTextHqReturn"
+      : "detailPage.refusedAlertTextHq";
   const selectionHint = isEffectiveRefusedDetail
-    ? t("detailPage.selectionHintRefused")
+    ? t(refusedSelectionHintKey)
     : isCourier
       ? t("detailPage.selectionHintReceiveShort")
       : shouldReceiveCurrentPost
@@ -1360,7 +1546,7 @@ const MailDetailPage = () => {
 
       {canManualSelectRefusedOrder ? (
         <DetailAlert tone="info" icon={Info} role="note" title={t("detailPage.refusedAlertTitle")} titleBlock>
-          {t("detailPage.refusedAlertText")}
+          {t(refusedAlertTextKey)}
         </DetailAlert>
       ) : null}
 

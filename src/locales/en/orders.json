@@ -561,7 +561,10 @@
       "postReceivedAtBranch": "{{actor}} received the post — {{branch}}",
       "dispatchToNamedBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}}",
       "postBranchReassigned": "{{actor}} moved {{post}} to another branch: {{from}} → {{to}}",
-      "postBranchReassignedShort": "{{actor}} moved {{post}} to another branch"
+      "postBranchReassignedShort": "{{actor}} moved {{post}} to another branch",
+      "cancelledPostReturnedToBranch": "{{actor}} returned the cancelled order from HQ to {{branch}} branch",
+      "cancelledPostReturnedToNamedBranch": "{{actor}} returned the cancelled order from HQ to {{branch}}",
+      "cancelledPostReturnedShort": "{{actor}} returned the cancelled order from HQ to the sending branch"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -623,7 +626,8 @@
       "returnRequested": "Return requested",
       "returnedToMarket": "Handed to market",
       "warehouseReturned": "Returned to warehouse",
-      "postBranchReassigned": "Moved to another branch"
+      "postBranchReassigned": "Moved to another branch",
+      "cancelledPostReturned": "Returned to branch"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",

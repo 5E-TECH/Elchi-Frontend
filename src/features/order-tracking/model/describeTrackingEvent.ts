@@ -5,6 +5,7 @@ import {
   Inbox,
   Mail,
   Plus,
+  RotateCcw,
   Send,
   Store,
   Truck,
@@ -468,6 +469,15 @@ export const isPostReceivedEvent = (event: TrackingEvent) => normalizeKey(event.
 export const isWarehouseReturnedEvent = (event: TrackingEvent) => normalizeKey(event.action) === "warehouse_returned";
 
 /**
+ * HQ rad etilgan pochtadagi bekor buyurtmani jo'natgan filialga qaytardi (`cancelled_post_returned`, holat
+ * o'zgarmaydi — `cancelled (sent)`); metadata `{ post_id, return_post_id, from_branch: "HQ", to_branch_id, to_branch_name }`.
+ */
+export const isCancelledPostReturnedEvent = (event: TrackingEvent) => {
+  const action = normalizeKey(event.action);
+  return action === "cancelled_post_returned" || action === "canceled_post_returned";
+};
+
+/**
  * Jumla shabloni (`tracking.dynamic.*`) yoki — mos shablon bo'lmasa — `null` (izoh alohida).
  * Shablonlar `{{actor}}` bilan; sahifa aktyorni qalin va rol nomi bilan chizadi.
  */
@@ -518,6 +528,16 @@ const getSentenceTemplate = (
     if (place) return dynamic("cancelledPostReceivedAtPlace", { place });
     return dynamic(isHqReceiver ? "cancelledPostReceivedAtHq" : "cancelledPostReceivedAtBranch");
   }
+  // HQ bekor buyurtmani jo'natgan filialga qaytardi (holat o'zgarmaydi): metadata `{ to_branch_name }`.
+  if (isCancelledPostReturnedEvent(event)) {
+    const metadata = isRecord(event.metadata) ? event.metadata : {};
+    const to = cleanBranchLabel(metadata.to_branch_name);
+    if (!to) return dynamic("cancelledPostReturnedShort");
+    return dynamic(
+      branchNameHasBranchWord(to) ? "cancelledPostReturnedToNamedBranch" : "cancelledPostReturnedToBranch",
+      { branch: to },
+    );
+  }
   // Jo'natilgan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi): metadata `{ from_branch_name, to_branch_name }`.
   if (normalizeKey(event.action) === "post_branch_reassigned") {
     const metadata = isRecord(event.metadata) ? event.metadata : {};
@@ -556,6 +576,10 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
   switch (templateKey) {
     case "tracking.dynamic.returnInitiated":
       return Undo2;
+    case "tracking.dynamic.cancelledPostReturnedToBranch":
+    case "tracking.dynamic.cancelledPostReturnedToNamedBranch":
+    case "tracking.dynamic.cancelledPostReturnedShort":
+      return RotateCcw;
     case "tracking.dynamic.returnedToMarketByActor":
     case "tracking.dynamic.cancelledOrderHandedToMarket":
       return Store;

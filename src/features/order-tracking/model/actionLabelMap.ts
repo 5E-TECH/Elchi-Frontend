@@ -22,4 +22,7 @@ export const actionLabelMap: Record<string, string> = {
   warehouse_returned: "tracking.action.warehouseReturned",
   // Jo'natilgan, hali qabul qilinmagan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi — yo'lda).
   post_branch_reassigned: "tracking.action.postBranchReassigned",
+  // HQ rad etilgan pochtadagi bekor buyurtmani jo'natgan filialga qaytardi (holat o'zgarmaydi — `cancelled (sent)`).
+  cancelled_post_returned: "tracking.action.cancelledPostReturned",
+  canceled_post_returned: "tracking.action.cancelledPostReturned",
 };

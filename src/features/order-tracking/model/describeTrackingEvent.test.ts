@@ -358,3 +358,42 @@ describe("describeTrackingEvent — pochta boshqa filialga o'tkazildi", () => {
     expect(sentence(v)).toBe("Admin TEST Claude admin pochtani boshqa filialga o'tkazdi");
   });
 });
+
+/**
+ * HQ rad etilgan pochtadagi bekor buyurtmani jo'natgan filialga qaytardi (`cancelled_post_returned`, holat o'zgarmaydi —
+ * `cancelled (sent)`): metadata `{ post_id, return_post_id, from_branch: "HQ", to_branch_id, to_branch_name }`.
+ */
+describe("describeTrackingEvent — HQ bekor buyurtmani filialga qaytardi", () => {
+  const event = (metadata: Record<string, unknown>) =>
+    view({
+      action: "cancelled_post_returned",
+      changed_by: "520",
+      changed_by_role: "registrator",
+      from_status: "cancelled (sent)",
+      to_status: "cancelled (sent)",
+      description: "HQ bekor qilingan buyurtmani Samarqand filialiga qaytardi",
+      metadata,
+    });
+
+  it("«Ro'yxatchi … bekor qilingan buyurtmani HQ'dan Samarqand filialiga qaytardi», belgi «Filialga qaytarildi», izoh takrorlanmaydi", () => {
+    const v = event({ post_id: "2115", return_post_id: "2140", from_branch: "HQ", to_branch_id: "14", to_branch_name: "Samarqand" });
+    expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov bekor qilingan buyurtmani HQ'dan Samarqand filialiga qaytardi");
+    expect(v.actionName).toBe("Filialga qaytarildi");
+    expect(v.note).toBe("");
+    expect(v.oldStatus).toBe("cancelled (sent)");
+    expect(v.newStatus).toBe("cancelled (sent)");
+    // Jumladagi «HQ» va filial nomi alohida qator bo'lib takrorlanmaydi.
+    expect(v.details.map((detail) => detail.value)).not.toContain("HQ");
+    expect(v.details.map((detail) => detail.value)).not.toContain("Samarqand");
+  });
+
+  it("nomida «filial» bor — «… filiali filialiga» emas", () => {
+    const v = event({ post_id: "2115", to_branch_id: "14", to_branch_name: "Samarqand filiali (SM, ID: 14)" });
+    expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov bekor qilingan buyurtmani HQ'dan Samarqand filialiga qaytardi");
+  });
+
+  it("filial nomi yo'q — qisqa jumla", () => {
+    const v = event({ post_id: "2115" });
+    expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov bekor qilingan buyurtmani HQ'dan jo'natgan filialga qaytardi");
+  });
+});

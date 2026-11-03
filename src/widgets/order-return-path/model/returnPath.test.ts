@@ -390,3 +390,68 @@ describe("buildReturnPath — bir xil vaqtli hodisalar (hfkhYrGk №5)", () => {
     expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "handed"]);
   });
 });
+
+/**
+ * HQ rad etilgan pochtani qabul qilmay, buyurtmani jo'natgan filialga qaytardi (`cancelled_post_returned`, holat
+ * o'zgarmaydi): zanjirda «Jo'natildi» qadami HQ → filial; filialga yuborilgan pochta № — qaytarish hodisasidagi
+ * asl pochta, qaytarish pochtasi emas.
+ */
+describe("buildReturnPath — HQ filialga qaytardi", () => {
+  /** Filial → HQ yo'li (HQ hali qabul qilmagan). */
+  const TO_HQ = BRANCH_TO_HQ.slice(0, 6);
+  const returned = ev("2026-10-06T10:00:00+05:00", {
+    ...status("cancelled (sent)", "cancelled (sent)"),
+    action: "cancelled_post_returned",
+    actor: registrator,
+    changed_by_role: "registrator",
+    description: "HQ bekor qilingan buyurtmani Urgut filialiga qaytardi",
+    metadata: {
+      post_id: "2115",
+      return_post_id: "2140",
+      from_branch: "HQ",
+      to_branch_id: "12",
+      to_branch_name: "Urgut filiali (UR, ID: 12)",
+    },
+  });
+  const IN_TRANSIT_ORDER = {
+    id: "10305",
+    status: "cancelled (sent)",
+    holder_type: "BRANCH",
+    canceled_post_id: "2140",
+    branch: { id: "12", name: "Urgut filiali" },
+    market: { name: "Nur Elektronika" },
+    district: { name: "Urgut tumani" },
+  };
+
+  it("custody'siz ham: «Jo'natildi» HQ → Urgut filiali, pochta №2140; oldingi jo'natish — №2115; filial qabuli kutilmoqda", () => {
+    const path = buildReturnPath([...TO_HQ, returned], IN_TRANSIT_ORDER, { hqName: "Toshkent HQ" });
+    expect(path!.stage).toBe("in_transit");
+    expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "sent", "sent"]);
+    const [, , , sentToHq, returnedToBranch] = path!.steps;
+    expect(sentToHq).toMatchObject({ place: "Urgut filiali", to: "Toshkent HQ", postId: "2115" });
+    expect(returnedToBranch).toMatchObject({
+      place: "Toshkent HQ",
+      to: "Urgut filiali",
+      postId: "2140",
+      actor: "Bobur Xolmatov",
+      role: "registrator",
+    });
+    expect(path!.pending).toMatchObject({ kind: "receive", place: "Urgut filiali" });
+  });
+
+  it("filial qaytgan buyurtmani qabul qildi — «Qabul qilindi» Urgut filialida", () => {
+    const receivedBack = ev("2026-10-06T15:00:00+05:00", {
+      ...status("cancelled (sent)", "cancelled"),
+      action: "cancelled_post_received",
+      actor: manager,
+      metadata: { canceled_post_id: "2140", destination_branch: "Urgut filiali (UR, ID: 12)", received_by_hq: false },
+    });
+    const order = { ...IN_TRANSIT_ORDER, status: "cancelled", canceled_post_id: null, post_id: "2140" };
+    const path = buildReturnPath([...TO_HQ, returned, receivedBack], order, { hqName: "Toshkent HQ" });
+    expect(path!.stage).toBe("branch");
+    expect(path!.steps.map((step) => step.kind)).toEqual(["cancelled", "sent", "received", "sent", "sent", "received"]);
+    expect(path!.steps[3]).toMatchObject({ to: "Toshkent HQ", postId: "2115" });
+    expect(path!.steps[4]).toMatchObject({ to: "Urgut filiali", postId: "2140" });
+    expect(path!.steps[5]).toMatchObject({ place: "Urgut filiali", actor: "Ravshan Ortiqov" });
+  });
+});

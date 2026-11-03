@@ -561,7 +561,10 @@
       "postReceivedAtBranch": "{{actor}} pochtani qabul qildi — {{branch}}",
       "dispatchToNamedBranch": "{{actor}} {{post}}ni HQ'dan {{branch}}ga jo'natdi",
       "postBranchReassigned": "{{actor}} {{post}}ni boshqa filialga o'tkazdi: {{from}} → {{to}}",
-      "postBranchReassignedShort": "{{actor}} {{post}}ni boshqa filialga o'tkazdi"
+      "postBranchReassignedShort": "{{actor}} {{post}}ni boshqa filialga o'tkazdi",
+      "cancelledPostReturnedToBranch": "{{actor}} bekor qilingan buyurtmani HQ'dan {{branch}} filialiga qaytardi",
+      "cancelledPostReturnedToNamedBranch": "{{actor}} bekor qilingan buyurtmani HQ'dan {{branch}}ga qaytardi",
+      "cancelledPostReturnedShort": "{{actor}} bekor qilingan buyurtmani HQ'dan jo'natgan filialga qaytardi"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -623,7 +626,8 @@
       "returnRequested": "Qaytarish so'raldi",
       "returnedToMarket": "Marketga topshirildi",
       "warehouseReturned": "Omborga qaytdi",
-      "postBranchReassigned": "Boshqa filialga o'tkazildi"
+      "postBranchReassigned": "Boshqa filialga o'tkazildi",
+      "cancelledPostReturned": "Filialga qaytarildi"
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",

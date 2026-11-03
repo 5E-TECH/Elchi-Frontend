@@ -91,6 +91,8 @@
   "receiveNotReceivedDescription": "Still on the road: {{ids}}. Try receiving them again.",
   "receiveRefusedSuccess": "Rejected mail received successfully.",
   "receiveRefusedError": "An error occurred while receiving rejected mail.",
+  "receiveRefusedPartial": "Orders received: {{value}}. Still in this mail: {{remaining}}.",
+  "receiveRefusedClosed": "Orders received: {{value}}. The mail is closed — all its orders were received or returned to the branch.",
   "noActiveCourierInRegion": "There is no active courier in this region.",
   "noActiveBranchInRegion": "There is no active branch in this region.",
   "sendCourierSuccess": "Mail was successfully sent to courier {{name}}.",
@@ -185,6 +187,7 @@
   "detailPage": {
     "sendButton": "Send mail — {{value}}",
     "receiveButton": "Receive mail — {{value}}",
+    "returnButton": "Return to branch — {{value}}",
     "printAll": "Print all",
     "printAllLabel": "Print labels for all {{value}} orders",
     "printSelectedLabel": "Print {{value}} selected orders",
@@ -201,6 +204,8 @@
     "printRowLabel": "Print label for №{{id}}",
     "refusedAlertTitle": "Scan the QR codes of the orders returned by the courier.",
     "refusedAlertText": "Matching orders are selected in the list automatically, then press «Receive mail».",
+    "refusedAlertTextHq": "Matching orders are selected in the list automatically, then press «Receive mail». Orders you don't select stay in this mail.",
+    "refusedAlertTextHqReturn": "Matching orders are selected in the list automatically, then press «Receive mail» or «Return to branch». Orders you don't select stay in this mail.",
     "leftoversTitle": "{{value}} orders still on the road",
     "leftoversText": "The mail is marked as received, but these orders were not received — receive them.",
     "courierRefusedNote": "The refused mail is received by the branch.",
@@ -239,6 +244,8 @@
     "selectionHintReceive": "Receiving and printing apply only to the selected orders",
     "selectionHintReceiveShort": "Receiving and printing apply only to the selected ones",
     "selectionHintRefused": "Receiving applies only to the selected orders",
+    "selectionHintRefusedHq": "Receiving applies only to the selected orders — the rest stay in this mail",
+    "selectionHintRefusedHqReturn": "Receiving and returning apply only to the selected orders — the rest stay in this mail",
     "selectAll": "Select all",
     "clearSelection": "Clear selection",
     "selectAllRows": "Select all orders",
@@ -322,6 +329,20 @@
       "success": "The post was moved to {{name}}.",
       "error": "Could not move the post",
       "noOtherBranch": "There is no other active branch in this region."
+    },
+    "returnDialog": {
+      "title": "Return orders to the branch",
+      "description": "The selected orders ({{value}}) will go back to the branch that sent this mail.",
+      "from": "HQ",
+      "toMeta": "Branch that sent the mail",
+      "consequenceBranch": "Orders going back to «{{branch}}»: {{value}} — the branch receives them under «Refused mails»",
+      "consequenceRemaining": "Unselected orders stay in this mail: {{value}}",
+      "consequenceClosed": "No orders will be left — the mail will be closed",
+      "confirm": "Return",
+      "loading": "Returning…",
+      "success": "Orders returned to «{{branch}}»: {{value}}.",
+      "successClosed": "Orders returned to «{{branch}}»: {{value}}. The mail is closed — all its orders were received or returned to the branch.",
+      "error": "Could not return the orders to the branch"
     }
   }
 }

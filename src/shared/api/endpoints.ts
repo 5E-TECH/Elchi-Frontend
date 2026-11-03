@@ -205,6 +205,8 @@ export const API_ENDPOINTS = {
     // Buyurtmani SHU pochtadan o'chirish (soft-delete), faqat superadmin va NEW pochta (yokjwjXG). 409 — sabab matnda.
     DELETE_ORDERS: "post/delete", // POST { post_id, order_ids, reason }
     CANCEL_RECEIVE: (postId: string | number) => `post/cancel/receive/${postId}`, // POST receive canceled post (admin)
+    // HQ: rad etilgan pochtadagi TANLANGAN buyurtmalarni jo'natgan filialga qaytarish (POST { order_ids }).
+    CANCEL_RETURN: (postId: string | number) => `post/cancel/return/${postId}`,
     CHECK: (id: string | number) => `post/check/${id}`, // POST check post order by qr token
     CHECK_CANCEL: (id: string | number) => `post/check/cancel/${id}`, // POST check canceled post order by qr token
     COURIERS_BY_POST: (id: string | number) => `post/courier/${id}`, // POST get couriers by post id

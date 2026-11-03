@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 import type { PostOrderMembership } from "./lib/postHistory";
 
 export {
@@ -571,8 +572,9 @@ export const useMails = () => {
 /**
  * Pochta tafsiloti (`GET post/orders/:id`). `view` berilsa — so'rovda ham, kesh kalitida ham (oxirgi bo'lak);
  * berilmasa — parametrsiz (server sukuti). Amal rejimlari `current` so'raydi, eski pochta (tarix) — sukut.
+ * `silentError` — yordamchi so'rov (masalan rad etilgan pochtaning jo'natuvchi ma'lumoti): xato global xabar bermaydi.
  */
-export const useMailDetail = (postId: string, options?: { view?: MailDetailView }) => {
+export const useMailDetail = (postId: string, options?: { view?: MailDetailView } & SilentErrorOption) => {
   const view = options?.view;
   return useQuery<MailDetailResponse>({
     queryKey: view ? [MAILS_KEY, "detail", postId, view] : [MAILS_KEY, "detail", postId],
@@ -582,6 +584,7 @@ export const useMailDetail = (postId: string, options?: { view?: MailDetailView 
     },
     enabled: !!postId,
     retry: false,
+    ...silentErrorMeta(options),
   });
 };
 
@@ -777,6 +780,78 @@ export const useReceivePost = () => {
   });
 };
 
+/** Rad etilgan (bekor qilingan) pochta holati: `canceled` — ochiq, `canceled_received` — yopilgan. */
+export type CanceledPostStatus = "canceled" | "canceled_received";
+
+/**
+ * Rad etilgan pochtadagi amal natijasi — `POST post/cancel/receive/:id` (qabul) va `POST post/cancel/return/:id`
+ * (HQ: filialga qaytarish) javobining `data` qismi, bir shaklga keltirilgan.
+ *
+ *  - `orderIds` — shu amal bajarilgan buyurtmalar (qabul qilingan / qaytarilgan);
+ *  - `remainingOrderIds` — pochtada hali turganlari (`null` — eski backend bermadi);
+ *  - `postClosed` — pochtada buyurtma qolmadi, pochta yopildi (`null` — eski backend: `post_closed` ham,
+ *    `post_status` ham yo'q; bunda sahifa avvalgi matn bilan qoladi);
+ *  - `requeuedPostIds` — qaytarish pochtalari (HQ qabulida endi doim bo'sh — hech narsa o'zi qaytmaydi);
+ *  - `branchId` — qabul joyi (qabul), `returnBranchId` — buyurtmalar qaytgan filial (qaytarish).
+ */
+export interface CanceledPostActionResult {
+  orderIds: string[];
+  remainingOrderIds: string[] | null;
+  requeuedPostIds: string[];
+  groupedPostIds: string[];
+  postStatus: CanceledPostStatus | null;
+  postClosed: boolean | null;
+  branchId: string | null;
+  returnBranchId: string | null;
+}
+
+const toIdList = (value: unknown): string[] =>
+  Array.isArray(value) ? [...new Set(value.map((item) => toText(item)).filter(Boolean))] : [];
+
+/** Javob (`{ statusCode, message, data }` yoki to'g'ridan-to'g'ri `data`) → `CanceledPostActionResult`. */
+export const toCanceledPostActionResult = (payload: unknown): CanceledPostActionResult => {
+  const body = asRecord(payload);
+  const data = asRecord(body?.data) ?? body ?? {};
+  const rawStatus = toText(data.post_status).toLowerCase();
+  const postStatus: CanceledPostStatus | null =
+    rawStatus === "canceled" || rawStatus === "canceled_received" ? rawStatus : null;
+  return {
+    orderIds: toIdList(data.order_ids),
+    remainingOrderIds: Array.isArray(data.remaining_order_ids) ? toIdList(data.remaining_order_ids) : null,
+    requeuedPostIds: toIdList(data.requeued_post_ids),
+    groupedPostIds: toIdList(data.grouped_post_ids),
+    postStatus,
+    postClosed:
+      typeof data.post_closed === "boolean"
+        ? data.post_closed
+        : postStatus === "canceled_received"
+          ? true
+          : postStatus === "canceled"
+            ? false
+            : null,
+    branchId: toText(data.branch_id) || null,
+    returnBranchId: toText(data.return_branch_id) || null,
+  };
+};
+
+/**
+ * Rad etilgan pochtadagi amaldan keyin eskiradigan so'rovlar: pochta qatorlari (rad etilgan va oddiy tafsilot —
+ * yordamchi `current` so'rovi ham), «Rad etilgan» / «Eski pochtalar» ro'yxatlari va buyurtmalar.
+ */
+const invalidateAfterCanceledPostAction = (queryClient: ReturnType<typeof useQueryClient>, postId: string) => {
+  queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "refused-detail", postId] });
+  queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+  queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "refused"] });
+  queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "refused-courier"] });
+  queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+  queryClient.invalidateQueries({ queryKey: ["orders"] });
+  queryClient.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"] });
+};
+
+/**
+ * Rad etilgan pochtani (tanlangan buyurtmalarni) qabul qilish — `POST post/cancel/receive/:id { order_ids }`.
+ * HQ qabulida tanlanmaganlar shu pochtada qoladi (`remainingOrderIds`); filial qabulida pochta doim yopiladi.
+ */
 export const useReceiveCanceledPost = () => {
   const queryClient = useQueryClient();
 
@@ -787,23 +862,31 @@ export const useReceiveCanceledPost = () => {
     }: {
       postId: string;
       payload: ReceivePostPayload;
-    }) => api.post(API_ENDPOINTS.POSTS.CANCEL_RECEIVE(postId), payload).then((res) => res.data),
-    onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({
-        queryKey: [MAILS_KEY, "refused-detail", postId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [MAILS_KEY, "refused"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [MAILS_KEY, "refused-courier"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["orders"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["orders", "markets", "cancelled"],
-      });
-    },
+    }) =>
+      api
+        .post(API_ENDPOINTS.POSTS.CANCEL_RECEIVE(postId), payload)
+        .then((res) => toCanceledPostActionResult(res.data)),
+    // Xatoda ham (409 — boshqa xodim shu orada qabul qilgan / qaytargan) qatorlar yangilansin.
+    onSettled: (_data, _error, { postId }) => invalidateAfterCanceledPostAction(queryClient, postId),
+  });
+};
+
+/**
+ * HQ: rad etilgan pochtadagi TANLANGAN buyurtmalarni jo'natgan filialga qaytarish —
+ * `POST post/cancel/return/:id { order_ids }` (bo'sh ro'yxat yuborilmaydi). Filial ularni «Rad etilgan
+ * pochtalar»dan qabul qiladi. Rad javoblari: 400 (pochtani HQ kuryeri olib kelgan, jo'natuvchi filial noma'lum,
+ * buyurtma bu pochtada yo'q, pochta yopilgan) va 409 (buyurtma shu orada qabul qilingan / qaytarilgan) — matn
+ * backenddan.
+ */
+export const useReturnCanceledOrders = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId, payload }: { postId: string; payload: ReceivePostPayload }) =>
+      api
+        .post(API_ENDPOINTS.POSTS.CANCEL_RETURN(postId), payload)
+        .then((res) => toCanceledPostActionResult(res.data)),
+    // Xatoda ham (409 — boshqa xodim shu orada qabul qilgan / qaytargan) qatorlar yangilansin.
+    onSettled: (_data, _error, { postId }) => invalidateAfterCanceledPostAction(queryClient, postId),
   });
 };

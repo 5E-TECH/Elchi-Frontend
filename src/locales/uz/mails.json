@@ -91,6 +91,8 @@
   "receiveNotReceivedDescription": "Hamon yo'lda: {{ids}}. Ularni qayta qabul qilib ko'ring.",
   "receiveRefusedSuccess": "Rad etilgan pochta muvaffaqiyatli qabul qilindi.",
   "receiveRefusedError": "Rad etilgan pochtani qabul qilishda xatolik yuz berdi.",
+  "receiveRefusedPartial": "{{value}} ta buyurtma qabul qilindi. {{remaining}} tasi shu pochtada qoldi.",
+  "receiveRefusedClosed": "{{value}} ta buyurtma qabul qilindi. Pochta yopildi — undagi barcha buyurtmalar qabul qilindi yoki filialga qaytarildi.",
   "noActiveCourierInRegion": "Bu viloyatda aktiv courier mavjud emas.",
   "noActiveBranchInRegion": "Bu viloyatda aktiv filial mavjud emas.",
   "sendCourierSuccess": "Pochta {{name}} ga muvaffaqiyatli jo'natildi.",
@@ -185,6 +187,7 @@
   "detailPage": {
     "sendButton": "Pochtani jo'natish — {{value}} ta",
     "receiveButton": "Pochtani qabul qilish — {{value}} ta",
+    "returnButton": "Filialga qaytarish — {{value}} ta",
     "printAll": "Barchasini chop etish",
     "printAllLabel": "Barcha {{value}} ta buyurtma yorlig'ini chop etish",
     "printSelectedLabel": "Tanlangan {{value}} ta buyurtmani chop etish",
@@ -201,6 +204,8 @@
     "printRowLabel": "№{{id}} yorlig'ini chop etish",
     "refusedAlertTitle": "Kuryer qaytargan buyurtmalarning QR kodini skanerlang.",
     "refusedAlertText": "Mos buyurtmalar ro'yxatda avtomatik tanlanadi, so'ng «Pochtani qabul qilish» tugmasini bosing.",
+    "refusedAlertTextHq": "Mos buyurtmalar ro'yxatda avtomatik tanlanadi, so'ng «Pochtani qabul qilish» tugmasini bosing. Tanlanmagan buyurtmalar shu pochtada qoladi.",
+    "refusedAlertTextHqReturn": "Mos buyurtmalar ro'yxatda avtomatik tanlanadi, so'ng «Pochtani qabul qilish» yoki «Filialga qaytarish» tugmasini bosing. Tanlanmagan buyurtmalar shu pochtada qoladi.",
     "leftoversTitle": "{{value}} ta buyurtma hali yo'lda",
     "leftoversText": "Pochta qabul qilingan deb belgilangan, lekin bu buyurtmalar qabul qilinmagan — ularni qabul qiling.",
     "courierRefusedNote": "Rad etilgan pochtani filial qabul qiladi.",
@@ -239,6 +244,8 @@
     "selectionHintReceive": "Qabul qilish va chop etish faqat tanlangan buyurtmalarga qo'llanadi",
     "selectionHintReceiveShort": "Qabul qilish va chop etish faqat tanlanganlarga qo'llanadi",
     "selectionHintRefused": "Qabul qilish faqat tanlangan buyurtmalarga qo'llanadi",
+    "selectionHintRefusedHq": "Qabul qilish faqat tanlangan buyurtmalarga qo'llanadi — qolganlari shu pochtada qoladi",
+    "selectionHintRefusedHqReturn": "Qabul qilish va qaytarish faqat tanlangan buyurtmalarga qo'llanadi — qolganlari shu pochtada qoladi",
     "selectAll": "Barchasini tanlash",
     "clearSelection": "Tanlovni bekor qilish",
     "selectAllRows": "Barcha buyurtmalarni tanlash",
@@ -322,6 +329,20 @@
       "success": "Pochta {{name}} filialiga o'tkazildi.",
       "error": "Pochtani o'tkazib bo'lmadi",
       "noOtherBranch": "Bu viloyatda boshqa faol filial yo'q."
+    },
+    "returnDialog": {
+      "title": "Buyurtmalarni filialga qaytarish",
+      "description": "Tanlangan {{value}} ta buyurtma pochtani jo'natgan filialga qaytariladi.",
+      "from": "HQ",
+      "toMeta": "Pochtani jo'natgan filial",
+      "consequenceBranch": "{{value}} ta buyurtma «{{branch}}» filialiga qaytadi — filial ularni «Rad etilgan pochtalar» bo'limidan qabul qiladi",
+      "consequenceRemaining": "Tanlanmagan {{value}} ta buyurtma shu pochtada qoladi",
+      "consequenceClosed": "Pochtada buyurtma qolmaydi — pochta yopiladi",
+      "confirm": "Qaytarish",
+      "loading": "Qaytarilmoqda…",
+      "success": "{{value}} ta buyurtma «{{branch}}» filialiga qaytarildi.",
+      "successClosed": "{{value}} ta buyurtma «{{branch}}» filialiga qaytarildi. Pochta yopildi — undagi barcha buyurtmalar qabul qilindi yoki filialga qaytarildi.",
+      "error": "Buyurtmalarni filialga qaytarib bo'lmadi"
     }
   }
 }

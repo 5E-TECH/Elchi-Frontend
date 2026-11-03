@@ -26,6 +26,7 @@ vi.mock("../../../entities/mails", () => ({
   useMailDetail: mocks.useMailDetail,
   useReceivePost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReceiveCanceledPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useReturnCanceledOrders: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDispatchPostToBranch: () => ({ mutateAsync: vi.fn(), isPending: false, reset: vi.fn() }),
   useDeleteOrdersFromPost: () => ({ mutateAsync: mocks.deleteFromPost, isPending: false }),
 }));

@@ -21,6 +21,8 @@ import {
  *                          `metadata.canceled_post_id`;
  *   3. «Qabul qilindi»   — `action: cancelled_post_received`; joy — `metadata.destination_branch`
  *                          (HQ'da — `received_by_hq`); filial → HQ zanjirida 2–3 qadam ikki marta;
+ *      HQ qabul qilmay jo'natgan filialga qaytarsa — `action: cancelled_post_returned` («Jo'natildi» qadami:
+ *      HQ → `metadata.to_branch_name`, pochta № — `metadata.return_post_id`), so'ng filial qabuli;
  *   4. «Marketga topshirildi» — `to_status: returned_to_market`; usul — `readCancelHandoverInfo`;
  *      ombor buyurtmasida (6kHnNH9j) o'rniga «Omborga qaytdi» — `action: warehouse_returned` (zanjir shu bilan yopiladi).
  * Yopilmagan zanjirda oxirida «kutilmoqda» qadami (bosqichdan: jo'natish / qabul / topshirish).
@@ -120,6 +122,10 @@ const isReceiveEvent = (event: TrackingEvent) => {
     note.includes("cancelled_order_received")
   );
 };
+
+/** HQ rad etilgan pochtadagi buyurtmani jo'natgan filialga qaytardi (holat o'zgarmaydi — `cancelled (sent)`). */
+const isReturnToBranchEvent = (event: TrackingEvent) =>
+  ["cancelled_post_returned", "canceled_post_returned"].includes(key(event.action));
 
 const isSendEvent = (event: TrackingEvent) =>
   !isReceiveEvent(event) &&
@@ -270,15 +276,31 @@ export const buildReturnPath = (
     }
     if (isSendEvent(event)) {
       const near = custodyNear(event);
+      // HQ → jo'natgan filial (qaytarish): qayerga — hodisaning o'zidan, custody bo'lmasa ham.
+      if (isReturnToBranchEvent(event)) {
+        const metadata = asRecord(event.metadata);
+        const to = cleanBranchLabel(metadata.to_branch_name) ?? (near ? holderPlace(near.new_value, hq) : null);
+        const receipt = chain.slice(index + 1).find(isReceiveEvent);
+        const postId =
+          text(metadata.return_post_id) ||
+          text(asRecord(receipt?.metadata).canceled_post_id) ||
+          (!receipt ? text(record.canceled_post_id) : "") ||
+          null;
+        steps.push({ ...base(event, "sent"), place: hq, to, postId });
+        return;
+      }
       const to = near ? holderPlace(near.new_value, hq) : null;
       const from = near ? (holderPlace(near.old_value, hq) ?? lastPlace) : lastPlace;
       // Pochta №: keyingi qabul hodisasi (`metadata.canceled_post_id`) yoki — hali yo'lda — buyurtmaning o'zi.
-      const receipt = chain.slice(index + 1).find(isReceiveEvent);
+      // HQ qabul qilmay qaytargan bo'lsa — qaytarish hodisasidagi pochta (`metadata.post_id`), qaytarish pochtasi emas.
+      const next = chain.slice(index + 1).find((item) => isReceiveEvent(item) || isReturnToBranchEvent(item));
+      const receipt = next && isReceiveEvent(next) ? next : undefined;
       const receiptMeta = asRecord(receipt?.metadata);
       const postId =
         text(receiptMeta.canceled_post_id) ||
         text(asRecord(receipt?.old_value).canceled_post_id) ||
-        (!receipt ? text(record.canceled_post_id) : "") ||
+        (next && !receipt ? text(asRecord(next.metadata).post_id) : "") ||
+        (!next ? text(record.canceled_post_id) : "") ||
         null;
       const role = roleOf(event);
       steps.push({ ...base(event, "sent"), place: role === "courier" ? null : from, to, postId });
