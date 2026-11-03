@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { ScanFormats } from "./barcodeCodes";
-import type { ScanSource } from "./feedback";
+import { preloadScanFeedbackAudio, type ScanSource } from "./feedback";
 
 export type { ScanSource } from "./feedback";
 
@@ -236,6 +236,8 @@ const buildView = (entry: Entry): ScanTarget => {
 
 /** Maqsadni stack tepasiga qo'yadi; qaytgan kalit bilan `updateScanTarget` / `unregisterScanTarget`. */
 export const registerScanTarget = (target: ScanTarget): number => {
+  // Skan kutayotgan sahifa ochildi — natija ovozi fayllari (BeePost, «Ovozli xabar») oldindan yuklansin.
+  preloadScanFeedbackAudio();
   const entry: Entry = { key: nextKey++, latest: target, view: target };
   entry.view = buildView(entry);
   stack = [...stack, entry];

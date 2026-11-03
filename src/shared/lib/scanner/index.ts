@@ -45,8 +45,16 @@ export type { ScanFormats } from "./barcodeCodes";
 export {
   playScanFeedback,
   playScanSignal,
+  preloadScanFeedbackAudio,
   SCAN_FEEDBACK_EVENT,
+  SCAN_VOICE_PHRASES,
   SCANNER_SOUND_IDS,
 } from "./feedback";
-export type { ScanFeedbackDetail, ScanFeedbackOptions, ScanFeedbackType, ScannerSoundId } from "./feedback";
+export type {
+  ScanFeedbackDetail,
+  ScanFeedbackOptions,
+  ScanFeedbackType,
+  ScannerSoundId,
+  ScanVoicePhrase,
+} from "./feedback";
 export { orderByRecent, scanNotify, useRecentScans } from "./scanSession";

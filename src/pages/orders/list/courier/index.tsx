@@ -607,7 +607,7 @@ const CourierOrders = () => {
       description: t("scanSelectedDescription", { name }),
       duration: 2000,
     });
-    void playScanFeedback("success", t("courierList.cameraSelected", { id: order.id }));
+    void playScanFeedback("success", t("courierList.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
   }, [activeTab, rejectScannedCode, selectedIds, t, touchRecentScan]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {

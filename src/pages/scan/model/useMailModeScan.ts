@@ -100,7 +100,8 @@ export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: 
         }
         const title = t("scanner.mail.pickLabel", { id: mail.id });
         setOpening({ token, title });
-        void playScanFeedback("success", t("scanner.found", { title }), source);
+        // Faqat ochadi, hali hech narsa bajarilmagan — «Bajarildi» aytilmaydi.
+        void playScanFeedback("success", t("scanner.found", { title }), source, { voice: false });
         timerRef.current = window.setTimeout(() => {
           timerRef.current = null;
           reset();

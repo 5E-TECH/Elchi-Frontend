@@ -200,7 +200,8 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
 
     expect(mocks.receiveMutate).toHaveBeenCalledWith({ orderIds: ["o1"] }, expect.any(Object));
     expect(mocks.fetchScanDetail).not.toHaveBeenCalled();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o1");
+    // «Ovozli xabar»: HQ market qabuli — «Qabul qilindi».
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o1", undefined, { voice: "received" });
     expect(statsOf()).toEqual({ received: 1, left: 1, missing: 0 });
     expect(target().progress).toMatchObject({ done: 1, total: 2 });
     expect(target().list?.[0]).toMatchObject({ title: "№o1 · Sanjar Mirzayev", tone: "success" });

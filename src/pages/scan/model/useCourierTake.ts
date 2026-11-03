@@ -124,7 +124,7 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
       const order = feedback.entry.order;
       const ref = orderRef(order?.order_number ?? feedback.entry.orderId);
       if (feedback.kind === "assigned") {
-        void playScanFeedback("success", t("scanner.take.assignedToast", { ref }));
+        void playScanFeedback("success", t("scanner.take.assignedToast", { ref }), undefined, { voice: "assigned" });
         return;
       }
       void playScanFeedback(

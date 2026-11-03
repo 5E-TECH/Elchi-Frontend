@@ -845,7 +845,7 @@ const Orders = () => {
     scanNotify.success(t("scanSelectedTitle"), {
       description: t("ordersList.scanSelected", { name: order.customer?.name ?? "—", id: order.id }),
     });
-    void playScanFeedback("success", t("ordersList.cameraSelected", { id: order.id }));
+    void playScanFeedback("success", t("ordersList.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
   }, [rejectScannedCode, selectedCancelledIds, t, touchRecentScan]);
 
   const handleMissingScannedCancelledOrder = useCallback(async (rawValue: string) => {

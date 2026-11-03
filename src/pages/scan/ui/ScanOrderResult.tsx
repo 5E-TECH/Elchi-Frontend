@@ -142,7 +142,7 @@ const useCourierAssign = (token: string) => {
     onSuccess: () => {
       // Buyurtma kuryerga o'tdi (filial qabuli ham) — ro'yxatlar, pochta va paketlar eskirmasin (6qypMFeT).
       void invalidateAfterScanAction(queryClient);
-      void playScanFeedback("success");
+      void playScanFeedback("success", undefined, undefined, { voice: "assigned" });
       setResult({ tone: "success", text: t("courier.assignSuccess") });
       scheduleRedirect();
     },

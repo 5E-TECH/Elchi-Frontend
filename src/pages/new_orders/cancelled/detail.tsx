@@ -237,7 +237,7 @@ const CancelledMarketDetail = () => {
       next.add(order.id);
       return next;
     });
-    void playScanFeedback("success", t("cancelled.camera.selected", { id: order.id }));
+    void playScanFeedback("success", t("cancelled.camera.selected", { id: order.id }), undefined, { voice: "selected" });
   }, [selectedIds, t]);
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
@@ -282,7 +282,7 @@ const CancelledMarketDetail = () => {
       return;
     }
     // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
-    void playScanFeedback("success", title, undefined, { step: true });
+    void playScanFeedback("success", title, undefined, { step: true, voice: "received" });
     scanNotify.success(title, options);
   }, [language, selectableOrders, t]);
 

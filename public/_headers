@@ -32,6 +32,11 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Skaner ovozlari va iboralari (sound/): nomida xesh yo'q, lekin kam o'zgaradi — 1 kun: har ochishda qayta so'ralmaydi
+# (birinchi skan zaxira ohangda qolmasin), fayl almashtirilsa ertasiga yangisi keladi.
+/sound/*
+  Cache-Control: public, max-age=86400
+
 # Telegram Mini App (/tg/scan): Telegram Web (web.telegram.org) ilovani iframe ichida ochadi — faqat shu sahifaga
 # Telegram'ning o'z domeni ruxsat etiladi (mobil/desktop Telegram iframe ishlatmaydi).
 /tg/scan*

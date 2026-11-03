@@ -186,6 +186,8 @@ const CourierBulkPage = () => {
           id: order.id,
           name,
         }),
+        undefined,
+        { voice: "selected" },
       );
     },
     [actions, scanMode, t, touchRecentScan],

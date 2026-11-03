@@ -116,7 +116,8 @@ export const useUniversalScan = () => {
         }
         const title = scanHistoryTitle(t, entry, language);
         setOpening({ token, title, entry });
-        void playScanFeedback("success", t("scanner.found", { title }), source);
+        // Faqat ochadi, hali hech narsa bajarilmagan — «Bajarildi» aytilmaydi.
+        void playScanFeedback("success", t("scanner.found", { title }), source, { voice: false });
         timerRef.current = window.setTimeout(() => {
           navigate(`/scan/${encodeURIComponent(token)}`);
         }, SCAN_OPEN_DELAY_MS);

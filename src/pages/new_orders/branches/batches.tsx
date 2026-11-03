@@ -172,7 +172,12 @@ const BranchSentBatchesPage = () => {
         return next;
       });
       touchRecentScan(batch.id);
-      void playScanFeedback("success", t("branchBatches.batches.cameraSelected", { id: formatBatchDisplayId(batch.id) }));
+      void playScanFeedback(
+        "success",
+        t("branchBatches.batches.cameraSelected", { id: formatBatchDisplayId(batch.id) }),
+        undefined,
+        { voice: "selected" },
+      );
     },
     [t, touchRecentScan],
   );

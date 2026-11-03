@@ -797,7 +797,7 @@ const MailDetailPage = () => {
     }
     selectOne(order.id);
     touchRecentScan(`order:${order.id}`);
-    void playScanFeedback("success", t("detailPage.cameraSelected", { id: order.id }));
+    void playScanFeedback("success", t("detailPage.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
     scanNotify.success(t("orderSelected"), {
       description: reclaimed ? t("detailPage.requestReturn.scannedRequested", { id: order.id }) : `#${order.id}`,
       duration: reclaimed ? 4000 : 2000,

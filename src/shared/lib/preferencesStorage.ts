@@ -1,10 +1,12 @@
 export type StoredTheme = "light" | "dark";
 export type StoredLanguage = "uz" | "ru" | "en";
 /**
- * Skaner ovozlari. Birinchi 6 tasi — eski (saqlangan tanlovlar shu ID'lar bilan ishlayveradi), keyingilari — yumshoq
- * to'plamlar (JX0EBpa7: qisqa, ≤ 250 ms, «takror» ohangi bilan). Ro'yxatda yo'q qiymat — sukut (`classic`).
+ * Skaner ovozlari. `beepost` — BeePost skaneridagi mp3 fayllar (`public/sound/scanner`, sukut); keyingi 6 tasi — eski
+ * (saqlangan tanlovlar shu ID'lar bilan ishlayveradi), oxirgilari — yumshoq to'plamlar (JX0EBpa7: qisqa, ≤ 250 ms,
+ * «takror» ohangi bilan). Ro'yxatda yo'q qiymat — sukut (`DEFAULT_SCANNER_SOUND`).
  */
 export const STORED_SCANNER_SOUNDS = [
+  "beepost",
   "classic",
   "soft",
   "digital",
@@ -19,6 +21,14 @@ export const STORED_SCANNER_SOUNDS = [
   "breeze",
 ] as const;
 export type StoredScannerSound = (typeof STORED_SCANNER_SOUNDS)[number];
+/** Sukut ovozi — tanlov saqlanmagan foydalanuvchida (ega qarori 2026-11-04: BeePost ovozlari). */
+export const DEFAULT_SCANNER_SOUND: StoredScannerSound = "beepost";
+/**
+ * Avvalgi sukut. Sozlama har yozuvda hisobga TO'LIQ ketardi (`useUpdateSettings`), shuning uchun hisobdagi `classic`
+ * — tanlovmi yoki eski sukutmi, ajratib bo'lmaydi: u faqat aniq tanlov belgisi (`scanner.sounds.chosen`) bilan
+ * hurmat qilinadi, aks holda — yangi sukut. Boshqa ovozlar (ular faqat tanlab qo'yiladi) har doim hurmat qilinadi.
+ */
+const LEGACY_DEFAULT_SCANNER_SOUND: StoredScannerSound = "classic";
 /** Asosiy kamera: orqa (`environment`, tavsiya) yoki old (`user`). */
 export type StoredCameraFacing = "environment" | "user";
 /** Skaner ramkasi o'lchami: kichik · o'rta · katta. */
@@ -38,6 +48,7 @@ export const PREFERENCE_STORAGE_KEYS = {
   scannerContinuous: "scanner-continuous",
   scannerSoundEnabled: "scanner-sound-enabled",
   scannerVibration: "scanner-vibration",
+  scannerVoice: "scanner-voice-enabled",
   dashboardComparison: "dashboard-comparison",
 } as const;
 
@@ -121,6 +132,15 @@ const normalizeScannerSound = (value: string | null): StoredScannerSound | null 
 export const readStoredScannerSuccessSound = (): StoredScannerSound | null =>
   normalizeScannerSound(read(PREFERENCE_STORAGE_KEYS.scannerSuccessSound));
 
+/**
+ * Hisobdagi (`admins.settings.scanner.sounds`) ovoz → amaldagi ovoz. Noma'lum qiymat — `null` (chaqiruvchi sukutni
+ * yoki qurilmadagi qiymatni qo'yadi); tanlov belgisisiz `classic` — eski avtomatik sukut, endi `DEFAULT_SCANNER_SOUND`.
+ */
+export const resolveAccountScannerSound = (value: unknown, chosen: unknown): StoredScannerSound | null => {
+  if (!isScannerSound(value)) return null;
+  return value === LEGACY_DEFAULT_SCANNER_SOUND && chosen !== true ? DEFAULT_SCANNER_SOUND : value;
+};
+
 export const writeStoredScannerSuccessSound = (sound: StoredScannerSound) => {
   write(PREFERENCE_STORAGE_KEYS.scannerSuccessSound, sound);
 };
@@ -149,6 +169,8 @@ export type StoredScannerCameraPrefs = {
 export type StoredScannerFeedbackPrefs = {
   sound: boolean;
   vibration: boolean;
+  /** «Ovozli xabar»: signaldan keyin natija o'zbekcha aytiladi («Qabul qilindi», «Xatolik bo'ldi»). */
+  voice: boolean;
 };
 
 export const DEFAULT_SCANNER_CAMERA_PREFS: StoredScannerCameraPrefs = {
@@ -161,6 +183,7 @@ export const DEFAULT_SCANNER_CAMERA_PREFS: StoredScannerCameraPrefs = {
 export const DEFAULT_SCANNER_FEEDBACK_PREFS: StoredScannerFeedbackPrefs = {
   sound: true,
   vibration: true,
+  voice: true,
 };
 
 const readStoredBool = (key: string, fallback: boolean) => {
@@ -192,11 +215,13 @@ export const writeStoredScannerCameraPrefs = (prefs: Partial<StoredScannerCamera
 export const readStoredScannerFeedbackPrefs = (): StoredScannerFeedbackPrefs => ({
   sound: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerSoundEnabled, DEFAULT_SCANNER_FEEDBACK_PREFS.sound),
   vibration: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerVibration, DEFAULT_SCANNER_FEEDBACK_PREFS.vibration),
+  voice: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerVoice, DEFAULT_SCANNER_FEEDBACK_PREFS.voice),
 });
 
 export const writeStoredScannerFeedbackPrefs = (prefs: Partial<StoredScannerFeedbackPrefs>) => {
   if (prefs.sound !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerSoundEnabled, String(prefs.sound));
   if (prefs.vibration !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerVibration, String(prefs.vibration));
+  if (prefs.voice !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerVoice, String(prefs.voice));
 };
 
 export const clearStoredUiPreferences = () => {

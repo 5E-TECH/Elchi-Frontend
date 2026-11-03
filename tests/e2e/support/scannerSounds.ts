@@ -3,9 +3,10 @@ import { expectNoHorizontalScroll } from "./scannerCamera";
 import { mockSettingsApi, settingsTab } from "./settingsNotifications";
 
 /**
- * JX0EBpa7 — Sozlamalar → Skaner: eski 6 ta ovoz yonida 6 ta yumshoq to'plam. Tanlov hisobga (`PATCH
- * auth/my-settings` → `scanner.sounds`) va qurilmaga yoziladi, qayta yuklanganda saqlangan; «Eshitib ko'rish»
- * tanlovni o'zgartirmaydi; serverdagi noma'lum ID — «Klassik» (zaxira).
+ * JX0EBpa7 — Sozlamalar → Skaner: BeePost (sukut, 2026-11-04), eski 6 ta ovoz va 6 ta yumshoq to'plam. Tanlov
+ * hisobga (`PATCH auth/my-settings` → `scanner.sounds`, aniq tanlov belgisi `chosen` bilan) va qurilmaga yoziladi,
+ * qayta yuklanganda saqlangan; «Eshitib ko'rish» tanlovni o'zgartirmaydi; serverdagi noma'lum ID va belgisiz eski
+ * sukut `classic` — «BeePost». «Ovozli xabar» kaliti ham hisobga va qurilmaga yoziladi.
  */
 const SOFT = ["Jiringcha", "Tomchi", "Marimba", "Pufakcha", "Billur", "Mayin"];
 
@@ -26,15 +27,16 @@ export const runSoftSoundsSaved = async (
 ) => {
   const { patches, leaked } = await mockSettingsApi(page, { theme });
   const { success, error } = await openScanner(page);
-  await expect(success.getByRole("radio")).toHaveCount(12);
+  await expect(success.getByRole("radio")).toHaveCount(13);
   for (const name of SOFT) await expect(success.getByRole("radio", { name })).toBeAttached();
-  await expect(success.getByRole("radio", { name: "Klassik" })).toBeChecked();
+  await expect(success.getByRole("radio", { name: "Klassik" })).toBeAttached();
+  await expect(success.getByRole("radio", { name: "BeePost" })).toBeChecked();
 
   // Eshitib ko'rish — tanlov va hisob o'zgarmaydi.
   await success
     .getByRole("button", { name: "Jiringcha — muvaffaqiyat ovozini eshitib ko'rish" })
     .click();
-  await expect(success.getByRole("radio", { name: "Klassik" })).toBeChecked();
+  await expect(success.getByRole("radio", { name: "BeePost" })).toBeChecked();
   expect(patches).toEqual([]);
 
   await success.getByText("Marimba", { exact: true }).click();
@@ -43,7 +45,7 @@ export const runSoftSoundsSaved = async (
   await expect(error.getByRole("radio", { name: "Billur" })).toBeChecked();
   await expect
     .poll(() => (patches.at(-1) as { scanner?: { sounds?: unknown } } | undefined)?.scanner?.sounds)
-    .toEqual({ success: "marimba", error: "glass" });
+    .toEqual({ success: "marimba", error: "glass", chosen: true });
   expect(await page.evaluate(() => window.localStorage.getItem("scanner-success-sound"))).toBe(
     "marimba",
   );
@@ -79,10 +81,39 @@ export const runUnknownSoundFallback = async (page: Page) => {
     initialSettings: { scanner: { sounds: { success: "eski-ovoz", error: "bell" } } },
   });
   const { success, error } = await openScanner(page);
-  await expect(success.getByRole("radio", { name: "Klassik" })).toBeChecked();
+  await expect(success.getByRole("radio", { name: "BeePost" })).toBeChecked();
   await expect(error.getByRole("radio", { name: "Qo'ng'iroq" })).toBeChecked();
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem("scanner-success-sound")))
-    .toBe("classic");
+    .toBe("beepost");
+  expect(leaked).toEqual([]);
+};
+
+/** Belgisiz `classic` (eski avtomatik sukut) — BeePost; «Ovozli xabar» o'chirilsa hisob va qurilmaga yoziladi. */
+export const runLegacyDefaultAndVoice = async (page: Page) => {
+  const { patches, leaked } = await mockSettingsApi(page, {
+    theme: "light",
+    initialSettings: { scanner: { sounds: { success: "classic", error: "classic" } } },
+  });
+  const { success, error } = await openScanner(page);
+  await expect(success.getByRole("radio", { name: "BeePost" })).toBeChecked();
+  await expect(error.getByRole("radio", { name: "BeePost" })).toBeChecked();
+
+  const voice = page.getByRole("switch", { name: "Ovozli xabar" });
+  await expect(voice).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "Ovozli xabarni eshitib ko'rish" }).click();
+  expect(patches).toEqual([]);
+
+  await voice.click();
+  await expect(voice).toHaveAttribute("aria-checked", "false");
+  await expect
+    .poll(() => (patches.at(-1) as { scanner?: { feedback?: { voice?: unknown } } } | undefined)?.scanner?.feedback?.voice)
+    .toBe(false);
+  expect(await page.evaluate(() => window.localStorage.getItem("scanner-voice-enabled"))).toBe("false");
+
+  const reloaded = await openScanner(page);
+  await expect(reloaded.success.getByRole("radio", { name: "BeePost" })).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Ovozli xabar" })).toHaveAttribute("aria-checked", "false");
+  await expectNoHorizontalScroll(page);
   expect(leaked).toEqual([]);
 };

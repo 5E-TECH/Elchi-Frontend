@@ -181,7 +181,9 @@ const BranchBatchDetailPage = () => {
         return next;
       });
       touchRecentScan(order.id);
-      void playScanFeedback("success", t("branchBatches.detail.cameraSelected", { id: order.id }));
+      void playScanFeedback("success", t("branchBatches.detail.cameraSelected", { id: order.id }), undefined, {
+        voice: "selected",
+      });
     },
     [t, touchRecentScan],
   );

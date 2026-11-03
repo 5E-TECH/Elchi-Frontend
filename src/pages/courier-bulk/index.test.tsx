@@ -278,7 +278,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     await act(async () => {
       await target().onScan("tok-10-qr", "camera");
     });
-    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Bekor qilishga belgilandi №10 · Ali");
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Bekor qilishga belgilandi №10 · Ali", undefined, {
+      voice: "selected",
+    });
     expect(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" })).toBeChecked();
 
     // Rejim kamera ichida almashtiriladi — sahifadagi rejim ham (bitta holat).
@@ -287,7 +289,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     await act(async () => {
       await target().onScan("tok-11-qr", "manual");
     });
-    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №11 · Vali");
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №11 · Vali", undefined, {
+      voice: "selected",
+    });
 
     await waitFor(() => expect(target().progress).toMatchObject({ done: 2, total: 3 }));
     expect(target().listDescription).toBe("2 / 3 · 1 ta bekor, 1 ta ertaga");
@@ -304,7 +308,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     await act(async () => {
       await target().onScan("tok-10-qr", "camera");
     });
-    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №10 · Ali");
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №10 · Ali", undefined, {
+      voice: "selected",
+    });
   });
 
   it("qatorda qo'lda belgilangan — «skanerlandi» ga kirmaydi, kamera ro'yxatida yo'q", async () => {

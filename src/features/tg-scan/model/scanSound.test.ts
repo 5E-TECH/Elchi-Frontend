@@ -30,13 +30,14 @@ describe("fetchScannerSoundPrefs — GET auth/my-profile (Mini App tokeni bilan)
     const get = vi
       .spyOn(tgScanHttp, "get")
       .mockResolvedValue(
-        profile({ sounds: { success: "marimba", error: "glass" }, feedback: { sound: false } }),
+        profile({ sounds: { success: "marimba", error: "glass" }, feedback: { sound: false, voice: false } }),
       );
 
     await expect(fetchScannerSoundPrefs("tg.jwt")).resolves.toEqual({
       success: "marimba",
       error: "glass",
       sound: false,
+      voice: false,
     });
     expect(get).toHaveBeenCalledWith("auth/my-profile", {
       headers: { Authorization: "Bearer tg.jwt", "X-Request-Source": "tg-scan" },
@@ -49,7 +50,17 @@ describe("fetchScannerSoundPrefs — GET auth/my-profile (Mini App tokeni bilan)
       success: null,
       error: null,
       sound: null,
+      voice: null,
     });
+  });
+
+  it("tanlov belgisisiz `classic` — eski sukut, asosiy ilovadagidek BeePost; belgili `classic` saqlanadi", async () => {
+    const get = vi.spyOn(tgScanHttp, "get");
+    get.mockResolvedValueOnce(profile({ sounds: { success: "classic", error: "classic" } }));
+    await expect(fetchScannerSoundPrefs("tg.jwt")).resolves.toMatchObject({ success: "beepost", error: "beepost" });
+
+    get.mockResolvedValueOnce(profile({ sounds: { success: "classic", error: "bell", chosen: true } }));
+    await expect(fetchScannerSoundPrefs("tg.jwt")).resolves.toMatchObject({ success: "classic", error: "bell" });
   });
 });
 
@@ -58,7 +69,7 @@ describe("useTgScanSound", () => {
     vi.spyOn(tgScanHttp, "get").mockResolvedValue(
       profile({
         sounds: { success: "chime", error: "drop" },
-        feedback: { sound: false, vibration: true },
+        feedback: { sound: false, vibration: true, voice: false },
       }),
     );
     renderHook(() => useTgScanSound("tg.jwt"));
@@ -66,6 +77,7 @@ describe("useTgScanSound", () => {
     await waitFor(() => expect(window.localStorage.getItem("scanner-success-sound")).toBe("chime"));
     expect(window.localStorage.getItem("scanner-error-sound")).toBe("drop");
     expect(window.localStorage.getItem("scanner-sound-enabled")).toBe("false");
+    expect(window.localStorage.getItem("scanner-voice-enabled")).toBe("false");
   });
 
   it("so'rov o'tmasa (401/tarmoq) — jim, qurilmadagi qiymatlar tegilmaydi", async () => {
@@ -78,21 +90,21 @@ describe("useTgScanSound", () => {
     expect(window.localStorage.getItem("scanner-sound-enabled")).toBeNull();
   });
 
-  it("natija → ovoz turi (asosiy ilovadagidek), tebranishsiz — Telegram o'zi tebratadi", () => {
+  it("natija → ovoz turi va ibora (asosiy ilovadagidek: o'ziga olsa «Biriktirildi»), tebranishsiz", () => {
     vi.spyOn(tgScanHttp, "get").mockResolvedValue(profile({}));
     const { result } = renderHook(() => useTgScanSound("tg.jwt"));
     const entry = { token: "t" } as never;
 
-    const cases: [ScanFeedback, string][] = [
-      [{ key: 1, kind: "assigned", entry }, "success"],
-      [{ key: 2, kind: "already", entry }, "duplicate"],
-      [{ key: 3, kind: "repeat", entry }, "duplicate"],
-      [{ key: 4, kind: "failed", entry }, "error"],
-      [{ key: 5, kind: "invalid" }, "error"],
+    const cases: [ScanFeedback, string, object][] = [
+      [{ key: 1, kind: "assigned", entry }, "success", { vibrate: false, voice: "assigned" }],
+      [{ key: 2, kind: "already", entry }, "duplicate", { vibrate: false }],
+      [{ key: 3, kind: "repeat", entry }, "duplicate", { vibrate: false }],
+      [{ key: 4, kind: "failed", entry }, "error", { vibrate: false }],
+      [{ key: 5, kind: "invalid" }, "error", { vibrate: false }],
     ];
-    for (const [feedback, type] of cases) {
+    for (const [feedback, type, options] of cases) {
       result.current(feedback);
-      expect(playScanSignal).toHaveBeenLastCalledWith(type, { vibrate: false });
+      expect(playScanSignal).toHaveBeenLastCalledWith(type, options);
     }
     expect(playScanSignal).toHaveBeenCalledTimes(5);
   });

@@ -57,7 +57,8 @@ export const useScanSession = ({ open, warehouseId, marketId, camera, messages }
         return;
       }
       dispatch({ type: "item", item, ...options });
-      void playScanFeedback("success", messages.added(item.product.name));
+      // «Qo'shildi»: kirimda ham, inventarizatsiyada ham skan faqat ro'yxatga +1 qo'shadi (tasdiq — alohida tugma).
+      void playScanFeedback("success", messages.added(item.product.name), undefined, { voice: "added" });
     },
     [messages],
   );
@@ -75,7 +76,8 @@ export const useScanSession = ({ open, warehouseId, marketId, camera, messages }
           addItem(result.items[0], { resolves: code, badge: options.badge });
         } else if (result.items.length > 1) {
           dispatch({ type: "issue", kind: "ambiguous", code, candidates: result.items });
-          void playScanFeedback("missing", messages.ambiguous(code));
+          // Topildi, lekin bir nechta marketda — «Bu ro'yxatda yo'q» noto'g'ri bo'lardi: faqat ohang + ekrandagi tanlov.
+          void playScanFeedback("missing", messages.ambiguous(code), undefined, { voice: false });
         } else if (classifyScanCode(code) === "barcode") {
           dispatch({ type: "issue", kind: "unlinked", code });
           void playScanFeedback("missing", messages.unlinked(code));

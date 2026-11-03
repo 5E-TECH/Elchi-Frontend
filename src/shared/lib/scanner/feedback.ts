@@ -1,4 +1,5 @@
 import {
+  DEFAULT_SCANNER_SOUND,
   readStoredScannerErrorSound,
   readStoredScannerFeedbackPrefs,
   readStoredScannerSuccessSound,
@@ -7,24 +8,41 @@ import {
 } from "../preferencesStorage";
 
 /**
- * SKAN NATIJASI SIGNALI — ovoz (WebAudio), tebranish va `SCAN_FEEDBACK_EVENT` hodisasi
+ * SKAN NATIJASI SIGNALI — ovoz (WebAudio), «Ovozli xabar», tebranish va `SCAN_FEEDBACK_EVENT` hodisasi
  * (taxta `tizim-scanner` §07: success · duplicate · missing · error).
  *
  * Avval `pages/scan/lib/scanShared.ts` da edi; shared va boshqa sahifalar ham ishlatgani uchun shu yerga
  * ko'chirildi (FSD: shared → pages importi bo'lmasin). Hodisa tafsiloti `{ type, message?, source? }` —
  * kamera (`ScannerCamera`) natija qatorini shundan oladi, global `ScanFeedbackOverlay` ham shuni tinglaydi.
+ *
+ * Ovoz ikki xil: sintez ohanglar (`Tone[]`, osilator) va mp3 fayllar — BeePost skaneri ovozlari (`beepost`, sukut)
+ * va o'zbekcha «Ovozli xabar» iboralari (`public/sound`). Fayllar o'sha `AudioContext` da dekodlanib chalinadi:
+ * kechikish yo'q, iOS'da ham (kamera skani foydalanuvchi bosishisiz keladi — `HTMLAudioElement` u yerda jim qolardi),
+ * va har yangi signal oldingisini (ibora ham) to'xtatadi — tez ketma-ket skanda ovozlar ustma-ust tushmaydi.
  */
 
 let audioContext: AudioContext | null = null;
 let audioOutput: GainNode | null = null;
-const activeOscillators = new Set<OscillatorNode>();
+/** mp3 fayllar chiqishi — kompressorsiz (asl ovoz balandligi o'zgarmasin), to'g'ridan-to'g'ri karnayga. */
+let fileOutput: GainNode | null = null;
+/** Chalinayotgan yoki rejalashtirilgan manbalar (osilator va fayl) — yangi signal ularni to'xtatadi. */
+const activeSources = new Set<AudioScheduledSourceNode>();
+/** Har signal — yangi avlod: yuklanib kechikkan eski signal (va uning iborasi) chalinmaydi. */
+let generation = 0;
+
+type AudioContextConstructor = typeof AudioContext;
+
+const getAudioContextCtor = (): AudioContextConstructor | null => {
+  if (typeof window === "undefined") return null;
+  return (
+    window.AudioContext ||
+    (window as typeof window & { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext ||
+    null
+  );
+};
 
 const getAudioContext = () => {
-  if (typeof window === "undefined") return null;
-  const AudioContextCtor = window.AudioContext || (window as typeof window & {
-    webkitAudioContext?: typeof AudioContext;
-  }).webkitAudioContext;
-
+  const AudioContextCtor = getAudioContextCtor();
   if (!AudioContextCtor) return null;
   if (!audioContext) {
     audioContext = new AudioContextCtor({ latencyHint: "interactive" });
@@ -40,6 +58,10 @@ const getAudioContext = () => {
     audioOutput.gain.value = 0.78;
     audioOutput.connect(compressor);
     compressor.connect(audioContext.destination);
+
+    fileOutput = audioContext.createGain();
+    fileOutput.gain.value = 1;
+    fileOutput.connect(audioContext.destination);
   }
   return audioContext;
 };
@@ -64,6 +86,8 @@ if (typeof window !== "undefined") {
 
   const unlockOnce = () => {
     void unlockAudio().then(() => {
+      // Oldindan yuklangan (skan sahifasi ochilganda) fayllar endi dekodlanadi — birinchi skan darhol chalinadi.
+      if (audioContext) decodeFetchedFiles(audioContext);
       if (audioContext?.state === "running") removeUnlockListeners();
     });
   };
@@ -75,6 +99,8 @@ if (typeof window !== "undefined") {
 
 export type ScanFeedbackType = "success" | "error" | "missing" | "duplicate";
 export type ScannerSoundId = StoredScannerSound;
+/** Sintez ohangli ovozlar (fayl emas). */
+type ToneSoundId = Exclude<ScannerSoundId, "beepost">;
 
 /** Skan qayerdan keldi: kamera, USB/Bluetooth skaner (klaviatura) yoki qo'lda kiritish. */
 export type ScanSource = "camera" | "keyboard" | "manual";
@@ -107,7 +133,54 @@ export type Tone = {
 
 export const SCANNER_SOUND_IDS: ScannerSoundId[] = [...STORED_SCANNER_SOUNDS];
 
-const SUCCESS_TONES: Record<ScannerSoundId, Tone[]> = {
+/** `public/` dagi fayl manzili — ilova bazasi bilan (`vite.config` → `base`); Mini App (`/tg/scan`) da ham ildizdan. */
+const publicFile = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
+/** mp3 ovoz: manzil, balandlik (0..1) va eshitiladigan qismi (s) — «Ovozli xabar» shundan keyin boshlanadi. */
+export type ScanSoundFile = { url: string; volume: number; audible: number };
+
+/**
+ * BeePost skaneri ovozlari (`post_control_system` → `client/public/sound/beep.mp3`, `error.mp3`; balandlik ham
+ * BeePost'dagidek — 0,7 va 1). `audible` — fayl to'lqinidan o'lchangan: signal ~0,2 s da so'nadi, xato — uch
+ * qisqa «bip», ~0,62 s (fayl oxiri — jimlik).
+ */
+export const BEEPOST_SOUNDS = {
+  success: { url: publicFile("sound/scanner/beepost-success.mp3"), volume: 0.7, audible: 0.2 },
+  error: { url: publicFile("sound/scanner/beepost-error.mp3"), volume: 1, audible: 0.62 },
+} as const satisfies Record<"success" | "error", ScanSoundFile>;
+
+/**
+ * «OVOZLI XABAR» iboralari (o'zbekcha, Microsoft uz-UZ-MadinaNeural, `public/sound/voice/uz/<ibora>.mp3`):
+ * received «Qabul qilindi» · selected «Tanlandi» · assigned «Biriktirildi» · added «Qo'shildi» · done «Bajarildi» ·
+ * duplicate «Allaqachon skanerlangan» · missing «Bu ro'yxatda yo'q» · error «Xatolik bo'ldi».
+ */
+export const SCAN_VOICE_PHRASES = [
+  "received",
+  "selected",
+  "assigned",
+  "added",
+  "done",
+  "duplicate",
+  "missing",
+  "error",
+] as const;
+export type ScanVoicePhrase = (typeof SCAN_VOICE_PHRASES)[number];
+
+export const scanVoiceUrl = (phrase: ScanVoicePhrase) => publicFile(`sound/voice/uz/${phrase}.mp3`);
+
+/** Chaqiruvchi ibora bermasa — natija turi bo'yicha. */
+const DEFAULT_VOICE: Record<ScanFeedbackType, ScanVoicePhrase> = {
+  success: "done",
+  duplicate: "duplicate",
+  missing: "missing",
+  error: "error",
+};
+
+/** Aytiladigan ibora: aniq berilgani, aks holda tur bo'yicha; `false` — aytilmaydi. */
+export const resolveScanVoice = (type: ScanFeedbackType, voice?: ScanVoicePhrase | false): ScanVoicePhrase | null =>
+  voice === false ? null : (voice ?? DEFAULT_VOICE[type]);
+
+const SUCCESS_TONES: Record<ToneSoundId, Tone[]> = {
   classic: [
     { frequency: 784, endFrequency: 880, start: 0, duration: 0.13, volume: 0.22, oscillator: "triangle" },
     { frequency: 1175, endFrequency: 1318, start: 0.105, duration: 0.16, volume: 0.18, oscillator: "sine" },
@@ -166,7 +239,7 @@ const SUCCESS_TONES: Record<ScannerSoundId, Tone[]> = {
   ],
 };
 
-const ERROR_TONES: Record<ScannerSoundId, Tone[]> = {
+const ERROR_TONES: Record<ToneSoundId, Tone[]> = {
   classic: [
     { frequency: 784, endFrequency: 740, start: 0, duration: 0.07, volume: 0.3, oscillator: "square" },
     { frequency: 370, endFrequency: 349, start: 0.095, duration: 0.09, volume: 0.34, oscillator: "square" },
@@ -231,7 +304,7 @@ const ERROR_TONES: Record<ScannerSoundId, Tone[]> = {
  * «Takror» (allaqachon o'qilgan / qayta skan) — yumshoq to'plamlarda o'z ohangi: bir xil nota ikki marta, qisqa.
  * Eski 6 ta ovozda avvalgidek muvaffaqiyat ohangi chalinadi.
  */
-const DUPLICATE_TONES: Partial<Record<ScannerSoundId, Tone[]>> = {
+const DUPLICATE_TONES: Partial<Record<ToneSoundId, Tone[]>> = {
   chime: [
     { frequency: 880, start: 0, duration: 0.07, volume: 0.09, oscillator: "sine", pluck: true },
     { frequency: 880, start: 0.1, duration: 0.09, volume: 0.09, oscillator: "sine", pluck: true },
@@ -264,15 +337,45 @@ const MISSING_TONES: Tone[] = [
   { frequency: 520, endFrequency: 440, start: 0.21, duration: 0.11, volume: 0.19, oscillator: "sine" },
 ];
 
-/** Natija turi uchun ohanglar — tanlangan (saqlangan) ovozdan; saqlanmagan yoki noma'lum bo'lsa `classic`. */
-export const getScanFeedbackTones = (type: ScanFeedbackType): Tone[] => {
-  if (type === "success") return SUCCESS_TONES[readStoredScannerSuccessSound() ?? "classic"];
-  if (type === "duplicate") {
-    const sound = readStoredScannerSuccessSound() ?? "classic";
-    return DUPLICATE_TONES[sound] ?? SUCCESS_TONES[sound];
+/** Natija ovozi: sintez ohanglar yoki mp3 fayl (yuklanmasa yoki dekodlanmasa — `fallback` ohanglar). */
+export type ScanFeedbackSound =
+  | { kind: "tones"; tones: Tone[] }
+  | { kind: "file"; file: ScanSoundFile; fallback: Tone[] };
+
+const toneSound = (tones: Tone[]): ScanFeedbackSound => ({ kind: "tones", tones });
+
+/**
+ * Natija turi uchun ovoz — tanlangan (saqlangan) ovozdan; saqlanmagan yoki noma'lum bo'lsa `DEFAULT_SCANNER_SOUND`
+ * (`beepost`). Muvaffaqiyat va «takror» — muvaffaqiyat ovozi tanlovidan, xato va «ro'yxatda yo'q» — xato ovozi
+ * tanlovidan. `sound` — saqlangan tanlov o'rniga (faqat «Eshitib ko'rish»).
+ *
+ * BeePost'da ham shunday: «allaqachon qabul qilingan» — muvaffaqiyat signali (sariq xabar bilan), «topilmadi» — xato
+ * signali (`global-scanner`). Shuning uchun `beepost` da «takror» — signal fayli, «ro'yxatda yo'q» — xato fayli;
+ * farqni «Ovozli xabar» aytadi («Allaqachon skanerlangan», «Bu ro'yxatda yo'q»). Boshqa ovozlarda avvalgidek.
+ */
+export const getScanFeedbackSound = (type: ScanFeedbackType, sound?: ScannerSoundId): ScanFeedbackSound => {
+  if (type === "success" || type === "duplicate") {
+    const id = sound ?? readStoredScannerSuccessSound() ?? DEFAULT_SCANNER_SOUND;
+    if (id === "beepost") return { kind: "file", file: BEEPOST_SOUNDS.success, fallback: SUCCESS_TONES.classic };
+    return toneSound(type === "duplicate" ? (DUPLICATE_TONES[id] ?? SUCCESS_TONES[id]) : SUCCESS_TONES[id]);
   }
-  if (type === "error") return ERROR_TONES[readStoredScannerErrorSound() ?? "classic"];
-  return MISSING_TONES;
+  const id = sound ?? readStoredScannerErrorSound() ?? DEFAULT_SCANNER_SOUND;
+  if (type === "missing") {
+    return id === "beepost"
+      ? { kind: "file", file: BEEPOST_SOUNDS.error, fallback: MISSING_TONES }
+      : toneSound(MISSING_TONES);
+  }
+  if (id === "beepost") return { kind: "file", file: BEEPOST_SOUNDS.error, fallback: ERROR_TONES.classic };
+  return toneSound(ERROR_TONES[id]);
+};
+
+/**
+ * Natija turi uchun sintez ohanglar — tanlangan ovozdan; `beepost` (fayl) da — fayl yuklanmagandagi zaxira
+ * (`classic`, «ro'yxatda yo'q» — o'z ohangi).
+ */
+export const getScanFeedbackTones = (type: ScanFeedbackType): Tone[] => {
+  const sound = getScanFeedbackSound(type);
+  return sound.kind === "tones" ? sound.tones : sound.fallback;
 };
 
 const FEEDBACK_VIBRATION: Record<ScanFeedbackType, number | number[]> = {
@@ -284,27 +387,31 @@ const FEEDBACK_VIBRATION: Record<ScanFeedbackType, number | number[]> = {
 };
 
 const stopActiveFeedback = () => {
-  activeOscillators.forEach((oscillator) => {
+  activeSources.forEach((source) => {
     try {
-      oscillator.stop();
+      source.stop();
     } catch {
-      // oscillator already stopped
+      // source already stopped
     }
   });
-  activeOscillators.clear();
+  activeSources.clear();
 };
 
-const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
+const track = (source: AudioScheduledSourceNode) => {
+  activeSources.add(source);
+  source.addEventListener("ended", () => activeSources.delete(source), { once: true });
+};
+
+/** Ohanglarni `start` dan rejalashtiradi; qaytaradi — oxirgi ohang tugaydigan payt (AudioContext vaqti). */
+const scheduleTones = (context: AudioContext, tones: Tone[], startAt: number, volumeScale: number): number => {
   const output = audioOutput;
-  if (!output) return;
+  if (!output) return startAt;
+  let lastEnd = startAt;
 
-  stopActiveFeedback();
-  const now = context.currentTime + 0.002;
-  const volumeScale = type === "success" ? 0.7 : 1;
-
-  getScanFeedbackTones(type).forEach((tone) => {
-    const start = now + tone.start;
+  tones.forEach((tone) => {
+    const start = startAt + tone.start;
     const end = start + tone.duration;
+    lastEnd = Math.max(lastEnd, end);
     const volume = tone.volume * volumeScale;
     const oscillator = context.createOscillator();
     const toneGain = context.createGain();
@@ -322,11 +429,180 @@ const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
     if (!tone.pluck) toneGain.gain.setValueAtTime(volume, Math.max(start + 0.005, end - 0.025));
     toneGain.gain.exponentialRampToValueAtTime(0.0001, end);
 
-    activeOscillators.add(oscillator);
-    oscillator.addEventListener("ended", () => activeOscillators.delete(oscillator), { once: true });
     oscillator.start(start);
     oscillator.stop(end);
+    track(oscillator);
   });
+  return lastEnd;
+};
+
+/* ─── mp3 fayllar: yuklash (tarmoq) va dekodlash (AudioContext) ───────────────────────────────────────────── */
+
+/** Tarmoqdan olingan xom fayllar — AudioContext'siz ham (oldindan yuklash foydalanuvchi bosishini kutmaydi). */
+const fetchedFiles = new Map<string, Promise<ArrayBuffer | null>>();
+/** Dekodlangan fayllar — keyingi signal ularni darhol (sinxron) chaladi. */
+const decodedFiles = new Map<string, AudioBuffer>();
+const decodingFiles = new Map<string, Promise<AudioBuffer | null>>();
+/** Brauzer dekodlay olmagan fayllar — qayta urinilmaydi, zaxira ohang chalinadi. */
+const brokenFiles = new Set<string>();
+
+const FETCH_TIMEOUT_MS = 5000;
+
+const fetchFile = (url: string): Promise<ArrayBuffer | null> => {
+  let pending = fetchedFiles.get(url);
+  if (!pending) {
+    // Osilib qolgan so'rov umumiy promise'ni ushlab turmasin — 5 s dan keyin bekor, keyingi signal qayta urinadi.
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS) : null;
+    pending = fetch(url, controller ? { signal: controller.signal } : undefined)
+      .then((response) => (response.ok ? response.arrayBuffer() : null))
+      .catch(() => null)
+      .finally(() => {
+        if (timer) clearTimeout(timer);
+      })
+      .then((data) => {
+        // Tarmoq xatosi — keyingi signal qayta urinadi.
+        if (!data) fetchedFiles.delete(url);
+        return data;
+      });
+    fetchedFiles.set(url, pending);
+  }
+  return pending;
+};
+
+const decodeData = (context: AudioContext, data: ArrayBuffer) =>
+  new Promise<AudioBuffer | null>((resolve) => {
+    try {
+      // Eski Safari faqat callback shaklini biladi; yangilari Promise ham qaytaradi (rad etilishi ushlanadi).
+      const result = context.decodeAudioData(data, resolve, () => resolve(null)) as Promise<AudioBuffer> | undefined;
+      if (result && typeof result.then === "function") result.then(resolve, () => resolve(null));
+    } catch {
+      resolve(null);
+    }
+  });
+
+/** Dekodlangan fayl; yuklanmasa yoki brauzer dekodlay olmasa — `null` (zaxira ohang yoki jim). */
+const loadFile = (context: AudioContext, url: string): Promise<AudioBuffer | null> => {
+  const ready = decodedFiles.get(url);
+  if (ready) return Promise.resolve(ready);
+  if (brokenFiles.has(url) || typeof context.decodeAudioData !== "function" || typeof fetch !== "function") {
+    return Promise.resolve(null);
+  }
+  let pending = decodingFiles.get(url);
+  if (!pending) {
+    pending = fetchFile(url).then(async (data) => {
+      const buffer = data ? await decodeData(context, data) : null;
+      decodingFiles.delete(url);
+      if (buffer) decodedFiles.set(url, buffer);
+      else if (data) {
+        // `decodeAudioData` xom ma'lumotni egallaydi — qayta dekodlab bo'lmaydi, fayl ham tuzalmaydi.
+        fetchedFiles.delete(url);
+        brokenFiles.add(url);
+      }
+      return buffer;
+    });
+    decodingFiles.set(url, pending);
+  }
+  return pending;
+};
+
+/** Oldindan yuklangan (hali dekodlanmagan) fayllarni dekodlaydi — ovoz qulfi ochilganda. */
+const decodeFetchedFiles = (context: AudioContext) => {
+  fetchedFiles.forEach((_, url) => void loadFile(context, url));
+};
+
+const FEEDBACK_TYPES: ScanFeedbackType[] = ["success", "duplicate", "missing", "error"];
+
+/**
+ * Skan sahifasi (skan maqsadi, Mini App) ochilganda kerakli fayllar oldindan yuklanadi — birinchi skan ham darhol
+ * chalinsin: tanlangan BeePost ovozlari va (yoqiq bo'lsa) «Ovozli xabar» iboralari. «Ovoz» o'chiq — hech narsa.
+ * Tarmoqqa chiqadi, AudioContext yaratmaydi (u foydalanuvchi bosishini kutadi); kontekst bo'lsa — darhol dekodlaydi.
+ */
+export const preloadScanFeedbackAudio = () => {
+  if (!getAudioContextCtor() || typeof fetch !== "function") return;
+  const prefs = readStoredScannerFeedbackPrefs();
+  if (!prefs.sound) return;
+  const urls = new Set<string>();
+  FEEDBACK_TYPES.forEach((type) => {
+    const sound = getScanFeedbackSound(type);
+    if (sound.kind === "file") urls.add(sound.file.url);
+  });
+  if (prefs.voice) SCAN_VOICE_PHRASES.forEach((phrase) => urls.add(scanVoiceUrl(phrase)));
+  urls.forEach((url) => {
+    if (brokenFiles.has(url)) return;
+    if (audioContext) void loadFile(audioContext, url);
+    else void fetchFile(url);
+  });
+};
+
+const playFile = (context: AudioContext, buffer: AudioBuffer, startAt: number, volume: number) => {
+  const output = fileOutput;
+  if (!output) return;
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  gain.gain.value = volume;
+  source.connect(gain);
+  gain.connect(output);
+  source.start(startAt);
+  track(source);
+};
+
+/** «Ovozli xabar»: signal so'ngach shuncha (s) jimlik — ibora faylining o'zida ham ~0,1 s jimlik bor. */
+const VOICE_GAP_S = 0.04;
+const VOICE_VOLUME = 1;
+/** Yuklanib shuncha (s) kechikkan signal yoki ibora endi chalinmaydi — natija allaqachon eskirgan. */
+const STALE_S = 1.5;
+/** Dekodlanmagan signal fayli shuncha (ms) kutiladi — keyin zaxira ohang (sekin tarmoqda skan jim qolmasin). */
+const FILE_WAIT_MS = 150;
+
+type FeedbackPlan = {
+  type: ScanFeedbackType;
+  sound: ScanFeedbackSound;
+  voice: ScanVoicePhrase | null;
+  preview: boolean;
+};
+
+/**
+ * Signal (ohang yoki fayl), so'ng ibora. Signal tarmoqni uzoq kutmaydi: fayl FILE_WAIT_MS ichida tayyor bo'lmasa zaxira
+ * ohang chalinadi («Eshitib ko'rish» bundan mustasno — u faylni kutadi). Ibora yuklanayotgan bo'lsa — yuklangach, agar
+ * shu orada yangi signal kelmagan va natija eskirmagan bo'lsa.
+ */
+const runFeedback = async (context: AudioContext, plan: FeedbackPlan, gen: number) => {
+  stopActiveFeedback();
+  const requestedAt = context.currentTime;
+  const volumeScale = plan.type === "success" ? 0.7 : 1;
+  let soundEnd: number;
+
+  if (plan.sound.kind === "tones") {
+    soundEnd = scheduleTones(context, plan.sound.tones, requestedAt + 0.002, volumeScale);
+  } else {
+    const { file, fallback } = plan.sound;
+    let buffer = decodedFiles.get(file.url) ?? null;
+    if (!buffer) {
+      // Skan tarmoqni kutmaydi: oldindan yuklangan fayl millisoniyalarda dekodlanadi, aks holda FILE_WAIT_MS dan keyin
+      // zaxira ohang chalinadi, fayl esa keyingi skanga yuklanishda davom etadi. «Eshitib ko'rish» faylni kutadi.
+      const loading = loadFile(context, file.url);
+      buffer = plan.preview
+        ? await loading
+        : await Promise.race([loading, new Promise<null>((resolve) => setTimeout(() => resolve(null), FILE_WAIT_MS))]);
+      if (gen !== generation) return;
+    }
+    const startAt = context.currentTime + 0.002;
+    if (buffer) {
+      playFile(context, buffer, startAt, file.volume);
+      soundEnd = startAt + Math.min(file.audible, buffer.duration);
+    } else {
+      soundEnd = scheduleTones(context, fallback, startAt, volumeScale);
+    }
+  }
+
+  if (!plan.voice) return;
+  const url = scanVoiceUrl(plan.voice);
+  const voice = decodedFiles.get(url) ?? (await loadFile(context, url));
+  if (!voice || gen !== generation) return;
+  if (!plan.preview && context.currentTime - soundEnd > STALE_S) return;
+  playFile(context, voice, Math.max(soundEnd + VOICE_GAP_S, context.currentTime + 0.002), VOICE_VOLUME);
 };
 
 export type ScanSignalOptions = {
@@ -340,6 +616,15 @@ export type ScanSignalOptions = {
    * ikki marta tebranardi.
    */
   vibrate?: boolean;
+  /**
+   * «Ovozli xabar» iborasi (signaldan keyin aytiladi): qabul — `received`, ro'yxatga tanlash — `selected`, kuryerga
+   * biriktirish — `assigned`, ro'yxatga qo'shish — `added`. Berilmasa — tur bo'yicha (success → `done`, duplicate,
+   * missing, error); `false` — aytilmaydi. Sozlamalarda «Ovozli xabar» yoki «Ovoz» o'chiq bo'lsa — aytilmaydi;
+   * «Eshitib ko'rish» (`preview`) da faqat aniq berilgan ibora aytiladi.
+   */
+  voice?: ScanVoicePhrase | false;
+  /** Saqlangan tanlov o'rniga shu ovoz — faqat «Eshitib ko'rish» (Sozlamalar), tanlov o'zgarmaydi. */
+  sound?: ScannerSoundId;
 };
 
 /** `playScanFeedback` qo'shimchalari: izoh qatori, oraliq qadam, ovozsiz yangilash. */
@@ -356,7 +641,8 @@ export type ScanFeedbackOptions = ScanSignalOptions & {
 /**
  * Faqat ovoz va tebranish (hodisasiz) — natija ekranda boshqa yo'l bilan ko'rsatilganda
  * (masalan kamera «ruxsat berilmagan» kartasi: xabar qatori kerak emas, xato ovozi kerak).
- * Sozlamalar → Skaner: «Ovoz» o'chiq — ohang yo'q, «Tebranish» o'chiq — tebranish yo'q.
+ * Sozlamalar → Skaner: «Ovoz» o'chiq — ohang ham, ibora ham yo'q; «Ovozli xabar» o'chiq — ibora yo'q;
+ * «Tebranish» o'chiq — tebranish yo'q. Hech qachon kuttirmaydi va xato tashlamaydi (brauzer ovozni bloklasa — jim).
  */
 export const playScanSignal = (type: ScanFeedbackType, options: ScanSignalOptions = {}) => {
   const prefs = readStoredScannerFeedbackPrefs();
@@ -368,12 +654,26 @@ export const playScanSignal = (type: ScanFeedbackType, options: ScanSignalOption
   const context = getAudioContext();
   if (!context) return;
 
+  const plan: FeedbackPlan = {
+    type,
+    sound: getScanFeedbackSound(type, options.sound),
+    voice: options.preview ? options.voice || null : prefs.voice ? resolveScanVoice(type, options.voice) : null,
+    preview: Boolean(options.preview),
+  };
+  const gen = ++generation;
+  const run = () => runFeedback(context, plan, gen).catch(() => undefined);
+
   if (context.state === "running") {
-    scheduleFeedback(context, type);
+    void run();
     return;
   }
 
-  void context.resume().then(() => scheduleFeedback(context, type)).catch(() => undefined);
+  // Qulf ochilishini (foydalanuvchi bosishi) kutgan signal keyinroq, eskirgan holda chalinmasin.
+  const requestedAt = Date.now();
+  void context
+    .resume()
+    .then(() => (gen === generation && Date.now() - requestedAt <= STALE_S * 1000 ? run() : undefined))
+    .catch(() => undefined);
 };
 
 /** Natija: `SCAN_FEEDBACK_EVENT` hodisasi (ekrandagi xabar) + ovoz va tebranish. */

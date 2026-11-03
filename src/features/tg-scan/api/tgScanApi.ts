@@ -2,7 +2,7 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../shared/api/endpoints";
 import { BASE_URL } from "../../../shared/const";
-import { isScannerSound, type StoredScannerSound } from "../../../shared/lib/preferencesStorage";
+import { resolveAccountScannerSound, type StoredScannerSound } from "../../../shared/lib/preferencesStorage";
 
 /**
  * SKAN MINI APP'NING O'Z HTTP MIJOZI (MWYaqprw).
@@ -115,12 +115,15 @@ export type ScannerSoundPrefs = {
   error: StoredScannerSound | null;
   /** «Ovoz» kaliti (Sozlamalar → Skaner); kelmasa — `null`, qurilmadagi qiymat qoladi. */
   sound: boolean | null;
+  /** «Ovozli xabar» kaliti; kelmasa — `null` (qurilmadagi qiymat, sukut — yoqiq). */
+  voice: boolean | null;
 };
 
 /**
  * JX0EBpa7: kuryerning skaner ovozi sozlamasi (`GET auth/my-profile` → `data.settings.scanner`). Telegram ichidagi
  * brauzer xotirasi asosiy ilovanikidan alohida — Mini App'da ham hisobdagi ovoz chalinsin va «Ovoz» o'chiq bo'lsa
- * jim tursin. Noma'lum ovoz ID — `null` (sukut qoladi).
+ * jim tursin. Noma'lum ovoz ID — `null` (sukut qoladi); tanlov belgisisiz `classic` — eski avtomatik sukut, asosiy
+ * ilovadagidek yangi sukutga (`beepost`) o'tadi (`resolveAccountScannerSound`).
  */
 export const fetchScannerSoundPrefs = async (accessToken: string): Promise<ScannerSoundPrefs> => {
   const response = await tgScanHttp.get(API_ENDPOINTS.AUTH.MY_PROFILE, { headers: authHeaders(accessToken) });
@@ -128,9 +131,10 @@ export const fetchScannerSoundPrefs = async (accessToken: string): Promise<Scann
   const sounds = asRow(scanner?.sounds);
   const feedback = asRow(scanner?.feedback);
   return {
-    success: isScannerSound(sounds?.success) ? sounds.success : null,
-    error: isScannerSound(sounds?.error) ? sounds.error : null,
+    success: resolveAccountScannerSound(sounds?.success, sounds?.chosen),
+    error: resolveAccountScannerSound(sounds?.error, sounds?.chosen),
     sound: typeof feedback?.sound === "boolean" ? feedback.sound : null,
+    voice: typeof feedback?.voice === "boolean" ? feedback.voice : null,
   };
 };
 

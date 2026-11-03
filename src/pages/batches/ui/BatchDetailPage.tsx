@@ -175,7 +175,7 @@ const BatchDetailPage = () => {
       selectOne(order.id);
       touchRecentScan(`order:${order.id}`);
       scanNotify.success(t("detail.scanSelected"), { description: `№${order.id}`, duration: 2000 });
-      void playScanFeedback("success", t("detail.cameraSelected", { id: order.id }));
+      void playScanFeedback("success", t("detail.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
     },
     [canSendToMainBranch, selectOne, t, touchRecentScan],
   );
