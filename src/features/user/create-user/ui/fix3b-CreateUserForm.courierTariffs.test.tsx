@@ -28,6 +28,7 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
     createMarket: mocks.mutation(),
     createCourier: { mutateAsync: mocks.createCourier, isPending: false },
     createLogist: mocks.mutation(),
+    createInvestorUser: mocks.mutation(),
   }),
 }));
 

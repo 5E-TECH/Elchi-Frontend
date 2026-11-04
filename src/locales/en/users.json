@@ -240,7 +240,8 @@
         "registrator": "Branch, salary and payment day",
         "registratorOwnBranch": "Salary and payment day",
         "courier": "Salary or per-order tariff",
-        "market": "Login and delivery tariffs"
+        "market": "Login and delivery tariffs",
+        "investor": "Account access and initial capital"
       },
       "hybridNote": "Couriers and registrars are assigned to {{branch}} automatically.",
       "hybridNoteOwnBranch": "Couriers and registrars are assigned to your branch automatically.",
@@ -255,7 +256,8 @@
       "alertTextCourier": "Once the courier is created, give them the phone number and password yourself — the system does not send them by SMS.",
       "formDescription": {
         "courier": "Couriers deliver orders and hand money over to the cashbox",
-        "market": "The market signs in to its account with a login and password"
+        "market": "The market signs in to its account with a login and password",
+        "investor": "The investor sees their investments and profit in their account"
       },
       "sections": {
         "main": "Main details",
@@ -263,7 +265,8 @@
         "salary": "Salary and payment day",
         "branch": "Assignment",
         "login": "Login details",
-        "delivery": "Delivery tariff"
+        "delivery": "Delivery tariff",
+        "investment": "Investment"
       },
       "fields": {
         "name": "Full name",
@@ -327,6 +330,18 @@
         "alertText": "The login is the user's phone number. The system generates the password and sends it to that number — you don't need to pass it on.",
         "phoneHint": "This number is the login; the password is sent to it too",
         "sampleSender": "Sender"
+      },
+      "investor": {
+        "sectionNote": "Optional: the capital you enter is recorded as an investment",
+        "capital": "Initial capital",
+        "capitalPlaceholder": "For example: 100 000 000",
+        "capitalHint": "Leave empty to skip the investment",
+        "investedAt": "Investment date",
+        "investedAtHint": "Empty means today",
+        "investedAtFuture": "A future date can't be chosen",
+        "created": "Investor created",
+        "capitalFailedTitle": "Capital not recorded",
+        "capitalFailedText": "The investor and their login were created, but the initial capital was not saved"
       }
     },
     "detail": {

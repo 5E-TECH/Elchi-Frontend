@@ -98,6 +98,12 @@ export const API_ENDPOINTS = {
   LOGISTS: {
     BASE: "logists",
   },
+  // Investor logini (superadmin/admin; vpKijXce): POST { name, phone_number, password_mode, password?,
+  // must_change_password? } — shu telefondagi investor yozuvi loginga bog'lanadi (yo'q bo'lsa yaratiladi),
+  // javob `data.investor`. GET ?search&status&page&limit — investor rolli loginlar.
+  INVESTOR_USERS: {
+    BASE: "investor-users",
+  },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
     BY_REGION: (regionId: string | number) => `couriers/region/${regionId}`,

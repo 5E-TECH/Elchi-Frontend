@@ -8,6 +8,7 @@ import { setName, setRole } from "../../../shared/model/roleSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateInvestorUserRequest,
   CreateLogistRequest,
   CreateManagerRequest,
   CreateMarketRequest,
@@ -240,6 +241,13 @@ export const useUser = () => {
       Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["logists"] })]),
   });
 
+  /** `POST /investor-users` — investor logini; «Investorlar» ro'yxati (`["investors"]`) ham yangilanadi. */
+  const createInvestorUser = useMutation({
+    mutationFn: (data: CreateInvestorUserRequest) => api.post(API_ENDPOINTS.INVESTOR_USERS.BASE, data),
+    onSuccess: () =>
+      Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["investors"] })]),
+  });
+
   const useGetRegions = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["regions"],
@@ -457,6 +465,7 @@ export const useUser = () => {
     createMarket,
     createCourier,
     createLogist,
+    createInvestorUser,
     useGetRegions,
     useGetUser,
     useGetCouriers,

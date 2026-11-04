@@ -240,7 +240,8 @@
         "registrator": "Filial, maosh va to'lov kuni",
         "registratorOwnBranch": "Maosh va to'lov kuni",
         "courier": "Maosh yoki buyurtma tarifi",
-        "market": "Login va yetkazish tariflari"
+        "market": "Login va yetkazish tariflari",
+        "investor": "Kabinetga kirish va boshlang'ich kapital"
       },
       "hybridNote": "Kuryer va ro'yxatchi {{branch}}ga avtomatik biriktiriladi.",
       "hybridNoteOwnBranch": "Kuryer va ro'yxatchi filialingizga avtomatik biriktiriladi.",
@@ -255,7 +256,8 @@
       "alertTextCourier": "Kuryer yaratilgach, telefon raqami va parolni unga o'zingiz yetkazing — tizim ularni SMS orqali yubormaydi.",
       "formDescription": {
         "courier": "Kuryer buyurtmalarni yetkazadi va kassaga pul topshiradi",
-        "market": "Market o'z kabinetiga login va parol bilan kiradi"
+        "market": "Market o'z kabinetiga login va parol bilan kiradi",
+        "investor": "Investor o'z kabinetida investitsiya va foydasini ko'radi"
       },
       "sections": {
         "main": "Asosiy ma'lumotlar",
@@ -263,7 +265,8 @@
         "salary": "Maosh va to'lov kuni",
         "branch": "Biriktirish",
         "login": "Kirish ma'lumotlari",
-        "delivery": "Yetkazish tarifi"
+        "delivery": "Yetkazish tarifi",
+        "investment": "Investitsiya"
       },
       "fields": {
         "name": "Ism familiya",
@@ -327,6 +330,18 @@
         "alertText": "Login — foydalanuvchining telefon raqami. Parolni tizim yaratadi va shu raqamga yuboradi, uni yetkazish shart emas.",
         "phoneHint": "Login shu raqam bo'ladi, parol ham shu raqamga keladi",
         "sampleSender": "Yuboruvchi"
+      },
+      "investor": {
+        "sectionNote": "Ixtiyoriy: kapital kiritilsa, investitsiya sifatida yoziladi",
+        "capital": "Boshlang'ich kapital",
+        "capitalPlaceholder": "Masalan: 100 000 000",
+        "capitalHint": "Bo'sh qolsa, investitsiya yozilmaydi",
+        "investedAt": "Investitsiya sanasi",
+        "investedAtHint": "Bo'sh qolsa, bugungi sana",
+        "investedAtFuture": "Kelajakdagi sanani tanlab bo'lmaydi",
+        "created": "Investor yaratildi",
+        "capitalFailedTitle": "Kapital yozilmadi",
+        "capitalFailedText": "Investor va uning logini yaratildi, lekin boshlang'ich kapital saqlanmadi"
       }
     },
     "detail": {

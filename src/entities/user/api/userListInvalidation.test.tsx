@@ -47,6 +47,7 @@ const CASES: Case[] = [
   ["createMarket", (m) => m.createMarket.mutateAsync({ name: "Mk", phone_number: "+998901112233", password: "1234" } as never)],
   ["createCourier", (m) => m.createCourier.mutateAsync({ name: "K", phone_number: "+998901112233", password: "1234" })],
   ["createLogist", (m) => m.createLogist.mutateAsync({ name: "L", phone_number: "+998901112233", password: "1234", salary: 1 })],
+  ["createInvestorUser", (m) => m.createInvestorUser.mutateAsync({ name: "I", phone_number: "+998901112233", password: "1234" })],
   ["updateUserStatus", (m) => m.updateUserStatus.mutateAsync({ id: "5", status: "inactive" as never })],
   ["updateUser", (m) => m.updateUser.mutateAsync({ id: "5", data: { name: "Yangi ism" } })],
   ["updateMyProfile", (m) => m.updateMyProfile.mutateAsync({ name: "Men" })],

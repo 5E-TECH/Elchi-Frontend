@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   createMarket: vi.fn(),
   createCourier: vi.fn(),
   createLogist: vi.fn(),
+  createInvestorUser: vi.fn(),
   useBranches: vi.fn(),
   navigate: vi.fn(),
   get: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
     createMarket: { mutateAsync: mocks.createMarket, isPending: false },
     createCourier: { mutateAsync: mocks.createCourier, isPending: false },
     createLogist: { mutateAsync: mocks.createLogist, isPending: false },
+    createInvestorUser: { mutateAsync: mocks.createInvestorUser, isPending: false },
   }),
 }));
 vi.mock("../../../../entities/branch", async (importOriginal) => ({
@@ -85,7 +87,7 @@ const sentSms = {
 const createdResponse = (data: Record<string, unknown>) => ({ data: { statusCode: 201, message: "ok", data } });
 
 beforeEach(() => {
-  for (const fn of [mocks.createAdmin, mocks.createManager, mocks.createRegistrator, mocks.createMarket, mocks.createCourier, mocks.createLogist]) {
+  for (const fn of [mocks.createAdmin, mocks.createManager, mocks.createRegistrator, mocks.createMarket, mocks.createCourier, mocks.createLogist, mocks.createInvestorUser]) {
     fn.mockReset().mockResolvedValue({ statusCode: 201 });
   }
   mocks.navigate.mockReset();
@@ -234,6 +236,34 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     expect(mocks.createLogist.mock.calls[0][0]).not.toHaveProperty("password");
     await user.click(within(dialog).getByRole("button", { name: "Viloyatlarni belgilash" }));
     expect(mocks.navigate).toHaveBeenCalledWith("/regions/logist-assignment?logist=57");
+  });
+
+  it("investor SMS rejimida (parolsiz) — natija oynasi, «Foydalanuvchiga o'tish» → investor logini", async () => {
+    mocks.createInvestorUser.mockResolvedValue(
+      createdResponse({
+        id: 81,
+        name: "Ali Investor",
+        role: "investor",
+        password_mode: "generate_sms",
+        password_sms: sentSms,
+        investor: { id: "5", user_id: "81" },
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+    await user.click(screen.getByRole("radio", { name: /^Investor/ }));
+    await fill(user, container, "fullName", "Ali Investor");
+    await fill(user, container, "phone", "901234567");
+    await user.click(screen.getByRole("button", { name: "Yaratish va SMS yuborish" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
+    expect(mocks.createInvestorUser.mock.calls[0][0]).toEqual({
+      name: "Ali Investor",
+      phone_number: "+998901234567",
+      password_mode: "generate_sms",
+    });
+    await user.click(within(dialog).getByRole("button", { name: "Foydalanuvchiga o'tish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/all-users/81");
   });
 
   it("HYBRID menejer market yaratsa — qayta yuborish yo'q; «Foydalanuvchiga o'tish» o'rniga «Ro'yxatga qaytish» (tafsilot 403), xabar bilan", async () => {

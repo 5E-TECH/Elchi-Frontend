@@ -277,6 +277,18 @@ export interface CreateLogistRequest extends CreateUserPasswordFields {
   payment_day?: number;
 }
 
+// ==================== CREATE INVESTOR ====================
+
+/**
+ * `POST /investor-users` (superadmin, admin; BeePost `POST /users/investor` naqshi) — faqat kirish: ism, telefon,
+ * parol. Backend shu telefondagi investor yozuvini loginga bog'laydi (yo'q bo'lsa yaratadi): javob `data.investor`.
+ * Boshlang'ich kapital — alohida `POST /investments`.
+ */
+export interface CreateInvestorUserRequest extends CreateUserPasswordFields {
+  name: string;
+  phone_number: string;
+}
+
 // ==================== USER DETAIL ====================
 
 export interface UserDetailResponse {
