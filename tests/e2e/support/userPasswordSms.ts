@@ -388,8 +388,9 @@ export const runUserPasswordSmsScenarios = (suffix: string, { mobile = false }: 
     await form.getByText("Qo'lda kiritish", { exact: true }).click();
     await form.locator('input[name="fullName"]').fill("Lola Kuryerova");
     await form.locator('input[name="phone"]').fill("901112233");
-    await form.locator('input[name="password"]').fill("lola2026ok");
-    await form.locator('input[name="passwordRepeat"]').fill("boshqa2026ok");
+    // Ega qarori 2026-11-02: parolda katta va kichik harf, raqam (kamida 6 belgi) — faqat takrori mos kelmaydi.
+    await form.locator('input[name="password"]').fill("Lola2026ok");
+    await form.locator('input[name="passwordRepeat"]').fill("Boshqa2026ok");
     await form.locator('input[name="homeRate"]').fill("25000");
     await form.locator('input[name="centerRate"]').fill("15000");
     const mustChange = form.getByRole("checkbox", { name: "Birinchi kirishda parolni almashtirishni talab qilish" });
@@ -398,11 +399,11 @@ export const runUserPasswordSmsScenarios = (suffix: string, { mobile = false }: 
     await form.getByRole("button", { name: "Saqlash" }).click();
     await expect(form.getByText("Parollar mos kelmadi")).toBeVisible();
     expect(mock.creates).toHaveLength(0);
-    await form.locator('input[name="passwordRepeat"]').fill("lola2026ok");
+    await form.locator('input[name="passwordRepeat"]').fill("Lola2026ok");
     await shot(page, `create-manual-form-${suffix}`);
     await form.getByRole("button", { name: "Saqlash" }).click();
     await expect.poll(() => mock.creates.length).toBe(1);
-    expect(mock.creates[0]).toMatchObject({ password_mode: "manual", password: "lola2026ok", must_change_password: true });
+    expect(mock.creates[0]).toMatchObject({ password_mode: "manual", password: "Lola2026ok", must_change_password: true });
     expect(mock.creates[0]).not.toHaveProperty("passwordRepeat");
     await expect(page.getByRole("dialog", { name: "Foydalanuvchi yaratildi" })).toHaveCount(0);
   });

@@ -114,7 +114,8 @@ test("⭐ kuryer: «Tahrirlash» joriy qiymatlar bilan, «Ish hududi» — viloy
   await dialog.getByRole("button", { name: "O'zgarishlarni saqlash" }).click();
   await expect.poll(() => patches.length).toBe(1);
   // Faqat o'zgargan maydon yuboriladi; hudud — hech qachon (o'tkazish oynasining ishi), tegilmagan tuman ham yo'q.
-  expect(patches[0]).toMatchObject({ name: "Sherzod Alimov (kuryer)" });
+  // Ism — shaxs ismi: yuborishda har so'zning bosh harfi katta (`normalizePersonName`, «(kuryer)» → «(Kuryer)»).
+  expect(patches[0]).toMatchObject({ name: "Sherzod Alimov (Kuryer)" });
   expect(patches[0]).not.toHaveProperty("region_id");
   expect(patches[0]).not.toHaveProperty("district_id");
 });
