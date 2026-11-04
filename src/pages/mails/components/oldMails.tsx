@@ -126,10 +126,12 @@ const toItems = <T extends { id: string | number; name?: string }>(value: unknow
   if (typeof value !== "object" || value === null) return [];
 
   const record = value as {
-    data?: { items?: T[]; data?: T[] };
+    data?: T[] | { items?: T[]; data?: T[] };
     items?: T[];
   };
 
+  // `GET /region` — `{ data: [...] }`: bu shakl o'qilmasa filtrga faqat joriy sahifadagi pochtalar viloyatlari chiqardi.
+  if (Array.isArray(record.data)) return record.data;
   if (Array.isArray(record.data?.items)) return record.data.items;
   if (Array.isArray(record.data?.data)) return record.data.data;
   if (Array.isArray(record.items)) return record.items;

@@ -555,6 +555,39 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "3" });
   });
 
+  it("region filter offers every region from `GET /region` ({ data: [...] }), not only the current page's ones", async () => {
+    mocks.useGetRegions.mockReturnValue({
+      data: {
+        statusCode: 200,
+        data: [
+          { id: "2", name: "Buxoro" },
+          { id: "3", name: "Andijon" },
+          { id: "9", name: "Xorazm" },
+          { id: "12", name: "Surxondaryo" },
+        ],
+      },
+      isLoading: false,
+    });
+    const user = userEvent.setup();
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    const names = screen.getAllByRole("option").map((option) => option.textContent);
+    expect(names).toEqual(expect.arrayContaining(["Xorazm", "Surxondaryo", "Buxoro", "Andijon"]));
+
+    await user.click(screen.getByRole("option", { name: "Xorazm" }));
+    expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "9" });
+  });
+
+  it("region filter falls back to the page's regions when `GET /region` gave nothing", async () => {
+    mocks.useGetRegions.mockReturnValue({ data: undefined, isLoading: false });
+    const user = userEvent.setup();
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    expect(screen.getByRole("option", { name: "Andijon" })).toBeInTheDocument();
+  });
+
   it("offers the mail statuses in the status filter", async () => {
     const user = userEvent.setup();
     renderOld("registrator", "/mails/old", "card");
