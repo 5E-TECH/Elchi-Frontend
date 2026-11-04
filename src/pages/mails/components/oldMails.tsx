@@ -46,6 +46,7 @@ import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { printPostWithOrders, toPostReceiptSource } from "../detail/lib/printMode";
+import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../model/mailBranchNames";
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabLayout } from "../model/mailsLayout";
 import {
@@ -106,6 +107,9 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * Ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
  * (`MailCardsGrid`, `useMailsCardView`) — joriy sahifa yangilari tepada, «Chekni qayta chiqarish» karta pastida
  * (havoladan tashqarida); filtrlar, chiplar, xulosa, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
+ *
+ * Jadvalda superadmin, admin va registrator «Kuryer» o'rnida «Filial» ustunini ko'radi (Bahodir, 2026-11-04;
+ * `model/mailBranchNames.ts`); menejer — «Kuryer» (o'z filiali). Filtr, Excel va chek — avvalgidek (kuryer).
  */
 
 const PAGE_SIZES = [8, 16, 32, 64] as const;
@@ -288,6 +292,10 @@ const OldMails = ({ layout }: OldMailsProps) => {
     [filteredBatches, isAllBatchMode, limit, mailsPage.rows, page],
   );
 
+  // «Filial» ustuni (superadmin, admin, registrator) — pochtalarda; «Filial paketlari» rejimida yo'q.
+  const branchColumn = useSelector(selectMailsBranchColumn) && !isAllBatchMode;
+  const branchName = useMailBranchName(branchColumn && hasMailBranch(visible));
+
   // URL'dagi sahifa oxirgisidan katta bo'lsa — oxirgisiga. Faqat haqiqiy (eski sahifa emas) javob bo'yicha.
   const lastPage = isAllBatchMode ? Math.max(1, Math.ceil(filteredBatches.length / limit)) : mailsPage.totalPages;
   const settled = isAllBatchMode
@@ -336,6 +344,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
         regionName: regionNameOf(mail),
         regionLabel: mail.region?.name || null,
         courierName: mail.courier?.name?.trim() || null,
+        branchName: branchColumn ? branchName(mail.branch_id) : null,
         orders: Number(mail.order_quantity) || 0,
         amount: Number(mail.post_total_price) || 0,
         status: { tone: badge.tone, label: t(`mails:${badge.labelKey}`) },
@@ -343,7 +352,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
         kind: badge.kind,
       };
     },
-    [isAllBatchMode, regionNameOf, t],
+    [branchColumn, branchName, isAllBatchMode, regionNameOf, t],
   );
 
   const rows = useMemo(() => visible.map(toRow), [toRow, visible]);
@@ -898,7 +907,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
           ariaLabel={tableLabel}
           idHeader={t(isAllBatchMode ? "old.colBatch" : "old.colMail")}
           statusHeader={canUseBatchMode ? t("old.colStatus") : undefined}
-          showCourier={!isCourier && !isAllBatchMode}
+          showCourier={!isCourier && !isAllBatchMode && !branchColumn}
+          showBranch={branchColumn}
           courierCards={isCourier}
           sortable={isCourier}
           statusSortable={isCourier}

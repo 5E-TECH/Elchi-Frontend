@@ -15,6 +15,22 @@ vi.mock("../../../entities/mails", () => ({
   }),
 }));
 
+/** «Filial» ustuni nomlari — `GET branches` (superadmin, admin; `model/mailBranchNames.ts`). */
+const branchesMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    data: {
+      data: [
+        { id: "1", name: "HQ Toshkent" },
+        { id: "16", name: "Urgut filiali" },
+      ],
+    },
+  })),
+);
+vi.mock("../../../entities/branch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/branch")>()),
+  useBranches: branchesMock,
+}));
+
 const roleState = (role: string) => ({ role: { id: "1", role, region: null, name: role } });
 
 /** Menejer filial turi bilan (HQ — jadval, qolganlari — kartalar; `model/mailsCardView.ts`). */
@@ -68,6 +84,7 @@ const MAILS = [
     post_total_price: 1_860_000,
     order_quantity: 9,
     qr_code_token: "qr-2471",
+    branch_id: "16",
     region_id: "21",
     region: { id: "21", name: "Surxondaryo", sato_code: "" },
     status: "canceled",
@@ -81,6 +98,7 @@ const MAILS = [
     post_total_price: 813_000,
     order_quantity: 4,
     qr_code_token: "qr-2459",
+    branch_id: "40",
     region_id: "3",
     region: { id: "3", name: "Andijon", sato_code: "" },
     status: "canceled",
@@ -97,7 +115,7 @@ describe("RefusedMails", () => {
     getRefusedMailsCourierMock.mockReturnValue(idle);
   });
 
-  it("staff: hint, summary, courier column and the «Rad etilgan» badge", () => {
+  it("staff: hint, summary, «Filial» column (instead of «Kuryer») and the «Rad etilgan» badge", () => {
     getRefusedMailsMock.mockReturnValue(loaded(MAILS));
 
     renderRefused("card", "superadmin");
@@ -110,8 +128,12 @@ describe("RefusedMails", () => {
     expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "2 ta viloyat · 13 ta buyurtma · jami 2 673 000 so'm")).toBeInTheDocument();
 
     const table = screen.getByRole("table", { name: "Rad etilgan pochtalar" });
-    expect(within(table).getByRole("columnheader", { name: "Kuryer" })).toBeInTheDocument();
-    expect(within(table).getAllByText("Sherzod Komilov").length).toBeGreaterThan(0);
+    expect(within(table).getByRole("columnheader", { name: "Filial" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
+    expect(within(table).getAllByText("Urgut filiali").length).toBeGreaterThan(0);
+    // Nomi topilmagan filial — «Filial #40» (viloyatdagi «Viloyat #12» kabi).
+    expect(within(table).getAllByText("Filial #40").length).toBeGreaterThan(0);
+    expect(within(table).queryByText("Sherzod Komilov")).not.toBeInTheDocument();
     expect(within(table).getAllByText("Rad etilgan")).toHaveLength(2);
     expect(within(table).getByRole("link", { name: "№2471 rad etilgan pochtani ochish" })).toBeInTheDocument();
     // Filtr yo'q.
@@ -124,6 +146,11 @@ describe("RefusedMails", () => {
 
     renderRefused("card", "manager", managerState("HQ"));
     expect(screen.queryByRole("list", { name: "Rad etilgan pochtalar" })).not.toBeInTheDocument();
+    // Menejerda «Kuryer» qoladi (o'z filiali — filial hamma qatorda bir xil).
+    const table = screen.getByRole("table", { name: "Rad etilgan pochtalar" });
+    expect(within(table).getByRole("columnheader", { name: "Kuryer" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Filial" })).not.toBeInTheDocument();
+    expect(within(table).getAllByText("Sherzod Komilov").length).toBeGreaterThan(0);
     await user.click(within(screen.getByRole("table", { name: "Rad etilgan pochtalar" })).getByRole("link", { name: "№2459" }));
 
     expect(screen.getByTestId("location")).toHaveTextContent("/mails/2459");

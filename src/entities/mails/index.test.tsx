@@ -9,6 +9,7 @@ import {
   toReturnRequestsMailResponse,
   useMailDetail,
   useMails,
+  useReceivePost,
   useRequestOrderReturn,
 } from "./index";
 
@@ -496,5 +497,53 @@ describe("useRequestOrderReturn — kuryer qaytarish so'rovi", () => {
     expect(
       toRequestOrderReturnResult({ order_id: "102", post_id: "8", remaining_receivable: "0" }, { postId: "7", orderId: "101" }),
     ).toMatchObject({ orderId: "102", postId: "8", remainingReceivable: 0 });
+  });
+});
+
+/**
+ * Pochtani qabul qilish (`PATCH post/receive/:id`) — kuryer va filial menejeri. Qabul qilingan pochta «Bugungi»dan
+ * chiqib «Eski»ga o'tadi: orqaga qaytganda eski kesh ko'rinmasligi uchun shu ro'yxatlar ham yangilanadi (2026-11-04).
+ */
+describe("useReceivePost — «Bugungi» ro'yxati yangilanadi", () => {
+  beforeEach(() => {
+    apiMock.patch.mockReset();
+  });
+
+  it("PATCH post/receive/:id { order_ids }; pochta, «Bugungi» (zaxira bilan) va «Eski» yangilanadi", async () => {
+    apiMock.patch.mockResolvedValue({ data: { statusCode: 200, data: [], not_received_order_ids: [] } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useReceivePost(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({ postId: "99", payload: { order_ids: ["3101", "3102"] } });
+    });
+
+    expect(apiMock.patch.mock.calls).toEqual([["post/receive/99", { order_ids: ["3101", "3102"] }]]);
+    expect(invalidate.mock.calls.map(([filters]) => (filters as { queryKey: unknown[] }).queryKey)).toEqual([
+      ["mails", "detail", "99"],
+      ["mails", "new"],
+      ["mails", "today-fallback-orders"],
+      ["mails", "old"],
+    ]);
+  });
+
+  it("xato bo'lsa ro'yxatlar yangilanmaydi (qabul bo'lmadi)", async () => {
+    apiMock.patch.mockRejectedValue({ response: { status: 400, data: { message: "Cannot receive post with this status" } } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useReceivePost(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({ postId: "99", payload: { order_ids: ["3101"] } }).catch(() => undefined);
+    });
+
+    expect(invalidate).not.toHaveBeenCalled();
   });
 });

@@ -83,6 +83,7 @@
   "oldExportSuccess": "{{count}} старых почтовых отправлений экспортировано в Excel",
   "regionFallback": "Область {{id}}",
   "regionHashFallback": "Область #{{id}}",
+  "branchHashFallback": "Филиал #{{id}}",
   "statusReturned": "Возвращена",
   "retryHint": "Пожалуйста, попробуйте снова",
   "mailNumberWithId": "Почта №{{id}}",

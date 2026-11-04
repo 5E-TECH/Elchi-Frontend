@@ -27,6 +27,8 @@ export type MailsTableRow = {
   createdAt: string;
   regionName: string;
   courierName?: string | null;
+  /** «Filial» ustuni (superadmin, admin, registrator) — pochta `branch_id` ning nomi. */
+  branchName?: string | null;
   orders: number;
   amount: number;
   /** Holat badge'i (ton + matn). `null` — badge chizilmaydi. */
@@ -44,10 +46,15 @@ const toNumber = (value: unknown): number => {
 /**
  * API pochtasi → jadval qatori. Viloyat nomi bo'lmasa — `regionFallback(id)` («Viloyat 12»), v1 dagidek.
  * Kuryer — `courier.name` (rad etilganlarda backend beradi; bugungi YANGI pochtada kuryer hali yo'q).
+ * Filial — `branchName(branch_id)` (`model/mailBranchNames.ts`; berilmasa yoki pochtada filial yo'q — `null`).
  */
 export const toMailListRow = (
   mail: MailItem,
-  options: { status: MailsTableRow["status"]; regionFallback: (regionId: string) => string },
+  options: {
+    status: MailsTableRow["status"];
+    regionFallback: (regionId: string) => string;
+    branchName?: (branchId: unknown) => string | null;
+  },
 ): MailListRow => {
   const regionId = String(mail.region?.id ?? mail.region_id ?? "");
   const courierName = mail.courier?.name?.trim();
@@ -58,6 +65,7 @@ export const toMailListRow = (
     regionId,
     regionName: mail.region?.name?.trim() || options.regionFallback(String(mail.region_id ?? regionId)),
     courierName: courierName || null,
+    branchName: options.branchName?.(mail.branch_id) ?? null,
     orders: toNumber(mail.order_quantity),
     amount: toNumber(mail.post_total_price),
     status: options.status,

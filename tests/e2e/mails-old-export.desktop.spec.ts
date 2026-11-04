@@ -3,6 +3,8 @@ import { expect, test, type Route } from "@playwright/test";
 
 /**
  * Eski pochtalar: jadvalda kuryer (TC2) va Excel «Kuryer» ustuni (TC3) — 4YZcTTDQ, 1440px.
+ * Bahodir, 2026-11-04: superadmin jadvalida «Kuryer» o'rnida «Filial» (pochta `branch_id` nomi) — TC2 shunga
+ * almashgan; Excel «Kuryer» ustuni (TC3) o'zgarmagan.
  * Backend endi `GET /post` qatorida `courier: { id, name, phone_number }` beradi
  * (kuryer o'chirilgan / yo'q bo'lsa `null`). Soxta backend, serverga so'rov ketmaydi.
  *
@@ -61,6 +63,9 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
       if (path === "auth/my-profile") {
         return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "Bosh admin", status: "active" } });
       }
+      if (path === "branches") {
+        return reply(route, { statusCode: 200, data: { items: [{ id: "1", name: "HQ Toshkent", type: "HQ" }], total: 1 } });
+      }
       if (path === "post") {
         postQueries.push(Object.fromEntries(url.searchParams));
         // Backend kabi: `limit` ≤ 100 (`limit_capped`), sahifa `createdAt DESC` bo'yicha kesiladi.
@@ -97,20 +102,22 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
     });
 
     await page.goto("/mails/old");
-    // TC2 (dizayn v2): jadvalning «Kuryer» ustunida kuryer nomi; kuryersiz pochtada «—».
+    // TC2 (2026-11-04 dan): jadvalda «Kuryer» o'rnida «Filial» — pochta filiali nomi (kuryerli pochtada ham).
     const table = page.getByRole("table", { name: "Eski pochtalar" });
     await expect(table).toBeVisible({ timeout: 60_000 });
+    await expect(table.getByRole("link", { name: "№90", exact: true })).toBeVisible();
     const headers = await table.getByRole("columnheader").allInnerTexts();
-    const courierColumn = headers.findIndex((text) => text.trim().toLowerCase() === "kuryer");
-    expect(courierColumn, "jadvalda «Kuryer» ustuni").toBeGreaterThan(-1);
-    const courierCell = (id: string) =>
+    expect(headers.map((text) => text.trim().toLowerCase())).not.toContain("kuryer");
+    const branchColumn = headers.findIndex((text) => text.trim().toLowerCase() === "filial");
+    expect(branchColumn, "jadvalda «Filial» ustuni").toBeGreaterThan(-1);
+    const branchCell = (id: string) =>
       table
         .getByRole("row")
         .filter({ has: page.getByRole("link", { name: `№${id}`, exact: true }) })
         .getByRole("cell")
-        .nth(courierColumn);
-    await expect(courierCell("90")).toHaveText("Buxaro Courier");
-    await expect(courierCell("91")).toHaveText("—");
+        .nth(branchColumn);
+    await expect(branchCell("90")).toHaveText("HQ Toshkent");
+    await expect(branchCell("91")).toHaveText("HQ Toshkent");
     // F4: sahifalash server `total` i bo'yicha — birinchi so'rov 8 ta qator, `has_orders=true`.
     await expect(page.getByText("1–8 / 150 ta pochta")).toBeVisible();
     // tveJKICY: xulosa — server yig'indilari (joriy 8 qatorniki emas).

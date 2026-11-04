@@ -83,6 +83,7 @@
   "oldExportSuccess": "{{count}} old mails exported to Excel",
   "regionFallback": "Region {{id}}",
   "regionHashFallback": "Region #{{id}}",
+  "branchHashFallback": "Branch #{{id}}",
   "statusReturned": "Returned",
   "retryHint": "Please try again",
   "mailNumberWithId": "Mail №{{id}}",

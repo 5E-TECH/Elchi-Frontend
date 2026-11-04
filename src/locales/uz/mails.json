@@ -83,6 +83,7 @@
   "oldExportSuccess": "{{count}} ta eski pochta Excel fayliga yuklandi",
   "regionFallback": "Viloyat {{id}}",
   "regionHashFallback": "Viloyat #{{id}}",
+  "branchHashFallback": "Filial #{{id}}",
   "statusReturned": "Qaytarilgan",
   "retryHint": "Iltimos, qayta urinib ko'ring",
   "mailNumberWithId": "Pochta №{{id}}",

@@ -268,6 +268,9 @@ export interface MailItem {
   qr_code_token: string;
   region_id: string;
   region: Region;
+  /** Pochta filiali (`GET /post`, `post/new`, `post/rejected`; faqat id, nomi kelmaydi): jo'natilgan — qabul qiluvchi
+   * filial, filial kuryerining pochtasi — o'sha filial; YANGI (jo'natilmagan) pochtada `null`. */
+  branch_id?: string | null;
   courier?: {
     id?: string;
     name?: string;
@@ -812,6 +815,12 @@ export const useReceivePost = () => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
       });
+      // Qabul qilingan pochta «Bugungi»dan chiqib «Eski»ga o'tadi — orqaga qaytganda eski kesh (30 s) ko'rinmasin:
+      // kuryer / menejer «Bugungi»si (`post/on-the-road`, `post?status=sent`), menejer zaxirasi (yo'ldagi buyurtmalar)
+      // va eski pochtalar.
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "today-fallback-orders"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
     },
   });
 };

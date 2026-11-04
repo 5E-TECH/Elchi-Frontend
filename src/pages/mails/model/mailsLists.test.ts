@@ -54,10 +54,21 @@ describe("mailsLists model", () => {
       regionId: "7",
       regionName: "Viloyat 7",
       courierName: "Jasur Tursunov",
+      branchName: null,
       orders: 18,
       amount: 3_420_000,
       status: { tone: "info", label: "Yangi" },
     });
+  });
+
+  it("«Filial» ustuni: branch_id nomi `branchName` dan (berilmasa yoki filial yo'q — null)", () => {
+    const mail = { id: 99, createdAt: "", region_id: "8", region: { id: "8", name: "Samarqand" }, branch_id: "16" } as unknown as MailItem;
+    const names = (id: unknown) => (id === "16" ? "Urgut filiali" : null);
+    const options = { status: null, regionFallback: (id: string) => `Viloyat ${id}` };
+
+    expect(toMailListRow(mail, { ...options, branchName: names }).branchName).toBe("Urgut filiali");
+    expect(toMailListRow({ ...mail, branch_id: null }, { ...options, branchName: names }).branchName).toBeNull();
+    expect(toMailListRow(mail, options).branchName).toBeNull();
   });
 
   it("summarizes distinct regions, mails, orders and amount", () => {
