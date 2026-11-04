@@ -33,6 +33,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canViewPaymentsPage": "superadmin admin manager/HQ manager/REGIONAL manager/HYBRID",
   "canViewProducts": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID market market_operator",
   "canViewRegionStats": "superadmin admin manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID logist",
+  "canViewReplacementReturns": "superadmin admin market",
   "canViewReturnsPage": "superadmin admin manager/HQ manager/PICKUP manager/HYBRID",
   "canViewUiKit": "superadmin",
   "canViewUsers": "superadmin admin manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID",

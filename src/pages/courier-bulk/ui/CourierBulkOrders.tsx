@@ -2,6 +2,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Inbox, RotateCcw, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ReplacementTag } from "../../../entities/order/ui/ReplacementTag";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
@@ -27,6 +28,7 @@ import {
   filterCourierBulkOrders,
   getCourierBulkOrderAction,
   isCourierBulkOrderMarked,
+  isCourierBulkSellBlocked,
   sortCourierBulkOrders,
   type CourierBulkAction,
   type CourierBulkOrder,
@@ -124,6 +126,14 @@ export const CourierBulkOrders = ({
   );
   const unmarkedBadge = (order: CourierBulkOrder) =>
     isCourierBulkOrderMarked(order.id, actions) ? null : <Badge className="shrink-0">{t("list.unmarked")}</Badge>;
+  // lQjt6sKP: eski mahsulot olinmagan almashtirish buyurtmasi bu yerdan sotilmaydi — belgi va qisqa izoh.
+  const replacementNote = (order: CourierBulkOrder) =>
+    isCourierBulkSellBlocked(order) ? (
+      <span className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="courier-bulk-replacement">
+        <ReplacementTag order={order} />
+        <span className="text-[13px] text-warning-fg">{t("list.replacementHint")}</span>
+      </span>
+    ) : null;
 
   const columns: DataTableColumn<CourierBulkOrder>[] = [
     {
@@ -136,6 +146,7 @@ export const CourierBulkOrders = ({
         <>
           <div className="whitespace-nowrap font-semibold text-text">№{order.id}</div>
           <div className="whitespace-nowrap text-[13px] text-text-muted">{dateTime(order)}</div>
+          {replacementNote(order)}
         </>
       ),
     },
@@ -213,6 +224,7 @@ export const CourierBulkOrders = ({
                 {unmarkedBadge(order)}
               </span>
               <span className="truncate text-[13px] text-text-muted">{meta}</span>
+              {replacementNote(order)}
             </div>
             <div className="min-w-0 flex-[1_1_300px] md:max-w-[380px]">{resultCell(order, "list")}</div>
           </li>

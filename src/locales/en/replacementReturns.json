@@ -1,0 +1,54 @@
+{
+  "title": "Replacement returns",
+  "description": "Old orders chosen for a replacement — the item is taken back from the customer and returned to the store",
+  "descriptionMarket": "Your replaced orders — the old item is returned to your store",
+  "total_one": "{{value}} in total",
+  "total_other": "{{value}} in total",
+  "listLabel": "Replacement returns list",
+  "cardsLabel": "Replacement returns",
+  "filtersLabel": "Filters",
+  "filters": {
+    "state": "Status",
+    "market": "Store",
+    "all": "All",
+    "allMarkets": "All stores"
+  },
+  "stateFilter": {
+    "awaiting_old_pickup": "Pending",
+    "old_collected": "Collected",
+    "old_returned": "Returned"
+  },
+  "states": {
+    "awaiting_old_pickup": "Pending — courier must collect",
+    "old_collected": "Collected — on the way to the store",
+    "old_returned": "Returned to the store"
+  },
+  "columns": {
+    "oldOrder": "Old order",
+    "newOrder": "New order",
+    "customer": "Customer",
+    "products": "Product",
+    "state": "Status",
+    "soldAt": "Sold"
+  },
+  "newOrderDeleted": "New order deleted",
+  "collectedAt": "Collected: {{date}}",
+  "soldAt": "Sold: {{date}}",
+  "itemLine": "{{name}} × {{qty}}",
+  "marketFallback": "Store #{{id}}",
+  "unknownCustomer": "Customer not specified",
+  "oldRef": "Old {{ref}}",
+  "newRef": "New {{ref}}",
+  "openOld": "Open old order {{ref}}",
+  "openNew": "Open new order {{ref}}",
+  "pagination": "{{from}}–{{to}} of {{total}}",
+  "loading": "Loading replacement returns",
+  "loadFailed": "Couldn't load replacement returns",
+  "empty": "No replacement returns",
+  "emptyDescription": "When an old order is chosen in the «Replacement» block while creating an order, it appears here.",
+  "filteredEmpty": "No replacements match this filter",
+  "filteredEmptyDescription": "Choose another status or store.",
+  "returnedEmptyDescription": "Handing the old item over to the store isn't recorded in the system yet — collected items stay «Collected».",
+  "clearFilter": "Clear filter",
+  "clearFilters": "Clear filters"
+}

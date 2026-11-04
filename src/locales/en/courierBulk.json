@@ -93,7 +93,8 @@
     "cancel": "Cancel",
     "tomorrow": "Tomorrow",
     "noMatchTitle": "No orders found",
-    "noMatchHint": "Change the search or the result filter."
+    "noMatchHint": "Change the search or the result filter.",
+    "replacementHint": "Replacement — sell from «Orders» with «I took the old item»"
   },
   "states": {
     "errorHint": "Check your internet connection and try again.",
@@ -134,5 +135,10 @@
     "markedCancel": "Marked for cancellation №{{id}} · {{name}}",
     "markedTomorrow": "Kept for tomorrow №{{id}} · {{name}}",
     "markedSold": "Marked as sold №{{id}} · {{name}}"
-  }
+  },
+  "confirmReplacement_one": "{{count}} replacement order is not sold",
+  "confirmReplacement_other": "{{count}} replacement orders are not sold",
+  "confirmReplacementHint": "They stay waiting — take the old item and sell from «Orders» with «I took the old item»",
+  "finalizeReplacementKept_one": "{{count}} replacement order is sold from «Orders».",
+  "finalizeReplacementKept_other": "{{count}} replacement orders are sold from «Orders»."
 }

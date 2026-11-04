@@ -1,0 +1,56 @@
+{
+  "title": "Возвраты по заменам",
+  "description": "Старые заказы, выбранные для замены, — товар забирают у клиента и возвращают магазину",
+  "descriptionMarket": "Ваши заказы с заменой — старый товар возвращается магазину",
+  "total_one": "всего {{value}}",
+  "total_few": "всего {{value}}",
+  "total_many": "всего {{value}}",
+  "total_other": "всего {{value}}",
+  "listLabel": "Список возвратов по заменам",
+  "cardsLabel": "Возвраты по заменам",
+  "filtersLabel": "Фильтры",
+  "filters": {
+    "state": "Статус",
+    "market": "Магазин",
+    "all": "Все",
+    "allMarkets": "Все магазины"
+  },
+  "stateFilter": {
+    "awaiting_old_pickup": "Ожидается",
+    "old_collected": "Забран",
+    "old_returned": "Возвращён"
+  },
+  "states": {
+    "awaiting_old_pickup": "Ожидается — курьер должен забрать",
+    "old_collected": "Забран — едет в магазин",
+    "old_returned": "Возвращён магазину"
+  },
+  "columns": {
+    "oldOrder": "Старый заказ",
+    "newOrder": "Новый заказ",
+    "customer": "Клиент",
+    "products": "Товар",
+    "state": "Статус",
+    "soldAt": "Продан"
+  },
+  "newOrderDeleted": "Новый заказ удалён",
+  "collectedAt": "Забран: {{date}}",
+  "soldAt": "Продан: {{date}}",
+  "itemLine": "{{name}} × {{qty}}",
+  "marketFallback": "Магазин #{{id}}",
+  "unknownCustomer": "Клиент не указан",
+  "oldRef": "Старый {{ref}}",
+  "newRef": "Новый {{ref}}",
+  "openOld": "Открыть старый заказ {{ref}}",
+  "openNew": "Открыть новый заказ {{ref}}",
+  "pagination": "{{from}}–{{to}} из {{total}}",
+  "loading": "Загружаются возвраты по заменам",
+  "loadFailed": "Не удалось загрузить возвраты по заменам",
+  "empty": "Возвратов по заменам нет",
+  "emptyDescription": "Когда при создании заказа в блоке «Замена» выбирают старый заказ, он появляется здесь.",
+  "filteredEmpty": "По этому фильтру замен нет",
+  "filteredEmptyDescription": "Выберите другой статус или магазин.",
+  "returnedEmptyDescription": "Передача старого товара магазину пока не отмечается в системе — забранные товары остаются в статусе «Забран».",
+  "clearFilter": "Сбросить фильтр",
+  "clearFilters": "Сбросить фильтры"
+}

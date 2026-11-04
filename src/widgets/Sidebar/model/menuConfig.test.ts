@@ -14,6 +14,7 @@ import {
   MapPinned,
   Package,
   Plug,
+  Repeat,
   RotateCcw,
   Scale,
   ScrollText,
@@ -321,6 +322,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     Banknote,
     // yXC91RRx: «Ombor» — maketda lucide nomi bilan.
     Warehouse,
+    // lQjt6sKP: «Almashtirishlar» — maketda lucide nomi bilan (BeePost menyusidagi ikonka).
+    Repeat,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
@@ -424,6 +427,34 @@ describe("market operatori menyusi (MO-2, MO-3)", () => {
     const paths = SIDEBAR_CONFIG.market_operator.map((item) => item.to);
     for (const path of ["/payments", "/cash-box", "/financial-balance", "/market-operators"]) {
       expect(paths).not.toContain(path);
+    }
+  });
+});
+
+describe("«Almashtirishlar» bandi (lQjt6sKP)", () => {
+  const paths = (role: string, type?: BranchType) =>
+    getSidebarConfigForUser(role, type ? userWithBranchType(type) : null).map((item) => item.to);
+
+  it("superadmin va adminda — «Qaytarishlar» dan keyin, «Ish» guruhida, `Repeat` ikonkasi bilan (BeePost menyusi)", () => {
+    for (const role of ["superadmin", "admin"]) {
+      const items = getSidebarConfigForUser(role, null);
+      const index = items.findIndex((item) => item.to === "/replacement-returns");
+      expect(index, role).toBeGreaterThan(-1);
+      expect(items[index - 1].to, role).toBe("/returns");
+      expect(items[index]).toMatchObject({ label: "replacements", icon: Repeat });
+    }
+    expect(SIDEBAR_GROUP_BY_PATH["/replacement-returns"]).toBe("work");
+  });
+
+  it("registrator (backend 403), market (menyusiz — faqat havola), menejer va kuryerda yo'q", () => {
+    for (const [role, type] of [
+      ["registrator", "HQ"],
+      ["market", undefined],
+      ["market_operator", undefined],
+      ["manager", "HYBRID"],
+      ["courier", "REGIONAL"],
+    ] as const) {
+      expect(paths(role, type), role).not.toContain("/replacement-returns");
     }
   });
 });

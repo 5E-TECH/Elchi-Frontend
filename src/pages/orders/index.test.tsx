@@ -147,6 +147,32 @@ describe("Orders list — buyurtma yaratish", () => {
   });
 });
 
+describe("Orders list — «Almashtirishlar» havolasi (lQjt6sKP)", () => {
+  const marketState = { role: { id: "77", role: "market", region: null, name: "Baraka Shop" } } as never;
+  const registratorState = { role: { id: "5", role: "registrator", region: null, name: "Registrator" } } as never;
+
+  it("market — menyu bandi yo'q, kirish nuqtasi sarlavhadagi havola", () => {
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: marketState });
+
+    expect(screen.getByRole("link", { name: "Almashtirishlar" })).toHaveAttribute("href", "/replacement-returns");
+  });
+
+  it("admin — havola bor (menyuda ham)", () => {
+    open("/orders");
+
+    expect(screen.getByRole("link", { name: "Almashtirishlar" })).toHaveAttribute("href", "/replacement-returns");
+  });
+
+  it("registrator va menejer — havola yo'q (backend 403)", () => {
+    const { unmount } = renderWithProviders(<Orders />, { route: "/orders", preloadedState: registratorState });
+    expect(screen.queryByRole("link", { name: "Almashtirishlar" })).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: regionalManagerState });
+    expect(screen.queryByRole("link", { name: "Almashtirishlar" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Orders list — sarlavha, tablar, sahifalash", () => {
   beforeEach(() => {
     getOrdersMock.mockClear();

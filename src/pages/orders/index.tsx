@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, ListX, Plus, Send } from "lucide-react";
+import { Download, Info, ListX, Plus, Repeat, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -44,7 +44,7 @@ import { OrdersRefreshAlert } from "./list/OrdersRefreshAlert";
 import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
-import { canCreateOrders, canViewCancelReasons } from "../../app/lib/access";
+import { canCreateOrders, canViewCancelReasons, canViewReplacementReturns } from "../../app/lib/access";
 import CourierOrders from "./list/courier/index";
 import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
@@ -277,6 +277,9 @@ const Orders = () => {
   const currentUser = useSelector((state: RootState) => state.user.user);
   const canCreate = useSelector(canCreateOrders);
   const canSeeCancelReasons = useSelector(canViewCancelReasons);
+  // lQjt6sKP: «Almashtirish qaytarmalari» havolasi — superadmin/admin uchun menyuda ham bor, market uchun esa
+  // yagona kirish nuqtasi (marketda menyu bandi yo'q).
+  const canSeeReplacementReturns = useSelector(canViewReplacementReturns);
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -634,6 +637,10 @@ const Orders = () => {
           ? selectedActionOrder.sale_market_paid_max
           : null,
       external_id: (orderFlags.external_id as string | number | null | undefined) ?? null,
+      // lQjt6sKP: almashtirish buyurtmasi — sotish oynasida «Eski mahsulotni oldim» tasdig'i.
+      replacement_of_order_id: selectedActionOrder.replacement_of_order_id ?? null,
+      replacement_state: selectedActionOrder.replacement_state ?? null,
+      old_item_collected_at: selectedActionOrder.old_item_collected_at ?? null,
       where_deliver: selectedActionOrder.where_deliver,
       market: {
         name: selectedActionOrder.market?.name ?? "—",
@@ -1124,6 +1131,12 @@ const Orders = () => {
               <Link to="/orders/cancel-reasons" className={buttonClasses({ variant: "secondary", compact: true })}>
                 <ListX aria-hidden="true" size={16} strokeWidth={2} />
                 {t("cancelReasonStats.title")}
+              </Link>
+            ) : null}
+            {canSeeReplacementReturns ? (
+              <Link to="/replacement-returns" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <Repeat aria-hidden="true" size={16} strokeWidth={2} />
+                {t("ordersList.replacementReturns")}
               </Link>
             ) : null}
             {canCreate ? (

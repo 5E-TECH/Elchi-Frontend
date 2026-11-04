@@ -1,3 +1,4 @@
+import { readOrderReplacement } from "../../../entities/order/model/orderReplacement";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { isProofRequiredByConditions, toKnownAmount } from "../../../entities/orders/proofRequirement";
 
@@ -78,8 +79,11 @@ export const getCourierBulkCounts = (
   return orders.reduce<CourierBulkCounts>(
     (accumulator, order) => {
       const action = actions[order.id] ?? "sold";
-      accumulator[action] += 1;
       accumulator.total += 1;
+      // lQjt6sKP: eski mahsulot olinmagan almashtirish bu yerdan sotilmaydi — «Sotiladi»ga qo'shilmaydi
+      // (tasdiq oynasidagi soldCount bilan bir xil); «Kutilayotgan» (total) da qoladi — buyurtma WAITING.
+      if (action === "sold" && isCourierBulkSellBlocked(order)) return accumulator;
+      accumulator[action] += 1;
       return accumulator;
     },
     { cancel: 0, sold: 0, tomorrow: 0, total: 0 },
@@ -92,6 +96,20 @@ export const getCourierBulkOrderAction = (
 ): CourierBulkAction => actions[orderId] ?? "sold";
 
 /**
+ * Almashtirish buyurtmasi (lQjt6sKP) eski mahsulot olinmaguncha «Eski mahsulotni oldim» tasdig'isiz sotilmaydi
+ * (backend 400). Ommaviy yopishda bunday tasdiq yo'q — buyurtma «sotildi» bo'lib YUBORILMAYDI, kutilmoqda holatida
+ * qoladi; kuryer uni «Buyurtmalar»dan tasdiq bilan sotadi. Bekor qilish — odatdagidek.
+ */
+export const isCourierBulkSellBlocked = (order: unknown) => readOrderReplacement(order).needsOldItemConfirm;
+
+/** «Sotildi» (aniq yoki sukut) belgisidagi, lekin bu yerdan sotib bo'lmaydigan almashtirish buyurtmalari. */
+export const getCourierBulkReplacementHeld = <T extends { id: string }>(
+  orders: T[],
+  actions: Record<string, CourierBulkAction>,
+): T[] =>
+  orders.filter((order) => getCourierBulkOrderAction(order.id, actions) === "sold" && isCourierBulkSellBlocked(order));
+
+/**
  * "Kunni yakunlash" da API ga ketadigan buyurtmalar (fix3 FE-CB-09).
  *
  * "Ertaga" belgilangan buyurtma uchun so'rov YUBORILMAYDI — u shunchaki
@@ -99,6 +117,8 @@ export const getCourierBulkOrderAction = (
  * yuborilardi: u `reason` (min 10 belgi) talab qiladi va faqat ON_THE_ROAD
  * buyurtmani qabul qiladi, bu ro'yxat esa faqat WAITING — ya'ni har bir
  * "ertaga" doim 400 berardi va butun yakunlash "xatolik" bilan tugardi.
+ *
+ * Eski mahsulot olinmagan almashtirish buyurtmasi ham «sotildi» bo'lib yuborilmaydi (`isCourierBulkSellBlocked`).
  */
 export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   orders: T[],
@@ -106,7 +126,9 @@ export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
 ): Array<CourierBulkFinalizeTask<T>> =>
   orders.flatMap((order) => {
     const action = getCourierBulkOrderAction(order.id, actions);
-    return action === "tomorrow" ? [] : [{ order, action }];
+    if (action === "tomorrow") return [];
+    if (action === "sold" && isCourierBulkSellBlocked(order)) return [];
+    return [{ order, action }];
   });
 
 /**
@@ -132,12 +154,14 @@ export const isCourierBulkOrderMarked = (orderId: string, actions: Record<string
 
 /**
  * Belgilanmagan buyurtmalar soni — «Sotiladi» kartasi va tasdiq oynasidagi «{u} tasi belgilanmagan, sukut
- * bo'yicha» (maket `courier-courier-bulk-confirm-dialog`).
+ * bo'yicha» (maket `courier-courier-bulk-confirm-dialog`). Sukut bo'yicha ham sotilmaydigan almashtirish
+ * buyurtmasi (`isCourierBulkSellBlocked`, lQjt6sKP) bu songa kirmaydi — «Sotiladi» soni bilan mos bo'lsin.
+ * «Belgilanmagan» natija filtri va qatordagi belgi bu songa bog'liq emas (`isCourierBulkOrderMarked`).
  */
 export const getCourierBulkUnmarkedCount = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,
-) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions)).length;
+) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions) && !isCourierBulkSellBlocked(order)).length;
 
 /** «Natija» filtri: barchasi · sotiladi · bekor · ertaga · belgilanmagan (mijoz tomonida). */
 export type CourierBulkResultFilter = "all" | CourierBulkAction | "unmarked";

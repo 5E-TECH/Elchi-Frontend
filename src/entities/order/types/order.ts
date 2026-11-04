@@ -135,6 +135,14 @@ export interface OrderListItem {
     /** 6kHnNH9j: manba (eski javobda yo'q — HQ). */
     fulfillment_source?: OrderFulfillmentSource | null;
     warehouse?: OrderWarehouseRef | null;
+    /**
+     * lQjt6sKP almashtirish (`readOrderReplacement`): yangi buyurtmada — eski buyurtma id'si; eski buyurtmada
+     * `is_replacement_return: true`. Holat: `awaiting_old_pickup` → `old_collected` → `old_returned`.
+     */
+    replacement_of_order_id?: string | null;
+    replacement_state?: "awaiting_old_pickup" | "old_collected" | "old_returned" | null;
+    is_replacement_return?: boolean;
+    old_item_collected_at?: string | null;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -315,4 +323,9 @@ export interface CreateOrderRequest {
     cancel_requires_media?: boolean;
     /** 6kHnNH9j: manba tanlovi (yuborilmasa — `auto`). Faqat manba bloki ko'rinadigan rollarda yuboriladi. */
     fulfillment?: OrderFulfillmentChoice;
+    /**
+     * lQjt6sKP: almashtirish — shu buyurtma o'rniga yuboriladigan ESKI (yetkazilgan) buyurtma ID si
+     * (`GET orders/replaceable`). Faqat qo'lda yaratish formasidan; tanlanmasa yuborilmaydi.
+     */
+    replaced_order_id?: string;
 }

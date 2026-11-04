@@ -1,3 +1,4 @@
+import { readOrderReplacement } from "../../../../entities/order/model/orderReplacement";
 import { resolveAssetUrl } from "../../../../shared/lib/assetUrl";
 import type { EditableOrderSnapshot } from "../newOrderUpdateRules";
 
@@ -245,6 +246,7 @@ export const buildTrackingContext = (order: OrderDetail | null) => {
 export const buildActionOrder = (order: OrderDetail | null) => {
   if (!order) return null;
   const market = readOrderMarket(order);
+  const replacement = readOrderReplacement(order);
   return {
     id: order.id,
     created_at: "",
@@ -267,6 +269,10 @@ export const buildActionOrder = (order: OrderDetail | null) => {
         ? order.sale_market_paid_max
         : null,
     external_id: (order.external_id ?? order.externalId ?? null) as string | number | null,
+    // lQjt6sKP: almashtirish buyurtmasi — sotish oynasida «Eski mahsulotni oldim» tasdig'i (tafsilot va skan).
+    replacement_of_order_id: replacement.oldOrderId,
+    replacement_state: replacement.state,
+    old_item_collected_at: replacement.collectedAt,
     sell_requires_media: Boolean(
       order.sell_requires_media ?? order.sellRequiresMedia ?? order.require_sell_proof ?? order.sell_proof_required,
     ),

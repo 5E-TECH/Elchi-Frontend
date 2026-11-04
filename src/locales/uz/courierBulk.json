@@ -90,7 +90,8 @@
     "cancel": "Bekor",
     "tomorrow": "Ertaga",
     "noMatchTitle": "Buyurtma topilmadi",
-    "noMatchHint": "Qidiruv yoki natija filtrini o'zgartiring."
+    "noMatchHint": "Qidiruv yoki natija filtrini o'zgartiring.",
+    "replacementHint": "Almashtirish — «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting"
   },
   "states": {
     "errorHint": "Internet aloqasini tekshirib, qayta urinib ko'ring.",
@@ -127,5 +128,8 @@
     "markedCancel": "Bekor qilishga belgilandi №{{id}} · {{name}}",
     "markedTomorrow": "Ertaga qoldirishga belgilandi №{{id}} · {{name}}",
     "markedSold": "Sotildi deb belgilandi №{{id}} · {{name}}"
-  }
+  },
+  "confirmReplacement": "{{count}} ta almashtirish buyurtmasi sotilmaydi",
+  "confirmReplacementHint": "Kutilmoqda holatida qoladi — eski mahsulotni olib, «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting",
+  "finalizeReplacementKept": "{{count}} ta almashtirish buyurtmasi «Buyurtmalar»dan sotiladi."
 }

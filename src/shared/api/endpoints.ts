@@ -166,6 +166,10 @@ export const API_ENDPOINTS = {
     COURIER_ORDERS: "orders/courier/orders",
     COURIER_ORDER_COUNTS: "orders/courier/orders/counts", // GET kuryer tablari soni { waiting, all, cancelled } (0d11ewk7)
     STATUS_COUNTS: "orders/status-counts", // GET holat tablari sonlari + new_incoming — `GET /orders` filtrlari bilan (GaBIPi3Z)
+    // lQjt6sKP: almashtirish uchun eski (yetkazilgan) buyurtmalar — yaratish formasi. GET ?market_id&customer_id&q&limit
+    REPLACEABLE: "orders/replaceable",
+    // lQjt6sKP: almashtirishga tanlangan eski buyurtmalar (mahsuloti marketga qaytariladi). GET ?market_id&state&page&limit
+    REPLACEMENT_RETURNS: "orders/replacement/returns",
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST

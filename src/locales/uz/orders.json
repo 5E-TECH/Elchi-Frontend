@@ -5,6 +5,7 @@
     "exportExcel": "Excelga yuklash",
     "exportAllHint": "Filtrga mos barcha sahifalar Excel faylga yuklanadi",
     "createOrder": "Buyurtma yaratish",
+    "replacementReturns": "Almashtirishlar",
     "cardLabel": "Buyurtmalar ro'yxati",
     "cardLabelPending": "Kutilayotgan buyurtmalar",
     "cardLabelCancelled": "Bekor qilingan buyurtmalar",
@@ -1005,6 +1006,33 @@
     "operatorYou": "Siz",
     "operatorAuto": "Siz — avtomatik yoziladi"
   },
+  "replacementPicker": {
+    "label": "Almashtirish",
+    "hint": "Bu buyurtma avval yetkazilgan buyurtma o'rniga bo'lsa, eskisini tanlang — kuryer yangisini topshirib eskisini qaytarib oladi.",
+    "noMarket": "Avval marketni tanlang — eski buyurtma shu market buyurtmalaridan tanlanadi",
+    "open": "Almashtirish uchun — eski buyurtmani tanlash",
+    "selected": "Eski {{ref}} ({{date}}) — {{customer}} almashtirilmoqda",
+    "selectedNoCustomer": "Eski {{ref}} ({{date}}) almashtirilmoqda",
+    "cancel": "Bekor qilish",
+    "cancelAria": "Almashtirishni bekor qilish: eski {{ref}} ({{date}})",
+    "summary": "Almashtirish",
+    "dialogTitle": "Eski buyurtmani tanlash",
+    "dialogDescription": "Shu marketning yetkazilgan buyurtmalari — yangi buyurtma shulardan biri o'rniga yuboriladi",
+    "searchPlaceholder": "Telefon yoki buyurtma raqami bo'yicha qidirish...",
+    "searchAria": "Eski buyurtmani qidirish",
+    "listLabel": "Yetkazilgan buyurtmalar",
+    "hintSearch": "Market bo'ylab qidiruv natijalari",
+    "hintCustomer": "Shu mijozning oldingi buyurtmalari (boshqa mijoznikini qidirish uchun yuqorida yozing)",
+    "hintRecent": "Marketning so'nggi yetkazilgan buyurtmalari (mijoz telefoni yoki buyurtma raqamini yozing)",
+    "emptySearch": "Qidiruv bo'yicha yetkazilgan buyurtma topilmadi.",
+    "emptyCustomer": "Bu mijozning shu marketdan yetkazilgan buyurtmasi yo'q. Boshqa mijoznikini qidiring.",
+    "emptyRecent": "Bu marketda almashtirish mumkin bo'lgan yetkazilgan buyurtma yo'q.",
+    "more": "{{total}} tadan {{shown}} tasi ko'rsatildi — aniqroq qidiring",
+    "deliveredOn": "Yetkazilgan sana: {{date}}",
+    "itemLine": "{{name}} ×{{quantity}}",
+    "unnamedProduct": "Mahsulot",
+    "noCustomerName": "Ismsiz mijoz"
+  },
   "operatorSelect": {
     "none": "Tanlanmagan",
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
@@ -1050,5 +1078,30 @@
       "summary": "Qayerdan",
       "notInStock": "Omborda yo'q"
     }
+  },
+  "replacementSell": {
+    "notice": "Almashtirish: mijozdan eski mahsulotni qaytarib oling — {{ref}}",
+    "noticeHint": "Bu buyurtma avval yetkazilgan buyurtma o'rniga. Yangisini topshirib, eskisini mijozdan oling — u marketga qaytariladi.",
+    "confirm": "Eski mahsulotni oldim",
+    "confirmRequired": "«Eski mahsulotni oldim» belgilanmaguncha sotib bo'lmaydi",
+    "collected": "Almashtirish: eski mahsulot olingan ({{date}})",
+    "collectedNoDate": "Almashtirish: eski mahsulot olingan"
+  },
+  "replacementTag": {
+    "replacement": "Almashtirish",
+    "replacementTitle": "Almashtirish buyurtmasi — eski {{ref}} o'rniga",
+    "return": "Almashtirish qaytarmasi",
+    "returnAwaiting": "Eski mahsulot — kuryer mijozdan olishi kerak",
+    "returnCollected": "Eski mahsulot olingan — marketga qaytmoqda",
+    "returnReturned": "Eski mahsulot marketga qaytarildi"
+  },
+  "replacementBanner": {
+    "newTitle": "Almashtirish buyurtmasi",
+    "newAwaiting": "Eski {{ref}} o'rniga. Kuryer yangisini topshirib, eskisini mijozdan qaytarib oladi — sotishda «Eski mahsulotni oldim» tasdig'i so'raladi.",
+    "newCollected": "Eski {{ref}} o'rniga. Eski mahsulot mijozdan olingan: {{date}}.",
+    "newCollectedNoDate": "Eski {{ref}} o'rniga. Eski mahsulot mijozdan olingan.",
+    "returnTitle": "Almashtirish qaytarmasi",
+    "returnCollectedAt": "Olingan: {{date}}.",
+    "openOld": "Eski buyurtmani ochish"
   }
 }

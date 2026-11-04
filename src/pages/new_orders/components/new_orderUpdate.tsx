@@ -8,6 +8,7 @@ import type { RootState } from "../../../app/config/store";
 import {
   isWarehouseReturn,
   normalizeOrderStatus,
+  readOrderReplacement,
   readProofFiles,
   resolveCancelReturnStage,
   useCancelHandoverMethodLabel,
@@ -118,6 +119,8 @@ const NewOrderUpdate = () => {
   const lockIds = getLockAlertIds(access.productsLocked, access.destinationLocked);
 
   const actionOrder = useMemo(() => buildActionOrder(order), [order]);
+  // lQjt6sKP: almashtirish banneri (yangi buyurtma — eski №EL-… o'rniga; eski buyurtma — qaytarma holati).
+  const replacement = useMemo(() => (order ? readOrderReplacement(order) : null), [order]);
   const trackingAccess = useMemo(() => buildTrackingAccess(order), [order]);
   /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
   const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
@@ -526,6 +529,7 @@ const NewOrderUpdate = () => {
           editOpen={editOpen}
           marketListHref={isNewOrdersRoute && access.layout === "market" ? `/new-orders/${marketId}` : null}
           lockReason={lockReason}
+          replacement={replacement}
         />
       ) : null}
 

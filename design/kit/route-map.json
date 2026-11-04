@@ -47,7 +47,8 @@
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} },
     "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } },
     "canViewInvestorCabinet": { "source": "access.ts → canViewInvestorCabinet", "roles": { "investor": "" } },
-    "canViewInvestorControl": { "source": "access.ts → canViewInvestorControl", "roles": { "superadmin": "" } }
+    "canViewInvestorControl": { "source": "access.ts → canViewInvestorControl", "roles": { "superadmin": "" } },
+    "canViewReplacementReturns": { "source": "access.ts → canViewReplacementReturns", "roles": { "superadmin": "", "admin": "", "market": "o'z buyurtmalari (token); menyuda yo'q" } }
   },
   "sections": [
     { "id": "shell", "title": "Qobiq — yon menyu, yuqori panel, pastki menyu" },
@@ -833,6 +834,20 @@
         "manager": ["returns-list"]
       },
       "note": "Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2)."
+    },
+    {
+      "path": "/replacement-returns",
+      "entry": "yon menyu → «Ish» → «Almashtirishlar» (superadmin, admin); /orders sarlavhasidagi «Almashtirishlar» tugmasi (superadmin, admin, market)",
+      "section": "orders",
+      "title": "Almashtirish qaytarmalari — almashtirishga tanlangan eski buyurtmalar",
+      "components": ["src/pages/replacement-returns/index.tsx", "src/pages/replacement-returns/model/replacementReturnsView.ts", "src/entities/order/api/replacementReturns.ts"],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q — eng yaqini: superadmin-returns-list",
+        "admin": "Maket yo'q — eng yaqini: superadmin-returns-list",
+        "market": "Maket yo'q — eng yaqini: superadmin-returns-list. Menyu bandi yo'q (BeePost'da marketda yo'q), havola: /orders sarlavhasidagi «Almashtirishlar» tugmasi; o'z buyurtmalari (token), market filtri yo'q."
+      },
+      "note": "lQjt6sKP (BeePost replacement-returns): GET orders/replacement/returns?market_id&state&page&limit — almashtirishga tanlangan ESKI buyurtmalar (mahsuloti mijozdan olinib marketga qaytariladi). Ustunlar: eski buyurtma, yangi buyurtma (holati bilan; o'chirilgan bo'lsa — «Yangi buyurtma o'chirilgan»), mijoz, mahsulot, holat («Kutilmoqda — kuryer olishi kerak» / «Olingan — marketga ketmoqda» / «Marketga qaytarildi», olingan sanasi bilan), sotilgan sana; telefonda kartalar. Filtrlar «Holat: …» va (superadmin/admin) «Market: …» — URL ?state&market, o'zgarsa sahifa 1. Faqat o'qish: backend'da «Marketga topshirildi» amali va old_returned ga o'tkazuvchi oqim yo'q — «Qaytarildi» filtri hozircha bo'sh."
     },
     {
       "path": "/dispatch",

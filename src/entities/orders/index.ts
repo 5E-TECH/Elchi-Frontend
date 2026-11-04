@@ -402,6 +402,8 @@ export const useOrders = () => {
         extraCost: number;
         comment: string;
         proof?: File;
+        /** Almashtirish buyurtmasi: «Eski mahsulotni oldim» (lQjt6sKP) — `SellOrderPayload.oldItemCollected` dagidek. */
+        oldItemCollected?: boolean;
       };
     }) =>
       toOrderActionBody(data).then((body) =>

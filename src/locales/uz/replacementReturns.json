@@ -1,0 +1,53 @@
+{
+  "title": "Almashtirish qaytarmalari",
+  "description": "Almashtirishga tanlangan eski buyurtmalar — mahsuloti mijozdan olinib, marketga qaytariladi",
+  "descriptionMarket": "Almashtirilgan buyurtmalaringiz — eski mahsulot marketga qaytariladi",
+  "total": "jami {{value}} ta",
+  "listLabel": "Almashtirish qaytarmalari ro'yxati",
+  "cardsLabel": "Almashtirish qaytarmalari",
+  "filtersLabel": "Filtrlar",
+  "filters": {
+    "state": "Holat",
+    "market": "Market",
+    "all": "Barchasi",
+    "allMarkets": "Barcha marketlar"
+  },
+  "stateFilter": {
+    "awaiting_old_pickup": "Kutilmoqda",
+    "old_collected": "Olingan",
+    "old_returned": "Qaytarildi"
+  },
+  "states": {
+    "awaiting_old_pickup": "Kutilmoqda — kuryer olishi kerak",
+    "old_collected": "Olingan — marketga ketmoqda",
+    "old_returned": "Marketga qaytarildi"
+  },
+  "columns": {
+    "oldOrder": "Eski buyurtma",
+    "newOrder": "Yangi buyurtma",
+    "customer": "Mijoz",
+    "products": "Mahsulot",
+    "state": "Holat",
+    "soldAt": "Sotilgan"
+  },
+  "newOrderDeleted": "Yangi buyurtma o'chirilgan",
+  "collectedAt": "Olingan: {{date}}",
+  "soldAt": "Sotilgan: {{date}}",
+  "itemLine": "{{name}} × {{qty}}",
+  "marketFallback": "Market #{{id}}",
+  "unknownCustomer": "Mijoz ko'rsatilmagan",
+  "oldRef": "Eski {{ref}}",
+  "newRef": "Yangi {{ref}}",
+  "openOld": "Eski buyurtma {{ref}} ni ochish",
+  "openNew": "Yangi buyurtma {{ref}} ni ochish",
+  "pagination": "{{from}}–{{to}} / {{total}} ta",
+  "loading": "Almashtirish qaytarmalari yuklanmoqda",
+  "loadFailed": "Almashtirish qaytarmalarini yuklab bo'lmadi",
+  "empty": "Almashtirish qaytarmasi yo'q",
+  "emptyDescription": "Buyurtma yaratishda «Almashtirish» bilan eski buyurtma tanlansa, u shu yerda paydo bo'ladi.",
+  "filteredEmpty": "Bu filtr bo'yicha almashtirish yo'q",
+  "filteredEmptyDescription": "Boshqa holat yoki marketni tanlang.",
+  "returnedEmptyDescription": "Eski mahsulotni marketga topshirish hozircha tizimda belgilanmaydi — olingan mahsulotlar «Olingan» holatida turadi.",
+  "clearFilter": "Filtrni tozalash",
+  "clearFilters": "Filtrlarni tozalash"
+}

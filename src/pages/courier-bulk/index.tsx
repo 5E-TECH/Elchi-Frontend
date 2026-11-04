@@ -2,7 +2,7 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Check, CircleX, PackageCheck, RotateCcw, Zap } from "lucide-react";
+import { CalendarClock, Check, CircleX, PackageCheck, Repeat, RotateCcw, Zap } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
 import type { OrderListItem } from "../../entities/order/types/order";
@@ -27,6 +27,7 @@ import {
   getCourierBulkCounts,
   getCourierBulkFinalizeTasks,
   getCourierBulkProofKey,
+  getCourierBulkReplacementHeld,
   getCourierBulkUnmarkedCount,
   hasAllCourierBulkProofs,
   isCourierBulkOrderMarked,
@@ -55,6 +56,8 @@ type ProofStep = {
   proofTasks: FinalizeTask[];
   plainCount: number;
   tomorrowCount: number;
+  /** Bu yerdan sotilmaydigan almashtirish buyurtmalari (lQjt6sKP) — kutilmoqda qoladi. */
+  replacementCount: number;
 };
 
 const COURIER_BULK_PAGE_LIMIT = 100;
@@ -304,7 +307,7 @@ const CourierBulkPage = () => {
    * So'rovlarni yuborish. Isbotsiz buyurtmalar 6 tadan, isbotlilar (fayl yuklash + amal) ko'pi bilan 2 tadan
    * parallel; har so'rov `X-Request-Source: courier-bulk` bilan (audit).
    */
-  const runFinalize = async (tasks: FinalizeTask[], tomorrowCount: number) => {
+  const runFinalize = async (tasks: FinalizeTask[], tomorrowCount: number, replacementCount = 0) => {
     setIsFinalizing(true);
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
 
@@ -367,6 +370,7 @@ const CourierBulkPage = () => {
       description: [
         t("finalizeSuccessDescription", { count: succeededOrderIds.size }),
         tomorrowCount > 0 ? t("finalizeTomorrowKept", { count: tomorrowCount }) : "",
+        replacementCount > 0 ? t("finalizeReplacementKept", { count: replacementCount }) : "",
       ]
         .filter(Boolean)
         .join(" "),
@@ -379,10 +383,20 @@ const CourierBulkPage = () => {
 
     // "Ertaga" — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09).
     const tasks = getCourierBulkFinalizeTasks(orders, actions);
-    const tomorrowCount = orders.length - tasks.length;
+    // lQjt6sKP: eski mahsulot olinmagan almashtirish buyurtmasi bu yerdan sotilmaydi («Eski mahsulotni oldim»
+    // tasdig'i «Buyurtmalar» sotish oynasida) — kutilmoqda qoladi, «ertaga» soniga qo'shilmaydi.
+    const replacementCount = getCourierBulkReplacementHeld(orders, actions).length;
+    const tomorrowCount = orders.length - tasks.length - replacementCount;
 
     if (tasks.length === 0) {
-      notify.info(t("finalizeSuccessTitle"), { description: t("finalizeNothing") });
+      notify.info(t("finalizeSuccessTitle"), {
+        description: [
+          t("finalizeNothing"),
+          replacementCount > 0 ? t("finalizeReplacementKept", { count: replacementCount }) : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
       return;
     }
 
@@ -429,6 +443,14 @@ const CourierBulkPage = () => {
         icon: CalendarClock,
       });
     }
+    if (replacementCount > 0) {
+      consequences.push({
+        text: t("confirmReplacement", { count: replacementCount }),
+        hint: t("confirmReplacementHint"),
+        tone: "warning",
+        icon: Repeat,
+      });
+    }
     const confirmed = await confirm({
       title: t("confirmTitle"),
       description: t("confirmDescription", { count: orders.length }),
@@ -451,16 +473,16 @@ const CourierBulkPage = () => {
     // qadami. Isbot kerak bo'lmasa — qo'shimcha qadamsiz darhol yakunlanadi.
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
     if (proofTasks.length > 0) {
-      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, tomorrowCount });
+      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, tomorrowCount, replacementCount });
       return;
     }
 
-    await runFinalize(tasks, tomorrowCount);
+    await runFinalize(tasks, tomorrowCount, replacementCount);
   };
 
   const handleProofSubmit = () => {
     if (!proofStep || isFinalizing || !hasAllCourierBulkProofs(proofStep.proofTasks, proofs)) return;
-    void runFinalize(proofStep.tasks, proofStep.tomorrowCount);
+    void runFinalize(proofStep.tasks, proofStep.tomorrowCount, proofStep.replacementCount);
   };
 
   // «Kunni yakunlash» — DOM'da BITTA tugma: ≥ 768 sarlavhada, telefonda pastki menyu ustidagi panelda.

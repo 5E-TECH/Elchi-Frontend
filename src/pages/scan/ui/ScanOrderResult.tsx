@@ -29,7 +29,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canViewDispatchPage } from "../../../app/lib/access";
 import { addToDispatchBasket, normalizeDispatchOrder, useDispatchBasketScope } from "../../../features/dispatch-basket";
-import { OrderStatusBadge } from "../../../entities/order";
+import { OrderStatusBadge, ReplacementTag } from "../../../entities/order";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -166,7 +166,7 @@ const MetaItem = ({ icon: Icon, label, children }: { icon: LucideIcon; label: st
   </div>
 );
 
-const SummaryCard = ({ view, staff }: { view: ScanOrderView; staff: boolean }) => {
+const SummaryCard = ({ view, order, staff }: { view: ScanOrderView; order: OrderDetail; staff: boolean }) => {
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isPhone = useIsBelowMd();
@@ -185,6 +185,8 @@ const SummaryCard = ({ view, staff }: { view: ScanOrderView; staff: boolean }) =
       <div className="flex flex-wrap items-center gap-2">
         <span className="sr-only">{t("statusLabel")}</span>
         <OrderStatusBadge status={view.status} />
+        {/* lQjt6sKP: almashtirish — kuryer yangisini topshirib, eskisini mijozdan oladi. */}
+        <ReplacementTag order={order} />
         {!showMeta && deliveryLabel ? (
           <>
             <span className="sr-only">{t("order.deliveryLabel")}</span>
@@ -720,7 +722,7 @@ export const ScanOrderResult = ({
       {topNotice}
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
-          <SummaryCard view={view} staff={roleKind === "staff"} />
+          <SummaryCard view={view} order={order} staff={roleKind === "staff"} />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4">
             <CustomerCard view={view} />
             <ProductsCard view={view} />

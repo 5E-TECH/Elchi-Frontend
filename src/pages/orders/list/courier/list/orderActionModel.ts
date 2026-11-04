@@ -60,6 +60,13 @@ export type ActionOrder = {
   sale_market_paid_max?: number | string | null;
   /** Hamkor (BeePost/API) buyurtmasi — marketga to'lov maydoni ko'rsatilmaydi. */
   external_id?: string | number | null;
+  /**
+   * Almashtirish (lQjt6sKP, `readOrderReplacement`): eski buyurtma id'si va holati. Eski mahsulot hali olinmagan
+   * bo'lsa sotish oynasida «Eski mahsulotni oldim» tasdig'i shart (backend usiz 400 qaytaradi).
+   */
+  replacement_of_order_id?: string | number | null;
+  replacement_state?: string | null;
+  old_item_collected_at?: string | null;
 };
 
 export const MAX_PROOF_SIZE_MB = 10;

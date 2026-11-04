@@ -26,7 +26,7 @@ import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { marketOperatorKeys } from "../../../entities/market-operator";
-import { useOrders } from "../../../entities/order/api/orderApi";
+import { ORDER_KEY, useOrders } from "../../../entities/order/api/orderApi";
 import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -34,6 +34,7 @@ import {
   createOrderSchema,
   ORDER_CREATE_BLOCKER_FIELD,
   ORDER_CREATE_DEFAULT_VALUES,
+  isReplacementRejectedMessage,
   orderCreateBlockersFromMessage,
   orderCreatePayloadBlockers,
   pendingOrderCreateBlockers,
@@ -117,6 +118,7 @@ const orderCreateFieldErrorMap: Record<string, Path<OrderCreateFormValues>> = {
   order_item_info: "details.items",
   operator: "details.operator",
   operator_id: "details.operator_id",
+  replaced_order_id: "replacement",
 };
 
 /** Backend 400: «Tanlangan operator bu marketga tegishli emas yoki faol emas» (`POST /orders`, `operator_id`). */
@@ -154,6 +156,8 @@ const applyOrderCreateFieldErrors = (
     normalizeBackendMessage(data?.message) || normalizeBackendMessage(data?.data?.message) || "";
   markOrderCreateBlockers(orderCreateBlockersFromMessage(message), setError, t);
   if (isOperatorRejected(message)) setError("details.operator_id", { type: "server", message });
+  // lQjt6sKP: eski buyurtma rad etildi (topilmadi / yetkazilmagan / allaqachon almashtirilgan) — «Almashtirish» ostida.
+  if (isReplacementRejectedMessage(message)) setError("replacement", { type: "server", message });
   const errors = data?.errors ?? data?.data?.errors;
 
   if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
@@ -356,6 +360,8 @@ const OrderCreateFormContent = () => {
           setValue("details.operator_id", "", { shouldDirty: true });
           setValue("details.operator", "", { shouldDirty: true });
         }
+        // lQjt6sKP: almashtiriladigan eski buyurtma eski market doirasidan — yangi marketda yaroqsiz.
+        if (getValues("replacement")) setValue("replacement", null, { shouldDirty: true });
       }
       itemsMarketRef.current = nextMarket;
       focusStepsRef.current = true;
@@ -421,6 +427,10 @@ const OrderCreateFormContent = () => {
         applyOrderCreateFieldErrors(error, setError, t);
         // Tanlangan operator o'chirilgan / bloklangan — ro'yxat yangilanadi (eskirgan tanlov o'zi tozalanadi).
         if (isOperatorRejected(message)) void queryClient.invalidateQueries({ queryKey: marketOperatorKeys.all });
+        // Eski buyurtma endi tanlab bo'lmaydi (boshqasi almashtirdi va h.k.) — tanlash ro'yxati yangilanadi.
+        if (isReplacementRejectedMessage(message)) {
+          void queryClient.invalidateQueries({ queryKey: [ORDER_KEY, "replaceable"] });
+        }
         setServerError(message);
         notify.error(t("orderCreateErrorTitle"), { description: message });
       },

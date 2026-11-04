@@ -14,6 +14,7 @@ import {
   Inbox,
   Package,
   RotateCcw,
+  Repeat,
   CreditCard,
   Wallet,
   Scale,
@@ -90,6 +91,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
     { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
+    // lQjt6sKP: «Almashtirishlar» — almashtirishga tanlangan eski buyurtmalar (BeePost menyusidagidek; `roles.json`, «Ish»).
+    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» — viloyat filiallaridagi omborlar (maket `roles.json`, «Ma'lumotnoma», Mahsulotlardan keyin).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -113,6 +116,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
+    // lQjt6sKP: «Almashtirishlar» (BeePost: superadmin, admin; registrator backend'da 403 — menyusida yo'q).
+    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» (maket `roles.json`).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -430,6 +435,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/courier-bulk": 'work',
   "/batches": 'work',
   "/returns": 'work',
+  // lQjt6sKP: almashtirish qaytarmalari.
+  "/replacement-returns": 'work',
   // Moliya
   "/payments": 'finance',
   "/cash-box": 'finance',

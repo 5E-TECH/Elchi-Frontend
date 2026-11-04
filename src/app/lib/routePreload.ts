@@ -9,6 +9,7 @@ const routeImporters: Record<string, RouteImporter> = {
   "/mails": () => import("../../pages/mails"),
   "/batches": () => import("../../pages/batches"),
   "/returns": () => import("../../pages/returns"),
+  "/replacement-returns": () => import("../../pages/replacement-returns"),
   "/products": () => import("../../pages/products/list"),
   "/warehouses": () => import("../../pages/warehouses"),
   "/all-users": () => import("../../pages/users/list/UserListPage"),

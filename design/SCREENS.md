@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**82 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **81 / 82**
+**83 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **82 / 83**
 
 ## Qanday ishlatiladi
 
@@ -57,6 +57,7 @@
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
 | `/orders/cancel-reasons` | Buyurtmalar | `src/pages/orders/cancel-reasons/index.tsx` | superadmin, admin, manager, market | 0 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
+| `/replacement-returns` | Buyurtmalar | `src/pages/replacement-returns/index.tsx` | superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q) | 0 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
@@ -406,6 +407,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | logist | `logist-orders-detail` — Buyurtma tafsiloti va kuzatuv — faqat ko'rish | [design/fragments/logist--orders-detail.html](fragments/logist--orders-detail.html) | sahifa | yangi (kodda yo'q) |
 | `/orders/edit/:orderId` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 | `/orders/edit/:orderId` | tizim taxtasi | `tizim-category-labels` — Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | [design/fragments/tizim--category-labels.html](fragments/tizim--category-labels.html) | taxta | qoida |
+
+#### `/replacement-returns` — Almashtirish qaytarmalari — almashtirishga tanlangan eski buyurtmalar
+
+- **Fayllar:** `src/pages/replacement-returns/index.tsx` · `src/pages/replacement-returns/model/replacementReturnsView.ts` · `src/entities/order/api/replacementReturns.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewReplacementReturns` (access.ts → canViewReplacementReturns)
+- **Rollar:** superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q)
+- **Menyuda:** «Almashtirishlar» (`replacements`) — superadmin, admin
+- **Holat:** v2
+- **Izoh:** lQjt6sKP (BeePost replacement-returns): GET orders/replacement/returns?market_id&state&page&limit — almashtirishga tanlangan ESKI buyurtmalar (mahsuloti mijozdan olinib marketga qaytariladi). Ustunlar: eski buyurtma, yangi buyurtma (holati bilan; o'chirilgan bo'lsa — «Yangi buyurtma o'chirilgan»), mijoz, mahsulot, holat («Kutilmoqda — kuryer olishi kerak» / «Olingan — marketga ketmoqda» / «Marketga qaytarildi», olingan sanasi bilan), sotilgan sana; telefonda kartalar. Filtrlar «Holat: …» va (superadmin/admin) «Market: …» — URL ?state&market, o'zgarsa sahifa 1. Faqat o'qish: backend'da «Marketga topshirildi» amali va old_returned ga o'tkazuvchi oqim yo'q — «Qaytarildi» filtri hozircha bo'sh.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/replacement-returns` | superadmin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
+| `/replacement-returns` | admin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
+| `/replacement-returns` | market | — Maket yo'q — eng yaqini: superadmin-returns-list. Menyu bandi yo'q (BeePost'da marketda yo'q), havola: /orders sarlavhasidagi «Almashtirishlar» tugmasi; o'z buyurtmalari (token), market filtri yo'q. | — | — | v2 |
 
 ### Qabul va yaratish
 
@@ -3111,6 +3127,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/notification-campaign/ui/CustomerSegmentFilters.tsx` | `/notifications/sms` |
 | `src/entities/notification-campaign/ui/SaveSegmentDialog.tsx` | `/notifications/send` |
 | `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | `/notifications/send`, `/notifications/sent` |
+| `src/entities/order/api/replacementReturns.ts` | `/replacement-returns` |
 | `src/entities/order/ui/FulfillmentSourceTag.tsx` | `/orders` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
@@ -3563,6 +3580,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/region/ui/sato/useSatoMerge.ts` | `/regions/sato-management` |
 | `src/pages/region/ui/useDistrictMerge.ts` | `/regions/districts` |
 | `src/pages/region/ui/useSatoCodeOwner.ts` | `/regions/districts`, `/regions/sato-management` |
+| `src/pages/replacement-returns/index.tsx` | `/replacement-returns` |
+| `src/pages/replacement-returns/model/replacementReturnsView.ts` | `/replacement-returns` |
 | `src/pages/returns/index.tsx` | `/returns` |
 | `src/pages/returns/model/returnBatches.ts` | `/returns` |
 | `src/pages/scan/detail.tsx` | `/scan/:token` |
@@ -3723,6 +3742,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` (+3) |
+| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
@@ -3747,6 +3767,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `admin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
+| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |

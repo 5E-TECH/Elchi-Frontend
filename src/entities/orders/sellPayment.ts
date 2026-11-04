@@ -13,6 +13,12 @@ export type SellOrderPayload = {
   /** Faqat 0 dan katta bo'lsa yuboriladi — 0 eski xatti-harakat bilan bir xil. */
   paidAmount?: number;
   proof?: File;
+  /**
+   * Almashtirish buyurtmasi (lQjt6sKP): kuryer eski mahsulotni mijozdan olganini tasdiqladi («Eski mahsulotni oldim»).
+   * Faqat almashtirish buyurtmasida `true` yuboriladi — oddiy buyurtma tanasi o'zgarmaydi. Nomi aynan `oldItemCollected`
+   * (gateway DTO; `old_item_collected` — 400 «should not exist»).
+   */
+  oldItemCollected?: boolean;
 };
 
 export type SellPaymentStatus = "paid" | "partly_paid";

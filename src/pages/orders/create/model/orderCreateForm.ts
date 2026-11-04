@@ -34,10 +34,26 @@ export interface ExistingCustomerLink {
   previous: CustomerFieldValues;
 }
 
+/**
+ * ALMASHTIRISH (lQjt6sKP, BeePost «Almashtirish (ixtiyoriy)») — yangi buyurtma o'rniga yuboriladigan ESKI (yetkazilgan)
+ * buyurtma (`GET orders/replaceable` dan tanlangan). Payload'ga faqat `replaced_order_id` (id) ketadi; qolgani —
+ * tanlangan chip matni uchun. `marketKey` — tanlov qaysi market doirasida qilingani (market roli — `"own"`): market
+ * almashsa tanlov tozalanadi.
+ */
+export interface ReplacementSelection {
+  id: string;
+  marketKey: string;
+  /** Yetkazilgan (sotilgan) payt — epoch ms matni yoki ISO (`sold_at`, bo'lmasa `createdAt`). */
+  date: string | null;
+  customerName: string | null;
+}
+
 export interface OrderCreateFormValues {
   market: MarketOption | null;
   /** Bog'langan mavjud mijoz (`null` — yangi mijoz yoki taklif tanlanmagan). */
   existingCustomer: ExistingCustomerLink | null;
+  /** Almashtiriladigan eski buyurtma (`null` — oddiy buyurtma). */
+  replacement: ReplacementSelection | null;
   /**
    * Yetkazish turi qo'lda tanlanganmi (CS-B). `false` bo'lsa tur market kartasidagi sukut (`default_tariff`) ga
    * moslanadi; qo'lda tanlangani ustidan yozilmaydi. Payload'ga kirmaydi.
@@ -85,6 +101,7 @@ export interface OrderCreateFormValues {
 export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   market: null,
   existingCustomer: null,
+  replacement: null,
   deliveryTypeTouched: false,
   deliveryDefaultFor: null,
   totalPriceAuto: true,
@@ -125,6 +142,8 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         : marketSchema,
       // Bog'lanish holati (tekshirilmaydi) — `buildCreateOrderPayload` `customer_id` ni shundan oladi.
       existingCustomer: yup.mixed<ExistingCustomerLink>().nullable().default(null),
+      // Ixtiyoriy tanlov (tekshirilmaydi) — `buildCreateOrderPayload` `replaced_order_id` ni shundan oladi.
+      replacement: yup.mixed<ReplacementSelection>().nullable().default(null),
       // Forma holati (tekshirilmaydi, payload'ga kirmaydi) — CS-B.
       deliveryTypeTouched: yup.boolean().default(false),
       deliveryDefaultFor: yup.string().nullable().default(null),
@@ -252,6 +271,7 @@ export const buildCreateOrderPayload = (
   const operatorId = values.details.operator_id?.trim() ?? "";
 
   const existingCustomerId = isExistingCustomerUnchanged(values) ? values.existingCustomer?.id : undefined;
+  const replacedOrderId = values.replacement?.id?.trim() ?? "";
 
   return {
     ...(includeMarketId && market ? { market_id: String(market.id) } : {}),
@@ -278,8 +298,20 @@ export const buildCreateOrderPayload = (
     // Tanlangan operator: backend uni buyurtma marketi ro'yxatida tekshiradi va `operator` ni uning ismi bilan yozadi.
     ...(operatorId && { operator_id: operatorId }),
     ...(includeFulfillment ? { fulfillment: values.fulfillment === "hq" ? "hq" : "auto" } : {}),
+    // lQjt6sKP: eski (yetkazilgan) buyurtma o'rniga — backend uni shu market doirasida qulflab tekshiradi (aks holda
+    // 400, matni «Almashtirish» maydoni ostida). Tanlanmasa maydon umuman yuborilmaydi (oddiy buyurtma).
+    ...(replacedOrderId ? { replaced_order_id: replacedOrderId } : {}),
   };
 };
+
+/**
+ * `POST /orders` ning almashtirish 400 xatolari (backend `order-replacement.ts`, DTO): «Almashtiriladigan buyurtma #…
+ * shu marketda topilmadi …», «Faqat yetkazib berilgan (sotilgan) buyurtmani almashtirish mumkin …», «Bu buyurtma (#…)
+ * allaqachon almashtirishga belgilangan …», «replaced_order_id buyurtma raqami (ID) bo'lishi kerak». Matn o'zgarmay
+ * «Almashtirish» maydoni ostida ko'rsatiladi.
+ */
+export const isReplacementRejectedMessage = (message: string): boolean =>
+  /almashtir|replaced_order_id/i.test(message);
 
 /**
  * IR2OHIiN — mahsulotsiz yoki tumansiz buyurtma yaratilmaydi (ega qarori 2026-10-25). Backend ham rad etadi
