@@ -114,8 +114,22 @@ for (const viewport of [
         await expect(range).toBeVisible();
         // Oraliq TO'LIQ ko'rinadi — «… – 20.10.2…» bo'lib kesilmaydi (`toBeVisible` kesilishni ushlamaydi; tya24blo
         // qayta tekshiruvi: market 390px da «Yil» tanlovi yonida matn qutisi 154 px, matn 171 px edi).
-        expect(await range.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+        // Sub-piksel aniqlikda: `scrollWidth`/`clientWidth` butun songa yaxlitlanadi va 0,2 px kesilishni («20.10.20…»)
+        // ko'rmaydi — matnning haqiqiy eni (Range) qutidan katta bo'lmasin.
+        expect(
+          await range.evaluate((node) => {
+            const text = document.createRange();
+            text.selectNodeContents(node);
+            return text.getBoundingClientRect().width - node.getBoundingClientRect().width;
+          }),
+        ).toBeLessThanOrEqual(0.01);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        // «Yil» bosish joyi telefonda ≥ 44 × 44 (tugma butun maydon — `fullTrigger`), maydon esa tor qoladi.
+        if (viewport.width < 768 && role !== "manager") {
+          const year = await page.getByRole("combobox", { name: /Yil/ }).boundingBox();
+          expect(year!.width).toBeGreaterThanOrEqual(44);
+          expect(year!.height).toBeGreaterThanOrEqual(44);
+        }
 
         // Telefonda «Yil» tor (matn kengligida) — uning ro'yxati maydon eniga qisilmaydi: har variant bir qatorda
         // (avval 53 px ro'yxatda «Yil» harflarga bo'linardi).

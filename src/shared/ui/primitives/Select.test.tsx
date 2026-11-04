@@ -203,6 +203,37 @@ describe("Select — bosish maydoni (uEV2pchR)", () => {
     expect(trigger).toHaveClass("outline-none!");
     expect(trigger.closest("[data-select]")).toHaveClass("focus-within:border-action", "focus-within:ring-focus");
   });
+
+  it("sukut: chevron tugmadan tashqarida, quti o'ng chekkasi va bo'shlig'i bilan (avvalgi tuzilma)", () => {
+    render(<SingleControlled options={REGIONS} />);
+    const box = combobox().closest("[data-select]") as HTMLElement;
+    expect(box).toHaveClass("gap-2", "pr-3");
+    expect(combobox()).not.toHaveClass("pr-9");
+    const chevron = box.querySelector(":scope > span[aria-hidden]") as HTMLElement;
+    expect(chevron).not.toHaveClass("absolute");
+  });
+
+  it("`fullTrigger` (tya24blo): tugma butun quti, chevron uning ichida — bosish joyi tor maydonda ham ≥ 44 px", async () => {
+    const user = userEvent.setup();
+    render(<SingleControlled options={REGIONS} fullTrigger placeholder="Yil" />);
+    const box = combobox().closest("[data-select]") as HTMLElement;
+    expect(box).not.toHaveClass("pr-3");
+    expect(box).not.toHaveClass("gap-2");
+    expect(combobox()).toHaveClass("pr-9", "flex-1");
+    const chevron = box.querySelector(":scope > span[aria-hidden]") as HTMLElement;
+    expect(chevron).toHaveClass("pointer-events-none", "absolute", "right-3");
+
+    await user.click(combobox());
+    expect(screen.getByRole("listbox", { name: "Viloyat" })).toBeInTheDocument();
+  });
+
+  it("`fullTrigger` + × (clearable, qiymat bor) — avvalgi tuzilma: × alohida tugma", () => {
+    render(<SingleControlled options={REGIONS} fullTrigger clearable initial="samarkand" />);
+    const box = combobox().closest("[data-select]") as HTMLElement;
+    expect(box).toHaveClass("gap-2", "pr-3");
+    expect(combobox()).not.toHaveClass("pr-9");
+    expect(screen.getByRole("button", { name: "Tozalash" })).toBeInTheDocument();
+  });
 });
 
 describe("Select — ochiq ro'yxat", () => {

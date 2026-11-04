@@ -143,6 +143,11 @@ type SelectBaseProps<V extends string> = {
    * «Yil» harflarga bo'linardi, tya24blo).
    */
   panelWidth?: "match" | "min";
+  /**
+   * Bitta tanlov (qidiruvsiz): tugma butun maydonni egallaydi, chevron tugma ichida — tor maydonda ham bosish joyi
+   * ≥ 44 px, maydon eni o'zgarmaydi (telefondagi bosh sahifa «Yil»i, tya24blo). Sukut — `false` (avvalgi tuzilma).
+   */
+  fullTrigger?: boolean;
   /** Ro'yxat ochiqligi (boshqariladigan). */
   open?: boolean;
   /** Birinchi chizishda ochiq (boshqarilmaydigan; namuna sahifasi). */
@@ -383,6 +388,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     valueAddon,
     placement = "bottom",
     panelWidth = "match",
+    fullTrigger = false,
     open: openProp,
     defaultOpen = false,
     onOpenChange,
@@ -801,6 +807,8 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
       onClick={clearAll}
     />
   ) : null;
+  // `fullTrigger` faqat × yo'q bo'lsa (× alohida tugma — bosish joyi bo'linadi, avvalgi tuzilma qoladi).
+  const wideTrigger = fullTrigger && !clearButton;
 
   // Ichki yorliq (yorlig'i yashirin filtr): «Holat:» kulrang, ekran o'quvchidan yashirin (nomi `Field` yorlig'idan).
   const inlineLabelNode =
@@ -949,7 +957,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
         data-open={isOpen || undefined}
         data-invalid={field.invalid || undefined}
         onMouseDown={handleBoxMouseDown}
-        className={cx(BOX_BASE, BOX_SIZE[size], "gap-2 pr-3", boxStateClasses(state), className)}
+        className={cx(BOX_BASE, BOX_SIZE[size], !wideTrigger && "gap-2 pr-3", boxStateClasses(state), className)}
       >
         <button
           ref={setControlRef}
@@ -960,7 +968,8 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           onBlur={handleBlur}
-          className={cx(CONTROL_BASE, "flex cursor-[inherit] items-center gap-2 pl-3 text-left")}
+          // `fullTrigger`: o'ng chekka chevron o'rni (8 + 16 + 12) — ko'rinish avvalgidek, bosish joyi butun maydon.
+          className={cx(CONTROL_BASE, "flex cursor-[inherit] items-center gap-2 pl-3 text-left", wideTrigger && "pr-9")}
         >
           {icon ? <ButtonIcon icon={icon} px={18} className="text-text-subtle" /> : null}
           {inlineLabelNode}
@@ -980,7 +989,13 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
           )}
         </button>
         {clearButton ?? (
-          <span aria-hidden="true" className="pointer-events-none flex shrink-0 items-center">
+          <span
+            aria-hidden="true"
+            className={cx(
+              "pointer-events-none flex shrink-0 items-center",
+              wideTrigger && "absolute top-1/2 right-3 -translate-y-1/2",
+            )}
+          >
             {trailingIcon}
           </span>
         )}
