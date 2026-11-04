@@ -142,6 +142,61 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
     expect(screen.queryByText("on the road")).not.toBeInTheDocument();
   });
 
+  it("filial o'tkazmasi so'rovlari (menejer «kelmagan») — kuryer o'rniga filial nomi, «Filialga kelmagan», kuryer sanalmaydi", async () => {
+    const user = userEvent.setup();
+    apiGetMock.mockImplementation(async (url: string) =>
+      url === "branches/dispatch-destinations"
+        ? mockEnvelope([
+            { id: "15", name: "Guliston", status: "active", type: "REGIONAL", region_id: "12" },
+            { id: "16", name: "Urgut", status: "active", type: "REGIONAL", region_id: "13" },
+          ])
+        : mockEnvelope({
+            total: 3,
+            scope: { type: "HQ", branch_id: "1" },
+            groups: [
+              { courier_id: "57", courier: { id: "57", name: "Sherzod Komilov" }, orders: [{ id: "9006", status: "waiting" }] },
+              {
+                courier_id: null,
+                courier: null,
+                source: "branch_transfer",
+                branch_id: "15",
+                orders: [{ id: "9101", status: "on the road" }],
+              },
+              {
+                courier_id: null,
+                courier: null,
+                source: "branch_transfer",
+                branch_id: "16",
+                orders: [{ id: "9102", status: "on the road" }],
+              },
+            ],
+          }),
+    );
+    renderWithProviders(<LogisticsOpsPage />);
+
+    expect(await screen.findByText("Filial: Guliston — kelmagan")).toBeInTheDocument();
+    expect(screen.getByText("Filial: Urgut — kelmagan")).toBeInTheDocument();
+    expect(screen.getAllByText("Filialga kelmagan")).toHaveLength(2);
+    expect(screen.queryByText("Kuryer biriktirilmagan")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Barcha so'rovlarni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash — 3 ta" }));
+    const dialog = await screen.findByRole("alertdialog", DIALOG);
+    // Kuryer — bitta (Sherzod), filial o'tkazmasidagi 2 tasi kuryersiz.
+    expect(within(dialog).getByText("Kuryerlar").nextSibling).toHaveTextContent("1 ta");
+    expect(within(dialog).getByText("+ 2 ta buyurtma kuryersiz")).toBeInTheDocument();
+    const groups = within(dialog).getByRole("list", { name: "Kuryerlar bo'yicha" });
+    const items = within(groups)
+      .getAllByRole("listitem")
+      .filter((item) => item.parentElement === groups);
+    expect(items.map((item) => item.textContent)).toEqual([
+      expect.stringContaining("Sherzod Komilov1 ta"),
+      expect.stringContaining("Filial: Guliston — kelmagan1 ta"),
+      expect.stringContaining("Filial: Urgut — kelmagan1 ta"),
+    ]);
+    expect(within(items[1]).getByText("Filialga kelmagan")).toBeInTheDocument();
+  });
+
   it("hammasi tasdiqlansa — muvaffaqiyat xabari, tanlov tozalanadi, ro'yxat yangilanadi", async () => {
     const user = userEvent.setup();
     const { queryClient } = renderWithProviders(<LogisticsOpsPage />);

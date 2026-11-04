@@ -3,8 +3,10 @@ import {
   extractReturnRequestRows,
   extractReturnRequestScope,
   groupReturnRequestRowsByCourier,
+  isBranchTransferRow,
   normalizeReturnRequestStatus,
   parseApproveReturnResult,
+  returnRequestStatusKey,
 } from "./returnRequestRows";
 
 const payload = {
@@ -64,6 +66,51 @@ describe("returnRequestRows (OS-3)", () => {
       ["Jasur Tursunov", ["9001", "9002"]],
       ["Sherzod Komilov", ["9003"]],
       ["", ["9004"]],
+    ]);
+  });
+
+  it("filial o'tkazmasi guruhi (`source: 'branch_transfer'`) — kuryersiz, manzil filial bilan; alohida guruh", () => {
+    const rows = extractReturnRequestRows({
+      data: {
+        scope: { type: "HQ", branch_id: "1" },
+        groups: [
+          { courier_id: "56", courier: { id: "56", name: "Jasur Tursunov" }, orders: [{ id: "9001", status: "waiting" }] },
+          { courier_id: null, courier: null, orders: [{ id: "9004", status: "waiting" }] },
+          {
+            courier_id: null,
+            courier: null,
+            source: "branch_transfer",
+            branch_id: "15",
+            orders: [{ id: "9101", status: "on the road" }],
+          },
+          {
+            courier_id: null,
+            courier: null,
+            source: "branch_transfer",
+            branch_id: "16",
+            orders: [{ id: "9102", status: "on the road" }],
+          },
+        ],
+      },
+    });
+    expect(rows.map((row) => [row.id, row.courierId, row.source, row.branchId])).toEqual([
+      ["9001", "56", undefined, undefined],
+      ["9004", "", undefined, undefined],
+      ["9101", "", "branch_transfer", "15"],
+      ["9102", "", "branch_transfer", "16"],
+    ]);
+    expect(isBranchTransferRow(rows[2])).toBe(true);
+    expect(isBranchTransferRow(rows[1])).toBe(false);
+    // Holat yorlig'i: filialga kelmagan; kuryer qatorida — avvalgidek.
+    expect(rows.map(returnRequestStatusKey)).toEqual(["waiting", "waiting", "branch_not_arrived", "branch_not_arrived"]);
+
+    // Filiallar kuryersiz guruhga qo'shilmaydi: har biri alohida, kuryerlardan keyin, kuryersiz — oxirida.
+    const groups = groupReturnRequestRowsByCourier(rows);
+    expect(groups.map((group) => [group.key, group.branch?.id ?? null, group.rows.map((row) => row.id)])).toEqual([
+      ["56", null, ["9001"]],
+      ["branch_transfer:15", "15", ["9101"]],
+      ["branch_transfer:16", "16", ["9102"]],
+      ["", null, ["9004"]],
     ]);
   });
 

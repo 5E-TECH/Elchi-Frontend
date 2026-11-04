@@ -164,9 +164,10 @@ interface OrdersTableProps {
   /** Takroriy raqamli qator: belgi maslahati («Shu raqamga yana: №…») yoki `null` — belgi va chiziq yo'q. */
   duplicateNote?: (order: PostOrder) => string | null;
   /**
-   * Kuryer: «Bu buyurtma kelmagan — qaytarish so'rovi» (opt-in; paket tafsilotida yo'q). Jadvalda — qator amallarida
-   * chop etishdan oldin `danger-soft` sm («Kelmadi» < 1024, «Kelmagan — qaytarish»), telefonda — kartaning ostida
-   * to'liq kenglikdagi tugma. Maket yo'q — eng yaqini: `courier-orders-pending` (qator amali).
+   * Kuryer / filial menejeri (o'z filialiga o'tkazma): «Bu buyurtma kelmagan — qaytarish so'rovi» (opt-in; paket
+   * tafsilotida yo'q). Jadvalda — qator amallarida chop etishdan oldin `danger-soft` sm («Kelmadi» < 1024,
+   * «Kelmagan — qaytarish»), telefonda — kartaning ostida to'liq kenglikdagi tugma. Maket yo'q — eng yaqini:
+   * `courier-orders-pending` (qator amali).
    */
   onRequestReturn?: (order: PostOrder) => void;
   /** So'rovi yuborilayotgan qator — uning tugmasi `loading`. */

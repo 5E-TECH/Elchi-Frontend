@@ -27,4 +27,7 @@ export const actionLabelMap: Record<string, string> = {
   canceled_post_returned: "tracking.action.cancelledPostReturned",
   // Kuryer jo'natilgan pochtadagi buyurtma kelmaganini bildirdi — qaytarish so'rovi (holat o'zgarmaydi — yo'lda).
   courier_return_requested: "tracking.action.courierReturnRequested",
+  // Filial menejeri o'z filialiga jo'natilgan o'tkazma pochtasidagi buyurtma kelmaganini bildirdi — qaytarish so'rovi
+  // (holat o'zgarmaydi — yo'lda; ega qarori 2026-11-04).
+  branch_return_requested: "tracking.action.branchReturnRequested",
 };

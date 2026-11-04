@@ -203,6 +203,8 @@
       "selectRow": "Select request {{id}}",
       "orderLink": "№{{id}}",
       "noCourier": "No courier assigned",
+      "branchTransfer": "Branch: {{branch}} — not arrived",
+      "branchTransferFallback": "Branch transfer — not arrived",
       "emptyText": "New requests will appear here."
     },
     "approve": {
@@ -240,7 +242,8 @@
     },
     "statuses": {
       "waiting": "Courier hasn't accepted",
-      "on_the_road": "With the courier"
+      "on_the_road": "With the courier",
+      "branch_not_arrived": "Did not arrive at branch"
     }
   },
   "branches": {

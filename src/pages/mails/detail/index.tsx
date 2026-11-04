@@ -22,6 +22,7 @@ import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { canDispatchPostToBranch, canReassignPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import {
   countReceiptsWithoutQr,
   preloadReceiptPrinting,
@@ -120,6 +121,8 @@ import { useMailDetailState } from "./model/useMailDetailState";
  *    qabul qilinadigan buyurtma qolmasa — kelingan ro'yxatga qaytiladi. So'rovi bor buyurtmalar qabul
  *    qilinadiganlar ro'yxatida (tanlov, son, skaner) yo'q — karta izohida sanaladi; ularning QR'i skanerlansa,
  *    buyurtma ro'yxatga qaytib tanlanadi (qabul qilinsa so'rov bekor bo'ladi — backend);
+ *  - filial menejeri, o'z filialiga jo'natilgan (`sent`) o'tkazma pochtasi (kuryersiz, `post.branch_id` — menejer
+ *    filiali; ega qarori 2026-11-04) — kuryerdagidek «Kelmagan — qaytarish», xuddi shu so'rov va oqim;
  *  - kuryerning rad etilgan pochtasi — faqat o'qish, «Barchasini chop etish»;
  *  - eski pochta (tarix) — faqat o'qish; qolib ketgan yo'ldagi buyurtma bo'lsa qabul qayta ochiladi (fix3b).
  *
@@ -239,6 +242,8 @@ const MailDetailPage = () => {
   // qaytaradi, shuning uchun ularga "jo'natish" tugmasi ko'rsatilmaydi.
   const canDispatchToBranch = useSelector(canDispatchPostToBranch);
   const canReassignPost = useSelector(canReassignPostToBranch);
+  /** Ko'ruvchining filiali — menejer o'tkazma pochtasining manzili o'zimi (`post.branch_id`) shundan. */
+  const viewerBranchId = useSelector(getCurrentBranchId);
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -307,7 +312,10 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
-  /** Kuryer: qaytarish so'rovi bor, lekin QR'i shu sahifada skanerlangan buyurtmalar — yana qabul qilinadiganlar. */
+  /**
+   * Kuryer / filial menejeri: qaytarish so'rovi bor, lekin QR'i shu sahifada skanerlangan buyurtmalar — yana qabul
+   * qilinadiganlar.
+   */
   const [reclaimedOrderIds, setReclaimedOrderIds] = useState<Set<string>>(new Set());
   const regularOrdersFromPost = useMemo(
     () => regularResponse?.data?.allOrdersByPostId ?? [],
@@ -337,6 +345,8 @@ const MailDetailPage = () => {
    * (`isForeignReceivedPost`).
    */
   const postCourierId = toText(postMeta?.courier_id);
+  /** Pochta qayerga ketgan: o'tkazma pochtasida — manzil filial (qabul qiladigan menejer filiali). */
+  const postBranchId = toText(postMeta?.branch_id);
   const viewerId = toText(user?.id);
   const isPostReceiver = isCourier
     ? Boolean(viewerId) && postCourierId === viewerId
@@ -364,17 +374,26 @@ const MailDetailPage = () => {
   const isOldDetail = isOldByState || isForeignReceivedPost;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   /**
-   * Kuryerning jo'natilgan (`sent`) pochtasi, qabul rejimi: qaytarish so'rovi bor buyurtmalar qabul
-   * qilinadiganlardan ajratiladi (karta izohida sanaladi).
+   * Filial menejeri: o'z filialiga jo'natilgan o'tkazma pochtasi (kuryersiz, `post.branch_id` — menejer filiali).
+   * Boshqa filialning o'tkazmasi (havola orqali ochilgan) yoki filiali noma'lum — «kelmagan» yo'q (backend — 403).
    */
-  const isCourierSentReceive =
-    isCourier &&
+  const isOwnBranchTransferPost =
+    isBranchReceiverManager && isPostReceiver && Boolean(viewerBranchId) && postBranchId === viewerBranchId;
+  /**
+   * Jo'natilgan (`sent`) pochta, qabul rejimi — kuryerning pochtasi yoki menejer filialiga o'tkazma (ega qarori
+   * 2026-11-04): qaytarish so'rovi bor buyurtmalar qabul qilinadiganlardan ajratiladi (karta izohida sanaladi).
+   */
+  const isSentReturnReceive =
+    (isCourier || isOwnBranchTransferPost) &&
     shouldReceiveCurrentPost &&
     !isEffectiveRefusedDetail &&
     !isOldDetail &&
     String(postMeta?.status ?? "").toLowerCase() === "sent";
-  /** «Bu buyurtma kelmagan — qaytarish so'rovi» — faqat pochtaning o'z kuryeriga (backend ham shuni tekshiradi). */
-  const canRequestReturn = isCourierSentReceive && isPostReceiver;
+  /**
+   * «Bu buyurtma kelmagan — qaytarish so'rovi» — faqat pochtaning o'z kuryeriga yoki manzil filial menejeriga
+   * (backend ham shuni tekshiradi).
+   */
+  const canRequestReturn = isSentReturnReceive && isPostReceiver;
   // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
   // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
   const canShowActionButton = shouldReceiveCurrentPost || isEffectiveRefusedDetail || canDispatchToBranch;
@@ -485,8 +504,9 @@ const MailDetailPage = () => {
         ) {
           return false;
         }
-        // Kuryer: qaytarish so'rovi bor buyurtma qabul qilinmaydi (QR'i skanerlanmagan bo'lsa) — izohda sanaladi.
-        if (isCourierSentReceive && order.return_requested === true && !reclaimedOrderIds.has(order.id)) {
+        // Kuryer / filial menejeri: qaytarish so'rovi bor buyurtma qabul qilinmaydi (QR'i skanerlanmagan bo'lsa) —
+        // izohda sanaladi.
+        if (isSentReturnReceive && order.return_requested === true && !reclaimedOrderIds.has(order.id)) {
           return false;
         }
 
@@ -498,14 +518,17 @@ const MailDetailPage = () => {
       shouldReceiveCurrentPost,
       isEffectiveRefusedDetail,
       isOldDetail,
-      isCourierSentReceive,
+      isSentReturnReceive,
       reclaimedOrderIds,
     ],
   );
-  /** Kuryerning jo'natilgan pochtasida qaytarish so'rovi yuborilgan (hali yo'ldagi) buyurtmalar — karta izohi. */
+  /**
+   * Jo'natilgan pochtada (kuryerniki yoki menejer filialiga o'tkazma) qaytarish so'rovi yuborilgan (hali yo'ldagi)
+   * buyurtmalar — karta izohi.
+   */
   const requestedOrders = useMemo(
     () =>
-      isCourierSentReceive
+      isSentReturnReceive
         ? rawOrders.filter(
             (order) =>
               isInPostNow(order) &&
@@ -514,7 +537,7 @@ const MailDetailPage = () => {
               !reclaimedOrderIds.has(order.id),
           )
         : [],
-    [isCourierSentReceive, rawOrders, reclaimedOrderIds],
+    [isSentReturnReceive, rawOrders, reclaimedOrderIds],
   );
   const requestedOrderIds = useMemo(() => new Set(requestedOrders.map((order) => order.id)), [requestedOrders]);
   /** Skaner ro'yxati: qabul qilinadiganlar + so'rovi borlar (QR'i skanerlansa, buyurtma ro'yxatga qaytadi). */
@@ -783,8 +806,8 @@ const MailDetailPage = () => {
       return;
     }
 
-    // Kuryer: qaytarish so'rovi bor buyurtmaning QR'i — posilka kelgan; u qabul qilinadiganlarga qaytib tanlanadi
-    // (bloklanmaydi: qabul qilinsa backend so'rovni bekor qiladi).
+    // Kuryer / filial menejeri: qaytarish so'rovi bor buyurtmaning QR'i — posilka kelgan; u qabul qilinadiganlarga
+    // qaytib tanlanadi (bloklanmaydi: qabul qilinsa backend so'rovni bekor qiladi).
     const reclaimed = requestedOrderIds.has(order.id);
     if (reclaimed) {
       setReclaimedOrderIds((prev) => new Set(prev).add(order.id));
@@ -1121,9 +1144,10 @@ const MailDetailPage = () => {
     handleBack,
   ]);
 
-  // ─── Kuryer: «Bu buyurtma kelmagan» — qaytarish so'rovi (tasdiq bilan) ────
+  // ─── Kuryer / menejer: «Bu buyurtma kelmagan» — qaytarish so'rovi (tasdiq bilan) ─
   // Maket yo'q — eng yaqini: `courier-mails-detail-receive` (qator / karta), `courier-orders-pending` (danger-soft
-  // qator amali). Ega qarori 2026-11-03 (BeePost kabi). Buyurtma «yo'lda» qoladi, so'rov «Qaytarish»ga tushadi.
+  // qator amali). Ega qarori 2026-11-03 (BeePost kabi); menejer — o'z filialiga o'tkazmada (2026-11-04), xuddi shu
+  // so'rov va oqim. Buyurtma «yo'lda» qoladi, so'rov «Qaytarish»ga tushadi.
   const handleRequestReturn = useCallback(async (order: PostOrder) => {
     if (!postId || !canRequestReturn || requestOrderReturn.isPending || receivePost.isPending) return;
     const orderId = order.id;
@@ -1134,7 +1158,10 @@ const MailDetailPage = () => {
       tone: "primary",
       icon: RotateCcw,
       title: t("detailPage.requestReturn.title"),
-      description: t("detailPage.requestReturn.description", { id: orderId }),
+      description: t(
+        isOwnBranchTransferPost ? "detailPage.requestReturn.descriptionBranch" : "detailPage.requestReturn.description",
+        { id: orderId },
+      ),
       details: (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
           <div className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
@@ -1152,7 +1179,16 @@ const MailDetailPage = () => {
         </div>
       ),
       consequences: [
-        { text: t("detailPage.requestReturn.consequenceRequest"), tone: "info", icon: RotateCcw },
+        // Menejer: so'rov HQ ro'yxatiga tushadi (filialning o'z «Qaytarish»ida ko'rinmaydi — backend HQ doirasida).
+        {
+          text: t(
+            isOwnBranchTransferPost
+              ? "detailPage.requestReturn.consequenceRequestBranch"
+              : "detailPage.requestReturn.consequenceRequest",
+          ),
+          tone: "info",
+          icon: RotateCcw,
+        },
         { text: t("detailPage.requestReturn.consequenceHidden") },
         left > 0
           ? { text: t("detailPage.requestReturn.consequenceRemaining", { value: count(left) }) }
@@ -1177,7 +1213,13 @@ const MailDetailPage = () => {
       return next;
     });
     void refetchRegularDetail();
-    const remaining = result.remainingReceivable ?? left;
+    // Backend `remaining_receivable` QR'i shu sahifada skanerlangan (qayta olingan) buyurtmani sanamaydi — serverda u
+    // hali so'rovli. Ular ham qo'shiladi: qayta olingan buyurtma kutib turgan bo'lsa sahifa yopilmaydi.
+    const reclaimedLeft = orders.filter((item) => item.id !== orderId && reclaimedOrderIds.has(item.id)).length;
+    const remaining =
+      result.remainingReceivable === null || result.remainingReceivable === undefined
+        ? left
+        : result.remainingReceivable + reclaimedLeft;
     const title = t(
       result.alreadyRequested ? "detailPage.requestReturn.alreadyRequested" : "detailPage.requestReturn.success",
       { id: orderId },
@@ -1189,9 +1231,11 @@ const MailDetailPage = () => {
   }, [
     postId,
     canRequestReturn,
+    isOwnBranchTransferPost,
     requestOrderReturn,
     receivePost.isPending,
     orders,
+    reclaimedOrderIds,
     confirm,
     t,
     language,
@@ -1259,7 +1303,6 @@ const MailDetailPage = () => {
   // HQ pochtani adashib boshqa filialga jo'natgan, u filial hali qabul qilmagan (pochta «Jo'natilgan», kuryersiz,
   // hamma buyurtma yo'lda): superadmin/admin uni shu viloyatning boshqa filialiga o'tkazadi. Qolgan shartlarni
   // («kelmadi» belgisi, tuman qamrovi, shu orada qabul) backend tekshiradi va matn bilan rad etadi.
-  const postBranchId = toText(postMeta?.branch_id);
   const canTransferPost =
     canReassignPost &&
     isOldDetail &&
@@ -1760,7 +1803,7 @@ const MailDetailPage = () => {
             <>
               <RotateCcw aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
               <span className="min-w-0" data-testid="mail-requested-notice">
-                {t("detailPage.requestReturn.notice", {
+                {t(isOwnBranchTransferPost ? "detailPage.requestReturn.noticeBranch" : "detailPage.requestReturn.notice", {
                   value: count(requestedOrders.length),
                   ids: requestedOrders.map((order) => `№${order.id}`).join(", "),
                 })}

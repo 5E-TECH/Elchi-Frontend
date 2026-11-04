@@ -141,8 +141,9 @@ export interface PostOrder {
   current_post_id?: string | null;
   current_canceled_post_id?: string | null;
   /**
-   * Qaytarish so'rovi bor. Kuryerning jo'natilgan (`sent`) pochtasida — kuryer «kelmagan» deb bildirgan (yoki
-   * qisman qabulda tanlamagan) buyurtma: holat «yo'lda» qoladi, so'rov «Qaytarish» bo'limida ko'rib chiqiladi.
+   * Qaytarish so'rovi bor. Jo'natilgan (`sent`) pochtada — kuryer (o'z pochtasida) yoki manzil filial menejeri
+   * (o'tkazma pochtasida) «kelmagan» deb bildirgan (yoki qisman qabulda tanlamagan) buyurtma: holat «yo'lda» qoladi,
+   * so'rov «Qaytarish» bo'limida ko'rib chiqiladi.
    */
   return_requested?: boolean | null;
 }
@@ -284,6 +285,14 @@ export interface MailItem {
   } | null;
   action?: string;
   status: string;
+  /**
+   * Faqat «Qaytarish» ro'yxatida (`GET post/return-requests/list`, HQ doirasi): so'rov filial o'tkazmasidan —
+   * manzil filial menejeri «kelmagan» degan yoki qisman qabulda qolgan (kuryersiz; ega qarori 2026-11-04).
+   * Kuryer so'rovida — yo'q.
+   */
+  return_source?: "branch_transfer";
+  /** Filial o'tkazmasi so'rovida — manzil filial (`groups[].branch_id`; nomi backend bersa, aks holda bo'sh). */
+  return_branch?: { id: string; name: string } | null;
 }
 
 const toText = (value: unknown, fallback = ""): string => {
@@ -300,6 +309,8 @@ const toNumber = (value: unknown, fallback = 0): number => {
 // ─── Pochta → Qaytarish (kuryer qaytarish so'rovlari) ─────────────────────────
 // Backend: data = { total, scope: { type: "HQ" | "BRANCH", branch_id }, groups: [
 //   { courier, courier_id, orders: [OrderRow + customer/district/market] } ] }.
+// HQ doirasida filial o'tkazmasi so'rovlari — manzil filial bo'yicha alohida guruh:
+//   { courier: null, courier_id: null, source: "branch_transfer", branch_id, orders } (2026-11-04).
 // Har bir so'rov — bitta buyurtma; approve/reject aynan { order_ids } oladi
 // (gateway ValidationPipe boshqa kalitni 400 bilan qaytaradi).
 export interface ReturnRequestActionPayload {
@@ -323,6 +334,9 @@ const mapReturnOrderToMailItem = (
   const orderId = toText(order.id);
   const regionId = toText(region?.id ?? order.region_id);
   const createdAt = toText(order.createdAt ?? order.created_at, new Date().toISOString());
+  // Filial o'tkazmasi guruhi — kuryersiz: `holder_courier_id` ('0' / bo'sh) kuryer deb olinmaydi.
+  const isBranchTransfer = toText(group.source).toLowerCase() === "branch_transfer";
+  const groupBranch = asRecord(group.branch);
 
   return {
     id: orderId,
@@ -331,7 +345,7 @@ const mapReturnOrderToMailItem = (
     post_id: toText(order.post_id),
     createdAt,
     updatedAt: toText(order.updatedAt ?? order.updated_at, createdAt),
-    courier_id: toText(group.courier_id ?? courier?.id ?? order.holder_courier_id),
+    courier_id: isBranchTransfer ? "" : toText(group.courier_id ?? courier?.id ?? order.holder_courier_id),
     post_total_price: toNumber(order.total_price),
     order_quantity: 1,
     qr_code_token: toText(order.qr_code_token),
@@ -359,6 +373,15 @@ const mapReturnOrderToMailItem = (
     district: district ? { id: toText(district.id), name: toText(district.name) } : null,
     action: destination,
     status: toText(order.status),
+    ...(isBranchTransfer
+      ? {
+          return_source: "branch_transfer" as const,
+          return_branch: {
+            id: toText(group.branch_id ?? groupBranch?.id),
+            name: toText(groupBranch?.name ?? group.branch_name),
+          },
+        }
+      : {}),
   };
 };
 
@@ -794,7 +817,7 @@ export const useReceivePost = () => {
 };
 
 /**
- * Kuryer: «Bu buyurtma kelmagan» — qaytarish so'rovi natijasi (`POST post/:postId/orders/:orderId/return-request`
+ * Kuryer / filial menejeri: «Bu buyurtma kelmagan» — qaytarish so'rovi natijasi (`POST post/:postId/orders/:orderId/return-request`
  * javobining `data` qismi, bir shaklga keltirilgan).
  *
  *  - `alreadyRequested` — so'rov avval yuborilgan edi (boshqa oyna / qurilmadan), qayta yozilmadi;
@@ -828,11 +851,13 @@ export const toRequestOrderReturnResult = (
 };
 
 /**
- * Kuryer o'z jo'natilgan (`sent`) pochtasidagi yo'ldagi buyurtmani «kelmagan» deb bildiradi —
- * `POST post/:postId/orders/:orderId/return-request` (tanasiz, faqat kuryer). Buyurtma «yo'lda» qoladi
+ * Kuryer o'z jo'natilgan (`sent`) pochtasidagi yoki filial menejeri o'z filialiga jo'natilgan o'tkazma pochtasidagi
+ * (kuryersiz; ega qarori 2026-11-04) yo'ldagi buyurtmani «kelmagan» deb bildiradi —
+ * `POST post/:postId/orders/:orderId/return-request` (tanasiz, ikkalasiga bitta endpoint). Buyurtma «yo'lda» qoladi
  * (`return_requested: true`), so'rov xodimning «Qaytarish» bo'limiga tushadi; pochta bu amal bilan yopilmaydi.
- * Rad javoblari (matn backenddan): 404 — pochta kuryerniki emas; 400 — pochta jo'natilmagan, buyurtma qabul
- * qilingan yoki yo'lda emas; 409 — buyurtma shu orada boshqa pochtaga o'tgan yoki o'zgargan.
+ * Rad javoblari (matn backenddan): 403 — boshqa filial menejeri yoki boshqa rol; 404 — pochta kuryerniki emas;
+ * 400 — pochta jo'natilmagan, buyurtma qabul qilingan yoki yo'lda emas; 409 — buyurtma shu orada boshqa pochtaga
+ * o'tgan yoki o'zgargan.
  */
 export const useRequestOrderReturn = () => {
   const queryClient = useQueryClient();
@@ -845,7 +870,7 @@ export const useRequestOrderReturn = () => {
     // Xatoda ham (409 — shu orada qabul qilingan / boshqa pochtaga o'tgan) qatorlar yangilansin.
     onSettled: (_data, _error, { postId }) => {
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
-      // Kuryerning «Bugungi» pochtalari (`post/on-the-road`) va xodimning «Qaytarish» ro'yxati.
+      // Kuryer / menejerning «Bugungi» pochtalari (`post/on-the-road`, `post?status=sent`) va «Qaytarish» ro'yxati.
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
       // Buyurtma ro'yxati va tafsilotidagi «Qaytarish so'ralgan» belgisi.

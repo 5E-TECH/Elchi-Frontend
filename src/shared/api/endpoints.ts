@@ -226,7 +226,8 @@ export const API_ENDPOINTS = {
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     BY_ID: (postId: string | number) => `post/${postId}`, // GET / PATCH send post (superadmin) / DELETE (superadmin)
     RECEIVE: (postId: string | number) => `post/receive/${postId}`, // PATCH receive post (branch/courier)
-    // Kuryer: jo'natilgan pochtadagi buyurtma kelmadi — qaytarish so'rovi (POST, tanasiz; buyurtma «yo'lda» qoladi).
+    // Kuryer / manzil filial menejeri (o'tkazma): jo'natilgan pochtadagi buyurtma kelmadi — qaytarish so'rovi
+    // (POST, tanasiz; buyurtma «yo'lda» qoladi).
     ORDER_RETURN_REQUEST: (postId: string | number, orderId: string | number) =>
       `post/${postId}/orders/${orderId}/return-request`,
     // Backend #618: pochtaga kirgan buyurtmalar (ro'yxat va ruxsat doirasi `GET post/orders/:id?view=all` bilan bir xil).

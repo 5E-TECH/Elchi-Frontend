@@ -1,13 +1,14 @@
 {
   "return": {
     "summary": "Курьеров: <strong>{{couriers}}</strong>, заказов: <strong>{{orders}}</strong>",
+    "summaryWithBranches": "Курьеров: <strong>{{couriers}}</strong>, филиалов: <strong>{{branches}}</strong>, заказов: <strong>{{orders}}</strong>",
     "selectionLabel": "Выбранные запросы",
     "selected_one": "Выбран {{count}} запрос",
     "selected_few": "Выбрано {{count}} запроса",
     "selected_many": "Выбрано {{count}} запросов",
     "selected_other": "Выбрано {{count}} запроса",
     "noneSelected": "Ничего не выбрано",
-    "selectionHint": "Подтверждённые заказы вернутся на склад, отклонённые останутся у курьера",
+    "selectionHint": "Подтверждённые заказы вернутся на склад, отклонённые останутся на месте (у курьера или в почте филиала)",
     "clearSelection": "Снять выбор",
     "tableLabel": "Запросы на возврат",
     "selectAll": "Выбрать все запросы",
