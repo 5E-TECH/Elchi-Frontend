@@ -131,6 +131,24 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("address");
     expect(payload).not.toHaveProperty("comment");
     expect(payload).not.toHaveProperty("operator");
+    expect(payload).not.toHaveProperty("operator_id");
+  });
+
+  it("tanlangan operator: `operator_id` + `operator` (ismi); tanlanmagan (bo'sh / yo'q) — faqat matn", () => {
+    const picked = buildCreateOrderPayload(
+      { ...formValues, details: { ...formValues.details, operator: "Dilnoza Karimova", operator_id: " 11 " } },
+      { includeMarketId: true },
+    );
+    expect(picked).toMatchObject({ operator_id: "11", operator: "Dilnoza Karimova" });
+
+    for (const operator_id of ["", undefined]) {
+      const typed = buildCreateOrderPayload(
+        { ...formValues, details: { ...formValues.details, operator_id } },
+        { includeMarketId: true },
+      );
+      expect(typed).toMatchObject({ operator: "Operator" });
+      expect(typed).not.toHaveProperty("operator_id");
+    }
   });
 
   // 6kHnNH9j: manba bloki ko'rinadigan rollarda `fulfillment` (auto | hq), qolganlarida — yuborilmaydi (backend `auto`).

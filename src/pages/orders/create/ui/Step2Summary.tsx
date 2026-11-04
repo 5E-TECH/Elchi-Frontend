@@ -13,6 +13,7 @@ import { toApiList, type OrderCreateBlocker, type OrderCreateFormValues } from "
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
 import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import DeliveryPriceBlock from "./DeliveryPriceBlock";
+import OperatorField from "./OperatorField";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 import { useOrderDeliveryQuote } from "./useOrderDeliveryQuote";
@@ -266,22 +267,7 @@ const Step2Summary = ({
           <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
         </Field>
       ) : (
-        <Controller
-          control={control}
-          name="details.operator"
-          render={({ field }) => (
-            <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
-              <TextInput
-                name={field.name}
-                placeholder={t("operatorPlaceholder")}
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-              />
-            </Field>
-          )}
-        />
+        <OperatorField isMarketRole={isMarketRole} />
       )}
 
       <Divider />

@@ -25,6 +25,7 @@ import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
 import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
+import { marketOperatorKeys } from "../../../entities/market-operator";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
 import type { RootState } from "../../../app/config/store";
@@ -114,7 +115,12 @@ const orderCreateFieldErrorMap: Record<string, Path<OrderCreateFormValues>> = {
   items: "details.items",
   "details.items": "details.items",
   order_item_info: "details.items",
+  operator: "details.operator",
+  operator_id: "details.operator_id",
 };
+
+/** Backend 400: «Tanlangan operator bu marketga tegishli emas yoki faol emas» (`POST /orders`, `operator_id`). */
+const isOperatorRejected = (message: string) => /tanlangan operator/i.test(message);
 
 /** IR2OHIiN: to'siq → maydon ostidagi (lokal tildagi) matn kaliti. */
 const ORDER_CREATE_BLOCKER_MESSAGE_KEY: Record<OrderCreateBlocker, string> = {
@@ -147,6 +153,7 @@ const applyOrderCreateFieldErrors = (
   const message =
     normalizeBackendMessage(data?.message) || normalizeBackendMessage(data?.data?.message) || "";
   markOrderCreateBlockers(orderCreateBlockersFromMessage(message), setError, t);
+  if (isOperatorRejected(message)) setError("details.operator_id", { type: "server", message });
   const errors = data?.errors ?? data?.data?.errors;
 
   if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
@@ -343,6 +350,12 @@ const OrderCreateFormContent = () => {
         // Mavjud mijoz bog'lanishi eski market doirasida (buyurtmalar soni, «yangi buyurtma bor» ogohlantirishi va
         // havolalar shu marketniki) — uziladi; maydonlar qoladi, telefon yangi market bo'yicha qayta qidiriladi.
         setValue("existingCustomer", null, { shouldDirty: true });
+        // Operator tanlovi eski market ro'yxatidan — yangi marketda yaroqsiz: tanlov va undan olingan ism tozalanadi
+        // (qo'lda yozilgan ism qoladi).
+        if (getValues("details.operator_id")) {
+          setValue("details.operator_id", "", { shouldDirty: true });
+          setValue("details.operator", "", { shouldDirty: true });
+        }
       }
       itemsMarketRef.current = nextMarket;
       focusStepsRef.current = true;
@@ -406,6 +419,8 @@ const OrderCreateFormContent = () => {
         );
 
         applyOrderCreateFieldErrors(error, setError, t);
+        // Tanlangan operator o'chirilgan / bloklangan — ro'yxat yangilanadi (eskirgan tanlov o'zi tozalanadi).
+        if (isOperatorRejected(message)) void queryClient.invalidateQueries({ queryKey: marketOperatorKeys.all });
         setServerError(message);
         notify.error(t("orderCreateErrorTitle"), { description: message });
       },

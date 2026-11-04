@@ -72,6 +72,12 @@ export interface OrderCreateFormValues {
     total_price: string;
     where_deliver: DeliveryType;
     operator: string;
+    /**
+     * «Operator» ro'yxatidan tanlangan market operatori (`GET /market-operators/selectable`). Tanlansa `operator` —
+     * uning ismi; `""` («Tanlanmagan», ro'yxat bo'sh yoki yuklanmadi) — faqat erkin matn yuboriladi. Market
+     * almashsa tozalanadi.
+     */
+    operator_id?: string;
     comment: string;
   };
 }
@@ -96,6 +102,7 @@ export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
     total_price: "",
     where_deliver: "center",
     operator: "",
+    operator_id: "",
     comment: "",
   },
 };
@@ -173,6 +180,7 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
           .oneOf(["center", "address"])
           .required(),
         operator: yup.string().optional(),
+        operator_id: yup.string().optional(),
         comment: yup.string().optional(),
       }),
     })
@@ -240,7 +248,8 @@ export const buildCreateOrderPayload = (
   const market = values.market;
   const address = values.customer.address.trim();
   const comment = values.details.comment.trim();
-  const operator = values.details.operator.trim();
+  const operator = (values.details.operator ?? "").trim();
+  const operatorId = values.details.operator_id?.trim() ?? "";
 
   const existingCustomerId = isExistingCustomerUnchanged(values) ? values.existingCustomer?.id : undefined;
 
@@ -266,6 +275,8 @@ export const buildCreateOrderPayload = (
     ...(address && { address }),
     ...(comment && { comment }),
     ...(operator && { operator }),
+    // Tanlangan operator: backend uni buyurtma marketi ro'yxatida tekshiradi va `operator` ni uning ismi bilan yozadi.
+    ...(operatorId && { operator_id: operatorId }),
     ...(includeFulfillment ? { fulfillment: values.fulfillment === "hq" ? "hq" : "auto" } : {}),
   };
 };

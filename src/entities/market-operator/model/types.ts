@@ -37,6 +37,15 @@ export type MarketOperatorList = {
   limit: number;
 };
 
+/**
+ * Buyurtma yaratishda tanlanadigan operator — `GET /market-operators/selectable` qatori (faqat id va ism). Tanlansa
+ * buyurtmaga `operator_id` (komissiya egasi) va `operator` (chekdagi ism) shu yerdan yoziladi.
+ */
+export type SelectableMarketOperator = {
+  id: string;
+  name: string;
+};
+
 /** `POST /market-operators` tanasi — faqat 3 maydon (`forbidNonWhitelisted`: komissiya alohida PATCH bilan). */
 export type CreateMarketOperatorRequest = {
   name: string;

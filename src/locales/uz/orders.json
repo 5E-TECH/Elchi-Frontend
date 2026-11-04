@@ -1005,6 +1005,12 @@
     "operatorYou": "Siz",
     "operatorAuto": "Siz — avtomatik yoziladi"
   },
+  "operatorSelect": {
+    "none": "Tanlanmagan",
+    "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
+    "otherLabel": "Ro'yxatda yo'q operator",
+    "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing"
+  },
   "fulfillment": {
     "tag": "Ombordan",
     "tagNamed": "Ombordan · {{name}}",

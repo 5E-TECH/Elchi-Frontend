@@ -57,6 +57,11 @@ export interface ReceiptOrderSource extends ReceiptContactSource {
   district?: (ReceiptNamed & { region?: ReceiptNamed | null }) | null;
   region?: ReceiptNamed | null;
   market?: { name?: string | null; phone_number?: string | null } | null;
+  /**
+   * Buyurtma operatori — ro'yxatdan tanlangan market operatori ismi yoki qo'lda yozilgan matn (`order.operator`).
+   * Tashqi import texnik belgisi (`external_*`) chop etilmaydi.
+   */
+  operator?: string | null;
 }
 
 /**
@@ -91,6 +96,8 @@ export interface ReceiptOrderModel {
   comment: string;
   /** Jo'natuvchi — market nomi. */
   sender: string;
+  /** «Jo'natuvchi: Market / Operator» ning operator qismi (BeePost kabi); yo'q — `""` (faqat market). */
+  operator: string;
   /** «Muammo bo'lsa» raqamlari. */
   contacts: string[];
 }
@@ -107,6 +114,8 @@ export const RECEIPT_TEXT = Object.freeze({
   comment: "Izoh:",
   address: "Manzil:",
   sender: "Jo'natuvchi:",
+  /** Market va operator orasida: «Baraka Shop / Dilnoza». */
+  operatorSeparator: "/",
   contact: "Muammo bo'lsa:",
   noQr: "QR yo'q",
 });
@@ -207,6 +216,22 @@ const productLine = (item: ReceiptOrderItemSource) => {
   return quantity !== null && quantity > 0 ? `${name} ×${Math.round(quantity)}` : name;
 };
 
+/**
+ * Operator ustunidagi TEXNIK belgilar — ism emas (backend: tashqi buyurtma `external_manual`, sayt importi
+ * `external_<integratsiya slug>`; hamkor buyurtmasida operator bo'sh).
+ */
+const TECHNICAL_OPERATOR = /^external_/i;
+
+/**
+ * Chekdagi operator: qirqilgan ism; bo'sh joy tutuvchi, texnik belgi yoki market nomining o'zi — `""` (faqat
+ * market chiqadi).
+ */
+export const receiptOperatorOf = (operator: unknown, sender: string): string => {
+  const text = firstText(operator);
+  if (!text || TECHNICAL_OPERATOR.test(text)) return "";
+  return text.toLowerCase() === sender.toLowerCase() ? "" : text;
+};
+
 /** Manba → chek maydonlari (TZ F3 jadvali). */
 export const toReceiptOrderModel = (source: ReceiptOrderSource): ReceiptOrderModel => {
   const customer = source.customer ?? null;
@@ -222,6 +247,7 @@ export const toReceiptOrderModel = (source: ReceiptOrderSource): ReceiptOrderMod
     .filter((part, index, parts) => part && parts.indexOf(part) === index)
     .join(" · ");
   const token = typeof source.qr_code_token === "string" ? source.qr_code_token.trim() : "";
+  const sender = firstText(source.market?.name);
   return {
     id: String(source.id),
     // «-» kabi `order_number` — yo'q hisoblanadi (zaxira «№{id}»).
@@ -239,7 +265,8 @@ export const toReceiptOrderModel = (source: ReceiptOrderSource): ReceiptOrderMod
     date: formatReceiptDate(source.createdAt),
     products: (source.items ?? []).map(productLine),
     comment: firstText(source.comment),
-    sender: firstText(source.market?.name),
+    sender,
+    operator: receiptOperatorOf(source.operator, sender),
     contacts: getReceiptContactPhones(source),
   };
 };

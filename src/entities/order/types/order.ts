@@ -302,6 +302,11 @@ export interface CreateOrderRequest {
     total_price: number;
     comment?: string;
     operator?: string;
+    /**
+     * Ro'yxatdan tanlangan market operatori (raqamli id). Backend buyurtma marketining faol operatori ekanini
+     * tekshiradi (aks holda 400), `operator` ni uning ismi bilan yozadi; komissiya shu operatorga.
+     */
+    operator_id?: string;
     where_deliver: DeliveryType;
     paid_amount?: number;
     post_id?: string;

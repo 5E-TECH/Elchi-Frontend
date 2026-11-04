@@ -6,13 +6,16 @@ export type {
   MarketOperatorList,
   MarketOperatorListParams,
   MarketOperatorStatus,
+  SelectableMarketOperator,
 } from "./model/types";
 export {
   createMarketOperator,
   deleteMarketOperator,
   getMarketOperators,
+  getSelectableMarketOperators,
   normalizeMarketOperator,
   normalizeMarketOperatorList,
+  normalizeSelectableMarketOperators,
   updateMarketOperatorCommission,
   updateMarketOperatorWarehouseAccess,
 } from "./api/marketOperatorApi";
@@ -22,6 +25,7 @@ export {
   useDeleteMarketOperator,
   useMarketOperators,
   useRefreshMarketOperators,
+  useSelectableMarketOperators,
   useUpdateMarketOperatorCommission,
   useUpdateMarketOperatorWarehouseAccess,
 } from "./api/useMarketOperators";

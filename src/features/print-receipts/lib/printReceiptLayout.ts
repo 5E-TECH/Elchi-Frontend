@@ -979,9 +979,70 @@ interface FooterPlan {
   ops: ReceiptOp[];
 }
 
+/** «Market / Operator» da ikkalasi ham uzun bo'lsa market oladigan eng kam ulush. */
+const SENDER_MARKET_SHARE = 0.6;
+
+interface SenderFit {
+  market: string;
+  /** «/ Operator» (qisqargan bo'lishi mumkin); `""` — operator chizilmaydi. */
+  operator: string;
+  /** Market va «/ …» orasidagi bo'sh joy (500 qalinlikdagi probel). */
+  gap: number;
+}
+
 /**
- * Pastki band (maket 10-band): chapda «Jo'natuvchi: market», o'ngda «Muammo bo'lsa: telefon» — o'ng qism hech qachon
- * kesilmaydi, market nomi «…» bilan qisqaradi. Ikki raqam sig'masa (ega qarori 4) band 2 qatorga o'tadi, R2 qisqaradi.
+ * «Jo'natuvchi:» qiymati — BeePost kabi `<b>Market</b> / Operator`: market qalin (700), «/ operator» oddiy (500).
+ * Sig'masa: market qisqa bo'lsa — faqat operator «…» bilan qisqaradi (avval so'z bo'yicha — «/ Dilnoza…», so'z
+ * sig'masa belgi bo'yicha); ikkalasi uzun bo'lsa market kamida 60 % joyni oladi, qolgani operatorga (ikkalasi «…»
+ * bilan). Operator ismidan bitta harf ham sig'masa — faqat market.
+ */
+const fitSender = (
+  market: string,
+  operator: string,
+  room: number,
+  pt: number,
+  measure: ReceiptMeasure,
+): SenderFit => {
+  const gap = measure(" ", pt, 500);
+  const marketOnly = (): SenderFit => ({
+    market: ellipsizeChars(market, room, pt, 700, measure),
+    operator: "",
+    gap,
+  });
+  if (!operator) return marketOnly();
+  const prefix = `${RECEIPT_TEXT.operatorSeparator} `;
+  const full = `${prefix}${operator}`;
+  const marketWidth = measure(market, pt, 700);
+  const operatorWidth = gap + measure(full, pt, 500);
+  if (marketWidth + operatorWidth <= room + EPS) return { market, operator: full, gap };
+  const fittedMarket = ellipsizeChars(
+    market,
+    Math.max(room * SENDER_MARKET_SHARE, room - operatorWidth),
+    pt,
+    700,
+    measure,
+  );
+  const operatorRoom = room - measure(fittedMarket, pt, 700) - gap;
+  const byWords = ellipsizeWords(full, operatorRoom, pt, 500, measure);
+  const fittedOperator =
+    words(byWords).length > 1 && measure(byWords, pt, 500) <= operatorRoom + EPS
+      ? byWords
+      : ellipsizeChars(full, operatorRoom, pt, 500, measure);
+  // «/…» yoki «…» — ismdan harf qolmadi: operator chizilmaydi, market to'liq joyni oladi.
+  if (
+    Array.from(fittedOperator).length <= Array.from(prefix).length ||
+    measure(fittedOperator, pt, 500) > operatorRoom + EPS
+  ) {
+    return marketOnly();
+  }
+  return { market: fittedMarket, operator: fittedOperator, gap };
+};
+
+/**
+ * Pastki band (maket 10-band): chapda «Jo'natuvchi: market / operator», o'ngda «Muammo bo'lsa: telefon» — o'ng qism
+ * hech qachon kesilmaydi. Ikki raqam sig'masa (ega qarori 4) yoki «market / operator» kontakt yonida to'liq sig'masa,
+ * band 2 qatorga o'tadi (jo'natuvchi yuqorida, r2 enida), R2 bir qatorga qisqaradi. Market va operator «…» bilan
+ * faqat r2 enida ham sig'masa qisqaradi (`fitSender`); operatorsiz chek o'zgarmaydi.
  */
 const planFooter = (
   model: ReceiptOrderModel,
@@ -990,7 +1051,9 @@ const planFooter = (
 ): FooterPlan => {
   const { footer, r2 } = spec;
   const ops: ReceiptOp[] = [];
-  const left = model.sender ? { label: `${RECEIPT_TEXT.sender} `, value: model.sender } : null;
+  const left = model.sender
+    ? { label: `${RECEIPT_TEXT.sender} `, value: model.sender, operator: model.operator }
+    : null;
   const right = model.contacts.length
     ? { label: `${RECEIPT_TEXT.contact} `, value: model.contacts.join(", ") }
     : null;
@@ -1000,12 +1063,22 @@ const planFooter = (
     ? measure(right.label, footer.pt, 500) + measure(right.value, footer.pt, 700)
     : 0;
   const leftLabelWidth = left ? measure(left.label, footer.pt, 500) : 0;
+  // Qisqartirishsiz chap qiymat eni: market + (bo'lsa) « / operator».
+  const leftValueWidth = left
+    ? measure(left.value, footer.pt, 700) +
+      (left.operator
+        ? measure(" ", footer.pt, 500) +
+          measure(`${RECEIPT_TEXT.operatorSeparator} ${left.operator}`, footer.pt, 500)
+        : 0)
+    : 0;
   const fullLeft = right ? r2.w - rightWidth - footer.gap : r2.w;
   const twoLines = Boolean(
     left &&
     right &&
-    leftLabelWidth + measure(left.value, footer.pt, 700) > fullLeft + EPS &&
-    fullLeft - leftLabelWidth < footer.minName,
+    leftLabelWidth + leftValueWidth > fullLeft + EPS &&
+    // Ikki raqam sig'masa (ega qarori 4) yoki «Market / Operator» kontakt yonida qisqarib qolsa — yuqori qatorga:
+    // operator ismi «…» bilan kesilmasin, oddiy uzunlikdagi market nomi ham operator sababli qisqarmasin.
+    (fullLeft - leftLabelWidth < footer.minName || Boolean(left.operator)),
   );
   const shift = twoLines ? footer.lineHeight : 0;
   ops.push({ kind: "rect", x: r2.x, y: round3(footer.ruleY - shift), w: r2.w, h: spec.rule });
@@ -1013,7 +1086,7 @@ const planFooter = (
   const leftTop = footer.top - shift;
   if (left) {
     const room = (twoLines ? r2.w : fullLeft) - leftLabelWidth;
-    const value = ellipsizeChars(left.value, room, footer.pt, 700, measure);
+    const sender = fitSender(left.value, left.operator, room, footer.pt, measure);
     const baseline = round3(baselineOf(leftTop, footer.lineHeight, footer.pt));
     ops.push({
       kind: "text",
@@ -1029,8 +1102,18 @@ const planFooter = (
       baseline,
       pt: footer.pt,
       weight: 700,
-      text: value,
+      text: sender.market,
     });
+    if (sender.operator) {
+      ops.push({
+        kind: "text",
+        x: round3(r2.x + leftLabelWidth + measure(sender.market, footer.pt, 700) + sender.gap),
+        baseline,
+        pt: footer.pt,
+        weight: 500,
+        text: sender.operator,
+      });
+    }
   }
   if (right) {
     const baseline = round3(baselineOf(footer.top, footer.lineHeight, footer.pt));

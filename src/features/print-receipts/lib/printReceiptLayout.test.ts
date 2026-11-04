@@ -581,6 +581,196 @@ describe("empty fields, QR, contacts", () => {
   });
 });
 
+describe("footer: «Jo'natuvchi: Market / Operator» (BeePost)", () => {
+  const LONG_MARKET = "Juda uzun nomli market — Toshkent shahar Chilonzor filiali ombori";
+  const LONG_OPERATOR = "Abdurahmonova Mohinur Baxtiyorovna — katta operator, Chilonzor filiali";
+  /** Matnning o'ng cheti (shu shrift va qalinlikda). */
+  const rightEdge = (op: ReceiptTextOp) => op.x + measure(op.text, op.pt, op.weight);
+  const startsWith = (label: ReceiptLabel, prefix: string) => {
+    const op = texts(label).find((item) => item.text.startsWith(prefix));
+    if (!op)
+      throw new Error(
+        `«${prefix}…» yo'q: ${texts(label)
+          .map((item) => item.text)
+          .join(" | ")}`,
+      );
+    return op;
+  };
+
+  it("market bold, «/ operator» regular on the same line right after it; the contact stays at the right edge", () => {
+    const [label] = layout({ ...RECEIPT_SAMPLES.main, operator: "  Ali  " });
+    const market = text(label, "Baraka Shop");
+    const operator = text(label, "/ Ali");
+    expect(market.weight).toBe(700);
+    expect(operator).toMatchObject({ pt: 8, weight: 500, baseline: market.baseline });
+    near(operator.x, rightEdge(market) + measure(" ", 8, 500), 0.001);
+    const contact = text(label, "+998 71 200 11 22");
+    near(rightEdge(contact), 98, 0.01);
+    expect(rightEdge(operator)).toBeLessThanOrEqual(text(label, "Muammo bo'lsa:").x - 2.4 + 1e-6);
+    // Bitta qator: chiziq joyida (53,6 mm).
+    expect(rects(label)).toContainEqual({ kind: "rect", x: 2, y: 53.6, w: 96, h: 0.25 });
+  });
+
+  it("no operator (empty, placeholder or technical `external_*` marker) — exactly the market-only footer", () => {
+    const [plain] = layout(RECEIPT_SAMPLES.main);
+    expect(texts(plain).some((op) => op.text.startsWith("/"))).toBe(false);
+    for (const operator of ["", "—", "external_manual", "external_shop-uz"]) {
+      const [label] = layout({ ...RECEIPT_SAMPLES.main, operator });
+      expect(label.ops, operator).toEqual(plain.ops);
+    }
+  });
+
+  it("«/ operator» that does not fit beside the contact: the band wraps, the name prints whole on the upper line", () => {
+    // Termal 100×60, bitta raqam: «Baraka Shop» dan keyin kontakt yonida ~12 mm qolardi («Dilnoz…») — endi band
+    // ikki raqamdagidek 2 qatorga o'tadi, jo'natuvchi r2 enida to'liq.
+    const [label] = layout({ ...RECEIPT_SAMPLES.main, operator: "Dilnoza Karimova" });
+    const market = text(label, "Baraka Shop");
+    const operator = text(label, "/ Dilnoza Karimova");
+    const contact = text(label, "+998 71 200 11 22");
+    expect(operator).toMatchObject({ pt: 8, weight: 500, baseline: market.baseline });
+    expect(operator.baseline).toBeLessThan(contact.baseline);
+    near(rightEdge(contact), 98, 0.01);
+    expect(rects(label)).toContainEqual({ kind: "rect", x: 2, y: 50, w: 96, h: 0.25 });
+    // R2 bir qatorga qisqardi: chiziqdan pastda faqat pastki band.
+    expect(
+      texts(label)
+        .filter((op) => op.baseline > 50)
+        .map((op) => op.text),
+    ).toEqual([
+      "Jo'natuvchi:",
+      "Baraka Shop",
+      "/ Dilnoza Karimova",
+      "Muammo bo'lsa:",
+      "+998 71 200 11 22",
+    ]);
+  });
+
+  it("an operator too long even for the full r2 width is shortened with «…» on the upper line", () => {
+    const [label] = layout({ ...RECEIPT_SAMPLES.main, operator: LONG_OPERATOR });
+    const market = text(label, "Baraka Shop");
+    const operator = startsWith(label, "/ Abdu");
+    expect(operator.text.endsWith("…")).toBe(true);
+    expect(operator.baseline).toBe(market.baseline);
+    expect(operator.baseline).toBeLessThan(text(label, "Muammo bo'lsa:").baseline);
+    expect(rightEdge(operator)).toBeLessThanOrEqual(98 + 1e-6);
+  });
+
+  it("the market is never cut because of an operator; a normal operator name is never cut (one contact)", () => {
+    /** «Jo'natuvchi:» dan keyingi market va (bo'lsa) «/ operator» bo'laklari. */
+    const senderOf = (label: ReceiptLabel) => {
+      const all = texts(label);
+      const at = all.findIndex((op) => op.text === "Jo'natuvchi:");
+      const next = all[at + 2];
+      return { market: all[at + 1].text, operator: next?.text.startsWith("/") ? next.text : "" };
+    };
+    const markets = [
+      "Elchi",
+      "Baraka Shop",
+      "Ipak Yo'li Savdo",
+      "Chilonzor Market",
+      "Mohinur Kosmetika",
+      "Zamonaviy Kiyimlar Do'koni",
+    ];
+    for (const spec of [undefined, A4_ORDER_SPEC]) {
+      for (const name of markets) {
+        const source = { ...RECEIPT_SAMPLES.main, market: { name, phone_number: null } };
+        const [plain] = layoutOrderReceipt(toReceiptOrderModel(source), { measure }, spec);
+        const before = senderOf(plain).market;
+        for (const operator of ["Ali", "Dilnoza Karimova", "Sardor Abdullayev"]) {
+          const [label] = layoutOrderReceipt(
+            toReceiptOrderModel({ ...source, operator }),
+            { measure },
+            spec,
+          );
+          const sender = senderOf(label);
+          const where = `${spec ? "A4" : "termal"} · ${name} / ${operator}`;
+          expect(sender.operator, where).toBe(`/ ${operator}`);
+          // Operatorsiz chekdagi market — o'zi yoki (u yerda «…» bo'lsa) undan ham to'liqrog'i.
+          if (before.endsWith("…"))
+            expect(sender.market.startsWith(before.slice(0, -1)), where).toBe(true);
+          else expect(sender.market, where).toBe(before);
+        }
+      }
+    }
+  });
+
+  it("long market and long operator: both shortened on the upper line, the market keeps about 60 % of the r2 width", () => {
+    const [label] = layout({
+      ...RECEIPT_SAMPLES.main,
+      market: { name: LONG_MARKET, phone_number: null },
+      operator: LONG_OPERATOR,
+    });
+    const market = startsWith(label, "Juda uzun");
+    const operator = startsWith(label, "/ Abdu");
+    expect(market.text.endsWith("…")).toBe(true);
+    expect(operator.text.endsWith("…")).toBe(true);
+    expect(operator.baseline).toBe(market.baseline);
+    expect(market.baseline).toBeLessThan(text(label, "Muammo bo'lsa:").baseline);
+    const room = 98 - market.x;
+    const marketWidth = measure(market.text, 8, 700);
+    expect(marketWidth).toBeLessThanOrEqual(room * 0.6 + 1e-6);
+    expect(marketWidth).toBeGreaterThan(room * 0.5);
+    expect(rightEdge(operator)).toBeLessThanOrEqual(98 + 1e-6);
+  });
+
+  it("no contact: «Market / Operator» stays on one line at the rule (nothing to wrap under)", () => {
+    const [label] = layout({
+      ...RECEIPT_SAMPLES.main,
+      problem_contacts: [],
+      operator: "Dilnoza Karimova",
+    });
+    const market = text(label, "Baraka Shop");
+    expect(text(label, "/ Dilnoza Karimova").baseline).toBe(market.baseline);
+    expect(rects(label)).toContainEqual({ kind: "rect", x: 2, y: 53.6, w: 96, h: 0.25 });
+  });
+
+  it("two «Muammo bo'lsa» numbers: the band wraps, market and operator share the upper line", () => {
+    const [label] = layout({
+      ...RECEIPT_SAMPLES.main,
+      problem_contacts: [{ phone: "+998901234567" }, { phone: "+998991981929" }],
+      market: { name: LONG_MARKET, phone_number: null },
+      operator: "Dilnoza Karimova",
+    });
+    const contact = text(label, "+998 90 123 45 67, +998 99 198 19 29");
+    const market = startsWith(label, "Juda uzun");
+    const operator = text(label, "/ Dilnoza Karimova");
+    expect(market.text.endsWith("…")).toBe(true);
+    expect(operator.baseline).toBe(market.baseline);
+    expect(operator.baseline).toBeLessThan(contact.baseline);
+    expect(rightEdge(operator)).toBeLessThanOrEqual(98 + 1e-6);
+    expect(rects(label)).toContainEqual({ kind: "rect", x: 2, y: 50, w: 96, h: 0.25 });
+  });
+
+  it("A4 cell: «Market / Operator» at 7 pt inside the 94 mm band", () => {
+    const a4 = (operator: string) =>
+      layoutOrderReceipt(
+        toReceiptOrderModel({ ...RECEIPT_SAMPLES.main, operator }),
+        { measure },
+        A4_ORDER_SPEC,
+      )[0];
+    // Sig'adi — bitta qator, chiziq joyida (39,2 mm).
+    const short = a4("Dilnoza Karimova");
+    expect(text(short, "/ Dilnoza Karimova")).toMatchObject({
+      pt: 7,
+      weight: 500,
+      baseline: text(short, "Baraka Shop").baseline,
+    });
+    expect(rightEdge(text(short, "/ Dilnoza Karimova"))).toBeLessThanOrEqual(
+      text(short, "Muammo bo'lsa:").x - 2 + 1e-6,
+    );
+    expect(rects(short)).toContainEqual({ kind: "rect", x: 3, y: 39.2, w: 94, h: 0.2 });
+    // Sig'masa — band 2 qatorga, r2 enida ham sig'magan qismi «…».
+    const label = a4(LONG_OPERATOR);
+    const market = text(label, "Baraka Shop");
+    const operator = startsWith(label, "/ Abdu");
+    expect(operator).toMatchObject({ pt: 7, weight: 500, baseline: market.baseline });
+    expect(operator.text.endsWith("…")).toBe(true);
+    expect(operator.baseline).toBeLessThan(text(label, "Muammo bo'lsa:").baseline);
+    expect(rightEdge(operator)).toBeLessThanOrEqual(97 + 1e-6);
+    expect(rects(label)).toContainEqual({ kind: "rect", x: 3, y: 36, w: 94, h: 0.2 });
+  });
+});
+
 describe("pages", () => {
   it("thermal: one label per 100×60 page, in order (T8 labels can be inserted after an order)", () => {
     const labels = [...layout(RECEIPT_SAMPLES.e), ...layout(RECEIPT_SAMPLES.f)];

@@ -1013,6 +1013,12 @@
     "operatorYou": "You",
     "operatorAuto": "You — filled in automatically"
   },
+  "operatorSelect": {
+    "none": "Not selected",
+    "pickedHint": "The order and commission are credited to this operator",
+    "otherLabel": "Operator not on the list",
+    "loadFailed": "Couldn't load the operator list — type the name manually"
+  },
   "fulfillment": {
     "tag": "From warehouse",
     "tagNamed": "From warehouse · {{name}}",

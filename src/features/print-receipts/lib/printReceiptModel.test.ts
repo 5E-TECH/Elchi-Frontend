@@ -107,8 +107,27 @@ describe("receipt fields (TZ F3)", () => {
       products: ["Smart soat X8 Pro ×1", "Quvvatlagich 20W ×2"],
       comment: "Soat 18:00 dan keyin qo'ng'iroq qiling",
       sender: "Baraka Shop",
+      operator: "",
       contacts: ["+998 71 200 11 22"],
     });
+  });
+
+  it("operator: trimmed name next to the market; placeholders, technical markers and the market name itself are dropped", () => {
+    const market = { name: "Baraka Shop", phone_number: null };
+    expect(toReceiptOrderModel(order({ market, operator: "  Dilnoza   Karimova " }))).toMatchObject({
+      sender: "Baraka Shop",
+      operator: "Dilnoza Karimova",
+    });
+    for (const operator of [null, undefined, "", "  ", "-", "—", "null"]) {
+      expect(toReceiptOrderModel(order({ market, operator })).operator, String(operator)).toBe("");
+    }
+    // Tashqi buyurtma / sayt importi texnik belgisi (backend `external_manual`, `external_<slug>`) — ism emas.
+    expect(toReceiptOrderModel(order({ market, operator: "external_manual" })).operator).toBe("");
+    expect(toReceiptOrderModel(order({ market, operator: "external_uzum-market" })).operator).toBe("");
+    // Operator ustuniga market nomi yozilgan — takror «Baraka Shop / Baraka Shop» chiqmaydi.
+    expect(toReceiptOrderModel(order({ market, operator: "baraka shop" })).operator).toBe("");
+    // «external» so'zi bilan boshlanmaydigan oddiy ism qoladi.
+    expect(toReceiptOrderModel(order({ market, operator: "Externov Ali" })).operator).toBe("Externov Ali");
   });
 
   it("number: full «№EL-…» (rwAy8Qyk), id only as a fallback (ega qarori 2)", () => {
@@ -213,6 +232,7 @@ describe("receipt fields (TZ F3)", () => {
       street: "",
       comment: "",
       sender: "",
+      operator: "",
       contacts: [],
       products: [],
       date: "",

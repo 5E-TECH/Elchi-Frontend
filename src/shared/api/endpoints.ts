@@ -88,6 +88,10 @@ export const API_ENDPOINTS = {
     COMMISSION: (id: string | number) => `market-operators/${id}/commission`,
     // XtcEyQjb: PATCH { can_view_warehouse_stock: boolean } — «Ombordagi qoldiqni ko'radi» (begona operator — 404)
     WAREHOUSE_ACCESS: (id: string | number) => `market-operators/${id}/warehouse-access`,
+    // Buyurtma yaratishdagi «Operator» tanlovi: GET ?market_id → { items: [{ id, name }] } — faol, o'chirilmagan, nom
+    // bo'yicha. SUPERADMIN, ADMIN, REGISTRATOR, MANAGER, BRANCH — `market_id` majburiy; MARKET va MARKET_OPERATOR —
+    // o'z marketi (tokendan), boshqa `market_id` — 400.
+    SELECTABLE: "market-operators/selectable",
   },
   // Logistlar (superadmin/admin; LG-2, dzyVftBx): GET ?search&status&page&limit (limit ≤ 100) → { items, meta } /
   // POST { name, phone_number, password, salary, payment_day? } — filialsiz, viloyatlar alohida (REGIONS.LOGIST_BULK).
