@@ -228,10 +228,13 @@
     },
     "addEmployee": {
       "description": "Assign a user to {{branch}}.",
-      "hint": "Only active managers, registrars and couriers are shown",
+      "hint": "Only active managers, registrars and couriers not assigned to any branch are shown",
+      "hintHq": "Only active registrars and couriers not assigned to any branch are shown — HQ has no managers",
+      "hintPickup": "Only active managers and registrars not assigned to any branch are shown — a pickup branch has no couriers",
       "listLabel": "Users",
       "empty": "No user found",
-      "noOptions": "No active employees to assign"
+      "searchMore": "Not everyone is listed — search by name, login or phone",
+      "noOptions": "No active employees without a branch. Remove the employee from their current branch first."
     },
     "positions": {
       "MANAGER": "Manager",

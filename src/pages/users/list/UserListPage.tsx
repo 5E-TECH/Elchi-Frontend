@@ -65,7 +65,9 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  *
  * Maketlar: `superadmin-users-list` (= admin): sarlavha + «Foydalanuvchi qo'shish», KPI (jami, marketlar,
  * xodimlar), karta: rol tablari, qidiruv «Ism yoki telefon raqami» + «Holat: Barchasi», jadval, sahifalash;
- * `manager-users-list`: sarlavha «{filial} xodimlari va marketlari», KPI yo'q, 4 ta tab, amallar o'rnida «Ochish».
+ * `manager-users-list`: sarlavha «{filial} xodimlari», KPI yo'q, 4 ta tab (Hammasi · Kuryerlar · Ro'yxatchilar ·
+ * Menejerlar), amallar o'rnida «Ochish». Ega (2026-11-04): menejer faqat o'z filiali xodimlarini ko'radi — backend
+ * `GET /users` ni `branch_users` bo'yicha cheklaydi; marketlar (filialga bog'i yo'q) menejer ro'yxatida yo'q.
  *
  * FY-1 (`superadmin-users-list-roles`, `-role-select`): superadmin/admin — 9 ta rol tabi (FY-S1); telefonda tablar
  * o'rnida «Rol: Hammasi» `Select` (guruhlar «Xodimlar» / «Tashqi hisoblar»), URL kaliti o'sha `role`. Ko'rinuvchi
@@ -79,7 +81,7 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  * sahifalashi (avvalgi `market` + `marketing` birlashtirish olib tashlandi, FY-1).
  *
  * Tab sonlari (2CBnPAeg, maket `manager-users-list` — «Barchasi 16 · Kuryerlar 8 …»): faqat menejerda, `meta.countsByRole`
- * dan (backend endi filial ko'lamida, sahifalashdan oldin sanaydi; «Barchasi» — `meta.totalUsers`). Sonlar `role`
+ * dan (backend filial ko'lamida, sahifalashdan oldin sanaydi; «Hammasi» — `meta.totalUsers`, filial a'zolari). Sonlar `role`
  * dan boshqa filtrlarga (qidiruv, holat) bo'ysunadi — ro'yxat bilan bir xil. Superadmin/admin maketida tab soni yo'q.
  *
  * «Telegram boti» chiplari (yA31z7Rr / td89SKXQ) — superadmin/admin (ustun ham faqat ularda), URL `telegram`.

@@ -236,7 +236,7 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     expect(mocks.navigate).toHaveBeenCalledWith("/regions/logist-assignment?logist=57");
   });
 
-  it("HYBRID menejer market yaratsa — natija oynasida qayta yuborish yo'q (backend: menejer — faqat o'z kuryeri)", async () => {
+  it("HYBRID menejer market yaratsa — qayta yuborish yo'q; «Foydalanuvchiga o'tish» o'rniga «Ro'yxatga qaytish» (tafsilot 403), xabar bilan", async () => {
     mocks.createMarket.mockResolvedValue(createdResponse({ id: 77, name: "Urgut Market", role: "market", password_mode: "generate_sms", password_sms: sentSms }));
     const user = userEvent.setup();
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: hybridManagerState });
@@ -252,5 +252,48 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
     expect(within(dialog).queryByRole("button", { name: /SMSni qayta yuborish/ })).not.toBeInTheDocument();
     expect(mocks.get.mock.calls.filter(([url]) => String(url).includes("password/sms-status"))).toEqual([]);
+
+    // Ega (2026-11-04): menejer ro'yxatida market yo'q, `GET /users/77` — 403. Tafsilotga o'tilmaydi.
+    expect(within(dialog).queryByRole("button", { name: "Foydalanuvchiga o'tish" })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Ro'yxatga qaytish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/all-users");
+    expect(mocks.navigate).not.toHaveBeenCalledWith("/all-users/77");
+    expect(await screen.findByText("Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.")).toBeInTheDocument();
+  });
+
+  it("HYBRID menejer market yaratsa, «Qo'lda kiritish» — avvalgidek `navigate(-1)`, xabarda market ro'yxatda ko'rinmasligi", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: hybridManagerState });
+    await user.click(screen.getByRole("radio", { name: /^Market/ }));
+    await user.click(screen.getByRole("radio", { name: /^Qo'lda kiritish/ }));
+    await fill(user, container, "fullName", "Urgut Market");
+    await fill(user, container, "phone", "901234567");
+    await fill(user, container, "username", "urgut_m");
+    await fill(user, container, "password", "UrgutMarket26");
+    await fill(user, container, "passwordRepeat", "UrgutMarket26");
+    await fill(user, container, "homeRate", "30000");
+    await fill(user, container, "centerRate", "20000");
+    await user.click(screen.getByRole("radio", { name: "Uygacha" }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => expect(mocks.createMarket).toHaveBeenCalledTimes(1));
+    expect(mocks.navigate).toHaveBeenCalledWith(-1);
+    expect(await screen.findByText("Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.")).toBeInTheDocument();
+  });
+
+  it("HYBRID menejer kuryer yaratsa — avvalgidek «Foydalanuvchiga o'tish» (o'z filiali xodimi)", async () => {
+    mocks.createCourier.mockResolvedValue(createdResponse({ id: 92, name: "Urgut Kuryer", role: "courier", password_mode: "generate_sms", password_sms: sentSms }));
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: hybridManagerState });
+    await user.click(screen.getByRole("radio", { name: /^Kuryer/ }));
+    await fill(user, container, "fullName", "Urgut Kuryer");
+    await fill(user, container, "phone", "901234568");
+    await fill(user, container, "homeRate", "25000");
+    await fill(user, container, "centerRate", "18000");
+    await user.click(screen.getByRole("button", { name: "Yaratish va SMS yuborish" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
+    await user.click(within(dialog).getByRole("button", { name: "Foydalanuvchiga o'tish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/all-users/92");
   });
 });

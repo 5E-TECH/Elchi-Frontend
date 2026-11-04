@@ -164,8 +164,8 @@
     },
     "list": {
       "descriptionAll": "Xodimlar, marketlar va mijozlar hisoblarini boshqarish",
-      "descriptionBranch": "{{branch}} xodimlari va marketlari",
-      "descriptionOwnBranch": "Filialingiz xodimlari va marketlari",
+      "descriptionBranch": "{{branch}} xodimlari",
+      "descriptionOwnBranch": "Filialingiz xodimlari",
       "kpiLabel": "Foydalanuvchilar soni",
       "kpiAll": "Barcha foydalanuvchilar",
       "kpiTotal": "Jami",
@@ -305,6 +305,7 @@
         "loginRequired": "Login kiritilmadi"
       },
       "saving": "Saqlanmoqda…",
+      "managerMarketCreated": "Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.",
       "passwordMode": {
         "section": "Parol",
         "legend": "Parolni qanday berish",
@@ -557,6 +558,7 @@
       "note": "Parol tizimda ochiq ko'rinishda saqlanmaydi. Foydalanuvchi birinchi kirishda yangi parol o'rnatadi.",
       "createAnother": "Yana yaratish",
       "openUser": "Foydalanuvchiga o'tish",
+      "backToList": "Ro'yxatga qaytish",
       "openLogistAssignment": "Viloyatlarni belgilash",
       "reset": {
         "action": "Parolni tiklash va SMS yuborish",

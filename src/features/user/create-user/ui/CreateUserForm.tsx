@@ -230,6 +230,11 @@ const FormSection = ({ title, note, children }: { title: string; note?: ReactNod
  * Xulq AYNAN saqlangan: rollar (`managerAllowedRoles`), filial ro'yxati va HQ cheklovi, maosh/to'lov kuni
  * qoidalari, kuryer tariflari (fix3b FE-USR-11), har rol payload'i, backend maydon xatolari, muvaffaqiyatda
  * `navigate(-1)`. Filiallar so'rovi faqat superadmin/admin uchun (menejerga `GET branches` 403).
+ *
+ * Menejer yaratgan market (ega, 2026-11-04): menejer ro'yxatida faqat o'z filiali xodimlari — market filialga
+ * bog'lanmagan, tafsiloti menejerga 403. Shuning uchun SMS natija oynasida «Foydalanuvchiga o'tish» o'rniga
+ * «Ro'yxatga qaytish» (`/all-users` + muvaffaqiyat xabari); xabarda (qo'lda rejimda ham, `navigate(-1)` saqlangan)
+ * market ro'yxatda ko'rinmasligi aytiladi. Yaratish qoidalari (`managerAllowedRoles`) o'zgarmagan.
  */
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation(["users", "common", "auth"]);
@@ -258,6 +263,9 @@ export const CreateUserForm = memo(() => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [created, setCreated] = useState<CreatedResult | null>(null);
+  // Menejer yaratgan market — ro'yxatida ham, tafsilotida ham (403) ko'rinmaydi: tafsilotga o'tilmaydi.
+  const isManagerMarket = (createdRole: string) => authRole === "manager" && createdRole === "marketing";
+  const marketCreatedMessage = authRole === "manager" ? t("v2.create.managerMarketCreated") : t("createMarket");
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
   const [initialRole] = useState<UserRole>(
@@ -649,7 +657,7 @@ export const CreateUserForm = memo(() => {
         default_tariff: values.deliveryType === "center" ? "center" : "address",
       };
 
-      await submitRequest(() => createMarket.mutateAsync(payload), t("createMarket"), values);
+      await submitRequest(() => createMarket.mutateAsync(payload), marketCreatedMessage, values);
     }
   };
 
@@ -1249,16 +1257,27 @@ export const CreateUserForm = memo(() => {
           user={created.user}
           initialSms={created.sms}
           viewerRole={authRole}
-          primaryLabel={t(created.isLogist ? "v2.passwordSms.openLogistAssignment" : "v2.passwordSms.openUser")}
-          onPrimary={() =>
+          primaryLabel={t(
+            created.isLogist
+              ? "v2.passwordSms.openLogistAssignment"
+              : isManagerMarket(created.user.role)
+                ? "v2.passwordSms.backToList"
+                : "v2.passwordSms.openUser",
+          )}
+          onPrimary={() => {
+            if (!created.isLogist && isManagerMarket(created.user.role)) {
+              notify.success(t("success", { ns: "common" }), { description: marketCreatedMessage });
+              navigate("/all-users");
+              return;
+            }
             navigate(
               created.isLogist
                 ? logistAssignmentPath(created.user.id)
                 : created.user.id
                   ? `/all-users/${encodeURIComponent(created.user.id)}`
                   : "/all-users",
-            )
-          }
+            );
+          }}
           onCreateAnother={() => {
             setCreated(null);
             reset({ ...INITIAL_FORM, role });

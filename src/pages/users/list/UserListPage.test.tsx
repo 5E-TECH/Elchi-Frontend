@@ -7,8 +7,8 @@ import UserListPage from "./UserListPage";
 
 /**
  * `/all-users` (dizayn v2): holat URL'da — `role` (tab), `status`, `search`, `page`, `limit`; filtr o'zgarsa
- * sahifa 1 ga qaytadi; so'rov parametrlari URL'dan. KPI faqat superadmin/admin; menejerda — 4 ta tab, KPI va
- * amallar yo'q.
+ * sahifa 1 ga qaytadi; so'rov parametrlari URL'dan. KPI faqat superadmin/admin; menejerda — 4 ta tab (Hammasi ·
+ * Kuryerlar · Ro'yxatchilar · Menejerlar — faqat o'z filiali xodimlari, marketlar yo'q), KPI va amallar yo'q.
  */
 
 const mocks = vi.hoisted(() => ({ useGetUser: vi.fn() }));
@@ -33,10 +33,16 @@ const ITEMS = [
   { id: "2", name: "Jasur Tursunov", phone_number: "+998904121855", role: "courier", status: "inactive", createdAt: "2026-10-06T09:30:00.000Z" },
 ];
 
-const listResponse = (overrides: Record<string, unknown> = {}) => ({
+/** Menejer ro'yxati — faqat o'z filiali a'zolari (backend `branch_users` bo'yicha), market yo'q. */
+const BRANCH_ITEMS = [
+  { id: "2", name: "Jasur Tursunov", phone_number: "+998904121855", role: "courier", status: "inactive", createdAt: "2026-10-06T09:30:00.000Z" },
+  { id: "70", name: "Shodiyor Ergashev", phone_number: "+998901112233", role: "manager", status: "active", createdAt: "2026-09-01T09:30:00.000Z" },
+];
+
+const listResponse = (overrides: Record<string, unknown> = {}, items: unknown[] = ITEMS) => ({
   data: {
     data: {
-      items: ITEMS,
+      items,
       meta: { page: 1, limit: 10, total: 1286, totalPages: 129, totalMarket: 342, totalEmployees: 944, totalUsers: 1286, ...overrides },
     },
   },
@@ -353,11 +359,18 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
   });
 });
 
-describe("UserListPage — menejer (maket `manager-users-list`)", () => {
-  it("filial nomi sarlavhada, KPI yo'q, 4 ta tab, amallar o'rnida «Ochish»", () => {
-    render("/all-users", "manager", { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } });
+const MANAGER_USER = { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } };
 
-    expect(screen.getByText("Urgut filiali xodimlari va marketlari")).toBeInTheDocument();
+describe("UserListPage — menejer (maket `manager-users-list`)", () => {
+  beforeEach(() => {
+    mocks.useGetUser.mockImplementation(() => listResponse({}, BRANCH_ITEMS));
+  });
+
+  it("sarlavha «{filial} xodimlari» (marketsiz), KPI yo'q, 4 ta tab — «Marketlar» o'rnida «Menejerlar», amallar o'rnida «Ochish»", () => {
+    render("/all-users", "manager", MANAGER_USER);
+
+    expect(screen.getByText("Urgut filiali xodimlari")).toBeInTheDocument();
+    expect(screen.queryByText(/marketlari/)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Foydalanuvchilar soni" })).not.toBeInTheDocument();
     expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, false, { silentError: true });
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
@@ -365,42 +378,64 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
       "Hammasi",
       "Kuryerlar",
       "Ro'yxatchilar",
-      "Marketlar",
+      "Menejerlar",
     ]);
+    expect(within(tabs).queryByRole("tab", { name: /Marketlar/ })).not.toBeInTheDocument();
     // «Telegram boti» ustuni ham, uning izohi ham yo'q.
     expect(screen.queryByText(/Shaxsiy Elchi boti ulanishi/)).not.toBeInTheDocument();
     // Menejerda 4 ta tab telefonda ham sig'adi — «Rol» tanlovi yo'q, tablar yashirilmaydi.
     expect(screen.queryByRole("combobox", { name: "Rol" })).not.toBeInTheDocument();
     expect(tabs.closest(".max-md\\:hidden")).toBeNull();
     expect(screen.queryByRole("button", { name: /amallari$/ })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Mehr Kosmetika tafsilotlari" })[0]).toHaveAttribute(
-      "href",
-      "/all-users/1",
-    );
+    expect(screen.getAllByRole("link", { name: "Jasur Tursunov tafsilotlari" })[0]).toHaveAttribute("href", "/all-users/2");
+    expect(screen.getAllByRole("link", { name: "Shodiyor Ergashev tafsilotlari" })[0]).toHaveAttribute("href", "/all-users/70");
+  });
+
+  it("filial nomi bo'lmasa — «Filialingiz xodimlari»", () => {
+    render("/all-users", "manager", { id: "70", role: "manager" });
+    expect(screen.getByText("Filialingiz xodimlari")).toBeInTheDocument();
   });
 
   it("2CBnPAeg: tab sonlari `meta.countsByRole` dan (filial ko'lami), «Hammasi» — `totalUsers`; tab almashsa ham o'zgarmaydi", async () => {
     mocks.useGetUser.mockImplementation(() =>
-      listResponse({
-        total: 16,
-        totalUsers: 16,
-        countsByRole: { admin: 0, manager: 0, courier: 8, registrator: 2, market: 6 },
-      }),
+      listResponse(
+        {
+          total: 13,
+          totalUsers: 13,
+          countsByRole: { admin: 0, manager: 2, courier: 8, registrator: 3, market: 0 },
+        },
+        BRANCH_ITEMS,
+      ),
     );
     const user = userEvent.setup();
-    render("/all-users", "manager", { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } });
+    render("/all-users", "manager", MANAGER_USER);
 
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
     const texts = () => within(tabs).getAllByRole("tab").map((tab) => (tab.textContent ?? "").replace(/\s/g, " "));
-    expect(texts()).toEqual(["Hammasi 16", "Kuryerlar 8", "Ro'yxatchilar 2", "Marketlar 6"]);
+    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2"]);
 
     await user.click(within(tabs).getByRole("tab", { name: /Kuryerlar/ }));
     expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "courier" });
-    expect(texts()).toEqual(["Hammasi 16", "Kuryerlar 8", "Ro'yxatchilar 2", "Marketlar 6"]);
+    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2"]);
+
+    await user.click(within(tabs).getByRole("tab", { name: /Menejerlar/ }));
+    expect(currentSearch().get("role")).toBe("manager");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "manager" });
+  });
+
+  it("eski havola `role=market` (va `marketing`) — menejerda «Hammasi», `role` so'rovga ketmaydi", () => {
+    const { unmount } = render("/all-users?role=market", "manager", MANAGER_USER);
+    expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+    unmount();
+
+    render("/all-users?role=marketing", "manager", MANAGER_USER);
+    expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
   });
 
   it("menejer: Telegram chiplari yo'q, URL `telegram` so'rovga ketmaydi", () => {
-    render("/all-users?telegram=linked", "manager", { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } });
+    render("/all-users?telegram=linked", "manager", MANAGER_USER);
     expect(screen.queryByRole("group", { name: "Telegram boti:" })).not.toBeInTheDocument();
     expect(lastListParams()).toEqual({ page: 1, limit: 10 });
   });

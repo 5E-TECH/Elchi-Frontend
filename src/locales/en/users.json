@@ -164,8 +164,8 @@
     },
     "list": {
       "descriptionAll": "Manage employee, market and customer accounts",
-      "descriptionBranch": "{{branch}} employees and markets",
-      "descriptionOwnBranch": "Your branch employees and markets",
+      "descriptionBranch": "{{branch}} employees",
+      "descriptionOwnBranch": "Your branch employees",
       "kpiLabel": "User count",
       "kpiAll": "All users",
       "kpiTotal": "Total",
@@ -305,6 +305,7 @@
         "loginRequired": "Login is required"
       },
       "saving": "Saving…",
+      "managerMarketCreated": "The market was created. Markets don't appear in the branch employee list.",
       "passwordMode": {
         "section": "Password",
         "legend": "How to issue the password",
@@ -557,6 +558,7 @@
       "note": "The password is never stored in plain text. The user sets a new password at first sign-in.",
       "createAnother": "Create another",
       "openUser": "Go to user",
+      "backToList": "Back to list",
       "openLogistAssignment": "Assign regions",
       "reset": {
         "action": "Reset password and send SMS",

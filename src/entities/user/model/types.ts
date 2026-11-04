@@ -51,4 +51,9 @@ export interface IdentityUser {
     phone?: string;
     role?: User["role"];
     status?: User["status"];
+    /**
+     * `GET /users` qatori filiali (gateway `attachUserBranches`, kGIjOciz): biriktirilmagan — `null`. Filial «Xodim
+     * qo'shish» oynasi faqat filialsizlarni ko'rsatadi (boshqa filialdagini backend 409 bilan rad etadi).
+     */
+    branch_id?: string | number | null;
 }

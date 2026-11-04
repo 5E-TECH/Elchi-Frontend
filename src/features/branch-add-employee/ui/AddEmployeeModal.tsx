@@ -4,6 +4,7 @@ import { useController, useForm } from "react-hook-form";
 import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import { Check, Info, SearchX, UserPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { BranchType } from "../../../entities/branch";
 import { useUsers, type IdentityUser } from "../../../entities/user";
 import { branchPositionLabel } from "../../branch/lib/branchDisplay";
 import { addEmployeeSchema } from "../model/schema";
@@ -19,6 +20,43 @@ import { Button, Dialog, Field, Skeleton, TextInput } from "../../../shared/ui/p
  * foydalanuvchilarni ko'rsatardi, ya'ni har qanday tanlov rad etilardi.
  */
 const BRANCH_ASSIGNABLE_ROLES = ["manager", "registrator", "courier"] as const;
+type AssignableRole = (typeof BRANCH_ASSIGNABLE_ROLES)[number];
+/** HQ da menejer bo'lmaydi — backend `HQ_MANAGER_FORBIDDEN_MESSAGE` (400). */
+const HQ_ASSIGNABLE_ROLES: readonly AssignableRole[] = ["registrator", "courier"];
+/** Qabul punktida (PICKUP) kuryer bo'lmaydi — backend 403 «Courier faqat HQ, REGIONAL yoki HYBRID branchga …». */
+const PICKUP_ASSIGNABLE_ROLES: readonly AssignableRole[] = ["manager", "registrator"];
+
+/**
+ * Filial turiga ko'ra biriktirsa bo'ladigan rollar (backend `assignUserToBranch` qoidalari): faqat shular so'raladi va
+ * ko'rsatiladi. REGIONAL, HYBRID va noma'lum tur — uchalasi (backend baribir tekshiradi). Modul konstantalari — har
+ * renderda bir xil havola (`useMemo` bog'liqligi barqaror).
+ */
+const assignableRolesFor = (type?: BranchType | null): readonly AssignableRole[] =>
+  type === "HQ" ? HQ_ASSIGNABLE_ROLES : type === "PICKUP" ? PICKUP_ASSIGNABLE_ROLES : BRANCH_ASSIGNABLE_ROLES;
+
+/** Filial turiga mos izoh: kim ko'rsatilishi aytiladi. */
+const hintKeyFor = (type?: BranchType | null) =>
+  type === "HQ" ? "v2.addEmployee.hintHq" : type === "PICKUP" ? "v2.addEmployee.hintPickup" : "v2.addEmployee.hint";
+
+/**
+ * Har rol uchun bitta sahifa: backend `limit` ni 100 da kesadi va eng yangilarini (`createdAt DESC`) beradi. Filialsiz
+ * xodimlar odatda eskilar (filialdan olib tashlanganlar) — ular bu oynadan tashqarida qolishi mumkin, shuning uchun
+ * qidiruv serverga ham yuboriladi (`search`).
+ */
+const USERS_PAGE_LIMIT = 100;
+/** Ma'lumot yo'q paytdagi barqaror bo'sh ro'yxat (`useMemo` har renderda qayta hisoblanmasin). */
+const NO_USERS: IdentityUser[] = [];
+/** Server qidiruvi kechikishi — har harfda `GET /users` (har rol uchun) yuborilmasin. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * Biriktirsa bo'ladigan — hech qaysi filialga biriktirilmagan (`branch_id` bo'sh). Foydalanuvchi faqat bitta faol
+ * filialda bo'ladi (`branch_users` qisman unikal indeksi): boshqa filialdagini backend 409 bilan rad etadi.
+ */
+const isUnassigned = (user: IdentityUser) => String(user.branch_id ?? "").trim() === "";
+/** Filialsiz va roli shu filial turiga mos (rol bo'yicha so'rov bo'lsa ham, ikkinchi himoya). */
+const isAssignable = (user: IdentityUser, roles: readonly AssignableRole[]) =>
+  isUnassigned(user) && (!user.role || (roles as readonly string[]).includes(user.role));
 
 /** `.el-options` (CODE-MAP 2.2): ro'yxat oyna ichida, eng ko'pi 280 px, ichida aylanadi. */
 const OPTIONS =
@@ -30,28 +68,42 @@ const OPTION =
   "text-left text-sm text-text transition-[background-color] duration-150 motion-reduce:transition-none";
 
 const normalize = (value: string) => value.toLocaleLowerCase().replace(/[ʻʼ‘’`]/g, "'").trim();
+const matches = (user: IdentityUser, needle: string) =>
+  [user.fullName, user.username, user.phone].some((value) => normalize(String(value ?? "")).includes(needle));
 
 /**
  * «XODIM QO'SHISH» oynasi (maket `superadmin-branches-add-employee-dialog`; telefonda pastki varaqa):
  * «{filial}ga foydalanuvchini biriktiring.», «Foydalanuvchi *» — qidiruv maydoni va uning ostida oyna ichidagi
- * ro'yxat (ism, ostida «login · rol»), izoh «Faqat faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi»,
- * «Bekor qilish» / «Qo'shish». Qidiruv — kelgan ro'yxat ichida (ism, login, telefon).
+ * ro'yxat (ism, ostida «login · rol»), izoh «Faqat hech qaysi filialga biriktirilmagan faol menejer, ro'yxatchi va
+ * kuryerlar ko'rsatiladi», «Bekor qilish» / «Qo'shish».
+ *
+ * Ega (2026-11-04): ro'yxatda faqat filialsiz foydalanuvchilar (`branch_id` bo'sh) — boshqa filialdagi xodim tanlansa
+ * backend baribir 409 qaytarardi. Rollar filial turiga mos (`assignableRolesFor`): HQ da menejer yo'q (backend 400),
+ * qabul punktida (PICKUP) kuryer yo'q (backend 403); izoh ham shunga mos.
+ *
+ * Qidiruv: yozilgan zahoti — yuklangan ro'yxat ichida (ism, login, telefon); 300 ms dan keyin — serverda ham
+ * (`GET /users?search=…`): har rol uchun 100 tadan tashqaridagi eski filialsiz xodim ham topiladi. Joriy matn uchun
+ * server topganlari mahalliy moslikdan qat'i nazar ko'rinadi (masalan, telefon bo'shliqlar bilan yozilsa). Ro'yxat
+ * kesilgan bo'lsa (≥ 100 qator) «Biriktirilmagan faol xodim yo'q» deyilmaydi — «qidiring» deyiladi.
  *
  * Klaviatura (fokus qidiruvda, `aria-activedescendant`): ↑ ↓ Home End — ro'yxatda yurish, Enter — tanlash
  * (forma yuborilmaydi). Qatorni bosish tanlaydi; «Qo'shish» yuboradi.
  *
- * Xulq o'zgarmagan: `GET /users?status=active&role=…` (faqat oyna ochiq bo'lsa), `addEmployeeSchema`,
+ * Xulq o'zgarmagan: `GET /users?status=active&role=…&page=1&limit=100` (faqat oyna ochiq bo'lsa), `addEmployeeSchema`,
  * `POST /branches/:id/users { user_id }`; rad etilsa oyna ochiq qoladi va sabab xabarda.
  */
 const AddEmployeeModal = ({
   branchId,
   branchName,
+  branchType,
   open,
   onClose,
 }: {
   branchId: string;
   /** Izohdagi filial nomi («Urgut filialiga …»); berilmasa — umumiy izoh. */
   branchName?: string;
+  /** Filial turi: `HQ` — menejerlar, `PICKUP` — kuryerlar ko'rsatilmaydi va so'ralmaydi. */
+  branchType?: BranchType | null;
   open: boolean;
   onClose: () => void;
 }) => {
@@ -59,13 +111,28 @@ const AddEmployeeModal = ({
   const listId = useId();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
-  const { data: users = [], isLoading: usersLoading } = useUsers({
-    status: "active",
-    role: [...BRANCH_ASSIGNABLE_ROLES],
-    page: 1,
-    limit: 100,
-    enabled: open,
+  const [serverSearch, setServerSearch] = useState("");
+  const roles = assignableRolesFor(branchType);
+  // Yozish to'xtagach (300 ms) matn serverga ham ketadi; oyna yopilib `query` tozalansa — u ham.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setServerSearch(query.trim()), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  const usersParams = { status: "active" as const, role: [...roles], page: 1, limit: USERS_PAGE_LIMIT };
+  const { data: users = NO_USERS, isLoading: usersLoading } = useUsers({ ...usersParams, enabled: open });
+  const { data: found = NO_USERS, isFetching: searchFetching } = useUsers({
+    ...usersParams,
+    search: serverSearch,
+    enabled: open && serverSearch !== "",
   });
+  const assignable = useMemo(() => users.filter((user) => isAssignable(user, roles)), [roles, users]);
+  // Har rol 100 tadan oshmaydi va xodimning roli bitta: jami < 100 bo'lsa, har rol sahifasi to'liq kelgan. Aks holda
+  // ro'yxat kesilgan bo'lishi mumkin (ehtiyotkor baho) — filialsizlar 100 tadan tashqarida qolgan bo'lishi mumkin.
+  const truncated = users.length >= USERS_PAGE_LIMIT;
+  const needle = normalize(query);
+  // Server natijasi joriy matnga tegishlimi (kechikish o'tgan: `found` — shu matn kalitining ma'lumoti yoki bo'sh)?
+  const searchCurrent = needle !== "" && serverSearch === query.trim();
+  const searchPending = needle !== "" && (!searchCurrent || searchFetching);
   const addEmployee = useAddEmployee(branchId);
   const { control, handleSubmit, reset } = useForm<AddEmployeeDto>({
     resolver: yupResolver(addEmployeeSchema),
@@ -81,12 +148,17 @@ const AddEmployeeModal = ({
     [user.username, user.role ? branchPositionLabel(user.role, t) : ""].filter(Boolean).join(" · ");
 
   const visible = useMemo(() => {
-    const needle = normalize(query);
-    if (!needle) return users;
-    return users.filter((user) =>
-      [user.fullName, user.username, user.phone].some((value) => normalize(String(value ?? "")).includes(needle)),
-    );
-  }, [query, users]);
+    if (!needle) return assignable;
+    // Yuklangan ro'yxat + server topganlari (100 tadan tashqaridagilar ham), takrorsiz. Joriy matn uchun server
+    // topganlari — mahalliy mos kelmasa ham (server telefonni raqamlar bo'yicha ham qidiradi).
+    const serverIds = new Set(searchCurrent ? found.map((user) => user.id) : []);
+    const seen = new Set<string>();
+    return [...assignable, ...found.filter((user) => isAssignable(user, roles))].filter((user) => {
+      if (seen.has(user.id)) return false;
+      seen.add(user.id);
+      return serverIds.has(user.id) || matches(user, needle);
+    });
+  }, [assignable, found, needle, roles, searchCurrent]);
 
   const current = activeIndex >= 0 && activeIndex < visible.length ? activeIndex : -1;
   const optionId = (user: IdentityUser) => `${listId}-${encodeURIComponent(user.id)}`;
@@ -146,6 +218,15 @@ const AddEmployeeModal = ({
   });
 
   const pending = addEmployee.isPending;
+  // Server qidiruvi kutilayotganda bo'sh ro'yxat uchun «topilmadi» chiqmaydi — skelet turadi.
+  const showSkeleton = usersLoading || (visible.length === 0 && searchPending);
+  // «Biriktirilmagan faol xodim yo'q» — faqat ro'yxat to'liq kelgan bo'lsa; kesilgan bo'lsa qidirishni taklif qiladi.
+  const emptyKey =
+    assignable.length === 0 && !truncated
+      ? "v2.addEmployee.noOptions"
+      : needle
+        ? "v2.addEmployee.empty"
+        : "v2.addEmployee.searchMore";
   const description = branchName ? t("v2.addEmployee.description", { branch: branchName }) : t("employee.addDescription");
 
   return (
@@ -155,6 +236,7 @@ const AddEmployeeModal = ({
       // Yopilgach qidiruv tozalanadi (keyingi ochilishda ro'yxat to'liq).
       onExited={() => {
         setQuery("");
+        setServerSearch("");
         setActiveIndex(-1);
       }}
       busy={pending}
@@ -184,7 +266,7 @@ const AddEmployeeModal = ({
         hint={
           <span className="inline-flex items-start gap-1.5">
             <Info aria-hidden="true" size={16} strokeWidth={2} className="shrink-0" />
-            {t("v2.addEmployee.hint")}
+            {t(hintKeyFor(branchType))}
           </span>
         }
       >
@@ -208,12 +290,12 @@ const AddEmployeeModal = ({
           id={listId}
           role="listbox"
           aria-label={t("v2.addEmployee.listLabel")}
-          aria-busy={usersLoading || undefined}
+          aria-busy={usersLoading || searchPending || undefined}
           // Bosilganda fokus qidiruv maydonida qoladi (`aria-activedescendant`).
           onMouseDown={(event) => event.preventDefault()}
           className={OPTIONS}
         >
-          {usersLoading
+          {showSkeleton
             ? Array.from({ length: 4 }, (_, index) => (
                 <div key={index} role="presentation" className="flex min-h-11 flex-col justify-center gap-1.5 px-2.5 py-1.5">
                   <Skeleton width="45%" />
@@ -246,12 +328,15 @@ const AddEmployeeModal = ({
                   </div>
                 );
               })}
-          {!usersLoading && visible.length === 0 ? (
+          {!showSkeleton && visible.length === 0 ? (
             <div role="presentation" className="flex flex-col items-center gap-1.5 px-2.5 py-4 text-center">
               <SearchX aria-hidden="true" size={20} className="text-text-muted" />
-              <span className="text-[13px] text-text-muted">
-                {users.length === 0 ? t("v2.addEmployee.noOptions") : t("v2.addEmployee.empty")}
-              </span>
+              <span className="text-[13px] text-text-muted">{t(emptyKey)}</span>
+            </div>
+          ) : null}
+          {!showSkeleton && visible.length > 0 && truncated && !needle ? (
+            <div role="presentation" className="px-2.5 py-2 text-center text-xs text-text-muted">
+              {t("v2.addEmployee.searchMore")}
             </div>
           ) : null}
         </div>
