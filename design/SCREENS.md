@@ -2021,7 +2021,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | v2 |
 | `/activity-logs` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
-#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)
+#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|investors|delivery-pricing|identity|system|auth; ?tab=logistics|branches|integrations — /returns, /batches, /integrations ga yo'naltiriladi; dizayn v2)
 
 - **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)

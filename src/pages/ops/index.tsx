@@ -65,7 +65,9 @@ const OpsPage = () => {
     return TABS.some((tab) => tab.key === fromUrl) ? (fromUrl as string) : fallbackTab;
   }, [searchParams, fallbackTab]);
 
-  const movedTo = MOVED_OPS_TABS[searchParams.get("tab") ?? ""];
+  const tabParam = searchParams.get("tab") ?? "";
+  // O'z kaliti bo'yicha (`?tab=constructor` kabi meros xossasi yo'naltirish manzili bo'lib qolmasin).
+  const movedTo = Object.hasOwn(MOVED_OPS_TABS, tabParam) ? MOVED_OPS_TABS[tabParam] : undefined;
   const active = TABS.find((tab) => tab.key === activeKey) ?? TABS[0];
   const activeLabel = t(active.labelKey);
   const Panel = CONTENT[active.key];

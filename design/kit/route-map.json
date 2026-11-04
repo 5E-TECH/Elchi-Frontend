@@ -1693,7 +1693,7 @@
     {
       "path": "/ops",
       "section": "system",
-      "title": "Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)",
+      "title": "Ops vositalari markazi (tablar: ?tab=finance|expense-categories|investors|delivery-pricing|identity|system|auth; ?tab=logistics|branches|integrations — /returns, /batches, /integrations ga yo'naltiriladi; dizayn v2)",
       "components": [
         "src/pages/ops/index.tsx",
         "src/pages/ops/tabs.ts",

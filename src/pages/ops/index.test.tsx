@@ -173,6 +173,21 @@ describe("Ops page — tablar (dizayn v2)", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent(target);
   });
 
+  it.each(["constructor", "toString", "__proto__"])(
+    "`?tab=%s` (meros xossasi) — yo'naltirilmaydi, birinchi tab ochiladi",
+    async (tab) => {
+      renderWithProviders(
+        <>
+          <OpsPage />
+          <LocationProbe />
+        </>,
+        { route: `/ops?tab=${tab}` },
+      );
+      expect(await screen.findByRole("tab", { name: "Moliya operatorlari", selected: true })).toBeInTheDocument();
+      expect(screen.getByTestId("location")).toHaveTextContent(`/ops?tab=${tab}`);
+    },
+  );
+
   it("tab bosilsa URL `?tab=` almashadi (replace)", async () => {
     const user = userEvent.setup();
     renderWithProviders(
