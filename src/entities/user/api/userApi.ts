@@ -374,6 +374,18 @@ export const useUser = () => {
     },
   });
 
+  /** Market kassasi qarzga ishlaydimi (`PATCH /admin/markets/:id`, faqat admin/superadmin). */
+  const updateMarketCashboxDebt = useMutation({
+    mutationFn: ({ id, cashbox_debt_enabled }: { id: string; cashbox_debt_enabled: boolean }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.EXTRA_COST(id), { cashbox_debt_enabled })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      void invalidateUserLists();
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   /** (w2bDrE3i) Market bo'yicha qo'shimcha xarajat: ochiq yoki yopiq va market tasdig'i. */
   const updateMarketExtraCost = useMutation({
     mutationFn: ({
@@ -479,6 +491,7 @@ export const useUser = () => {
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
     updateMarketExtraCost,
+    updateMarketCashboxDebt,
     updateMarketTelegramGroupPii,
     deleteUser,
   };

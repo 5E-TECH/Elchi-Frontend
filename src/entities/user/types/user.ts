@@ -83,6 +83,8 @@ export interface User {
   /** Market bo'yicha qo'shimcha xarajat (w2bDrE3i): yangi market — yopiq, eski marketlar — ochiq. */
   extra_cost_enabled?: boolean;
   extra_cost_requires_approval?: boolean;
+  /** Market kassasi qarzga ishlaydimi: yoqilsa marketga qarzdan ortiq to'lash mumkin (sukut — o'chiq). */
+  cashbox_debt_enabled?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni

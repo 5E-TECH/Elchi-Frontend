@@ -154,6 +154,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
     updateMarketExtraCost,
+    updateMarketCashboxDebt,
   } = useUser();
   const currentRole = useSelector((state: RootState) => state.role.role);
   const viewerId = useSelector((state: RootState) => state.role.id);
@@ -245,6 +246,19 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
       t,
       request: () => updateMarketExtraCost.mutateAsync({ id: user.id, extra_cost_requires_approval: nextValue }),
       successMessage: nextValue ? t("marketExtraCostApprovalEnabled") : t("marketExtraCostApprovalDisabled"),
+      errorMessage: editError,
+    });
+  };
+
+  const marketCashboxDebtEnabled = user.cashbox_debt_enabled === true;
+
+  const handleToggleMarketCashboxDebt = async () => {
+    if (!isMarket || !canManagePrivilegedToggles) return;
+    const nextValue = !marketCashboxDebtEnabled;
+    await runUserRequest({
+      t,
+      request: () => updateMarketCashboxDebt.mutateAsync({ id: user.id, cashbox_debt_enabled: nextValue }),
+      successMessage: nextValue ? t("marketCashboxDebtEnabled") : t("marketCashboxDebtDisabled"),
       errorMessage: editError,
     });
   };
@@ -379,6 +393,14 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
                   busy={updateMarketExtraCost.isPending}
                   disabled={updateMarketExtraCost.isPending || !marketExtraCostEnabled}
                   onToggle={() => void handleToggleMarketExtraCostApproval()}
+                />
+                <SettingSwitch
+                  title={t("v2.detail.marketCashboxDebt")}
+                  description={t("v2.detail.marketCashboxDebtHint")}
+                  checked={marketCashboxDebtEnabled}
+                  busy={updateMarketCashboxDebt.isPending}
+                  disabled={updateMarketCashboxDebt.isPending}
+                  onToggle={() => void handleToggleMarketCashboxDebt()}
                 />
                 <div className="flex flex-col gap-0.5 border-t border-border px-5 pb-1 pt-4 max-md:px-4">
                   <h3 className="m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted">
