@@ -6,6 +6,7 @@ import type {
   OrderItem,
 } from "../../../../entities/order/types/order";
 import i18n from "../../../../i18n";
+import { normalizePersonName } from "../../../../shared/lib/personName";
 
 export interface MarketOption {
   id: number;
@@ -238,9 +239,10 @@ export const formatExtraNumber = (raw: string): string => {
   return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5, 7)}-${digits.slice(7, 9)}`;
 };
 
+// Ism fokusdan chiqqanda bosh harfi katta bo'ladi (`personName`) — faqat shu farq bog'lanishni uzmasin.
 const sameCustomerFields = (a: CustomerFieldValues, b: CustomerFieldValues) =>
   a.phone === b.phone &&
-  a.name.trim() === b.name.trim() &&
+  normalizePersonName(a.name) === normalizePersonName(b.name) &&
   (a.extra_phone ?? "") === (b.extra_phone ?? "") &&
   a.address.trim() === b.address.trim() &&
   a.region_id === b.region_id &&
@@ -267,7 +269,8 @@ export const buildCreateOrderPayload = (
   const market = values.market;
   const address = values.customer.address.trim();
   const comment = values.details.comment.trim();
-  const operator = (values.details.operator ?? "").trim();
+  // Mijoz va operator — shaxs ismi: har so'z bosh harfi katta (Enter bilan yuborilsa blur bo'lmagan bo'lishi mumkin).
+  const operator = normalizePersonName(values.details.operator);
   const operatorId = values.details.operator_id?.trim() ?? "";
 
   const existingCustomerId = isExistingCustomerUnchanged(values) ? values.existingCustomer?.id : undefined;
@@ -279,7 +282,7 @@ export const buildCreateOrderPayload = (
     // doiradan tashqari bo'lsa obyekt bo'yicha avvalgidek aniqlaydi (403 o'rniga).
     ...(existingCustomerId ? { customer_id: existingCustomerId } : {}),
     customer: {
-      name: values.customer.name.trim(),
+      name: normalizePersonName(values.customer.name),
       phone_number: `+998${values.customer.phone}`,
       district_id: values.customer.district_id,
       ...(values.customer.extra_phone && {

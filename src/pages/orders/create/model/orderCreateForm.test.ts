@@ -109,6 +109,21 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("market_id");
   });
 
+  it("mijoz va operator ismi — har so'z bosh harfi katta (blur bo'lmasa ham), manzil/izoh yozilgandek", () => {
+    const payload = buildCreateOrderPayload(
+      {
+        ...formValues,
+        customer: { ...formValues.customer, name: "  aliyev   vali-o'g'li ", address: "chilonzor 9" },
+        details: { ...formValues.details, operator: "kamola yusupova", comment: "kechqurun" },
+      },
+      { includeMarketId: false },
+    );
+    expect(payload.customer.name).toBe("Aliyev Vali-O'g'li");
+    expect(payload.operator).toBe("Kamola Yusupova");
+    expect(payload.customer.address).toBe("chilonzor 9");
+    expect(payload.comment).toBe("kechqurun");
+  });
+
   it("omits optional empty fields from payload", () => {
     const payload = buildCreateOrderPayload(
       {
@@ -201,6 +216,15 @@ describe("buildCreateOrderPayload — mavjud mijoz (CS-A, hiqRNhkI)", () => {
       expect(isExistingCustomerUnchanged(changed), JSON.stringify(patch)).toBe(false);
       expect(buildCreateOrderPayload(changed), JSON.stringify(patch)).not.toHaveProperty("customer_id");
     }
+  });
+
+  it("saqlangan ism kichik harfli: maydondan chiqib bosh harfi katta bo'lgani bog'lanishni uzmaydi", () => {
+    const values = linked({ ...base.customer, name: "ali valiyev" });
+    const blurred = { ...values, customer: { ...values.customer, name: "Ali Valiyev" } };
+    expect(isExistingCustomerUnchanged(blurred)).toBe(true);
+    const payload = buildCreateOrderPayload(blurred);
+    expect(payload.customer_id).toBe("55");
+    expect(payload.customer.name).toBe("Ali Valiyev");
   });
 
   it("sxema bog'lanish holatini tekshirmaydi (yuborishga tayyorlikka ta'sir qilmaydi)", async () => {

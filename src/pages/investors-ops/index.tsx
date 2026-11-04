@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useInvestors } from "../../entities/investors";
 import { formatPhone } from "../../shared/lib/formatPhone";
+import { normalizePersonName } from "../../shared/lib/personName";
 import { isCompleteUzbekistanPhone } from "../../shared/lib/phone";
 import {
   Badge,
@@ -67,7 +68,8 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     event.preventDefault();
     setTouched(true);
     if (!name.trim() || !phoneComplete || createInvestor.isPending) return;
-    const payload = { name: name.trim(), phone_number: phone };
+    // Investor — shaxs: har so'z bosh harfi katta (Enter bilan yuborilsa maydon blur bo'lmagan bo'lishi mumkin).
+    const payload = { name: normalizePersonName(name), phone_number: phone };
     setCreated(null);
     createInvestor.mutate(payload, {
       onSuccess: () => {
@@ -176,6 +178,7 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             <div className="flex flex-wrap items-end gap-x-3 gap-y-4">
               <Field label={t("investors.create.name")} required error={nameError} className="min-w-0 flex-[2_1_220px]">
                 <TextInput
+                  personName
                   autoComplete="name"
                   value={name}
                   onValueChange={setName}

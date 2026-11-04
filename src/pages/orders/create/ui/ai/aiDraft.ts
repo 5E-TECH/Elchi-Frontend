@@ -1,4 +1,5 @@
 import { toLocalPhone, toQuantity, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import { normalizePersonName } from "../../../../../shared/lib/personName";
 import type { AiDraftOrder } from "./evalPreview";
 
 /**
@@ -67,7 +68,8 @@ export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, p
 export const toCreatedRow = (draft: AiDraft, orderId?: string): AiCreatedRow => ({
   key: draft.key,
   order_id: orderId,
-  customer_name: draft.order.customer_name,
+  // Yaratilgan ro'yxatda — serverga ketgan ko'rinishda (`toConfirmOrder` bilan bir xil).
+  customer_name: normalizePersonName(draft.order.customer_name),
   phone_number: draft.order.phone_number,
   district_name: draft.order.district_name,
   total_price: Number(draft.order.total_price ?? 0),

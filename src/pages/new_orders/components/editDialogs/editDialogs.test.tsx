@@ -279,6 +279,40 @@ describe("EditCustomerDialog (maket *-orders-detail-edit-customer-dialog)", () =
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("saqlangan kichik harfli ism (avtofokus olgan, tegilmagan) yuborilmaydi — eski yozuv ko'chirilmaydi", async () => {
+    const user = userEvent.setup();
+    const lower: EditDialogOrder = { ...baseOrder, customer: { id: "c1", name: "ali valiyev", phone_number: "+998901234567" } };
+    const { onClose } = renderCustomer(lower);
+    const name = screen.getByLabelText(/^Ism/);
+    // Kompyuterda oyna tanadagi birinchi maydonni — ismni fokuslaydi.
+    expect(name).toHaveFocus();
+
+    // Hech narsa o'zgarmagan — «Saqlash» so'rovsiz yopadi.
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(mutations.updateUser).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(name).toHaveValue("ali valiyev");
+
+    // Faqat telefon o'zgardi — ism payload'da yo'q.
+    const phone = screen.getByLabelText(/^Telefon/);
+    await user.click(name);
+    await user.clear(phone);
+    await user.type(phone, "911112233");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(mutations.updateUser).toHaveBeenCalledWith({ id: "c1", data: { phone_number: "+998911112233" } });
+    expect(name).toHaveValue("ali valiyev");
+  });
+
+  it("tahrirlangan ism — fokusdan chiqqanda va yuborishda har so'z bosh harfi katta", async () => {
+    const user = userEvent.setup();
+    renderCustomer();
+    const name = screen.getByLabelText(/^Ism/);
+    await user.clear(name);
+    await user.type(name, "  vali   o'tkirov ");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(mutations.updateUser).toHaveBeenCalledWith({ id: "c1", data: { name: "Vali O'tkirov" } });
+  });
+
   it("server xatosi (matnsiz) — sukut matni «Ma'lumotlarni yangilab bo'lmadi.», oyna ochiq", async () => {
     const user = userEvent.setup();
     mutations.updateUser.mockRejectedValueOnce({});

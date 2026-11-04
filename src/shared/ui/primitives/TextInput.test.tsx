@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
@@ -232,6 +232,94 @@ describe("TextInput — ko'p qatorli va boshqarilmaydigan", () => {
     const input = screen.getByRole("textbox", { name: "Telefon raqam" });
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(boxOf(input)).toHaveClass("border-danger");
+  });
+});
+
+describe("TextInput — shaxs ismi (personName)", () => {
+  it("yozish paytida tegilmaydi, fokusdan chiqqanda har so'z bosh harfi katta; onBlur yangi qiymatdan keyin", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    const Probe = () => {
+      const [value, setValue] = useState("");
+      return (
+        <>
+          <TextInput aria-label="ism" personName value={value} onValueChange={setValue} onBlur={(event) => seen.push(event.target.value)} />
+          <output data-testid="value">{value}</output>
+        </>
+      );
+    };
+    render(<Probe />);
+    const input = screen.getByRole("textbox", { name: "ism" });
+    await user.type(input, "  o'tkir   abdulla-ugli ");
+    expect(input).toHaveValue("  o'tkir   abdulla-ugli ");
+    await user.tab();
+    expect(screen.getByTestId("value")).toHaveTextContent("O'tkir Abdulla-Ugli");
+    expect(input).toHaveValue("O'tkir Abdulla-Ugli");
+    expect(seen).toHaveLength(1);
+  });
+
+  it("o'zgarish bo'lmasa onValueChange chaqirilmaydi; boshqarilmaydigan maydonda ham ishlaydi", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(<TextInput aria-label="ism" personName defaultValue="Ali" onValueChange={onValueChange} />);
+    const input = screen.getByRole("textbox", { name: "ism" });
+    await user.click(input);
+    await user.tab();
+    expect(onValueChange).not.toHaveBeenCalled();
+    await user.type(input, " vali");
+    await user.tab();
+    expect(input).toHaveValue("Ali Vali");
+    expect(onValueChange).toHaveBeenLastCalledWith("Ali Vali");
+  });
+
+  it("tegilmagan (faqat fokus olgan) eski ism o'zgartirilmaydi — tahrirlash oynasidagi avtofokus", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(<TextInput aria-label="ism" personName value="ali valiyev" onValueChange={onValueChange} />);
+    const input = screen.getByRole("textbox", { name: "ism" });
+    input.focus();
+    await user.tab();
+    await user.click(input);
+    await user.tab();
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue("ali valiyev");
+  });
+
+  it("oyna/tab fokusni yo'qotsa (fokus maydonda qoladi) — oxirgi bo'shliq saqlanadi; chiqqanda tekislanadi", async () => {
+    const user = userEvent.setup();
+    const onBlur = vi.fn();
+    render(<Controlled aria-label="ism" personName onBlur={onBlur} />);
+    const input = screen.getByRole("textbox", { name: "ism" });
+    await user.type(input, "ali ");
+    // Oyna fokusi ketdi (Alt-Tab): blur keladi, lekin `document.activeElement` — hamon shu maydon.
+    fireEvent.blur(input);
+    expect(input).toHaveFocus();
+    expect(onBlur).toHaveBeenCalledTimes(1);
+    expect(input).toHaveValue("ali ");
+    // Qaytib, familiyani qo'shdi — endi haqiqiy chiqish.
+    await user.type(input, "valiyev");
+    expect(input).toHaveValue("ali valiyev");
+    await user.tab();
+    expect(input).toHaveValue("Ali Valiyev");
+    expect(screen.getByTestId("value")).toHaveTextContent("Ali Valiyev");
+  });
+
+  it("personName siz, faqat o'qishda va boshqa turlarda o'zgartirilmaydi", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Controlled aria-label="oddiy" />
+        <TextInput aria-label="o'qish" personName readOnly value="ali" onValueChange={() => {}} />
+      </>,
+    );
+    const plain = screen.getByRole("textbox", { name: "oddiy" });
+    await user.type(plain, "ali valiyev");
+    await user.tab();
+    expect(plain).toHaveValue("ali valiyev");
+    const readOnly = screen.getByRole("textbox", { name: "o'qish" });
+    await user.click(readOnly);
+    await user.tab();
+    expect(readOnly).toHaveValue("ali");
   });
 });
 

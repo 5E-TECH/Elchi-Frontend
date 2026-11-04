@@ -123,6 +123,7 @@ const CustomerDialog = ({ open, order, onClose, onSaved }: CustomerDialogProps) 
       <Field label={t("name")} required error={errors.name} disabled={locked}>
         <TextInput
           ref={nameRef}
+          personName
           value={form.name}
           onValueChange={(value) => update("name", value)}
           placeholder={t("customerNamePlaceholder")}

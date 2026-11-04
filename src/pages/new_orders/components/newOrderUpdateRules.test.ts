@@ -214,6 +214,21 @@ describe("new order update rules", () => {
     })).toEqual({ phone_number: "+998909999999" });
   });
 
+  it("mijoz ismi: tahrirlangani bosh harfi katta bo'lib ketadi, tegilmagan eski ism ko'chirilmaydi", () => {
+    const lower: EditableOrderSnapshot = { ...order, customer: { name: "ali valiyev", phone_number: "+998901234567" } };
+    expect(buildCustomerUpdatePayload(order, { name: "  vali   o'tkirov ", phone: "+998901234567" })).toEqual({
+      name: "Vali O'tkirov",
+    });
+    // Faqat telefon o'zgardi — saqlangan kichik harfli ism yuborilmaydi.
+    expect(buildCustomerUpdatePayload(lower, { name: "ali valiyev", phone: "+998 90 999 99 99" })).toEqual({
+      phone_number: "+998909999999",
+    });
+    // Foydalanuvchi ismni o'zi tahrirlagan (faqat bosh harfni kattalashtirgan bo'lsa ham) — tahrirlangan sanaladi.
+    expect(buildCustomerUpdatePayload(lower, { name: "Ali Valiyev", phone: "+998901234567" })).toEqual({ name: "Ali Valiyev" });
+    // Faqat kichik harfga o'zgartirilgan — tekislangani saqlanganiga teng, so'rov yo'q.
+    expect(buildCustomerUpdatePayload(order, { name: "ali", phone: "+998901234567" })).toEqual({});
+  });
+
   it("validates required customer and address fields", () => {
     expect(getAddressUpdateValidationError({ region_id: "", district_id: "district-1" })).toBe("region");
     expect(getAddressUpdateValidationError({ region_id: "region-1", district_id: "" })).toBe("district");

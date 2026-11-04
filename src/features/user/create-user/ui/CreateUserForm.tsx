@@ -38,6 +38,7 @@ import { useBranches, type Branch } from "../../../../entities/branch";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
 import { notify } from "../../../../shared/lib/notify";
+import { isPersonNameRole, normalizePersonName } from "../../../../shared/lib/personName";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import { formatPhone } from "../../../../shared/lib/formatPhone";
 import {
@@ -511,9 +512,14 @@ export const CreateUserForm = memo(() => {
       describeError,
     });
 
-  const onSubmit = async (values: CreateUserFormValues) => {
+  const onSubmit = async (submitted: CreateUserFormValues) => {
     clearErrors();
-    if (!validateByRole(values)) return;
+    if (!validateByRole(submitted)) return;
+    // Xodim ismi — shaxs ismi: har so'z bosh harfi katta (Enter bilan yuborilsa blur bo'lmagan bo'lishi mumkin);
+    // market nomi — biznes nomi, yozilgandek.
+    const values = isPersonNameRole(role)
+      ? { ...submitted, fullName: normalizePersonName(submitted.fullName) }
+      : submitted;
 
     const rawPhone = toUzbekistanPhoneValue(values.phone);
 
@@ -675,6 +681,8 @@ export const CreateUserForm = memo(() => {
       render={({ field, fieldState }) => (
         <Field label={label} required hint={hint} error={fieldState.error?.message}>
           <TextInput
+            // Ism — shaxs rollarida fokusdan chiqqanda bosh harfi katta; «Market nomi» yozilgandek.
+            personName={name === "fullName" && isPersonNameRole(role)}
             name={field.name}
             value={field.value}
             onValueChange={field.onChange}

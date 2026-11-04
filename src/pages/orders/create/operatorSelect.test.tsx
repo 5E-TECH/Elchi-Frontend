@@ -262,3 +262,28 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     expect(screen.queryByRole("combobox", { name: "Operator" })).not.toBeInTheDocument();
   });
 });
+
+describe("OrderCreate — ism bosh harfi (mijoz va operator — shaxs ismi)", () => {
+  it("«Mijoz ismi» yozish paytida tegilmaydi, fokusdan chiqqanda har so'z bosh harfi katta; POST'da mijoz va operator katta", async () => {
+    operatorsByMarket.own = [];
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    await waitFor(() => expect(selectableCalls()).toHaveLength(1));
+
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    const name = screen.getByLabelText(/^Mijoz ismi/);
+    await user.type(name, "aliyev  vali-o'g'li");
+    expect(name).toHaveValue("aliyev  vali-o'g'li");
+    await user.tab();
+    expect(name).toHaveValue("Aliyev Vali-O'g'li");
+
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await waitFor(() => expect(within(aside()).getByRole("status")).toHaveTextContent("Buyurtma yuborishga tayyor"));
+    await user.type(screen.getByLabelText("Operator"), "kamola yusupova");
+    await submit(user);
+
+    expect(lastPayload()).toMatchObject({ operator: "Kamola Yusupova", customer: { name: "Aliyev Vali-O'g'li" } });
+  });
+});

@@ -1,3 +1,4 @@
+import { normalizePersonName } from "../../../shared/lib/personName";
 import { toUzbekistanPhoneValue } from "../../../shared/lib/phone";
 
 export interface EditableOrderItem {
@@ -223,11 +224,14 @@ export const buildCustomerUpdatePayload = (
   if (getCustomerUpdateValidationError(form)) return {};
 
   const payload: Record<string, string> = {};
-  const name = form.name.trim();
+  // Mijoz ismi — shaxs ismi: har so'z bosh harfi katta. Ism tegilmagan bo'lsa (saqlangani kichik harf bilan
+  // bo'lsa ham) yuborilmaydi — eski yozuvlar ko'chirilmaydi, faqat tahrirlangan ism tekislanadi.
+  const storedName = order.customer.name.trim();
+  const name = normalizePersonName(form.name);
   const phone = toUzbekistanPhoneValue(form.phone);
   const currentPhone = toUzbekistanPhoneValue(order.customer.phone_number);
 
-  if (name !== order.customer.name.trim()) payload.name = name;
+  if (form.name.trim() !== storedName && name !== storedName) payload.name = name;
   if (phone !== currentPhone) payload.phone_number = phone;
 
   return payload;

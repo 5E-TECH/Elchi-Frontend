@@ -1,3 +1,4 @@
+import { normalizePersonName } from "../../shared/lib/personName";
 import { getUzbekistanPhoneDigits } from "../../shared/lib/phone";
 import {
   formatExtraNumber,
@@ -105,11 +106,12 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
   const districtId = preview.district_id ? String(preview.district_id) : "";
   const address = text(preview.address);
   const comment = text(preview.comment);
-  const operator = text(preview.operator);
+  // Mijoz va operator — shaxs ismi: har so'z bosh harfi katta (AI kichik harf bilan o'qigan bo'lsa ham).
+  const operator = normalizePersonName(preview.operator);
 
   return {
     customer: {
-      name: text(preview.customer_name),
+      name: normalizePersonName(preview.customer_name),
       phone_number: phone ? `+998${phone}` : "",
       // ⚠️ Gateway `customer.district_id` ni ham majburiy talab qiladi.
       district_id: districtId,

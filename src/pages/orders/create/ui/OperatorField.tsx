@@ -68,6 +68,7 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
       render={({ field }) => (
         <Field id="details.operator" label={label} hint={hint} error={errors.details?.operator?.message}>
           <TextInput
+            personName
             name={field.name}
             placeholder={t("operatorPlaceholder")}
             value={field.value}

@@ -4,6 +4,7 @@ import {
   useState,
   type ChangeEvent,
   type ComponentProps,
+  type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
@@ -14,6 +15,7 @@ import { copyToClipboard } from "../../lib/clipboard";
 import { cx } from "../../lib/cx";
 import { keepDigitCaret, toDigits } from "../../lib/digitsInput";
 import { CURRENCY_LABEL, formatNumberLocalized, resolveMoneyLanguage } from "../../lib/formatMoney";
+import { normalizePersonName } from "../../lib/personName";
 import {
   formatUzbekistanPhoneLocal,
   getUzbekistanPhoneDigits,
@@ -51,6 +53,7 @@ import { useMergedRefs } from "./overlay/mergeRefs";
  *    money   — mingliklar bilan («1 545 000»), qiymat — raqamlar satri («1545000»), o'ngda valyuta
  *              (uz so'm · ru сум · en UZS; `suffix={null}` — yashirish).
  *  Ko'p qatorli (`multiline`) — `.el-textarea`: kamida 88 px, bo'yiga cho'ziladi.
+ *  Shaxs ismi (`personName`) — yozilgan ism fokusdan chiqqanda «ali valiyev» → «Ali Valiyev» (`shared/lib/personName`).
  *
  *  Yorliq, ko'rsatma va xato — `Field` (id lar avtomatik ulanadi). `Field` siz ishlatilsa —
  *  `aria-label` bering.
@@ -94,6 +97,13 @@ type InputOnlyProps = {
   copyLabel?: string;
   /** Ichki `<input>` klassi (`className` — tashqi qutiga). */
   inputClassName?: string;
+  /**
+   * Shaxs ismi (`mode="text"`): fokusdan chiqqanda har so'zning birinchi harfi katta, bo'shliqlar tekislanadi
+   * (`normalizePersonName`). Yozish paytida tegilmaydi — kursor sakramaydi. Faqat shu fokusda yozilgan bo'lsa:
+   * tegilmagan (avtofokus olgan) eski ism o'zgarmaydi; oyna/tab fokusni yo'qotganda ham tegilmaydi. Yuborishda ham
+   * payload quruvchisi shu funksiyani qo'llasin (Enter bilan yuborilganda blur bo'lmasligi mumkin).
+   */
+  personName?: boolean;
 };
 
 export type TextInputFieldProps = CommonProps &
@@ -259,6 +269,7 @@ const SingleLine = ({
   copyable = false,
   copyLabel,
   inputClassName,
+  personName = false,
   id,
   disabled,
   readOnly,
@@ -268,6 +279,7 @@ const SingleLine = ({
   type,
   placeholder,
   onKeyDown,
+  onBlur,
   "aria-describedby": describedBy,
   ...rest
 }: SingleLineOwnProps) => {
@@ -278,6 +290,10 @@ const SingleLine = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const setRefs = useMergedRefs(inputRef, ref);
   const [copied, setCopied] = useState(false);
+  // `personName`: shu fokusda foydalanuvchi maydonga yozganmi. Tegilmagan ism (masalan oyna ochilganda Dialog
+  // avtofokusi) fokusdan chiqqanda o'zgartirilmaydi — aks holda tahrirlash oynalari saqlangan eski «ali valiyev» ni
+  // «tahrirlangan» deb yuborardi (eski yozuvlar ko'chirilmaydi).
+  const typedRef = useRef(false);
 
   useEffect(() => {
     if (!copied) return;
@@ -295,11 +311,33 @@ const SingleLine = ({
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    typedRef.current = true;
     const next = fromInput(mode, event.target.value);
     if (mode === "phone") keepPhoneCaretAfterChange(event.target, formatUzbekistanPhoneLocal(next));
     if (mode === "money") keepDigitCaret(event.target, toDisplay(mode, next, language));
     onChange?.(event);
     emit(next);
+  };
+
+  /**
+   * `personName`: shu fokusda yozilgan ism fokusdan chiqqanda tekislanadi — avval qiymat, so'ng tashqi `onBlur`
+   * (forma yangisini ko'radi).
+   */
+  const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    // Oyna/tab fokusni yo'qotganda ham blur keladi, lekin fokus maydonda qoladi (activeElement — o'zi): foydalanuvchi
+    // hali yozmoqda («ali » + familiyani boshqa oynadan nusxalash) — oxirgi bo'shliqqa tegilmaydi, «yozgan» belgisi
+    // ham saqlanadi (qaytib, so'ng chiqqanda tekislanadi). `document.hasFocus()` emas — jsdom da u doim `false`.
+    const windowBlur = input.ownerDocument.activeElement === input;
+    if (!windowBlur) {
+      const typed = typedRef.current;
+      typedRef.current = false;
+      if (personName && typed && mode === "text" && !field.readOnly && !field.disabled) {
+        const next = normalizePersonName(current);
+        if (next !== current) emit(next);
+      }
+    }
+    onBlur?.(event);
   };
 
   const clear = () => {
@@ -411,6 +449,7 @@ const SingleLine = ({
         aria-required={field["aria-required"]}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         className={cx(INPUT_BASE, INPUT_TEXT[size], numeric && "tabular-nums", inputClassName)}
       />
       {suffixNode !== null && suffixNode !== undefined && suffixNode !== false ? (
@@ -425,7 +464,7 @@ const SingleLine = ({
  * Dizayn v2 matn maydoni.
  *
  *   <Field label="Mijoz ismi" required error={errors.name}>
- *     <TextInput value={name} onValueChange={setName} placeholder="Ism kiriting" />
+ *     <TextInput personName value={name} onValueChange={setName} placeholder="Ism kiriting" />
  *   </Field>
  *   <TextInput mode="search" aria-label="Buyurtmalarni qidirish" value={q} onValueChange={setQ} />
  *   <Field label="Telefon raqam" required hint="9 ta raqam, kod avtomatik">

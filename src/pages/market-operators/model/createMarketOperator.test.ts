@@ -17,6 +17,15 @@ describe("buildCreateMarketOperatorPayload", () => {
       password: "Secret123",
     });
   });
+
+  it("ism kichik harf bilan yozilsa ham har so'z bosh harfi katta (qolgani yozilgandek)", () => {
+    const payload = buildCreateMarketOperatorPayload({
+      name: "  nodira   o'tkirova-ALIYEVA ",
+      phone_number: "+998901234567",
+      password: "Secret123",
+    });
+    expect(payload.name).toBe("Nodira O'tkirova-ALIYEVA");
+  });
 });
 
 describe("validateCreateOperator", () => {

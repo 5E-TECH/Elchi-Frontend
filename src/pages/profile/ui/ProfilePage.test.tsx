@@ -313,6 +313,31 @@ describe("Profil — tahrirlash", () => {
     expect(patchCalls()).toEqual([]);
   });
 
+  it("saqlangan kichik harfli ism (avtofokus olgan, tegilmagan) yuborilmaydi; faqat telefon ketadi", async () => {
+    profile = { ...baseProfile, name: "shodiyor ergashev" };
+    renderWithProviders(<ProfilePage />, { route: "/profile" });
+    await screen.findByRole("heading", { name: "shodiyor ergashev" });
+    await userEvent.click(screen.getByRole("button", { name: "Tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Profilni tahrirlash" });
+    const name = within(dialog).getByRole("textbox", { name: /Ism/ });
+    await waitFor(() => expect(name).toHaveFocus());
+    const phone = within(dialog).getByRole("textbox", { name: /Telefon/ });
+    await userEvent.clear(phone);
+    await userEvent.type(phone, "901112233");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(patchCalls()).toEqual([{ phone_number: "+998901112233" }]));
+    expect(name).toHaveValue("shodiyor ergashev");
+  });
+
+  it("tahrirlangan ism — har so'z bosh harfi katta bo'lib yuboriladi", async () => {
+    const dialog = await openDialog();
+    const name = within(dialog).getByRole("textbox", { name: /Ism/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, "shodiyor  ergash");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(patchCalls()).toEqual([{ name: "Shodiyor Ergash" }]));
+  });
+
   it("1 belgili ism — yuborilmaydi (backend `@MinLength(2)`)", async () => {
     const dialog = await openDialog();
     const name = within(dialog).getByRole("textbox", { name: /Ism/ });

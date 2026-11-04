@@ -392,6 +392,7 @@ const Step2Combined = () => {
             render={({ field }) => (
               <Field id="customer.name" label={t("createCustomerName")} required error={errors.customer?.name?.message}>
                 <TextInput
+                  personName
                   name={field.name}
                   placeholder={t("enterName")}
                   value={field.value}

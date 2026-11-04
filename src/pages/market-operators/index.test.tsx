@@ -290,6 +290,27 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     expect(api.patch).not.toHaveBeenCalled();
   });
 
+  it("ism kichik harf bilan yozilsa — fokusdan chiqqanda va POST'da har so'z bosh harfi katta", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Operator qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
+    const name = within(dialog).getByLabelText(/Ism familiya/);
+    await user.type(name, "lola  karimova");
+    await user.tab();
+    expect(name).toHaveValue("Lola Karimova");
+    await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "Lola-2025x");
+    await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith("market-operators", {
+      name: "Lola Karimova",
+      phone_number: "+998901234567",
+      password: "Lola-2025x",
+    });
+  });
+
   it("409 — telefon maydonida «Bu telefon raqam band», oyna ochiq, xom matn yo'q", async () => {
     api.post.mockRejectedValueOnce(axiosError(409));
     const user = userEvent.setup();

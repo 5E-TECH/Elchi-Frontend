@@ -1,6 +1,7 @@
 import type { CreateMarketOperatorRequest } from "../../../entities/market-operator";
 import { isCompleteUzbekistanPhone } from "../../../shared/lib/phone";
 import { checkPasswordPolicy } from "../../../shared/lib/passwordPolicy";
+import { normalizePersonName } from "../../../shared/lib/personName";
 
 export type MarketOperatorCreateFormValues = {
   name: string;
@@ -30,7 +31,8 @@ export const NAME_MIN = 2;
 export const NAME_MAX = 100;
 export const OPERATOR_ROLE = "market_operator";
 
-const normalizeName = (value: string) => value.trim().replace(/\s+/g, " ");
+/** Operator — shaxs: bo'shliqlar tekislanadi, har so'z bosh harfi katta («nodira aliyeva» → «Nodira Aliyeva»). */
+const normalizeName = normalizePersonName;
 
 const normalizePhoneNumber = (value: string) => {
   const digits = value.replace(/\D/g, "");

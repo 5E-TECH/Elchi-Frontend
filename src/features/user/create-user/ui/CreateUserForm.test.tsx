@@ -647,3 +647,48 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
     expect(screen.getByRole("radio", { name: /^Kuryer/ })).toBeChecked();
   });
 });
+
+describe("CreateUserForm — ism bosh harfi (shaxs ismi; market nomi yozilgandek)", () => {
+  const nameInput = (container: HTMLElement) => container.querySelector<HTMLInputElement>('input[name="fullName"]')!;
+
+  it("kuryer: fokusdan chiqqanda har so'z bosh harfi katta; Enter bilan (blursiz) yuborilsa ham payload'da katta", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: managerState("REGIONAL") });
+
+    await fill(user, container, "fullName", "azamat  to'g'ayev");
+    expect(nameInput(container)).toHaveValue("azamat  to'g'ayev");
+    await user.tab();
+    expect(nameInput(container)).toHaveValue("Azamat To'g'ayev");
+
+    await user.clear(nameInput(container));
+    await fill(user, container, "phone", "946273051");
+    await fill(user, container, "password", "Urgut-2026x");
+    await fill(user, container, "homeRate", "20000");
+    await fill(user, container, "centerRate", "15000");
+    // Fokus ism maydonida qoladi — blur bo'lmaydi, Enter formani yuboradi.
+    await user.type(nameInput(container), "sardor qodirov-ugli{Enter}");
+
+    await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
+    expect(mocks.createCourier.mock.calls[0][0]).toMatchObject({ name: "Sardor Qodirov-Ugli" });
+  });
+
+  it("market: «Market nomi» o'zgartirilmaydi (fokusdan chiqqanda ham, yuborishda ham)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+    await pickRole(user, "Market");
+
+    await fill(user, container, "fullName", "zarafshon market");
+    await user.tab();
+    expect(nameInput(container)).toHaveValue("zarafshon market");
+    await fill(user, container, "phone", "934552017");
+    await fill(user, container, "username", "zarafshon_market");
+    await fill(user, container, "password", "Zarafshon26");
+    await user.click(screen.getByRole("radio", { name: "Markazgacha" }));
+    await fill(user, container, "homeRate", "35000");
+    await fill(user, container, "centerRate", "25000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createMarket).toHaveBeenCalledTimes(1));
+    expect(mocks.createMarket.mock.calls[0][0]).toMatchObject({ name: "zarafshon market" });
+  });
+});
