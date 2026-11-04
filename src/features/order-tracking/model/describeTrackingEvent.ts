@@ -486,6 +486,14 @@ export const isCourierReturnRequestedEvent = (event: TrackingEvent) =>
   normalizeKey(event.action) === "courier_return_requested";
 
 /**
+ * Filial menejeri o'z filialiga jo'natilgan o'tkazma pochtasidagi buyurtma kelmaganini bildirdi — qaytarish so'rovi
+ * (`branch_return_requested`, holat o'zgarmaydi — `on the road`; ega qarori 2026-11-04). Kuryer yozuvidan alohida
+ * yorliq — tarixda kim bildirgani ko'rinsin. Backend izohi jumlada takrorlanmaydi.
+ */
+export const isBranchReturnRequestedEvent = (event: TrackingEvent) =>
+  normalizeKey(event.action) === "branch_return_requested";
+
+/**
  * Jumla shabloni (`tracking.dynamic.*`) yoki — mos shablon bo'lmasa — `null` (izoh alohida).
  * Shablonlar `{{actor}}` bilan; sahifa aktyorni qalin va rol nomi bilan chizadi.
  */
@@ -547,6 +555,7 @@ const getSentenceTemplate = (
     );
   }
   if (isCourierReturnRequestedEvent(event)) return dynamic("courierReturnRequested");
+  if (isBranchReturnRequestedEvent(event)) return dynamic("branchReturnRequested");
   // Jo'natilgan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi): metadata `{ from_branch_name, to_branch_name }`.
   if (normalizeKey(event.action) === "post_branch_reassigned") {
     const metadata = isRecord(event.metadata) ? event.metadata : {};
@@ -589,6 +598,7 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
     case "tracking.dynamic.cancelledPostReturnedToNamedBranch":
     case "tracking.dynamic.cancelledPostReturnedShort":
     case "tracking.dynamic.courierReturnRequested":
+    case "tracking.dynamic.branchReturnRequested":
       return RotateCcw;
     case "tracking.dynamic.returnedToMarketByActor":
     case "tracking.dynamic.cancelledOrderHandedToMarket":

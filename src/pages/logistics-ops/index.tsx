@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { Check, CircleCheck, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useDispatchBranchNames } from "../../entities/branch";
 import { useLogisticsCoverage } from "../../entities/logistics/logisticsCoverage";
 import { getErrorKind, getErrorStatus } from "../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -26,7 +27,9 @@ import { useOpsErrorText } from "../ops/lib/opsErrorText";
 import {
   extractReturnRequestRows,
   extractReturnRequestScope,
+  isBranchTransferRow,
   parseApproveReturnResult,
+  returnRequestStatusKey,
   type ApproveReturnResult,
   type ReturnRequestRow,
 } from "./lib/returnRequestRows";
@@ -45,8 +48,11 @@ import { ApproveReturnSummary } from "./ui/ApproveReturnSummary";
  * Matnlar: sarlavha, ustunlar — `returns:opsReturnRequests.*`; maketdagi yangi matnlar — `ops:logistics.*`.
  */
 
-/** Qaytarish so'rovi holati (backend `RETURN_REQUEST_STATUSES`: WAITING, ON_THE_ROAD). */
-const STATUS_TONE: Record<string, Tone> = { waiting: "warning", on_the_road: "neutral" };
+/**
+ * Qaytarish so'rovi holati (backend `RETURN_REQUEST_STATUSES`: WAITING, ON_THE_ROAD); `branch_not_arrived` —
+ * filial o'tkazmasida manzil filialga kelmagan buyurtma (`returnRequestStatusKey`).
+ */
+const STATUS_TONE: Record<string, Tone> = { waiting: "warning", on_the_road: "neutral", branch_not_arrived: "warning" };
 
 /** Natija xabarida nomi bilan sanaladigan o'tkazib yuborilgan buyurtmalar (qolgani — «va yana N ta»). */
 const SKIPPED_LISTED = 3;
@@ -63,8 +69,17 @@ const LogisticsOpsPage = () => {
   const returnRequests = useGetReturnRequestsList(undefined, { silentError: true });
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
-  // fix3 CODE-09 / C13: javob `data.groups[].orders` — kuryer bo'yicha guruhlangan.
-  const rows = extractReturnRequestRows(returnRequests.data);
+  // fix3 CODE-09 / C13: javob `data.groups[].orders` — kuryer bo'yicha guruhlangan; filial o'tkazmasi so'rovlari
+  // (2026-11-04) — manzil filial bo'yicha, nomi backend bermasa `dispatch-destinations` dan.
+  const extractedRows = extractReturnRequestRows(returnRequests.data);
+  const branchNames = useDispatchBranchNames(
+    extractedRows.some((row) => isBranchTransferRow(row) && !row.branchName && row.branchId),
+  );
+  const rows = extractedRows.map((row) =>
+    isBranchTransferRow(row) && !row.branchName && row.branchId && branchNames.has(row.branchId)
+      ? { ...row, branchName: branchNames.get(row.branchId) }
+      : row,
+  );
   const scope = extractReturnRequestScope(returnRequests.data);
 
   // Tanlov faqat ro'yxatda hozir bor qatorlardan — yangilangan ro'yxatda yo'qolgan qator yuborilmaydi.
@@ -154,13 +169,22 @@ const LogisticsOpsPage = () => {
     notifyResult(outcome.result);
   };
 
-  const statusBadge = (row: ReturnRequestRow) => (
-    <StatusBadge
-      tone={STATUS_TONE[row.status] ?? "neutral"}
-      label={t(`logistics.statuses.${row.status}`, { defaultValue: "—" })}
-    />
-  );
-  const courierName = (row: ReturnRequestRow) => row.courier || t("logistics.list.noCourier");
+  const statusBadge = (row: ReturnRequestRow) => {
+    const statusKey = returnRequestStatusKey(row);
+    return (
+      <StatusBadge
+        tone={STATUS_TONE[statusKey] ?? "neutral"}
+        label={t(`logistics.statuses.${statusKey}`, { defaultValue: "—" })}
+      />
+    );
+  };
+  // Filial o'tkazmasi — kuryer o'rniga manzil filial («Filial: <nomi> — kelmagan»).
+  const courierName = (row: ReturnRequestRow) =>
+    isBranchTransferRow(row)
+      ? row.branchName
+        ? t("logistics.list.branchTransfer", { branch: row.branchName })
+        : t("logistics.list.branchTransferFallback")
+      : row.courier || t("logistics.list.noCourier");
   const orderLink = (row: ReturnRequestRow) => {
     const orderId = row.order_id || row.id;
     return orderId ? (

@@ -1,10 +1,11 @@
 {
   "return": {
     "summary": "<strong>{{couriers}}</strong> ta kuryer, <strong>{{orders}}</strong> ta buyurtma",
+    "summaryWithBranches": "<strong>{{couriers}}</strong> ta kuryer, <strong>{{branches}}</strong> ta filial, <strong>{{orders}}</strong> ta buyurtma",
     "selectionLabel": "Tanlangan so'rovlar",
     "selected": "{{count}} ta so'rov tanlandi",
     "noneSelected": "Hech biri tanlanmagan",
-    "selectionHint": "Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari kuryerda qoladi",
+    "selectionHint": "Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari joyida qoladi (kuryerda yoki filial pochtasida)",
     "clearSelection": "Tanlovni bekor qilish",
     "tableLabel": "Qaytarish so'rovlari",
     "selectAll": "Barcha so'rovlarni tanlash",

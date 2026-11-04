@@ -39,6 +39,8 @@ export const queryKeys = {
     withSentBatches: (params: object) => ["branches", "with-sent-batches", params] as const,
     detail: (id: string) => ["branches", "detail", id] as const,
     employees: (id: string) => ["branches", id, "employees"] as const,
+    /** Filial id → nomi (`GET /branches/dispatch-destinations`, «Qaytarish»dagi filial o'tkazmasi guruhlari). */
+    dispatchNames: ["branches", "dispatch-destinations", "names"] as const,
   },
   users: {
     all: ["users"] as const,

@@ -15,6 +15,12 @@ const mocks = vi.hoisted(() => ({
   useGetReturnMails: vi.fn(),
   approveMutateAsync: vi.fn(),
   rejectMutateAsync: vi.fn(),
+  useDispatchBranchNames: vi.fn(),
+}));
+
+vi.mock("../../../entities/branch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/branch")>()),
+  useDispatchBranchNames: mocks.useDispatchBranchNames,
 }));
 
 vi.mock("../../../entities/mails", () => ({
@@ -73,6 +79,7 @@ const selectionRegion = () => screen.getByRole("region", { name: "Tanlangan so'r
 
 describe("ReturnMails (Pochta → Qaytarish)", () => {
   beforeEach(() => {
+    mocks.useDispatchBranchNames.mockReset().mockReturnValue(new Map());
     mocks.useGetReturnMails.mockReturnValue(listResult(branchRequests));
     mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: { approved: 1 } });
     mocks.rejectMutateAsync.mockResolvedValue({ statusCode: 200, data: { rejected: 2 } });
@@ -117,7 +124,7 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
     const region = selectionRegion();
     expect(within(region).getByText("Hech biri tanlanmagan")).toBeInTheDocument();
     expect(
-      within(region).getByText("Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari kuryerda qoladi"),
+      within(region).getByText("Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari joyida qoladi (kuryerda yoki filial pochtasida)"),
     ).toBeInTheDocument();
     for (const name of ["Tasdiqlash", "Rad etish", "Tanlovni bekor qilish"]) {
       expect(within(region).getByRole("button", { name })).toBeDisabled();
@@ -171,7 +178,7 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
 
     expect(mocks.rejectMutateAsync).toHaveBeenCalledWith({ order_ids: ["101", "102"] });
     expect(
-      await screen.findByText("2 ta so'rov rad etildi — buyurtmalar kuryerda qoldi"),
+      await screen.findByText("2 ta so'rov rad etildi — buyurtmalar joyida qoldi (kuryerda yoki filial pochtasida)"),
     ).toBeInTheDocument();
   });
 
@@ -212,7 +219,7 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
     expect(mocks.rejectMutateAsync).toHaveBeenCalledWith({ order_ids: ["101", "102"] });
     expect(
       await screen.findByText(
-        "1 ta so'rov rad etildi — buyurtmalar kuryerda qoldi · 1 ta so'rov allaqachon ko'rib chiqilgan — o'tkazib yuborildi",
+        "1 ta so'rov rad etildi — buyurtmalar joyida qoldi (kuryerda yoki filial pochtasida) · 1 ta so'rov allaqachon ko'rib chiqilgan — o'tkazib yuborildi",
       ),
     ).toBeInTheDocument();
   });
@@ -295,9 +302,97 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
   });
 });
 
+describe("ReturnMails — filial o'tkazmasi so'rovlari (menejer «kelmagan», HQ doirasi)", () => {
+  /** Backend `{ courier: null, courier_id: null, source: 'branch_transfer', branch_id }` guruhidan kelgan qator. */
+  const transfer = (id: string, branchId: string, customer: string, branchName = "") =>
+    request({
+      id,
+      request_id: id,
+      order_id: id,
+      courier_id: "",
+      courier: null,
+      action: "center",
+      customer: { id: `c${id}`, name: customer, phone_number: "+998901112233", extra_number: null },
+      return_source: "branch_transfer",
+      return_branch: { id: branchId, name: branchName },
+    });
+  const items = [
+    request({ action: "center" }),
+    transfer("201", "15", "Guli"),
+    transfer("202", "16", "Nodir"),
+    transfer("203", "15", "Olim"),
+  ];
+  const roleState = (role: string) => ({ role: { id: "1", role, region: null, name: role } }) as never;
+
+  beforeEach(() => {
+    mocks.useDispatchBranchNames.mockReset().mockReturnValue(
+      new Map([
+        ["15", "Guliston"],
+        ["16", "Urgut"],
+      ]),
+    );
+    mocks.useGetReturnMails.mockReturnValue(listResult(items));
+    mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: { approved: 2 } });
+  });
+
+  it("har manzil filial — alohida guruh, filial nomi bilan; «Kuryer» guruhiga qo'shilmaydi, kuryer sanalmaydi", () => {
+    renderWithProviders(<ReturnMails layout="card" />, { preloadedState: roleState("superadmin") });
+
+    // Nomlar so'raladi (superadmin, nomsiz filial guruhi bor).
+    expect(mocks.useDispatchBranchNames).toHaveBeenLastCalledWith(true);
+    const table = screen.getByRole("table", { name: "Qaytarish so'rovlari" });
+    expect(within(table).getByText("Ali")).toBeInTheDocument();
+    expect(within(table).getByText("Filial: Guliston — kelmagan")).toBeInTheDocument();
+    expect(within(table).getByText("Filial: Urgut — kelmagan")).toBeInTheDocument();
+    expect(within(table).queryByText("Kuryer")).not.toBeInTheDocument();
+    // Guliston guruhida ikkala buyurtma (201, 203), telefonsiz.
+    expect(within(table).getByText("2 ta buyurtma qaytarish so'rovi")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Filial: Guliston — kelmagan: barchasini tanlash" })).toBeInTheDocument();
+    // Holat chipi: filial qatorlarida «Filialga kelmagan», kuryer qatorida — avvalgidek.
+    expect(within(table).getAllByText("Filialga kelmagan")).toHaveLength(3);
+    expect(within(table).getAllByText("Kuryer qabul qilmagan")).toHaveLength(1);
+    // Xulosa: 1 ta kuryer (filial guruhlari kuryer emas), 2 ta filial.
+    expect(
+      screen.getByText((_, node) => node?.textContent === "1 ta kuryer, 2 ta filial, 4 ta buyurtma"),
+    ).toBeInTheDocument();
+  });
+
+  it("filial guruhini tanlab tasdiqlash — faqat shu filial buyurtmalari", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />, { preloadedState: roleState("superadmin") });
+
+    await user.click(screen.getByRole("checkbox", { name: "Filial: Guliston — kelmagan: barchasini tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["201", "203"] });
+  });
+
+  it("nom olinmasa (HQ menejeri — `dispatch-destinations` yopiq) — so'ralmaydi, «Filial o'tkazmasi», guruhlar baribir alohida", () => {
+    mocks.useDispatchBranchNames.mockReturnValue(new Map());
+    renderWithProviders(<ReturnMails layout="card" />, { preloadedState: roleState("manager") });
+
+    expect(mocks.useDispatchBranchNames).toHaveBeenLastCalledWith(false);
+    const table = screen.getByRole("table", { name: "Qaytarish so'rovlari" });
+    expect(within(table).getAllByText("Filial o'tkazmasi — kelmagan")).toHaveLength(2);
+    expect(within(table).queryByText("Kuryer")).not.toBeInTheDocument();
+  });
+
+  it("backend filial nomini bersa — o'sha, nomlar so'ralmaydi", () => {
+    mocks.useGetReturnMails.mockReturnValue(listResult([transfer("201", "15", "Guli", "Sirdaryo filiali")]));
+    renderWithProviders(<ReturnMails layout="card" />, { preloadedState: roleState("superadmin") });
+
+    expect(mocks.useDispatchBranchNames).toHaveBeenLastCalledWith(false);
+    expect(screen.getByText("Filial: Sirdaryo filiali — kelmagan")).toBeInTheDocument();
+    expect(
+      screen.getByText((_, node) => node?.textContent === "0 ta kuryer, 1 ta filial, 1 ta buyurtma"),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("ReturnMails — telefon (< 768): guruh sarlavhasi va kartalar", () => {
   const original = window.matchMedia;
   beforeEach(() => {
+    mocks.useDispatchBranchNames.mockReset().mockReturnValue(new Map());
     mocks.useGetReturnMails.mockReturnValue(listResult(branchRequests));
     mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: { approved: 1 } });
     window.matchMedia = ((query: string) => ({
@@ -339,6 +434,9 @@ describe("mails locales — Qaytarish keys", () => {
     "returnDestinationBranch",
     "returnStateNotReceived",
     "returnStateWithCourier",
+    "returnStateNotArrived",
+    "returnBranchGroup",
+    "returnBranchGroupFallback",
     "returnApproveSuccess",
     "returnRejectSuccess",
     "returnActionError",
@@ -358,6 +456,7 @@ describe("mails locales — Qaytarish keys", () => {
       expect(dict.returnApproveSuccess).toContain("{{count}}");
       expect(dict.returnRejectSuccess).toContain("{{count}}");
       expect(dict.returnSkippedNote).toContain("{{count}}");
+      expect(dict.returnBranchGroup).toContain("{{branch}}");
     });
   });
 });
@@ -379,7 +478,7 @@ describe("mailsArchive locales — uz/ru/en parity", () => {
 
   it("uses exact mockup texts in uz", () => {
     expect(archiveUz.return.selectionHint).toBe(
-      "Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari kuryerda qoladi",
+      "Tasdiqlangan buyurtmalar omborga qaytadi, rad etilganlari joyida qoladi (kuryerda yoki filial pochtasida)",
     );
     expect(archiveUz.return.clearSelection).toBe("Tanlovni bekor qilish");
     expect(archiveUz.old.export).toBe("Excelga yuklash");

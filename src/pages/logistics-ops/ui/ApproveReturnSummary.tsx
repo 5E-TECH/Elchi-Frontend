@@ -1,10 +1,14 @@
 // dizayn-v2: superadmin-ops-logistics-approve-dialog
 import { useEffect, useRef } from "react";
-import { Lock, User } from "lucide-react";
+import { Building2, Lock, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Badge } from "../../../shared/ui/primitives";
-import { groupReturnRequestRowsByCourier, type ReturnRequestRow } from "../lib/returnRequestRows";
+import {
+  groupReturnRequestRowsByCourier,
+  returnRequestStatusKey,
+  type ReturnRequestRow,
+} from "../lib/returnRequestRows";
 
 /** Har kuryer ostida ko'rsatiladigan buyurtmalar soni (qolgani — «+ yana N ta»), maket bo'yicha. */
 const VISIBLE_ORDERS = 3;
@@ -55,8 +59,17 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
   const summaryRef = useRevealDialogError();
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const groups = groupReturnRequestRowsByCourier(rows);
-  const courierCount = groups.filter((group) => group.key).length;
-  const withoutCourier = groups.find((group) => !group.key)?.rows.length ?? 0;
+  // Filial o'tkazmasi guruhlari kuryer emas — «kuryersiz» buyurtmalarga qo'shiladi, ro'yxatda filial nomi bilan.
+  const courierCount = groups.filter((group) => group.key && !group.branch).length;
+  const withoutCourier = groups
+    .filter((group) => !group.key || group.branch)
+    .reduce((sum, group) => sum + group.rows.length, 0);
+  const groupName = (group: (typeof groups)[number]) =>
+    group.branch
+      ? group.branch.name
+        ? t("logistics.list.branchTransfer", { branch: group.branch.name })
+        : t("logistics.list.branchTransferFallback")
+      : group.courier || t("logistics.list.noCourier");
 
   return (
     <>
@@ -93,7 +106,14 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
             return (
               <li key={group.key || "none"} className="flex min-w-0 flex-col gap-2 border-t border-border py-3">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  {group.key ? (
+                  {group.branch ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-text-muted"
+                    >
+                      <Building2 size={16} />
+                    </span>
+                  ) : group.key ? (
                     <span
                       aria-hidden="true"
                       className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-avatar text-[13px] font-bold text-on-avatar"
@@ -115,7 +135,7 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
                         : "min-w-0 flex-1 truncate text-sm font-semibold text-text-muted"
                     }
                   >
-                    {group.courier || t("logistics.list.noCourier")}
+                    {groupName(group)}
                   </span>
                   <Badge className="shrink-0">{t("logistics.approve.groupCount", { value: number(group.rows.length) })}</Badge>
                 </div>
@@ -127,7 +147,7 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
                       </span>
                       <span className="whitespace-nowrap text-xs text-text-muted">
                         {/* Noma'lum holat — «—» (xom backend qiymati ko'rsatilmaydi). */}
-                        {t(`logistics.statuses.${row.status}`, { defaultValue: "—" })}
+                        {t(`logistics.statuses.${returnRequestStatusKey(row)}`, { defaultValue: "—" })}
                       </span>
                     </li>
                   ))}

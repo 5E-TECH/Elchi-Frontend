@@ -566,7 +566,8 @@
       "cancelledPostReturnedToBranch": "{{actor}} returned the cancelled order from HQ to {{branch}} branch",
       "cancelledPostReturnedToNamedBranch": "{{actor}} returned the cancelled order from HQ to {{branch}}",
       "cancelledPostReturnedShort": "{{actor}} returned the cancelled order from HQ to the sending branch",
-      "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent"
+      "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent",
+      "branchReturnRequested": "{{actor}} reported the order did not arrive at the branch — a return request was sent"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -630,7 +631,8 @@
       "warehouseReturned": "Returned to warehouse",
       "postBranchReassigned": "Moved to another branch",
       "cancelledPostReturned": "Returned to branch",
-      "courierReturnRequested": "Not arrived — return requested"
+      "courierReturnRequested": "Not arrived — return requested",
+      "branchReturnRequested": "Not arrived at branch — return requested"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",

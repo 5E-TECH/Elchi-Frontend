@@ -332,6 +332,41 @@ describe("toReturnRequestsMailResponse", () => {
     rows.forEach((row) => expect(row.courier?.name).toBe("Baxodir"));
   });
 
+  it("carries a branch-transfer group's source and branch onto each row, without a courier (2026-11-04)", () => {
+    const rows = toReturnRequestsMailResponse({
+      data: {
+        total: 3,
+        scope: { type: "HQ", branch_id: "1" },
+        groups: [
+          { courier: { id: "9", name: "Baxodir" }, courier_id: "9", orders: [{ id: "1", holder_courier_id: "9" }] },
+          {
+            courier: null,
+            courier_id: null,
+            source: "branch_transfer",
+            branch_id: "15",
+            orders: [
+              { id: "2", status: "on the road", holder_courier_id: "0" },
+              { id: "3", status: "on the road", holder_courier_id: null },
+            ],
+          },
+        ],
+      },
+    }).data.data;
+
+    expect(rows[0].return_source).toBeUndefined();
+    expect(rows[0].return_branch).toBeUndefined();
+    expect(rows[0].courier_id).toBe("9");
+    rows.slice(1).forEach((row) =>
+      expect(row).toMatchObject({
+        action: "center",
+        courier: null,
+        courier_id: "",
+        return_source: "branch_transfer",
+        return_branch: { id: "15", name: "" },
+      }),
+    );
+  });
+
   it("maps an empty backend answer { total: 0, groups: [] } to an empty list, not an error", () => {
     expect(toReturnRequestsMailResponse({ data: { total: 0, groups: [] } }).data).toMatchObject({
       data: [],

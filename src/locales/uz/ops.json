@@ -203,6 +203,8 @@
       "selectRow": "So'rov {{id}} ni tanlash",
       "orderLink": "№{{id}}",
       "noCourier": "Kuryer biriktirilmagan",
+      "branchTransfer": "Filial: {{branch}} — kelmagan",
+      "branchTransferFallback": "Filial o'tkazmasi — kelmagan",
       "emptyText": "Yangi so'rov kelganda shu yerda ko'rinadi."
     },
     "approve": {
@@ -240,7 +242,8 @@
     },
     "statuses": {
       "waiting": "Kuryer qabul qilmagan",
-      "on_the_road": "Kuryer qo'lida"
+      "on_the_road": "Kuryer qo'lida",
+      "branch_not_arrived": "Filialga kelmagan"
     }
   },
   "branches": {

@@ -439,3 +439,46 @@ describe("describeTrackingEvent — kuryer «kelmagan» qaytarish so'rovi", () =
     expect(en.sentence.after).toBe(" reported the order did not arrive — a return request was sent");
   });
 });
+
+/**
+ * Filial menejeri o'z filialiga jo'natilgan o'tkazma pochtasidagi buyurtma kelmaganini bildirdi (`branch_return_requested`,
+ * ega qarori 2026-11-04; holat o'zgarmaydi — `on the road`): kuryer yozuvidan alohida yorliq — kim bildirgani ko'rinsin.
+ */
+describe("describeTrackingEvent — filial menejeri «kelmagan» qaytarish so'rovi", () => {
+  const manager = { name: "Dilnoza Karimova", role: "manager" };
+  const event = {
+    ...base,
+    action: "branch_return_requested",
+    changed_by: "522",
+    changed_by_role: "manager",
+    actor: manager,
+    from_status: "on the road",
+    to_status: "on the road",
+  } as TrackingEvent;
+
+  it("«Menejer … buyurtma filialga kelmaganini bildirdi — …», belgi, backend izohi takrorlanmaydi", () => {
+    const v = view({
+      ...event,
+      description: "Filial menejeri buyurtma filialga kelmaganini bildirdi — qaytarish so'rovi yuborildi",
+      metadata: { post_id: "96", branch_id: "11" },
+    });
+    expect(sentence(v)).toBe(
+      "Menejer Dilnoza Karimova buyurtma filialga kelmaganini bildirdi — qaytarish so'rovi yuborildi",
+    );
+    expect(v.actionName).toBe("Filialga kelmagan — qaytarish so'raldi");
+    expect(v.note).toBe("");
+    expect(v.oldStatus).toBe("on the road");
+    expect(v.newStatus).toBe("on the road");
+    // Kuryer yozuvi bilan aralashmaydi.
+    expect(view({ ...event, action: "courier_return_requested" }).actionName).toBe("Kelmagan — qaytarish so'raldi");
+  });
+
+  it("ru va en: xom «Branch Return Requested» emas", () => {
+    const ru = describeTrackingEvent(event, i18n.getFixedT("ru", "orders") as never, null);
+    const en = describeTrackingEvent(event, i18n.getFixedT("en", "orders") as never, null);
+    expect(ru.actionName).toBe("Не пришёл в филиал — запрошен возврат");
+    expect(ru.sentence.after).toBe(" сообщил(а): заказ не пришёл в филиал — отправлен запрос на возврат");
+    expect(en.actionName).toBe("Not arrived at branch — return requested");
+    expect(en.sentence.after).toBe(" reported the order did not arrive at the branch — a return request was sent");
+  });
+});
