@@ -162,4 +162,36 @@ describe("Amal oynasi — rad javobi oyna ichida (2KisY7DL)", () => {
     renderSell();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("sabab chiqqanda va o'zgarganda ko'rinishga suriladi (telefonda uzun pastki varaqa)", () => {
+    const scrollIntoView = vi.fn();
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      writable: true,
+      value: scrollIntoView,
+    });
+    try {
+      const { rerender } = renderSell({ error: REASON });
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest" });
+      expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByRole("alert"));
+
+      rerender(
+        <SellModal
+          order={order(false)}
+          open
+          variant="manager"
+          onClose={vi.fn()}
+          onSell={vi.fn()}
+          onPartlySell={vi.fn()}
+          error="Boshqa sabab"
+        />,
+      );
+      expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    } finally {
+      if (original) Object.defineProperty(Element.prototype, "scrollIntoView", original);
+      else Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+    }
+  });
 });

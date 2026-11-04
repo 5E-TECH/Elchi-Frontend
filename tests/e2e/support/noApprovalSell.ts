@@ -62,7 +62,8 @@ export const runNoApprovalSell = async (
 
   const alert = dialog.getByRole("alert");
   await expect(alert).toContainText(REASON);
-  await alert.scrollIntoViewIfNeeded();
+  // Sabab foydalanuvchi qo'lda skroll qilmasdan ko'rinadi (telefonda pastki varaqa uzun bo'lsa ham).
+  await expect(alert).toBeInViewport({ ratio: 1 });
   // Sabab bir marta — oynada; ortidagi toastda takrorlanmaydi.
   await expect(page.getByText(REASON)).toHaveCount(1);
   await expect(dialog).toBeVisible();
