@@ -134,6 +134,9 @@ const renderReady = async (webApp = makeWebApp()) => {
   setWebApp(webApp);
   renderWithProviders(<TgScanPage />, { route: "/tg/scan" });
   await waitFor(() => expect(latestCamera()?.isActive).toBe(true));
+  // Ovoz sozlamasi (`auth/my-profile`) kirishdan keyin effektda so'raladi. Sekin CI'da test undan oldin tugasa,
+  // so'rov soxta transport qaytarilgach yuboriladi va haqiqiy tarmoqqa ketadi — shuning uchun u ham kutiladi.
+  await waitFor(() => expect(requestsTo("auth/my-profile").length).toBeGreaterThan(0));
   return webApp;
 };
 
