@@ -109,6 +109,43 @@ export const fetchProofFileUrl = async (key: string): Promise<string> => {
 };
 
 /**
+ * GykuOz8f: kalit emas, ANIQ API YO'LI bilan berilgan isbot (masalan qo'shimcha xarajat so'rovi isboti —
+ * `orders/extra-costs/:id/proofs/:index`: ko'rinish qoidasi ro'yxatniki, `files/:key/content` niki emas). `key` — nom
+ * va tur (rasm / video) uchun; tur javobning `Content-Type` idan ham aniqlanadi (kalitda kengaytma bo'lmasa).
+ */
+export type ProofSource = { key: string; url: string };
+export type ProofSourceFile = { url: string; kind: ProofKind };
+
+export const proofSourceUrlKey = (url: string) => ["order-proof-file-url", "source", url] as const;
+
+const kindOfBlob = (blob: Blob, key: string): ProofKind => {
+  const type = typeof blob.type === "string" ? blob.type.toLowerCase() : "";
+  if (type.startsWith("image/")) return "image";
+  if (type.startsWith("video/")) return "video";
+  return proofKind(key);
+};
+
+/** Yo'l bo'yicha baytlar → `blob:` URL (har yo'l uchun oxirgisi; eskisi bo'shatiladi). */
+export const fetchProofSource = async (source: ProofSource): Promise<ProofSourceFile> => {
+  const res = await api.get<Blob>(source.url, { responseType: "blob", timeout: LONG_REQUEST_TIMEOUT_MS });
+  return { url: toObjectUrl(`source:${source.url}`, res.data), kind: kindOfBlob(res.data, source.key) };
+};
+
+/** `useProofFileUrls` ning yo'l bilan berilgan varianti — bir faylning xatosi qolganlarini to'smaydi. */
+export const useProofSourceUrls = (sources: readonly ProofSource[]) =>
+  useQueries({
+    queries: sources.map((source) => ({
+      queryKey: proofSourceUrlKey(source.url),
+      queryFn: () => fetchProofSource(source),
+      staleTime: (URL_TTL_SECONDS - 600) * 1000,
+      gcTime: (URL_TTL_SECONDS - 300) * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      meta: { silentError: true },
+    })),
+  });
+
+/**
  * Har bir kalit uchun imzolangan URL. Bir kalitning xatosi (403, fayl yo'q)
  * qolganlarini to'smaydi — har plitka o'z holatini ko'rsatadi.
  */

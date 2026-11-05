@@ -67,6 +67,12 @@ export type ActionOrder = {
   replacement_of_order_id?: string | number | null;
   replacement_state?: string | null;
   old_item_collected_at?: string | null;
+  /**
+   * Serverdagi kutilayotgan qo'shimcha xarajat so'rovi (GykuOz8f) — xom qiymat, `null` ham (so'rov yo'q). Oyna
+   * «allaqachon yuborilgan» ogohlantirishini shundan oladi (`getActivePendingApproval`); maydon umuman bo'lmasa
+   * (skaner javobi) — shu qurilmadagi ishora.
+   */
+  pending_extra_cost_approval?: unknown;
 };
 
 export const MAX_PROOF_SIZE_MB = 10;

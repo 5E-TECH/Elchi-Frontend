@@ -1,0 +1,85 @@
+{
+  "title": "Qo'shimcha xarajatli buyurtmalar",
+  "description": {
+    "courier": "Siz yozgan qo'shimcha xarajatlar va market qarorlari",
+    "manager": "Filialingiz kuryerlari va siz yozgan qo'shimcha xarajatlar",
+    "market": "Buyurtmalaringizga yozilgan qo'shimcha xarajatlar — tasdiqlash va rad etish",
+    "market_operator": "Market buyurtmalariga yozilgan qo'shimcha xarajatlar — faqat ko'rish"
+  },
+  "total": "jami {{value}} ta",
+  "tabsLabel": "Xarajat holati bo'yicha",
+  "tabs": {
+    "all": "Barchasi",
+    "pending": "Kutilmoqda",
+    "pendingMarket": "Tasdiqlash kutilayotgan",
+    "approved": "Tasdiqlangan",
+    "cancelled": "Bekor qilingan"
+  },
+  "listLabel": "Qo'shimcha xarajatli buyurtmalar ro'yxati",
+  "cardsLabel": "Qo'shimcha xarajatli buyurtmalar",
+  "columns": {
+    "order": "Buyurtma",
+    "customer": "Mijoz",
+    "amount": "Summa va holat",
+    "requester": "Kim yozgan",
+    "dates": "Sana",
+    "reason": "Sabab yoki izoh",
+    "proof": "Isbot",
+    "actions": "Amallar"
+  },
+  "action": {
+    "sell": "Sotish",
+    "cancel": "Bekor qilish",
+    "partly_sell": "Qisman sotish"
+  },
+  "status": {
+    "pending": "Tasdiq kutilmoqda",
+    "approved": "Tasdiqlandi",
+    "auto": "Avtomatik tasdiqlandi",
+    "immediate": "Tasdiqsiz yozildi",
+    "rejected": "Rad etildi",
+    "void": "Bekor bo'ldi",
+    "reversed": "Teskari qaytarildi"
+  },
+  "autoAt": "{{time}} gacha javob bo'lmasa — avtomatik tasdiqlanadi",
+  "requestedAt": "So'raldi: {{date}}",
+  "decidedAt": "Qaror: {{date}}",
+  "closedAt": "Yopildi: {{date}}",
+  "role": {
+    "courier": "Kuryer",
+    "manager": "Menejer"
+  },
+  "requesterFallback": "#{{id}}",
+  "unknownCustomer": "Mijoz ko'rsatilmagan",
+  "openOrder": "Buyurtma {{ref}} ni ochish",
+  "proofButton": "Isbot ({{count}})",
+  "proofButtonLabel": "Isbot ({{count}}) — {{ref}}",
+  "proofNone": "Yo'q",
+  "proofTitle": "Isbot — {{ref}}",
+  "proofDescription": "{{action}} · {{amount}}",
+  "close": "Yopish",
+  "approve": "Tasdiqlash",
+  "reject": "Rad etish",
+  "approveLabel": "Tasdiqlash — {{ref}}, {{amount}}",
+  "rejectLabel": "Rad etish — {{ref}}, {{amount}}",
+  "pagination": "{{from}}–{{to}} / {{total}} ta",
+  "loading": "Qo'shimcha xarajatlar yuklanmoqda",
+  "loadFailed": "Qo'shimcha xarajatlarni yuklab bo'lmadi",
+  "empty": {
+    "all": "Qo'shimcha xarajatli buyurtma yo'q",
+    "allDescription": "Sotish yoki bekor qilishda qo'shimcha xarajat yozilsa, buyurtma shu yerda paydo bo'ladi.",
+    "pending": "Kutilayotgan so'rov yo'q",
+    "pendingDescription": "Market hali qaror qilmagan so'rovlar shu yerda turadi.",
+    "pendingMarket": "Tasdiq kutayotgan xarajat yo'q",
+    "pendingMarketDescription": "Kuryer yoki menejer qo'shimcha xarajat yozsa, so'rov shu yerga tushadi.",
+    "approved": "Tasdiqlangan xarajat yo'q",
+    "approvedDescription": "Tasdiqlangan, avtomatik tasdiqlangan va tasdiqsiz yozilgan xarajatlar shu yerda.",
+    "cancelled": "Bekor qilingan xarajat yo'q",
+    "cancelledDescription": "Rad etilgan va o'zi yopilgan so'rovlar sababi bilan shu yerda."
+  },
+  "unassigned": {
+    "title": "Siz hali marketga biriktirilmagansiz",
+    "description": "Qo'shimcha xarajatlar market egasi sizni «Operatorlar» bo'limida qo'shgandan keyin ko'rinadi."
+  },
+  "readOnlyHint": "Faqat ko'rish: qarorni market egasi qiladi"
+}

@@ -1,11 +1,10 @@
 // dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-action-approval-pending
-import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
+import { memo, useMemo, useState, type ReactNode } from "react";
 import { Clock, Copy, Phone, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { formatOrderRef, orderNumberOf, OrderStatusBadge, ReplacementTag } from "../../../../../../entities/order";
 import {
-  clearPendingExtraCostApproval,
   getActivePendingApproval,
   isExtraCostAction,
   usePendingExtraCostApprovals,
@@ -90,17 +89,13 @@ const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
 /**
  * «Tasdiq kutilmoqda» — qo'shimcha xarajat market tasdig'iga yuborilgan (maket
  * `courier-orders-action-approval-pending`): chegarali ogohlantirish + soat ikonkasi, maslahatda amal,
- * summa va vaqt. Buyurtma holati so'rovdagidan o'zgarsa (market tasdiqladi) — yozuv o'chiriladi.
+ * summa va vaqt. Manba — server (GykuOz8f): buyurtmaning `pending_extra_cost_approval` maydoni, shuning uchun belgi
+ * har qurilmada bir xil va market qaror qilgach (ro'yxat yangilanganda) yo'qoladi.
  */
 const ApprovalBadge = ({ order }: { order: Order }) => {
   const { t, i18n } = useTranslation("orders");
   const approvals = usePendingExtraCostApprovals();
-  const stored = approvals[order.id];
-  const active = getActivePendingApproval(approvals, { id: order.id, status: order.status });
-
-  useEffect(() => {
-    if (stored && !active) clearPendingExtraCostApproval(order.id);
-  }, [active, order.id, stored]);
+  const active = getActivePendingApproval(approvals, order);
 
   if (!active) return null;
 

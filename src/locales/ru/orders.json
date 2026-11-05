@@ -6,6 +6,7 @@
     "exportAllHint": "В файл Excel выгружаются все страницы, подходящие под фильтр",
     "createOrder": "Создать заказ",
     "replacementReturns": "Замены",
+    "extraCosts": "Доп. расходы",
     "cardLabel": "Список заказов",
     "cardLabelPending": "Ожидающие заказы",
     "cardLabelCancelled": "Отменённые заказы",

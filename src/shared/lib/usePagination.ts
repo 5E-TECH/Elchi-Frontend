@@ -10,7 +10,8 @@ export type PaginationScope =
   | "mails"
   | "batches"
   | "returns"
-  | "replacementReturns";
+  | "replacementReturns"
+  | "extraCosts";
 
 interface UsePaginationOptions {
   key: PaginationScope;

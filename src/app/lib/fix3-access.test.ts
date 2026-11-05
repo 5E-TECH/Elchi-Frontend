@@ -82,7 +82,16 @@ describe("canViewProducts (ROL-0: yagona predikat; MH-1: market operatori — fa
 
 describe("menyu tuzatishlari (fix3 RBAC-18, CODE-21)", () => {
   it("market menyusida «Operatorlar» — o'z operatorlari (MO-1: GET /market-operators, @Roles(MARKET))", () => {
-    expect(paths("market")).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box", "/market-operators"]);
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — «Buyurtmalar» dan keyin.
+    expect(paths("market")).toEqual([
+      "/",
+      "/orders",
+      "/extra-costs",
+      "/new-orders",
+      "/products",
+      "/cash-box",
+      "/market-operators",
+    ]);
     for (const role of ["superadmin", "admin", "registrator", "courier", "market_operator"]) {
       expect(paths(role), role).not.toContain("/market-operators");
     }

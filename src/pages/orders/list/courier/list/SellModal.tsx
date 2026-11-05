@@ -17,6 +17,7 @@ import {
 } from "../../../../../shared/ui/primitives";
 import {
   getActivePendingApproval,
+  getRequestedApproval,
   usePendingExtraCostApprovals,
 } from "../../../../../entities/orders/extraCostApproval";
 import {
@@ -194,6 +195,9 @@ const SellDialog = ({
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const id = (suffix: string) => `${ids}-${suffix}`;
   const pendingApproval = getActivePendingApproval(approvals, order);
+  // 202 javobidan keyingi «Market tasdig'i kutilmoqda» ko'rinishi: oynadagi buyurtma so'rovdan oldingi holatda — avval
+  // shu qurilmadagi ishora (aynan hozirgi so'rov), keyin server (GykuOz8f).
+  const requestedApproval = getRequestedApproval(approvals, order);
   const orderFlags = order as ActionOrder & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
@@ -404,9 +408,9 @@ const SellDialog = ({
       >
         <OrderCustomerSummary order={order} variant={variant} />
         <ExtraCostPendingAlert
-          amount={pendingApproval?.amount ?? effectiveExtraCost}
-          action={pendingApproval?.action}
-          requestedAt={pendingApproval?.requestedAt}
+          amount={requestedApproval?.amount ?? effectiveExtraCost}
+          action={requestedApproval?.action}
+          requestedAt={requestedApproval?.requestedAt}
         />
       </Dialog>
     );

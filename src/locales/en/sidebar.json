@@ -7,6 +7,8 @@
   "batches": "Batches",
   "returns": "Returns",
   "replacements": "Replacements",
+  "extraCosts": "Orders with extra costs",
+  "extraCostsShort": "Extra costs",
   "products": "Products",
   "warehouse": "Warehouse",
   "users": "Users",

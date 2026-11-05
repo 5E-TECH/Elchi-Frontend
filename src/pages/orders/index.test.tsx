@@ -173,6 +173,26 @@ describe("Orders list — «Almashtirishlar» havolasi (lQjt6sKP)", () => {
   });
 });
 
+describe("Orders list — «Qo'shimcha xarajatlar» havolasi (GykuOz8f)", () => {
+  const operatorState = { role: { id: "9", role: "market_operator", region: null, name: "Operator" } } as never;
+  const marketState = { role: { id: "77", role: "market", region: null, name: "Baraka Shop" } } as never;
+
+  it("market operatori — sarlavhada havola (telefonda «Menyu» yo'q, kirish nuqtasi shu)", () => {
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: operatorState });
+
+    expect(screen.getByRole("link", { name: "Qo'shimcha xarajatlar" })).toHaveAttribute("href", "/extra-costs");
+  });
+
+  it("market, admin va menejer — sarlavhada havola yo'q (yon menyuda bor yoki sahifa yopiq)", () => {
+    const { unmount } = renderWithProviders(<Orders />, { route: "/orders", preloadedState: marketState });
+    expect(screen.queryByRole("link", { name: "Qo'shimcha xarajatlar" })).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: regionalManagerState });
+    expect(screen.queryByRole("link", { name: "Qo'shimcha xarajatlar" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Orders list — sarlavha, tablar, sahifalash", () => {
   beforeEach(() => {
     getOrdersMock.mockClear();

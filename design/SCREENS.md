@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**83 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **82 / 83**
+**84 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **83 / 84**
 
 ## Qanday ishlatiladi
 
@@ -58,6 +58,7 @@
 | `/orders/cancel-reasons` | Buyurtmalar | `src/pages/orders/cancel-reasons/index.tsx` | superadmin, admin, manager, market | 0 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
 | `/replacement-returns` | Buyurtmalar | `src/pages/replacement-returns/index.tsx` | superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q) | 0 | v2 |
+| `/extra-costs` | Buyurtmalar | `src/pages/extra-costs/index.tsx` | manager (o'z filiali kuryerlari va o'zi (token)), market (o'z marketi (token); tasdiqlash / rad etish), market_operator (o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola), courier (o'zi yozganlari (token)) | 0 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
@@ -422,6 +423,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/replacement-returns` | superadmin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
 | `/replacement-returns` | admin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
 | `/replacement-returns` | market | — Maket yo'q — eng yaqini: superadmin-returns-list. Menyu bandi yo'q (BeePost'da marketda yo'q), havola: /orders sarlavhasidagi «Almashtirishlar» tugmasi; o'z buyurtmalari (token), market filtri yo'q. | — | — | v2 |
+
+#### `/extra-costs` — Qo'shimcha xarajatli buyurtmalar — so'rovlar, qarorlar va tasdiqsiz yozilgan xarajatlar
+
+- **Fayllar:** `src/pages/extra-costs/index.tsx` · `src/pages/extra-costs/model/extraCostsView.ts` · `src/pages/extra-costs/ui/ExtraCostProofDialog.tsx` · `src/entities/orders/extraCosts.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewExtraCosts` (access.ts → canViewExtraCosts)
+- **Rollar:** manager (o'z filiali kuryerlari va o'zi (token)), market (o'z marketi (token); tasdiqlash / rad etish), market_operator (o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola), courier (o'zi yozganlari (token))
+- **Menyuda:** «Qo'shimcha xarajatli buyurtmalar» (`extraCosts`) — manager, market, market_operator, courier
+- **Holat:** v2
+- **Izoh:** GykuOz8f: GET orders/extra-costs?tab=all|pending|approved|cancelled&page&limit (doira faqat tokendan; admin/superadmin — 403). Tab va sahifa URL'da (?tab&page&limit), tab sonlari javobdagi counts dan. Ustunlar: buyurtma (EL-… havola, amal: Sotish / Bekor qilish / Qisman sotish), mijoz, summa va holat («Tasdiq kutilmoqda» + avtomatik tasdiq vaqti / «Tasdiqlandi» / «Avtomatik tasdiqlandi» / «Tasdiqsiz yozildi» / «Rad etildi» / «Bekor bo'ldi» / «Teskari qaytarildi»), «Kim yozgan» (menejer, market, operator), so'rov va qaror sanasi, sabab yoki izoh, «Isbot (N)» — GET orders/extra-costs/:id/proofs/:index galereya oynasida. Telefonda kartalar. «Bekor qilingan» = rad etilgan + o'zi yopilgan (void); «Teskari qaytarildi» faqat «Barchasi» da.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/extra-costs` | manager | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; «Kim yozgan» ustuni bor. | — | — | v2 |
+| `/extra-costs` | market | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Tasdiqlash kutilayotgan · Tasdiqlangan · Bekor qilingan; «Tasdiqlash kutilayotgan» tabida «Tasdiqlash» (tasdiq oynasi) va «Rad etish» (sabab oynasi). | — | — | v2 |
+| `/extra-costs` | market_operator | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Market tablari, faqat ko'rish (tugmalar yo'q); marketga biriktirilmagan — so'rov yo'q, bo'sh holat. | — | — | v2 |
+| `/extra-costs` | courier | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; faqat o'zi yozganlari. | — | — | v2 |
 
 ### Qabul va yaratish
 
@@ -3131,6 +3148,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/order/ui/FulfillmentSourceTag.tsx` | `/orders` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
+| `src/entities/orders/extraCosts.ts` | `/extra-costs` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
 | `src/entities/product/ui/ProductThumb.tsx` | `/products`, `/products/create-product/:id` |
@@ -3252,6 +3270,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/expense-categories/index.tsx` | `/ops` |
 | `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` | `/ops` |
 | `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` | `/ops` |
+| `src/pages/extra-costs/index.tsx` | `/extra-costs` |
+| `src/pages/extra-costs/model/extraCostsView.ts` | `/extra-costs` |
+| `src/pages/extra-costs/ui/ExtraCostProofDialog.tsx` | `/extra-costs` |
 | `src/pages/finance-operators/index.tsx` | `/finance-operators` |
 | `src/pages/finance-operators/lib/operatorFinance.ts` | `/finance-operators` |
 | `src/pages/finance-operators/ui/OperatorBalanceCard.tsx` | `/finance-operators` |
@@ -3789,6 +3810,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | REGIONAL · HYBRID | `manager-courier-bulk-main` (+1) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` (+1) |
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | barchasi | izohga qarang |
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
@@ -3815,6 +3837,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+2) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+1) |
 | To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+3) |
@@ -3826,6 +3849,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | izohga qarang |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | izohga qarang |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Buyurtma yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market_operator-products-list` (+1) |
 | Daromadim | `earnings` | `/my-earnings` | `/my-earnings` | — | `market_operator-earnings` (+1) |
@@ -3838,6 +3862,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+12) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+5) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `courier-regions-scoped` |
 

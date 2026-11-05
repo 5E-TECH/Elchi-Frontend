@@ -15,6 +15,7 @@ import {
   Package,
   RotateCcw,
   Repeat,
+  Receipt,
   CreditCard,
   Wallet,
   Scale,
@@ -135,6 +136,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — «Buyurtmalar» ostida (maket `roles.json`); tasdiqlash / rad etish.
+    { to: "/extra-costs", icon: Receipt, label: "extraCosts" },
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/cash-box", icon: Wallet, label: "payments" },
@@ -157,6 +160,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/courier-bulk", icon: Zap, label: "quickAction" },
     { to: "/mails", icon: Mail, label: "mails" },
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — «Buyurtmalar» va «Pochta» ostida (maket `roles.json`), o'zi yozganlari.
+    { to: "/extra-costs", icon: Receipt, label: "extraCosts" },
     { to: "/cash-box", icon: Wallet, label: "payments" },
     // Kuryerda «Hududlar» — `MapPinned` (roles.json istisnosi: kuryer o'z hududini ko'radi).
     { to: "/regions", icon: MapPinned, label: "regions" },
@@ -171,6 +176,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/extra-costs", icon: Receipt, label: "extraCosts" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/regions", icon: MapIcon, label: "regions" },
   ],
@@ -196,6 +202,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   market_operator: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — o'z marketi, faqat ko'rish (telefonda — /orders sarlavhasidagi havola).
+    { to: "/extra-costs", icon: Receipt, label: "extraCosts" },
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/my-earnings", icon: Banknote, label: "earnings" },
@@ -280,6 +288,9 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   { item: { to: "/courier-bulk", icon: Zap, label: "quickAction" }, capability: 'dispatch' },
   { item: { to: "/new-orders", icon: Inbox, label: "newOrders" }, capability: 'intake' },
   { item: { to: "/mails", icon: Mail, label: "mails" }, capability: 'mails' },
+  // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — «Buyurtmalar» / «Pochta» ostida, har filial turida (o'z filiali
+  // kuryerlari va o'zi yozgan xarajatlar).
+  { item: { to: "/extra-costs", icon: Receipt, label: "extraCosts" }, capability: null },
   { item: { to: "/batches", icon: Package, label: "batches" }, capability: 'intake' },
   { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
@@ -437,6 +448,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/returns": 'work',
   // lQjt6sKP: almashtirish qaytarmalari.
   "/replacement-returns": 'work',
+  // GykuOz8f: qo'shimcha xarajatli buyurtmalar.
+  "/extra-costs": 'work',
   // Moliya
   "/payments": 'finance',
   "/cash-box": 'finance',

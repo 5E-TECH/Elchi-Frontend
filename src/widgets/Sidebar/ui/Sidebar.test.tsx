@@ -302,7 +302,14 @@ describe("Sidebar — menejer filial turi", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Filial turi aniqlanmadi");
     expect(screen.getByRole("status")).toHaveTextContent("Menyuning bir qismi yashirin");
-    expect(linkNames()).toEqual(["Bosh sahifa", "Buyurtmalar", "Mahsulotlar", "Hududlar"]);
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — har bir menejerda (filial turidan qat'i nazar).
+    expect(linkNames()).toEqual([
+      "Bosh sahifa",
+      "Buyurtmalar",
+      "Qo'shimcha xarajatli buyurtmalar",
+      "Mahsulotlar",
+      "Hududlar",
+    ]);
   });
 
   it("XtcEyQjb: «Ombor» — faqat o'z filialida ombor bo'lsa (javob kelguncha ham yashirin)", () => {

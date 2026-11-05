@@ -184,6 +184,11 @@ export const API_ENDPOINTS = {
     EXTRA_COST_APPROVAL_APPROVE: (id: string | number) =>
       `orders/extra-cost-approvals/${id}/approve`,
     EXTRA_COST_APPROVAL_REJECT: (id: string | number) => `orders/extra-cost-approvals/${id}/reject`,
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — kuryer / menejer / market / operator (doira tokendan).
+    // GET ?tab=all|pending|approved|cancelled&page&limit → { items, total, page, limit, counts }
+    EXTRA_COSTS: "orders/extra-costs",
+    // GykuOz8f: so'rov isboti (rasm/video) baytlari — ro'yxatdagi ko'rinish qoidasi bilan (pending/rad/void ham).
+    EXTRA_COST_PROOF: (id: string | number, index: number) => `orders/extra-costs/${id}/proofs/${index}`,
     COULD_NOT_DELIVER: (id: string | number) => `orders/${id}/could-not-deliver`, // POST courier
     INITIATE_RETURN: (id: string | number) => `orders/${id}/initiate-return`, // POST HQ
     MARK_RETURNED_TO_MARKET: (id: string | number) => `orders/${id}/mark-returned-to-market`, // POST branch

@@ -128,6 +128,17 @@ export interface OrderListItem {
      * ularni bermaydi — imzolangan URL `GET files/:key` (JWT) orqali olinadi.
      */
     proof_files?: string[] | null;
+    /**
+     * GykuOz8f: serverdagi kutilayotgan qo'shimcha xarajat so'rovi — buyurtma `waiting` da va so'rov hal qilinmagan
+     * bo'lsa `{ id, action, amount, created_at, auto_approve_at }`, aks holda `null` (ro'yxatdagi «Tasdiqqa yuborilgan»).
+     */
+    pending_extra_cost_approval?: {
+        id: string;
+        action: "sell" | "partly_sell" | "cancel";
+        amount: number;
+        created_at: string;
+        auto_approve_at: string | null;
+    } | null;
     /** HQ marketga qaytarishni boshlagan (`POST orders/:id/initiate-return`). */
     return_requested?: boolean;
     /** Qaytarish sababi (initiate-return `reason`). */

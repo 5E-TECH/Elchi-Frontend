@@ -490,7 +490,12 @@ const CourierOrders = () => {
   const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollbackOrder));
   const ordersQuery = useGetOrderCourier(
     params,
-    (current) => getOrdersRefetchInterval(refreshPaused, pollWhileApprovalPending(extractOrderRows(current))),
+    (current) =>
+      getOrdersRefetchInterval(
+        refreshPaused,
+        // Ochiq oyna — faqat shu qurilma yuborgan so'rov natijasi kutiladi (GykuOz8f).
+        pollWhileApprovalPending(extractOrderRows(current), { onlyHinted: refreshPaused }),
+      ),
     { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
   const countsQuery = useGetCourierOrderCounts({

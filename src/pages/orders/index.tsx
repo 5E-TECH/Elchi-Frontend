@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, ListX, Plus, Repeat, Send } from "lucide-react";
+import { Download, Info, ListX, Plus, Receipt, Repeat, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -280,6 +280,9 @@ const Orders = () => {
   // lQjt6sKP: «Almashtirish qaytarmalari» havolasi — superadmin/admin uchun menyuda ham bor, market uchun esa
   // yagona kirish nuqtasi (marketda menyu bandi yo'q).
   const canSeeReplacementReturns = useSelector(canViewReplacementReturns);
+  // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — market operatorida telefonda «Menyu» yo'q (pastki menyu to'la), shuning
+  // uchun sahifaga kirish shu sarlavhadagi havola (boshqa rollarda — yon menyu va «Menyu» varag'ida).
+  const canSeeExtraCostsLink = role === "market_operator";
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -490,7 +493,13 @@ const Orders = () => {
   const ordersQuery = useGetOrders(
     apiParams,
     role !== "courier",
-    (current) => getOrdersRefetchInterval(refreshPaused, pollWhileApprovalPending(current?.data ?? [])),
+    (current) =>
+      getOrdersRefetchInterval(
+        refreshPaused,
+        // So'rovni menejer yozadi: serverdagi kutilayotganlar uchun ham 30 s; boshqa rollar va ochiq oyna — faqat shu
+        // qurilma yuborgan so'rov (GykuOz8f).
+        pollWhileApprovalPending(current?.data ?? [], { onlyHinted: refreshPaused || role !== "manager" }),
+      ),
     { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
   const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
@@ -641,6 +650,11 @@ const Orders = () => {
       replacement_of_order_id: selectedActionOrder.replacement_of_order_id ?? null,
       replacement_state: selectedActionOrder.replacement_state ?? null,
       old_item_collected_at: selectedActionOrder.old_item_collected_at ?? null,
+      // GykuOz8f: serverdagi kutilayotgan so'rov (`null` ham) — oynadagi «allaqachon yuborilgan» ogohlantirishi
+      // boshqa qurilmada ham ko'rinsin, rad etilgandan keyin esa eski ishora qolib ketmasin.
+      ...("pending_extra_cost_approval" in orderFlags
+        ? { pending_extra_cost_approval: orderFlags.pending_extra_cost_approval }
+        : {}),
       where_deliver: selectedActionOrder.where_deliver,
       market: {
         name: selectedActionOrder.market?.name ?? "—",
@@ -1137,6 +1151,12 @@ const Orders = () => {
               <Link to="/replacement-returns" className={buttonClasses({ variant: "secondary", compact: true })}>
                 <Repeat aria-hidden="true" size={16} strokeWidth={2} />
                 {t("ordersList.replacementReturns")}
+              </Link>
+            ) : null}
+            {canSeeExtraCostsLink ? (
+              <Link to="/extra-costs" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <Receipt aria-hidden="true" size={16} strokeWidth={2} />
+                {t("ordersList.extraCosts")}
               </Link>
             ) : null}
             {canCreate ? (

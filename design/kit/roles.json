@@ -422,6 +422,17 @@
      }
     },
     {
+     "key": "extraCosts",
+     "label": "Qo'shimcha xarajatli buyurtmalar",
+     "icon": "Receipt",
+     "group": "Ish",
+     "short": {
+      "uz": "Xarajatlar",
+      "ru": "Доп. расходы",
+      "en": "Extra costs"
+     }
+    },
+    {
      "key": "batches",
      "label": "Paketlar",
      "icon": "i5",
@@ -608,6 +619,16 @@
      }
     },
     {
+     "key": "extraCosts",
+     "label": "Qo'shimcha xarajatli buyurtmalar",
+     "icon": "Receipt",
+     "short": {
+      "uz": "Xarajatlar",
+      "ru": "Доп. расходы",
+      "en": "Extra costs"
+     }
+    },
+    {
      "key": "newOrders",
      "label": "Qabul va yaratish",
      "icon": "i3",
@@ -684,6 +705,16 @@
       "uz": "Buyurtmalar",
       "ru": "Заказы",
       "en": "Orders"
+     }
+    },
+    {
+     "key": "extraCosts",
+     "label": "Qo'shimcha xarajatli buyurtmalar",
+     "icon": "Receipt",
+     "short": {
+      "uz": "Xarajatlar",
+      "ru": "Доп. расходы",
+      "en": "Extra costs"
      }
     },
     {
@@ -773,6 +804,16 @@
       "uz": "Pochta",
       "ru": "Почта",
       "en": "Mail"
+     }
+    },
+    {
+     "key": "extraCosts",
+     "label": "Qo'shimcha xarajatli buyurtmalar",
+     "icon": "Receipt",
+     "short": {
+      "uz": "Xarajatlar",
+      "ru": "Доп. расходы",
+      "en": "Extra costs"
      }
     },
     {
@@ -962,6 +1003,7 @@
   "Warehouse": "<path d=\"M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11\"/><path d=\"M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z\"/><path d=\"M6 13h12\"/><path d=\"M6 17h12\"/>",
   "Sparkles": "<path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\"/><path d=\"M20 2v4\"/><path d=\"M22 4h-4\"/><circle cx=\"4\" cy=\"20\" r=\"2\"/>",
   "Send": "<path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\"/><path d=\"m21.854 2.147-10.94 10.939\"/>",
-  "Repeat": "<path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/>"
+  "Repeat": "<path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/>",
+  "Receipt": "<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\"/><path d=\"M12 17.5v-11\"/>"
  }
 }

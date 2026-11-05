@@ -10,6 +10,7 @@ const routeImporters: Record<string, RouteImporter> = {
   "/batches": () => import("../../pages/batches"),
   "/returns": () => import("../../pages/returns"),
   "/replacement-returns": () => import("../../pages/replacement-returns"),
+  "/extra-costs": () => import("../../pages/extra-costs"),
   "/products": () => import("../../pages/products/list"),
   "/warehouses": () => import("../../pages/warehouses"),
   "/all-users": () => import("../../pages/users/list/UserListPage"),

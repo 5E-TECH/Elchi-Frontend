@@ -273,6 +273,10 @@ export const buildActionOrder = (order: OrderDetail | null) => {
     replacement_of_order_id: replacement.oldOrderId,
     replacement_state: replacement.state,
     old_item_collected_at: replacement.collectedAt,
+    // GykuOz8f: serverdagi kutilayotgan so'rov (`null` ham) — oynalar shu qiymatdan; skaner javobida maydon yo'q.
+    ...("pending_extra_cost_approval" in order
+      ? { pending_extra_cost_approval: (order as { pending_extra_cost_approval?: unknown }).pending_extra_cost_approval }
+      : {}),
     sell_requires_media: Boolean(
       order.sell_requires_media ?? order.sellRequiresMedia ?? order.require_sell_proof ?? order.sell_proof_required,
     ),

@@ -6,6 +6,7 @@
     "exportAllHint": "All pages matching the filter are exported to an Excel file",
     "createOrder": "Create order",
     "replacementReturns": "Replacements",
+    "extraCosts": "Extra costs",
     "cardLabel": "Order list",
     "cardLabelPending": "Waiting orders",
     "cardLabelCancelled": "Cancelled orders",

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../../../shared/ui/primitives";
 import {
   getActivePendingApproval,
+  getRequestedApproval,
   usePendingExtraCostApprovals,
 } from "../../../../../entities/orders/extraCostApproval";
 import {
@@ -99,6 +100,9 @@ const CancelDialog = ({
   const isManager = variant === "manager";
   const extraCostAmount = toAmount(extraCost);
   const pendingApproval = getActivePendingApproval(approvals, order);
+  // 202 javobidan keyingi «Market tasdig'i kutilmoqda» ko'rinishi: oynadagi buyurtma so'rovdan oldingi holatda — avval
+  // shu qurilmadagi ishora (aynan hozirgi so'rov), keyin server (GykuOz8f).
+  const requestedApproval = getRequestedApproval(approvals, order);
   const orderFlags = order as ActionOrder & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
@@ -189,9 +193,9 @@ const CancelDialog = ({
       >
         <OrderCustomerSummary order={order} variant={variant} />
         <ExtraCostPendingAlert
-          amount={pendingApproval?.amount ?? extraCostAmount}
-          action={pendingApproval?.action}
-          requestedAt={pendingApproval?.requestedAt}
+          amount={requestedApproval?.amount ?? extraCostAmount}
+          action={requestedApproval?.action}
+          requestedAt={requestedApproval?.requestedAt}
         />
       </Dialog>
     );

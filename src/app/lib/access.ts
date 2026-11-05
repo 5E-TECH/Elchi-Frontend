@@ -94,6 +94,14 @@ export const canViewCancelReasons: Predicate = hasRole("superadmin", "admin", "m
 export const canViewReplacementReturns: Predicate = hasRole("superadmin", "admin", "market");
 
 /**
+ * «Qo'shimcha xarajatli buyurtmalar» (`/extra-costs`, GykuOz8f) — backend `GET orders/extra-costs`
+ * `@Roles(COURIER, MANAGER, MARKET, MARKET_OPERATOR)` bilan bir xil: kuryer — o'zi yozganlari, menejer — o'z filiali
+ * kuryerlari va o'zi (har filial turida), market — o'z marketi, operator — o'z marketi (faqat ko'rish). Admin va
+ * superadmin — karta bo'yicha bu sahifa YO'Q (backend ham 403).
+ */
+export const canViewExtraCosts: Predicate = hasRole("courier", "manager", "market", "market_operator");
+
+/**
  * Investor kabinetini nazorat uchun ko'rish (vpKijXce): `/investor/:id`. Backend `investors/:id/dashboard` adminga
  * ham ochiq, lekin kirish nuqtasi — Ops «Investorlar» (faqat superadmin), shuning uchun karta matnidagidek superadmin.
  */

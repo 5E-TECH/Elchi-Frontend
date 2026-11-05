@@ -407,6 +407,50 @@ describe("Kuryer buyurtmalari — jadval qatori (v2)", () => {
     }
   });
 
+  it("GykuOz8f: belgi serverdan (`pending_extra_cost_approval`) — boshqa qurilmada yozilgan so'rov ham ko'rinadi", () => {
+    const createdAt = new Date();
+    createdAt.setHours(9, 15, 0, 0);
+    state.rows = [
+      order("1001", "Kamron Ahmedov", {
+        pending_extra_cost_approval: {
+          id: "ap-1",
+          action: "cancel",
+          amount: 7000,
+          created_at: createdAt.toISOString(),
+          auto_approve_at: null,
+        },
+      }),
+      order("1002", "Laylo Hasanova", { pending_extra_cost_approval: null }),
+    ];
+    renderPage();
+
+    const badge = within(screen.getByText("Kamron Ahmedov").closest("tr")!).getByText("Tasdiq kutilmoqda");
+    expect(badge).toHaveAttribute(
+      "title",
+      expect.stringMatching(/^Bekor qilish: 7\D000 so'm qo'shimcha xarajat 09:15 da market tasdig'iga yuborilgan$/),
+    );
+    expect(within(screen.getByText("Laylo Hasanova").closest("tr")!).queryByText("Tasdiq kutilmoqda")).not.toBeInTheDocument();
+  });
+
+  it("GykuOz8f: server `null` desa (market rad etdi / hal qilindi) — shu qurilmadagi ishora belgini ko'rsatmaydi", () => {
+    recordPendingExtraCostApproval({
+      orderId: "1001",
+      action: "sell",
+      amount: 20000,
+      requestedAt: new Date().toISOString(),
+      orderStatus: "waiting",
+    });
+    try {
+      state.rows = [order("1001", "Kamron Ahmedov", { pending_extra_cost_approval: null })];
+      renderPage();
+      expect(
+        within(screen.getByText("Kamron Ahmedov").closest("tr")!).queryByText("Tasdiq kutilmoqda"),
+      ).not.toBeInTheDocument();
+    } finally {
+      clearPendingExtraCostApproval("1001");
+    }
+  });
+
   it("ustun kalitlari takrorlanmaydi (eski jadvaldagi «customer»/«id» kalit ogohlantirishi yo'q)", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     state.rows = [order("1001", "Laylo Hasanova"), order("1002", "Javohir Toshmatov")];

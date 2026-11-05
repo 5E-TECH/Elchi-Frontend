@@ -751,6 +751,39 @@ describe("NewOrderUpdate — mijoz havolasi va rol ko'rinishlari", () => {
       clearPendingExtraCostApproval("1251175");
     }
   });
+
+  it("⭐ GykuOz8f: ogohlantirish serverdan (`pending_extra_cost_approval`) — shu qurilmada ishora bo'lmasa ham", () => {
+    orderState.extra = {
+      pending_extra_cost_approval: {
+        id: "ap-1",
+        action: "cancel",
+        amount: 7000,
+        created_at: new Date().toISOString(),
+        auto_approve_at: null,
+      },
+    };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+      const alert = screen
+        .getAllByRole("status")
+        .find((node) => node.textContent?.includes("Market tasdig'i kutilmoqda."));
+      expect(alert).toHaveTextContent(/Bekor qilish: 7\s000 so'm qo'shimcha xarajat/);
+    } finally {
+      orderState.extra = undefined;
+    }
+  });
+
+  it("GykuOz8f: server `null` — ogohlantirish yo'q", () => {
+    orderState.extra = { pending_extra_cost_approval: null };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+      expect(
+        screen.queryAllByRole("status").find((node) => node.textContent?.includes("Market tasdig'i kutilmoqda.")),
+      ).toBeUndefined();
+    } finally {
+      orderState.extra = undefined;
+    }
+  });
 });
 
 describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)", () => {

@@ -216,7 +216,7 @@ const OrdersTable = ({
                 <ReturnRequestedTag order={order} />
                 {/* lQjt6sKP: «Almashtirish» (eski buyurtma o'rniga) / «Almashtirish qaytarmasi» (eski buyurtma). */}
                 <ReplacementTag order={order} />
-                <ExtraCostApprovalTag orderId={order.id} status={order.status} />
+                <ExtraCostApprovalTag order={order} />
                 {/* 6kHnNH9j: «Ombordan · <ombor>» — viloyat omboridan ketadigan buyurtma. */}
                 <FulfillmentSourceTag order={order} />
             </>

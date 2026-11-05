@@ -5,9 +5,11 @@ export {
   proofFileName,
   readProofFiles,
   useProofFileUrls,
+  useProofSourceUrls,
   proofFileUrlKey,
+  proofSourceUrlKey,
 } from "./api/proofFiles";
-export type { ProofKind } from "./api/proofFiles";
+export type { ProofKind, ProofSource, ProofSourceFile } from "./api/proofFiles";
 export { default as ProofGallery } from "./ui/ProofGallery";
 export { readReturnRequest } from "./model/returnRequest";
 export type { ReturnRequest } from "./model/returnRequest";

@@ -14,6 +14,7 @@ import {
   MapPinned,
   Package,
   Plug,
+  Receipt,
   Repeat,
   RotateCcw,
   Scale,
@@ -56,9 +57,11 @@ describe("sidebar menu config", () => {
     // /products har bir menejerda bor (bazaviy band — registrator menyusidagidek);
     // /all-users endi HAR QANDAY filial turidagi menejerga ochiq (`staff`
     // qobiliyati HQ/PICKUP ga ham berildi, 2026-10-06).
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — har bir menejerda (filial turidan qat'i nazar).
     expect(getSidebarConfigForUser("manager").map((item) => item.to)).toEqual([
       "/branch-dashboard",
       "/orders",
+      "/extra-costs",
       "/products",
       "/regions",
     ]);
@@ -72,6 +75,7 @@ describe("sidebar menu config", () => {
       "/orders",
       "/courier-bulk",
       "/mails",
+      "/extra-costs",
       "/products",
       "/warehouses",
       "/all-users",
@@ -86,6 +90,7 @@ describe("sidebar menu config", () => {
       "/courier-bulk",
       "/new-orders",
       "/mails",
+      "/extra-costs",
       "/batches",
       "/returns",
       "/products",
@@ -99,6 +104,7 @@ describe("sidebar menu config", () => {
       "/branch-dashboard",
       "/orders",
       "/new-orders",
+      "/extra-costs",
       "/batches",
       "/returns",
       "/products",
@@ -115,6 +121,7 @@ describe("sidebar menu config", () => {
       "/orders",
       "/new-orders",
       "/mails",
+      "/extra-costs",
       "/batches",
       "/returns",
       "/products",
@@ -249,7 +256,8 @@ describe("B1 — menyu guruhlari", () => {
   });
 
   it("qisqa menyu guruhlanmaydi (shovqin qo'shmaslik uchun)", () => {
-    // courier/market — 6 band, registrator — 5–6 band: chegaradan past.
+    // courier/market — 7 band (GykuOz8f «Qo'shimcha xarajatli buyurtmalar» bilan), registrator — 5–6 band:
+    // chegaradan (7) oshmaydi.
     for (const role of ["courier", "market", "registrator"]) {
       const groups = grouped(role);
       expect(groups, role).toHaveLength(1);
@@ -324,6 +332,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     Warehouse,
     // lQjt6sKP: «Almashtirishlar» — maketda lucide nomi bilan (BeePost menyusidagi ikonka).
     Repeat,
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — maketda lucide nomi bilan.
+    Receipt,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
@@ -394,22 +404,25 @@ describe("investor menyusi (IN-1, IN-2)", () => {
 });
 
 describe("market operatori menyusi (MO-2, MO-3)", () => {
-  it("Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim — maket tartibi va ikonkalari", () => {
+  it("Bosh sahifa · Buyurtmalar · Qo'shimcha xarajatlar · Buyurtma yaratish · Mahsulotlar · Daromadim — maket tartibi va ikonkalari", () => {
     const items = getSidebarConfigForUser("market_operator", null);
     expect(items.map((item) => [item.to, item.label])).toEqual([
       ["/", "dashboard"],
       ["/orders", "orders"],
+      // GykuOz8f: market operatori ham ko'radi (faqat ko'rish).
+      ["/extra-costs", "extraCosts"],
       // MO-3: `/new-orders` operatorda `/new-orders/create` ga yo'naltiriladi (yorliq «Buyurtma yaratish» — navSections).
       ["/new-orders", "newOrders"],
       ["/products", "products"],
       ["/my-earnings", "earnings"],
     ]);
-    expect(items.map((item) => item.icon)).toEqual([House, ShoppingBag, Inbox, Tag, Banknote]);
+    expect(items.map((item) => item.icon)).toEqual([House, ShoppingBag, Receipt, Inbox, Tag, Banknote]);
     expect(items[0].end).toBe(true);
-    // Maket (`roles.json` → market_operator.menu): `i1` · `i2` · `i3` · `i9` · `Banknote`.
+    // Maket (`roles.json` → market_operator.menu): `i1` · `i2` · `Receipt` · `i3` · `i9` · `Banknote`.
     expect(designRoleInCode("market_operator").menu.map((item) => [item.key, item.icon])).toEqual([
       ["dashboard", "i1"],
       ["orders", "i2"],
+      ["extraCosts", "Receipt"],
       ["newOrders", "i3"],
       ["products", "i9"],
       ["earnings", "Banknote"],
@@ -455,6 +468,49 @@ describe("«Almashtirishlar» bandi (lQjt6sKP)", () => {
       ["courier", "REGIONAL"],
     ] as const) {
       expect(paths(role, type), role).not.toContain("/replacement-returns");
+    }
+  });
+});
+
+describe("«Qo'shimcha xarajatli buyurtmalar» bandi (GykuOz8f)", () => {
+  const paths = (role: string, type?: BranchType) =>
+    getSidebarConfigForUser(role, type ? userWithBranchType(type) : null).map((item) => item.to);
+
+  it("kuryer, menejer (har bir filial turi), market va market operatorida — «Ish» guruhida, `Receipt` ikonkasi bilan", () => {
+    for (const [role, type] of [
+      ["courier", "REGIONAL"],
+      ["courier", undefined],
+      ["manager", "HQ"],
+      ["manager", "PICKUP"],
+      ["manager", "REGIONAL"],
+      ["manager", "HYBRID"],
+      ["manager", undefined],
+      ["market", undefined],
+      ["market_operator", undefined],
+    ] as const) {
+      const items = getSidebarConfigForUser(role, type ? userWithBranchType(type) : null);
+      const item = items.find((entry) => entry.to === "/extra-costs");
+      expect(item, `${role}/${type ?? "-"}`).toMatchObject({ label: "extraCosts", icon: Receipt });
+    }
+    expect(SIDEBAR_GROUP_BY_PATH["/extra-costs"]).toBe("work");
+  });
+
+  it("kuryerda «Pochta» dan keyin, marketda «Buyurtmalar» dan keyin", () => {
+    const courier = paths("courier", "REGIONAL");
+    expect(courier[courier.indexOf("/extra-costs") - 1]).toBe("/mails");
+    const market = paths("market");
+    expect(market[market.indexOf("/extra-costs") - 1]).toBe("/orders");
+  });
+
+  it("superadmin, admin, registrator, logist va investorda yo'q (sahifa ularga yopiq — route 403)", () => {
+    for (const [role, type] of [
+      ["superadmin", undefined],
+      ["admin", undefined],
+      ["registrator", "HQ"],
+      ["logist", undefined],
+      ["investor", undefined],
+    ] as const) {
+      expect(paths(role, type), role).not.toContain("/extra-costs");
     }
   });
 });
