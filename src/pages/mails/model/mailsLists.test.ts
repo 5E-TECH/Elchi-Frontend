@@ -132,7 +132,7 @@ describe("mailsLists model", () => {
       "41": "2026-10-30T12:00:00.000Z",
     });
 
-    const rows = buildFallbackMailsFromOrders(orders).map((mail) => toMailListRow(mail, { regionFallback: () => "" }));
+    const rows = buildFallbackMailsFromOrders(orders).map((mail) => toMailListRow(mail, { status: null, regionFallback: () => "" }));
     expect(sortMailsRows(rows, { key: "createdAt", direction: "desc" })[0].id).toBe("117");
   });
 });
