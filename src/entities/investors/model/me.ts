@@ -13,6 +13,8 @@ export type InvestorSelfProfile = {
   id: string;
   name: string;
   status: string;
+  /** «Ulush (%)» — investor yaratilganda kelishilgan; kiritilmagan bo'lsa `null`. */
+  sharePercent: number | null;
 };
 
 export type InvestorSummary = {
@@ -133,7 +135,12 @@ const toProfile = (value: unknown): InvestorSelfProfile | null => {
   const record = asRecord(value);
   const id = toText(record.id);
   if (!id) return null;
-  return { id, name: toText(record.name).trim(), status: toText(record.status) };
+  return {
+    id,
+    name: toText(record.name).trim(),
+    status: toText(record.status),
+    sharePercent: toNumberOrNull(record.share_percent),
+  };
 };
 
 const toSummary = (value: unknown): InvestorSummary => {

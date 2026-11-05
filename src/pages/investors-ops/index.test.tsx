@@ -71,15 +71,21 @@ describe("InvestorsOps page", () => {
     // Jonli javob shakli — ilgari "te.some is not a function" bilan /runtime-error ga otardi.
     apiGetMock.mockResolvedValue(
       mockEnvelope({
-        items: [{ id: "1", name: "AUDIT TEST Investor", phone_number: "+998901112233" }],
-        meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        items: [
+          { id: "1", name: "AUDIT TEST Investor", phone_number: "+998901112233", share_percent: "12.50" },
+          { id: "2", name: "Ulushsiz Investor", phone_number: "+998901112234", share_percent: null },
+        ],
+        meta: { page: 1, limit: 10, total: 2, totalPages: 1 },
       }),
     );
     renderWithProviders(<InvestorsOpsPage />);
 
     expect(await screen.findByText("AUDIT TEST Investor")).toBeInTheDocument();
     expect(screen.getByText("+998 90 111 22 33")).toBeInTheDocument();
-    expect(screen.getByText("1 ta")).toBeInTheDocument();
+    // «Ulush (%)» ustuni: kiritilgan — «12,5%», kiritilmagan — «—».
+    expect(screen.getByRole("columnheader", { name: "Ulush" })).toBeInTheDocument();
+    expect(screen.getByText("12,5%")).toBeInTheDocument();
+    expect(screen.getByText("2 ta")).toBeInTheDocument();
   });
 
   it("shows an empty state for an empty list instead of crashing", async () => {

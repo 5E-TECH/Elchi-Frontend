@@ -167,6 +167,7 @@
       "id": "ID",
       "name": "Name",
       "phone": "Phone",
+      "share": "Share",
       "summary": "{{from}}–{{to}} of {{total}} investors",
       "empty": "No investors",
       "emptyHint": "Add a new investor with the form on the right.",

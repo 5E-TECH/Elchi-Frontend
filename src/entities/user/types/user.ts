@@ -289,6 +289,8 @@ export interface CreateLogistRequest extends CreateUserPasswordFields {
 export interface CreateInvestorUserRequest extends CreateUserPasswordFields {
   name: string;
   phone_number: string;
+  /** «Ulush (%)» — 0..100, ko'pi bilan 2 kasr; investor yozuviga saqlanadi. */
+  share_percent?: number;
 }
 
 // ==================== USER DETAIL ====================

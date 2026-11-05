@@ -167,6 +167,7 @@
       "id": "ID",
       "name": "Ism",
       "phone": "Telefon",
+      "share": "Ulush",
       "summary": "{{from}}–{{to}} / {{total}} ta investor",
       "empty": "Investorlar yo'q",
       "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",

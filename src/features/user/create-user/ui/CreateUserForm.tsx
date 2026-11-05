@@ -83,6 +83,13 @@ import {
 } from "../../password-sms/ui/PasswordSmsResultDialog";
 
 const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
+/** «Ulush (%)»: `12`, `12.5`, `12,75` → son; noto'g'ri yoki 0..100 dan tashqari → `null`. */
+const parseSharePercent = (value: string): number | null => {
+  const text = value.trim().replace(",", ".");
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(text)) return null;
+  const share = Number(text);
+  return share <= 100 ? share : null;
+};
 
 interface CreateUserFormValues {
   role: UserRole;
@@ -108,6 +115,8 @@ interface CreateUserFormValues {
   capital: string;
   /** Investor: kapital sanasi `YYYY-MM-DD` (bo'sh — bugun). */
   investedAt: string;
+  /** Investor: «Ulush (%)» — 0..100, ko'pi bilan 2 kasr (ixtiyoriy, BeePost formasi). */
+  sharePercent: string;
 }
 
 const INITIAL_FORM: CreateUserFormValues = {
@@ -128,6 +137,7 @@ const INITIAL_FORM: CreateUserFormValues = {
   mustChangePassword: true,
   capital: "",
   investedAt: "",
+  sharePercent: "",
 };
 
 /**
@@ -174,6 +184,7 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   district_id: "districtId",
   amount: "capital",
   invested_at: "investedAt",
+  share_percent: "sharePercent",
 };
 
 const getBranchOptionLabel = (branch: Branch) => {
@@ -488,6 +499,11 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
+    if (role === "investor" && values.sharePercent.trim() && parseSharePercent(values.sharePercent) === null) {
+      setError("sharePercent", { message: t("v2.create.investor.sharePercentInvalid") });
+      valid = false;
+    }
+
     if (role === "marketing") {
       if (!values.username.trim()) {
         // Eski «Username kiritilmadi» — inglizcha so'z; maketdagi maydon nomi «Login».
@@ -710,10 +726,12 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "investor") {
+      const sharePercent = values.sharePercent.trim() ? parseSharePercent(values.sharePercent) : null;
       const payload: CreateInvestorUserRequest = {
         name: values.fullName,
         phone_number: rawPhone,
         ...passwordPayload(values),
+        ...(sharePercent === null ? {} : { share_percent: sharePercent }),
       };
       const capital = parseAmount(values.capital);
       await submitRequest(
@@ -1323,6 +1341,27 @@ export const CreateUserForm = memo(() => {
                     t("v2.create.investor.capitalPlaceholder"),
                     { required: false, hint: t("v2.create.investor.capitalHint") },
                   )}
+                  <Controller
+                    control={control}
+                    name="sharePercent"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        label={t("v2.create.investor.sharePercent")}
+                        hint={t("v2.create.investor.sharePercentHint")}
+                        error={fieldState.error?.message}
+                      >
+                        <TextInput
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          inputMode="decimal"
+                          suffix="%"
+                          placeholder={t("v2.create.investor.sharePercentPlaceholder")}
+                        />
+                      </Field>
+                    )}
+                  />
                   <Controller
                     control={control}
                     name="investedAt"
