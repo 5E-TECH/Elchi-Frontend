@@ -230,7 +230,6 @@ export const API_ENDPOINTS = {
     CHECK_CANCEL: (id: string | number) => `post/check/cancel/${id}`, // POST check canceled post order by qr token
     COURIERS_BY_POST: (id: string | number) => `post/courier/${id}`, // POST get couriers by post id
     SCAN: (id: string | number) => `post/scan/${id}`, // GET post by scanner (was POSTS.QR_CODE)
-    REASSIGN: (id: string | number) => `post/reassign/${id}`, // PATCH reassign sent post to another courier
     RECEIVE_ORDER: (id: string | number) => `post/receive/order/${id}`, // PATCH receive order (courier)
     RECEIVE_SCAN: (id: string | number) => `post/receive/scan/${id}`, // PATCH receive post with scanner (courier)
     ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`, // GET ?view=current|all (#618)
