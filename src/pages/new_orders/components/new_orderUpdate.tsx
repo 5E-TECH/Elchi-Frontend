@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, market-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -139,6 +139,14 @@ const NewOrderUpdate = () => {
   // Tarix (tracking) o'zi qayta so'ralmaydi — amaldan keyin qayta mount.
   const [trackingVersion, setTrackingVersion] = useState(0);
   const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
+  // Holat boshqa joyda o'zgarsa (market tasdig'i, boshqa xodim — kutish so'rovi yoki realtime) tarix va «Qaytarish
+  // yo'li» ham qayta o'qiladi; aks holda badge «Sotildi» bo'ladi, tarixda esa yozuv yo'q.
+  const lastStatusRef = useRef(order?.status);
+  useEffect(() => {
+    const status = order?.status;
+    if (status && lastStatusRef.current && status !== lastStatusRef.current) refreshTracking();
+    lastStatusRef.current = status;
+  }, [order?.status, refreshTracking]);
   // Bekor bosqichi va «Qaytarish yo'li» (maketlar `*-orders-detail-cancelled`): sarlavhadagi usul va karta
   // bitta so'rovdan (`GET orders/:id/tracking`).
   const cancelStage = resolveCancelReturnStage(order);

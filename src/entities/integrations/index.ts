@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { invalidateQueueViews } from "./shipments";
 
 /**
  * INTEGRATSIYA ROLI — oqimda nima qiladi.
@@ -306,6 +307,8 @@ export const useReconcileNow = () => {
       }),
     onSettled: (_result, _error, id) => {
       queryClient.invalidateQueries({ queryKey: integrationKeys.byId(id) });
+      // Solishtiruv posilka holatlarini o'zgartiradi — posilkalar, ko'rsatkichlar va sinxron tarixi ham.
+      void invalidateQueueViews(queryClient);
     },
   });
 };

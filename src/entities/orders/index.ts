@@ -191,6 +191,11 @@ export const useOrders = () => {
     client.invalidateQueries({ queryKey: ["finance-cov"] });
     client.invalidateQueries({ queryKey: ["cashbox"] });
     client.invalidateQueries({ queryKey: ["dashboard"] });
+    // `entities/payments` `refreshCashboxQueries` dagi qolgan pul keshlari (entity'lar bir-birini import qilmaydi):
+    // bosh sahifa KPI va «Moliyaviy tahlil», `/payments` dagi kuryer / market / menejer / filial summalari.
+    for (const key of ["kpi", "revenue", "couriers", "markets", "managers", "branches"]) {
+      client.invalidateQueries({ queryKey: [key] });
+    }
   };
 
   const useExtraCostApprovals = (
@@ -263,6 +268,9 @@ export const useOrders = () => {
     onSuccess: () => {
       // Barcha orders cache ni yangilash
       client.invalidateQueries({ queryKey: [orders] });
+      // HQ qabuli buyurtmani viloyat pochtasiga qo'shadi — «Bugungi» pochtalar va bosh sahifa soni.
+      client.invalidateQueries({ queryKey: ["mails", "new"] });
+      client.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 
@@ -271,6 +279,8 @@ export const useOrders = () => {
       api.post(API_ENDPOINTS.BRANCHES.TRANSFER_BATCHES, data).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
+      // Yangi (yoki kattalashgan) o'tkazma paketi — `/batches` «Yangi» ro'yxati va tab sonlari.
+      client.invalidateQueries({ queryKey: ["batches"] });
     },
   });
 
@@ -447,6 +457,8 @@ export const useOrders = () => {
       api.post(API_ENDPOINTS.POSTS.CANCEL, { order_ids }).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
+      // Rad etilgan (bekor) pochta yaratildi — «Pochta → Rad etilgan» ro'yxati va tab soni.
+      client.invalidateQueries({ queryKey: ["mails"] });
     },
   });
 

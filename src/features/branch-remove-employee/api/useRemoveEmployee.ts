@@ -16,6 +16,8 @@ export const useRemoveEmployee = (branchId: string) => {
     // Kutilmaydi: tasdiq oynasi yopilishi `GET /users` qayta yuklanishini kutmasin.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      // Foydalanuvchi tafsiloti (`/all-users/:id`) sarlavhasidagi filial nomi.
+      void queryClient.invalidateQueries({ queryKey: ["user"] });
       return queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });
     },
   });

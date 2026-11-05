@@ -109,6 +109,8 @@ export const useProducts = () => {
     mutationFn: (id: number) => api.delete(API_ENDPOINTS.PRODUCTS.BY_ID(id)),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
+      // Yaratish / tahrirlashdagidek: buyurtma yaratish katalogi va mahsulot qo'shish oynasi (`["market", id]`).
+      client.invalidateQueries({ queryKey: ["market"] });
     },
   });
 
