@@ -95,8 +95,14 @@ export const extraCostReasonText = (
   const comment = row.decision_comment?.trim() || null;
   if (row.status === "rejected") {
     const label = reasonLabel ?? row.reject_reason_label;
-    if (label && comment) return `${label}: ${comment}`;
-    return label ?? comment;
+    // Backend rad izohini «<sabab nomi> — <izoh>» qilib saqlaydi (bot bilan bir yozuv) — nom ikki marta chiqmasin.
+    const backendLabel = row.reject_reason_label?.trim();
+    const own =
+      comment && backendLabel && comment.startsWith(backendLabel)
+        ? comment.slice(backendLabel.length).replace(/^\s*[—:-]\s*/, "").trim() || null
+        : comment;
+    if (label && own) return `${label}: ${own}`;
+    return label ?? own;
   }
   if (row.status === "void" || row.status === "reversed") return row.closed_reason?.trim() || comment;
   return comment;
