@@ -144,6 +144,7 @@ export const readOrderMarket = (order: OrderDetail | null) => {
       : null,
     extra_cost_requires_approval:
       typeof raw.extra_cost_requires_approval === "boolean" ? raw.extra_cost_requires_approval : null,
+    extra_cost_enabled: typeof raw.extra_cost_enabled === "boolean" ? raw.extra_cost_enabled : null,
   };
 };
 
@@ -258,6 +259,7 @@ export const buildActionOrder = (order: OrderDetail | null) => {
       name: market?.name ?? "-",
       expense_proof_conditions: market?.expense_proof_conditions ?? null,
       extra_cost_requires_approval: market?.extra_cost_requires_approval ?? null,
+      extra_cost_enabled: market?.extra_cost_enabled ?? null,
     },
     customer: { name: order.customer.name, phone_number: order.customer.phone_number },
     district: { name: getDistrictName(order) ?? "—" },

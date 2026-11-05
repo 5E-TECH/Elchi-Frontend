@@ -817,6 +817,7 @@
   "orderActionError": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
   "rollbackCancelPostWarning": "Buyurtma bekor qilindi, lekin bekor qilinganlar pochtasiga qo'shilmadi. Uni pochtaga qo'lda qo'shing.",
   "extraCostHomeNotAllowed": "Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori.",
+  "extraCostMarketDisabled": "Bu market uchun qo'shimcha xarajat yozilmaydi.",
   "returnRequested": "Qaytarish so'ralgan",
   "returnRequestedReason": "Sabab: {{reason}}",
   "returnInitiate": "Marketga qaytarish",

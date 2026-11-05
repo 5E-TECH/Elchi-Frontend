@@ -817,6 +817,7 @@
   "orderActionError": "The action could not be completed. Please try again.",
   "rollbackCancelPostWarning": "The order was cancelled but not added to the cancelled-orders post. Add it to a post manually.",
   "extraCostHomeNotAllowed": "Extra cost can't be added for home delivery — the home tariff is already higher.",
+  "extraCostMarketDisabled": "Extra cost can't be added for this market.",
   "returnRequested": "Return requested",
   "returnRequestedReason": "Reason: {{reason}}",
   "returnInitiate": "Return to market",

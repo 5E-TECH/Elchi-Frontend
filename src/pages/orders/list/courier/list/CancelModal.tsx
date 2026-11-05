@@ -25,7 +25,7 @@ import {
   type CancelOrderPayload,
   type CancelReason,
 } from "../../../../../entities/orders/cancelReason";
-import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
+import { ExtraCostUnavailableNote, OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
   getDeliveryLabelKey,
   isProofFileTooLarge,
@@ -98,7 +98,10 @@ const CancelDialog = ({
   const approvalCloseRef = useApprovalStateFocus(awaitingApproval);
 
   const isManager = variant === "manager";
-  const extraCostAmount = toAmount(extraCost);
+  // QoYyRl6S: market qo'shimcha xarajatni yopgan (`extra_cost_enabled: false`) — maydon o'rnida izoh, so'rovda 0
+  // (backend 403 qaytarardi). Maydon kelmasa — avvalgidek.
+  const isExtraCostDisabled = order.market?.extra_cost_enabled === false;
+  const extraCostAmount = isExtraCostDisabled ? 0 : toAmount(extraCost);
   const pendingApproval = getActivePendingApproval(approvals, order);
   // 202 javobidan keyingi «Market tasdig'i kutilmoqda» ko'rinishi: oynadagi buyurtma so'rovdan oldingi holatda — avval
   // shu qurilmadagi ishora (aynan hozirgi so'rov), keyin server (GykuOz8f).
@@ -135,8 +138,9 @@ const CancelDialog = ({
   const isProofMissing = cancelRequiresMedia && !proof;
   const commentRequired = cancelReasonNeedsComment(reason);
   const reasonReady = isCancelReasonComplete(reason, comment);
-  // 2KisY7DL: tasdiqsiz marketda menejerga «market tasdig'idan o'tadi» eslatmasi yo'q (sotish oynasidagidek).
-  const approvalRequired = !isManager || order.market?.extra_cost_requires_approval !== false;
+  // Tasdiqsiz marketda «market tasdig'idan o'tadi» eslatmasi yo'q — kuryer va menejer uchun bir xil (sotish
+  // oynasidagidek; 2KisY7DL menejer, QoYyRl6S kuryer).
+  const approvalRequired = order.market?.extra_cost_requires_approval !== false;
   const showExtraNotice = approvalRequired && extraCostAmount > 0;
 
   const reasonOptions: SelectOption<CancelReason>[] = CANCEL_REASONS.map((value) => ({
@@ -255,15 +259,19 @@ const CancelDialog = ({
 
       <div className="flex min-w-0 flex-col gap-2">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] items-start gap-4">
-          <Field label={t("extraCost")}>
-            <TextInput
-              mode="money"
-              value={extraCost}
-              onValueChange={setExtraCost}
-              placeholder="0"
-              aria-describedby={showExtraNotice ? id("extra-note") : undefined}
-            />
-          </Field>
+          {isExtraCostDisabled ? (
+            <ExtraCostUnavailableNote label={t("extraCost")}>{t("extraCostMarketDisabled")}</ExtraCostUnavailableNote>
+          ) : (
+            <Field label={t("extraCost")}>
+              <TextInput
+                mode="money"
+                value={extraCost}
+                onValueChange={setExtraCost}
+                placeholder="0"
+                aria-describedby={showExtraNotice ? id("extra-note") : undefined}
+              />
+            </Field>
+          )}
           {/* Sabab — yopiq ro'yxat, majburiy */}
           <Field label={t("cancelReasonLabel")} labelAs="span" required hint={t("cancelReasonHint")}>
             <Select<CancelReason>

@@ -361,14 +361,17 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
         name: "Zamon Market",
         expense_proof_conditions: ["sell_any", "cancel_any"],
         extra_cost_requires_approval: false,
+        extra_cost_enabled: false,
       },
     };
     renderPage();
-    // 2KisY7DL: tasdiqsiz market bayrog'i ham oynaga yetadi (menejerga «market tasdig'idan o'tadi» chiqmasin).
+    // 2KisY7DL: tasdiqsiz market bayrog'i ham oynaga yetadi (menejerga «market tasdig'idan o'tadi» chiqmasin);
+    // QoYyRl6S: xarajat yopiq market bayrog'i ham (maydon o'rnida izoh).
     const expected = {
       name: "Zamon Market",
       expense_proof_conditions: ["sell_any", "cancel_any"],
       extra_cost_requires_approval: false,
+      extra_cost_enabled: false,
     };
     expect((sellModalProps.last?.order as unknown as { market: unknown }).market).toEqual(expected);
     expect(cancelModalProps.last?.order?.market).toEqual(expected);
@@ -380,6 +383,7 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
       name: "-",
       expense_proof_conditions: null,
       extra_cost_requires_approval: null,
+      extra_cost_enabled: null,
     });
   });
 });

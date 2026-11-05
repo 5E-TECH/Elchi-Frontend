@@ -1,6 +1,6 @@
 // dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, courier-orders-action-approval-pending, manager-orders-sell-dialog
 import { memo, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { CircleCheck, Clock, Info, Minus, PackageCheck, Plus, Repeat, Tag, TriangleAlert } from "lucide-react";
+import { CircleCheck, Clock, Minus, PackageCheck, Plus, Repeat, Tag, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatReplacementOrderRef, readOrderReplacement } from "../../../../../entities/order/model/orderReplacement";
 import { cx } from "../../../../../shared/lib/cx";
@@ -31,7 +31,7 @@ import {
 } from "../../../../../entities/orders/proofRequirement";
 import { getMarketPaidMax, readMarketPaidBase, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
 import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
-import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
+import { ExtraCostUnavailableNote, OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
   getDeliveryLabelKey,
   isProofFileTooLarge,
@@ -202,15 +202,20 @@ const SellDialog = ({
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
-  // 2KisY7DL: tasdiqsiz market (`extra_cost_requires_approval: false`) — menejer xarajati tasdiqsiz, kuryer chegarasida
-  // o'tadi (backend 04e1ad9): «market tasdig'idan o'tadi» eslatmasi yo'q, uyga yetkazishda xarajat yo'q (kuryer
-  // izohi). Maydon kelmasa — avvalgidek.
-  const approvalRequired = !isManager || order.market?.extra_cost_requires_approval !== false;
-  // Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
+  // Tasdiqsiz market (`extra_cost_requires_approval: false`) — backend xarajatni darhol yozadi: «market tasdig'idan
+  // o'tadi» eslatmasi yo'q, kuryer va menejer uchun bir xil (2KisY7DL menejer, QoYyRl6S kuryer). Maydon kelmasa —
+  // avvalgidek.
+  const approvalRequired = order.market?.extra_cost_requires_approval !== false;
+  // QoYyRl6S: market qo'shimcha xarajatni yopgan (`extra_cost_enabled: false`) — maydon o'rnida izoh, so'rovda 0
+  // (backend 403 qaytarardi). Maydon kelmasa — avvalgidek.
+  const isExtraCostDisabled = order.market?.extra_cost_enabled === false;
+  // Uyga yetkazishda xarajat yo'q: kuryer — `restrictExtraCostToCenter`, menejer — tasdiqsiz marketda (2KisY7DL,
+  // backend 04e1ad9). Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
   // kuryerni bekorga cheklamaymiz — backend baribir tekshiradi.
   const deliveryType = typeof order.where_deliver === "string" ? order.where_deliver.trim() : "";
-  const isExtraCostBlocked =
-    (restrictExtraCostToCenter || !approvalRequired) && deliveryType !== "" && deliveryType !== "center";
+  const isHomeExtraCostBlocked =
+    (restrictExtraCostToCenter || (isManager && !approvalRequired)) && deliveryType !== "" && deliveryType !== "center";
+  const isExtraCostBlocked = isExtraCostDisabled || isHomeExtraCostBlocked;
   const effectiveExtraCost = isExtraCostBlocked ? 0 : toAmount(extraCost);
   const operationTotal = isPartial
     ? totalPrice === "" ? null : Number(totalPrice)
@@ -418,19 +423,9 @@ const SellDialog = ({
 
   // ── Maydonlar ─────────────────────────────────────────────────────────────────────────────
   const extraCostField = isExtraCostBlocked ? (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <span id={id("extra-label")} className={LABEL}>
-        {t("extraCost")}
-      </span>
-      <div
-        role="note"
-        aria-labelledby={id("extra-label")}
-        className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
-      >
-        <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="min-w-0">{t("extraCostHomeNotAllowed")}</p>
-      </div>
-    </div>
+    <ExtraCostUnavailableNote label={t("extraCost")}>
+      {isExtraCostDisabled ? t("extraCostMarketDisabled") : t("extraCostHomeNotAllowed")}
+    </ExtraCostUnavailableNote>
   ) : (
     <Field
       label={t("extraCost")}

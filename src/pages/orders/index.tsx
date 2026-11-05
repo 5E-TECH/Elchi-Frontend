@@ -660,6 +660,7 @@ const Orders = () => {
         name: selectedActionOrder.market?.name ?? "—",
         expense_proof_conditions: selectedActionOrder.market?.expense_proof_conditions ?? null,
         extra_cost_requires_approval: selectedActionOrder.market?.extra_cost_requires_approval ?? null,
+        extra_cost_enabled: selectedActionOrder.market?.extra_cost_enabled ?? null,
       },
       customer: {
         name: selectedActionOrder.customer?.name ?? "—",

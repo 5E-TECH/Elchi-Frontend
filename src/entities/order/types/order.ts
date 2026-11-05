@@ -191,6 +191,8 @@ export interface OrderListItem {
         cancelled_handover_qr_required?: boolean | null;
         /** `false` — tasdiqsiz market: menejer xarajati kuryer chegarasida, tasdiqsiz (2KisY7DL, backend 04e1ad9). */
         extra_cost_requires_approval?: boolean | null;
+        /** `false` — market qo'shimcha xarajatni yopgan: sotish/bekor oynalarida maydon yo'q (QoYyRl6S). */
+        extra_cost_enabled?: boolean | null;
     };
     branch?: {
         id: string;

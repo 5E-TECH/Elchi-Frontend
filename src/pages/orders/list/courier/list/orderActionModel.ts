@@ -35,11 +35,15 @@ export type ActionOrder = {
   status?: string | null;
   total_price?: number | string | null;
   where_deliver?: string | null;
-  /** `extra_cost_requires_approval: false` — tasdiqsiz market (2KisY7DL): menejer xarajati kuryer chegarasida, tasdiqsiz. */
+  /**
+   * `extra_cost_requires_approval: false` — tasdiqsiz market (2KisY7DL, QoYyRl6S): xarajat darhol yoziladi, «market
+   * tasdig'idan o'tadi» yozuvi yo'q. `extra_cost_enabled: false` — market xarajatni yopgan: maydon yo'q, so'rovda 0.
+   */
   market?: {
     name?: string | null;
     expense_proof_conditions?: string[] | null;
     extra_cost_requires_approval?: boolean | null;
+    extra_cost_enabled?: boolean | null;
   } | null;
   customer?: { name?: string | null; phone_number?: string | null } | null;
   district?: { name?: string | null } | null;
