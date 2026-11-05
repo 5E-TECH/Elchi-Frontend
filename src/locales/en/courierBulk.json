@@ -94,7 +94,10 @@
     "tomorrow": "Tomorrow",
     "noMatchTitle": "No orders found",
     "noMatchHint": "Change the search or the result filter.",
-    "replacementHint": "Replacement — sell from «Orders» with «I took the old item»"
+    "replacementHint": "Replacement — sell from «Orders» with «I took the old item»",
+    "awaitingPostHint": "Mail not accepted yet — accept it in «Mail» first",
+    "courierHeldHint": "With the courier — the courier sells it",
+    "lastError": "Not finalized: {{reason}}"
   },
   "states": {
     "errorHint": "Check your internet connection and try again.",
@@ -140,5 +143,19 @@
   "confirmReplacement_other": "{{count}} replacement orders are not sold",
   "confirmReplacementHint": "They stay waiting — take the old item and sell from «Orders» with «I took the old item»",
   "finalizeReplacementKept_one": "{{count}} replacement order is sold from «Orders».",
-  "finalizeReplacementKept_other": "{{count}} replacement orders are sold from «Orders»."
+  "finalizeReplacementKept_other": "{{count}} replacement orders are sold from «Orders».",
+  "awaitingPostTitle": "Mail not accepted yet",
+  "finalizeNothingPlain": "Nothing to finalize.",
+  "finalizeCourierHeldKept_one": "{{count}} order is with a courier — the courier sells it.",
+  "finalizeCourierHeldKept_other": "{{count}} orders are with couriers — the couriers sell them.",
+  "finalizeAwaitingPostKept_one": "{{count}} order is in mail not accepted yet — finalize it after accepting it in «Mail».",
+  "finalizeAwaitingPostKept_other": "{{count}} orders are in mail not accepted yet — finalize them after accepting it in «Mail».",
+  "confirmCourierHeld_one": "{{count}} order with a courier is not sold",
+  "confirmCourierHeld_other": "{{count}} orders with couriers are not sold",
+  "confirmCourierHeldHint": "They stay waiting — the courier sells them",
+  "confirmAwaitingPost_one": "{{count}} order is in mail not accepted yet",
+  "confirmAwaitingPost_other": "{{count}} orders are in mail not accepted yet",
+  "confirmAwaitingPostHint": "Nothing changes — accept the mail in «Mail» first",
+  "noPermissionTitle": "No permission to sell or cancel",
+  "noPermissionText": "To finalize the day, a superadmin must give you the sell/cancel permission."
 }

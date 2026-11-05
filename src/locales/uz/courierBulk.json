@@ -91,7 +91,10 @@
     "tomorrow": "Ertaga",
     "noMatchTitle": "Buyurtma topilmadi",
     "noMatchHint": "Qidiruv yoki natija filtrini o'zgartiring.",
-    "replacementHint": "Almashtirish — «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting"
+    "replacementHint": "Almashtirish — «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting",
+    "awaitingPostHint": "Pochta hali qabul qilinmagan — avval «Pochta»da qabul qiling",
+    "courierHeldHint": "Kuryer qo'lida — uni kuryerning o'zi sotadi",
+    "lastError": "Yakunlanmadi: {{reason}}"
   },
   "states": {
     "errorHint": "Internet aloqasini tekshirib, qayta urinib ko'ring.",
@@ -131,5 +134,15 @@
   },
   "confirmReplacement": "{{count}} ta almashtirish buyurtmasi sotilmaydi",
   "confirmReplacementHint": "Kutilmoqda holatida qoladi — eski mahsulotni olib, «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting",
-  "finalizeReplacementKept": "{{count}} ta almashtirish buyurtmasi «Buyurtmalar»dan sotiladi."
+  "finalizeReplacementKept": "{{count}} ta almashtirish buyurtmasi «Buyurtmalar»dan sotiladi.",
+  "awaitingPostTitle": "Pochta hali qabul qilinmagan",
+  "finalizeNothingPlain": "Yakunlanadigan buyurtma yo'q.",
+  "finalizeCourierHeldKept": "{{count}} ta buyurtma kuryer qo'lida — ularni kuryerning o'zi sotadi.",
+  "finalizeAwaitingPostKept": "{{count}} ta buyurtma pochtasi qabul qilinmagan — «Pochta»da qabul qilgach yakunlang.",
+  "confirmCourierHeld": "{{count}} ta buyurtma kuryer qo'lida — sotilmaydi",
+  "confirmCourierHeldHint": "Kutilmoqda holatida qoladi — uni kuryerning o'zi sotadi",
+  "confirmAwaitingPost": "{{count}} ta buyurtma pochtasi qabul qilinmagan",
+  "confirmAwaitingPostHint": "O'zgarmaydi — avval «Pochta»da pochtani qabul qiling",
+  "noPermissionTitle": "Sotish va bekor qilish ruxsati yo'q",
+  "noPermissionText": "Kunni yakunlash uchun superadmin sizga sotish/bekor ruxsatini berishi kerak."
 }

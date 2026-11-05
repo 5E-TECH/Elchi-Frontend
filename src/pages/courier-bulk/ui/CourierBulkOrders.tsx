@@ -2,6 +2,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Inbox, RotateCcw, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cx } from "../../../shared/lib/cx";
 import { ReplacementTag } from "../../../entities/order/ui/ReplacementTag";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -27,13 +28,15 @@ import {
 import {
   filterCourierBulkOrders,
   getCourierBulkOrderAction,
+  getCourierBulkSellBlock,
+  isCourierBulkAwaitingPost,
   isCourierBulkOrderMarked,
-  isCourierBulkSellBlocked,
   sortCourierBulkOrders,
   type CourierBulkAction,
   type CourierBulkOrder,
   type CourierBulkResultFilter,
   type CourierBulkSort,
+  type CourierBulkViewer,
 } from "../model/courierBulk";
 import { ResultControl } from "./ResultControl";
 
@@ -41,6 +44,10 @@ type CourierBulkOrdersProps = {
   query: QueryLike<CourierBulkOrder[]>;
   orders: CourierBulkOrder[];
   actions: Record<string, CourierBulkAction>;
+  /** Menejerda kuryer qo'lidagi buyurtma sotilmaydi (LC-04) — qatorda izoh. */
+  viewer: CourierBulkViewer;
+  /** Oxirgi yakunlashda xato bergan buyurtmalar: id → backend xatosi (qatorda sababi). */
+  rowErrors: Readonly<Record<string, unknown>>;
   onSetAction: (order: CourierBulkOrder, action: CourierBulkAction) => void;
   busy: boolean;
   /** Fonda yangilanmoqda (birinchi yuklanish emas) — «Yangilanmoqda...». */
@@ -61,6 +68,9 @@ type ResultOption = Exclude<CourierBulkResultFilter, "all"> | "";
 const COUNT_PILL =
   "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-sunken px-1.5 text-xs font-semibold text-text-muted";
 
+/** Qator izohi — jadval ustunini kengaytirib yubormasin (uzun backend sababi ham o'raladi). */
+const NOTE_CLASS = "block max-w-[360px] break-words text-[13px]";
+
 const districtOf = (order: CourierBulkOrder) => order.district?.name ?? order.region?.name ?? null;
 const regionOf = (order: CourierBulkOrder) =>
   (order.district?.name ? (order.district.region?.name ?? order.region?.name) : null) ?? null;
@@ -77,6 +87,8 @@ export const CourierBulkOrders = ({
   query,
   orders,
   actions,
+  viewer,
+  rowErrors,
   onSetAction,
   busy,
   refreshing,
@@ -99,10 +111,14 @@ export const CourierBulkOrders = ({
   const visible = useMemo(
     () =>
       sortCourierBulkOrders(
-        filterCourierBulkOrders(orders, actions, isPhone ? { query: "", result: "all" } : { query: search, result }),
+        filterCourierBulkOrders(
+          orders,
+          actions,
+          isPhone ? { query: "", result: "all", viewer } : { query: search, result, viewer },
+        ),
         sort,
       ),
-    [actions, isPhone, orders, result, search, sort],
+    [actions, isPhone, orders, result, search, sort, viewer],
   );
 
   // «Barchasi» — bo'sh qiymatli variant: filtr tanlangach maydonda × chiqadi (ega qarori 2026-10-16).
@@ -120,20 +136,49 @@ export const CourierBulkOrders = ({
       value={getCourierBulkOrderAction(order.id, actions)}
       marked={isCourierBulkOrderMarked(order.id, actions)}
       name={order.customer?.name ?? `№${order.id}`}
-      disabled={busy}
+      // Pochtasi qabul qilinmagan posilkani belgilab bo'lmaydi — so'rov baribir ketmaydi.
+      disabled={busy || isCourierBulkAwaitingPost(order)}
       onChange={(action) => onSetAction(order, action)}
     />
   );
+  // «Belgilanmagan» — sukut «sotildi» qo'llanadigan qatorda; bu yerdan sotilmaydiganida (izohi bor) — yo'q.
   const unmarkedBadge = (order: CourierBulkOrder) =>
-    isCourierBulkOrderMarked(order.id, actions) ? null : <Badge className="shrink-0">{t("list.unmarked")}</Badge>;
-  // lQjt6sKP: eski mahsulot olinmagan almashtirish buyurtmasi bu yerdan sotilmaydi — belgi va qisqa izoh.
-  const replacementNote = (order: CourierBulkOrder) =>
-    isCourierBulkSellBlocked(order) ? (
+    isCourierBulkOrderMarked(order.id, actions) ||
+    isCourierBulkAwaitingPost(order) ||
+    getCourierBulkSellBlock(order, viewer) ? null : (
+      <Badge className="shrink-0">{t("list.unmarked")}</Badge>
+    );
+  // Bu yerdan yopilmaydigan qator — qisqa izoh: pochtasi qabul qilinmagan (6qypMFeT), eski mahsulot olinmagan
+  // almashtirish (lQjt6sKP, belgi bilan), menejerda kuryer qo'lidagi (LC-04). Oxirgi yakunlashda xato bergan qatorda —
+  // backend sababi (natija oynasi yopilgach ham).
+  const rowNote = (order: CourierBulkOrder) => {
+    const block = getCourierBulkSellBlock(order, viewer);
+    const hold = isCourierBulkAwaitingPost(order) ? (
+      <span className={cx(NOTE_CLASS, "text-warning-fg")} data-testid="courier-bulk-awaiting-post">
+        {t("list.awaitingPostHint")}
+      </span>
+    ) : block === "replacement" ? (
       <span className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="courier-bulk-replacement">
         <ReplacementTag order={order} />
         <span className="text-[13px] text-warning-fg">{t("list.replacementHint")}</span>
       </span>
+    ) : block === "courierHeld" ? (
+      <span className={cx(NOTE_CLASS, "text-warning-fg")} data-testid="courier-bulk-courier-held">
+        {t("list.courierHeldHint")}
+      </span>
     ) : null;
+    const failed = Object.prototype.hasOwnProperty.call(rowErrors, order.id) ? (
+      <span className={cx(NOTE_CLASS, "text-danger-fg")} data-testid="courier-bulk-row-error">
+        {t("list.lastError", { reason: getBackendErrorMessage(rowErrors[order.id]) ?? t("resultReasonUnknown") })}
+      </span>
+    ) : null;
+    return hold || failed ? (
+      <>
+        {hold}
+        {failed}
+      </>
+    ) : null;
+  };
 
   const columns: DataTableColumn<CourierBulkOrder>[] = [
     {
@@ -146,7 +191,7 @@ export const CourierBulkOrders = ({
         <>
           <div className="whitespace-nowrap font-semibold text-text">№{order.id}</div>
           <div className="whitespace-nowrap text-[13px] text-text-muted">{dateTime(order)}</div>
-          {replacementNote(order)}
+          {rowNote(order)}
         </>
       ),
     },
@@ -224,7 +269,7 @@ export const CourierBulkOrders = ({
                 {unmarkedBadge(order)}
               </span>
               <span className="truncate text-[13px] text-text-muted">{meta}</span>
-              {replacementNote(order)}
+              {rowNote(order)}
             </div>
             <div className="min-w-0 flex-[1_1_300px] md:max-w-[380px]">{resultCell(order, "list")}</div>
           </li>

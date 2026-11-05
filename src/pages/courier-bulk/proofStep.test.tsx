@@ -25,7 +25,11 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
-const BULK_HEADERS = { "X-Request-Source": "courier-bulk" };
+const BULK_HEADERS = {
+  "X-Request-Source": "courier-bulk",
+  // Har amal + buyurtma uchun barqaror kalit (qayta yuborishda o'zgarmaydi).
+  "Idempotency-Key": expect.stringMatching(/^courier-bulk:[^:]+:(sold|cancel):\d+$/),
+};
 
 type Conditions = string[] | null;
 

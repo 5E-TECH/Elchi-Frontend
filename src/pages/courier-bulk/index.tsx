@@ -1,12 +1,15 @@
 // dizayn-v2: courier-courier-bulk-main, manager-courier-bulk-main, courier-courier-bulk-confirm-dialog
 import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useSelector } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Check, CircleX, PackageCheck, Repeat, RotateCcw, Zap } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, Check, CircleX, PackageCheck, Repeat, RotateCcw, Truck, UserRound, Zap } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
 import type { OrderListItem } from "../../entities/order/types/order";
+import { createIdempotencyKey } from "../../entities/warehouse/lib/idempotency";
 import type { RootState } from "../../app/config/store";
+import { getUserCanSellCancel } from "../new_orders/components/detail/orderDetailAccess";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
@@ -26,19 +29,24 @@ import {
   getCourierBulkActionsAfterFinalize,
   getCourierBulkCounts,
   getCourierBulkFinalizeTasks,
+  getCourierBulkKept,
   getCourierBulkProofKey,
-  getCourierBulkReplacementHeld,
   getCourierBulkUnmarkedCount,
   hasAllCourierBulkProofs,
+  isCourierBulkAwaitingPost,
   isCourierBulkOrderMarked,
+  isCourierBulkSellBlocked,
   mergeCourierBulkOrders,
   runLimited,
   splitCourierBulkTasksByProof,
+  getCourierBulkIdempotencyKey,
+  withCourierBulkRetry,
   summarizeCourierBulkResults,
   type CourierBulkAction,
   type CourierBulkFinalizeTask,
   type CourierBulkOrder,
   type CourierBulkScanMode,
+  type CourierBulkViewer,
 } from "./model/courierBulk";
 import { useIsBelowLg } from "./model/useIsBelowLg";
 import { BulkAlert } from "./ui/BulkAlert";
@@ -55,10 +63,13 @@ type ProofStep = {
   tasks: FinalizeTask[];
   proofTasks: FinalizeTask[];
   plainCount: number;
-  tomorrowCount: number;
-  /** Bu yerdan sotilmaydigan almashtirish buyurtmalari (lQjt6sKP) — kutilmoqda qoladi. */
-  replacementCount: number;
+  kept: KeptCounts;
 };
+
+/** Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`). */
+type KeptCounts = { tomorrow: number; replacement: number; courierHeld: number; awaitingPost: number };
+
+const COURIER_BULK_QUERY_KEY = ["orders", "courier", "bulk", "waiting"] as const;
 
 const COURIER_BULK_PAGE_LIMIT = 100;
 const COURIER_BULK_MAX_PAGES = 50;
@@ -121,43 +132,70 @@ const CourierBulkPage = () => {
   const { t, i18n } = useTranslation("courierBulk");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const role = useSelector((state: RootState) => state.role.role);
+  const currentUser = useSelector((state: RootState) => state.user.user);
+  const isManager = role === "manager";
+  const viewer: CourierBulkViewer = isManager ? "manager" : "courier";
+  // Menejer `can_sell_cancel` siz hech narsani sota ham, bekor qila ham olmaydi (backend 403) — yakunlash o'chiq.
+  const managerCannotFinalize = isManager && !getUserCanSellCancel(currentUser);
   const isPhone = useIsPhone();
   const isBelowLg = useIsBelowLg();
   const { SellOrder, CancelOrder } = useOrders();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const ordersQuery = useQuery({
-    queryKey: ["orders", "courier", "bulk", "waiting"],
+    queryKey: COURIER_BULK_QUERY_KEY,
     queryFn: fetchAllCourierWaitingOrders,
     staleTime: 15_000,
+    // Yakunlash paytida har muvaffaqiyatli sotish/bekor ["orders"] ni yangilaydi — ro'yxat har safar barcha
+    // sahifalari bilan qayta so'ralardi (gateway IP chegarasini ham yerdi). Oxirida bir marta yangilanadi.
+    enabled: !isFinalizing,
   });
   const { data: orders = [], isLoading, isFetching, refetch } = ordersQuery;
 
   const [scanMode, setScanMode] = useState<CourierBulkScanMode>("cancel");
   const [actions, setActions] = useState<Record<string, CourierBulkAction>>({});
   const [scanError, setScanError] = useState("");
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  // Tasdiq oynasi ochiq: yuboriladiganlar ro'yxati oyna ochilishida olingan — skan belgilarni o'zgartirmasin.
+  const [isConfirming, setIsConfirming] = useState(false);
   const [proofStep, setProofStep] = useState<ProofStep | null>(null);
   // Tanlangan isbotlar (kalit — buyurtma + amal): oyna yopilsa yoki amal xato bersa ham saqlanadi
   // (qayta urinishda qayta tanlash shart emas); bajarilganlarniki tozalanadi.
   const [proofs, setProofs] = useState<Record<string, File | undefined>>({});
   const [result, setResult] = useState<CourierBulkResult | null>(null);
   const [isResultOpen, setIsResultOpen] = useState(false);
+  // Oxirgi yakunlashda xato bergan buyurtmalar (id → backend xatosi): qatorda sababi turadi — oyna yopilgach ham
+  // buyurtma «o'zgarmay qolgan»dek ko'rinmasin. Belgi o'zgartirilsa yoki keyingi yakunlashda yangilanadi.
+  const [rowErrors, setRowErrors] = useState<Record<string, unknown>>({});
   // Skanerlangan token → buyurtma (takror skan rad etiladi; kamera «Bekor qilish» shu buyurtma tokenlarini bo'shatadi).
   const scannedTokenRef = useRef<Map<string, string>>(new Map());
   const { recent: recentScanIds, touch: touchRecentScan, forget: forgetRecentScan, clear: clearRecentScans } =
     useRecentScans();
 
-  const counts = useMemo(() => getCourierBulkCounts(orders, actions), [actions, orders]);
-  const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions), [actions, orders]);
+  const counts = useMemo(() => getCourierBulkCounts(orders, actions, viewer), [actions, orders, viewer]);
+  const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions, viewer), [actions, orders, viewer]);
   const hasMarks = useMemo(() => orders.some((order) => isCourierBulkOrderMarked(order.id, actions)), [actions, orders]);
   const isInitialLoading = isLoading && orders.length === 0;
   const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending;
 
 
-  /** Qatordagi natija tanlovi — aniq belgi (`sold` ham). */
-  const setOrderAction = useCallback((order: CourierBulkOrder, action: CourierBulkAction) => {
-    setActions((prev) => ({ ...prev, [order.id]: action }));
+  const forgetRowError = useCallback((orderId: string) => {
+    setRowErrors((prev) => {
+      if (!(orderId in prev)) return prev;
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
   }, []);
+
+  /** Qatordagi natija tanlovi — aniq belgi (`sold` ham). */
+  const setOrderAction = useCallback(
+    (order: CourierBulkOrder, action: CourierBulkAction) => {
+      setActions((prev) => ({ ...prev, [order.id]: action }));
+      forgetRowError(order.id);
+    },
+    [forgetRowError],
+  );
 
   /** Skan: tanlangan rejim belgisi; xuddi shu belgi qayta skanerlansa — aniq «sotildi». */
   const handleScanMatch = useCallback(
@@ -171,9 +209,17 @@ const CourierBulkPage = () => {
         return;
       }
 
+      // Pochtasi qabul qilinmagan posilka belgilanmaydi (so'rov baribir 400) — token band qilinmaydi.
+      if (isCourierBulkAwaitingPost(order)) {
+        scanNotify.warning(t("awaitingPostTitle"), { description: t("list.awaitingPostHint") });
+        void playScanFeedback("error", t("list.awaitingPostHint"));
+        return;
+      }
+
       scannedTokenRef.current.set(tokenKey, order.id);
       const next: CourierBulkAction = actions[order.id] === scanMode ? "sold" : scanMode;
       setActions((prev) => ({ ...prev, [order.id]: prev[order.id] === scanMode ? "sold" : scanMode }));
+      forgetRowError(order.id);
       touchRecentScan(order.id);
       setScanError("");
       scanNotify.success(t("scanSuccessTitle"), {
@@ -193,7 +239,7 @@ const CourierBulkPage = () => {
         { voice: "selected" },
       );
     },
-    [actions, scanMode, t, touchRecentScan],
+    [actions, forgetRowError, scanMode, t, touchRecentScan],
   );
 
   const handleScanMissing = useCallback(() => {
@@ -214,8 +260,9 @@ const CourierBulkPage = () => {
       });
       for (const [token, id] of scannedTokenRef.current) if (id === orderId) scannedTokenRef.current.delete(token);
       forgetRecentScan(orderId);
+      forgetRowError(orderId);
     },
-    [forgetRecentScan],
+    [forgetRecentScan, forgetRowError],
   );
 
   // Kamera ro'yxati — faqat SKAN bilan belgilanganlar (bekor / ertaga), yangisi birinchi. Qatordagi tanlov bilan
@@ -254,9 +301,14 @@ const CourierBulkPage = () => {
     [actions, language, scannedOrders, t, unmarkScannedOrder],
   );
   const num = (value: number) => formatNumberLocalized(value, { language });
-  // «Skanerlanmagan N ta … sotilgan deb belgilanadi» — bekor / ertaga belgisi yo'qlar (skan yoki qatordagi tanlov).
+  // «Skanerlanmagan N ta … sotilgan deb belgilanadi» — bekor / ertaga belgisi yo'qlar (skan yoki qatordagi tanlov);
+  // bu yerdan sotilmaydiganlar (pochtasi qabul qilinmagan, almashtirish, menejerda kuryer qo'lidagi) kirmaydi.
   const unscannedCount = orders.filter(
-    (order) => actions[order.id] !== "cancel" && actions[order.id] !== "tomorrow",
+    (order) =>
+      actions[order.id] !== "cancel" &&
+      actions[order.id] !== "tomorrow" &&
+      !isCourierBulkAwaitingPost(order) &&
+      !isCourierBulkSellBlocked(order, viewer),
   ).length;
 
   useOrderQrScanner({
@@ -264,7 +316,7 @@ const CourierBulkPage = () => {
     // Isbot / natija oynasi ochiq bo'lsa skan belgilarni o'zgartirmaydi; yakunlash so'rovlari ketayotganda skan
     // e'tiborsiz, lekin ochiq kamera yopilmaydi.
     enabled: !proofStep?.open && !isResultOpen,
-    paused: isBusy,
+    paused: isBusy || isConfirming,
     onMatch: handleScanMatch,
     onMissing: handleScanMissing,
     camera: {
@@ -294,10 +346,20 @@ const CourierBulkPage = () => {
 
   const clearActions = () => {
     setActions({});
+    setRowErrors({});
     scannedTokenRef.current.clear();
     clearRecentScans();
     setScanError("");
   };
+
+  /** Natija xabaridagi «… qoldi» qatorlari — so'rov ketmagan buyurtmalar, sababi bilan. */
+  const keptNotes = (kept: KeptCounts) =>
+    [
+      kept.tomorrow > 0 ? t("finalizeTomorrowKept", { count: kept.tomorrow }) : "",
+      kept.replacement > 0 ? t("finalizeReplacementKept", { count: kept.replacement }) : "",
+      kept.courierHeld > 0 ? t("finalizeCourierHeldKept", { count: kept.courierHeld }) : "",
+      kept.awaitingPost > 0 ? t("finalizeAwaitingPostKept", { count: kept.awaitingPost }) : "",
+    ].filter(Boolean);
 
   const handleProofChange = useCallback((proofKey: string, file: File | undefined) => {
     setProofs((previous) => ({ ...previous, [proofKey]: file }));
@@ -305,31 +367,40 @@ const CourierBulkPage = () => {
 
   /**
    * So'rovlarni yuborish. Isbotsiz buyurtmalar 6 tadan, isbotlilar (fayl yuklash + amal) ko'pi bilan 2 tadan
-   * parallel; har so'rov `X-Request-Source: courier-bulk` bilan (audit).
+   * parallel; har so'rov `X-Request-Source: courier-bulk` (audit) va shu urinishdagi barqaror `Idempotency-Key`
+   * bilan — vaqtinchalik xato (429, 5xx, tarmoq) bo'lsa ayni kalit bilan qayta yuboriladi (`withCourierBulkRetry`).
    */
-  const runFinalize = async (tasks: FinalizeTask[], tomorrowCount: number, replacementCount = 0) => {
-    setIsFinalizing(true);
+  const runFinalize = async (tasks: FinalizeTask[], kept: KeptCounts) => {
+    // Ro'yxat so'rovi birinchi so'rovdan OLDIN o'chadi (sinxron render): javob React qayta chizishidan oldin kelsa ham
+    // ["orders"] eskirishi ro'yxatni qayta so'ramaydi.
+    flushSync(() => setIsFinalizing(true));
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
 
     // Isbot faqat isbot talab qilinadigan buyurtmaga yuboriladi (keraksiz fayl yuklanmaydi).
+    const runId = createIdempotencyKey();
     const runTask =
       (withProof: boolean) =>
       async ({ order, action }: FinalizeTask) => {
         const proof = withProof ? proofs[getCourierBulkProofKey({ order, action })] : undefined;
         const proofData = proof instanceof File ? { proof } : {};
-        if (action === "cancel") {
-          await CancelOrder.mutateAsync({
-            orderId: order.id,
-            data: { comment: t("bulkCancelComment"), extraCost: 0, ...proofData },
-            headers: COURIER_BULK_REQUEST_HEADERS,
-          });
-        } else {
-          await SellOrder.mutateAsync({
-            orderId: order.id,
-            data: { comment: t("bulkSoldComment"), extraCost: 0, ...proofData },
-            headers: COURIER_BULK_REQUEST_HEADERS,
-          });
-        }
+        // 429 / 5xx / tarmoq — kutib ayni kalit bilan qayta yuboriladi, buyurtma «o'tmay» qolmasin.
+        const headers = {
+          ...COURIER_BULK_REQUEST_HEADERS,
+          "Idempotency-Key": getCourierBulkIdempotencyKey(runId, action, order.id),
+        };
+        await withCourierBulkRetry(() =>
+          action === "cancel"
+            ? CancelOrder.mutateAsync({
+                orderId: order.id,
+                data: { comment: t("bulkCancelComment"), extraCost: 0, ...proofData },
+                headers,
+              })
+            : SellOrder.mutateAsync({
+                orderId: order.id,
+                data: { comment: t("bulkSoldComment"), extraCost: 0, ...proofData },
+                headers,
+              }),
+        );
       };
 
     const [plainResults, proofResults] = await Promise.all([
@@ -347,6 +418,14 @@ const CourierBulkPage = () => {
 
     setIsFinalizing(false);
     setProofStep((previous) => (previous ? { ...previous, open: false } : previous));
+    // Bajarilganlar ro'yxatdan darhol olib tashlanadi (yangilanishni kutmasdan): aks holda ular bir lahza belgisiz —
+    // sukut «Sotildi» bilan — qolib, «eski holatiga qaytdi»dek ko'rinardi.
+    if (succeededOrderIds.size > 0) {
+      queryClient.setQueryData<CourierBulkOrder[]>(COURIER_BULK_QUERY_KEY, (previous) =>
+        previous?.filter((order) => !succeededOrderIds.has(String(order.id))),
+      );
+    }
+    setRowErrors(Object.fromEntries(failures.map(({ order, error }) => [String(order.id), error])));
     // Bajarilganlarning belgisi xato bo'lsa ham tozalanadi; xato bergan va
     // "ertaga" belgilari qoladi. Ro'yxat har holda yangilanadi.
     setActions((previous) => getCourierBulkActionsAfterFinalize(previous, succeededOrderIds));
@@ -361,41 +440,40 @@ const CourierBulkPage = () => {
 
     if (failures.length > 0) {
       // Har xato bergan buyurtma — backend sababi bilan (faqat son emas).
-      setResult({ failures, succeededCount: succeededOrderIds.size, tomorrowCount });
+      setResult({ failures, succeededCount: succeededOrderIds.size, keptNotes: keptNotes(kept) });
       setIsResultOpen(true);
       return;
     }
 
+    const notes = keptNotes(kept);
     notify.success(t("finalizeSuccessTitle"), {
-      description: [
-        t("finalizeSuccessDescription", { count: succeededOrderIds.size }),
-        tomorrowCount > 0 ? t("finalizeTomorrowKept", { count: tomorrowCount }) : "",
-        replacementCount > 0 ? t("finalizeReplacementKept", { count: replacementCount }) : "",
-      ]
-        .filter(Boolean)
-        .join(" "),
-      duration: 3000,
+      description: [t("finalizeSuccessDescription", { count: succeededOrderIds.size }), ...notes].join(" "),
+      // Qolganlari haqida izoh bo'lsa — o'qib ulgurilsin.
+      duration: notes.length > 0 ? 6000 : 3000,
     });
   };
 
   const handleFinalize = async () => {
-    if (orders.length === 0 || isBusy) return;
+    if (orders.length === 0 || isBusy || managerCannotFinalize) return;
 
     // "Ertaga" — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09).
-    const tasks = getCourierBulkFinalizeTasks(orders, actions);
-    // lQjt6sKP: eski mahsulot olinmagan almashtirish buyurtmasi bu yerdan sotilmaydi («Eski mahsulotni oldim»
-    // tasdig'i «Buyurtmalar» sotish oynasida) — kutilmoqda qoladi, «ertaga» soniga qo'shilmaydi.
-    const replacementCount = getCourierBulkReplacementHeld(orders, actions).length;
-    const tomorrowCount = orders.length - tasks.length - replacementCount;
+    const tasks = getCourierBulkFinalizeTasks(orders, actions, viewer);
+    // So'rov ketmaydiganlar sababi bilan: «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim» tasdig'i
+    // «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04); pochtasi qabul qilinmagan (6qypMFeT).
+    const keptOrders = getCourierBulkKept(orders, actions, viewer);
+    const kept: KeptCounts = {
+      tomorrow: keptOrders.tomorrow.length,
+      replacement: keptOrders.replacement.length,
+      courierHeld: keptOrders.courierHeld.length,
+      awaitingPost: keptOrders.awaitingPost.length,
+    };
 
     if (tasks.length === 0) {
       notify.info(t("finalizeSuccessTitle"), {
         description: [
-          t("finalizeNothing"),
-          replacementCount > 0 ? t("finalizeReplacementKept", { count: replacementCount }) : "",
-        ]
-          .filter(Boolean)
-          .join(" "),
+          t(kept.tomorrow > 0 ? "finalizeNothing" : "finalizeNothingPlain"),
+          ...keptNotes({ ...kept, tomorrow: 0 }),
+        ].join(" "),
       });
       return;
     }
@@ -403,7 +481,7 @@ const CourierBulkPage = () => {
     // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
     const cancelTasks = tasks.filter((task) => task.action === "cancel");
     const soldCount = tasks.length - cancelTasks.length;
-    const unmarked = getCourierBulkUnmarkedCount(orders, actions);
+    const unmarked = getCourierBulkUnmarkedCount(orders, actions, viewer);
     const consequences: ConfirmConsequence[] = [];
     if (soldCount > 0) {
       consequences.push({
@@ -435,22 +513,39 @@ const CourierBulkPage = () => {
         icon: CircleX,
       });
     }
-    if (tomorrowCount > 0) {
+    if (kept.tomorrow > 0) {
       consequences.push({
-        text: t("confirmTomorrow", { count: tomorrowCount }),
+        text: t("confirmTomorrow", { count: kept.tomorrow }),
         hint: t("confirmTomorrowHint"),
         tone: "warning",
         icon: CalendarClock,
       });
     }
-    if (replacementCount > 0) {
+    if (kept.replacement > 0) {
       consequences.push({
-        text: t("confirmReplacement", { count: replacementCount }),
+        text: t("confirmReplacement", { count: kept.replacement }),
         hint: t("confirmReplacementHint"),
         tone: "warning",
         icon: Repeat,
       });
     }
+    if (kept.courierHeld > 0) {
+      consequences.push({
+        text: t("confirmCourierHeld", { count: kept.courierHeld }),
+        hint: t("confirmCourierHeldHint"),
+        tone: "warning",
+        icon: UserRound,
+      });
+    }
+    if (kept.awaitingPost > 0) {
+      consequences.push({
+        text: t("confirmAwaitingPost", { count: kept.awaitingPost }),
+        hint: t("confirmAwaitingPostHint"),
+        tone: "warning",
+        icon: Truck,
+      });
+    }
+    setIsConfirming(true);
     const confirmed = await confirm({
       title: t("confirmTitle"),
       description: t("confirmDescription", { count: orders.length }),
@@ -466,23 +561,23 @@ const CourierBulkPage = () => {
       confirmLabel: t("confirmAction"),
       confirmIcon: Check,
       cancelLabel: t("confirmBack"),
-    });
+    }).finally(() => setIsConfirming(false));
     if (!confirmed) return;
 
     // Market isbot talab qiladigan buyurtmalar (j9KFyqlS): isbotsiz backend 400 qaytaradi — avval isbot
     // qadami. Isbot kerak bo'lmasa — qo'shimcha qadamsiz darhol yakunlanadi.
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
     if (proofTasks.length > 0) {
-      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, tomorrowCount, replacementCount });
+      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, kept });
       return;
     }
 
-    await runFinalize(tasks, tomorrowCount, replacementCount);
+    await runFinalize(tasks, kept);
   };
 
   const handleProofSubmit = () => {
     if (!proofStep || isFinalizing || !hasAllCourierBulkProofs(proofStep.proofTasks, proofs)) return;
-    void runFinalize(proofStep.tasks, proofStep.tomorrowCount, proofStep.replacementCount);
+    void runFinalize(proofStep.tasks, proofStep.kept);
   };
 
   // «Kunni yakunlash» — DOM'da BITTA tugma: ≥ 768 sarlavhada, telefonda pastki menyu ustidagi panelda.
@@ -492,15 +587,13 @@ const CourierBulkPage = () => {
       fullWidth={isPhone}
       leftIcon={Zap}
       aria-haspopup="dialog"
-      disabled={orders.length === 0}
+      disabled={orders.length === 0 || managerCannotFinalize}
       loading={isBusy}
       onClick={() => void handleFinalize()}
     >
       {t("page.finalize")}
     </Button>
   );
-
-  const isManager = role === "manager";
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -529,6 +622,12 @@ const CourierBulkPage = () => {
         isBelowLg={isBelowLg}
       />
 
+      {managerCannotFinalize ? (
+        <BulkAlert tone="danger" role="note" data-testid="courier-bulk-no-permission" title={t("noPermissionTitle")}>
+          {t("noPermissionText")}
+        </BulkAlert>
+      ) : null}
+
       {/* Skan topilmadi — keyingi muvaffaqiyatli skangacha turadi (+ xabar, maket «Buyurtma topilmadi»). */}
       {scanError ? (
         <BulkAlert tone="danger" data-testid="courier-bulk-scan-error">
@@ -540,6 +639,8 @@ const CourierBulkPage = () => {
         query={ordersQuery}
         orders={orders}
         actions={actions}
+        viewer={viewer}
+        rowErrors={rowErrors}
         onSetAction={setOrderAction}
         busy={isBusy}
         refreshing={isFetching && !isInitialLoading}
