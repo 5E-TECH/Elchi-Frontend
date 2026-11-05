@@ -51,6 +51,7 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     const api = await mockCourierBulkApi(page);
     await openCourierBulk(page);
 
+    await markResult(page, "Feruza Mirzayeva", "Sotildi");
     await markResult(page, "Ali Valiyev", "Ertaga");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
     await expectAboveBottomNav(page, "Kunni yakunlash");
@@ -69,6 +70,8 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     const api = await mockCourierBulkApi(page, { sellProofIds: ["10402"] });
     await openCourierBulk(page);
 
+    await markResult(page, "Feruza Mirzayeva", "Sotildi");
+    await markResult(page, "Ali Valiyev", "Sotildi");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
     await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
     await page

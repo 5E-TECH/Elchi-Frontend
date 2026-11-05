@@ -81,7 +81,7 @@ const regionOf = (order: CourierBulkOrder) =>
  * < 1024 — kartalar (planshetda natija o'ngda, telefonda pastda to'liq enli).
  *
  * «№…» oddiy matn (havola emas): belgilar faqat shu sahifa xotirasida — tafsilotga o'tilsa yo'qoladi va qaytgach
- * hamma buyurtma sukut bo'yicha «sotildi» bo'lib qolardi.
+ * qo'yilgan belgilar o'chib, hamma qator belgilanmagan bo'lib qolardi.
  */
 export const CourierBulkOrders = ({
   query,
@@ -134,18 +134,16 @@ export const CourierBulkOrders = ({
     <ResultControl
       layout={layout}
       value={getCourierBulkOrderAction(order.id, actions)}
-      marked={isCourierBulkOrderMarked(order.id, actions)}
       name={order.customer?.name ?? `№${order.id}`}
       // Pochtasi qabul qilinmagan posilkani belgilab bo'lmaydi — so'rov baribir ketmaydi.
       disabled={busy || isCourierBulkAwaitingPost(order)}
       onChange={(action) => onSetAction(order, action)}
     />
   );
-  // «Belgilanmagan» — sukut «sotildi» qo'llanadigan qatorda; bu yerdan sotilmaydiganida (izohi bor) — yo'q.
+  // «Belgilanmagan» — natija tanlanmagan qator (yakunlashda o'zgarmaydi); pochtasi qabul qilinmaganida — yo'q (uni
+  // belgilab bo'lmaydi, o'z izohi bor). `getCourierBulkUnmarkedCount` bilan bir xil.
   const unmarkedBadge = (order: CourierBulkOrder) =>
-    isCourierBulkOrderMarked(order.id, actions) ||
-    isCourierBulkAwaitingPost(order) ||
-    getCourierBulkSellBlock(order, viewer) ? null : (
+    isCourierBulkOrderMarked(order.id, actions) || isCourierBulkAwaitingPost(order) ? null : (
       <Badge className="shrink-0">{t("list.unmarked")}</Badge>
     );
   // Bu yerdan yopilmaydigan qator — qisqa izoh: pochtasi qabul qilinmagan (6qypMFeT), eski mahsulot olinmagan

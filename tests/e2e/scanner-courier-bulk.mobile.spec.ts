@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { BULK_CANCEL_COMMENT, BULK_SOLD_COMMENT, mockCourierBulkApi, openCourierBulk } from "./support/floor";
+import { BULK_CANCEL_COMMENT, BULK_SOLD_COMMENT, markResult, mockCourierBulkApi, openCourierBulk } from "./support/floor";
 import { enterCode, expectNoHorizontalScroll, FAKE_CAMERA, openScannerFromBottomNav } from "./support/scannerCamera";
 
 /**
  * 390px: `/courier-bulk` — markaziy «Skaner» kamerani shu sahifa ustida ochadi (sahifada «Kamera bilan
  * skanerlash» yo'q). Kamera ichida «Bekor / Ertaga» rejimi; «Ro'yxat» — «Skanerlanganlar · 2 / 3 · …»;
- * «Tugatish» — kamera yopiladi, yakunlash sahifadagi «Kunni yakunlash» (tasdiq) bilan.
+ * «Tugatish» — kamera yopiladi, yakunlash sahifadagi «Kunni yakunlash» (tasdiq) bilan. Sukut natija yo'q: skanerlanmagan
+ * qator belgilanmagan qoladi, «Sotildi» qatorda alohida tanlanadi (ega 2026-11-05).
  */
 test.use(FAKE_CAMERA);
 
@@ -31,7 +32,7 @@ test.describe("Tezkor amal — kamera rejimlari, 390px", () => {
     await camera.getByRole("button", { name: "Ro'yxat" }).click();
     const sheet = page.getByRole("dialog", { name: "Skanerlanganlar" });
     await expect(sheet.getByText("2 / 3 · 1 ta bekor, 1 ta ertaga")).toBeVisible();
-    await expect(sheet.getByText("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.")).toBeVisible();
+    await expect(sheet.getByText("Belgilanmagan 1 ta buyurtma o'zgarmaydi.")).toBeVisible();
     await sheet.getByRole("button", { name: "Tugatish" }).click();
     await expect(camera).toBeHidden();
 
@@ -40,6 +41,8 @@ test.describe("Tezkor amal — kamera rejimlari, 390px", () => {
       page.getByRole("radiogroup", { name: `${name}: natija` }).getByRole("radio", { name: option });
     await expect(row("Feruza Mirzayeva", "Bekor")).toHaveAttribute("aria-checked", "true");
     await expect(row("Ali Valiyev", "Ertaga")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" }).getByRole("radio", { checked: true })).toHaveCount(0);
+    await markResult(page, "Dilnoza Rahimova", "Sotildi");
 
     await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
     const confirm = page.getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });

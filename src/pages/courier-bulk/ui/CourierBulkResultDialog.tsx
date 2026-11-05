@@ -19,7 +19,10 @@ import type { CourierBulkFailure, CourierBulkOrder } from "../model/courierBulk"
 export type CourierBulkResult = {
   failures: ReadonlyArray<CourierBulkFailure<CourierBulkOrder>>;
   succeededCount: number;
-  /** So'rov ketmay qolganlar haqida tayyor matnlar: ertaga, almashtirish, kuryer qo'lida, pochtasi qabul qilinmagan. */
+  /**
+   * So'rov ketmay qolganlar haqida tayyor matnlar: belgilanmagan, ertaga, almashtirish, kuryer qo'lida, pochtasi qabul
+   * qilinmagan.
+   */
   keptNotes: readonly string[];
 };
 

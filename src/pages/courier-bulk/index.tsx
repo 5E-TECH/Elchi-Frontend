@@ -3,8 +3,19 @@ import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useSelector } from "react-redux";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Check, CircleX, PackageCheck, Repeat, RotateCcw, Truck, UserRound, Zap } from "lucide-react";
-import { Trans, useTranslation } from "react-i18next";
+import {
+  CalendarClock,
+  Check,
+  CircleDashed,
+  CircleX,
+  PackageCheck,
+  Repeat,
+  RotateCcw,
+  Truck,
+  UserRound,
+  Zap,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
 import type { OrderListItem } from "../../entities/order/types/order";
 import { createIdempotencyKey } from "../../entities/warehouse/lib/idempotency";
@@ -35,7 +46,6 @@ import {
   hasAllCourierBulkProofs,
   isCourierBulkAwaitingPost,
   isCourierBulkOrderMarked,
-  isCourierBulkSellBlocked,
   mergeCourierBulkOrders,
   runLimited,
   splitCourierBulkTasksByProof,
@@ -67,7 +77,7 @@ type ProofStep = {
 };
 
 /** Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`). */
-type KeptCounts = { tomorrow: number; replacement: number; courierHeld: number; awaitingPost: number };
+type KeptCounts = { unmarked: number; tomorrow: number; replacement: number; courierHeld: number; awaitingPost: number };
 
 const COURIER_BULK_QUERY_KEY = ["orders", "courier", "bulk", "waiting"] as const;
 
@@ -102,9 +112,10 @@ const fetchAllCourierWaitingOrders = async () => {
 
 /**
  * «TEZKOR AMAL» — `/courier-bulk` (kuryer; REGIONAL/HYBRID menejer — filial kuryerlarining kutilayotganlari, backend
- * filialga cheklaydi). Kun yakunida har buyurtma natijasi belgilanadi: belgilanmagani sotiladi, «Bekor» — bekor
- * qilinadi, «Ertaga» — so'rovsiz kutilmoqda holatida qoladi (FE-CB-09). Belgilash: qatordagi «Sotildi | Bekor |
- * Ertaga», USB skaner yoki kamera (skanerlash rejimi bo'yicha).
+ * filialga cheklaydi). Kun yakunida har buyurtma natijasi belgilanadi: «Sotildi» — sotiladi, «Bekor» — bekor
+ * qilinadi, «Ertaga» — so'rovsiz kutilmoqda holatida qoladi (FE-CB-09). Sukut natija YO'Q (ega 2026-11-05):
+ * belgilanmagani ham so'rovsiz kutilmoqda qoladi. Belgilash: qatordagi «Sotildi | Bekor | Ertaga», USB skaner yoki
+ * kamera (skanerlash rejimi bo'yicha).
  *
  * Maketlar: `courier-courier-bulk-main` (ikkala rol uchun bitta tartib; menejerda faqat «Kutilayotgan» izohi
  * boshqa — Q8), tasdiq oynasi `courier-courier-bulk-confirm-dialog` (`useConfirm`).
@@ -173,7 +184,7 @@ const CourierBulkPage = () => {
     useRecentScans();
 
   const counts = useMemo(() => getCourierBulkCounts(orders, actions, viewer), [actions, orders, viewer]);
-  const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions, viewer), [actions, orders, viewer]);
+  const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions), [actions, orders]);
   const hasMarks = useMemo(() => orders.some((order) => isCourierBulkOrderMarked(order.id, actions)), [actions, orders]);
   const isInitialLoading = isLoading && orders.length === 0;
   const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending;
@@ -301,15 +312,6 @@ const CourierBulkPage = () => {
     [actions, language, scannedOrders, t, unmarkScannedOrder],
   );
   const num = (value: number) => formatNumberLocalized(value, { language });
-  // «Skanerlanmagan N ta … sotilgan deb belgilanadi» — bekor / ertaga belgisi yo'qlar (skan yoki qatordagi tanlov);
-  // bu yerdan sotilmaydiganlar (pochtasi qabul qilinmagan, almashtirish, menejerda kuryer qo'lidagi) kirmaydi.
-  const unscannedCount = orders.filter(
-    (order) =>
-      actions[order.id] !== "cancel" &&
-      actions[order.id] !== "tomorrow" &&
-      !isCourierBulkAwaitingPost(order) &&
-      !isCourierBulkSellBlocked(order, viewer),
-  ).length;
 
   useOrderQrScanner({
     orders,
@@ -330,7 +332,8 @@ const CourierBulkPage = () => {
       mode: scanMode,
       onModeChange: (value) => setScanMode(value === "tomorrow" ? "tomorrow" : "cancel"),
       progress: { done: scannedOrders.length, total: orders.length, label: t("camera.meter") },
-      note: { title: t("camera.unscanned", { value: num(unscannedCount) }) },
+      // Belgilanmaganlar yakunlashda o'zgarmaydi (sukut natija yo'q) — kamerada ham shu aytiladi.
+      note: { title: t("camera.unmarked", { value: num(unmarkedCount) }) },
       list: cameraList,
       listTitle: t("camera.listTitle"),
       listDescription: t("camera.listDescription", {
@@ -339,7 +342,7 @@ const CourierBulkPage = () => {
         cancel: num(scannedCancelCount),
         tomorrow: num(scannedTomorrowCount),
       }),
-      listNote: t("camera.unscanned", { value: num(unscannedCount) }),
+      listNote: t("camera.unmarked", { value: num(unmarkedCount) }),
       finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
     },
   });
@@ -355,6 +358,7 @@ const CourierBulkPage = () => {
   /** Natija xabaridagi «… qoldi» qatorlari — so'rov ketmagan buyurtmalar, sababi bilan. */
   const keptNotes = (kept: KeptCounts) =>
     [
+      kept.unmarked > 0 ? t("finalizeUnmarkedKept", { count: kept.unmarked }) : "",
       kept.tomorrow > 0 ? t("finalizeTomorrowKept", { count: kept.tomorrow }) : "",
       kept.replacement > 0 ? t("finalizeReplacementKept", { count: kept.replacement }) : "",
       kept.courierHeld > 0 ? t("finalizeCourierHeldKept", { count: kept.courierHeld }) : "",
@@ -418,8 +422,8 @@ const CourierBulkPage = () => {
 
     setIsFinalizing(false);
     setProofStep((previous) => (previous ? { ...previous, open: false } : previous));
-    // Bajarilganlar ro'yxatdan darhol olib tashlanadi (yangilanishni kutmasdan): aks holda ular bir lahza belgisiz —
-    // sukut «Sotildi» bilan — qolib, «eski holatiga qaytdi»dek ko'rinardi.
+    // Bajarilganlar ro'yxatdan darhol olib tashlanadi (yangilanishni kutmasdan): aks holda ular bir lahza belgisiz
+    // qolib, «eski holatiga qaytdi»dek ko'rinardi.
     if (succeededOrderIds.size > 0) {
       queryClient.setQueryData<CourierBulkOrder[]>(COURIER_BULK_QUERY_KEY, (previous) =>
         previous?.filter((order) => !succeededOrderIds.has(String(order.id))),
@@ -456,12 +460,13 @@ const CourierBulkPage = () => {
   const handleFinalize = async () => {
     if (orders.length === 0 || isBusy || managerCannotFinalize) return;
 
-    // "Ertaga" — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09).
+    // "Ertaga" va belgilanmagan — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09; sukut natija yo'q).
     const tasks = getCourierBulkFinalizeTasks(orders, actions, viewer);
-    // So'rov ketmaydiganlar sababi bilan: «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim» tasdig'i
-    // «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04); pochtasi qabul qilinmagan (6qypMFeT).
+    // So'rov ketmaydiganlar sababi bilan: belgilanmagan; «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim»
+    // tasdig'i «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04); pochtasi qabul qilinmagan (6qypMFeT).
     const keptOrders = getCourierBulkKept(orders, actions, viewer);
     const kept: KeptCounts = {
+      unmarked: keptOrders.unmarked.length,
       tomorrow: keptOrders.tomorrow.length,
       replacement: keptOrders.replacement.length,
       courierHeld: keptOrders.courierHeld.length,
@@ -481,23 +486,11 @@ const CourierBulkPage = () => {
     // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
     const cancelTasks = tasks.filter((task) => task.action === "cancel");
     const soldCount = tasks.length - cancelTasks.length;
-    const unmarked = getCourierBulkUnmarkedCount(orders, actions, viewer);
     const consequences: ConfirmConsequence[] = [];
     if (soldCount > 0) {
       consequences.push({
         text: t("confirmSold", { count: soldCount }),
-        hint:
-          unmarked > 0 ? (
-            <Trans
-              t={t}
-              ns="courierBulk"
-              i18nKey="confirm.soldUnmarked"
-              count={unmarked}
-              components={{ strong: <strong className="font-semibold text-text" /> }}
-            />
-          ) : (
-            t("confirm.soldMarked")
-          ),
+        hint: t("confirm.soldMarked"),
         tone: "success",
         icon: PackageCheck,
       });
@@ -519,6 +512,13 @@ const CourierBulkPage = () => {
         hint: t("confirmTomorrowHint"),
         tone: "warning",
         icon: CalendarClock,
+      });
+    }
+    if (kept.unmarked > 0) {
+      consequences.push({
+        text: t("confirmUnmarked", { count: kept.unmarked }),
+        hint: t("confirmUnmarkedHint"),
+        icon: CircleDashed,
       });
     }
     if (kept.replacement > 0) {

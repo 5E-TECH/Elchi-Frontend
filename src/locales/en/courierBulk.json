@@ -16,6 +16,9 @@
   "confirmCancelOneHint": "No. {{id}} · {{name}} — moved to the cancelled status",
   "confirmTomorrow": "{{count}} kept for tomorrow",
   "confirmTomorrowHint": "Stay in the waiting status",
+  "confirmUnmarked_one": "{{count}} unmarked — stays unchanged",
+  "confirmUnmarked_other": "{{count}} unmarked — stay unchanged",
+  "confirmUnmarkedHint": "Stay in the waiting status",
   "confirmAction": "Confirm",
   "confirmBack": "Back",
   "scanMissingTitle": "Order not found",
@@ -34,6 +37,8 @@
   "finalizeNothing": "Nothing to finalize — orders postponed to tomorrow stay waiting.",
   "finalizeTomorrowKept_one": "{{count}} order postponed to tomorrow.",
   "finalizeTomorrowKept_other": "{{count}} orders postponed to tomorrow.",
+  "finalizeUnmarkedKept_one": "{{count}} unmarked order left unchanged.",
+  "finalizeUnmarkedKept_other": "{{count}} unmarked orders left unchanged.",
   "page": {
     "clearMarks": "Clear marks",
     "finalize": "Finish the day"
@@ -45,7 +50,7 @@
     "pendingCourier": "Assigned to you, not finished",
     "pendingManager": "With branch couriers, not finished",
     "sold": "Will be sold",
-    "soldUnmarked": "<strong>{{count}}</strong> unmarked, by default",
+    "soldUnmarked": "Unmarked: <strong>{{count}}</strong> — stay unchanged",
     "cancel": "Will be cancelled",
     "cancelHint": "Moved to the cancelled status",
     "tomorrow": "Kept for tomorrow",
@@ -68,7 +73,7 @@
   "list": {
     "title": "Waiting orders",
     "titleShort": "Waiting",
-    "description": "Unmarked orders will be sold",
+    "description": "Unmarked orders stay unchanged",
     "search": "Name, phone or number",
     "searchLabel": "Search orders by name, phone or number",
     "filterLabel": "Filter by result",
@@ -104,7 +109,6 @@
     "emptyHint": "Orders in the waiting status appear here."
   },
   "confirm": {
-    "soldUnmarked": "<strong>{{count}} unmarked</strong>, by default",
     "soldMarked": "Moved to the sold status",
     "irreversibleTitle": "This action cannot be undone",
     "irreversibleText_one": "The status of {{count}} order changes immediately.",
@@ -132,7 +136,7 @@
   "camera": {
     "context": "Waiting orders: {{value}}",
     "meter": "scanned",
-    "unscanned": "Unscanned orders ({{value}}) will be marked as sold.",
+    "unmarked": "Unmarked orders ({{value}}) stay unchanged.",
     "listTitle": "Scanned",
     "listDescription": "{{done}} / {{total}} · cancel: {{cancel}}, tomorrow: {{tomorrow}}",
     "markedCancel": "Marked for cancellation №{{id}} · {{name}}",

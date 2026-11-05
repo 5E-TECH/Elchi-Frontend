@@ -15,6 +15,8 @@
   "confirmCancelOneHint": "№{{id}} · {{name}} — bekor qilingan holatiga o'tadi",
   "confirmTomorrow": "{{count}} tasi ertaga qoladi",
   "confirmTomorrowHint": "Kutilmoqda holatida qoladi",
+  "confirmUnmarked": "{{count}} tasi belgilanmagan — o'zgarmaydi",
+  "confirmUnmarkedHint": "Kutilmoqda holatida qoladi",
   "confirmAction": "Tasdiqlash",
   "confirmBack": "Orqaga",
   "scanMissingTitle": "Buyurtma topilmadi",
@@ -31,6 +33,7 @@
   "finalizeErrorTitle": "Yakunlashda xatolik",
   "finalizeNothing": "Yakunlanadigan buyurtma yo'q — ertaga qoldirilganlar kutilmoqda holatida qoladi.",
   "finalizeTomorrowKept": "{{count}} ta buyurtma ertaga qoldirildi.",
+  "finalizeUnmarkedKept": "{{count}} ta belgilanmagan buyurtma o'zgarmadi.",
   "page": {
     "clearMarks": "Belgilarni tozalash",
     "finalize": "Kunni yakunlash"
@@ -42,7 +45,7 @@
     "pendingCourier": "Sizga biriktirilgan, yakunlanmagan",
     "pendingManager": "Filial kuryerlarida, yakunlanmagan",
     "sold": "Sotiladi",
-    "soldUnmarked": "<strong>{{count}} tasi</strong> belgilanmagan, sukut bo'yicha",
+    "soldUnmarked": "Belgilanmagan: <strong>{{count}} ta</strong> — o'zgarmaydi",
     "cancel": "Bekor qilinadi",
     "cancelHint": "Bekor qilingan holatiga o'tadi",
     "tomorrow": "Ertaga qoladi",
@@ -65,7 +68,7 @@
   "list": {
     "title": "Kutilayotgan buyurtmalar",
     "titleShort": "Kutilayotganlar",
-    "description": "Belgilanmaganlari sotiladi",
+    "description": "Belgilanmaganlari o'zgarmaydi",
     "search": "Ism, telefon yoki raqam",
     "searchLabel": "Buyurtmalarni ism, telefon yoki raqam bo'yicha qidirish",
     "filterLabel": "Natija bo'yicha filtr",
@@ -101,7 +104,6 @@
     "emptyHint": "Kutilmoqda holatidagi buyurtmalar shu yerda chiqadi."
   },
   "confirm": {
-    "soldUnmarked": "<strong>{{count}} tasi belgilanmagan</strong>, sukut bo'yicha",
     "soldMarked": "Sotilgan holatiga o'tadi",
     "irreversibleTitle": "Bu amalni ortga qaytarib bo'lmaydi",
     "irreversibleText": "{{count}} ta buyurtma holati darhol o'zgaradi."
@@ -125,7 +127,7 @@
   "camera": {
     "context": "{{value}} ta kutilayotgan buyurtma",
     "meter": "ta skanerlandi",
-    "unscanned": "Skanerlanmagan {{value}} ta buyurtma sotilgan deb belgilanadi.",
+    "unmarked": "Belgilanmagan {{value}} ta buyurtma o'zgarmaydi.",
     "listTitle": "Skanerlanganlar",
     "listDescription": "{{done}} / {{total}} · {{cancel}} ta bekor, {{tomorrow}} ta ertaga",
     "markedCancel": "Bekor qilishga belgilandi №{{id}} · {{name}}",

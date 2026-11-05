@@ -9,6 +9,8 @@ import { getActiveScanTarget, resetScanTargets } from "../../shared/lib/scanner/
  * «Kunni yakunlash» — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, maket `courier-courier-bulk-confirm-dialog`):
  * oyna nima bo'lishini sanab beradi, «Orqaga» — hech narsa yuborilmaydi, «Tasdiqlash» — buyurtmalar yakunlanadi.
  * Qator natijasi «Sotildi | Bekor | Ertaga» (maket `courier-courier-bulk-main`), «Ertaga» so'rov yubormaydi.
+ * Sukut natija YO'Q (ega 2026-11-05): belgilanmagan qator ham so'rovsiz kutilmoqda holatida qoladi — sotiladigani
+ * aniq «Sotildi» bilan belgilanadi.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -63,6 +65,10 @@ const rowOf = (name: string) => {
   return group.closest("tr") as HTMLElement;
 };
 
+/** Qatordagi natija varianti («{name}: natija» guruhida). */
+const resultOf = (name: string, option: "Sotildi" | "Bekor" | "Ertaga") =>
+  within(screen.getByRole("radiogroup", { name: `${name}: natija` })).getByRole("radio", { name: option });
+
 describe("CourierBulkPage — «Kunni yakunlash»", () => {
   beforeEach(() => {
     mocks.get.mockReset();
@@ -78,11 +84,17 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Ali")).toBeInTheDocument();
+    // Sukut natija yo'q — sotiladiganlari aniq «Sotildi» bilan belgilanadi.
+    await user.click(resultOf("Ali", "Sotildi"));
+    await user.click(resultOf("Vali", "Sotildi"));
     await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     expect(dialog).toHaveTextContent("2 ta buyurtma: quyidagilar bajariladi");
-    expect(dialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
-    expect(dialog).toHaveTextContent("2 tasi belgilanmagan, sukut bo'yicha");
+    expect(within(dialog).getByText("2 ta sotilgan deb belgilanadi").closest("li")).toHaveTextContent(
+      "Sotilgan holatiga o'tadi",
+    );
+    // Hammasi belgilangan — «belgilanmagan» qatori yo'q.
+    expect(dialog).not.toHaveTextContent("belgilanmagan");
     expect(within(dialog).getByRole("note")).toHaveTextContent("Bu amalni ortga qaytarib bo'lmaydi");
     expect(within(dialog).getByRole("note")).toHaveTextContent("2 ta buyurtma holati darhol o'zgaradi.");
 
@@ -97,6 +109,8 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await user.click(resultOf("Ali", "Sotildi"));
+    await user.click(resultOf("Vali", "Sotildi"));
     await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
@@ -117,11 +131,13 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Ali")).toBeInTheDocument();
-    // Boshida hammasi belgilanmagan (sukut — «sotildi»).
+    // Boshida hammasi belgilanmagan (sukut natija yo'q — hech qaysi variant tanlanmagan).
     expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(resultOf("Ali", "Sotildi")).not.toBeChecked();
 
     await user.click(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" }));
     await user.click(within(screen.getByRole("radiogroup", { name: "Vali: natija" })).getByRole("radio", { name: "Ertaga" }));
+    await user.click(resultOf("Soli", "Sotildi"));
 
     expect(within(rowOf("Ali")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
     expect(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" })).toBeChecked();
@@ -129,8 +145,11 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     expect(dialog).toHaveTextContent("3 ta buyurtma: quyidagilar bajariladi");
-    expect(dialog).toHaveTextContent("1 ta sotilgan deb belgilanadi");
-    expect(dialog).toHaveTextContent("1 tasi belgilanmagan, sukut bo'yicha");
+    expect(within(dialog).getByText("1 ta sotilgan deb belgilanadi").closest("li")).toHaveTextContent(
+      "Sotilgan holatiga o'tadi",
+    );
+    // Hammasi belgilangan — «belgilanmagan» qatori yo'q.
+    expect(dialog).not.toHaveTextContent("belgilanmagan");
     expect(dialog).toHaveTextContent("1 ta bekor qilinadi");
     expect(dialog).toHaveTextContent("№10 · Ali — bekor qilingan holatiga o'tadi");
     expect(dialog).toHaveTextContent("1 tasi ertaga qoladi");
@@ -151,22 +170,98 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     expect(await screen.findByText(/1 ta buyurtma ertaga qoldirildi\./)).toBeInTheDocument();
   });
 
-  it("belgilanmagan qatorda «Sotildi» bosilsa — aniq belgi («Belgilanmagan» yo'qoladi)", async () => {
+  it("belgilanmagan qatorda hech qaysi natija tanlanmagan; «Sotildi» bosilsa — belgi qo'yiladi («Belgilanmagan» yo'qoladi)", async () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Ali")).toBeInTheDocument();
-    const sold = within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Sotildi" });
-    expect(sold).toBeChecked();
+    // Sukut natija yo'q: «Sotildi» ham oldindan tanlanmagan, belgilanmaganlar «Sotiladi» ga kirmaydi.
+    for (const option of ["Sotildi", "Bekor", "Ertaga"] as const) expect(resultOf("Ali", option)).not.toBeChecked();
+    expect(screen.getByText("Belgilanmaganlari o'zgarmaydi")).toBeInTheDocument();
+    const stats = screen.getByRole("group", { name: "Kun yakuni" });
+    expect(stats).toHaveTextContent(/Sotiladi\s*0\s*ta\s*Belgilanmagan: 2 ta — o'zgarmaydi/);
+
+    const sold = resultOf("Ali", "Sotildi");
     await user.click(sold);
 
+    expect(sold).toBeChecked();
+    expect(stats).toHaveTextContent(/Sotiladi\s*1\s*ta\s*Belgilanmagan: 1 ta — o'zgarmaydi/);
     expect(within(rowOf("Ali")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
     expect(within(rowOf("Vali")).getByText("Belgilanmagan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Belgilarni tozalash" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Belgilarni tozalash" }));
     expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(resultOf("Ali", "Sotildi")).not.toBeChecked();
+    expect(stats).toHaveTextContent(/Sotiladi\s*0\s*ta\s*Belgilanmagan: 2 ta — o'zgarmaydi/);
     expect(screen.getByRole("button", { name: "Belgilarni tozalash" })).toBeDisabled();
+  });
+
+  it("faqat «Sotildi» belgilanganlar sotiladi — belgilanmaganlari so'rovsiz kutilmoqda qoladi (sukut natija yo'q)", async () => {
+    // Ega holati (2026-11-05): bir qismi «Sotildi», bir qismi «Bekor» / «Ertaga», qolgani belgilanmagan — yakunlashda
+    // belgilanmaganlari «sotildi» bo'lib ketmasin.
+    respondWith([
+      order("10", "Ali"),
+      order("11", "Vali"),
+      order("12", "Soli"),
+      order("13", "Gani"),
+      order("14", "Hasan"),
+      order("15", "Karim"),
+    ]);
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await user.click(resultOf("Ali", "Sotildi"));
+    await user.click(resultOf("Vali", "Sotildi"));
+    await user.click(resultOf("Soli", "Bekor"));
+    await user.click(resultOf("Gani", "Ertaga"));
+    // Hasan (№14) va Karim (№15) — belgilanmagan.
+
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    expect(dialog).toHaveTextContent("6 ta buyurtma: quyidagilar bajariladi");
+    expect(dialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
+    expect(dialog).toHaveTextContent("1 ta bekor qilinadi");
+    expect(dialog).toHaveTextContent("1 tasi ertaga qoladi");
+    expect(within(dialog).getByText("2 tasi belgilanmagan — o'zgarmaydi").closest("li")).toHaveTextContent(
+      "Kutilmoqda holatida qoladi",
+    );
+    expect(within(dialog).getByRole("note")).toHaveTextContent("3 ta buyurtma holati darhol o'zgaradi.");
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(
+      await screen.findByText(
+        "3 ta buyurtma muvaffaqiyatli yakunlandi 2 ta belgilanmagan buyurtma o'zgarmadi. 1 ta buyurtma ertaga qoldirildi.",
+      ),
+    ).toBeInTheDocument();
+    expect(mocks.sell).toHaveBeenCalledTimes(2);
+    expect(mocks.sell.mock.calls.map(([call]) => call.orderId).sort()).toEqual(["10", "11"]);
+    expect(mocks.cancel).toHaveBeenCalledTimes(1);
+    expect(mocks.cancel).toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));
+    // «Ertaga» (Gani) va belgilanmaganlar (Hasan, Karim) — hech qanday so'rov yo'q.
+    for (const orderId of ["13", "14", "15"]) {
+      expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId }));
+      expect(mocks.cancel).not.toHaveBeenCalledWith(expect.objectContaining({ orderId }));
+    }
+  });
+
+  it("hech narsa belgilanmagan — tasdiq oynasi yo'q, so'rov ketmaydi, «o'zgarmadi» xabari", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
+
+    expect(
+      await screen.findByText("Yakunlanadigan buyurtma yo'q. 2 ta belgilanmagan buyurtma o'zgarmadi."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(mocks.sell).not.toHaveBeenCalled();
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    // Qatorlar belgisiz qoladi.
+    expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(resultOf("Ali", "Sotildi")).not.toBeChecked();
   });
 
   it("USB skaner: «Bekor qilish» rejimida buyurtma bekorga belgilanadi; topilmasa — xato qoladi", async () => {
@@ -204,6 +299,22 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     await user.clear(screen.getByRole("searchbox", { name: /qidirish/ }));
     await user.type(screen.getByRole("searchbox", { name: /qidirish/ }), "Hech kim");
     expect(screen.getByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(mocks.get.mock.calls.length).toBe(requests);
+
+    // «Natija» filtri — sukut natija yo'q: «Sotiladi» da faqat aniq «Sotildi» belgilangani, belgilanmagani — faqat
+    // «Belgilanmagan» da.
+    await user.clear(screen.getByRole("searchbox", { name: /qidirish/ }));
+    await user.click(resultOf("Ali", "Sotildi"));
+    const filter = screen.getByRole("combobox", { name: "Natija bo'yicha filtr" });
+    await user.click(filter);
+    await user.click(screen.getByRole("option", { name: "Sotiladi" }));
+    expect(screen.getByText("Ali")).toBeInTheDocument();
+    expect(screen.queryByText("Vali")).not.toBeInTheDocument();
+
+    await user.click(filter);
+    await user.click(screen.getByRole("option", { name: "Belgilanmagan" }));
+    expect(screen.queryByText("Ali")).not.toBeInTheDocument();
+    expect(screen.getByText("Vali")).toBeInTheDocument();
     expect(mocks.get.mock.calls.length).toBe(requests);
   });
 
@@ -265,6 +376,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
       ],
       mode: "cancel",
       progress: { done: 0, total: 3, label: "ta skanerlandi" },
+      // Belgilanmaganlar yakunlashda o'zgarmaydi (sukut natija yo'q).
+      note: { title: "Belgilanmagan 3 ta buyurtma o'zgarmaydi." },
+      listNote: "Belgilanmagan 3 ta buyurtma o'zgarmaydi.",
       listTitle: "Skanerlanganlar",
       finish: { label: "Tugatish" },
     });
@@ -295,7 +409,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
 
     await waitFor(() => expect(target().progress).toMatchObject({ done: 2, total: 3 }));
     expect(target().listDescription).toBe("2 / 3 · 1 ta bekor, 1 ta ertaga");
-    expect(target().listNote).toBe("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.");
+    // Soli belgilanmagan — o'zgarmaydi (sotilmaydi).
+    expect(target().listNote).toBe("Belgilanmagan 1 ta buyurtma o'zgarmaydi.");
+    expect(target().note).toEqual({ title: "Belgilanmagan 1 ta buyurtma o'zgarmaydi." });
     expect(target().list?.map((item) => [item.key, item.tone])).toEqual([
       ["11", "warning"],
       ["10", "danger"],
@@ -305,6 +421,8 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     // «Bekor qilish» — belgi olinadi, shu buyurtmani qayta skanerlash mumkin (takror deb rad etilmaydi).
     act(() => target().list![1].onUndo!());
     await waitFor(() => expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument());
+    // Belgisi olingan Ali yana belgilanmaganlar ichida.
+    await waitFor(() => expect(target().listNote).toBe("Belgilanmagan 2 ta buyurtma o'zgarmaydi."));
     await act(async () => {
       await target().onScan("tok-10-qr", "camera");
     });
@@ -328,8 +446,9 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     await waitFor(() => expect(target().progress).toMatchObject({ done: 1, total: 3 }));
     expect(target().list?.map((item) => item.key)).toEqual(["10"]);
     expect(target().listDescription).toBe("1 / 3 · 1 ta bekor, 0 ta ertaga");
-    // Qo'lda «Bekor» qilingan Vali sotilgan deb hisoblanmaydi.
-    expect(target().listNote).toBe("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.");
+    // Qo'lda «Bekor» qilingan Vali belgilanmaganlarga kirmaydi — faqat Soli o'zgarmaydi.
+    expect(target().listNote).toBe("Belgilanmagan 1 ta buyurtma o'zgarmaydi.");
+    expect(target().note).toEqual({ title: "Belgilanmagan 1 ta buyurtma o'zgarmaydi." });
   });
 
   it("topilmagan kod — xato signali matn bilan, belgi yo'q", async () => {

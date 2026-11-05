@@ -12,6 +12,9 @@ import { renderWithProviders } from "../../test/test-utils";
  * Tekshiriladi: isbot qadami faqat isbot kerak bo'lgan buyurtmalar uchun, isbotsiz «Yakunlash»
  * o'chiq, fayl sotish so'roviga boradi, qolganlari avvalgidek, isbotlilar ko'pi bilan 2 tadan
  * parallel, xato berganlar sababi bilan ro'yxatda, har so'rovda `X-Request-Source: courier-bulk`.
+ *
+ * Sukut natija yo'q (ega 2026-11-05): sotiladigan qatorlar «Sotildi» bilan aniq belgilanadi (`markSold`);
+ * belgilanmagan qator (isbot talab qilsa ham) isbot qadamiga kirmaydi, so'rovsiz kutilmoqda holatida qoladi.
  */
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), sell: vi.fn(), cancel: vi.fn() }));
@@ -50,10 +53,22 @@ const serve = (orders: ReturnType<typeof order>[]) =>
 
 const image = (name: string) => new File(["x"], name, { type: "image/jpeg" });
 
-/** USB skaner: tez kiritilgan belgilar + Enter (sukut rejim — «Bekor qilish»). */
+/** USB skaner: tez kiritilgan belgilar + Enter (boshlang'ich skanerlash rejimi — «Bekor qilish»). */
 const scan = (value: string) => {
   for (const key of value) fireEvent.keyDown(window, { key });
   fireEvent.keyDown(window, { key: "Enter" });
+};
+
+/**
+ * Qatorlarda «Sotildi»ni aniq belgilaydi — sukut natija yo'q (ega 2026-11-05): belgilanmagan qator yakunlashda
+ * o'zgarmaydi, sotilishi kerak bo'lganlari qo'lda belgilanadi.
+ */
+const markSold = async (user: ReturnType<typeof userEvent.setup>, ...names: string[]) => {
+  for (const name of names) {
+    const group = await screen.findByRole("radiogroup", { name: `${name}: natija` });
+    await user.click(within(group).getByRole("radio", { name: "Sotildi" }));
+    expect(within(group).getByRole("radio", { name: "Sotildi" })).toBeChecked();
+  }
 };
 
 const confirmFinalize = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -76,6 +91,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
+    await markSold(user, "Ali", "Vali");
     await confirmFinalize(user);
 
     await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
@@ -93,6 +109,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
+    await markSold(user, "Ali", "Vali");
     await confirmFinalize(user);
 
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -108,6 +125,10 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     await user.click(within(dialog).getByRole("button", { name: "Orqaga" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument());
     expect(mocks.sell).not.toHaveBeenCalled();
+    for (const name of ["Ali", "Vali"]) {
+      const group = screen.getByRole("radiogroup", { name: `${name}: natija` });
+      expect(within(group).getByRole("radio", { name: "Sotildi" })).toBeChecked();
+    }
   });
 
   it("isbot tanlangach sotish so'roviga fayl boradi; isbotsiz buyurtma avvalgidek", async () => {
@@ -115,6 +136,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
+    await markSold(user, "Ali", "Vali");
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     const group = within(dialog).getByRole("group", { name: "№10 · Ali" });
@@ -142,11 +164,112 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument());
   });
 
+  it("belgilanmagan qator (isbotli ham) — isbot qadamiga kirmaydi, so'rovsiz kutilmoqda qoladi", async () => {
+    // Sukut natija yo'q (ega 2026-11-05): #10, #13 — «Sotildi»; #11 (market sotishda isbot so'raydi) va #12 —
+    // belgilanmagan, yakunlashda kutilmoqda holatida qoladi.
+    serve([
+      order("10", "Ali", ["sell_any"]),
+      order("11", "Vali", ["sell_any"]),
+      order("12", "Gani"),
+      order("13", "Hasan"),
+    ]);
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    await markSold(user, "Ali", "Hasan");
+    // Belgilanmagan qatorda hech qaysi natija tanlanmagan.
+    for (const name of ["Vali", "Gani"]) {
+      const radios = within(screen.getByRole("radiogroup", { name: `${name}: natija` })).getAllByRole("radio");
+      expect(radios).toHaveLength(3);
+      for (const radio of radios) expect(radio).not.toBeChecked();
+    }
+
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    expect(confirmDialog).toHaveTextContent("4 ta buyurtma: quyidagilar bajariladi");
+    expect(confirmDialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
+    expect(confirmDialog).toHaveTextContent("Sotilgan holatiga o'tadi");
+    expect(confirmDialog).toHaveTextContent("2 tasi belgilanmagan — o'zgarmaydi");
+    expect(confirmDialog).toHaveTextContent("Kutilmoqda holatida qoladi");
+    expect(within(confirmDialog).getByRole("note")).toHaveTextContent("2 ta buyurtma holati darhol o'zgaradi.");
+    await user.click(within(confirmDialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
+    expect(dialog).toHaveTextContent("1 ta buyurtma uchun market rasm yoki video isbot talab qiladi");
+    expect(within(dialog).getByRole("group", { name: "№10 · Ali" })).toBeInTheDocument();
+    // #11 ham isbot talab qiladi, lekin belgilanmagan — undan isbot so'ralmaydi.
+    expect(within(dialog).queryByRole("group", { name: "№11 · Vali" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("group", { name: "№12 · Gani" })).not.toBeInTheDocument();
+    expect(dialog).toHaveTextContent("Qolgan 1 ta buyurtma isbotsiz yakunlanadi.");
+    expect(dialog).toHaveTextContent("Isbot tanlandi: 0 / 1");
+
+    const proof = image("isbot_10.jpg");
+    await user.upload(proofInput(within(dialog).getByRole("group", { name: "№10 · Ali" })), proof);
+    expect(dialog).toHaveTextContent("Isbot tanlandi: 1 / 1");
+    await user.click(within(dialog).getByRole("button", { name: "Yakunlash" }));
+
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
+    expect(mocks.sell).toHaveBeenCalledWith({
+      orderId: "10",
+      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0, proof },
+      headers: BULK_HEADERS,
+    });
+    expect(mocks.sell).toHaveBeenCalledWith({
+      orderId: "13",
+      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
+      headers: BULK_HEADERS,
+    });
+    // Belgilanmaganlar — hech qanday so'rov yo'q.
+    for (const orderId of ["11", "12"]) {
+      expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId }));
+    }
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
+    expect(await screen.findByText(/2 ta belgilanmagan buyurtma o'zgarmadi\./)).toBeInTheDocument();
+    // Yakunlangandan keyin ham belgilanmaganlar uchun kechikkan so'rov yo'q.
+    expect(mocks.sell).toHaveBeenCalledTimes(2);
+  });
+
+  it("isbot faqat belgilanmagan qatorga kerak bo'lsa — isbot qadamisiz darhol yakunlanadi", async () => {
+    // #10 — market sotishda isbot so'raydi, lekin belgilanmagan: isbot qadamini ochmaydi, so'rov ketmaydi;
+    // #11 — «Sotildi», isbotsiz darhol yakunlanadi.
+    serve([order("10", "Ali", ["sell_any"]), order("11", "Vali")]);
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    await markSold(user, "Vali");
+    const radios = within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getAllByRole("radio");
+    expect(radios).toHaveLength(3);
+    for (const radio of radios) expect(radio).not.toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    expect(confirmDialog).toHaveTextContent("1 ta sotilgan deb belgilanadi");
+    expect(confirmDialog).toHaveTextContent("1 tasi belgilanmagan — o'zgarmaydi");
+    expect(within(confirmDialog).getByRole("note")).toHaveTextContent("1 ta buyurtma holati darhol o'zgaradi.");
+    await user.click(within(confirmDialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    // Isbot qadami ochilsa isbot tanlanmaguncha so'rov ketmasdi — so'rov ketgani qadam yo'qligini bildiradi.
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument();
+    expect(mocks.sell).toHaveBeenCalledWith({
+      orderId: "11",
+      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
+      headers: BULK_HEADERS,
+    });
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
+    expect(await screen.findByText(/1 ta belgilanmagan buyurtma o'zgarmadi\./)).toBeInTheDocument();
+    expect(mocks.sell).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument();
+  });
+
   it("10 MB dan katta fayl rad etiladi — sababi maydon ostida, «Yakunlash» o'chiqligicha", async () => {
     serve([order("10", "Ali", ["sell_any"])]);
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
+    await markSold(user, "Ali");
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     const group = within(dialog).getByRole("group", { name: "№10 · Ali" });
@@ -171,6 +294,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(await screen.findByText("Vali")).toBeInTheDocument();
     scan("TOKEN-11");
     expect(await screen.findByText("Vali bekor qilishga belgilandi")).toBeInTheDocument();
+    await markSold(user, "Ali", "Gani");
 
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -222,6 +346,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
 
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
+    await markSold(user, ...[...proofOrders, ...plainOrders].map(({ customer }) => customer.name));
     await confirmFinalize(user);
 
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -251,6 +376,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
+    await markSold(user, "Ali", "Vali", "Gani");
     await confirmFinalize(user);
     const proofDialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     await user.upload(proofInput(within(proofDialog).getByRole("group", { name: "№11 · Vali" })), image("isbot_11.jpg"));

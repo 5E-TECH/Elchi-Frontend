@@ -76,6 +76,10 @@ export const mergeCourierBulkOrders = (pages: CourierBulkOrder[][]): CourierBulk
   return [...byId.values()];
 };
 
+/**
+ * Natijalar soni. Belgilanmagan buyurtma hech qaysi natijaga kirmaydi (faqat `total`) — sukut natija yo'q, u
+ * yakunlashda o'zgarmaydi (ega 2026-11-05: «default hech nimada turmasligi kerak»).
+ */
 export const getCourierBulkCounts = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,
@@ -83,10 +87,10 @@ export const getCourierBulkCounts = (
 ): CourierBulkCounts => {
   return orders.reduce<CourierBulkCounts>(
     (accumulator, order) => {
-      const action = actions[order.id] ?? "sold";
+      const action = getCourierBulkOrderAction(order.id, actions);
       accumulator.total += 1;
       // Pochtasi qabul qilinmagan posilka (6qypMFeT) hech qaysi natijaga kirmaydi — so'rov ketmaydi.
-      if (isCourierBulkAwaitingPost(order)) return accumulator;
+      if (isCourierBulkAwaitingPost(order) || action === null) return accumulator;
       // lQjt6sKP: eski mahsulot olinmagan almashtirish bu yerdan sotilmaydi — «Sotiladi»ga qo'shilmaydi
       // (tasdiq oynasidagi soldCount bilan bir xil); «Kutilayotgan» (total) da qoladi — buyurtma WAITING.
       // Menejerda kuryer qo'lidagi buyurtma ham shunday (LC-04).
@@ -98,10 +102,11 @@ export const getCourierBulkCounts = (
   );
 };
 
+/** Qatorga qo'yilgan belgi; belgilanmagan — `null` (sukut «sotildi» yo'q). */
 export const getCourierBulkOrderAction = (
   orderId: string,
   actions: Record<string, CourierBulkAction>,
-): CourierBulkAction => actions[orderId] ?? "sold";
+): CourierBulkAction | null => actions[orderId] ?? null;
 
 const normalizeStatus = (value: unknown) =>
   typeof value === "string" ? value.trim().toLowerCase().replaceAll("_", " ") : "";
@@ -142,13 +147,15 @@ export const getCourierBulkSellBlock = (
 export const isCourierBulkSellBlocked = (order: unknown, viewer: CourierBulkViewer = "courier") =>
   getCourierBulkSellBlock(order, viewer) !== null;
 
-/** «Sotildi» (aniq yoki sukut) belgisidagi, lekin bu yerdan sotib bo'lmaydigan almashtirish buyurtmalari. */
+/** «Sotildi» belgisidagi, lekin bu yerdan sotib bo'lmaydigan almashtirish buyurtmalari. */
 export const getCourierBulkReplacementHeld = <T extends { id: string }>(
   orders: T[],
   actions: Record<string, CourierBulkAction>,
 ): T[] => getCourierBulkKept(orders, actions).replacement;
 
 export type CourierBulkKept<T> = {
+  /** Belgilanmagan — so'rovsiz kutilmoqda qoladi (sukut natija yo'q). */
+  unmarked: T[];
   /** «Ertaga» belgisi — so'rovsiz kutilmoqda qoladi (FE-CB-09). */
   tomorrow: T[];
   /** «Sotildi», lekin almashtirish — «Buyurtmalar»dan sotiladi. */
@@ -168,13 +175,17 @@ export const getCourierBulkKept = <T extends { id: string }>(
   actions: Record<string, CourierBulkAction>,
   viewer: CourierBulkViewer = "courier",
 ): CourierBulkKept<T> => {
-  const kept: CourierBulkKept<T> = { tomorrow: [], replacement: [], courierHeld: [], awaitingPost: [] };
+  const kept: CourierBulkKept<T> = { unmarked: [], tomorrow: [], replacement: [], courierHeld: [], awaitingPost: [] };
   orders.forEach((order) => {
     if (isCourierBulkAwaitingPost(order)) {
       kept.awaitingPost.push(order);
       return;
     }
     const action = getCourierBulkOrderAction(order.id, actions);
+    if (action === null) {
+      kept.unmarked.push(order);
+      return;
+    }
     if (action === "tomorrow") {
       kept.tomorrow.push(order);
       return;
@@ -194,6 +205,9 @@ export const getCourierBulkKept = <T extends { id: string }>(
  * buyurtmani qabul qiladi, bu ro'yxat esa faqat WAITING — ya'ni har bir
  * "ertaga" doim 400 berardi va butun yakunlash "xatolik" bilan tugardi.
  *
+ * Belgilanmagan buyurtma uchun ham so'rov YUBORILMAYDI — sukut natija yo'q (ega 2026-11-05): ilgari belgilanmagani
+ * «sotildi» bo'lib ketardi, 10 tasini «Sotildi» belgilab yakunlasa, qolgan belgilanmaganlari ham sotilardi.
+ *
  * Eski mahsulot olinmagan almashtirish buyurtmasi (menejerda — kuryer qo'lidagi ham) «sotildi» bo'lib yuborilmaydi
  * (`isCourierBulkSellBlocked`); pochtasi qabul qilinmagan posilka umuman yuborilmaydi (`isCourierBulkAwaitingPost`).
  */
@@ -205,19 +219,16 @@ export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   orders.flatMap((order) => {
     if (isCourierBulkAwaitingPost(order)) return [];
     const action = getCourierBulkOrderAction(order.id, actions);
-    if (action === "tomorrow") return [];
+    if (action === null || action === "tomorrow") return [];
     if (action === "sold" && isCourierBulkSellBlocked(order, viewer)) return [];
     return [{ order, action }];
   });
 
 /**
  * Yakunlashdan keyingi belgilar: muvaffaqiyatli bajarilganlar olib
- * tashlanadi, qolganlari (xato bergan buyurtmalar va "ertaga") SAQLANADI.
- *
- * ⚠️ "Ertaga" belgisi o'chirilmaydi: belgilanmagan buyurtma sukut bo'yicha
- * "sotildi" hisoblanadi, ya'ni tugma qayta bosilsa ertaga qoldirilganlar
- * sotilib ketardi. Xato bergan buyurtma ham o'z belgisini saqlaydi —
- * qayta urinishda "bekor" buyurtma "sotildi" bo'lib ketmasin.
+ * tashlanadi, qolganlari (xato bergan buyurtmalar va "ertaga") SAQLANADI —
+ * kuryer nimani tanlagani ko'rinib tursin, qayta urinishda qayta belgilash
+ * shart bo'lmasin (xato bergan "bekor" — "bekor"ligicha qayta yuboriladi).
  */
 export const getCourierBulkActionsAfterFinalize = (
   actions: Record<string, CourierBulkAction>,
@@ -227,28 +238,20 @@ export const getCourierBulkActionsAfterFinalize = (
     Object.entries(actions).filter(([orderId]) => !succeededOrderIds.has(orderId)),
   ) as Record<string, CourierBulkAction>;
 
-/** Buyurtma qo'lda belgilanganmi (belgilanmagani sukut bo'yicha «sotildi»). */
+/** Buyurtma qo'lda belgilanganmi (belgilanmagani yakunlashda o'zgarmaydi). */
 export const isCourierBulkOrderMarked = (orderId: string, actions: Record<string, CourierBulkAction>) =>
   actions[orderId] !== undefined;
 
 /**
- * Belgilanmagan buyurtmalar soni — «Sotiladi» kartasi va tasdiq oynasidagi «{u} tasi belgilanmagan, sukut
- * bo'yicha» (maket `courier-courier-bulk-confirm-dialog`). Sukut bo'yicha ham sotilmaydigan almashtirish
- * buyurtmasi (`isCourierBulkSellBlocked`, lQjt6sKP; menejerda — kuryer qo'lidagi ham) va pochtasi qabul qilinmagan
- * posilka bu songa kirmaydi — «Sotiladi» soni bilan mos bo'lsin. «Belgilanmagan» natija filtri va qatordagi belgi
- * ham ularni chiqarmaydi (`filterCourierBulkOrders`, `CourierBulkOrders`).
+ * Belgilanmagan buyurtmalar soni — yakunlashda o'zgarmaydiganlar (`getCourierBulkKept().unmarked` bilan bir xil):
+ * «Sotiladi» kartasi izohi, tasdiq oynasi va kameradagi «Belgilanmagan N ta — o'zgarmaydi». Pochtasi qabul
+ * qilinmagan posilka kirmaydi — uni belgilab bo'lmaydi, o'z izohi bor. «Belgilanmagan» natija filtri va qatordagi
+ * belgi ham shu ta'rif bilan (`filterCourierBulkOrders`, `CourierBulkOrders`).
  */
 export const getCourierBulkUnmarkedCount = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,
-  viewer: CourierBulkViewer = "courier",
-) =>
-  orders.filter(
-    (order) =>
-      !isCourierBulkOrderMarked(order.id, actions) &&
-      !isCourierBulkAwaitingPost(order) &&
-      !isCourierBulkSellBlocked(order, viewer),
-  ).length;
+) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions) && !isCourierBulkAwaitingPost(order)).length;
 
 /** «Natija» filtri: barchasi · sotiladi · bekor · ertaga · belgilanmagan (mijoz tomonida). */
 export type CourierBulkResultFilter = "all" | CourierBulkAction | "unmarked";
@@ -258,8 +261,8 @@ const digitsOf = (value: string) => value.replace(/\D/g, "");
 /**
  * Qidiruv (ism, telefon yoki buyurtma raqami) va «Natija» filtri — faqat mijoz tomonida, yangi API parametrisiz.
  * Telefon raqamlar bo'yicha ham solishtiriladi («90 214» → `+998902146631`). Pochtasi qabul qilinmagan posilka
- * natijasi yo'q — u faqat «Barchasi»da chiqadi; bu yerdan sotilmaydigani («sotildi» belgisi bilan) «Sotiladi» va
- * «Belgilanmagan» ga kirmaydi — kartalardagi sonlar bilan bir xil.
+ * natijasi yo'q — u faqat «Barchasi»da chiqadi; bu yerdan sotilmaydigani («sotildi» belgisi bilan) «Sotiladi» ga
+ * kirmaydi — kartalardagi sonlar bilan bir xil. «Belgilanmagan» — hech qanday belgi qo'yilmaganlar.
  */
 export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
   orders: T[],
@@ -276,7 +279,7 @@ export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
   return orders.filter((order) => {
     if (result !== "all" && isCourierBulkAwaitingPost(order)) return false;
     if (
-      (result === "sold" || result === "unmarked") &&
+      result === "sold" &&
       getCourierBulkOrderAction(order.id, actions) === "sold" &&
       isCourierBulkSellBlocked(order, viewer)
     ) {
