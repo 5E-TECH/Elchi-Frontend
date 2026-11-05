@@ -103,6 +103,8 @@ export interface OrderListItem {
     transport_status?: string | null;
     /** Oxirgi custody o'tishi (bekor bosqichidagi «N kun» — `cancel_return` yo'q eski javobda zaxira). */
     last_handover_at?: string | null;
+    /** Kuryerga biriktirilgan payt — kuryer pochtasi shu so'rovda ochiladi (menejer «Bugungi» zaxira kartasi sanasi). */
+    assigned_at?: string | null;
     /**
      * BG1 (vOczoOUE 2-bosqich): backend hisoblagan bekor bosqichi — FE `resolveCancelReturnStage` bilan AYNAN bir
      * xil qoida; qabulgacha bekor — `null`.
