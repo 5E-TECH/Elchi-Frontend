@@ -259,6 +259,28 @@ describe("OrdersTable — paket ko'rinishi (`appearance=\"batch\"`, maket `*-bat
         />,
       );
       expect(screen.getByText("№101 · Baraka Shop · +998 91 452 18 30")).toBeInTheDocument();
+      // Paketda telefon izoh qatorida — ism ostida alohida qator yo'q (takrorlanmaydi).
+      expect(screen.queryByText("+998 91 452 18 30")).toBeNull();
+    });
+
+    it("pochta kartasida mijoz telefoni ism ostida (tafsilotga kirmasdan); raqam yo'q — «Telefon yo'q»", () => {
+      const { unmount } = renderWithProviders(<OrdersTable {...base} />);
+      const phones = screen.getAllByText("+998 91 452 18 30");
+      expect(phones).toHaveLength(3);
+      // Karta havolasi ichida (buyurtma tafsilotiga), ism bilan bir kartada.
+      expect(phones[0].closest("a")).toHaveAttribute("href", "/orders/edit/101");
+      expect(phones[0].closest("a")).toHaveTextContent("Mijoz 101");
+      unmount();
+
+      renderWithProviders(
+        <OrdersTable {...base} orders={[order("201", { customer: { id: "c201", name: "Raqamsiz" } as never })]} />,
+      );
+      expect(screen.getByText("Telefon yo'q")).toBeInTheDocument();
+    });
+
+    it("eski pochta (`history`) kartasida ham telefon bor", () => {
+      renderWithProviders(<OrdersTable {...base} variant="history" readOnly />);
+      expect(screen.getAllByText("+998 91 452 18 30")).toHaveLength(3);
     });
 
     it("pochta ko'rinishi o'zgarmagan: «№X · tuman · market»; skaner belgisi telefonda faqat `scannerReadyOnPhone` bilan", () => {

@@ -239,6 +239,10 @@ export const MarketReturnsPanel = ({ view, query, rows, truncated, range, onRang
             <span className="min-w-0 font-semibold text-text">{order.customer?.name ?? "—"}</span>
             <span className="whitespace-nowrap font-semibold text-text">{money(order.total_price)}</span>
           </span>
+          {/* «Yo'lda»: telefon ism ostida (jadvaldagi «Mijoz» katagidagidek; «Qabul qilingan» jadvalida raqam yo'q). */}
+          {isTransit && order.customer?.phone_number?.trim() ? (
+            <span className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(order.customer.phone_number)}</span>
+          ) : null}
           <span className="text-[13px] text-text-muted">
             {formatOrderRef(order)}
             {district ? ` · ${district}` : null}

@@ -140,6 +140,10 @@ export const DispatchOrdersTable = ({ rows, selectedIds, onToggle, onToggleAll, 
               <span className="min-w-0 font-semibold text-text">{order.name ?? "—"}</span>
               <span className="whitespace-nowrap font-semibold text-text">{money(order.amount)}</span>
             </span>
+            {/* Telefon ism ostida (jadvaldagi «Mijoz» katagidagidek). */}
+            {order.phone?.trim() ? (
+              <span className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(order.phone)}</span>
+            ) : null}
             <span className="text-[13px] text-text-muted">
               №{order.id} · <span className="whitespace-nowrap">{dateTime(order.createdAt)}</span>
             </span>

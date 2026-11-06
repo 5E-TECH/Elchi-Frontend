@@ -265,6 +265,10 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
             <span className="min-w-0 font-semibold text-text">{order.customer?.name ?? "—"}</span>
             <span className="whitespace-nowrap font-semibold text-text">{money(order.total_price)}</span>
           </span>
+          {/* Telefon ism ostida (jadvaldagi «Mijoz» katagidagidek). */}
+          {order.customer?.phone_number?.trim() ? (
+            <span className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(order.customer.phone_number)}</span>
+          ) : null}
           <span className="text-[13px] text-text-muted">
             №{order.id}
             {district ? ` · ${district}` : null}

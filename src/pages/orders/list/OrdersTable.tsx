@@ -478,6 +478,8 @@ const OrdersTable = ({
             const meta = isMarket
                 ? [formatOrderRef(order), order.district?.name ?? "—"]
                 : [formatOrderRef(order), order.district?.name ?? "—", order.market?.name ?? "—"];
+            // Telefon raqami ism ostida (jadvaldagi «Mijoz» katagidagidek) — raqamni ko'rish uchun tafsilotga kirish shart emas.
+            const phone = order.customer?.phone_number?.trim() ? formatPhone(order.customer.phone_number) : null;
             const actions = renderActions(order, "card");
             const showCourierHeldNote =
                 hasActions &&
@@ -500,6 +502,7 @@ const OrdersTable = ({
                             </span>
                             <span className="whitespace-nowrap font-semibold">{money(order.total_price)}</span>
                         </span>
+                        {phone ? <span className="whitespace-nowrap text-[13px] text-text-muted">{phone}</span> : null}
                         <span className="text-[13px] text-text-muted">
                             {meta.join(" · ")}
                             {isMarket ? (
