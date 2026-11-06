@@ -55,12 +55,15 @@ vi.mock("./ui/OrdersTable", () => ({
     orders,
     onToggleAll,
     readOnly,
+    notice,
   }: {
     orders: Array<{ id: string }>;
     onToggleAll: () => void;
     readOnly?: boolean;
+    notice?: import("react").ReactNode;
   }) => (
     <div>
+      {notice ? <div data-testid="orders-notice">{notice}</div> : null}
       <span data-testid="orders-count">{orders.length}</span>
       <span data-testid="orders-ids">{orders.map((order) => order.id).join(",")}</span>
       <span data-testid="orders-readonly">{String(Boolean(readOnly))}</span>
@@ -113,7 +116,11 @@ const courierState = {
 } as never;
 
 /** `data.post` — pochtaning o'z ma'lumoti (qabul qiluvchini aniqlash: `courier_id`). */
-type PostMeta = { id: string; status: string; courier_id?: string | null; view?: string };
+type PostMeta = { id: string; status: string; courier_id?: string | null; branch_id?: string | null; view?: string };
+
+/** Menejer (filial 15) filialiga jo'natilgan o'tkazma — manzil filial menejeri qabul qiladi (anKpzwxk). */
+const DEST_SENT: PostMeta = { id: POST_ID, status: "sent", courier_id: "0", branch_id: "15" };
+const DEST_RECEIVED: PostMeta = { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" };
 
 const withOrders = (rows: ReturnType<typeof order>[], post?: PostMeta) => {
   const { view, ...postMeta } = post ?? ({} as PostMeta);
@@ -164,7 +171,7 @@ describe("receiveResult helpers (fix3b LC-11)", () => {
 describe("MailDetailPage — qisman qabul (fix3b LC-11)", () => {
   beforeEach(() => {
     mocks.receivePostMutateAsync.mockReset();
-    withOrders([order("101", "on the road"), order("102", "on the road"), order("103", "on the road")]);
+    withOrders([order("101", "on the road"), order("102", "on the road"), order("103", "on the road")], DEST_SENT);
   });
 
   it("qabul qilinmagan buyurtmalar ro'yxatda qoladi va ogohlantirishda sanaladi", async () => {
@@ -234,7 +241,7 @@ describe("MailDetailPage — RECEIVED pochtadagi yo'ldagi qoldiq (fix3b LC-11)",
 
   it("menejer eski pochtada yo'ldagi buyurtmani qabul qila oladi", async () => {
     const user = userEvent.setup();
-    withOrders([order("101", "waiting"), order("102", "on the road")]);
+    withOrders([order("101", "waiting"), order("102", "on the road")], DEST_RECEIVED);
     mocks.receivePostMutateAsync.mockResolvedValue({ statusCode: 200, data: [{ id: "102" }], not_received_order_ids: [] });
     renderPage(managerState, `/mails/${POST_ID}?view=old`);
 
@@ -277,7 +284,7 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
   });
 
   it("eski pochta view'siz so'raladi (server sukuti), holatsiz havola — view=current", () => {
-    withOrders([order("101", "waiting")], { id: POST_ID, status: "received", courier_id: "0" });
+    withOrders([order("101", "waiting")], { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" });
     const { unmount } = renderPage(managerState, `/mails/${POST_ID}?view=old`);
     expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: undefined });
     expect(mocks.useMailDetail).not.toHaveBeenCalledWith(POST_ID, { view: "current" });
@@ -294,7 +301,7 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
         order("101", "waiting", { in_post_now: true }),
         order("102", "on the road", { in_post_now: false, current_post_id: "88" }),
       ],
-      { id: POST_ID, status: "received", courier_id: "0", view: "all" },
+      { id: POST_ID, status: "received", courier_id: "0", branch_id: "15", view: "all" },
     );
     renderPage(managerState, `/mails/${POST_ID}?view=old`);
 
@@ -323,7 +330,7 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
   it("menejer filial o'tkazmasi pochtasida (courier_id '0') qolib ketgan qatorni qabul qiladi", async () => {
     withOrders(
       [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
-      { id: POST_ID, status: "received", courier_id: "0" },
+      { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" },
     );
     renderPage(managerState, `/mails/${POST_ID}?view=old`);
 
@@ -366,7 +373,7 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
   });
 
   it("kuryer filial o'tkazmasi (courier_id '0') yoki boshqa kuryer pochtasida qabulni qayta ochmaydi", async () => {
-    withOrders([order("102", "on the road", { in_post_now: true })], { id: POST_ID, status: "received", courier_id: "0" });
+    withOrders([order("102", "on the road", { in_post_now: true })], { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" });
     const { unmount } = renderPage(courierState, `/mails/${POST_ID}?view=old`);
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
     expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
@@ -441,11 +448,88 @@ describe("MailDetailPage — holatsiz havola qabul qilingan pochtaga: faqat qabu
 
     withOrders(
       [order("101", "waiting", { in_post_now: true }), order("102", "on the road", { in_post_now: true })],
-      { id: POST_ID, status: "received", courier_id: "0" },
+      { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" },
     );
     renderPage(managerState);
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("false");
     expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^102$/);
     expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeInTheDocument();
+  });
+});
+
+describe("MailDetailPage — o'tkazmani faqat manzil filial menejeri qabul qiladi (anKpzwxk, backend #620/#621)", () => {
+  const hqManagerState = {
+    role: { id: "301", role: "manager", region: null, name: "HQ menejer" },
+    user: {
+      user: { id: "301", role: "manager", branch: { id: "1", type: "HQ" } },
+      isAuthenticated: true,
+      accessToken: null,
+      loading: false,
+      isAppInitializing: false,
+      error: null,
+    },
+  } as never;
+  const ROWS = [order("101", "on the road", { in_post_now: true }), order("102", "on the road", { in_post_now: true })];
+
+  beforeEach(() => {
+    mocks.receivePostMutateAsync.mockReset();
+  });
+
+  it.each([
+    ["HQ menejeri (o'z HQ filialiga jo'natilgan)", hqManagerState, "1"],
+    ["boshqa filial menejeri", managerState, "7"],
+  ])("%s — faqat o'qish: «Faqat o'qish», izoh, qabul tugmasi yo'q", async (_label, state, branchId) => {
+    withOrders(ROWS, { id: POST_ID, status: "sent", courier_id: "0", branch_id: branchId });
+    renderPage(state);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    expect(screen.getByTestId("orders-notice")).toHaveTextContent(
+      "Bu pochtani manzil filial menejeri qabul qiladi — sizda faqat ko'rish.",
+    );
+    expect(screen.getByTestId("orders-ids")).toHaveTextContent(/^101,102$/);
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
+    expect(mocks.receivePostMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("manzil filial menejeri — qabul tugmasi bor, izoh yo'q", async () => {
+    withOrders(ROWS, DEST_SENT);
+    renderPage(managerState);
+
+    expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("false");
+    expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeInTheDocument();
+    expect(screen.queryByTestId("mail-read-only")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("orders-notice")).not.toBeInTheDocument();
+  });
+
+  it("server 403 post_receive_manager_only — lokal matn (backend matni emas), sahifa yangilanadi", async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn().mockResolvedValue({});
+    mocks.useMailDetail.mockImplementation((postId: string) => ({
+      data: postId ? { data: { allOrdersByPostId: ROWS, post: DEST_SENT } } : undefined,
+      isLoading: false,
+      isError: false,
+      refetch,
+    }));
+    mocks.receivePostMutateAsync.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {
+          statusCode: 403,
+          message: "Bu pochtani faqat manzil filial menejeri qabul qila oladi",
+          data: { reason: "post_receive_manager_only", details: { post_id: POST_ID } },
+        },
+      },
+    });
+    renderPage(managerState);
+
+    await user.click(await screen.findByRole("button", { name: "test-select-all" }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
+
+    expect(await screen.findByText("Pochta qabul qilinmadi")).toBeInTheDocument();
+    expect(screen.getByText("Bu pochtani faqat manzil filial menejeri qabul qila oladi.")).toBeInTheDocument();
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
+    expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
   });
 });

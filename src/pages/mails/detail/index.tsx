@@ -22,6 +22,8 @@ import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { canDispatchPostToBranch, canReassignPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
+import { readBackendRejection } from "../../../shared/lib/backendReason";
+import { coverageRejectionText } from "../../../shared/lib/coverageReasons";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import {
   countReceiptsWithoutQr,
@@ -102,6 +104,7 @@ import {
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
+import { resolveReceiveAccess } from "./model/receiveAccess";
 
 /**
  * POCHTA TAFSILOTI — `/mails/:id` (dizayn v2, sahifa shell ichida).
@@ -348,9 +351,19 @@ const MailDetailPage = () => {
   /** Pochta qayerga ketgan: o'tkazma pochtasida — manzil filial (qabul qiladigan menejer filiali). */
   const postBranchId = toText(postMeta?.branch_id);
   const viewerId = toText(user?.id);
-  const isPostReceiver = isCourier
-    ? Boolean(viewerId) && postCourierId === viewerId
-    : isBranchReceiverManager && (!postCourierId || postCourierId === "0");
+  /**
+   * anKpzwxk (backend #620/#621): HQ → filial o'tkazmasini faqat manzil filial menejeri (REGIONAL/HYBRID,
+   * `post.branch_id` — o'z filiali) qabul qiladi; HQ menejeri va boshqa filial menejeriga jo'natilgan o'tkazma —
+   * faqat o'qish (`model/receiveAccess.ts`).
+   */
+  const receiveAccess = resolveReceiveAccess({
+    role,
+    branchType: userBranchType,
+    myBranchId: viewerBranchId,
+    viewerId,
+    post: postMeta,
+  });
+  const { isPostReceiver, isReadOnlyForeignTransfer } = receiveAccess;
   const isReceivedPost = String(postMeta?.status ?? "").toLowerCase() === "received";
   const hasStuckOnTheRoadOrders =
     isOldMailView &&
@@ -371,14 +384,15 @@ const MailDetailPage = () => {
    */
   const isForeignReceivedPost =
     !isOldByState && !isEffectiveRefusedDetail && isCourierLikeReceiver && isReceivedPost && !isPostReceiver;
-  const isOldDetail = isOldByState || isForeignReceivedPost;
-  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
+  /** Jo'natilgan o'tkazma, ko'ruvchi — manzil filial menejeri emas: faqat o'qish («Faqat o'qish» + izoh). */
+  const isForeignTransferPost = !isOldByState && !isEffectiveRefusedDetail && isReadOnlyForeignTransfer;
+  const isOldDetail = isOldByState || isForeignReceivedPost || isForeignTransferPost;
+  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : receiveAccess.canReceive;
   /**
    * Filial menejeri: o'z filialiga jo'natilgan o'tkazma pochtasi (kuryersiz, `post.branch_id` — menejer filiali).
    * Boshqa filialning o'tkazmasi (havola orqali ochilgan) yoki filiali noma'lum — «kelmagan» yo'q (backend — 403).
    */
-  const isOwnBranchTransferPost =
-    isBranchReceiverManager && isPostReceiver && Boolean(viewerBranchId) && postBranchId === viewerBranchId;
+  const isOwnBranchTransferPost = receiveAccess.isDestinationManager;
   /**
    * Jo'natilgan (`sent`) pochta, qabul rejimi — kuryerning pochtasi yoki menejer filialiga o'tkazma (ega qarori
    * 2026-11-04): qaytarish so'rovi bor buyurtmalar qabul qilinadiganlardan ajratiladi (karta izohida sanaladi).
@@ -1054,6 +1068,15 @@ const MailDetailPage = () => {
         void refetchRegularDetail();
       })
       .catch((error: unknown) => {
+        // anKpzwxk (#621): o'tkazmani faqat manzil filial menejeri qabul qiladi — lokal matn (backend matniga
+        // tarmoqlanmaymiz), sahifa yangilanadi. `details.branch_id` o'qilmaydi.
+        const rejection = readBackendRejection(error);
+        if (rejection.reason === "post_receive_manager_only") {
+          const text = coverageRejectionText(t, rejection, { context: "receive", fallbackTitle: t("common:error") });
+          notify.error(text.title, { description: text.description });
+          void refetchRegularDetail();
+          return;
+        }
         notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("receiveError") });
       });
   }, [
@@ -1511,7 +1534,8 @@ const MailDetailPage = () => {
   const ordersCountText = isCourier && isOldDetail
     ? t("headerOrdersCount", { count: orders.length })
     : isOldDetail
-      ? t("oldOrdersCount", { count: orders.length })
+      ? // Jo'natilgan begona o'tkazma faqat o'qish uchun, lekin «eski» emas (anKpzwxk).
+        t(isForeignTransferPost ? "ordersCount" : "oldOrdersCount", { count: orders.length })
       : isManagerHeader || (isCourier && isEffectiveRefusedDetail)
         ? t(isEffectiveRefusedDetail ? "headerRefusedOrdersCount" : "headerOrdersCount", { count: orders.length })
         : isEffectiveRefusedDetail
@@ -1794,7 +1818,14 @@ const MailDetailPage = () => {
         sortable={isCourier}
         cardVariant={isCourier ? "courier" : "default"}
         notice={
-          isReadOnlyRefusedCourier ? (
+          isForeignTransferPost ? (
+            <>
+              <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
+              <span className="min-w-0" data-testid="mail-receive-destination-only">
+                {t("detailPage.receiveDestinationOnly")}
+              </span>
+            </>
+          ) : isReadOnlyRefusedCourier ? (
             <>
               <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
               <span className="min-w-0">{t("detailPage.courierRefusedNote")}</span>

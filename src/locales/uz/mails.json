@@ -274,6 +274,7 @@
     "footerTotal": "Jami:",
     "footerCountTotal": "Jami {{value}} ta buyurtma",
     "readOnly": "Faqat o'qish",
+    "receiveDestinationOnly": "Bu pochtani manzil filial menejeri qabul qiladi — sizda faqat ko'rish.",
     "sendDialog": {
       "title": "Filialni tanlang",
       "description": "{{value}} ta buyurtma tanlangan filialga jo'natiladi",

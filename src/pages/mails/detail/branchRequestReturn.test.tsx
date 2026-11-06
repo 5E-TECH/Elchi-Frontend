@@ -322,19 +322,20 @@ describe("MailDetailPage — filial menejeri: «Bu buyurtma kelmagan — qaytari
   });
 
   it("ko'rinmaydi: boshqa filial menejeri, filiali noma'lum menejer, registrator, kuryer pochtasi, qabul qilingan pochta", () => {
-    // Boshqa filialning o'tkazmasi (havola orqali ochilgan): qabul ro'yxati avvalgidek, «kelmagan» yo'q, so'rovi bor
-    // buyurtma ham ajratilmaydi.
+    // Boshqa filialning o'tkazmasi (havola orqali ochilgan): anKpzwxk (#620/#621) — faqat manzil filial menejeri
+    // qabul qiladi, shuning uchun sahifa faqat o'qish uchun (tanlov yo'q), «kelmagan» yo'q.
     setup(() => [order("101"), order("103", { return_requested: true })]);
     const foreign = renderPage(manager("16"));
-    expect(checkbox("101")).toBeInTheDocument();
-    expect(checkbox("103")).toBeInTheDocument();
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    expect(checkbox("101")).toBeNull();
+    expect(checkbox("103")).toBeNull();
     expect(anyRequestButton()).toHaveLength(0);
     expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
     foreign.unmount();
 
     setup(() => [order("101")]);
     const unknownBranch = renderPage(manager(""));
-    expect(checkbox("101")).toBeInTheDocument();
+    expect(checkbox("101")).toBeNull();
     expect(anyRequestButton()).toHaveLength(0);
     unknownBranch.unmount();
 
@@ -350,7 +351,7 @@ describe("MailDetailPage — filial menejeri: «Bu buyurtma kelmagan — qaytari
       courier_id: "0",
     });
     const bothEmpty = renderPage(manager(""));
-    expect(checkbox("101")).toBeInTheDocument();
+    expect(checkbox("101")).toBeNull();
     expect(anyRequestButton()).toHaveLength(0);
     expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
     bothEmpty.unmount();

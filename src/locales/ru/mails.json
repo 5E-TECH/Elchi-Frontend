@@ -274,6 +274,7 @@
     "footerTotal": "Итого:",
     "footerCountTotal": "Всего заказов: {{value}}",
     "readOnly": "Только просмотр",
+    "receiveDestinationOnly": "Эту почту принимает менеджер филиала назначения — у вас только просмотр.",
     "sendDialog": {
       "title": "Выберите филиал",
       "description": "Заказов будет отправлено в выбранный филиал: {{value}}",

@@ -83,7 +83,13 @@ const stateFor = (role: string, branchType?: string) =>
     },
   }) as never;
 
-const regular = (rows: ReturnType<typeof order>[], post?: { status: string; qr_code_token?: string }) =>
+/** Menejer (filial 1, REGIONAL) filialiga jo'natilgan o'tkazma — manzil filial menejeri qabul qiladi (anKpzwxk). */
+const TO_MANAGER_BRANCH = { courier_id: "0", branch_id: "1" };
+
+const regular = (
+  rows: ReturnType<typeof order>[],
+  post?: { status: string; qr_code_token?: string; courier_id?: string; branch_id?: string },
+) =>
   mocks.useMailDetail.mockImplementation((postId: string) => ({
     data: postId ? { data: { allOrdersByPostId: rows, ...(post ? { post: { id: POST_ID, ...post } } : {}) } } : undefined,
     isLoading: false,
@@ -299,7 +305,7 @@ describe("MailDetailPage v2 — rejimlar", () => {
   });
 
   it("menejer qabul: sarlavha «Yo'ldagi» emas, «Buyurtmalar»; skaner izohi menejer matni (`manager-mails-detail-receive`)", () => {
-    regular([order("301", "on the road"), order("302", "waiting")], { status: "new" });
+    regular([order("301", "on the road"), order("302", "waiting")], { status: "sent", ...TO_MANAGER_BRANCH });
     renderPage(stateFor("manager", "REGIONAL"));
     expect(screen.getByRole("heading", { level: 2, name: "Buyurtmalar" })).toBeInTheDocument();
     expect(screen.getByText("QR kodni skanerlang — buyurtma ro'yxatda tanlanadi")).toBeInTheDocument();
@@ -465,7 +471,7 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
         person("10350", "Javohir", "+998 93 207 61 45", "Nur Elektronika", "on the road"),
         person("10351", "Sardor", "+998911112233", "Baraka Shop", "on the road"),
       ],
-      { status: "sent" },
+      { status: "sent", ...TO_MANAGER_BRANCH },
     );
     renderPage(stateFor("manager", "REGIONAL"));
     const banner = screen.getByTestId("mail-duplicate-phones");

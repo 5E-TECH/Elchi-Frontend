@@ -274,6 +274,7 @@
     "footerTotal": "Total:",
     "footerCountTotal": "{{value}} orders in total",
     "readOnly": "Read only",
+    "receiveDestinationOnly": "Only the destination branch manager can receive this mail — view only.",
     "sendDialog": {
       "title": "Choose a branch",
       "description": "{{value}} orders will be sent to the chosen branch",

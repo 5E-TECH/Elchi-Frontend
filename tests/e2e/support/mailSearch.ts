@@ -105,6 +105,8 @@ export const mockMailSearchApi = async (
           post: {
             id: "2483",
             status: isManager ? "sent" : "new",
+            // HQ → filial o'tkazmasi: kuryersiz, manzil — menejer filiali (faqat u qabul qiladi — anKpzwxk).
+            ...(isManager ? { courier_id: "0", branch_id: "3" } : {}),
             region_id: "14",
             region: { id: "14", name: "Qashqadaryo" },
             qr_code_token: "qr-post-2483",
