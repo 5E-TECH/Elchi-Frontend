@@ -3,11 +3,14 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Inbox, Map as MapIcon, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
+import { readBackendRejection } from "../../../shared/lib/backendReason";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Select, type SelectOption } from "../../../shared/ui/primitives";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
+import { getMailTabPath } from "../lib/navigation";
 import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../model/mailBranchNames";
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
@@ -33,6 +36,9 @@ import MailsListBody from "./MailsListBody";
  *    (`MailCardsGrid`, `useMailsCardView`) — filtr, xulosa va `StatCard` lar o'z joyida; HQ menejeri — jadval.
  *
  * Holat — doim «Yangi» (info): bu ro'yxatdagi pochtalar hali qabul qilinmagan (v1 dagidek).
+ * HQ bo'lmagan registratorda tab yo'q (`available: false`, qobiq qayta yo'naltiradi; bu yerda ham — to'g'ridan-to'g'ri
+ * chizilsa xato emas, `/mails/return`). Eskirgan profil bilan baribir 403 `new_posts_hq_only` kelsa — kulrang
+ * «Yangi pochtalar faqat HQ xodimlari uchun» holati (global xabarsiz: so'rov `silentError`).
  * Ochish: `/mails/:id` + `{ fromTab: "today", fallbackRegionId, fallbackRegionName, expectedOrderCount }`
  * (fix3: jo'natishda viloyat zaxirasi).
  */
@@ -43,7 +49,7 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
   const isManager = role === "manager";
   const cardView = useMailsCardView();
   const branchColumn = useSelector(selectMailsBranchColumn);
-  const { isCourier, mails, query } = useTodayMails();
+  const { isCourier, available, mails, query } = useTodayMails();
   const branchName = useMailBranchName(branchColumn && hasMailBranch(mails));
   const [regionId, setRegionId] = useState("");
 
@@ -114,9 +120,23 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
     />
   );
 
+  const errorText = useCallback(
+    (error: unknown) =>
+      readBackendRejection(error).reason === "new_posts_hq_only"
+        ? {
+            title: t("common:coverage.new_posts_hq_only.title"),
+            description: t("common:coverage.new_posts_hq_only.text"),
+          }
+        : null,
+    [t],
+  );
+
+  if (!available) return <Navigate replace to={getMailTabPath("return")} />;
+
   return (
     <MailsListBody
       layout={layout}
+      errorText={errorText}
       query={query}
       rows={rows}
       onClearFilter={regionId ? () => setRegionId("") : undefined}

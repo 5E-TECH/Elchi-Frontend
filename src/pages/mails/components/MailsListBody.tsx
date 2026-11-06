@@ -65,6 +65,11 @@ type MailsListBodyProps = {
   table: Omit<MailsTableProps<MailListRow>, "rows" | "ariaLabel" | "busy" | "className">;
   /** Kartalar to'ri jadval o'rnida (havola — `table.linkOf`). Berilmasa — jadval. */
   cards?: Pick<MailCardsGridProps<MailListRow>, "cardLabel" | "showCourier">;
+  /**
+   * Xato matnini almashtirish (masalan backend sababi `new_posts_hq_only` — lokal matn). `null` — sukut
+   * («Ma'lumotlarni yuklab bo'lmadi» + turiga qarab izoh).
+   */
+  errorText?: (error: unknown) => { title: string; description: string } | null;
 };
 
 const MailsListBody = ({
@@ -85,6 +90,7 @@ const MailsListBody = ({
   note,
   table,
   cards,
+  errorText,
 }: MailsListBodyProps) => {
   const { t } = useTranslation("mailsShell");
   const isPhone = useIsPhone();
@@ -94,6 +100,17 @@ const MailsListBody = ({
   const tableColumns = [t("table.mail"), t("table.region"), t("table.status"), t("table.orders"), t("table.amount")];
 
   const emptyNode = <EmptyState icon={empty.icon} title={empty.title} />;
+  const renderError = (error: unknown, retry: () => void) => {
+    const override = errorText?.(error);
+    return (
+      <ErrorState
+        error={error}
+        title={override?.title ?? t("mails:loadError")}
+        description={override?.description}
+        onRetry={retry}
+      />
+    );
+  };
   const filterEmpty = (
     <EmptyState
       icon={SearchX}
@@ -138,7 +155,7 @@ const MailsListBody = ({
           )
         }
         empty={emptyNode}
-        error={(error, retry) => <ErrorState error={error} title={t("mails:loadError")} onRetry={retry} />}
+        error={renderError}
       >
         {(_, { isRefetching }) => (
           <>
@@ -178,11 +195,7 @@ const MailsListBody = ({
       loadingLabel={loadingLabel}
       loading={loading}
       empty={<Card padding="none">{emptyNode}</Card>}
-      error={(error, retry) => (
-        <Card padding="none">
-          <ErrorState error={error} title={t("mails:loadError")} onRetry={retry} />
-        </Card>
-      )}
+      error={(error, retry) => <Card padding="none">{renderError(error, retry)}</Card>}
       className="flex min-w-0 flex-col gap-6 max-md:gap-4"
     >
       {(_, { isRefetching }) => (

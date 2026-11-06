@@ -718,7 +718,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Pochta» (`mails`) — superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
 - **Holat:** v2
-- **Izoh:** Komponent darhol /mails/today ga yo'naltiradi.
+- **Izoh:** Komponent darhol /mails/today ga yo'naltiradi; HQ bo'lmagan (yoki filial turi noma'lum) registratorda «Bugungi» yo'q — /mails/return ga (anKpzwxk, GET /post/new faqat HQ).
 
 #### `/mails/today` — Pochta — Bugungi pochtalar
 

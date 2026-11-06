@@ -47,6 +47,19 @@ const managerState = (branchType: string) => ({
   },
 });
 
+/** Registrator filial turi bilan (`GET post/new` faqat HQ registratoriga — anKpzwxk). */
+const registratorState = (branchType?: string) => ({
+  ...roleState("registrator"),
+  user: {
+    user: { id: "r-1", role: "registrator", ...(branchType ? { branch: { id: "3", type: branchType } } : {}) },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+});
+
 /** Router holati (`state`) ham ko'rinsin — tafsilotga o'tishda fix3 zaxira viloyati shu bilan boradi. */
 const LocationProbe = () => {
   const location = useLocation();
@@ -255,7 +268,7 @@ describe("TodaysMails", () => {
   it.each(["superadmin", "admin", "registrator"])("%s keeps the table (HQ staff)", (role) => {
     getNewMailsMock.mockReturnValue(loaded(MAILS));
 
-    renderToday("card", role);
+    renderToday("card", role, role === "registrator" ? registratorState("HQ") : roleState(role));
 
     expect(screen.getByRole("table", { name: "Bugungi pochtalar" })).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Bugungi pochtalar" })).not.toBeInTheDocument();
@@ -349,6 +362,53 @@ describe("TodaysMails", () => {
     expect(refetch).toHaveBeenCalled();
   });
 
+  describe("«Yangi pochtalar» (GET post/new) faqat HQ xodimlariga (anKpzwxk)", () => {
+    it("superadmin va HQ registratori — so'rov yoqilgan, xatosi global xabarsiz (`silentError`)", () => {
+      renderToday("card", "superadmin");
+      expect(getNewMailsMock).toHaveBeenLastCalledWith({ enabled: true, silentError: true });
+
+      getNewMailsMock.mockClear();
+      renderToday("card", "registrator", registratorState("HQ"));
+      expect(getNewMailsMock).toHaveBeenLastCalledWith({ enabled: true, silentError: true });
+    });
+
+    it.each(["REGIONAL", "HYBRID", "PICKUP", undefined])(
+      "registrator/%s — so'rov yo'q, to'g'ridan-to'g'ri chizilsa «Qaytarish» ga o'tadi",
+      (branchType) => {
+        renderToday("card", "registrator", registratorState(branchType));
+
+        expect(getNewMailsMock).toHaveBeenCalled();
+        expect(getNewMailsMock.mock.calls.every(([options]) => options?.enabled === false)).toBe(true);
+        expect(screen.getByTestId("location")).toHaveTextContent("/mails/return");
+        expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      },
+    );
+
+    it("eskirgan profil bilan 403 new_posts_hq_only — kulrang holat, lokal matn, «Qayta urinish» yo'q", () => {
+      const error = {
+        isAxiosError: true,
+        response: {
+          status: 403,
+          data: {
+            statusCode: 403,
+            message: "«Yangi pochtalar» faqat HQ xodimlari uchun — ko'rishga ruxsat yo'q",
+            data: { reason: "new_posts_hq_only" },
+          },
+        },
+      };
+      getNewMailsMock.mockReturnValue({ data: undefined, isLoading: false, isError: true, error, refetch: vi.fn() });
+
+      renderToday("card", "superadmin");
+
+      const state = screen.getByText("Yangi pochtalar faqat HQ xodimlari uchun").closest("[data-error-kind]");
+      expect(state).toHaveAttribute("data-error-kind", "forbidden");
+      expect(state).toHaveAttribute("role", "status");
+      expect(state).toHaveTextContent("Filialga kelgan pochtalar «Eski» va «Rad etilgan» bo'limlarida.");
+      expect(screen.queryByText("Ma'lumotlarni yuklab bo'lmadi")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("courier", () => {
     beforeEach(() => {
       getNewMailsCourierMock.mockReturnValue(loaded(MAILS));
@@ -360,7 +420,7 @@ describe("TodaysMails", () => {
       renderToday("page", "courier");
 
       expect(getNewMailsCourierMock).toHaveBeenCalledWith({ enabled: true });
-      expect(getNewMailsMock).toHaveBeenCalledWith({ enabled: false });
+      expect(getNewMailsMock).toHaveBeenCalledWith({ enabled: false, silentError: true });
       expect(screen.getByRole("heading", { name: "Qabul qilinishi kerak" })).toBeInTheDocument();
       expect(screen.getByText("Jami summa")).toBeInTheDocument();
       expect(screen.queryByRole("table")).not.toBeInTheDocument();

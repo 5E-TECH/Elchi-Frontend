@@ -24,7 +24,9 @@ vi.mock("./components/returnMails", () => ({
 // Tab sonlari — tanalar ishlatadigan o'sha hooklardan (so'rovsiz soxta qiymatlar).
 const counts = vi.hoisted(() => ({ today: 8 as number | undefined, refused: 2 as number | undefined, ret: 9 as number | undefined }));
 const returnCountCalls = vi.hoisted(() => ({ value: 0 }));
-vi.mock("./model/mailsLists", () => ({
+vi.mock("./model/mailsLists", async (importOriginal) => ({
+  // «Bugungi» tabi bormi — haqiqiy shart (rol + filial turi, `canViewNewPosts`; anKpzwxk).
+  useTodayMailsAvailable: (await importOriginal<typeof import("./model/mailsLists")>()).useTodayMailsAvailable,
   useTodayMails: () => ({
     isCourier: false,
     isLoaded: counts.today !== undefined,
@@ -46,13 +48,25 @@ vi.mock("./model/mailsLists", () => ({
 const roleState = (role: string) => ({ role: { id: "1", role, region: null, name: role } });
 const courierState = roleState("courier");
 const managerState = roleState("manager");
+/** Registrator filial turi bilan (`GET post/new` faqat HQ registratoriga — anKpzwxk). */
+const registratorState = (branchType?: string) => ({
+  ...roleState("registrator"),
+  user: {
+    user: { id: "r-1", role: "registrator", ...(branchType ? { branch: { id: "3", type: branchType } } : {}) },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+});
 
 const LocationProbe = () => {
   const location = useLocation();
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 };
 
-const renderMails = (route: string, preloadedState?: ReturnType<typeof roleState>) =>
+const renderMails = (route: string, preloadedState: object = roleState("superadmin")) =>
   renderWithProviders(
     <>
       <Mails />
@@ -258,5 +272,57 @@ describe("Mails page", () => {
     expect(within(nav).getByRole("link", { name: "Eski" })).toBeInTheDocument();
     expect(screen.queryByText("Sizga biriktirilgan pochtalar: qabul qilish, rad etilganlar va tarix")).not.toBeInTheDocument();
     expect(screen.getByText("refused-content:page")).toBeInTheDocument();
+  });
+
+  describe("HQ bo'lmagan registrator — «Bugungi» yo'q (GET post/new faqat HQ xodimlariga, anKpzwxk)", () => {
+    it.each(["REGIONAL", "HYBRID", "PICKUP", undefined])("registrator/%s: tablar «Qaytarish · Rad etilgan · Eski»", (branchType) => {
+      renderMails("/mails/return", registratorState(branchType));
+
+      const nav = tabsNav();
+      expect(within(nav).queryByRole("link", { name: /Bugungi/ })).not.toBeInTheDocument();
+      expect(within(nav).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+        "/mails/return",
+        "/mails/refused",
+        "/mails/old",
+      ]);
+      expect(screen.getByText("return-content:card")).toBeInTheDocument();
+    });
+
+    it.each(["/mails", "/mails/today", "/mails?tab=today"])("%s → /mails/return", async (route) => {
+      renderMails(route, registratorState("REGIONAL"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("location").textContent).toBe("/mails/return");
+      });
+      expect(screen.getByText("return-content:card")).toBeInTheDocument();
+      expect(screen.queryByText(/today-content/)).not.toBeInTheDocument();
+    });
+
+    it("telefonda bo'lim tanlagichida ham «Bugungi pochtalar» yo'q", async () => {
+      mockPhone();
+      const user = userEvent.setup();
+      renderMails("/mails/refused", registratorState("REGIONAL"));
+
+      await user.click(screen.getByRole("combobox", { name: "Pochta bo'limi: Rad etilgan pochtalar" }));
+      expect(await screen.findByRole("option", { name: /Qaytarish so'rovlari/ })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: /Eski pochtalar/ })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: /Bugungi pochtalar/ })).not.toBeInTheDocument();
+    });
+
+    it("HQ registratori — «Bugungi» bor, /mails → /mails/today", async () => {
+      renderMails("/mails", registratorState("HQ"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("location").textContent).toBe("/mails/today");
+      });
+      expect(within(tabsNav()).getByRole("link", { name: /^Bugungi/ })).toHaveTextContent("Bugungi 8");
+    });
+
+    it("menejer (HQ ham) — «Bugungi» o'z filiali ro'yxati, tab bor", () => {
+      renderMails("/mails/today", { ...managerState, user: registratorState("HQ").user });
+
+      expect(within(tabsNav()).getByRole("link", { name: /^Bugungi/ })).toBeInTheDocument();
+      expect(screen.getByText("today-content:card")).toBeInTheDocument();
+    });
   });
 });
