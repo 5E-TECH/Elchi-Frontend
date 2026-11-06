@@ -163,11 +163,8 @@ export const useFinanceCoverage = () => {
   const createSalary = useMutation({
     mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
-    onSuccess: () =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: ["finance-cov"] }),
-        client.invalidateQueries({ queryKey: ["cashbox"] }),
-      ]),
+    // Maosh kassadan chiqadi — boshqa kassa amallaridek: kassa, tarix, bosh sahifa «Kassa balansi», KPI.
+    onSuccess: () => refreshCashboxQueries(client),
   });
 
   const updateSalary = useMutation({

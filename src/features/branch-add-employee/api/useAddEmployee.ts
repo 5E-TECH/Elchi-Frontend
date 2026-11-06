@@ -20,6 +20,8 @@ export const useAddEmployee = (branchId: string) => {
     // Kutilmaydi: oyna yopilishi `GET /users` (har rol uchun bittadan) qayta yuklanishini kutmasin.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      // Foydalanuvchi tafsiloti (`/all-users/:id`) sarlavhasidagi filial nomi.
+      void queryClient.invalidateQueries({ queryKey: ["user"] });
       return queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });
     },
   });

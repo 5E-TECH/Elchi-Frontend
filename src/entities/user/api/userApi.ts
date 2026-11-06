@@ -175,6 +175,16 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: queryKeys.users.all }),
       client.invalidateQueries({ queryKey: ["couriers"] }),
       client.invalidateQueries({ queryKey: ["managers"] }),
+      // Shu foydalanuvchi boshqa ro'yxat va tanlovlarda ham turadi: marketlar (filtr, SMS / kampaniya segmenti,
+      // Telegram guruhlari), buyurtma tafsilotidagi kuryer / market aloqasi, filial xodimlari va soni, logistlar,
+      // investorlar, pochta kuryerlari.
+      client.invalidateQueries({ queryKey: ["markets"] }),
+      client.invalidateQueries({ queryKey: ["order-meta", "user"] }),
+      client.invalidateQueries({ queryKey: queryKeys.branches.all }),
+      client.invalidateQueries({ queryKey: ["logists"] }),
+      client.invalidateQueries({ queryKey: ["region-logists"] }),
+      client.invalidateQueries({ queryKey: ["investors"] }),
+      client.invalidateQueries({ queryKey: ["mails", "couriers-by-region"] }),
     ]);
 
   /**

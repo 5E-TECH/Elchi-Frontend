@@ -509,7 +509,7 @@ describe("useReceivePost — «Bugungi» ro'yxati yangilanadi", () => {
     apiMock.patch.mockReset();
   });
 
-  it("PATCH post/receive/:id { order_ids }; pochta, «Bugungi» (zaxira bilan) va «Eski» yangilanadi", async () => {
+  it("PATCH post/receive/:id { order_ids }; pochta, «Bugungi» (zaxira bilan), «Eski» va buyurtmalar yangilanadi", async () => {
     apiMock.patch.mockResolvedValue({ data: { statusCode: 200, data: [], not_received_order_ids: [] } });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
     const invalidate = vi.spyOn(client, "invalidateQueries");
@@ -528,6 +528,7 @@ describe("useReceivePost — «Bugungi» ro'yxati yangilanadi", () => {
       ["mails", "new"],
       ["mails", "today-fallback-orders"],
       ["mails", "old"],
+      ["orders"],
     ]);
   });
 

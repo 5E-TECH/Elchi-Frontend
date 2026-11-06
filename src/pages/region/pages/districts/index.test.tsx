@@ -140,7 +140,8 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
 
   it("renames a district with PATCH /district/name/:id", async () => {
     const user = userEvent.setup();
-    open();
+    const { queryClient } = open();
+    queryClient.setQueryData(["districts", "1"], [{ id: "3", name: "Mirobod" }]);
     await screen.findByText("Mirobod");
 
     await user.click(screen.getByRole("button", { name: "Mirobod nomini tahrirlash" }));
@@ -156,6 +157,8 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("district/name/3", { name: "Mirobod tumani" }),
     );
+    // Buyurtma yaratish / manzil / filtrdagi tuman tanlovlari (`GET region/:id`) eski nom bilan qolmasin.
+    await waitFor(() => expect(queryClient.getQueryState(["districts", "1"])?.isInvalidated).toBe(true));
   });
 
   it("deletes a district only after the v2 confirmation (DELETE /district/:id)", async () => {

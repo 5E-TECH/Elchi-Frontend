@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { assertManropeLoaded, FONT_HOSTS, serveFont } from "../visual/support/fonts";
 
 /**
  * tya24blo — bosh sahifada «Barchasi»: superadmin, market va menejer (`/branch-dashboard`) `GET analytics/dashboard`
@@ -6,6 +7,10 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * (`clamped: true` + `effective_from` / `effective_to`), sarlavhadagi sana maydonida shu haqiqiy oraliq ko'rinadi.
  * Meta joyi: superadmin va menejer — javobning yuqori darajasi, market — `myStat.applied_range` (karta: market /
  * menejer javobida meta shu yerda edi). 1440 va 390px, soxta backend.
+ *
+ * Matn kengligi o'lchanadi — shuning uchun ilovadagi HAQIQIY shrift (Manrope, Google Fonts) yuklanadi (vizual
+ * testlardagi `serveFont`): to'sib qo'yilsa zaxira shrift chiziladi va natija mashinaga bog'liq bo'ladi (lokalda
+ * o'tib, CI'da 0,2–7,5 px toshib yiqilardi).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -62,6 +67,7 @@ const mockDashboard = async (page: Page, role: Role) => {
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin === ORIGIN) return route.continue();
+    if (FONT_HOSTS.has(url.host)) return void (await serveFont(route));
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
@@ -112,6 +118,7 @@ for (const viewport of [
 
         const range = page.getByText(RANGE_TEXT);
         await expect(range).toBeVisible();
+        await assertManropeLoaded(page);
         // Oraliq TO'LIQ ko'rinadi — «… – 20.10.2…» bo'lib kesilmaydi (`toBeVisible` kesilishni ushlamaydi; tya24blo
         // qayta tekshiruvi: market 390px da «Yil» tanlovi yonida matn qutisi 154 px, matn 171 px edi).
         // Sub-piksel aniqlikda: `scrollWidth`/`clientWidth` butun songa yaxlitlanadi va 0,2 px kesilishni («20.10.20…»)

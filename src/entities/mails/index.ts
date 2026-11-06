@@ -521,6 +521,8 @@ export const useMails = () => {
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
     queryClient.invalidateQueries({ queryKey: ["orders"] });
+    // `/returns` dagi «Qaytarish so'rovlari» (superadmin) — `entities/logistics` (`["logi-cov", "posts", …]`).
+    queryClient.invalidateQueries({ queryKey: ["logi-cov", "posts"] });
   };
 
   const approveReturnRequests = useMutation({
@@ -768,6 +770,11 @@ export const useDispatchPostToBranch = () => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
       });
+      // Jo'natilgan pochta «Bugungi»dan chiqib «Eski»ga o'tadi, buyurtmalar «yo'lda» bo'ladi — jo'natgach sahifa
+      // «Bugungi»ga qaytadi, eski kesh (30 s) ko'rinmasin.
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 };
@@ -821,6 +828,8 @@ export const useReceivePost = () => {
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "today-fallback-orders"] });
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+      // Qabul qilingan buyurtmalar «kutilmoqda»ga o'tadi — buyurtmalar ro'yxati va sonlari.
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 };

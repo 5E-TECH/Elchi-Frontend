@@ -139,6 +139,12 @@ const RegionDistrictsPage = () => {
       ),
     [queryClient],
   );
+  // Nomi o'zgargan, o'chirilgan yoki birlashtirilgan tuman buyurtma yaratish / manzil / filtrdagi tuman tanlovlarida
+  // (`GET region/:id`, `DISTRICT_KEY`) qolmasin. Ko'chirish bunga kirmaydi — u `GET region/:id` ni o'zgartirmaydi.
+  const refreshWithDistricts = useCallback(
+    () => Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: [DISTRICT_KEY] })]),
+    [queryClient, refresh],
+  );
   // Birlashtirish oynasi «o'chirib bo'lmaydi» oynasidan ochiladi — u yopilgach fokus o'chirish tugmasiga
   // (birlashtirilgan tuman qatori yo'qolgan bo'lsa — qidiruv maydoniga) qaytadi.
   const deleteOriginRef = useRef<HTMLElement | null>(null);
@@ -152,7 +158,7 @@ const RegionDistrictsPage = () => {
     }),
     [],
   );
-  const merge = useDistrictMerge(refresh);
+  const merge = useDistrictMerge(refreshWithDistricts);
   /** 409 — shu viloyatda shu nomli tuman bor (nomini o'zgartirish); qolgani — umumiy matn. */
   const showError = (error: unknown, fallbackKey: string, conflictKey?: string) =>
     notify.error(t(conflictKey && httpStatusOf(error) === 409 ? conflictKey : fallbackKey));
@@ -202,7 +208,7 @@ const RegionDistrictsPage = () => {
     onSuccess: async () => {
       setEditingId(null);
       notify.success(t("districts.renameSuccess"));
-      await refresh();
+      await refreshWithDistricts();
     },
     onError: (error) => showError(error, "districts.renameError", "v2.districts.duplicateName"),
   });
@@ -211,7 +217,7 @@ const RegionDistrictsPage = () => {
     mutationFn: (district: MergeDistrict) => api.delete(API_ENDPOINTS.DISTRICTS.BY_ID(district.id)),
     onSuccess: async () => {
       notify.success(t("districts.deleteSuccess"));
-      await refresh();
+      await refreshWithDistricts();
     },
     onError: (error, district) => {
       // 400 — tumanga buyurtma/foydalanuvchi/filial bog'langan (oNAE3LW9): birlashtirishni taklif qiladigan oyna.

@@ -334,6 +334,7 @@ export const useSendSmsCampaign = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns });
       void queryClient.invalidateQueries({ queryKey: SMS_KEYS.status });
+      void queryClient.invalidateQueries({ queryKey: ["sms", "report"] });
     },
   });
 };
@@ -346,7 +347,12 @@ export const useCancelSmsCampaign = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => (await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGN_CANCEL(id))).data,
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns }),
+    // Tarix, bugungi limit qatori va hisobot.
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: SMS_KEYS.campaigns });
+      void queryClient.invalidateQueries({ queryKey: SMS_KEYS.status });
+      void queryClient.invalidateQueries({ queryKey: ["sms", "report"] });
+    },
   });
 };
 
@@ -399,13 +405,20 @@ export const useUpsertSmsAccount = () => {
   });
 };
 
-export const useGrantSmsConsent = () =>
-  useMutation({
+/** Rozilik o'zgardi — «Kampaniya» tabidagi auditoriya (rozisiz bloklanganlar soni) qayta sanaladi. */
+export const useGrantSmsConsent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: async (input: { phone: string; source: "shartnoma" | "veb-forma" | "buyurtma" | "operator"; customer_id?: string }) =>
       (await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CONSENTS, input)).data,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["sms", "campaign-audience"] }),
   });
+};
 
-export const useRevokeSmsConsent = () =>
-  useMutation({
+export const useRevokeSmsConsent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: async (phone: string) => (await api.post(API_ENDPOINTS.NOTIFICATIONS.SMS_CONSENTS_REVOKE, { phone })).data,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["sms", "campaign-audience"] }),
   });
+};

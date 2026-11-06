@@ -21,7 +21,8 @@ test("⭐ ro'yxat: market jadvali, market/kuryer/viloyat filtrlari yo'q, so'rovd
   const mock = await openOperatorOrders(page, {}, `/orders?orderMarketId=99`);
 
   const nav = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(nav.getByRole("link", { name: "Buyurtmalar" })).toHaveAttribute("aria-current", "page");
+  // `exact`: menyuda «Qo'shimcha xarajatli buyurtmalar» ham bor (GykuOz8f).
+  await expect(nav.getByRole("link", { name: "Buyurtmalar", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("columnheader", { name: "Market" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Excelga yuklash" })).toHaveAttribute(
     "title",
