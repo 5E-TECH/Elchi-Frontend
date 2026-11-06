@@ -102,6 +102,34 @@ const shouldSkipRefreshAfterLogout = () => {
   }
 };
 
+/**
+ * Qidiruvdan «/» ga kelgan yangi tashrifchi (2026-11-06): `index.html` dagi birinchi skript sessiya belgisi yo'q bo'lsa
+ * manzilni `/login` ga almashtiradi (tez yo'l) va `ROOT_RESTORE_KEY` qo'yadi. Belgi muvaffaqiyatli kirish / tiklashda
+ * yoziladi, chiqish yoki sessiya topilmaganda o'chiriladi. Nomlar `index.html` dagi skript bilan AYNAN bir xil.
+ */
+const HAD_SESSION_KEY = "elchi_had_session";
+const ROOT_RESTORE_KEY = "elchi_root_restore";
+
+const markHadSession = () => {
+  try {
+    window.localStorage.setItem(HAD_SESSION_KEY, "1");
+  } catch {
+    // Saqlab bo'lmasa — keyingi tashrifda «/» tez yo'ldan ochiladi, sessiya baribir fonda tiklanadi.
+  }
+};
+
+/** `/login` ga «/» dan o'tkazilganmi (bir marta o'qiladi). */
+const consumeRootRestore = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    const flagged = window.sessionStorage.getItem(ROOT_RESTORE_KEY) === "1";
+    window.sessionStorage.removeItem(ROOT_RESTORE_KEY);
+    return flagged;
+  } catch {
+    return false;
+  }
+};
+
 const syncUserContext = (user: AuthenticatedUser) => {
   tokenStorage.setAuthIdentity({ id: user.id, role: user.role });
   store.dispatch(setProfile(user));
@@ -124,11 +152,13 @@ const resetClientAuthState = () => {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("name");
     window.localStorage.removeItem("region");
+    window.localStorage.removeItem(HAD_SESSION_KEY);
     clearStoredUiPreferences();
   }
 };
 
 const persistSessionMetadata = (response: LoginResponse | RefreshResponse) => {
+  markHadSession();
   tokenStorage.setSessionMetadata({
     accessTokenExpiresAt: response.accessTokenExpiresAt ?? response.access_token_expires_at ?? null,
     refreshTokenExpiresAt: response.refreshTokenExpiresAt ?? response.refresh_token_expires_at ?? null,
@@ -284,7 +314,11 @@ const postRefreshWithRetry = async () => {
   }
 };
 
-export const refreshAccessToken = async () => {
+/**
+ * `beforeSignedIn` — sessiya tiklandi, `loginSuccess` dan (kirgan holat) BIR LAHZA OLDIN: fon tiklashda yuklanish
+ * holati shu yerda yoqiladi, aks holda kirish sahifasi tarjimalar kelmasdan «/» ga o'tib ketardi.
+ */
+export const refreshAccessToken = async (options: { beforeSignedIn?: () => void } = {}) => {
   const response = await postRefreshWithRetry();
   const nextAccessToken = response.data?.accessToken;
 
@@ -300,6 +334,7 @@ export const refreshAccessToken = async () => {
   persistSessionMetadata(response.data);
   // NDmZMzCP: `must_change_password` — «Yangi parol o'rnating» oynasi (parol almashgach refresh `false` beradi).
   syncPasswordChangeFlag(response.data);
+  options.beforeSignedIn?.();
   store.dispatch(loginSuccess({ accessToken: nextAccessToken }));
 
   return nextAccessToken;
@@ -614,6 +649,7 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
     // Sessiyali ochilish: tarjimalarning qolgan qismi ham chizishdan oldin (to'g'ridan-to'g'ri `/login` da ham —
     // undan `/` ga o'tiladi; `src/i18n.ts`, rzzxMItN). Yuklanmasa — chizishda qayta so'raladi.
     let appLocales: Promise<unknown> = Promise.resolve();
+    const fromRoot = consumeRootRestore();
     try {
       if (shouldSkipRefreshAfterLogout()) {
         resetClientAuthState();
@@ -626,14 +662,26 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
         // Yangi tab / telefon tashrifi (token sessionStorage'da — tabga xos): refresh cookie bilan sessiya
         // tiklanadi, har tashrifda qayta kirish talab qilinmaydi (h0AM0kDL). Cookie yo'q/yaroqsiz yoki tarmoq
         // yo'q — jim, kirish sahifasi (xato xabarisiz).
-        if (!shouldRestoreSessionFromCookie()) {
+        // «/» dan `/login` ga o'tkazilgan (`index.html`) — xuddi shu tiklash FONDA: yuklanish ekranisiz, forma
+        // ko'rinib turadi; tiklansa yuklanish ekrani va tarjimalar, so'ng kirish sahifasi «/» ga o'tkazadi.
+        const silent = fromRoot && !shouldRestoreSessionFromCookie();
+        if (!shouldRestoreSessionFromCookie() && !silent) {
           resetClientAuthState();
           return;
         }
-        showLoader();
-        appLocales = loadAppLocales().catch(() => undefined);
+        if (!silent) {
+          showLoader();
+          appLocales = loadAppLocales().catch(() => undefined);
+        }
         try {
-          accessToken = await refreshAccessToken();
+          accessToken = await refreshAccessToken({
+            beforeSignedIn: silent
+              ? () => {
+                  showLoader();
+                  appLocales = loadAppLocales().catch(() => undefined);
+                }
+              : undefined,
+          });
         } catch {
           resetClientAuthState();
           return;

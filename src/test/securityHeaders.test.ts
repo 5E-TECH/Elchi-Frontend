@@ -121,11 +121,13 @@ describe("public/_headers — xavfsizlik sarlavhalari (KwodkKWY)", () => {
 });
 
 describe("scripts/csp-headers.mjs — ichki skript xeshlari", () => {
-  it("index.html: mavzu skripti xeshlanadi, JSON-LD va src li skriptlar e'tiborsiz", () => {
-    const theme = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
-    expect(theme).toContain("theme-version");
-    const expected = `'sha256-${createHash("sha256").update(theme, "utf8").digest("base64")}'`;
-    expect(inlineScriptHashes(html)).toEqual([expected]);
+  it("index.html: ichki skriptlar (qidiruvdan «/» → `/login`, mavzu) xeshlanadi, JSON-LD va src li skriptlar e'tiborsiz", () => {
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
+    expect(scripts).toHaveLength(2);
+    expect(scripts[0]).toContain("elchi_root_restore");
+    expect(scripts[1]).toContain("theme-version");
+    const expected = scripts.map((text) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`);
+    expect(inlineScriptHashes(html)).toEqual(expected);
   });
 
   it("joy tutuvchi xeshlar bilan almashtiriladi; xesh yoki joy tutuvchi bo'lmasa — xato (build yiqiladi)", () => {

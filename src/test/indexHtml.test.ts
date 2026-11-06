@@ -60,8 +60,23 @@ describe("index.html /login birinchi kadri", () => {
   it("sukut yashirin; ko'rinishi — faqat mavzu skripti `/login` da qo'ygan klass bilan", () => {
     expect(html).toMatch(/#login-shell\s*\{\s*display:\s*none;/);
     expect(html).toMatch(/\.login-first-paint #login-shell\s*\{\s*display:\s*flex;/);
-    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
+    const script = scripts.find((text) => text.includes("theme-version")) ?? "";
     expect(script).toContain("/^\\/login\\/?$/i.test(location.pathname)");
     expect(script).toContain('classList.add("login-first-paint")');
+  });
+
+  it("qidiruvdan «/» ga sessiyasiz kelgan — birinchi skript `/login` ga almashtiradi (`<meta charset>` dan oldin, ASCII)", () => {
+    const first = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
+    expect(first).toContain('location.pathname === "/"');
+    expect(first).toContain('sessionStorage.getItem("accessToken")');
+    expect(first).toContain('localStorage.getItem("elchi_had_session")');
+    expect(first).toContain('sessionStorage.setItem("elchi_root_restore", "1")');
+    expect(first).toContain('history.replaceState(history.state, "", "/login")');
+    // Mavzu skripti, `firstPaintPreload` va `src/i18n.ts` manzilni undan KEYIN o'qiydi; charset 1024 bayt ichida qoladi.
+    const charset = html.indexOf('<meta charset="UTF-8" />');
+    expect(html.indexOf(first)).toBeLessThan(charset);
+    expect(charset).toBeLessThan(1024);
+    expect(/^[\x20-\x7E\s]*$/.test(first)).toBe(true);
   });
 });

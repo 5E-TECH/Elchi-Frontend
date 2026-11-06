@@ -1,7 +1,25 @@
 <!doctype html>
 <html lang="uz">
   <head>
+    <script>
+      (() => {
+        try {
+          if (location.pathname === "/" && !sessionStorage.getItem("accessToken") && !localStorage.getItem("elchi_had_session")) {
+            sessionStorage.setItem("elchi_root_restore", "1");
+            history.replaceState(history.state, "", "/login");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="UTF-8" />
+    <!--
+      Yuqoridagi skript (hammasidan OLDIN — `firstPaintPreload`, mavzu skripti va `src/i18n.ts` manzilni o'qishidan
+      oldin; ASCII, chunki `<meta charset>` dan oldin turadi): qidiruvdan «/» ga kelgan, bu qurilmada sessiya belgisi
+      (`elchi_had_session`, `auth/authService.ts`) yo'q tashrifchi darhol `/login` ning tez yo'lida ochiladi —
+      birinchi kadr, kirish sahifasi chunklari parallel, tarjimalarning qolgani kechiktirilgan. Sekin 3G'da «/» 14 s bo'sh
+      ekran va forma 20 s da edi. Cookie sessiyasi bo'lsa ham qayta kirish shart emas: `elchi_root_restore` bilan
+      `initAuth` uni fonda tiklaydi va kirish sahifasi «/» ga o'tkazadi.
+    -->
     <!-- Logotip — yuklanish ekrani va /login dagi eng katta element (LCP, rzzxMItN): JS kutmasdan, darhol so'raladi. -->
     <link rel="preload" as="image" href="/src/shared/assets/brand/elchi-logo-white.png" fetchpriority="high" />
 
