@@ -337,6 +337,8 @@ export type OldMailSource = {
   status: string;
   courier_id?: string | null;
   courier?: { id?: string; name?: string; phone_number?: string } | null;
+  /** Pochta filiali (faqat id) — «Filial» ustuni (`model/mailBranchNames.ts`). */
+  branch_id?: string | null;
 };
 
 /** Paket → qator manbasi (v1 dagidek: viloyat — qabul qiluvchi filial viloyati yoki nomi). */

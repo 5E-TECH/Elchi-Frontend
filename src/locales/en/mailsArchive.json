@@ -1,11 +1,12 @@
 {
   "return": {
     "summary": "<strong>{{couriers}}</strong> couriers, <strong>{{orders}}</strong> orders",
+    "summaryWithBranches": "<strong>{{couriers}}</strong> couriers, <strong>{{branches}}</strong> branches, <strong>{{orders}}</strong> orders",
     "selectionLabel": "Selected requests",
     "selected_one": "{{count}} request selected",
     "selected_other": "{{count}} requests selected",
     "noneSelected": "Nothing selected",
-    "selectionHint": "Approved orders go back to the warehouse, rejected ones stay with the courier",
+    "selectionHint": "Approved orders go back to the warehouse, rejected ones stay where they were (with the courier or in the branch post)",
     "clearSelection": "Clear selection",
     "tableLabel": "Return requests",
     "selectAll": "Select all requests",

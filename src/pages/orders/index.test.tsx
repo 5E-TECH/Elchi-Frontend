@@ -147,6 +147,52 @@ describe("Orders list — buyurtma yaratish", () => {
   });
 });
 
+describe("Orders list — «Almashtirishlar» havolasi (lQjt6sKP)", () => {
+  const marketState = { role: { id: "77", role: "market", region: null, name: "Baraka Shop" } } as never;
+  const registratorState = { role: { id: "5", role: "registrator", region: null, name: "Registrator" } } as never;
+
+  it("market — menyu bandi yo'q, kirish nuqtasi sarlavhadagi havola", () => {
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: marketState });
+
+    expect(screen.getByRole("link", { name: "Almashtirishlar" })).toHaveAttribute("href", "/replacement-returns");
+  });
+
+  it("admin — havola bor (menyuda ham)", () => {
+    open("/orders");
+
+    expect(screen.getByRole("link", { name: "Almashtirishlar" })).toHaveAttribute("href", "/replacement-returns");
+  });
+
+  it("registrator va menejer — havola yo'q (backend 403)", () => {
+    const { unmount } = renderWithProviders(<Orders />, { route: "/orders", preloadedState: registratorState });
+    expect(screen.queryByRole("link", { name: "Almashtirishlar" })).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: regionalManagerState });
+    expect(screen.queryByRole("link", { name: "Almashtirishlar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Orders list — «Qo'shimcha xarajatlar» havolasi (GykuOz8f)", () => {
+  const operatorState = { role: { id: "9", role: "market_operator", region: null, name: "Operator" } } as never;
+  const marketState = { role: { id: "77", role: "market", region: null, name: "Baraka Shop" } } as never;
+
+  it("market operatori — sarlavhada havola (telefonda «Menyu» yo'q, kirish nuqtasi shu)", () => {
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: operatorState });
+
+    expect(screen.getByRole("link", { name: "Qo'shimcha xarajatlar" })).toHaveAttribute("href", "/extra-costs");
+  });
+
+  it("market, admin va menejer — sarlavhada havola yo'q (yon menyuda bor yoki sahifa yopiq)", () => {
+    const { unmount } = renderWithProviders(<Orders />, { route: "/orders", preloadedState: marketState });
+    expect(screen.queryByRole("link", { name: "Qo'shimcha xarajatlar" })).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: regionalManagerState });
+    expect(screen.queryByRole("link", { name: "Qo'shimcha xarajatlar" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Orders list — sarlavha, tablar, sahifalash", () => {
   beforeEach(() => {
     getOrdersMock.mockClear();

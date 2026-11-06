@@ -1,0 +1,85 @@
+{
+  "title": "Orders with extra costs",
+  "description": {
+    "courier": "Extra costs you recorded and the store's decisions",
+    "manager": "Extra costs recorded by your branch couriers and you",
+    "market": "Extra costs on your orders — approve or reject",
+    "market_operator": "Extra costs on the store's orders — view only"
+  },
+  "total": "{{value}} in total",
+  "tabsLabel": "By cost status",
+  "tabs": {
+    "all": "All",
+    "pending": "Pending",
+    "pendingMarket": "Awaiting approval",
+    "approved": "Approved",
+    "cancelled": "Cancelled"
+  },
+  "listLabel": "Orders with extra costs list",
+  "cardsLabel": "Orders with extra costs",
+  "columns": {
+    "order": "Order",
+    "customer": "Customer",
+    "amount": "Amount and status",
+    "requester": "Recorded by",
+    "dates": "Date",
+    "reason": "Reason or comment",
+    "proof": "Proof",
+    "actions": "Actions"
+  },
+  "action": {
+    "sell": "Sale",
+    "cancel": "Cancellation",
+    "partly_sell": "Partial sale"
+  },
+  "status": {
+    "pending": "Awaiting approval",
+    "approved": "Approved",
+    "auto": "Approved automatically",
+    "immediate": "Recorded without approval",
+    "rejected": "Rejected",
+    "void": "Voided",
+    "reversed": "Reversed"
+  },
+  "autoAt": "No answer by {{time}} — approved automatically",
+  "requestedAt": "Requested: {{date}}",
+  "decidedAt": "Decision: {{date}}",
+  "closedAt": "Closed: {{date}}",
+  "role": {
+    "courier": "Courier",
+    "manager": "Manager"
+  },
+  "requesterFallback": "#{{id}}",
+  "unknownCustomer": "Customer not specified",
+  "openOrder": "Open order {{ref}}",
+  "proofButton": "Proof ({{count}})",
+  "proofButtonLabel": "Proof ({{count}}) — {{ref}}",
+  "proofNone": "None",
+  "proofTitle": "Proof — {{ref}}",
+  "proofDescription": "{{action}} · {{amount}}",
+  "close": "Close",
+  "approve": "Approve",
+  "reject": "Reject",
+  "approveLabel": "Approve — {{ref}}, {{amount}}",
+  "rejectLabel": "Reject — {{ref}}, {{amount}}",
+  "pagination": "{{from}}–{{to}} of {{total}}",
+  "loading": "Loading extra costs",
+  "loadFailed": "Could not load extra costs",
+  "empty": {
+    "all": "No orders with extra costs",
+    "allDescription": "When an extra cost is recorded on a sale or cancellation, the order appears here.",
+    "pending": "No pending requests",
+    "pendingDescription": "Requests the store has not decided on yet appear here.",
+    "pendingMarket": "No extra costs awaiting approval",
+    "pendingMarketDescription": "When a courier or manager records an extra cost, the request appears here.",
+    "approved": "No approved extra costs",
+    "approvedDescription": "Approved, automatically approved and recorded-without-approval costs appear here.",
+    "cancelled": "No cancelled extra costs",
+    "cancelledDescription": "Rejected and self-closed requests appear here with the reason."
+  },
+  "unassigned": {
+    "title": "You are not assigned to a store yet",
+    "description": "Extra costs appear once the store owner adds you in «Operators»."
+  },
+  "readOnlyHint": "View only: the store owner decides"
+}

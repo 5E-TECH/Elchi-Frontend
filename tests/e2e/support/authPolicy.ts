@@ -92,7 +92,8 @@ export const runAuthPolicyScenarios = () => {
     await submitLogin(page);
     const dialog = page.getByRole("dialog", { name: "Yangi parol o'rnating" });
     await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await expect(dialog).toContainText("Kamida 10 ta belgi");
+    // Ega qarori 2026-11-02 (`shared/lib/passwordPolicy`): hamma rol uchun kamida 6 belgi, katta va kichik harf, raqam.
+    await expect(dialog).toContainText("Kamida 6 ta belgi: 1 ta katta harf, 1 ta kichik harf va 1 ta raqam");
     await expect(page).toHaveURL(/\/branch-dashboard/);
     await dialog.getByRole("button", { name: "Keyinroq" }).click();
     await expect(dialog).toHaveCount(0);
@@ -107,10 +108,15 @@ export const runAuthPolicyScenarios = () => {
     const inputs = dialog.locator('input[autocomplete="new-password"]');
     // aidsxJ2H: «Joriy parol» — kirishda yozilgan parol.
     await dialog.locator('input[autocomplete="current-password"]').fill("eski-parol");
+    // Ega qarori 2026-11-02: 6 belgidan qisqa — rad; uzunligi yetarli, lekin katta harfsiz — ham rad (so'rov ketmaydi).
+    await inputs.nth(0).fill("Qis12");
+    await inputs.nth(1).fill("Qis12");
+    await dialog.getByRole("button", { name: "Parolni saqlash" }).click();
+    await expect(dialog).toContainText("Parol kamida 6 ta belgidan iborat bo'lsin");
     await inputs.nth(0).fill("qisqa123");
     await inputs.nth(1).fill("qisqa123");
     await dialog.getByRole("button", { name: "Parolni saqlash" }).click();
-    await expect(dialog).toContainText("Parol kamida 10 ta belgidan iborat bo'lsin");
+    await expect(dialog).toContainText("Parolda kamida 1 ta katta harf bo'lsin");
     expect(calls.passwordPatches).toEqual([]);
 
     await inputs.nth(0).fill("Yangi-Parol-2026");

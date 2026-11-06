@@ -57,7 +57,7 @@ export const FormsSection = () => {
               <div className={GRID}>
                 <State name={t("forms.states.empty")}>
                   <Field label={t("forms.demo.nameLabel")} required hint={t("forms.demo.nameHint")}>
-                    <TextInput value={name} onValueChange={setName} placeholder={t("forms.demo.namePlaceholder")} />
+                    <TextInput personName value={name} onValueChange={setName} placeholder={t("forms.demo.namePlaceholder")} />
                   </Field>
                 </State>
                 <State name={t("forms.states.filled")}>

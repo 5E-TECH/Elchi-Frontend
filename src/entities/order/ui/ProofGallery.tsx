@@ -3,7 +3,14 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, ExternalLink, FileText, Play, TriangleAlert } from "lucide-react";
 import { Dialog, IconButton, Pressable, Spinner } from "../../../shared/ui/primitives";
-import { proofFileName, proofKind, useProofFileUrls } from "../api/proofFiles";
+import {
+  proofFileName,
+  proofKind,
+  useProofFileUrls,
+  useProofSourceUrls,
+  type ProofKind,
+  type ProofSource,
+} from "../api/proofFiles";
 
 /**
  * DALILLAR GALEREYASI — kuryer sotish / bekor qilishda biriktirgan rasm va
@@ -16,19 +23,46 @@ import { proofFileName, proofKind, useProofFileUrls } from "../api/proofFiles";
  *
  * Dizayn v2 (maket yo'q — buyurtma tafsilotidagi «Dalillar» kartasi): plitkalar `bg-sunken`,
  * ko'rish oynasi — `Dialog` (telefonda pastki varaqa).
+ *
+ * Fayllar ikki xil beriladi: `keys` — buyurtmaning `proof_files` kalitlari (`files/:key/content`), yoki `sources`
+ * (GykuOz8f) — aniq API yo'li bilan (qo'shimcha xarajat so'rovi isboti: o'z ko'rinish qoidasi bilan).
  */
 
 interface ProofGalleryProps {
   /** `proof_files` kalitlari (bo'sh bo'lsa komponent hech narsa chizmaydi). */
-  keys: string[];
+  keys?: string[];
+  /** Yo'l bilan berilgan fayllar — berilsa `keys` o'rniga shular ko'rsatiladi. */
+  sources?: readonly ProofSource[];
 }
+
+type GalleryFile = { id: string; key: string; url: string | null; error: boolean; kind: ProofKind };
+
+const NO_KEYS: string[] = [];
+const NO_SOURCES: readonly ProofSource[] = [];
 
 const TILE =
   "group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-border bg-sunken text-left transition-[border-color] duration-150 hover:border-action motion-reduce:transition-none";
 
-const ProofGallery = ({ keys }: ProofGalleryProps) => {
+const ProofGallery = ({ keys = NO_KEYS, sources }: ProofGalleryProps) => {
   const { t } = useTranslation("orders");
-  const urls = useProofFileUrls(keys);
+  const keyUrls = useProofFileUrls(sources ? NO_KEYS : keys);
+  const sourceUrls = useProofSourceUrls(sources ?? NO_SOURCES);
+  const files: GalleryFile[] = sources
+    ? sources.map((source, index) => {
+        const query = sourceUrls[index];
+        return {
+          id: source.url,
+          key: source.key,
+          url: query?.data?.url ?? null,
+          error: Boolean(query?.isError),
+          kind: query?.data?.kind ?? proofKind(source.key),
+        };
+      })
+    : keys.map((key, index) => {
+        const query = keyUrls[index];
+        return { id: key, key, url: query?.data ?? null, error: Boolean(query?.isError), kind: proofKind(key) };
+      });
+  const total = files.length;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // URL olindi, lekin brauzer uni ocha olmadi (masalan MinIO tashqariga yopiq) —
   // buzilgan rasm belgisi o'rniga "ochib bo'lmadi".
@@ -41,40 +75,38 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
   const close = useCallback(() => setOpenIndex(null), []);
   const step = useCallback(
     (delta: number) =>
-      setOpenIndex((current) => (current === null ? current : (current + delta + keys.length) % keys.length)),
-    [keys.length],
+      setOpenIndex((current) => (current === null ? current : (current + delta + total) % total)),
+    [total],
   );
 
   useEffect(() => {
-    if (openIndex === null || keys.length < 2) return;
+    if (openIndex === null || total < 2) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "ArrowRight") step(1);
       if (event.key === "ArrowLeft") step(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [openIndex, keys.length, step]);
+  }, [openIndex, total, step]);
 
-  if (keys.length === 0) return null;
+  if (total === 0) return null;
 
-  const openKey = openIndex === null ? null : keys[openIndex];
-  const openQuery = openIndex === null ? null : urls[openIndex];
-  const openUrl = openQuery?.data ?? null;
-  const openFailed = Boolean(openQuery?.isError || (openUrl && brokenUrls.has(openUrl)));
-  const openKind = openKey ? proofKind(openKey) : "file";
+  const openFile = openIndex === null ? null : (files[openIndex] ?? null);
+  const openKey = openFile?.key ?? null;
+  const openUrl = openFile?.url ?? null;
+  const openFailed = Boolean(openFile?.error || (openUrl && brokenUrls.has(openUrl)));
+  const openKind = openFile?.kind ?? "file";
 
   return (
     <>
       <div className="grid grid-cols-3 gap-2 md:grid-cols-4" data-testid="proof-gallery">
-        {keys.map((key, index) => {
-          const query = urls[index];
-          const url = query?.data ?? null;
-          const failed = Boolean(query?.isError || (url && brokenUrls.has(url)));
-          const kind = proofKind(key);
-          const name = proofFileName(key);
+        {files.map((file, index) => {
+          const { url, kind } = file;
+          const failed = Boolean(file.error || (url && brokenUrls.has(url)));
+          const name = proofFileName(file.key);
           return (
             <Pressable
-              key={key}
+              key={file.id}
               onClick={() => setOpenIndex(index)}
               aria-label={`${t("proofOpen")}: ${name}`}
               title={name}
@@ -132,9 +164,9 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
           openKey ? (
             <span className="flex min-w-0 items-center gap-2">
               <span className="min-w-0 truncate">{proofFileName(openKey)}</span>
-              {keys.length > 1 ? (
+              {total > 1 ? (
                 <span className="shrink-0 text-[13px] font-normal text-text-muted">
-                  {(openIndex ?? 0) + 1} / {keys.length}
+                  {(openIndex ?? 0) + 1} / {total}
                 </span>
               ) : null}
             </span>
@@ -175,7 +207,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
               </span>
             )}
 
-            {keys.length > 1 ? (
+            {total > 1 ? (
               <>
                 <IconButton
                   variant="secondary"

@@ -99,7 +99,7 @@ describe("ScanDetailPage — next scan from the detail page", () => {
     hidScan("PARCEL-B");
 
     expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-B");
-    expect(feedbackMock).toHaveBeenCalledWith("success");
+    expect(feedbackMock).toHaveBeenCalledWith("success", undefined, undefined, { voice: false });
   });
 
   it("treats a re-scan of the open parcel as a duplicate, not a navigation", async () => {
@@ -185,7 +185,7 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
 
     expect(assignMock).toHaveBeenCalledWith("PARCEL-A");
     expect(await screen.findByText("Buyurtma sizga biriktirildi")).toBeInTheDocument();
-    expect(feedbackMock).toHaveBeenCalledWith("success");
+    expect(feedbackMock).toHaveBeenCalledWith("success", undefined, undefined, { voice: "assigned" });
     expect(invalidateMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: /O'zimga olish/ })).toBeDisabled();
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan"), { timeout: 3000 });

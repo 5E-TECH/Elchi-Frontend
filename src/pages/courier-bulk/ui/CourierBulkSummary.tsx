@@ -10,7 +10,7 @@ import { ScanModeControl, ScanModeHint } from "./ScanModeControl";
 
 type CourierBulkSummaryProps = {
   counts: CourierBulkCounts;
-  /** Belgilanmagan (sukut bo'yicha sotiladigan) buyurtmalar soni. */
+  /** Belgilanmagan (yakunlashda o'zgarmaydigan — sukut natija yo'q) buyurtmalar soni. */
   unmarked: number;
   /** `manager` — «Kutilayotgan» izohi «Filial kuryerlarida, yakunlanmagan» (Q8, maket yo'q). */
   viewer: "courier" | "manager";

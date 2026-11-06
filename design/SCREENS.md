@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**82 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **81 / 82**
+**84 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **143** · qisman: **163** · v2 ga ko'chirilgan route: **83 / 84**
 
 ## Qanday ishlatiladi
 
@@ -57,6 +57,8 @@
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
 | `/orders/cancel-reasons` | Buyurtmalar | `src/pages/orders/cancel-reasons/index.tsx` | superadmin, admin, manager, market | 0 | v2 |
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
+| `/replacement-returns` | Buyurtmalar | `src/pages/replacement-returns/index.tsx` | superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q) | 0 | v2 |
+| `/extra-costs` | Buyurtmalar | `src/pages/extra-costs/index.tsx` | manager (o'z filiali kuryerlari va o'zi (token)), market (o'z marketi (token); tasdiqlash / rad etish), market_operator (o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola), courier (o'zi yozganlari (token)) | 0 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
@@ -407,6 +409,37 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | tizim taxtasi | `tizim-contact-card` — Aloqa kartasi va «Muammo bo'lsa» — holatlar | [design/fragments/tizim--contact-card.html](fragments/tizim--contact-card.html) | taxta | qoida |
 | `/orders/edit/:orderId` | tizim taxtasi | `tizim-category-labels` — Maxsus yorliq — kategoriya belgisi (100×60, A4, tartib) | [design/fragments/tizim--category-labels.html](fragments/tizim--category-labels.html) | taxta | qoida |
 
+#### `/replacement-returns` — Almashtirish qaytarmalari — almashtirishga tanlangan eski buyurtmalar
+
+- **Fayllar:** `src/pages/replacement-returns/index.tsx` · `src/pages/replacement-returns/model/replacementReturnsView.ts` · `src/entities/order/api/replacementReturns.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewReplacementReturns` (access.ts → canViewReplacementReturns)
+- **Rollar:** superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q)
+- **Menyuda:** «Almashtirishlar» (`replacements`) — superadmin, admin
+- **Holat:** v2
+- **Izoh:** lQjt6sKP (BeePost replacement-returns): GET orders/replacement/returns?market_id&state&page&limit — almashtirishga tanlangan ESKI buyurtmalar (mahsuloti mijozdan olinib marketga qaytariladi). Ustunlar: eski buyurtma, yangi buyurtma (holati bilan; o'chirilgan bo'lsa — «Yangi buyurtma o'chirilgan»), mijoz, mahsulot, holat («Kutilmoqda — kuryer olishi kerak» / «Olingan — marketga ketmoqda» / «Marketga qaytarildi», olingan sanasi bilan), sotilgan sana; telefonda kartalar. Filtrlar «Holat: …» va (superadmin/admin) «Market: …» — URL ?state&market, o'zgarsa sahifa 1. Faqat o'qish: backend'da «Marketga topshirildi» amali va old_returned ga o'tkazuvchi oqim yo'q — «Qaytarildi» filtri hozircha bo'sh.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/replacement-returns` | superadmin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
+| `/replacement-returns` | admin | — Maket yo'q — eng yaqini: superadmin-returns-list | — | — | v2 |
+| `/replacement-returns` | market | — Maket yo'q — eng yaqini: superadmin-returns-list. Menyu bandi yo'q (BeePost'da marketda yo'q), havola: /orders sarlavhasidagi «Almashtirishlar» tugmasi; o'z buyurtmalari (token), market filtri yo'q. | — | — | v2 |
+
+#### `/extra-costs` — Qo'shimcha xarajatli buyurtmalar — so'rovlar, qarorlar va tasdiqsiz yozilgan xarajatlar
+
+- **Fayllar:** `src/pages/extra-costs/index.tsx` · `src/pages/extra-costs/model/extraCostsView.ts` · `src/pages/extra-costs/ui/ExtraCostProofDialog.tsx` · `src/entities/orders/extraCosts.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewExtraCosts` (access.ts → canViewExtraCosts)
+- **Rollar:** manager (o'z filiali kuryerlari va o'zi (token)), market (o'z marketi (token); tasdiqlash / rad etish), market_operator (o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola), courier (o'zi yozganlari (token))
+- **Menyuda:** «Qo'shimcha xarajatli buyurtmalar» (`extraCosts`) — manager, market, market_operator, courier
+- **Holat:** v2
+- **Izoh:** GykuOz8f: GET orders/extra-costs?tab=all|pending|approved|cancelled&page&limit (doira faqat tokendan; admin/superadmin — 403). Tab va sahifa URL'da (?tab&page&limit), tab sonlari javobdagi counts dan. Ustunlar: buyurtma (EL-… havola, amal: Sotish / Bekor qilish / Qisman sotish), mijoz, summa va holat («Tasdiq kutilmoqda» + avtomatik tasdiq vaqti / «Tasdiqlandi» / «Avtomatik tasdiqlandi» / «Tasdiqsiz yozildi» / «Rad etildi» / «Bekor bo'ldi» / «Teskari qaytarildi»), «Kim yozgan» (menejer, market, operator), so'rov va qaror sanasi, sabab yoki izoh, «Isbot (N)» — GET orders/extra-costs/:id/proofs/:index galereya oynasida. Telefonda kartalar. «Bekor qilingan» = rad etilgan + o'zi yopilgan (void); «Teskari qaytarildi» faqat «Barchasi» da.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/extra-costs` | manager | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; «Kim yozgan» ustuni bor. | — | — | v2 |
+| `/extra-costs` | market | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Tasdiqlash kutilayotgan · Tasdiqlangan · Bekor qilingan; «Tasdiqlash kutilayotgan» tabida «Tasdiqlash» (tasdiq oynasi) va «Rad etish» (sabab oynasi). | — | — | v2 |
+| `/extra-costs` | market_operator | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Market tablari, faqat ko'rish (tugmalar yo'q); marketga biriktirilmagan — so'rov yo'q, bo'sh holat. | — | — | v2 |
+| `/extra-costs` | courier | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; faqat o'zi yozganlari. | — | — | v2 |
+
 ### Qabul va yaratish
 
 #### `/new-orders` — Qabul va yaratish — tablar (layout) + Marketlar tabi
@@ -694,7 +727,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Pochta» (`mails`, `/mails` orqali) — superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
 - **Holat:** v2
-- **Izoh:** Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi). Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Filial menejeri «Bugungi»si bitta so'rovda 100 tagacha ochiq pochta oladi (sukut 8 emas).
+- **Izoh:** Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi). Bahodir so'rovi 2026-11-04 (Bugungi · Rad etilgan · Eski jadvallari): superadmin, admin va registratorda «Kuryer» o'rnida «Filial» — pochta branch_id nomi (ro'yxat javobida faqat id: superadmin/admin — GET branches, HQ registratori — GET branches/dispatch-destinations, hammada — o'z filiali; topilmasa «Filial #id»), < 1024 da viloyat ostida, telefon kartasi izohida; Bugungida faqat pochtada filial bo'lsa (YANGI pochtada yo'q). Menejerda «Kuryer» qoladi (ro'yxati faqat o'z filiali), kuryer va kartalar to'ri o'zgarmagan; «Kuryer» filtri, Excel ustuni va chek — avvalgidek. Pochta qabul qilingach (PATCH post/receive/:id) «Bugungi» (zaxira bilan) va «Eski» ro'yxatlari yangilanadi — orqaga qaytganda qabul qilingan pochta ko'rinmaydi. Ega qarori 2026-11-03 (BeePost uslubi, kuryer va filial menejeri maketlaridan ustun): kuryer (barcha tablari) va HQ bo'lmagan filial menejeri pochtalarni jadval emas, sana bo'yicha alohida kartalarda ko'radi (MailCardsGrid; kim — mailsCardView.ts, filial turi HQ emas): har pochta — o'z kartasi (sarlavha — sana va vaqt «Bugun, 13:10», holat, «Pochta №X», viloyat, kuryer, «N ta buyurtma», summa), yangilari tepada, butun karta — tafsilot havolasi (jadvaldagi holat bilan); turli pochtalar birlashtirilmaydi. Filtrlar, xulosa / StatCard lar, bo'sh va xato holatlari o'zgarmaydi. HQ xodimlari (superadmin, admin, registrator, HQ menejeri) — jadval. Maket yo'q — eng yaqini: courier-mails-today (telefon qatori), superadmin-branches-list-table (kartalar). Filial menejeri «Bugungi»si bitta so'rovda 100 tagacha ochiq pochta oladi (sukut 8 emas).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -769,7 +802,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Qidiruv («Buyurtmalar N ta» kartasida, × bilan, «natija yo'q» holati) va takroriy telefon raqamlar banneri (*-mails-detail-duplicates / -search / -search-empty, menejerda *-receive-*) — klient tomonda, pochta ichidagi buyurtmalar bo'yicha (sahifa barcha buyurtmalarni yuklaydi; +998 siz raqamlar normallashtiriladi), backend maydoni kerak emas. Qoida: pochtada takroriy raqam bo'lsa banner qidiruvdan qat'i nazar turadi, chiplari filtr — faol chip = joriy qidiruv. Ega qarori 2026-11-03 (rad etilgan pochta, HQ qabuli): HQ qabul qiluvchisi (admin, superadmin, HQ menejeri / registratori) — «Pochtani qabul qilish» (asosiy) + «Filialga qaytarish» (secondary, RotateCcw, useConfirm tasdiq oynasi HQ → filial; faqat pochtani filial jo'natgan bo'lsa — GET post/orders/:id dagi post.branch HQ emas), ikkalasi faqat tanlanganlarga; tanlanmaganlari shu pochtada qoladi (hech narsa o'zi qaytmaydi), pochtada buyurtma qolmasa pochta yopiladi va sahifa kelingan ro'yxatga qaytadi; filial menejeri (kuryer pochtasini qabul qilish) — o'zgarmagan. Maket yo'q — eng yaqini: admin-mails-refused-detail (sarlavha amallari), admin-mails-send-branch-dialog (tasdiq oynasi). Ega qarori 2026-11-03 (kuryer, BeePost kabi): kuryerning o'z jo'natilgan (sent) pochtasida har yo'ldagi, so'rovsiz qatorda «kelmagan — qaytarish so'rovi» — jadvalda qator amallarida chop etishdan oldin danger-soft sm («Kelmadi» < 1024, «Kelmagan — qaytarish», RotateCcw), telefonda kartaning ostida to'liq kenglikda «Bu buyurtma kelmagan — qaytarish so'rovi»; useConfirm tasdiq oynasi (tone primary, «Buyurtma kelmadimi?», buyurtma ma'lumoti va oqibatlar, «So'rov yuborish») → POST post/:id/orders/:orderId/return-request; qator ro'yxatdan chiqadi, so'rov «Qaytarish»ga tushadi (tasdiqlangach buyurtma kelgan omboriga qaytadi), qabul qilinadigan buyurtma qolmasa kelingan ro'yxatga qaytiladi. Qaytarish so'rovi bor buyurtmalar qabul qilinadiganlardan (tanlov, son, qabul) chiqariladi va karta izohida sanaladi; QR'i skanerlansa buyurtma ro'yxatga qaytib tanlanadi (qabul qilinsa so'rov bekor bo'ladi). Xodim, eski va rad etilgan pochtada yo'q. Maket yo'q — eng yaqini: courier-mails-detail-receive (qator / karta), courier-orders-pending (danger-soft qator amali, karta ostidagi amal).
+- **Izoh:** Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Qidiruv («Buyurtmalar N ta» kartasida, × bilan, «natija yo'q» holati) va takroriy telefon raqamlar banneri (*-mails-detail-duplicates / -search / -search-empty, menejerda *-receive-*) — klient tomonda, pochta ichidagi buyurtmalar bo'yicha (sahifa barcha buyurtmalarni yuklaydi; +998 siz raqamlar normallashtiriladi), backend maydoni kerak emas. Qoida: pochtada takroriy raqam bo'lsa banner qidiruvdan qat'i nazar turadi, chiplari filtr — faol chip = joriy qidiruv. Ega qarori 2026-11-03 (rad etilgan pochta, HQ qabuli): HQ qabul qiluvchisi (admin, superadmin, HQ menejeri / registratori) — «Pochtani qabul qilish» (asosiy) + «Filialga qaytarish» (secondary, RotateCcw, useConfirm tasdiq oynasi HQ → filial; faqat pochtani filial jo'natgan bo'lsa — GET post/orders/:id dagi post.branch HQ emas), ikkalasi faqat tanlanganlarga; tanlanmaganlari shu pochtada qoladi (hech narsa o'zi qaytmaydi), pochtada buyurtma qolmasa pochta yopiladi va sahifa kelingan ro'yxatga qaytadi; filial menejeri (kuryer pochtasini qabul qilish) — o'zgarmagan. Maket yo'q — eng yaqini: admin-mails-refused-detail (sarlavha amallari), admin-mails-send-branch-dialog (tasdiq oynasi). Ega qarori 2026-11-03 (kuryer, BeePost kabi): kuryerning o'z jo'natilgan (sent) pochtasida har yo'ldagi, so'rovsiz qatorda «kelmagan — qaytarish so'rovi» — jadvalda qator amallarida chop etishdan oldin danger-soft sm («Kelmadi» < 1024, «Kelmagan — qaytarish», RotateCcw), telefonda kartaning ostida to'liq kenglikda «Bu buyurtma kelmagan — qaytarish so'rovi»; useConfirm tasdiq oynasi (tone primary, «Buyurtma kelmadimi?», buyurtma ma'lumoti va oqibatlar, «So'rov yuborish») → POST post/:id/orders/:orderId/return-request; qator ro'yxatdan chiqadi, so'rov «Qaytarish»ga tushadi (tasdiqlangach buyurtma kelgan omboriga qaytadi), qabul qilinadigan buyurtma qolmasa kelingan ro'yxatga qaytiladi. Qaytarish so'rovi bor buyurtmalar qabul qilinadiganlardan (tanlov, son, qabul) chiqariladi va karta izohida sanaladi; QR'i skanerlansa buyurtma ro'yxatga qaytib tanlanadi (qabul qilinsa so'rov bekor bo'ladi). Xodim, eski va rad etilgan pochtada yo'q. Maket yo'q — eng yaqini: courier-mails-detail-receive (qator / karta), courier-orders-pending (danger-soft qator amali, karta ostidagi amal). Ega qarori 2026-11-04 (filial menejeri): xuddi shu «kelmagan — qaytarish so'rovi» filial menejeriga ham — faqat o'z filialiga jo'natilgan (sent) o'tkazma pochtasida (kuryersiz: courier_id yo'q yoki '0'; post.branch_id — menejer filiali); tasdiq oynasida «… filialingizga kelmagan …» va «So'rovni HQ ko'rib chiqadi …», izohda «… — HQ ko'rib chiqadi» (so'rov HQ «Qaytarish»iga tushadi, filialning o'zinikiga emas; HQ ro'yxatida — manzil filial bo'yicha «Filial: <nomi> — kelmagan» guruhi, holat «Filialga kelmagan»), qolgani (shu endpoint, ro'yxatdan chiqish, izoh, skaner, ro'yxatga qaytish, telefonda karta ostidagi to'liq enli tugma) kuryerdagidek. Boshqa filial menejeri, filiali noma'lum menejer, registrator, kuryer pochtasi va qabul qilingan pochtada yo'q. QR'i skanerlab qayta olingan buyurtma kutib turgan bo'lsa (backend remaining_receivable uni sanamaydi), so'rovdan keyin sahifa yopilmaydi. Tarixda branch_return_requested yorlig'i («Filialga kelmagan — qaytarish so'raldi»).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2005,7 +2038,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | v2 |
 | `/activity-logs` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
-#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|integrations|investors|logistics|delivery-pricing|branches|identity|system|auth; dizayn v2)
+#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|expense-categories|investors|delivery-pricing|identity|system|auth; ?tab=logistics|branches|integrations — /returns, /batches, /integrations ga yo'naltiriladi; dizayn v2)
 
 - **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx` · `src/pages/expense-categories/index.tsx` · `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` · `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` · `src/pages/delivery-tariffs/index.tsx` · `src/pages/delivery-tariffs/ui/DeliveryTariffsContent.tsx` · `src/pages/investors-ops/index.tsx` · `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/HealthCard.tsx` · `src/pages/system-ops/ui/AiStatusCard.tsx` · `src/pages/system-ops/lib/aiStatus.ts` · `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
@@ -3111,9 +3144,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/notification-campaign/ui/CustomerSegmentFilters.tsx` | `/notifications/sms` |
 | `src/entities/notification-campaign/ui/SaveSegmentDialog.tsx` | `/notifications/send` |
 | `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | `/notifications/send`, `/notifications/sent` |
+| `src/entities/order/api/replacementReturns.ts` | `/replacement-returns` |
 | `src/entities/order/ui/FulfillmentSourceTag.tsx` | `/orders` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
+| `src/entities/orders/extraCosts.ts` | `/extra-costs` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
 | `src/entities/product/ui/ProductThumb.tsx` | `/products`, `/products/create-product/:id` |
@@ -3235,6 +3270,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/expense-categories/index.tsx` | `/ops` |
 | `src/pages/expense-categories/ui/ExpenseCategoriesPanel.tsx` | `/ops` |
 | `src/pages/expense-categories/ui/ExpenseCategoryFormDialog.tsx` | `/ops` |
+| `src/pages/extra-costs/index.tsx` | `/extra-costs` |
+| `src/pages/extra-costs/model/extraCostsView.ts` | `/extra-costs` |
+| `src/pages/extra-costs/ui/ExtraCostProofDialog.tsx` | `/extra-costs` |
 | `src/pages/finance-operators/index.tsx` | `/finance-operators` |
 | `src/pages/finance-operators/lib/operatorFinance.ts` | `/finance-operators` |
 | `src/pages/finance-operators/ui/OperatorBalanceCard.tsx` | `/finance-operators` |
@@ -3563,6 +3601,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/region/ui/sato/useSatoMerge.ts` | `/regions/sato-management` |
 | `src/pages/region/ui/useDistrictMerge.ts` | `/regions/districts` |
 | `src/pages/region/ui/useSatoCodeOwner.ts` | `/regions/districts`, `/regions/sato-management` |
+| `src/pages/replacement-returns/index.tsx` | `/replacement-returns` |
+| `src/pages/replacement-returns/model/replacementReturnsView.ts` | `/replacement-returns` |
 | `src/pages/returns/index.tsx` | `/returns` |
 | `src/pages/returns/model/returnBatches.ts` | `/returns` |
 | `src/pages/scan/detail.tsx` | `/scan/:token` |
@@ -3723,6 +3763,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` (+3) |
+| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
@@ -3747,6 +3788,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `admin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
+| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |
@@ -3768,6 +3810,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | REGIONAL · HYBRID | `manager-courier-bulk-main` (+1) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` (+1) |
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | barchasi | izohga qarang |
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
@@ -3794,6 +3837,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+2) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+1) |
 | To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+3) |
@@ -3805,6 +3849,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | izohga qarang |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | izohga qarang |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Buyurtma yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market_operator-products-list` (+1) |
 | Daromadim | `earnings` | `/my-earnings` | `/my-earnings` | — | `market_operator-earnings` (+1) |
@@ -3817,6 +3862,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+12) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
+| Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | — | izohga qarang |
 | Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+5) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `courier-regions-scoped` |
 

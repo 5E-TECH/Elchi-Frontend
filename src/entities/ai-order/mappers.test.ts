@@ -82,10 +82,20 @@ describe("buildAiConfirmPayload", () => {
           where_deliver: "address",
           address: "9-kvartal, 12-uy",
           comment: "18:00 dan keyin",
-          operator: "sevinch",
+          // Operator — shaxs ismi: har so'z bosh harfi katta.
+          operator: "Sevinch",
         },
       ],
     });
+  });
+
+  it("mijoz va operator ismi — har so'z bosh harfi katta, qolgani AI o'qigandek", () => {
+    const [order] = buildAiConfirmPayload(
+      [preview({ customer_name: "  o'tkir   abdulla-ugli ", operator: "nodira ALIYEVA" })],
+      { includeMarketId: false },
+    ).orders;
+    expect(order.customer.name).toBe("O'tkir Abdulla-Ugli");
+    expect(order.operator).toBe("Nodira ALIYEVA");
   });
 
   it("vncdmXOy: `draft_id` bilan preview o'rni `ai_item_index` bo'lib ketadi; `draft_id` siz yoki 0..29 dan tashqari — yo'q", () => {

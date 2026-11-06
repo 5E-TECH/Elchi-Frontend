@@ -39,6 +39,10 @@ export const useOrders = () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
                 client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+                // Shu mijozga keyingi buyurtmada «yangi buyurtma bor» ogohlantirishi (`entities/customer`) va ombor
+                // qoldig'i («Omborda: N» — buyurtma omborda band qiladi).
+                client.invalidateQueries({ queryKey: ["customer-suggest"] }),
+                client.invalidateQueries({ queryKey: ["warehouses"] }),
             ]);
         },
     });
@@ -82,7 +86,12 @@ export const useOrders = () => {
         mutationFn: (data: AssignCourierRequest) =>
             api.post(API_ENDPOINTS.ORDERS.ASSIGN_COURIER, data).then((res) => res.data),
         onSuccess: () =>
-            client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
+            Promise.all([
+                client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
+                client.invalidateQueries({ queryKey: ["dashboard"] }),
+                // `/scan/:token` → «Kuryerga biriktirish» → orqaga: skan natijasi eski holat bilan qolmasin.
+                client.invalidateQueries({ queryKey: ["scan-detail"], refetchType: "none" }),
+            ]),
     });
 
     return { createOrder, useGetOrders, useGetExternalOrders, assignCourier };

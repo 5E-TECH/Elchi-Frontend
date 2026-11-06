@@ -7,6 +7,7 @@ import {
   Repeat,
   Scan,
   ScanLine,
+  Speech,
   Usb,
   Vibrate,
   Volume2,
@@ -298,9 +299,52 @@ const SoundGroup = ({
 };
 
 /**
+ * «OVOZLI XABAR» (maket yo'q — eng yaqini: `common-settings-scanner`, «Kamera» kartasidagi kalit qatori va ovoz
+ * tanlovining «Eshitib ko'rish» tugmasi): signaldan keyin natija o'zbekcha aytiladi. Kalit qatori — `Pressable`
+ * (`role="switch"`), «Eshitib ko'rish» — yonida alohida `IconButton` (tugma ichida tugma bo'lmaydi). «Ovoz» o'chiq
+ * bo'lsa ibora ham aytilmaydi — kalit nofaol va sababi izohda.
+ */
+const VoiceRow = ({
+  checked,
+  soundOn,
+  onToggle,
+  onPreview,
+}: {
+  checked: boolean;
+  soundOn: boolean;
+  onToggle: (next: boolean) => void;
+  onPreview: () => void;
+}) => {
+  const { t } = useTranslation("settings");
+  return (
+    <div className="flex items-center gap-2 pr-5 max-md:pr-4">
+      <div className="min-w-0 flex-1">
+        <SwitchRow
+          checked={checked}
+          disabled={!soundOn}
+          onToggle={onToggle}
+          title={t("scanner.voice")}
+          hint={soundOn ? t("scanner.voice_hint") : t("scanner.voice_needs_sound")}
+          leading={
+            <span
+              aria-hidden="true"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
+            >
+              <Speech size={20} />
+            </span>
+          }
+        />
+      </div>
+      <IconButton size="sm" icon={Play} label={t("scanner.preview_voice")} onClick={onPreview} />
+    </div>
+  );
+};
+
+/**
  * «SKANER» — maket `common-settings-scanner` (spec D5: alohida tab, ovozlar Interfeysdan ko'chdi): «Kamera»
- * kartasi (skaner ishi 4-bosqichi), ovozlar, USB skaner. Ovoz tanlovi — `onSelect` (localStorage + persist),
- * eshitib ko'rish — `onPreview` (tanlov o'zgarmaydi); kamera — `onCamera`, ovoz/tebranish kaliti — `onFeedback`.
+ * kartasi (skaner ishi 4-bosqichi), ovozlar, «Ovozli xabar», USB skaner. Ovoz tanlovi — `onSelect` (localStorage +
+ * persist), eshitib ko'rish — `onPreview` / `onPreviewVoice` (tanlov o'zgarmaydi); kamera — `onCamera`,
+ * ovoz/tebranish/ovozli xabar kaliti — `onFeedback`.
  */
 export const ScannerPanel = ({
   sounds,
@@ -309,6 +353,7 @@ export const ScannerPanel = ({
   canTestCamera = true,
   onSelect,
   onPreview,
+  onPreviewVoice,
   onCamera,
   onFeedback,
 }: {
@@ -319,6 +364,7 @@ export const ScannerPanel = ({
   canTestCamera?: boolean;
   onSelect: (type: SoundType, sound: ScannerSoundId) => void;
   onPreview: (type: SoundType, sound: ScannerSoundId) => void;
+  onPreviewVoice: () => void;
   onCamera: (patch: Partial<CameraSettings>) => void;
   onFeedback: (patch: Partial<FeedbackSettings>) => void;
 }) => {
@@ -346,6 +392,14 @@ export const ScannerPanel = ({
           value={sounds.error}
           onSelect={(sound) => onSelect("error", sound)}
           onPreview={(sound) => onPreview("error", sound)}
+        />
+      </div>
+      <div className="border-t border-border">
+        <VoiceRow
+          checked={feedback.voice}
+          soundOn={feedback.sound}
+          onToggle={(next) => onFeedback({ voice: next })}
+          onPreview={onPreviewVoice}
         />
       </div>
       {/* USB skaner — telefonda yo'q (maket `el-hide-mobile`). */}

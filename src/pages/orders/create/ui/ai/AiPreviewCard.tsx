@@ -430,6 +430,7 @@ const AiPreviewCard = ({
             hint={hints(warningFor("customer_name"))}
           >
             <TextInput
+              personName
               value={order.customer_name}
               onValueChange={(value) => update({ customer_name: value })}
               placeholder={t("enterName")}
@@ -658,6 +659,7 @@ const AiPreviewCard = ({
           ) : (
             <Field label={t("operator")} id={`${idPrefix}-operator`} hint={hints(warningFor("operator"))}>
               <TextInput
+                personName
                 value={order.operator ?? ""}
                 onValueChange={(value) => update({ operator: value })}
                 placeholder={t("operatorPlaceholder")}

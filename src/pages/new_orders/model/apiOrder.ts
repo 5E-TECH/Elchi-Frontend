@@ -38,4 +38,6 @@ export interface ApiOrder {
   problem_contacts?: { name?: string | null; phone?: string | null; source?: string | null }[] | null;
   /** Market (`{ id, name, phone_number }`) — chekda jo'natuvchi. */
   market?: { id?: string; name?: string | null; phone_number?: string | null } | null;
+  /** Buyurtma operatori (ism yoki erkin matn) — chekda «Jo'natuvchi: Market / Operator». */
+  operator?: string | null;
 }

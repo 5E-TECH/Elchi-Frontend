@@ -137,4 +137,32 @@ describe("ProofGallery", () => {
     fireEvent.keyDown(window, { key: "ArrowLeft" });
     await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
   });
+
+  it("⭐ GykuOz8f: `sources` — fayllar berilgan yo'ldan (JWT bilan `blob`), tur javobning `Content-Type` idan", async () => {
+    apiGet.mockImplementation((url: string) => {
+      if (url === "orders/extra-costs/ap-1/proofs/0") {
+        return Promise.resolve({ data: Object.assign(new Blob(["x"], { type: "video/mp4" }), { key: "src-0" }) });
+      }
+      if (url === "orders/extra-costs/ap-1/proofs/1") return Promise.reject(httpError(404));
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+    renderWithProviders(
+      <ProofGallery
+        keys={[IMG]}
+        sources={[
+          { key: "isbot-1", url: "orders/extra-costs/ap-1/proofs/0" },
+          { key: "isbot-2", url: "orders/extra-costs/ap-1/proofs/1" },
+        ]}
+      />,
+    );
+
+    // Kalitda kengaytma yo'q — video ekanini javob turidan biladi.
+    await waitFor(() => expect(tile("isbot-1")?.querySelector("video")).toBeTruthy());
+    expect(tile("isbot-1")).toHaveAttribute("data-proof-kind", "video");
+    // `retry: 1` — bir marta qayta urinadi, keyin plitkada xato.
+    await waitFor(() => expect(tile("isbot-2")).toHaveTextContent("Faylni ochib bo'lmadi"), { timeout: 4000 });
+    // `sources` berilsa `keys` (files/:key/content) ishlatilmaydi.
+    expect(apiGet.mock.calls.map(([url]) => url)).not.toContain(contentPath(IMG));
+    expect(apiGet).toHaveBeenCalledWith("orders/extra-costs/ap-1/proofs/0", expect.objectContaining({ responseType: "blob" }));
+  });
 });

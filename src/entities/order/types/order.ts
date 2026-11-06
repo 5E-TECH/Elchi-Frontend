@@ -103,6 +103,8 @@ export interface OrderListItem {
     transport_status?: string | null;
     /** Oxirgi custody o'tishi (bekor bosqichidagi «N kun» — `cancel_return` yo'q eski javobda zaxira). */
     last_handover_at?: string | null;
+    /** Kuryerga biriktirilgan payt — kuryer pochtasi shu so'rovda ochiladi (menejer «Bugungi» zaxira kartasi sanasi). */
+    assigned_at?: string | null;
     /**
      * BG1 (vOczoOUE 2-bosqich): backend hisoblagan bekor bosqichi — FE `resolveCancelReturnStage` bilan AYNAN bir
      * xil qoida; qabulgacha bekor — `null`.
@@ -128,6 +130,17 @@ export interface OrderListItem {
      * ularni bermaydi — imzolangan URL `GET files/:key` (JWT) orqali olinadi.
      */
     proof_files?: string[] | null;
+    /**
+     * GykuOz8f: serverdagi kutilayotgan qo'shimcha xarajat so'rovi — buyurtma `waiting` da va so'rov hal qilinmagan
+     * bo'lsa `{ id, action, amount, created_at, auto_approve_at }`, aks holda `null` (ro'yxatdagi «Tasdiqqa yuborilgan»).
+     */
+    pending_extra_cost_approval?: {
+        id: string;
+        action: "sell" | "partly_sell" | "cancel";
+        amount: number;
+        created_at: string;
+        auto_approve_at: string | null;
+    } | null;
     /** HQ marketga qaytarishni boshlagan (`POST orders/:id/initiate-return`). */
     return_requested?: boolean;
     /** Qaytarish sababi (initiate-return `reason`). */
@@ -135,6 +148,14 @@ export interface OrderListItem {
     /** 6kHnNH9j: manba (eski javobda yo'q — HQ). */
     fulfillment_source?: OrderFulfillmentSource | null;
     warehouse?: OrderWarehouseRef | null;
+    /**
+     * lQjt6sKP almashtirish (`readOrderReplacement`): yangi buyurtmada — eski buyurtma id'si; eski buyurtmada
+     * `is_replacement_return: true`. Holat: `awaiting_old_pickup` → `old_collected` → `old_returned`.
+     */
+    replacement_of_order_id?: string | null;
+    replacement_state?: "awaiting_old_pickup" | "old_collected" | "old_returned" | null;
+    is_replacement_return?: boolean;
+    old_item_collected_at?: string | null;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -172,6 +193,8 @@ export interface OrderListItem {
         cancelled_handover_qr_required?: boolean | null;
         /** `false` — tasdiqsiz market: menejer xarajati kuryer chegarasida, tasdiqsiz (2KisY7DL, backend 04e1ad9). */
         extra_cost_requires_approval?: boolean | null;
+        /** `false` — market qo'shimcha xarajatni yopgan: sotish/bekor oynalarida maydon yo'q (QoYyRl6S). */
+        extra_cost_enabled?: boolean | null;
     };
     branch?: {
         id: string;
@@ -302,6 +325,11 @@ export interface CreateOrderRequest {
     total_price: number;
     comment?: string;
     operator?: string;
+    /**
+     * Ro'yxatdan tanlangan market operatori (raqamli id). Backend buyurtma marketining faol operatori ekanini
+     * tekshiradi (aks holda 400), `operator` ni uning ismi bilan yozadi; komissiya shu operatorga.
+     */
+    operator_id?: string;
     where_deliver: DeliveryType;
     paid_amount?: number;
     post_id?: string;
@@ -310,4 +338,9 @@ export interface CreateOrderRequest {
     cancel_requires_media?: boolean;
     /** 6kHnNH9j: manba tanlovi (yuborilmasa — `auto`). Faqat manba bloki ko'rinadigan rollarda yuboriladi. */
     fulfillment?: OrderFulfillmentChoice;
+    /**
+     * lQjt6sKP: almashtirish — shu buyurtma o'rniga yuboriladigan ESKI (yetkazilgan) buyurtma ID si
+     * (`GET orders/replaceable`). Faqat qo'lda yaratish formasidan; tanlanmasa yuborilmaydi.
+     */
+    replaced_order_id?: string;
 }

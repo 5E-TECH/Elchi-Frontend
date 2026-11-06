@@ -83,6 +83,8 @@ export interface User {
   /** Market bo'yicha qo'shimcha xarajat (w2bDrE3i): yangi market — yopiq, eski marketlar — ochiq. */
   extra_cost_enabled?: boolean;
   extra_cost_requires_approval?: boolean;
+  /** Market kassasi qarzga ishlaydimi: yoqilsa marketga qarzdan ortiq to'lash mumkin (sukut — o'chiq). */
+  cashbox_debt_enabled?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
@@ -275,6 +277,20 @@ export interface CreateLogistRequest extends CreateUserPasswordFields {
   phone_number: string;
   salary: number;
   payment_day?: number;
+}
+
+// ==================== CREATE INVESTOR ====================
+
+/**
+ * `POST /investor-users` (superadmin, admin; BeePost `POST /users/investor` naqshi) — faqat kirish: ism, telefon,
+ * parol. Backend shu telefondagi investor yozuvini loginga bog'laydi (yo'q bo'lsa yaratadi): javob `data.investor`.
+ * Boshlang'ich kapital — alohida `POST /investments`.
+ */
+export interface CreateInvestorUserRequest extends CreateUserPasswordFields {
+  name: string;
+  phone_number: string;
+  /** «Ulush (%)» — 0..100, ko'pi bilan 2 kasr; investor yozuviga saqlanadi. */
+  share_percent?: number;
 }
 
 // ==================== USER DETAIL ====================

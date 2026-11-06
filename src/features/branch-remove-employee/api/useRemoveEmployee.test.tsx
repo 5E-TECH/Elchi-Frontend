@@ -11,11 +11,19 @@ const api = vi.hoisted(() => ({ delete: vi.fn() }));
 vi.mock("../../../shared/api/instance", () => ({ api }));
 
 const LIST = queryKeys.branches.list({ page: 1, limit: 12 });
-const OTHER = ["users", "list", {}] as const;
+/** «Xodim qo'shish» oynasining `GET /users` keshi (`branch_id` bo'yicha filialsizlar). */
+const USERS = queryKeys.users.list({
+  status: "active",
+  role: ["manager", "registrator", "courier"],
+  page: 1,
+  limit: 100,
+  enabled: true,
+});
+const OTHER = ["orders", "list", {}] as const;
 
 const setup = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  for (const key of [LIST, queryKeys.branches.detail("15"), queryKeys.branches.employees("15"), OTHER]) {
+  for (const key of [LIST, queryKeys.branches.detail("15"), queryKeys.branches.employees("15"), USERS, OTHER]) {
     queryClient.setQueryData(key, { seeded: true });
   }
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -31,7 +39,7 @@ describe("useRemoveEmployee — kesh (cI5gqN90)", () => {
     api.delete.mockReset().mockResolvedValue({ data: { statusCode: 200 } });
   });
 
-  it("⭐ muvaffaqiyatda ro'yxat, tafsilot va xodimlar eskiradi; boshqa keshlar tegilmaydi", async () => {
+  it("⭐ muvaffaqiyatda ro'yxat, tafsilot, xodimlar va `GET /users` (branch_id) eskiradi; boshqa keshlar tegilmaydi", async () => {
     const { result, stale } = setup();
     await act(() => result.current.mutateAsync("210"));
 
@@ -39,6 +47,7 @@ describe("useRemoveEmployee — kesh (cI5gqN90)", () => {
     expect(stale(LIST)).toBe(true);
     expect(stale(queryKeys.branches.detail("15"))).toBe(true);
     expect(stale(queryKeys.branches.employees("15"))).toBe(true);
+    expect(stale(USERS)).toBe(true);
     expect(stale(OTHER)).toBe(false);
   });
 
@@ -48,5 +57,6 @@ describe("useRemoveEmployee — kesh (cI5gqN90)", () => {
     await act(() => result.current.mutateAsync("210").catch(() => {}));
 
     expect(stale(LIST)).toBe(false);
+    expect(stale(USERS)).toBe(false);
   });
 });

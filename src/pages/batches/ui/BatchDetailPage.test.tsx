@@ -309,7 +309,7 @@ describe("BatchDetailPage — /batches/:id", () => {
     act(() => mocks.scanner!.onMatch(scanned("10165"), "qr-10165"));
     expect(await screen.findByText("Buyurtma tanlandi")).toBeInTheDocument();
     expect(within(ordersCard()).getByRole("checkbox", { name: "№10165 ni tanlash" })).toBeChecked();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Tanlandi №10165");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Tanlandi №10165", undefined, { voice: "selected" });
 
     act(() => mocks.scanner!.onMatch(scanned("10165"), "qr-10165"));
     expect(await screen.findByText("Allaqachon tanlangan")).toBeInTheDocument();

@@ -33,6 +33,8 @@ import {
   canViewMyEarnings,
   canManageDeliveryTariffs,
   canViewWarehouses,
+  canViewReplacementReturns,
+  canViewExtraCosts,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -84,6 +86,10 @@ const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
 const BatchDetailPage = lazy(() => import("../../pages/batches/detail"));
 const ReturnsPage = lazy(() => import("../../pages/returns"));
+// lQjt6sKP: «Almashtirish qaytarmalari» — almashtirishga tanlangan eski buyurtmalar (BeePost `replacement-returns`).
+const ReplacementReturnsPage = lazy(() => import("../../pages/replacement-returns"));
+// GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — kuryer, menejer, market, operator (admin/superadmin — yo'q).
+const ExtraCostsPage = lazy(() => import("../../pages/extra-costs"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
@@ -621,6 +627,26 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewReturns}>
                   <ReturnsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              // lQjt6sKP: almashtirish qaytarmalari — superadmin, admin (menyuda), market (o'zinikilar, menyusiz — /orders
+              // sarlavhasidagi «Almashtirishlar» havolasi orqali).
+              path: "replacement-returns",
+              element: (
+                <ProtectedRoute canActivate={canViewReplacementReturns}>
+                  <ReplacementReturnsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              // GykuOz8f: qo'shimcha xarajatli buyurtmalar — kuryer, menejer, market (menyuda), market operatori (faqat
+              // ko'rish; telefonda «Menyu» yo'q — /orders sarlavhasidagi havola orqali). Admin va superadmin — 403.
+              path: "extra-costs",
+              element: (
+                <ProtectedRoute canActivate={canViewExtraCosts}>
+                  <ExtraCostsPage />
                 </ProtectedRoute>
               ),
             },

@@ -240,7 +240,7 @@ describe("Filial paketlari — USB skaner", () => {
     act(() => mocks.scanner!.onMatch(scanned("147"), "BTB-TOKEN147AA"));
     expect(screen.getByRole("checkbox", { name: "B-147 paketini tanlash" })).toBeChecked();
     expect(rowOf("B-147")).toHaveAttribute("data-selected");
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String));
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, { voice: "selected" });
     expect(mocks.post).not.toHaveBeenCalled();
   });
 
@@ -256,7 +256,7 @@ describe("Filial paketlari — USB skaner", () => {
     });
 
     act(() => mocks.scanner!.onMatch(scanned("147"), "BTB-TOKEN147AA"));
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Paket tanlandi B-147");
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Paket tanlandi B-147", undefined, { voice: "selected" });
     expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 1, total: 3 });
     expect(mocks.scanner?.camera?.list?.[0]).toMatchObject({ key: "147", title: expect.stringContaining("B-147") });
 

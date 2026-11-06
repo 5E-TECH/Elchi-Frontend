@@ -133,7 +133,8 @@ const ScanDetailPage = () => {
         void playScanFeedback("error", t("waitForAction"));
         return true;
       }
-      void playScanFeedback("success");
+      // Keyingi skan faqat ochadi — «Bajarildi» aytilmaydi.
+      void playScanFeedback("success", undefined, undefined, { voice: false });
       setInvalidScan(false);
       navigate(`/scan/${encodeURIComponent(nextToken)}`);
       return true;

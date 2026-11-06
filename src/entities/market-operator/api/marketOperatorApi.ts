@@ -7,6 +7,7 @@ import type {
   MarketOperatorCommission,
   MarketOperatorList,
   MarketOperatorListParams,
+  SelectableMarketOperator,
 } from "../model/types";
 
 type Raw = Record<string, unknown>;
@@ -66,6 +67,48 @@ export const getMarketOperators = async (params: MarketOperatorListParams): Prom
   if (params.status) query.status = params.status;
   const response = await api.get(API_ENDPOINTS.MARKET_OPERATORS.BASE, { params: query });
   return normalizeMarketOperatorList(response.data, params);
+};
+
+const toOperatorId = (value: unknown): string =>
+  typeof value === "string" || (typeof value === "number" && Number.isFinite(value)) ? String(value).trim() : "";
+
+/**
+ * `{ statusCode, message, data: { items: [{ id, name }] } }` → tanlov ro'yxati (`data` massiv bo'lsa ham). Id yoki
+ * ismsiz qator va takror id tashlanadi; tartib — serverniki (nom bo'yicha).
+ */
+export const normalizeSelectableMarketOperators = (value: unknown): SelectableMarketOperator[] => {
+  const response = asRecord(value);
+  const data = asRecord(response?.data);
+  const items = Array.isArray(value)
+    ? value
+    : Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(response?.items)
+          ? response.items
+          : [];
+  const seen = new Set<string>();
+  const operators: SelectableMarketOperator[] = [];
+  for (const raw of items) {
+    const item = asRecord(raw);
+    const id = toOperatorId(item?.id);
+    const name = typeof item?.name === "string" ? item.name.trim() : "";
+    if (!id || !name || seen.has(id)) continue;
+    seen.add(id);
+    operators.push({ id, name });
+  }
+  return operators;
+};
+
+/**
+ * `GET /market-operators/selectable` — buyurtmaga biriktiriladigan operatorlar. `marketId` — xodim tanlagan market;
+ * market va market operatori uchun berilmaydi (server o'z marketini tokendan oladi).
+ */
+export const getSelectableMarketOperators = async (marketId?: string): Promise<SelectableMarketOperator[]> => {
+  const params = marketId ? { market_id: marketId } : undefined;
+  const response = await api.get(API_ENDPOINTS.MARKET_OPERATORS.SELECTABLE, { params });
+  return normalizeSelectableMarketOperators(response.data);
 };
 
 export const createMarketOperator = async (body: CreateMarketOperatorRequest): Promise<MarketOperator> => {

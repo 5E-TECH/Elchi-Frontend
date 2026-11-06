@@ -178,6 +178,7 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
     >
       <Field label={t("create.name")} required error={errorText("name")}>
         <TextInput
+          personName
           value={values.name}
           onValueChange={(value) => setField("name", value)}
           placeholder={t("create.namePlaceholder")}

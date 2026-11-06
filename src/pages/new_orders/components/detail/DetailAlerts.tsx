@@ -1,7 +1,11 @@
 // dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
-import { Clock, Info, Lock } from "lucide-react";
+import { Clock, Info, Lock, Repeat } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import {
+  formatReplacementOrderRef,
+  type OrderReplacementInfo,
+} from "../../../../entities/order/model/orderReplacement";
 import { isExtraCostAction, type PendingExtraCostApproval } from "../../../../entities/orders/extraCostApproval";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
@@ -41,7 +45,18 @@ type DetailAlertsProps = {
    * marketga topshirilmagan) — «Mahsulot omborga qaytarilgan — …». Berilmasa — «filialga jo'natilgan».
    */
   lockReason?: "cancelled" | "returned" | "warehouse" | null;
+  /**
+   * lQjt6sKP almashtirish (`readOrderReplacement`): yangi buyurtmada — «Eski №EL-… o'rniga» (+ eski buyurtmaga havola,
+   * kuryerdan tashqari — kuryer eski buyurtmani ocholmaydi, 403), eski buyurtmada — eski mahsulot qayerdaligi.
+   */
+  replacement?: OrderReplacementInfo | null;
 };
+
+const RETURN_STATE_KEYS = {
+  awaiting_old_pickup: "replacementTag.returnAwaiting",
+  old_collected: "replacementTag.returnCollected",
+  old_returned: "replacementTag.returnReturned",
+} as const;
 
 /**
  * Sarlavha ostidagi ogohlantirishlar (`flex flex-col gap-3`): market tasdig'i kutilmoqda (warning),
@@ -59,6 +74,7 @@ export const DetailAlerts = ({
   editOpen = null,
   marketListHref = null,
   lockReason = null,
+  replacement = null,
 }: DetailAlertsProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -168,11 +184,63 @@ export const DetailAlerts = ({
     return null;
   })();
 
-  if (!approval && !lock && !parentOrderId) return null;
+  // Almashtirish banneri (maket yo'q — `DetailAlert` naqshida, BeePost tafsilotidagi «Almashtirish» kartasi o'rnida).
+  const replacementAlert = (() => {
+    if (!replacement) return null;
+    const collectedAt = replacement.collectedAt ? formatDateTimeLocalized(replacement.collectedAt, { language }) : null;
+    if (replacement.isReplacement && replacement.oldOrderId) {
+      const ref = formatReplacementOrderRef(replacement.oldOrderId);
+      const body = replacement.needsOldItemConfirm
+        ? t("replacementBanner.newAwaiting", { ref })
+        : collectedAt
+          ? t("replacementBanner.newCollected", { ref, date: collectedAt })
+          : t("replacementBanner.newCollectedNoDate", { ref });
+      return (
+        <DetailAlert
+          tone={replacement.needsOldItemConfirm ? "warning" : "info"}
+          icon={Repeat}
+          role="note"
+          title={t("replacementBanner.newTitle")}
+          data-testid="order-replacement-banner"
+        >
+          {body}
+          {layout === "courier" ? null : (
+            <>
+              {" "}
+              <Link
+                to={`/orders/edit/${replacement.oldOrderId}`}
+                className="whitespace-nowrap font-semibold text-action-fg underline-offset-2 hover:underline"
+              >
+                {t("replacementBanner.openOld")}
+              </Link>
+            </>
+          )}
+        </DetailAlert>
+      );
+    }
+    if (replacement.isReplacementReturn) {
+      return (
+        <DetailAlert
+          tone="info"
+          icon={Repeat}
+          role="note"
+          title={t("replacementBanner.returnTitle")}
+          data-testid="order-replacement-return-banner"
+        >
+          {replacement.state ? t(RETURN_STATE_KEYS[replacement.state]) : null}
+          {collectedAt ? ` ${t("replacementBanner.returnCollectedAt", { date: collectedAt })}` : null}
+        </DetailAlert>
+      );
+    }
+    return null;
+  })();
+
+  if (!approval && !lock && !parentOrderId && !replacementAlert) return null;
 
   return (
     <div className="flex flex-col gap-3">
       {approval}
+      {replacementAlert}
       {lock}
       <OrderParentBanner parentOrderId={parentOrderId} />
     </div>

@@ -6,6 +6,7 @@ import {
   formatOrderRef,
   FulfillmentSourceTag,
   orderNumberOf,
+  ReplacementTag,
   ReturnRequestedTag,
   resolveCancelReturnPlace,
   resolveCancelReturnStage,
@@ -96,6 +97,8 @@ export const DetailHeader = ({
       ) : null}
       {isCourier && deliveryKey ? <Badge className="max-md:hidden">{t(deliveryKey)}</Badge> : null}
       <ReturnRequestedTag order={order} />
+      {/* lQjt6sKP: «Almashtirish» (eski №EL-… o'rniga) / «Almashtirish qaytarmasi» — kuryer tafsilotida ham. */}
+      <ReplacementTag order={order} />
       {/* 6kHnNH9j: «Ombordan · <ombor>» (kuryer tafsilotida ham — u qaysi filial omboridan olganini biladi). */}
       <FulfillmentSourceTag order={order} />
     </>

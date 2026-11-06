@@ -6,6 +6,7 @@ import type { UpdateUserRequest, User } from "../../../entities/user/types/user"
 import { useUser } from "../../../entities/user/api/userApi";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
+import { isPersonNameRole, normalizePersonName } from "../../../shared/lib/personName";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { getUzbekistanPhoneDigits, UZBEKISTAN_PHONE_PREFIX } from "../../../shared/lib/phone";
 import {
@@ -47,6 +48,8 @@ export const EditProfileDialog = ({ open, onClose, user }: EditProfileDialogProp
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const submittingRef = useRef(false);
+  // Ism — shaxs ismi (market/filial hisobi nomi emas): fokusdan chiqqanda va yuborishda bosh harfi katta.
+  const isPersonName = isPersonNameRole(user.role);
 
   // Har ochilishda forma joriy profildan boshlanadi — render paytida, effektsiz.
   const [wasOpen, setWasOpen] = useState(open);
@@ -78,7 +81,9 @@ export const EditProfileDialog = ({ open, onClose, user }: EditProfileDialogProp
     if (next.name || next.phone) return;
 
     const payload: UpdateUserRequest = {};
-    if (name.trim() !== user.name) payload.name = name.trim();
+    // Tegilmagan eski ism (kichik harfli bo'lsa ham) yuborilmaydi — faqat tahrirlangani tekislanadi.
+    const nextName = isPersonName ? normalizePersonName(name) : name.trim();
+    if (name.trim() !== user.name && nextName !== user.name) payload.name = nextName;
     const phoneNumber = `${UZBEKISTAN_PHONE_PREFIX}${digits}`;
     if (phoneNumber !== user.phone_number) payload.phone_number = phoneNumber;
 
@@ -140,6 +145,7 @@ export const EditProfileDialog = ({ open, onClose, user }: EditProfileDialogProp
     >
       <Field label={t("profile:editDialog.name")} required error={errors.name}>
         <TextInput
+          personName={isPersonName}
           value={name}
           autoComplete="name"
           onValueChange={(value) => {

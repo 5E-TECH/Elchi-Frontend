@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import {
   clearPendingExtraCostApproval,
+  getPendingExtraCostApprovalHints,
   resolveOrderActionResponse,
 } from "./extraCostApproval";
 // v1 SentNote / PendingBanner o'rnini v2 ogohlantirishlari egalladi (buyurtma tafsiloti
@@ -16,7 +17,8 @@ import { ExtraCostPendingAlert, ExtraCostSentAlert } from "./ui/ExtraCostApprova
  * so'ralganda eski SOTISH tasdig'ini qaytarardi).
  */
 
-const readStored = () => JSON.parse(window.localStorage.getItem("extra_cost_pending_approvals") ?? "{}");
+// GykuOz8f: so'rov endi `localStorage` da emas — shu qurilmadagi qisqa muddatli ishora (xotirada).
+const readStored = () => getPendingExtraCostApprovalHints();
 
 describe("resolveOrderActionResponse — tasdiq amali (fix3b M3)", () => {
   afterEach(() => clearPendingExtraCostApproval("o-3"));

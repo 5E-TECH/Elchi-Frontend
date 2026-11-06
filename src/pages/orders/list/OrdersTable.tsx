@@ -10,6 +10,7 @@ import {
     orderNumberOf,
     OrderReturnPlace,
     OrderStatusBadge,
+    ReplacementTag,
     ReturnRequestedTag,
 } from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
@@ -213,7 +214,9 @@ const OrdersTable = ({
             <>
                 <OrderStatusBadge status={getDisplayStatus(order)} order={order} />
                 <ReturnRequestedTag order={order} />
-                <ExtraCostApprovalTag orderId={order.id} status={order.status} />
+                {/* lQjt6sKP: «Almashtirish» (eski buyurtma o'rniga) / «Almashtirish qaytarmasi» (eski buyurtma). */}
+                <ReplacementTag order={order} />
+                <ExtraCostApprovalTag order={order} />
                 {/* 6kHnNH9j: «Ombordan · <ombor>» — viloyat omboridan ketadigan buyurtma. */}
                 <FulfillmentSourceTag order={order} />
             </>

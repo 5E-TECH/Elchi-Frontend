@@ -27,6 +27,8 @@ export type MailsTableRow = {
   createdAt: string;
   regionName: string;
   courierName?: string | null;
+  /** «Filial» ustuni (superadmin, admin, registrator) — pochta `branch_id` ning nomi. */
+  branchName?: string | null;
   orders: number;
   amount: number;
   /** Holat badge'i (ton + matn). `null` — badge chizilmaydi. */
@@ -44,10 +46,15 @@ const toNumber = (value: unknown): number => {
 /**
  * API pochtasi → jadval qatori. Viloyat nomi bo'lmasa — `regionFallback(id)` («Viloyat 12»), v1 dagidek.
  * Kuryer — `courier.name` (rad etilganlarda backend beradi; bugungi YANGI pochtada kuryer hali yo'q).
+ * Filial — `branchName(branch_id)` (`model/mailBranchNames.ts`; berilmasa yoki pochtada filial yo'q — `null`).
  */
 export const toMailListRow = (
   mail: MailItem,
-  options: { status: MailsTableRow["status"]; regionFallback: (regionId: string) => string },
+  options: {
+    status: MailsTableRow["status"];
+    regionFallback: (regionId: string) => string;
+    branchName?: (branchId: unknown) => string | null;
+  },
 ): MailListRow => {
   const regionId = String(mail.region?.id ?? mail.region_id ?? "");
   const courierName = mail.courier?.name?.trim();
@@ -58,6 +65,7 @@ export const toMailListRow = (
     regionId,
     regionName: mail.region?.name?.trim() || options.regionFallback(String(mail.region_id ?? regionId)),
     courierName: courierName || null,
+    branchName: options.branchName?.(mail.branch_id) ?? null,
     orders: toNumber(mail.order_quantity),
     amount: toNumber(mail.post_total_price),
     status: options.status,
@@ -150,6 +158,13 @@ const extractOrderItems = (payload: unknown): OrderListItem[] => {
 };
 
 /**
+ * Zaxira kartaning sanasi — pochta ochilgan payt: buyurtma kuryerga biriktirilgan payt (`assigned_at`, pochta shu
+ * so'rovda ochiladi); u yo'q bo'lsa buyurtma sanasi. Buyurtma sanasi kunlar oldin bo'lishi mumkin — bugungi pochta
+ * eski ko'rinib, ro'yxat oxiriga tushardi.
+ */
+const fallbackMailDate = (order: OrderListItem): string => order.assigned_at || order.createdAt;
+
+/**
  * Menejer zaxirasi: `post?status=sent&branch_id` bo'sh qaytsa, filialga yo'lda kelayotgan buyurtmalar
  * (`orders?status=on the road&branch_id`) pochta bo'yicha guruhlanadi — v1 (`todaysMails.tsx`) dagi AYNAN.
  */
@@ -162,19 +177,20 @@ export const buildFallbackMailsFromOrders = (orders: OrderListItem[]): MailItem[
 
     const regionId = String(order.region_id ?? order.district?.region?.id ?? order.branch?.id ?? "branch");
     const existing = groups.get(postId);
+    const mailDate = fallbackMailDate(order);
 
     if (existing) {
       existing.order_quantity += 1;
       existing.post_total_price += Number(order.total_price ?? 0);
-      if (order.createdAt && order.createdAt < existing.createdAt) {
-        existing.createdAt = order.createdAt;
+      if (mailDate && mailDate < existing.createdAt) {
+        existing.createdAt = mailDate;
       }
       return;
     }
 
     groups.set(postId, {
       id: postId,
-      createdAt: order.createdAt,
+      createdAt: mailDate,
       updatedAt: order.updatedAt,
       courier_id: "",
       post_total_price: Number(order.total_price ?? 0),

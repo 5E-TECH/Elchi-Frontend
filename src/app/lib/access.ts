@@ -86,6 +86,22 @@ export const canViewOrders: Predicate = hasRole(
 export const canViewCancelReasons: Predicate = hasRole("superadmin", "admin", "manager", "market");
 
 /**
+ * «Almashtirish qaytarmalari» (`/replacement-returns`, lQjt6sKP) — backend `GET orders/replacement/returns`
+ * `@Roles(SUPERADMIN, ADMIN, MARKET)` bilan bir xil: superadmin va admin — hamma marketlar (market filtri bilan),
+ * market — faqat o'zinikilar (token). Menyu bandi — superadmin va adminda (BeePost kabi); market (menyusiz) — /orders
+ * sarlavhasidagi «Almashtirishlar» havolasi orqali. Registrator backend'da 403 oladi, shuning uchun bu yerda ham yo'q.
+ */
+export const canViewReplacementReturns: Predicate = hasRole("superadmin", "admin", "market");
+
+/**
+ * «Qo'shimcha xarajatli buyurtmalar» (`/extra-costs`, GykuOz8f) — backend `GET orders/extra-costs`
+ * `@Roles(COURIER, MANAGER, MARKET, MARKET_OPERATOR)` bilan bir xil: kuryer — o'zi yozganlari, menejer — o'z filiali
+ * kuryerlari va o'zi (har filial turida), market — o'z marketi, operator — o'z marketi (faqat ko'rish). Admin va
+ * superadmin — karta bo'yicha bu sahifa YO'Q (backend ham 403).
+ */
+export const canViewExtraCosts: Predicate = hasRole("courier", "manager", "market", "market_operator");
+
+/**
  * Investor kabinetini nazorat uchun ko'rish (vpKijXce): `/investor/:id`. Backend `investors/:id/dashboard` adminga
  * ham ochiq, lekin kirish nuqtasi — Ops «Investorlar» (faqat superadmin), shuning uchun karta matnidagidek superadmin.
  */

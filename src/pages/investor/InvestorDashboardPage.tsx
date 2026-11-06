@@ -119,7 +119,12 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
         </Card>
       ) : (
         <>
-          <InvestorKpis summary={data?.summary} loading={loading} language={language} />
+          <InvestorKpis
+            summary={data?.summary}
+            agreedShare={data?.investor?.sharePercent ?? null}
+            loading={loading}
+            language={language}
+          />
           <MonthlyProfitCard
             months={months}
             onMonthsChange={setMonths}
@@ -152,13 +157,18 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
   );
 };
 
-/** To'rt KPI (maket `.el-kpi-row`): pul ixcham («450» + «mln so'm»), foiz — «12,5» + «%». */
+/**
+ * To'rt KPI (maket `.el-kpi-row`): pul ixcham («450» + «mln so'm»), foiz — «12,5» + «%». «Ulush» — investor
+ * yaratilganda kelishilgan «Ulush (%)» (BeePost formasi), kiritilmagan bo'lsa oxirgi foyda davri stavkasi.
+ */
 const InvestorKpis = ({
   summary,
+  agreedShare,
   loading,
   language,
 }: {
   summary: InvestorSummary | undefined;
+  agreedShare: number | null;
   loading: boolean;
   language: string;
 }) => {
@@ -170,7 +180,9 @@ const InvestorKpis = ({
   const paid = money(summary?.totalPaidProfit ?? 0);
   const unpaid = money(summary?.totalUnpaidProfit ?? 0);
   const count = summary?.investmentsCount ?? 0;
-  const share = summary?.currentPercentage ?? null;
+  const share = agreedShare ?? summary?.currentPercentage ?? null;
+  const shareHint =
+    agreedShare != null ? t("kpi.shareAgreed") : share == null ? t("kpi.shareNone") : t("kpi.shareHint");
 
   const investedHint =
     count === 0
@@ -201,7 +213,7 @@ const InvestorKpis = ({
         loading={loading}
         value={share == null ? "—" : formatNumberLocalized(share, { language, fractionDigits: 2 })}
         unit={share == null ? undefined : "%"}
-        hint={loading ? undefined : share == null ? t("kpi.shareNone") : t("kpi.shareHint")}
+        hint={loading ? undefined : shareHint}
       />
       <StatCard
         label={t("kpi.paid")}

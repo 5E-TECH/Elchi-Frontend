@@ -152,7 +152,7 @@ describe("scanner.camera / scanner.feedback — Sozlamalar → Skaner → «Kame
     expect(merged.scanner).toEqual({
       sounds: { success: "bell", error: "soft" },
       camera: { facing: "environment", frame: "md", torchAuto: true, continuous: true },
-      feedback: { sound: true, vibration: true },
+      feedback: { sound: true, vibration: true, voice: true },
     });
   });
 
@@ -160,11 +160,11 @@ describe("scanner.camera / scanner.feedback — Sozlamalar → Skaner → «Kame
     const merged = mergeSettings({
       scanner: {
         camera: { facing: "user", frame: "xl", torchAuto: "ha", continuous: false },
-        feedback: { sound: false, vibration: 0 },
+        feedback: { sound: false, vibration: 0, voice: "yo'q" },
       },
     });
     expect(merged.scanner.camera).toEqual({ facing: "user", frame: "md", torchAuto: true, continuous: false });
-    expect(merged.scanner.feedback).toEqual({ sound: false, vibration: true });
+    expect(merged.scanner.feedback).toEqual({ sound: false, vibration: true, voice: true });
   });
 
   it("patch bitta qiymatni o'zgartiradi, qolganlari (ovozlar ham) tegilmaydi", () => {
@@ -173,7 +173,7 @@ describe("scanner.camera / scanner.feedback — Sozlamalar → Skaner → «Kame
     expect(step2.scanner).toEqual({
       sounds: DEFAULT_SETTINGS.scanner.sounds,
       camera: { ...DEFAULT_SETTINGS.scanner.camera, frame: "lg" },
-      feedback: { sound: true, vibration: false },
+      feedback: { sound: true, vibration: false, voice: true },
     });
   });
 });
@@ -183,7 +183,7 @@ describe("preferencesStorage — kamera ko'zgusi", () => {
     const storage = await import("../../shared/lib/preferencesStorage");
     window.localStorage.clear();
     expect(storage.readStoredScannerCameraPrefs()).toEqual(storage.DEFAULT_SCANNER_CAMERA_PREFS);
-    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: true });
+    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: true, voice: true });
 
     window.localStorage.setItem("scanner-frame-size", "huge");
     expect(storage.readStoredScannerCameraPrefs().frame).toBe("md");
@@ -196,7 +196,7 @@ describe("preferencesStorage — kamera ko'zgusi", () => {
       torchAuto: true,
       continuous: false,
     });
-    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: false });
+    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: false, voice: true });
 
     storage.clearStoredUiPreferences();
     expect(storage.readStoredScannerCameraPrefs()).toEqual(storage.DEFAULT_SCANNER_CAMERA_PREFS);
@@ -228,11 +228,54 @@ describe("scanner.sounds — JX0EBpa7 yumshoq ovozlar va zaxira", () => {
     expect(scanner.sounds).toEqual({ success: "bell", error: "digital" });
   });
 
-  it("noma'lum yoki buzuq ID — sukut (classic), boshqa sozlamalar tegilmaydi", () => {
+  it("noma'lum yoki buzuq ID — sukut (beepost), boshqa sozlamalar tegilmaydi", () => {
     const { scanner } = mergeSettings({
       scanner: { sounds: { success: "eski-ovoz", error: 42 }, feedback: { sound: false } },
     });
-    expect(scanner.sounds).toEqual({ success: "classic", error: "classic" });
+    expect(scanner.sounds).toEqual({ success: "beepost", error: "beepost" });
     expect(scanner.feedback.sound).toBe(false);
+  });
+});
+
+describe("scanner.sounds — BeePost sukut ovozi va «Ovozli xabar» (2026-11-04)", () => {
+  it("yangi foydalanuvchi (sozlamasiz) — BeePost ovozi, «Ovozli xabar» yoqiq", () => {
+    const { scanner } = mergeSettings(undefined);
+    expect(scanner.sounds).toEqual({ success: "beepost", error: "beepost" });
+    expect(scanner.feedback).toEqual({ sound: true, vibration: true, voice: true });
+    expect(DEFAULT_SETTINGS.scanner.sounds).toEqual({ success: "beepost", error: "beepost" });
+  });
+
+  it("tanlov belgisisiz `classic` — eski avtomatik sukut, BeePost'ga o'tadi", () => {
+    const { scanner } = mergeSettings({ scanner: { sounds: { success: "classic", error: "classic" } } });
+    expect(scanner.sounds).toEqual({ success: "beepost", error: "beepost" });
+  });
+
+  it("aniq tanlangan ovoz saqlanadi: belgili `classic` va har qanday boshqa ovoz", () => {
+    expect(
+      mergeSettings({ scanner: { sounds: { success: "classic", error: "classic", chosen: true } } }).scanner.sounds,
+    ).toEqual({ success: "classic", error: "classic", chosen: true });
+    // `classic` dan boshqa ovoz faqat tanlab qo'yiladi — belgisiz ham o'z o'rnida, yonidagi `classic` esa sukutga.
+    expect(mergeSettings({ scanner: { sounds: { success: "chime", error: "classic" } } }).scanner.sounds).toEqual({
+      success: "chime",
+      error: "beepost",
+    });
+  });
+
+  it("tanlov belgisi patch bilan qo'shiladi va keyingi o'qishda saqlanadi", () => {
+    const current = mergeSettings({ scanner: { sounds: { success: "classic", error: "classic" } } });
+    const next = applySettingsPatch(current, { scanner: { sounds: { success: "classic", chosen: true } } });
+    expect(next.scanner.sounds).toEqual({ success: "classic", error: "beepost", chosen: true });
+    expect(mergeSettings(next).scanner.sounds).toEqual({ success: "classic", error: "beepost", chosen: true });
+  });
+
+  it("«Ovozli xabar» o'chirilgani o'qiladi va patch faqat uni o'zgartiradi", () => {
+    expect(mergeSettings({ scanner: { feedback: { voice: false } } }).scanner.feedback).toEqual({
+      sound: true,
+      vibration: true,
+      voice: false,
+    });
+    const next = applySettingsPatch(DEFAULT_SETTINGS, { scanner: { feedback: { voice: false } } });
+    expect(next.scanner.feedback).toEqual({ sound: true, vibration: true, voice: false });
+    expect(next.scanner.sounds).toEqual(DEFAULT_SETTINGS.scanner.sounds);
   });
 });

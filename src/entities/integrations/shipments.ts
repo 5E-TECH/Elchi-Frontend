@@ -1,7 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { metricsKey } from "./metrics";
+import { syncHistoryKey } from "./syncHistory";
 
 /**
  * JO'NATMALAR — ulanish bo'yicha posilkalar.
@@ -141,6 +143,16 @@ export const usePartnerShipments = (params: {
   });
 
 /**
+ * Navbat amalidan keyin: posilkalar, ulanish ko'rsatkichlari (KPI, «Yiqilgan N», navbat chizig'i) va sinxron tarixi.
+ */
+export const invalidateQueueViews = (client: QueryClient) =>
+  Promise.all([
+    client.invalidateQueries({ queryKey: [shipmentsKey] }),
+    client.invalidateQueries({ queryKey: metricsKey }),
+    client.invalidateQueries({ queryKey: [syncHistoryKey] }),
+  ]);
+
+/**
  * Posilkani QAYTA jo'natish.
  *
  * Mavjud `POST integrations/:slug/dispatch` ishlatiladi — u yangi posilka
@@ -154,7 +166,7 @@ export const useRedispatch = () => {
       api
         .post(API_ENDPOINTS.INTEGRATIONS.DISPATCH(slug), { order_id: orderId })
         .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [shipmentsKey] }),
+    onSuccess: () => invalidateQueueViews(client),
   });
 };
 
@@ -170,7 +182,7 @@ export const useProcessQueue = () => {
   return useMutation({
     mutationFn: (id: string) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.SYNC(id), {}).then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [shipmentsKey] }),
+    onSuccess: () => invalidateQueueViews(client),
   });
 };
 
@@ -180,6 +192,6 @@ export const useRetryFailed = () => {
   return useMutation({
     mutationFn: (id: string) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.RETRY(id), {}).then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [shipmentsKey] }),
+    onSuccess: () => invalidateQueueViews(client),
   });
 };

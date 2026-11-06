@@ -47,6 +47,7 @@ const CASES: Case[] = [
   ["createMarket", (m) => m.createMarket.mutateAsync({ name: "Mk", phone_number: "+998901112233", password: "1234" } as never)],
   ["createCourier", (m) => m.createCourier.mutateAsync({ name: "K", phone_number: "+998901112233", password: "1234" })],
   ["createLogist", (m) => m.createLogist.mutateAsync({ name: "L", phone_number: "+998901112233", password: "1234", salary: 1 })],
+  ["createInvestorUser", (m) => m.createInvestorUser.mutateAsync({ name: "I", phone_number: "+998901112233", password: "1234" })],
   ["updateUserStatus", (m) => m.updateUserStatus.mutateAsync({ id: "5", status: "inactive" as never })],
   ["updateUser", (m) => m.updateUser.mutateAsync({ id: "5", data: { name: "Yangi ism" } })],
   ["updateMyProfile", (m) => m.updateMyProfile.mutateAsync({ name: "Men" })],
@@ -54,6 +55,7 @@ const CASES: Case[] = [
   ["updateMarketExpenseProof", (m) => m.updateMarketExpenseProof.mutateAsync({ id: "5", expense_proof_conditions: [] })],
   ["updateMarketCancelledHandoverQr", (m) => m.updateMarketCancelledHandoverQr.mutateAsync({ id: "5", cancelled_handover_qr_required: true })],
   ["updateMarketExtraCost", (m) => m.updateMarketExtraCost.mutateAsync({ id: "5", extra_cost_enabled: true })],
+  ["updateMarketCashboxDebt", (m) => m.updateMarketCashboxDebt.mutateAsync({ id: "5", cashbox_debt_enabled: true })],
   ["updateMarketTelegramGroupPii", (m) => m.updateMarketTelegramGroupPii.mutateAsync({ id: "5", tg_group_show_customer_pii: true })],
   ["deleteUser", (m) => m.deleteUser.mutateAsync("5")],
 ];

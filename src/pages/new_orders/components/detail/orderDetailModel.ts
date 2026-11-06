@@ -1,3 +1,4 @@
+import { readOrderReplacement } from "../../../../entities/order/model/orderReplacement";
 import { resolveAssetUrl } from "../../../../shared/lib/assetUrl";
 import type { EditableOrderSnapshot } from "../newOrderUpdateRules";
 
@@ -143,6 +144,7 @@ export const readOrderMarket = (order: OrderDetail | null) => {
       : null,
     extra_cost_requires_approval:
       typeof raw.extra_cost_requires_approval === "boolean" ? raw.extra_cost_requires_approval : null,
+    extra_cost_enabled: typeof raw.extra_cost_enabled === "boolean" ? raw.extra_cost_enabled : null,
   };
 };
 
@@ -245,6 +247,7 @@ export const buildTrackingContext = (order: OrderDetail | null) => {
 export const buildActionOrder = (order: OrderDetail | null) => {
   if (!order) return null;
   const market = readOrderMarket(order);
+  const replacement = readOrderReplacement(order);
   return {
     id: order.id,
     created_at: "",
@@ -256,6 +259,7 @@ export const buildActionOrder = (order: OrderDetail | null) => {
       name: market?.name ?? "-",
       expense_proof_conditions: market?.expense_proof_conditions ?? null,
       extra_cost_requires_approval: market?.extra_cost_requires_approval ?? null,
+      extra_cost_enabled: market?.extra_cost_enabled ?? null,
     },
     customer: { name: order.customer.name, phone_number: order.customer.phone_number },
     district: { name: getDistrictName(order) ?? "—" },
@@ -267,6 +271,14 @@ export const buildActionOrder = (order: OrderDetail | null) => {
         ? order.sale_market_paid_max
         : null,
     external_id: (order.external_id ?? order.externalId ?? null) as string | number | null,
+    // lQjt6sKP: almashtirish buyurtmasi — sotish oynasida «Eski mahsulotni oldim» tasdig'i (tafsilot va skan).
+    replacement_of_order_id: replacement.oldOrderId,
+    replacement_state: replacement.state,
+    old_item_collected_at: replacement.collectedAt,
+    // GykuOz8f: serverdagi kutilayotgan so'rov (`null` ham) — oynalar shu qiymatdan; skaner javobida maydon yo'q.
+    ...("pending_extra_cost_approval" in order
+      ? { pending_extra_cost_approval: (order as { pending_extra_cost_approval?: unknown }).pending_extra_cost_approval }
+      : {}),
     sell_requires_media: Boolean(
       order.sell_requires_media ?? order.sellRequiresMedia ?? order.require_sell_proof ?? order.sell_proof_required,
     ),

@@ -19,7 +19,11 @@ import type { CourierBulkFailure, CourierBulkOrder } from "../model/courierBulk"
 export type CourierBulkResult = {
   failures: ReadonlyArray<CourierBulkFailure<CourierBulkOrder>>;
   succeededCount: number;
-  tomorrowCount: number;
+  /**
+   * So'rov ketmay qolganlar haqida tayyor matnlar: belgilanmagan, ertaga, almashtirish, kuryer qo'lida, pochtasi qabul
+   * qilinmagan.
+   */
+  keptNotes: readonly string[];
 };
 
 type Props = {
@@ -36,7 +40,7 @@ export const CourierBulkResultDialog = ({ open, result, onClose, onExited }: Pro
   const { t } = useTranslation("courierBulk");
   const failures = result?.failures ?? [];
   const succeededCount = result?.succeededCount ?? 0;
-  const tomorrowCount = result?.tomorrowCount ?? 0;
+  const keptNotes = result?.keptNotes ?? [];
 
   return (
     <Dialog
@@ -55,20 +59,23 @@ export const CourierBulkResultDialog = ({ open, result, onClose, onExited }: Pro
         </Button>
       }
     >
-      {succeededCount > 0 ? (
+      {succeededCount > 0 || keptNotes.length > 0 ? (
         <div className="flex items-center gap-3 rounded-xl bg-sunken px-4 py-3">
           <span aria-hidden="true" className={cx(STAT_ICON, TONE_SOFT.success)}>
             <ButtonIcon icon={CircleCheck} px={18} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-sm font-semibold text-text">
-              {t("finalizeSuccessDescription", { count: succeededCount })}
-            </span>
-            {tomorrowCount > 0 ? (
-              <span className="text-[13px] text-text-muted">
-                {t("finalizeTomorrowKept", { count: tomorrowCount })}
+            {succeededCount > 0 ? (
+              <span className="text-sm font-semibold text-text">
+                {t("finalizeSuccessDescription", { count: succeededCount })}
               </span>
             ) : null}
+            {/* Ataylab qoldirilganlar (so'rovsiz) — xato emas, lekin «hammasi yopilmadi» savoliga javob. */}
+            {keptNotes.map((note) => (
+              <span key={note} className="text-[13px] text-text-muted">
+                {note}
+              </span>
+            ))}
           </span>
         </div>
       ) : null}

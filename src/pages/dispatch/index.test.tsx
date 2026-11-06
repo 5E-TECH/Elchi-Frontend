@@ -528,7 +528,8 @@ describe("DispatchPage — kamera (markaziy «Skaner» tugmasi)", () => {
 
     expect(await screen.findByText("№10285")).toBeInTheDocument();
     expect(mocks.fetchScanDetail).toHaveBeenCalledWith("tok-10285");
-    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Qo'shildi №10285");
+    // «Ovozli xabar»: dispatch — tanlov ro'yxati, «Tanlandi».
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Qo'shildi №10285", undefined, { voice: "selected" });
     await waitFor(() => expect(target().progress).toMatchObject({ done: 1, label: "ta skanerlandi · 1 tasi tanlangan" }));
     expect(target().context).toBe("Savatda 1 ta");
     expect(target().list?.[0]).toMatchObject({

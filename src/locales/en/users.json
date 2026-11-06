@@ -72,6 +72,8 @@
   "marketExtraCostDisabled": "Extra cost disabled for market",
   "marketExtraCostApprovalEnabled": "Extra cost now needs market approval",
   "marketExtraCostApprovalDisabled": "Extra cost is now recorded without approval",
+  "marketCashboxDebtEnabled": "Market cashbox debt enabled",
+  "marketCashboxDebtDisabled": "Market cashbox debt disabled",
   "marketProofEnabled": "Photo/video proof enabled for market",
   "marketProofDisabled": "Photo/video proof disabled for market",
   "cancelledHandoverQrRequired": "Require QR for cancelled-order handover",
@@ -164,8 +166,8 @@
     },
     "list": {
       "descriptionAll": "Manage employee, market and customer accounts",
-      "descriptionBranch": "{{branch}} employees and markets",
-      "descriptionOwnBranch": "Your branch employees and markets",
+      "descriptionBranch": "{{branch}} employees",
+      "descriptionOwnBranch": "Your branch employees",
       "kpiLabel": "User count",
       "kpiAll": "All users",
       "kpiTotal": "Total",
@@ -240,7 +242,8 @@
         "registrator": "Branch, salary and payment day",
         "registratorOwnBranch": "Salary and payment day",
         "courier": "Salary or per-order tariff",
-        "market": "Login and delivery tariffs"
+        "market": "Login and delivery tariffs",
+        "investor": "Account access and initial capital"
       },
       "hybridNote": "Couriers and registrars are assigned to {{branch}} automatically.",
       "hybridNoteOwnBranch": "Couriers and registrars are assigned to your branch automatically.",
@@ -255,7 +258,8 @@
       "alertTextCourier": "Once the courier is created, give them the phone number and password yourself — the system does not send them by SMS.",
       "formDescription": {
         "courier": "Couriers deliver orders and hand money over to the cashbox",
-        "market": "The market signs in to its account with a login and password"
+        "market": "The market signs in to its account with a login and password",
+        "investor": "The investor sees their investments and profit in their account"
       },
       "sections": {
         "main": "Main details",
@@ -263,7 +267,8 @@
         "salary": "Salary and payment day",
         "branch": "Assignment",
         "login": "Login details",
-        "delivery": "Delivery tariff"
+        "delivery": "Delivery tariff",
+        "investment": "Investment"
       },
       "fields": {
         "name": "Full name",
@@ -305,6 +310,7 @@
         "loginRequired": "Login is required"
       },
       "saving": "Saving…",
+      "managerMarketCreated": "The market was created. Markets don't appear in the branch employee list.",
       "passwordMode": {
         "section": "Password",
         "legend": "How to issue the password",
@@ -326,6 +332,22 @@
         "alertText": "The login is the user's phone number. The system generates the password and sends it to that number — you don't need to pass it on.",
         "phoneHint": "This number is the login; the password is sent to it too",
         "sampleSender": "Sender"
+      },
+      "investor": {
+        "sectionNote": "Optional: the capital you enter is recorded as an investment",
+        "capital": "Initial capital",
+        "capitalPlaceholder": "For example: 100 000 000",
+        "capitalHint": "Leave empty to skip the investment",
+        "sharePercent": "Share (%)",
+        "sharePercentPlaceholder": "e.g. 10",
+        "sharePercentHint": "0 to 100; shown in the investor cabinet",
+        "sharePercentInvalid": "Share must be a number from 0 to 100 with at most 2 decimals",
+        "investedAt": "Start date",
+        "investedAtHint": "Empty means today",
+        "investedAtFuture": "A future date can't be chosen",
+        "created": "Investor created",
+        "capitalFailedTitle": "Capital not recorded",
+        "capitalFailedText": "The investor and their login were created, but the initial capital was not saved"
       }
     },
     "detail": {
@@ -348,6 +370,8 @@
       "marketExtraCostHint": "The courier and manager can add an extra cost to this market's orders",
       "marketExtraCostApproval": "Market approval",
       "marketExtraCostApprovalHint": "When on, the cost is recorded after the market approves it. When off, it is recorded at once",
+      "marketCashboxDebt": "Cashbox can go into debt",
+      "marketCashboxDebtHint": "When on, the market can be paid more than it is owed and its cashbox goes negative. When off, payments above the debt are blocked",
       "proofTitle": "Photo or video proof",
       "proofHint": "When the courier must upload proof for this market's orders",
       "sellProof": "Proof on sale",
@@ -557,6 +581,7 @@
       "note": "The password is never stored in plain text. The user sets a new password at first sign-in.",
       "createAnother": "Create another",
       "openUser": "Go to user",
+      "backToList": "Back to list",
       "openLogistAssignment": "Assign regions",
       "reset": {
         "action": "Reset password and send SMS",

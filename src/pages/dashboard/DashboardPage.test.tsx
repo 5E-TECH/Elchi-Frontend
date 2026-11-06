@@ -593,6 +593,27 @@ describe("DashboardPage (v2)", () => {
     expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
   });
 
+  it("kuryer filialsiz (2026-11-04: backend reytingni filial ichida beradi, filial yo'q — bo'sh): `topCouriers: []`, `myRank: null` — reyting kartasi yo'q, xato ham yo'q, KPI'lar joyida", () => {
+    routeDashboard(
+      {
+        data: {
+          myStat: { totalOrders: 4, soldOrders: 3, canceledOrders: 1, profit: 60000, successRate: 75 },
+          topCouriers: [],
+          myRank: null,
+          myRanking: null,
+        },
+      },
+      { data: { myStat: { totalOrders: 0, soldOrders: 0, canceledOrders: 0, profit: 0, successRate: 0 } } },
+    );
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByTestId("courier-stats-grid").children).toHaveLength(4);
+    expect(screen.queryByTestId("courier-ranking")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("courier-ranking-failed")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Top kuryerlar" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Sizning o'rningiz")).not.toBeInTheDocument();
+  });
+
   it("kuryer ma'lumoti yuklanayotganda — 4 ta KPI skeleti", () => {
     getDashboardMock.mockReturnValue({ data: undefined, isLoading: true });
     const { container } = renderWithProviders(<DashboardPage />, { preloadedState: courierState });

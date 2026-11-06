@@ -134,6 +134,9 @@ const renderReady = async (webApp = makeWebApp()) => {
   setWebApp(webApp);
   renderWithProviders(<TgScanPage />, { route: "/tg/scan" });
   await waitFor(() => expect(latestCamera()?.isActive).toBe(true));
+  // Ovoz sozlamasi (`auth/my-profile`) kirishdan keyin effektda so'raladi. Sekin CI'da test undan oldin tugasa,
+  // so'rov soxta transport qaytarilgach yuboriladi va haqiqiy tarmoqqa ketadi — shuning uchun u ham kutiladi.
+  await waitFor(() => expect(requestsTo("auth/my-profile").length).toBeGreaterThan(0));
   return webApp;
 };
 
@@ -391,9 +394,20 @@ describe("/tg/scan — Telegram skan Mini App", () => {
   });
 });
 
-describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
-  /** Soxta WebAudio: chalingan notalar (osilator boshlang'ich chastotasi) yoziladi. */
+describe("/tg/scan — skan ovozi (JX0EBpa7) va «Ovozli xabar»", () => {
+  /** Soxta WebAudio: chalingan notalar (osilator boshlang'ich chastotasi) va mp3 fayllar (manzili) yoziladi. */
   const played: number[] = [];
+  const playedFiles: string[] = [];
+  const fileOf = new WeakMap<ArrayBuffer, string>();
+  const realFetch = globalThis.fetch;
+  const fetchMock = vi.fn(async (url: string) => ({
+    ok: true,
+    arrayBuffer: async () => {
+      const data = new ArrayBuffer(8);
+      fileOf.set(data, url);
+      return data;
+    },
+  }));
   class FakeAudioContext {
     state = "running";
     currentTime = 0;
@@ -418,6 +432,21 @@ describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
         addEventListener: () => undefined,
       };
     }
+    createBufferSource() {
+      const node = {
+        buffer: null as { url: string } | null,
+        connect: () => undefined,
+        start: () => playedFiles.push(node.buffer?.url ?? ""),
+        stop: () => undefined,
+        addEventListener: () => undefined,
+      };
+      return node;
+    }
+    decodeAudioData(data: ArrayBuffer, ok?: (buffer: unknown) => void) {
+      const buffer = { url: fileOf.get(data) ?? "", duration: 1.2 };
+      ok?.(buffer);
+      return Promise.resolve(buffer);
+    }
     resume() {
       return Promise.resolve();
     }
@@ -425,15 +454,18 @@ describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
 
   beforeEach(() => {
     played.length = 0;
+    playedFiles.length = 0;
     window.localStorage.clear();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
     Object.defineProperty(window, "AudioContext", { configurable: true, writable: true, value: FakeAudioContext });
   });
   afterEach(() => {
+    globalThis.fetch = realFetch;
     Reflect.deleteProperty(window, "AudioContext");
     Reflect.deleteProperty(navigator, "vibrate");
   });
 
-  it("hisobdagi ovoz (Mini App tokeni bilan o'qiladi) qabulda chalinadi; tebranish faqat Telegram'da", async () => {
+  it("hisobdagi ovoz (Mini App tokeni bilan o'qiladi) qabulda chalinadi, keyin «Biriktirildi»; tebranish faqat Telegram'da", async () => {
     const vibrate = vi.fn(() => true);
     Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
     routes["auth/my-profile"] = () => ({ data: { settings: { scanner: { sounds: { success: "marimba", error: "glass" } } } } });
@@ -445,6 +477,7 @@ describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
     await decode("ORD-abc");
     await screen.findByText("№10191 qabul qilindi");
     await waitFor(() => expect(played).toEqual([523.25, 783.99]));
+    await waitFor(() => expect(playedFiles).toEqual(["/sound/voice/uz/assigned.mp3"]));
     expect(webApp.HapticFeedback.notificationOccurred).toHaveBeenCalledWith("success");
     expect(vibrate).not.toHaveBeenCalled();
   });
@@ -458,14 +491,18 @@ describe("/tg/scan — skan ovozi (JX0EBpa7)", () => {
     await decode("ORD-abc");
     await screen.findByText("№10191 qabul qilindi");
     expect(played).toEqual([]);
+    expect(playedFiles).toEqual([]);
   });
 
-  it("profil o'qilmasa — sukut ovozi (classic), skan oqimi to'xtamaydi", async () => {
+  it("profil o'qilmasa — sukut ovozi (BeePost) va «Biriktirildi», skan oqimi to'xtamaydi", async () => {
     routes["orders/scan-assign"] = () => assigned(ORDER_53);
     await renderReady();
 
     await decode("ORD-abc");
     await screen.findByText("№10191 qabul qilindi");
-    await waitFor(() => expect(played).toEqual([784, 1175]));
+    await waitFor(() =>
+      expect(playedFiles).toEqual(["/sound/scanner/beepost-success.mp3", "/sound/voice/uz/assigned.mp3"]),
+    );
+    expect(played).toEqual([]);
   });
 });

@@ -16,6 +16,22 @@ vi.mock("../../../entities/mails", () => ({
   }),
 }));
 
+/** «Filial» ustuni nomlari — `GET branches` (superadmin, admin; `model/mailBranchNames.ts`). */
+const branchesMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    data: {
+      data: [
+        { id: "1", name: "HQ Toshkent" },
+        { id: "16", name: "Urgut filiali" },
+      ],
+    },
+  })),
+);
+vi.mock("../../../entities/branch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/branch")>()),
+  useBranches: branchesMock,
+}));
+
 const roleState = (role: string) => ({ role: { id: "1", role, region: null, name: role } });
 
 /** Menejer filial turi bilan (HQ — jadval, qolganlari — kartalar; `model/mailsCardView.ts`). */
@@ -150,15 +166,28 @@ describe("TodaysMails", () => {
     expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "2 ta viloyat · 33 ta buyurtma · jami 5 700 000 so'm")).toBeInTheDocument();
   });
 
-  it("shows the courier column only when the backend sends couriers", () => {
+  it("superadmin: «Kuryer» o'rnida «Filial» — faqat pochtada filial bo'lsa (YANGI pochtada filial yo'q)", () => {
     getNewMailsMock.mockReturnValue(
-      loaded([{ ...MAILS[0], courier: { id: "7", name: "Jasur Tursunov" } }, MAILS[1]]),
+      loaded([{ ...MAILS[0], branch_id: "16", courier: { id: "7", name: "Jasur Tursunov" } }, MAILS[1]]),
     );
 
-    renderToday();
+    const { unmount } = renderToday();
 
-    expect(screen.getByRole("columnheader", { name: "Kuryer" })).toBeInTheDocument();
-    expect(screen.getAllByText("Jasur Tursunov").length).toBeGreaterThan(0);
+    const table = screen.getByRole("table", { name: "Bugungi pochtalar" });
+    expect(within(table).getByRole("columnheader", { name: "Filial" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
+    // Ustun (≥ 1024) va planshet nusxasi (viloyat ostida); kuryer ismi jadvalda yo'q.
+    expect(within(table).getAllByText("Urgut filiali").length).toBeGreaterThan(0);
+    expect(within(table).queryByText("Jasur Tursunov")).not.toBeInTheDocument();
+    unmount();
+
+    // Filialsiz (jo'natilmagan) pochtalar — ustun chizilmaydi, nomlar so'ralmaydi.
+    branchesMock.mockClear();
+    getNewMailsMock.mockReturnValue(loaded(MAILS));
+    renderToday("card", "admin");
+    expect(screen.queryByRole("columnheader", { name: "Filial" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
+    expect(branchesMock.mock.calls.every((call) => !(call as unknown[])[1])).toBe(true);
   });
 
   it("filters by region on the client and clears the filter", async () => {

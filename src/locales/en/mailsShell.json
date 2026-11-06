@@ -17,6 +17,7 @@
     "mail": "Mail",
     "region": "Region",
     "courier": "Courier",
+    "branch": "Branch",
     "status": "Status",
     "orders": "Orders",
     "amount": "Amount",

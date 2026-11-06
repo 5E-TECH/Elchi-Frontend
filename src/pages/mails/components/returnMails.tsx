@@ -1,7 +1,10 @@
 // dizayn-v2: superadmin-mails-return, admin-mails-return, manager-mails-return, registrator-mails-return
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Check, RotateCcw, Truck, X } from "lucide-react";
+import { Building2, Check, RotateCcw, Truck, X } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
+import { useDispatchBranchNames } from "../../../entities/branch";
 import { useMails, type MailItem, type ReturnRequestActionPayload } from "../../../entities/mails";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { cx } from "../../../shared/lib/cx";
@@ -22,15 +25,28 @@ import type { MailsTabLayout } from "../model/mailsLayout";
  * `DataTable` emas — CODE-MAP 2.6 TH/TD retsepti), telefonda — guruh sarlavhasi + `label` kartalar.
  *
  * Backend sahifalamaydi — doiradagi barcha so'rovlar bir yo'la keladi (sahifalash yo'q).
+ *
+ * Filial o'tkazmasi so'rovlari (HQ doirasi; manzil filial menejeri «kelmagan» degan yoki qisman qabulda qolgan —
+ * kuryersiz, ega qarori 2026-11-04) — har manzil filial alohida guruh: «Filial: <nomi> — kelmagan», `Building2`
+ * belgisi, holat chipi «Filialga kelmagan»; xulosada kuryer sifatida sanalmaydi. Nomi — `dispatch-destinations`
+ * dan (superadmin/admin/HQ registratori), olinmasa — «Filial o'tkazmasi — kelmagan».
  */
 
 type ReturnGroup = {
-  courierId: string;
-  courierName: string;
-  courierPhone: string;
+  /** Kuryer id (`unknown` — kuryersiz eski qator) yoki `branch_transfer:<branch_id>`. */
+  key: string;
+  kind: "courier" | "branch";
+  /** Kuryer ismi yoki «Filial: <nomi> — kelmagan». */
+  name: string;
+  phone: string;
   orders: MailItem[];
   totalAmount: number;
 };
+
+/** Filial nomlari (`GET /branches/dispatch-destinations`) faqat shu rollarga ochiq — qolganlar so'ramaydi. */
+const BRANCH_NAME_ROLES = new Set(["superadmin", "admin", "registrator"]);
+
+const isBranchTransfer = (item: MailItem) => item.return_source === "branch_transfer";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -51,11 +67,16 @@ const actionLabel = (value: string | undefined, t: Translate) => {
   return t("returnDestinationCenter");
 };
 
-// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan (warning);
-// WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida (neutral).
-const requestState = (status: string | undefined, t: Translate) => {
-  const normalized = String(status ?? "").toLowerCase();
-  if (normalized === "on the road") return { label: t("returnStateNotReceived"), tone: "warning" as const };
+// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan (warning); filial o'tkazmasida —
+// posilka manzil filialga kelmagan (warning); WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida (neutral).
+const requestState = (item: MailItem, t: Translate) => {
+  const normalized = String(item.status ?? "").toLowerCase();
+  if (normalized === "on the road") {
+    return {
+      label: t(isBranchTransfer(item) ? "returnStateNotArrived" : "returnStateNotReceived"),
+      tone: "warning" as const,
+    };
+  }
   if (normalized === "waiting") return { label: t("returnStateWithCourier"), tone: "neutral" as const };
   return null;
 };
@@ -82,23 +103,34 @@ type ReturnActionResponse = {
   } | null;
 };
 
-const groupByCourier = (items: MailItem[], courierFallback: string): ReturnGroup[] => {
+/**
+ * Kuryer bo'yicha guruhlar; filial o'tkazmasi so'rovlari — manzil filial bo'yicha alohida (`branch_transfer:<id>`):
+ * bir nechta filialniki bitta «Kuryer» guruhiga qo'shilib ketmaydi.
+ */
+const groupRequests = (
+  items: MailItem[],
+  courierFallback: string,
+  branchLabel: (branch: MailItem["return_branch"]) => string,
+): ReturnGroup[] => {
   const groups = new Map<string, ReturnGroup>();
 
   items.forEach((item) => {
-    const courierId = item.courier?.id || item.courier_id || "unknown";
-    const courierName = item.courier?.name || courierFallback;
-    const group = groups.get(courierId) ?? {
-      courierId,
-      courierName,
-      courierPhone: item.courier?.phone_number || "",
+    const branch = isBranchTransfer(item);
+    const key = branch
+      ? `branch_transfer:${item.return_branch?.id ?? ""}`
+      : item.courier?.id || item.courier_id || "unknown";
+    const group = groups.get(key) ?? {
+      key,
+      kind: branch ? ("branch" as const) : ("courier" as const),
+      name: branch ? branchLabel(item.return_branch) : item.courier?.name || courierFallback,
+      phone: branch ? "" : item.courier?.phone_number || "",
       orders: [],
       totalAmount: 0,
     };
 
     group.orders.push(item);
     group.totalAmount += item.post_total_price;
-    groups.set(courierId, group);
+    groups.set(key, group);
   });
 
   return Array.from(groups.values());
@@ -167,7 +199,26 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const requests: MailItem[] = useMemo(() => response?.data?.data ?? [], [response]);
-  const groups = useMemo(() => groupByCourier(requests, t("courierFallback")), [requests, t]);
+  // Filial o'tkazmasi guruhining nomi: backend bersa — o'sha, aks holda `dispatch-destinations` dan (ruxsatli rol).
+  const role = useSelector((state: RootState) => state.role.role);
+  const needsBranchNames = useMemo(
+    () => requests.some((item) => isBranchTransfer(item) && !item.return_branch?.name && item.return_branch?.id),
+    [requests],
+  );
+  const branchNames = useDispatchBranchNames(needsBranchNames && BRANCH_NAME_ROLES.has(String(role ?? "")));
+  const branchLabel = useCallback(
+    (branch: MailItem["return_branch"]) => {
+      const name = branch?.name || (branch?.id ? branchNames.get(branch.id) : "") || "";
+      return name ? t("returnBranchGroup", { branch: name }) : t("returnBranchGroupFallback");
+    },
+    [branchNames, t],
+  );
+  const groups = useMemo(
+    () => groupRequests(requests, t("courierFallback"), branchLabel),
+    [requests, t, branchLabel],
+  );
+  const courierGroups = groups.filter((group) => group.kind === "courier").length;
+  const branchGroups = groups.length - courierGroups;
   const selectedItems = useMemo(
     () => requests.filter((item) => selectedIds.has(getRequestId(item))),
     [requests, selectedIds],
@@ -247,7 +298,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     return raw ? formatPhone(raw) : t("phoneUnavailable");
   };
   const stateBadge = (item: MailItem) => {
-    const state = requestState(item.status, t);
+    const state = requestState(item, t);
     return state ? (
       <Badge tone={state.tone} dot>
         {state.label}
@@ -267,7 +318,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
         checked={state.checked}
         indeterminate={state.indeterminate}
         disabled={isMutating}
-        label={t("mailsArchive:return.selectGroup", { courier: group.courierName })}
+        label={t("mailsArchive:return.selectGroup", { courier: group.name })}
         onChange={() => toggleGroup(group)}
       />
     );
@@ -291,8 +342,8 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
         <p className={SUB}>
           <Trans
             t={t}
-            i18nKey="mailsArchive:return.summary"
-            values={{ couriers: count(groups.length), orders: count(totalOrders) }}
+            i18nKey={branchGroups > 0 ? "mailsArchive:return.summaryWithBranches" : "mailsArchive:return.summary"}
+            values={{ couriers: count(courierGroups), branches: count(branchGroups), orders: count(totalOrders) }}
             components={{ strong: <span className="font-semibold text-text" /> }}
           />
         </p>
@@ -352,7 +403,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
       short
         ? t("mailsArchive:return.groupShort", { count: group.orders.length, value: count(group.orders.length) })
         : t("returnGroupDescription", { count: group.orders.length }),
-      group.courierPhone ? formatPhone(group.courierPhone) : null,
+      group.phone ? formatPhone(group.phone) : null,
     ]
       .filter(Boolean)
       .join(" · ");
@@ -392,16 +443,20 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
           </tr>
         </thead>
         {groups.map((group) => (
-          <tbody key={group.courierId}>
+          <tbody key={group.key}>
             <tr>
               <td className={cx(TD, CHECK_CELL, "bg-sunken")}>{groupCheckbox(group)}</td>
               <td colSpan={3} className={cx(TD, "bg-sunken")}>
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted">
-                    <Truck aria-hidden="true" size={16} strokeWidth={2} />
+                    {group.kind === "branch" ? (
+                      <Building2 aria-hidden="true" size={16} strokeWidth={2} />
+                    ) : (
+                      <Truck aria-hidden="true" size={16} strokeWidth={2} />
+                    )}
                   </span>
                   <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-semibold text-text">{group.courierName}</span>
+                    <span className="truncate font-semibold text-text">{group.name}</span>
                     <span className={cx(SUB, "truncate")}>{groupSub(group, false)}</span>
                   </div>
                 </div>
@@ -451,14 +506,14 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
   const cards = (
     <div role="list" aria-label={t("mailsArchive:return.tableLabel")} className="flex flex-col">
       {groups.map((group) => (
-        <Fragment key={group.courierId}>
+        <Fragment key={group.key}>
           <div
             role="listitem"
             className="flex items-center gap-1 border-y border-border bg-sunken py-2.5 pl-1 pr-4 first:border-t-0"
           >
             <label className="flex size-11 shrink-0 items-center justify-center">{groupCheckbox(group)}</label>
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-semibold text-text">{group.courierName}</span>
+              <span className="truncate font-semibold text-text">{group.name}</span>
               <span className={SUB}>{groupSub(group, true)}</span>
             </span>
             <span className="whitespace-nowrap text-sm font-semibold text-text">{money(group.totalAmount)}</span>

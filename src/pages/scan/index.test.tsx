@@ -184,7 +184,7 @@ describe("ScanPage — universal skaner (desktop)", () => {
     // Ichki (24 hex) token kichik harfga keltiriladi — Caps Lock yoqiq skaner ham topadi.
     expect(fetchMock).toHaveBeenCalledWith(TOKEN);
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith(`/scan/${TOKEN}`));
-    expect(feedbackMock).toHaveBeenCalledWith("success", "№10226 · Buyurtma topildi", "keyboard");
+    expect(feedbackMock).toHaveBeenCalledWith("success", "№10226 · Buyurtma topildi", "keyboard", { voice: false });
   });
 
   it("signals a second code scanned while the first one is still opening (not silently lost)", async () => {
@@ -620,7 +620,7 @@ describe("ScanPage — «Pochtani jo'natish», «Rad etilgan pochta», «Marketg
         },
       }),
     );
-    expect(feedbackMock).toHaveBeenCalledWith("success", "Pochta №2486 topildi", "keyboard");
+    expect(feedbackMock).toHaveBeenCalledWith("success", "Pochta №2486 topildi", "keyboard", { voice: false });
     expect(sendableMock).not.toHaveBeenCalled();
   });
 
@@ -800,7 +800,8 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
     await waitFor(() => expect(assignMock).toHaveBeenCalledWith(TOKEN));
     expect(await screen.findByText("№10191 · Lobar Yusupova")).toBeInTheDocument();
     expect(screen.getByText("Sizga biriktirildi · Yunusobod tumani")).toBeInTheDocument();
-    expect(feedbackMock).toHaveBeenCalledWith("success", "№10191 sizga biriktirildi");
+    // «Ovozli xabar»: kuryer o'ziga oldi — «Biriktirildi».
+    expect(feedbackMock).toHaveBeenCalledWith("success", "№10191 sizga biriktirildi", undefined, { voice: "assigned" });
 
     await enterManual(user, OTHER_TOKEN, "Olish");
     await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(2));

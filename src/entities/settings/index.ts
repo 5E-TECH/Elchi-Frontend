@@ -3,7 +3,11 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { myProfileQuery } from "../../shared/api/myProfile";
 import { tokenStorage } from "../../auth/tokenStorage";
-import { isScannerSound, type StoredScannerSound } from "../../shared/lib/preferencesStorage";
+import {
+  DEFAULT_SCANNER_SOUND,
+  resolveAccountScannerSound,
+  type StoredScannerSound,
+} from "../../shared/lib/preferencesStorage";
 import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
@@ -69,6 +73,11 @@ export interface AppSettings {
     sounds: {
       success: ScannerSoundId;
       error: ScannerSoundId;
+      /**
+       * Foydalanuvchi ovozni Sozlamalar'da O'ZI tanlaganmi. Belgisiz `classic` — eski avtomatik sukut (har yozuvda
+       * to'liq sozlama ketardi), u yangi sukutga (`beepost`) o'tadi; belgi bilan — hurmat qilinadi.
+       */
+      chosen?: boolean;
     };
     /**
      * «Kamera» kartasi (maket `common-settings-scanner`). Backend `admins.settings` jsonb ni ochiq saqlaydi
@@ -83,10 +92,12 @@ export interface AppSettings {
       /** `false` — oqim ichidagi kamera bitta muvaffaqiyatli koddan keyin yopiladi. */
       continuous: boolean;
     };
-    /** Skan signali: ovoz va tebranish (kamera ham, USB skaner ham). */
+    /** Skan signali: ovoz, tebranish va «Ovozli xabar» (kamera ham, USB skaner ham). */
     feedback: {
       sound: boolean;
       vibration: boolean;
+      /** Signaldan keyin natija o'zbekcha aytiladi («Qabul qilindi», «Xatolik bo'ldi»); «Ovoz» o'chiq bo'lsa — jim. */
+      voice: boolean;
     };
   };
   notifications: {
@@ -149,11 +160,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   interface: { sidebarOpen: true },
   scanner: {
     sounds: {
-      success: "classic",
-      error: "classic",
+      success: DEFAULT_SCANNER_SOUND,
+      error: DEFAULT_SCANNER_SOUND,
     },
     camera: { facing: "environment", frame: "md", torchAuto: true, continuous: true },
-    feedback: { sound: true, vibration: true },
+    feedback: { sound: true, vibration: true, voice: true },
   },
   notifications: {
     push: false,
@@ -170,9 +181,12 @@ const readBool = (value: unknown, fallback: boolean): boolean =>
 const readClock = (value: unknown, fallback: ClockTime): ClockTime =>
   typeof value === "string" && CLOCK_TIME.test(value) ? value : fallback;
 
-/** JX0EBpa7: noma'lum ovoz ID (eskirgan yoki buzilgan qiymat) — sukut ovozi, oyna bo'sh qolmaydi. */
-const readSound = (value: unknown, fallback: ScannerSoundId): ScannerSoundId =>
-  isScannerSound(value) ? value : fallback;
+/**
+ * JX0EBpa7: noma'lum ovoz ID (eskirgan yoki buzilgan qiymat) — sukut ovozi, oyna bo'sh qolmaydi. Tanlov belgisisiz
+ * `classic` — eski avtomatik sukut, yangi sukutga o'tadi (`resolveAccountScannerSound`).
+ */
+const readSound = (value: unknown, chosen: unknown, fallback: ScannerSoundId): ScannerSoundId =>
+  resolveAccountScannerSound(value, chosen) ?? fallback;
 
 const readFacing = (value: unknown): ScannerCameraFacing =>
   value === "environment" || value === "user" ? value : DEFAULT_SETTINGS.scanner.camera.facing;
@@ -248,8 +262,9 @@ export const mergeSettings = (raw: unknown): AppSettings => {
     },
     scanner: {
       sounds: {
-        success: readSound(s.scanner?.sounds?.success, DEFAULT_SETTINGS.scanner.sounds.success),
-        error: readSound(s.scanner?.sounds?.error, DEFAULT_SETTINGS.scanner.sounds.error),
+        success: readSound(s.scanner?.sounds?.success, s.scanner?.sounds?.chosen, DEFAULT_SETTINGS.scanner.sounds.success),
+        error: readSound(s.scanner?.sounds?.error, s.scanner?.sounds?.chosen, DEFAULT_SETTINGS.scanner.sounds.error),
+        ...(s.scanner?.sounds?.chosen === true ? { chosen: true } : {}),
       },
       camera: {
         facing: readFacing(s.scanner?.camera?.facing),
@@ -260,6 +275,7 @@ export const mergeSettings = (raw: unknown): AppSettings => {
       feedback: {
         sound: readBool(s.scanner?.feedback?.sound, DEFAULT_SETTINGS.scanner.feedback.sound),
         vibration: readBool(s.scanner?.feedback?.vibration, DEFAULT_SETTINGS.scanner.feedback.vibration),
+        voice: readBool(s.scanner?.feedback?.voice, DEFAULT_SETTINGS.scanner.feedback.voice),
       },
     },
     // ⚠️ mergeSettings OQ RO'YXAT: shu yerda sanalmagan kalit jimgina tashlanadi.

@@ -8,6 +8,7 @@ import { setName, setRole } from "../../../shared/model/roleSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateInvestorUserRequest,
   CreateLogistRequest,
   CreateManagerRequest,
   CreateMarketRequest,
@@ -174,6 +175,16 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: queryKeys.users.all }),
       client.invalidateQueries({ queryKey: ["couriers"] }),
       client.invalidateQueries({ queryKey: ["managers"] }),
+      // Shu foydalanuvchi boshqa ro'yxat va tanlovlarda ham turadi: marketlar (filtr, SMS / kampaniya segmenti,
+      // Telegram guruhlari), buyurtma tafsilotidagi kuryer / market aloqasi, filial xodimlari va soni, logistlar,
+      // investorlar, pochta kuryerlari.
+      client.invalidateQueries({ queryKey: ["markets"] }),
+      client.invalidateQueries({ queryKey: ["order-meta", "user"] }),
+      client.invalidateQueries({ queryKey: queryKeys.branches.all }),
+      client.invalidateQueries({ queryKey: ["logists"] }),
+      client.invalidateQueries({ queryKey: ["region-logists"] }),
+      client.invalidateQueries({ queryKey: ["investors"] }),
+      client.invalidateQueries({ queryKey: ["mails", "couriers-by-region"] }),
     ]);
 
   /**
@@ -238,6 +249,13 @@ export const useUser = () => {
     mutationFn: (data: CreateLogistRequest) => api.post(API_ENDPOINTS.LOGISTS.BASE, data),
     onSuccess: () =>
       Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["logists"] })]),
+  });
+
+  /** `POST /investor-users` — investor logini; «Investorlar» ro'yxati (`["investors"]`) ham yangilanadi. */
+  const createInvestorUser = useMutation({
+    mutationFn: (data: CreateInvestorUserRequest) => api.post(API_ENDPOINTS.INVESTOR_USERS.BASE, data),
+    onSuccess: () =>
+      Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["investors"] })]),
   });
 
   const useGetRegions = (enabled: boolean = true) =>
@@ -366,6 +384,18 @@ export const useUser = () => {
     },
   });
 
+  /** Market kassasi qarzga ishlaydimi (`PATCH /admin/markets/:id`, faqat admin/superadmin). */
+  const updateMarketCashboxDebt = useMutation({
+    mutationFn: ({ id, cashbox_debt_enabled }: { id: string; cashbox_debt_enabled: boolean }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.EXTRA_COST(id), { cashbox_debt_enabled })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      void invalidateUserLists();
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   /** (w2bDrE3i) Market bo'yicha qo'shimcha xarajat: ochiq yoki yopiq va market tasdig'i. */
   const updateMarketExtraCost = useMutation({
     mutationFn: ({
@@ -457,6 +487,7 @@ export const useUser = () => {
     createMarket,
     createCourier,
     createLogist,
+    createInvestorUser,
     useGetRegions,
     useGetUser,
     useGetCouriers,
@@ -470,6 +501,7 @@ export const useUser = () => {
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
     updateMarketExtraCost,
+    updateMarketCashboxDebt,
     updateMarketTelegramGroupPii,
     deleteUser,
   };

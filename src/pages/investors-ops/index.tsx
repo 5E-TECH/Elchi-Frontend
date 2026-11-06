@@ -4,7 +4,9 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useInvestors } from "../../entities/investors";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { formatPhone } from "../../shared/lib/formatPhone";
+import { normalizePersonName } from "../../shared/lib/personName";
 import { isCompleteUzbekistanPhone } from "../../shared/lib/phone";
 import {
   Badge,
@@ -29,7 +31,7 @@ import { useOpsErrorText } from "../ops/lib/opsErrorText";
  */
 
 const PAGE_SIZE = 10;
-type InvestorRow = { key: string; id: string; name: string; phone: string };
+type InvestorRow = { key: string; id: string; name: string; phone: string; share: number | null };
 
 const toRow = (item: Record<string, unknown>, index: number): InvestorRow => {
   const id = item.id == null ? "" : String(item.id);
@@ -38,11 +40,12 @@ const toRow = (item: Record<string, unknown>, index: number): InvestorRow => {
     id,
     name: item.name == null ? "" : String(item.name),
     phone: item.phone_number == null ? "" : String(item.phone_number),
+    share: item.share_percent == null || item.share_percent === "" ? null : Number(item.share_percent),
   };
 };
 
 const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
-  const { t } = useTranslation("ops");
+  const { t, i18n } = useTranslation("ops");
   const { useGetInvestors, createInvestor } = useInvestors();
   // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
   const errorText = useOpsErrorText();
@@ -67,7 +70,8 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     event.preventDefault();
     setTouched(true);
     if (!name.trim() || !phoneComplete || createInvestor.isPending) return;
-    const payload = { name: name.trim(), phone_number: phone };
+    // Investor — shaxs: har so'z bosh harfi katta (Enter bilan yuborilsa maydon blur bo'lmagan bo'lishi mumkin).
+    const payload = { name: normalizePersonName(name), phone_number: phone };
     setCreated(null);
     createInvestor.mutate(payload, {
       onSuccess: () => {
@@ -101,6 +105,16 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     },
     { id: "name", header: t("investors.list.name"), cell: (row) => <span className="font-semibold">{row.name || "—"}</span> },
     { id: "phone", header: t("investors.list.phone"), cell: (row) => <span className="whitespace-nowrap">{phoneText(row.phone)}</span> },
+    {
+      id: "share",
+      header: t("investors.list.share"),
+      align: "end",
+      cell: (row) => (
+        <span className="whitespace-nowrap tabular-nums">
+          {row.share == null || !Number.isFinite(row.share) ? "—" : `${formatNumberLocalized(row.share, { language: i18n.language, fractionDigits: 2 })}%`}
+        </span>
+      ),
+    },
     {
       id: "open",
       header: <span className="sr-only">{t("investors.list.actions")}</span>,
@@ -176,6 +190,7 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             <div className="flex flex-wrap items-end gap-x-3 gap-y-4">
               <Field label={t("investors.create.name")} required error={nameError} className="min-w-0 flex-[2_1_220px]">
                 <TextInput
+                  personName
                   autoComplete="name"
                   value={name}
                   onValueChange={setName}

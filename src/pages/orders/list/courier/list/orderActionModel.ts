@@ -35,11 +35,15 @@ export type ActionOrder = {
   status?: string | null;
   total_price?: number | string | null;
   where_deliver?: string | null;
-  /** `extra_cost_requires_approval: false` — tasdiqsiz market (2KisY7DL): menejer xarajati kuryer chegarasida, tasdiqsiz. */
+  /**
+   * `extra_cost_requires_approval: false` — tasdiqsiz market (2KisY7DL, QoYyRl6S): xarajat darhol yoziladi, «market
+   * tasdig'idan o'tadi» yozuvi yo'q. `extra_cost_enabled: false` — market xarajatni yopgan: maydon yo'q, so'rovda 0.
+   */
   market?: {
     name?: string | null;
     expense_proof_conditions?: string[] | null;
     extra_cost_requires_approval?: boolean | null;
+    extra_cost_enabled?: boolean | null;
   } | null;
   customer?: { name?: string | null; phone_number?: string | null } | null;
   district?: { name?: string | null } | null;
@@ -60,6 +64,19 @@ export type ActionOrder = {
   sale_market_paid_max?: number | string | null;
   /** Hamkor (BeePost/API) buyurtmasi — marketga to'lov maydoni ko'rsatilmaydi. */
   external_id?: string | number | null;
+  /**
+   * Almashtirish (lQjt6sKP, `readOrderReplacement`): eski buyurtma id'si va holati. Eski mahsulot hali olinmagan
+   * bo'lsa sotish oynasida «Eski mahsulotni oldim» tasdig'i shart (backend usiz 400 qaytaradi).
+   */
+  replacement_of_order_id?: string | number | null;
+  replacement_state?: string | null;
+  old_item_collected_at?: string | null;
+  /**
+   * Serverdagi kutilayotgan qo'shimcha xarajat so'rovi (GykuOz8f) — xom qiymat, `null` ham (so'rov yo'q). Oyna
+   * «allaqachon yuborilgan» ogohlantirishini shundan oladi (`getActivePendingApproval`); maydon umuman bo'lmasa
+   * (skaner javobi) — shu qurilmadagi ishora.
+   */
+  pending_extra_cost_approval?: unknown;
 };
 
 export const MAX_PROOF_SIZE_MB = 10;

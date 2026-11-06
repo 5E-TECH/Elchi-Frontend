@@ -266,7 +266,9 @@ describe("Paket tafsiloti — USB skaner", () => {
 
     act(() => mocks.scanner!.onMatch(scanned("10172"), "qr-10172-token"));
     expect(screen.getByRole("checkbox", { name: "№10172 ni tanlash" })).toBeChecked();
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", expect.any(String));
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", expect.any(String), undefined, {
+      voice: "selected",
+    });
 
     act(() => mocks.scanner!.onMatch(scanned("10172"), "qr-10172-token"));
     expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Allaqachon topilgan");

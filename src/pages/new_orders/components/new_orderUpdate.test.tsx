@@ -4,6 +4,7 @@ import { AxiosError, type AxiosResponse } from "axios";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import NewOrderUpdate from "./new_orderUpdate";
+import { setProfile } from "../../../entities/user/model/slice";
 import { renderWithProviders } from "../../../test/test-utils";
 
 const order = {
@@ -73,15 +74,25 @@ vi.mock("../../../entities/logistics/api/logisticsApi", () => ({
   }),
 }));
 
-vi.mock("../../../widgets/order-tracking", () => ({
-  OrderTracking: ({ defaultCollapsed, context }: { defaultCollapsed?: boolean; context?: { hqName?: string | null } }) => (
-    <div
-      data-testid="order-tracking-stub"
-      data-default-collapsed={String(Boolean(defaultCollapsed))}
-      data-hq-name={context?.hqName ?? ""}
-    />
-  ),
-}));
+/** «Tarix» qayta o'qilishi = komponent qayta mount (sahifa `key` ni o'zgartiradi) — mount soni shu yerda. */
+const trackingMounts = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock("../../../widgets/order-tracking", async () => {
+  const { useState } = await import("react");
+  return {
+    OrderTracking: ({ defaultCollapsed, context }: { defaultCollapsed?: boolean; context?: { hqName?: string | null } }) => {
+      const [mount] = useState(() => ++trackingMounts.count);
+      return (
+        <div
+          data-testid="order-tracking-stub"
+          data-mount={mount}
+          data-default-collapsed={String(Boolean(defaultCollapsed))}
+          data-hq-name={context?.hqName ?? ""}
+        />
+      );
+    },
+  };
+});
 
 vi.mock("../../orders/list/courier/list/SellModal", () => ({
   default: (props: { order: { items: unknown[] } | null }) => {
@@ -128,6 +139,32 @@ const renderPage = (role?: string) =>
         : {}),
     },
   );
+
+describe("NewOrderUpdate — «Tarix» boshqa joydagi o'zgarishda", () => {
+  afterEach(() => {
+    orderState.status = undefined;
+  });
+
+  it("holat boshqa joyda o'zgarsa (market tasdig'i, boshqa xodim) — tarix qayta o'qiladi; o'zgarmasa — yo'q", async () => {
+    orderState.status = "waiting";
+    const { store } = renderPage("superadmin");
+    const stub = () => screen.getByTestId("order-tracking-stub");
+    const first = stub().getAttribute("data-mount");
+
+    // Holat o'zgarmagan qayta chizish — tarix qayta so'ralmaydi.
+    act(() => {
+      store.dispatch(setProfile({ id: "u-1", role: "superadmin", name: "A" } as never));
+    });
+    expect(stub().getAttribute("data-mount")).toBe(first);
+
+    // Kutish so'rovi / realtime yangi holatni olib keldi.
+    orderState.status = "sold";
+    act(() => {
+      store.dispatch(setProfile({ id: "u-1", role: "superadmin", name: "B" } as never));
+    });
+    await waitFor(() => expect(stub().getAttribute("data-mount")).not.toBe(first));
+  });
+});
 
 describe("NewOrderUpdate comment", () => {
   afterEach(() => {
@@ -361,14 +398,17 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
         name: "Zamon Market",
         expense_proof_conditions: ["sell_any", "cancel_any"],
         extra_cost_requires_approval: false,
+        extra_cost_enabled: false,
       },
     };
     renderPage();
-    // 2KisY7DL: tasdiqsiz market bayrog'i ham oynaga yetadi (menejerga «market tasdig'idan o'tadi» chiqmasin).
+    // 2KisY7DL: tasdiqsiz market bayrog'i ham oynaga yetadi (menejerga «market tasdig'idan o'tadi» chiqmasin);
+    // QoYyRl6S: xarajat yopiq market bayrog'i ham (maydon o'rnida izoh).
     const expected = {
       name: "Zamon Market",
       expense_proof_conditions: ["sell_any", "cancel_any"],
       extra_cost_requires_approval: false,
+      extra_cost_enabled: false,
     };
     expect((sellModalProps.last?.order as unknown as { market: unknown }).market).toEqual(expected);
     expect(cancelModalProps.last?.order?.market).toEqual(expected);
@@ -380,6 +420,7 @@ describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () =>
       name: "-",
       expense_proof_conditions: null,
       extra_cost_requires_approval: null,
+      extra_cost_enabled: null,
     });
   });
 });
@@ -749,6 +790,39 @@ describe("NewOrderUpdate — mijoz havolasi va rol ko'rinishlari", () => {
       expect(alert).toHaveTextContent(/Sotish: 20\s000 so'm qo'shimcha xarajat Bugun, \d{2}:\d{2} da market tasdig'iga yuborilgan\. Market tasdiqlasa, amal avtomatik bajariladi\./);
     } finally {
       clearPendingExtraCostApproval("1251175");
+    }
+  });
+
+  it("⭐ GykuOz8f: ogohlantirish serverdan (`pending_extra_cost_approval`) — shu qurilmada ishora bo'lmasa ham", () => {
+    orderState.extra = {
+      pending_extra_cost_approval: {
+        id: "ap-1",
+        action: "cancel",
+        amount: 7000,
+        created_at: new Date().toISOString(),
+        auto_approve_at: null,
+      },
+    };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+      const alert = screen
+        .getAllByRole("status")
+        .find((node) => node.textContent?.includes("Market tasdig'i kutilmoqda."));
+      expect(alert).toHaveTextContent(/Bekor qilish: 7\s000 so'm qo'shimcha xarajat/);
+    } finally {
+      orderState.extra = undefined;
+    }
+  });
+
+  it("GykuOz8f: server `null` — ogohlantirish yo'q", () => {
+    orderState.extra = { pending_extra_cost_approval: null };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+      expect(
+        screen.queryAllByRole("status").find((node) => node.textContent?.includes("Market tasdig'i kutilmoqda.")),
+      ).toBeUndefined();
+    } finally {
+      orderState.extra = undefined;
     }
   });
 });

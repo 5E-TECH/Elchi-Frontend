@@ -44,11 +44,8 @@ export const useLogisticsCoverage = () => {
       api.post(API_ENDPOINTS.POSTS.COURIERS_BY_POST(id), data),
   });
 
-  const reassignPost = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
-      api.patch(API_ENDPOINTS.POSTS.REASSIGN(id), data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
-  });
+  // `PATCH post/reassign/:id` (kuryerga qayta biriktirish) backend'da o'chirilgan (410, CODE-12): jo'natilgan
+  // pochta boshqa filialga — `useReassignPostToBranch` (`entities/mails`, «Filialga o'tkazish»; EzgWTudf).
 
   const receivePostOrder = useMutation({
     mutationFn: ({ id, data }: { id: string | number; data?: any }) =>
@@ -119,7 +116,6 @@ export const useLogisticsCoverage = () => {
     checkPost,
     checkCancelPost,
     getCouriersByPost,
-    reassignPost,
     receivePostOrder,
     receivePostScan,
     approveReturnRequest,

@@ -66,11 +66,16 @@ export const useBranchCoverage = () => {
         api.get(API_ENDPOINTS.BRANCHES.TREE, { params }).then((res) => res.data),
     });
 
-  // POST transfer-batches/:id/cancel
+  // POST transfer-batches/:id/cancel — paketlar ro'yxati (`/batches`, tab sonlari, tafsilot) va bo'shagan buyurtmalar.
   const cancelBatch = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.post(API_ENDPOINTS.BATCHES.CANCEL(id), data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["branch-cov"] }),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ["branch-cov"] }),
+        client.invalidateQueries({ queryKey: ["batches"] }),
+        client.invalidateQueries({ queryKey: ["orders"] }),
+      ]),
   });
 
   return {

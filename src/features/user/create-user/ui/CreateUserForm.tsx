@@ -16,6 +16,7 @@ import {
   Route,
   Send,
   Store,
+  TrendingUp,
   Truck,
   UserCog,
   type LucideIcon,
@@ -23,6 +24,7 @@ import {
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateInvestorUserRequest,
   CreateLogistRequest,
   CreateManagerRequest,
   CreateMarketRequest,
@@ -35,14 +37,18 @@ import type {
 import { useUser } from "../../../../entities/user/api/userApi";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { useBranches, type Branch } from "../../../../entities/branch";
+import { useInvestors } from "../../../../entities/investors";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
 import { notify } from "../../../../shared/lib/notify";
+import { isPersonNameRole, normalizePersonName } from "../../../../shared/lib/personName";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
+import { todayISODay } from "../../../../shared/ui/primitives/date/calendarMath";
 import { formatPhone } from "../../../../shared/lib/formatPhone";
 import {
   Button,
   Card,
+  DateInput,
   Field,
   IconButton,
   PageHeader,
@@ -77,6 +83,13 @@ import {
 } from "../../password-sms/ui/PasswordSmsResultDialog";
 
 const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
+/** «Ulush (%)»: `12`, `12.5`, `12,75` → son; noto'g'ri yoki 0..100 dan tashqari → `null`. */
+const parseSharePercent = (value: string): number | null => {
+  const text = value.trim().replace(",", ".");
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(text)) return null;
+  const share = Number(text);
+  return share <= 100 ? share : null;
+};
 
 interface CreateUserFormValues {
   role: UserRole;
@@ -98,6 +111,12 @@ interface CreateUserFormValues {
   passwordMode: PasswordMode;
   /** aidsxJ2H: faqat `manual` da yuboriladi (`generate_sms` da backend doim `true`). */
   mustChangePassword: boolean;
+  /** Investor: boshlang'ich kapital (ixtiyoriy) — yaratilgach `POST /investments`. */
+  capital: string;
+  /** Investor: kapital sanasi `YYYY-MM-DD` (bo'sh — bugun). */
+  investedAt: string;
+  /** Investor: «Ulush (%)» — 0..100, ko'pi bilan 2 kasr (ixtiyoriy, BeePost formasi). */
+  sharePercent: string;
 }
 
 const INITIAL_FORM: CreateUserFormValues = {
@@ -116,6 +135,9 @@ const INITIAL_FORM: CreateUserFormValues = {
   districtId: "",
   passwordMode: "generate_sms",
   mustChangePassword: true,
+  capital: "",
+  investedAt: "",
+  sharePercent: "",
 };
 
 /**
@@ -160,6 +182,9 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   delivery_type: "deliveryType",
   deliveryType: "deliveryType",
   district_id: "districtId",
+  amount: "capital",
+  invested_at: "investedAt",
+  share_percent: "sharePercent",
 };
 
 const getBranchOptionLabel = (branch: Branch) => {
@@ -178,9 +203,15 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   logist: Route,
   courier: Truck,
   marketing: Store,
+  investor: TrendingUp,
 };
 /** Superadmin/admin rollari (LG-2: Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market). */
 const ROLE_ORDER: UserRole[] = ["admin", "manager", "registrator", "logist", "courier", "marketing"];
+/**
+ * Superadmin — oxirida «Investor» ham (BeePost naqshi: investor yaratish faqat superadmin'da; ega so'rovi
+ * 2026-11-05). Maket yo'q — eng yaqini: `superadmin-users-create`.
+ */
+const SUPERADMIN_ROLE_ORDER: UserRole[] = [...ROLE_ORDER, "investor"];
 
 /** `?role=logist` («Logist biriktirish» → «Logist yaratish») — shu rol tanlangan holda ochiladi. */
 const readRoleParam = (value: string | null, allowed: readonly UserRole[]): UserRole | null =>
@@ -197,6 +228,14 @@ const createdIdOf = (response: unknown): unknown => {
   const body = (response as { data?: unknown } | null)?.data ?? response;
   const data = (body as { data?: unknown } | null)?.data ?? body;
   return (data as { id?: unknown } | null)?.id;
+};
+
+/** `POST /investor-users` javobidan bog'langan investor yozuvi id'si (`data.investor.id`). */
+const createdInvestorIdOf = (response: unknown): string | null => {
+  const body = (response as { data?: unknown } | null)?.data ?? response;
+  const data = (body as { data?: unknown } | null)?.data ?? body;
+  const id = ((data as { investor?: { id?: unknown } } | null)?.investor ?? null)?.id;
+  return typeof id === "string" || typeof id === "number" ? String(id) : null;
 };
 
 const statusOf = (error: unknown): number | undefined =>
@@ -230,6 +269,11 @@ const FormSection = ({ title, note, children }: { title: string; note?: ReactNod
  * Xulq AYNAN saqlangan: rollar (`managerAllowedRoles`), filial ro'yxati va HQ cheklovi, maosh/to'lov kuni
  * qoidalari, kuryer tariflari (fix3b FE-USR-11), har rol payload'i, backend maydon xatolari, muvaffaqiyatda
  * `navigate(-1)`. Filiallar so'rovi faqat superadmin/admin uchun (menejerga `GET branches` 403).
+ *
+ * Menejer yaratgan market (ega, 2026-11-04): menejer ro'yxatida faqat o'z filiali xodimlari — market filialga
+ * bog'lanmagan, tafsiloti menejerga 403. Shuning uchun SMS natija oynasida «Foydalanuvchiga o'tish» o'rniga
+ * «Ro'yxatga qaytish» (`/all-users` + muvaffaqiyat xabari); xabarda (qo'lda rejimda ham, `navigate(-1)` saqlangan)
+ * market ro'yxatda ko'rinmasligi aytiladi. Yaratish qoidalari (`managerAllowedRoles`) o'zgarmagan.
  */
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation(["users", "common", "auth"]);
@@ -258,10 +302,14 @@ export const CreateUserForm = memo(() => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [created, setCreated] = useState<CreatedResult | null>(null);
+  // Menejer yaratgan market — ro'yxatida ham, tafsilotida ham (403) ko'rinmaydi: tafsilotga o'tilmaydi.
+  const isManagerMarket = (createdRole: string) => authRole === "manager" && createdRole === "marketing";
+  const marketCreatedMessage = authRole === "manager" ? t("v2.create.managerMarketCreated") : t("createMarket");
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
+  const staffRoles = authRole === "superadmin" ? SUPERADMIN_ROLE_ORDER : ROLE_ORDER;
   const [initialRole] = useState<UserRole>(
-    () => readRoleParam(searchParams.get("role"), managerAllowedRoles ?? ROLE_ORDER) ?? INITIAL_FORM.role,
+    () => readRoleParam(searchParams.get("role"), managerAllowedRoles ?? staffRoles) ?? INITIAL_FORM.role,
   );
   const methods = useForm<CreateUserFormValues>({
     defaultValues: { ...INITIAL_FORM, role: initialRole },
@@ -283,10 +331,12 @@ export const CreateUserForm = memo(() => {
   const salaryValue = useWatch({ control, name: "salary" }) ?? "";
   const courierTariffsRequired = areCourierTariffsRequired({ salary: salaryValue });
   // Menejer: o'z tartibida (maket `manager-users-create-hybrid`: Kuryer, Ro'yxatchi, Market).
-  const visibleRoles = managerAllowedRoles ?? ROLE_ORDER;
+  const visibleRoles = managerAllowedRoles ?? staffRoles;
   const shouldShowRolePanel = visibleRoles.length > 1;
 
-  const { createAdmin, createManager, createRegistrator, createMarket, createCourier, createLogist } = useUser();
+  const { createAdmin, createManager, createRegistrator, createMarket, createCourier, createLogist, createInvestorUser } =
+    useUser();
+  const { createInvestment } = useInvestors();
   // Filial tanlovi faqat superadmin/admin formasida — menejer uchun `GET branches` 403 (BatchesPage naqshi).
   const canLoadBranches = authRole === "superadmin" || authRole === "admin";
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches(
@@ -326,7 +376,9 @@ export const CreateUserForm = memo(() => {
     createRegistrator.isPending ||
     createMarket.isPending ||
     createCourier.isPending ||
-    createLogist.isPending;
+    createLogist.isPending ||
+    createInvestorUser.isPending ||
+    createInvestment.isPending;
 
   const validateByRole = (values: CreateUserFormValues): boolean => {
     let valid = true;
@@ -442,6 +494,16 @@ export const CreateUserForm = memo(() => {
       }
     }
 
+    if (role === "investor" && values.investedAt && values.investedAt > todayISODay()) {
+      setError("investedAt", { message: t("v2.create.investor.investedAtFuture") });
+      valid = false;
+    }
+
+    if (role === "investor" && values.sharePercent.trim() && parseSharePercent(values.sharePercent) === null) {
+      setError("sharePercent", { message: t("v2.create.investor.sharePercentInvalid") });
+      valid = false;
+    }
+
     if (role === "marketing") {
       if (!values.username.trim()) {
         // Eski «Username kiritilmadi» — inglizcha so'z; maketdagi maydon nomi «Login».
@@ -503,9 +565,34 @@ export const CreateUserForm = memo(() => {
       describeError,
     });
 
-  const onSubmit = async (values: CreateUserFormValues) => {
+  /**
+   * Investor yaratilgach boshlang'ich kapital — `POST /investments` (`data.investor.id`). Login va investor yozuvi
+   * allaqachon yaratilgan: kapital yozilmasa yaratish bekor qilinmaydi, faqat ogohlantirish (qo'lda qo'shiladi).
+   */
+  const recordInitialCapital = async (response: unknown, amount: number, investedAt: string) => {
+    const investorId = createdInvestorIdOf(response);
+    try {
+      if (!investorId) throw new Error("investor id yo'q");
+      await createInvestment.mutateAsync({
+        investor_id: investorId,
+        amount,
+        invested_at: investedAt || new Date().toISOString(),
+      });
+    } catch {
+      notify.warning(t("v2.create.investor.capitalFailedTitle"), {
+        description: t("v2.create.investor.capitalFailedText"),
+      });
+    }
+  };
+
+  const onSubmit = async (submitted: CreateUserFormValues) => {
     clearErrors();
-    if (!validateByRole(values)) return;
+    if (!validateByRole(submitted)) return;
+    // Xodim ismi — shaxs ismi: har so'z bosh harfi katta (Enter bilan yuborilsa blur bo'lmagan bo'lishi mumkin);
+    // market nomi — biznes nomi, yozilgandek.
+    const values = isPersonNameRole(role)
+      ? { ...submitted, fullName: normalizePersonName(submitted.fullName) }
+      : submitted;
 
     const rawPhone = toUzbekistanPhoneValue(values.phone);
 
@@ -638,6 +725,27 @@ export const CreateUserForm = memo(() => {
       return;
     }
 
+    if (role === "investor") {
+      const sharePercent = values.sharePercent.trim() ? parseSharePercent(values.sharePercent) : null;
+      const payload: CreateInvestorUserRequest = {
+        name: values.fullName,
+        phone_number: rawPhone,
+        ...passwordPayload(values),
+        ...(sharePercent === null ? {} : { share_percent: sharePercent }),
+      };
+      const capital = parseAmount(values.capital);
+      await submitRequest(
+        async () => {
+          const response = await createInvestorUser.mutateAsync(payload);
+          if (capital > 0) await recordInitialCapital(response, capital, values.investedAt);
+          return response;
+        },
+        t("v2.create.investor.created"),
+        values,
+      );
+      return;
+    }
+
     if (role === "marketing") {
       const payload: CreateMarketRequest = {
         name: values.fullName,
@@ -649,7 +757,7 @@ export const CreateUserForm = memo(() => {
         default_tariff: values.deliveryType === "center" ? "center" : "address",
       };
 
-      await submitRequest(() => createMarket.mutateAsync(payload), t("createMarket"), values);
+      await submitRequest(() => createMarket.mutateAsync(payload), marketCreatedMessage, values);
     }
   };
 
@@ -667,6 +775,8 @@ export const CreateUserForm = memo(() => {
       render={({ field, fieldState }) => (
         <Field label={label} required hint={hint} error={fieldState.error?.message}>
           <TextInput
+            // Ism — shaxs rollarida fokusdan chiqqanda bosh harfi katta; «Market nomi» yozilgandek.
+            personName={name === "fullName" && isPersonNameRole(role)}
             name={field.name}
             value={field.value}
             onValueChange={field.onChange}
@@ -680,7 +790,7 @@ export const CreateUserForm = memo(() => {
   );
 
   const renderMoneyField = (
-    name: "salary" | "homeRate" | "centerRate",
+    name: "salary" | "homeRate" | "centerRate" | "capital",
     label: string,
     placeholder: string,
     { required, hint }: { required: boolean; hint?: string },
@@ -915,6 +1025,7 @@ export const CreateUserForm = memo(() => {
   const roleHint = (key: UserRole) => {
     if (key === "marketing") return t("v2.create.roleHint.market");
     if (key === "logist") return t("v2.logist.roleHint");
+    if (key === "investor") return t("v2.create.roleHint.investor");
     if (key === "registrator" && isManagerHybridCreator) return t("v2.create.roleHint.registratorOwnBranch");
     return t(`v2.create.roleHint.${key}`);
   };
@@ -1027,7 +1138,9 @@ export const CreateUserForm = memo(() => {
         ? t("v2.create.formDescription.market")
         : role === "logist"
           ? t("v2.logist.formDescription")
-          : undefined;
+          : role === "investor"
+            ? t("v2.create.formDescription.investor")
+            : undefined;
 
   const formTitle = (
     <span className="flex min-w-0 items-center gap-3">
@@ -1219,6 +1332,60 @@ export const CreateUserForm = memo(() => {
               </>
             ) : null}
 
+            {role === "investor" ? (
+              <FormSection title={t("v2.create.sections.investment")} note={t("v2.create.investor.sectionNote")}>
+                <div className={GRID_260}>
+                  {renderMoneyField(
+                    "capital",
+                    t("v2.create.investor.capital"),
+                    t("v2.create.investor.capitalPlaceholder"),
+                    { required: false, hint: t("v2.create.investor.capitalHint") },
+                  )}
+                  <Controller
+                    control={control}
+                    name="sharePercent"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        label={t("v2.create.investor.sharePercent")}
+                        hint={t("v2.create.investor.sharePercentHint")}
+                        error={fieldState.error?.message}
+                      >
+                        <TextInput
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          inputMode="decimal"
+                          suffix="%"
+                          placeholder={t("v2.create.investor.sharePercentPlaceholder")}
+                        />
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="investedAt"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        label={t("v2.create.investor.investedAt")}
+                        labelAs="span"
+                        hint={t("v2.create.investor.investedAtHint")}
+                        error={fieldState.error?.message}
+                      >
+                        <DateInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          max={todayISODay()}
+                          invalid={Boolean(fieldState.error)}
+                          aria-label={t("v2.create.investor.investedAt")}
+                        />
+                      </Field>
+                    )}
+                  />
+                </div>
+              </FormSection>
+            ) : null}
+
             {/* aidsxJ2H: «Parol» — maket `superadmin-users-create-password-sms` (barcha rollar). */}
             <FormSection title={t("v2.create.passwordMode.section")}>
               <PasswordModeSection
@@ -1249,16 +1416,27 @@ export const CreateUserForm = memo(() => {
           user={created.user}
           initialSms={created.sms}
           viewerRole={authRole}
-          primaryLabel={t(created.isLogist ? "v2.passwordSms.openLogistAssignment" : "v2.passwordSms.openUser")}
-          onPrimary={() =>
+          primaryLabel={t(
+            created.isLogist
+              ? "v2.passwordSms.openLogistAssignment"
+              : isManagerMarket(created.user.role)
+                ? "v2.passwordSms.backToList"
+                : "v2.passwordSms.openUser",
+          )}
+          onPrimary={() => {
+            if (!created.isLogist && isManagerMarket(created.user.role)) {
+              notify.success(t("success", { ns: "common" }), { description: marketCreatedMessage });
+              navigate("/all-users");
+              return;
+            }
             navigate(
               created.isLogist
                 ? logistAssignmentPath(created.user.id)
                 : created.user.id
                   ? `/all-users/${encodeURIComponent(created.user.id)}`
                   : "/all-users",
-            )
-          }
+            );
+          }}
           onCreateAnother={() => {
             setCreated(null);
             reset({ ...INITIAL_FORM, role });

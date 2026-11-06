@@ -103,6 +103,17 @@ test("⭐ token yo'q — QR kartasi yo'q, «Chop etish» qoladi", async ({ page 
 });
 
 test("⭐ «Chop etish»: ikki usul, PDF yangi oynada ochiladi", async ({ page }) => {
+  // Oyna qaysi manzil bilan ochilgani yozib olinadi: Playwright Chromium'da (CI) PDF ko'ruvchi yo'q — `blob:` PDF
+  // popup'da ko'rsatilmaydi va uning `url()` i «:» bo'lib qoladi (Chrome'da `blob:…`). Ilova `window.open(blob)` qiladi.
+  await page.addInitScript(() => {
+    const opened: string[] = [];
+    (window as unknown as { __opened: string[] }).__opened = opened;
+    const original = window.open.bind(window);
+    window.open = (url?: string | URL, ...rest: unknown[]) => {
+      opened.push(String(url ?? ""));
+      return original(url, ...(rest as [string?, string?]));
+    };
+  });
   await mockOrderDetailApi(page, { ...ORDER_95, qr_code_token: TOKEN }, { profile: SUPERADMIN });
   await openOrderDetail(page, "95");
   await page.getByRole("button", { name: "Chop etish" }).click();
@@ -112,8 +123,13 @@ test("⭐ «Chop etish»: ikki usul, PDF yangi oynada ochiladi", async ({ page }
 
   const popup = page.waitForEvent("popup", { timeout: 60_000 });
   await pdf.click();
-  const pdfWindow = await popup;
-  await expect.poll(() => pdfWindow.url(), { timeout: 30_000 }).toMatch(/^blob:/);
+  await popup;
+  const opened = await page.evaluate(() => (window as unknown as { __opened: string[] }).__opened);
+  expect(opened).toHaveLength(1);
+  expect(opened[0]).toMatch(/^blob:/);
+  // Blob — haqiqiy PDF fayl (yorliq yaratildi).
+  const head = await page.evaluate(async (url) => (await (await fetch(url)).text()).slice(0, 5), opened[0]);
+  expect(head).toBe("%PDF-");
 });
 
 for (const [role, profile, visible] of [

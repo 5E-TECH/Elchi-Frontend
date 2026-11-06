@@ -6,6 +6,14 @@ export type ReturnRequestRow = {
   courier: string;
   /** Kuryer id (`groups[].courier_id`); kuryersiz guruhda — bo'sh. */
   courierId: string;
+  /**
+   * Filial o'tkazmasi so'rovi (`groups[].source: 'branch_transfer'`, HQ doirasi; ega qarori 2026-11-04): manzil
+   * filial menejeri «kelmagan» degan yoki qisman qabulda qolgan — kuryersiz. Kuryer so'rovida — yo'q.
+   */
+  source?: "branch_transfer";
+  /** Filial o'tkazmasida — manzil filial id (`groups[].branch_id`) va nomi (backend bersa; aks holda bo'sh). */
+  branchId?: string;
+  branchName?: string;
 };
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -42,7 +50,13 @@ export const extractReturnRequestRows = (payload: unknown): ReturnRequestRow[] =
       ? root.groups
       : null;
 
-  const toRow = (order: unknown, courierName: string, courierId: string, index: number): ReturnRequestRow => {
+  const toRow = (
+    order: unknown,
+    courierName: string,
+    courierId: string,
+    index: number,
+    branch?: { id: string; name: string },
+  ): ReturnRequestRow => {
     const record = asRecord(order);
     const id = toText(record.id ?? record.order_id);
     return {
@@ -52,6 +66,7 @@ export const extractReturnRequestRows = (payload: unknown): ReturnRequestRow[] =
       status: normalizeReturnRequestStatus(record.status),
       courier: courierName,
       courierId,
+      ...(branch ? { source: "branch_transfer" as const, branchId: branch.id, branchName: branch.name } : {}),
     };
   };
 
@@ -59,10 +74,19 @@ export const extractReturnRequestRows = (payload: unknown): ReturnRequestRow[] =
     let index = 0;
     return groups.flatMap((group) => {
       const groupRecord = asRecord(group);
+      const orders = Array.isArray(groupRecord.orders) ? groupRecord.orders : [];
+      // Filial o'tkazmasi guruhi — kuryersiz, manzil filial bilan.
+      if (toText(groupRecord.source).toLowerCase() === "branch_transfer") {
+        const branchRecord = asRecord(groupRecord.branch);
+        const branch = {
+          id: toText(groupRecord.branch_id) || toText(branchRecord.id),
+          name: toText(branchRecord.name) || toText(groupRecord.branch_name),
+        };
+        return orders.map((order) => toRow(order, "", "", index++, branch));
+      }
       const courier = asRecord(groupRecord.courier);
       const courierId = toText(groupRecord.courier_id) || toText(courier.id);
       const courierName = toText(courier.name) || courierId;
-      const orders = Array.isArray(groupRecord.orders) ? groupRecord.orders : [];
       return orders.map((order) => toRow(order, courierName, courierId, index++));
     });
   }
@@ -86,29 +110,53 @@ export const extractReturnRequestScope = (payload: unknown): ReturnRequestScope 
   return type === "HQ" || type === "BRANCH" ? type : null;
 };
 
+/** Filial o'tkazmasi so'rovi (kuryersiz, manzil filial bilan) — `source: 'branch_transfer'`. */
+export const isBranchTransferRow = (row: ReturnRequestRow) => row.source === "branch_transfer";
+
+/**
+ * Holat yorlig'i kaliti (`logistics.statuses.*`): filial o'tkazmasida yo'ldagi buyurtma — «Filialga kelmagan»
+ * (`branch_not_arrived`), qolganlari — backend holati.
+ */
+export const returnRequestStatusKey = (row: ReturnRequestRow) =>
+  isBranchTransferRow(row) && row.status === "on_the_road" ? "branch_not_arrived" : row.status;
+
 export type ReturnRequestCourierGroup = {
   key: string;
-  /** Kuryer ismi; kuryersiz guruhda — bo'sh. */
+  /** Kuryer ismi; kuryersiz guruhda va filial o'tkazmasida — bo'sh. */
   courier: string;
   courierId: string;
+  /** Filial o'tkazmasi guruhi (`branch_transfer:<branchId>`): manzil filial id va nomi. */
+  branch?: { id: string; name: string };
   rows: ReturnRequestRow[];
 };
 
 /**
  * Tanlangan qatorlarni kuryer bo'yicha guruhlaydi (tasdiq oynasi, maket
- * `superadmin-ops-logistics-approve-dialog`): ro'yxat tartibida, kuryersiz
- * guruh — oxirida.
+ * `superadmin-ops-logistics-approve-dialog`): ro'yxat tartibida, filial
+ * o'tkazmasi guruhlari (manzil filial bo'yicha) — kuryerlardan keyin,
+ * kuryersiz guruh — oxirida.
  */
 export const groupReturnRequestRowsByCourier = (rows: ReturnRequestRow[]): ReturnRequestCourierGroup[] => {
   const groups = new Map<string, ReturnRequestCourierGroup>();
   for (const row of rows) {
-    const key = row.courierId || row.courier;
-    const group = groups.get(key) ?? { key, courier: row.courier, courierId: row.courierId, rows: [] };
+    const branch = isBranchTransferRow(row);
+    const key = branch ? `branch_transfer:${row.branchId ?? ""}` : row.courierId || row.courier;
+    const group = groups.get(key) ?? {
+      key,
+      courier: row.courier,
+      courierId: row.courierId,
+      ...(branch ? { branch: { id: row.branchId ?? "", name: row.branchName ?? "" } } : {}),
+      rows: [],
+    };
     group.rows.push(row);
     groups.set(key, group);
   }
   const list = [...groups.values()];
-  return [...list.filter((group) => group.key), ...list.filter((group) => !group.key)];
+  return [
+    ...list.filter((group) => group.key && !group.branch),
+    ...list.filter((group) => group.branch),
+    ...list.filter((group) => !group.key),
+  ];
 };
 
 export type ApproveReturnResult = {

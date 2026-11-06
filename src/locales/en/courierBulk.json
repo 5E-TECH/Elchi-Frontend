@@ -16,6 +16,9 @@
   "confirmCancelOneHint": "No. {{id}} · {{name}} — moved to the cancelled status",
   "confirmTomorrow": "{{count}} kept for tomorrow",
   "confirmTomorrowHint": "Stay in the waiting status",
+  "confirmUnmarked_one": "{{count}} unmarked — stays unchanged",
+  "confirmUnmarked_other": "{{count}} unmarked — stay unchanged",
+  "confirmUnmarkedHint": "Stay in the waiting status",
   "confirmAction": "Confirm",
   "confirmBack": "Back",
   "scanMissingTitle": "Order not found",
@@ -34,6 +37,8 @@
   "finalizeNothing": "Nothing to finalize — orders postponed to tomorrow stay waiting.",
   "finalizeTomorrowKept_one": "{{count}} order postponed to tomorrow.",
   "finalizeTomorrowKept_other": "{{count}} orders postponed to tomorrow.",
+  "finalizeUnmarkedKept_one": "{{count}} unmarked order left unchanged.",
+  "finalizeUnmarkedKept_other": "{{count}} unmarked orders left unchanged.",
   "page": {
     "clearMarks": "Clear marks",
     "finalize": "Finish the day"
@@ -45,7 +50,7 @@
     "pendingCourier": "Assigned to you, not finished",
     "pendingManager": "With branch couriers, not finished",
     "sold": "Will be sold",
-    "soldUnmarked": "<strong>{{count}}</strong> unmarked, by default",
+    "soldUnmarked": "Unmarked: <strong>{{count}}</strong> — stay unchanged",
     "cancel": "Will be cancelled",
     "cancelHint": "Moved to the cancelled status",
     "tomorrow": "Kept for tomorrow",
@@ -68,7 +73,7 @@
   "list": {
     "title": "Waiting orders",
     "titleShort": "Waiting",
-    "description": "Unmarked orders will be sold",
+    "description": "Unmarked orders stay unchanged",
     "search": "Name, phone or number",
     "searchLabel": "Search orders by name, phone or number",
     "filterLabel": "Filter by result",
@@ -93,14 +98,17 @@
     "cancel": "Cancel",
     "tomorrow": "Tomorrow",
     "noMatchTitle": "No orders found",
-    "noMatchHint": "Change the search or the result filter."
+    "noMatchHint": "Change the search or the result filter.",
+    "replacementHint": "Replacement — sell from «Orders» with «I took the old item»",
+    "awaitingPostHint": "Mail not accepted yet — accept it in «Mail» first",
+    "courierHeldHint": "With the courier — the courier sells it",
+    "lastError": "Not finalized: {{reason}}"
   },
   "states": {
     "errorHint": "Check your internet connection and try again.",
     "emptyHint": "Orders in the waiting status appear here."
   },
   "confirm": {
-    "soldUnmarked": "<strong>{{count}} unmarked</strong>, by default",
     "soldMarked": "Moved to the sold status",
     "irreversibleTitle": "This action cannot be undone",
     "irreversibleText_one": "The status of {{count}} order changes immediately.",
@@ -128,11 +136,30 @@
   "camera": {
     "context": "Waiting orders: {{value}}",
     "meter": "scanned",
-    "unscanned": "Unscanned orders ({{value}}) will be marked as sold.",
+    "unmarked": "Unmarked orders ({{value}}) stay unchanged.",
     "listTitle": "Scanned",
     "listDescription": "{{done}} / {{total}} · cancel: {{cancel}}, tomorrow: {{tomorrow}}",
     "markedCancel": "Marked for cancellation №{{id}} · {{name}}",
     "markedTomorrow": "Kept for tomorrow №{{id}} · {{name}}",
     "markedSold": "Marked as sold №{{id}} · {{name}}"
-  }
+  },
+  "confirmReplacement_one": "{{count}} replacement order is not sold",
+  "confirmReplacement_other": "{{count}} replacement orders are not sold",
+  "confirmReplacementHint": "They stay waiting — take the old item and sell from «Orders» with «I took the old item»",
+  "finalizeReplacementKept_one": "{{count}} replacement order is sold from «Orders».",
+  "finalizeReplacementKept_other": "{{count}} replacement orders are sold from «Orders».",
+  "awaitingPostTitle": "Mail not accepted yet",
+  "finalizeNothingPlain": "Nothing to finalize.",
+  "finalizeCourierHeldKept_one": "{{count}} order is with a courier — the courier sells it.",
+  "finalizeCourierHeldKept_other": "{{count}} orders are with couriers — the couriers sell them.",
+  "finalizeAwaitingPostKept_one": "{{count}} order is in mail not accepted yet — finalize it after accepting it in «Mail».",
+  "finalizeAwaitingPostKept_other": "{{count}} orders are in mail not accepted yet — finalize them after accepting it in «Mail».",
+  "confirmCourierHeld_one": "{{count}} order with a courier is not sold",
+  "confirmCourierHeld_other": "{{count}} orders with couriers are not sold",
+  "confirmCourierHeldHint": "They stay waiting — the courier sells them",
+  "confirmAwaitingPost_one": "{{count}} order is in mail not accepted yet",
+  "confirmAwaitingPost_other": "{{count}} orders are in mail not accepted yet",
+  "confirmAwaitingPostHint": "Nothing changes — accept the mail in «Mail» first",
+  "noPermissionTitle": "No permission to sell or cancel",
+  "noPermissionText": "To finalize the day, a superadmin must give you the sell/cancel permission."
 }

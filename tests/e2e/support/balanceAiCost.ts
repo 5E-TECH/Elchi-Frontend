@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { FONT_HOSTS, serveFont } from "../../visual/support/fonts";
 
 /**
  * Celz3rKJ — «Balans → AI xarajat» (`/financial-balance?tab=ai`) uchun soxta gateway (superadmin): `GET /ai-usage/dashboard`
@@ -141,6 +142,9 @@ export const openAiCost = async (
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin === origin) return route.continue();
+    // Ilovadagi haqiqiy shrift (Manrope) — «Modellar» qiymat ustuni (13rem) va chiziqlar nisbati shrift eniga bog'liq;
+    // to'sib qo'yilsa zaxira shrift (lokalda Noto, CI'da DejaVu) chiziladi va natija mashinaga bog'liq bo'ladi.
+    if (FONT_HOSTS.has(url.host)) return void (await serveFont(route));
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");

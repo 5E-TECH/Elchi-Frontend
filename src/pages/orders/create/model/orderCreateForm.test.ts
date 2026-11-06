@@ -3,6 +3,7 @@ import {
   buildCreateOrderPayload,
   createOrderSchema,
   isExistingCustomerUnchanged,
+  isReplacementRejectedMessage,
   ORDER_CREATE_DEFAULT_VALUES,
   orderCreateBlockers,
   orderCreateBlockersFromMessage,
@@ -57,6 +58,7 @@ describe("buildCreateOrderPayload", () => {
       status: "active",
     },
     existingCustomer: null,
+    replacement: null,
     deliveryTypeTouched: true,
     deliveryDefaultFor: null,
     totalPriceAuto: false,
@@ -107,6 +109,21 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("market_id");
   });
 
+  it("mijoz va operator ismi — har so'z bosh harfi katta (blur bo'lmasa ham), manzil/izoh yozilgandek", () => {
+    const payload = buildCreateOrderPayload(
+      {
+        ...formValues,
+        customer: { ...formValues.customer, name: "  aliyev   vali-o'g'li ", address: "chilonzor 9" },
+        details: { ...formValues.details, operator: "kamola yusupova", comment: "kechqurun" },
+      },
+      { includeMarketId: false },
+    );
+    expect(payload.customer.name).toBe("Aliyev Vali-O'g'li");
+    expect(payload.operator).toBe("Kamola Yusupova");
+    expect(payload.customer.address).toBe("chilonzor 9");
+    expect(payload.comment).toBe("kechqurun");
+  });
+
   it("omits optional empty fields from payload", () => {
     const payload = buildCreateOrderPayload(
       {
@@ -131,6 +148,24 @@ describe("buildCreateOrderPayload", () => {
     expect(payload).not.toHaveProperty("address");
     expect(payload).not.toHaveProperty("comment");
     expect(payload).not.toHaveProperty("operator");
+    expect(payload).not.toHaveProperty("operator_id");
+  });
+
+  it("tanlangan operator: `operator_id` + `operator` (ismi); tanlanmagan (bo'sh / yo'q) — faqat matn", () => {
+    const picked = buildCreateOrderPayload(
+      { ...formValues, details: { ...formValues.details, operator: "Dilnoza Karimova", operator_id: " 11 " } },
+      { includeMarketId: true },
+    );
+    expect(picked).toMatchObject({ operator_id: "11", operator: "Dilnoza Karimova" });
+
+    for (const operator_id of ["", undefined]) {
+      const typed = buildCreateOrderPayload(
+        { ...formValues, details: { ...formValues.details, operator_id } },
+        { includeMarketId: true },
+      );
+      expect(typed).toMatchObject({ operator: "Operator" });
+      expect(typed).not.toHaveProperty("operator_id");
+    }
   });
 
   // 6kHnNH9j: manba bloki ko'rinadigan rollarda `fulfillment` (auto | hq), qolganlarida — yuborilmaydi (backend `auto`).
@@ -181,6 +216,15 @@ describe("buildCreateOrderPayload — mavjud mijoz (CS-A, hiqRNhkI)", () => {
       expect(isExistingCustomerUnchanged(changed), JSON.stringify(patch)).toBe(false);
       expect(buildCreateOrderPayload(changed), JSON.stringify(patch)).not.toHaveProperty("customer_id");
     }
+  });
+
+  it("saqlangan ism kichik harfli: maydondan chiqib bosh harfi katta bo'lgani bog'lanishni uzmaydi", () => {
+    const values = linked({ ...base.customer, name: "ali valiyev" });
+    const blurred = { ...values, customer: { ...values.customer, name: "Ali Valiyev" } };
+    expect(isExistingCustomerUnchanged(blurred)).toBe(true);
+    const payload = buildCreateOrderPayload(blurred);
+    expect(payload.customer_id).toBe("55");
+    expect(payload.customer.name).toBe("Ali Valiyev");
   });
 
   it("sxema bog'lanish holatini tekshirmaydi (yuborishga tayyorlikka ta'sir qilmaydi)", async () => {
@@ -247,5 +291,61 @@ describe("IR2OHIiN — mahsulotsiz va tumansiz buyurtma to'siqlari", () => {
       orderCreateBlockersFromMessage("Buyurtmada kamida bitta mahsulot bo‘lishi kerak, Buyurtma uchun tuman tanlanmagan"),
     ).toEqual(["items", "district"]);
     expect(orderCreateBlockersFromMessage("Telefon noto'g'ri")).toEqual([]);
+  });
+});
+
+describe("lQjt6sKP — almashtirish (`replaced_order_id`)", () => {
+  const replacement = { id: "120", marketKey: "3", date: "1729000000000", customerName: "Ali Valiyev" };
+
+  it("tanlanmagan — maydon yuborilmaydi (oddiy buyurtma)", () => {
+    const payload = buildCreateOrderPayload({
+      ...validBaseValues("center"),
+      market: { id: 3, name: "Baraka Shop" },
+    });
+    expect(payload).not.toHaveProperty("replaced_order_id");
+    expect(ORDER_CREATE_DEFAULT_VALUES.replacement).toBeNull();
+  });
+
+  it("tanlangan eski buyurtma — faqat id `replaced_order_id` bo'lib ketadi (market rolida ham)", () => {
+    const values = { ...validBaseValues("center"), market: { id: 3, name: "Baraka Shop" }, replacement };
+    const payload = buildCreateOrderPayload(values);
+    expect(payload.replaced_order_id).toBe("120");
+    expect(payload.market_id).toBe("3");
+    // Chip matni (mijoz, sana, market kaliti) payload'ga kirmaydi.
+    expect(payload).not.toHaveProperty("replacement");
+    expect(JSON.stringify(payload)).not.toContain("marketKey");
+    const own = buildCreateOrderPayload({ ...values, replacement: { ...replacement, marketKey: "own" } }, {
+      includeMarketId: false,
+    });
+    expect(own.replaced_order_id).toBe("120");
+    expect(own).not.toHaveProperty("market_id");
+  });
+
+  it("sxema tanlovni tekshirmaydi (ixtiyoriy) — `null` va obyekt ham to'g'ri", async () => {
+    await expect(
+      createOrderSchema(false).validate({ ...validBaseValues("center"), replacement }, { abortEarly: false }),
+    ).resolves.toBeTruthy();
+    await expect(
+      createOrderSchema(false).validate({ ...validBaseValues("center"), replacement: null }, { abortEarly: false }),
+    ).resolves.toBeTruthy();
+  });
+
+  it("isReplacementRejectedMessage: `POST /orders` almashtirish 400 matnlari", () => {
+    expect(
+      isReplacementRejectedMessage(
+        "Almashtiriladigan buyurtma #120 shu marketda topilmadi — faqat shu marketning yetkazilgan buyurtmasini tanlash mumkin",
+      ),
+    ).toBe(true);
+    expect(
+      isReplacementRejectedMessage("Faqat yetkazib berilgan (sotilgan) buyurtmani almashtirish mumkin — #120 holati: new"),
+    ).toBe(true);
+    expect(
+      isReplacementRejectedMessage(
+        "Bu buyurtma (#120) allaqachon almashtirishga belgilangan — almashtirish buyurtmasi #130",
+      ),
+    ).toBe(true);
+    expect(isReplacementRejectedMessage("replaced_order_id buyurtma raqami (ID) bo'lishi kerak")).toBe(true);
+    expect(isReplacementRejectedMessage("Buyurtma uchun tuman tanlanmagan")).toBe(false);
+    expect(isReplacementRejectedMessage("Tanlangan operator bu marketga tegishli emas")).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { test } from "@playwright/test";
 import { runSoftSoundsSaved } from "./support/scannerSounds";
 
-/** JX0EBpa7 — 390px: 12 ta ovoz kartasi sig'adi, gorizontal skroll yo'q, tanlov saqlanadi. */
+/** JX0EBpa7 — 390px: 13 ta ovoz kartasi (BeePost bilan) sig'adi, gorizontal skroll yo'q, tanlov saqlanadi. */
 test.describe("Skaner ovozlari — yumshoq to'plamlar (390)", () => {
   test.describe.configure({ timeout: 120_000 });
 

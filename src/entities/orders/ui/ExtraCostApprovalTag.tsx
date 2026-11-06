@@ -1,15 +1,15 @@
 // dizayn-v2: manager-orders-list-pending
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Badge } from "../../../shared/ui/primitives/Badge";
 import {
-  clearPendingExtraCostApproval,
   getActivePendingApproval,
   isExtraCostAction,
   usePendingExtraCostApprovals,
   type ExtraCostAction,
+  type OrderWithPendingApproval,
 } from "../extraCostApproval";
 
 const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
@@ -23,19 +23,14 @@ const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
  * `el-badge el-badge-outline el-tone-warning`, ikonkasiz). Maslahatda nima, qancha va qachon yuborilgani:
  * «Sotish: 20 000 so'm qo'shimcha xarajat Bugun, 14:05 da market tasdig'iga yuborilgan».
  *
- * Buyurtma holati so'rov yuborilgandagidan o'zgargan bo'lsa (market tasdiqladi, amal bajarildi) yozuv
- * o'chiriladi va belgi ko'rinmaydi.
+ * Manba — server (GykuOz8f): buyurtmaning `pending_extra_cost_approval` maydoni (`GET /orders`) — boshqa qurilmada
+ * yuborilgan so'rov ham ko'rinadi, market qaror qilgach (ro'yxat yangilanganda) belgi yo'qoladi.
  */
-export const ExtraCostApprovalTag = memo(({ orderId, status }: { orderId: string; status: string }) => {
+export const ExtraCostApprovalTag = memo(({ order }: { order: OrderWithPendingApproval }) => {
   const { t, i18n } = useTranslation("orders");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const approvals = usePendingExtraCostApprovals();
-  const stored = approvals[orderId];
-  const active = getActivePendingApproval(approvals, { id: orderId, status });
-
-  useEffect(() => {
-    if (stored && !active) clearPendingExtraCostApproval(orderId);
-  }, [active, orderId, stored]);
+  const active = getActivePendingApproval(approvals, order);
 
   if (!active) return null;
 

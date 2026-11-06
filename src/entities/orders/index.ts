@@ -82,7 +82,11 @@ export type ExtraCostApproval = {
   action: "sell" | "cancel" | "partly_sell";
   amount: number;
   proof_file_keys?: string[];
-  status: "pending" | "approved" | "rejected";
+  /**
+   * `void` — so'rov o'zi yopildi (yangi so'rov, boshqa yo'l bilan bajarildi, ortga qaytarish; sababi `closed_reason`);
+   * `reversed` — tasdiqlangan xarajat buyurtma ortga qaytarilganda teskari yozildi (hwTkXsGi).
+   */
+  status: ExtraCostApprovalStatus;
   decided_by_user_id?: string | null;
   decided_at?: string | null;
   decision_comment?: string | null;
@@ -95,9 +99,28 @@ export type ExtraCostApproval = {
   auto_approve_at?: string | null;
   /** (DuST9k8j) rad etish sababi — yopiq ro'yxat. */
   reject_reason?: ExtraCostRejectReason | null;
+  /** (hwTkXsGi) `void` / `reversed` sababi va vaqti (boshqa holatlarda `null`). */
+  closed_reason?: string | null;
+  closed_at?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  // ─── GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» ro'yxati (`GET orders/extra-costs`) qo'shimcha maydonlari ───
+  /** Market tasdig'isiz darhol yozilgan xarajat (market tasdig'i o'chiq) — `approved` qator, qarorchisiz. */
+  immediate?: boolean;
+  /** Buyurtmaning hozirgi holati. */
+  order_status?: string | null;
+  /** Buyurtma mijozi (ism va telefon). */
+  customer?: { name: string | null; phone: string | null } | null;
+  /** Market — faqat nomi (telefon kuryer/menejerga berilmaydi). */
+  market?: { id: string; name: string | null } | null;
+  /** Isbot fayllari soni (`proof_file_keys.length` bilan bir xil). */
+  proof_count?: number;
+  /** Rad etish sababining o'qiladigan nomi (backend). */
+  reject_reason_label?: string | null;
 };
+
+/** So'rov holati (hwTkXsGi: `void`, `reversed` ham). */
+export type ExtraCostApprovalStatus = "pending" | "approved" | "rejected" | "void" | "reversed";
 
 export type ExtraCostApprovalsResponse = {
   data?: ExtraCostApproval[];
@@ -168,6 +191,11 @@ export const useOrders = () => {
     client.invalidateQueries({ queryKey: ["finance-cov"] });
     client.invalidateQueries({ queryKey: ["cashbox"] });
     client.invalidateQueries({ queryKey: ["dashboard"] });
+    // `entities/payments` `refreshCashboxQueries` dagi qolgan pul keshlari (entity'lar bir-birini import qilmaydi):
+    // bosh sahifa KPI va «Moliyaviy tahlil», `/payments` dagi kuryer / market / menejer / filial summalari.
+    for (const key of ["kpi", "revenue", "couriers", "markets", "managers", "branches"]) {
+      client.invalidateQueries({ queryKey: [key] });
+    }
   };
 
   const useExtraCostApprovals = (
@@ -240,6 +268,9 @@ export const useOrders = () => {
     onSuccess: () => {
       // Barcha orders cache ni yangilash
       client.invalidateQueries({ queryKey: [orders] });
+      // HQ qabuli buyurtmani viloyat pochtasiga qo'shadi — «Bugungi» pochtalar va bosh sahifa soni.
+      client.invalidateQueries({ queryKey: ["mails", "new"] });
+      client.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 
@@ -248,6 +279,8 @@ export const useOrders = () => {
       api.post(API_ENDPOINTS.BRANCHES.TRANSFER_BATCHES, data).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
+      // Yangi (yoki kattalashgan) o'tkazma paketi — `/batches` «Yangi» ro'yxati va tab sonlari.
+      client.invalidateQueries({ queryKey: ["batches"] });
     },
   });
 
@@ -402,6 +435,8 @@ export const useOrders = () => {
         extraCost: number;
         comment: string;
         proof?: File;
+        /** Almashtirish buyurtmasi: «Eski mahsulotni oldim» (lQjt6sKP) — `SellOrderPayload.oldItemCollected` dagidek. */
+        oldItemCollected?: boolean;
       };
     }) =>
       toOrderActionBody(data).then((body) =>
@@ -422,6 +457,8 @@ export const useOrders = () => {
       api.post(API_ENDPOINTS.POSTS.CANCEL, { order_ids }).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
+      // Rad etilgan (bekor) pochta yaratildi — «Pochta → Rad etilgan» ro'yxati va tab soni.
+      client.invalidateQueries({ queryKey: ["mails"] });
     },
   });
 

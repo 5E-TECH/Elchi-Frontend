@@ -5,9 +5,11 @@ export {
   proofFileName,
   readProofFiles,
   useProofFileUrls,
+  useProofSourceUrls,
   proofFileUrlKey,
+  proofSourceUrlKey,
 } from "./api/proofFiles";
-export type { ProofKind } from "./api/proofFiles";
+export type { ProofKind, ProofSource, ProofSourceFile } from "./api/proofFiles";
 export { default as ProofGallery } from "./ui/ProofGallery";
 export { readReturnRequest } from "./model/returnRequest";
 export type { ReturnRequest } from "./model/returnRequest";
@@ -51,3 +53,36 @@ export { useCancelReturnPlaceText } from "./ui/useCancelReturnPlaceText";
 export { useCancelHandoverMethodLabel } from "./ui/useCancelHandoverMethodLabel";
 export type { OrderStatusBadgeProps } from "./ui/OrderStatusBadge";
 export { formatOrderRef, orderNumberOf, toOrderSearchTerm } from "./model/orderNumber";
+// lQjt6sKP: almashtirish — yaratish formasidagi eski (yetkazilgan) buyurtma tanlovi.
+export {
+  fetchReplaceableOrders,
+  replaceableOrdersQueryKey,
+  toReplaceableOrdersPage,
+  toReplaceableSearch,
+  useReplaceableOrders,
+} from "./api/replaceableOrders";
+export type {
+  ReplaceableOrderItem,
+  ReplaceableOrderRow,
+  ReplaceableOrdersPage,
+  ReplaceableOrdersParams,
+} from "./api/replaceableOrders";
+// lQjt6sKP: almashtirish — sotish darvozasi («Eski mahsulotni oldim») va belgi.
+export { formatReplacementOrderRef, readOrderReplacement } from "./model/orderReplacement";
+export type { OrderReplacementInfo, OrderReplacementState } from "./model/orderReplacement";
+export { ReplacementTag } from "./ui/ReplacementTag";
+// lQjt6sKP: almashtirish qaytarmalari ro'yxati (`/replacement-returns`).
+export {
+  REPLACEMENT_RETURN_STATES,
+  replacementReturnsQueryKey,
+  toReplacementReturnsPage,
+  useReplacementReturns,
+} from "./api/replacementReturns";
+export type {
+  ReplacementReturnItem,
+  ReplacementReturnPerson,
+  ReplacementReturnRow,
+  ReplacementReturnState,
+  ReplacementReturnsPage,
+  ReplacementReturnsParams,
+} from "./api/replacementReturns";

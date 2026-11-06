@@ -2,11 +2,13 @@
 import { memo, useCallback, useMemo } from "react";
 import { Info, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { TONE_SOFT } from "../../../shared/ui/primitives";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
+import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../model/mailBranchNames";
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useRefusedMails, type MailListRow } from "../model/mailsLists";
@@ -19,7 +21,8 @@ import MailsListBody from "./MailsListBody";
  * kuryer nomini ham beradi). Filtr yo'q.
  *
  *  - xodim (`card`, maketlar `superadmin-mails-refused`, `admin-`/`manager-mails-refused`): izoh «Kuryer
- *    qaytargan pochtalar…» + xulosa, jadval (Kuryer ustuni bilan), holat «Rad etilgan» (danger);
+ *    qaytargan pochtalar…» + xulosa, jadval (Kuryer ustuni bilan; superadmin, admin va registratorda uning o'rnida
+ *    «Filial» — `model/mailBranchNames.ts`), holat «Rad etilgan» (danger);
  *  - kuryer (`page`, `courier-mails-refused`): «faqat ko'rish» izohi, 3 ta `StatCard`, «Rad etilgan pochtalar»
  *    kartasi, saralanadigan jadval. Qabulni filial bajaradi — kuryer tafsilotda faqat o'qiydi.
  *  - ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
@@ -33,6 +36,8 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { isCourier, mails, query } = useRefusedMails();
   const cardView = useMailsCardView();
+  const branchColumn = useSelector(selectMailsBranchColumn);
+  const branchName = useMailBranchName(branchColumn && hasMailBranch(mails));
 
   const status = useMemo(() => {
     const badge = getPostStatusBadge("canceled");
@@ -40,8 +45,14 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
   }, [t]);
   const rows = useMemo(
     () =>
-      mails.map((mail) => toMailListRow(mail, { status, regionFallback: (id) => t("mails:regionFallback", { id }) })),
-    [mails, status, t],
+      mails.map((mail) =>
+        toMailListRow(mail, {
+          status,
+          regionFallback: (id) => t("mails:regionFallback", { id }),
+          branchName: branchColumn ? branchName : undefined,
+        }),
+      ),
+    [branchColumn, branchName, mails, status, t],
   );
 
   const linkOf = useCallback(
@@ -99,7 +110,8 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
       note={note}
       table={{
         idHeader: t("table.mail"),
-        showCourier: !isCourier,
+        showCourier: !isCourier && !branchColumn,
+        showBranch: branchColumn,
         courierCards: isCourier,
         sortable: isCourier,
         linkOf,

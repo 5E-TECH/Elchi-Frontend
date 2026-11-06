@@ -224,10 +224,13 @@
     },
     "addEmployee": {
       "description": "{{branch}}ga foydalanuvchini biriktiring.",
-      "hint": "Faqat faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi",
+      "hint": "Faqat hech qaysi filialga biriktirilmagan faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi",
+      "hintHq": "Faqat hech qaysi filialga biriktirilmagan faol ro'yxatchi va kuryerlar ko'rsatiladi — HQ da menejer bo'lmaydi",
+      "hintPickup": "Faqat hech qaysi filialga biriktirilmagan faol menejer va ro'yxatchilar ko'rsatiladi — qabul punktida kuryer bo'lmaydi",
       "listLabel": "Foydalanuvchilar",
       "empty": "Foydalanuvchi topilmadi",
-      "noOptions": "Biriktirish mumkin bo'lgan faol xodim yo'q"
+      "searchMore": "Hammasi ko'rsatilmagan — ism, login yoki telefon bo'yicha qidiring",
+      "noOptions": "Biriktirilmagan faol xodim yo'q. Boshqa filialdagi xodimni avval o'sha filialdan olib tashlang."
     },
     "positions": {
       "MANAGER": "Menejer",

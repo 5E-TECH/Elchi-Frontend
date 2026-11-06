@@ -72,6 +72,8 @@
   "marketExtraCostDisabled": "Market uchun qo'shimcha xarajat o'chirildi",
   "marketExtraCostApprovalEnabled": "Qo'shimcha xarajat endi market tasdig'idan o'tadi",
   "marketExtraCostApprovalDisabled": "Qo'shimcha xarajat endi tasdiqsiz yoziladi",
+  "marketCashboxDebtEnabled": "Market kassasi qarzga ishlashi yoqildi",
+  "marketCashboxDebtDisabled": "Market kassasi qarzga ishlashi o'chirildi",
   "marketProofEnabled": "Market uchun rasm/video isbot yoqildi",
   "marketProofDisabled": "Market uchun rasm/video isbot o'chirildi",
   "cancelledHandoverQrRequired": "Bekor qilingan buyurtmalar uchun QR kod olish",
@@ -164,8 +166,8 @@
     },
     "list": {
       "descriptionAll": "Xodimlar, marketlar va mijozlar hisoblarini boshqarish",
-      "descriptionBranch": "{{branch}} xodimlari va marketlari",
-      "descriptionOwnBranch": "Filialingiz xodimlari va marketlari",
+      "descriptionBranch": "{{branch}} xodimlari",
+      "descriptionOwnBranch": "Filialingiz xodimlari",
       "kpiLabel": "Foydalanuvchilar soni",
       "kpiAll": "Barcha foydalanuvchilar",
       "kpiTotal": "Jami",
@@ -240,7 +242,8 @@
         "registrator": "Filial, maosh va to'lov kuni",
         "registratorOwnBranch": "Maosh va to'lov kuni",
         "courier": "Maosh yoki buyurtma tarifi",
-        "market": "Login va yetkazish tariflari"
+        "market": "Login va yetkazish tariflari",
+        "investor": "Kabinetga kirish va boshlang'ich kapital"
       },
       "hybridNote": "Kuryer va ro'yxatchi {{branch}}ga avtomatik biriktiriladi.",
       "hybridNoteOwnBranch": "Kuryer va ro'yxatchi filialingizga avtomatik biriktiriladi.",
@@ -255,7 +258,8 @@
       "alertTextCourier": "Kuryer yaratilgach, telefon raqami va parolni unga o'zingiz yetkazing — tizim ularni SMS orqali yubormaydi.",
       "formDescription": {
         "courier": "Kuryer buyurtmalarni yetkazadi va kassaga pul topshiradi",
-        "market": "Market o'z kabinetiga login va parol bilan kiradi"
+        "market": "Market o'z kabinetiga login va parol bilan kiradi",
+        "investor": "Investor o'z kabinetida investitsiya va foydasini ko'radi"
       },
       "sections": {
         "main": "Asosiy ma'lumotlar",
@@ -263,7 +267,8 @@
         "salary": "Maosh va to'lov kuni",
         "branch": "Biriktirish",
         "login": "Kirish ma'lumotlari",
-        "delivery": "Yetkazish tarifi"
+        "delivery": "Yetkazish tarifi",
+        "investment": "Investitsiya"
       },
       "fields": {
         "name": "Ism familiya",
@@ -305,6 +310,7 @@
         "loginRequired": "Login kiritilmadi"
       },
       "saving": "Saqlanmoqda…",
+      "managerMarketCreated": "Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.",
       "passwordMode": {
         "section": "Parol",
         "legend": "Parolni qanday berish",
@@ -326,6 +332,22 @@
         "alertText": "Login — foydalanuvchining telefon raqami. Parolni tizim yaratadi va shu raqamga yuboradi, uni yetkazish shart emas.",
         "phoneHint": "Login shu raqam bo'ladi, parol ham shu raqamga keladi",
         "sampleSender": "Yuboruvchi"
+      },
+      "investor": {
+        "sectionNote": "Ixtiyoriy: kapital kiritilsa, investitsiya sifatida yoziladi",
+        "capital": "Boshlang'ich kapital",
+        "capitalPlaceholder": "Masalan: 100 000 000",
+        "capitalHint": "Bo'sh qolsa, investitsiya yozilmaydi",
+        "sharePercent": "Ulush (%)",
+        "sharePercentPlaceholder": "Masalan: 10",
+        "sharePercentHint": "0 dan 100 gacha; investor kabinetida ko'rinadi",
+        "sharePercentInvalid": "Ulush 0 dan 100 gacha, ko'pi bilan 2 kasr xonali son bo'lsin",
+        "investedAt": "Boshlanish sanasi",
+        "investedAtHint": "Bo'sh qolsa, bugungi sana",
+        "investedAtFuture": "Kelajakdagi sanani tanlab bo'lmaydi",
+        "created": "Investor yaratildi",
+        "capitalFailedTitle": "Kapital yozilmadi",
+        "capitalFailedText": "Investor va uning logini yaratildi, lekin boshlang'ich kapital saqlanmadi"
       }
     },
     "detail": {
@@ -348,6 +370,8 @@
       "marketExtraCostHint": "Kuryer va menejer shu market buyurtmalariga qo'shimcha xarajat yoza oladi",
       "marketExtraCostApproval": "Market tasdig'i",
       "marketExtraCostApprovalHint": "Yoqiq bo'lsa, xarajat market tasdiqlagach yoziladi. O'chiq bo'lsa, darhol yoziladi",
+      "marketCashboxDebt": "Kassa qarzga ishlaydi",
+      "marketCashboxDebtHint": "Yoqiq bo'lsa, marketga qarzdan ortiq to'lash mumkin — market kassasi minusga tushadi. O'chiq bo'lsa, qarzdan ortiq to'lab bo'lmaydi",
       "proofTitle": "Rasm yoki video isbot",
       "proofHint": "Shu market buyurtmalarida kuryer qachon isbot yuklashi shart",
       "sellProof": "Sotishda isbot",
@@ -557,6 +581,7 @@
       "note": "Parol tizimda ochiq ko'rinishda saqlanmaydi. Foydalanuvchi birinchi kirishda yangi parol o'rnatadi.",
       "createAnother": "Yana yaratish",
       "openUser": "Foydalanuvchiga o'tish",
+      "backToList": "Ro'yxatga qaytish",
       "openLogistAssignment": "Viloyatlarni belgilash",
       "reset": {
         "action": "Parolni tiklash va SMS yuborish",

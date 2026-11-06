@@ -6,6 +6,7 @@
  * `transport_status: "cancelled (sent)"` bo'lib keladi (`normalizeOrderStatusForDisplay`) —
  * ko'rinishda u «Bekor — jo'natilgan» (chegarali badge).
  */
+import type { ServerPendingExtraCostApproval } from "../../../../../../entities/orders/extraCostApproval";
 
 export const Order_status = {
   CREATED: "created",
@@ -44,6 +45,8 @@ export type Order = {
   holder_type?: string | null;
   parent_order_id?: string | null;
   qr_code_token?: string | null;
+  /** GykuOz8f: serverdagi kutilayotgan qo'shimcha xarajat so'rovi (`waiting` da) yoki `null`. */
+  pending_extra_cost_approval?: ServerPendingExtraCostApproval | null;
 };
 
 /** Ro'yxat tablari (URL `status` paramiga bog'langan). */

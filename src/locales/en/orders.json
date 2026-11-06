@@ -5,6 +5,8 @@
     "exportExcel": "Export to Excel",
     "exportAllHint": "All pages matching the filter are exported to an Excel file",
     "createOrder": "Create order",
+    "replacementReturns": "Replacements",
+    "extraCosts": "Extra costs",
     "cardLabel": "Order list",
     "cardLabelPending": "Waiting orders",
     "cardLabelCancelled": "Cancelled orders",
@@ -565,7 +567,8 @@
       "cancelledPostReturnedToBranch": "{{actor}} returned the cancelled order from HQ to {{branch}} branch",
       "cancelledPostReturnedToNamedBranch": "{{actor}} returned the cancelled order from HQ to {{branch}}",
       "cancelledPostReturnedShort": "{{actor}} returned the cancelled order from HQ to the sending branch",
-      "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent"
+      "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent",
+      "branchReturnRequested": "{{actor}} reported the order did not arrive at the branch — a return request was sent"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -629,7 +632,8 @@
       "warehouseReturned": "Returned to warehouse",
       "postBranchReassigned": "Moved to another branch",
       "cancelledPostReturned": "Returned to branch",
-      "courierReturnRequested": "Not arrived — return requested"
+      "courierReturnRequested": "Not arrived — return requested",
+      "branchReturnRequested": "Not arrived at branch — return requested"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",
@@ -813,6 +817,7 @@
   "orderActionError": "The action could not be completed. Please try again.",
   "rollbackCancelPostWarning": "The order was cancelled but not added to the cancelled-orders post. Add it to a post manually.",
   "extraCostHomeNotAllowed": "Extra cost can't be added for home delivery — the home tariff is already higher.",
+  "extraCostMarketDisabled": "Extra cost can't be added for this market.",
   "returnRequested": "Return requested",
   "returnRequestedReason": "Reason: {{reason}}",
   "returnInitiate": "Return to market",
@@ -1013,6 +1018,39 @@
     "operatorYou": "You",
     "operatorAuto": "You — filled in automatically"
   },
+  "replacementPicker": {
+    "label": "Replacement",
+    "hint": "If this order replaces a previously delivered one, pick the old order — the courier hands over the new one and takes the old one back.",
+    "noMarket": "Select a market first — the old order is picked from this market's orders",
+    "open": "For a replacement — pick the old order",
+    "selected": "Replacing old {{ref}} ({{date}}) — {{customer}}",
+    "selectedNoCustomer": "Replacing old {{ref}} ({{date}})",
+    "cancel": "Cancel",
+    "cancelAria": "Cancel replacement: old {{ref}} ({{date}})",
+    "summary": "Replacement",
+    "dialogTitle": "Pick the old order",
+    "dialogDescription": "Delivered orders of this market — the new order is sent in place of one of them",
+    "searchPlaceholder": "Search by phone or order number...",
+    "searchAria": "Search old order",
+    "listLabel": "Delivered orders",
+    "hintSearch": "Search results across the market",
+    "hintCustomer": "This customer's previous orders (type above to find another customer's order)",
+    "hintRecent": "The market's latest delivered orders (type the customer's phone or the order number)",
+    "emptySearch": "No delivered orders match the search.",
+    "emptyCustomer": "This customer has no delivered orders from this market. Search for another customer's order.",
+    "emptyRecent": "This market has no delivered orders that can be replaced.",
+    "more": "Showing {{shown}} of {{total}} — refine the search",
+    "deliveredOn": "Delivered on: {{date}}",
+    "itemLine": "{{name}} ×{{quantity}}",
+    "unnamedProduct": "Product",
+    "noCustomerName": "Unnamed customer"
+  },
+  "operatorSelect": {
+    "none": "Not selected",
+    "pickedHint": "The order and commission are credited to this operator",
+    "otherLabel": "Operator not on the list",
+    "loadFailed": "Couldn't load the operator list — type the name manually"
+  },
   "fulfillment": {
     "tag": "From warehouse",
     "tagNamed": "From warehouse · {{name}}",
@@ -1052,5 +1090,30 @@
       "summary": "Ships from",
       "notInStock": "Not in stock"
     }
+  },
+  "replacementSell": {
+    "notice": "Replacement: take the old item back from the customer — {{ref}}",
+    "noticeHint": "This order replaces an order delivered earlier. Hand over the new one and take the old one from the customer — it goes back to the market.",
+    "confirm": "I took the old item",
+    "confirmRequired": "You can't sell until «I took the old item» is checked",
+    "collected": "Replacement: old item collected ({{date}})",
+    "collectedNoDate": "Replacement: old item collected"
+  },
+  "replacementTag": {
+    "replacement": "Replacement",
+    "replacementTitle": "Replacement order — instead of the old {{ref}}",
+    "return": "Replacement return",
+    "returnAwaiting": "Old item — the courier must collect it from the customer",
+    "returnCollected": "Old item collected — on its way to the market",
+    "returnReturned": "Old item returned to the market"
+  },
+  "replacementBanner": {
+    "newTitle": "Replacement order",
+    "newAwaiting": "Instead of the old {{ref}}. The courier hands over the new one and takes the old one back from the customer — selling asks to confirm «I took the old item».",
+    "newCollected": "Instead of the old {{ref}}. The old item was collected from the customer: {{date}}.",
+    "newCollectedNoDate": "Instead of the old {{ref}}. The old item was collected from the customer.",
+    "returnTitle": "Replacement return",
+    "returnCollectedAt": "Collected: {{date}}.",
+    "openOld": "Open the old order"
   }
 }

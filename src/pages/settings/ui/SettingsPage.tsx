@@ -137,7 +137,8 @@ const SettingsPage = () => {
   const onScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
     if (type === "success") writeStoredScannerSuccessSound(sound);
     else writeStoredScannerErrorSound(sound);
-    persist({ scanner: { sounds: { [type]: sound } } });
+    // `chosen` — aniq tanlov belgisi: hisobdagi `classic` faqat shu bilan hurmat qilinadi (entities/settings).
+    persist({ scanner: { sounds: { [type]: sound, chosen: true } } });
   };
   /** Kamera sozlamasi: qurilmadagi ko'zgu darhol (keyingi ochilgan kamera o'qiydi) + hisobga. */
   const onScannerCamera = (patch: Partial<AppSettings["scanner"]["camera"]>) => {
@@ -148,22 +149,21 @@ const SettingsPage = () => {
     writeStoredScannerFeedbackPrefs(patch);
     persist({ scanner: { feedback: patch } });
   };
-  /** Faqat chaladi: vaqtincha shu ovozni yozadi, 350 ms dan keyin saqlangan tanlov qaytadi. */
+  /**
+   * Faqat chaladi (tanlov o'zgarmaydi): shu ovoz `sound` bilan beriladi. «Ovoz» kaliti o'chiq bo'lsa ham
+   * eshittiriladi — foydalanuvchi ohangni aniq so'radi; ibora aytilmaydi (faqat ohang).
+   */
   const previewScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
-    const previous = settings.scanner.sounds[type];
-    if (type === "success") writeStoredScannerSuccessSound(sound);
-    else writeStoredScannerErrorSound(sound);
-    // «Ovoz» kaliti o'chiq bo'lsa ham eshittiriladi — foydalanuvchi ohangni aniq so'radi.
     void playScanFeedback(
       type,
       t(`scanner.${type === "success" ? "success_preview" : "error_preview"}`),
       undefined,
-      { preview: true },
+      { preview: true, sound },
     );
-    window.setTimeout(() => {
-      if (type === "success") writeStoredScannerSuccessSound(previous);
-      else writeStoredScannerErrorSound(previous);
-    }, 350);
+  };
+  /** «Ovozli xabar»ni eshitib ko'rish: tanlangan muvaffaqiyat ovozi va «Qabul qilindi» (kalitlarga qaramay). */
+  const previewScannerVoice = () => {
+    void playScanFeedback("success", t("scanner.success_preview"), undefined, { preview: true, voice: "received" });
   };
 
   // Menejerning bosh sahifasi — `/branch-dashboard` (`routes.tsx` → `DashboardEntry`).
@@ -290,6 +290,7 @@ const SettingsPage = () => {
                   canTestCamera={role !== "market"}
                   onSelect={onScannerSound}
                   onPreview={previewScannerSound}
+                  onPreviewVoice={previewScannerVoice}
                   onCamera={onScannerCamera}
                   onFeedback={onScannerFeedback}
                 />

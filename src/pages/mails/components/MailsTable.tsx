@@ -24,6 +24,8 @@ export type { MailsTableRow } from "../model/mailsLists";
  * Ustunlar: Pochta (№ havola + sana) · Viloyat (< 1024 da ostida kuryer) · Kuryer (≥ 1024) · Holat ·
  * Buyurtmalar «N ta» · Summa (qalin) · amallar (› havola). Telefonda (< 768) — kartalar:
  *  - xodim: sarlavha — viloyat, o'ngda summa; ostida «№X · kuryer · N ta buyurtma · sana»; holat badge'i;
+ *  - `showBranch` (superadmin, admin, registrator — Bahodir, 2026-11-04): «Kuryer» o'rnida «Filial» — ustun,
+ *    viloyat ostidagi nusxa va karta izohida pochta filiali (`model/mailBranchNames.ts`);
  *  - kuryer (`courierCards`): sarlavha — sana; ostida «Pochta №X · viloyat · N ta buyurtma».
  * Sarlavha va izohni sahifa o'zi bera oladi (`cardTitle` / `cardSub`, masalan menejerda «Pochta №X»).
  *
@@ -40,6 +42,8 @@ export type MailsTableProps<R extends MailsTableRow> = {
   statusHeader?: string;
   /** Kuryer ustuni (≥ 1024); < 1024 da kuryer viloyat ostida. */
   showCourier: boolean;
+  /** «Kuryer» o'rnida «Filial» ustuni (`branchName`; ≥ 1024, < 1024 da viloyat ostida). */
+  showBranch?: boolean;
   /** Telefon kartasi: sarlavha = sana (kuryer maketlari). */
   courierCards?: boolean;
   /** Kuryer: Pochta (sana) / Buyurtmalar / Summa bo'yicha saralash, mijoz tomonida. */
@@ -86,6 +90,7 @@ export const MailsTable = <R extends MailsTableRow>({
   idHeader,
   statusHeader,
   showCourier,
+  showBranch = false,
   courierCards = false,
   sortable = false,
   statusSortable = false,
@@ -118,6 +123,10 @@ export const MailsTable = <R extends MailsTableRow>({
     (value: number) => t("table.ordersSub", { count: value, value: count(value) }),
     [count, t],
   );
+
+  // Viloyat ostidagi va karta izohidagi ism — «Filial» ustunida filial, aks holda kuryer.
+  const showParty = showCourier || showBranch;
+  const partyOf = useCallback((row: R) => (showBranch ? row.branchName : row.courierName), [showBranch]);
 
   const statusBadge = useCallback(
     (row: R) =>
@@ -155,20 +164,20 @@ export const MailsTable = <R extends MailsTableRow>({
         cell: (row) => (
           <>
             <div className="whitespace-nowrap">{row.regionName}</div>
-            {showCourier && row.courierName ? (
-              <div className={`hidden whitespace-nowrap max-lg:block ${SUB}`}>{row.courierName}</div>
+            {showParty && partyOf(row) ? (
+              <div className={`hidden whitespace-nowrap max-lg:block ${SUB}`}>{partyOf(row)}</div>
             ) : null}
           </>
         ),
       },
     ];
-    if (showCourier) {
+    if (showParty) {
       list.push({
-        id: "courier",
-        header: t("table.courier"),
+        id: showBranch ? "branch" : "courier",
+        header: t(showBranch ? "table.branch" : "table.courier"),
         hideBelow: "lg",
         className: "whitespace-nowrap",
-        cell: (row) => row.courierName ?? "—",
+        cell: (row) => partyOf(row) ?? "—",
       });
     }
     list.push(
@@ -232,8 +241,10 @@ export const MailsTable = <R extends MailsTableRow>({
     money,
     openLabel,
     ordersSub,
+    partyOf,
     rowActions,
-    showCourier,
+    showBranch,
+    showParty,
     sortable,
     statusBadge,
     statusHeader,
@@ -256,11 +267,11 @@ export const MailsTable = <R extends MailsTableRow>({
         </>
       ) : (
         <>
-          {[row.displayId, row.courierName, ordersSub(row.orders)].filter(Boolean).join(" · ")} ·{" "}
+          {[row.displayId, partyOf(row), ordersSub(row.orders)].filter(Boolean).join(" · ")} ·{" "}
           <span className="whitespace-nowrap">{dateTime(row.createdAt)}</span>
         </>
       ),
-    [courierCards, dateTime, idHeader, ordersSub, t],
+    [courierCards, dateTime, idHeader, ordersSub, partyOf, t],
   );
 
   const defaultCardLabel = useCallback(

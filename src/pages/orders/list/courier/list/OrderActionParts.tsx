@@ -1,6 +1,6 @@
 // dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, courier-orders-cancel-dialog, courier-orders-action-approval-pending, courier-orders-rollback-confirm, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog
 import { useId, type ReactNode } from "react";
-import { Camera, CircleCheck, User, X } from "lucide-react";
+import { Camera, CircleCheck, Info, User, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
@@ -95,6 +95,29 @@ export const OrderCustomerSummary = ({ order, variant, footer, meta, metaClassNa
     <div role="group" aria-label={t("customer")} className="flex min-w-0 flex-col rounded-xl bg-sunken text-sm">
       {row}
       {footer ? <div className="border-t border-border px-4 py-3">{footer}</div> : null}
+    </div>
+  );
+};
+
+/**
+ * Qo'shimcha xarajat yozilmaydigan holat — maydon o'rnida kulrang izoh: uyga yetkazish yoki market xarajatni yopgan
+ * (QoYyRl6S). Sarlavha maydon nomi bilan bir xil, izoh `role="note"`.
+ */
+export const ExtraCostUnavailableNote = ({ label, children }: { label: string; children: ReactNode }) => {
+  const labelId = useId();
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span id={labelId} className="text-[13px] font-semibold text-text">
+        {label}
+      </span>
+      <div
+        role="note"
+        aria-labelledby={labelId}
+        className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
+      >
+        <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="min-w-0">{children}</p>
+      </div>
     </div>
   );
 };

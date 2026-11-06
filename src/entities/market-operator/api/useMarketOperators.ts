@@ -4,6 +4,7 @@ import {
   createMarketOperator,
   deleteMarketOperator,
   getMarketOperators,
+  getSelectableMarketOperators,
   updateMarketOperatorCommission,
   updateMarketOperatorWarehouseAccess,
 } from "./marketOperatorApi";
@@ -11,7 +12,31 @@ import {
 /** So'rov kalitlari — shu entity ichida (`shared/config/queryKeys.ts` boshqa PR'lar egaligida). */
 export const marketOperatorKeys = {
   all: ["market-operators"] as const,
+  /** Boshqaruv sahifasi ro'yxatlari (`MarketOperatorList`) — tanlov ro'yxati (massiv) bu prefiksga kirmaydi. */
+  lists: ["market-operators", "list"] as const,
   list: (params: MarketOperatorListParams) => ["market-operators", "list", params] as const,
+  /** Tanlov ro'yxati: `marketId` — xodim tanlagan market, `null` — o'z marketi (market roli). */
+  selectable: (marketId: string | null) => ["market-operators", "selectable", marketId ?? "own"] as const,
+};
+
+/**
+ * `GET /market-operators/selectable` — buyurtma yaratishdagi «Operator» tanlovi. `ownMarket` (market roli) —
+ * `market_id` yuborilmaydi, server o'z marketini tokendan oladi; qolgan rollar — `marketId` bilan, market
+ * tanlanmaguncha so'rov ketmaydi. Ro'yxat bo'sh yoki xato bo'lsa forma erkin matnga qaytadi — umumiy xabar
+ * chiqmaydi (`silentError`). Operator qo'shilsa / o'chirilsa (`marketOperatorKeys.all`) — ro'yxat ham yangilanadi.
+ */
+export const useSelectableMarketOperators = (
+  marketId: string | null,
+  options: { enabled?: boolean; ownMarket?: boolean } = {},
+) => {
+  const ownMarket = options.ownMarket ?? false;
+  const scopedMarketId = ownMarket ? null : marketId?.trim() || null;
+  return useQuery({
+    queryKey: marketOperatorKeys.selectable(scopedMarketId),
+    queryFn: () => getSelectableMarketOperators(scopedMarketId ?? undefined),
+    enabled: (options.enabled ?? true) && (ownMarket || scopedMarketId !== null),
+    meta: { silentError: true },
+  });
 };
 
 /**
@@ -63,7 +88,7 @@ export const useUpdateMarketOperatorWarehouseAccess = () => {
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => updateMarketOperatorWarehouseAccess(id, enabled),
     onSuccess: (operator) => {
       // Server tasdiqlagan qiymat darhol ro'yxatda (qayta so'rov kelguncha kalit eski holatga qaytib turmasin).
-      queryClient.setQueriesData<MarketOperatorList>({ queryKey: marketOperatorKeys.all }, (list) =>
+      queryClient.setQueriesData<MarketOperatorList>({ queryKey: marketOperatorKeys.lists }, (list) =>
         list
           ? {
               ...list,

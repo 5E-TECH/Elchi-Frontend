@@ -75,8 +75,8 @@ type OrderRowProps = {
   /** Badge'lar qatori oxirida — «Takroriy raqam» (MD-1, maket `*-mails-detail-duplicates`). */
   flag?: ReactNode;
   /**
-   * Kartaning ostida, to'liq kenglikda — kuryer: «Bu buyurtma kelmagan — qaytarish so'rovi» (maket yo'q — eng
-   * yaqini `courier-orders-pending` karta amallari: `px-4 pb-3`, karta matni `pb-2`).
+   * Kartaning ostida, to'liq kenglikda — kuryer / filial menejeri: «Bu buyurtma kelmagan — qaytarish so'rovi» (maket
+   * yo'q — eng yaqini `courier-orders-pending` karta amallari: `px-4 pb-3`, karta matni `pb-2`).
    */
   footer?: ReactNode;
 };

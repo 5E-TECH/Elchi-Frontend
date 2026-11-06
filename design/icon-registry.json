@@ -302,6 +302,12 @@
      "icon": "WifiOff",
      "usage": "Kuryer telefonidagi oflayn banner, kirish sahifasidagi aloqa xatosi",
      "replaces": []
+    },
+    {
+     "concept": "So'rov yopildi",
+     "icon": "CircleSlash",
+     "usage": "Qo'shimcha xarajat so'rovi o'zi yopilgan («Yopildi»): yangi so'rov almashtirgan yoki buyurtma boshqa yo'l bilan bajarilgan; rang neytral",
+     "replaces": []
     }
    ]
   },
@@ -399,6 +405,12 @@
      "icon": "Sparkles",
      "usage": "AI bilan buyurtma yaratish, skandagi AI taklifi, filial tafsilotidagi AI xulosasi",
      "replaces": []
+    },
+    {
+     "concept": "Isbot (rasm / video)",
+     "icon": "FileImage",
+     "usage": "Qo'shimcha xarajat isboti: «Isbot (N)» tugmasi va isbot oynasi",
+     "replaces": []
     }
    ]
   },
@@ -483,6 +495,12 @@
      "concept": "Investor ulushi",
      "icon": "PiggyBank",
      "usage": "Ops vositalari «Investorlar» bo'limi, investor ulushi va to'lovlari",
+     "replaces": []
+    },
+    {
+     "concept": "Avtomatik tasdiq",
+     "icon": "TimerReset",
+     "usage": "Market 24 soat javob bermagani uchun avtomatik tasdiqlangan qo'shimcha xarajat va avtomatik tasdiq vaqti (dashboard, «Qo'shimcha xarajatli buyurtmalar»)",
      "replaces": []
     }
    ]

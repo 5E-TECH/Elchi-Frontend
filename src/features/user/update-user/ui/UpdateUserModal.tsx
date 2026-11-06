@@ -22,6 +22,7 @@ import {
 } from "../../../../shared/lib/passwordPolicy";
 import { getOldPasswordErrorKind } from "../../../../shared/lib/oldPassword";
 import { notify } from "../../../../shared/lib/notify";
+import { isPersonNameRole, normalizePersonName } from "../../../../shared/lib/personName";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
   Button,
@@ -277,6 +278,8 @@ export const UpdateUserModal = memo(({
   const isSuperAdmin = role === "superadmin";
   const isCourier = !isOwnProfile && role === "courier";
   const isMarket = !isOwnProfile && (role === "market" || role === "marketing");
+  // Ism — shaxs ismi (market/filial hisobi nomi emas): fokusdan chiqqanda va yuborishda bosh harfi katta.
+  const isPersonName = isPersonNameRole(role);
   const isCustomer = role === "customer";
   // NFiXfmq6: AI narxini faqat superadmin/admin o'zgartiradi (menejerda maydon yashirin).
   const canEditAiPrice = isMarket && (authRole === "admin" || authRole === "superadmin");
@@ -526,8 +529,11 @@ export const UpdateUserModal = memo(({
 
     const payload: UpdateUserRequest = {};
 
-    if (values.name.trim() && values.name !== userData.name) {
-      payload.name = values.name.trim();
+    // Tegilmagan eski ism (kichik harfli bo'lsa ham) yuborilmaydi — faqat tahrirlangani tekislanadi.
+    const typedName = values.name.trim();
+    const nextName = isPersonName ? normalizePersonName(typedName) : typedName;
+    if (typedName && values.name !== userData.name && nextName !== userData.name) {
+      payload.name = nextName;
     }
 
     const rawPhone = toUzbekistanPhoneValue(values.phone);
@@ -768,6 +774,7 @@ export const UpdateUserModal = memo(({
               render={({ field, fieldState }) => (
                 <Field label={t(isMarket ? "v2.edit.marketName" : "v2.edit.name")} required error={fieldState.error?.message}>
                   <TextInput
+                    personName={isPersonName}
                     name={field.name}
                     ref={field.ref}
                     value={field.value}

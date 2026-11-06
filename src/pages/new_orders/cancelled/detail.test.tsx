@@ -224,7 +224,10 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     const selectedRegion = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
     expect(within(selectedRegion).getByText("2 ta buyurtma tanlandi")).toBeInTheDocument();
     expect(selectedRegion).toHaveClass("bg-action-soft");
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, { step: true });
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, {
+      step: true,
+      voice: "received",
+    });
 
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
@@ -252,7 +255,7 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
 
     expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" })).toBeDisabled();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String));
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, { voice: "selected" });
   });
 });
 
@@ -319,7 +322,10 @@ describe("Bekor qilinganlarni topshirish — kamera (markaziy «Skaner» tugmasi
     expect(after.progress).toMatchObject({ done: 2, total: 2, label: "ta tanlandi" });
     expect(after.finish).toMatchObject({ label: "Tugatish" });
     expect(after.list?.map((item) => item.key)).toEqual(["501", "502"]);
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Market QR qabul qilindi", undefined, { step: true });
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Market QR qabul qilindi", undefined, {
+      step: true,
+      voice: "received",
+    });
 
     // «Bekor qilish» — tanlovdan chiqaradi (jo'natish hali bo'lmagan).
     act(() => after.list![0].onUndo!());

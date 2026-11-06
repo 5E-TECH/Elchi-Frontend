@@ -75,6 +75,9 @@ export const useAiConfirm = () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
         client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+        // Qo'lda yaratishdagidek: mijozning «yangi buyurtma bor» ogohlantirishi va ombor qoldig'i.
+        client.invalidateQueries({ queryKey: ["customer-suggest"] }),
+        client.invalidateQueries({ queryKey: ["warehouses"] }),
       ]);
     },
   });

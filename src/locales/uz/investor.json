@@ -20,6 +20,7 @@
     "investedNone": "Hali investitsiya kiritilmagan",
     "share": "Ulush",
     "shareHint": "Oxirgi davr stavkasi",
+    "shareAgreed": "Kelishilgan ulush",
     "shareNone": "Foyda davri hali yo'q",
     "paid": "To'langan foyda",
     "paidHint": "Oxirgi to'lov: {{date}}",

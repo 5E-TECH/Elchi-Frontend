@@ -62,6 +62,7 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     await openCourierBulk(page);
     expect(api.listQueries[0]).toMatchObject({ status: "waiting", page: "1", limit: "100" });
 
+    await markResult(page, "Feruza Mirzayeva", "Sotildi");
     await markResult(page, "Ali Valiyev", "Bekor");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
 
@@ -85,10 +86,37 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     expect(api.leaked).toEqual([]);
   });
 
+  test("⭐ /courier-bulk: sukut natija yo'q — belgilanmagan qator so'rovsiz, «Kutilmoqda»da qoladi", async ({ page }) => {
+    const api = await mockCourierBulkApi(page);
+    await openCourierBulk(page);
+
+    // Hech bir qatorda natija oldindan tanlanmagan (ega 2026-11-05: «default hech nimada turmasligi kerak»).
+    for (const name of ["Feruza Mirzayeva", "Ali Valiyev", "Dilnoza Rahimova"]) {
+      await expect(page.getByRole("radiogroup", { name: `${name}: natija` }).getByRole("radio", { checked: true })).toHaveCount(0);
+    }
+    await markResult(page, "Feruza Mirzayeva", "Sotildi");
+    await markResult(page, "Ali Valiyev", "Bekor");
+
+    await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    await expect(confirm).toContainText("1 tasi belgilanmagan — o'zgarmaydi");
+    await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
+
+    await expect(toast(page, "Kun yakunlandi")).toBeVisible();
+    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } }]);
+    expect(api.cancels).toEqual([{ id: "10402", body: { comment: BULK_CANCEL_COMMENT, extraCost: 0 } }]);
+    // Belgilanmagan qator so'rovsiz ro'yxatda qoladi va hali ham belgisiz.
+    const unmarked = page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" });
+    await expect(unmarked).toBeVisible();
+    await expect(unmarked.getByRole("radio", { checked: true })).toHaveCount(0);
+    expect(api.leaked).toEqual([]);
+  });
+
   test("⭐ /courier-bulk: xato berganlar oynasi — backend sababi bilan, bajarilganlar soni; xato bergan belgi qoladi", async ({ page }) => {
     const api = await mockCourierBulkApi(page, { failWith: { "10402": "Buyurtma holati bekor qilishga mos emas" } });
     await openCourierBulk(page);
 
+    await markResult(page, "Feruza Mirzayeva", "Sotildi");
     await markResult(page, "Ali Valiyev", "Bekor");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
     await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();

@@ -56,7 +56,7 @@ describe("toInvestorDashboard", () => {
 
   it("konvertni ochadi; KPI maydonlari raqam, foiz satrdan son", () => {
     const dashboard = toInvestorDashboard(payload);
-    expect(dashboard.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active" });
+    expect(dashboard.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active", sharePercent: null });
     expect(dashboard.summary).toEqual({
       totalInvested: 450_000_000,
       investmentsCount: 5,
@@ -99,11 +99,21 @@ describe("toInvestorMe", () => {
         summary: { total_invested: "450000000", investments_count: 5, current_percentage: "12.5", last_paid_at: null },
       },
     });
-    expect(me.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active" });
+    expect(me.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active", sharePercent: null });
     expect(me.summary.totalInvested).toBe(450_000_000);
     expect(me.summary.investmentsCount).toBe(5);
     expect(me.summary.currentPercentage).toBe(12.5);
     expect(me.summary.lastPaidAt).toBeNull();
+  });
+
+  it("«Ulush (%)»: numeric satr → son; bo'sh / noto'g'ri → null", () => {
+    const of = (share: unknown) =>
+      toInvestorMe({ data: { investor: { id: 7, name: "A", status: "active", share_percent: share } } }).investor
+        ?.sharePercent;
+    expect(of("12.50")).toBe(12.5);
+    expect(of(0)).toBe(0);
+    expect(of(null)).toBeNull();
+    expect(of("abc")).toBeNull();
   });
 
   it("bo'sh yoki noto'g'ri javob — profil `null`, yig'indi 0", () => {

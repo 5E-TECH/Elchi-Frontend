@@ -167,6 +167,7 @@
       "id": "ID",
       "name": "Имя",
       "phone": "Телефон",
+      "share": "Доля",
       "summary": "{{from}}–{{to}} из {{total}} инвесторов",
       "empty": "Инвесторов нет",
       "emptyHint": "Добавьте нового инвестора через форму справа.",
@@ -203,6 +204,8 @@
       "selectRow": "Выбрать запрос {{id}}",
       "orderLink": "№{{id}}",
       "noCourier": "Курьер не назначен",
+      "branchTransfer": "Филиал: {{branch}} — не пришёл",
+      "branchTransferFallback": "Перевод в филиал — не пришёл",
       "emptyText": "Новые запросы появятся здесь."
     },
     "approve": {
@@ -240,7 +243,8 @@
     },
     "statuses": {
       "waiting": "Курьер не принял",
-      "on_the_road": "У курьера"
+      "on_the_road": "У курьера",
+      "branch_not_arrived": "Не пришёл в филиал"
     }
   },
   "branches": {

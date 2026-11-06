@@ -266,7 +266,7 @@ const IncomingOrdersPage = () => {
     const total = Math.max(bag ? bag.size - bag.received : (size ?? 0), members.length);
     if (!fresh.length) {
       const text = t("incomingBatchAlready", { size: total, count: members.length });
-      void playScanFeedback("error", text);
+      void playScanFeedback("error", text, undefined, { voice: "duplicate" });
       setMessage({ tone: "warn", text });
       return;
     }
@@ -282,7 +282,10 @@ const IncomingOrdersPage = () => {
     const text = partial
       ? t("incoming.partialScan", { bag: bag.label, arrived: bag.arrived, size: bag.size })
       : t("incomingBatchMarked", { size: total, count: marked });
-    void playScanFeedback(partial ? "error" : "success", text);
+    // Qop to'liq emas — xato ohangi (ibora tur bo'yicha); to'liq — «Qo'shildi»: hali faqat ro'yxatda, serverda qabul
+    // «Qabul qilish» tugmasida.
+    if (partial) void playScanFeedback("error", text);
+    else void playScanFeedback("success", text, undefined, { voice: "added" });
     setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
@@ -349,7 +352,7 @@ const IncomingOrdersPage = () => {
     }
     if (scannedIds.has(order.id)) {
       const text = `${orderLabel(order)} — ${t("incomingScanDuplicate")}`;
-      void playScanFeedback("error", text);
+      void playScanFeedback("error", text, undefined, { voice: "duplicate" });
       setMessage({
         tone: "warn",
         text,
@@ -357,7 +360,7 @@ const IncomingOrdersPage = () => {
       return;
     }
 
-    void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`);
+    void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`, undefined, { voice: "added" });
     setScannedIds((prev) => new Set(prev).add(order.id));
     // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
     setScannedTokens((prev) => [...prev, parcelToken(order)]);

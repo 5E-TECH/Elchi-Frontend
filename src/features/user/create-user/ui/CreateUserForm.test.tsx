@@ -30,6 +30,8 @@ const mocks = vi.hoisted(() => {
     createMarket: vi.fn(),
     createCourier: vi.fn(),
     createLogist: vi.fn(),
+    createInvestorUser: vi.fn(),
+    createInvestment: vi.fn(),
     useBranches: vi.fn(),
     navigate: vi.fn(),
   };
@@ -48,7 +50,13 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
     createMarket: { mutateAsync: mocks.createMarket, isPending: false },
     createCourier: { mutateAsync: mocks.createCourier, isPending: false },
     createLogist: { mutateAsync: mocks.createLogist, isPending: false },
+    createInvestorUser: { mutateAsync: mocks.createInvestorUser, isPending: false },
   }),
+}));
+
+vi.mock("../../../../entities/investors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../entities/investors")>()),
+  useInvestors: () => ({ createInvestment: { mutateAsync: mocks.createInvestment, isPending: false } }),
 }));
 
 // DtKKY0V8: kuryer «Tuman» — viloyat tumanlari (`GET region/:id`), tarmoqsiz.
@@ -127,6 +135,8 @@ beforeEach(() => {
     mocks.createMarket,
     mocks.createCourier,
     mocks.createLogist,
+    mocks.createInvestorUser,
+    mocks.createInvestment,
   ]) {
     fn.mockReset().mockResolvedValue({ statusCode: 201 });
   }
@@ -135,7 +145,7 @@ beforeEach(() => {
 });
 
 describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
-  it("sarlavha, rol kartasi (6 rol, izohlari bilan), izoh va forma kartasi", () => {
+  it("sarlavha, rol kartasi (superadmin — 7 rol, izohlari bilan), izoh va forma kartasi", () => {
     renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
 
     expect(screen.getByRole("heading", { level: 1, name: "Yangi foydalanuvchi" })).toBeInTheDocument();
@@ -149,8 +159,12 @@ describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
       "logist",
       "courier",
       "marketing",
+      "investor",
     ]);
     expect(screen.getByRole("radio", { name: /^Kuryer/ })).toHaveAccessibleName("Kuryer Maosh yoki buyurtma tarifi");
+    expect(screen.getByRole("radio", { name: /^Investor/ })).toHaveAccessibleName(
+      "Investor Kabinetga kirish va boshlang'ich kapital",
+    );
     expect(screen.getByRole("radio", { name: /^Logist/ })).toHaveAccessibleName(
       "Logist Buyurtmalar va holat tarixi, moliyasiz",
     );
@@ -645,5 +659,192 @@ describe("CreateUserForm — «Logist» (LG-2, maket `superadmin-users-create-lo
     });
     expect(screen.queryByRole("radio", { name: /^Logist/ })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /^Kuryer/ })).toBeChecked();
+  });
+});
+
+describe("CreateUserForm — ism bosh harfi (shaxs ismi; market nomi yozilgandek)", () => {
+  const nameInput = (container: HTMLElement) => container.querySelector<HTMLInputElement>('input[name="fullName"]')!;
+
+  it("kuryer: fokusdan chiqqanda har so'z bosh harfi katta; Enter bilan (blursiz) yuborilsa ham payload'da katta", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: managerState("REGIONAL") });
+
+    await fill(user, container, "fullName", "azamat  to'g'ayev");
+    expect(nameInput(container)).toHaveValue("azamat  to'g'ayev");
+    await user.tab();
+    expect(nameInput(container)).toHaveValue("Azamat To'g'ayev");
+
+    await user.clear(nameInput(container));
+    await fill(user, container, "phone", "946273051");
+    await fill(user, container, "password", "Urgut-2026x");
+    await fill(user, container, "homeRate", "20000");
+    await fill(user, container, "centerRate", "15000");
+    // Fokus ism maydonida qoladi — blur bo'lmaydi, Enter formani yuboradi.
+    await user.type(nameInput(container), "sardor qodirov-ugli{Enter}");
+
+    await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
+    expect(mocks.createCourier.mock.calls[0][0]).toMatchObject({ name: "Sardor Qodirov-Ugli" });
+  });
+
+  it("market: «Market nomi» o'zgartirilmaydi (fokusdan chiqqanda ham, yuborishda ham)", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+    await pickRole(user, "Market");
+
+    await fill(user, container, "fullName", "zarafshon market");
+    await user.tab();
+    expect(nameInput(container)).toHaveValue("zarafshon market");
+    await fill(user, container, "phone", "934552017");
+    await fill(user, container, "username", "zarafshon_market");
+    await fill(user, container, "password", "Zarafshon26");
+    await user.click(screen.getByRole("radio", { name: "Markazgacha" }));
+    await fill(user, container, "homeRate", "35000");
+    await fill(user, container, "centerRate", "25000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createMarket).toHaveBeenCalledTimes(1));
+    expect(mocks.createMarket.mock.calls[0][0]).toMatchObject({ name: "zarafshon market" });
+  });
+});
+
+describe("CreateUserForm — «Investor» (BeePost naqshi; maket yo'q — eng yaqini `superadmin-users-create`)", () => {
+  const adminState = { role: { id: "2", role: "admin", region: null, name: "Admin" } } as never;
+  const created = { data: { statusCode: 201, data: { id: 81, name: "Ali Investor", investor: { id: "5" } } } };
+
+  const fillInvestor = async (user: User, container: HTMLElement) => {
+    await fill(user, container, "fullName", "ali investor");
+    await fill(user, container, "phone", "901234567");
+    await fill(user, container, "password", "Investor2026");
+  };
+
+  it("faqat superadmin'da: admin va ?role=investor — kartasi yo'q", () => {
+    renderWithProviders(<CreateUserForm />, {
+      preloadedState: adminState,
+      route: "/all-users/create-user?role=investor",
+    });
+
+    expect(screen.queryByRole("radio", { name: /^Investor/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^Admin/ })).toBeChecked();
+  });
+
+  it("⭐ forma: «Investitsiya» bo'limi; kapital bilan — login, keyin `POST /investments` (bog'langan investor id)", async () => {
+    mocks.createInvestorUser.mockResolvedValue(created);
+    mocks.createInvestment.mockResolvedValue({ data: { statusCode: 201 } });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    expect(screen.getByRole("form", { name: "Investor qo'shish" })).toBeInTheDocument();
+    expect(screen.getByText("Investor o'z kabinetida investitsiya va foydasini ko'radi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Investitsiya" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Filial" })).not.toBeInTheDocument();
+    expect(container.querySelector('input[name="salary"]')).toBeNull();
+
+    await fillInvestor(user, container);
+    await fill(user, container, "capital", "100000000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createInvestment).toHaveBeenCalledTimes(1));
+    expect(mocks.createInvestorUser).toHaveBeenCalledWith({
+      name: "Ali Investor",
+      phone_number: "+998901234567",
+      password: "Investor2026",
+      password_mode: "manual",
+      must_change_password: true,
+    });
+    expect(mocks.createInvestment).toHaveBeenCalledWith({
+      investor_id: "5",
+      amount: 100000000,
+      invested_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+    });
+    expect(await screen.findByText("Investor yaratildi")).toBeInTheDocument();
+    expect(mocks.navigate).toHaveBeenCalledWith(-1);
+  });
+
+  it("⭐ «Ulush (%)» (BeePost formasi) — `share_percent` login so'rovida; sana maydoni «Boshlanish sanasi»", async () => {
+    mocks.createInvestorUser.mockResolvedValue(created);
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    expect(screen.getByText("Ulush (%)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Boshlanish sanasi")).toBeInTheDocument();
+    await fillInvestor(user, container);
+    await fill(user, container, "sharePercent", "12,5");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createInvestorUser).toHaveBeenCalledTimes(1));
+    expect(mocks.createInvestorUser.mock.calls[0][0]).toMatchObject({ name: "Ali Investor", share_percent: 12.5 });
+  });
+
+  it.each(["101", "12.345", "abc"])("«Ulush (%)» %s — xato, so'rov ketmaydi", async (share) => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    await fillInvestor(user, container);
+    await fill(user, container, "sharePercent", share);
+    await save(user);
+
+    expect(await screen.findByText("Ulush 0 dan 100 gacha, ko'pi bilan 2 kasr xonali son bo'lsin")).toBeInTheDocument();
+    expect(mocks.createInvestorUser).not.toHaveBeenCalled();
+  });
+
+  it("kapitalsiz — faqat login (investitsiya yozilmaydi)", async () => {
+    mocks.createInvestorUser.mockResolvedValue(created);
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, {
+      preloadedState: superadminState,
+      route: "/all-users/create-user?role=investor",
+    });
+
+    expect(screen.getByRole("radio", { name: /^Investor/ })).toBeChecked();
+    await fillInvestor(user, container);
+    await save(user);
+
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(-1));
+    expect(mocks.createInvestorUser).toHaveBeenCalledTimes(1);
+    expect(mocks.createInvestment).not.toHaveBeenCalled();
+  });
+
+  it("kapital yozilmasa — investor yaratilgan bo'lib qoladi, ogohlantirish chiqadi", async () => {
+    mocks.createInvestorUser.mockResolvedValue(created);
+    mocks.createInvestment.mockRejectedValue({ response: { status: 503 } });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    await fillInvestor(user, container);
+    await fill(user, container, "capital", "5000000");
+    await save(user);
+
+    expect(await screen.findByText("Kapital yozilmadi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Investor va uning logini yaratildi, lekin boshlang'ich kapital saqlanmadi"),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Investor yaratildi")).toBeInTheDocument();
+    expect(mocks.navigate).toHaveBeenCalledWith(-1);
+  });
+
+  it("409 (telefon band) — telefon ostida, sahifada qoladi", async () => {
+    mocks.createInvestorUser.mockRejectedValue({
+      response: {
+        status: 409,
+        data: {
+          message: "Bu telefon raqam allaqachon mavjud",
+          errors: { phone_number: ["Bu telefon raqam allaqachon mavjud"] },
+        },
+      },
+    });
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    await fillInvestor(user, container);
+    await save(user);
+
+    await waitFor(() => expect(mocks.createInvestorUser).toHaveBeenCalledTimes(1));
+    expect(mocks.createInvestment).not.toHaveBeenCalled();
+    expect(mocks.navigate).not.toHaveBeenCalled();
   });
 });

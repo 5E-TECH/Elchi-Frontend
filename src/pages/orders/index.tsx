@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, ListX, Plus, Send } from "lucide-react";
+import { Download, Info, ListX, Plus, Receipt, Repeat, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -44,7 +44,7 @@ import { OrdersRefreshAlert } from "./list/OrdersRefreshAlert";
 import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
-import { canCreateOrders, canViewCancelReasons } from "../../app/lib/access";
+import { canCreateOrders, canViewCancelReasons, canViewReplacementReturns } from "../../app/lib/access";
 import CourierOrders from "./list/courier/index";
 import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
@@ -277,6 +277,12 @@ const Orders = () => {
   const currentUser = useSelector((state: RootState) => state.user.user);
   const canCreate = useSelector(canCreateOrders);
   const canSeeCancelReasons = useSelector(canViewCancelReasons);
+  // lQjt6sKP: «Almashtirish qaytarmalari» havolasi — superadmin/admin uchun menyuda ham bor, market uchun esa
+  // yagona kirish nuqtasi (marketda menyu bandi yo'q).
+  const canSeeReplacementReturns = useSelector(canViewReplacementReturns);
+  // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — market operatorida telefonda «Menyu» yo'q (pastki menyu to'la), shuning
+  // uchun sahifaga kirish shu sarlavhadagi havola (boshqa rollarda — yon menyu va «Menyu» varag'ida).
+  const canSeeExtraCostsLink = role === "market_operator";
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -487,7 +493,13 @@ const Orders = () => {
   const ordersQuery = useGetOrders(
     apiParams,
     role !== "courier",
-    (current) => getOrdersRefetchInterval(refreshPaused, pollWhileApprovalPending(current?.data ?? [])),
+    (current) =>
+      getOrdersRefetchInterval(
+        refreshPaused,
+        // So'rovni menejer yozadi: serverdagi kutilayotganlar uchun ham 30 s; boshqa rollar va ochiq oyna — faqat shu
+        // qurilma yuborgan so'rov (GykuOz8f).
+        pollWhileApprovalPending(current?.data ?? [], { onlyHinted: refreshPaused || role !== "manager" }),
+      ),
     { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
   const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
@@ -634,11 +646,21 @@ const Orders = () => {
           ? selectedActionOrder.sale_market_paid_max
           : null,
       external_id: (orderFlags.external_id as string | number | null | undefined) ?? null,
+      // lQjt6sKP: almashtirish buyurtmasi — sotish oynasida «Eski mahsulotni oldim» tasdig'i.
+      replacement_of_order_id: selectedActionOrder.replacement_of_order_id ?? null,
+      replacement_state: selectedActionOrder.replacement_state ?? null,
+      old_item_collected_at: selectedActionOrder.old_item_collected_at ?? null,
+      // GykuOz8f: serverdagi kutilayotgan so'rov (`null` ham) — oynadagi «allaqachon yuborilgan» ogohlantirishi
+      // boshqa qurilmada ham ko'rinsin, rad etilgandan keyin esa eski ishora qolib ketmasin.
+      ...("pending_extra_cost_approval" in orderFlags
+        ? { pending_extra_cost_approval: orderFlags.pending_extra_cost_approval }
+        : {}),
       where_deliver: selectedActionOrder.where_deliver,
       market: {
         name: selectedActionOrder.market?.name ?? "—",
         expense_proof_conditions: selectedActionOrder.market?.expense_proof_conditions ?? null,
         extra_cost_requires_approval: selectedActionOrder.market?.extra_cost_requires_approval ?? null,
+        extra_cost_enabled: selectedActionOrder.market?.extra_cost_enabled ?? null,
       },
       customer: {
         name: selectedActionOrder.customer?.name ?? "—",
@@ -845,7 +867,7 @@ const Orders = () => {
     scanNotify.success(t("scanSelectedTitle"), {
       description: t("ordersList.scanSelected", { name: order.customer?.name ?? "—", id: order.id }),
     });
-    void playScanFeedback("success", t("ordersList.cameraSelected", { id: order.id }));
+    void playScanFeedback("success", t("ordersList.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
   }, [rejectScannedCode, selectedCancelledIds, t, touchRecentScan]);
 
   const handleMissingScannedCancelledOrder = useCallback(async (rawValue: string) => {
@@ -1124,6 +1146,18 @@ const Orders = () => {
               <Link to="/orders/cancel-reasons" className={buttonClasses({ variant: "secondary", compact: true })}>
                 <ListX aria-hidden="true" size={16} strokeWidth={2} />
                 {t("cancelReasonStats.title")}
+              </Link>
+            ) : null}
+            {canSeeReplacementReturns ? (
+              <Link to="/replacement-returns" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <Repeat aria-hidden="true" size={16} strokeWidth={2} />
+                {t("ordersList.replacementReturns")}
+              </Link>
+            ) : null}
+            {canSeeExtraCostsLink ? (
+              <Link to="/extra-costs" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <Receipt aria-hidden="true" size={16} strokeWidth={2} />
+                {t("ordersList.extraCosts")}
               </Link>
             ) : null}
             {canCreate ? (

@@ -5,6 +5,7 @@ import { ArrowLeft, Check, ChevronLeft, CircleCheck, Plus } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
+import { formatReplacementOrderRef } from "../../../../entities/order";
 import { cx } from "../../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../../shared/ui/primitives";
@@ -13,6 +14,8 @@ import { toApiList, type OrderCreateBlocker, type OrderCreateFormValues } from "
 import { computeItemsTotal, isItemsTotalTooLong, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
 import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
 import DeliveryPriceBlock from "./DeliveryPriceBlock";
+import OperatorField from "./OperatorField";
+import ReplacementField from "./ReplacementPicker";
 import { useMarketTariffs } from "./useMarketTariffs";
 import { useOrderCatalog } from "./useOrderCatalog";
 import { useOrderDeliveryQuote } from "./useOrderDeliveryQuote";
@@ -55,6 +58,9 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  *    bo'lsa standart qator yo'q;
  *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
  *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
+ *
+ * lQjt6sKP: «Operator» dan keyin «Almashtirish (ixtiyoriy)» (`ReplacementField`, BeePost kabi); tanlansa `dl` da
+ * «Almashtirish: №EL-…» qatori.
  */
 const Step2Summary = ({
   isMarketRole,
@@ -83,6 +89,7 @@ const Step2Summary = ({
   const whereDeliver = useWatch({ control, name: "details.where_deliver" });
   const regionId = useWatch({ control, name: "customer.region_id" }) ?? "";
   const districtId = useWatch({ control, name: "customer.district_id" }) ?? "";
+  const replacement = useWatch({ control, name: "replacement" });
 
   // Tuman nomi — `Step2Combined` dagi bilan bir xil so'rov (react-query keshidan).
   const { useGetDistricts } = useLogistics();
@@ -196,6 +203,14 @@ const Step2Summary = ({
             </dd>
           </>
         ) : null}
+        {replacement ? (
+          <>
+            <dt className="text-text-muted">{t("replacementPicker.summary")}</dt>
+            <dd className="m-0 min-w-0 truncate font-semibold text-warning-fg" data-testid="summary-replacement">
+              {formatReplacementOrderRef(replacement.id)}
+            </dd>
+          </>
+        ) : null}
       </dl>
 
       {/* `text-sm` — maketdagi `.el` asosi (14 px): summa `dl` qiymatlari bilan bir o'lchamda, «Umumiy summa» bilan
@@ -266,23 +281,11 @@ const Step2Summary = ({
           <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
         </Field>
       ) : (
-        <Controller
-          control={control}
-          name="details.operator"
-          render={({ field }) => (
-            <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
-              <TextInput
-                name={field.name}
-                placeholder={t("operatorPlaceholder")}
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                ref={field.ref}
-              />
-            </Field>
-          )}
-        />
+        <OperatorField isMarketRole={isMarketRole} />
       )}
+
+      {/* lQjt6sKP: BeePost'dagidek Operator (va Izoh) dan keyin, «Buyurtma yaratish» dan oldin. */}
+      <ReplacementField isMarketRole={isMarketRole} />
 
       <Divider />
 

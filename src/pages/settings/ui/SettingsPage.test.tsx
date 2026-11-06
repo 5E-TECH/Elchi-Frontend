@@ -8,9 +8,22 @@ import SettingsPage from "./SettingsPage";
 
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
+  playScanFeedback: vi.fn(),
   settings: null as AppSettings | null,
   update: { isPending: false, isError: false },
 }));
+
+// «Eshitib ko'rish» — haqiqiy signal ham chaqiriladi (jsdom'da ovozsiz), qaysi ovoz/ibora so'ralgani yoziladi.
+vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>();
+  return {
+    ...actual,
+    playScanFeedback: (...args: Parameters<typeof actual.playScanFeedback>) => {
+      mocks.playScanFeedback(...args);
+      actual.playScanFeedback(...args);
+    },
+  };
+});
 
 vi.mock("../../../entities/settings", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../entities/settings")>();
@@ -189,20 +202,34 @@ describe("SettingsPage — Interfeys va Skaner", () => {
   });
 
   it("ovoz tanlash saqlanadi; «eshitib ko'rish» tanlovni o'zgartirmaydi", async () => {
+    window.localStorage.clear();
     await openTab(/^Skaner/);
     const success = screen.getByRole("radiogroup", { name: "Muvaffaqiyat ovozi" });
-    expect(within(success).getAllByRole("radio")).toHaveLength(12);
-    expect(within(success).getByRole("radio", { name: "Klassik" })).toBeChecked();
+    expect(within(success).getAllByRole("radio")).toHaveLength(13);
+    // Sukut — BeePost (birinchi variant).
+    expect(within(success).getAllByRole("radio")[0]).toHaveAccessibleName("BeePost");
+    expect(within(success).getByRole("radio", { name: "BeePost" })).toBeChecked();
 
     await userEvent.click(
       within(success).getByRole("button", { name: "Puls — muvaffaqiyat ovozini eshitib ko'rish" }),
     );
     expect(mocks.mutate).not.toHaveBeenCalled();
-    expect(within(success).getByRole("radio", { name: "Klassik" })).toBeChecked();
+    expect(within(success).getByRole("radio", { name: "BeePost" })).toBeChecked();
+    // Ovoz `sound` bilan beriladi — qurilmadagi tanlov vaqtincha ham yozilmaydi; faqat ohang, ibora yo'q.
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Qabul qilindi", undefined, {
+      preview: true,
+      sound: "pulse",
+    });
+    expect(window.localStorage.getItem("scanner-success-sound")).toBeNull();
 
     const error = screen.getByRole("radiogroup", { name: "Xato ovozi" });
+    await userEvent.click(within(error).getByRole("button", { name: "BeePost — xato ovozini eshitib ko'rish" }));
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("error", "Xatolik", undefined, {
+      preview: true,
+      sound: "beepost",
+    });
     await userEvent.click(within(error).getByRole("radio", { name: "Raqamli" }));
-    expect(mocks.mutate).toHaveBeenCalledWith({ scanner: { sounds: { error: "digital" } } });
+    expect(mocks.mutate).toHaveBeenCalledWith({ scanner: { sounds: { error: "digital", chosen: true } } });
     expect(screen.getByText("USB skaner tayyor")).toBeInTheDocument();
   });
 
@@ -213,12 +240,13 @@ describe("SettingsPage — Interfeys va Skaner", () => {
       expect(within(success).getByRole("radio", { name })).toBeInTheDocument();
     }
     await userEvent.click(within(success).getByRole("radio", { name: "Marimba" }));
-    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { success: "marimba" } } });
+    // `chosen` — aniq tanlov belgisi (hisobdagi `classic` faqat shu bilan hurmat qilinadi).
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { success: "marimba", chosen: true } } });
     expect(window.localStorage.getItem("scanner-success-sound")).toBe("marimba");
 
     const error = screen.getByRole("radiogroup", { name: "Xato ovozi" });
     await userEvent.click(within(error).getByRole("radio", { name: "Billur" }));
-    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { error: "glass" } } });
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { sounds: { error: "glass", chosen: true } } });
     expect(window.localStorage.getItem("scanner-error-sound")).toBe("glass");
   });
 
@@ -276,7 +304,7 @@ describe("SettingsPage — Interfeys va Skaner", () => {
       scanner: {
         ...DEFAULT_SETTINGS.scanner,
         camera: { facing: "user", frame: "sm", torchAuto: false, continuous: false },
-        feedback: { sound: true, vibration: false },
+        feedback: { sound: true, vibration: false, voice: true },
       },
     };
     renderPage({ preloadedState: { role: { id: "k1", role: "market", region: null, name: "k" } } as never });
@@ -288,6 +316,43 @@ describe("SettingsPage — Interfeys va Skaner", () => {
     expect(within(card).getByRole("switch", { name: "Uzluksiz skanerlash" })).toHaveAttribute("aria-checked", "false");
     expect(within(card).getByRole("switch", { name: "Tebranish" })).toHaveAttribute("aria-checked", "false");
     expect(within(card).getByRole("switch", { name: "Ovoz" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("«Ovozli xabar»: sukut yoqiq, o'chirilsa hisob va qurilmaga yoziladi; «Eshitib ko'rish» — «Qabul qilindi»", async () => {
+    window.localStorage.clear();
+    await openTab(/^Skaner/);
+    const voice = screen.getByRole("switch", { name: "Ovozli xabar" });
+    expect(voice).toHaveAttribute("aria-checked", "true");
+    expect(voice).toBeEnabled();
+    expect(voice).toHaveAccessibleDescription("Skan natijasini o'zbekcha aytadi: «Qabul qilindi», «Xatolik bo'ldi»");
+
+    await userEvent.click(voice);
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { feedback: { voice: false } } });
+    expect(window.localStorage.getItem("scanner-voice-enabled")).toBe("false");
+
+    await userEvent.click(screen.getByRole("button", { name: "Ovozli xabarni eshitib ko'rish" }));
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Qabul qilindi", undefined, {
+      preview: true,
+      voice: "received",
+    });
+    expect(mocks.mutate).toHaveBeenCalledTimes(1);
+    window.localStorage.clear();
+  });
+
+  it("«Ovoz» o'chiq — «Ovozli xabar» nofaol va sababi izohda; saqlangan holat ko'rsatiladi", async () => {
+    mocks.settings = {
+      ...DEFAULT_SETTINGS,
+      scanner: { ...DEFAULT_SETTINGS.scanner, feedback: { sound: false, vibration: true, voice: false } },
+    };
+    await openTab(/^Skaner/);
+    const voice = screen.getByRole("switch", { name: "Ovozli xabar" });
+    expect(voice).toHaveAttribute("aria-checked", "false");
+    expect(voice).toBeDisabled();
+    expect(voice).toHaveAccessibleDescription(
+      "«Ovoz» o'chiq — ovozli xabar ham jim. Uni yuqoridagi «Kamera» kartasida yoqing.",
+    );
+    // Eshitib ko'rish baribir ishlaydi (kalitlarga qaramay).
+    expect(screen.getByRole("button", { name: "Ovozli xabarni eshitib ko'rish" })).toBeEnabled();
   });
 });
 

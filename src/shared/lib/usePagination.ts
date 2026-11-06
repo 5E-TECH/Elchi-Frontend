@@ -2,7 +2,16 @@ import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 /** Qaysi ro'yxatning sahifalashi. Holat faqat URL'da (`?page=&limit=`) — Redux'da sahifalash yo'q (iR4B6hcP). */
-export type PaginationScope = "orders" | "products" | "users" | "payments" | "mails" | "batches" | "returns";
+export type PaginationScope =
+  | "orders"
+  | "products"
+  | "users"
+  | "payments"
+  | "mails"
+  | "batches"
+  | "returns"
+  | "replacementReturns"
+  | "extraCosts";
 
 interface UsePaginationOptions {
   key: PaginationScope;

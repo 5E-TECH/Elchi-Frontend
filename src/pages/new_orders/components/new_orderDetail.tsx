@@ -213,7 +213,9 @@ const NewOrderDetail = () => {
           onSuccess: () => {
             rememberReceivedScan(order, rawValue);
             logReceived([order]);
-            void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }));
+            void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }), undefined, {
+              voice: "received",
+            });
             setReceivedOrderIds((prev) => {
               const next = new Set(prev);
               next.add(orderId);

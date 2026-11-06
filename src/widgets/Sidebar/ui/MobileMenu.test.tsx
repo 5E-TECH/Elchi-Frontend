@@ -63,7 +63,7 @@ type DesignRole =
   | "logist"
   | "market_operator"
   | "investor";
-type DesignMenuItem = { key: string; label: string; group?: string };
+type DesignMenuItem = { key: string; label: string; group?: string; short?: { uz?: string } };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
   DesignRole,
@@ -318,7 +318,8 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
       within(sectionsNav())
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(ROLES.courier.menu.map((item) => item.label));
+      // Telefon katagida qisqa yorliq (`roles.json` → `short`; GykuOz8f «Xarajatlar»), qolganlari — to'liq nom.
+    ).toEqual(ROLES.courier.menu.map((item) => item.short?.uz ?? item.label));
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute(
       "aria-current",
       "page",

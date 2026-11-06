@@ -193,6 +193,7 @@ const BranchDetailWidget = ({ branchId, branch, employeesQuery, metrics }: Branc
       <AddEmployeeModal
         branchId={branchId}
         branchName={branch.name}
+        branchType={branch.type}
         open={isAddEmployeeOpen}
         onClose={() => setIsAddEmployeeOpen(false)}
       />

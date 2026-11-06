@@ -20,6 +20,7 @@
     "investedNone": "No investments yet",
     "share": "Share",
     "shareHint": "Rate of the latest period",
+    "shareAgreed": "Agreed share",
     "shareNone": "No profit periods yet",
     "paid": "Paid profit",
     "paidHint": "Last payout: {{date}}",

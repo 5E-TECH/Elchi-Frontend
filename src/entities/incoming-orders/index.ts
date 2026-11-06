@@ -307,6 +307,10 @@ export const useReceiveByScan = () => {
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [incomingOrdersKey] });
       client.invalidateQueries({ queryKey: [incomingSourcesKey] });
+      // Qabul qilingan posilkalar buyurtmalarga aylanadi: `/orders` va tab sonlari, menyudagi «Qabul va yaratish»
+      // soni (`["orders", "status-counts"]`), bosh sahifa.
+      client.invalidateQueries({ queryKey: ["orders"] });
+      client.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 };

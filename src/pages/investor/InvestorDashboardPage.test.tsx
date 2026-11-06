@@ -294,6 +294,23 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
   });
 });
 
+describe("InvestorDashboardPage — «Ulush (%)» (BeePost investor formasi)", () => {
+  it("kelishilgan ulush kiritilgan bo'lsa — KPI shu foizni ko'rsatadi, oxirgi davr stavkasini emas", async () => {
+    mockApi((url, params) => {
+      if (url !== "investors/me/dashboard") return happy(url, params);
+      const body = dashboardBody(Number(params?.months ?? 12));
+      return { ...body, data: { ...body.data, investor: { ...body.data.investor, share_percent: "30.00" } } };
+    });
+    renderPage();
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(await within(kpis).findByText("Kelishilgan ulush")).toBeInTheDocument();
+    expect(within(kpis).queryByText("Oxirgi davr stavkasi")).not.toBeInTheDocument();
+    const values = Array.from(kpis.querySelectorAll("[data-stat-value]")).map((el) => el.textContent);
+    expect(values[1]).toBe("30 %");
+  });
+});
+
 describe("InvestorDashboardPage — holatlar", () => {
   it("yuklanish: KPI skeleti (aria-busy), yorliqlar joyida", () => {
     vi.spyOn(api, "get").mockImplementation(() => new Promise(() => undefined));

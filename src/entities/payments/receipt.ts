@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
@@ -315,8 +316,9 @@ export const RECEIPT_PENDING_POLL_MS = 5000;
  * `GET finance/receipts/:id`. `pending` da 5 s da qayta o'qiladi; server `ai_stale` (3 daqiqadan oshdi) desa so'rov
  * to'xtaydi — UI «AI natijasi kelmadi» va «Qayta tahlil». Havola 300 s yashaydi: ko'ruvchi rasm ochilmasa qayta so'raydi.
  */
-export const useReceipt = (id: string | null | undefined, options: { enabled?: boolean } = {}) =>
-  useQuery({
+export const useReceipt = (id: string | null | undefined, options: { enabled?: boolean } = {}) => {
+  const client = useQueryClient();
+  const receiptQuery = useQuery({
     queryKey: receiptKey(String(id ?? "")),
     queryFn: () =>
       api.get(API_ENDPOINTS.CASHBOX.RECEIPT(String(id))).then((res) => normalizeReceiptDetail(res.data)),
@@ -327,6 +329,18 @@ export const useReceipt = (id: string | null | undefined, options: { enabled?: b
     },
     meta: { silentError: true },
   });
+  // So'rov bilan natija chiqdi (realtime kelmagan bo'lsa ham) — kassa tarixi qatoridagi belgi ham yangilansin.
+  const status = receiptQuery.data?.ai_status;
+  const lastStatusRef = useRef(status);
+  useEffect(() => {
+    if (lastStatusRef.current === "pending" && status && status !== "pending") {
+      void client.invalidateQueries({ queryKey: ["cashbox"], refetchType: "active" });
+      void client.invalidateQueries({ queryKey: ["finance-history"], refetchType: "active" });
+    }
+    lastStatusRef.current = status;
+  }, [client, status]);
+  return receiptQuery;
+};
 
 /** Chek holati o'zgardi: tafsilot va kassa tarixi ro'yxatlari (ochiq sahifalar) qayta o'qiladi. */
 export const refreshReceiptQueries = (client: QueryClient) =>

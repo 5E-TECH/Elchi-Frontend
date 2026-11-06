@@ -15,6 +15,8 @@ import type {
 } from "../model/types";
 
 export const BATCH_KEY = "batches";
+/** HQ «Filial paketlari» (`queryKeys.branches.withSentBatches`): filial kartasi va «Qabul va yaratish» tab soni. */
+const WITH_SENT_BATCHES_KEY = ["branches", "with-sent-batches"] as const;
 
 export type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
 type ApiBatchDirection = "FORWARD" | "RETURN";
@@ -487,6 +489,9 @@ export const useSendTransferBatch = () => {
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
+      // Jo'natilgan buyurtmalar holati va HQ «Filial paketlari» (filial kartasi, tab soni).
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: [...WITH_SENT_BATCHES_KEY] });
     },
   });
 };
@@ -501,6 +506,8 @@ export const useReceiveTransferBatch = () => {
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      // HQ «Filial paketlari»: filial kartasidagi paketlar soni va tab soni (skaner yo'li ham shuni yangilaydi).
+      void queryClient.invalidateQueries({ queryKey: [...WITH_SENT_BATCHES_KEY] });
     },
   });
 };
@@ -525,6 +532,7 @@ export const useReceiveTransferBatchOrders = () => {
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, "remaining", variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: [...WITH_SENT_BATCHES_KEY] });
     },
   });
 };

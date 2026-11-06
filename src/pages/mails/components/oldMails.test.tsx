@@ -9,6 +9,8 @@ import { renderWithProviders } from "../../../test/test-utils";
 import OldMails from "./oldMails";
 
 const mocks = vi.hoisted(() => ({
+  /** «Filial» ustuni nomlari — `GET branches` (superadmin, admin; `model/mailBranchNames.ts`). */
+  useBranches: vi.fn(() => ({ data: { data: [{ id: "1", name: "HQ Toshkent" }] } })),
   useGetOldMails: vi.fn(),
   fetchOldMails: vi.fn(),
   fetchAllTransferBatches: vi.fn(),
@@ -24,6 +26,10 @@ vi.mock("../../../entities/mails", () => ({
 vi.mock("../../../entities/batch", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../entities/batch")>()),
   fetchAllTransferBatches: mocks.fetchAllTransferBatches,
+}));
+vi.mock("../../../entities/branch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/branch")>()),
+  useBranches: mocks.useBranches,
 }));
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({ useGetRegions: mocks.useGetRegions, useGetCouriers: mocks.useGetCouriers }),
@@ -191,15 +197,17 @@ describe("OldMails — xodim (pochtalar)", () => {
     mocks.printPostWithOrders.mockReset();
   });
 
-  it("requests one server page (page, limit ≤ 100, has_orders) and renders the table with courier column and status badges", () => {
+  it("requests one server page (page, limit ≤ 100, has_orders) and renders the table with «Filial» column and status badges", () => {
     renderOld("admin", "/mails/old", "card");
 
     expect(mocks.useGetOldMails).toHaveBeenCalledWith(false, { page: 1, limit: 8, has_orders: true }, LIST_OPTIONS);
     const table = screen.getByRole("table", { name: "Eski pochtalar" });
     expect(within(table).getByRole("link", { name: "№90" })).toBeInTheDocument();
-    expect(within(table).getByRole("columnheader", { name: "Kuryer" })).toBeInTheDocument();
-    // Kuryer ustuni (≥ 1024) va planshet nusxasi (viloyat ostida).
-    expect(within(table).getAllByText("Buxaro Courier").length).toBeGreaterThan(0);
+    // «Kuryer» o'rnida «Filial» (Bahodir, 2026-11-04): ustun (≥ 1024) va planshet nusxasi (viloyat ostida).
+    expect(within(table).getByRole("columnheader", { name: "Filial" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
+    expect(within(table).getAllByText("HQ Toshkent").length).toBeGreaterThan(0);
+    expect(within(table).queryByText("Buxaro Courier")).not.toBeInTheDocument();
     expect(within(table).getByText("Qabul qilingan")).toBeInTheDocument();
     expect(within(table).getByText("Jo'natilgan")).toBeInTheDocument();
     expect(within(table).getByText("Rad etilgan")).toBeInTheDocument();
@@ -264,6 +272,16 @@ describe("OldMails — xodim (pochtalar)", () => {
     unmount();
     renderOld("manager", "/mails/old", "card", "HQ");
     expect(within(screen.getByRole("table", { name: "Eski pochtalar" })).getByRole("columnheader", { name: "Holat" })).toBeInTheDocument();
+  });
+
+  it("HQ manager keeps the «Kuryer» column (own branch only — no «Filial», branch names not requested)", () => {
+    mocks.useBranches.mockClear();
+    renderOld("manager", "/mails/old", "card", "HQ");
+    const table = screen.getByRole("table", { name: "Eski pochtalar" });
+    expect(within(table).getByRole("columnheader", { name: "Kuryer" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Filial" })).not.toBeInTheDocument();
+    expect(within(table).getAllByText("Buxaro Courier").length).toBeGreaterThan(0);
+    expect(mocks.useBranches.mock.calls.every((call) => !(call as unknown[])[1])).toBe(true);
   });
 
   it("branch manager: date cards (newest first in the page) with the real status, courier and the same router state", async () => {
@@ -555,6 +573,39 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "3" });
   });
 
+  it("region filter offers every region from `GET /region` ({ data: [...] }), not only the current page's ones", async () => {
+    mocks.useGetRegions.mockReturnValue({
+      data: {
+        statusCode: 200,
+        data: [
+          { id: "2", name: "Buxoro" },
+          { id: "3", name: "Andijon" },
+          { id: "9", name: "Xorazm" },
+          { id: "12", name: "Surxondaryo" },
+        ],
+      },
+      isLoading: false,
+    });
+    const user = userEvent.setup();
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    const names = screen.getAllByRole("option").map((option) => option.textContent);
+    expect(names).toEqual(expect.arrayContaining(["Xorazm", "Surxondaryo", "Buxoro", "Andijon"]));
+
+    await user.click(screen.getByRole("option", { name: "Xorazm" }));
+    expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "9" });
+  });
+
+  it("region filter falls back to the page's regions when `GET /region` gave nothing", async () => {
+    mocks.useGetRegions.mockReturnValue({ data: undefined, isLoading: false });
+    const user = userEvent.setup();
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    expect(screen.getByRole("option", { name: "Andijon" })).toBeInTheDocument();
+  });
+
   it("offers the mail statuses in the status filter", async () => {
     const user = userEvent.setup();
     renderOld("registrator", "/mails/old", "card");
@@ -663,6 +714,7 @@ describe("OldMails — «Pochtalar | Filial paketlari» (D11)", () => {
     expect(within(table).getByRole("link", { name: "B-129" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "Paket" })).toBeInTheDocument();
     expect(within(table).queryByRole("columnheader", { name: "Kuryer" })).not.toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Filial" })).not.toBeInTheDocument();
     expect(within(table).getByText("Qabul qilingan")).toBeInTheDocument();
     // F1: SENT paket — «Yo'lda», buyurtmadagi «Yo'lda» bilan bir xil ton (warning).
     expect(within(table).getByText("Yo'lda").closest("[class*='bg-']")?.className).toContain("bg-warning-soft");

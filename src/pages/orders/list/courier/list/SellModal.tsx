@@ -1,8 +1,10 @@
 // dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, courier-orders-action-approval-pending, manager-orders-sell-dialog
 import { memo, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { CircleCheck, Clock, Info, Minus, PackageCheck, Plus, Tag, TriangleAlert } from "lucide-react";
+import { CircleCheck, Clock, Minus, PackageCheck, Plus, Repeat, Tag, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatReplacementOrderRef, readOrderReplacement } from "../../../../../entities/order/model/orderReplacement";
 import { cx } from "../../../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../../../shared/lib/formatDateTime";
 import { getOrderItemName } from "../../../../../shared/lib/orderItemName";
 import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
 import {
@@ -15,6 +17,7 @@ import {
 } from "../../../../../shared/ui/primitives";
 import {
   getActivePendingApproval,
+  getRequestedApproval,
   usePendingExtraCostApprovals,
 } from "../../../../../entities/orders/extraCostApproval";
 import {
@@ -28,7 +31,7 @@ import {
 } from "../../../../../entities/orders/proofRequirement";
 import { getMarketPaidMax, readMarketPaidBase, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
 import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
-import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
+import { ExtraCostUnavailableNote, OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
   getDeliveryLabelKey,
   isProofFileTooLarge,
@@ -51,6 +54,12 @@ import { useActionDialogSession, useApprovalStateFocus } from "./useActionDialog
  * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan olgan puldan marketga o'zi
  * bergan qism. Faqat 0 dan katta bo'lsa yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
  * Maketda yo'q — summa maydoni naqshida.
+ *
+ * Almashtirish (lQjt6sKP, BeePost `waiting-orders` sotish oynasi): buyurtma eski buyurtma o'rniga bo'lsa va eski
+ * mahsulot hali olinmagan bo'lsa — ogohlantirish «Almashtirish: mijozdan eski mahsulotni qaytarib oling — №EL-…» va
+ * majburiy belgi «Eski mahsulotni oldim»; belgilanmaguncha «Sotish» o'chiq. Tana `oldItemCollected: true` bilan
+ * ketadi (to'liq va qisman sotishda — backend darvozasi ikkalasida bir xil). Eski mahsulot allaqachon olingan bo'lsa
+ * (qaytarilgan sotuvni qayta sotish) — faqat ma'lumot qatori. Oddiy buyurtmada hech narsa o'zgarmaydi.
  */
 
 type OrderItem = ActionOrderItem;
@@ -75,6 +84,8 @@ type PartlySellPayload = {
   extraCost: number;
   comment: string;
   proof?: File;
+  /** Almashtirish buyurtmasi — «Eski mahsulotni oldim» (faqat shunda yuboriladi). */
+  oldItemCollected?: boolean;
 };
 
 type SellModalProps = {
@@ -168,6 +179,8 @@ const SellDialog = ({
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
+  // Almashtirish: «Eski mahsulotni oldim» belgisi (oyna har ochilganda yangi sessiya — sukut belgilanmagan).
+  const [oldItemCollected, setOldItemCollected] = useState(false);
   const approvalCloseRef = useApprovalStateFocus(awaitingApproval);
   // «−» bosilib o'zi o'chsa (0 ga yoki jami 1 donaga yetdi) fokus `body` ga tushmasin — shu qatordagi «+» ga.
   const focusAfterRender = useRef<string | null>(null);
@@ -182,19 +195,27 @@ const SellDialog = ({
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const id = (suffix: string) => `${ids}-${suffix}`;
   const pendingApproval = getActivePendingApproval(approvals, order);
+  // 202 javobidan keyingi «Market tasdig'i kutilmoqda» ko'rinishi: oynadagi buyurtma so'rovdan oldingi holatda — avval
+  // shu qurilmadagi ishora (aynan hozirgi so'rov), keyin server (GykuOz8f).
+  const requestedApproval = getRequestedApproval(approvals, order);
   const orderFlags = order as ActionOrder & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
-  // 2KisY7DL: tasdiqsiz market (`extra_cost_requires_approval: false`) — menejer xarajati tasdiqsiz, kuryer chegarasida
-  // o'tadi (backend 04e1ad9): «market tasdig'idan o'tadi» eslatmasi yo'q, uyga yetkazishda xarajat yo'q (kuryer
-  // izohi). Maydon kelmasa — avvalgidek.
-  const approvalRequired = !isManager || order.market?.extra_cost_requires_approval !== false;
-  // Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
+  // Tasdiqsiz market (`extra_cost_requires_approval: false`) — backend xarajatni darhol yozadi: «market tasdig'idan
+  // o'tadi» eslatmasi yo'q, kuryer va menejer uchun bir xil (2KisY7DL menejer, QoYyRl6S kuryer). Maydon kelmasa —
+  // avvalgidek.
+  const approvalRequired = order.market?.extra_cost_requires_approval !== false;
+  // QoYyRl6S: market qo'shimcha xarajatni yopgan (`extra_cost_enabled: false`) — maydon o'rnida izoh, so'rovda 0
+  // (backend 403 qaytarardi). Maydon kelmasa — avvalgidek.
+  const isExtraCostDisabled = order.market?.extra_cost_enabled === false;
+  // Uyga yetkazishda xarajat yo'q: kuryer — `restrictExtraCostToCenter`, menejer — tasdiqsiz marketda (2KisY7DL,
+  // backend 04e1ad9). Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
   // kuryerni bekorga cheklamaymiz — backend baribir tekshiradi.
   const deliveryType = typeof order.where_deliver === "string" ? order.where_deliver.trim() : "";
-  const isExtraCostBlocked =
-    (restrictExtraCostToCenter || !approvalRequired) && deliveryType !== "" && deliveryType !== "center";
+  const isHomeExtraCostBlocked =
+    (restrictExtraCostToCenter || (isManager && !approvalRequired)) && deliveryType !== "" && deliveryType !== "center";
+  const isExtraCostBlocked = isExtraCostDisabled || isHomeExtraCostBlocked;
   const effectiveExtraCost = isExtraCostBlocked ? 0 : toAmount(extraCost);
   const operationTotal = isPartial
     ? totalPrice === "" ? null : Number(totalPrice)
@@ -280,8 +301,16 @@ const SellDialog = ({
         : isPartialPriceAboveTotal
           ? t("partialSellPriceExceedsTotal")
           : null;
+  // Almashtirish darvozasi (backend `assertReplacementSaleAllowed` sharti bilan aynan bir xil): eski mahsulot hali
+  // olinmagan almashtirish buyurtmasi tasdiqsiz sotilmaydi — to'liq va qisman sotishda.
+  const replacement = readOrderReplacement(order);
+  const isOldItemConfirmMissing = replacement.needsOldItemConfirm && !oldItemCollected;
+  const oldItemBlockReason = isOldItemConfirmMissing ? t("replacementSell.confirmRequired") : null;
   // Pastdagi izoh — nega «Sotish» o'chiq (maketdagidek tugma yonida).
-  const blockReason = partialBlockReason ?? (isProofMissing ? t("sellMediaProofRequiredNotice") : null);
+  const blockReason =
+    partialBlockReason ?? oldItemBlockReason ?? (isProofMissing ? t("sellMediaProofRequiredNotice") : null);
+  // Faqat almashtirish buyurtmasida — oddiy buyurtma tanasi o'zgarmaydi.
+  const oldItemPayload = replacement.needsOldItemConfirm ? { oldItemCollected: true } : {};
 
   const canDecreaseItem = (item: OrderItem) => {
     const currentQty = getItemQty(item);
@@ -306,6 +335,8 @@ const SellDialog = ({
   const handleSubmit = (event?: FormEvent) => {
     event?.preventDefault();
     if (isLoading) return;
+    // Tugma o'chiq; Enter bilan yuborishda ham tasdiqsiz so'rov ketmaydi.
+    if (isOldItemConfirmMissing) return;
     if (sellRequiresMedia && !proof) {
       setProofError(t("mediaProofRequired"));
       return;
@@ -330,6 +361,7 @@ const SellDialog = ({
         extraCost: effectiveExtraCost,
         comment: note,
         ...(proof ? { proof } : {}),
+        ...oldItemPayload,
       });
     } else {
       // POST /orders/sell/{id}
@@ -338,6 +370,7 @@ const SellDialog = ({
         extraCost: effectiveExtraCost,
         ...(marketPaidAmount > 0 ? { paidAmount: marketPaidAmount } : {}),
         ...(proof ? { proof } : {}),
+        ...oldItemPayload,
       });
     }
   };
@@ -380,9 +413,9 @@ const SellDialog = ({
       >
         <OrderCustomerSummary order={order} variant={variant} />
         <ExtraCostPendingAlert
-          amount={pendingApproval?.amount ?? effectiveExtraCost}
-          action={pendingApproval?.action}
-          requestedAt={pendingApproval?.requestedAt}
+          amount={requestedApproval?.amount ?? effectiveExtraCost}
+          action={requestedApproval?.action}
+          requestedAt={requestedApproval?.requestedAt}
         />
       </Dialog>
     );
@@ -390,19 +423,9 @@ const SellDialog = ({
 
   // ── Maydonlar ─────────────────────────────────────────────────────────────────────────────
   const extraCostField = isExtraCostBlocked ? (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <span id={id("extra-label")} className={LABEL}>
-        {t("extraCost")}
-      </span>
-      <div
-        role="note"
-        aria-labelledby={id("extra-label")}
-        className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
-      >
-        <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="min-w-0">{t("extraCostHomeNotAllowed")}</p>
-      </div>
-    </div>
+    <ExtraCostUnavailableNote label={t("extraCost")}>
+      {isExtraCostDisabled ? t("extraCostMarketDisabled") : t("extraCostHomeNotAllowed")}
+    </ExtraCostUnavailableNote>
   ) : (
     <Field
       label={t("extraCost")}
@@ -452,6 +475,55 @@ const SellDialog = ({
       <TextInput multiline rows={2} value={note} onValueChange={setNote} placeholder={t("writeNote")} />
     </Field>
   );
+
+  // Almashtirish (maket yo'q — BeePost sotish oynasidagi sariq blok; v2 `warning` ogohlantirish + belgi naqshi
+  // `AiPreviewCard`). Eski mahsulot olingan bo'lsa (qaytarilgan sotuvni qayta sotish) — faqat ma'lumot qatori.
+  const oldOrderRef = replacement.oldOrderId ? formatReplacementOrderRef(replacement.oldOrderId) : "";
+  const replacementBlock = replacement.needsOldItemConfirm ? (
+    <div
+      role="group"
+      aria-labelledby={id("old-title")}
+      data-testid="sell-replacement-gate"
+      className="flex flex-col gap-2 rounded-xl bg-warning-soft px-3 py-2.5 text-[13px] text-warning-fg ring-1 ring-inset ring-warning-fg/40"
+    >
+      <div className="flex items-start gap-2">
+        <Repeat size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <div className="flex min-w-0 flex-col gap-0.5 text-text">
+          <p id={id("old-title")} className="m-0 font-semibold">
+            {t("replacementSell.notice", { ref: oldOrderRef })}
+          </p>
+          <p id={id("old-hint")} className="m-0 text-text-muted">
+            {t("replacementSell.noticeHint")}
+          </p>
+        </div>
+      </div>
+      <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-semibold text-text">
+        <input
+          type="checkbox"
+          checked={oldItemCollected}
+          onChange={(event) => setOldItemCollected(event.target.checked)}
+          disabled={isLoading}
+          aria-describedby={id("old-hint")}
+          aria-required="true"
+          className="size-[18px] shrink-0 accent-action"
+        />
+        {t("replacementSell.confirm")}
+      </label>
+    </div>
+  ) : replacement.isReplacement ? (
+    <div
+      role="note"
+      data-testid="sell-replacement-collected"
+      className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
+    >
+      <Repeat size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+      <p className="m-0 min-w-0">
+        {replacement.collectedAt
+          ? t("replacementSell.collected", { date: formatDateTimeLocalized(replacement.collectedAt, { language }) })
+          : t("replacementSell.collectedNoDate")}
+      </p>
+    </div>
+  ) : null;
 
   const proofField = (
     <ProofField
@@ -643,7 +715,7 @@ const SellDialog = ({
             variant={isManager ? "primary" : "success"}
             leftIcon={SubmitIcon}
             loading={isLoading}
-            disabled={isProofMissing || Boolean(partialBlockReason)}
+            disabled={isProofMissing || Boolean(partialBlockReason) || isOldItemConfirmMissing}
             aria-describedby={blockReason ? id("block") : undefined}
           >
             {t("sell")}
@@ -653,6 +725,7 @@ const SellDialog = ({
     >
       {pendingApproval ? <ExtraCostSentAlert approval={pendingApproval} /> : null}
       <OrderCustomerSummary order={order} variant={variant} />
+      {replacementBlock}
       <PartialSwitch
         checked={isPartial}
         disabled={!canSellPartially}

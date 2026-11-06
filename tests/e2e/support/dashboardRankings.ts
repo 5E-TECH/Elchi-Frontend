@@ -134,6 +134,10 @@ export const rankingCard = (page: Page, id: "markets" | "branches") => page.getB
 export const openDashboard = async (page: Page, path = "/") => {
   await page.goto(path);
   await expect(page.locator('[data-testid^="ranking-"]').first()).toBeVisible({ timeout: 90_000 });
+  // Yuklanish kartasi (`LoadingChartCard`, `aria-busy`) ham shu `data-testid` bilan — javob kelgach u haqiqiy karta
+  // bilan almashadi. Kutilmasa o'lchov / skroll eski (DOM'dan chiqqan) elementga tushadi: sekin mashinada
+  // «Element is not attached to the DOM».
+  await expect(page.locator('[data-testid^="ranking-"][aria-busy="true"]')).toHaveCount(0, { timeout: 60_000 });
 };
 
 /** «12.10 – 15.10.2026» (bir yil) — `formatRangeShort` kabi. */

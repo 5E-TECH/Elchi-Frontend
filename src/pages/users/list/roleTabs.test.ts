@@ -35,7 +35,9 @@ describe("rol tablari", () => {
 
   it("superadmin/admin va menejer tablari o'zgarmagan (snapshot)", () => {
     expect(STAFF_TABS).toEqual(["", "admin", "manager", "registrator", "courier", "logist", "market", "market_operator", "investor"]);
-    expect(MANAGER_TABS).toEqual(["", "courier", "registrator", "market"]);
+    // 2026-11-04: menejerda «Marketlar» yo'q (market filialga bog'lanmagan), o'rniga «Menejerlar».
+    expect(MANAGER_TABS).toEqual(["", "courier", "registrator", "manager"]);
+    expect(MANAGER_TABS).not.toContain("market");
   });
 
   it("xodim va tashqi rollar kesishmaydi", () => {

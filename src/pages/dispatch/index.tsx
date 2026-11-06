@@ -198,7 +198,7 @@ const DispatchPage = () => {
           setScanNotice({ tone: "warning", text: t("scanErrors.duplicate") });
           void playScanFeedback("duplicate", t("scanErrors.duplicate"));
         } else {
-          void playScanFeedback("success", t("camera.added", { id: nextOrder.id }));
+          void playScanFeedback("success", t("camera.added", { id: nextOrder.id }), undefined, { voice: "selected" });
         }
         blockScans(250);
         return true;

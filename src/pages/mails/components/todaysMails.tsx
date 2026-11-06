@@ -8,6 +8,7 @@ import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Select, type SelectOption } from "../../../shared/ui/primitives";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
+import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../model/mailBranchNames";
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useTodayMails, type MailListRow } from "../model/mailsLists";
@@ -22,7 +23,9 @@ import MailsListBody from "./MailsListBody";
  *
  *  - xodim (`card`, maket `superadmin-mails-today`): «Viloyat: Barchasi» + xulosa «N ta viloyat · …»,
  *    jadval. Kuryer ustuni — faqat backend bergan bo'lsa: YANGI pochtaga kuryer hali biriktirilmagan
- *    (`post/new` da `courier_id = '0'`, `courier` yo'q), shuning uchun odatda chizilmaydi;
+ *    (`post/new` da `courier_id = '0'`, `courier` yo'q), shuning uchun odatda chizilmaydi; superadmin, admin va
+ *    registratorda uning o'rnida «Filial» (`model/mailBranchNames.ts`) — xuddi shunday, faqat pochtada filial bo'lsa
+ *    (YANGI pochta hali jo'natilmagan — `branch_id` yo'q);
  *  - menejer (`manager-mails-today`): kuryer ustunisiz, xulosa «N ta pochta», telefon kartasi «Pochta №X»;
  *  - kuryer (`page`, `courier-mails-today`): 3 ta `StatCard`, «Qabul qilinishi kerak» kartasi, saralanadigan
  *    jadval; telefonda filtr va xulosa kartadan oldin.
@@ -39,7 +42,9 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
   const role = useSelector((state: RootState) => state.role.role);
   const isManager = role === "manager";
   const cardView = useMailsCardView();
+  const branchColumn = useSelector(selectMailsBranchColumn);
   const { isCourier, mails, query } = useTodayMails();
+  const branchName = useMailBranchName(branchColumn && hasMailBranch(mails));
   const [regionId, setRegionId] = useState("");
 
   const regionOptions = useMemo<SelectOption[]>(
@@ -58,9 +63,13 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
   const rows = useMemo(
     () =>
       filteredMails.map((mail) =>
-        toMailListRow(mail, { status, regionFallback: (id) => t("mails:regionFallback", { id }) }),
+        toMailListRow(mail, {
+          status,
+          regionFallback: (id) => t("mails:regionFallback", { id }),
+          branchName: branchColumn ? branchName : undefined,
+        }),
       ),
-    [filteredMails, status, t],
+    [branchColumn, branchName, filteredMails, status, t],
   );
 
   const linkOf = useCallback(
@@ -127,7 +136,8 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
       phoneTop={regionSelect("w-full")}
       table={{
         idHeader: t("table.mail"),
-        showCourier: !isCourier && !isManager && rows.some((row) => Boolean(row.courierName)),
+        showCourier: !isCourier && !isManager && !branchColumn && rows.some((row) => Boolean(row.courierName)),
+        showBranch: branchColumn && rows.some((row) => Boolean(row.branchName)),
         courierCards: isCourier,
         sortable: isCourier,
         linkOf,

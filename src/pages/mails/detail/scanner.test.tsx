@@ -137,7 +137,9 @@ describe("MailDetailPage — kamera maqsadi", () => {
       await target().onScan("aaaaaaaaaaaaaaaaaaaaaa99", "camera");
     });
     expect(screen.getByTestId("selected")).toHaveTextContent("10199");
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Buyurtma tanlandi №10199");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Buyurtma tanlandi №10199", undefined, {
+      voice: "selected",
+    });
     expect(target().progress).toMatchObject({ done: 1, total: 2 });
     expect(target().list?.[0]).toMatchObject({ key: "order:10199", title: "№10199 · Sanjar Qurbonov", tone: "success" });
 

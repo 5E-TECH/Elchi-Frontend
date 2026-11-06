@@ -87,7 +87,8 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
           onDone?.();
           onClose();
         },
-        onError: (mutationError) => setError(getBackendErrorMessage(mutationError) ?? t("orderActionError")),
+        // «Qabul qilindi» (QR/PIN) dan keyin topshirish rad etilsa — xato ham eshitilsin.
+        onError: (mutationError) => fail(getBackendErrorMessage(mutationError) ?? t("orderActionError")),
       },
     );
 
@@ -104,7 +105,12 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
       fail(t("orderActionError"));
       return;
     }
-    void playScanFeedback("success", t(method === "pin" ? "returnHandoverPinAccepted" : "returnHandoverQrAccepted"));
+    void playScanFeedback(
+      "success",
+      t(method === "pin" ? "returnHandoverPinAccepted" : "returnHandoverQrAccepted"),
+      undefined,
+      { voice: "received" },
+    );
     setAuthorization({ token, method });
     markReturned(token);
   };

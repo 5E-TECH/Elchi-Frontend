@@ -46,7 +46,7 @@ export const useBarcodeCamera = ({ enabled, productName, onCode }: Options) => {
               return;
             }
             onCode(code);
-            void playScanFeedback("success", t("productCode.cameraDone"), undefined, { text: code });
+            void playScanFeedback("success", t("productCode.cameraDone"), undefined, { text: code, voice: "added" });
           },
         }
       : null,

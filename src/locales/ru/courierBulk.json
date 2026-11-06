@@ -15,6 +15,8 @@
   "confirmCancelOneHint": "№{{id}} · {{name}} — перейдёт в статус «Отменён»",
   "confirmTomorrow": "Останутся на завтра: {{count}}",
   "confirmTomorrowHint": "Останутся в статусе «Ожидает»",
+  "confirmUnmarked": "Без отметки: {{count}} — не изменятся",
+  "confirmUnmarkedHint": "Останутся в статусе «Ожидает»",
   "confirmAction": "Подтвердить",
   "confirmBack": "Назад",
   "scanMissingTitle": "Заказ не найден",
@@ -34,6 +36,7 @@
   "finalizeErrorTitle": "Ошибка завершения",
   "finalizeNothing": "Нечего завершать — отложенные на завтра заказы остаются в ожидании.",
   "finalizeTomorrowKept": "Заказов отложено на завтра: {{count}}.",
+  "finalizeUnmarkedKept": "Заказы без отметки не изменены: {{count}}.",
   "page": {
     "clearMarks": "Сбросить отметки",
     "finalize": "Завершить день"
@@ -45,7 +48,7 @@
     "pendingCourier": "Назначены вам, не завершены",
     "pendingManager": "У курьеров филиала, не завершены",
     "sold": "Будут проданы",
-    "soldUnmarked": "<strong>{{count}}</strong> без отметки, по умолчанию",
+    "soldUnmarked": "Без отметки: <strong>{{count}}</strong> — не изменятся",
     "cancel": "Будут отменены",
     "cancelHint": "Перейдут в статус «Отменён»",
     "tomorrow": "Останутся на завтра",
@@ -68,7 +71,7 @@
   "list": {
     "title": "Ожидающие заказы",
     "titleShort": "Ожидающие",
-    "description": "Заказы без отметки будут проданы",
+    "description": "Заказы без отметки не изменятся",
     "search": "Имя, телефон или номер",
     "searchLabel": "Поиск заказов по имени, телефону или номеру",
     "filterLabel": "Фильтр по результату",
@@ -93,14 +96,17 @@
     "cancel": "Отмена",
     "tomorrow": "Завтра",
     "noMatchTitle": "Заказы не найдены",
-    "noMatchHint": "Измените поиск или фильтр результата."
+    "noMatchHint": "Измените поиск или фильтр результата.",
+    "replacementHint": "Замена — продайте в «Заказах» с отметкой «Старый товар забрал»",
+    "awaitingPostHint": "Почта ещё не принята — сначала примите её в «Почте»",
+    "courierHeldHint": "У курьера — продаёт сам курьер",
+    "lastError": "Не завершён: {{reason}}"
   },
   "states": {
     "errorHint": "Проверьте подключение к интернету и повторите попытку.",
     "emptyHint": "Здесь появятся заказы в статусе «Ожидает»."
   },
   "confirm": {
-    "soldUnmarked": "<strong>{{count}} без отметки</strong>, по умолчанию",
     "soldMarked": "Перейдут в статус «Продан»",
     "irreversibleTitle": "Это действие нельзя отменить",
     "irreversibleText": "Статус заказов ({{count}}) изменится сразу."
@@ -124,11 +130,24 @@
   "camera": {
     "context": "Ожидающих заказов: {{value}}",
     "meter": "отсканировано",
-    "unscanned": "Неотсканированные заказы ({{value}}) будут отмечены как проданные.",
+    "unmarked": "Заказы без отметки ({{value}}) не изменятся.",
     "listTitle": "Отсканированные",
     "listDescription": "{{done}} / {{total}} · отмена: {{cancel}}, на завтра: {{tomorrow}}",
     "markedCancel": "Отмечен к отмене №{{id}} · {{name}}",
     "markedTomorrow": "Оставлен на завтра №{{id}} · {{name}}",
     "markedSold": "Отмечен как продан №{{id}} · {{name}}"
-  }
+  },
+  "confirmReplacement": "Заказы на замену не будут проданы: {{count}}",
+  "confirmReplacementHint": "Останутся в статусе «Ожидает» — заберите старый товар и продайте в «Заказах» с отметкой «Старый товар забрал»",
+  "finalizeReplacementKept": "Заказов на замену к продаже через «Заказы»: {{count}}.",
+  "awaitingPostTitle": "Почта ещё не принята",
+  "finalizeNothingPlain": "Нечего завершать.",
+  "finalizeCourierHeldKept": "Заказов у курьера: {{count}} — их продаёт сам курьер.",
+  "finalizeAwaitingPostKept": "Заказов из непринятой почты: {{count}} — завершите после приёма в «Почте».",
+  "confirmCourierHeld": "Заказы у курьера не будут проданы: {{count}}",
+  "confirmCourierHeldHint": "Останутся в статусе «Ожидает» — их продаёт сам курьер",
+  "confirmAwaitingPost": "Заказы из непринятой почты: {{count}}",
+  "confirmAwaitingPostHint": "Не изменятся — сначала примите почту в «Почте»",
+  "noPermissionTitle": "Нет права на продажу и отмену",
+  "noPermissionText": "Чтобы завершить день, суперадмин должен выдать вам право на продажу/отмену."
 }

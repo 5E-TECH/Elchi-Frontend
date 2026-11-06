@@ -88,11 +88,21 @@ export const API_ENDPOINTS = {
     COMMISSION: (id: string | number) => `market-operators/${id}/commission`,
     // XtcEyQjb: PATCH { can_view_warehouse_stock: boolean } — «Ombordagi qoldiqni ko'radi» (begona operator — 404)
     WAREHOUSE_ACCESS: (id: string | number) => `market-operators/${id}/warehouse-access`,
+    // Buyurtma yaratishdagi «Operator» tanlovi: GET ?market_id → { items: [{ id, name }] } — faol, o'chirilmagan, nom
+    // bo'yicha. SUPERADMIN, ADMIN, REGISTRATOR, MANAGER, BRANCH — `market_id` majburiy; MARKET va MARKET_OPERATOR —
+    // o'z marketi (tokendan), boshqa `market_id` — 400.
+    SELECTABLE: "market-operators/selectable",
   },
   // Logistlar (superadmin/admin; LG-2, dzyVftBx): GET ?search&status&page&limit (limit ≤ 100) → { items, meta } /
   // POST { name, phone_number, password, salary, payment_day? } — filialsiz, viloyatlar alohida (REGIONS.LOGIST_BULK).
   LOGISTS: {
     BASE: "logists",
+  },
+  // Investor logini (superadmin/admin; vpKijXce): POST { name, phone_number, password_mode, password?,
+  // must_change_password? } — shu telefondagi investor yozuvi loginga bog'lanadi (yo'q bo'lsa yaratiladi),
+  // javob `data.investor`. GET ?search&status&page&limit — investor rolli loginlar.
+  INVESTOR_USERS: {
+    BASE: "investor-users",
   },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
@@ -162,6 +172,10 @@ export const API_ENDPOINTS = {
     COURIER_ORDERS: "orders/courier/orders",
     COURIER_ORDER_COUNTS: "orders/courier/orders/counts", // GET kuryer tablari soni { waiting, all, cancelled } (0d11ewk7)
     STATUS_COUNTS: "orders/status-counts", // GET holat tablari sonlari + new_incoming — `GET /orders` filtrlari bilan (GaBIPi3Z)
+    // lQjt6sKP: almashtirish uchun eski (yetkazilgan) buyurtmalar — yaratish formasi. GET ?market_id&customer_id&q&limit
+    REPLACEABLE: "orders/replaceable",
+    // lQjt6sKP: almashtirishga tanlangan eski buyurtmalar (mahsuloti marketga qaytariladi). GET ?market_id&state&page&limit
+    REPLACEMENT_RETURNS: "orders/replacement/returns",
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
@@ -170,6 +184,11 @@ export const API_ENDPOINTS = {
     EXTRA_COST_APPROVAL_APPROVE: (id: string | number) =>
       `orders/extra-cost-approvals/${id}/approve`,
     EXTRA_COST_APPROVAL_REJECT: (id: string | number) => `orders/extra-cost-approvals/${id}/reject`,
+    // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — kuryer / menejer / market / operator (doira tokendan).
+    // GET ?tab=all|pending|approved|cancelled&page&limit → { items, total, page, limit, counts }
+    EXTRA_COSTS: "orders/extra-costs",
+    // GykuOz8f: so'rov isboti (rasm/video) baytlari — ro'yxatdagi ko'rinish qoidasi bilan (pending/rad/void ham).
+    EXTRA_COST_PROOF: (id: string | number, index: number) => `orders/extra-costs/${id}/proofs/${index}`,
     COULD_NOT_DELIVER: (id: string | number) => `orders/${id}/could-not-deliver`, // POST courier
     INITIATE_RETURN: (id: string | number) => `orders/${id}/initiate-return`, // POST HQ
     MARK_RETURNED_TO_MARKET: (id: string | number) => `orders/${id}/mark-returned-to-market`, // POST branch
@@ -211,14 +230,14 @@ export const API_ENDPOINTS = {
     CHECK_CANCEL: (id: string | number) => `post/check/cancel/${id}`, // POST check canceled post order by qr token
     COURIERS_BY_POST: (id: string | number) => `post/courier/${id}`, // POST get couriers by post id
     SCAN: (id: string | number) => `post/scan/${id}`, // GET post by scanner (was POSTS.QR_CODE)
-    REASSIGN: (id: string | number) => `post/reassign/${id}`, // PATCH reassign sent post to another courier
     RECEIVE_ORDER: (id: string | number) => `post/receive/order/${id}`, // PATCH receive order (courier)
     RECEIVE_SCAN: (id: string | number) => `post/receive/scan/${id}`, // PATCH receive post with scanner (courier)
     ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`, // GET ?view=current|all (#618)
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     BY_ID: (postId: string | number) => `post/${postId}`, // GET / PATCH send post (superadmin) / DELETE (superadmin)
     RECEIVE: (postId: string | number) => `post/receive/${postId}`, // PATCH receive post (branch/courier)
-    // Kuryer: jo'natilgan pochtadagi buyurtma kelmadi — qaytarish so'rovi (POST, tanasiz; buyurtma «yo'lda» qoladi).
+    // Kuryer / manzil filial menejeri (o'tkazma): jo'natilgan pochtadagi buyurtma kelmadi — qaytarish so'rovi
+    // (POST, tanasiz; buyurtma «yo'lda» qoladi).
     ORDER_RETURN_REQUEST: (postId: string | number, orderId: string | number) =>
       `post/${postId}/orders/${orderId}/return-request`,
     // Backend #618: pochtaga kirgan buyurtmalar (ro'yxat va ruxsat doirasi `GET post/orders/:id?view=all` bilan bir xil).
