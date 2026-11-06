@@ -158,6 +158,13 @@ const extractOrderItems = (payload: unknown): OrderListItem[] => {
 };
 
 /**
+ * Zaxira kartaning sanasi — pochta ochilgan payt: buyurtma kuryerga biriktirilgan payt (`assigned_at`, pochta shu
+ * so'rovda ochiladi); u yo'q bo'lsa buyurtma sanasi. Buyurtma sanasi kunlar oldin bo'lishi mumkin — bugungi pochta
+ * eski ko'rinib, ro'yxat oxiriga tushardi.
+ */
+const fallbackMailDate = (order: OrderListItem): string => order.assigned_at || order.createdAt;
+
+/**
  * Menejer zaxirasi: `post?status=sent&branch_id` bo'sh qaytsa, filialga yo'lda kelayotgan buyurtmalar
  * (`orders?status=on the road&branch_id`) pochta bo'yicha guruhlanadi — v1 (`todaysMails.tsx`) dagi AYNAN.
  */
@@ -170,19 +177,20 @@ export const buildFallbackMailsFromOrders = (orders: OrderListItem[]): MailItem[
 
     const regionId = String(order.region_id ?? order.district?.region?.id ?? order.branch?.id ?? "branch");
     const existing = groups.get(postId);
+    const mailDate = fallbackMailDate(order);
 
     if (existing) {
       existing.order_quantity += 1;
       existing.post_total_price += Number(order.total_price ?? 0);
-      if (order.createdAt && order.createdAt < existing.createdAt) {
-        existing.createdAt = order.createdAt;
+      if (mailDate && mailDate < existing.createdAt) {
+        existing.createdAt = mailDate;
       }
       return;
     }
 
     groups.set(postId, {
       id: postId,
-      createdAt: order.createdAt,
+      createdAt: mailDate,
       updatedAt: order.updatedAt,
       courier_id: "",
       post_total_price: Number(order.total_price ?? 0),

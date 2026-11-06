@@ -116,4 +116,23 @@ describe("mailsLists model", () => {
       status: "sent",
     });
   });
+
+  it("dates a manager fallback mail by when its orders were assigned (post opened), not by order creation", () => {
+    const orders = [
+      { id: "345", post_id: "117", status: "on the road", region_id: "11", total_price: 100, createdAt: "2026-10-30T11:36:00.744Z", assigned_at: "2026-11-05T10:38:00.887Z", updatedAt: "x" },
+      { id: "346", post_id: "117", status: "on the road", region_id: "11", total_price: 100, createdAt: "2026-10-29T09:00:00.000Z", assigned_at: "2026-11-05T11:02:00.000Z", updatedAt: "x" },
+      { id: "354", post_id: "40", status: "on the road", region_id: "11", total_price: 100, createdAt: "2026-10-30T11:40:43.356Z", assigned_at: "2026-10-30T11:43:45.326Z", updatedAt: "x" },
+      { id: "355", post_id: "41", status: "on the road", region_id: "11", total_price: 100, createdAt: "2026-10-30T12:00:00.000Z", assigned_at: null, updatedAt: "x" },
+    ] as unknown as OrderListItem[];
+
+    const byId = Object.fromEntries(buildFallbackMailsFromOrders(orders).map((mail) => [mail.id, mail.createdAt]));
+    expect(byId).toEqual({
+      "117": "2026-11-05T10:38:00.887Z",
+      "40": "2026-10-30T11:43:45.326Z",
+      "41": "2026-10-30T12:00:00.000Z",
+    });
+
+    const rows = buildFallbackMailsFromOrders(orders).map((mail) => toMailListRow(mail, { status: null, regionFallback: () => "" }));
+    expect(sortMailsRows(rows, { key: "createdAt", direction: "desc" })[0].id).toBe("117");
+  });
 });
