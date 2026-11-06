@@ -284,5 +284,54 @@
   "queryErrorTitle": "Ma'lumotni yuklab bo'lmadi",
   "queryErrorForbidden": "Bu ma'lumotni ko'rishga ruxsatingiz yo'q (403).",
   "queryErrorServer": "Server xatosi ({{status}}). Birozdan keyin qayta urinib ko'ring.",
-  "queryErrorGeneric": "So'rov bajarilmadi ({{status}})."
+  "queryErrorGeneric": "So'rov bajarilmadi ({{status}}).",
+  "coverage": {
+    "district_not_served_by_branch": {
+      "title": "Boshqa viloyat buyurtmasi",
+      "assign": "Bu buyurtma boshqa viloyatga tegishli — kuryerga berilmaydi: {{ids}}",
+      "dispatch": "Bu buyurtmalar boshqa viloyatga tegishli — bu filialga jo'natilmaydi: {{ids}}. Ularni tanlovdan olib tashlang."
+    },
+    "order_in_outgoing_batch": {
+      "title": "Buyurtma chiquvchi partiyada",
+      "text": "Avval partiyadan chiqaring — kuryerga berilmaydi: {{ids}}"
+    },
+    "hq_courier_region_only": {
+      "title": "HQ viloyatidan emas",
+      "text": "HQ kuryeri faqat HQ viloyati buyurtmasini oladi: {{ids}}"
+    },
+    "branch_region_missing": {
+      "title": "Viloyat belgilanmagan",
+      "hq": "HQ filialiga viloyat biriktirilmagan — administrator belgilashi kerak.",
+      "destination": "Manzil filialga viloyat biriktirilmagan.",
+      "post": "Pochtaning viloyati belgilanmagan."
+    },
+    "region_mismatch": {
+      "title": "Pochta boshqa viloyat uchun",
+      "text": "Pochtani o'z viloyatidagi filialga jo'nating. Hech narsa jo'natilmadi."
+    },
+    "post_receive_manager_only": {
+      "title": "Pochta qabul qilinmadi",
+      "text": "Bu pochtani faqat manzil filial menejeri qabul qila oladi."
+    },
+    "post_not_visible_to_courier": {
+      "title": "Pochta hali filialga qabul qilinmagan",
+      "text": "Filial menejeri qabul qilgach, pochta sizga ko'rinadi."
+    },
+    "new_posts_hq_only": {
+      "title": "Yangi pochtalar faqat HQ xodimlari uchun",
+      "text": "Filialga kelgan pochtalar «Eski» va «Rad etilgan» bo'limlarida."
+    },
+    "order_not_in_your_branch": {
+      "title": "Bu buyurtma sizning filialingizda emas"
+    },
+    "branch_not_assigned": {
+      "title": "Siz hech qaysi filialga biriktirilmagansiz",
+      "text": "Administratorga murojaat qiling."
+    },
+    "branch_scope_unavailable": {
+      "title": "Filialingizni aniqlab bo'lmadi",
+      "text": "Birozdan so'ng qayta urinib ko'ring."
+    },
+    "idsMore": "{{ids}} va yana {{count}} ta"
+  }
 }
