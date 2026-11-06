@@ -141,7 +141,20 @@ const HistoryRow = memo(
     const insteadOf = replacementRefText(row, t);
     const correctionKind = paymentCorrectionBadgeKind(row);
     const baseExtra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
-    const extra = reversalRef ?? [baseExtra, insteadOf].filter(Boolean).join(" · ");
+    // «#4498 o'rniga» bo'linmaydi (maket — `white-space: nowrap`).
+    const extra =
+      reversalRef ??
+      (baseExtra || insteadOf ? (
+        <>
+          {baseExtra}
+          {insteadOf ? (
+            <>
+              {baseExtra ? " · " : null}
+              <span className="whitespace-nowrap">{insteadOf}</span>
+            </>
+          ) : null}
+        </>
+      ) : null);
     const date = formatDateTimeLocalized(getHistoryRowDate(row));
     const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
     // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish» — sarlavhadan keyin qavsda; kvitansiya
@@ -303,7 +316,7 @@ const PaymentHistoryList = ({
       />
     ) : null;
 
-  const detail = <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />;
+  const detail = <FinanceHistoryDetailPopup row={selectedRow} rows={rows} onClose={() => setSelectedRow(null)} />;
 
   if (withContainer) {
     return (

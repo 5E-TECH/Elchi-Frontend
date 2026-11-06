@@ -87,7 +87,10 @@ test("superadmin 390: kartada belgi «Kirim/Chiqim» dan keyin", async ({ page }
   });
   await page.goto("/payments");
 
-  const card = page.getByRole("button", { name: /^To'lovni qaytarish, Teskari yozuv \(Bugun/ }).first();
+  // Karta nomi ko'rinadigan pastki qatorni ham aytadi (ekran o'quvchi): «… (#4511 · Kuryer to'lovi qaytarildi), Chiqim …».
+  const card = page.getByRole("button", {
+    name: /^To'lovni qaytarish, Teskari yozuv \(#4511 · Kuryer to'lovi qaytarildi\), Chiqim /,
+  });
   await expect(card).toContainText("#4511 · Kuryer to'lovi qaytarildi · Asosiy kassa");
   const previous = await card
     .locator("[data-payment-correction]")

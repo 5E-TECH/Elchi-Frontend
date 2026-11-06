@@ -60,12 +60,16 @@ const sellDetail = {
   },
 };
 
-const open = (row: PaymentRow | null, role = "superadmin", props: { hideCashboxType?: boolean } = {}) => {
+const open = (
+  row: PaymentRow | null,
+  role = "superadmin",
+  props: { hideCashboxType?: boolean; rows?: readonly PaymentRow[] } = {},
+) => {
   const onClose = vi.fn();
-  renderWithProviders(<FinanceHistoryDetailPopup row={row} onClose={onClose} {...props} />, {
+  const { unmount } = renderWithProviders(<FinanceHistoryDetailPopup row={row} onClose={onClose} {...props} />, {
     preloadedState: asRole(role),
   });
-  return { onClose };
+  return { onClose, unmount };
 };
 
 const term = (dialog: HTMLElement, label: string) => within(dialog).getByText(label, { selector: "dt" });
@@ -376,7 +380,9 @@ describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
   it("tahrirlangan asl to'lov: #id izohda, «Tahrirlangan» belgisi, blok va «Bog'liq yozuv»", async () => {
     open(editedRow());
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
-    expect(within(dialog).getByText("Operatsiyalar tarixi · #4498 · Bugun, 13:05")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("Operatsiyalar tarixi · #4498 · Bugun, 13:05");
+    // Sana bir qatorda (telefonda bo'linmaydi).
+    expect(within(dialog).getByText("Bugun, 13:05", { selector: "span" })).toHaveClass("whitespace-nowrap");
 
     const badge = within(dialog).getByText("Tahrirlangan");
     expect(badge).toHaveAttribute("data-payment-correction", "edited");
@@ -430,7 +436,7 @@ describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
     await user.click(within(dialog).getByRole("button", { name: /^Bog'liq yozuv: Market to'lovi, Tuzatilgan/ }));
 
     expect(detailState.calls).toContainEqual({ id: "4522", enabled: true });
-    expect(within(dialog).getByText("Operatsiyalar tarixi · #4522 · Bugun, 15:10")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("Operatsiyalar tarixi · #4522 · Bugun, 15:10");
     expect(within(dialog).getByText("Tuzatilgan")).toHaveAttribute("data-payment-correction", "replacement");
     // C1: «Tuzatilgan» to'lov sanasi — tuzatish vaqti (backend asl payment_date ni nusxalaydi).
     expect(valueOf(dialog, "To'lov sanasi")).toHaveTextContent("Bugun, 15:10");
@@ -530,11 +536,24 @@ describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
   });
 
   it("market: bog'liq yozuv sarlavhasi market nuqtai nazaridan, related yo'q — «Bog'liq yozuv» yo'q", async () => {
-    open(editedRow({ cashbox_type: "markets", cashbox_id: "55" }), "market");
+    const { unmount } = open(editedRow({ cashbox_type: "markets", cashbox_id: "55" }), "market");
     const dialog = await screen.findByRole("dialog");
     expect(
       within(section(dialog)).getByRole("button", { name: /^Bog'liq yozuv: HQ'dan marketga o'tkazma, Tuzatilgan, #4522/ }),
     ).toBeInTheDocument();
+    unmount();
+
+    open(
+      editedRow({
+        cashbox_type: "markets",
+        cashbox_id: "55",
+        correction: editCorrection("original", null) as unknown as PaymentRow["correction"],
+      }),
+      "market",
+    );
+    const withoutRelated = await screen.findByRole("dialog");
+    expect(section(withoutRelated)).toBeInTheDocument();
+    expect(within(withoutRelated).queryByText("Bog'liq yozuv")).not.toBeInTheDocument();
   });
 
   it("related yo'q — «Bog'liq yozuv» bo'limi chizilmaydi, qolgan blok bor", async () => {
@@ -565,9 +584,111 @@ describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
   });
 
   it("tuzatilmagan yozuv: belgi va blok yo'q; virtual qatorda #id yo'q", async () => {
-    open(editedRow({ correction: null }));
+    open(editedRow({ id: "pending-4498", correction: null }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog.querySelector("[data-payment-correction]")).toBeNull();
     expect(within(dialog).queryByRole("region", { name: "Qaytarish va tahrir" })).not.toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("Operatsiyalar tarixi · Bugun, 13:05");
+  });
+
+  it("correction kelmagan teskari yozuv (backend fail-open): «Teskari yozuv» belgisi ro'yxatdagidek, blok yo'q", async () => {
+    detailState.byId["4521"] = {
+      data: { data: { id: "4521", cashbox_id: "1", source_type: "payment_reversal", correction: null } },
+      isLoading: false,
+      isError: false,
+    };
+    open(
+      editedRow({
+        id: "4521",
+        operation_type: "income",
+        source_type: "payment_reversal",
+        payment_date: undefined,
+        createdAt: EDITED,
+        reverses_history_id: "4498",
+        correction: null,
+      }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    expect(dialog.querySelector("[data-payment-correction]")).toHaveAttribute("data-payment-correction", "reversal");
+    expect(within(dialog).getByText("Teskari yozuv")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("region", { name: "Qaytarish va tahrir" })).not.toBeInTheDocument();
+  });
+
+  describe("«Bog'liq yozuv» ro'yxat qatorini ochadi (kvitansiya javobi saqlanadi)", () => {
+    const REVERSED_AT = "2026-10-08T11:40:00.000Z";
+    const reverseCorrection = (role: string, related: Record<string, unknown>) =>
+      ({
+        id: "12",
+        action: "reverse",
+        payment_kind: "courier_payment",
+        role,
+        reason: REVERSE_REASON,
+        created_by_name: "Shodiyor Ergashev",
+        created_at: REVERSED_AT,
+        original_amount: 1_850_000,
+        new_amount: null,
+        related_history_id: String(related.id),
+        related: { ...related, created_at: REVERSED_AT },
+      }) as unknown as PaymentRow["correction"];
+    const courierOriginal: PaymentRow = {
+      id: "4512",
+      amount: 1_850_000,
+      operation_type: "expense",
+      cashbox_id: "70",
+      cashbox_type: "couriers",
+      source_type: "courier_payment",
+      payment_method: "cash",
+      payment_date: "2026-10-08T09:32:00.000Z",
+      createdAt: "2026-10-08T09:32:00.000Z",
+      comment: "Kunlik topshiriq",
+      payment_ack: "disputed",
+      correction: reverseCorrection("original", {
+        id: "4530", source_type: "payment_reversal", role: "reversal", operation_type: "income", amount: 1_850_000,
+      }),
+    };
+    const courierReversal: PaymentRow = {
+      id: "4530",
+      amount: 1_850_000,
+      operation_type: "income",
+      cashbox_id: "70",
+      cashbox_type: "couriers",
+      source_type: "payment_reversal",
+      payment_method: "cash",
+      createdAt: REVERSED_AT,
+      comment: REVERSE_REASON,
+      reverses_history_id: "4512",
+      correction: reverseCorrection("reversal", {
+        id: "4512", source_type: "courier_payment", role: "original", operation_type: "expense", amount: 1_850_000,
+      }),
+    };
+
+    it("ro'yxatda bor — o'sha qator: «Kvitansiya javobi» ko'rinadi; qaytishda — ro'yxatdan ochilgan qator", async () => {
+      const user = userEvent.setup();
+      open(courierReversal, "manager", { rows: [courierReversal, courierOriginal] });
+      const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+      expect(within(dialog).queryByText("Kvitansiya javobi", { selector: "dt" })).not.toBeInTheDocument();
+
+      await user.click(within(section(dialog)).getByRole("button", { name: /^Bog'liq yozuv: asl to'lov/ }));
+      expect(dialog).toHaveAccessibleDescription(/^Operatsiyalar tarixi · #4512 · /);
+      expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Kuryer: noto'g'ri")).toHaveAttribute(
+        "data-payment-ack",
+        "disputed",
+      );
+      expect(within(dialog).getByText("Kunlik topshiriq")).toBeInTheDocument();
+
+      await user.click(within(section(dialog)).getByRole("button", { name: /^Bog'liq yozuv: To'lovni qaytarish/ }));
+      expect(dialog).toHaveAccessibleDescription(/^Operatsiyalar tarixi · #4530 · /);
+      expect(within(dialog).getByText("Teskari yozuv")).toHaveAttribute("data-payment-correction", "reversal");
+    });
+
+    it("ro'yxatda yo'q (boshqa sahifada) — sintetik qator: kvitansiya javobi qatori yo'q", async () => {
+      const user = userEvent.setup();
+      open(courierReversal, "manager");
+      const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+      await user.click(within(section(dialog)).getByRole("button", { name: /^Bog'liq yozuv: asl to'lov/ }));
+      expect(dialog).toHaveAccessibleDescription(/^Operatsiyalar tarixi · #4512 · /);
+      expect(detailState.calls).toContainEqual({ id: "4512", enabled: true });
+      expect(within(dialog).queryByText("Kvitansiya javobi", { selector: "dt" })).not.toBeInTheDocument();
+    });
   });
 });

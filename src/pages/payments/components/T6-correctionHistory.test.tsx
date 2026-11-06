@@ -192,23 +192,42 @@ describe("«To'lovlar» jadvali (superadmin-payments-overview-corrected)", () =>
     ).toBeInTheDocument();
   });
 
-  it("telefon kartasi: belgi «Kirim/Chiqim» dan keyin, sub — havola va kassa", () => {
+  it("telefon kartasi: belgi «Kirim/Chiqim» dan keyin, sub — havola va kassa; nomida pastki qator ham", () => {
     restoreMedia = phoneMedia();
     open();
-    const card = screen.getByRole("button", { name: "To'lovni qaytarish, Teskari yozuv (Bugun, 16:40) tafsilotini ochish" });
+    // Karta nomi ichidagini almashtiradi — T6 pastki qatori ham aytiladi (ekran o'quvchi).
+    const card = screen.getByRole("button", {
+      name: "To'lovni qaytarish, Teskari yozuv (#4511 · Kuryer to'lovi qaytarildi), Chiqim −1 850 000 so'm, Bugun, 16:40 · Shodiyor Ergashev",
+    });
     expect(card).toHaveTextContent("#4511 · Kuryer to'lovi qaytarildi · Asosiy kassa");
     const badge = within(card).getByText("Teskari yozuv");
     expect(badge.previousElementSibling).toHaveTextContent("Chiqim");
-    const replacement = screen.getByRole("button", { name: /^Market to'lovi, Tuzatilgan/ });
+    const replacement = screen.getByRole("button", {
+      name: "Market to'lovi, Tuzatilgan (Baraka Shop · #4498 o'rniga), Chiqim −2 000 000 so'm, Bugun, 15:10 · Shodiyor Ergashev",
+    });
     expect(replacement).toHaveTextContent("Baraka Shop · #4498 o'rniga · Asosiy kassa");
+    // «#4498 o'rniga» bo'linmaydi (maket).
+    expect(within(replacement).getByText("#4498 o'rniga")).toHaveClass("whitespace-nowrap");
+    expect(
+      screen.getByRole("button", {
+        name: "Kuryer to'lovi, Qaytarildi (Jasur Tursunov), Kirim +1 850 000 so'm, Bugun, 14:32 · Shodiyor Ergashev",
+      }),
+    ).toBeInTheDocument();
     expect(kinds()).toEqual(["reversal", "replacement", "reversal", "reversed", "edited"]);
   });
 
   it("admin va menejer ro'yxatida ham belgilar (maket yo'q — eng yaqini superadmin)", () => {
-    renderWithProviders(<PaymentHistoryTable data={mainRows} viewerRole="manager" />, {
-      preloadedState: asRole("manager"),
-    });
-    expect(kinds()).toEqual(["reversal", "replacement", "reversal", "reversed", "edited"]);
+    for (const role of ["admin", "manager"]) {
+      const { unmount } = renderWithProviders(<PaymentHistoryTable data={mainRows} viewerRole={role} />, {
+        preloadedState: asRole(role),
+      });
+      expect(kinds()).toEqual(["reversal", "replacement", "reversal", "reversed", "edited"]);
+      // Sarlavha ko'ruvchi nuqtai nazaridan (C10): menejerda — «Kuryerdan filialga o'tkazma».
+      expect(screen.getByRole("table")).toHaveTextContent(
+        role === "manager" ? "#4511 · Kuryerdan filialga o'tkazma qaytarildi" : "#4511 · Kuryer to'lovi qaytarildi",
+      );
+      unmount();
+    }
   });
 });
 
@@ -259,5 +278,31 @@ describe("kassa tafsilotidagi ro'yxat (superadmin-payments-cash-detail-courier-c
     expect(correctionBadge.parentElement?.firstElementChild).toBe(correctionBadge);
     expect(within(original).getByText("−1 850 000 so'm").className).toContain("text-danger-fg");
     expect(document.querySelector(".line-through")).toBeNull();
+  });
+
+  it("«Tuzatilgan»: «izoh · #4498 o'rniga» bo'linmaydi; correction kelmagan teskari yozuv — sabab emas, «#id qaytarildi»", () => {
+    const rows: PaymentRow[] = [
+      { ...mainRows[1], cashbox_id: "55", cashbox_type: "markets" },
+      base("4535", {
+        cashbox_id: "70",
+        cashbox_type: "couriers",
+        operation_type: "income",
+        source_type: "payment_reversal",
+        comment: REVERSE_REASON,
+        createdAt: "2026-10-08T11:45:00.000Z",
+        payment_date: undefined,
+        reverses_history_id: "4513",
+        // Backend `correction` qidiruvi yiqildi (fail-open).
+        correction: null,
+      }),
+    ];
+    renderWithProviders(<PaymentHistoryList data={rows} />, { preloadedState: asRole("superadmin") });
+    const replacement = screen.getByRole("button", { name: /^Market to'lovi, Tuzatilgan, #4498 o'rniga, / });
+    expect(replacement).toHaveTextContent("Oktabr, 1-hafta hisobi · #4498 o'rniga");
+    expect(within(replacement).getByText("#4498 o'rniga")).toHaveClass("whitespace-nowrap");
+
+    const failOpen = screen.getByRole("button", { name: /^To'lovni qaytarish, Teskari yozuv, #4513 qaytarildi, Kirim / });
+    expect(failOpen).toHaveTextContent("#4513 qaytarildi");
+    expect(failOpen).not.toHaveTextContent(REVERSE_REASON);
   });
 });

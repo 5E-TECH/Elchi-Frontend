@@ -21,6 +21,7 @@ import type { RootState } from "../../../app/config/store";
 import { useCashBox } from "../../../entities/payments";
 import { toDailyRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import {
+  compareHistoryIdDesc,
   historyRowDate,
   isPaymentReversalRow,
   paymentCorrectionBadgeKind,
@@ -202,7 +203,11 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
     .sort((left, right) => {
       const leftDate = Date.parse(getHistoryDate(left));
       const rightDate = Date.parse(getHistoryDate(right));
-      return (Number.isFinite(rightDate) ? rightDate : 0) - (Number.isFinite(leftDate) ? leftDate : 0);
+      // Teng vaqt (tuzatish: teskari yozuv va yangi to'lov bir tranzaksiyada) — katta ID tepada (T6, C1).
+      return (
+        (Number.isFinite(rightDate) ? rightDate : 0) - (Number.isFinite(leftDate) ? leftDate : 0) ||
+        compareHistoryIdDesc(left["id"], right["id"])
+      );
     })
     .filter((item) => {
       const rowCashbox = item["cashbox"] as { cashbox_type?: string } | undefined;
@@ -547,6 +552,9 @@ const MyCashboxPage = () => {
 
   const historyQuery = useGetCashboxMyCashbox(params);
   const todayQuery = useGetCashboxMyCashbox(todayParams);
+  const historyData = historyQuery.data as CashboxResponse | undefined;
+  // Ro'yxat qatorlari (saralashsiz) — tafsilot oynasi «Bog'liq yozuv» ni shu yerdan topadi (kvitansiya javobi saqlanadi).
+  const historyRows = useMemo(() => toPaymentRows(historyData, role), [historyData, role]);
 
   // qzjTMWPb: balans chizig'i va oqimi. Sana tanlanmasa — kuryerda 8 kun (maket), boshqalarda 14 kun.
   const dailyParams = useMemo(() => {
@@ -963,7 +971,12 @@ const MyCashboxPage = () => {
     if (!sort) return rows;
     const factor = sort.direction === "asc" ? 1 : -1;
     const value = sort.key === "amount" ? signedAmount : rowTime;
-    return [...rows].sort((left, right) => (value(left) - value(right)) * factor);
+    // Teng sana — ID bo'yicha shu yo'nalishda (kamayishda katta ID tepada: «Tuzatilgan» «Teskari yozuv» ustida).
+    return [...rows].sort(
+      (left, right) =>
+        (value(left) - value(right)) * factor ||
+        (sort.key === "amount" ? 0 : compareHistoryIdDesc(left.id, right.id) * -factor),
+    );
   };
 
   /* ── Holatlar ── */
@@ -1040,7 +1053,7 @@ const MyCashboxPage = () => {
   };
 
   const historyQueryLike = {
-    data: historyQuery.data as CashboxResponse | undefined,
+    data: historyData,
     isLoading: historyQuery.isLoading,
     isFetching: historyQuery.isFetching,
     isError: historyQuery.isError,
@@ -1077,7 +1090,7 @@ const MyCashboxPage = () => {
         className="flex min-w-0 flex-col gap-6 max-md:gap-4"
       >
         {(response, { isRefetching }) => {
-          const rows = sortRows(toPaymentRows(response, role));
+          const rows = sortRows(response === historyData ? historyRows : toPaymentRows(response, role));
           const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
           const currentPage = Math.min(page, totalPages);
           const pageRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -1143,6 +1156,7 @@ const MyCashboxPage = () => {
 
       <FinanceHistoryDetailPopup
         row={selectedRow}
+        rows={historyRows}
         onClose={() => setSelectedRow(null)}
         hideCashboxType={isCourier}
       />

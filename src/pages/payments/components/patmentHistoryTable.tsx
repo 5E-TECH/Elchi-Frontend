@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, superadmin-payments-overview-receipts, superadmin-payments-overview-corrected
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { Fragment, memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Inbox, ListFilter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
@@ -239,8 +239,8 @@ const PaymentHistoryTable = ({
     [direction, language],
   );
 
-  // Kartaning nomi (aria-label) ichidagini almashtiradi — tuzatish belgisi (T6) va xarajat kategoriyasi (Elchi Pochta
-  // №1) ham aytilsin: «Kuryer to'lovi, Qaytarildi (Bugun, 14:32) tafsilotini ochish».
+  // Jadvaldagi «›» tugmasi nomi — tuzatish belgisi (T6) va xarajat kategoriyasi (Elchi Pochta №1) ham aytilsin:
+  // «Kuryer to'lovi, Qaytarildi (Bugun, 14:32) tafsilotini ochish». Telefon kartasi — `cardLabel`.
   const openLabel = useCallback(
     (row: PaymentRow) => {
       const category = getExpenseCategoryName(row);
@@ -252,6 +252,37 @@ const PaymentHistoryTable = ({
         : label;
     },
     [dateText, sourceTitle, t],
+  );
+  /**
+   * Telefon kartasining nomi (aria-label) — ichidagini almashtiradi, shuning uchun ko'rinadigan matnni aytadi:
+   * «{sarlavha}, {belgi} · {kategoriya} ({pastki qator}), {Kirim|Chiqim} {summa}, {sana} · {yaratgan}, {chek}».
+   * T6 pastki qatori («#4512 · Kuryer to'lovi qaytarildi» / «… · #4498 o'rniga») ham eshitiladi.
+   */
+  const cardLabel = useCallback(
+    (row: PaymentRow) => {
+      const line = subLine(row);
+      const sub = [line.text, line.insteadOf].filter(Boolean).join(" · ");
+      const category = getExpenseCategoryName(row);
+      const labelTitle = correctionLabelTitle(sourceTitle(row), paymentCorrectionBadgeKind(row), t);
+      const title = category ? `${labelTitle} · ${category}` : labelTitle;
+      const value = direction(row);
+      const amount = Math.abs(Number(row.amount) || 0);
+      const receipt = toReceiptRef(row.receipt);
+      return [
+        sub ? `${title} (${sub})` : title,
+        value
+          ? `${t(value === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
+              value === "expense" ? -amount : amount,
+              { language },
+            )}`
+          : "",
+        `${dateText(row)} · ${actorName(row)}`,
+        receipt ? t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) }) : "",
+      ]
+        .filter(Boolean)
+        .join(", ");
+    },
+    [dateText, direction, language, sourceTitle, subLine, t],
   );
   const categoryBadge = useCallback((row: PaymentRow) => {
     const category = getExpenseCategoryName(row);
@@ -370,10 +401,15 @@ const PaymentHistoryTable = ({
   const renderCard = useCallback(
     (row: PaymentRow) => {
       const line = subLine(row);
-      const sub = [line.text, line.insteadOf, rowCashboxType(row) ? cashboxLabel(row) : null].filter(Boolean).join(" · ");
+      // «#4498 o'rniga» bo'linmaydi (maket — `white-space: nowrap`).
+      const parts: ReactNode[] = [
+        line.text || null,
+        line.insteadOf ? <span className="whitespace-nowrap">{line.insteadOf}</span> : null,
+        rowCashboxType(row) ? cashboxLabel(row) : null,
+      ].filter(Boolean);
       return (
         <Pressable
-          aria-label={openLabel(row)}
+          aria-label={cardLabel(row)}
           onClick={() => setSelectedRow(row)}
           className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
         >
@@ -381,7 +417,16 @@ const PaymentHistoryTable = ({
             <span className="min-w-0 font-semibold">{sourceTitle(row)}</span>
             {amountNode(row)}
           </span>
-          {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
+          {parts.length ? (
+            <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
+              {parts.map((part, index) => (
+                <Fragment key={index}>
+                  {index ? " · " : null}
+                  {part}
+                </Fragment>
+              ))}
+            </span>
+          ) : null}
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {operationBadge(row)}
             <PaymentCorrectionBadge kind={paymentCorrectionBadgeKind(row)} />
@@ -394,7 +439,7 @@ const PaymentHistoryTable = ({
         </Pressable>
       );
     },
-    [amountNode, cashboxLabel, categoryBadge, dateText, openLabel, operationBadge, sourceTitle, subLine],
+    [amountNode, cardLabel, cashboxLabel, categoryBadge, dateText, operationBadge, sourceTitle, subLine],
   );
 
   const total = pagination?.total ?? data?.length ?? 0;
@@ -474,7 +519,7 @@ const PaymentHistoryTable = ({
         </div>
       ) : null}
 
-      <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <FinanceHistoryDetailPopup row={selectedRow} rows={data} onClose={() => setSelectedRow(null)} />
     </>
   );
 };

@@ -78,7 +78,10 @@ describe("«To'lovlarni tuzatish muddati» kartasi (T6-FE-3, 2wgTzcG0)", () => {
     const card = await open();
 
     expect(await within(card).findByRole("radio", { name: "30 kun" })).toHaveAttribute("aria-checked", "true");
-    expect(within(card).getByRole("radiogroup", { name: "Muddat" })).toBeInTheDocument();
+    // Izoh guruhga bog'langan — ekran o'quvchi «Muddat» bilan birga aytadi.
+    expect(within(card).getByRole("radiogroup", { name: "Muddat" })).toHaveAccessibleDescription(
+      "Sukut — 30 kun. Muddat to'lov qilingan paytdan hisoblanadi; tahrirlangan to'lovda — birinchi to'lovdan.",
+    );
     for (const name of ["7 kun", "10 kun", "Boshqa"]) {
       expect(within(card).getByRole("radio", { name })).toHaveAttribute("aria-checked", "false");
     }

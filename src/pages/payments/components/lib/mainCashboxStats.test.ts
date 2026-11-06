@@ -5,6 +5,7 @@ import {
   computePeriodStats,
   filterRowsFrom,
   groupBySource,
+  rowDateValue,
 } from "./mainCashboxStats";
 
 /** Mahalliy vaqt (testlar mintaqaga bog'liq bo'lmasin). */
@@ -47,6 +48,47 @@ describe("mainCashboxStats — periods (same rules as the v1 page)", () => {
     expect(stats.week).toEqual({ income: 7_970_000, expense: 2_400_000, from: "2026-10-05", to: "2026-10-08" });
     expect(stats.month).toEqual({ income: 7_970_000, expense: 2_900_000, from: "2026-10-01", to: "2026-10-08" });
     expect(filterRowsFrom(rows, "2026-10-01", NOW)).toHaveLength(4);
+  });
+});
+
+describe("mainCashboxStats — to'lov tuzatish (T6, C1)", () => {
+  it("«Tuzatilgan» tuzatish vaqti bo'yicha davrga tushadi; asl to'lov va teskari yozuv — o'z davrida", () => {
+    const replacement = row({
+      amount: 2_000_000,
+      operation_type: "expense",
+      source_type: "market_payment",
+      // Backend asl `payment_date` ni nusxalaydi; ko'rsatiladigan vaqt — tuzatish vaqti (`createdAt`).
+      payment_date: local(2026, 10, 1),
+      createdAt: local(2026, 10, 8, 10),
+      correction: { role: "replacement", action: "edit" } as unknown as PaymentRow["correction"],
+    });
+    const original = row({
+      amount: 2_400_000,
+      operation_type: "expense",
+      source_type: "market_payment",
+      payment_date: local(2026, 10, 1),
+      createdAt: local(2026, 10, 1),
+      correction: { role: "original", action: "edit" } as unknown as PaymentRow["correction"],
+    });
+    const reversal = row({
+      amount: 2_400_000,
+      operation_type: "income",
+      source_type: "payment_reversal",
+      // Backend teskari yozuvda `payment_date: null` beradi; `PaymentRow` da maydon ixtiyoriy (null holati —
+      // `paymentCorrection.test.ts` → `historyRowDate`).
+      payment_date: undefined,
+      createdAt: local(2026, 10, 8, 10),
+      correction: { role: "reversal", action: "edit" } as unknown as PaymentRow["correction"],
+    });
+
+    expect(rowDateValue(replacement)).toBe(replacement.createdAt);
+    expect(rowDateValue(original)).toBe(original.payment_date);
+    expect(rowDateValue(reversal)).toBe(reversal.createdAt);
+
+    const stats = computePeriodStats([replacement, original, reversal], NOW);
+    expect(stats.today).toEqual({ income: 2_400_000, expense: 2_000_000, from: "2026-10-08", to: "2026-10-08" });
+    expect(stats.week).toEqual({ income: 2_400_000, expense: 2_000_000, from: "2026-10-05", to: "2026-10-08" });
+    expect(stats.month).toEqual({ income: 2_400_000, expense: 4_400_000, from: "2026-10-01", to: "2026-10-08" });
   });
 });
 

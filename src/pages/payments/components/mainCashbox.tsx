@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-main-cashbox, admin-payments-main-cashbox, manager-payments-main-cashbox, superadmin-payments-main-cashbox-shift-closed, admin-payments-main-cashbox-shift-closed, manager-payments-main-cashbox-shift-closed
-import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -70,6 +70,7 @@ import {
 } from "../../../entities/payments";
 import { dayOverDay, lastDaysRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import { paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCorrection";
+import { toReceiptRef } from "../../../entities/payments/receipt";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
@@ -849,11 +850,39 @@ const MainCashbox = () => {
       ? { text: reversal, insteadOf: null }
       : { text: rowCounterparty(row), insteadOf: replacementRefText(row, t) };
   };
-  // Kartaning nomi (aria-label) ichidagini almashtiradi — tuzatish belgisi (T6) va xarajat kategoriyasi ham aytilsin.
+  // Jadvaldagi «›» tugmasi nomi — tuzatish belgisi (T6) va xarajat kategoriyasi ham aytilsin.
   const openLabel = (row: PaymentRow) => {
     const category = getExpenseCategoryName(row);
     const title = correctionLabelTitle(rowSourceTitle(row), paymentCorrectionBadgeKind(row), t);
     return t("v2Common.openDetail", { title: category ? `${title} · ${category}` : title, date: rowDateText(row) });
+  };
+  /**
+   * Telefon kartasining nomi (aria-label) — ichidagini almashtiradi, shuning uchun ko'rinadigan matnni aytadi:
+   * «{sarlavha}, {belgi} · {kategoriya} ({pastki qator}), {Kirim|Chiqim} {summa}, {sana} · {yaratgan}, {chek}»
+   * (chek — menejerda yo'q). T6 pastki qatori («#4512 · Kuryer to'lovi qaytarildi» / «… · #4498 o'rniga») ham.
+   */
+  const cardLabel = (row: PaymentRow) => {
+    const line = rowSubLine(row);
+    const sub = [line.text, line.insteadOf].filter(Boolean).join(" · ");
+    const category = getExpenseCategoryName(row);
+    const labelTitle = correctionLabelTitle(rowSourceTitle(row), paymentCorrectionBadgeKind(row), t);
+    const title = category ? `${labelTitle} · ${category}` : labelTitle;
+    const direction = rowDirection(row);
+    const amount = Math.abs(toNumber(row.amount));
+    const receipt = isManagerRole ? null : toReceiptRef(row.receipt);
+    return [
+      sub ? `${title} (${sub})` : title,
+      direction
+        ? `${t(direction === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
+            direction === "expense" ? -amount : amount,
+            { language },
+          )}`
+        : "",
+      `${rowDateText(row)} · ${actorName(row)}`,
+      receipt ? t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) }) : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
   };
   const categoryBadge = (row: PaymentRow) => {
     const category = getExpenseCategoryName(row);
@@ -1004,10 +1033,15 @@ const MainCashbox = () => {
   // sana · yaratgan.
   const renderHistoryCard = (row: PaymentRow) => {
     const line = rowSubLine(row);
-    const sub = [line.text, line.insteadOf, paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
+    // «#4498 o'rniga» bo'linmaydi (maket — `white-space: nowrap`).
+    const parts: ReactNode[] = [
+      line.text || null,
+      line.insteadOf ? <span className="whitespace-nowrap">{line.insteadOf}</span> : null,
+      paymentMethodLabel(row.payment_method) || null,
+    ].filter(Boolean);
     return (
       <Pressable
-        aria-label={openLabel(row)}
+        aria-label={cardLabel(row)}
         onClick={() => setSelectedRow(row)}
         className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
       >
@@ -1015,7 +1049,16 @@ const MainCashbox = () => {
           <span className="min-w-0 font-semibold">{rowSourceTitle(row)}</span>
           {amountNode(row)}
         </span>
-        {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
+        {parts.length ? (
+          <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
+            {parts.map((part, index) => (
+              <Fragment key={index}>
+                {index ? " · " : null}
+                {part}
+              </Fragment>
+            ))}
+          </span>
+        ) : null}
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {operationBadge(row)}
           <PaymentCorrectionBadge kind={paymentCorrectionBadgeKind(row)} />
@@ -1735,7 +1778,7 @@ const MainCashbox = () => {
         onExport={handleExportExcel}
       />
 
-      <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <FinanceHistoryDetailPopup row={selectedRow} rows={historyRows} onClose={() => setSelectedRow(null)} />
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect
