@@ -1189,7 +1189,9 @@ export const CreateUserForm = memo(() => {
             title={formTitle}
             divided
             footer={
-              <div className="ml-auto flex gap-2 max-md:w-full max-md:[&>*]:flex-1">
+              // Telefonda maketdagidek (`*-users-create`: `el-card-foot el-show-mobile`) ustma-ust, to'liq enli — yonma-yon
+              // «Yaratish va SMS yuborish» 360 px da kartadan 22 px chiqib, sahifa yonga surilardi.
+              <div className="ml-auto flex gap-2 max-md:w-full max-md:flex-col max-md:items-stretch">
                 <Button variant="secondary" onClick={() => navigate(-1)} disabled={isPending}>
                   {t("cancel")}
                 </Button>
