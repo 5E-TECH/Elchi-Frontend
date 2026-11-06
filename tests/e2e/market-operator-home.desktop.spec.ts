@@ -20,7 +20,15 @@ test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat so'rovlari faqa
   const mock = await openOperatorHome(page);
 
   const nav = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(nav.getByRole("link")).toHaveText(["Bosh sahifa", "Buyurtmalar", "Buyurtma yaratish", "Mahsulotlar", "Daromadim"]);
+  // «Qo'shimcha xarajatli buyurtmalar» — GykuOz8f (f4676e41, `roles.json` dagi menyu bilan birga).
+  await expect(nav.getByRole("link")).toHaveText([
+    "Bosh sahifa",
+    "Buyurtmalar",
+    "Qo'shimcha xarajatli buyurtmalar",
+    "Buyurtma yaratish",
+    "Mahsulotlar",
+    "Daromadim",
+  ]);
 
   const sales = page.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" });
   await expect(sales.getByRole("listitem").filter({ hasText: "Baraka Shop" })).toContainText("Siz");

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { assertManropeLoaded } from "../visual/support/fonts";
 import { noHorizontalScroll, openAiCost } from "./support/balanceAiCost";
 
 /**
@@ -89,6 +90,7 @@ for (const width of [768, 1024, 1100, 1279, 1280, 1360, 1440]) {
     await tab.click();
     const models = page.getByRole("list", { name: "Modellar" });
     await expect(models.getByRole("listitem")).toHaveCount(2);
+    await assertManropeLoaded(page);
 
     expect(await noHorizontalScroll(page)).toBe(true);
     const [first, second] = await models.getByRole("listitem").evaluateAll((rows) =>
