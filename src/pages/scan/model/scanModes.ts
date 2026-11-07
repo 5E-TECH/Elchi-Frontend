@@ -26,6 +26,8 @@ import { resolveReceiveMode } from "../../new_orders/components/newOrderReceiveR
  *   courierReceive — kuryer «Qabul qilish» (2026-11-07, BeePost /scan kuryer qabul sikli): o'z yo'ldagi buyurtmasi
  *                 skanerlansa darhol qabul (`PATCH post/receive/:post_id { order_ids: [id], scan: true }`), kamera
  *                 yopilmaydi; allaqachon qabul qilingan (WAITING) buyurtma — natija sahifasi (sotish / bekor);
+ *   branchReceive — menejer «Pochtadan qabul» (2026-11-07, xuddi shu sikl): o'z filialiga kelgan o'tkazma
+ *                 pochtasidagi yo'ldagi buyurtma skanerlansa darhol qabul, qabul qilingani — natija sahifasi;
  *   sendMail    — «Pochtani jo'natish»: yangi pochta varag'i (yoki pochta QR'i) → `/mails/:id`, kamera o'sha
  *                 sahifaning «jo'natish» maqsadida ochiq (buyurtma skani = tanlov, jo'natish — sahifa oynasi);
  *   refusedMail — «Rad etilgan pochta»: rad etilgan pochta varag'i (yoki QR'i) → `/mails/:id` (`type: "refused"`),
@@ -36,6 +38,8 @@ import { resolveReceiveMode } from "../../new_orders/components/newOrderReceiveR
  * Rejimlar rol va filial imkoniyatiga qarab — har biri kelinadigan sahifaning O'Z shartini takrorlaydi (sahifa
  * taqiqlangan yoki faqat o'qish bo'lgan rolga rejim chiqmaydi):
  *   - kuryer — «O'zimga olish» · «Qabul qilish» · «Ma'lumot»;
+ *   - «Pochtadan qabul» — REGIONAL / HYBRID filial menejeri (HQ → filial o'tkazma pochtasini backend faqat manzil
+ *     filial menejeriga qabul qildiradi; HQ ga o'tkazma kelmaydi, PICKUP ga pochta jo'natilmaydi);
  *   - «Qabul qilish» — buyurtma yaratish/qabul sahifasiga kirish bor (`canCreateOrders`) va qabul usuli bor
  *     (`resolveReceiveMode` ≠ `none`: REGIONAL menejer/registratorda yo'q — backend transfer'ni 403 qiladi);
  *   - «Kuryerga biriktirish» — `/dispatch` ga kirish bor VA backend `POST orders/assign-to-courier` rolida
@@ -59,6 +63,7 @@ export type UniversalScanMode =
   | "dispatch"
   | "take"
   | "courierReceive"
+  | "branchReceive"
   | "sendMail"
   | "refusedMail"
   | "handover";
@@ -69,6 +74,7 @@ const ALL_MODES: ReadonlySet<string> = new Set<UniversalScanMode>([
   "dispatch",
   "take",
   "courierReceive",
+  "branchReceive",
   "sendMail",
   "refusedMail",
   "handover",
@@ -95,6 +101,9 @@ export type ScanModeAccess = {
 /** `POST orders/assign-to-courier` gateway rollari (backend `@Roles(BRANCH, MANAGER, REGISTRATOR)`). */
 const COURIER_ASSIGN_ROLES: ReadonlySet<string> = new Set(["branch", "manager", "registrator"]);
 
+/** HQ → filial o'tkazma pochtasi boradigan filiallar (menejeri «Pochtadan qabul» qiladi). */
+const BRANCH_RECEIVE_BRANCH_TYPES: ReadonlySet<BranchType | null> = new Set<BranchType | null>(["REGIONAL", "HYBRID"]);
+
 /** Rol va imkoniyatga qarab rejimlar (segment tartibida). Market — skanerlamaydi (bo'sh ro'yxat). */
 export const resolveScanModes = ({
   role,
@@ -112,6 +121,8 @@ export const resolveScanModes = ({
   if (role === "courier") return ["take", "courierReceive", "info"];
   const modes: UniversalScanMode[] = ["info"];
   if (canCreateOrders && resolveReceiveMode(role, branchType) !== "none") modes.push("receive");
+  // O'z filialiga kelgan o'tkazma pochtasini skan bilan qabul qilish (varaqsiz, kuryer «Qabul qilish» kabi).
+  if (role === "manager" && BRANCH_RECEIVE_BRANCH_TYPES.has(branchType)) modes.push("branchReceive");
   if (canViewDispatch && COURIER_ASSIGN_ROLES.has(role)) modes.push("dispatch");
   if (canSendMail) modes.push("sendMail");
   if (canReceiveRefusedMail) modes.push("refusedMail");

@@ -216,6 +216,7 @@
       "dispatch": "Assign",
       "take": "Take myself",
       "courierReceive": "Receive",
+      "branchReceive": "Receive mail",
       "sendMail": "Send mail",
       "refusedMail": "Refused mail",
       "refusedMailShort": "Refused",
@@ -225,6 +226,7 @@
       "dispatchText": "A scanned order is added to the assignment basket — the basket is kept on this device. You pick the courier on the «Assign» page.",
       "takeText": "Every scanned order is assigned to you at once. The camera stays open — scan the next parcel.",
       "courierReceiveText": "Scan your order on the road — it is received at once. Scanning a received order opens selling or cancelling.",
+      "branchReceiveText": "Scan an order from a mail sent to your branch — it is received at once. Scanning a received order opens selling or cancelling.",
       "sendMailText": "Choose a mail or read its QR code — the mail opens and the camera continues there. A scanned order is selected for sending.",
       "refusedMailText": "Choose a refused mail or read its QR code — the mail opens and the camera continues there. A scanned order is selected for receiving.",
       "handoverText": "Choose a market first — its cancelled orders open and the camera continues there. The market QR code is scanned first."
@@ -328,8 +330,23 @@
       "openWaiting": "{{ref}} is received — sell or cancel",
       "free": "This order is not yours — take it in «Take myself» mode",
       "notOnTheRoad": "The order is not on the road — it can't be received",
+      "notInPost": "The order is not in a mail — it can't be received",
       "notOrder": "This is not an order QR code — open it in «Info» mode",
       "failed": "{{ref}} was not received — scan again",
+      "manualSubmit": "Receive"
+    },
+    "branchReceive": {
+      "title": "Receive mail",
+      "context": "Orders sent to your branch are received at once",
+      "hint": "Read the order QR code — it is received at once",
+      "meter": "received",
+      "listTitle": "Scanned",
+      "emptyText": "Received orders appear here",
+      "notOurs": "This order is not coming to your branch — it can't be received",
+      "courierHeld": "The order is with courier {{name}} — the courier receives it",
+      "courierHeldUnknown": "The order is with a courier — the courier receives it",
+      "courierHeldWaiting": "The order is with courier {{name}} — already received, the courier sells or cancels it",
+      "courierHeldWaitingUnknown": "The order is with a courier — already received, the courier sells or cancels it",
       "manualSubmit": "Receive"
     }
   },

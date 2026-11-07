@@ -21,6 +21,8 @@ type OrderLike = {
   holderCourierId?: unknown;
   post_id?: unknown;
   postId?: unknown;
+  branch_id?: unknown;
+  branchId?: unknown;
 } | null | undefined;
 
 const idText = (value: unknown) => {
@@ -110,6 +112,44 @@ export const getCourierReceiveDecision = (
   if (RECEIVABLE_STATUSES.has(status)) return readOrderPostId(order) ? "receive" : "notReceivable";
   if (status === "waiting") return "open";
   if (status === "new" || status === "created" || status === "received") return "free";
+  return "notReceivable";
+};
+
+/**
+ * MENEJER SKAN-QABULI (2026-11-07, Dilshod: «scanerni faqat kuryerda emas, menejerda ham») — `/scan` «Pochtadan
+ * qabul» rejimi (REGIONAL / HYBRID filial menejeri). HQ → filial o'tkazma pochtasidagi (kuryersiz) yo'ldagi buyurtma
+ * skanerlansa — `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, faqat shu buyurtma «kutilmoqda»ga
+ * o'tadi (backend anKpzwxk: o'tkazma pochtasini faqat manzil filial menejeri qabul qiladi). Qaror (shu tartibda):
+ *   - `notReceivable` — sotuvdan / bekordan keyingi holat (kuryer id'si qolgan bo'lsa ham — «yo'lda emas»);
+ *   - `other` — buyurtma kuryerda (`courier_id` / `holder_courier_id`): yo'lda — uni kuryer o'zi qabul qiladi,
+ *     «kutilmoqda» — kuryer qabul qilgan (sotish / bekor kuryerda); boshqa holatda — `notReceivable`;
+ *   - `notReceivable` — yo'lda, lekin pochtasi yo'q (masalan filiallararo paketdagi posilka — pochta emas);
+ *   - `notOurs` — buyurtma boshqa filialniki (`branch_id` ma'lum va menejer filiali emas);
+ *   - `receive` — yo'lda yoki mijoz kutilmoqda va pochtasi bor → darhol qabul;
+ *   - `open` — «kutilmoqda» (qabul qilingan) → natija sahifasi (sotish / bekor);
+ *   - `notReceivable` — qolgan holatlar (yangi, qabul qilingan …).
+ * Menejer filiali noma'lum (profil hali kelmagan) — filial tekshirilmaydi, backend hal qiladi (begona filial — 403).
+ */
+export type BranchReceiveDecision = "receive" | "open" | "other" | "notOurs" | "notReceivable";
+
+export const getBranchReceiveDecision = (
+  order: OrderLike,
+  branchId: string | number | null | undefined,
+): BranchReceiveDecision => {
+  const status = normalizeReceiveStatus(order?.status);
+  if (FINAL_STATUSES.has(status)) return "notReceivable";
+  const receivable = RECEIVABLE_STATUSES.has(status);
+  const courierIds = [
+    idText(order?.courier_id ?? order?.courierId),
+    idText(order?.holder_courier_id ?? order?.holderCourierId),
+  ].filter(Boolean);
+  if (courierIds.length > 0) return receivable || status === "waiting" ? "other" : "notReceivable";
+  if (receivable && !readOrderPostId(order)) return "notReceivable";
+  const mine = idText(branchId);
+  const orderBranch = idText(order?.branch_id ?? order?.branchId);
+  if (mine && orderBranch && orderBranch !== mine) return "notOurs";
+  if (receivable) return "receive";
+  if (status === "waiting") return "open";
   return "notReceivable";
 };
 

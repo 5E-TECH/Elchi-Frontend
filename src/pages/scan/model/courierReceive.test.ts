@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getBranchReceiveDecision,
   getCourierReceiveDecision,
   getCourierScanAction,
   isCourierReceivableStatus,
@@ -107,5 +108,66 @@ describe("courierReceive — kuryer skan-qabuli qoidalari", () => {
     expect(readScanReceiveResult({ data: { not_received_order_ids: ["8"] } }, "9").ok).toBe(true);
     expect(readScanReceiveResult({ data: { not_received_order_ids: ["9"] } }, "9").ok).toBe(false);
     expect(readScanReceiveResult(undefined, "9").ok).toBe(true);
+  });
+});
+
+describe("getBranchReceiveDecision — menejer «Pochtadan qabul» (o'tkazma pochtasi)", () => {
+  const BRANCH = "3";
+  /** HQ → filial o'tkazma pochtasidagi buyurtma: kuryersiz, `branch_id` — manzil filial. */
+  const transfer = (patch: Record<string, unknown> = {}) => ({
+    status: "on the road",
+    courier_id: null,
+    holder_courier_id: null,
+    branch_id: BRANCH,
+    post_id: "48",
+    ...patch,
+  });
+
+  it("o'z filialiga kelgan yo'ldagi (yoki mijoz kutilmoqda) buyurtma — darhol qabul", () => {
+    expect(getBranchReceiveDecision(transfer(), BRANCH)).toBe("receive");
+    expect(getBranchReceiveDecision(transfer({ status: "ON_THE_ROAD" }), BRANCH)).toBe("receive");
+    expect(getBranchReceiveDecision(transfer({ status: "waiting_customer" }), BRANCH)).toBe("receive");
+    expect(getBranchReceiveDecision(transfer({ branch_id: 3 }), 3)).toBe("receive");
+  });
+
+  it("qabul qilingan («kutilmoqda») — natija sahifasi (sotish / bekor)", () => {
+    expect(getBranchReceiveDecision(transfer({ status: "waiting" }), BRANCH)).toBe("open");
+  });
+
+  it("kuryerdagi buyurtma (courier_id yoki holder_courier_id): yo'lda yoki «kutilmoqda» — kuryerniki", () => {
+    expect(getBranchReceiveDecision(transfer({ courier_id: "15" }), BRANCH)).toBe("other");
+    expect(getBranchReceiveDecision(transfer({ holder_courier_id: "15" }), BRANCH)).toBe("other");
+    expect(getBranchReceiveDecision(transfer({ courier_id: "15", status: "waiting" }), BRANCH)).toBe("other");
+    // '0' — tayinlanmagan pochta sentineli, kuryer emas.
+    expect(getBranchReceiveDecision(transfer({ courier_id: "0" }), BRANCH)).toBe("receive");
+  });
+
+  it("sotilgan / bekor qilingan (kuryer id'si qolgan bo'lsa ham) — «yo'lda emas», kuryerniki deyilmaydi", () => {
+    for (const status of ["sold", "partly_paid", "paid", "cancelled", "cancelled (sent)", "closed", "returned_to_market"]) {
+      expect(getBranchReceiveDecision(transfer({ courier_id: "15", status }), BRANCH)).toBe("notReceivable");
+    }
+    expect(getBranchReceiveDecision(transfer({ courier_id: "15", status: "new" }), BRANCH)).toBe("notReceivable");
+  });
+
+  it("filiallararo paketdagi posilka (pochtasiz, `branch_id` — jo'natgan filial) — «pochtada emas», begona deyilmaydi", () => {
+    expect(
+      getBranchReceiveDecision(transfer({ post_id: null, branch_id: "11", current_batch_id: "b-5" }), BRANCH),
+    ).toBe("notReceivable");
+  });
+
+  it("boshqa filialniki — qabul qilinmaydi; filial noma'lum bo'lsa backend hal qiladi", () => {
+    expect(getBranchReceiveDecision(transfer({ branch_id: "7" }), BRANCH)).toBe("notOurs");
+    expect(getBranchReceiveDecision(transfer({ branch_id: "7" }), "")).toBe("receive");
+    expect(getBranchReceiveDecision(transfer({ branch_id: "7" }), null)).toBe("receive");
+    expect(getBranchReceiveDecision(transfer({ branch_id: null }), BRANCH)).toBe("receive");
+  });
+
+  it("pochtasiz yoki boshqa holatda — qabul qilib bo'lmaydi", () => {
+    expect(getBranchReceiveDecision(transfer({ post_id: null }), BRANCH)).toBe("notReceivable");
+    expect(getBranchReceiveDecision(transfer({ post_id: "0" }), BRANCH)).toBe("notReceivable");
+    for (const status of ["new", "received", "sold", "cancelled", "paid", "closed", "returned_to_market"]) {
+      expect(getBranchReceiveDecision(transfer({ status }), BRANCH)).toBe("notReceivable");
+    }
+    expect(getBranchReceiveDecision(null, BRANCH)).toBe("notReceivable");
   });
 });

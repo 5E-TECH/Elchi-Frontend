@@ -44,12 +44,27 @@ describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
     window.localStorage.clear();
   });
 
-  it("menejer HYBRID: qabul (transfer), biriktirish va rad etilgan pochta", () => {
-    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "dispatch", "refusedMail"]);
+  it("menejer HYBRID: qabul (transfer), pochtadan qabul, biriktirish va rad etilgan pochta", () => {
+    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "branchReceive", "dispatch", "refusedMail"]);
   });
 
-  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), biriktirish va rad etilgan pochta bor", () => {
-    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "dispatch", "refusedMail"]);
+  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), pochtadan qabul, biriktirish va rad etilgan pochta bor", () => {
+    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "branchReceive", "dispatch", "refusedMail"]);
+  });
+
+  it("«Pochtadan qabul» — varaqsiz (skan = qabul), faqat REGIONAL / HYBRID menejerida (o'tkazma pochtasi boradigan filial)", () => {
+    expect(PICKER_SCAN_MODES.has("branchReceive")).toBe(false);
+    expect(modesOf("manager", "HQ")).not.toContain("branchReceive");
+    expect(modesOf("manager", "PICKUP")).not.toContain("branchReceive");
+    expect(modesOf("manager")).not.toContain("branchReceive");
+    for (const branchType of ["HQ", "REGIONAL", "HYBRID", "PICKUP"] as const) {
+      expect(modesOf("registrator", branchType)).not.toContain("branchReceive");
+      expect(modesOf("courier", branchType)).not.toContain("branchReceive");
+    }
+    expect(modesOf("superadmin")).not.toContain("branchReceive");
+    writeStoredScanMode("u-8", "branchReceive");
+    expect(readStoredScanMode("u-8")).toBe("branchReceive");
+    window.localStorage.clear();
   });
 
   it("menejer HQ: qabul va rad etilgan pochta, biriktirish yo'q (HQ menejerida `/dispatch` yo'q)", () => {
