@@ -1,5 +1,5 @@
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { memo, Suspense, type ReactNode } from "react";
+import { lazy, memo, Suspense, type ComponentType, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
 import { I18nextProvider } from "react-i18next";
@@ -16,11 +16,20 @@ import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import PasswordChangePrompt from "../providers/PasswordChangePrompt";
 import SettingsSync from "../providers/SettingsSync";
 import RealtimeSync from "../providers/RealtimeSync";
-import { PushSync } from "../../features/push-notifications";
-import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
+// Aniq fayldan (barrel emas): barrel sozlamalar sahifasidagi push tugmasi va oynasini boshlang'ich faylga tortardi.
+import PushSync from "../../features/push-notifications/ui/PushSync";
 import { emitQueryError, emitQueryRecovered } from "../../shared/lib/queryErrorEvents";
 import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 import { capInvalidateWait } from "../../shared/lib/invalidateWait";
+
+/**
+ * USB skan natijasi xabari — faqat skan bo'lganda kerak: alohida chunk (ovoz/tebranish moduli bilan), kirish sahifasining
+ * boshlang'ich faylida emas. Chunk yuklanmasa (uzilish) — xabar chiqmaydi, ilova xato sahifasiga tushmaydi.
+ */
+const ScanFeedbackOverlay = lazy(
+  (): Promise<{ default: ComponentType }> =>
+    import("../../shared/components/ScanFeedbackOverlay").catch(() => ({ default: () => null })),
+);
 
 /** Ilovaning `QueryClient` i (test uchun eksport — `createAppQueryClient()` bilan bir xil sozlama). */
 export const createAppQueryClient = () => {
@@ -89,7 +98,9 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
           <BrowserRouter>
             <QueryClientProvider client={queryClient}>
               <NotificationProvider>
-                <ScanFeedbackOverlay />
+                <Suspense fallback={null}>
+                  <ScanFeedbackOverlay />
+                </Suspense>
                 <UiHost />
                 <AuthBootstrap>
                   <SettingsSync />

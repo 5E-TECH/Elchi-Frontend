@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { LogIn, RefreshCw, ServerCrash, WifiOff } from "lucide-react";
 import LogoWhite from "../shared/assets/brand/elchi-logo-white.png";
-import { Button } from "../shared/ui/primitives";
+import { Button } from "../shared/ui/primitives/Button";
 import type { SessionRestoreState } from "../entities/user/model/types";
 import { abandonSessionRestore, retrySessionRestoreNow } from "./authService";
 

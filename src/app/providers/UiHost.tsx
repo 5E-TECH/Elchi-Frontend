@@ -1,4 +1,6 @@
-import { ConfirmHost, Toaster } from "../../shared/ui/primitives";
+// Aniq fayllardan (barrel emas): bu modul ilovaning boshlang'ich faylida — barrel u yerga barcha primitivlarni tortardi.
+import { ConfirmHost } from "../../shared/ui/primitives/ConfirmHost";
+import { Toaster } from "../../shared/ui/primitives/Toaster";
 
 /**
  * DIZAYN v2 GLOBAL QATLAMLARI — ilovada BIR MARTA (`app/lib/provider.tsx`).

@@ -1,7 +1,7 @@
 import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { isBrowserOffline, isChunkLoadError, reloadForNewVersion } from "../lib/chunkError";
 import { reportClientError } from "../lib/clientErrorReport";
-import { ErrorState } from "./primitives";
+import { ErrorState } from "./primitives/ErrorState";
 import {
   getCurrentAppPath,
   getRuntimeError,
