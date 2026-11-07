@@ -232,6 +232,23 @@ describe("TodaysMails", () => {
     expect(screen.getByText("Viloyat 99")).toBeInTheDocument();
   });
 
+  it("⭐ menejer: asosiy ro'yxat bor — zaxira `GET orders?status=on the road` yuborilmaydi; bo'sh — yuboriladi", async () => {
+    const get = vi.spyOn(api, "get").mockResolvedValue({ data: { data: [] } });
+    onTestFinished(() => get.mockRestore());
+    const fallbackCalls = () => get.mock.calls.filter(([url]) => url === "orders");
+
+    getNewMailsMock.mockReturnValue(loaded(MAILS));
+    const { unmount } = renderToday("page", "manager", managerState("HQ"));
+    await screen.findAllByText(/2486/);
+    expect(fallbackCalls()).toHaveLength(0);
+    unmount();
+
+    getNewMailsMock.mockReturnValue(loaded([]));
+    renderToday("page", "manager", managerState("HQ"));
+    await vi.waitFor(() => expect(fallbackCalls()).toHaveLength(1));
+    expect(fallbackCalls()[0][1]).toMatchObject({ params: { status: "on the road", limit: 100 } });
+  });
+
   it("HQ manager keeps the table: «ta pochta» summary, no courier column, phone card «Pochta №X»", () => {
     // Menejer zaxirasi `GET orders?status=on the road` — tarmoqqa chiqmasin; xatosi keyingi testga «Internet aloqasi
     // yo'q» xabarini (ikkinchi «Qayta urinish») tashlardi.

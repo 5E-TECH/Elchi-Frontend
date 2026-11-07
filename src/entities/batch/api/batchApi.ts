@@ -485,9 +485,10 @@ export const useSendTransferBatch = () => {
       api.patch(API_ENDPOINTS.BATCHES.SEND(batchId), {
         orderIds,
       }),
-    onSuccess: (_response, variables) => {
+    onSuccess: () => {
+      // `[BATCH_KEY]` paket tafsiloti va «qolganlar» ni ham qamraydi (prefiks): ularni alohida yangilash shu
+      // so'rovlarni bekor qilib qayta yuborardi — bitta amal = 2–3 ta bir xil GET.
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       // Jo'natilgan buyurtmalar holati va HQ «Filial paketlari» (filial kartasi, tab soni).
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -501,9 +502,10 @@ export const useReceiveTransferBatch = () => {
 
   return useMutation({
     mutationFn: async (batchId: string) => api.post(API_ENDPOINTS.BATCHES.RECEIVE(batchId)),
-    onSuccess: (_response, batchId) => {
+    onSuccess: () => {
+      // `[BATCH_KEY]` paket tafsiloti va «qolganlar» ni ham qamraydi (prefiks): ularni alohida yangilash shu
+      // so'rovlarni bekor qilib qayta yuborardi — bitta amal = 2–3 ta bir xil GET.
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
       // HQ «Filial paketlari»: filial kartasidagi paketlar soni va tab soni (skaner yo'li ham shuni yangilaydi).
@@ -526,10 +528,10 @@ export const useReceiveTransferBatchOrders = () => {
       api.post(API_ENDPOINTS.BATCHES.RECEIVE_ORDERS(batchId), {
         orderIds,
       }),
-    onSuccess: (_response, variables) => {
+    onSuccess: () => {
+      // `[BATCH_KEY]` paket tafsiloti va «qolganlar» ni ham qamraydi (prefiks): ularni alohida yangilash shu
+      // so'rovlarni bekor qilib qayta yuborardi — bitta amal = 2–3 ta bir xil GET.
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
-      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, "remaining", variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
       void queryClient.invalidateQueries({ queryKey: [...WITH_SENT_BATCHES_KEY] });

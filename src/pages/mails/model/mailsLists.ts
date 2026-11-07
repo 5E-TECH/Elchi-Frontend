@@ -245,7 +245,10 @@ export const useTodayMails = (): MailsListResult => {
   const courierQuery = useGetNewMailsCourier({ enabled: isCourier });
   const defaultQuery = useGetNewMails({ enabled: !isCourier });
   const main = isCourier ? courierQuery : defaultQuery;
+  const apiMails = useMemo(() => readMailItems(main.data), [main.data]);
 
+  // Zaxira faqat asosiy ro'yxat BO'SH kelganda kerak: ilgari menejerning har «Pochta» tashrifida (tab soni uchun
+  // ham) 100 ta to'liq buyurtma yuklanib, ro'yxat bo'sh bo'lmasa tashlab yuborilardi.
   const fallbackOrdersQuery = useQuery({
     queryKey: ["mails", "today-fallback-orders", role, branchId],
     queryFn: () =>
@@ -259,11 +262,10 @@ export const useTodayMails = (): MailsListResult => {
           },
         })
         .then((res) => res.data),
-    enabled: isManager,
+    enabled: isManager && main.data !== undefined && apiMails.length === 0,
     staleTime: 10_000,
   });
 
-  const apiMails = useMemo(() => readMailItems(main.data), [main.data]);
   const fallbackMails = useMemo(
     () => buildFallbackMailsFromOrders(extractOrderItems(fallbackOrdersQuery.data)),
     [fallbackOrdersQuery.data],
