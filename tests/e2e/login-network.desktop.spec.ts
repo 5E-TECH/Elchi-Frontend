@@ -27,11 +27,12 @@ test.describe("/login — tarmoq uzilishlari (1440px)", () => {
     expect(calls.login).toBe(2);
   });
 
-  test("server javob bermadi (15 s) → «Server javob bermadi», qayta urinilmaydi", async ({ page }) => {
+  // Sekin internet (2026-11-07, 5023c4c4): kirish so'rovi 45 s kutadi (`LOGIN_TIMEOUT_MS`), ilgari 15 s edi.
+  test("server javob bermadi (45 s) → «Server javob bermadi», qayta urinilmaydi", async ({ page }) => {
     await setTheme(page, "light");
     const { calls } = await mockAuthNetwork(page, { login: ["hang"] });
     await submitLogin(page);
-    await expect(loginAlert(page)).toContainText("Server javob bermadi", { timeout: 30_000 });
+    await expect(loginAlert(page)).toContainText("Server javob bermadi", { timeout: 60_000 });
     expect(calls.login).toBe(1);
   });
 

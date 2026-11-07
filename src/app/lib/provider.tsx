@@ -11,6 +11,7 @@ import { UiHost } from "../providers/UiHost";
 import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
+import SessionRestoreScreen from "../../auth/SessionRestoreScreen";
 import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import PasswordChangePrompt from "../providers/PasswordChangePrompt";
 import SettingsSync from "../providers/SettingsSync";
@@ -19,6 +20,7 @@ import { PushSync } from "../../features/push-notifications";
 import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
 import { emitQueryError, emitQueryRecovered } from "../../shared/lib/queryErrorEvents";
 import { shouldRetryQuery } from "../../shared/lib/queryRetry";
+import { capInvalidateWait } from "../../shared/lib/invalidateWait";
 
 /** Ilovaning `QueryClient` i (test uchun eksport — `createAppQueryClient()` bilan bir xil sozlama). */
 export const createAppQueryClient = () => {
@@ -31,7 +33,8 @@ export const createAppQueryClient = () => {
   queryCache.subscribe((event) => {
     if (event.type === "removed") emitQueryRecovered(event.query.queryHash);
   });
-  return new QueryClient({
+  // Amaldan keyingi yangilash kutilishi ≤ 20 s (sekin internet, 2026-11-07): `shared/lib/invalidateWait.ts`.
+  const client = new QueryClient({
     queryCache,
     defaultOptions: {
       // G6F68ti6 (2-band): oflaynda amal (sotish, to'lov …) pauzaga tushib tugma to'xtamay aylanmasin va aloqa
@@ -43,22 +46,30 @@ export const createAppQueryClient = () => {
         gcTime: 10 * 60 * 1000,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        // Vaqt chegarasi (20 s) va 4xx (408, 429 dan tashqari) qayta urinilmaydi; tarmoq xatosi va 5xx — 1 marta
+        // Vaqt chegarasi (GET ni adapter o'zi 1 marta qayta so'raydi — `shared/api/readRetry.ts`) va 4xx (408, 429 dan
+        // tashqari) bu yerda qayta urinilmaydi; tarmoq xatosi va 5xx — 1 marta
         // (D-08: har 400/404 ikki marta so'ralardi). Qoida va testlari — `shared/lib/queryRetry.ts`.
         retry: shouldRetryQuery,
       },
     },
   });
+  return capInvalidateWait(client);
 };
 
 const queryClient = createAppQueryClient();
 
-const GlobalLoader = ({ children }: { children: ReactNode }) => {
+/**
+ * Ilova ochilayotganda — yuklanish ekrani; sessiyani tiklash sekin yoki vaqtincha yiqilgan bo'lsa — «Internet sekin —
+ * qayta urinilmoqda» ekrani (`auth/SessionRestoreScreen`, sekin internet 2026-11-07). Test uchun eksport.
+ */
+export const GlobalLoader = ({ children }: { children: ReactNode }) => {
   const isAppInitializing = useSelector((state: RootState) => state.user.isAppInitializing);
+  const sessionRestore = useSelector((state: RootState) => state.user.sessionRestore ?? null);
 
   return (
     <>
-      {isAppInitializing && <PageLoader />}
+      {isAppInitializing &&
+        (sessionRestore ? <SessionRestoreScreen state={sessionRestore} /> : <PageLoader />)}
       <div className={isAppInitializing ? "invisible opacity-0" : "visible opacity-100"}>
         {children}
       </div>

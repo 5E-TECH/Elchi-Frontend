@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
  *   150 ms dan yuqori chiziq (bo'limlar orasida — shell'dagi `RouteProgress`)
  *   400 ms dan skelet, sahifa shaklida (`SKELETON_DELAY_MS`)
  *   15 s dan   skelet ostida «Kutish uzoq davom etmoqda…» (`SLOW_LOADING_MS`)
- *   20 s       so'rov to'xtatiladi → xato holati va «Qayta urinish» (axios `API_TIMEOUT_MS`)
+ *   60 s       o'qish so'rovi (GET) jim 1 marta qayta so'raladi (2 s dan keyin, `shared/api/readRetry.ts`); ~2 daqiqada
+ *              xato holati va «Qayta urinish». Amallar (POST/PATCH …) — 20 s (`API_TIMEOUT_MS`), qayta urinilmaydi
  *
  * Fon yangilanishi («Yangilanmoqda…» belgisi) ham 400 ms dan qisqa so'rovda chiqmaydi (taxta 11-naqsh).
  */

@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { UserState, User } from "./types";
+import type { SessionRestoreState, UserState, User } from "./types";
 
 const initialAccessToken =
   typeof window !== "undefined"
@@ -16,6 +16,7 @@ const initialState: UserState = {
   loading: false,
   isAppInitializing: Boolean(initialAccessToken) || !startsOnLoginPage,
   error: null,
+  sessionRestore: null,
 };
 
 export const userSlice = createSlice({
@@ -31,6 +32,7 @@ export const userSlice = createSlice({
       state.user = action.payload.user ?? state.user;
       state.isAuthenticated = true;
       state.error = null;
+      state.sessionRestore = null;
     },
     setAccessToken: (state, action: PayloadAction<string | null>) => {
       state.accessToken = action.payload;
@@ -42,6 +44,10 @@ export const userSlice = createSlice({
     },
     setAppInitializing: (state, action: PayloadAction<boolean>) => {
       state.isAppInitializing = action.payload;
+    },
+    /** «Internet sekin — qayta urinilmoqda» ekrani holati (`auth/authService.ts` — sessiyani tiklash). */
+    setSessionRestore: (state, action: PayloadAction<SessionRestoreState | null>) => {
+      state.sessionRestore = action.payload;
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.loading = false;
@@ -57,7 +63,7 @@ export const userSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
-
+      state.sessionRestore = null;
     },
   },
 });
@@ -67,6 +73,7 @@ export const {
   setAccessToken,
   setLoading,
   setAppInitializing,
+  setSessionRestore,
   setError,
   setProfile,
   logout,

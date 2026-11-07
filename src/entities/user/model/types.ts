@@ -35,6 +35,17 @@ export interface User {
     can_order_from_warehouse?: boolean;
 }
 
+/**
+ * Yangi tab / PWA ochilishida cookie bilan sessiyani tiklash sekin yoki vaqtincha yiqildi (sekin internet,
+ * 2026-11-07) — yuklanish ekrani o'rniga «Internet sekin — qayta urinilmoqda» ekrani (`auth/SessionRestoreScreen`).
+ */
+export type SessionRestoreState = {
+    /** `slow` — 1-urinish 15 s dan oshdi (so'rov davom etadi); `waiting` — yiqildi, keyingisi kutilmoqda; `retrying` — qayta urinish ketmoqda. */
+    phase: "slow" | "waiting" | "retrying";
+    /** `network` — javob kelmadi / vaqt tugadi; `server` — 429 / 5xx. */
+    reason: "network" | "server";
+};
+
 export interface UserState {
     user: User | null;
     isAuthenticated: boolean;
@@ -42,6 +53,8 @@ export interface UserState {
     loading: boolean;
     isAppInitializing: boolean;
     error: string | null;
+    /** Ixtiyoriy — mavjud test fixture'lari (`UserState` literal) o'zgarmasin. */
+    sessionRestore?: SessionRestoreState | null;
 }
 
 export interface IdentityUser {

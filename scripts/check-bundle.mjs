@@ -110,6 +110,19 @@ else if (!/^\/assets\/\*\n\s+Cache-Control: public, max-age=31536000, immutable$
   fail("dist/_headers: `/assets/*` uchun `Cache-Control: public, max-age=31536000, immutable` yo'q — har yuklashda 304.");
 } else console.log("Kesh: dist/_headers — /assets/* 1 yil, immutable.");
 
+// Shrift (Manrope o'zimizdan — sekin tarmoq): Google Fonts yo'q; lotin bo'lagi preload qilingan va @font-face dagi
+// URL bilan bir xil (aks holda ikki marta yuklanadi); 4 bo'lak alohida xeshli fayl, CSS ichiga base64 bo'lib kirmagan.
+const allCss = cssFiles.map((file) => readFileSync(join(DIST, "assets", file), "utf8")).join("\n");
+const fontFiles = [...new Set([...allCss.matchAll(/url\(\/(assets\/Manrope-wght-[\w-]+\.woff2)\)/g)].map((m) => m[1]))];
+const fontPreload = /<link rel="preload" as="font" type="font\/woff2" href="\/(assets\/Manrope-wght-latin-[\w-]{8}\.woff2)" crossorigin/.exec(html)?.[1];
+if (/fonts\.(googleapis|gstatic)\.com/.test(html + allCss)) fail("Google Fonts qaytgan — Manrope o'zimizdan (src/index.css @font-face).");
+if (/data:(font|application)\/(x-)?(font-)?woff2/.test(allCss)) fail("woff2 CSS ichiga base64 bo'lib kirgan — vite.config.ts → assetsInlineLimit.");
+if (fontFiles.length !== 4 || fontFiles.some((file) => !existsSync(join(DIST, file)))) {
+  fail(`Manrope @font-face: 4 ta mavjud woff2 kutilgan, topildi: ${fontFiles.join(", ") || "yo'q"}`);
+}
+if (!fontPreload || !fontFiles.includes(fontPreload)) fail("dist/index.html: Manrope lotin preload'i yo'q yoki @font-face URL'iga mos emas.");
+else console.log(`Shrift: Manrope ${fontFiles.length} bo'lak o'zimizdan, preload ${fontPreload}.`);
+
 const unexpected = rows.map((row) => row.name).filter((name) => !EXPECTED_ENTRY_CHUNKS.includes(name));
 if (unexpected.length) console.warn(`::warning::index.html ga yangi eager chunk qo'shildi: ${unexpected.join(", ")} — kerakmi, tekshiring.`);
 

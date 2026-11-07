@@ -148,8 +148,6 @@ const runScene = async (page: Page, theme: Theme, scene: Scene, testInfo: TestIn
     await waitForReady(page, ready);
   }
   await assertManropeLoaded(page);
-  // Suratdan OLDIN: lotin 600 dan boshqa bo'lak (cyrillic «№», latin-ext) olinmagan bo'lsa ham snapshot olinmaydi.
-  expect(network.fontErrors, `Vizual «${scene.id}»: Google Fonts bo'laklari olinmadi (zaxira shrift bilan chizilgan)`).toEqual([]);
 
   const finalPath = new URL(page.url()).pathname;
   expect(finalPath, `Vizual «${scene.id}»: sahifa boshqa yo'lga yo'naltirildi (guard / rol / sessiya)`).toBe(
@@ -204,7 +202,6 @@ const runScene = async (page: Page, theme: Theme, scene: Scene, testInfo: TestIn
       unmocked: [...new Set(network.unmocked)],
       writes: network.writes,
       blocked: network.blocked,
-      fontErrors: network.fontErrors,
       consoleErrors: errors,
     };
     writeFileSync(join(out, `${scene.id}.json`), `${JSON.stringify(report, null, 2)}\n`);
@@ -223,10 +220,8 @@ const runScene = async (page: Page, theme: Theme, scene: Scene, testInfo: TestIn
   for (const entry of new Set(network.unmocked)) testInfo.annotations.push({ type: "unmocked", description: entry });
   const allowed = scene.allowConsole ?? [];
   const unexpected = errors.filter((text) => !allowed.some(({ pattern }) => pattern.test(text)));
-  expect(network.blocked, `Vizual «${scene.id}»: ruxsatsiz tarmoq so'rovlari (faqat ilova, soxta API, Google Fonts)`).toEqual([]);
+  expect(network.blocked, `Vizual «${scene.id}»: ruxsatsiz tarmoq so'rovlari (faqat ilova va soxta API)`).toEqual([]);
   expect(network.writes, `Vizual «${scene.id}»: jadvalda yo'q yozish so'rovlari (sahna faqat o'qiydi)`).toEqual([]);
-  // Qayta: sahifa cho'zilgach yangi bo'lak so'ralgan bo'lishi mumkin.
-  expect(network.fontErrors, `Vizual «${scene.id}»: Google Fonts bo'laklari olinmadi (zaxira shrift bilan chizilgan)`).toEqual([]);
   expect(unexpected, `Vizual «${scene.id}»: konsol xatolari`).toEqual([]);
 
   if (action === "neutral") {

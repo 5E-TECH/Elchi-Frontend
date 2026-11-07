@@ -2,7 +2,7 @@
  * SO'ROV XATOSI TURI — dizayn v2 xato holatlari uchun (`ErrorState`, taxta `tizim-errors` 02).
  *
  *   server    — 5xx;
- *   timeout   — vaqt chegarasi (axios `ECONNABORTED` / `ETIMEDOUT`, 20 s; «Request aborted» emas);
+ *   timeout   — vaqt chegarasi (axios `ECONNABORTED` / `ETIMEDOUT`: o'qish 60 s × 2, amal 20 s; «Request aborted» emas);
  *   offline   — brauzer oflayn yoki javob umuman kelmadi (tarmoq xatosi);
  *   forbidden — 403 (xato emas: kulrang, «Qayta urinish» yo'q);
  *   section   — bitta bo'lim/tab ishdan chiqdi (faqat qo'lda beriladi);

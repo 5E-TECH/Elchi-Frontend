@@ -89,13 +89,15 @@ describe("public/_headers — xavfsizlik sarlavhalari (KwodkKWY)", () => {
     expect(reportOnly.get("base-uri")).toEqual(["'self'"]);
   });
 
-  it("Report-Only CSP: API (https + wss — socket.io /realtime), Google Fonts, blob worker (qr-scanner)", () => {
+  it("Report-Only CSP: API (https + wss — socket.io /realtime), shrift faqat o'zimizdan, blob worker (qr-scanner)", () => {
     expect(apiHost).toBe("api.elchipochta.uz");
     expect(reportOnly.get("connect-src")).toEqual(
       expect.arrayContaining(["'self'", `https://${apiHost}`, `wss://${apiHost}`]),
     );
-    expect(reportOnly.get("style-src")).toEqual(["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]);
-    expect(reportOnly.get("font-src")).toEqual(expect.arrayContaining(["https://fonts.gstatic.com"]));
+    // Manrope o'zimizdan (`src/index.css` @font-face) — Google Fonts xostlari siyosatda yo'q (sekin tarmoq).
+    expect(reportOnly.get("style-src")).toEqual(["'self'", "'unsafe-inline'"]);
+    expect(reportOnly.get("font-src")).toEqual(["'self'", "data:"]);
+    expect(headersFile).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
     expect(reportOnly.get("img-src")).toEqual(expect.arrayContaining(["'self'", "data:", "blob:", `https://${apiHost}`]));
     expect(reportOnly.get("worker-src")).toEqual(["'self'", "blob:"]);
     expect(reportOnly.get("manifest-src")).toEqual(["'self'"]);
@@ -121,11 +123,13 @@ describe("public/_headers — xavfsizlik sarlavhalari (KwodkKWY)", () => {
 });
 
 describe("scripts/csp-headers.mjs — ichki skript xeshlari", () => {
-  it("index.html: ichki skriptlar (qidiruvdan «/» → `/login`, mavzu) xeshlanadi, JSON-LD va src li skriptlar e'tiborsiz", () => {
+  it("index.html: ichki skriptlar (qidiruvdan «/» → `/login`, mavzu, zaxira bloklar) xeshlanadi, JSON-LD va src li skriptlar e'tiborsiz", () => {
     const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
-    expect(scripts).toHaveLength(2);
+    expect(scripts).toHaveLength(4);
     expect(scripts[0]).toContain("elchi_root_restore");
     expect(scripts[1]).toContain("theme-version");
+    expect(scripts[2]).toContain("elchiModernJs = null ?? true");
+    expect(scripts[3]).toContain("elchi-boot-failed");
     const expected = scripts.map((text) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`);
     expect(inlineScriptHashes(html)).toEqual(expected);
   });
@@ -138,6 +142,11 @@ describe("scripts/csp-headers.mjs — ichki skript xeshlari", () => {
     expect(filled).toContain(`script-src 'self' ${hashes.join(" ")} https://telegram.org;`);
     expect(() => fillInlineScriptHashes(filled, hashes)).toThrow(/topilmadi/);
     expect(() => fillInlineScriptHashes(headersFile, [])).toThrow(/xesh/);
+  });
+
+  it("HTML izohidagi `<script …>` matni xeshlanmaydi va keyingi haqiqiy skriptni yutib yubormaydi", () => {
+    const sha = (text: string) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`;
+    expect(inlineScriptHashes(`<!-- ilova moduli <script type="module"> --><script>a()</script>`)).toEqual([sha("a()")]);
   });
 });
 

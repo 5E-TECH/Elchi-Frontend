@@ -15,10 +15,13 @@ export const INLINE_SCRIPT_HASHES_PLACEHOLDER = "{{INLINE_SCRIPT_HASHES}}";
 /** Bajarilmaydigan (ma'lumot) bloklari — CSP ularga taalluqli emas. */
 const DATA_BLOCK_TYPE = /\btype\s*=\s*["']?application\/(ld\+)?json/i;
 
+/** HTML izohlari — brauzer uchun skript emas; ichidagi `<script …>` matni keyingi haqiqiy skript xeshini buzardi. */
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+
 /** `<script>…</script>` (src siz, bajariladigan) matnlarining `'sha256-…'` manbalari, takrorsiz, tartibi bilan. */
 export const inlineScriptHashes = (html) => {
   const hashes = [];
-  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+  for (const match of html.replace(HTML_COMMENT, "").matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const [, attrs, body] = match;
     if (/\bsrc\s*=/i.test(attrs) || DATA_BLOCK_TYPE.test(attrs)) continue;
     const hash = `'sha256-${createHash("sha256").update(body, "utf8").digest("base64")}'`;

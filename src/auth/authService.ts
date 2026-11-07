@@ -5,7 +5,14 @@ import { queryKeys } from "../shared/config/queryKeys";
 import { setId, setName, setRegion, setRole, removeRole } from "../shared/model/roleSlice";
 import { BASE_URL } from "../shared/const";
 import { API_ENDPOINTS } from "../shared/api";
-import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, setError } from "../entities/user/model/slice";
+import {
+  loginSuccess,
+  logout as logoutAction,
+  setAppInitializing,
+  setProfile,
+  setError,
+  setSessionRestore,
+} from "../entities/user/model/slice";
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
@@ -33,6 +40,7 @@ import { clearPasswordChangeFlag, syncPasswordChangeFlag, syncPasswordChangeFrom
 import {
   bumpLoginEpoch,
   getLoginEpoch,
+  isRefreshSuperseded,
   loginHappenedSince,
   markLogins,
   noteLoginAttempt,
@@ -317,6 +325,106 @@ const keepSessionWhileOffline = (error: unknown) => {
   }, AUTH_REINIT_DELAY_MS);
 };
 
+/*
+ * SESSIYANI TIKLASH — SEKIN INTERNET (2026-11-07). Yangi tab / PWA ochilishida token yo'q (sessionStorage — tabga
+ * xos), sessiya refresh cookie bilan tiklanadi. Sovuq ulanishda (DNS + TLS + CORS preflight) EDGE / 3G da birgina
+ * shu ~15 s — ilgari 15 s vaqt chegarasi bilan so'rov yiqilar, foydalanuvchi jim kirish sahifasiga tushar, «/»
+ * belgisi, til va mavzu sozlamalari ham o'chirilardi. Endi (BeePost kabi taslim bo'lmaydi):
+ *   - urinish 45 s kutadi; 15 s dan oshsa yuklanish ekrani «Internet sekin — qayta urinilmoqda» ekraniga almashadi
+ *     (so'rov bekor qilinmaydi);
+ *   - tarmoq xatosi / vaqt tugashi — 2 s, 5 s, 10 s, so'ng har 10 s qayta (`online` bo'lsa darhol); 429 / 5xx —
+ *     `AUTH_REINIT_DELAY_MS` (30 s). Har tashqi urinish — BITTA `POST auth/refresh` (gateway cheklovi 60/daq/IP;
+ *     refresh token aylantirilmaydi — takrorlash xavfsiz);
+ *   - hech narsa o'chirilmaydi (cookie holati noma'lum); faqat 401/403 / buzilgan javob — jim, kirish sahifasi;
+ *   - ekranda «Qayta urinish» (kutish paytida darhol) va «Kirish sahifasiga o'tish» (qayta urinishlar to'xtaydi).
+ */
+/** Tiklash so'rovi vaqti — kirish (`LOGIN_TIMEOUT_MS`) bilan bir xil. */
+export const RESTORE_REFRESH_TIMEOUT_MS = 45_000;
+/** 1-urinish shundan uzoq cho'zilsa — «Internet sekin» ekrani (so'rov davom etadi). */
+export const RESTORE_SLOW_HINT_MS = 15_000;
+/** Tarmoq xatosidan keyingi kutish; oxirgisi cheksiz takrorlanadi. 429 / 5xx — `AUTH_REINIT_DELAY_MS`. */
+export const RESTORE_RETRY_DELAYS_MS = [2_000, 5_000, 10_000];
+const RESTORE_RETRY_JITTER_MS = 500;
+
+let restoreFailures = 0;
+/** «Kirish sahifasiga o'tish», kirish, chiqish — +1: ketayotgan urinish natijasi endi ekran va taymer qo'ymaydi. */
+let restoreGeneration = 0;
+let restoreTimer: ReturnType<typeof setTimeout> | null = null;
+let restoreSlowTimer: ReturnType<typeof setTimeout> | null = null;
+let restoreWake: (() => void) | null = null;
+
+const clearRestoreTimers = () => {
+  if (restoreTimer) clearTimeout(restoreTimer);
+  if (restoreSlowTimer) clearTimeout(restoreSlowTimer);
+  restoreTimer = null;
+  restoreSlowTimer = null;
+  if (restoreWake && typeof window !== "undefined")
+    window.removeEventListener("online", restoreWake);
+  restoreWake = null;
+};
+
+const stopSessionRestore = (abandon = false) => {
+  if (abandon) restoreGeneration += 1;
+  clearRestoreTimers();
+  restoreFailures = 0;
+  if (store.getState().user.sessionRestore) store.dispatch(setSessionRestore(null));
+};
+
+const beginRestoreAttempt = (generation: number) => {
+  const current = store.getState().user.sessionRestore;
+  if (current) {
+    store.dispatch(setSessionRestore({ ...current, phase: "retrying" }));
+    return;
+  }
+  restoreSlowTimer = setTimeout(() => {
+    restoreSlowTimer = null;
+    if (generation === restoreGeneration)
+      store.dispatch(setSessionRestore({ phase: "slow", reason: "network" }));
+  }, RESTORE_SLOW_HINT_MS);
+};
+
+const scheduleSessionRestore = (error: unknown) => {
+  const reason = isNetworkFailure(error) ? "network" : "server";
+  const delay =
+    reason === "network"
+      ? RESTORE_RETRY_DELAYS_MS[Math.min(restoreFailures, RESTORE_RETRY_DELAYS_MS.length - 1)]
+      : AUTH_REINIT_DELAY_MS;
+  restoreFailures += 1;
+  store.dispatch(setSessionRestore({ phase: "waiting", reason }));
+  const generation = restoreGeneration;
+  const wake = () => {
+    clearRestoreTimers();
+    // Rejalagan ishga tushish hali tugamagan bo'lishi mumkin (`finally` tarjimalarni kutmoqda) — `initAuth` o'sha
+    // va'dani qaytarardi va qayta urinish zanjiri uzilib, ekran abadiy «kutish» da qolardi: avval u tugaydi.
+    // Shu kutish orasida «Kirish sahifasiga o'tish» / kirish / chiqish bo'lsa — navbatdagi urinish bekor: aks holda
+    // `/login` da ishga tushib, tiklash muvaffaqiyatsiz bo'lsa til, mavzu va sessiya belgisini o'chirardi.
+    void (initPromise ?? Promise.resolve()).then(() => {
+      if (generation === restoreGeneration) void initAuth();
+    });
+  };
+  restoreWake = wake;
+  window.addEventListener("online", wake);
+  restoreTimer = setTimeout(wake, delay + Math.floor(Math.random() * RESTORE_RETRY_JITTER_MS));
+};
+
+/** «Qayta urinish»: kutish paytida — darhol; urinish ketayotgan bo'lsa — hech narsa. */
+export const retrySessionRestoreNow = () => {
+  restoreWake?.();
+};
+
+/**
+ * «Kirish sahifasiga o'tish»: qayta urinishlar to'xtaydi, kirish formasi ochiladi. Ketayotgan so'rov baribir
+ * muvaffaqiyatli kelsa — sessiya jim tiklanadi (`/login` → «/», «/» dan kelgan fon tiklash kabi); shu orada kirish
+ * boshlangan bo'lsa — kirish ustun (`abandonIf`).
+ */
+export const abandonSessionRestore = () => {
+  stopSessionRestore(true);
+  store.dispatch(setAppInitializing(false));
+};
+
+/** Testlar uchun: taymerlar, `online` tinglovchisi va hisoblagich — boshlang'ich holatga. */
+export const resetSessionRestoreForTests = () => stopSessionRestore(true);
+
 /**
  * POST /auth/refresh qayta urinishlari (fix3 RBAC-11 / C10): 429 yoki 5xx
  * kelsa 1 s, 3 s, 7 s (+ tasodifiy 0–0.5 s) kutib, KO'PI BILAN 3 marta qayta
@@ -340,15 +448,29 @@ const isRetryableRefreshError = (error: unknown) => {
   return status === 429 || status >= 500;
 };
 
-const postRefreshWithRetry = async () => {
+type RefreshRequestOptions = {
+  /** So'rov vaqti (sukut — `AUTH_TIMEOUT_MS`); faqat berilganda yuboriladi. */
+  timeout?: number;
+  /** 429 / 5xx dagi ichki qayta urinishlar (sukut — `REFRESH_RETRY_DELAYS_MS`). */
+  retryDelays?: readonly number[];
+};
+
+const postRefreshWithRetry = async ({
+  timeout,
+  retryDelays = REFRESH_RETRY_DELAYS_MS,
+}: RefreshRequestOptions = {}) => {
   for (let attempt = 0; ; attempt += 1) {
     try {
       // `X-Device-Id` / `X-Device-Name` — sessiya qurilmasi (deploy'dan oldingi sessiya birinchi refresh'da shu
       // bilan yoziladi; nom o'zgarsa — yangilanadi).
-      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {}, { headers: deviceHeaders() });
+      return await authClient.post<RefreshResponse>(
+        API_ENDPOINTS.AUTH.REFRESH,
+        {},
+        timeout ? { headers: deviceHeaders(), timeout } : { headers: deviceHeaders() },
+      );
     } catch (error) {
-      if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
-      await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
+      if (!isRetryableRefreshError(error) || attempt >= retryDelays.length) throw error;
+      await wait(retryDelays[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
     }
   }
 };
@@ -356,12 +478,15 @@ const postRefreshWithRetry = async () => {
 /**
  * `beforeSignedIn` — sessiya tiklandi, `loginSuccess` dan (kirgan holat) BIR LAHZA OLDIN: fon tiklashda yuklanish
  * holati shu yerda yoqiladi, aks holda kirish sahifasi tarjimalar kelmasdan «/» ga o'tib ketardi.
+ * `abandonIf` — javob kelganda `true` bo'lsa javob tashlanadi (masalan tiklash paytida kirish boshlandi).
  */
-export const refreshAccessToken = async (options: { beforeSignedIn?: () => void } = {}) => {
+export const refreshAccessToken = async (
+  options: RefreshRequestOptions & { beforeSignedIn?: () => void; abandonIf?: () => boolean } = {},
+) => {
   const epochAtStart = getLoginEpoch();
-  const response = await postRefreshWithRetry();
+  const response = await postRefreshWithRetry(options);
   // Javob kelguncha qayta kirildi — bu eski sessiya (eski cookie) tokeni: yangi sessiyaning ustiga yozilmaydi.
-  if (getLoginEpoch() !== epochAtStart) throw supersededRefreshError();
+  if (getLoginEpoch() !== epochAtStart || options.abandonIf?.()) throw supersededRefreshError();
   const nextAccessToken = response.data?.accessToken;
 
   if (!nextAccessToken) {
@@ -524,6 +649,7 @@ const fetchLoginProfile = async (accessToken: string) => {
 export const login = async (credentials: LoginCredentials) => {
   // Shu paytgacha boshlangan eski sessiya ishi (chiqish, bootstrap) endi yangi sessiyaga tegmaydi (`loginEpoch.ts`).
   noteLoginAttempt();
+  stopSessionRestore(true);
   // Kirishdan keyingi sahifalar tarjimasi — so'rov bilan parallel (to'g'ridan-to'g'ri `/login` da kechiktirilgan,
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
@@ -610,6 +736,7 @@ export const logout = async (): Promise<boolean> => {
   let superseded = false;
   logoutsInFlight += 1;
   markLogoutSkipRefresh();
+  stopSessionRestore(true);
   if (reinitTimer) {
     clearTimeout(reinitTimer);
     reinitTimer = null;
@@ -727,6 +854,7 @@ export const logoutRevokedSession = (reason: RevokedReason | null = null): Promi
 
   revokedLogout = (async () => {
     markLogoutSkipRefresh();
+    stopSessionRestore(true);
     if (reinitTimer) {
       clearTimeout(reinitTimer);
       reinitTimer = null;
@@ -777,12 +905,16 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
   };
 
   initPromise = (async () => {
+    // Kutilayotgan tiklash urinishi (taymer / `online`) — shu ishga tushish bilan almashadi, ikki marta ketmaydi.
+    clearRestoreTimers();
     // Bootstrap davomida foydalanuvchi /login da qayta kirsa (sekin internetda fon tiklash hali tugamagan) — bootstrap
     // yangi sessiyani tozalamaydi va kirish yuklash ekranini o'chirmaydi: holatni kirish o'zi boshqaradi.
     const logins = markLogins();
     const resetUnlessLoggedIn = () => {
       if (!loginHappenedSince(logins)) resetClientAuthState();
     };
+    /** Tiklash vaqtincha yiqildi va qayta urinish rejalandi — «Internet sekin» ekrani qoladi. */
+    let restorePending = false;
     // Sessiyali ochilish: tarjimalarning qolgan qismi ham chizishdan oldin (to'g'ridan-to'g'ri `/login` da ham —
     // undan `/` ga o'tiladi; `src/i18n.ts`, rzzxMItN). Yuklanmasa — chizishda qayta so'raladi.
     let appLocales: Promise<unknown> = Promise.resolve();
@@ -797,29 +929,50 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
 
       if (!accessToken) {
         // Yangi tab / telefon tashrifi (token sessionStorage'da — tabga xos): refresh cookie bilan sessiya
-        // tiklanadi, har tashrifda qayta kirish talab qilinmaydi (h0AM0kDL). Cookie yo'q/yaroqsiz yoki tarmoq
-        // yo'q — jim, kirish sahifasi (xato xabarisiz).
+        // tiklanadi, har tashrifda qayta kirish talab qilinmaydi (h0AM0kDL). Cookie yo'q/yaroqsiz (401/403) —
+        // jim, kirish sahifasi (xato xabarisiz). Tarmoq / vaqt / 429 / 5xx — hech narsa o'chirilmaydi, «Internet
+        // sekin — qayta urinilmoqda» ekrani va qayta urinish (yuqoridagi SESSIYANI TIKLASH).
         // «/» dan `/login` ga o'tkazilgan (`index.html`) — xuddi shu tiklash FONDA: yuklanish ekranisiz, forma
-        // ko'rinib turadi; tiklansa yuklanish ekrani va tarjimalar, so'ng kirish sahifasi «/» ga o'tkazadi.
+        // ko'rinib turadi; tiklansa yuklanish ekrani va tarjimalar, so'ng kirish sahifasi «/» ga o'tkazadi. Fonda
+        // yiqilsa — jim, qayta urinilmaydi (forma ochiq, foydalanuvchi o'zi kiradi).
         const silent = fromRoot && !shouldRestoreSessionFromCookie();
         if (!shouldRestoreSessionFromCookie() && !silent) {
           resetClientAuthState();
           return;
         }
+        const generation = restoreGeneration;
         if (!silent) {
           showLoader();
           appLocales = loadAppLocales().catch(() => undefined);
+          beginRestoreAttempt(generation);
         }
         try {
           accessToken = await refreshAccessToken({
-            beforeSignedIn: silent
-              ? () => {
-                  showLoader();
-                  appLocales = loadAppLocales().catch(() => undefined);
-                }
-              : undefined,
+            timeout: RESTORE_REFRESH_TIMEOUT_MS,
+            // Qayta urinishda ichki 429/5xx takrori yo'q — har tashqi urinish bitta POST (gateway cheklovi).
+            retryDelays: restoreFailures > 0 ? [] : REFRESH_RETRY_DELAYS_MS,
+            // Tiklash kutilayotganda kirish boshlandi — kirish ustun, kech kelgan tiklash javobi tashlanadi.
+            abandonIf: () => loginHappenedSince(logins),
+            // «Kirish sahifasiga o'tish» dan keyin ham kelishi mumkin — yuklanish ekrani qaytadi (fon tiklash kabi).
+            beforeSignedIn: () => {
+              clearRestoreTimers();
+              showLoader();
+              appLocales = loadAppLocales().catch(() => undefined);
+            },
           });
-        } catch {
+          stopSessionRestore();
+        } catch (error) {
+          clearRestoreTimers();
+          if (loginHappenedSince(logins) || isRefreshSuperseded(error)) return;
+          if (isTransientAuthFailure(error)) {
+            // Cookie holati noma'lum — `elchi_had_session`, til, mavzu saqlanadi.
+            if (!silent && generation === restoreGeneration) {
+              scheduleSessionRestore(error);
+              restorePending = true;
+            }
+            return;
+          }
+          stopSessionRestore();
           resetUnlessLoggedIn();
           return;
         }
@@ -857,7 +1010,7 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
       resetClientAuthState();
     } finally {
       await appLocales;
-      if (!loginHappenedSince(logins)) store.dispatch(setAppInitializing(false));
+      if (!loginHappenedSince(logins) && !restorePending) store.dispatch(setAppInitializing(false));
       initPromise = null;
     }
   })();

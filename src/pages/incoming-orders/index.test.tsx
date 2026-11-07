@@ -492,7 +492,7 @@ describe("IncomingOrdersPage — qop (batch) yorlig'i", () => {
     scan(BATCH);
 
     expect(await screen.findByText("Qop: 3 posilkadan 3 tasi belgilandi")).toBeInTheDocument();
-    expect(apiGetMock).toHaveBeenCalledWith(`scan/${BATCH}`);
+    expect(apiGetMock).toHaveBeenCalledWith(`scan/${BATCH}`, { failFast: true });
     expect(scannedRows()).toEqual(["1251161", "1251162", "1251163"]);
   });
 

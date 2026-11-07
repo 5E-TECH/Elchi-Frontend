@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { API_ORIGIN, installMockApi, reply, type ApiTable } from "./mockApi";
 
 /**
- * Vizual snapshotlar tarmoq to'sig'i: faqat ilova, soxta API va Google Fonts; yozish va boshqa xost — qayd
+ * Vizual snapshotlar tarmoq to'sig'i: faqat ilova va soxta API (Manrope — ilovaning o'zidan); yozish va boshqa xost — qayd
  * qilinadi (test yiqiladi). Haqiqiy brauzersiz: kontekst va route soxta.
  */
 const APP = "http://127.0.0.1:4178";
@@ -80,8 +80,15 @@ describe("vizual tarmoq to'sig'i (mockApi)", () => {
     const { log, send } = await setup();
     expect((await send(`${APP}/assets/index.js`)).continued).toBe(true);
     expect((await send("https://api.elchipochta.uz/orders")).aborted).toBe("blockedbyclient");
-    expect((await send("http://fonts.googleapis.com/css2?family=Manrope")).aborted).toBe("blockedbyclient");
-    expect(log.blocked).toEqual(["GET https://api.elchipochta.uz/orders", "GET http://fonts.googleapis.com/css2"]);
+    expect((await send(`${APP}/assets/Manrope-wght-latin-x.woff2`, { resourceType: "font" })).continued).toBe(true);
+    // Google Fonts endi tashqi xost: ilova uni so'ramaydi — so'rasa, to'xtatiladi va test yiqiladi.
+    expect((await send("https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap", { resourceType: "stylesheet" })).aborted).toBe("blockedbyclient");
+    expect((await send("https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2", { resourceType: "font" })).aborted).toBe("blockedbyclient");
+    expect(log.blocked).toEqual([
+      "GET https://api.elchipochta.uz/orders",
+      "GET https://fonts.googleapis.com/css2",
+      "GET https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2",
+    ]);
   });
 
   it("jadval: aniq kalit `:id` dan ustun, parametr va `reply(status)` ishlaydi; OPTIONS → 204", async () => {
@@ -95,7 +102,7 @@ describe("vizual tarmoq to'sig'i (mockApi)", () => {
     const missing = await send(`${API_ORIGIN}/orders/97`);
     expect(missing.fulfilled?.status).toBe(404);
     expect((await send(`${API_ORIGIN}/orders/96`, { method: "OPTIONS" })).fulfilled?.status).toBe(204);
-    expect(log).toEqual({ unmocked: [], writes: [], blocked: [], fontErrors: [] });
+    expect(log).toEqual({ unmocked: [], writes: [], blocked: [] });
   });
 
   it("⭐ jadvalda yo'q GET — bo'sh shakl + «unmocked»; jadvalda yo'q yozish — 403 va qayd", async () => {
@@ -129,36 +136,4 @@ describe("vizual tarmoq to'sig'i (mockApi)", () => {
   it("noto'g'ri jadval kaliti darhol xato beradi", async () => {
     await expect(setup({ "orders/96": {} })).rejects.toThrow(/mock kaliti noto'g'ri/);
   });
-
-  it("Google Fonts: tarmoq lip etsa qayta uradi, javob keshlanadi, siqilish sarlavhasi berilmaydi", async () => {
-    let calls = 0;
-    const { send } = await setup({}, async () => {
-      calls += 1;
-      if (calls === 1) throw new Error("net::ERR_INTERNET_DISCONNECTED");
-      return { status: 200, body: "@font-face{font-family:Manrope}" };
-    });
-    const url = "https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap";
-    const first = await send(url, { resourceType: "stylesheet" });
-    expect(first.fulfilled?.status).toBe(200);
-    expect(String(first.fulfilled?.body)).toContain("Manrope");
-    expect(first.fulfilled).toMatchObject({ headers: { "content-type": "text/css", "access-control-allow-origin": "*" } });
-    expect(JSON.stringify(first.fulfilled)).not.toContain("content-encoding");
-    const second = await send(url, { resourceType: "stylesheet" });
-    expect(second.fulfilled?.status).toBe(200);
-    expect(calls).toBe(2);
-  });
-
-  it("⭐ Google Fonts bo'lagi olinmasa (4 urinishdan keyin yoki 4xx) — `fontErrors` ga yoziladi (test yiqiladi)", async () => {
-    const down = await setup({}, async () => {
-      throw new Error("net::ERR_INTERNET_DISCONNECTED");
-    });
-    const subset = "https://fonts.gstatic.com/s/manrope/v20/cyrillic-subset.woff2";
-    expect((await down.send(subset, { resourceType: "font" })).aborted).toBe("internetdisconnected");
-    expect(down.log.fontErrors).toEqual(["fonts.gstatic.com/s/manrope/v20/cyrillic-subset.woff2"]);
-    expect(down.log.blocked).toEqual([]);
-
-    const gone = await setup({}, async () => ({ status: 404, body: "" }));
-    expect((await gone.send("https://fonts.gstatic.com/s/manrope/v20/missing.woff2", { resourceType: "font" })).fulfilled?.status).toBe(404);
-    expect(gone.log.fontErrors).toEqual(["fonts.gstatic.com/s/manrope/v20/missing.woff2"]);
-  }, 15_000);
 });

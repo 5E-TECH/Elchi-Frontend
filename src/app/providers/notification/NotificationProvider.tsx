@@ -72,8 +72,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     /**
      * TARMOQ HOLATI (G6F68ti6, 1/3/8-bandlar; taxta `tizim-feedback` §04, `tizim-errors` 03):
-     *  - javob kelmadi → «Internet aloqasi yo'q», vaqt tugadi (20 s, internet bor) → «Server javob bermadi» —
-     *    bitta `id`; bir xil sabab 4 s ichida qayta chiqmaydi, boshqa sabab o'sha xabarni yangilaydi;
+     *  - javob kelmadi → «Internet aloqasi yo'q», vaqt tugadi (internet bor; GET — oxirgi jim urinishdan keyin,
+     *    `shared/api/readRetry.ts`) → «Server javob bermadi» — bitta `id`; bir xil sabab 4 s ichida qayta
+     *    chiqmaydi, boshqa sabab o'sha xabarni yangilaydi;
      *  - aloqa holat: «Internet aloqasi yo'q» foydalanuvchi yopguncha emas, aloqa qaytguncha turadi («Qayta urinish»
      *    uni yopmaydi) va uzilishdan keyingi birinchi javobda o'zi yopiladi + «Aloqa tiklandi» (3 s);
      *  - «Server javob bermadi» fon javobidan yopilmaydi — yiqilgan amalning yagona xabari bo'lishi mumkin;

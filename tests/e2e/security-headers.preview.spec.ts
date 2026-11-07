@@ -7,7 +7,7 @@ import { expect, test, type BrowserContext, type Page, type Route } from "@playw
  *
  * `vite preview` Cloudflare `_headers` ni qo'llamaydi, shuning uchun sahifa javobiga `dist/_headers` dagi `/*` (va
  * mos yo'l) sarlavhalari shu yerda qo'yiladi. Report-Only siyosat MAJBURIY qilib beriladi: kuzatuv haftasidan keyin
- * majburiy rejimga o'tilganda ham ilova buzilmasligini (login, kamera skaneri, realtime, Google Fonts) hozirdan
+ * majburiy rejimga o'tilganda ham ilova buzilmasligini (login, kamera skaneri, realtime, o'zimizdagi Manrope) hozirdan
  * tekshiradi. Har qanday CSP buzilishi (`securitypolicyviolation`) testni yiqitadi.
  */
 
@@ -73,7 +73,7 @@ const prepare = async (context: BrowserContext, { loggedIn }: { loggedIn: boolea
       return route.fulfill({ response, headers: { ...response.headers(), ...headersFor(rules, url.pathname) } });
     }
     if (!/api\.elchipochta\.uz/.test(url.host)) {
-      // Google Fonts va boshqa tashqi manbalar — CSP ruxsat bergan (so'rov yuborilgan), lekin internetga chiqmaydi.
+      // Tashqi manbalar (telegram.org SDK …) — CSP ruxsat bergan (so'rov yuborilgan), lekin internetga chiqmaydi.
       blockedExternal.push(url.host);
       return route.abort();
     }
@@ -119,7 +119,7 @@ test.use({
 const violations = (page: Page) => page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
 
 test.describe("Xavfsizlik sarlavhalari — CSP majburiy rejimda ham ilova ishlaydi (KwodkKWY)", () => {
-  test("/login: mavzu + preload ichki skriptlari xesh bilan o'tadi, Google Fonts ruxsat, buzilish yo'q", async ({ page }) => {
+  test("/login: mavzu + preload ichki skriptlari xesh bilan o'tadi, Manrope o'zimizdan (tashqi so'rov yo'q), buzilish yo'q", async ({ page }) => {
     const { blockedExternal } = await prepare(page.context(), { loggedIn: false });
     const consoleLines: string[] = [];
     page.on("console", (message) => consoleLines.push(message.text()));
@@ -129,7 +129,10 @@ test.describe("Xavfsizlik sarlavhalari — CSP majburiy rejimda ham ilova ishlay
     await expect(page.getByRole("button", { name: "Kirish" })).toBeVisible({ timeout: 60_000 });
     // Mavzu skripti (ichki, xesh orqali) ishladi — <html> da mavzu klassi bor.
     await expect(page.locator("html")).toHaveClass(/\b(light|dark)\b/);
-    expect(blockedExternal).toContain("fonts.googleapis.com");
+    // Manrope o'zimizdan (font-src 'self'): Google Fonts'ga so'rov yo'q, shrift majburiy CSP ostida yuklanadi.
+    expect(blockedExternal).toEqual([]);
+    await expect.poll(() => page.evaluate(async () => (await document.fonts.load("600 16px Manrope")).length)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.fonts.check("600 16px Manrope"))).toBe(true);
     expect(await violations(page)).toEqual([]);
     // Brauzer tanimaydigan Permissions-Policy funksiyasi / CSP xatosi konsolda ogohlantirish bermasin.
     expect(consoleLines.filter((text) => /Permissions-Policy|Content Security Policy|Refused to/.test(text))).toEqual([]);

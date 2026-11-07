@@ -530,14 +530,24 @@ export const useCashBox = () => {
       meta: { silentError: true },
     });
 
-  // Smena holati qayta o'qilguncha kutiladi — tugma ("ochish" ↔ "yopish")
-  // muvaffaqiyat xabari bilan bir vaqtda almashadi.
+  // Tugma ("ochish" ↔ "yopish") muvaffaqiyat xabari bilan bir vaqtda almashadi: server qaytargan smena darhol
+  // keshga yoziladi, so'ng holat qayta o'qiladi. Sekin internetda qayta o'qish kutilishi 20 s bilan chegaralangan
+  // (`shared/lib/invalidateWait.ts`) — keshga yozmasdan xabar chiqib, kassa hali «smena yopiq» deb qulflangan
+  // qolardi va qayta «Smenani ochish» 400 berardi (sekin internet, 2026-11-07).
+  const setCurrentShift = (next: CashboxShift | null) =>
+    client.setQueryData<CurrentShiftResponse>([shift, "current"], (prev) =>
+      prev ? { ...prev, data: { ...prev.data, shift: next } } : prev,
+    );
+
   const openShift = useMutation({
     mutationFn: ({ comment }: OpenShiftRequest = {}) =>
       api
         .post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_OPEN, comment ? { comment } : {})
         .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [shift] }),
+    onSuccess: (response) => {
+      if (response?.data?.id) setCurrentShift(response.data);
+      return client.invalidateQueries({ queryKey: [shift] });
+    },
   });
 
   const closeShift = useMutation({
@@ -561,6 +571,7 @@ export const useCashBox = () => {
       return request.then((res) => res.data);
     },
     onSuccess: async () => {
+      setCurrentShift(null);
       void refreshCashbox();
       await client.invalidateQueries({ queryKey: [shift] });
     },
