@@ -521,6 +521,24 @@ describe("Kuryer buyurtmalari — bekor qilinganlarni pochtaga yuborish (v2)", (
     expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).not.toBeChecked();
   });
 
+  it("⭐ ro'yxatdagi tokenga to'g'ri kelmagan QR — server javobidagi buyurtma (`{ data: { id } }`) bo'yicha topiladi", async () => {
+    state.rows = cancelledRows();
+    const get = vi.spyOn(api, "get").mockImplementation((url: string) =>
+      url.includes("qr-code")
+        ? Promise.resolve({ data: { statusCode: 200, data: { id: "2001", customer: { name: "Malika Yusupova" } } } })
+        : Promise.reject(new Error(`kutilmagan so'rov: ${url}`)),
+    );
+    renderPage("/orders?status=cancelled");
+
+    act(() => {
+      void getActiveScanTarget()!.onScan("e1e1e1e1e1e1e1e1e1e1e1e1", "camera");
+    });
+
+    // Ilgari `unwrapScannedOrder` doim `{}` qaytarardi (bo'sh `resource` obyekti `??` dan o'tib ketardi) — «Topilmadi».
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).toBeChecked());
+    get.mockRestore();
+  });
+
   it("boshqa tabda kamera maqsadi yo'q (markaziy tugma universal skanerni ochadi)", () => {
     state.rows = [order("1001", "Laylo Hasanova")];
     renderPage("/orders?status=waiting");
@@ -640,6 +658,36 @@ describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)"
     const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
     await user.click(within(road).getByRole("button", { name: "№1001 ni qabul qilish" }));
     expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+  });
+
+  it("⭐ ikki qator tez ketma-ket — birinchisi javobini kutib turganda ikkinchisi bosiladi: ikkala xabar, aylanish to'xtaydi", async () => {
+    const user = userEvent.setup();
+    state.rows = [
+      order("1001", "Yo'ldagi mijoz", { status: "on_the_road", post_id: "p-7" }),
+      order("1004", "Ikkinchi yo'ldagi", { status: "on_the_road", post_id: "p-7" }),
+    ];
+    const body = (id: string) => ({
+      data: { received_order_ids: [id], already_received_order_ids: [], not_received_order_ids: [], failures: [] },
+    });
+    let finishFirst: (value: unknown) => void = () => {};
+    patchSpy
+      .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+      .mockResolvedValueOnce(body("1004") as never);
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
+    await user.click(screen.getByRole("button", { name: "№1004 ni qabul qilish" }));
+    await act(async () => {
+      finishFirst(body("1001"));
+    });
+
+    // Ilgari (`mutate(vars, { onSuccess, onSettled })`): ikkinchi bosish birinchisining callbacklarini uzardi —
+    // №1001 xabarsiz, uning tugmasi esa abadiy «kutilmoqda».
+    expect(await screen.findByText("№1001 qabul qilindi")).toBeInTheDocument();
+    expect(await screen.findByText("№1004 qabul qilindi")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "№1001 ni qabul qilish" })).not.toHaveAttribute("aria-busy"),
+    );
   });
 
   it("backend qabul qilmasa — «Buyurtma qabul qilinmadi» va sababi", async () => {

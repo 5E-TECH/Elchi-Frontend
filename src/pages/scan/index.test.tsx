@@ -877,6 +877,30 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
     expect(assignMock).toHaveBeenCalledTimes(1);
   });
 
+  it("⭐ 100 tadan ko'p «O'zimga olish» — xulosa hammasini sanaydi (ro'yxat oxirgi 100 tasini saqlasa ham)", async () => {
+    const user = userEvent.setup();
+    setPhone(true);
+    const COUNT = 103;
+    const tokenOf = (index: number) => `beef00${String(index).padStart(18, "0")}`;
+    let assigned = 0;
+    assignMock.mockImplementation(() => {
+      assigned += 1;
+      return Promise.resolve(assignOk(String(30000 + assigned), `Mijoz ${assigned}`));
+    });
+    renderScan("courier");
+
+    for (let index = 1; index <= COUNT; index += 1) {
+      hidScan(tokenOf(index));
+      await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(index));
+    }
+    await screen.findByText(`№${30000 + COUNT} · Mijoz ${COUNT}`);
+
+    await user.click(screen.getByRole("button", { name: "Tugatish" }));
+    const summary = await screen.findByRole("dialog", { name: "Skanerlash yakunlandi" });
+    // Ilgari xulosa ro'yxatdan (`slice(0, 100)`) sanalardi — «100 ta».
+    expect(within(summary).getByText(`${COUNT} ta buyurtma sizga biriktirildi`)).toBeInTheDocument();
+  });
+
   it("«Tugatish» — kesh yangilanadi va xulosa: N ta biriktirildi", async () => {
     const user = userEvent.setup();
     setPhone(true);
@@ -1003,6 +1027,32 @@ describe("ScanPage — kuryer «Qabul qilish» (telefon, 2026-11-07)", () => {
     expect(feedbackMock).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(patchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("⭐ 100 tadan ko'p qabul — hisoblagich hammasini sanaydi (ro'yxat oxirgi 100 tasini ko'rsatsa ham)", async () => {
+    const COUNT = 105;
+    const tokenOf = (index: number) => `c0ffee${String(index).padStart(18, "0")}`;
+    const idOf = (token: string) => String(20000 + Number(token.slice(6)));
+    fetchMock.mockImplementation((token: string) =>
+      Promise.resolve({ type: "order", data: { ...ROAD, id: idOf(token), order_number: idOf(token) } }),
+    );
+    patchSpy.mockImplementation((_url: string, body: { order_ids: string[] }) =>
+      Promise.resolve({
+        data: { received_order_ids: body.order_ids, already_received_order_ids: [], not_received_order_ids: [], failures: [] },
+      } as never),
+    );
+    renderScan("courier", { mode: "courierReceive" });
+
+    for (let index = 1; index <= COUNT; index += 1) {
+      hidScan(tokenOf(index));
+      await waitFor(() => expect(patchSpy).toHaveBeenCalledTimes(index));
+    }
+
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledTimes(COUNT));
+    // Ilgari hisob ro'yxatdan (`slice(0, 100)`) sanalardi — 100 da to'xtab qolardi.
+    await waitFor(() =>
+      expect(screen.getByText("ta qabul qilindi").parentElement).toHaveTextContent(new RegExp(`^${COUNT}\\s*ta qabul qilindi$`)),
+    );
   });
 
   it("o'zidagi «kutilmoqda» buyurtma → natija sahifasi (sotish / bekor), qabul so'rovi yo'q", async () => {

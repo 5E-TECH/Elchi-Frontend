@@ -95,6 +95,12 @@ export const useCourierReceive = ({
   const { mutateAsync: receivePost } = useReceivePost({ scope: "courier-scan-receive" });
   const [entries, setEntries] = useState<ReceiveEntry[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  /**
+   * Shu sessiyada qabul qilingan NOYOB buyurtmalar soni — ro'yxatdan (oxirgi `MAX_ENTRIES` tasi) emas: 100 tadan
+   * ko'p skanda (yoki xatolar ko'p bo'lsa) eski qatorlar ro'yxatdan chiqadi va hisob kamayib ketardi.
+   */
+  const receivedOrderIdsRef = useRef(new Set<string>());
+  const [received, setReceived] = useState(0);
 
   /** Shu sessiyada qabul qilingan tokenlar → «№…» (javob kelishi bilan — React holatini kutmasdan). */
   const receivedRef = useRef(new Map<string, string>());
@@ -213,6 +219,8 @@ export const useCourierReceive = ({
           return;
         }
         receivedRef.current.set(token, ref);
+        receivedOrderIdsRef.current.add(order.id);
+        if (mountedRef.current) setReceived(receivedOrderIdsRef.current.size);
         addEntry({
           key: `${Date.now()}-${token}-received`,
           status: "received",
@@ -270,12 +278,6 @@ export const useCourierReceive = ({
       });
     },
     [process, t],
-  );
-
-  /** Shu sessiyada qabul qilingan noyob buyurtmalar. */
-  const received = useMemo(
-    () => new Set(entries.filter((entry) => entry.status === "received").map((entry) => entry.orderId)).size,
-    [entries],
   );
 
   /** Ro'yxat qatorlari (yangisi birinchi) — kamera «Ro'yxat» varag'i va yon panel. */

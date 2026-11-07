@@ -83,6 +83,11 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
   const lookedUpRef = useRef(new Set<string>());
   /** Yangi biriktirilgan noyob buyurtmalar (natija kelishi bilan — React holatini kutmasdan). */
   const assignedIdsRef = useRef(new Set<string>());
+  /**
+   * Sessiyaning BARCHA natijalari (xulosa uchun) — `useScanAssign` ro'yxati oxirgi 100 tasini saqlaydi: 150 ta
+   * «O'zimga olish» dan keyin xulosa «100 ta biriktirildi» deb kam ko'rsatardi.
+   */
+  const sessionEntriesRef = useRef<ScanEntry[]>([]);
   /** Kesh oxirgi yangilanganda nechta biriktirilgan edi. */
   const invalidatedCountRef = useRef(0);
   /** Oxirgi «boshqa kuryerda» xabari: buyurtma aniqlansa izohi yangilanadi (boshqa skan kelmagan bo'lsa). */
@@ -104,6 +109,9 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
   const onFeedback = useCallback(
     (feedback: ScanFeedback) => {
       lastOtherRef.current = null;
+      if (feedback.kind === "assigned" || feedback.kind === "already" || feedback.kind === "failed") {
+        sessionEntriesRef.current.push(feedback.entry);
+      }
       if (feedback.kind === "invalid") {
         void playScanFeedback("error", t("scanner.invalid.title"));
         return;
@@ -221,7 +229,9 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
     }
   }, [entries, t]);
 
-  const summary = useMemo(() => summarizeTakeEntries(entries), [entries]);
+  // `entries` — faqat qayta hisoblash belgisi (har yangi natijada o'zgaradi); sanash to'liq sessiyadan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref o'zgarishi `entries` bilan bir vaqtda (`onFeedback`)
+  const summary = useMemo(() => summarizeTakeEntries(sessionEntriesRef.current), [entries]);
 
   /** Ro'yxat qatorlari (yangisi birinchi) — kamera «Ro'yxat» varag'i va yon panel. */
   const list = useMemo<ScanTargetListItem[]>(

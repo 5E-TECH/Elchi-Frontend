@@ -109,14 +109,17 @@ const unwrapScannedOrder = (payload: unknown) => {
   const nestedData = asRecord(data.data ?? data);
   const resource = asRecord(nestedData.resource ?? data.resource);
   const payloadData = asRecord(nestedData.payload ?? data.payload);
+  // `asRecord` hech qachon `null` qaytarmaydi: bo'sh obyekt `??` dan o'tib ketib, oddiy `{ data: { id, … } }` javobida
+  // ham natija `{}` bo'lardi va zaxira moslash (identifikator / mijoz + market) hech qachon ishlamasdi — «Topilmadi».
+  const nonEmpty = (record: Record<string, unknown>) => (Object.keys(record).length > 0 ? record : undefined);
 
   return asRecord(
     nestedData.order ??
       data.order ??
       resource.order ??
       payloadData.order ??
-      resource ??
-      payloadData ??
+      nonEmpty(resource) ??
+      nonEmpty(payloadData) ??
       nestedData,
   );
 };
@@ -517,7 +520,7 @@ const CourierOrders = () => {
   const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
   const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
-  const { mutate: receivePostMutate } = useReceivePost({ scope: "courier-scan-receive" });
+  const { mutateAsync: receivePostAsync } = useReceivePost({ scope: "courier-scan-receive" });
   /** Qabul so'rovi ketayotgan qatorlar (bir qator ikki marta yuborilmasin; tugma «yuklanmoqda»). */
   const [receivingIds, setReceivingIds] = useState<ReadonlySet<string>>(() => new Set());
 
@@ -832,10 +835,12 @@ const CourierOrders = () => {
     const postId = getOrderPostId(order);
     if (!postId || receivingIds.has(order.id)) return;
     setReceiving(order.id, true);
-    receivePostMutate(
-      { postId, payload: { order_ids: [order.id], scan: true } },
-      {
-        onSuccess: (response) => {
+    // `mutateAsync` — har qatorning O'Z natijasi: `mutate(vars, { onSuccess, onSettled })` callbacklari keyingi qator
+    // bosilishi bilan uziladi (TanStack: faqat oxirgi chaqiruvniki ishlaydi) — birinchi qator xabarsiz va abadiy
+    // «kutilmoqda» qolardi.
+    receivePostAsync({ postId, payload: { order_ids: [order.id], scan: true } })
+      .then(
+        (response) => {
           const outcome = readScanReceiveResult(response, order.id);
           if (outcome.ok) {
             notify.success(t("courierList.receiveDone", { id: order.id }));
@@ -843,14 +848,13 @@ const CourierOrders = () => {
           }
           notify.error(t("courierList.receiveFailed"), outcome.error ? { description: outcome.error } : undefined);
         },
-        onError: (error) => {
+        (error: unknown) => {
           // Tarmoq xatosini global bildirishnoma allaqachon ko'rsatgan (`notifyActionError` bilan bir qoida).
           const description = getActionErrorMessage(error, t("orderActionError"));
           if (description) notify.error(t("courierList.receiveFailed"), { description });
         },
-        onSettled: () => setReceiving(order.id, false),
-      },
-    );
+      )
+      .finally(() => setReceiving(order.id, false));
   };
 
   const handleRollbackConfirm = (targetStatus: RollbackTarget) => {
