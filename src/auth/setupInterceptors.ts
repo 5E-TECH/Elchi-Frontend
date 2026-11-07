@@ -4,10 +4,14 @@ import { logoutAndRedirect, refreshAccessToken } from "./authService";
 import { emitNetworkError, emitNetworkRestored, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 import { PASSWORD_CHANGE_REQUIRED_CODE, requirePasswordChange, responseErrorCode } from "./passwordChange";
 import { notify } from "../shared/lib/notify";
+import { API_ENDPOINTS } from "../shared/api/endpoints";
+import { getLoginEpoch, isRefreshSuperseded } from "./loginEpoch";
 import i18n from "../i18n";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
+  /** So'rov qaysi kirish davrida yuborildi (`loginEpoch.ts`). */
+  _loginEpoch?: number;
 };
 
 let refreshPromise: Promise<string> | null = null;
@@ -93,12 +97,15 @@ const hasRefreshTokenExpired = () => {
  * yangilaganda 429 olganlar /login ga tashlanardi.
  */
 const handleRefreshFailure = async (refreshError: unknown, revoked = false) => {
+  // Yangilash javobi kelguncha foydalanuvchi qayta kirdi — eski sessiyaning so'rovi shunchaki rad etiladi: yangi
+  // sessiyadan chiqarilmaydi, so'rov yangi token bilan qayta yuborilmaydi.
+  if (isRefreshSuperseded(refreshError)) return Promise.reject(refreshError);
   if (!isTransientAuthFailure(refreshError)) {
     // Sessiya haqiqatan tugagan (yoki boshqa qurilmadan yopilgan — `revoked`) — login sahifasida «Sessiya tugadi»
     // ekrani (dizayn v2 `common-session-expired`), yopilgan bo'lsa sababi bilan.
     await logoutSessionExpired(revoked);
   } else if (isNetworkFailure(refreshError)) {
-    // `authClient` da interceptor yo'q — "Tarmoq xatosi" shu yerdan chiqadi.
+    // `authClient` tarmoq xatosini bildirmaydi (faqat «aloqa tiklandi» ni) — "Tarmoq xatosi" shu yerdan chiqadi.
     emitNetworkError(refreshError);
   }
   return Promise.reject(refreshError);
@@ -113,17 +120,26 @@ const shouldAttemptRefresh = (error: AxiosError) => {
     return false;
   }
 
+  // Eski sessiyada yuborilgan so'rovning 401 i qayta kirishdan keyin keldi (sekin internet) — yangi foydalanuvchi
+  // cookie'si bilan yangilab, eski so'rovni (masalan boshqa xodimning amalini) yangi token bilan qayta yubormaymiz.
+  if (requestConfig._loginEpoch !== undefined && requestConfig._loginEpoch !== getLoginEpoch()) {
+    return false;
+  }
+
   if (!tokenStorage.getAccessToken()) {
     return false;
   }
 
-  return !requestUrl.includes("/auth/login") && !requestUrl.includes("/auth/refresh");
+  // Endpoint'lar nisbiy ("auth/refresh", boshida "/" siz) — ilgari "/auth/refresh" bilan solishtirilib hech qachon mos
+  // kelmasdi: yiqilgan token yangilash xatosi yangi token bilan qayta yangilanib, javobi so'rov keshiga yozilardi.
+  return !requestUrl.includes(API_ENDPOINTS.AUTH.LOGIN) && !requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
 };
 
 // ⚠️ Foydalanuvchi o'zi bekor qilgan so'rov (AbortController) ham `response`
 // siz keladi — u tarmoq xatosi EMAS, "tarmoq xatosi" toast'i chiqmasin.
 export const setupAuthInterceptors = (api: AxiosInstance) => {
   api.interceptors.request.use(async (config) => {
+    (config as RetryableRequestConfig)._loginEpoch = getLoginEpoch();
     if (hasRefreshTokenExpired()) {
       await logoutSessionExpired();
       return Promise.reject(new Error("Refresh token expired"));

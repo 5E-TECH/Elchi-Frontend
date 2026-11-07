@@ -306,4 +306,44 @@ describe("LoginForm (dizayn v2: common-login, common-login-error)", () => {
     await user.click(hide);
     expect(passwordInput()).toHaveAttribute("type", "password");
   });
+
+  it("sekin internet: ko'rsatilgan parol maydoniga telefon klaviaturasi tegmaydi (katta harf, tuzatish, «’» yo'q)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+
+    await user.click(screen.getByRole("button", { name: "Parolni ko'rsatish" }));
+
+    expect(passwordInput()).toHaveAttribute("type", "text");
+    expect(passwordInput()).toHaveAttribute("autocapitalize", "none");
+    expect(passwordInput()).toHaveAttribute("autocorrect", "off");
+    expect(passwordInput()).toHaveAttribute("spellcheck", "false");
+    expect(passwordInput()).toHaveAttribute("autocomplete", "current-password");
+  });
+
+  it("sekin internet: login qabul qilinib, keyingi profil so'rovi 401 bo'lsa — «Parol noto'g'ri» EMAS", async () => {
+    // Haqiqiy `authService.login`: POST auth/login 201, GET auth/my-profile har safar 401 (qayta kirishda ham).
+    const { authClient, login } = await import("../../../auth/authService");
+    const b64url = (value: unknown) => btoa(JSON.stringify(value)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const token = `${b64url({ alg: "HS256" })}.${b64url({ id: "77", role: "manager", sid: "s-1" })}.sig`;
+    const post = vi.spyOn(authClient, "post").mockResolvedValue({ data: { accessToken: token } });
+    vi.spyOn(authClient, "get").mockRejectedValue(
+      new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
+        status: 401,
+        data: { message: "Session revoked" },
+      } as never),
+    );
+    loginFn.mockImplementation((payload: { phone_number: string; password: string }) => login(payload));
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Tizim xatoligi");
+    expect(alert).toHaveTextContent("Birozdan keyin qayta urinib ko'ring.");
+    expect(alert).not.toHaveTextContent("Parol noto'g'ri");
+    expect(post).toHaveBeenCalledTimes(2); // bir marta qayta kirildi
+    expect(navigateMock).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
 });

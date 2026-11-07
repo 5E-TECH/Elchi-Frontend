@@ -9,12 +9,19 @@ import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, s
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
-import { emitNetworkError, isNetworkFailure, isTransientAuthFailure, NETWORK_RESTORED_EVENT } from "./networkError";
+import {
+  emitNetworkError,
+  emitNetworkRestored,
+  isNetworkFailure,
+  isTransientAuthFailure,
+  NETWORK_RESTORED_EVENT,
+} from "./networkError";
 import {
   clearLoginNotice,
   holdLoginNoticeUntilReload,
   peekLoginNotice,
   peekLoginNoticeDetails,
+  releaseLoginNoticeHold,
   rememberLoginNotice,
   resetLoginNoticeHoldForTests,
   type RevokedReason,
@@ -23,6 +30,14 @@ import { loadAppLocales } from "../i18n";
 import { deviceIdHeaders } from "./deviceId";
 import { deviceNameHeaders } from "./deviceName";
 import { clearPasswordChangeFlag, syncPasswordChangeFlag, syncPasswordChangeFromToken } from "./passwordChange";
+import {
+  bumpLoginEpoch,
+  getLoginEpoch,
+  loginHappenedSince,
+  markLogins,
+  noteLoginAttempt,
+  supersededRefreshError,
+} from "./loginEpoch";
 
 type LoginCredentials = {
   phone_number: string;
@@ -67,6 +82,20 @@ export const authClient = axios.create({
   },
 });
 
+// Sekin internet (login sahifasi): `offline` dan keyin ochilgan «Internet aloqasi yo'q» xabari faqat `api` javobidan
+// yopilardi — /login da esa barcha so'rovlar shu klientda, xabar kirishdan keyin ham osilib qolardi va har qanday
+// keyingi xato (masalan «Parol noto'g'ri») bilan yonma-yon turardi. Server javob berdi (xato bo'lsa ham) — aloqa bor.
+authClient.interceptors.response.use(
+  (response) => {
+    emitNetworkRestored();
+    return response;
+  },
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response) emitNetworkRestored();
+    return Promise.reject(error);
+  },
+);
+
 let initPromise: Promise<void> | null = null;
 const LOGOUT_SKIP_REFRESH_KEY = "elchi_skip_refresh_once";
 const LOGOUT_SKIP_REFRESH_MS = 10_000;
@@ -80,6 +109,16 @@ const markLogoutSkipRefresh = () => {
     window.sessionStorage.setItem(LOGOUT_SKIP_REFRESH_KEY, String(Date.now()));
   } catch {
     // Ignore storage failures and continue logout flow.
+  }
+};
+
+/** Parol bilan kirildi — «hozirgina chiqildi, tiklama» oralig'i tugadi (aks holda 10 s ichida F5 yangi sessiyani o'chirardi). */
+const clearLogoutSkipRefresh = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(LOGOUT_SKIP_REFRESH_KEY);
+  } catch {
+    // Saqlash joyi yopiq — bayroq ham yozilmagan.
   }
 };
 
@@ -319,7 +358,10 @@ const postRefreshWithRetry = async () => {
  * holati shu yerda yoqiladi, aks holda kirish sahifasi tarjimalar kelmasdan «/» ga o'tib ketardi.
  */
 export const refreshAccessToken = async (options: { beforeSignedIn?: () => void } = {}) => {
+  const epochAtStart = getLoginEpoch();
   const response = await postRefreshWithRetry();
+  // Javob kelguncha qayta kirildi — bu eski sessiya (eski cookie) tokeni: yangi sessiyaning ustiga yozilmaydi.
+  if (getLoginEpoch() !== epochAtStart) throw supersededRefreshError();
   const nextAccessToken = response.data?.accessToken;
 
   if (!nextAccessToken) {
@@ -343,7 +385,8 @@ export const refreshAccessToken = async (options: { beforeSignedIn?: () => void 
 /**
  * POST /auth/login qayta urinishi (h0AM0kDL): FAQAT darhol uzilishda (`ERR_NETWORK` — so'rov serverga yetmadi:
  * Wi-Fi ↔ mobil almashuvi, tunnel/Cloudflare uzilishi) bir marta, 400–800 ms dan keyin. Vaqt tugashi
- * (`ECONNABORTED`, 15 s) qayta urinilmaydi — foydalanuvchi yana 15 s kutib qolmasin; server javobi (4xx/5xx) ham.
+ * (`ECONNABORTED`, `LOGIN_TIMEOUT_MS`) qayta urinilmaydi — foydalanuvchi yana shuncha kutib qolmasin; server javobi
+ * (4xx/5xx) ham.
  */
 export const LOGIN_RETRY_DELAY_MS = 400;
 export const LOGIN_RETRY_JITTER_MS = 400;
@@ -351,10 +394,21 @@ export const LOGIN_RETRY_JITTER_MS = 400;
 const isImmediateNetworkError = (error: unknown) =>
   axios.isAxiosError(error) && !error.response && error.code === "ERR_NETWORK";
 
+/**
+ * POST auth/login vaqt chegarasi — umumiy 15 s emas. Sekin (3G/EDGE) internetda login — ko'pincha API ga birinchi
+ * so'rov: DNS + TCP + TLS + CORS preflight yolg'iz ~15 s oladi (o'lchangan), to'g'ri parol ham «Server javob
+ * bermadi» bilan qaytardi (server esa kirishni qabul qilgan bo'lardi). Kutish paytida forma yuklash ekrani ostida.
+ */
+export const LOGIN_TIMEOUT_MS = 45_000;
+
 const postLoginWithRetry = async (credentials: LoginCredentials) => {
   // Elchi Pochta #3: `X-Device-Id` sessiyani shu brauzerga bog'laydi (shu qurilmadagi ochiq sessiya qayta
   // ishlatiladi), `X-Device-Name` — ro'yxatdagi aniq qurilma nomi.
-  const send = () => authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, { headers: deviceHeaders() });
+  const send = () =>
+    authClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials, {
+      headers: deviceHeaders(),
+      timeout: LOGIN_TIMEOUT_MS,
+    });
   try {
     return await send();
   } catch (error) {
@@ -409,28 +463,88 @@ const keepLoginWithoutProfile = (accessToken: string) => {
   return true;
 };
 
+/**
+ * Server parolni QABUL QILGAN, lekin keyingi profil so'rovi rad etilgan xatolar. Bu parol xatosi EMAS — `LoginForm`
+ * ularga «Parol noto'g'ri» demaydi (ilgari profil 401 ham to'g'ri parolga «Parol noto'g'ri yoki foydalanuvchi
+ * topilmadi» chiqarardi).
+ */
+const loginProfileStageErrors = new WeakSet<object>();
+
+const markLoginProfileStage = (error: unknown) => {
+  if (error && typeof error === "object") loginProfileStageErrors.add(error);
+  return error;
+};
+
+export const isLoginProfileStageError = (error: unknown): boolean =>
+  Boolean(error && typeof error === "object" && loginProfileStageErrors.has(error));
+
+const isUnauthorized = (error: unknown) => axios.isAxiosError(error) && error.response?.status === 401;
+
+/**
+ * Yangi kirish — oldingi sessiya nomidan olingan (yoki hali olinayotgan) so'rovlar keshi tashlanadi. Odatda `/login`
+ * ga sahifa qayta yuklanib kelinadi (kesh bo'sh), lekin sekin tarmoqda eski sessiyaning chiqishi tugamay qayta
+ * kirilsa sahifa qayta yuklanmaydi (`logoutAndRedirect`): boshqa xodim kirgan bo'lsa ham oldingisining ro'yxatlari
+ * ko'rinmasin. Login o'z profilini eski tokenning osilgan `['user','profile']` so'rovidan ham olmaydi (u 401
+ * qaytarib, to'g'ri parolga «Parol noto'g'ri» chiqarardi).
+ */
+const dropPreviousSessionQueries = async () => {
+  if (!profileCache) return;
+  await profileCache.cancelQueries();
+  profileCache.removeQueries();
+};
+
+const postLoginAndStore = async (credentials: LoginCredentials) => {
+  const response = await postLoginWithRetry(credentials);
+  const accessToken = response.data?.accessToken;
+
+  if (!accessToken) {
+    throw new Error("Login response does not include accessToken");
+  }
+
+  await dropPreviousSessionQueries();
+  bumpLoginEpoch();
+  clearLogoutSkipRefresh();
+  tokenStorage.setAccessToken(accessToken);
+  persistSessionMetadata(response.data);
+  syncPasswordChangeFlag(response.data);
+  store.dispatch(loginSuccess({ accessToken }));
+  return accessToken;
+};
+
+/** Profil (tarmoq / 429 / 5xx da — token'dagi rol bilan kirish saqlanadi, profil fonda); kelmasa — `null`. */
+const fetchLoginProfile = async (accessToken: string) => {
+  try {
+    return await fetchMyProfileWithRetry(accessToken);
+  } catch (error) {
+    if (isTransientAuthFailure(error) && keepLoginWithoutProfile(accessToken)) return null;
+    throw error;
+  }
+};
+
 export const login = async (credentials: LoginCredentials) => {
+  // Shu paytgacha boshlangan eski sessiya ishi (chiqish, bootstrap) endi yangi sessiyaga tegmaydi (`loginEpoch.ts`).
+  noteLoginAttempt();
   // Kirishdan keyingi sahifalar tarjimasi — so'rov bilan parallel (to'g'ridan-to'g'ri `/login` da kechiktirilgan,
   // `src/i18n.ts`). Yuklanmasa kirish to'xtamaydi: kerakli nomlar fazosi chizilishda qayta so'raladi.
   const appLocales = loadAppLocales().catch(() => undefined);
   try {
-    const response = await postLoginWithRetry(credentials);
-    const accessToken = response.data?.accessToken;
-
-    if (!accessToken) {
-      throw new Error("Login response does not include accessToken");
-    }
-
-    tokenStorage.setAccessToken(accessToken);
-    persistSessionMetadata(response.data);
-    syncPasswordChangeFlag(response.data);
-    store.dispatch(loginSuccess({ accessToken }));
+    let accessToken = await postLoginAndStore(credentials);
 
     let user: AuthenticatedUser | null = null;
     try {
-      user = await fetchMyProfileWithRetry(accessToken);
+      user = await fetchLoginProfile(accessToken);
     } catch (error) {
-      if (!isTransientAuthFailure(error) || !keepLoginWithoutProfile(accessToken)) throw error;
+      // Tarmoq / 429 / 5xx va token'da rol yo'q — eski oqim: shu xato (forma «Internet aloqasi yo'q» va h.k.).
+      if (isTransientAuthFailure(error)) throw error;
+      if (!isUnauthorized(error)) throw markLoginProfileStage(error);
+      // Kirish qabul qilindi, lekin sessiya darhol rad etildi (401: masalan shu brauzerning boshqa tabidagi kechikkan
+      // «Chiqish» qayta ishlatilgan qurilma sessiyasini yopdi) — BIR marta qayta kiriladi: server yangi sessiya ochadi.
+      accessToken = await postLoginAndStore(credentials);
+      try {
+        user = await fetchLoginProfile(accessToken);
+      } catch (retryError) {
+        throw isTransientAuthFailure(retryError) ? retryError : markLoginProfileStage(retryError);
+      }
     }
     await appLocales;
     store.dispatch(setAppInitializing(false));
@@ -486,7 +600,14 @@ let revokedLogout: Promise<void> | null = null;
 /** `logoutRevokedSession` dagi hooklar (push obunasini qurilmadan o'chirish) chegarasi — chiqish kechikmasin. */
 export const REVOKED_LOGOUT_HOOKS_TIMEOUT_MS = 1_500;
 
-export const logout = async () => {
+/**
+ * Chiqish. `true` — chiqish davomida kirish boshlandi yoki tugadi (`loginEpoch.ts`): yangi sessiya tegilmaydi, holat
+ * tozalanmaydi (sekin tarmoqda eski sessiyaning chiqishi foydalanuvchi qayta kirayotganda tugashi mumkin; kirish
+ * muvaffaqiyatsiz bo'lsa holatni `login()` o'zi tozalaydi).
+ */
+export const logout = async (): Promise<boolean> => {
+  const logins = markLogins();
+  let superseded = false;
   logoutsInFlight += 1;
   markLogoutSkipRefresh();
   if (reinitTimer) {
@@ -507,10 +628,14 @@ export const logout = async () => {
   } catch {
     // Backend logout endpoint may be unavailable in some environments.
   } finally {
-    resetClientAuthState();
-    store.dispatch(setAppInitializing(false));
+    superseded = loginHappenedSince(logins);
+    if (!superseded) {
+      resetClientAuthState();
+      store.dispatch(setAppInitializing(false));
+    }
     logoutsInFlight = Math.max(0, logoutsInFlight - 1);
   }
+  return superseded;
 };
 
 /** Chiqish sababi: `sessionExpired` — login sahifasida «Sessiya tugadi» ekrani (`common-session-expired`). */
@@ -572,7 +697,13 @@ export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) 
   // `logout()` holatni tozalagach React `/login` ga o'zi o'tadi; kirish sahifasi xabarni o'qib o'chirib qo'ysa,
   // `location.replace` dan keyingi yangi hujjat sababni ko'rmasdi — xabar qayta yuklanguncha ushlab turiladi.
   holdLoginNoticeUntilReload();
-  await logout();
+  if (await logout()) {
+    // Chiqish tugaguncha foydalanuvchi qayta kirib bo'ldi — u tizimda qoladi: `/login` ga qaytarilmaydi, eskirgan
+    // «Sessiya tugadi» xabari o'chiriladi.
+    releaseLoginNoticeHold();
+    clearLoginNotice();
+    return;
+  }
   window.location.replace("/login");
 };
 
@@ -646,6 +777,12 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
   };
 
   initPromise = (async () => {
+    // Bootstrap davomida foydalanuvchi /login da qayta kirsa (sekin internetda fon tiklash hali tugamagan) — bootstrap
+    // yangi sessiyani tozalamaydi va kirish yuklash ekranini o'chirmaydi: holatni kirish o'zi boshqaradi.
+    const logins = markLogins();
+    const resetUnlessLoggedIn = () => {
+      if (!loginHappenedSince(logins)) resetClientAuthState();
+    };
     // Sessiyali ochilish: tarjimalarning qolgan qismi ham chizishdan oldin (to'g'ridan-to'g'ri `/login` da ham —
     // undan `/` ga o'tiladi; `src/i18n.ts`, rzzxMItN). Yuklanmasa — chizishda qayta so'raladi.
     let appLocales: Promise<unknown> = Promise.resolve();
@@ -683,7 +820,7 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
               : undefined,
           });
         } catch {
-          resetClientAuthState();
+          resetUnlessLoggedIn();
           return;
         }
       } else {
@@ -712,6 +849,7 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
         await fetchMyProfile(accessToken);
       }
     } catch (error) {
+      if (loginHappenedSince(logins)) return;
       if (shouldKeepSessionOnError(error)) {
         keepSessionWhileOffline(error);
         return;
@@ -719,7 +857,7 @@ export const initAuth = async (options: InitAuthOptions = {}) => {
       resetClientAuthState();
     } finally {
       await appLocales;
-      store.dispatch(setAppInitializing(false));
+      if (!loginHappenedSince(logins)) store.dispatch(setAppInitializing(false));
       initPromise = null;
     }
   })();
