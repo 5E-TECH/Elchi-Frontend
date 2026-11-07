@@ -649,5 +649,31 @@
     "editOpenBody": "Buyurtma hali qabul qilinmagan — barcha ma'lumotlarni o'zgartirish mumkin. HQ qabul qilgach, summa va mahsulotlar qulflanadi.",
     "editOpenBodyLimited": "Buyurtma hali qabul qilinmagan — mahsulot, summa va manzilni o'zgartirish mumkin. HQ qabul qilgandan keyin summa va mahsulotlar qulflanadi.",
     "marketReadOnlyHint": "Xato kiritilgan bo'lsa, uni <list>Yangi buyurtmalar</list> ro'yxatidan o'chirib, qaytadan yarating."
+  },
+  "intake": {
+    "until": "Bugungi qabul: {{time}} gacha",
+    "unlimited": "Bugungi qabul: cheklovsiz",
+    "closed": "Bugungi qabul yopildi",
+    "change": "Bugungi qabul vaqtini o'zgartirish",
+    "dialog": {
+      "title": "Bugungi qabul vaqti",
+      "description": "Belgilangan vaqtdan keyin kun almashguncha yangi buyurtma yaratib bo'lmaydi — barcha rollar uchun: qo'lda, AI bilan va integratsiyalar orqali.",
+      "field": "Qabul tugaydigan vaqt",
+      "hint": "Faqat bugun uchun, kun almashganda bekor bo'ladi. 24 soatlik format, Toshkent vaqti.",
+      "invalid": "Vaqtni 00:00–23:59 ko'rinishida kiriting",
+      "passed": "Bu vaqt o'tib ketgan — saqlansa, qabul darhol yopiladi.",
+      "save": "Saqlash",
+      "remove": "Cheklovni olib tashlash",
+      "cancel": "Bekor qilish",
+      "saved": "Bugungi qabul {{time}} gacha",
+      "removed": "Bugungi qabul cheklovi olib tashlandi",
+      "error": "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "create": {
+      "closedTitle": "Bugungi qabul yopildi",
+      "closedBody": "Qabul {{time}} da yopilgan. Yangi buyurtmani kun almashgach ({{reopens}}) yaratish mumkin.",
+      "closedBodyNoTime": "Yangi buyurtmani kun almashgach yaratish mumkin.",
+      "untilBody": "Bugungi qabul {{time}} gacha — shundan keyin kun almashguncha yangi buyurtma yaratib bo'lmaydi."
+    }
   }
 }

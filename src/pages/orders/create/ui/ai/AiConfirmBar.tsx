@@ -16,6 +16,8 @@ type AiConfirmBarProps = {
   readyOrders: AiDraftOrder[];
   notReadyCount: number;
   pending: boolean;
+  /** Bugungi qabul yopiq — «Tayyorlarini yaratish» o'chiq (sabab sahifa ogohlantirishida). */
+  blocked?: boolean;
   onConfirm: () => void;
   /** Keyingi to'ldirilmagan kartaga o'tish (10-30 karta orasida yo'qolmaslik uchun). */
   onJumpToUnready: () => void;
@@ -33,12 +35,20 @@ type AiConfirmBarProps = {
  * ⚠️ "Hammasini yaratish" tugmasi ATAYLAB YO'Q: faqat `ready` kartalar
  * yaratiladi, to'ldirilmaganlari so'rovga umuman qo'shilmaydi.
  */
-const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpToUnready, barRef }: AiConfirmBarProps) => {
+const AiConfirmBar = ({
+  readyOrders,
+  notReadyCount,
+  pending,
+  blocked = false,
+  onConfirm,
+  onJumpToUnready,
+  barRef,
+}: AiConfirmBarProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [dialogOpen, setDialogOpen] = useState(false);
   const readyCount = readyOrders.length;
-  const disabled = readyCount === 0;
+  const disabled = readyCount === 0 || blocked;
 
   const handleClick = () => {
     if (disabled || pending) return;

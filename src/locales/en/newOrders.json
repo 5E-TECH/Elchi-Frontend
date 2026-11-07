@@ -669,5 +669,31 @@
     "editOpenBody": "The order hasn't been received yet — all details can be changed. Once HQ receives it, the amount and products are locked.",
     "editOpenBodyLimited": "The order hasn't been received yet — products, amount and address can be changed. Once HQ receives it, the amount and products are locked.",
     "marketReadOnlyHint": "If it was entered by mistake, delete it from the <list>New orders</list> list and create it again."
+  },
+  "intake": {
+    "until": "Today's intake: until {{time}}",
+    "unlimited": "Today's intake: no limit",
+    "closed": "Today's intake is closed",
+    "change": "Change today's intake time",
+    "dialog": {
+      "title": "Today's intake time",
+      "description": "After this time and until the day changes, no new orders can be created — for every role: manually, with AI and through integrations.",
+      "field": "Intake closes at",
+      "hint": "For today only, reset when the day changes. 24-hour format, Tashkent time.",
+      "invalid": "Enter the time as 00:00–23:59",
+      "passed": "This time has already passed — saving closes the intake right away.",
+      "save": "Save",
+      "remove": "Remove the limit",
+      "cancel": "Cancel",
+      "saved": "Today's intake until {{time}}",
+      "removed": "Today's intake limit removed",
+      "error": "Could not save. Try again a bit later."
+    },
+    "create": {
+      "closedTitle": "Today's intake is closed",
+      "closedBody": "The intake closed at {{time}}. A new order can be created after the day changes ({{reopens}}).",
+      "closedBodyNoTime": "A new order can be created after the day changes.",
+      "untilBody": "Today's intake is open until {{time}} — after that and until the day changes, no new orders can be created."
+    }
   }
 }
