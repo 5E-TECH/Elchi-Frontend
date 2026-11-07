@@ -78,39 +78,43 @@ const ROW_TONE: Record<ScanTargetTone, { icon: LucideIcon; className: string }> 
   neutral: { icon: Info, className: "text-text-muted" },
 };
 
-/** Kuryer «O'zimga olish»: hisoblagich, natija qatorlari (yangisi birinchi) va «Tugatish». */
-export const ScanTakeCard = ({
+/**
+ * Kuryer skan sessiyasi (yon panel): hisoblagich, natija qatorlari (yangisi birinchi) va ixtiyoriy pastki amal.
+ * «O'zimga olish» (`ScanTakeCard` — «Tugatish» bilan) va «Qabul qilish» (2026-11-07, amalsiz — har skan darhol
+ * qabul qilinadi) bir xil ko'rinishda.
+ */
+export const ScanSessionCard = ({
   list,
-  assigned,
-  finishing,
-  onFinish,
+  count,
+  title,
+  meter,
+  emptyText,
+  footer,
 }: {
   list: readonly ScanTargetListItem[];
-  assigned: number;
-  finishing: boolean;
-  onFinish: () => void;
+  count: number;
+  title: string;
+  /** Son yonidagi matn: «ta biriktirildi» / «ta qabul qilindi». */
+  meter: string;
+  emptyText: string;
+  footer?: ReactNode;
 }) => {
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   return (
     <Card
       padding="none"
-      title={t("scanner.take.listTitle")}
+      title={title}
       actions={
         <span className="text-[13px] text-text-muted">
-          <span className="text-base font-bold text-text">{formatNumberLocalized(assigned, { language })}</span>{" "}
-          {t("scanner.take.meter")}
+          <span className="text-base font-bold text-text">{formatNumberLocalized(count, { language })}</span> {meter}
         </span>
       }
       className="overflow-hidden"
-      footer={
-        <Button fullWidth leftIcon={Check} loading={finishing} onClick={onFinish}>
-          {t("scanner.take.finish")}
-        </Button>
-      }
+      footer={footer}
     >
       {list.length === 0 ? (
-        <EmptyState icon={History} title={t("scanner.recentEmptyTitle")} description={t("scanner.take.emptyText")} />
+        <EmptyState icon={History} title={t("scanner.recentEmptyTitle")} description={emptyText} />
       ) : (
         <ul className="max-h-[360px] divide-y divide-border overflow-y-auto border-t border-border">
           {list.map((item) => {
@@ -133,5 +137,34 @@ export const ScanTakeCard = ({
         </ul>
       )}
     </Card>
+  );
+};
+
+/** Kuryer «O'zimga olish»: hisoblagich, natija qatorlari (yangisi birinchi) va «Tugatish». */
+export const ScanTakeCard = ({
+  list,
+  assigned,
+  finishing,
+  onFinish,
+}: {
+  list: readonly ScanTargetListItem[];
+  assigned: number;
+  finishing: boolean;
+  onFinish: () => void;
+}) => {
+  const { t } = useTranslation("scan");
+  return (
+    <ScanSessionCard
+      list={list}
+      count={assigned}
+      title={t("scanner.take.listTitle")}
+      meter={t("scanner.take.meter")}
+      emptyText={t("scanner.take.emptyText")}
+      footer={
+        <Button fullWidth leftIcon={Check} loading={finishing} onClick={onFinish}>
+          {t("scanner.take.finish")}
+        </Button>
+      }
+    />
   );
 };

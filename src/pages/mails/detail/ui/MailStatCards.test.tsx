@@ -65,6 +65,27 @@ describe("MailStatCards (v2)", () => {
     );
     expect(flat(screen.getByRole("group", { name: "Pochta xulosasi" }).textContent)).toContain("Jami6 tajami 1 668 000 so'm");
   });
+
+  it("skan-qabul (`leadCard=\"received\"`): «Qabul qilindi» 2 / 5 ta, «Qoldi 3 ta», jarayon chizig'i; telefon xulosasida ham", () => {
+    const { unmount } = renderWithProviders(
+      <MailStatCards leadCard="received" receivedCount={2} receiveTotal={5} totalOrders={3} selectedCount={1} {...stats} />,
+    );
+    const group = screen.getByRole("group", { name: "Pochta xulosasi" });
+    expect(flat(group.textContent)).toContain("Qabul qilindi2 / 5 taQoldi 3 ta");
+    expect(group).not.toHaveTextContent("Tanlangan");
+    expect(within(group).getByRole("progressbar", { name: "Qabul qilingan buyurtmalar" })).toHaveAttribute(
+      "aria-valuenow",
+      "2",
+    );
+    const summary = screen.getByRole("region", { name: "Pochta xulosasi" });
+    expect(flat(within(summary).getAllByRole("term")[0].textContent)).toBe("Qabul qilindiQoldi 3 ta");
+    expect(flat(within(summary).getAllByRole("definition")[0].textContent)).toBe("2 / 5 ta");
+    unmount();
+    renderWithProviders(
+      <MailStatCards layout="courier" leadCard="received" receivedCount={4} receiveTotal={4} totalOrders={0} selectedCount={0} {...stats} />,
+    );
+    expect(screen.getByRole("group", { name: "Pochta xulosasi" })).toHaveTextContent("Hammasi qabul qilindi");
+  });
 });
 
 describe("SendButton (v2)", () => {

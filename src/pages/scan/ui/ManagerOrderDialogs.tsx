@@ -1,4 +1,4 @@
-// dizayn-v2: manager-scan-result
+// dizayn-v2: manager-scan-result, courier-scan-order-detail
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrders } from "../../../entities/orders";
@@ -9,7 +9,7 @@ import { notify } from "../../../shared/lib/notify";
 import { useActionDialogError } from "../../../entities/orders/actionDialogError";
 import { buildActionOrder, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
-import { notifyOrderActionDone } from "../../orders/list/courier/list/orderActionModel";
+import { notifyOrderActionDone, type OrderActionVariant } from "../../orders/list/courier/list/orderActionModel";
 import SellModal from "../../orders/list/courier/list/SellModal";
 
 type PartlySellPayload = {
@@ -24,19 +24,38 @@ type ManagerOrderDialogsProps = {
   order: OrderDetail;
   dialog: "sell" | "cancel" | null;
   onClose: () => void;
-  /** Amal bajarildi (oyna yopiladi) — sahifa skan so'rovini qayta oladi. */
+  /** Amal bajarildi (oyna yopiladi) — menejer: skan so'rovi qayta olinadi; kuryer: `/scan` ga qaytadi. */
   onDone: () => void;
+  /** Oynalar varianti (sukut `manager`; kuryer skan natijasi — `courier`). */
+  variant?: OrderActionVariant;
+  /**
+   * Kuryer sotuvi: qo'shimcha xarajat faqat markazga yetkazishda (`SellModal` bilan bir xil; backend uyga yetkazishda
+   * 400). Kuryer — `true`, menejer — yo'q.
+   */
+  restrictExtraCostToCenter?: boolean;
+  /** Amal market tasdig'iga tushdi (202) — sahifa shu sessiyada amal tugmalarini yashiradi. */
+  onApprovalRequested?: () => void;
 };
 
 /**
- * Menejerning «Sotish» / «Bekor qilish» oynalari skaner natijasida (maket `manager-scan-result`) —
- * `/orders` va buyurtma tafsilotidagi AYNI v2 oynalar (`variant="manager"`), so'rov tanalari o'zgarmagan.
+ * «Sotish» / «Bekor qilish» oynalari skaner natijasida: menejer (maket `manager-scan-result`, sukut
+ * `variant="manager"`) va kuryer (2026-11-07 — qabul qilingan buyurtma, `variant="courier"` +
+ * `restrictExtraCostToCenter`, kuryer `/orders` ro'yxatidagidek). `/orders` va buyurtma tafsilotidagi AYNI v2 oynalar,
+ * so'rov tanalari o'zgarmagan.
  * Ishlovchilar `new_orderUpdate.tsx` dagidek: market tasdig'iga tushsa — oyna holatni ko'rsatadi
  * (`resolveOrderActionResponse`), marketga to'lov yozilsa — o'sha xabar (`SELL_PAYMENT_NOTICE_KEYS`),
  * aks holda «Sotildi» / «Bekor qilindi» xabari; xato — backend matni. Sahifa bu faylni `lazy()` bilan
  * yuklaydi: kuryer va xodim telefoniga oynalar kodi tushmaydi.
  */
-const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDialogsProps) => {
+const ManagerOrderDialogs = ({
+  order,
+  dialog,
+  onClose,
+  onDone,
+  variant = "manager",
+  restrictExtraCostToCenter = false,
+  onApprovalRequested,
+}: ManagerOrderDialogsProps) => {
   const { t } = useTranslation(["orders", "common"]);
   const { SellOrder, PartlySellOrder, CancelOrder } = useOrders();
   const actionOrder = useMemo(() => buildActionOrder(order), [order]);
@@ -80,7 +99,10 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
                 complete();
                 if (!paymentStatus) notifyOrderActionDone("sell", actionOrder);
               },
-              onApprovalRequested: () => setIsApprovalRequested(true),
+              onApprovalRequested: () => {
+                setIsApprovalRequested(true);
+                onApprovalRequested?.();
+              },
             });
             if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
           },
@@ -88,7 +110,7 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
         },
       );
     },
-    [SellOrder, actionOrder, clearSellError, complete, showSellError, t],
+    [SellOrder, actionOrder, clearSellError, complete, onApprovalRequested, showSellError, t],
   );
 
   const handlePartlySell = useCallback(
@@ -107,13 +129,16 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
                 complete();
                 notifyOrderActionDone("partly_sell", actionOrder);
               },
-              onApprovalRequested: () => setIsApprovalRequested(true),
+              onApprovalRequested: () => {
+                setIsApprovalRequested(true);
+                onApprovalRequested?.();
+              },
             }),
           onError: showSellError,
         },
       );
     },
-    [PartlySellOrder, actionOrder, clearSellError, complete, showSellError],
+    [PartlySellOrder, actionOrder, clearSellError, complete, onApprovalRequested, showSellError],
   );
 
   const handleCancel = useCallback(
@@ -132,13 +157,16 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
                 complete();
                 notifyOrderActionDone("cancel", actionOrder);
               },
-              onApprovalRequested: () => setIsApprovalRequested(true),
+              onApprovalRequested: () => {
+                setIsApprovalRequested(true);
+                onApprovalRequested?.();
+              },
             }),
           onError: showCancelError,
         },
       );
     },
-    [CancelOrder, actionOrder, clearCancelError, complete, showCancelError],
+    [CancelOrder, actionOrder, clearCancelError, complete, onApprovalRequested, showCancelError],
   );
 
   return (
@@ -152,7 +180,8 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
         error={sellErrorMessage}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
         awaitingApproval={isApprovalRequested}
-        variant="manager"
+        variant={variant}
+        restrictExtraCostToCenter={restrictExtraCostToCenter}
       />
       <CancelModal
         order={actionOrder}
@@ -162,7 +191,7 @@ const ManagerOrderDialogs = ({ order, dialog, onClose, onDone }: ManagerOrderDia
         error={cancelErrorMessage}
         isLoading={CancelOrder.isPending}
         awaitingApproval={isApprovalRequested}
-        variant="manager"
+        variant={variant}
       />
     </>
   );

@@ -259,34 +259,41 @@ describe("MailDetailPage — filial menejeri: «Bu buyurtma kelmagan — qaytari
     expect(screen.getByText("Pochtada qabul qilinadigan buyurtma qolmadi.")).toBeInTheDocument();
   });
 
-  it("QR'i skanerlab qayta olingan buyurtma kutib tursa — oxirgi boshqasiga so'rovdan keyin ham sahifada qolinadi", async () => {
+  it("skan-qabul navbati ketayotganda «Kelmagan — qaytarish» va «Pochtani qabul qilish» o'chiq, javobdan keyin yoqiladi", async () => {
     const user = userEvent.setup();
     const reclaimed = order("103", { return_requested: true });
-    setup(() => [order("101"), reclaimed]);
-    // Serverda №103 hali so'rovli (qabul qilinmagan) — `remaining_receivable` uni sanamaydi: 0.
-    mocks.requestReturn.mockResolvedValue(result({ orderId: "101", remainingReceivable: 0 }));
+    setup(() => [order("101"), order("102"), reclaimed]);
+    let resolveReceive: (value: unknown) => void = () => undefined;
+    mocks.receive.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReceive = resolve;
+        }),
+    );
     renderPage(manager());
 
+    await user.click(checkbox("101")!);
     act(() => {
       mocks.scanner?.onMatch(reclaimed, "103", "keyboard");
     });
-    expect(checkbox("103")).toBeChecked();
 
-    await user.click(requestButton("101")!);
-    const dialog = await screen.findByRole("alertdialog");
-    expect(dialog).toHaveTextContent("Qolgan 1 ta buyurtmani odatdagidek qabul qilasiz");
-    await user.click(within(dialog).getByRole("button", { name: "So'rov yuborish" }));
-
-    expect(await screen.findByText("№101 uchun qaytarish so'rovi yuborildi")).toBeInTheDocument();
-    expect(screen.queryByText("Pochtada qabul qilinadigan buyurtma qolmadi.")).toBeNull();
-    expect(screen.queryByTestId("today-list")).toBeNull();
-    expect(screen.getByTestId("location")).toHaveTextContent(`/mails/${POST_ID}`);
-    // Qayta olingan №103 tanlangan holda qoladi — qabul qilinadi.
-    expect(checkbox("103")).toBeChecked();
-    await user.click(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" }));
     await waitFor(() =>
-      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"] } }),
+      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"], scan: true } }),
     );
+    expect(requestButton("101")).toBeDisabled();
+    expect(requestButton("102")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" })).toBeDisabled();
+    // So'rovi bor №103 ro'yxatga «qaytib tanlanmaydi» — to'g'ridan qabulga ketdi, izohdan ham chiqdi.
+    expect(checkbox("103")).toBeNull();
+    expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
+
+    await act(async () => {
+      resolveReceive({ statusCode: 200, data: [], received_order_ids: ["103"], post_status: "sent" });
+    });
+    await waitFor(() => expect(requestButton("101")).toBeEnabled());
+    expect(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" })).toBeEnabled();
+    expect(checkbox("103")).toBeNull();
+    expect(mocks.requestReturn).not.toHaveBeenCalled();
   });
 
   it("so'rov avval yuborilgan (`already_requested`) — info xabar, qator baribir chiqadi", async () => {
@@ -302,10 +309,10 @@ describe("MailDetailPage — filial menejeri: «Bu buyurtma kelmagan — qaytari
     await waitFor(() => expect(checkbox("101")).toBeNull());
   });
 
-  it("so'rovi bor buyurtmaning QR'i skanerlansa — ro'yxatga qaytib tanlanadi, qabulga ketadi", async () => {
-    const user = userEvent.setup();
+  it("so'rovi bor buyurtmaning QR'i skanerlansa — to'g'ridan qabul qilinadi (`scan: true`), tanlanmaydi", async () => {
     const requested = order("103", { return_requested: true });
     setup(() => [order("101"), requested]);
+    mocks.receive.mockResolvedValue({ statusCode: 200, data: [], received_order_ids: ["103"], post_status: "sent" });
     renderPage(manager());
     expect(checkbox("103")).toBeNull();
 
@@ -313,12 +320,13 @@ describe("MailDetailPage — filial menejeri: «Bu buyurtma kelmagan — qaytari
       mocks.scanner?.onMatch(requested, "103", "keyboard");
     });
 
-    expect(checkbox("103")).toBeChecked();
-    expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" }));
     await waitFor(() =>
-      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"] } }),
+      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"], scan: true } }),
     );
+    expect(checkbox("103")).toBeNull();
+    expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
+    expect(await screen.findByText("№103 qabul qilindi · 1 ta qoldi")).toBeInTheDocument();
+    expect(checkbox("101")).not.toBeChecked();
   });
 
   it("ko'rinmaydi: boshqa filial menejeri, filiali noma'lum menejer, registrator, kuryer pochtasi, qabul qilingan pochta", () => {

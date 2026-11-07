@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CourierOrders from "./index";
 import { renderWithProviders } from "../../../../test/test-utils";
+import { api } from "../../../../shared/api/api";
 import { getActiveScanTarget } from "../../../../shared/lib/scanner/scanTargets";
 import { PHONE_QUERY } from "../../../../shared/ui/primitives/date/useIsPhone";
 import {
@@ -583,5 +584,96 @@ describe("Kuryer buyurtmalari — telefon (< 768)", () => {
 
     await user.click(screen.getByRole("button", { name: "2 ta buyurtmani pochtaga yuborish" }));
     expect(sendToPost).toHaveBeenCalledWith(["2001", "2002"], expect.any(Object));
+  });
+});
+
+describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)", () => {
+  let patchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    patchSpy = vi.spyOn(api, "patch").mockResolvedValue({
+      data: { received_order_ids: ["1001"], already_received_order_ids: [], not_received_order_ids: [], failures: [] },
+    } as never);
+    state.rows = [
+      order("1001", "Yo'ldagi mijoz", { status: "on_the_road", post_id: "p-7" }),
+      order("1002", "Pochtasiz yo'ldagi", { status: "on_the_road", post_id: null }),
+      order("1003", "Kutilayotgan mijoz"),
+    ];
+  });
+
+  afterEach(() => patchSpy.mockRestore());
+
+  it("yo'ldagi qatorda «Sotish / Bekor» o'rniga «Qabul qilish»; pochtasiz yoki kutilayotgan — avvalgidek", () => {
+    renderPage();
+
+    const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
+    expect(within(road).getByRole("button", { name: "№1001 ni qabul qilish" })).toHaveTextContent("Qabul qilish");
+    expect(within(road).queryByRole("button", { name: /sotish|bekor qilish/ })).toBeNull();
+
+    const noPost = screen.getByText("Pochtasiz yo'ldagi").closest("tr")!;
+    expect(within(noPost).getByRole("button", { name: "№1002 ni sotish" })).toBeInTheDocument();
+    expect(within(noPost).queryByRole("button", { name: /qabul qilish/ })).toBeNull();
+
+    const waiting = screen.getByText("Kutilayotgan mijoz").closest("tr")!;
+    expect(within(waiting).getByRole("button", { name: "№1003 ni sotish" })).toBeInTheDocument();
+    expect(within(waiting).getByRole("button", { name: "№1003 ni bekor qilish" })).toBeInTheDocument();
+    expect(within(waiting).queryByRole("button", { name: /qabul qilish/ })).toBeNull();
+  });
+
+  it("«Qabul qilish» → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, xabar va ro'yxat yangilanadi", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = renderPage();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
+
+    expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+    expect(await screen.findByText("№1001 qabul qilindi")).toBeInTheDocument();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["orders"] });
+  });
+
+  it("«Barchasi» tabida ham — yo'ldagi qatorda «Qabul qilish»", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole("tab", { name: "Barchasi" }));
+
+    const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
+    await user.click(within(road).getByRole("button", { name: "№1001 ni qabul qilish" }));
+    expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+  });
+
+  it("backend qabul qilmasa — «Buyurtma qabul qilinmadi» va sababi", async () => {
+    const user = userEvent.setup();
+    patchSpy.mockResolvedValueOnce({
+      data: {
+        received_order_ids: [],
+        already_received_order_ids: [],
+        not_received_order_ids: ["1001"],
+        failures: [{ order_id: "1001", error: "Pochta hali jo'natilmagan" }],
+      },
+    } as never);
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
+
+    expect(await screen.findByText("Buyurtma qabul qilinmadi")).toBeInTheDocument();
+    expect(screen.getByText("Pochta hali jo'natilmagan")).toBeInTheDocument();
+  });
+
+  it("telefon kartasi: yo'ldagida «Qabul qilish», sotish / bekor tugmalari yo'q", async () => {
+    const user = userEvent.setup();
+    const restore = mockPhone(true);
+    try {
+      renderPage();
+      const list = screen.getByRole("list", { name: "Kutilayotgan buyurtmalar" });
+      expect(within(list).queryByRole("button", { name: "Yo'ldagi mijoz: sotish" })).toBeNull();
+      expect(within(list).queryByRole("button", { name: "Yo'ldagi mijoz: bekor qilish" })).toBeNull();
+      expect(within(list).getByRole("button", { name: "Pochtasiz yo'ldagi: sotish" })).toBeInTheDocument();
+
+      await user.click(within(list).getByRole("button", { name: "Yo'ldagi mijoz: qabul qilish" }));
+      expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+    } finally {
+      restore();
+    }
   });
 });

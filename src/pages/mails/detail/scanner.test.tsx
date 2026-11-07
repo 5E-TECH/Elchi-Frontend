@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   useRefusedByPostId: vi.fn(),
   fetchScanDetail: vi.fn(),
   playScanFeedback: vi.fn(),
+  receive: vi.fn(),
 }));
 
 vi.mock("../../../entities/branch", async (importOriginal) => ({
@@ -26,7 +27,7 @@ vi.mock("../../../entities/branch", async (importOriginal) => ({
 vi.mock("../../../entities/mails", () => ({
   useMails: () => ({ useGetRefusedMailsCourierByPostId: mocks.useRefusedByPostId }),
   useMailDetail: mocks.useMailDetail,
-  useReceivePost: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useReceivePost: () => ({ mutateAsync: mocks.receive, isPending: false }),
   useRequestOrderReturn: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReceiveCanceledPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReturnCanceledOrders: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -172,7 +173,55 @@ describe("MailDetailPage — kamera maqsadi", () => {
     expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu pochtada yo'q");
   });
 
-  it("qabul (kuryer): «Pochtani qabul qilish» — faqat yo'ldagi buyurtmalar", async () => {
+  it("qabul (kuryer, o'z pochtasi): «Pochtani qabul qilish» — kamera skani darhol qabul qiladi, «ta qabul qilindi»", async () => {
+    const rows = [
+      order("10247", "aaaaaaaaaaaaaaaaaaaaaa47", "Dilshod Ergashev", "on the road"),
+      order("10248", "aaaaaaaaaaaaaaaaaaaaaa48", "Feruza Rasulova", "on the road"),
+      order("10249", "aaaaaaaaaaaaaaaaaaaaaa49", "Aziz Karimov", "waiting"),
+    ];
+    const response = {
+      ...detail(rows),
+      data: { data: { allOrdersByPostId: rows, post: { id: POST_ID, status: "sent", courier_id: "courier-1" } } },
+    };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? response : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    mocks.receive.mockResolvedValue({ statusCode: 200, data: [], received_order_ids: ["10247"], post_status: "sent" });
+    renderPage(stateFor("courier"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    expect(target()).toMatchObject({
+      id: `mail:${POST_ID}:receive`,
+      title: "Pochtani qabul qilish",
+      note: { title: "Skanerlangan buyurtma darhol qabul qilinadi va ro'yxatdan chiqadi" },
+      progress: { done: 1, total: 3, label: "ta qabul qilindi" },
+    });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaa47", "camera");
+    });
+    await waitFor(() =>
+      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["10247"], scan: true } }),
+    );
+    // Tanlanmaydi — ro'yxatdan chiqadi; ovoz «Qabul qilindi», izohda qolgani.
+    expect(screen.getByTestId("selected")).toHaveTextContent("");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "№10247 qabul qilindi", "camera", {
+      voice: "received",
+      text: "1 ta qoldi",
+    });
+    expect(target().progress).toMatchObject({ done: 2, total: 3 });
+    await waitFor(() =>
+      expect(target().list?.[0]).toMatchObject({ key: "order:10247", title: "№10247 · Dilshod Ergashev", tone: "success" }),
+    );
+    expect(target().list?.[0].onUndo).toBeUndefined();
+
+    // Kutilmoqdadagi buyurtma qayta skanerlansa — «Allaqachon qabul qilingan», so'rovsiz.
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaa49", "camera");
+    });
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Allaqachon qabul qilingan №10249", "camera");
+    expect(mocks.receive).toHaveBeenCalledTimes(1);
+  });
+
+  it("qabul (kuryer), pochta boshqa kuryerniki — kamera skani avvalgidek tanlaydi", async () => {
     const response = detail([
       order("10247", "aaaaaaaaaaaaaaaaaaaaaa47", "Dilshod Ergashev", "on the road"),
       order("10248", "aaaaaaaaaaaaaaaaaaaaaa48", "Feruza Rasulova", "received"),
@@ -181,7 +230,16 @@ describe("MailDetailPage — kamera maqsadi", () => {
     renderPage(stateFor("courier"));
     await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
 
-    expect(target()).toMatchObject({ id: `mail:${POST_ID}:receive`, title: "Pochtani qabul qilish", progress: { done: 0, total: 1 } });
+    expect(target()).toMatchObject({
+      id: `mail:${POST_ID}:receive`,
+      title: "Pochtani qabul qilish",
+      progress: { done: 0, total: 1, label: "ta tanlandi" },
+    });
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaa47", "camera");
+    });
+    expect(screen.getByTestId("selected")).toHaveTextContent("10247");
+    expect(mocks.receive).not.toHaveBeenCalled();
   });
 
   it("eski pochta (faqat o'qish) — kamera maqsadi yo'q (markaziy tugma universal skanerni ochadi)", async () => {

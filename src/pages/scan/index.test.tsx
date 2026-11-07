@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
+import { api } from "../../shared/api/api";
 import type { CameraErrorKind } from "../../shared/lib/qrScanner";
 import { PHONE_QUERY } from "../../shared/ui/primitives/date/useIsPhone";
 import ScanPage from "./index";
@@ -915,5 +916,196 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
     hidScan(TOKEN);
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith(`/scan/${TOKEN}`));
     expect(assignMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("ScanPage — kuryer «Qabul qilish» (telefon, 2026-11-07)", () => {
+  /** Kuryerning yo'ldagi buyurtmasi (scan-assign bilan olingan — SENT pochtada). */
+  const ROAD = {
+    ...ORDER,
+    id: "10191",
+    order_number: "10191",
+    status: "on_the_road",
+    courier_id: "u-1",
+    post_id: "p-7",
+    customer: { name: "Lobar Yusupova" },
+    district: { name: "Yunusobod tumani" },
+  };
+  let patchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setPhone(true);
+    patchSpy = vi.spyOn(api, "patch").mockResolvedValue({
+      data: { received_order_ids: ["10191"], already_received_order_ids: [], not_received_order_ids: [], failures: [] },
+    } as never);
+    fetchMock.mockResolvedValue({ type: "order", data: ROAD });
+  });
+
+  afterEach(() => {
+    patchSpy.mockRestore();
+  });
+
+  it("kuryerda 3 ta rejim: «O'zimga olish» (sukut), «Qabul qilish», «Ma'lumot»", async () => {
+    const user = userEvent.setup();
+    renderScan("courier");
+
+    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+      "O'zimga olish",
+      "Qabul qilish",
+      "Ma'lumot",
+    ]);
+    expect(screen.getByRole("radio", { name: "O'zimga olish" })).toHaveAttribute("aria-checked", "true");
+
+    await user.click(screen.getByRole("radio", { name: "Qabul qilish" }));
+    expect(screen.getByRole("radio", { name: "Qabul qilish" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("heading", { name: "Qabul qilish" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("elchi:scan-mode:v1:u-1")).toBe("courierReceive");
+  });
+
+  it("o'zidagi yo'ldagi buyurtma → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, ro'yxatda «Qabul qilindi»", async () => {
+    const user = userEvent.setup();
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["10191"], scan: true }));
+    expect(fetchMock).toHaveBeenCalledWith(TOKEN);
+    expect(await screen.findByText("№10191 · Lobar Yusupova")).toBeInTheDocument();
+    expect(screen.getByText("Qabul qilindi · Yunusobod tumani")).toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith("success", "№10191 qabul qilindi", "manual", { voice: "received" });
+    expect(screen.getByText("ta qabul qilindi").parentElement).toHaveTextContent(/^1\s*ta qabul qilindi$/);
+    // Kamera sahifasi yopilmaydi — natija sahifasiga o'tilmaydi.
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("shu sessiyada qabul qilingan kod qayta o'qilsa — «allaqachon qabul qilindi», so'rov va o'tish yo'q", async () => {
+    const user = userEvent.setup();
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+    await screen.findByText("№10191 · Lobar Yusupova");
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    expect(feedbackMock).toHaveBeenCalledWith("duplicate", "№10191 allaqachon qabul qilindi", "manual");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("kamerada turib qolgan qabul qilingan kod — jim (qayta so'ralmaydi)", async () => {
+    renderScan("courier", { mode: "courierReceive" });
+
+    act(() => camera.onDecode?.(TOKEN));
+    await screen.findByText("№10191 · Lobar Yusupova");
+    feedbackMock.mockClear();
+    act(() => camera.onDecode?.(TOKEN));
+
+    expect(feedbackMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("o'zidagi «kutilmoqda» buyurtma → natija sahifasi (sotish / bekor), qabul so'rovi yo'q", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue({ type: "order", data: { ...ROAD, status: "waiting" } });
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith(`/scan/${TOKEN}`));
+    expect(feedbackMock).toHaveBeenCalledWith(
+      "success",
+      "№10191 qabul qilingan — sotish yoki bekor qilish",
+      "manual",
+      { voice: false },
+    );
+    expect(patchSpy).not.toHaveBeenCalled();
+  });
+
+  it("bo'sh, boshqa kuryerniki va yo'lda bo'lmagan — xato ovozi va sabab, qabul so'rovi yo'q", async () => {
+    const user = userEvent.setup();
+    fetchMock
+      .mockResolvedValueOnce({ type: "order", data: { ...ROAD, status: "new", courier_id: null, post_id: null } })
+      .mockResolvedValueOnce({
+        type: "order",
+        data: { ...ROAD, id: "10251", order_number: "10251", courier_id: "u-9", courier: { name: "Sherzod Nazarov" } },
+      })
+      .mockResolvedValueOnce({ type: "order", data: { ...ROAD, status: "sold" } });
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith(
+        "error",
+        "Bu buyurtma sizda emas — uni «O'zimga olish» rejimida oling",
+        "manual",
+      ),
+    );
+    await enterManual(user, OTHER_TOKEN, "Qabul qilish");
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("error", "Boshqa kuryerda: Sherzod Nazarov", "manual"));
+    await enterManual(user, "c1b2c3d4e5f60718293a4b5c", "Qabul qilish");
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "Buyurtma yo'lda emas — qabul qilib bo'lmaydi", "manual"),
+    );
+
+    // Oxirgi skan qatori — sababi bilan (kamera xabari va ro'yxat).
+    expect(screen.getAllByText("Buyurtma yo'lda emas — qabul qilib bo'lmaydi").length).toBeGreaterThan(0);
+    expect(patchSpy).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("backend qabul qilmasa — sababi xato sifatida; keyingi skan qayta urinadi", async () => {
+    const user = userEvent.setup();
+    patchSpy.mockResolvedValueOnce({
+      data: {
+        received_order_ids: [],
+        already_received_order_ids: [],
+        not_received_order_ids: ["10191"],
+        failures: [{ order_id: "10191", error: "Pochta hali jo'natilmagan" }],
+      },
+    } as never);
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("error", "Pochta hali jo'natilmagan", "manual"));
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Qabul qilindi · Yunusobod tumani")).toBeInTheDocument();
+  });
+
+  it("paket kodi so'rovsiz rad etiladi", async () => {
+    const user = userEvent.setup();
+    renderScan("courier", { mode: "courierReceive" });
+
+    await enterManual(user, "BTB-00042", "Qabul qilish");
+
+    expect(feedbackMock).toHaveBeenCalledWith(
+      "error",
+      "Bu buyurtma QR kodi emas — uni «Ma'lumot» rejimida oching",
+      "manual",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("«O'zimga olish» rejimida o'zidagi yo'ldagi buyurtma — «Yo'lda — «Qabul qilish» rejimida skanerlang»", async () => {
+    const user = userEvent.setup();
+    assignMock.mockResolvedValueOnce({
+      statusCode: 200,
+      data: {
+        idempotent: true,
+        order_id: "10172",
+        post_id: "p-1",
+        post_created: false,
+        order: { id: "10172", order_number: "10172", status: "on_the_road", customer: { name: "Sardor Qodirov" } },
+      },
+    });
+    renderScan("courier");
+
+    await enterManual(user, TOKEN, "Olish");
+
+    expect(await screen.findByText("Yo'lda — «Qabul qilish» rejimida skanerlang")).toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith("duplicate", "№10172 yo'lda — «Qabul qilish» rejimida skanerlang");
+    expect(patchSpy).not.toHaveBeenCalled();
   });
 });

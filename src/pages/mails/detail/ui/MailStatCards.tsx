@@ -17,6 +17,10 @@ import { Card, StatCard } from "../../../../shared/ui/primitives";
  * Kuryer (`layout="courier"`): birinchi karta — «Tanlangan» (izoh — tanlanganlar summasi + jarayon chizig'i),
  * rad etilgan pochtada «Rad etilgan» N ta, eski pochtada «Jami» N ta (`leadCard`).
  *
+ * Skan = darhol qabul (2026-11-07, `leadCard="received"`, kuryer va menejer): birinchi karta — «Qabul qilindi»
+ * n / N ta (izoh «Qoldi m ta», jarayon chizig'i); telefonda xodim xulosasida ham shu qator. Maket yo'q — eng yaqini
+ * `courier-mails-detail-receive` («Tanlangan» kartasi).
+ *
  * `variant="compact"` — eski API (paket tafsiloti ishlatgan); ko'rinishi `cards` bilan bir xil.
  */
 interface HomeOrderStats {
@@ -39,8 +43,12 @@ interface MailStatCardsProps {
   variant?: "cards" | "compact";
   /** Xodim (sukut) yoki kuryer maketi. */
   layout?: "staff" | "courier";
-  /** Kuryer: birinchi karta (sukut — «Tanlangan», `showSelectionCard` bo'lsa). */
-  leadCard?: "selected" | "refused" | "total";
+  /** Birinchi karta (sukut — «Tanlangan», `showSelectionCard` bo'lsa); «received» — skan-qabul rejimi. */
+  leadCard?: "selected" | "refused" | "total" | "received";
+  /** `leadCard="received"`: shu pochtada qabul qilinganlar (kutilmoqda + shu sahifada skanerlab qabul qilinganlar). */
+  receivedCount?: number;
+  /** `leadCard="received"`: qabul qilinganlar + hali qabul qilinadiganlar. */
+  receiveTotal?: number;
   /** Tanlangan buyurtmalar summasi (kuryer «Tanlangan» izohi). */
   selectedSum?: number;
   /** Barcha buyurtmalar summasi («Rad etilgan» / «Jami» izohi). */
@@ -58,6 +66,8 @@ const MailStatCards = memo(
     leadCard,
     selectedSum = 0,
     totalSum = 0,
+    receivedCount = 0,
+    receiveTotal = 0,
   }: MailStatCardsProps) => {
     const { t, i18n } = useTranslation("mails");
     const language = i18n.resolvedLanguage ?? i18n.language;
@@ -76,9 +86,37 @@ const MailStatCards = memo(
         ? t("detailPage.statSelectedHint", { value: count(selectedCount), count: selectedCount })
         : t("detailPage.statNoneSelected");
     const percent = totalOrders > 0 ? Math.round((selectedCount / totalOrders) * 100) : 0;
+    const receiveLeft = Math.max(0, receiveTotal - receivedCount);
+    const receivedHint =
+      receiveLeft > 0
+        ? t("detailPage.statReceivedLeft", { value: count(receiveLeft), count: receiveLeft })
+        : t("detailPage.statReceivedAll");
+    const receivedPercent = receiveTotal > 0 ? Math.round((receivedCount / receiveTotal) * 100) : 0;
 
     const leadNode =
-      lead === "selected" ? (
+      lead === "received" ? (
+        <StatCard
+          label={t("detailPage.statReceived")}
+          icon={ListChecks}
+          value={count(receivedCount)}
+          unit={t("detailPage.statOfTotal", { value: count(receiveTotal), count: receiveTotal })}
+          hint={receivedHint}
+        >
+          <span
+            role="progressbar"
+            aria-label={t("detailPage.statReceivedProgress")}
+            aria-valuemin={0}
+            aria-valuemax={receiveTotal}
+            aria-valuenow={receivedCount}
+            className="mt-1.5 block h-2 overflow-hidden rounded-full bg-sunken"
+          >
+            <span
+              className="block h-full rounded-full bg-success transition-[width] duration-200 motion-reduce:transition-none"
+              style={{ width: `${receivedPercent}%` }}
+            />
+          </span>
+        </StatCard>
+      ) : lead === "selected" ? (
         <StatCard
           label={t("detailPage.statSelected")}
           icon={ListChecks}
@@ -112,15 +150,26 @@ const MailStatCards = memo(
         />
       ) : null;
 
-    const phoneRows = [
-      showSelectionCard && !isCourier
+    // Xodim telefonidagi birinchi qator: skan-qabulda «Qabul qilindi», aks holda «Tanlangan».
+    const phoneLeadRow = isCourier
+      ? null
+      : lead === "received"
         ? {
-            key: "selected",
-            label: t("detailPage.statSelected"),
-            sub: selectedHint,
-            value: t("detailPage.statSelectedOf", { selected: count(selectedCount), total: count(totalOrders) }),
+            key: "received",
+            label: t("detailPage.statReceived"),
+            sub: receivedHint,
+            value: t("detailPage.statSelectedOf", { selected: count(receivedCount), total: count(receiveTotal) }),
           }
-        : null,
+        : showSelectionCard
+          ? {
+              key: "selected",
+              label: t("detailPage.statSelected"),
+              sub: selectedHint,
+              value: t("detailPage.statSelectedOf", { selected: count(selectedCount), total: count(totalOrders) }),
+            }
+          : null;
+    const phoneRows = [
+      phoneLeadRow,
       {
         key: "home",
         label: t("detailPage.statHome"),

@@ -804,20 +804,79 @@ export const useReassignPostToBranch = () => {
 // ─── Receive Post Payload ─────────────────────────────────────────────────────
 export interface ReceivePostPayload {
   order_ids: string[];
+  /**
+   * Skaner bilan qabul (2026-11-07): faqat `order_ids` qabul qilinadi, pochtadagi qolgan yo'ldagi buyurtmalarga tegilmaydi
+   * (qaytarish so'rovi belgilanmaydi). Berilmasa — eski «tanlanganlarni qabul qil, qolganini qaytarishga» qoidasi.
+   */
+  scan?: boolean;
 }
 
+/**
+ * `PATCH post/receive/:id` javobi. `scan: true` bo'lsa backend qo'shimcha maydonlarni ham qaytaradi
+ * (eski backendda yo'q bo'lishi mumkin — hammasi ixtiyoriy).
+ */
+export interface ReceivePostResponse {
+  data?: unknown;
+  message?: string;
+  not_received_order_ids?: Array<string | number>;
+  /** Shu so'rovda yo'ldan «kutilmoqda»ga o'tganlar. */
+  received_order_ids?: Array<string | number>;
+  /** So'rovdan oldin allaqachon qabul qilingan (yozuv yo'q, xato emas). */
+  already_received_order_ids?: Array<string | number>;
+  /** Pochtada hamon yo'lda turganlar soni (qaytarish so'ralganlar ham); qayta tekshiruv yiqilsa `null`. */
+  remaining_count?: number | null;
+  /** Pochtaning yangi holati (`sent` | `received` …). */
+  post_status?: string;
+}
+
+/**
+ * Skan-qabul navbatlari (kalit — `scope`): so'rovlar ketma-ket, sahifa yashirin bo'lsa ham va sahifadan chiqilsa ham
+ * yuboriladi. TanStack `scope` ishlatilmaydi — u navbatdagi mutatsiyani fokus/tarmoq qaytguncha to'xtatib qo'yadi
+ * (telefon qulflansa skanlar jo'natilmay qolardi, kuryer esa «qabul qilindi» ni eshitib bo'lgan).
+ */
+const receiveChains = new Map<string, Promise<unknown>>();
+
+const enqueueReceive = <T,>(key: string, run: () => Promise<T>): Promise<T> => {
+  const previous = receiveChains.get(key) ?? Promise.resolve();
+  const next = previous.then(run, run);
+  const tail = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  receiveChains.set(key, tail);
+  void tail.then(() => {
+    if (receiveChains.get(key) === tail) receiveChains.delete(key);
+  });
+  return next;
+};
+
 // ─── PATCH: Courier tomonidan pochtani qabul qilish ──────────────────────────
-export const useReceivePost = () => {
+export const useReceivePost = (options?: {
+  /**
+   * Berilsa so'rovlar shu kalit bo'yicha ketma-ket (bitta navbat; sahifa yashirin bo'lsa yoki sahifadan chiqilsa ham
+   * yuboriladi) va `mutationKey: ["post-receive", scope]` (useIsMutating / useMutationState uchun — navbatdagilar ham
+   * darhol `pending`). Skan-qabulda: `post-receive:<postId>`; kuryer /scan va ro'yxati: `courier-scan-receive`.
+   */
+  scope?: string;
+}) => {
   const queryClient = useQueryClient();
+  const scope = options?.scope;
 
   return useMutation({
+    ...(scope ? { mutationKey: ["post-receive", scope] } : {}),
     mutationFn: ({
       postId,
       payload,
     }: {
       postId: string;
       payload: ReceivePostPayload;
-    }) => api.patch(API_ENDPOINTS.POSTS.RECEIVE(postId), payload).then((res) => res.data),
+    }): Promise<ReceivePostResponse> => {
+      const send = () =>
+        api
+          .patch(API_ENDPOINTS.POSTS.RECEIVE(postId), payload)
+          .then((res) => res.data as ReceivePostResponse);
+      return scope ? enqueueReceive(scope, send) : send();
+    },
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],

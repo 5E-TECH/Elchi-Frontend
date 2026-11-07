@@ -157,6 +157,30 @@ describe("useKeyboardScanner", () => {
     expect(onScan).not.toHaveBeenCalled();
   });
 
+  it("sahifa band — tugmalar kechikib ishlansa ham skan bo'linmaydi (oraliq hodisa vaqtidan, 2026-11-07)", () => {
+    const onScan = vi.fn();
+    renderHook(() => useKeyboardScanner({ onScan, idleMs: 80, clearMs: 350 }));
+    const at = (key: string, timeStamp: number) => {
+      const event = keyEvent({ key, code: key === "Enter" ? "Enter" : undefined });
+      Object.defineProperty(event, "timeStamp", { value: timeStamp });
+      window.dispatchEvent(event);
+    };
+    at("a", 1000);
+    at("b", 1005);
+    // Asosiy oqim 200 ms band edi: qolgan tugmalar shundan keyin ishlanadi, lekin skaner ularni 5 ms oraliqda yuborgan.
+    vi.advanceTimersByTime(200);
+    at("c", 1010);
+    at("Enter", 1015);
+    expect(onScan).toHaveBeenCalledWith("abc");
+
+    // Haqiqiy pauza (hodisa vaqtida ham) — avvalgidek bufer yangidan boshlanadi.
+    onScan.mockClear();
+    at("x", 5000);
+    at("y", 5100);
+    at("Enter", 5105);
+    expect(onScan).toHaveBeenCalledWith("y");
+  });
+
   it("Ctrl/Meta/Alt bilan bosilgan tugma va (sukutda) matn maydonidagi yozuv hisoblanmaydi", () => {
     const onScan = vi.fn();
     renderHook(() => useKeyboardScanner({ onScan }));

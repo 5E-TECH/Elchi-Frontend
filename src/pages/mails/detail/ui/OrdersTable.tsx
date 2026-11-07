@@ -113,6 +113,8 @@ interface OrdersTableProps {
   scannerReady?: boolean;
   /** Skaner belgisi matni (sukut «USB skaner tayyor»; rad etilganda «Skaner tayyor»). */
   scannerReadyLabel?: ReactNode;
+  /** Skaner belgisi izohi (`title`, sukut «… buyurtma ro'yxatda tanlanadi»; skan-qabulda «… qabul qilinadi»). */
+  scannerReadyTitle?: string;
   /** Tanlov paneli izohi (`readOnly` da panel yo'q). */
   selectionHint?: ReactNode;
   /** «Tanlovni bekor qilish» (berilmasa tugma yo'q). */
@@ -223,6 +225,7 @@ const OrdersTable = memo(
     scanHint,
     scannerReady = false,
     scannerReadyLabel,
+    scannerReadyTitle,
     selectionHint,
     onClearSelection,
     columns,
@@ -717,7 +720,7 @@ const OrdersTable = memo(
         tone="success"
         dot
         role="status"
-        title={t("detailPage.scannerReadyTitle")}
+        title={scannerReadyTitle ?? t("detailPage.scannerReadyTitle")}
         className={scannerReadyOnPhone ? undefined : "max-md:hidden"}
       >
         {scannerReadyLabel ?? t("detailPage.scannerReady")}

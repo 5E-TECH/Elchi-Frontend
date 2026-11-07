@@ -4,8 +4,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * 390px, kuryer QR skani (Trello 6qypMFeT): «O'zimga olish» dan keyin keshlar yangilanadi.
  *   1) `POST orders/scan-assign` 200 → ilovadan chiqmasdan «Buyurtmalar» ga qaytilsa ro'yxat (`GET orders/courier/orders`)
  *      QAYTA so'raladi — global 30 s keshda eski ro'yxat qolmaydi;
- *   2) o'sha QR qayta ochilsa skan natijasi ham qayta so'raladi va buyurtma endi shu kuryerda — «O'zimga olish» faol
- *      emas, «Bu buyurtma allaqachon sizda».
+ *   2) o'sha QR qayta ochilsa skan natijasi ham qayta so'raladi va buyurtma endi shu kuryerda, pochtasida yo'lda —
+ *      «O'zimga olish» yo'q, o'rniga «Qabul qilish» (2026-11-07 kuryer skan-qabuli).
  * Sahifalar orasida ilova ichida o'tiladi (`history.pushState` + `popstate`) — to'liq qayta yuklash keshni o'chirib,
  * tekshiruvni ma'nosiz qilardi.
  */
@@ -27,6 +27,8 @@ const order = (assigned: boolean) => ({
   id: "10214",
   status: assigned ? "on_the_road" : "received",
   courier_id: assigned ? COURIER_ID : null,
+  // scan-assign buyurtmani kuryerning SENT pochtasiga qo'yadi (javobdagi `post_id`).
+  post_id: assigned ? "p-1" : null,
   qr_code_token: TOKEN,
   where_deliver: "address",
   total_price: 185000,
@@ -128,15 +130,15 @@ test.describe("Kuryer QR: «O'zimga olish» dan keyin kesh (6qypMFeT), 390px", (
     expect(leaked).toEqual([]);
   });
 
-  test("o'sha QR qayta ochilsa — yangi holat: «Bu buyurtma allaqachon sizda», «O'zimga olish» faol emas", async ({ page }) => {
+  test("o'sha QR qayta ochilsa — yangi holat: yo'lda, «Qabul qilish» bor, «O'zimga olish» yo'q", async ({ page }) => {
     const { state, leaked } = await mockApi(page);
     await page.goto(`/scan/${TOKEN}`);
     await takeOrder(page);
     expect(state.detailCalls).toBe(1);
 
     await goInApp(page, `/scan/${TOKEN}`);
-    await expect(page.getByText("Bu buyurtma allaqachon sizda")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole("button", { name: "O'zimga olish" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Qabul qilish" })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "O'zimga olish" })).toHaveCount(0);
     expect(state.detailCalls).toBe(2);
     expect(state.assigns).toBe(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
