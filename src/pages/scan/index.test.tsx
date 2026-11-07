@@ -250,6 +250,10 @@ describe("ScanPage — universal skaner (desktop)", () => {
     expect(within(card).queryByText(/№/)).not.toBeInTheDocument();
     expect(feedbackMock).toHaveBeenCalledWith("error", "Bu buyurtma sizning filialingizda emas", "keyboard");
     expect(navigateMock).not.toHaveBeenCalled();
+    // Kulrang qulf (tizim-errors §02, `/scan/:token` dagidek) — qizil emas.
+    const alert = within(card).getByTestId("scan-outcome");
+    expect(alert).toHaveClass("bg-sunken");
+    expect(alert).not.toHaveClass("bg-danger-soft");
   });
 
   it("503 branch_scope_unavailable: «Filialingizni aniqlab bo'lmadi» va izoh", async () => {
@@ -270,6 +274,8 @@ describe("ScanPage — universal skaner (desktop)", () => {
       "Filialingizni aniqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
       "keyboard",
     );
+    // Vaqtinchalik tizim xatosi — qizil qoladi.
+    expect(within(card).getByTestId("scan-outcome")).toHaveClass("bg-danger-soft");
   });
 
   it("shows the read text of an invalid QR and never asks the server", async () => {

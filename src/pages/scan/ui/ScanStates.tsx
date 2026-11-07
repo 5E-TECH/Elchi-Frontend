@@ -66,7 +66,7 @@ export const ScanForbiddenCard = ({ title, text }: { title: string; text?: strin
   return (
     <Card>
       <EmptyState
-        role="alert"
+        role="status"
         tone="neutral"
         icon={Lock}
         title={title}

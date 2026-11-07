@@ -36,6 +36,7 @@ import { useDebounce } from "../../../../shared/lib/useDebounce";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
 import { playScanFeedback } from "../../../../shared/lib/scanner/feedback";
+import { readQrScopeText } from "../../../../shared/lib/coverageReasons";
 import { orderByRecent, scanNotify, useRecentScans } from "../../../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../../../shared/lib/scanner/scanTargets";
 import { extractScannerToken } from "../../../../shared/lib/scanToken";
@@ -660,6 +661,13 @@ const CourierOrders = () => {
         t("scanNotFoundDescription"),
       );
     } catch (error) {
+      // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — lokal uz/ru/en sabab, «Buyurtma topilmadi» emas.
+      const scope = readQrScopeText(t, error);
+      if (scope) {
+        scanNotify.error(scope.title, { description: scope.description || undefined, duration: 3000 });
+        void playScanFeedback("error", scope.line);
+        return;
+      }
       const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
       scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
       void playScanFeedback("error", message);

@@ -14,6 +14,7 @@ import {
   useReceiptPrint,
 } from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
@@ -324,6 +325,14 @@ const NewOrderDetail = () => {
       } catch (error) {
         if (getErrorStatus(error) === 404) {
           markMissingCode(rawValue);
+          return;
+        }
+        // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — lokal sabab, «qayta skanerlang» emas (qayta skan
+        // foydasiz). 503 `branch_scope_unavailable` — o'z matni, qayta skan bilan urinib ko'rish mumkin.
+        const scope = readQrScopeText(t, error);
+        if (scope) {
+          void playScanFeedback("error", scope.line);
+          scanNotify.error(scope.title, { description: scope.description || undefined, duration: 3000 });
           return;
         }
         const message = t("marketOrders.camera.checkFailed");

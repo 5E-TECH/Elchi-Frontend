@@ -658,7 +658,7 @@ describe("ScanDetailPage — begona QR (anKpzwxk, backend #620)", () => {
     const heading = await screen.findByRole("heading", { level: 1, name: "Bu buyurtma sizning filialingizda emas" });
     const card = screen.getByTestId("scan-forbidden");
     expect(card).toContainElement(heading);
-    expect(card).toHaveAttribute("role", "alert");
+    expect(card).toHaveAttribute("role", "status");
     expect(screen.getByRole("link", { name: "Skanerga qaytish" })).toHaveAttribute("href", "/scan");
     expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
     expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();

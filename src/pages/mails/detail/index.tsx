@@ -1120,7 +1120,8 @@ const MailDetailPage = () => {
         duration: 2000,
       });
 
-      const fail = (reason: string | null) => {
+      /** `heading` — o'z sarlavhasi («qayta skanerlang» siz); `sticky` — xabar foydalanuvchi yopguncha turadi. */
+      const fail = (reason: string | null, heading?: string, sticky = false) => {
         pending.delete(orderId);
         setScanHiddenIds((prev) => {
           if (!prev.has(orderId)) return prev;
@@ -1129,9 +1130,9 @@ const MailDetailPage = () => {
           return next;
         });
         setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "failed" } }));
-        const title = t("detailPage.scanReceive.failed", { id: orderId });
+        const title = heading ?? t("detailPage.scanReceive.failed", { id: orderId });
         void playScanFeedback("error", title, undefined, reason ? { text: reason } : {});
-        scanNotify.error(title, { description: reason ?? undefined, duration: 6000 });
+        scanNotify.error(title, { description: reason ?? undefined, duration: sticky ? undefined : 6000 });
       };
 
       // `Promise.resolve().then` — so'rov xatosi (hatto sinxron) ham shu yerda ushlanadi, skan oqimi uzilmaydi.
@@ -1149,11 +1150,22 @@ const MailDetailPage = () => {
             setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "received" } }));
             if (outcome.postStatus === "received" && pending.size === 0) finishScanReceive();
           },
-          // #621 `post_receive_manager_only` — lokal matn; noma'lum sabab — backend matni.
-          (error: unknown) => fail(coverageErrorLine(t, error, "receive") ?? getBackendErrorMessage(error) ?? null),
+          (error: unknown) => {
+            // #621 `post_receive_manager_only`: qabul faqat manzil filial menejerida — qayta skan foydasiz:
+            // «Pochta qabul qilinmadi» + sabab (qolguncha turadi), sahifa yangilanadi (`handleReceive` dagidek).
+            const rejection = readBackendRejection(error);
+            if (rejection.reason === "post_receive_manager_only") {
+              const text = coverageRejectionText(t, rejection, { context: "receive", fallbackTitle: "" });
+              fail(text.description, text.title, true);
+              void refetchRegularDetail();
+              return;
+            }
+            // Boshqa tanilgan sabab — lokal matn; noma'lum — backend matni.
+            fail(coverageErrorLine(t, error, "receive") ?? getBackendErrorMessage(error) ?? null);
+          },
         );
     },
-    [count, finishScanReceive, postId, scanReceivePost, t, touchRecentScan],
+    [count, finishScanReceive, postId, refetchRegularDetail, scanReceivePost, t, touchRecentScan],
   );
 
   /** Skan-qabul: indeksda yo'q kod — faqat skan javobidagi buyurtma id'si pochta qatoriga AYNAN teng bo'lsa qabul. */
@@ -2031,7 +2043,8 @@ const MailDetailPage = () => {
   // Karta: sarlavha, skaner izohi va tanlov izohi rejimga qarab (maketlar).
   const ordersTitle =
     isCourier && !isEffectiveRefusedDetail && !isCourierHistory ? t("detailPage.onTheRoadTitle") : undefined;
-  const ordersAria = isOldDetail
+  // Boshqa filialning yo'ldagi o'tkazmasi (faqat o'qish) eski pochta emas — sukut «Pochtadagi buyurtmalar».
+  const ordersAria = isOldDetail && !isForeignTransferPost
     ? t("detailPage.oldOrdersAria")
     : isEffectiveRefusedDetail
       ? t("detailPage.refusedOrdersAria")

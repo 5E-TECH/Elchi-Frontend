@@ -70,6 +70,11 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
     icon = TriangleAlert;
   }
 
+  // Begona QR (403, #620) — kulrang qulf (tizim-errors §02: qizil faqat tizim xatosida), `/scan/:token` dagidek;
+  // 503 `branch_scope_unavailable` va boshqa xatolar — qizil.
+  const tone =
+    outcome.kind === "market-qr" ? "warning" : outcome.kind === "error" && outcome.forbidden ? "neutral" : "danger";
+
   return (
     <Card
       padding="lg"
@@ -78,7 +83,7 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
       bodyClassName="flex flex-col gap-3"
     >
       {/* Jonli hudud emas: natijani kamera xabari (`role="status"`) allaqachon o'qiydi — ikki marta aytilmasin. */}
-      <ScanAlert tone={outcome.kind === "market-qr" ? "warning" : "danger"} icon={icon} title={title}>
+      <ScanAlert tone={tone} icon={icon} title={title} data-testid="scan-outcome">
         {text}
       </ScanAlert>
       <div className="flex flex-col gap-0.5 rounded-xl bg-sunken px-3 py-2.5">

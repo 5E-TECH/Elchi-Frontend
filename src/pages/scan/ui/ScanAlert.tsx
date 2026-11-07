@@ -5,7 +5,7 @@ import { cx } from "../../../shared/lib/cx";
 import { TONE_SOFT } from "../../../shared/ui/primitives";
 
 type ScanAlertProps = {
-  tone: "success" | "danger" | "info" | "warning";
+  tone: "neutral" | "success" | "danger" | "info" | "warning";
   icon: LucideIcon;
   /** Qalin birinchi qator (`.el-alert-title`). */
   title: ReactNode;

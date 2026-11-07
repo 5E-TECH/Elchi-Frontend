@@ -951,7 +951,7 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "courier": "Begona QR (anKpzwxk, backend #620): «Ma'lumot» rejimida 403 order_not_in_your_branch / post_not_visible_to_courier — «Natija» kartasida lokal sarlavha («Bu buyurtma sizning filialingizda emas» / «Pochta hali filialga qabul qilinmagan»), qulf ikonkasi, faqat o'qilgan matn (raqam va ma'lumot yo'q), xato signali; «Qabul qilish» rejimida — ro'yxatda o'sha sabab. Maket yo'q — eng yaqini: courier-scan-not-found, courier-scan-invalid («O'qilgan matn»).",
+        "courier": "Begona QR (anKpzwxk, backend #620): «Ma'lumot» rejimida 403 order_not_in_your_branch / post_not_visible_to_courier — «Natija» kartasida lokal sarlavha («Bu buyurtma sizning filialingizda emas» / «Pochta hali filialga qabul qilinmagan»), kulrang qulf ikonkasi (503 — qizil), faqat o'qilgan matn (raqam va ma'lumot yo'q), xato signali; «Qabul qilish» rejimida — ro'yxatda o'sha sabab. Maket yo'q — eng yaqini: courier-scan-not-found, courier-scan-invalid («O'qilgan matn»).",
         "manager": "Begona QR (anKpzwxk, backend #620): «Ma'lumot» va «Pochtadan qabul» rejimlarida 403 order_not_in_your_branch / branch_not_assigned — lokal sarlavha, xato signali, ma'lumotsiz; 503 branch_scope_unavailable — «Filialingizni aniqlab bo'lmadi». «Pochtadan qabul»da qabul 403 post_receive_manager_only (#621) — «Pochta qabul qilinmadi. Bu pochtani faqat manzil filial menejeri qabul qila oladi.» (backend matni emas). Maket yo'q — eng yaqini: courier-scan-not-found, courier-scan-active.",
         "market": "Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false). URL bilan ochilsa — «Skaner market roli uchun emas» bo'sh holati (kamera ochilmaydi)."
       },

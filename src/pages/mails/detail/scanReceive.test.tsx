@@ -503,7 +503,7 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
     expect(checkbox("101")).toBeNull();
   });
 
-  it("menejer, skan-qabul 403 post_receive_manager_only (#621) — qator qaytadi, sabab lokal matn (backend matni emas)", async () => {
+  it("menejer, skan-qabul 403 post_receive_manager_only (#621) — «Pochta qabul qilinmadi» + sabab, «qayta skanerlang» yo'q, sahifa yangilanadi", async () => {
     const rows = [order("101"), order("102")];
     setup(() => rows, TRANSFER_POST);
     mocks.receive.mockRejectedValue({
@@ -513,14 +513,18 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
       },
     });
     renderPage(manager());
+    mocks.refetchDetail.mockClear();
 
     scanRow(rows[0]);
 
-    expect(await screen.findByText("№101 qabul qilinmadi — qayta skanerlang")).toBeInTheDocument();
-    expect(
-      screen.getByText("Pochta qabul qilinmadi. Bu pochtani faqat manzil filial menejeri qabul qila oladi."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Pochta qabul qilinmadi")).toBeInTheDocument();
+    expect(screen.getByText("Bu pochtani faqat manzil filial menejeri qabul qila oladi.")).toBeInTheDocument();
+    expect(screen.queryByText(/qayta skanerlang/)).toBeNull();
     expect(screen.queryByText("backend matni")).toBeNull();
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("error", "Pochta qabul qilinmadi", undefined, {
+      text: "Bu pochtani faqat manzil filial menejeri qabul qila oladi.",
+    });
+    expect(mocks.refetchDetail).toHaveBeenCalled();
     expect(checkbox("101")).toBeInTheDocument();
   });
 
@@ -546,13 +550,16 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
   });
 
   it("menejer, boshqa filialning o'tkazmasi (havola orqali) — faqat o'qish: tanlov yo'q, so'rovsiz (anKpzwxk)", () => {
-    const rows = [order("101"), order("102")];
-    setup(() => rows, TRANSFER_POST);
+    setup(() => [order("101"), order("102")], TRANSFER_POST);
     renderPage(manager("16"));
 
     // Qabul faqat manzil filial menejerida (backend #620/#621) — boshqa filial menejeriga sahifa faqat o'qish uchun.
     expect(screen.getByText("Faqat o'qish")).toBeInTheDocument();
-    if (mocks.scanner) scanRow(rows[0]);
+    expect(mocks.scanner?.enabled).toBe(false);
+    expect(mocks.scanner?.camera).toBeUndefined();
+    // Yo'ldagi o'tkazma eski pochta emas — kartaning nomi sukut bo'yicha.
+    expect(screen.getByRole("region", { name: "Pochtadagi buyurtmalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Eski pochtadagi buyurtmalar" })).toBeNull();
     expect(checkbox("101")).toBeNull();
     expect(mocks.receive).not.toHaveBeenCalled();
   });
