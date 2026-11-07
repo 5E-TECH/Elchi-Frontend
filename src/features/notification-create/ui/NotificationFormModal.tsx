@@ -86,13 +86,16 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
   /** Tanlov almashsa, kechikkan javob eski (market, tur) havolasini ko'rsatmasin. */
   const requestSeq = useRef(0);
 
+  const expired = link !== null && expiredLink === link;
+
   // Tanlangan (market, tur) uchun ulanish: havoladan oldin — «allaqachon ulangan» tekshiruvi,
-  // havoladan keyin — ulanishni kutish (har 4 s, oyna fonda bo'lsa ham).
+  // havoladan keyin — ulanishni kutish (har 4 s, oyna fonda bo'lsa ham). Muddati tugagan havola ulay olmaydi —
+  // kutish to'xtaydi (ilgari oyna yopilguncha har 4 s so'rov ketardi; `useMarketGroupLink` dagidek).
   const linkQuery = useNotifications(
     { market_id: marketId ?? undefined, group_type: groupType, page: 1, limit: 1 },
     {
       enabled: open && Boolean(marketId),
-      refetchInterval: open && link ? GROUP_LINK_POLL_MS : false,
+      refetchInterval: open && link && !expired ? GROUP_LINK_POLL_MS : false,
       refetchIntervalInBackground: true,
     },
   );
@@ -100,7 +103,6 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
     ? (linkQuery.data?.data.find((row) => row.market_id === marketId && row.group_type === groupType) ?? null)
     : null;
   const checking = Boolean(marketId) && linkQuery.isLoading;
-  const expired = link !== null && expiredLink === link;
   const marketName = marketId ? (getName(marketId) ?? `#${marketId}`) : "";
 
   // Havola muddati tugadi — «Yangi havola olish».

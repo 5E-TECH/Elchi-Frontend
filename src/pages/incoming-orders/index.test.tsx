@@ -805,6 +805,45 @@ describe("IncomingOrdersPage — USB skaner fokussiz, F5, «tayyor» belgisi", (
     document.querySelectorAll("[data-test-extra]").forEach((element) => element.remove());
   });
 
+  it("⭐ manba almashtirilib qaytilsa (A → B → A, kameradagi manba tanlovi) — A skanlari va F5 qoralamasi saqlanadi", async () => {
+    const user = userEvent.setup();
+    const other = [{ id: "o-91", order_number: 2091, qr_code_token: "tok-91", customer: { name: "Boshqa mijoz" } }];
+    apiGetMock.mockImplementation((url: string, config?: { params?: { market_id?: string } }) => {
+      if (url !== "orders/external") return Promise.resolve({ data: [] });
+      const rows = config?.params?.market_id === "122" ? other : list;
+      return Promise.resolve({ data: { data: rows, total: rows.length } });
+    });
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/new-orders/incoming/:marketId" element={<IncomingOrdersPage />} />
+        </Routes>
+        <Link to="/new-orders/incoming/121">Manba A</Link>
+        <Link to="/new-orders/incoming/122">Manba B</Link>
+      </>,
+      { route: "/new-orders/incoming/121", preloadedState: userState },
+    );
+    await screen.findByText("Mijoz 3");
+    scanInField("tok-11");
+    scanInField("tok-22");
+    await waitFor(() => expect(scannedProgress()).toBe("2 / 3"));
+    expect(window.localStorage.getItem(DRAFT_KEY)).not.toBeNull();
+
+    await user.click(screen.getByRole("link", { name: "Manba B" }));
+    expect(await screen.findByText("Boshqa mijoz")).toBeInTheDocument();
+    await waitFor(() => expect(scannedProgress()).toBe("0 / 1"));
+    scanInField("tok-91");
+    await waitFor(() => expect(scannedProgress()).toBe("1 / 1"));
+
+    await user.click(screen.getByRole("link", { name: "Manba A" }));
+    expect(await screen.findByText("Mijoz 3")).toBeInTheDocument();
+    // Sahifa `key={marketId}` bilan qayta yaratiladi — qoralama manbaga bog'liq tiklanadi (kalit olib tashlansa,
+    // tiklash faqat foydalanuvchiga bog'liq qolib, A ning skanlari va qoralamasi o'chib ketardi).
+    await waitFor(() => expect(scannedProgress()).toBe("2 / 3"));
+    expect(window.localStorage.getItem(DRAFT_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem("elchi:incoming-scan:v1:user-1:122")).not.toBeNull();
+  });
+
   it("⭐ fokus bo'sh joyda: skan tutiladi, posilka belgilanadi, xabar chiqadi", async () => {
     render();
     await screen.findByText("Mijoz 3");

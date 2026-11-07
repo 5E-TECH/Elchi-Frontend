@@ -166,6 +166,15 @@ export const useHeaderSearch = (idPrefix: string) => {
         return "handled";
       }
       if (key === "Enter") {
+        // Ko'rinib turgan natijalar OLDINGI matnniki (400 ms kechikish yoki sekin javob — `placeholderData`): Enter
+        // ularni ochmaydi — aks holda skanerlangan / qo'yilgan havola boshqa buyurtmani ochardi. Qidiruv darhol
+        // yuboriladi; natija kelgach Enter ishlaydi.
+        const staleResults =
+          trimmed.length > 0 && (trimmed !== debounced || (isPlaceholderData && limit === PAGE_SIZE));
+        if (staleResults) {
+          setDebounced(trimmed);
+          return "handled";
+        }
         const option = options[boundedActive] ?? (view === "results" ? options[0] : undefined);
         if (!option) return null;
         return choose(option) ? "chosen" : "handled";
@@ -179,7 +188,7 @@ export const useHeaderSearch = (idPrefix: string) => {
       }
       return null;
     },
-    [boundedActive, choose, close, open, options, view],
+    [boundedActive, choose, close, debounced, isPlaceholderData, limit, open, options, trimmed, view],
   );
 
   return {

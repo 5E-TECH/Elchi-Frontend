@@ -75,6 +75,8 @@ describe("AddEmployeeModal (v2)", () => {
         params: expect.objectContaining({ role, status: "active", page: 1, limit: 100 }),
       });
     }
+    // `enabled` — hook bayrog'i, so'rov parametri emas (ilgari `GET users?…&enabled=true` ketardi).
+    for (const [, config] of api.get.mock.calls) expect(config.params).not.toHaveProperty("enabled");
 
     await user.click(within(dialog).getByRole("combobox", { name: /^Foydalanuvchi/ }));
     const option = await screen.findByRole("option", { name: /Dilshod Karimov/ });

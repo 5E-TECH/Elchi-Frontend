@@ -122,6 +122,19 @@ describe("UpdateUserModal — kuryer «Tuman» (DtKKY0V8)", () => {
     expect(mocks.updateUser).toHaveBeenCalledWith({ id: "263", data: { district_id: "40" } });
   });
 
+  it("⭐ API pulni matn bilan beradi («25000.00») — tegilmagan tariflar qayta yuborilmaydi (faqat o'zgargan maydon)", async () => {
+    const user = userEvent.setup();
+    renderModal(courier({ tariff_home: "25000.00", tariff_center: "15000.00" } as unknown as Partial<User>));
+
+    await user.click(screen.getByRole("combobox", { name: "Tuman" }));
+    await user.click(screen.getByRole("option", { name: "Pastdarg'om tumani" }));
+    await save(user);
+
+    // Ilgari son va matn solishtirilardi (`25000 !== "25000.00"`) — har saqlashda ikkala tarif ham yuborilardi.
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "263", data: { district_id: "40" } });
+  });
+
   it("× — tumansiz (`district_id: null`)", async () => {
     const user = userEvent.setup();
     renderModal(courier());

@@ -8,6 +8,7 @@ import {
   rememberSearch,
 } from "./recentSearches";
 import { groupSearchEntries, splitByQuery, toSearchEntry } from "./searchEntry";
+import { clearStoredUiPreferences } from "../../../shared/lib/preferencesStorage";
 import { getInitials, joinRoleAndBranch, readBranchName, readDisplayName } from "./userIdentity";
 
 const item = (overrides: Partial<GlobalSearchItem>): GlobalSearchItem => ({
@@ -64,6 +65,18 @@ describe("recentSearches", () => {
     for (let index = 0; index < 10; index += 1) rememberSearch(`q${index}`);
     expect(readRecentSearches()).toHaveLength(RECENT_SEARCHES_LIMIT);
     expect(readRecentSearches()[0]).toBe("q9");
+  });
+
+  it("⭐ chiqishda tozalanadi — umumiy kompyuterda keyingi foydalanuvchi oldingisining qidiruvlarini ko'rmaydi", () => {
+    rememberSearch("+998 90 123 45 67");
+    rememberSearch("Dilnoza Karimova");
+    expect(readRecentSearches()).toHaveLength(2);
+
+    // `authService.resetClientAuthState` (chiqish, sessiya tugashi) shuni chaqiradi.
+    clearStoredUiPreferences();
+
+    expect(readRecentSearches()).toEqual([]);
+    expect(window.localStorage.getItem(RECENT_SEARCHES_KEY)).toBeNull();
   });
 
   it("ignores empty queries and broken storage values", () => {

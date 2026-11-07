@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-warehouse-detail, admin-warehouse-detail, manager-warehouse-detail
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, PackagePlus, SearchX, Tag } from "lucide-react";
 import {
   ProductCodeTag,
@@ -83,6 +83,15 @@ export const StockPanel = ({
     window.clearTimeout(searchTimer.current);
     if (value.trim() !== filters.search) applyFilters({ search: value.trim() });
   };
+  /**
+   * Kechiktirilgan qidiruv ENG SO'NGGI `commitSearch` ni chaqiradi: taymer o'zi yaratilgan renderdagi `filters` ni
+   * ushlab qolsa, 400 ms ichida tanlangan «Market» / «Holat» jimgina bekor bo'lardi (Excel filtrlari ham).
+   */
+  const commitSearchRef = useRef(commitSearch);
+  useEffect(() => {
+    commitSearchRef.current = commitSearch;
+  });
+  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
   const query = useWarehouseStock(warehouseId, {
     page,
@@ -325,7 +334,7 @@ export const StockPanel = ({
           onValueChange={(value) => {
             setSearchText(value);
             window.clearTimeout(searchTimer.current);
-            searchTimer.current = window.setTimeout(() => commitSearch(value), SEARCH_DEBOUNCE_MS);
+            searchTimer.current = window.setTimeout(() => commitSearchRef.current(value), SEARCH_DEBOUNCE_MS);
           }}
           onClear={() => commitSearch("")}
           onSearch={commitSearch}

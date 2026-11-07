@@ -96,3 +96,22 @@ describe("Eski manba yaratish — avtorizatsiya", () => {
     expect(payload.credentials).toEqual({ api_key: "tok_123" });
   });
 });
+
+describe("Eski manba yaratish — xato", () => {
+  it("⭐ backend rad etsa — uning sababi ko'rsatiladi (axios'ning «Request failed with status code 400» emas)", async () => {
+    const user = userEvent.setup();
+    const rejection = Object.assign(new Error("Request failed with status code 400"), {
+      isAxiosError: true,
+      response: { status: 400, data: { message: "Bu slug band" } },
+    });
+    api.post.mockRejectedValueOnce(rejection);
+    render();
+    await fillBasics(user);
+    await user.type(screen.getByRole("textbox", { name: "Login" }), "elchi_sync");
+    await user.type(screen.getByLabelText("Parol"), "Parol123");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    expect(await screen.findByText("Bu slug band")).toBeInTheDocument();
+    expect(screen.queryByText("Request failed with status code 400")).toBeNull();
+  });
+});

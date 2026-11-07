@@ -212,6 +212,8 @@ const CampaignPage = () => {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+  /** Kalit qaysi kampaniya (so'rov tanasi) uchun yaratilgan — o'zgarmagan kampaniya qayta yuborilsa kalit ham o'sha. */
+  const idempotencyPayloadRef = useRef<string | null>(null);
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Javob massiv bo'lmasa (kutilmagan konvert) — sahifa yiqilmasin. Kampaniya faqat reklama — xizmat va OTP
@@ -379,10 +381,18 @@ const CampaignPage = () => {
     setPreviewError(null);
     setResult(null);
     try {
-      const data = await previewSmsCampaign(input());
+      const payload = input();
+      const data = await previewSmsCampaign(payload);
       setPreview(data);
-      // Bir tasdiq oynasi — bitta kalit: 504 dan keyin qayta bosilsa ham ikki marta ketmaydi.
-      setIdempotencyKey(newKey());
+      // Bitta kampaniya — bitta kalit. Yuborish xato bersa (vaqt tugashi, 5xx — server uni saqlagan bo'lishi mumkin)
+      // oyna yopiladi; qayta «Ko'rib chiqish» → «Yuborish» AYNI kalit bilan ketadi va server takrorni taniydi (409).
+      // Ilgari har ko'rib chiqishda yangi kalit — SMS ikki marta ketib, ikki marta to'lanardi. Kalit faqat
+      // muvaffaqiyatdan keyin yoki kampaniya (matn, qabul qiluvchilar, vaqt) o'zgarganda yangilanadi.
+      const signature = JSON.stringify(payload);
+      if (!idempotencyKey || idempotencyPayloadRef.current !== signature) {
+        idempotencyPayloadRef.current = signature;
+        setIdempotencyKey(newKey());
+      }
     } catch (error) {
       setPreviewError(errorText(error, t("campaign.previewFailed")));
     } finally {
@@ -418,6 +428,7 @@ const CampaignPage = () => {
       });
       setPreview(null);
       setIdempotencyKey(null);
+      idempotencyPayloadRef.current = null;
     } catch (error) {
       setResult({ type: "error", message: errorText(error, t("campaign.failed")) });
       setPreview(null);

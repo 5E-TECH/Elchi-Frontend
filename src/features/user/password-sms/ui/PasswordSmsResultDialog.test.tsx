@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock("../../../../shared/api/api", () => ({ api: { get: mocks.get, post: mocks.post } }));
 
 import { PasswordSmsResultDialog } from "./PasswordSmsResultDialog";
+import { PASSWORD_SMS_POLL_LIMIT, PASSWORD_SMS_POLL_MS } from "../api/passwordSmsApi";
 
 const inSeconds = (seconds: number) => new Date(Date.now() + seconds * 1000).toISOString();
 
@@ -107,6 +108,37 @@ describe("PasswordSmsResultDialog (maket `superadmin-users-create-password-resul
     expect(await screen.findByText("Yangi parol SMS orqali yuborildi")).toBeInTheDocument();
     expect(await within(dialog).findByText("Navbatda")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /SMSni qayta yuborish/ })).toBeDisabled();
+  });
+
+  it("⭐ birinchi SMS 2 daqiqa «yuborildi» da qolib so'rash to'xtagan — qayta yuborilgach yangi SMS holati yana so'raladi", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const stuck = smsOf({ status: "sent", resend_available_at: inSeconds(-1) });
+      mocks.get.mockResolvedValue(statusResponse(stuck));
+      mocks.post.mockResolvedValue({
+        data: { statusCode: 200, data: { user_id: "91", must_change_password: true, password_sms: smsOf({ status: "pending", sent_at: null }) } },
+      });
+      renderWithProviders(<PasswordSmsResultDialog {...props} initialSms={stuck} />);
+      const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(PASSWORD_SMS_POLL_MS * (PASSWORD_SMS_POLL_LIMIT + 5));
+      });
+      const stopped = statusCalls();
+      expect(stopped).toBe(PASSWORD_SMS_POLL_LIMIT);
+
+      await act(async () => {
+        within(dialog).getByRole("button", { name: /SMSni qayta yuborish/ }).click();
+      });
+      await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("users/91/password/resend-sms"));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(PASSWORD_SMS_POLL_MS * 3);
+      });
+      // Ilgari so'rovlar soni (`dataUpdateCount`) yig'ilib qolardi — qayta yuborilgan SMS «Yetkazildi» ga o'tmasdi.
+      expect(statusCalls()).toBeGreaterThanOrEqual(stopped + 3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("qayta yuborish javobida `failed` — parol o'zgarmagani aytiladi («yaratildi» emas)", async () => {

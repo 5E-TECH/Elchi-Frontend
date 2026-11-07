@@ -145,8 +145,10 @@ export const PasswordSmsResultDialog = ({
       setResent({ sms: result.passwordSms, at: Date.now() });
       // Yiqilgan urinish avvalgi muvaffaqiyatli tiklashni bekor qilmaydi — bayroq faqat muvaffaqiyatda tushadi.
       if (result.passwordSms?.status !== "failed") setPasswordUnchanged(false);
-      // Yangi SMS — holat yana so'raladi (yakuniy holat bo'lmasa).
-      void queryClient.invalidateQueries({ queryKey: passwordSmsStatusKey(user.id) });
+      // Yangi SMS — holat yana so'raladi (yakuniy holat bo'lmasa). `reset` — so'rovlar hisobi ham nolga qaytadi:
+      // `invalidate` da `PASSWORD_SMS_POLL_LIMIT` yig'ilib qolardi va birinchi SMS 2 daqiqa «yuborildi» da qolgan
+      // bo'lsa, yangisining holati umuman so'ralmasdi.
+      void queryClient.resetQueries({ queryKey: passwordSmsStatusKey(user.id) });
       if (result.passwordSms?.status === "failed") {
         notify.warning(t("v2.passwordSms.resentFailed"), {
           description: result.passwordSms.failure_message ?? undefined,

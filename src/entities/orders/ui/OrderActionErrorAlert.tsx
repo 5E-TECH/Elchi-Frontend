@@ -9,6 +9,8 @@ import { TriangleAlert } from "lucide-react";
 export const OrderActionErrorAlert = memo(({ message }: { message: string }) => {
   const ref = useRef<HTMLDivElement>(null);
   // Telefonda pastki varaqa uzun bo'lsa sabab tanasining oxirida, ko'rinmay qolardi — chiqqanda ko'rinishga suriladi.
+  // `scroll-mb-1` — oyna tanasining pastki ichki chekkasi (`p-1`) bilan teng: «nearest» kasr pikselga tekislab, xabar
+  // pastidan ~0,2 px qirqilib qolmasin (2 qatorli sabab, «Qisman sotish» qatori qo'shilgach varaqa uzaydi).
   useEffect(() => {
     ref.current?.scrollIntoView?.({ block: "nearest" });
   }, [message]);
@@ -17,7 +19,7 @@ export const OrderActionErrorAlert = memo(({ message }: { message: string }) => 
     <div
       ref={ref}
       role="alert"
-      className="flex items-start gap-2 rounded-xl bg-danger-soft px-3 py-2.5 text-[13px] text-danger-fg"
+      className="flex scroll-mb-1 items-start gap-2 rounded-xl bg-danger-soft px-3 py-2.5 text-[13px] text-danger-fg"
     >
       <TriangleAlert className="mt-0.5 size-4 flex-none" aria-hidden="true" />
       <p className="min-w-0 text-text">{message}</p>

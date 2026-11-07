@@ -27,19 +27,26 @@ export const toPaymentDay = (value: unknown): number => {
   return Number.isFinite(day) && day >= 1 ? Math.floor(day) : 1;
 };
 
+/**
+ * Shu oydagi to'lov sanasi: kun oy uzunligidan oshmaydi (31 → fevralda 28/29, aprelda 30). Ilgari `new Date(y, m, 31)`
+ * keyingi oyga o'tib ketardi: 1-martda davr boshi «3-mart» (kelajak) chiqib, foiz va «to'plangan summa» manfiy edi.
+ */
+const paymentDate = (year: number, month: number, paymentDay: number) =>
+  new Date(year, month, Math.min(paymentDay, new Date(year, month + 1, 0).getDate()));
+
 export const calcSalaryCycle = (paymentDay: number, now: Date = new Date()): SalaryCycle => {
-  const today = now.getDate();
   const year = now.getFullYear();
   const month = now.getMonth();
 
-  const start =
-    today >= paymentDay ? new Date(year, month, paymentDay) : new Date(year, month - 1, paymentDay);
-  const end =
-    today >= paymentDay ? new Date(year, month + 1, paymentDay) : new Date(year, month, paymentDay);
+  const thisMonth = paymentDate(year, month, paymentDay);
+  // To'lov kunining o'zida (00:00 dan) yangi davr boshlanadi.
+  const started = now.getTime() >= thisMonth.getTime();
+  const start = started ? thisMonth : paymentDate(year, month - 1, paymentDay);
+  const end = started ? paymentDate(year, month + 1, paymentDay) : thisMonth;
 
   const totalMs = end.getTime() - start.getTime();
   const passedMs = now.getTime() - start.getTime();
-  const progress = Math.min((passedMs / totalMs) * 100, 100);
+  const progress = Math.min(Math.max((passedMs / totalMs) * 100, 0), 100);
 
   const totalDays = Math.round(totalMs / DAY_MS);
   const passedDays = Math.round(passedMs / DAY_MS);
