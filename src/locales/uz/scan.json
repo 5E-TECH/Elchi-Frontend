@@ -213,6 +213,7 @@
       "dispatch": "Biriktirish",
       "take": "O'zimga olish",
       "courierReceive": "Qabul qilish",
+      "branchReceive": "Pochtadan qabul",
       "sendMail": "Pochtani jo'natish",
       "refusedMail": "Rad etilgan pochta",
       "refusedMailShort": "Rad etilgan",
@@ -222,6 +223,7 @@
       "dispatchText": "Skanerlangan buyurtma biriktirish savatiga qo'shiladi — savat shu qurilmada saqlanadi. Kuryerni «Biriktirish» sahifasida tanlaysiz.",
       "takeText": "Har skanerlangan buyurtma darhol sizga biriktiriladi. Kamera yopilmaydi — keyingi posilkani skanerlang.",
       "courierReceiveText": "Yo'ldagi buyurtmangizni skanerlang — u darhol qabul qilinadi. Qabul qilingan buyurtma skanerlansa — sotish yoki bekor qilish sahifasi ochiladi.",
+      "branchReceiveText": "Filialingizga kelgan pochtadagi buyurtmani skanerlang — u darhol qabul qilinadi. Qabul qilingan buyurtma skanerlansa — sotish yoki bekor qilish sahifasi ochiladi.",
       "sendMailText": "Pochtani tanlang yoki uning QR kodini o'qing — pochta ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma jo'natish uchun tanlanadi.",
       "refusedMailText": "Rad etilgan pochtani tanlang yoki uning QR kodini o'qing — pochta ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma qabul qilish uchun tanlanadi.",
       "handoverText": "Avval marketni tanlang — uning bekor qilingan buyurtmalari ochiladi va kamera o'sha yerda davom etadi. Avval market QR kodi skanerlanadi."
@@ -321,8 +323,23 @@
       "openWaiting": "{{ref}} qabul qilingan — sotish yoki bekor qilish",
       "free": "Bu buyurtma sizda emas — uni «O'zimga olish» rejimida oling",
       "notOnTheRoad": "Buyurtma yo'lda emas — qabul qilib bo'lmaydi",
+      "notInPost": "Buyurtma pochtada emas — qabul qilib bo'lmaydi",
       "notOrder": "Bu buyurtma QR kodi emas — uni «Ma'lumot» rejimida oching",
       "failed": "{{ref}} qabul qilinmadi — qayta skanerlang",
+      "manualSubmit": "Qabul qilish"
+    },
+    "branchReceive": {
+      "title": "Pochtadan qabul",
+      "context": "Filialga kelgan buyurtma darhol qabul qilinadi",
+      "hint": "Buyurtma QR kodini o'qing — u darhol qabul qilinadi",
+      "meter": "ta qabul qilindi",
+      "listTitle": "Skanerlanganlar",
+      "emptyText": "Qabul qilingan buyurtmalar shu yerda chiqadi",
+      "notOurs": "Bu buyurtma sizning filialingizga kelmayapti — qabul qilib bo'lmaydi",
+      "courierHeld": "Buyurtma kuryerda: {{name}} — uni kuryer o'zi qabul qiladi",
+      "courierHeldUnknown": "Buyurtma kuryerda — uni kuryer o'zi qabul qiladi",
+      "courierHeldWaiting": "Buyurtma kuryerda: {{name}} — u qabul qilingan, sotish yoki bekor qilish kuryerda",
+      "courierHeldWaitingUnknown": "Buyurtma kuryerda — u qabul qilingan, sotish yoki bekor qilish kuryerda",
       "manualSubmit": "Qabul qilish"
     }
   },

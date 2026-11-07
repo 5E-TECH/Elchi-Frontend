@@ -5,7 +5,8 @@ import { enterScanCode } from "./support/universalScanner";
 /**
  * 390px, kuryer skan-qabuli (2026-11-07, BeePost `/scan` kuryer qabul sikli), soxta backend:
  *   1) `/scan` «Qabul qilish» rejimi: yo'ldagi o'z buyurtmasi → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`,
- *      kamera yopilmaydi, ro'yxatda «Qabul qilindi»; o'sha kod qayta → «allaqachon qabul qilindi» (so'rovsiz);
+ *      kamera yopilmaydi, ro'yxatda «Qabul qilindi»; o'sha kod darhol (3 s ichida) qayta → «allaqachon qabul qilindi»
+ *      (so'rovsiz; keyinroq qayta skan — natija sahifasi, unit testlarda);
  *      qabul qilingan («kutilmoqda») kod → natija sahifasi `/scan/:token` (Sotish / Bekor qilish);
  *   2) natija sahifasi: yo'ldagi → «Qabul qilish» → yangilanadi → «Sotish» → `POST orders/sell/:id` → skanerga
  *      «Qabul qilish» rejimida qaytadi.
@@ -147,7 +148,7 @@ test.describe("Kuryer skan-qabuli, 390px", () => {
     await expect(page.getByText("Qabul qilindi · Chilonzor tumani")).toBeVisible();
     expect(api.receives).toEqual([{ postId: POST_ID, body: { order_ids: ["10301"], scan: true } }]);
 
-    // O'sha kod qayta — so'rovsiz «allaqachon», sahifa o'zgarmaydi.
+    // O'sha kod darhol qayta (3 s ichida — qo'shaloq o'qish) — so'rovsiz «allaqachon», sahifa o'zgarmaydi.
     await enterScanCode(page, camera, ROAD_TOKEN, "Qabul qilish");
     await expect(page.getByText("№10301 allaqachon qabul qilindi").first()).toBeVisible();
     expect(api.receives).toHaveLength(1);

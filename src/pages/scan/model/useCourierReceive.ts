@@ -16,25 +16,44 @@ import {
   getScanResourceType,
   normalizeScanToken,
 } from "../lib/scanResource";
-import { getCourierReceiveDecision, readOrderPostId, readScanReceiveResult } from "./courierReceive";
+import {
+  getBranchReceiveDecision,
+  getCourierReceiveDecision,
+  isCourierReceivableStatus,
+  readOrderPostId,
+  readScanReceiveResult,
+} from "./courierReceive";
 
 /**
- * KURYER «QABUL QILISH» — universal skaner rejimi (`/scan`, 2026-11-07; andoza — BeePost `/scan` kuryer qabul sikli).
+ * SKAN = QABUL — universal skaner rejimlari (`/scan`, 2026-11-07; andoza — BeePost `/scan` kuryer qabul sikli):
+ *   - kuryer «Qabul qilish» (`courierReceive`, `actor: "courier"`) — o'z pochtasidagi yo'ldagi buyurtma;
+ *   - menejer «Pochtadan qabul» (`branchReceive`, `actor: "branch"`) — o'z filialiga kelgan o'tkazma pochtasidagi
+ *     yo'ldagi buyurtma (qoidalar `getBranchReceiveDecision`).
  * Maket yo'q — eng yaqini `courier-scan-active` («O'zimga olish» bilan bir xil ko'rinish: hisoblagich, ro'yxat).
  *
  * Har skan: token → buyurtma (`fetchScanDetail`, keshsiz — har safar yangi holat), keyin:
- *   - o'ziniki, yo'lda (yoki mijoz kutilmoqda) va pochtasi bor → `PATCH post/receive/:post_id { order_ids: [id],
- *     scan: true }` (faqat shu buyurtma qabul qilinadi); kamera yopilmaydi; «№… qabul qilindi» (ovoz «Qabul qilindi»),
- *     ro'yxatga qator; shu token natija keshi eskirgan deb belgilanadi;
- *   - shu sessiyada qabul qilingan token qayta o'qilsa — «takror» ovozi «№… allaqachon qabul qilindi», hech qayerga
- *     o'tilmaydi (kamerada turib qolgan kod esa 6 s jim — `useScanAssign` naqshi);
- *   - o'zidagi «kutilmoqda» (shu sessiyada qabul qilinmagan) → natija sahifasi `/scan/:token` (sotish / bekor);
- *   - bo'sh / NEW → «O'zimga olish rejimida oling»; boshqa kuryerniki yoki boshqa holat — xato ovozi va sabab.
+ *   - qabul qilinadigan (yo'lda yoki mijoz kutilmoqda, pochtasi bor) → `PATCH post/receive/:post_id { order_ids:
+ *     [id], scan: true }` (faqat shu buyurtma qabul qilinadi); kamera yopilmaydi; «№… qabul qilindi» (ovoz «Qabul
+ *     qilindi»), ro'yxatga qator; shu token natija keshi eskirgan deb belgilanadi;
+ *   - xuddi shu token qabuldan keyin 3 s ichida yana o'qilsa — «takror» ovozi «№… allaqachon qabul qilindi» (USB
+ *     skanerning qo'shaloq o'qishi; BeePost ham bir tokenga 3 s); kamerada esa o'sha kod 6 s jim (`useScanAssign`
+ *     naqshi). Qabul qilingan posilka kamerada ko'rinib turgan ekan (keyingi posilka yonida ham — kamera darvozasi
+ *     faqat oxirgi kodni eslaydi) jimlik har ko'rinishda suriladi: 6 s ko'rinmay turib yana o'qilsagina — ataylab
+ *     qayta skan (natija sahifasi), skan seansidan beixtiyor chiqib ketilmaydi;
+ *   - «kutilmoqda» (qabul qilingan — shu sessiyada ham, avval ham) → natija sahifasi `/scan/:token` (sotish / bekor).
+ *     Ya'ni yo'ldagi posilka: 1-skan — qabul, keyingi skan — sotish / bekor (Dilshod, 2026-11-07);
+ *   - kuryerda: bo'sh / NEW → «O'zimga olish rejimida oling»; menejerda: boshqa filialniki → sabab; kuryerdagi yoki
+ *     boshqa holatdagi buyurtma — xato ovozi va sabab.
  * Bitta token parallel ikki marta ketmaydi (yo'ldagi tokenlar to'plami).
  */
 
-/** Kamerada turib qolgan, xato bergan kod shu vaqtdan keyin qayta tekshiriladi (`useScanAssign` bilan bir xil). */
+/** Kamerada turib qolgan kod shu vaqtdan keyin qayta tekshiriladi (`useScanAssign` bilan bir xil). */
 const CAMERA_SAME_CODE_QUIET_MS = 6_000;
+/**
+ * Qabul qilingan token shu vaqt ichida qayta o'qilsa — «allaqachon qabul qilindi» (so'rovsiz). Keyin qayta skan —
+ * natija sahifasi (sotish / bekor). BeePost: bir token 3 s.
+ */
+export const RECEIVED_RESCAN_COOLDOWN_MS = 3_000;
 /** Ro'yxatda saqlanadigan oxirgi skanlar. */
 const MAX_ENTRIES = 100;
 
@@ -80,13 +99,24 @@ const placeOf = (order: OrderDetail) => {
   return textOf(district) ?? textOf(region);
 };
 
+/** Kim qabul qiladi: kuryer (o'z pochtasi) yoki filial menejeri (o'z filialiga o'tkazma pochtasi). */
+export type ScanReceiveActor = "courier" | "branch";
+
+/** Skan paytidagi qoidalar — javob kelguncha rejim almashsa ham skan o'z rejimi bo'yicha tugaydi. */
+type ScanContext = { actor: ScanReceiveActor; branchId: string | null; currentUserId: string | number | null };
+
 export const useCourierReceive = ({
   enabled,
   onOpenOrder,
+  actor = "courier",
+  branchId = null,
 }: {
   enabled: boolean;
-  /** O'zidagi allaqachon qabul qilingan buyurtma — natija sahifasi (sotish / bekor). */
+  /** Allaqachon qabul qilingan buyurtma — natija sahifasi (sotish / bekor). */
   onOpenOrder: (token: string) => void;
+  actor?: ScanReceiveActor;
+  /** Menejer filiali (`actor: "branch"`); noma'lum — filial tekshirilmaydi (backend hal qiladi). */
+  branchId?: string | null;
 }) => {
   const { t } = useTranslation("scan");
   const queryClient = useQueryClient();
@@ -102,18 +132,20 @@ export const useCourierReceive = ({
   const receivedOrderIdsRef = useRef(new Set<string>());
   const [received, setReceived] = useState(0);
 
-  /** Shu sessiyada qabul qilingan tokenlar → «№…» (javob kelishi bilan — React holatini kutmasdan). */
-  const receivedRef = useRef(new Map<string, string>());
+  /** Shu sessiyada qabul qilingan tokenlar → «№…» va qabul vaqti (javob kelishi bilan — React holatini kutmasdan). */
+  const receivedRef = useRef(new Map<string, { ref: string; at: number }>());
   /** Yo'ldagi tokenlar — bitta token parallel ikki marta ketmasin. */
   const inflightRef = useRef(new Set<string>());
   /** Kamera oxirgi ishlagan kod va vaqti. */
   const lastCameraCodeRef = useRef<{ code: string; at: number } | null>(null);
+  /** Qabul qilingan tokenlar → kamerada oxirgi ko'ringan vaqti (surma jimlik; qabul paytidan boshlanadi). */
+  const cameraSeenRef = useRef(new Map<string, number>());
   const mountedRef = useRef(true);
-  const optionsRef = useRef({ enabled, onOpenOrder, currentUserId });
+  const optionsRef = useRef({ enabled, onOpenOrder, currentUserId, actor, branchId });
 
   useEffect(() => {
-    optionsRef.current = { enabled, onOpenOrder, currentUserId };
-  }, [currentUserId, enabled, onOpenOrder]);
+    optionsRef.current = { enabled, onOpenOrder, currentUserId, actor, branchId };
+  }, [actor, branchId, currentUserId, enabled, onOpenOrder]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -145,7 +177,7 @@ export const useCourierReceive = ({
   );
 
   const process = useCallback(
-    async (token: string, source: ScanSource) => {
+    async (token: string, source: ScanSource, context: ScanContext) => {
       let order: OrderDetail | null = null;
       let response: Awaited<ReturnType<typeof fetchScanDetail>>;
       try {
@@ -174,24 +206,41 @@ export const useCourierReceive = ({
       }
 
       const ref = refOf(order);
-      const decision = getCourierReceiveDecision(order, optionsRef.current.currentUserId);
+      const decision =
+        context.actor === "branch"
+          ? getBranchReceiveDecision(order, context.branchId)
+          : getCourierReceiveDecision(order, context.currentUserId);
       if (decision === "free") {
         fail(token, order, t("scanner.courierReceive.free"), source);
         return;
       }
+      if (decision === "notOurs") {
+        fail(token, order, t("scanner.branchReceive.notOurs"), source);
+        return;
+      }
       if (decision === "other") {
         const name = courierNameOf(order);
-        fail(
-          token,
-          order,
-          name ? t("scanner.take.otherCourier", { name }) : t("scanner.take.otherCourierUnknown"),
-          source,
-          true,
-        );
+        // Menejer: yo'ldagini kuryer o'zi qabul qiladi; «kutilmoqda» — kuryer allaqachon qabul qilgan.
+        const heldKey = isCourierReceivableStatus(order.status)
+          ? "scanner.branchReceive.courierHeld"
+          : "scanner.branchReceive.courierHeldWaiting";
+        const reason =
+          context.actor === "branch"
+            ? name
+              ? t(heldKey, { name })
+              : t(`${heldKey}Unknown`)
+            : name
+              ? t("scanner.take.otherCourier", { name })
+              : t("scanner.take.otherCourierUnknown");
+        fail(token, order, reason, source, true);
         return;
       }
       if (decision === "notReceivable") {
-        fail(token, order, t("scanner.courierReceive.notOnTheRoad"), source);
+        // Yo'lda, lekin pochtada emas — sababi boshqa (holat to'g'ri, qabul qiladigan pochta yo'q).
+        const reason = isCourierReceivableStatus(order.status)
+          ? t("scanner.courierReceive.notInPost")
+          : t("scanner.courierReceive.notOnTheRoad");
+        fail(token, order, reason, source);
         return;
       }
       if (decision === "open") {
@@ -218,7 +267,9 @@ export const useCourierReceive = ({
           fail(token, order, result.error ?? t("scanner.courierReceive.failed", { ref }), source);
           return;
         }
-        receivedRef.current.set(token, ref);
+        const receivedAt = Date.now();
+        receivedRef.current.set(token, { ref, at: receivedAt });
+        cameraSeenRef.current.set(token, receivedAt);
         receivedOrderIdsRef.current.add(order.id);
         if (mountedRef.current) setReceived(receivedOrderIdsRef.current.size);
         addEntry({
@@ -249,11 +300,18 @@ export const useCourierReceive = ({
       const extracted = extractScannerToken(raw, window.location.origin);
       const token = extracted ? normalizeScanToken(extracted) : null;
       if (source === "camera") {
-        // Kamerada turib qolgan o'sha posilka: qabul qilingan bo'lsa — umuman, aks holda 6 s gacha jim.
         const code = token ?? raw.trim();
         const now = Date.now();
+        // Qabul qilingan posilka kadrda ko'rinib turibdi (boshqa posilka yonida ham) — jimlik har ko'rinishda
+        // suriladi; 6 s ko'rinmay turib yana o'qilsa — ataylab qayta skan (natija sahifasi).
+        const seenAt = cameraSeenRef.current.get(code);
+        if (seenAt !== undefined) {
+          cameraSeenRef.current.set(code, now);
+          if (now - seenAt < CAMERA_SAME_CODE_QUIET_MS) return;
+        }
+        // Kamerada turib qolgan o'sha kod (xato bergan) — 6 s gacha jim.
         const last = lastCameraCodeRef.current;
-        if (last?.code === code && (receivedRef.current.has(code) || now - last.at < CAMERA_SAME_CODE_QUIET_MS)) return;
+        if (last?.code === code && now - last.at < CAMERA_SAME_CODE_QUIET_MS) return;
         lastCameraCodeRef.current = { code, at: now };
       }
       if (!token) {
@@ -264,15 +322,17 @@ export const useCourierReceive = ({
         void playScanFeedback("error", t("scanner.courierReceive.notOrder"), source);
         return;
       }
-      const knownRef = receivedRef.current.get(token);
-      if (knownRef) {
-        void playScanFeedback("duplicate", t("scanner.courierReceive.alreadyToast", { ref: knownRef }), source);
+      // Qabuldan darhol keyingi qo'shaloq o'qish — «allaqachon»; keyinroq qayta skan — natija sahifasi (sotish / bekor).
+      const known = receivedRef.current.get(token);
+      if (known && Date.now() - known.at < RECEIVED_RESCAN_COOLDOWN_MS) {
+        void playScanFeedback("duplicate", t("scanner.courierReceive.alreadyToast", { ref: known.ref }), source);
         return;
       }
       if (inflightRef.current.has(token)) return;
       inflightRef.current.add(token);
       setPendingCount((count) => count + 1);
-      void process(token, source).finally(() => {
+      const { actor: scanActor, branchId: scanBranchId, currentUserId: scanUserId } = optionsRef.current;
+      void process(token, source, { actor: scanActor, branchId: scanBranchId, currentUserId: scanUserId }).finally(() => {
         inflightRef.current.delete(token);
         if (mountedRef.current) setPendingCount((count) => Math.max(0, count - 1));
       });

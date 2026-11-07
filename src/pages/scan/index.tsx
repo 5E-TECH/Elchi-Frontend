@@ -186,7 +186,14 @@ const UniversalScanner = () => {
     (token: string) => navigate(`/scan/${encodeURIComponent(token)}`),
     [navigate],
   );
-  const courierReceive = useCourierReceive({ enabled: mode === "courierReceive", onOpenOrder: openReceivedOrder });
+  // Skan = qabul: kuryer «Qabul qilish» (o'z pochtasi) yoki filial menejeri «Pochtadan qabul» (o'z filialiga o'tkazma).
+  const isScanReceiveMode = mode === "courierReceive" || mode === "branchReceive";
+  const courierReceive = useCourierReceive({
+    enabled: isScanReceiveMode,
+    onOpenOrder: openReceivedOrder,
+    actor: mode === "branchReceive" ? "branch" : "courier",
+    branchId,
+  });
   const handleReceiveScan = courierReceive.handleScan;
 
   const openPicker = useCallback(() => setSwitcherKey((key) => key + 1), []);
@@ -212,7 +219,7 @@ const UniversalScanner = () => {
         handleTakeScan(raw, source);
         return;
       }
-      if (mode === "courierReceive") {
+      if (mode === "courierReceive" || mode === "branchReceive") {
         handleReceiveScan(raw, source);
         return;
       }
@@ -441,18 +448,18 @@ const UniversalScanner = () => {
         finish: { label: t("scanner.take.finish"), keepOpen: true, onFinish: () => void finishTake() },
       };
     }
-    if (mode === "courierReceive") {
+    if (mode === "courierReceive" || mode === "branchReceive") {
       return {
         ...base,
-        title: t("scanner.courierReceive.title"),
-        context: t("scanner.courierReceive.context"),
-        hint: t("scanner.courierReceive.hint"),
+        title: t(`scanner.${mode}.title`),
+        context: t(`scanner.${mode}.context`),
+        hint: t(`scanner.${mode}.hint`),
         icon: Inbox,
-        progress: { done: courierReceive.received, label: t("scanner.courierReceive.meter") },
+        progress: { done: courierReceive.received, label: t(`scanner.${mode}.meter`) },
         list: courierReceive.list,
-        listTitle: t("scanner.courierReceive.listTitle"),
+        listTitle: t(`scanner.${mode}.listTitle`),
         listDescription: `${formatNumberLocalized(courierReceive.received, { language })} ${t(
-          "scanner.courierReceive.meter",
+          `scanner.${mode}.meter`,
         )} · ${t("scanner.take.scans", {
           count: courierReceive.list.length,
           value: formatNumberLocalized(courierReceive.list.length, { language }),
@@ -544,8 +551,8 @@ const UniversalScanner = () => {
   const manualSubmitLabel =
     mode === "take"
       ? t("scanner.take.manualSubmit")
-      : mode === "courierReceive"
-        ? t("scanner.courierReceive.manualSubmit")
+      : mode === "courierReceive" || mode === "branchReceive"
+        ? t(`scanner.${mode}.manualSubmit`)
         : mode === "dispatch"
           ? t("scanner.dispatch.manualSubmit")
           : mode === "info" || isMailMode
@@ -705,14 +712,14 @@ const UniversalScanner = () => {
               />
             </div>
           ) : null}
-          {mode === "courierReceive" ? (
+          {mode === "courierReceive" || mode === "branchReceive" ? (
             <div className="min-w-0 max-lg:col-span-2">
               <ScanSessionCard
                 list={courierReceive.list}
                 count={courierReceive.received}
-                title={t("scanner.courierReceive.listTitle")}
-                meter={t("scanner.courierReceive.meter")}
-                emptyText={t("scanner.courierReceive.emptyText")}
+                title={t(`scanner.${mode}.listTitle`)}
+                meter={t(`scanner.${mode}.meter`)}
+                emptyText={t(`scanner.${mode}.emptyText`)}
               />
             </div>
           ) : null}
@@ -724,7 +731,7 @@ const UniversalScanner = () => {
               submitLabel={manualSubmitLabel}
             />
           ) : null}
-          {mode !== "take" && mode !== "courierReceive" ? (
+          {mode !== "take" && !isScanReceiveMode ? (
             <ScanRecentCard
               entries={entries}
               limit={isBelowLg ? 2 : 4}
