@@ -40,7 +40,7 @@ const rows = [
     id: "10293",
     status: "waiting",
     customer: { id: "c-2", name: "Sevara Tursunova", phone_number: "+998905621407" },
-    // vbu7Wr3o: kutilayotgan buyurtmada `to_be_paid` 0 — chegara backend bergan maydonda (96 000 − markaz tarifi).
+    // Backend hali ham `sale_market_paid_max` beradi — sotish oynasi uni o'qimaydi (maydon olib tashlangan, ega 2026-11-07).
     sale_market_paid_max: 25000,
   },
 ];
@@ -172,20 +172,20 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     expect(screen.getByText("№10293 · Sevara Tursunova")).toBeInTheDocument();
   });
 
-  it("vbu7Wr3o: sotish oynasida «Marketga to'langan summa» chegarasi `sale_market_paid_max` dan (25 000, «0 so'm» emas)", async () => {
+  it("sotish oynasida «Marketga to'langan summa» maydoni yo'q (ega 2026-11-07) — so'rovda `paidAmount` yo'q", async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(rowAction("№10293 ni sotish"));
     const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
-    const field = within(dialog).getByLabelText("Marketga to'langan summa");
-    const hint = field.closest("[data-field]") ?? dialog;
-    expect(hint).toHaveTextContent(/25\s000 so'mdan oshmasin/);
-    expect(dialog).not.toHaveTextContent(/·\s*0 so'mdan oshmasin/);
+    expect(within(dialog).queryByLabelText("Marketga to'langan summa")).toBeNull();
+    expect(dialog).not.toHaveTextContent(/so'mdan oshmasin/);
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
 
-    // Chegaradan oshsa — xato va «Sotish» yuborilmaydi.
-    await user.type(field, "30000");
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/25\s000/);
+    expect(sellMutate).toHaveBeenCalledWith(
+      { orderId: "10293", data: { comment: "", extraCost: 0 } },
+      expect.any(Object),
+    );
   });
 
   it("bekor qilish: sabab tanlanadi → POST cancel → «Buyurtma bekor qilindi»", async () => {

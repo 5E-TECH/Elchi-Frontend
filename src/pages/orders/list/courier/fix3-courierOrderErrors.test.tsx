@@ -146,9 +146,9 @@ describe("Kuryer sotuvi — uyga yetkazishda qo'shimcha xarajat yo'q (fix3 FE-OR
     expect(
       screen.getByText("Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori."),
     ).toBeInTheDocument();
-    // Xarajat maydoni yo'q (faqat «Marketga to'langan summa» qoladi — uguUEhin).
+    // Xarajat maydoni yo'q; «Marketga to'langan summa» ham yo'q (ega 2026-11-07).
     expect(screen.queryByRole("textbox", { name: "Qo'shimcha xarajat" })).toBeNull();
-    expect(screen.getByLabelText("Marketga to'langan summa")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
 
     await user.click(dialogButton(/^Sotish$/));
     expect(sellMutate).toHaveBeenCalledWith(
@@ -225,13 +225,11 @@ describe("Sotishdan keyin marketga to'lov natijasi (uguUEhin)", () => {
     renderPage();
 
     await openFirst(user, /ni sotish$/);
-    await user.type(screen.getByLabelText("Marketga to'langan summa"), "100000");
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
     await user.click(dialogButton(/^Sotish$/));
 
-    expect(sellMutate).toHaveBeenCalledWith(
-      { orderId: "7004", data: expect.objectContaining({ paidAmount: 100000 }) },
-      expect.any(Object),
-    );
+    // Maydon olib tashlangan (ega 2026-11-07): so'rovda `paidAmount` yo'q; javobdagi holat bildirishnomasi qoladi.
+    expect(sellMutate).toHaveBeenCalledWith({ orderId: "7004", data: { comment: "", extraCost: 0 } }, expect.any(Object));
     expect(await screen.findByText(text)).toBeInTheDocument();
   });
 

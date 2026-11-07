@@ -29,7 +29,7 @@ import {
   isProofRequiredByConditions,
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
-import { getMarketPaidMax, readMarketPaidBase, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
+import type { SellOrderPayload } from "../../../../../entities/orders/sellPayment";
 import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
 import { ExtraCostUnavailableNote, OrderCustomerSummary, ProofField } from "./OrderActionParts";
 import {
@@ -50,10 +50,6 @@ import { useActionDialogSession, useApprovalStateFocus } from "./useActionDialog
  * Maketlar: `courier-orders-sell-dialog` (+ `-partial-`, `-extra-cost-`, `-action-approval-pending`) —
  * `variant="courier"` (sukut); `manager-orders-sell-dialog` — `variant="manager"` (menejer ro'yxati va
  * buyurtma tafsiloti — u yerda sotishni faqat hududiy menejer qiladi).
- *
- * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan olgan puldan marketga o'zi
- * bergan qism. Faqat 0 dan katta bo'lsa yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
- * Maketda yo'q — summa maydoni naqshida.
  *
  * Almashtirish (lQjt6sKP, BeePost `waiting-orders` sotish oynasi): buyurtma eski buyurtma o'rniga bo'lsa va eski
  * mahsulot hali olinmagan bo'lsa — ogohlantirish «Almashtirish: mijozdan eski mahsulotni qaytarib oling — №EL-…» va
@@ -175,7 +171,6 @@ const SellDialog = ({
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [totalPrice, setTotalPrice] = useState("");
   const [extraCost, setExtraCost] = useState("");
-  const [marketPaid, setMarketPaid] = useState("");
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
@@ -236,13 +231,6 @@ const SellDialog = ({
       totalPrice: operationTotal,
     });
   const isProofMissing = sellRequiresMedia && !proof;
-
-  // Hamkor buyurtmasida marketga to'lov bu yerdan yozilmaydi.
-  const isPartnerOrder = order.external_id !== null && order.external_id !== undefined && order.external_id !== "";
-  const showMarketPaid = !isPartial && !isPartnerOrder;
-  const marketPaidAmount = showMarketPaid ? toAmount(marketPaid) : 0;
-  const marketPaidMax = getMarketPaidMax(readMarketPaidBase(order), effectiveExtraCost);
-  const isMarketPaidAboveMax = marketPaidMax !== null && marketPaidAmount > marketPaidMax;
 
   const getItemQty = (item: OrderItem) =>
     itemQuantities[item.id] ?? item.quantity;
@@ -374,7 +362,6 @@ const SellDialog = ({
       onSell(order.id, {
         comment: note,
         extraCost: effectiveExtraCost,
-        ...(marketPaidAmount > 0 ? { paidAmount: marketPaidAmount } : {}),
         ...(proof ? { proof } : {}),
         ...oldItemPayload,
       });
@@ -448,20 +435,6 @@ const SellDialog = ({
     </Field>
   );
   const extraNotice = showExtraNotice ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null;
-
-  const marketPaidField = showMarketPaid ? (
-    <Field
-      label={t("marketPaidAmount")}
-      hint={`${t("marketPaidAmountHint")}${marketPaidMax !== null ? ` · ${t("amountMaxHint", { amount: money(marketPaidMax) })}` : ""}`}
-      error={
-        isMarketPaidAboveMax ? (
-          <span role="alert">{t("marketPaidAboveMax", { amount: money(marketPaidMax ?? 0) })}</span>
-        ) : undefined
-      }
-    >
-      <TextInput mode="money" value={marketPaid} onValueChange={setMarketPaid} placeholder="0" />
-    </Field>
-  ) : null;
 
   const totalField = (
     <Field
@@ -672,7 +645,7 @@ const SellDialog = ({
   } else if (isManager) {
     fields = (
       <>
-        {pair(extraCostField, marketPaidField)}
+        {extraCostField}
         {extraNotice}
         {noteField}
         {proofField}
@@ -685,7 +658,6 @@ const SellDialog = ({
           {extraCostField}
           {extraNotice}
         </div>
-        {marketPaidField}
         {noteField}
         {proofField}
       </>

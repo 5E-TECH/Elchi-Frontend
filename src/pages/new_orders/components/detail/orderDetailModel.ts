@@ -264,13 +264,6 @@ export const buildActionOrder = (order: OrderDetail | null) => {
     customer: { name: order.customer.name, phone_number: order.customer.phone_number },
     district: { name: getDistrictName(order) ?? "—" },
     region: { name: getRegionName(order) ?? "—" },
-    // «Marketga to'langan summa» chegarasi va hamkor buyurtmasini aniqlash (uguUEhin).
-    to_be_paid: order.to_be_paid,
-    sale_market_paid_max:
-      typeof order.sale_market_paid_max === "number" || typeof order.sale_market_paid_max === "string"
-        ? order.sale_market_paid_max
-        : null,
-    external_id: (order.external_id ?? order.externalId ?? null) as string | number | null,
     // lQjt6sKP: almashtirish buyurtmasi — sotish oynasida «Eski mahsulotni oldim» tasdig'i (tafsilot va skan).
     replacement_of_order_id: replacement.oldOrderId,
     replacement_state: replacement.state,
