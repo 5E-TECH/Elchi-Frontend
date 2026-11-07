@@ -1,17 +1,15 @@
 /**
- * SOTISHDA MARKETGA TO'LANGAN SUMMA (uguUEhin / T0UGh8bL).
+ * SOTISH JAVOBIDAGI MARKETGA TO'LOV HOLATI (uguUEhin / T0UGh8bL).
  *
- * Kuryer mijozdan olgan puldan marketga o'zi bergan qismini kiritadi —
- * `POST /orders/sell/:id { paidAmount }`. Javobdagi `data.status`:
+ * `POST /orders/sell/:id` javobidagi `data.status`:
  * `paid` — marketga to'liq to'landi, `partly_paid` — qisman, `sold` — to'lovsiz.
+ * «Marketga to'langan summa» maydoni sotish oynasidan olib tashlangan (ega 2026-11-07) — `paidAmount` yuborilmaydi.
  */
 
 /** `POST /orders/sell/:id` tanasi (isbot fayli yuklangach `proofFileKeys` ga aylanadi). */
 export type SellOrderPayload = {
   comment: string;
   extraCost: number;
-  /** Faqat 0 dan katta bo'lsa yuboriladi — 0 eski xatti-harakat bilan bir xil. */
-  paidAmount?: number;
   proof?: File;
   /**
    * Almashtirish buyurtmasi (lQjt6sKP): kuryer eski mahsulotni mijozdan olganini tasdiqladi («Eski mahsulotni oldim»).
@@ -34,23 +32,4 @@ export const getSellPaymentStatus = (response: unknown): SellPaymentStatus | nul
 export const SELL_PAYMENT_NOTICE_KEYS: Record<SellPaymentStatus, string> = {
   paid: "soldPaidFull",
   partly_paid: "soldPaidPartly",
-};
-
-/**
- * Chegara asosi (uguUEhin): backend bergan `sale_market_paid_max` (kutilayotgan buyurtma — `to_be_paid` hali 0),
- * bo'lmasa `to_be_paid`.
- */
-export const readMarketPaidBase = (order: { sale_market_paid_max?: unknown; to_be_paid?: unknown }): unknown =>
-  order.sale_market_paid_max ?? order.to_be_paid;
-
-/**
- * Marketga to'lanishi mumkin bo'lgan eng ko'p summa: `asos − extraCost` (asos — `readMarketPaidBase`).
- * Bu faqat KO'RSATMA — yakuniy chegarani backend tekshiradi (400 xabari).
- * `to_be_paid` noma'lum bo'lsa `null`.
- */
-export const getMarketPaidMax = (toBePaid: unknown, extraCost: number): number | null => {
-  if (toBePaid === null || toBePaid === undefined || toBePaid === "") return null;
-  const value = Number(toBePaid);
-  if (!Number.isFinite(value)) return null;
-  return Math.max(0, value - (Number(extraCost) || 0));
 };

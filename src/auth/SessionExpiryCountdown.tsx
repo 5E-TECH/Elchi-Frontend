@@ -6,7 +6,7 @@ import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cx } from "../shared/lib/cx";
 import { useShellBannerSlot } from "../shared/lib/shellBannerSlot";
-import { Button } from "../shared/ui/primitives";
+import { Button } from "../shared/ui/primitives/Button";
 import { logoutAndRedirect } from "./authService";
 import tokenStorage, { AUTH_SESSION_METADATA_EVENT } from "./tokenStorage";
 

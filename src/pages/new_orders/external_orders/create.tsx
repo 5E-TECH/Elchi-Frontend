@@ -109,9 +109,9 @@ const ExternalIntegrationCreatePage = () => {
       notify.success(t("legacySources.createSuccess"));
       navigate("/integrations/sources");
     } catch (error) {
-      notify.error(
-        error instanceof Error ? error.message : getIntegrationErrorMessage(error) || t("legacySources.createError"),
-      );
+      // Backend sababi birinchi: AxiosError ham `Error` — ilgari doim inglizcha «Request failed with status code 400»
+      // chiqardi va backend sababi ko'rinmasdi.
+      notify.error(getIntegrationErrorMessage(error) || t("legacySources.createError"));
     }
   };
 

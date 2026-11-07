@@ -13,6 +13,7 @@ import type { RootState, AppDispatch } from "../../../app/config/store";
 import { Button, Field, IconButton, TextInput } from "../../../shared/ui/primitives";
 import { useLogin } from "../api/login";
 import { isNetworkFailure } from "../../../auth/networkError";
+import { isLoginProfileStageError } from "../../../auth/authService";
 import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
 import { responseErrorCode } from "../../../auth/passwordChange";
 
@@ -128,7 +129,11 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
         const err = error as AxiosError<ApiErrorResponse>;
         let message = t("systemError");
         let hint: string | null = null;
-        if (err.response) {
+        if (isLoginProfileStageError(error)) {
+          // Server parolni QABUL QILGAN — keyingi profil so'rovi rad etildi (masalan sekin tarmoqda eski sessiyaning
+          // kechikkan chiqishi). Bu parol xatosi emas: «Parol noto'g'ri» chiqmaydi, qayta urinish yetarli.
+          hint = t("serverErrorHint");
+        } else if (err.response) {
           const status = err.response.status;
           if (status === 400) message = t("invalidInput");
           if (status === 401) message = t("invalidCredentials");
@@ -162,7 +167,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
           }
         } else if (isNetworkFailure(error)) {
           // Javob kelmadi — axios'ning inglizcha matni emas (h0AM0kDL: tashxis uchun ikki holat alohida):
-          // vaqt tugadi (`ECONNABORTED`, 15 s) — «Server javob bermadi»; darhol uzilish — «Internet aloqasi yo'q».
+          // vaqt tugadi (`ECONNABORTED`, `LOGIN_TIMEOUT_MS`) — «Server javob bermadi»; darhol uzilish — «Internet aloqasi yo'q».
           message = err.code === "ECONNABORTED" ? t("networkTimeout") : t("networkOffline");
         }
         // Boshqa (javobsiz, tarmoqsiz) xato — «Tizim xatoligi»: `err.message` hech qachon lokalizatsiya qilinmagan.
@@ -248,6 +253,12 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
                 onBlur={field.onBlur}
                 placeholder={t("passwordPlaceholder")}
                 autoComplete="current-password"
+                // «Ko'rsatish» (ko'z) bosilganda maydon type="text" bo'ladi — telefon klaviaturasi (iOS Safari) birinchi
+                // harfni katta qilmasin, so'zni tuzatmasin, «'» ni «’» ga almashtirmasin: aks holda server boshqa parol
+                // oladi va to'g'ri terilgan parolga «Parol noto'g'ri» chiqadi.
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 readOnly={isSubmitting}
                 suffix={
                   <IconButton

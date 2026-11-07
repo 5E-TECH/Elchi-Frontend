@@ -123,9 +123,12 @@ export const holdLoginNoticeUntilReload = () => {
   heldUntilReload = true;
 };
 
-export const resetLoginNoticeHoldForTests = () => {
+/** Ushlab turish bekor — qayta yuklash bo'lmaydi (chiqish davomida foydalanuvchi qayta kirib bo'ldi). */
+export const releaseLoginNoticeHold = () => {
   heldUntilReload = false;
 };
+
+export const resetLoginNoticeHoldForTests = releaseLoginNoticeHold;
 
 export const clearLoginNotice = () => {
   if (heldUntilReload) return;

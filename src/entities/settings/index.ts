@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { myProfileQuery } from "../../shared/api/myProfile";
@@ -311,13 +311,17 @@ const SETTINGS_KEY = ["app-settings"];
  * Joriy foydalanuvchi sozlamalari (my-profile.settings dan). O'z so'rovi yo'q — yagona profil keshidan
  * (`myProfileQuery`, z87E6tdQ): auth bootstrap olgan javob qayta so'ralmaydi, ketayotgan so'rovga qo'shiladi.
  */
+const SETTINGS_STALE_MS = 5 * 60_000;
+const fetchServerSettings = async ({ client }: { client: QueryClient }) =>
+  mergeSettings((await client.fetchQuery(myProfileQuery))?.data?.settings);
+
 export const useSettings = () => {
   const enabled = Boolean(tokenStorage.getAccessToken());
   return useQuery<AppSettings>({
     queryKey: SETTINGS_KEY,
-    queryFn: async ({ client }) => mergeSettings((await client.fetchQuery(myProfileQuery))?.data?.settings),
+    queryFn: fetchServerSettings,
     enabled,
-    staleTime: 5 * 60_000,
+    staleTime: SETTINGS_STALE_MS,
     refetchOnWindowFocus: false,
     // Qayta urinish profil so'rovining o'zida — ikki qavat urinish so'rovlarni ko'paytirmasin.
     retry: false,
@@ -333,7 +337,17 @@ export const useUpdateSettings = () => {
   return useMutation({
     scope: { id: "app-settings" },
     mutationFn: async (patch: AppSettingsPatch) => {
-      const current = qc.getQueryData<AppSettings>(SETTINGS_KEY) ?? DEFAULT_SETTINGS;
+      // Backend TO'LIQ obyektni oladi. Kesh yo'q bo'lsa (profil hali kelmagan yoki yiqilgan) — avval serverdagi
+      // sozlama olinadi: aks holda sukut qiymatlar bilan foydalanuvchining vidjetlari, skaner, bildirishnoma va
+      // yon menyu sozlamalari ustidan yozilardi (masalan profil menyusida mavzu almashtirilganda). Olib bo'lmasa —
+      // xato, serverga hech narsa yozilmaydi.
+      const current =
+        qc.getQueryData<AppSettings>(SETTINGS_KEY) ??
+        (await qc.fetchQuery<AppSettings>({
+          queryKey: SETTINGS_KEY,
+          queryFn: fetchServerSettings,
+          staleTime: SETTINGS_STALE_MS,
+        }));
       const next = applySettingsPatch(current, patch);
       await api.patch(API_ENDPOINTS.AUTH.MY_SETTINGS, { settings: next });
       return next;
@@ -341,11 +355,12 @@ export const useUpdateSettings = () => {
     onMutate: async (patch: AppSettingsPatch) => {
       await qc.cancelQueries({ queryKey: SETTINGS_KEY });
       const prev = qc.getQueryData<AppSettings>(SETTINGS_KEY);
-      qc.setQueryData(
-        SETTINGS_KEY,
-        applySettingsPatch(prev ?? DEFAULT_SETTINGS, patch),
-      );
+      // Optimistik yangilash faqat haqiqiy kesh ustiga: sukut qiymatlardan soxta kesh yasalmaydi.
+      if (prev) qc.setQueryData(SETTINGS_KEY, applySettingsPatch(prev, patch));
       return { prev };
+    },
+    onSuccess: (next) => {
+      qc.setQueryData(SETTINGS_KEY, next);
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(SETTINGS_KEY, ctx.prev);

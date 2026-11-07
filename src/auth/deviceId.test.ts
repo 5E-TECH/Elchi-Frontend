@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authClient, login, refreshAccessToken } from "./authService";
+import { authClient, login, LOGIN_TIMEOUT_MS, refreshAccessToken } from "./authService";
 import { DEVICE_ID_STORAGE_KEY, deviceIdHeaders, getDeviceId } from "./deviceId";
 import tokenStorage from "./tokenStorage";
 
@@ -50,7 +50,7 @@ describe("login va refresh sarlavhasi", () => {
     expect(post).toHaveBeenCalledWith(
       "auth/login",
       { phone_number: "+998901234567", password: "secret" },
-      { headers: { "X-Device-Id": id } },
+      { headers: { "X-Device-Id": id }, timeout: LOGIN_TIMEOUT_MS },
     );
   });
 

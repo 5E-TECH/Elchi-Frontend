@@ -85,6 +85,16 @@ export const isEditableTarget = (target: EventTarget | null) => {
   );
 };
 
+/**
+ * Tugma bosilgan payt — `event.timeStamp` (hodisa yaratilgan vaqt), ishlov berilgan payt (`Date.now()`) emas.
+ * Sahifa band bo'lsa (skan-qabul javobidan keyingi qayta chizish ~50–60 ms, sekin telefonda ko'proq) tugmalar
+ * navbatda kutadi va keyin birdan ishlanadi: ishlov vaqti bo'yicha oraliq `idleMs` dan oshib, skanning boshi
+ * tashlanardi (2026-11-07, lokal sinov: tez ketma-ket 8 skandan 2 tasi kesilgan token bilan ketdi).
+ * Hodisa vaqti esa skaner yuborgan oraliqni saqlaydi.
+ */
+const keyTime = (event: KeyboardEvent) =>
+  Number.isFinite(event.timeStamp) && event.timeStamp > 0 ? event.timeStamp : performance.now();
+
 export const useKeyboardScanner = ({
   enabled = true,
   idleMs = DEFAULT_IDLE_MS,
@@ -94,7 +104,6 @@ export const useKeyboardScanner = ({
 }: UseKeyboardScannerOptions) => {
   const scannerBufferRef = useRef("");
   const scannerLastKeyAtRef = useRef(0);
-  const scannerClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onScanRef = useRef(onScan);
 
   useEffect(() => {
@@ -109,14 +118,6 @@ export const useKeyboardScanner = ({
       scannerLastKeyAtRef.current = 0;
     };
 
-    const scheduleScannerClear = () => {
-      if (scannerClearTimerRef.current) {
-        clearTimeout(scannerClearTimerRef.current);
-      }
-
-      scannerClearTimerRef.current = setTimeout(clearScannerBuffer, clearMs);
-    };
-
     const handleScannerKeyDown = (event: KeyboardEvent) => {
       if (
         event.ctrlKey ||
@@ -129,7 +130,9 @@ export const useKeyboardScanner = ({
       }
 
       if (event.key === "Enter") {
-        const scannedValue = scannerBufferRef.current.trim();
+        // Oxirgi belgidan `clearMs` dan keyin kelgan Enter — skan emas (bufer eskirgan).
+        const stale = keyTime(event) - scannerLastKeyAtRef.current > clearMs;
+        const scannedValue = stale ? "" : scannerBufferRef.current.trim();
         clearScannerBuffer();
 
         if (!scannedValue) return;
@@ -144,23 +147,19 @@ export const useKeyboardScanner = ({
       const char = readScannerKey(event);
       if (char === null) return;
 
-      const now = Date.now();
+      const now = keyTime(event);
       if (now - scannerLastKeyAtRef.current > idleMs) {
         scannerBufferRef.current = "";
       }
 
       scannerBufferRef.current += char;
       scannerLastKeyAtRef.current = now;
-      scheduleScannerClear();
     };
 
     window.addEventListener("keydown", handleScannerKeyDown, true);
 
     return () => {
       window.removeEventListener("keydown", handleScannerKeyDown, true);
-      if (scannerClearTimerRef.current) {
-        clearTimeout(scannerClearTimerRef.current);
-      }
     };
   }, [captureEditableTargets, clearMs, enabled, idleMs]);
 };

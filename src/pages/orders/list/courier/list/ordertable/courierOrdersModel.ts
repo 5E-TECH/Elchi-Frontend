@@ -45,6 +45,8 @@ export type Order = {
   holder_type?: string | null;
   parent_order_id?: string | null;
   qr_code_token?: string | null;
+  /** Buyurtmaning joriy pochtasi — yo'ldagi buyurtmani qabul qilish (`PATCH post/receive/:post_id`). */
+  post_id?: string | number | null;
   /** GykuOz8f: serverdagi kutilayotgan qo'shimcha xarajat so'rovi (`waiting` da) yoki `null`. */
   pending_extra_cost_approval?: ServerPendingExtraCostApproval | null;
 };
@@ -81,10 +83,29 @@ export const getDisplayStatus = (order: Order): string => {
 
 /** Sotish + Bekor qilish tugmalari ko'rinadigan holatlar. */
 const ACTIVE_STATUSES = new Set<string>(["waiting", "on the road", "new", "received"]);
+/**
+ * Skan-qabul qilinadigan holatlar (2026-11-07, backend `PATCH post/receive/:id` `scan: true` bilan bir) — yo'lda yoki
+ * mijoz kutilmoqda. Bunday qatorda «Sotish / Bekor» o'rniga «Qabul qilish» (avval qabul, keyin sotish).
+ */
+const RECEIVABLE_STATUSES = new Set<string>(["on the road", "waiting customer"]);
 /** «Qayta tiklash» ko'rinadigan holatlar — faqat sotilgan va bekor qilingan. */
 const ROLLBACK_STATUSES = new Set<string>(["sold", "cancelled"]);
 
 export const isActiveOrder = (order: Order) => ACTIVE_STATUSES.has(normalizeOrderStatus(order.status));
+
+/** Buyurtmaning joriy pochtasi (`post_id`; `'0'` va bo'sh — yo'q). */
+export const getOrderPostId = (order: Order): string | null => {
+  const record = asRecord(order);
+  const id = toText(record.post_id ?? record.postId);
+  return id && id !== "0" ? id : null;
+};
+
+/**
+ * «Qabul qilish» ko'rinadigan qator: kuryerning o'z ro'yxatida (pochtalari) yo'lda yoki mijoz kutilmoqda va pochtasi
+ * ma'lum (pochtasiz qabul so'rovi yuborib bo'lmaydi — u holda avvalgidek «Sotish / Bekor»).
+ */
+export const isReceivableOrder = (order: Order) =>
+  RECEIVABLE_STATUSES.has(normalizeOrderStatus(order.status)) && Boolean(getOrderPostId(order));
 
 /**
  * Qayta tiklash mumkinmi: sotilgan yoki bekor qilingan, pochtaga jo'natilmagan. Bekor qilingan

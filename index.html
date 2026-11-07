@@ -1,7 +1,25 @@
 <!doctype html>
 <html lang="uz">
   <head>
+    <script>
+      (() => {
+        try {
+          if (location.pathname === "/" && !sessionStorage.getItem("accessToken") && !localStorage.getItem("elchi_had_session")) {
+            sessionStorage.setItem("elchi_root_restore", "1");
+            history.replaceState(history.state, "", "/login");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="UTF-8" />
+    <!--
+      Yuqoridagi skript (hammasidan OLDIN — `firstPaintPreload`, mavzu skripti va `src/i18n.ts` manzilni o'qishidan
+      oldin; ASCII, chunki `<meta charset>` dan oldin turadi): qidiruvdan «/» ga kelgan, bu qurilmada sessiya belgisi
+      (`elchi_had_session`, `auth/authService.ts`) yo'q tashrifchi darhol `/login` ning tez yo'lida ochiladi —
+      birinchi kadr, kirish sahifasi chunklari parallel, tarjimalarning qolgani kechiktirilgan. Sekin 3G'da «/» 14 s bo'sh
+      ekran va forma 20 s da edi. Cookie sessiyasi bo'lsa ham qayta kirish shart emas: `elchi_root_restore` bilan
+      `initAuth` uni fonda tiklaydi va kirish sahifasi «/» ga o'tkazadi.
+    -->
     <!-- Logotip — yuklanish ekrani va /login dagi eng katta element (LCP, rzzxMItN): JS kutmasdan, darhol so'raladi. -->
     <link rel="preload" as="image" href="/src/shared/assets/brand/elchi-logo-white.png" fetchpriority="high" />
 
@@ -54,12 +72,8 @@
     <meta name="theme-color" content="#1f2853" />
 
     <!-- ═══════════════════ Shrift: Manrope (dizayn v2) ═══════════════════ -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap"
-    />
+    <!-- O'zimizdan (`src/index.css` → @font-face, swap): tashqi xost yo'q. Lotin bo'lagi har sahifada kerak — JS bilan parallel. -->
+    <link rel="preload" as="font" type="font/woff2" href="/src/shared/assets/fonts/Manrope-wght-latin.woff2" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Elchi" />
@@ -106,13 +120,44 @@
       })();
     </script>
 
-    <!-- ═══════════════════ Zaxira blok (js9ndYwA) ═══════════════════ -->
+    <!-- ═══════════════════ Zaxira bloklar (js9ndYwA) ═══════════════════ -->
     <!--
-      Ilova kodi ishga tushmasa (eski brauzer, JS o'chiq) — CSS yuklanmasdan chiqadi, shuning uchun uslub shu yerda,
-      v2 qiymatlarida (taxta tizim-errors → «Ilova xatosi»: ikonka, sarlavha, keyingi qadam). #legacy-fallback ni
-      ilova kodi ishga tushishi bilan main.tsx o'chiradi; 8 soniyagacha yashirin — oddiy yuklanishda ko'rinib qolmasin.
-      Uslub eski Safari'da ham ishlaydi: `inset` va flex `gap` yo'q (iOS 14.1 dan oldin qo'llab-quvvatlanmaydi).
+      Ilova kodi ishga tushmasa — oq ekran emas, zaxira blok. CSS yuklanmasdan chiqadi, shuning uchun uslub shu yerda,
+      v2 qiymatlarida (taxta tizim-errors). TAYMER YO'Q: sekin internetda (EDGE'da yuklanish 23–43 s) blok o'z-o'zidan
+      chiqmaydi — faqat aniq belgi bo'yicha:
+        - «Brauzeringiz eskirgan» — sintaksis sinovi: birinchi skript ES2020 `??` bilan (= `vite.config.ts` build.target
+          es2020). Uni tushunmaydigan brauzer (Chrome < 80, Safari < 13.1, IE) skriptni butunlay o'tkazib yuboradi,
+          ikkinchi skript (ES5) `<html>` ga `elchi-legacy` qo'yadi. Tarmoqqa bog'liq emas, birinchi kadrdayoq.
+        - «Ilovani yuklab bo'lmadi» — ilova moduli (main.tsx yoki uning statik importi) yuklanmadi
+          (tarmoq / HTTP xatosi) yoki ishga tushguncha o'z faylimizda xato: `elchi-boot-failed`; internet qaytsa
+          (`online`) sahifa o'zi qayta yuklanadi.
+      main.tsx ishga tushishi bilan ikkala blokni o'chiradi — kuzatuvchi shundan keyin hech narsa qilmaydi (keyingi
+      xatolar — ErrorBoundary / chunkError). CSP: ichki skriptlar xeshi build'da hisoblanadi (scripts/csp-headers.mjs);
+      `eval` / `new Function` / `onclick=` yo'q. Ikkinchi skript ES5 (vergul bilan tugaydigan argument ham yo'q) —
+      `src/test/indexHtml.test.ts` acorn bilan tekshiradi. Uslub eski Safari'da ham ishlaydi: `inset` va flex `gap` yo'q.
     -->
+    <script>window.elchiModernJs = null ?? true;</script>
+    <!-- prettier-ignore -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+        if (window.elchiModernJs !== true) {
+          root.className += " elchi-legacy";
+          return;
+        }
+        function failed() {
+          if (!document.getElementById("boot-fallback") || / elchi-boot-failed/.test(root.className)) return;
+          root.className += " elchi-boot-failed";
+          window.addEventListener("online", function () { location.reload(); });
+        }
+        window.addEventListener("error", function (event) {
+          var target = event.target;
+          var file = String(event.filename || "").split(/[?#]/)[0];
+          if (target && target.tagName === "SCRIPT" && target.type === "module") failed();
+          else if (file.indexOf(location.origin + "/") === 0 && /\.(m?js|jsx|tsx?)$/.test(file)) failed();
+        }, true);
+      })();
+    </script>
     <style>
       .elchi-fallback {
         position: fixed;
@@ -129,14 +174,18 @@
         color: #101733;
         font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
-      #legacy-fallback {
-        visibility: hidden;
-        animation: elchi-legacy-fallback 0s linear 8s forwards;
+      #legacy-fallback,
+      #boot-fallback {
+        display: none;
       }
-      @keyframes elchi-legacy-fallback {
-        to {
-          visibility: visible;
-        }
+      .elchi-legacy #legacy-fallback,
+      .elchi-boot-failed #boot-fallback {
+        display: flex;
+      }
+      /* Faqat Vite dev server: kompilyatsiya xatosi (modul 500) zaxira blok USTIDA ko'rinsin — «internetni tekshiring»
+         emas. Oyna blokdan keyin qo'shiladi, teng z-index da ustida chiziladi; production'da bunday element yo'q. */
+      vite-error-overlay {
+        z-index: 2147483647;
       }
       .elchi-fallback__card {
         display: flex;
@@ -174,6 +223,19 @@
         font-size: 14px;
         line-height: 20px;
         color: #4b5575;
+      }
+      .elchi-fallback__action {
+        display: inline-block;
+        box-sizing: border-box;
+        min-height: 44px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        background: #1f2853;
+        color: #ffffff;
+        font-size: 14px;
+        line-height: 20px;
+        font-weight: 600;
+        text-decoration: none;
       }
     </style>
 
@@ -248,9 +310,18 @@
         <p class="elchi-fallback__text">Iltimos, Safari yoki Chrome'ni yangilang.</p>
       </div>
     </div>
+    <div id="boot-fallback" class="elchi-fallback" role="alert">
+      <div class="elchi-fallback__card">
+        <span class="elchi-fallback__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg></span>
+        <p class="elchi-fallback__title">Ilovani yuklab bo'lmadi.</p>
+        <p class="elchi-fallback__text">Internetga ulanishni tekshiring va qayta urinib ko'ring.</p>
+        <a class="elchi-fallback__action" href="">Qayta urinish</a>
+      </div>
+    </div>
     <noscript>
       <style>
-        #legacy-fallback {
+        #legacy-fallback,
+        #boot-fallback {
           display: none;
         }
       </style>

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { assertManropeLoaded, FONT_HOSTS, serveFont } from "../visual/support/fonts";
+import { assertManropeLoaded } from "../visual/support/fonts";
 
 /**
  * tya24blo — bosh sahifada «Barchasi»: superadmin, market va menejer (`/branch-dashboard`) `GET analytics/dashboard`
@@ -8,9 +8,9 @@ import { assertManropeLoaded, FONT_HOSTS, serveFont } from "../visual/support/fo
  * Meta joyi: superadmin va menejer — javobning yuqori darajasi, market — `myStat.applied_range` (karta: market /
  * menejer javobida meta shu yerda edi). 1440 va 390px, soxta backend.
  *
- * Matn kengligi o'lchanadi — shuning uchun ilovadagi HAQIQIY shrift (Manrope, Google Fonts) yuklanadi (vizual
- * testlardagi `serveFont`): to'sib qo'yilsa zaxira shrift chiziladi va natija mashinaga bog'liq bo'ladi (lokalda
- * o'tib, CI'da 0,2–7,5 px toshib yiqilardi).
+ * Matn kengligi o'lchanadi — shuning uchun ilovadagi HAQIQIY shrift (Manrope) yuklanadi: 2026-11-07 dan u ilovaning
+ * o'zidan (`src/index.css` @font-face) keladi va `ORIGIN` bilan o'tadi; yuklanmasa zaxira shrift chiziladi va natija
+ * mashinaga bog'liq bo'ladi (lokalda o'tib, CI'da 0,2–7,5 px toshib yiqilardi) — `assertManropeLoaded` tekshiradi.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -66,8 +66,8 @@ const mockDashboard = async (page: Page, role: Role) => {
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    // Ilova, shu jumladan Manrope (o'zimizdan, 2026-11-07) — o'tadi.
     if (url.origin === ORIGIN) return route.continue();
-    if (FONT_HOSTS.has(url.host)) return void (await serveFont(route));
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");

@@ -1,7 +1,16 @@
 import { AxiosError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import store from "../app/config/store";
-import { authClient, initAuth, login, LOGIN_RETRY_DELAY_MS, LOGIN_RETRY_JITTER_MS, PROFILE_BACKGROUND_DELAYS_MS } from "./authService";
+import {
+  abandonSessionRestore,
+  authClient,
+  initAuth,
+  login,
+  LOGIN_RETRY_DELAY_MS,
+  LOGIN_RETRY_JITTER_MS,
+  PROFILE_BACKGROUND_DELAYS_MS,
+  resetSessionRestoreForTests,
+} from "./authService";
 import tokenStorage from "./tokenStorage";
 
 /**
@@ -30,6 +39,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Sessiyani tiklash taymerlari va `online` tinglovchisi modulda — keyingi testga o'tmasin.
+  resetSessionRestoreForTests();
   vi.useRealTimers();
   vi.restoreAllMocks();
   goTo("/");
@@ -163,10 +174,15 @@ describe("initAuth() — token yo'q ochilishda refresh cookie bilan tiklash", ()
     window.removeEventListener("elchi:network-error", onNetworkError);
   });
 
-  it("tarmoq yo'q — kirish sahifasi (ilova osilib qolmaydi)", async () => {
+  it("tarmoq yo'q — «Internet sekin» ekrani va qayta urinish; «Kirish sahifasiga o'tish» — forma (ilova osilib qolmaydi)", async () => {
     vi.spyOn(authClient, "post").mockRejectedValue(networkError());
     await initAuth();
     expect(tokenStorage.getAccessToken()).toBeNull();
+    // Sekin internet (2026-11-07): jim kirish sahifasi emas — ekran va qayta urinish (`initAuthSessionRestore.test`).
+    expect(store.getState().user.sessionRestore).toEqual({ phase: "waiting", reason: "network" });
+    expect(store.getState().user.isAppInitializing).toBe(true);
+    abandonSessionRestore();
+    expect(store.getState().user.sessionRestore).toBeNull();
     expect(store.getState().user.isAppInitializing).toBe(false);
   });
 

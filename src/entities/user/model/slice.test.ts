@@ -6,6 +6,7 @@ import reducer, {
   setAppInitializing,
   setError,
   setProfile,
+  setSessionRestore,
   logout,
 } from "./slice";
 import type { User } from "./types";
@@ -82,5 +83,23 @@ describe("userSlice reducer", () => {
     expect(state.accessToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
     expect(state.error).toBeNull();
+  });
+});
+
+// Sekin internet (2026-11-07): «Internet sekin — qayta urinilmoqda» ekrani holati.
+describe("userSlice — sessionRestore", () => {
+  it("boshlang'ich holatda yo'q; setSessionRestore qo'yadi va tozalaydi", () => {
+    expect(base().sessionRestore).toBeNull();
+    const shown = reducer(base(), setSessionRestore({ phase: "waiting", reason: "network" }));
+    expect(shown.sessionRestore).toEqual({ phase: "waiting", reason: "network" });
+    expect(reducer(shown, setSessionRestore(null)).sessionRestore).toBeNull();
+  });
+
+  it.each([
+    ["loginSuccess", loginSuccess({ accessToken: "tok" })],
+    ["logout", logout()],
+  ])("%s ekranni yopadi", (_name, action) => {
+    const shown = reducer(base(), setSessionRestore({ phase: "slow", reason: "network" }));
+    expect(reducer(shown, action).sessionRestore).toBeNull();
   });
 });

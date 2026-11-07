@@ -1,6 +1,6 @@
 // dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-action-approval-pending
 import { memo, useMemo, useState, type ReactNode } from "react";
-import { Clock, Copy, Phone, RotateCcw } from "lucide-react";
+import { Check, Clock, Copy, Phone, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { formatOrderRef, orderNumberOf, OrderStatusBadge, ReplacementTag } from "../../../../../../entities/order";
@@ -29,6 +29,7 @@ import {
   getDisplayStatus,
   getRegionName,
   isActiveOrder,
+  isReceivableOrder,
   isRollbackCandidate,
   isSelectableCancelledOrder,
   sortCourierOrders,
@@ -42,6 +43,8 @@ import {
  *  - 768–1023: Tuman, Market va Yetkazish yashirin, market nomi summa ostida;
  *  - < 768: kartalar — ism + summa, «№ · tuman · market», badge'lar + sana, o'ngda qo'ng'iroq tugmasi,
  *    pastda amallar (44 px).
+ * Yo'ldagi qatorda (skan bilan olingan, pochtasi ma'lum — 2026-11-07) «Sotish / Bekor» o'rniga «Qabul qilish»
+ * (`PATCH post/receive/:post_id { order_ids: [id], scan: true }`, faqat shu buyurtma) — qabul qilingach sotiladi.
  * Saralash sahifa ichida (kuryer ro'yxati API'si saralash parametrini qabul qilmaydi; sukut —
  * yangilari tepada, backend tartibi bilan bir xil).
  */
@@ -63,6 +66,10 @@ export type CourierOrdersTableProps = {
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
+  /** Yo'ldagi buyurtmani qabul qilish (berilmasa — avvalgidek «Sotish / Bekor»). */
+  onReceive?: (order: Order) => void;
+  /** Qabul so'rovi ketayotgan buyurtmalar (tugma «yuklanmoqda»). */
+  receivingIds?: ReadonlySet<string>;
   /** Qatorda «Qayta tiklash» ko'rsatiladimi (berilmasa — sotilgan/bekor qilingan hammasida). */
   canRestore?: (order: Order) => boolean;
   /** Faqat «Bekor qilingan» tabida — pochtaga yuborish uchun tanlov. */
@@ -127,6 +134,8 @@ const CourierOrdersTable = ({
   onDeliver,
   onCancel,
   onRestore,
+  onReceive,
+  receivingIds,
   canRestore,
   selection,
   busy = false,
@@ -149,6 +158,8 @@ const CourierOrdersTable = ({
   // aks holda hech narsa qilmaydigan tugma chiqardi.
   const showRestore = (order: Order) =>
     Boolean(onRestore) && isRollbackCandidate(order) && (canRestore ? canRestore(order) : true);
+  const showReceive = (order: Order) => Boolean(onReceive) && isReceivableOrder(order);
+  const receiving = (order: Order) => Boolean(receivingIds?.has(order.id));
 
   const nameOf = (order: Order) => order.customer?.name?.trim() || "—";
   const money = (order: Order) => formatMoneyLocalized(Number(order.total_price) || 0, { language });
@@ -158,6 +169,21 @@ const CourierOrdersTable = ({
 
   /** Jadval qatoridagi amallar (maket: `el-btn-sm`, planshetda «Bekor»). */
   const rowActions = (order: Order): ReactNode => {
+    if (showReceive(order)) {
+      return (
+        <Button
+          variant="secondary"
+          size="sm"
+          compact
+          leftIcon={Check}
+          loading={receiving(order)}
+          aria-label={t("courierList.receiveRow", { id: order.id })}
+          onClick={() => onReceive?.(order)}
+        >
+          {t("courierList.receive")}
+        </Button>
+      );
+    }
     if (isActiveOrder(order)) {
       return (
         <div className="flex gap-2">
@@ -210,6 +236,22 @@ const CourierOrdersTable = ({
   /** Telefon kartasidagi amallar (44 px, maket `courier-orders-*` telefon). */
   const cardActions = (order: Order): ReactNode => {
     const name = nameOf(order);
+    if (showReceive(order)) {
+      return (
+        <div className="flex gap-2 px-4 pb-3">
+          <Button
+            variant="secondary"
+            className="flex-1"
+            leftIcon={Check}
+            loading={receiving(order)}
+            aria-label={t("courierList.receiveCard", { name })}
+            onClick={() => onReceive?.(order)}
+          >
+            {t("courierList.receive")}
+          </Button>
+        </div>
+      );
+    }
     if (isActiveOrder(order)) {
       return (
         <div className="flex gap-2 px-4 pb-3">

@@ -48,6 +48,12 @@ export const queryKeys = {
   },
   regions: {
     all: ["regions"] as const,
+    /**
+     * Viloyat → tumanlar ro'yxati (massiv). `["regions"]` ostida boshqa hooklar XOM javobni (`{ data: [...] }`)
+     * saqlaydi — bir kalitda ikki shakl bo'lmasin (aks holda «Yangi filial» oynasi `.find` da yiqilardi).
+     * `["regions"]` invalidatsiyasi buni ham qamraydi (prefiks).
+     */
+    options: ["regions", "options"] as const,
   },
   courierTransfer: {
     all: ["courier-transfer"] as const,

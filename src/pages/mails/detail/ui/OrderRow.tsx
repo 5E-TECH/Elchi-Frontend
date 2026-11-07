@@ -15,7 +15,7 @@ import { useMailPrintOptions } from "./printOptions";
  * Pochta buyurtmasi qatorining telefon kartasi (`.el-list-item`, dizayn v2). Matnlar —
  * `model/useOrderRowView.tsx` (jadval kataklari bilan bir xil).
  *
- *  - `OrderRow` — telefon kartasi: ism va summa; kuryerda telefon va vaqt; «№X · tuman · market»; holat va
+ *  - `OrderRow` — telefon kartasi: ism va summa; ostida mijoz telefoni (kuryerda — vaqt bilan); «№X · tuman · market»; holat va
  *    yetkazish badge'lari; o'ngda chop etish / o'chirish. Xodimda karta matni buyurtma tafsilotiga havola
  *    (maket `superadmin-mails-detail`), tarixda butun karta havola (`admin-mails-old-detail`).
  *  - `RowPrintButton` — qatordagi chop etish menyusi (`PrintModeSelect variant="icon"`).
@@ -118,7 +118,10 @@ const OrderRow = memo((props: OrderRowProps) => {
           <span className="whitespace-nowrap">{view.customerPhone(order)}</span>
           {courierDateOnBadges ? null : <span className="whitespace-nowrap text-xs">{view.date(order)}</span>}
         </span>
-      ) : null}
+      ) : isContact ? null : (
+        // Xodim kartasi: telefon ism ostida (jadvaldagi «Mijoz» katagidagidek); `contact` da u izoh qatorida.
+        <span className="whitespace-nowrap text-[13px] text-text-muted">{view.customerPhone(order)}</span>
+      )}
       <span className="text-[13px] text-text-muted">{metaLine}</span>
       {addressLine ? <span className="text-[13px] text-text-muted">{addressLine}</span> : null}
       <span className="flex flex-wrap items-center gap-1.5">

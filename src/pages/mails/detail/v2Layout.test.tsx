@@ -317,16 +317,52 @@ describe("MailDetailPage v2 — rejimlar", () => {
     ).toEqual(["", "Buyurtma", "Mijoz", "Tuman / manzil", "Market", "Yetkazish", "Holat", "Summa", "Amallar"]);
   });
 
-  it("kuryer qabul: «Yo'ldagi buyurtmalar», raqam havolasiz, «Tanlangan» kartasida jarayon chizig'i (`courier-mails-detail-receive`)", () => {
-    regular([order("401", "on the road"), order("402", "on the road")], { status: "sent" });
+  it("menejer, o'z filialiga jo'natilgan o'tkazma pochtasi: skan = darhol qabul — izoh, «Qabul qilindi» kartasi (2026-11-07)", () => {
+    regular([order("301", "on the road"), order("302", "waiting"), order("303", "on the road")], {
+      status: "sent",
+      courier_id: "0",
+      branch_id: "1",
+    });
+    renderPage(stateFor("manager", "REGIONAL"));
+    expect(screen.getByText("Skanerlang — buyurtma darhol qabul qilinadi va ro'yxatdan chiqadi")).toBeInTheDocument();
+    expect(screen.queryByText("QR kodni skanerlang — buyurtma ro'yxatda tanlanadi")).toBeNull();
+    expect(screen.getByText("USB skaner tayyor")).toHaveAttribute(
+      "title",
+      "Skaner QR kodni o'qishi bilan buyurtma qabul qilinadi",
+    );
+    // «Qabul qilindi» 1 / 3 (kutilmoqdadagi №302), qo'lda belgilash qoladi.
+    const summary = screen.getByRole("group", { name: "Pochta xulosasi" });
+    expect(summary).toHaveTextContent("Qabul qilindi");
+    expect(summary).toHaveTextContent("Qoldi 2 ta");
+    expect(within(summary).getByRole("progressbar", { name: "Qabul qilingan buyurtmalar" })).toHaveAttribute(
+      "aria-valuenow",
+      "1",
+    );
+    expect(screen.getByRole("checkbox", { name: "№301 ni tanlash" })).toBeInTheDocument();
+    // Skaner indeksi — pochtadagi hamma joriy qator (kutilmoqdadagi ham: qayta skan — «Allaqachon qabul qilingan»).
+    expect(mocks.scanner?.orders.map((item) => item.id)).toEqual(["301", "302", "303"]);
+  });
+
+  it("kuryer qabul: «Yo'ldagi buyurtmalar», raqam havolasiz, «Qabul qilindi» kartasida jarayon chizig'i (`courier-mails-detail-receive`)", () => {
+    // Kuryerning o'z jo'natilgan pochtasi — skan = darhol qabul (2026-11-07).
+    regular([order("401", "on the road"), order("402", "on the road")], { status: "sent", courier_id: "courier-1" });
     renderPage(stateFor("courier", "REGIONAL"));
     expect(screen.getByRole("heading", { level: 2, name: "Yo'ldagi buyurtmalar" })).toBeInTheDocument();
-    expect(screen.getByText("QR skanerlansa, buyurtma avtomatik tanlanadi")).toBeInTheDocument();
+    expect(screen.getByText("Skanerlang — buyurtma darhol qabul qilinadi va ro'yxatdan chiqadi")).toBeInTheDocument();
     expect(within(screen.getByRole("table")).queryByRole("link")).toBeNull();
-    expect(screen.getByRole("progressbar", { name: "Tanlangan buyurtmalar" })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Qabul qilingan buyurtmalar" })).toHaveAttribute("aria-valuenow", "0");
+    expect(screen.getByRole("group", { name: "Pochta xulosasi" })).toHaveTextContent("Qoldi 2 ta");
     // Tanlovsiz: tugma «Pochta cheki» uchun faol (buyurtma cheklari menyuda o'chiq), nomi — ko'rinadigan matn.
     expect(screen.getByRole("button", { name: "Chop etish 0" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "№401 yorlig'ini chop etish" })).toBeInTheDocument();
+  });
+
+  it("kuryer, pochta boshqa kuryerniki (havola orqali): skan avvalgidek tanlaydi, «Tanlangan» kartasi", () => {
+    regular([order("401", "on the road"), order("402", "on the road")], { status: "sent", courier_id: "courier-9" });
+    renderPage(stateFor("courier", "REGIONAL"));
+    expect(screen.getByText("QR skanerlansa, buyurtma avtomatik tanlanadi")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Tanlangan buyurtmalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar", { name: "Qabul qilingan buyurtmalar" })).toBeNull();
   });
 
   it("kuryerning rad etilgan pochtasi: «Barchasini chop etish», «Faqat o'qish», filial izohi, tanlov yo'q (`courier-mails-detail-refused`)", () => {

@@ -39,6 +39,7 @@ import {
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { isSettledQuery } from "../../../shared/lib/invalidateWait";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
@@ -514,7 +515,9 @@ const MainCashbox = () => {
   );
   const balanceLoading = Boolean(mainCashboxQuery.isLoading || cashboxInfoQuery.isLoading);
   // Smena oynalaridagi «Ochilish qoldig'i» / «Tizim bo'yicha kutilgan» — kassa javobi kelgandagina (aks holda «—»).
-  const balanceKnown = Boolean(mainCashboxQuery.isSuccess);
+  // Amaldan keyin qoldiq qayta o'qilayotgan bo'lsa ham «—»: sekin internetda amal 20 s da tugaydi, yangi qoldiq
+  // fonda keladi (`shared/lib/invalidateWait.ts`) — eski qoldiq bilan soxta farq va majburiy izoh chiqmasin.
+  const balanceKnown = isSettledQuery(mainCashboxQuery);
   // «Qabul qilinishi kerak» oynasi izohidagi jami (SA/admin, /payments bilan bir xil manba).
   const receiveTotal = useMemo(() => {
     if (isManagerRole) return undefined;

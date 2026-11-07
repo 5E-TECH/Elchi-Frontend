@@ -1,9 +1,44 @@
-# Chek shriftlari (`src/features/print-receipts`)
+# Shriftlar
 
-Buyurtma va paket cheki (maket `tizim-receipts`, Trello HJ5sLHiz) **faqat shu fayllar** bilan o'lchanadi va
+Bu papkada ikki xil shrift bor: ilova interfeysi uchun Manrope (`woff2`, o'zgaruvchan) va chek uchun TTF'lar.
+
+## Interfeys shrifti — Manrope (`src/index.css`)
+
+2026-11-07 dan ilova Manrope'ni **o'zimizdan** yuklaydi, Google Fonts'dan emas: sekin yoki uzilgan internetda tashqi
+`fonts.googleapis.com` CSS'i sahifani oq ushlab turardi (render-bloklovchi). Endi `src/index.css` dagi 4 ta
+`@font-face` (wght `400 800`, `font-display: swap`) shu fayllarga ishora qiladi; Vite ularni xeshli
+`/assets/Manrope-wght-*.woff2` qilib chiqaradi (1 yil keshlanadi, `vite.config.ts` → `assetsInlineLimit` CSS ichiga
+base64 qilmaydi), `index.html` esa latin bo'lagini `preload` qiladi. `scripts/check-bundle.mjs` va
+`src/test/selfHostedFont.test.ts` Google manzili qaytib kelmasligini tekshiradi.
+
+| Fayl | Manba | Hajm | Litsenziya |
+|---|---|---|---|
+| `Manrope-wght-latin.woff2` | Google Fonts `css2?family=Manrope:wght@400..800` → `fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2` (Manrope 4.505) | 24 532 B | SIL OFL 1.1 — `OFL-Manrope.txt` |
+| `Manrope-wght-cyrillic.woff2` | o'sha javob → `…/v23/xn7gYHE41ni1AdIRggOxSuXd.woff2` (4.505) | 14 352 B | SIL OFL 1.1 — `OFL-Manrope.txt` |
+| `Manrope-wght-latin-ext.woff2` | Google Fonts latin-ext bo'lagi, build 4.504 (Next.js `next/font` keshidan) | 15 240 B | SIL OFL 1.1 — `OFL-Manrope.txt` |
+| `Manrope-wght-cyrillic-ext.woff2` | Google Fonts cyrillic-ext bo'lagi, build 4.504 (o'sha kesh) | 2 592 B | SIL OFL 1.1 — `OFL-Manrope.txt` |
+
+- **latin** va **cyrillic** — Google hozir beradigan v23 fayllar bilan bayt-ba-bayt bir xil (vizual baseline'lar
+  shular bilan chizilgan). **-ext** bo'laklari 4.504 — metrikasi bir xil, faqat interfeys matnida uchramaydigan
+  belgilar (Ā, Ş, ₽, Ү, Һ, Ө …) uchun.
+- **greek** va **vietnamese** bo'laklari qo'shilmagan — ilovada bu yozuvlar yo'q (kerak bo'lsa brauzer tizim shriftini
+  oladi).
+- **Yangilash:** faylni almashtiring va `unicode-range` ni Google'ning `css2` javobidan `src/index.css` ga ko'chiring
+  (`selfHostedFont.test.ts` v23 qatorlarini aniq solishtiradi — testni ham yangilang); SHA-256 ni pastga yozing.
+
+```
+e8c0b39992f06b3dc9a9834494088014859f363bf6ca8792b6bb07e17c7965f3  Manrope-wght-cyrillic-ext.woff2
+447c49583b1b735cc6f566151db1d24354cec41076c55dd98455cfbde9e806c1  Manrope-wght-cyrillic.woff2
+ce093b341d9c10658ee1eaa85c5f8042ff3307bc6ccfc5f405616eb437f0009e  Manrope-wght-latin-ext.woff2
+8c2def024c1bf31aacf3624ae3c4d701269b4ec3dc765c04830839f0d36b2d9e  Manrope-wght-latin.woff2
+```
+
+## Chek shriftlari (`src/features/print-receipts`)
+
+Buyurtma va paket cheki (maket `tizim-receipts`, Trello HJ5sLHiz) **faqat shu TTF fayllar** bilan o'lchanadi va
 chiziladi: jsPDF ularni PDF ichiga joylaydi, brauzer chop etish oynasi esa `@font-face` orqali o'sha TTF'ni yuklaydi —
-termal, A4 va brauzer bir xil kenglikda chiqadi. Ilova interfeysi bu fayllarni yuklamaydi (Manrope UI uchun Google
-Fonts'dan keladi); ular `?url` bilan faqat chop etish bosilganda so'raladi.
+termal, A4 va brauzer bir xil kenglikda chiqadi. Ilova interfeysi bu fayllarni yuklamaydi (interfeys Manrope'si —
+yuqoridagi `woff2` lar); ular `?url` bilan faqat chop etish bosilganda so'raladi.
 
 | Fayl | Manba | Litsenziya |
 |---|---|---|

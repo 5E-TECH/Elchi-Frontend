@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ops-logistics, superadmin-ops-logistics-approve-dialog, superadmin-ops-logistics-approve-result
 import { memo, useState } from "react";
-import { Check, CircleCheck, RotateCcw } from "lucide-react";
+import { Check, CircleCheck, RotateCcw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useDispatchBranchNames } from "../../entities/branch";
@@ -29,8 +29,10 @@ import {
   extractReturnRequestScope,
   isBranchTransferRow,
   parseApproveReturnResult,
+  parseRejectReturnResult,
   returnRequestStatusKey,
   type ApproveReturnResult,
+  type RejectReturnResult,
   type ReturnRequestRow,
 } from "./lib/returnRequestRows";
 import { ApproveReturnSummary } from "./ui/ApproveReturnSummary";
@@ -44,6 +46,10 @@ import { ApproveReturnSummary } from "./ui/ApproveReturnSummary";
  * `data.scope.type` dan, buyurtma va kuryer soni, kuryer guruhlari; xatoda oyna ochiq qoladi), natija — xabar
  * (ega S5, `superadmin-ops-logistics-approve-result`): o'tkazib yuborilgan bo'lsa ogohlantirish
  * «N ta tasdiqlandi, M tasi o'tkazib yuborildi», aks holda muvaffaqiyat. Xom backend matni ko'rsatilmaydi.
+ *
+ * Rad etish (2026-11-07, Bahodir): `POST post/return-requests/reject` (`{ order_ids }`) — buyurtmalar omborga
+ * qaytmaydi, kuryerda / filial pochtasida qoladi. Maket yo'q — eng yaqini `superadmin-mails-return` (o'sha endpoint,
+ * tanlov panelida «✕ Rad etish» `danger-soft` «Tasdiqlash» yonida); oyna — tasdiqlash oynasi naqshi (`danger`).
  *
  * Matnlar: sarlavha, ustunlar — `returns:opsReturnRequests.*`; maketdagi yangi matnlar — `ops:logistics.*`.
  */
@@ -62,7 +68,8 @@ const LogisticsOpsPage = () => {
   const isPhone = useIsPhone();
   const confirm = useConfirm();
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
-  const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
+  const { useGetReturnRequestsList, approveReturnRequest, rejectReturnRequest } = useLogisticsCoverage();
+  const isMutating = approveReturnRequest.isPending || rejectReturnRequest.isPending;
   // Ro'yxat xatosi — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
   const errorText = useOpsErrorText();
 
@@ -94,14 +101,29 @@ const LogisticsOpsPage = () => {
   const toggleAll = (checked: boolean) => setSelectedKeys(checked ? rows.map((row) => row.key) : []);
 
   /** Xato oynada qoladi — faqat i18n matn (xom backend matni emas). */
-  const approveErrorText = (error: unknown) => {
+  const actionErrorText = (action: "approve" | "reject") => (error: unknown) => {
     const status = getErrorStatus(error);
-    if (status === 403) return t("logistics.approve.errors.forbidden");
-    if (status === 404) return t("logistics.approve.errors.stale");
+    if (status === 403) return t(`logistics.${action}.errors.forbidden`);
+    if (status === 404) return t(`logistics.${action}.errors.stale`);
     // Vaqt chegarasi / oflayn: backend so'rovni yozayotgan yoki qisman yozib bo'lgan bo'lishi mumkin — 5xx kabi.
     const kind = getErrorKind(error);
-    if (kind === "server" || kind === "timeout" || kind === "offline") return t("logistics.approve.errors.server");
-    return t("logistics.approve.errors.generic");
+    if (kind === "server" || kind === "timeout" || kind === "offline") return t(`logistics.${action}.errors.server`);
+    return t(`logistics.${action}.errors.generic`);
+  };
+
+  /** «№1, №2, №3 ni …» — o'tkazib yuborilganlar sababi (tasdiqlash va rad etish natijasida bir xil). */
+  const skippedReason = (skippedOrderIds: string[]) => {
+    const listed = skippedOrderIds
+      .slice(0, SKIPPED_LISTED)
+      .map((id) => t("logistics.list.orderLink", { id }))
+      .join(", ");
+    const rest = skippedOrderIds.length - SKIPPED_LISTED;
+    // Son bo'yicha alohida kalit: uz «… va yana 2 tasini», ru/en — birlik/ko'plik (ops.json'da plural qo'shimchasiz).
+    return rest > 0
+      ? t("logistics.approve.result.skippedReasonMore", { list: listed, value: number(rest) })
+      : skippedOrderIds.length === 1
+        ? t("logistics.approve.result.skippedReason", { orders: listed })
+        : t("logistics.approve.result.skippedReasonMany", { orders: listed });
   };
 
   const notifyResult = ({ approved, skippedOrderIds }: ApproveReturnResult) => {
@@ -112,18 +134,7 @@ const LogisticsOpsPage = () => {
       });
       return;
     }
-    const listed = skippedOrderIds
-      .slice(0, SKIPPED_LISTED)
-      .map((id) => t("logistics.list.orderLink", { id }))
-      .join(", ");
-    const rest = skippedOrderIds.length - SKIPPED_LISTED;
-    // Son bo'yicha alohida kalit: uz «… va yana 2 tasini», ru/en — birlik/ko'plik (ops.json'da plural qo'shimchasiz).
-    const reason =
-      rest > 0
-        ? t("logistics.approve.result.skippedReasonMore", { list: listed, value: number(rest) })
-        : skippedOrderIds.length === 1
-          ? t("logistics.approve.result.skippedReason", { orders: listed })
-          : t("logistics.approve.result.skippedReasonMany", { orders: listed });
+    const reason = skippedReason(skippedOrderIds);
     notify.warning(
       t("logistics.approve.result.partialTitle", {
         approved: number(approved),
@@ -140,7 +151,7 @@ const LogisticsOpsPage = () => {
    * tanlov tozalanadi va natija xabari chiqadi.
    */
   const handleApprove = async () => {
-    if (selectedCount === 0 || approveReturnRequest.isPending) return;
+    if (selectedCount === 0 || isMutating) return;
     const rowsToApprove = selectedRows.filter((row) => row.order_id || row.id);
     const orderIds = [...selectedOrderIds];
     const count = orderIds.length;
@@ -158,7 +169,7 @@ const LogisticsOpsPage = () => {
       confirmIcon: Check,
       loadingLabel: t("logistics.approve.loading"),
       children: <ApproveReturnSummary rows={rowsToApprove} />,
-      errorMessage: approveErrorText,
+      errorMessage: actionErrorText("approve"),
       onConfirm: async () => {
         const response = await approveReturnRequest.mutateAsync({ order_ids: orderIds });
         outcome.result = parseApproveReturnResult(response?.data, orderIds);
@@ -167,6 +178,55 @@ const LogisticsOpsPage = () => {
     if (!confirmed || !outcome.result) return;
     setSelectedKeys([]);
     notifyResult(outcome.result);
+  };
+
+  const notifyRejectResult = ({ rejected, skippedOrderIds }: RejectReturnResult) => {
+    const kept = t("logistics.reject.result.kept");
+    if (skippedOrderIds.length === 0) {
+      notify.success(t("logistics.reject.result.successTitle", { value: number(rejected) }), { description: kept });
+      return;
+    }
+    const reason = skippedReason(skippedOrderIds);
+    notify.warning(
+      t("logistics.reject.result.partialTitle", {
+        rejected: number(rejected),
+        skipped: number(skippedOrderIds.length),
+      }),
+      { description: rejected > 0 ? `${kept} ${reason}` : reason },
+    );
+  };
+
+  /**
+   * Rad etish — `POST post/return-requests/reject` (`{ order_ids }`): tasdiqlashdagi oyna naqshi, `danger` tonda
+   * (buyurtmalar omborga qaytmaydi). Xato oynada qoladi, muvaffaqiyatdan keyin tanlov tozalanadi va natija xabari.
+   */
+  const handleReject = async () => {
+    if (selectedCount === 0 || isMutating) return;
+    const rowsToReject = selectedRows.filter((row) => row.order_id || row.id);
+    const orderIds = [...selectedOrderIds];
+    const count = orderIds.length;
+    const outcome: { result: RejectReturnResult | null } = { result: null };
+
+    const confirmed = await confirm({
+      title: t("logistics.reject.title"),
+      description: t("logistics.reject.description", { value: number(count) }),
+      icon: X,
+      tone: "danger",
+      size: "md",
+      closable: true,
+      confirmLabel: t("logistics.reject.confirm", { value: number(count) }),
+      confirmIcon: X,
+      loadingLabel: t("logistics.reject.loading"),
+      children: <ApproveReturnSummary rows={rowsToReject} />,
+      errorMessage: actionErrorText("reject"),
+      onConfirm: async () => {
+        const response = await rejectReturnRequest.mutateAsync({ order_ids: orderIds });
+        outcome.result = parseRejectReturnResult(response?.data, orderIds);
+      },
+    });
+    if (!confirmed || !outcome.result) return;
+    setSelectedKeys([]);
+    notifyRejectResult(outcome.result);
   };
 
   const statusBadge = (row: ReturnRequestRow) => {
@@ -253,7 +313,8 @@ const LogisticsOpsPage = () => {
         >
           {() => (
             <>
-              {/* Tanlov paneli (maket `role="region"` «Tanlangan so'rovlar»): son, izoh, «Tanlovni bekor qilish», tasdiqlash. */}
+              {/* Tanlov paneli (maket `role="region"` «Tanlangan so'rovlar»): son, izoh, «Tanlovni bekor qilish», rad etish,
+                  tasdiqlash. */}
               <div
                 role="region"
                 aria-label={t("logistics.list.selection")}
@@ -267,19 +328,40 @@ const LogisticsOpsPage = () => {
                   </span>
                   <span className="text-xs text-text-muted">{t("logistics.list.grouped")}</span>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-2 max-md:ml-auto">
+                {/* Telefonda «Pochta → Qaytarish» maketidagidek: «Rad etish» va «Tasdiqlash» yonma-yon (teng), «Tanlovni
+                    bekor qilish» — ostida, alohida qatorda. */}
+                <div className="flex flex-wrap items-center justify-end gap-2 max-md:w-full">
                   {selectedCount > 0 ? (
-                    <Button variant="ghost" size="sm" compact onClick={() => setSelectedKeys([])}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      compact
+                      onClick={() => setSelectedKeys([])}
+                      className="max-md:order-last max-md:basis-full"
+                    >
                       {t("logistics.list.clear")}
                     </Button>
                   ) : null}
                   <Button
+                    variant="danger-soft"
+                    size="sm"
+                    compact
+                    leftIcon={X}
+                    disabled={selectedCount === 0 || (isMutating && !rejectReturnRequest.isPending)}
+                    loading={rejectReturnRequest.isPending}
+                    onClick={() => void handleReject()}
+                    className="max-md:flex-1"
+                  >
+                    {t("logistics.list.reject")}
+                  </Button>
+                  <Button
                     size="sm"
                     compact
                     leftIcon={Check}
-                    disabled={selectedCount === 0}
+                    disabled={selectedCount === 0 || (isMutating && !approveReturnRequest.isPending)}
                     loading={approveReturnRequest.isPending}
                     onClick={() => void handleApprove()}
+                    className="max-md:flex-1"
                   >
                     {t("logistics.list.approve", { count: selectedCount })}
                   </Button>

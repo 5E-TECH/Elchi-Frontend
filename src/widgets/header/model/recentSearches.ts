@@ -4,7 +4,10 @@
  * `localStorage` yopiq bo'lsa (shaxsiy oyna, bloklangan sayt ma'lumoti) ro'yxat jimgina bo'sh qoladi.
  */
 
-export const RECENT_SEARCHES_KEY = "elchi:header:recent-searches";
+import { PREFERENCE_STORAGE_KEYS } from "../../../shared/lib/preferencesStorage";
+
+/** Chiqishda tozalanadi (`clearStoredUiPreferences`) — keyingi foydalanuvchi oldingisining qidiruvlarini ko'rmaydi. */
+export const RECENT_SEARCHES_KEY = PREFERENCE_STORAGE_KEYS.recentSearches;
 export const RECENT_SEARCHES_LIMIT = 5;
 
 const normalize = (query: string) => query.trim().replace(/\s+/g, " ");

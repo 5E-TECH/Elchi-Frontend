@@ -5,8 +5,9 @@ import LogoWhite from "../assets/brand/elchi-logo-white.png";
 /**
  * ILOVA OCHILAYOTGANDA — to'liq ekran (dizayn v2, taxta `tizim-loading` 01 «2 · Faqat ilova ochilganda»).
  *
- * Faqat sayt birinchi marta ochilganda yoki brauzerda yangilanganda, kirish tekshirilguncha (ko'pi bilan
- * 15 s). Bo'limlar orasida o'tishda hech qachon ko'rsatilmaydi (u yerda shell'dagi yuqori chiziq).
+ * Faqat sayt birinchi marta ochilganda yoki brauzerda yangilanganda, kirish tekshirilguncha. Sessiyani tiklash
+ * 15 s dan oshsa yoki vaqtincha yiqilsa — `auth/SessionRestoreScreen` («Internet sekin — qayta urinilmoqda») bilan
+ * almashadi. Bo'limlar orasida o'tishda hech qachon ko'rsatilmaydi (u yerda shell'dagi yuqori chiziq).
  * Navy fon (`nav`), oq logotip, ingichka chiziq va «Yuklanmoqda…»; «Harakatni kamaytirish» da chiziq to'xtaydi.
  */
 const PageLoader = () => {

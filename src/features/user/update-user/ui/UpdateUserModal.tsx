@@ -582,16 +582,18 @@ export const UpdateUserModal = memo(({
     }
 
     if (isCourier || isMarket) {
+      // API pulni matn bilan beradi («25000.00») — son bilan solishtiriladi (menejer bo'limidagidek), aks holda
+      // tegilmagan tariflar ham har saqlashda yuborilardi.
       if (values.tariff_home) {
         const tariffHome = parseAmount(values.tariff_home);
-        if (tariffHome !== userData.tariff_home) {
+        if (tariffHome !== Number(userData.tariff_home ?? 0)) {
           payload.tariff_home = tariffHome;
         }
       }
 
       if (values.tariff_center) {
         const tariffCenter = parseAmount(values.tariff_center);
-        if (tariffCenter !== userData.tariff_center) {
+        if (tariffCenter !== Number(userData.tariff_center ?? 0)) {
           payload.tariff_center = tariffCenter;
         }
       }

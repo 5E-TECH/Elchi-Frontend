@@ -347,10 +347,10 @@ describe("MailDetailPage — kuryer: «Bu buyurtma kelmagan — qaytarish so'rov
     expect(screen.getByTestId("location")).toHaveTextContent(`/mails/${POST_ID}`);
   });
 
-  it("so'rovi bor buyurtmaning QR'i skanerlansa — bloklanmaydi: ro'yxatga qaytib tanlanadi, qabulga ketadi", async () => {
-    const user = userEvent.setup();
+  it("so'rovi bor buyurtmaning QR'i skanerlansa — bloklanmaydi: to'g'ridan qabul qilinadi (`scan: true`), izohdan chiqadi", async () => {
     const requested = order("103", { return_requested: true });
     setup(() => [order("101"), requested]);
+    mocks.receive.mockResolvedValue({ statusCode: 200, data: [], received_order_ids: ["103"], post_status: "sent" });
     renderPage(courier());
     expect(checkbox("103")).toBeNull();
 
@@ -358,15 +358,14 @@ describe("MailDetailPage — kuryer: «Bu buyurtma kelmagan — qaytarish so'rov
       mocks.scanner?.onMatch(requested, "103", "keyboard");
     });
 
-    expect(checkbox("103")).toBeChecked();
-    expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
-    expect(
-      await screen.findByText("№103 uchun qaytarish so'rovi yuborilgan edi — qabul qilsangiz, so'rov bekor bo'ladi"),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" }));
+    // Skan-qabul (2026-11-07): tanlanmaydi — faqat shu buyurtma qabulga ketadi, qolganlari (№101) tegilmaydi.
     await waitFor(() =>
-      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"] } }),
+      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"], scan: true } }),
     );
+    expect(mocks.receive).toHaveBeenCalledTimes(1);
+    expect(checkbox("103")).toBeNull();
+    expect(screen.queryByTestId("mail-requested-notice")).toBeNull();
+    expect(await screen.findByText("№103 qabul qilindi · 1 ta qoldi")).toBeInTheDocument();
+    expect(checkbox("101")).not.toBeChecked();
   });
 });

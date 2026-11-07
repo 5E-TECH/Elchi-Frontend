@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { parseISODate, toISODate, type ISODateRange } from "../../shared/lib/dateRange";
+import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 
 /**
  * qzjTMWPb — KUNLIK MOLIYA AGREGATLARI (faqat o'qish).
@@ -306,8 +307,12 @@ export const balanceTrend = (
 
 const isForbidden = (error: unknown) => asRecord(asRecord(error).response).status === 403;
 
-/** 403 da qayta urinilmaydi (ruxsat o'zgarmaydi), boshqa xato — bir marta. */
-const retryOnce = (failures: number, error: unknown) => !isForbidden(error) && failures < 1;
+/**
+ * 403 da qayta urinilmaydi (ruxsat o'zgarmaydi), qolgani — ilova qoidasi (`shouldRetryQuery`): vaqt tugashini GET
+ * adapteri o'zi bir marta qayta so'raydi (`shared/api/readRetry.ts`) — bu yerda ham urinilsa sekin liniyada karta
+ * ~4 daqiqa yuklanishda qolardi (sekin internet, 2026-11-07).
+ */
+const retryOnce = (failures: number, error: unknown) => !isForbidden(error) && shouldRetryQuery(failures, error);
 
 /** Blok ruxsat yo'q rolda jim yashirinadi (xato kartasi chizilmaydi). */
 export const isFinanceDailyForbidden = isForbidden;

@@ -352,7 +352,9 @@ export const parseExternalBatchScan = (body: unknown): ExternalBatchScan | null 
 };
 
 export const fetchExternalBatchScan = async (token: string): Promise<ExternalBatchScan | null> => {
-  const response = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encodeURIComponent(token)));
+  // Skaner qidiruvi — tezkor (`failFast`, sekin internet 2026-11-07): 20 s, jim qayta urinish yo'q; aks holda sekin
+  // liniyada «topilmadi» ~4 daqiqadan keyin kelib, shu orada skanerlangan kodning xabarini bosib ketardi.
+  const response = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encodeURIComponent(token)), { failFast: true });
   return parseExternalBatchScan(response.data);
 };
 

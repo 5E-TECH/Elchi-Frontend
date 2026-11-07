@@ -17,7 +17,10 @@ import { resolveAccountScannerSound, type StoredScannerSound } from "../../../sh
  */
 
 export const TG_SCAN_REQUEST_SOURCE = "tg-scan";
-/** Asosiy mijozdagi bilan bir xil vaqt chegarasi (`API_TIMEOUT_MS`, qJjLP109). */
+/**
+ * Asosiy mijozning amal chegarasi (`API_TIMEOUT_MS`, qJjLP109). O'qishdagi 60 s + jim qayta urinish
+ * (`shared/api/readRetry.ts`) bu yerga qo'shilmagan: Mini App skan yo'li faqat POST, skaner kutib qolmasin.
+ */
 const TIMEOUT_MS = 20_000;
 /** Backend chegarasi: bitta «Tayyor» so'rovida 1..200 ta id. */
 export const SCAN_DONE_BATCH_LIMIT = 200;

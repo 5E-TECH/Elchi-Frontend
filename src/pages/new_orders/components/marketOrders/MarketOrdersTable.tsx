@@ -282,6 +282,10 @@ export const MarketOrdersTable = ({
             {name}
             <span className="whitespace-nowrap font-semibold text-text">{money(order.total_price)}</span>
           </span>
+          {/* Telefon ism ostida (jadvaldagi «Mijoz» katagidagidek); «Takroriy raqam» belgisi shu raqamga tegishli. */}
+          {order.customer?.phone_number?.trim() ? (
+            <span className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(order.customer.phone_number)}</span>
+          ) : null}
           {duplicateIds?.has(String(order.id)) ? (
             <Badge tone="warning" className="self-start">
               {t("marketOrders.duplicatePhoneBadge")}

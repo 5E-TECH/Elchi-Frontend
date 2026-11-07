@@ -48,7 +48,7 @@ const extractRegionOptions = (payload: unknown): RegionOption[] => {
 
 const useRegionOptions = () =>
   useQuery({
-    queryKey: queryKeys.regions.all,
+    queryKey: queryKeys.regions.options,
     queryFn: async () => {
       const response = await api.get(API_ENDPOINTS.REGIONS.BASE);
       return extractRegionOptions(response.data);

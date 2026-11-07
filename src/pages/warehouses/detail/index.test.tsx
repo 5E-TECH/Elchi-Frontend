@@ -137,6 +137,26 @@ describe("Ombor tafsiloti — superadmin, admin", () => {
     expect(mocks.saveBlob).toHaveBeenCalledWith(expect.any(Blob), "ombor-3-qoldiq.xlsx");
   });
 
+  it("⭐ qidiruvga yozilib, 400 ms ichida «Holat» tanlansa — ikkalasi ham saqlanadi (kechikkan qidiruv filtrni tushirmaydi)", async () => {
+    const user = userEvent.setup();
+    renderAs("admin");
+    await screen.findByRole("table", { name: "Ombordagi mahsulotlar" });
+
+    await user.type(screen.getByRole("searchbox", { name: /qidir/i }), "quloq");
+    await user.click(screen.getByRole("combobox", { name: /Holat/ }));
+    await user.click(await screen.findByRole("option", { name: /Tugagan/ }));
+
+    await waitFor(() =>
+      expect(mocks.get).toHaveBeenCalledWith("warehouses/3/stock", {
+        params: { page: 1, limit: 20, search: "quloq", level: "out" },
+      }),
+    );
+    // Ilgari: taymer eski `filters` bilan ishlab, tanlangan «Holat» ni jimgina tushirib yuborardi.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const lastStock = mocks.get.mock.calls.filter(([url]) => url === "warehouses/3/stock").at(-1);
+    expect(lastStock?.[1]).toEqual({ params: { page: 1, limit: 20, search: "quloq", level: "out" } });
+  });
+
   it("⋯ → «Omborni to'xtatish» — tasdiq oynasi, so'ng POST pause", async () => {
     const user = userEvent.setup();
     renderAs("superadmin");

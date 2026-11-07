@@ -7,6 +7,7 @@ import {
   CircleCheck,
   History,
   House,
+  Inbox,
   ListChecks,
   Mail,
   PackageCheck,
@@ -67,11 +68,12 @@ import {
 } from "./model/scanPickers";
 import { useScanHistory } from "./model/scanHistory";
 import { scanHistoryTitle } from "./model/scanHistoryText";
+import { useCourierReceive } from "./model/useCourierReceive";
 import { useCourierTake } from "./model/useCourierTake";
 import { useMailModeScan } from "./model/useMailModeScan";
 import { useUniversalScan } from "./model/useUniversalScan";
 import { useIsBelowLg } from "./model/useViewport";
-import { ScanModeCard, ScanTakeCard, type ScanModeOption } from "./ui/ScanModeCards";
+import { ScanModeCard, ScanSessionCard, ScanTakeCard, type ScanModeOption } from "./ui/ScanModeCards";
 import { ScanOutcomeCard, ScanRecentCard, ScanUsbCard, scanDetailRoute } from "./ui/ScanSideCards";
 
 /** Skanerdan chiqish («Orqaga», telefonda «Skanerni yopish») — maketdagi `@dashboard-main`. */
@@ -103,6 +105,9 @@ const MIN_KEYBOARD_SCAN_LENGTH = 4;
  *     savatga o'sha sahifa handler'i bilan qo'shiladi;
  *   - kuryer «O'zimga olish» (kuryerda sukut) — ketma-ket `POST orders/scan-assign`, natija ro'yxati,
  *     «Tugatish» → kesh yangilanadi va xulosa (`model/useCourierTake.ts`);
+ *   - kuryer «Qabul qilish» (2026-11-07, BeePost kuryer qabul sikli) — o'z yo'ldagi buyurtmasi skanerlansa darhol
+ *     `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, kamera yopilmaydi, natija ro'yxati; allaqachon
+ *     qabul qilingan buyurtma → `/scan/:token` (sotish / bekor; `model/useCourierReceive.ts`);
  *   - «Pochtani jo'natish» / «Rad etilgan pochta» (Trello vNcGDnNh 2-band) — pochta varag'i (`GET post/new` /
  *     `GET post/rejected`) YOKI pochta QR'i (`POST-…`, `model/useMailModeScan.ts`) → `/mails/:id`, kamera o'sha
  *     sahifaning «jo'natish» / «rad etilganni qabul» maqsadida ochiq (buyurtma skani = tanlov; jo'natish va qabul —
@@ -176,6 +181,20 @@ const UniversalScanner = () => {
   const take = useCourierTake({ enabled: mode === "take" && !summaryOpen && !finishing });
   const handleTakeScan = take.handleScan;
   const finishTakeFlow = take.finish;
+  // Qabul qilingan (WAITING) buyurtma — natija sahifasi: sotish / bekor (keyin `/scan` ga shu rejimda qaytiladi).
+  const openReceivedOrder = useCallback(
+    (token: string) => navigate(`/scan/${encodeURIComponent(token)}`),
+    [navigate],
+  );
+  // Skan = qabul: kuryer «Qabul qilish» (o'z pochtasi) yoki filial menejeri «Pochtadan qabul» (o'z filialiga o'tkazma).
+  const isScanReceiveMode = mode === "courierReceive" || mode === "branchReceive";
+  const courierReceive = useCourierReceive({
+    enabled: isScanReceiveMode,
+    onOpenOrder: openReceivedOrder,
+    actor: mode === "branchReceive" ? "branch" : "courier",
+    branchId,
+  });
+  const handleReceiveScan = courierReceive.handleScan;
 
   const openPicker = useCallback(() => setSwitcherKey((key) => key + 1), []);
 
@@ -198,6 +217,10 @@ const UniversalScanner = () => {
     (raw: string, source: ScanSource) => {
       if (mode === "take") {
         handleTakeScan(raw, source);
+        return;
+      }
+      if (mode === "courierReceive" || mode === "branchReceive") {
+        handleReceiveScan(raw, source);
         return;
       }
       if (mode === "receive" || mode === "handover") {
@@ -224,7 +247,7 @@ const UniversalScanner = () => {
       }
       void handleInfoScan(raw, source);
     },
-    [handleInfoScan, handleMailScan, handleTakeScan, mode, openDispatch, openPicker, t],
+    [handleInfoScan, handleMailScan, handleReceiveScan, handleTakeScan, mode, openDispatch, openPicker, t],
   );
 
   useKeyboardScanner({
@@ -425,8 +448,28 @@ const UniversalScanner = () => {
         finish: { label: t("scanner.take.finish"), keepOpen: true, onFinish: () => void finishTake() },
       };
     }
+    if (mode === "courierReceive" || mode === "branchReceive") {
+      return {
+        ...base,
+        title: t(`scanner.${mode}.title`),
+        context: t(`scanner.${mode}.context`),
+        hint: t(`scanner.${mode}.hint`),
+        icon: Inbox,
+        progress: { done: courierReceive.received, label: t(`scanner.${mode}.meter`) },
+        list: courierReceive.list,
+        listTitle: t(`scanner.${mode}.listTitle`),
+        listDescription: `${formatNumberLocalized(courierReceive.received, { language })} ${t(
+          `scanner.${mode}.meter`,
+        )} · ${t("scanner.take.scans", {
+          count: courierReceive.list.length,
+          value: formatNumberLocalized(courierReceive.list.length, { language }),
+        })}`,
+      };
+    }
     return { ...base, title: t("scanner.title"), context: t("scanner.context") };
   }, [
+    courierReceive.list,
+    courierReceive.received,
     finishTake,
     goToHandover,
     goToMarket,
@@ -508,11 +551,13 @@ const UniversalScanner = () => {
   const manualSubmitLabel =
     mode === "take"
       ? t("scanner.take.manualSubmit")
-      : mode === "dispatch"
-        ? t("scanner.dispatch.manualSubmit")
-        : mode === "info" || isMailMode
-          ? t("scanner.manualSubmit")
-          : undefined;
+      : mode === "courierReceive" || mode === "branchReceive"
+        ? t(`scanner.${mode}.manualSubmit`)
+        : mode === "dispatch"
+          ? t("scanner.dispatch.manualSubmit")
+          : mode === "info" || isMailMode
+            ? t("scanner.manualSubmit")
+            : undefined;
   const manualText = {
     label: t("scanner.manualDialogLabel"),
     hint: t("scanner.manualDialogHint"),
@@ -667,6 +712,17 @@ const UniversalScanner = () => {
               />
             </div>
           ) : null}
+          {mode === "courierReceive" || mode === "branchReceive" ? (
+            <div className="min-w-0 max-lg:col-span-2">
+              <ScanSessionCard
+                list={courierReceive.list}
+                count={courierReceive.received}
+                title={t(`scanner.${mode}.listTitle`)}
+                meter={t(`scanner.${mode}.meter`)}
+                emptyText={t(`scanner.${mode}.emptyText`)}
+              />
+            </div>
+          ) : null}
           {/* «Qabul qilish» / «Marketga topshirish»: market tanlanmaguncha kod hech qayerga ketmaydi — qo'lda kiritish ham yo'q. */}
           {mode !== "receive" && mode !== "handover" ? (
             <ScanUsbCard
@@ -675,7 +731,7 @@ const UniversalScanner = () => {
               submitLabel={manualSubmitLabel}
             />
           ) : null}
-          {mode !== "take" ? (
+          {mode !== "take" && !isScanReceiveMode ? (
             <ScanRecentCard
               entries={entries}
               limit={isBelowLg ? 2 : 4}

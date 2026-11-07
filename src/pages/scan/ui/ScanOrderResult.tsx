@@ -7,6 +7,7 @@ import {
   Check,
   ChevronRight,
   CircleCheck,
+  Clock,
   Copy,
   ExternalLink,
   FileText,
@@ -29,6 +30,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canViewDispatchPage } from "../../../app/lib/access";
 import { addToDispatchBasket, normalizeDispatchOrder, useDispatchBasketScope } from "../../../features/dispatch-basket";
+import { useReceivePost } from "../../../entities/mails";
 import { OrderStatusBadge, ReplacementTag } from "../../../entities/order";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -53,7 +55,9 @@ import {
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import { getBackendErrorMessage, invalidateAfterScanAction, scanAssignOrder } from "../lib/scanResource";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
-import { DISPATCH_ROUTE, orderDetailRoute } from "../model/routes";
+import { getCourierScanAction, readOrderPostId, readScanReceiveResult } from "../model/courierReceive";
+import { DISPATCH_ROUTE, orderDetailRoute, SCANNER_ROUTE } from "../model/routes";
+import { scanModeState } from "../model/scanModes";
 import {
   buildScanOrderView,
   getCourierTakeState,
@@ -82,7 +86,7 @@ type ScanOrderResultProps = {
   roleKind: ScanRoleKind;
   /** Sarlavha ostidagi xabar (USB skaner bilan yaroqsiz QR o'qildi). */
   topNotice?: ReactNode;
-  /** Menejer amali bajarildi — skan so'rovi qayta olinadi. */
+  /** Menejer amali yoki kuryer qabuli bajarildi — skan so'rovi qayta olinadi. */
   onChanged: () => void;
   /** Sotish / bekor oynasi ochiq — sahifaning USB skaneri to'xtaydi (oynadagi amal uzilmasin). */
   onDialogOpenChange: (open: boolean) => void;
@@ -152,6 +156,53 @@ const useCourierAssign = (token: string) => {
     },
   });
   return { mutation, result };
+};
+
+/**
+ * Kuryer «Qabul qilish» (2026-11-07) — o'z yo'ldagi buyurtmasi: `PATCH post/receive/:post_id { order_ids: [id],
+ * scan: true }` (faqat shu buyurtma; pochtadagi qolganlarga tegilmaydi). Muvaffaqiyat → «Qabul qilindi» ovozi, xabar
+ * va skan so'rovi qayta olinadi — buyurtma «kutilmoqda»: «Sotish» va «Bekor qilish» ochiladi. Xato → backend sababi.
+ */
+const useCourierOrderReceive = (order: OrderDetail, onReceived: () => void) => {
+  const { t } = useTranslation("scan");
+  const { mutate, isPending } = useReceivePost();
+  const [result, setResult] = useState<ResultMessage | null>(null);
+  const receive = () => {
+    const postId = readOrderPostId(order);
+    if (!postId) return;
+    setResult(null);
+    mutate(
+      { postId, payload: { order_ids: [order.id], scan: true } },
+      {
+        onSuccess: (response) => {
+          const outcome = readScanReceiveResult(response, order.id);
+          if (!outcome.ok) {
+            void playScanFeedback("error");
+            setResult({ tone: "error", text: outcome.error ?? t("courier.receiveError") });
+            return;
+          }
+          void playScanFeedback("success", undefined, undefined, { voice: "received" });
+          setResult({ tone: "success", text: t("courier.receiveSuccess") });
+          onReceived();
+        },
+        onError: (error) => {
+          void playScanFeedback("error");
+          setResult({ tone: "error", text: getBackendErrorMessage(error) ?? t("courier.receiveError") });
+        },
+      },
+    );
+  };
+  return { receive, isPending, result };
+};
+
+/** Market tasdig'i kutilmoqda (202, GykuOz8f) — shu sessiyada sotish / bekor yashirin. */
+const CourierApprovalAlert = () => {
+  const { t } = useTranslation("scan");
+  return (
+    <ScanAlert tone="warning" icon={Clock} role="status" title={t("courier.approvalPending")} data-testid="courier-approval-pending">
+      {t("courier.approvalPendingText")}
+    </ScanAlert>
+  );
 };
 
 /* ─── Kartalar ──────────────────────────────────────────────────────────── */
@@ -484,7 +535,8 @@ const ManagerMoreCard = ({
 /**
  * Buyurtma natijasi — bitta tuzilma hamma rol uchun (spec G3 §2.2): sarlavha, «Holat va summa», «Mijoz va
  * manzil» + «Mahsulotlar» (≥ 1024 ikki ustun), o'ngda (≥ 1024) amallar kartasi, < 1024 da pastki panel.
- * Rol farqi (§2.3): kuryer — «O'zimga olish»; superadmin/admin/registrator — «Holat tarixi» va «Buyurtma
+ * Rol farqi (§2.3): kuryer — «O'zimga olish» (2026-11-07: o'z yo'ldagi buyurtmasi — «Qabul qilish», qabul qilingani —
+ * «Sotish» / «Bekor qilish», keyin `/scan` «Qabul qilish» rejimiga qaytadi); superadmin/admin/registrator — «Holat tarixi» va «Buyurtma
  * sahifasi»; menejer — sotish / kuryerga biriktirish / bekor (tafsilotdagi qoidalar bilan); market — faqat
  * ma'lumot. Amal tugmasi DOM'da bir marta (yon karta YOKI pastki panel — `useIsBelowLg`).
  */
@@ -499,6 +551,7 @@ export const ScanOrderResult = ({
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isBelowLg = useIsBelowLg();
   const isPhone = useIsBelowMd();
   const view = useMemo(() => buildScanOrderView(order), [order]);
@@ -539,6 +592,20 @@ export const ScanOrderResult = ({
   const { mutation: assignMutation, result: assignResult } = useCourierAssign(token);
   // Qayta skanda (6qypMFeT): buyurtma allaqachon shu kuryerda yoki boshqa kuryerda — tugma faol emas, sababi yonida.
   const courierTake = roleKind === "courier" ? getCourierTakeState(order, user?.id) : "free";
+  // 2026-11-07: o'z yo'ldagi buyurtmasi — «Qabul qilish»; qabul qilingani — «Sotish» / «Bekor qilish».
+  const courierAction = roleKind === "courier" ? getCourierScanAction(order, user?.id) : "take";
+  const { receive, isPending: receiving, result: receiveResult } = useCourierOrderReceive(order, onChanged);
+  // 202 «tasdiq kutilmoqda» (shu sessiyada) yoki serverdagi kutilayotgan so'rov — sotish / bekor yashirin.
+  const [approvalRequested, setApprovalRequested] = useState(false);
+  const approvalPending =
+    approvalRequested || Boolean((order as { pending_extra_cost_approval?: unknown }).pending_extra_cost_approval);
+  // Kuryer sotdi / bekor qildi — skanerga «Qabul qilish» rejimida qaytadi (keyingi posilka).
+  const backToReceiveScanner = () => {
+    // Sotildi / bekor qilindi: orqaga qaytilganda yoki qayta skanda natija sahifasi eski «kutilmoqda» surati bilan
+    // (30 s kesh) «Sotish» ni ko'rsatmasin — scan-detail eskirgan deb belgilanadi (ro'yxatlar ham yangilanadi).
+    void invalidateAfterScanAction(queryClient);
+    navigate(SCANNER_ROUTE, { state: scanModeState("courierReceive") });
+  };
 
   const [dialog, setDialog] = useState<"sell" | "cancel" | null>(null);
   useEffect(() => {
@@ -618,7 +685,80 @@ export const ScanOrderResult = ({
   let mainExtras: ReactNode = null;
   let sticky: ReactNode = null;
 
-  if (layout === "courier") {
+  if (layout === "courier" && courierAction === "receive") {
+    const receiveButton = (block: boolean) => (
+      <Button
+        size="lg"
+        fullWidth={block}
+        leftIcon={Check}
+        loading={receiving}
+        loadingText={t("courier.receiving")}
+        disabled={receiveResult?.tone === "success"}
+        onClick={receive}
+      >
+        {t("courier.receive")}
+      </Button>
+    );
+    const notice = receiveResult ? <ResultAlert result={receiveResult} /> : null;
+    if (isBelowLg) {
+      sticky = (
+        <ScanStickyBar summary={stickySummary} notice={notice}>
+          {receiveButton(false)}
+        </ScanStickyBar>
+      );
+    } else {
+      aside = (
+        <ScanActionCard title={t("courier.receiveTitle")} text={t("courier.receiveText")}>
+          {notice}
+          {receiveButton(true)}
+        </ScanActionCard>
+      );
+    }
+  } else if (layout === "courier" && courierAction === "sell") {
+    const notice = receiveResult ? <ResultAlert result={receiveResult} /> : null;
+    if (approvalPending) {
+      // Tasdiq kutilmoqda — amal yo'q, faqat holat (telefonda kontentda, desktopda yon kartada).
+      if (isBelowLg) {
+        mainExtras = <CourierApprovalAlert />;
+      } else {
+        aside = (
+          <ScanActionCard title={t("courier.actionsTitle")}>
+            <CourierApprovalAlert />
+          </ScanActionCard>
+        );
+      }
+    } else if (isBelowLg) {
+      sticky = (
+        <ScanStickyBar summary={stickySummary} notice={notice}>
+          <Button variant="danger-soft" size="lg" leftIcon={X} aria-haspopup="dialog" onClick={() => setDialog("cancel")}>
+            {t("courier.cancel")}
+          </Button>
+          <Button size="lg" leftIcon={Check} aria-haspopup="dialog" onClick={() => setDialog("sell")}>
+            {t("courier.sell")}
+          </Button>
+        </ScanStickyBar>
+      );
+    } else {
+      aside = (
+        <ScanActionCard title={t("courier.actionsTitle")} text={t("courier.actionsText")}>
+          {notice}
+          <Button size="lg" fullWidth leftIcon={Check} aria-haspopup="dialog" onClick={() => setDialog("sell")}>
+            {t("courier.sell")}
+          </Button>
+          <Button
+            variant="danger-soft"
+            size="lg"
+            fullWidth
+            leftIcon={X}
+            aria-haspopup="dialog"
+            onClick={() => setDialog("cancel")}
+          >
+            {t("courier.cancel")}
+          </Button>
+        </ScanActionCard>
+      );
+    }
+  } else if (layout === "courier") {
     if (isBelowLg) {
       sticky = (
         <ScanStickyBar
@@ -746,6 +886,20 @@ export const ScanOrderResult = ({
             dialog={dialog}
             onClose={() => setDialog(null)}
             onDone={onChanged}
+          />
+        </Suspense>
+      ) : null}
+      {/* Kuryer: oynalar kodi faqat qabul qilingan buyurtmada yuklanadi (lazy chunk qoidasi — spec G3 §8). */}
+      {layout === "courier" && courierAction === "sell" ? (
+        <Suspense fallback={null}>
+          <ManagerOrderDialogs
+            order={order}
+            dialog={dialog}
+            onClose={() => setDialog(null)}
+            onDone={backToReceiveScanner}
+            variant="courier"
+            restrictExtraCostToCenter
+            onApprovalRequested={() => setApprovalRequested(true)}
           />
         </Suspense>
       ) : null}

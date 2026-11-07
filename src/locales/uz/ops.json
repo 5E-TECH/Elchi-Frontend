@@ -197,6 +197,7 @@
       "selected": "{{count}} ta so'rov tanlandi",
       "grouped": "So'rovlar kuryer bo'yicha guruhlangan",
       "clear": "Tanlovni bekor qilish",
+      "reject": "Rad etish",
       "approve": "Tasdiqlash — {{count}} ta",
       "selectAll": "Barcha so'rovlarni tanlash",
       "selectAllShort": "Barchasini tanlash",
@@ -239,6 +240,23 @@
         "skippedReason": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
         "skippedReasonMany": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
         "skippedReasonMore": "{{list}} va yana {{value}} tasini shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan."
+      }
+    },
+    "reject": {
+      "title": "Qaytarish so'rovlarini rad eting",
+      "description": "{{value}} ta so'rov rad etiladi: buyurtmalar omborga qaytmaydi, kuryerda (yoki filial pochtasida) qoladi.",
+      "confirm": "{{value}} tasini rad etish",
+      "loading": "Rad etilmoqda…",
+      "errors": {
+        "forbidden": "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+        "stale": "Tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+        "server": "Rad etishda xato yuz berdi. Ayrim so'rovlar rad etilgan bo'lishi mumkin — ro'yxat yangilandi, tekshirib qayta urinib ko'ring.",
+        "generic": "So'rovlarni rad etib bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+      },
+      "result": {
+        "successTitle": "{{value}} ta so'rov rad etildi",
+        "kept": "Buyurtmalar kuryerda yoki filial pochtasida qoldi.",
+        "partialTitle": "{{rejected}} ta rad etildi, {{skipped}} tasi o'tkazib yuborildi"
       }
     },
     "statuses": {

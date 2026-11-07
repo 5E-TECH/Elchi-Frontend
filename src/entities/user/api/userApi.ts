@@ -169,6 +169,8 @@ export const useUser = () => {
    * `["couriers"]` / `["managers"]` — shu hookning `useGetCouriers` / `useGetManagers` ro'yxatlari (tarqatish sahifasi,
    * to'lov «kimdan» tanlovi): yangi / o'zgargan / o'chirilgan kuryer yoki menejer ular ichida ham darhol aks etadi.
    */
+  // Har amal shu ro'yxatni chaqiradi — undan keyin shu kalitlarni (yoki ularning ichidagisini) qayta yangilamang:
+  // TanStack ketayotgan so'rovni bekor qilib qayta yuboradi (bitta amal = ikki xil GET).
   const invalidateUserLists = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
@@ -248,14 +250,14 @@ export const useUser = () => {
   const createLogist = useMutation({
     mutationFn: (data: CreateLogistRequest) => api.post(API_ENDPOINTS.LOGISTS.BASE, data),
     onSuccess: () =>
-      Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["logists"] })]),
+      invalidateUserLists(),
   });
 
   /** `POST /investor-users` — investor logini; «Investorlar» ro'yxati (`["investors"]`) ham yangilanadi. */
   const createInvestorUser = useMutation({
     mutationFn: (data: CreateInvestorUserRequest) => api.post(API_ENDPOINTS.INVESTOR_USERS.BASE, data),
     onSuccess: () =>
-      Promise.all([invalidateUserLists(), client.invalidateQueries({ queryKey: ["investors"] })]),
+      invalidateUserLists(),
   });
 
   const useGetRegions = (enabled: boolean = true) =>
@@ -329,7 +331,7 @@ export const useUser = () => {
     mutationFn: (data: UpdateUserRequest) =>
       api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res) => res.data),
     onSuccess: (response, variables) => {
-      client.invalidateQueries({ queryKey: [user, "profile"] });
+      // `[user]` (`invalidateUserLists`) o'z profilini ham qamraydi.
       void invalidateUserLists();
       // Parol almashdi — backend boshqa qurilmalarni darhol chiqaradi: profil «Sessiyalar» yangilansin.
       if (variables.password) invalidateOwnSessions();
@@ -361,7 +363,6 @@ export const useUser = () => {
         .then((res) => res.data),
     onSuccess: () => {
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 
@@ -380,7 +381,6 @@ export const useUser = () => {
         .then((res: any) => res.data),
     onSuccess: () => {
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 
@@ -392,7 +392,6 @@ export const useUser = () => {
         .then((res: any) => res.data),
     onSuccess: () => {
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 
@@ -411,7 +410,6 @@ export const useUser = () => {
         .then((res: any) => res.data),
     onSuccess: () => {
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 
@@ -430,7 +428,6 @@ export const useUser = () => {
         .then((res: any) => res.data),
     onSuccess: (response, variables) => {
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
 
       const currentProfile = reduxStore.getState().user.user;
@@ -470,7 +467,6 @@ export const useUser = () => {
     onSuccess: () => {
       // `[user]` — tafsilot (`[user, "detail", id]`) va o'z profili (`[user, "profile"]`) ham.
       void invalidateUserLists();
-      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 

@@ -96,6 +96,13 @@ export const isExternalBagPayload = (data: unknown) => unwrapRecord(data)?.is_ex
  *
  * Token yo'lda `encodeURIComponent` bilan (provayder yorlig'ida `/` bo'lishi mumkin).
  */
+/**
+ * Skaner qidiruvi — tezkor (`failFast`): 20 s, vaqt tugasa jim qayta urinilmaydi. Universal va pochta rejimlari
+ * qidiruv tugaguncha keyingi skanni kutdiradi («Oldingi kod ochilmoqda») — 2 daqiqa band qilmasin; operatorning
+ * qayta skanerlashi — qayta urinish.
+ */
+const SCAN_LOOKUP = { failFast: true } as const;
+
 export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse> => {
   const normalizedToken = normalizeScanToken(token);
   const resourceType = getScanResourceType(normalizedToken);
@@ -104,23 +111,23 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
   if (resourceType === "market-qr") return { type: resourceType, data: null };
 
   if (resourceType === "post") {
-    const response = await api.get(API_ENDPOINTS.POSTS.SCAN(encoded)).then((res) => res.data);
+    const response = await api.get(API_ENDPOINTS.POSTS.SCAN(encoded), SCAN_LOOKUP).then((res) => res.data);
     return { type: resourceType, data: response };
   }
 
   if (resourceType === "package" || resourceType === "returned-package") {
-    const response = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encoded)).then((res) => res.data);
+    const response = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encoded), SCAN_LOOKUP).then((res) => res.data);
     return { type: resourceType, data: response };
   }
 
   try {
-    const response = await api.get(API_ENDPOINTS.ORDERS.QR_CODE(encoded)).then((res) => res.data);
+    const response = await api.get(API_ENDPOINTS.ORDERS.QR_CODE(encoded), SCAN_LOOKUP).then((res) => res.data);
     return { type: "order", data: response };
   } catch (error) {
     if (getErrorStatus(error) !== 404) throw error;
     let fallback: unknown;
     try {
-      fallback = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encoded)).then((res) => res.data);
+      fallback = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encoded), SCAN_LOOKUP).then((res) => res.data);
     } catch {
       // Qop ham emas (yoki zaxira yo'li ishlamadi) — foydalanuvchiga asl «buyurtma topilmadi».
       throw error;

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -44,6 +45,26 @@ describe("BranchFormModal — «Yangi filial» (v2)", () => {
             : { statusCode: 200, data: { items: PARENTS, meta: { page: 1, limit: 200, total: PARENTS.length } } },
       }),
     );
+  });
+
+  it("⭐ `/orders` filtrlari `[\"regions\"]` ga xom javobni yozgan bo'lsa ham oyna yiqilmaydi, viloyatlar ro'yxati to'liq", async () => {
+    // `useUser().useGetRegions` / `useLogistics().useGetRegions` — xom javob (`{ data: [...] }`) shu kalitda.
+    const RawRegions = () => {
+      useQuery({ queryKey: ["regions"], queryFn: () => api.get("region").then((res: { data: unknown }) => res.data) });
+      return null;
+    };
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <RawRegions />
+        <BranchFormModal open onClose={vi.fn()} />
+      </>,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "Yangi filial" });
+    await user.click(within(dialog).getByRole("combobox", { name: /^Viloyat/ }));
+    expect(await screen.findByRole("option", { name: "Qashqadaryo viloyati" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Samarqand viloyati" })).toBeInTheDocument();
   });
 
   it("maket matnlari: sarlavha, izoh, tur segmenti (HQ o'chiq, «Viloyat» sukut), ko'rsatmalar, tugmalar", async () => {

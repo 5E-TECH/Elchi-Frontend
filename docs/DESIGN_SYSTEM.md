@@ -607,9 +607,9 @@ Har sahna aniq ro'yxat va holat (`api`, `act`, `capture`) — sahna faylining o'
 `tests/visual/__screenshots__/<loyiha>/<id>.png` (commit qilinadi).
 
 **Determinizm:** API `http://api.visual.test` ga yig'ilgan alohida bundle (`npm run visual:build`, production emas);
-tarmoq to'liq yopiq — faqat ilova, soxta API va Google Fonts, qolgani bloklanadi, yozish so'rovi va mock qilinmagan
+tarmoq to'liq yopiq — faqat ilova va soxta API, qolgani (Google Fonts ham) bloklanadi, yozish so'rovi va mock qilinmagan
 yo'l hisobotda, yozish — yiqilish; soat muzlatilgan `2026-10-15T10:00:00+05:00`, `Asia/Tashkent`, `uz-UZ`;
-`reducedMotion: reduce`, animatsiya va kursor o'chiq (`support/screenshot.css`); Manrope ilovadagidek Google Fonts'dan,
+`reducedMotion: reduce`, animatsiya va kursor o'chiq (`support/screenshot.css`); Manrope ilovadagidek o'zimizdan (`src/index.css` `@font-face`),
 suratdan oldin `document.fonts.load("600 16px Manrope")` bo'sh bo'lmasligi shart; brauzer doim «onlayn»
 (`pinOnline`: xost Wi-Fi'si uzilsa ham `navigator.onLine` true, `online`/`offline` hodisalari ilovaga yetmaydi —
 aks holda React Query so'rovni to'xtatib «Internet aloqasi yo'q» chizardi); sahifa tayyorligi — bo'lim yuklanish

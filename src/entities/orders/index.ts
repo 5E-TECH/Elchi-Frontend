@@ -481,10 +481,10 @@ export const useOrders = () => {
           ...(manualOverrides?.length ? { manual_overrides: manualOverrides } : {}),
         })
         .then((res) => res.data),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
+      // `[orders]` bekor qilinganlar ro'yxati va tab sonini ham qamraydi (prefiks) — alohida yangilash ularni 2–3
+      // marta so'rardi.
       client.invalidateQueries({ queryKey: [orders] });
-      client.invalidateQueries({ queryKey: [orders, "markets", "cancelled"] });
-      client.invalidateQueries({ queryKey: [orders, "markets", variables.marketId, "cancelled"] });
     },
   });
 

@@ -1,6 +1,8 @@
 import axios from "axios";
 import { BASE_URL } from "../const";
 import { setupAuthInterceptors } from "../../auth/setupInterceptors";
+import { getLoginEpoch } from "../../auth/loginEpoch";
+import { withReadTimeoutRetry } from "./readRetry";
 
 /**
  * VAQT CHEGARASI (qJjLP109). Ilgari yo'q edi — server osilib qolsa so'rov
@@ -37,6 +39,12 @@ export const api = axios.create({
     // `status=paid&status=sold` ko'rinishidagi query string saqlanadi.
     indexes: null,
   },
+});
+
+// O'qish so'rovlari: 60 s + vaqt tugasa 1 jim qayta urinish (`readRetry.ts`); amallar — 20 s, avvalgidek.
+api.defaults.adapter = withReadTimeoutRetry(axios.getAdapter(api.defaults.adapter), {
+  defaultTimeout: API_TIMEOUT_MS,
+  getLoginEpoch,
 });
 
 setupAuthInterceptors(api);

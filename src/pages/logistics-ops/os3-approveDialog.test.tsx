@@ -388,3 +388,129 @@ describe("LogisticsOps — tasdiq oynasi va natija (OS-3)", () => {
     expect(within(dialog).getByRole("button", { name: "Подтвердить 7" })).toBeInTheDocument();
   });
 });
+
+/**
+ * Rad etish (2026-11-07): `POST post/return-requests/reject` (`{ order_ids }`) — tasdiq oynasi orqali (`danger`),
+ * buyurtmalar omborga qaytmaydi. Maket yo'q — eng yaqini `superadmin-mails-return` («✕ Rad etish» «Tasdiqlash» yonida).
+ */
+describe("LogisticsOps — qaytarish so'rovlarini rad etish", () => {
+  const REJECT_DIALOG = { name: "Qaytarish so'rovlarini rad eting" };
+  const ALL_IDS = ["9001", "9002", "9003", "9004", "9005", "9007", "9006"];
+
+  const openRejectDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await screen.findByText("Sherzod Komilov");
+    await user.click(screen.getByRole("checkbox", { name: "Barcha so'rovlarni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Rad etish" }));
+    return screen.findByRole("alertdialog", REJECT_DIALOG);
+  };
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    apiGetMock.mockResolvedValue(listResponse());
+    apiPostMock.mockResolvedValue(mockEnvelope({ rejected: 7, skipped_order_ids: [] }));
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage("uz");
+  });
+
+  it("⭐ tanlovsiz — «Rad etish» o'chiq; tanlansa — oyna: son, guruhlar, «7 tasini rad etish»; «Bekor qilish» — so'rovsiz", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LogisticsOpsPage />);
+    await screen.findByText("Sherzod Komilov");
+    expect(screen.getByRole("button", { name: "Rad etish" })).toBeDisabled();
+
+    const dialog = await openRejectDialog(user);
+    expect(dialog).toHaveTextContent(
+      "7 ta so'rov rad etiladi: buyurtmalar omborga qaytmaydi, kuryerda (yoki filial pochtasida) qoladi.",
+    );
+    expect(within(dialog).getByText("Jasur Tursunov")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "7 tasini rad etish" })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog", REJECT_DIALOG)).not.toBeInTheDocument());
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("⭐ «7 tasini rad etish» — `POST post/return-requests/reject { order_ids }`, xabar, tanlov tozalanadi, ro'yxatlar yangilanadi", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = renderWithProviders(<LogisticsOpsPage />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const dialog = await openRejectDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/reject", { order_ids: ALL_IDS });
+    expect(apiPostMock).not.toHaveBeenCalledWith("post/return-requests/approve", expect.anything());
+    expect(await screen.findByText("7 ta so'rov rad etildi")).toBeInTheDocument();
+    expect(screen.getByText("Buyurtmalar kuryerda yoki filial pochtasida qoldi.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog", REJECT_DIALOG)).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Rad etish" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tasdiqlash — 0 ta" })).toBeDisabled();
+    for (const queryKey of [["logi-cov", "posts"], ["mails", "return"], ["orders"]]) {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey });
+    }
+  });
+
+  it("qisman: «6 ta rad etildi, 1 tasi o'tkazib yuborildi» va o'tkazilgan buyurtma raqami", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockResolvedValue(mockEnvelope({ rejected: 6, skipped_order_ids: ["9004"] }));
+    renderWithProviders(<LogisticsOpsPage />);
+    const dialog = await openRejectDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(await screen.findByText("6 ta rad etildi, 1 tasi o'tkazib yuborildi")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Buyurtmalar kuryerda yoki filial pochtasida qoldi. №9004 ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("404 — oyna ochiq, i18n matn (xom backend matni emas)", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockRejectedValue({ response: { status: 404, data: { message: "Qaytarish so'rovi topilmadi" } } });
+    renderWithProviders(<LogisticsOpsPage />);
+    const dialog = await openRejectDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+    );
+    expect(screen.queryByText("Qaytarish so'rovi topilmadi")).not.toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", REJECT_DIALOG)).toBeInTheDocument();
+  });
+
+  it("5xx — «ayrimlari rad etilgan bo'lishi mumkin» matni", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockRejectedValue({ response: { status: 500, data: {} } });
+    renderWithProviders(<LogisticsOpsPage />);
+    const dialog = await openRejectDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Rad etishda xato yuz berdi. Ayrim so'rovlar rad etilgan bo'lishi mumkin",
+    );
+  });
+
+  it.each([
+    ["ru", "Выбрать все запросы", "Отклонить", "Отклоните запросы на возврат", "Отклонить 7"],
+    ["en", "Select all requests", "Reject", "Reject return requests", "Reject 7"],
+  ] as const)("%s: tugma va oyna tanlangan tilda", async (language, selectAll, button, title, confirmLabel) => {
+    await i18n.changeLanguage(language);
+    const user = userEvent.setup();
+    renderWithProviders(<LogisticsOpsPage />);
+    await screen.findByText("Sherzod Komilov");
+    await user.click(screen.getByRole("checkbox", { name: selectAll }));
+    await user.click(screen.getByRole("button", { name: button }));
+    const dialog = await screen.findByRole("alertdialog", { name: title });
+    expect(within(dialog).getByRole("button", { name: confirmLabel })).toBeInTheDocument();
+    // Oyna global (`ConfirmHost`) — keyingi testga ochiq qolmasin.
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+});

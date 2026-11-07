@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authClient, login, refreshAccessToken } from "./authService";
+import { authClient, login, LOGIN_TIMEOUT_MS, refreshAccessToken } from "./authService";
 import { DEVICE_ID_STORAGE_KEY } from "./deviceId";
 import {
   DEVICE_NAME_MAX,
@@ -248,7 +248,11 @@ describe("primeDeviceName / getDeviceName / sarlavha", () => {
     await login({ phone_number: "+998901234567", password: "secret" });
     const id = window.localStorage.getItem(DEVICE_ID_STORAGE_KEY);
     const expected = { "X-Device-Id": id, "X-Device-Name": encodeURIComponent("Windows · Firefox 131") };
-    expect(post).toHaveBeenCalledWith("auth/login", { phone_number: "+998901234567", password: "secret" }, { headers: expected });
+    expect(post).toHaveBeenCalledWith(
+      "auth/login",
+      { phone_number: "+998901234567", password: "secret" },
+      { headers: expected, timeout: LOGIN_TIMEOUT_MS },
+    );
 
     post.mockClear();
     post.mockResolvedValue({ data: { accessToken: "token-new" } });

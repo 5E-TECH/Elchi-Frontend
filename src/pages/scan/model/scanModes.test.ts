@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RootState } from "../../../app/config/store";
 import {
   defaultScanMode,
+  PICKER_SCAN_MODES,
   readStoredScanMode,
   resolveScanModes,
   scanModeAccessOf,
@@ -27,17 +28,43 @@ const modesOf = (role: string, branchType?: "HQ" | "REGIONAL" | "HYBRID" | "PICK
   resolveScanModes(scanModeAccessOf(stateOf(role, branchType)));
 
 describe("universal skaner rejimlari — rol va filial bo'yicha", () => {
-  it("kuryer: «O'zimga olish» (sukut) va «Ma'lumot» — pochta va topshirish rejimlari yo'q", () => {
-    expect(modesOf("courier", "REGIONAL")).toEqual(["take", "info"]);
+  it("kuryer: «O'zimga olish» (sukut), «Qabul qilish» va «Ma'lumot» — pochta va topshirish rejimlari yo'q", () => {
+    expect(modesOf("courier", "REGIONAL")).toEqual(["take", "courierReceive", "info"]);
+    expect(modesOf("courier")).toEqual(["take", "courierReceive", "info"]);
     expect(defaultScanMode(modesOf("courier"))).toBe("take");
   });
 
-  it("menejer HYBRID: qabul (transfer), biriktirish va rad etilgan pochta", () => {
-    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "dispatch", "refusedMail"]);
+  it("kuryer «Qabul qilish» — varaqsiz (skan = qabul), faqat kuryerda; tanlov qurilmada eslab qolinadi", () => {
+    expect(PICKER_SCAN_MODES.has("courierReceive")).toBe(false);
+    for (const role of ["superadmin", "admin", "registrator", "manager", "logist"]) {
+      expect(modesOf(role, "HQ")).not.toContain("courierReceive");
+    }
+    writeStoredScanMode("u-7", "courierReceive");
+    expect(readStoredScanMode("u-7")).toBe("courierReceive");
+    window.localStorage.clear();
   });
 
-  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), biriktirish va rad etilgan pochta bor", () => {
-    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "dispatch", "refusedMail"]);
+  it("menejer HYBRID: qabul (transfer), pochtadan qabul, biriktirish va rad etilgan pochta", () => {
+    expect(modesOf("manager", "HYBRID")).toEqual(["info", "receive", "branchReceive", "dispatch", "refusedMail"]);
+  });
+
+  it("menejer REGIONAL: qabul yo'q (backend transfer'ni 403 qiladi), pochtadan qabul, biriktirish va rad etilgan pochta bor", () => {
+    expect(modesOf("manager", "REGIONAL")).toEqual(["info", "branchReceive", "dispatch", "refusedMail"]);
+  });
+
+  it("«Pochtadan qabul» — varaqsiz (skan = qabul), faqat REGIONAL / HYBRID menejerida (o'tkazma pochtasi boradigan filial)", () => {
+    expect(PICKER_SCAN_MODES.has("branchReceive")).toBe(false);
+    expect(modesOf("manager", "HQ")).not.toContain("branchReceive");
+    expect(modesOf("manager", "PICKUP")).not.toContain("branchReceive");
+    expect(modesOf("manager")).not.toContain("branchReceive");
+    for (const branchType of ["HQ", "REGIONAL", "HYBRID", "PICKUP"] as const) {
+      expect(modesOf("registrator", branchType)).not.toContain("branchReceive");
+      expect(modesOf("courier", branchType)).not.toContain("branchReceive");
+    }
+    expect(modesOf("superadmin")).not.toContain("branchReceive");
+    writeStoredScanMode("u-8", "branchReceive");
+    expect(readStoredScanMode("u-8")).toBe("branchReceive");
+    window.localStorage.clear();
   });
 
   it("menejer HQ: qabul va rad etilgan pochta, biriktirish yo'q (HQ menejerida `/dispatch` yo'q)", () => {
@@ -155,13 +182,21 @@ describe("so'ralgan rejim (router state) — shu ochilish uchun", () => {
   it("Sozlamalar «Kamerani sinash»: kuryer «Ma'lumot» da ochiladi, saqlangan «O'zimga olish» o'zgarmaydi", () => {
     writeStoredScanMode("u-1", "take");
     const requested = requestedScanMode(scanModeState("info"));
-    const { result } = renderHook(() => useScanMode(["take", "info"], "u-1", requested));
+    const { result } = renderHook(() => useScanMode(["take", "courierReceive", "info"], "u-1", requested));
     expect(result.current[0]).toBe("info");
     expect(readStoredScanMode("u-1")).toBe("take");
 
     // Foydalanuvchi o'zi tanlasa — odatdagidek saqlanadi.
     act(() => result.current[1]("take"));
     expect(result.current[0]).toBe("take");
+    expect(readStoredScanMode("u-1")).toBe("take");
+  });
+
+  it("kuryer sotgach / bekor qilgach skanerga «Qabul qilish» rejimida qaytadi — saqlangan rejim o'zgarmaydi", () => {
+    writeStoredScanMode("u-1", "take");
+    const requested = requestedScanMode(scanModeState("courierReceive"));
+    const { result } = renderHook(() => useScanMode(["take", "courierReceive", "info"], "u-1", requested));
+    expect(result.current[0]).toBe("courierReceive");
     expect(readStoredScanMode("u-1")).toBe("take");
   });
 

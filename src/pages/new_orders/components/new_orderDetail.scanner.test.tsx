@@ -19,6 +19,7 @@ type Order = Record<string, unknown> & { id: string };
 
 const mocks = vi.hoisted(() => ({
   receiveMutate: vi.fn(),
+  receiveMutateAsync: vi.fn(),
   fetchScanDetail: vi.fn(),
   marketsRefetch: vi.fn(),
   playScanFeedback: vi.fn(),
@@ -67,7 +68,7 @@ vi.mock("../../../entities/orders", () => ({
     useCancelledMarkets: () => query([]),
     useCancelledOrdersByMarket: () => query([]),
     deleteOrder: { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false },
-    createReceiveOrder: { mutate: mocks.receiveMutate, isPending: false },
+    createReceiveOrder: { mutate: mocks.receiveMutate, mutateAsync: mocks.receiveMutateAsync, isPending: false },
     createTransferBatch: { mutate: vi.fn(), isPending: false },
   }),
 }));
@@ -149,10 +150,13 @@ beforeEach(() => {
     ],
     "122": [order("o7", "bbbbbbbbbbbbbbbbbbbbbbb7", "Rustam Qodirov", "122", "Baraka Shop")],
   };
+  // Ommaviy qabul (tasdiq oynasi) — `mutate` callbacklari bilan; skan qabuli — har skan o'z `mutateAsync` va'dasi bilan.
   mocks.receiveMutate.mockImplementation((_vars: unknown, options: { onSuccess?: () => void; onSettled?: () => void }) => {
     options.onSuccess?.();
     options.onSettled?.();
   });
+  mocks.receiveMutateAsync.mockReset();
+  mocks.receiveMutateAsync.mockResolvedValue({});
   mocks.marketsRefetch.mockResolvedValue({
     isError: false,
     data: {
@@ -198,7 +202,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
       await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "camera");
     });
 
-    expect(mocks.receiveMutate).toHaveBeenCalledWith({ orderIds: ["o1"] }, expect.any(Object));
+    expect(mocks.receiveMutateAsync).toHaveBeenCalledWith({ orderIds: ["o1"] });
     expect(mocks.fetchScanDetail).not.toHaveBeenCalled();
     // «Ovozli xabar»: HQ market qabuli — «Qabul qilindi».
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o1", undefined, { voice: "received" });
@@ -206,6 +210,37 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     expect(target().progress).toMatchObject({ done: 1, total: 2 });
     expect(target().list?.[0]).toMatchObject({ title: "№o1 · Sanjar Mirzayev", tone: "success" });
     expect(target().list?.[0].onUndo).toBeUndefined();
+  });
+
+  it("⭐ sekin internet: A javobi kelmasdan B skanerlanadi — ikkalasi ham qabul qilindi (ovoz, hisob), A qotib qolmaydi", async () => {
+    let finishA: (value: unknown) => void = () => {};
+    mocks.receiveMutateAsync
+      .mockImplementationOnce(() => new Promise((resolve) => (finishA = resolve)))
+      .mockResolvedValueOnce({});
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa2", "keyboard");
+    });
+    await act(async () => {
+      finishA({});
+    });
+
+    // Ilgari (`mutate(vars, { onSuccess })`): B boshlanishi bilan A ning callbacklari uzilardi — A ovozsiz, hisobsiz.
+    await waitFor(() => expect(statsOf()).toEqual({ received: 2, left: 0, missing: 0 }));
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o1", undefined, { voice: "received" });
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o2", undefined, { voice: "received" });
+
+    // A «kutilmoqda» belgisida qolmagan: qayta skan — takror ogohlantirish, yangi qabul so'rovi yo'q.
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", expect.any(String));
+    expect(mocks.receiveMutateAsync).toHaveBeenCalledTimes(2);
   });
 
   it("boshqa marketning buyurtmasi — server tekshiradi va RAD etadi: qabul so'rovi yo'q, «Topilmadi» ga kirmaydi", async () => {
@@ -224,7 +259,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
       expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", "Boshqa market: Baraka Shop — qabul qilinmadi"),
     );
     expect(mocks.fetchScanDetail).toHaveBeenCalledWith("bbbbbbbbbbbbbbbbbbbbbbb7");
-    expect(mocks.receiveMutate).not.toHaveBeenCalled();
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
     expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
     expect(target().list).toEqual([]);
   });
@@ -241,7 +276,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     await waitFor(() => expect(statsOf()).toEqual({ received: 0, left: 2, missing: 1 }));
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", "Topilmadi: ccccccccccccccccccccccc0");
     expect(target().list?.[0]).toMatchObject({ title: "ccccccccccccccccccccccc0", subtitle: "Topilmadi", tone: "danger" });
-    expect(mocks.receiveMutate).not.toHaveBeenCalled();
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
   });
 
   it("ommaviy «Qabul qilish» dan keyin (ro'yxat yangilangan) shu buyurtma skanerlansa — takror, «Topilmadi» emas", async () => {
@@ -271,6 +306,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     expect(statsOf()).toEqual({ received: 1, left: 1, missing: 0 });
     expect(target().list?.map((item) => item.key)).toEqual(["received:o1"]);
     expect(mocks.receiveMutate).toHaveBeenCalledTimes(1);
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
   });
 
   it("shu marketning yangi buyurtmasi ro'yxatda hali yo'q — server tasdiqlasa darhol qabul qilinadi", async () => {
@@ -285,7 +321,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
       await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa3", "camera");
     });
 
-    await waitFor(() => expect(mocks.receiveMutate).toHaveBeenCalledWith({ orderIds: ["o3"] }, expect.any(Object)));
+    await waitFor(() => expect(mocks.receiveMutateAsync).toHaveBeenCalledWith({ orderIds: ["o3"] }));
   });
 
   it("kamera ichida market almashtiriladi: /new-orders/122, kamera ochiq qoladi, hisob yangidan", async () => {
@@ -317,6 +353,6 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     await act(async () => {
       await target().onScan("bbbbbbbbbbbbbbbbbbbbbbb7", "camera");
     });
-    expect(mocks.receiveMutate).toHaveBeenLastCalledWith({ orderIds: ["o7"] }, expect.any(Object));
+    expect(mocks.receiveMutateAsync).toHaveBeenLastCalledWith({ orderIds: ["o7"] });
   });
 });

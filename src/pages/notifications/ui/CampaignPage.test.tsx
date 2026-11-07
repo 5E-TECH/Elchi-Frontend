@@ -202,7 +202,7 @@ describe("CampaignPage (sVByLMnt)", () => {
     expect(await screen.findByText(/Navbatga qo'yildi: 1 ta/)).toBeInTheDocument();
   });
 
-  it("each review gets a NEW Idempotency-Key; the same dialog reuses one key", async () => {
+  it("409 (takroriy kalit) — i18n xato (xom backend matni emas), oyna yopiladi, qayta yuborilmaydi", async () => {
     api.post.mockImplementation((url: string) =>
       url.endsWith("preview")
         ? Promise.resolve({ data: { data: preview } })
@@ -217,26 +217,60 @@ describe("CampaignPage (sVByLMnt)", () => {
     await fill(user, "Chegirma");
 
     await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
-    let dialog = await screen.findByRole("alertdialog", {
+    const dialog = await screen.findByRole("alertdialog", {
       name: "SMS kampaniyani yuborishni tasdiqlang",
     });
     await user.click(within(dialog).getByRole("button", { name: "Yuborish" }));
-    // 409 (takroriy kalit) — i18n xato ko'rsatiladi (xom backend matni emas), oyna yopiladi, qayta yuborilmaydi.
     expect(
       await screen.findByText(/Kampaniya qabul qilinmadi: u allaqachon yuborilgan/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Takroriy so'rov")).toBeNull();
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
-    const firstKey = api.post.mock.calls[1][2].headers["Idempotency-Key"];
+    expect(api.post).toHaveBeenCalledTimes(2);
+  });
 
-    await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
-    dialog = await screen.findByRole("alertdialog", {
-      name: "SMS kampaniyani yuborishni tasdiqlang",
+  it("⭐ yuborish noaniq xato bersa (vaqt tugadi) — o'zgarmagan kampaniya qayta yuborilganda AYNI kalit (server takrorni taniydi); matn o'zgarsa yoki yuborilgach — yangi kalit", async () => {
+    const sendKeys = () =>
+      api.post.mock.calls
+        .filter((call: unknown[]) => !String(call[0]).endsWith("preview"))
+        .map((call: unknown[]) => (call[2] as { headers: Record<string, string> }).headers["Idempotency-Key"]);
+    const timeout = Object.assign(new Error("timeout"), { code: "ECONNABORTED" });
+    let sends = 0;
+    api.post.mockImplementation((url: string) => {
+      if (url.endsWith("preview")) return Promise.resolve({ data: { data: preview } });
+      sends += 1;
+      return sends === 1
+        ? Promise.reject(timeout)
+        : Promise.resolve({
+            data: { data: { campaign_id: String(sends), queued: 1, blocked_no_consent: 0, skipped_invalid_phone: 0 } },
+          });
     });
-    await user.click(within(dialog).getByRole("button", { name: "Yuborish" }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(4));
-    const secondKey = api.post.mock.calls[3][2].headers["Idempotency-Key"];
-    expect(secondKey).not.toBe(firstKey);
+    const user = userEvent.setup();
+    renderWithProviders(<CampaignPage />);
+    await fill(user, "Chegirma");
+    const send = async () => {
+      await user.click(screen.getByRole("button", { name: "Ko'rib chiqish" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "SMS kampaniyani yuborishni tasdiqlang" });
+      await user.click(within(dialog).getByRole("button", { name: "Yuborish" }));
+      await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    };
+
+    // 1) vaqt tugadi (server kampaniyani saqlagan bo'lishi mumkin) → 2) o'sha kampaniya qayta: kalit o'zgarmaydi.
+    await send();
+    await send();
+    await waitFor(() => expect(sendKeys()).toHaveLength(2));
+    expect(sendKeys()[1]).toBe(sendKeys()[0]);
+
+    // 3) muvaffaqiyatdan keyin o'sha matn qayta — yangi kampaniya, yangi kalit.
+    await send();
+    await waitFor(() => expect(sendKeys()).toHaveLength(3));
+    expect(sendKeys()[2]).not.toBe(sendKeys()[1]);
+
+    // 4) matn o'zgardi — yangi kalit.
+    await user.type(screen.getByRole("textbox", { name: "Xabar matni" }), "!");
+    await send();
+    await waitFor(() => expect(sendKeys()).toHaveLength(4));
+    expect(new Set(sendKeys().slice(2)).size).toBe(2);
   });
 
   it("cancel closes the confirmation without sending", async () => {

@@ -197,6 +197,7 @@
       "selected": "{{count}} requests selected",
       "grouped": "Requests are grouped by courier",
       "clear": "Clear selection",
+      "reject": "Reject",
       "approve": "Approve — {{count}}",
       "selectAll": "Select all requests",
       "selectAllShort": "Select all",
@@ -239,6 +240,23 @@
         "skippedReason": "{{orders}}: another employee reviewed it meanwhile or its status changed.",
         "skippedReasonMany": "{{orders}}: another employee reviewed them meanwhile or their status changed.",
         "skippedReasonMore": "{{list}} and {{value}} more: another employee reviewed them meanwhile or their status changed."
+      }
+    },
+    "reject": {
+      "title": "Reject return requests",
+      "description": "Requests ({{value}}) will be rejected: the orders will not return to the warehouse and stay with the courier (or in the branch mail).",
+      "confirm": "Reject {{value}}",
+      "loading": "Rejecting…",
+      "errors": {
+        "forbidden": "Some orders are with another branch's courier — that branch reviews them. The list has been refreshed — close this window and select again.",
+        "stale": "The selected requests have already been reviewed or their status has changed. The list has been refreshed — close this window and select again.",
+        "server": "Something went wrong while rejecting. Some requests may already be rejected — the list has been refreshed, check it and try again.",
+        "generic": "Could not reject the requests. Try again a bit later."
+      },
+      "result": {
+        "successTitle": "{{value}} rejected",
+        "kept": "The orders stayed with the courier or in the branch mail.",
+        "partialTitle": "{{rejected}} rejected, {{skipped}} skipped"
       }
     },
     "statuses": {

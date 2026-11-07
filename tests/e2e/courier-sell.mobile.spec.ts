@@ -5,7 +5,7 @@ import { mockCourierCancelApi, openSellDialog } from "./support/courierCancel";
 test.describe("Kuryer sotish oynasi — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ pastdan chiqadi, gorizontal skroll yo'q; marketga to'lov bilan sotiladi", async ({ page }) => {
+  test("⭐ pastdan chiqadi, gorizontal skroll yo'q; sotiladi, `paidAmount` yuborilmaydi", async ({ page }) => {
     const { sells, leaked } = await mockCourierCancelApi(page);
     const dialog = await openSellDialog(page);
 
@@ -36,10 +36,11 @@ test.describe("Kuryer sotish oynasi — 390px", () => {
     });
     expect(problems).toEqual([]);
 
-    await dialog.getByLabel("Marketga to'langan summa").fill("50000");
+    // «Marketga to'langan summa» maydoni olib tashlangan (ega 2026-11-07).
+    await expect(dialog.getByLabel("Marketga to'langan summa")).toHaveCount(0);
     await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    expect(sells.map((s) => s.body.paidAmount)).toEqual([50000]);
+    expect(sells.map((s) => s.body)).toEqual([{ comment: "", extraCost: 0 }]);
     expect(leaked).toEqual([]);
   });
 });

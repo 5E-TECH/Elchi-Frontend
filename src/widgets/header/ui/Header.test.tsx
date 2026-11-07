@@ -576,6 +576,27 @@ describe("Header global search", () => {
     expect(JSON.parse(window.localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]")).toEqual(["Dilnoza"]);
   });
 
+  it("⭐ yangi matn hali qidirilmagan — Enter OLDINGI natijani ochmaydi; natija kelgach Enter yangisini ochadi", async () => {
+    const user = userEvent.setup();
+    mocks.search = ORDERS;
+    renderHeader();
+    const field = screen.getByRole("combobox", { name: "Global qidiruv" });
+    await user.click(field);
+    await user.keyboard("Dilnoza");
+    expect(await screen.findByText("Buyurtma №10241")).toBeInTheDocument();
+    const before = screen.getByTestId("path").textContent;
+
+    // Skaner / qo'yilgan matn: yangi qiymat va darhol Enter (400 ms kechikish tugamagan, ro'yxatda eski natijalar).
+    mocks.search = USERS;
+    await user.keyboard(" Rasulova{Enter}");
+    expect(screen.getByTestId("path").textContent).toBe(before);
+    expect(screen.getByTestId("path")).not.toHaveTextContent("/orders/edit/10241");
+
+    expect(await screen.findByRole("option", { name: /Dilnoza Rasulova/ })).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(screen.getByTestId("path")).toHaveTextContent("/all-users/77");
+  });
+
   it("opens a user result on click", async () => {
     const user = userEvent.setup();
     mocks.search = USERS;

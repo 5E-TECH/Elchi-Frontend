@@ -45,77 +45,30 @@ const chooseReason = async (user: User, label: string) => {
 /** Oyna pastidagi «Yopish» (sarlavhadagi × ham «Yopish» — oxirgisi pastdagi tugma). */
 const footerCloseButton = () => screen.getAllByRole("button", { name: "Yopish" }).at(-1)!;
 
-describe("SellModal — «Marketga to'langan summa» (uguUEhin)", () => {
-  const paidInput = () => screen.getByLabelText("Marketga to'langan summa");
-
-  it("to'liq sotishda kiritilgan summa `paidAmount` sifatida yuboriladi", async () => {
+describe("SellModal — «Marketga to'langan summa» maydoni yo'q (ega 2026-11-07)", () => {
+  it("kuryer: maydon yo'q; to'liq sotishda `paidAmount` yuborilmaydi", async () => {
     const user = userEvent.setup();
     const onSell = vi.fn();
-    renderSell({ onSell, order: { ...order, to_be_paid: 120000 } as never });
-    expect(screen.getByText(/Mijozdan olingan puldan marketga o'zingiz bergan qism/)).toBeInTheDocument();
-    expect(screen.getByText(/120\D000 so'mdan oshmasin/)).toBeInTheDocument();
+    renderSell({ onSell, order: { ...order, to_be_paid: 120000, sale_market_paid_max: 30000 } as never });
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
+    expect(screen.queryByText(/Mijozdan olingan puldan marketga o'zingiz bergan qism/)).toBeNull();
+    expect(screen.queryByText(/so'mdan oshmasin/)).toBeNull();
 
-    await user.type(paidInput(), "50000");
-    expect(paidInput()).toHaveValue("50 000");
-    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
-    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0, paidAmount: 50000 });
-  });
-
-  it("bo'sh yoki 0 — `paidAmount` umuman yuborilmaydi (eski xatti-harakat)", async () => {
-    const user = userEvent.setup();
-    const onSell = vi.fn();
-    renderSell({ onSell });
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
     expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0 });
+    expect(onSell.mock.calls[0][1]).not.toHaveProperty("paidAmount");
   });
 
-  it("chegara: to_be_paid − qo'shimcha xarajat; oshsa ogohlantiradi", async () => {
-    const user = userEvent.setup();
-    renderSell({ order: { ...order, to_be_paid: 120000 } as never });
-    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "20000");
-    expect(screen.getByText(/100\D000 so'mdan oshmasin/)).toBeInTheDocument();
-    await user.type(paidInput(), "150000");
-    expect(paidInput()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("alert")).toHaveTextContent(/Marketga to'lov 100\D000 so'mdan oshmasligi kerak/);
-  });
-
-  it("№73: kutilayotgan buyurtmada `to_be_paid` 0 — chegara backend `sale_market_paid_max` dan (0 emas)", async () => {
+  it("menejer: maydon yo'q; to'liq sotishda `paidAmount` yuborilmaydi", async () => {
     const user = userEvent.setup();
     const onSell = vi.fn();
-    renderSell({ onSell, order: { ...order, to_be_paid: 0, sale_market_paid_max: 30000 } as never });
-    expect(screen.getByText(/30\D000 so'mdan oshmasin/)).toBeInTheDocument();
-    expect(screen.queryByText(/ 0 so'mdan oshmasin/)).toBeNull();
+    renderSell({ onSell, variant: "manager", order: { ...order, to_be_paid: 120000, sale_market_paid_max: 30000 } as never });
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
+    expect(screen.getByLabelText("Qo'shimcha xarajat")).toBeInTheDocument();
 
-    await user.type(paidInput(), "5000");
-    expect(paidInput()).not.toHaveAttribute("aria-invalid");
-    expect(screen.queryByText(/oshmasligi kerak/)).toBeNull();
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
-    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0, paidAmount: 5000 });
-  });
-
-  it("№73: qo'shimcha xarajat chegaradan ayriladi (30 000 − 10 000); oshsa ogohlantiradi", async () => {
-    const user = userEvent.setup();
-    renderSell({ order: { ...order, to_be_paid: 0, sale_market_paid_max: 30000 } as never });
-    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "10000");
-    expect(screen.getByText(/20\D000 so'mdan oshmasin/)).toBeInTheDocument();
-    await user.type(paidInput(), "25000");
-    expect(paidInput()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("alert")).toHaveTextContent(/Marketga to'lov 20\D000 so'mdan oshmasligi kerak/);
-  });
-
-  it("hamkor (external_id) buyurtmasida maydon yo'q", () => {
-    renderSell({ order: { ...order, external_id: "BP-120" } as never });
-    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
-  });
-
-  it("qisman sotish rejimida maydon yo'q", async () => {
-    const user = userEvent.setup();
-    renderSell({
-      order: { ...order, items: [{ id: "i1", quantity: 2, product: { id: "24", name: "Krossovka", image_url: null } }] } as never,
-    });
-    expect(screen.getByLabelText("Marketga to'langan summa")).toBeInTheDocument();
-    await user.click(screen.getByRole("switch", { name: /Qisman sotish/ }));
-    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
+    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0 });
+    expect(onSell.mock.calls[0][1]).not.toHaveProperty("paidAmount");
   });
 });
 
@@ -185,13 +138,65 @@ describe("SellModal partial sell", () => {
   const partialToggle = () => screen.getByRole("switch", { name: /Qisman sotish/ });
   const sellButton = () => screen.getByRole("button", { name: /^Sotish$/ });
 
-  it("blocks partial sell for a single-unit order and says why", () => {
-    renderSell({ order: singleUnitOrder });
+  // Ega 2026-11-07 (BeePost'dagidek): 1 donali buyurtmani ham narxini tushirib «qisman» sotish mumkin — mijoz
+  // 120 000 lik mahsulotni 90 000 ga oladi, kuryer market bilan kelishgan. Soni o'zgarmaydi, faqat summa.
+  it("allows a price-only partial sell for a single-unit order (BeePost parity)", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
 
-    expect(partialToggle()).toBeDisabled();
-    expect(partialToggle()).toHaveTextContent("Buyurtmada bitta mahsulot — qisman sotib bo'lmaydi");
-    // To'liq sotish ta'sirlanmaydi.
+    expect(partialToggle()).toBeEnabled();
+    expect(partialToggle()).not.toHaveTextContent("qisman sotib bo'lmaydi");
+    await user.click(partialToggle());
+
+    // Kamaytirib bo'lmaydi (kamida 1 dona), lekin bu xato emas — qizil ogohlantirish yo'q.
+    expect(screen.getByRole("button", { name: "product sonini kamaytirish" })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // Summa maydoni ostida: faqat narx tushadi, buyurtma summasidan kam.
+    expect(screen.getByText(/Soni o'zgarmasa, faqat narx tushadi — 120\s000 so'm dan kam kiriting/)).toBeInTheDocument();
+    // Summasiz — avvalgidek.
+    expect(sellButton()).toBeDisabled();
+    expect(screen.getByText("To'lov summasini kiriting")).toBeInTheDocument();
+
+    await user.type(screen.getAllByPlaceholderText("0")[0], "90000");
     expect(sellButton()).toBeEnabled();
+    await user.click(sellButton());
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", {
+      order_item_info: [{ order_item_id: "i1", product_id: "24", quantity: 1 }],
+      totalPrice: 90000,
+      extraCost: 0,
+      // Izoh ixtiyoriy (ega qarori).
+      comment: "",
+    });
+  });
+
+  it("price-only partial sell: an amount equal to the order total is not a partial sale", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.type(screen.getAllByPlaceholderText("0")[0], "120000");
+
+    expect(sellButton()).toBeDisabled();
+    expect(
+      screen.getByText("Mahsulot sonini kamaytiring yoki summani buyurtma summasidan kam kiriting"),
+    ).toBeInTheDocument();
+    await user.click(sellButton());
+    expect(onPartlySell).not.toHaveBeenCalled();
+  });
+
+  it("price-only partial sell allows 0 so'm", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.type(screen.getAllByPlaceholderText("0")[0], "0");
+    await user.click(sellButton());
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({ totalPrice: 0 }));
   });
 
   it("allows partial sell for a multi-unit partner parcel without a catalog product and sends the order-item id (real BeePost #120)", async () => {
@@ -288,22 +293,38 @@ describe("SellModal partial sell", () => {
     expect(partialToggle()).toHaveTextContent("Mahsulot sonlari noto'g'ri");
   });
 
-  it("keeps 'Sotish' disabled in partial mode until a quantity is actually reduced", async () => {
+  // Ega 2026-11-07: 2+ donali buyurtmada ham sonini tushirmasdan narxni tushirib sotish mumkin. Soni ham, summa
+  // ham o'zgarmasa — bu oddiy «Sotish», qisman emas.
+  it("multi-unit order: price-only sale below the total is allowed, the full total needs a reduced quantity", async () => {
     const user = userEvent.setup();
-    renderSell({ order: twoUnitOrder });
+    const onPartlySell = vi.fn();
+    renderSell({ order: twoUnitOrder, onPartlySell });
 
     await user.click(partialToggle());
-    await user.type(screen.getAllByPlaceholderText("0")[0], "60000");
+    await user.type(screen.getAllByPlaceholderText("0")[0], "120000");
 
     expect(sellButton()).toBeDisabled();
     // Sabab «Sotish» yonida yoziladi.
-    expect(screen.getByText("Kamida bitta mahsulot sonini kamaytiring")).toBeInTheDocument();
+    expect(
+      screen.getByText("Mahsulot sonini kamaytiring yoki summani buyurtma summasidan kam kiriting"),
+    ).toBeInTheDocument();
 
-    // Kamaytirib, keyin qaytarib oshirsa — yana bloklanadi.
+    // Kamaytirsa — teng summa ham qisman sotuv; qaytarib oshirsa — yana bloklanadi.
     await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
     expect(sellButton()).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Krossovka sonini oshirish" }));
     expect(sellButton()).toBeDisabled();
+
+    // Soni o'zgarmagan, summa kamroq — narx tushirib sotish.
+    const input = screen.getAllByPlaceholderText("0")[0];
+    await user.clear(input);
+    await user.type(input, "100000");
+    expect(sellButton()).toBeEnabled();
+    await user.click(sellButton());
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({
+      order_item_info: [{ order_item_id: "i1", product_id: "24", quantity: 2 }],
+      totalPrice: 100000,
+    }));
   });
 
   it("keeps 'Sotish' disabled in partial mode while the payment amount is empty", async () => {

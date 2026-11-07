@@ -15,10 +15,22 @@ type Props = {
   onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
+  /** Yo'ldagi buyurtmani qabul qilish — «Sotish / Bekor» o'rniga «Qabul qilish» (2026-11-07). */
+  onReceive?: (order: Order) => void;
+  receivingIds?: ReadonlySet<string>;
 };
 
 /** «Kutilayotgan» tab: har qatorda «Sotish» va «Bekor qilish» (maket `courier-orders-pending`). */
-const PendingOrdersTable = ({ orders, label, busy, onRowClick, onDeliver, onCancel }: Props) => (
+const PendingOrdersTable = ({
+  orders,
+  label,
+  busy,
+  onRowClick,
+  onDeliver,
+  onCancel,
+  onReceive,
+  receivingIds,
+}: Props) => (
   <CourierOrdersTable
     variant="pending"
     orders={orders}
@@ -27,6 +39,8 @@ const PendingOrdersTable = ({ orders, label, busy, onRowClick, onDeliver, onCanc
     onRowClick={onRowClick}
     onDeliver={onDeliver}
     onCancel={onCancel}
+    onReceive={onReceive}
+    receivingIds={receivingIds}
   />
 );
 

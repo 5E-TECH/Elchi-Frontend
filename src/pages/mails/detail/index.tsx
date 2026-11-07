@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-send-dialog, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-send-branch-dialog, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-send-dialog, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old, courier-mails-detail-print-menu
 import { Fragment, memo, useDeferredValue, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useIsMutating, useMutationState, useQuery } from "@tanstack/react-query";
 import { ArrowRightLeft, CircleX, Info, Lock, RotateCcw, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -80,7 +80,12 @@ import {
   type PrintMode,
 } from "./lib/printMode";
 import { resolveDispatchRegionId } from "./lib/dispatchRegion";
-import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
+import {
+  extractNotReceivedOrderIds,
+  hasOnTheRoadOrders,
+  isScanReceivableStatus,
+  readScanReceiveOutcome,
+} from "./lib/receiveResult";
 import {
   duplicateSiblings,
   filterMailOrders,
@@ -129,6 +134,17 @@ import { resolveReceiveAccess } from "./model/receiveAccess";
  *  - kuryerning rad etilgan pochtasi — faqat o'qish, «Barchasini chop etish»;
  *  - eski pochta (tarix) — faqat o'qish; qolib ketgan yo'ldagi buyurtma bo'lsa qabul qayta ochiladi (fix3b).
  *
+ * SKAN = DARHOL QABUL (2026-11-07, BeePost kabi; ega: «skaner qilsa ptichka belgilanishi kerak emas — buyurtma qabul
+ * bo'lib ro'yxatdan yo'qolsin»): pochtaning qabul qiluvchisi — kuryer (o'z pochtasi) yoki menejer (o'z filialiga
+ * kuryersiz o'tkazma pochtasi) — `sent` pochtada yoki eski pochtadagi yo'ldagi qoldiqda (`view=old`) QR skanerlasa,
+ * buyurtma tanlanmaydi: `PATCH post/receive/:id {order_ids: [id], scan: true}` — faqat shu buyurtma qabul qilinadi,
+ * qolgan yo'ldagilarga tegilmaydi. Optimistik: ovoz va «№id qabul qilindi · N ta qoldi» darhol, qator yashiriladi
+ * (muvaffaqiyatda qaytmaydi); xato — qator qaytadi, «qayta skanerlang». So'rovlar bitta navbatda (mutation `scope`,
+ * sahifadan chiqilsa ham yuboriladi); navbat bo'sh bo'lmaguncha «Pochtani qabul qilish», «Kelmagan — qaytarish» va
+ * avtomatik orqaga qaytish o'chiq. Faqat aniq moslik (id / QR token / skan javobidagi id) — «o'xshash» moslik yo'q.
+ * Pochta to'liq qabul qilinsa — «Pochta to'liq qabul qilindi» va ~1.5 s dan keyin kelingan ro'yxatga. Qo'lda belgilash
+ * va tugma (tanlanmaganlar qaytarishga) qoladi. Jo'natish, rad etilgan pochta, begona pochta — skan avvalgidek tanlaydi.
+ *
  * POCHTA TARIXI (backend #618, vaICniE4): `GET post/orders/:id` qabul qilingan pochtaga (`received`,
  * `canceled_received`) sukut bo'yicha `view=all` beradi — pochtaga har qachon kirgan buyurtmalar (`in_post_now`).
  * Amal rejimlari (jo'natish, qabul, rad etilgan, eski holatsiz havola yoki skan — buyurtma sahifasidagi «Pochta»,
@@ -144,8 +160,9 @@ import { resolveReceiveAccess } from "./model/receiveAccess";
  * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-mails-detail-camera`, `registrator-mails-detail-camera`,
  * `manager-mails-detail-receive-camera`, `courier-mails-detail-receive-camera`; rad etilgan pochta — maket yo'q,
  * eng yaqini `manager-mails-detail-receive-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» (desktopda
- * «Skanerlash») shu sahifaning maqsadini ochadi. Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi
- * (jo'natish / qabul — sahifadagi asosiy tugma). Pochtada yo'q kod ro'yxatda «Bu pochtada yo'q · rad etildi».
+ * «Skanerlash») shu sahifaning maqsadini ochadi. Kamera skani USB bilan aynan bir yo'l: jo'natish va rad etilgan pochtada
+ * buyurtma faqat tanlanadi (amal — sahifadagi asosiy tugma), qabul qiluvchining skan-qabul rejimida (yuqorida) — darhol
+ * qabul qilinadi («ta qabul qilindi» hisoblagichi). Pochtada yo'q kod ro'yxatda «Bu pochtada yo'q · rad etildi».
  * Eski pochta, kuryerning rad etilgan pochtasi va amalsiz rejimda kamera maqsadi yo'q (markaziy tugma — `/scan`).
  *
  * QIDIRUV VA TAKRORIY TELEFONLAR (MD-1, ega S1–S4; maketlar `*-mails-detail-search`, `-search-empty`,
@@ -183,6 +200,18 @@ const MANAGER_COLUMNS: readonly OrdersTableColumn[] = [
   "amount",
 ];
 const MANAGER_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["districtAddress", "market"];
+
+/** Skan-qabul: pochta to'liq qabul qilingach kelingan ro'yxatga shuncha kutib qaytiladi (BeePost kabi). */
+const SCAN_RECEIVE_DONE_BACK_MS = 1500;
+
+/** Skan-qabul jurnalidagi yozuv: buyurtma (ro'yxatdan yashirilgan bo'lsa ham kamera ro'yxati uchun) va holat. */
+type ScanReceiveLogEntry = { order: PostOrder; status: "pending" | "received" | "failed" };
+
+/** Navbatdagi skan-qabul so'rovining buyurtmalari (`useMutationState` — sahifa qayta ochilganda ham). */
+const readQueuedOrderIds = (variables: unknown): string[] => {
+  const ids = (variables as { payload?: { order_ids?: unknown } } | undefined)?.payload?.order_ids;
+  return Array.isArray(ids) ? ids.map((value) => String(value)) : [];
+};
 
 // ─── Yuklanish holati: sarlavha, ko'rsatkichlar va jadval skeletlari ──────────
 const MailDetailSkeleton = memo(() => {
@@ -320,6 +349,61 @@ const MailDetailPage = () => {
    * qilinadiganlar.
    */
   const [reclaimedOrderIds, setReclaimedOrderIds] = useState<Set<string>>(new Set());
+  /**
+   * Skan-qabul (2026-11-07): shu sahifada skanerlab qabulga yuborilgan buyurtmalar — ro'yxatdan (va qaytarish
+   * so'rovi izohidan) yashiriladi. Muvaffaqiyatda HECH QACHON olib tashlanmaydi (refetch kechiksa ham qaytib
+   * chiqmaydi); faqat xatoda chiqariladi (qator qaytadi).
+   */
+  const [scanHiddenIds, setScanHiddenIds] = useState<Set<string>>(new Set());
+  /** Skan-qabul jurnali (kamera ro'yxati, hisoblagich): navbatda · qabul qilindi · qabul qilinmadi. */
+  const [scanLog, setScanLog] = useState<Record<string, ScanReceiveLogEntry>>({});
+  /**
+   * Shu sahifada skan-qabul bo'ldi — sahifa qabul rejimida «qulflanadi»: pochta `received` bo'lsa yoki eski
+   * pochtadagi oxirgi yo'ldagi qoldiq qabul qilinsa ham refetchdan keyin faqat o'qish tarixiga o'tmaydi (kamera
+   * yopilib ketmaydi, keyingi skan ham qabul — `already_received`).
+   */
+  const [scanReceiveLocked, setScanReceiveLocked] = useState(false);
+  // Boshqa pochtaga o'tilsa (sahifa qayta o'rnatilmaydi) — skan-qabul holati yangidan (render paytida, React tavsiyasi).
+  const [scanReceiveOwner, setScanReceiveOwner] = useState(id);
+  if (scanReceiveOwner !== id) {
+    setScanReceiveOwner(id);
+    setScanHiddenIds(new Set());
+    setScanLog({});
+    setScanReceiveLocked(false);
+  }
+  const scanReceiveScope = `post-receive:${postId ?? ""}`;
+  /**
+   * Skan-qabul so'rovlari — bitta navbat (`useReceivePost` `scope`): ketma-ket, sahifa yashirin bo'lsa ham va sahifadan
+   * chiqilsa ham yuboriladi.
+   */
+  const scanReceivePost = useReceivePost({ scope: scanReceiveScope });
+  const scanQueueMutating = useIsMutating({ mutationKey: ["post-receive", scanReceiveScope] });
+  const queuedOrderIdLists = useMutationState({
+    filters: { mutationKey: ["post-receive", scanReceiveScope] },
+    select: (mutation) => {
+      const ids = readQueuedOrderIds(mutation.state.variables);
+      if (mutation.state.status === "pending") return ids;
+      // Qabul qilingani (yoki allaqachon qabul qilingani) — sahifa qayta ochilganda ham detal qayta so'rovi «kutilmoqda»
+      // ni ko'rsatguncha yashirin qoladi (eski «yo'lda» surat bilan qaytib chiqmasin). Xato — qator qaytadi.
+      if (mutation.state.status === "success") {
+        return ids.filter((orderId) => readScanReceiveOutcome(mutation.state.data, orderId).ok);
+      }
+      return [];
+    },
+  });
+  /** Navbatdagi va qabul qilingan buyurtmalar — sahifa yopilib qayta ochilganda ham (oldingi ochilishdagi so'rovlar). */
+  const queuedOrderIds = useMemo(() => new Set(queuedOrderIdLists.flat()), [queuedOrderIdLists]);
+  /** Ro'yxatdan yashiriladiganlar: shu sahifada skanerlab yuborilganlar + navbatdagilar. */
+  const scanHiddenAll = useMemo(
+    () => (queuedOrderIds.size === 0 ? scanHiddenIds : new Set([...scanHiddenIds, ...queuedOrderIds])),
+    [queuedOrderIds, scanHiddenIds],
+  );
+  const scanPendingCount = useMemo(
+    () => Object.values(scanLog).filter((entry) => entry.status === "pending").length,
+    [scanLog],
+  );
+  /** Navbat bo'sh emas: «Pochtani qabul qilish», «Kelmagan — qaytarish» va avtomatik orqaga qaytish o'chiq. */
+  const isScanQueueBusy = scanQueueMutating > 0 || scanPendingCount > 0;
   const regularOrdersFromPost = useMemo(
     () => regularResponse?.data?.allOrdersByPostId ?? [],
     [regularResponse],
@@ -369,7 +453,8 @@ const MailDetailPage = () => {
     isOldMailView &&
     !isRefusedDetail &&
     isPostReceiver &&
-    hasOnTheRoadOrders(currentOrdersFromPost);
+    // Skan-qabul bo'lgan bo'lsa — oxirgi qoldiq qabul qilingach ham qabul rejimi (qulf).
+    (hasOnTheRoadOrders(currentOrdersFromPost) || scanReceiveLocked);
   /** Holat (eski pochta yoki «Hamma batchlar») bo'yicha faqat o'qish. */
   const isOldByState = (isOldMailView && !hasStuckOnTheRoadOrders) || isAllBatchesDetail;
   const isRegularRefusedDetail =
@@ -408,6 +493,18 @@ const MailDetailPage = () => {
    * (backend ham shuni tekshiradi).
    */
   const canRequestReturn = isSentReturnReceive && isPostReceiver;
+  /**
+   * Skan = darhol qabul (2026-11-07): pochtaning qabul qiluvchisi — kuryer (o'z pochtasi) yoki menejer (o'z filialiga
+   * kuryersiz o'tkazma); pochta jo'natilgan (`sent`) yoki eski pochtadagi yo'ldagi qoldiq (`view=old`). Bir marta
+   * skan-qabul bo'lgach — qulf (pochta `received` bo'lsa ham rejim saqlanadi). Boshqa hamma joyda skan — tanlash.
+   */
+  const isScanReceive =
+    !isRefusedDetail &&
+    !isEffectiveRefusedDetail &&
+    !isOldDetail &&
+    isPostReceiver &&
+    (isCourier || isOwnBranchTransferPost) &&
+    (String(postMeta?.status ?? "").toLowerCase() === "sent" || hasStuckOnTheRoadOrders || scanReceiveLocked);
   // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
   // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
   const canShowActionButton = shouldReceiveCurrentPost || isEffectiveRefusedDetail || canDispatchToBranch;
@@ -507,6 +604,8 @@ const MailDetailPage = () => {
         // Tarix (eski) ko'rinishida hamma buyurtma ko'rinadi — shu sahifada
         // qabul qilingan qoldiqlar ham (LC-11), faqat ish rejimida yashiriladi.
         if (!isOldDetail && sentOrderIds.has(order.id)) return false;
+        // Skan-qabulga yuborilganlar (navbatda yoki qabul qilingan) — ro'yxatdan darhol chiqadi.
+        if (!isOldDetail && scanHiddenAll.has(order.id)) return false;
         // Ish rejimi — faqat hozir pochtadagilar (#618: sobiq a'zo tanlanmaydi, sanalmaydi, qabul qilinmaydi).
         if (!isOldDetail && !isInPostNow(order)) return false;
 
@@ -529,6 +628,7 @@ const MailDetailPage = () => {
     [
       rawOrders,
       sentOrderIds,
+      scanHiddenAll,
       shouldReceiveCurrentPost,
       isEffectiveRefusedDetail,
       isOldDetail,
@@ -548,10 +648,12 @@ const MailDetailPage = () => {
               isInPostNow(order) &&
               order.status === "on the road" &&
               order.return_requested === true &&
-              !reclaimedOrderIds.has(order.id),
+              !reclaimedOrderIds.has(order.id) &&
+              // So'rovi bor buyurtma skanerlab qabul qilinsa — izohdan ham chiqadi.
+              !scanHiddenAll.has(order.id),
           )
         : [],
-    [isSentReturnReceive, rawOrders, reclaimedOrderIds],
+    [isSentReturnReceive, rawOrders, reclaimedOrderIds, scanHiddenAll],
   );
   const requestedOrderIds = useMemo(() => new Set(requestedOrders.map((order) => order.id)), [requestedOrders]);
   /** Skaner ro'yxati: qabul qilinadiganlar + so'rovi borlar (QR'i skanerlansa, buyurtma ro'yxatga qaytadi). */
@@ -848,6 +950,22 @@ const MailDetailPage = () => {
     void playScanFeedback("missing", t("detailPage.cameraNotInMail"));
   }, [t, touchRecentScan]);
 
+  /** Skan javobini olib bo'lmadi: 404 — bu pochtada yo'q kod (ro'yxatda «rad etildi»); boshqa xato — tekshirib bo'lmadi. */
+  const reportScanLookupError = useCallback((rawValue: string, error: unknown) => {
+    if (getErrorStatus(error) === 404) {
+      rejectScannedCode(rawValue);
+      scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+      return;
+    }
+    const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
+    void playScanFeedback("error", message);
+    // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
+    scanNotify.error(t("qrNotFound"), {
+      description: message,
+      duration: 3000,
+    });
+  }, [rejectScannedCode, t]);
+
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const rawCandidates = normalizeScannerCandidates(rawValue, window.location.origin);
 
@@ -877,41 +995,238 @@ const MailDetailPage = () => {
       rejectScannedCode(rawValue);
       scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
     } catch (error) {
-      // Server ham tanimadi (404) — bu pochtada yo'q kod (ro'yxatda «rad etildi»); boshqa xato — tekshirib bo'lmadi.
-      if (getErrorStatus(error) === 404) {
-        rejectScannedCode(rawValue);
-        scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+      reportScanLookupError(rawValue, error);
+    }
+  }, [scanOrders, rejectScannedCode, reportScanLookupError, selectScannedOrder, t]);
+
+  const handleBack = useCallback(() => {
+    navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
+  }, [fromSearch, fromTab, navigate]);
+
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+
+  // ─── Skan = darhol qabul (2026-11-07) ─────────────────────────────────────
+  // Skaner indeksi — pochtadagi HAMMA joriy qator (yo'ldagi, qaytarish so'ralgan, kutilmoqda): ro'yxat bo'shasa ham
+  // USB tinglaydi, qabul qilingan buyurtmaning qayta skani esa «Allaqachon qabul qilingan» bo'ladi (so'rovsiz).
+  const scanReceiveIndex = useMemo(
+    () => (isScanReceive ? currentOrdersFromPost : []),
+    [currentOrdersFromPost, isScanReceive],
+  );
+  /** Shu ochilishda yuborilgan (javobi kutilayotgan) va qabul qilingan buyurtmalar — tez ketma-ket skanlar uchun ref. */
+  const scanPendingRef = useRef(new Set<string>());
+  const scanReceivedRef = useRef(new Set<string>());
+  const queuedOrderIdsRef = useRef(queuedOrderIds);
+  const scanVisibleOrdersRef = useRef(orders);
+  const scanReceiveIndexRef = useRef(scanReceiveIndex);
+  const isScanQueueBusyRef = useRef(isScanQueueBusy);
+  const handleBackRef = useRef(handleBack);
+  useEffect(() => {
+    queuedOrderIdsRef.current = queuedOrderIds;
+    scanVisibleOrdersRef.current = orders;
+    scanReceiveIndexRef.current = scanReceiveIndex;
+    isScanQueueBusyRef.current = isScanQueueBusy;
+    handleBackRef.current = handleBack;
+  });
+  // Boshqa pochta — yangi to'plamlar (oldingi pochtaning so'rovlari o'z to'plamini yangilaydi).
+  useEffect(() => {
+    scanPendingRef.current = new Set();
+    scanReceivedRef.current = new Set();
+  }, [postId]);
+  const mountedRef = useRef(false);
+  const doneTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current);
+      doneTimerRef.current = null;
+    };
+  }, []);
+
+  /** Pochta to'liq qabul qilindi (javob `post_status: received`, navbat bo'sh) — xabar va ~1.5 s dan keyin orqaga. */
+  const finishScanReceive = useCallback(() => {
+    notify.success(t("detailPage.scanReceive.done"), {
+      description: mountedRef.current ? t("detailPage.scanReceive.doneText") : undefined,
+    });
+    // Sahifadan chiqib ketilgan (navbat orqada tugadi) — hech qayoqqa o'tilmaydi.
+    if (!mountedRef.current) return;
+    // Kamera ochiq bo'lsa xabar uning ichida (ovozsiz — skan ovozi allaqachon chalingan).
+    void playScanFeedback("success", t("detailPage.scanReceive.done"), undefined, { silent: true });
+    if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current);
+    doneTimerRef.current = window.setTimeout(() => {
+      doneTimerRef.current = null;
+      if (mountedRef.current && !isScanQueueBusyRef.current && scanPendingRef.current.size === 0) {
+        handleBackRef.current();
+      }
+    }, SCAN_RECEIVE_DONE_BACK_MS);
+  }, [t]);
+
+  /**
+   * Skanerlangan buyurtmani darhol qabul qilish: navbatda / allaqachon qabul qilingan — «Allaqachon qabul qilingan»
+   * (so'rovsiz); yo'lda emas — xato (so'rovsiz); aks holda optimistik (ovoz, xabar, qator yashiriladi) va
+   * `PATCH post/receive/:id {order_ids: [id], scan: true}` navbatga. Qaytarish so'ralgan buyurtma ham to'g'ridan
+   * qabul qilinadi (backend so'rovni bekor qiladi) — `reclaimedOrderIds` ga tegilmaydi.
+   */
+  const receiveScannedOrder = useCallback(
+    (order: PostOrder, source?: ScanSource) => {
+      if (!postId) return;
+      const orderId = String(order.id);
+      touchRecentScan(`order:${orderId}`);
+      const pending = scanPendingRef.current;
+      const received = scanReceivedRef.current;
+      if (
+        pending.has(orderId) ||
+        received.has(orderId) ||
+        queuedOrderIdsRef.current.has(orderId) ||
+        String(order.status ?? "").toLowerCase() === "waiting"
+      ) {
+        const message = t("detailPage.scanReceive.duplicate", { id: orderId });
+        void playScanFeedback("duplicate", message, source);
+        scanNotify.warning(message, { duration: 2000 });
         return;
       }
-      const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
-      void playScanFeedback("error", message);
-      // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      scanNotify.error(t("qrNotFound"), {
-        description: message,
-        duration: 3000,
-      });
-    }
-  }, [scanOrders, rejectScannedCode, selectScannedOrder, t]);
+      if (!isScanReceivableStatus(order.status)) {
+        const message = t("detailPage.scanReceive.notReceivable", { id: orderId });
+        void playScanFeedback("error", message, source);
+        scanNotify.error(message, { duration: 3000 });
+        return;
+      }
 
-  const scannerEnabled = orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier;
+      pending.add(orderId);
+      setScanReceiveLocked(true);
+      setScanHiddenIds((prev) => new Set(prev).add(orderId));
+      setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "pending" } }));
+      // «N ta qoldi» — ko'rinadigan qabul qilinadiganlar minus navbatdagilar (lokal hisob, ref'lar orqali: tez
+      // ketma-ket skanlarda ham to'g'ri).
+      const left = scanVisibleOrdersRef.current.filter(
+        (row) => !pending.has(row.id) && !received.has(row.id) && !queuedOrderIdsRef.current.has(row.id),
+      ).length;
+      const leftValue = count(left);
+      void playScanFeedback("success", t("detailPage.scanReceive.received", { id: orderId }), source, {
+        voice: "received",
+        text: t("detailPage.scanReceive.left", { value: leftValue, count: left }),
+      });
+      scanNotify.success(t("detailPage.scanReceive.toast", { id: orderId, value: leftValue, count: left }), {
+        duration: 2000,
+      });
+
+      const fail = (reason: string | null) => {
+        pending.delete(orderId);
+        setScanHiddenIds((prev) => {
+          if (!prev.has(orderId)) return prev;
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+        setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "failed" } }));
+        const title = t("detailPage.scanReceive.failed", { id: orderId });
+        void playScanFeedback("error", title, undefined, reason ? { text: reason } : {});
+        scanNotify.error(title, { description: reason ?? undefined, duration: 6000 });
+      };
+
+      // `Promise.resolve().then` — so'rov xatosi (hatto sinxron) ham shu yerda ushlanadi, skan oqimi uzilmaydi.
+      void Promise.resolve()
+        .then(() => scanReceivePost.mutateAsync({ postId, payload: { order_ids: [orderId], scan: true } }))
+        .then(
+          (response) => {
+            const outcome = readScanReceiveOutcome(response, orderId);
+            if (!outcome.ok) {
+              fail(outcome.error);
+              return;
+            }
+            pending.delete(orderId);
+            received.add(orderId);
+            setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "received" } }));
+            if (outcome.postStatus === "received" && pending.size === 0) finishScanReceive();
+          },
+          (error: unknown) => fail(getBackendErrorMessage(error) ?? null),
+        );
+    },
+    [count, finishScanReceive, postId, scanReceivePost, t, touchRecentScan],
+  );
+
+  /** Skan-qabul: indeksda yo'q kod — faqat skan javobidagi buyurtma id'si pochta qatoriga AYNAN teng bo'lsa qabul. */
+  const handleMissingScanReceive = useCallback(
+    async (rawValue: string, source: ScanSource) => {
+      try {
+        const detail = await fetchScanDetail(rawValue);
+        const scanned = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
+        const scannedId = toText(scanned.id);
+        const row = scannedId
+          ? scanReceiveIndexRef.current.find((order) => String(order.id) === scannedId)
+          : undefined;
+        if (row) {
+          receiveScannedOrder(row, source);
+          return;
+        }
+        // Kuryerning yo'ldagi pochtasi ro'yxatida faqat yo'ldagilar keladi: qabul qilingan buyurtma qayta
+        // skanerlansa indeksda yo'q — «QR topilmadi» emas, «Allaqachon qabul qilingan» (shu ochilishda yoki avval).
+        const alreadyReceived =
+          !!scannedId &&
+          (scanReceivedRef.current.has(scannedId) ||
+            scanPendingRef.current.has(scannedId) ||
+            (toText(scanned.post_id) === String(postId) && toText(scanned.status).toLowerCase() === "waiting"));
+        if (alreadyReceived) {
+          const message = t("detailPage.scanReceive.duplicate", { id: scannedId });
+          void playScanFeedback("duplicate", message, source);
+          scanNotify.warning(message, { duration: 2000 });
+          return;
+        }
+        rejectScannedCode(rawValue);
+        scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+      } catch (error) {
+        reportScanLookupError(rawValue, error);
+      }
+    },
+    [postId, receiveScannedOrder, rejectScannedCode, reportScanLookupError, t],
+  );
+
+  const scannerEnabled =
+    (isScanReceive ? scanReceiveIndex.length > 0 : orders.length > 0) && !isOldDetail && !isReadOnlyRefusedCourier;
   // Kamera — faqat amal bor rejimda (jo'natish, qabul, rad etilganni qabul): aks holda markaziy tugma `/scan`.
   const cameraEnabled = !isOldDetail && !isReadOnlyRefusedCourier && canShowActionButton;
   const cameraMode = isEffectiveRefusedDetail ? "refused" : shouldReceiveCurrentPost ? "receive" : "send";
+  /** Skan-qabul hisoblagichi: kutilmoqdadagilar + shu sahifada skanerlab qabulga yuborilganlar (optimistik). */
+  const scanReceivedCount = useMemo(() => {
+    if (!isScanReceive) return 0;
+    const ids = new Set(scanHiddenAll);
+    currentOrdersFromPost.forEach((order) => {
+      if (String(order.status ?? "").toLowerCase() === "waiting") ids.add(order.id);
+    });
+    return ids.size;
+  }, [currentOrdersFromPost, isScanReceive, scanHiddenAll]);
+  const scanReceiveTotal = scanReceivedCount + orders.length;
   const cameraList = useMemo<ScanTargetListItem[]>(() => {
-    const selectedItems = orders
-      .filter((order) => selectedIds.has(order.id))
-      .map<{ key: string; item: ScanTargetListItem }>((order) => ({
-        key: `order:${order.id}`,
-        item: {
-          key: `order:${order.id}`,
-          title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
-          subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
-            .filter(Boolean)
-            .join(" · "),
-          tone: "success",
-          onUndo: () => deselectOne(order.id),
-        },
-      }));
+    const orderSubtitle = (order: PostOrder) =>
+      [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
+        .filter(Boolean)
+        .join(" · ");
+    const orderTitle = (order: PostOrder) =>
+      [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · ");
+    // Skan-qabul: qabul qilinganlar (bekor qilib bo'lmaydi — server amali) va qabul qilinmaganlar; tanlash rejimi —
+    // tanlanganlar («Bekor qilish» tanlovdan chiqaradi).
+    const orderItems = isScanReceive
+      ? Object.entries(scanLog).map<{ key: string; item: ScanTargetListItem }>(([orderId, entry]) => ({
+          key: `order:${orderId}`,
+          item: {
+            key: `order:${orderId}`,
+            title: orderTitle(entry.order),
+            subtitle: entry.status === "failed" ? t("detailPage.scanReceive.failedShort") : orderSubtitle(entry.order),
+            tone: entry.status === "failed" ? "danger" : "success",
+          },
+        }))
+      : orders
+          .filter((order) => selectedIds.has(order.id))
+          .map<{ key: string; item: ScanTargetListItem }>((order) => ({
+            key: `order:${order.id}`,
+            item: {
+              key: `order:${order.id}`,
+              title: orderTitle(order),
+              subtitle: orderSubtitle(order),
+              tone: "success",
+              onUndo: () => deselectOne(order.id),
+            },
+          }));
     const rejectedItems = rejectedCodes.map<{ key: string; item: ScanTargetListItem }>((code) => ({
       key: `missing:${code}`,
       item: {
@@ -921,10 +1236,10 @@ const MailDetailPage = () => {
         tone: "danger",
       },
     }));
-    return orderByRecent([...selectedItems, ...rejectedItems], (entry) => entry.key, recentScanKeys).map(
+    return orderByRecent([...orderItems, ...rejectedItems], (entry) => entry.key, recentScanKeys).map(
       (entry) => entry.item,
     );
-  }, [deselectOne, language, orders, recentScanKeys, rejectedCodes, selectedIds, t]);
+  }, [deselectOne, isScanReceive, language, orders, recentScanKeys, rejectedCodes, scanLog, selectedIds, t]);
   const cameraContext = [
     postId ? t("mailNumberWithId", { id: postMeta?.id ?? postId }) : null,
     regionLabel,
@@ -932,10 +1247,11 @@ const MailDetailPage = () => {
     .filter(Boolean)
     .join(" · ");
   useOrderQrScanner({
-    orders: scanOrders,
+    orders: isScanReceive ? scanReceiveIndex : scanOrders,
     enabled: !isOldDetail && !isReadOnlyRefusedCourier,
     onMatch: (order, _rawValue, source) => {
-      selectScannedOrder(order);
+      if (isScanReceive) receiveScannedOrder(order, source);
+      else selectScannedOrder(order);
       restoreQueryAfterScan(source);
     },
     onMissing: (rawValue, source) => {
@@ -944,27 +1260,27 @@ const MailDetailPage = () => {
         return;
       }
       restoreQueryAfterScan(source);
-      void handleMissingScannedOrder(rawValue);
+      if (isScanReceive) void handleMissingScanReceive(rawValue, source);
+      else void handleMissingScannedOrder(rawValue);
     },
     camera: cameraEnabled
       ? {
           id: `mail:${postId}:${cameraMode}`,
           title: t(`detailPage.cameraTitle.${cameraMode}`),
           context: cameraContext || undefined,
-          note: { title: t("detailPage.cameraNoteTitle"), text: t("detailPage.cameraNoteText") },
-          progress: { done: selectedIds.size, total: orders.length, label: t("detailPage.cameraMeter") },
+          note: {
+            title: t(isScanReceive ? "detailPage.cameraNoteTitleReceive" : "detailPage.cameraNoteTitle"),
+            text: t("detailPage.cameraNoteText"),
+          },
+          progress: isScanReceive
+            ? { done: scanReceivedCount, total: scanReceiveTotal, label: t("detailPage.cameraMeterReceive") }
+            : { done: selectedIds.size, total: orders.length, label: t("detailPage.cameraMeter") },
           list: cameraList,
           listTitle: t("detailPage.cameraListTitle"),
           finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
         }
       : undefined,
   });
-
-  const handleBack = useCallback(() => {
-    navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
-  }, [fromSearch, fromTab, navigate]);
-
-  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
 
   /** Shu sahifada qabul qilingan / qaytarilgan buyurtmalar ro'yxatdan darhol yashiriladi. */
   const hideHandledOrders = useCallback((ids: string[]) => {
@@ -1034,6 +1350,9 @@ const MailDetailPage = () => {
       });
       return;
     }
+
+    // Skan-qabul navbati bo'sh emas — qo'lda qabul (tanlanmaganlar qaytarishga) kutadi (tugma ham o'chiq).
+    if (isScanQueueBusyRef.current) return;
 
     /**
      * fix3b LC-11: backend tanlangan, lekin WAITING ga o'tmagan buyurtmalarni
@@ -1172,7 +1491,15 @@ const MailDetailPage = () => {
   // qator amali). Ega qarori 2026-11-03 (BeePost kabi); menejer — o'z filialiga o'tkazmada (2026-11-04), xuddi shu
   // so'rov va oqim. Buyurtma «yo'lda» qoladi, so'rov «Qaytarish»ga tushadi.
   const handleRequestReturn = useCallback(async (order: PostOrder) => {
-    if (!postId || !canRequestReturn || requestOrderReturn.isPending || receivePost.isPending) return;
+    if (
+      !postId ||
+      !canRequestReturn ||
+      requestOrderReturn.isPending ||
+      receivePost.isPending ||
+      isScanQueueBusyRef.current
+    ) {
+      return;
+    }
     const orderId = order.id;
     const left = orders.filter((item) => item.id !== orderId).length;
     const place = [order.district?.name?.trim(), order.market?.name?.trim()].filter(Boolean);
@@ -1250,7 +1577,8 @@ const MailDetailPage = () => {
     const description = remaining === 0 ? t("detailPage.requestReturn.successLast") : undefined;
     if (result.alreadyRequested) notify.info(title, { description });
     else notify.success(title, { description });
-    if (remaining === 0) handleBack();
+    // Skan-qabul navbati hali ketayotgan bo'lsa — sahifada qolinadi (javoblar shu yerda ko'rinadi).
+    if (remaining === 0 && !isScanQueueBusyRef.current) handleBack();
   }, [
     postId,
     canRequestReturn,
@@ -1572,7 +1900,8 @@ const MailDetailPage = () => {
       onReceive={handleReceive}
       disabled={
         (isEffectiveRefusedDetail && (!canReceiveRefusedPost || returnCanceledOrders.isPending)) ||
-        requestOrderReturn.isPending
+        requestOrderReturn.isPending ||
+        isScanQueueBusy
       }
       isBusy={primaryIsReceive ? isReceiving : isCheckingCouriers}
       block={isCourier && isPhone}
@@ -1689,7 +2018,15 @@ const MailDetailPage = () => {
       : undefined;
   const scanHint =
     scannerEnabled && !isEffectiveRefusedDetail
-      ? t(isCourier ? "detailPage.scanHintCourier" : isManager ? "detailPage.scanHintManager" : "detailPage.scanHintStaff")
+      ? t(
+          isScanReceive
+            ? "detailPage.scanHintReceive"
+            : isCourier
+              ? "detailPage.scanHintCourier"
+              : isManager
+                ? "detailPage.scanHintManager"
+                : "detailPage.scanHintStaff",
+        )
       : undefined;
   // HQ rad etilgan pochtasi: tanlanmaganlar pochtada qoladi (qaytarish tugmasi bo'lsa — u ham faqat tanlanganlarga).
   const refusedSelectionHintKey = !isHqRefusedFlow
@@ -1783,9 +2120,21 @@ const MailDetailPage = () => {
         centerStats={centerStats}
         showSelectionCard={!isOldDetail && !isReadOnlyRefusedCourier}
         layout={isCourier ? "courier" : "staff"}
-        leadCard={isCourier ? (isOldDetail ? "total" : isReadOnlyRefusedCourier ? "refused" : "selected") : undefined}
+        leadCard={
+          isScanReceive
+            ? "received"
+            : isCourier
+              ? isOldDetail
+                ? "total"
+                : isReadOnlyRefusedCourier
+                  ? "refused"
+                  : "selected"
+              : undefined
+        }
         selectedSum={selectedSum}
         totalSum={totalSum}
+        receivedCount={scanReceivedCount}
+        receiveTotal={scanReceiveTotal}
       />
 
       <OrdersTable
@@ -1811,6 +2160,7 @@ const MailDetailPage = () => {
         scanHint={scanHint}
         scannerReady={scannerEnabled && (!isEffectiveRefusedDetail || isManager)}
         scannerReadyLabel={isEffectiveRefusedDetail ? t("detailPage.scannerReadyShort") : undefined}
+        scannerReadyTitle={isScanReceive ? t("detailPage.scannerReadyTitleReceive") : undefined}
         selectionHint={selectionHint}
         columns={tableColumns}
         tabletHidden={tabletHidden}
@@ -1844,7 +2194,7 @@ const MailDetailPage = () => {
         }
         onRequestReturn={canRequestReturn ? (order) => void handleRequestReturn(order) : undefined}
         requestingOrderId={requestOrderReturn.isPending ? (requestOrderReturn.variables?.orderId ?? null) : null}
-        requestReturnDisabled={receivePost.isPending || requestOrderReturn.isPending}
+        requestReturnDisabled={receivePost.isPending || requestOrderReturn.isPending || isScanQueueBusy}
         phoneHeaderAction={isReadOnlyRefusedCourier && isPhone && orders.length > 0 ? printAll : undefined}
         phoneSelectionAction={isCourier && isPhone ? renderPrintSelected("shrink-0", true) : undefined}
         printLabel={isCourier ? (order) => t("detailPage.printRowLabel", { id: order.id }) : undefined}

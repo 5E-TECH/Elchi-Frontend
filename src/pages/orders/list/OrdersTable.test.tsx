@@ -418,6 +418,29 @@ describe("OrdersTable", () => {
     expect(within(card).queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("phone card: the customer phone is shown under the name (no need to open the order); no phone — no line", () => {
+    mockPhone();
+    const { unmount } = renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
+    expect(within(screen.getByRole("link")).getByText("+998 90 123 45 67")).toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(
+      <OrdersTable data={[{ ...orders[0], customer: { name: "Ali", phone_number: "" } }] as never} isLoading={false} />,
+    );
+    const card = screen.getByRole("link");
+    expect(card).toHaveTextContent("Ali");
+    expect(card).not.toHaveTextContent("+998");
+    expect(within(card).queryByText("—")).not.toBeInTheDocument();
+  });
+
+  it("market phone card shows the customer phone too", () => {
+    mockPhone();
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />, {
+      preloadedState: { role: { role: "market", id: "", region: "", name: "" } },
+    });
+    expect(within(screen.getByRole("link")).getByText("+998 90 123 45 67")).toBeInTheDocument();
+  });
+
   it("market phone card: number · district · date, no market", () => {
     mockPhone();
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />, {

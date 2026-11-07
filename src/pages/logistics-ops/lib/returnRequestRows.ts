@@ -184,3 +184,28 @@ export const parseApproveReturnResult = (payload: unknown, requestedOrderIds: st
         : Math.max(requestedOrderIds.length - skippedOrderIds.length, 0);
   return { approved, skippedOrderIds };
 };
+
+export type RejectReturnResult = {
+  /** Rad etilganlar soni (buyurtmalar kuryerda / filial pochtasida qoladi). */
+  rejected: number;
+  /** Shu orada ko'rib chiqilgan yoki holati o'zgargani uchun o'tkazib yuborilgan buyurtma id lari. */
+  skippedOrderIds: string[];
+};
+
+/**
+ * `POST post/return-requests/reject` javobi: `{ data: { rejected, skipped_order_ids } }` (o'sha endpointni
+ * «Pochta → Qaytarish» ham shunday o'qiydi — `pages/mails/components/returnMails.tsx`). Son kelmasa — yuborilganlar
+ * minus o'tkazib yuborilganlar.
+ */
+export const parseRejectReturnResult = (payload: unknown, requestedOrderIds: string[]): RejectReturnResult => {
+  const root = asRecord(payload);
+  const data = asRecord(root.data ?? root);
+  const skippedOrderIds = Array.isArray(data.skipped_order_ids)
+    ? data.skipped_order_ids.map(toText).filter(Boolean)
+    : [];
+  const rejected =
+    typeof data.rejected === "number" && Number.isFinite(data.rejected)
+      ? data.rejected
+      : Math.max(requestedOrderIds.length - skippedOrderIds.length, 0);
+  return { rejected, skippedOrderIds };
+};

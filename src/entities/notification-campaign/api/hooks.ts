@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { shouldRetryQuery } from "../../../shared/lib/queryRetry";
 import {
   campaignDisplayStatus,
   isCampaignActive,
@@ -413,7 +414,8 @@ export const useSchedulePolicyInfo = (category: string, enabled: boolean) =>
     queryKey: queryKeys.notificationCampaigns.schedulePolicy({ category }),
     queryFn: () => getSchedulePolicy({ category }),
     enabled,
-    retry: 1,
+    // Vaqt tugashi qayta urinilmaydi — GET adapteri o'zi bir marta qayta so'raydi (`shared/api/readRetry.ts`).
+    retry: shouldRetryQuery,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
     meta: { silentError: true },

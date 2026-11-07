@@ -257,6 +257,14 @@ describe("setupAuthInterceptors", () => {
       await expect(
         runResponseError({ response: { status: 401 }, config: { url: "/auth/login", headers: {} } }),
       ).rejects.toBeDefined();
+      // Haqiqiy endpoint'lar nisbiy — boshida "/" yo'q (`API_ENDPOINTS.AUTH.*`). Sekin tarmoqda yiqilgan token
+      // yangilash (401) yangi token bilan qayta yangilanmasin.
+      await expect(
+        runResponseError({ response: { status: 401 }, config: { url: "auth/refresh", headers: {} } }),
+      ).rejects.toBeDefined();
+      await expect(
+        runResponseError({ response: { status: 401 }, config: { url: "auth/login", headers: {} } }),
+      ).rejects.toBeDefined();
 
       expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
     });

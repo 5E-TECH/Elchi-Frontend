@@ -50,6 +50,11 @@ export const PREFERENCE_STORAGE_KEYS = {
   scannerVibration: "scanner-vibration",
   scannerVoice: "scanner-voice-enabled",
   dashboardComparison: "dashboard-comparison",
+  /**
+   * Global qidiruvning «So'nggi qidiruvlar» (`widgets/header`) — mijoz ismi / telefoni bo'lishi mumkin: chiqishda
+   * (va sessiya tugaganda) tozalanadi, filialdagi umumiy kompyuterda keyingi xodim ko'rmasin.
+   */
+  recentSearches: "elchi:header:recent-searches",
 } as const;
 
 const read = (key: string) => {

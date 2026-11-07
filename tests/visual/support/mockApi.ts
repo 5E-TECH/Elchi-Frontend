@@ -1,12 +1,10 @@
 import type { BrowserContext, Route, WebSocketRoute } from "@playwright/test";
-import { FONT_HOSTS, serveFont } from "./fonts";
 
 /**
  * Vizual snapshotlar — soxta API va tarmoq to'sig'i (docs/DESIGN_SYSTEM.md §12.5).
  *
  * - ilova manzili (`vite preview`, 127.0.0.1) — o'tadi;
- * - Manrope — ilova kabi Google Fonts'dan (`fonts.googleapis.com`, `fonts.gstatic.com`) — `fonts.ts` orqali
- *   (qayta urinish + ishchi keshi);
+ * - Manrope — ilova manzilidan (o'zimizdagi woff2, `fonts.ts`); Google Fonts — boshqa xost, to'xtatiladi;
  * - `http://api.visual.test/*` — sahna jadvali (`"GET orders"`, `"GET orders/:id"`), OPTIONS → 204 + CORS;
  *   jadvalda yo'q GET → bo'sh, lekin to'g'ri shakldagi javob (`app-shot.mjs` kabi) + «unmocked» ro'yxati;
  *   jadvalda yo'q yozish (POST/PATCH/PUT/DELETE) → 403 va test yiqiladi;
@@ -67,8 +65,6 @@ export interface NetworkLog {
   writes: string[];
   /** Ruxsatsiz manzillar (to'xtatildi) — test yiqiladi. */
   blocked: string[];
-  /** Olinmagan Google Fonts so'rovlari (CSS yoki woff2 bo'lagi) — test yiqiladi (zaxira shrift jim chiziladi). */
-  fontErrors: string[];
 }
 
 const ARRAYISH = /(^|\/)(regions?|districts?|markets?|couriers?|branches|categories|tariffs|sato|logists?|sources|partners|statuses|roles)(\/|$)/;
@@ -132,7 +128,7 @@ export const installMockApi = async (
   { appOrigin, table }: { appOrigin: string; table: ApiTable },
 ): Promise<NetworkLog> => {
   const entries = compile(table);
-  const log: NetworkLog = { unmocked: [], writes: [], blocked: [], fontErrors: [] };
+  const log: NetworkLog = { unmocked: [], writes: [], blocked: [] };
   const cors = {
     "access-control-allow-origin": appOrigin,
     "access-control-allow-credentials": "true",
@@ -155,10 +151,6 @@ export const installMockApi = async (
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin === appOrigin) return route.continue();
-    if (url.protocol === "https:" && FONT_HOSTS.has(url.hostname)) {
-      if (!(await serveFont(route))) log.fontErrors.push(`${url.hostname}${url.pathname}`);
-      return;
-    }
     if (url.origin !== API_ORIGIN) {
       log.blocked.push(`${request.method()} ${url.origin}${url.pathname}`);
       return route.abort("blockedbyclient");

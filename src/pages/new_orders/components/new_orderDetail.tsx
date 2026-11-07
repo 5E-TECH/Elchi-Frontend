@@ -207,10 +207,14 @@ const NewOrderDetail = () => {
       }
 
       pendingScanOrderIdsRef.current.add(orderId);
-      receiveMutation.mutate(
-        { orderIds: [orderId] },
-        {
-          onSuccess: () => {
+      // `mutateAsync` — har skanning O'Z natijasi: `mutate(vars, { onSuccess })` dagi chaqiruv callbacklari keyingi
+      // `mutate` boshlanishi bilan uziladi (TanStack: faqat oxirgi chaqiruvniki ishlaydi). Sekin internetda USB
+      // skaner bilan B oldingi A javobidan oldin skanerlansa, A ning ovozi, hisobi va xatosi yo'qolar, A esa
+      // `pendingScanOrderIdsRef` da abadiy qolib, qayta skanerlansa jim e'tiborsiz qolardi.
+      receiveMutation
+        .mutateAsync({ orderIds: [orderId] })
+        .then(
+          () => {
             rememberReceivedScan(order, rawValue);
             logReceived([order]);
             void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }), undefined, {
@@ -227,13 +231,14 @@ const NewOrderDetail = () => {
               next.delete(orderId);
               return next;
             });
-            void refetch();
+            // Ro'yxatni qayta so'rash shart emas: qabul hook'i `orders` keshini o'zi yangilaydi (bu sahifa so'rovi ham
+            // shu kalit ostida) — qo'shimcha `refetch()` har skanda ro'yxatni ikki marta yuklardi.
             scanNotify.success(t("newOrderReceiveSuccess"), {
               description: t("newOrderReceiveDescription"),
               duration: 2000,
             });
           },
-          onError: (err: unknown) => {
+          (err: unknown) => {
             const msg = getBackendErrorMessage(err) ?? t("receiveError");
             const lowerMsg = msg.toLowerCase();
             const isAlreadyReceived =
@@ -253,13 +258,12 @@ const NewOrderDetail = () => {
             void playScanFeedback("error", msg);
             scanNotify.error(t("receiveError"), { description: msg });
           },
-          onSettled: () => {
-            pendingScanOrderIdsRef.current.delete(orderId);
-          },
-        },
-      );
+        )
+        .finally(() => {
+          pendingScanOrderIdsRef.current.delete(orderId);
+        });
     },
-    [logReceived, receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+    [logReceived, receiveMutation, receivedOrderIds, rememberReceivedScan, showAlreadyReceivedFeedback, t],
   );
 
   /**

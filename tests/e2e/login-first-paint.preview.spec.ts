@@ -109,9 +109,15 @@ test("⭐ shell va forma bitta kadrda almashadi — oq bo'sh kadr yo'q", async (
   expect(blank).toBe(0);
 });
 
+// «/» — bu qurilmada avval kirilgan (sessiya belgisi `elchi_had_session` bor) holat: ilova yo'li, shell yo'q.
+// Belgisiz «/» (qidiruvdan kelgan yangi tashrifchi) `/login` ga almashadi — pastdagi alohida test.
+const markHadSession = (page: Page) =>
+  page.addInitScript(() => window.localStorage.setItem("elchi_had_session", "1"));
+
 for (const path of ["/", "/orders", "/login-eski"]) {
   test(`⭐ ${path}: shell ko'rinmaydi`, async ({ page }) => {
     await blockApi(page);
+    await markHadSession(page);
     await holdMainJs(page);
     await page.goto(path, { waitUntil: "commit" });
     // Avval DOM'da: yo'q element ham «yashirin» hisoblanadi, tekshiruv bo'sh o'tardi.
@@ -120,3 +126,12 @@ for (const path of ["/", "/orders", "/login-eski"]) {
     await expect(shell).toBeHidden();
   });
 }
+
+test("⭐ /: sessiya belgisi yo'q (qidiruvdan yangi tashrifchi) — JS'siz `/login` birinchi kadri", async ({ page }) => {
+  await blockApi(page);
+  await holdMainJs(page);
+  await page.goto("/", { waitUntil: "commit" });
+  const shell = page.locator("#login-shell");
+  await expect(shell).toBeVisible({ timeout: 60_000 });
+  await expect(page).toHaveURL(/\/login$/);
+});

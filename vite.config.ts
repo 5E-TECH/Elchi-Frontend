@@ -168,9 +168,14 @@ export default defineConfig({
      * ⚠️ CSS: Tailwind v4 to'liq ko'rinish uchun Safari 16.4+ (`color-mix`, `@property`) talab qiladi; 15.4–16.3 da
      * Tailwind'ning `@supports` zaxiralari ishlaydi, `color-mix` li tokenlar (index.css) esa chizilmasligi mumkin.
      * `@vitejs/plugin-legacy` qo'shilmadi: 15.4 dan eski iOS (iPhone 6S / 7 / SE1 — iOS 15.8 gacha bo'lsa ham) bu bazadan
-     * tashqarida; ularda `index.html` dagi zaxira blok «Brauzeringiz eskirgan» chiqadi.
+     * tashqarida. ES2020 sintaksisini o'qiy olmaydiganida (iOS / Safari < 13.1, Chrome < 80) `index.html` dagi sintaksis
+     * sinovi darhol «Brauzeringiz eskirgan» ko'rsatadi (taymer yo'q — sekin internetda soxta chiqmaydi); 13.1–15.3 da
+     * ilova ochiladi, lekin `.at()` / `Object.hasOwn` ishlatilgan joylar yiqilishi mumkin.
      */
     target: ["es2020", "safari15", "chrome90"],
+    // Shriftlar (Manrope woff2) hech qachon CSS ichiga base64 bo'lib kirmaydi: kichik bo'lak (cyrillic-ext) ham
+    // render-bloklovchi CSS'ni og'irlashtirmasin — alohida, xeshli, 1 yil keshlanadigan fayl.
+    assetsInlineLimit: (file) => (file.endsWith(".woff2") ? false : undefined),
     rollupOptions: {
       output: {
         manualChunks(id) {

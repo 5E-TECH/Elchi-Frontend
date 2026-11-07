@@ -90,9 +90,12 @@ export const getUsers = async (params?: UseUsersParams): Promise<IdentityUser[]>
   return normalizeUsers(response.data);
 };
 
-export const useUsers = (params?: UseUsersParams) =>
-  useQuery({
-    queryKey: queryKeys.users.list(params ?? {}),
-    queryFn: () => getUsers(params),
-    enabled: params?.enabled ?? true,
+export const useUsers = (params?: UseUsersParams) => {
+  // `enabled` — faqat hook bayrog'i: so'rov parametrlariga (`GET users?…&enabled=true`) va kesh kalitiga kirmaydi.
+  const { enabled = true, ...query } = params ?? {};
+  return useQuery({
+    queryKey: queryKeys.users.list(query),
+    queryFn: () => getUsers(query),
+    enabled,
   });
+};

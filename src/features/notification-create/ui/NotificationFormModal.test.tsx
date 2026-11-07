@@ -406,6 +406,14 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     expect(within(dialog).getByText("Havola muddati tugadi")).toBeInTheDocument();
     expect(within(dialog).queryByRole("link", { name: "Telegram'da ochish" })).not.toBeInTheDocument();
 
+    // Muddati tugagan havola ulay olmaydi — ulanishni kutish (har 4 s) to'xtaydi.
+    const polls = () => mocks.get.mock.calls.filter(([url]) => url === "notifications").length;
+    const pollsAfterExpiry = polls();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(GROUP_LINK_POLL_MS * 3);
+    });
+    expect(polls()).toBe(pollsAfterExpiry);
+
     await user.click(within(dialog).getByRole("button", { name: "Yangi havola olish" }));
     await screen.findByRole("link", { name: "Telegram'da ochish" });
     expect(mocks.post).toHaveBeenCalledTimes(2);

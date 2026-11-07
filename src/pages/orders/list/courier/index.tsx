@@ -15,6 +15,7 @@ import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
 import AllOrdersTable from "./list/ordertable/AllOrdersTable";
 import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import {
+  getOrderPostId,
   isSelectableCancelledOrder,
   isUnsentCancelledOrder,
   normalizeOrderStatus,
@@ -22,6 +23,8 @@ import {
   type Order,
 } from "./list/ordertable/courierOrdersModel";
 import { useOrders } from "../../../../entities/orders";
+import { useReceivePost } from "../../../../entities/mails";
+import { readScanReceiveResult } from "../../../scan/model/courierReceive";
 import { toOrderSearchTerm } from "../../../../entities/order/model/orderNumber";
 import {
   pollWhileApprovalPending,
@@ -77,6 +80,10 @@ import { OrdersRefreshAlert } from "../OrdersRefreshAlert";
  *  - < 768: tablar va qidiruv karta ustida (butun enda), kartada ro'yxat; bekor qilinganda tanlov —
  *    pastki menyu ustidagi panel («N ta buyurtmani pochtaga yuborish»).
  *
+ * Yo'ldagi qator (skan bilan olingan, 2026-11-07) — «Sotish / Bekor» o'rniga «Qabul qilish»: `PATCH
+ * post/receive/:post_id { order_ids: [id], scan: true }` (faqat shu buyurtma; pochtadagi qolganlarga tegilmaydi),
+ * muvaffaqiyatdan keyin ro'yxat va sonlar yangilanadi (`useReceivePost` → `["orders"]`). Desktop va telefon kartasi.
+ *
  * Filtrlar URL'da, `GET orders/courier/orders` ga `search`, `startDate`, `endDate`, `where_deliver` bo'lib ketadi.
  * Tab sonlari — `GET orders/courier/orders/counts` (OR-1, 0d11ewk7).
  *
@@ -102,14 +109,17 @@ const unwrapScannedOrder = (payload: unknown) => {
   const nestedData = asRecord(data.data ?? data);
   const resource = asRecord(nestedData.resource ?? data.resource);
   const payloadData = asRecord(nestedData.payload ?? data.payload);
+  // `asRecord` hech qachon `null` qaytarmaydi: bo'sh obyekt `??` dan o'tib ketib, oddiy `{ data: { id, … } }` javobida
+  // ham natija `{}` bo'lardi va zaxira moslash (identifikator / mijoz + market) hech qachon ishlamasdi — «Topilmadi».
+  const nonEmpty = (record: Record<string, unknown>) => (Object.keys(record).length > 0 ? record : undefined);
 
   return asRecord(
     nestedData.order ??
       data.order ??
       resource.order ??
       payloadData.order ??
-      resource ??
-      payloadData ??
+      nonEmpty(resource) ??
+      nonEmpty(payloadData) ??
       nestedData,
   );
 };
@@ -510,6 +520,9 @@ const CourierOrders = () => {
   const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
   const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
+  const { mutateAsync: receivePostAsync } = useReceivePost({ scope: "courier-scan-receive" });
+  /** Qabul so'rovi ketayotgan qatorlar (bir qator ikki marta yuborilmasin; tugma «yuklanmoqda»). */
+  const [receivingIds, setReceivingIds] = useState<ReadonlySet<string>>(() => new Set());
 
   // «Bekor qilingan» tabida faqat pochtaga hali yuborilmaganlar (shu sessiyada yuborilganlar ham yashirin).
   const visibleRows = (payload: unknown) => {
@@ -806,6 +819,42 @@ const CourierOrders = () => {
         onError: notifyActionError,
       },
     );
+  };
+
+  const setReceiving = (orderId: string, active: boolean) =>
+    setReceivingIds((previous) => {
+      if (previous.has(orderId) === active) return previous;
+      const next = new Set(previous);
+      if (active) next.add(orderId);
+      else next.delete(orderId);
+      return next;
+    });
+
+  // Yo'ldagi buyurtmani qabul qilish (skan-qabul bilan bir so'rov): faqat shu buyurtma «kutilmoqda»ga o'tadi.
+  const handleReceive = (order: Order) => {
+    const postId = getOrderPostId(order);
+    if (!postId || receivingIds.has(order.id)) return;
+    setReceiving(order.id, true);
+    // `mutateAsync` — har qatorning O'Z natijasi: `mutate(vars, { onSuccess, onSettled })` callbacklari keyingi qator
+    // bosilishi bilan uziladi (TanStack: faqat oxirgi chaqiruvniki ishlaydi) — birinchi qator xabarsiz va abadiy
+    // «kutilmoqda» qolardi.
+    receivePostAsync({ postId, payload: { order_ids: [order.id], scan: true } })
+      .then(
+        (response) => {
+          const outcome = readScanReceiveResult(response, order.id);
+          if (outcome.ok) {
+            notify.success(t("courierList.receiveDone", { id: order.id }));
+            return;
+          }
+          notify.error(t("courierList.receiveFailed"), outcome.error ? { description: outcome.error } : undefined);
+        },
+        (error: unknown) => {
+          // Tarmoq xatosini global bildirishnoma allaqachon ko'rsatgan (`notifyActionError` bilan bir qoida).
+          const description = getActionErrorMessage(error, t("orderActionError"));
+          if (description) notify.error(t("courierList.receiveFailed"), { description });
+        },
+      )
+      .finally(() => setReceiving(order.id, false));
   };
 
   const handleRollbackConfirm = (targetStatus: RollbackTarget) => {
@@ -1124,6 +1173,8 @@ const CourierOrders = () => {
                   onRowClick={handleOpenDetail}
                   onDeliver={(order) => setSellOrder(order)}
                   onCancel={(order) => setCancelOrder(order)}
+                  onReceive={handleReceive}
+                  receivingIds={receivingIds}
                 />
               )}
 
@@ -1137,6 +1188,8 @@ const CourierOrders = () => {
                   onCancel={(order) => setCancelOrder(order)}
                   onRestore={(order) => setRollbackOrder(order)}
                   canRestore={canRestoreOrder}
+                  onReceive={handleReceive}
+                  receivingIds={receivingIds}
                 />
               )}
 

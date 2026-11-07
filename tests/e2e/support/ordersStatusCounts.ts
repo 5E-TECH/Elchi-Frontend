@@ -82,8 +82,7 @@ export const mockStatusCountsApi = async (
     listQueries: [] as Record<string, string>[],
     requests: [] as string[],
     orders: [
-      // Order 133 (prod E2E): 45 000, markazgacha, market tarifi 20 000 → backend chegarasi 25 000.
-      order("133", "Sevara Tursunova", { sale_market_paid_max: 25000 }),
+      order("133", "Sevara Tursunova"),
       order("134", "Dilnoza Karimova", { status: "new" }),
     ],
   };
