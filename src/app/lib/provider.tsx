@@ -18,6 +18,8 @@ import SettingsSync from "../providers/SettingsSync";
 import RealtimeSync from "../providers/RealtimeSync";
 // Aniq fayldan (barrel emas): barrel sozlamalar sahifasidagi push tugmasi va oynasini boshlang'ich faylga tortardi.
 import PushSync from "../../features/push-notifications/ui/PushSync";
+// Aniq fayldan (barrel emas): ochiq ilovaga yangi versiya chiqsa — «Yangilash» banneri.
+import AppUpdateBanner from "../../features/app-update/ui/AppUpdateBanner";
 import { emitQueryError, emitQueryRecovered } from "../../shared/lib/queryErrorEvents";
 import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 import { capInvalidateWait } from "../../shared/lib/invalidateWait";
@@ -107,6 +109,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
                   <PushSync />
                   <RealtimeSync />
                   <SessionExpiryCountdown />
+                  <AppUpdateBanner />
                   <PasswordChangePrompt />
                   <GlobalLoader>
                     <Suspense fallback={<PageLoader />}>{children}</Suspense>

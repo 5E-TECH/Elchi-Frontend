@@ -333,5 +333,10 @@
       "text": "Birozdan so'ng qayta urinib ko'ring."
     },
     "idsMore": "{{ids}} va yana {{count}} ta"
+  },
+  "appUpdate": {
+    "title": "Ilovaning yangi versiyasi chiqdi.",
+    "text": "Ochiq formani saqlab, keyin yangilang.",
+    "reload": "Yangilash"
   }
 }

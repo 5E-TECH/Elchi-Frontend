@@ -340,5 +340,10 @@
       "text": "Try again in a moment."
     },
     "idsMore": "{{ids}} and {{count}} more"
+  },
+  "appUpdate": {
+    "title": "A new version of the app is available.",
+    "text": "Save any open form, then update.",
+    "reload": "Update"
   }
 }
