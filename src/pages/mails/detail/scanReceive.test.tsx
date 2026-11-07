@@ -503,13 +503,15 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
     expect(checkbox("101")).toBeNull();
   });
 
-  it("menejer, boshqa filialning o'tkazmasi (havola orqali) — skan tanlaydi, so'rovsiz", () => {
+  it("menejer, boshqa filialning o'tkazmasi (havola orqali) — faqat o'qish: tanlov yo'q, so'rovsiz (anKpzwxk)", () => {
     const rows = [order("101"), order("102")];
     setup(() => rows, TRANSFER_POST);
     renderPage(manager("16"));
 
-    scanRow(rows[0]);
-    expect(checkbox("101")).toBeChecked();
+    // Qabul faqat manzil filial menejerida (backend #620/#621) — boshqa filial menejeriga sahifa faqat o'qish uchun.
+    expect(screen.getByText("Faqat o'qish")).toBeInTheDocument();
+    if (mocks.scanner) scanRow(rows[0]);
+    expect(checkbox("101")).toBeNull();
     expect(mocks.receive).not.toHaveBeenCalled();
   });
 

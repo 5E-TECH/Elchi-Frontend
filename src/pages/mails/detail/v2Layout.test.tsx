@@ -305,7 +305,8 @@ describe("MailDetailPage v2 — rejimlar", () => {
   });
 
   it("menejer qabul: sarlavha «Yo'ldagi» emas, «Buyurtmalar»; skaner izohi menejer matni (`manager-mails-detail-receive`)", () => {
-    regular([order("301", "on the road"), order("302", "waiting")], { status: "sent", ...TO_MANAGER_BRANCH });
+    // O'z filialiga o'tkazmada skan = darhol qabul (pastdagi test); tanlash izohi — menejer kuryer pochtasini qabul qilganda.
+    regular([order("301", "on the road"), order("302", "waiting")], { status: "sent", courier_id: "77", branch_id: "1" });
     renderPage(stateFor("manager", "REGIONAL"));
     expect(screen.getByRole("heading", { level: 2, name: "Buyurtmalar" })).toBeInTheDocument();
     expect(screen.getByText("QR kodni skanerlang — buyurtma ro'yxatda tanlanadi")).toBeInTheDocument();
