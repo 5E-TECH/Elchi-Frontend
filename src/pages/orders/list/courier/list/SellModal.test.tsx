@@ -185,13 +185,65 @@ describe("SellModal partial sell", () => {
   const partialToggle = () => screen.getByRole("switch", { name: /Qisman sotish/ });
   const sellButton = () => screen.getByRole("button", { name: /^Sotish$/ });
 
-  it("blocks partial sell for a single-unit order and says why", () => {
-    renderSell({ order: singleUnitOrder });
+  // Ega 2026-11-07 (BeePost'dagidek): 1 donali buyurtmani ham narxini tushirib «qisman» sotish mumkin — mijoz
+  // 120 000 lik mahsulotni 90 000 ga oladi, kuryer market bilan kelishgan. Soni o'zgarmaydi, faqat summa.
+  it("allows a price-only partial sell for a single-unit order (BeePost parity)", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
 
-    expect(partialToggle()).toBeDisabled();
-    expect(partialToggle()).toHaveTextContent("Buyurtmada bitta mahsulot — qisman sotib bo'lmaydi");
-    // To'liq sotish ta'sirlanmaydi.
+    expect(partialToggle()).toBeEnabled();
+    expect(partialToggle()).not.toHaveTextContent("qisman sotib bo'lmaydi");
+    await user.click(partialToggle());
+
+    // Kamaytirib bo'lmaydi (kamida 1 dona), lekin bu xato emas — qizil ogohlantirish yo'q.
+    expect(screen.getByRole("button", { name: "product sonini kamaytirish" })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // Summa maydoni ostida: faqat narx tushadi, buyurtma summasidan kam.
+    expect(screen.getByText(/Soni o'zgarmasa, faqat narx tushadi — 120\s000 so'm dan kam kiriting/)).toBeInTheDocument();
+    // Summasiz — avvalgidek.
+    expect(sellButton()).toBeDisabled();
+    expect(screen.getByText("To'lov summasini kiriting")).toBeInTheDocument();
+
+    await user.type(screen.getAllByPlaceholderText("0")[0], "90000");
     expect(sellButton()).toBeEnabled();
+    await user.click(sellButton());
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", {
+      order_item_info: [{ order_item_id: "i1", product_id: "24", quantity: 1 }],
+      totalPrice: 90000,
+      extraCost: 0,
+      // Izoh ixtiyoriy (ega qarori).
+      comment: "",
+    });
+  });
+
+  it("price-only partial sell: an amount equal to the order total is not a partial sale", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.type(screen.getAllByPlaceholderText("0")[0], "120000");
+
+    expect(sellButton()).toBeDisabled();
+    expect(
+      screen.getByText("Mahsulot sonini kamaytiring yoki summani buyurtma summasidan kam kiriting"),
+    ).toBeInTheDocument();
+    await user.click(sellButton());
+    expect(onPartlySell).not.toHaveBeenCalled();
+  });
+
+  it("price-only partial sell allows 0 so'm", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: singleUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.type(screen.getAllByPlaceholderText("0")[0], "0");
+    await user.click(sellButton());
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({ totalPrice: 0 }));
   });
 
   it("allows partial sell for a multi-unit partner parcel without a catalog product and sends the order-item id (real BeePost #120)", async () => {
@@ -288,22 +340,38 @@ describe("SellModal partial sell", () => {
     expect(partialToggle()).toHaveTextContent("Mahsulot sonlari noto'g'ri");
   });
 
-  it("keeps 'Sotish' disabled in partial mode until a quantity is actually reduced", async () => {
+  // Ega 2026-11-07: 2+ donali buyurtmada ham sonini tushirmasdan narxni tushirib sotish mumkin. Soni ham, summa
+  // ham o'zgarmasa — bu oddiy «Sotish», qisman emas.
+  it("multi-unit order: price-only sale below the total is allowed, the full total needs a reduced quantity", async () => {
     const user = userEvent.setup();
-    renderSell({ order: twoUnitOrder });
+    const onPartlySell = vi.fn();
+    renderSell({ order: twoUnitOrder, onPartlySell });
 
     await user.click(partialToggle());
-    await user.type(screen.getAllByPlaceholderText("0")[0], "60000");
+    await user.type(screen.getAllByPlaceholderText("0")[0], "120000");
 
     expect(sellButton()).toBeDisabled();
     // Sabab «Sotish» yonida yoziladi.
-    expect(screen.getByText("Kamida bitta mahsulot sonini kamaytiring")).toBeInTheDocument();
+    expect(
+      screen.getByText("Mahsulot sonini kamaytiring yoki summani buyurtma summasidan kam kiriting"),
+    ).toBeInTheDocument();
 
-    // Kamaytirib, keyin qaytarib oshirsa — yana bloklanadi.
+    // Kamaytirsa — teng summa ham qisman sotuv; qaytarib oshirsa — yana bloklanadi.
     await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
     expect(sellButton()).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Krossovka sonini oshirish" }));
     expect(sellButton()).toBeDisabled();
+
+    // Soni o'zgarmagan, summa kamroq — narx tushirib sotish.
+    const input = screen.getAllByPlaceholderText("0")[0];
+    await user.clear(input);
+    await user.type(input, "100000");
+    expect(sellButton()).toBeEnabled();
+    await user.click(sellButton());
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({
+      order_item_info: [{ order_item_id: "i1", product_id: "24", quantity: 2 }],
+      totalPrice: 100000,
+    }));
   });
 
   it("keeps 'Sotish' disabled in partial mode while the payment amount is empty", async () => {

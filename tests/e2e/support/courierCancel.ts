@@ -6,8 +6,11 @@ import { expect, type Locator, type Page, type Route } from "@playwright/test";
  * `paidAmount > 0` — 400 (GNWDKvmZ, uguUEhin).
  * `POST /orders/sell/:id { paidAmount }` → `data.status`: to'liq — `paid`,
  * qisman — `partly_paid`, yo'q — `sold`; `to_be_paid` dan oshsa 400.
+ * `POST /orders/partly-sell/:id` backend kabi (2026-11-07): summa buyurtma summasidan oshsa 400; soni
+ * o'zgarmasa (narx tushirib sotish) summa buyurtma summasidan KAM bo'lishi shart, aks holda 400.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Ilova manzili (`E2E_ORIGIN` — boshqa portda yurgizish uchun, sukut `playwright.config.ts` dagi 4173). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -48,6 +51,7 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
   };
   const cancels: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
   const sells: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
+  const partlySells: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
   const leaked: string[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -116,6 +120,28 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
       const status = paid <= 0 ? "sold" : paid >= max ? "paid" : "partly_paid";
       return reply(route, { statusCode: 200, message: "Order sold", data: { id: sell[1], status, paid_amount: paid } });
     }
+    const partly = /^orders\/partly-sell\/(\w+)$/.exec(path);
+    if (partly && request.method() === "POST") {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      const target = state.orders.find((item) => item.id === partly[1]);
+      const total = Number(target?.total_price ?? 0);
+      const price = Number(body.totalPrice);
+      const lines = (body.order_item_info ?? []) as Array<{ order_item_id: string; quantity: number }>;
+      const items = (target?.items ?? []) as Array<{ id: string; quantity: number }>;
+      const decreased = lines.some((line) => {
+        const item = items.find((it) => it.id === line.order_item_id);
+        return item ? Number(line.quantity) < Number(item.quantity) : false;
+      });
+      const invalid = price > total
+        ? "Qisman sotuv summasi buyurtma summasidan oshmasligi kerak"
+        : !decreased && !(price < total)
+          ? "Mahsulot soni ham, summa ham o'zgarmagan — oddiy «Sotish» dan foydalaning"
+          : null;
+      partlySells.push({ id: partly[1], body, status: invalid ? 400 : 200 });
+      if (invalid) return reply(route, { statusCode: 400, message: invalid }, 400);
+      state.orders = state.orders.filter((item) => item.id !== partly[1]);
+      return reply(route, { statusCode: 200, message: "Order partly sold", data: { id: partly[1], status: "sold" } });
+    }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
@@ -132,7 +158,7 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
     window.localStorage.setItem("theme", t);
     window.localStorage.setItem("theme-version", "2");
   }, theme);
-  return { state, cancels, sells, leaked };
+  return { state, cancels, sells, partlySells, leaked };
 };
 
 /**

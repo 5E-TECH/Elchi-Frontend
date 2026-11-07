@@ -250,17 +250,14 @@ const SellDialog = ({
   const getSelectedItemsCount = () =>
     (order.items ?? []).reduce((sum, item) => sum + getItemQty(item), 0);
 
-  const isAtMinimumSelection = isPartial && getSelectedItemsCount() === 1;
-
   // Qisman sotish faqat backend haqiqatan qabul qila oladigan buyurtmada
-  // ochiladi. Ilgari rejim har doim ochilar va so'rov baribir rad etilardi:
-  //  • jami 1 dona — kamida bitta donani kamaytirish shart (backend), kamida
-  //    bitta dona qolishi shart (UI qoidasi) — ikkalasi birga bajarilmaydi;
+  // ochiladi:
   //  • mahsulot qatorlari umuman yo'q — yuboriladigan narsa yo'q;
   //  • bir xil katalog mahsuloti ikki qatorda — backend har ikkala qatorni
   //    so'rovdagi BIRINCHI yozuv bilan solishtiradi va rad etadi.
+  // Jami 1 donali buyurtma endi YOPILMAYDI (ega 2026-11-07, BeePost'dagidek):
+  // sonini kamaytirmasdan faqat narxni tushirib sotish mumkin.
   const orderItems = order.items ?? [];
-  const totalItemUnits = orderItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
   // Katalogsiz qatorlar (id `null`) dublikat hisoblanmaydi — ular
   // `order_item_id` bilan har biri alohida topiladi.
   const catalogIds = orderItems
@@ -271,36 +268,45 @@ const SellDialog = ({
       ? t("partialSellUnavailableNoItems")
       : orderItems.some((item) => !(Number(item.quantity) >= 0))
         ? t("partialSellUnavailableInvalidQuantity")
-        : totalItemUnits < 2
-          ? t("partialSellUnavailableSingle")
-          : new Set(catalogIds).size !== catalogIds.length
-            ? t("partialSellUnavailableDuplicate")
-            : null;
+        : new Set(catalogIds).size !== catalogIds.length
+          ? t("partialSellUnavailableDuplicate")
+          : null;
   const canSellPartially = partialUnavailableReason === null;
   const hasDecreasedItem = orderItems.some((item) => getItemQty(item) < item.quantity);
-  // fix3b M10: qisman sotuv summasi buyurtma summasidan oshmaydi (teng bo'lishi
-  // mumkin). Backend ham 400 qaytaradi; xato (masalan ortiqcha nol) market va
-  // kuryer kassasini oshirib, rollbackda asl summani yo'qotardi. Buyurtma
-  // summasi noma'lum bo'lsa tekshirilmaydi — backend baribir tekshiradi.
+  // «Kamida 1 dona qolsin» xatosi faqat kuryer o'zi kamaytirib chegaraga
+  // yetganda — 1 donali buyurtmada (hech narsa kamaytirilmagan) xato emas.
+  const isAtMinimumSelection = isPartial && hasDecreasedItem && getSelectedItemsCount() === 1;
+  // fix3b M10: qisman sotuv summasi buyurtma summasidan oshmaydi. Backend ham
+  // 400 qaytaradi; xato (masalan ortiqcha nol) market va kuryer kassasini
+  // oshirib, rollbackda asl summani yo'qotardi. Buyurtma summasi noma'lum
+  // bo'lsa tekshirilmaydi — backend baribir tekshiradi.
   const orderTotalAmount = toKnownAmount(order.total_price);
   const isPartialPriceAboveTotal =
     isPartial &&
     totalPrice !== "" &&
     orderTotalAmount !== null &&
     Number(totalPrice) > orderTotalAmount;
+  // Narx tushirib sotish (soni o'zgarmagan): summa buyurtma summasidan KAM
+  // bo'lishi shart — teng bo'lsa bu oddiy «Sotish» (backend ham 400).
+  const isPriceCutUnchanged =
+    isPartial &&
+    !hasDecreasedItem &&
+    totalPrice !== "" &&
+    orderTotalAmount !== null &&
+    Number(totalPrice) >= orderTotalAmount;
   const partialBlockReason = !isPartial
     ? null
     : !canSellPartially
       // Qisman rejim ochiq turganda ma'lumot yangilanib, qisman sotish
       // mumkin bo'lmay qolsa — tugma jimgina hech narsa qilmasin emas.
       ? partialUnavailableReason
-      : !hasDecreasedItem
-      ? t("partialSellDecreaseRequired")
       : totalPrice === ""
         ? t("partialSellPriceRequired")
         : isPartialPriceAboveTotal
           ? t("partialSellPriceExceedsTotal")
-          : null;
+          : isPriceCutUnchanged
+            ? t("partialSellChangeRequired")
+            : null;
   // Almashtirish darvozasi (backend `assertReplacementSaleAllowed` sharti bilan aynan bir xil): eski mahsulot hali
   // olinmagan almashtirish buyurtmasi tasdiqsiz sotilmaydi — to'liq va qisman sotishda.
   const replacement = readOrderReplacement(order);
@@ -461,7 +467,14 @@ const SellDialog = ({
     <Field
       label={isManager ? t("paidAmount") : t("paymentAmount")}
       required
-      hint={orderTotalAmount !== null ? t("amountMaxHint", { amount: money(orderTotalAmount) }) : undefined}
+      hint={
+        orderTotalAmount === null
+          ? undefined
+          : hasDecreasedItem
+            ? t("amountMaxHint", { amount: money(orderTotalAmount) })
+            // Soni o'zgarmagan — faqat narx tushadi (summa buyurtma summasidan kam).
+            : t("partialSellPriceOnlyHint", { amount: money(orderTotalAmount) })
+      }
       error={
         isPartialPriceAboveTotal ? <span role="alert">{t("partialSellPriceExceedsTotal")}</span> : undefined
       }
