@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource } from "../../../shared/lib/scanner";
 import { extractScannerToken, isForeignScanUrl } from "../../../shared/lib/scanToken";
@@ -113,7 +114,12 @@ export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: 
           void playScanFeedback("missing", t("post.notFoundTitle"), source);
           return;
         }
-        void playScanFeedback("error", getBackendErrorMessage(error) ?? t("scanner.error.title"), source);
+        // Begona pochta QR'i (#620: kuryerga 403 `post_not_visible_to_courier` …) — lokal matn.
+        void playScanFeedback(
+          "error",
+          readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanner.error.title"),
+          source,
+        );
       }
     },
     [evaluateScan, queryClient, t],

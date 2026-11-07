@@ -267,6 +267,29 @@ describe("DispatchPage — skanerlash va biriktirish", () => {
     expect(mocks.fetchScanDetail).not.toHaveBeenCalled();
   });
 
+  it("begona QR (403 order_not_in_your_branch, #620) — lokal matn (backend matni emas), ro'yxatga qo'shilmaydi", async () => {
+    mocks.fetchScanDetail.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 403, data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } } },
+    });
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("ORD-77031");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Bu buyurtma sizning filialingizda emas");
+    expect(screen.queryByText("backend matni")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /ni tanlash/ })).not.toBeInTheDocument();
+  });
+
+  it("noma'lum sababli xato — avvalgidek backend matni", async () => {
+    mocks.fetchScanDetail.mockRejectedValue({ response: { status: 400, data: { message: "Buyurtma bekor qilingan" } } });
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("ORD-77032");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Buyurtma bekor qilingan");
+  });
+
   it("tekshiruv ketayotganda «N ta buyurtma tekshirilmoqda...» va biriktirish o'chiq", async () => {
     let resolve: (value: unknown) => void = () => undefined;
     mocks.fetchScanDetail.mockReturnValue(new Promise((done) => (resolve = done)));

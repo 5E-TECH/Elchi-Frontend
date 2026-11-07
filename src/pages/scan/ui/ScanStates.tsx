@@ -1,5 +1,5 @@
 // dizayn-v2: manager-scan-result, registrator-scan-result
-import { RefreshCw, ScanLine, TriangleAlert } from "lucide-react";
+import { Lock, RefreshCw, ScanLine, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Button, Card, EmptyState, Spinner, buttonClasses } from "../../../shared/ui/primitives";
@@ -9,6 +9,11 @@ import { SCANNER_ROUTE } from "../model/routes";
  * «Sahifa holatlari» (maket `manager-scan-result`, `registrator-scan-result`): yuklanish — spinner +
  * «Buyurtma ma'lumotlari yuklanmoqda»; topilmadi / xato — xato ikonkasi, sarlavha, sabab, «Qayta urinish»
  * va asosiy «Skanerga qaytish». Kamera ekranidagi variantlar (`courier-scan-not-found`) — kamera ishi.
+ *
+ * Begona QR (`ScanForbiddenCard`, backend #620 403 `order_not_in_your_branch` / `branch_not_assigned` /
+ * `post_not_visible_to_courier`): maket yo'q — eng yaqini «Buyurtma topilmadi» holati va `tizim-errors` 403 bloki:
+ * kulrang qulf ikonkasi (xato emas — ruxsat), sarlavha va izoh, faqat «Skanerga qaytish», «Qayta urinish» YO'Q
+ * (qayta so'rov natijani o'zgartirmaydi). Buyurtma raqami va boshqa ma'lumot chizilmaydi (javobda yo'q).
  */
 export const ScanLoadingCard = ({ text }: { text: string }) => (
   <Card>
@@ -50,6 +55,29 @@ export const ScanNotFoundCard = ({
               {t("backToScanner")}
             </Link>
           </div>
+        }
+      />
+    </Card>
+  );
+};
+
+export const ScanForbiddenCard = ({ title, text }: { title: string; text?: string }) => {
+  const { t } = useTranslation("scan");
+  return (
+    <Card>
+      <EmptyState
+        role="alert"
+        tone="neutral"
+        icon={Lock}
+        title={title}
+        titleAs="h1"
+        description={text || undefined}
+        data-testid="scan-forbidden"
+        action={
+          <Link to={SCANNER_ROUTE} className={buttonClasses({ variant: "primary" })}>
+            <ScanLine size={18} aria-hidden="true" className="shrink-0" />
+            {t("backToScanner")}
+          </Link>
         }
       />
     </Card>

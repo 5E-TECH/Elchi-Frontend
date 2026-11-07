@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import i18n from "../../i18n";
 import { readBackendRejection } from "./backendReason";
-import { COVERAGE_REASONS, coverageRejectionText, formatCoverageIds, isCoverageReason } from "./coverageReasons";
+import {
+  COVERAGE_REASONS,
+  coverageErrorLine,
+  coverageRejectionText,
+  coverageTextLine,
+  formatCoverageIds,
+  isCoverageReason,
+  isQrScopeReason,
+  readQrScopeText,
+} from "./coverageReasons";
 
 const t = i18n.getFixedT("uz");
 
@@ -96,5 +105,59 @@ describe("coverageRejectionText", () => {
   it("formatCoverageIds — 10 tagacha to'liq", () => {
     expect(formatCoverageIds(t, ["1", "2"])).toBe("№1, №2");
     expect(formatCoverageIds(t, [])).toBe("");
+  });
+
+  it("isQrScopeReason — begona QR / pochta ko'rish doirasi sabablari", () => {
+    for (const reason of ["order_not_in_your_branch", "branch_not_assigned", "post_not_visible_to_courier", "branch_scope_unavailable"]) {
+      expect(isQrScopeReason(reason)).toBe(true);
+    }
+    expect(isQrScopeReason("district_not_served_by_branch")).toBe(false);
+    expect(isQrScopeReason(undefined)).toBe(false);
+  });
+
+  it("coverageTextLine — «Sarlavha. Izoh» yoki faqat sarlavha", () => {
+    expect(coverageTextLine({ title: "Bu buyurtma sizning filialingizda emas", description: "" })).toBe(
+      "Bu buyurtma sizning filialingizda emas",
+    );
+    expect(coverageTextLine(coverageRejectionText(t, reject(403, "branch_not_assigned"), { context: "qr", fallbackTitle: "x" }))).toBe(
+      "Siz hech qaysi filialga biriktirilmagansiz. Administratorga murojaat qiling.",
+    );
+  });
+
+  it("readQrScopeText — begona QR: sarlavha, izoh, qayta urinish faqat 503 da; boshqa sabab — null", () => {
+    const raw = (status: number, reason: string | null) => ({
+      response: { status, data: { statusCode: status, message: "Backend matni", data: reason ? { reason } : undefined } },
+    });
+    expect(readQrScopeText(t, raw(403, "order_not_in_your_branch"))).toEqual({
+      reason: "order_not_in_your_branch",
+      title: "Bu buyurtma sizning filialingizda emas",
+      description: "",
+      retryable: false,
+      line: "Bu buyurtma sizning filialingizda emas",
+    });
+    expect(readQrScopeText(t, raw(403, "post_not_visible_to_courier"))).toMatchObject({
+      title: "Pochta hali filialga qabul qilinmagan",
+      description: "Filial menejeri qabul qilgach, pochta sizga ko'rinadi.",
+      retryable: false,
+    });
+    expect(readQrScopeText(t, raw(503, "branch_scope_unavailable"))).toMatchObject({
+      title: "Filialingizni aniqlab bo'lmadi",
+      retryable: true,
+      line: "Filialingizni aniqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
+    });
+    expect(readQrScopeText(t, raw(403, "district_not_served_by_branch"))).toBeNull();
+    expect(readQrScopeText(t, raw(403, null))).toBeNull();
+    expect(readQrScopeText(t, new Error("Network Error"))).toBeNull();
+  });
+
+  it("coverageErrorLine — tanilgan sabab lokal matn, noma'lum — null (backend matniga tarmoqlanmaydi)", () => {
+    const raw = (reason: string | null) => ({
+      response: { status: 403, data: { statusCode: 403, message: "Backend matni", data: reason ? { reason } : undefined } },
+    });
+    expect(coverageErrorLine(t, raw("post_receive_manager_only"), "receive")).toBe(
+      "Pochta qabul qilinmadi. Bu pochtani faqat manzil filial menejeri qabul qila oladi.",
+    );
+    expect(coverageErrorLine(t, raw("market_cancelled_pin_invalid"), "receive")).toBeNull();
+    expect(coverageErrorLine(t, raw(null), "receive")).toBeNull();
   });
 });

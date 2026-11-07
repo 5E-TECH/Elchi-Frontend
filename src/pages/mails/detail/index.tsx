@@ -23,7 +23,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { canDispatchPostToBranch, canReassignPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import { readBackendRejection } from "../../../shared/lib/backendReason";
-import { coverageRejectionText } from "../../../shared/lib/coverageReasons";
+import { coverageErrorLine, coverageRejectionText, readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import {
   countReceiptsWithoutQr,
@@ -310,6 +310,9 @@ const MailDetailPage = () => {
     refetch: refetchRegularDetail,
   } = useMailDetail(!isRefusedDetail && !isAllBatchesDetail ? postId ?? "" : "", {
     view: isOldMailView ? undefined : "current",
+    // Xato sahifaning o'zida chiziladi (`ErrorState`) — global xabar takrorlanmaydi (anKpzwxk S8: kuryerga
+    // 403 `post_not_visible_to_courier` ikki marta chiqardi).
+    silentError: true,
   });
   const refusedQuery = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const { data: refusedResponse, isLoading: refusedLoading, isError: refusedError } = refusedQuery;
@@ -957,6 +960,13 @@ const MailDetailPage = () => {
       scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
       return;
     }
+    // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — lokal sarlavha va izoh, «QR topilmadi» emas.
+    const scope = readQrScopeText(t, error);
+    if (scope) {
+      void playScanFeedback("error", scope.line);
+      scanNotify.error(scope.title, { description: scope.description || undefined, duration: 3000 });
+      return;
+    }
     const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
     void playScanFeedback("error", message);
     // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
@@ -1139,7 +1149,8 @@ const MailDetailPage = () => {
             setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "received" } }));
             if (outcome.postStatus === "received" && pending.size === 0) finishScanReceive();
           },
-          (error: unknown) => fail(getBackendErrorMessage(error) ?? null),
+          // #621 `post_receive_manager_only` — lokal matn; noma'lum sabab — backend matni.
+          (error: unknown) => fail(coverageErrorLine(t, error, "receive") ?? getBackendErrorMessage(error) ?? null),
         );
     },
     [count, finishScanReceive, postId, scanReceivePost, t, touchRecentScan],
@@ -1829,7 +1840,14 @@ const MailDetailPage = () => {
     return <MailDetailSkeleton />;
 
   // ─── Xato ─────────────────────────────────────────────────────────────────
-  if (regularError || refusedError)
+  if (regularError || refusedError) {
+    const loadError = regularErrorValue ?? refusedQuery.error;
+    const rejection = readBackendRejection(loadError);
+    // Kuryer filialga hali qabul qilinmagan o'tkazmani ochdi (#620): kulrang holat, lokal matn, «Qayta urinish»siz.
+    const courierHidden =
+      rejection.reason === "post_not_visible_to_courier"
+        ? coverageRejectionText(t, rejection, { context: "post", fallbackTitle: t("loadError") })
+        : null;
     return (
       <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
         <PageHeader
@@ -1839,8 +1857,9 @@ const MailDetailPage = () => {
         />
         <ErrorState
           framed
-          error={regularErrorValue ?? refusedQuery.error}
-          title={t("loadError")}
+          error={loadError}
+          title={courierHidden?.title ?? t("loadError")}
+          description={courierHidden?.description}
           onRetry={() => {
             if (regularError) void refetchRegularDetail();
             if (refusedError) void refusedQuery.refetch?.();
@@ -1848,6 +1867,7 @@ const MailDetailPage = () => {
         />
       </div>
     );
+  }
 
   // ─── Sarlavha (dizayn v2) ─────────────────────────────────────────────────
   // Holat birlamchi manbasi — serverdagi `data.post` (4YZcTTDQ). Maketlar rolga qarab:

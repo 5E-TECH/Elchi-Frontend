@@ -11,7 +11,7 @@ import {
  * SKAN NATIJASI SIGNALI — ovoz (WebAudio), «Ovozli xabar», tebranish va `SCAN_FEEDBACK_EVENT` hodisasi
  * (taxta `tizim-scanner` §07: success · duplicate · missing · error).
  *
- * Avval `pages/scan/lib/scanShared.ts` da edi; shared va boshqa sahifalar ham ishlatgani uchun shu yerga
+ * Avval `pages/scan/lib/scanShared.ts` da edi (fayl o'chirilgan); shared va boshqa sahifalar ham ishlatgani uchun shu yerga
  * ko'chirildi (FSD: shared → pages importi bo'lmasin). Hodisa tafsiloti `{ type, message?, source? }` —
  * kamera (`ScannerCamera`) natija qatorini shundan oladi, global `ScanFeedbackOverlay` ham shuni tinglaydi.
  *

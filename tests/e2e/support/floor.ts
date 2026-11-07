@@ -4,8 +4,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * «Biriktirish» (`/dispatch`) va «Tezkor amal» (`/courier-bulk`) — soxta backend (dizayn v2, G3).
  *
  * `/dispatch` — HQ registratori: `GET couriers?page=1&limit=100&status=active` (filialga cheklangan rol,
- * `region_id` siz), `GET orders/qr-code/:token` (USB skaner → buyurtma), `POST orders/assign-to-courier
- * { courier_id, order_ids }`.
+ * `region_id` siz), `GET orders/qr-code/:token` (USB skaner → buyurtma; `FOREIGN_TOKEN` — 403 begona QR),
+ * `POST orders/assign-to-courier { courier_id, order_ids }`.
  * `/courier-bulk` — kuryer: `GET orders/courier/orders?status=waiting` (100 talik sahifalar), «Kunni yakunlash» →
  * `POST orders/sell/:id` / `POST orders/cancel/:id` (`{ comment, extraCost: 0 }`; isbotli — avval `POST files/upload`,
  * keyin `proofFileKeys`; har biri `X-Request-Source: courier-bulk`); «Ertaga» so'rov yubormaydi.
@@ -84,6 +84,9 @@ const COURIERS = [
   { id: "264", name: "Jasur Karimov", phone_number: "+998904445566", region: { name: "Toshkent sh." }, status: "active" },
 ];
 
+/** Boshqa filial buyurtmasi QR'i — `GET orders/qr-code/:token` 403 `order_not_in_your_branch` (#620). */
+export const FOREIGN_TOKEN = "tok-77031";
+
 export const mockDispatchApi = async (page: Page) => {
   const orders = new Map([
     ["tok-10285", order("10285", "Feruza Mirzayeva")],
@@ -115,6 +118,14 @@ export const mockDispatchApi = async (page: Page) => {
       if (lookup && method === "GET") {
         const token = decodeURIComponent(lookup[1]);
         lookups.push(token);
+        // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — 403, javobda ma'lumot yo'q.
+        if (token === FOREIGN_TOKEN) {
+          return reply(
+            route,
+            { statusCode: 403, message: "Bu buyurtma sizning filialingizda emas", data: { reason: "order_not_in_your_branch" } },
+            403,
+          );
+        }
         const found = orders.get(token);
         return found
           ? reply(route, { statusCode: 200, data: found })

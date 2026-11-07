@@ -639,3 +639,85 @@ describe("ScanDetailPage — yangi kod turlari (skaner 1-bosqich)", () => {
     expect(feedbackMock).toHaveBeenCalledWith("duplicate");
   });
 });
+
+/** Gateway rad javobi (#620): `{ statusCode, message, data: { reason } }` — buyurtma ma'lumotisiz. */
+const scopeError = (status: number, reason: string | null, message: string) =>
+  new AxiosError(message, String(status), undefined, undefined, {
+    status,
+    statusText: "",
+    headers: {},
+    config: {} as never,
+    data: { statusCode: status, message, ...(reason ? { data: { reason } } : {}) },
+  } as AxiosResponse);
+
+describe("ScanDetailPage — begona QR (anKpzwxk, backend #620)", () => {
+  it("403 order_not_in_your_branch: kulrang «filialingizda emas», faqat «Skanerga qaytish», ma'lumot va «Qayta urinish» yo'q", async () => {
+    fetchMock.mockRejectedValue(scopeError(403, "order_not_in_your_branch", "Bu buyurtma sizning filialingizda emas"));
+    renderDetail("manager", { route: "/scan/ORD-77031", user: { branch: { id: "3", type: "REGIONAL" } } });
+
+    const heading = await screen.findByRole("heading", { level: 1, name: "Bu buyurtma sizning filialingizda emas" });
+    const card = screen.getByTestId("scan-forbidden");
+    expect(card).toContainElement(heading);
+    expect(card).toHaveAttribute("role", "alert");
+    expect(screen.getByRole("link", { name: "Skanerga qaytish" })).toHaveAttribute("href", "/scan");
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText(/№/)).not.toBeInTheDocument();
+    expect(screen.queryByText("ORD-77031")).not.toBeInTheDocument();
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("error", "Bu buyurtma sizning filialingizda emas"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("403 branch_not_assigned — o'z matni", async () => {
+    fetchMock.mockRejectedValue(scopeError(403, "branch_not_assigned", "Siz hech qaysi filialga biriktirilmagansiz — administratorga murojaat qiling"));
+    renderDetail("courier");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Siz hech qaysi filialga biriktirilmagansiz" })).toBeInTheDocument();
+    expect(screen.getByText("Administratorga murojaat qiling.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+  });
+
+  it("kuryer pochta QR'i 403 post_not_visible_to_courier — «Pochta hali filialga qabul qilinmagan», ma'lumotsiz", async () => {
+    fetchMock.mockRejectedValue(
+      scopeError(403, "post_not_visible_to_courier", "Bu pochta hali filialga qabul qilinmagan — kuryerga ko'rinmaydi"),
+    );
+    renderDetail("courier", { route: "/scan/POST-2493" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Pochta hali filialga qabul qilinmagan" })).toBeInTheDocument();
+    expect(screen.getByText("Filial menejeri qabul qilgach, pochta sizga ko'rinadi.")).toBeInTheDocument();
+    expect(screen.queryByText("Pochta topilmadi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+  });
+
+  it("sababsiz 403 ham — ma'lumotsiz, qayta urinishsiz (umumiy «ruxsat yo'q» sarlavhasi, backend matni izohda)", async () => {
+    fetchMock.mockRejectedValue(scopeError(403, null, "Ruxsat yo'q"));
+    renderDetail();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Bu ma'lumotni ko'rishga ruxsatingiz yo'q" })).toBeInTheDocument();
+    expect(screen.getByText("Ruxsat yo'q")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+  });
+
+  it("503 branch_scope_unavailable — «Filialingizni aniqlab bo'lmadi» + «Qayta urinish» (qayta so'raydi)", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockRejectedValue(
+      scopeError(503, "branch_scope_unavailable", "Filialingizni aniqlab bo'lmadi — birozdan so'ng qayta urinib ko'ring"),
+    );
+    renderDetail("manager", { route: "/scan/ORD-77031", user: { branch: { id: "3", type: "REGIONAL" } } });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Filialingizni aniqlab bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByText("Birozdan so'ng qayta urinib ko'ring.")).toBeInTheDocument();
+    fetchMock.mockResolvedValue({ type: "order", data: ORDER });
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await orderHeading()).toBeInTheDocument();
+  });
+
+  it("404 — avvalgidek «Buyurtma topilmadi» + «Qayta urinish»", async () => {
+    fetchMock.mockRejectedValue(scopeError(404, null, "Not found"));
+    renderDetail();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Buyurtma topilmadi" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.queryByTestId("scan-forbidden")).not.toBeInTheDocument();
+  });
+});

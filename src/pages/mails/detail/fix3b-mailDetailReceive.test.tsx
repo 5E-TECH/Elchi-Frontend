@@ -286,13 +286,13 @@ describe("MailDetailPage — eski pochta va server sukuti view=all (vaICniE4, ba
   it("eski pochta view'siz so'raladi (server sukuti), holatsiz havola — view=current", () => {
     withOrders([order("101", "waiting")], { id: POST_ID, status: "received", courier_id: "0", branch_id: "15" });
     const { unmount } = renderPage(managerState, `/mails/${POST_ID}?view=old`);
-    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: undefined });
-    expect(mocks.useMailDetail).not.toHaveBeenCalledWith(POST_ID, { view: "current" });
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: undefined, silentError: true });
+    expect(mocks.useMailDetail).not.toHaveBeenCalledWith(POST_ID, { view: "current", silentError: true });
     unmount();
 
     mocks.useMailDetail.mockClear();
     renderPage(managerState);
-    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current" });
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current", silentError: true });
   });
 
   it("sobiq a'zo (in_post_now: false) boshqa pochtada yo'lda bo'lsa ham qabul qayta ochilmaydi — «Faqat o'qish»", async () => {
@@ -410,7 +410,7 @@ describe("MailDetailPage — holatsiz havola qabul qilingan pochtaga: faqat qabu
     );
     renderPage(managerState);
 
-    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current" });
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current", silentError: true });
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
     expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
     // Yo'ldagi qatorgacha qisqartirilmaydi — pochtaning hamma joriy buyurtmasi ko'rinadi.
@@ -531,5 +531,53 @@ describe("MailDetailPage — o'tkazmani faqat manzil filial menejeri qabul qilad
     expect(screen.getByText("Bu pochtani faqat manzil filial menejeri qabul qila oladi.")).toBeInTheDocument();
     await waitFor(() => expect(refetch).toHaveBeenCalled());
     expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
+  });
+});
+
+describe("MailDetailPage — kuryer hali qabul qilinmagan o'tkazmani ochdi (anKpzwxk S8, backend #620)", () => {
+  it("403 post_not_visible_to_courier — kulrang holat, lokal matn, «Qayta urinish» yo'q, so'rov global xabarsiz", async () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {
+          statusCode: 403,
+          message: "Bu pochta hali filialga qabul qilinmagan — kuryerga ko'rinmaydi",
+          data: { reason: "post_not_visible_to_courier", details: { post_id: POST_ID } },
+        },
+      },
+    };
+    mocks.useMailDetail.mockImplementation(() => ({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error,
+      refetch: vi.fn(),
+    }));
+    renderPage(courierState);
+
+    expect(await screen.findByText("Pochta hali filialga qabul qilinmagan")).toBeInTheDocument();
+    expect(screen.getByText("Filial menejeri qabul qilgach, pochta sizga ko'rinadi.")).toBeInTheDocument();
+    expect(screen.getByText("Pochta hali filialga qabul qilinmagan").closest("[data-error-kind]")).toHaveAttribute(
+      "data-error-kind",
+      "forbidden",
+    );
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Ma'lumotlarni yuklab bo'lmadi")).not.toBeInTheDocument();
+    expect(mocks.useMailDetail).toHaveBeenCalledWith(POST_ID, { view: "current", silentError: true });
+  });
+
+  it("boshqa xato — avvalgidek «Ma'lumotlarni yuklab bo'lmadi» + «Qayta urinish»", async () => {
+    mocks.useMailDetail.mockImplementation(() => ({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { isAxiosError: true, response: { status: 500, data: { message: "boom" } } },
+      refetch: vi.fn(),
+    }));
+    renderPage(courierState);
+
+    expect(await screen.findByText("Ma'lumotlarni yuklab bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
   });
 });

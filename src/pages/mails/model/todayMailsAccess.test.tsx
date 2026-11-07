@@ -77,4 +77,12 @@ describe("useTodayMails — «Yangi pochtalar» faqat HQ xodimlariga", () => {
     expect(requestedUrls()).not.toContain("post/new");
     expect(requestedUrls()).toContain("post");
   });
+
+  it("kuryer — faqat o'z pochtalari (post/on-the-road), GET post va post/new so'ralmaydi (#620: o'tkazmalar yashirin)", async () => {
+    const { wrapper } = wrapperFor("courier", "REGIONAL");
+    const { result } = renderHook(() => useTodayMails(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    expect(requestedUrls()).toEqual(["post/on-the-road"]);
+  });
 });

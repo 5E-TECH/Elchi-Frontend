@@ -503,6 +503,48 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
     expect(checkbox("101")).toBeNull();
   });
 
+  it("menejer, skan-qabul 403 post_receive_manager_only (#621) — qator qaytadi, sabab lokal matn (backend matni emas)", async () => {
+    const rows = [order("101"), order("102")];
+    setup(() => rows, TRANSFER_POST);
+    mocks.receive.mockRejectedValue({
+      response: {
+        status: 403,
+        data: { statusCode: 403, message: "backend matni", data: { reason: "post_receive_manager_only", details: { post_id: POST_ID } } },
+      },
+    });
+    renderPage(manager());
+
+    scanRow(rows[0]);
+
+    expect(await screen.findByText("№101 qabul qilinmadi — qayta skanerlang")).toBeInTheDocument();
+    expect(
+      screen.getByText("Pochta qabul qilinmadi. Bu pochtani faqat manzil filial menejeri qabul qila oladi."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("backend matni")).toBeNull();
+    expect(checkbox("101")).toBeInTheDocument();
+  });
+
+  it("menejer, boshqa filial buyurtmasining QR'i (403 order_not_in_your_branch, #620) — lokal sarlavha, so'rovsiz", async () => {
+    setup(() => [order("101"), order("102")], TRANSFER_POST);
+    mocks.fetchScanDetail.mockRejectedValue({
+      response: {
+        status: 403,
+        data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } },
+      },
+    });
+    renderPage(manager());
+
+    await scanMissing("ORD-77031");
+
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("error", "Bu buyurtma sizning filialingizda emas"),
+    );
+    expect(await screen.findByText("Bu buyurtma sizning filialingizda emas")).toBeInTheDocument();
+    expect(screen.queryByText("QR topilmadi")).toBeNull();
+    expect(screen.queryByText("backend matni")).toBeNull();
+    expect(mocks.receive).not.toHaveBeenCalled();
+  });
+
   it("menejer, boshqa filialning o'tkazmasi (havola orqali) — faqat o'qish: tanlov yo'q, so'rovsiz (anKpzwxk)", () => {
     const rows = [order("101"), order("102")];
     setup(() => rows, TRANSFER_POST);

@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { BackendRejection } from "./backendReason";
+import { readBackendRejection, type BackendRejection } from "./backendReason";
 
 /**
  * FILIAL QAMROVI RAD SABABLARI (Elchi-Backend #620/#621, Trello anKpzwxk, PlIPwpQY).
@@ -30,6 +30,24 @@ const REASON_SET: ReadonlySet<string> = new Set(COVERAGE_REASONS);
 
 export const isCoverageReason = (value: unknown): value is CoverageReason =>
   typeof value === "string" && REASON_SET.has(value);
+
+/**
+ * QR / pochta ko'rish doirasi rad etgan sabablar (#620 «begona QR»): javobda ma'lumot YO'Q — buyurtma yoki pochta
+ * kartasi ochilmaydi. `branch_scope_unavailable` (503) — qayta urinish mumkin, qolganlari — yo'q.
+ */
+export const QR_SCOPE_REASONS = [
+  "order_not_in_your_branch",
+  "branch_not_assigned",
+  "post_not_visible_to_courier",
+  "branch_scope_unavailable",
+] as const satisfies readonly CoverageReason[];
+
+export type QrScopeReason = (typeof QR_SCOPE_REASONS)[number];
+
+const QR_SCOPE_SET: ReadonlySet<string> = new Set(QR_SCOPE_REASONS);
+
+export const isQrScopeReason = (value: unknown): value is QrScopeReason =>
+  typeof value === "string" && QR_SCOPE_SET.has(value);
 
 /**
  * Qayerda ko'rsatiladi: kuryerga biriktirish (`assign`), kuryer skaneri (`scan`), HQ → filial jo'natish
@@ -113,5 +131,45 @@ export const coverageRejectionText = (
     reason,
     title: t(`common:coverage.${reason}.title`),
     description: knownText(t, reason, rejection, context),
+  };
+};
+
+/** Bir qatorli matn (skaner xabari, ro'yxatdagi «Rad etildi» sababi): «Sarlavha. Izoh» yoki faqat sarlavha. */
+export const coverageTextLine = ({ title, description }: Pick<CoverageText, "title" | "description">): string =>
+  description ? `${title}. ${description}` : title;
+
+/**
+ * Xato tanilgan qamrov sababi bo'lsa — lokal bir qatorli matn ({@link coverageTextLine}), aks holda `null`
+ * (chaqiruvchi avvalgidek backend matnini yoki o'z zaxirasini ko'rsatadi). Skaner oqimlari uchun: signal matni,
+ * ro'yxatdagi «Rad etildi» sababi.
+ */
+export const coverageErrorLine = (t: TFunction, error: unknown, context: CoverageContext): string | null => {
+  const rejection = readBackendRejection(error);
+  if (!isCoverageReason(rejection.reason)) return null;
+  return coverageTextLine(coverageRejectionText(t, rejection, { context, fallbackTitle: "" }));
+};
+
+export type QrScopeText = CoverageText & {
+  reason: QrScopeReason;
+  /** 503 `branch_scope_unavailable` — vaqtinchalik, «Qayta urinish» mumkin; qolganlari — ruxsat (qayta so'rov foydasiz). */
+  retryable: boolean;
+  /** Bir qatorli matn (skaner signali). */
+  line: string;
+};
+
+/**
+ * Begona QR (#620, anKpzwxk): skan so'rovi (`GET orders/qr-code/:token`, `GET post/scan/:token`) rad javobi →
+ * lokal sarlavha va izoh. QR ko'rish doirasi sababi bo'lmasa — `null`. Javobda buyurtma / pochta ma'lumoti yo'q —
+ * chaqiruvchi hech qanday ma'lumot chizmaydi.
+ */
+export const readQrScopeText = (t: TFunction, error: unknown): QrScopeText | null => {
+  const rejection = readBackendRejection(error);
+  if (!isQrScopeReason(rejection.reason)) return null;
+  const text = coverageRejectionText(t, rejection, { context: "qr", fallbackTitle: "" });
+  return {
+    ...text,
+    reason: rejection.reason,
+    retryable: rejection.reason === "branch_scope_unavailable",
+    line: coverageTextLine(text),
   };
 };

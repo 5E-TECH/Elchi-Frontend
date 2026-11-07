@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { ListChecks, QrCode, RefreshCw, Truck } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useDispatchBasket, useDispatchBasketScope } from "../../features/dispatch-basket";
+import { readQrScopeText } from "../../shared/lib/coverageReasons";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
@@ -203,7 +204,10 @@ const DispatchPage = () => {
         blockScans(250);
         return true;
       } catch (error) {
-        const message = getBackendErrorMessage(error) ?? t("scanErrors.lookup");
+        // Begona QR (#620, anKpzwxk): lokal uz/ru/en matn («Bu buyurtma sizning filialingizda emas»), backend matni
+        // faqat noma'lum sabab uchun.
+        const message =
+          readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanErrors.lookup");
         setScanNotice({ tone: "danger", text: message });
         rejectScan(normalizedToken, normalizedToken, message);
         void playScanFeedback("error", message);
