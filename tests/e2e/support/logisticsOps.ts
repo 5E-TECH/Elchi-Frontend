@@ -91,9 +91,12 @@ export const mockLogisticsOpsApi = async (
   page: Page,
   approve: (body: unknown) => ApproveReply,
   list: unknown = RETURN_REQUESTS,
+  /** `POST post/return-requests/reject` javobi (berilmasa — yozuvchi so'rov `leaked` ga tushadi). */
+  reject?: (body: unknown) => ApproveReply,
 ) => {
   const leaked: string[] = [];
   const approveBodies: unknown[] = [];
+  const rejectBodies: unknown[] = [];
   let listCalls = 0;
   let approved = false;
   await page.context().route("**/*", async (route) => {
@@ -117,6 +120,14 @@ export const mockLogisticsOpsApi = async (
       if (result.status < 400) approved = true;
       return reply(route, result.body, result.status);
     }
+    if (reject && path === "post/return-requests/reject" && request.method() === "POST") {
+      const body = request.postDataJSON();
+      rejectBodies.push(body);
+      const result = reject(body);
+      // Rad etilgan so'rovlar ham ro'yxatdan chiqadi.
+      if (result.status < 400) approved = true;
+      return reply(route, result.body, result.status);
+    }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
@@ -131,7 +142,7 @@ export const mockLogisticsOpsApi = async (
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, approveBodies, listCalls: () => listCalls };
+  return { leaked, approveBodies, rejectBodies, listCalls: () => listCalls };
 };
 
 export const openLogisticsOps = async (page: Page) => {

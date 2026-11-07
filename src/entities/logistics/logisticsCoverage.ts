@@ -84,10 +84,16 @@ export const useLogisticsCoverage = () => {
       ...silentErrorMeta(options),
     });
 
+  // Rad etish — buyurtmalar kuryerda / filial pochtasida qoladi; tasdiqlashdagidek bo'laklab yozilishi mumkin, shu
+  // bois xato bo'lsa ham (onSettled) Ops ro'yxati, «Pochta → Qaytarish» va buyurtmalar yangilanadi.
   const rejectReturnRequest = useMutation({
-    mutationFn: (data: unknown) =>
+    mutationFn: (data: { order_ids: string[] }) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: [logiCov, "posts"] });
+      client.invalidateQueries({ queryKey: ["mails", "return"] });
+      client.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 
   // ── REGIONS ────────────────────────────────────────────────────────────────
