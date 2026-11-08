@@ -72,6 +72,7 @@
   "oldStatusFilterLabel": "Status",
   "oldCourierLabel": "Courier: {{name}}",
   "oldRegionFilterEmpty": "No old mails found for selected region",
+  "refusedRegionFilterEmpty": "No refused mails found for the selected region",
   "oldBatchFilterLabel": "Batch",
   "oldBatchOptionPrefix": "Batch",
   "oldExportTitle": "Old mails report",
