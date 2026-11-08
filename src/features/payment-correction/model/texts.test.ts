@@ -378,7 +378,11 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
       body: "Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan.",
       changeWindow: null,
     });
-    const notCorrectable = (reason: "reversal_row" | "cashbox_deleted" | "unsupported_type", kind?: string) =>
+    const notCorrectable = (
+      reason: "reversal_row" | "cashbox_deleted" | "unsupported_type",
+      kind?: "courier_payment" | "market_payment",
+      options: { method?: "cash" | "click" | "click_to_market"; receiver?: "main" | "branch" } = {},
+    ) =>
       texts.lock({
         allowed: false,
         code: "NOT_CORRECTABLE",
@@ -387,12 +391,27 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
         window_days: 30,
         root_history_id: null,
         transfer: kind
-          ? { kind: kind as "market_payment", payment_method: "cash", amount: 1, receiver: { cashbox_type: "main", branch_id: null, name: null }, courier: null, market: null }
+          ? {
+              kind,
+              payment_method: options.method ?? "cash",
+              amount: 1,
+              receiver:
+                options.receiver === "branch"
+                  ? { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" }
+                  : { cashbox_type: "main", branch_id: null, name: null },
+              courier: null,
+              market: null,
+            }
           : null,
       })?.body;
     expect(notCorrectable("reversal_row")).toBe("Teskari yozuvni qaytarib ham, tahrirlab ham bo'lmaydi.");
+    // Backend qaysi oyoq kassasi o'chirilganini aytmaydi — kassa faqat boshqasi bo'lishi mumkin bo'lmaganda nomlanadi.
     expect(notCorrectable("cashbox_deleted", "courier_payment")).toBe("Kuryer kassasi o'chirilgan.");
-    expect(notCorrectable("cashbox_deleted", "market_payment")).toBe("Market kassasi o'chirilgan.");
+    expect(notCorrectable("cashbox_deleted", "courier_payment", { method: "click" })).toBe("Kuryer kassasi o'chirilgan.");
+    expect(notCorrectable("cashbox_deleted", "market_payment", { method: "click" })).toBe("Market kassasi o'chirilgan.");
+    // Filial qabul qilgan (filial kassasi ham oyoq) va click_to_market (market kassasi ham oyoq) — umumiy.
+    expect(notCorrectable("cashbox_deleted", "courier_payment", { receiver: "branch" })).toBe("Kassa o'chirilgan.");
+    expect(notCorrectable("cashbox_deleted", "courier_payment", { method: "click_to_market" })).toBe("Kassa o'chirilgan.");
     expect(notCorrectable("cashbox_deleted")).toBe("Kassa o'chirilgan.");
     expect(notCorrectable("unsupported_type")).toBe("To'lovning kassalardagi yozuvlari to'liq emas.");
     expect(texts.lock({ allowed: false, code: "ALREADY_CORRECTED", deadline: null, window_days: 30, root_history_id: null })).toBeNull();

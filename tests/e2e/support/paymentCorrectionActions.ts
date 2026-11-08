@@ -220,3 +220,31 @@ export const mockCorrectionShift = async (page: Page) => {
   });
   return state;
 };
+
+/**
+ * `GET finance/**` ustidan boshqaruv (sessiya ishlovchisidan keyin ro'yxatdan o'tadi, boshqa so'rovlar — `fallback`):
+ *  - `down = true` — server javob bermaydi (brauzer «onlayn», so'rov javobsiz: «Wi-Fi bor, server yo'q»);
+ *  - `override[path]` — yo'l javobini almashtirish (masalan POST hukmidan keyin tafsilot `correctable` i qulfga o'tadi).
+ */
+export const controlFinanceGets = async (page: Page) => {
+  const control = { down: false, override: {} as Record<string, unknown> };
+  await page.context().route(/\/finance\//, async (route) => {
+    const request = route.request();
+    if (request.method() !== "GET") return route.fallback();
+    if (control.down) return route.abort("failed");
+    const path = new URL(request.url()).pathname.replace(/^\//, "");
+    if (!(path in control.override)) return route.fallback();
+    const origin = (await request.headerValue("origin")) ?? "http://127.0.0.1:4173";
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "*",
+      },
+      body: JSON.stringify({ statusCode: 200, message: "ok", data: control.override[path] }),
+    });
+  });
+  return control;
+};

@@ -1,9 +1,15 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { refreshCashboxQueries } from "../../../entities/payments";
+import { getNetworkDownKind, NETWORK_RESTORED_EVENT } from "../../../auth/networkError";
+import { financeHistory, refreshCashboxQueries } from "../../../entities/payments";
 import { useIdempotencyKeys } from "../../../entities/warehouse";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { api } from "../../../shared/api/api";
-import { correctionErrorNeedsRefresh, correctionErrorResetsKeys, readCorrectionError } from "../model/errors";
+import {
+  correctionErrorNeedsRefresh,
+  correctionErrorRefreshesDetail,
+  correctionErrorResetsKeys,
+  readCorrectionError,
+} from "../model/errors";
 import { normalizeCorrectionReason } from "../model/validation";
 
 /**
@@ -25,6 +31,12 @@ import { normalizeCorrectionReason } from "../model/validation";
  * Yangilash (`refreshCashboxQueries` — kassa, tarix ro'yxatlari va ochiq tafsilot `["finance-history", id]`):
  * muvaffaqiyatda (filial qabul qilgan to'lovda superadmin realtime hodisa olmaydi), natija noma'lum xatoda (504 da
  * bajarilgan bo'lishi mumkin), `ALREADY_CORRECTED` va `NOT_FOUND` da. Kutilmaydi — tasdiq tugmasi darhol bo'shaydi.
+ * Javob umuman kelmagan bo'lsa (aloqa uzilgan deb belgilangan — `silentNetworkError` ham belgilaydi) yangilash aloqa
+ * tiklangach (`elchi:network-restored` — uzilishdan keyingi birinchi javob): «Wi-Fi bor, server yo'q» holatida
+ * darhol so'ralsa yangilash GET'lari ham yiqilib global «Internet aloqasi yo'q» xabarini ochardi — matn tasdiq
+ * oynasidagi bilan ikki marta. 502/503/504 da aloqa bor — darhol. Qayta urinish muvaffaqiyatli bo'lsa o'zi yangilaydi.
+ * Doimiy hukmda (`COURIER_MOVED`, `WINDOW_EXPIRED`, `LEGACY_UNLINKED`, sababli `NOT_CORRECTABLE`) — faqat ochiq
+ * tafsilot (`correctable` qulfga o'tadi).
  */
 
 export type ReversePaymentInput = { historyId: string; reason: string };
@@ -76,10 +88,34 @@ export const paymentCorrectionFingerprint = (
     input.newAmount === null || input.newAmount === undefined ? "" : String(Math.round(input.newAmount * 100) / 100),
   ].join("|");
 
-const handleCorrectionError = (client: QueryClient, reset: () => void, error: unknown) => {
+/** Aloqa tiklanishini kutayotgan mijozlar — bir nechta javobsiz urinish bitta yangilash beradi. */
+const waitingForNetwork = new WeakSet<QueryClient>();
+
+const refreshWhenNetworkRestored = (client: QueryClient) => {
+  if (typeof window === "undefined" || waitingForNetwork.has(client)) return;
+  waitingForNetwork.add(client);
+  window.addEventListener(
+    NETWORK_RESTORED_EVENT,
+    () => {
+      waitingForNetwork.delete(client);
+      void refreshCashboxQueries(client);
+    },
+    { once: true },
+  );
+};
+
+const handleCorrectionError = (client: QueryClient, reset: () => void, error: unknown, historyId: string) => {
   const info = readCorrectionError(error);
   if (correctionErrorResetsKeys(info)) reset();
-  if (correctionErrorNeedsRefresh(info)) void refreshCashboxQueries(client);
+  if (correctionErrorNeedsRefresh(info)) {
+    // Javobsiz va aloqa uzilgan: yangilash GET'lari ham yiqilardi (global xabar) — aloqa tiklangach.
+    if (info.status === undefined && getNetworkDownKind() !== null) refreshWhenNetworkRestored(client);
+    else void refreshCashboxQueries(client);
+    return;
+  }
+  if (correctionErrorRefreshesDetail(info)) {
+    void client.invalidateQueries({ queryKey: [financeHistory, historyId], refetchType: "active" });
+  }
 };
 
 /** «Qaytarish»: `mutateAsync({ historyId, reason })` — tasdiq oynasining `onConfirm` i. */
@@ -100,7 +136,7 @@ export const useReversePayment = () => {
       keys.reset();
       void refreshCashboxQueries(client);
     },
-    onError: (error) => handleCorrectionError(client, keys.reset, error),
+    onError: (error, { historyId }) => handleCorrectionError(client, keys.reset, error, historyId),
   });
 };
 
@@ -124,6 +160,6 @@ export const useCorrectPaymentAmount = () => {
       keys.reset();
       void refreshCashboxQueries(client);
     },
-    onError: (error) => handleCorrectionError(client, keys.reset, error),
+    onError: (error, { historyId }) => handleCorrectionError(client, keys.reset, error, historyId),
   });
 };

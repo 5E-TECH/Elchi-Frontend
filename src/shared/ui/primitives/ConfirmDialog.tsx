@@ -105,6 +105,13 @@ export type ConfirmErrorView = {
   blockConfirm?: boolean;
 };
 
+/**
+ * `errorView` ga beriladigan boshqaruv: `dismiss` — SHU xato qutisini olib tashlaydi (holat o'zgardi, masalan
+ * «Smenani ochish» dan keyin smena ochildi — eski «Smena ochilmagan» qolmasin) va fokusni xavfsiz tugmaga
+ * («Orqaga») qaytaradi (qutidagi amal tugmasi DOM'dan ketadi). Keyingi xato chiqqan bo'lsa — tegmaydi.
+ */
+export type ConfirmErrorControls = { dismiss: () => void };
+
 /** Tasdiqlash oynasining mazmuni — `ConfirmDialog` va `useConfirm()` uchun umumiy. */
 export type ConfirmContent = {
   title: ReactNode;
@@ -154,9 +161,10 @@ export type ConfirmContent = {
   errorMessage?: (error: unknown) => ReactNode;
   /**
    * Xato kodi bo'yicha ko'rinish (mazmun, ikonka, `blockConfirm`). `null` / `undefined` qaytarsa —
-   * `errorMessage` yoki sukut matni. `errorMessage` dan ustun.
+   * `errorMessage` yoki sukut matni. `errorMessage` dan ustun. `controls.dismiss` — qutini keyinroq olib tashlash
+   * (`ConfirmErrorControls`).
    */
-  errorView?: (error: unknown) => ConfirmErrorView | null | undefined;
+  errorView?: (error: unknown, controls: ConfirmErrorControls) => ConfirmErrorView | null | undefined;
   /**
    * Xato chiqqanda ixcham (telefon, < 768): oqibatlar ro'yxati yashirinadi (`max-md:hidden`), xato qutisi
    * ko'rinadigan joyga suriladi (`scrollIntoView`, `block: "nearest"`) — xato ekran ostida qolmasin
@@ -292,8 +300,9 @@ const resolveConfirmError = (
   caught: unknown,
   content: Pick<ConfirmContent, "errorView" | "errorMessage">,
   fallback: string,
+  controls: ConfirmErrorControls,
 ): ConfirmErrorView => {
-  const view = content.errorView?.(caught);
+  const view = content.errorView?.(caught, controls);
   if (view) return view;
   return {
     content: content.errorMessage ? content.errorMessage(caught) : (getActionErrorMessage(caught, fallback) ?? fallback),
@@ -491,19 +500,28 @@ export const ConfirmDialog = ({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const alertRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<ConfirmErrorView | null>(null);
+  const [caughtError, setError] = useState<ConfirmErrorView | null>(null);
+  // `errorView` ning `dismiss` i olib tashlagan quti (faqat o'sha — keyingi xato ko'rinadi).
+  const [dismissed, setDismissed] = useState<ConfirmErrorView | null>(null);
+  const wasDismissed = caughtError !== null && caughtError === dismissed;
+  const error = wasDismissed ? null : caughtError;
   // Qayta ochilganda eski xato ko'rinmasin (holat render paytida tozalanadi — effektsiz).
   const [wasOpen, setWasOpen] = useState(open);
   if (wasOpen !== open) {
     setWasOpen(open);
     if (open) {
       setError(null);
+      setDismissed(null);
       setPending(false);
     }
   }
 
   const busy = loading || pending;
-  const toView = (caught: unknown) => resolveConfirmError(caught, { errorView, errorMessage }, t("dialog.error"));
+  const toView = (caught: unknown) => {
+    const controls: ConfirmErrorControls = { dismiss: () => setDismissed(view) };
+    const view = resolveConfirmError(caught, { errorView, errorMessage }, t("dialog.error"), controls);
+    return view;
+  };
 
   const handleConfirm = () => {
     if (busy || error?.blockConfirm) return;
@@ -552,6 +570,12 @@ export const ConfirmDialog = ({
   useEffect(() => {
     if (blocked) cancelRef.current?.focus();
   }, [blocked]);
+
+  // `dismiss`: qutidagi amal tugmasi (fokus o'sha yerda yoki uning ustidagi oynadan qaytadi) DOM'dan ketdi — «Orqaga» ga.
+  // Effekt boshqa oynalar fokus qamog'i tozalangandan keyin ishlaydi (React avval barcha tozalashlarni bajaradi).
+  useEffect(() => {
+    if (wasDismissed) cancelRef.current?.focus();
+  }, [wasDismissed]);
 
   // `compactOnError`: xato qutisi ko'rinadigan joyga (telefonda oqibatlar yashiringach ham pastda qolishi mumkin).
   const compactOnError = Boolean(content.compactOnError);
@@ -610,7 +634,9 @@ export const ConfirmDialogPanel = ({
 }: ConfirmDialogPanelProps) => {
   const detailsId = useId();
   const errorId = useId();
-  const shownError: ConfirmErrorView | null = error ? (content.errorView?.(error) ?? { content: error }) : null;
+  const shownError: ConfirmErrorView | null = error
+    ? (content.errorView?.(error, { dismiss: () => {} }) ?? { content: error })
+    : null;
   const parts = useConfirmParts(content, {
     pending: loading,
     error: shownError,

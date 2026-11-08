@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-payments-history-correct-amount-dialog, superadmin-payments-history-correct-amount-confirm, superadmin-payments-history-correct-amount-errors
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { Pencil } from "lucide-react";
 import { notify } from "../../../shared/lib/notify";
 import { Badge, Button, Dialog, Field, TextInput, TransferSummary, useConfirm } from "../../../shared/ui/primitives";
 import { useCorrectPaymentAmount } from "../api/usePaymentCorrectionMutations";
-import { usePaymentCorrectionErrors, type CorrectionErrorModel } from "../model/errorView";
+import { usePaymentCorrectionErrors, type CorrectionErrorModel, type CorrectionOpenShift } from "../model/errorView";
 import type { CorrectionTarget } from "../model/target";
 import { usePaymentCorrectionTexts } from "../model/texts";
 import {
@@ -35,11 +35,16 @@ export type CorrectAmountDialogProps = {
   onCancel: () => void;
   /** Oqim tugadi (muvaffaqiyat yoki `ALREADY_CORRECTED` dan keyin «Orqaga») — hamma oyna yopiladi. */
   onDone: () => void;
-  /** «Smenani ochish» (`SHIFT_REQUIRED`). */
-  onOpenShift?: () => void;
+  /** «Smenani ochish» (`SHIFT_REQUIRED`); smena ochilgach `onOpened` — tasdiqdagi xato qutisi olib tashlanadi. */
+  onOpenShift?: CorrectionOpenShift;
+  /**
+   * Oqim tugagach fokus qayeriga (oynani ochgan ro'yxat qatori): forma tafsilot o'rnida ochiladi, uning «avvalgi
+   * fokusi» — yopilgan tafsilotdagi tugma. Berilmasa — `Dialog` sukuti.
+   */
+  returnFocus?: RefObject<HTMLElement | null>;
 };
 
-export const CorrectAmountDialog = ({ open, target, onCancel, onDone, onOpenShift }: CorrectAmountDialogProps) => {
+export const CorrectAmountDialog = ({ open, target, onCancel, onDone, onOpenShift, returnFocus }: CorrectAmountDialogProps) => {
   const texts = usePaymentCorrectionTexts();
   const errors = usePaymentCorrectionErrors();
   const confirm = useConfirm();
@@ -112,7 +117,7 @@ export const CorrectAmountDialog = ({ open, target, onCancel, onDone, onOpenShif
         confirmIcon: Pencil,
         loadingLabel: copy.loadingLabel,
         compactOnError: true,
-        errorView: (error) => errors.view(error, { ...context, onOpenShift }),
+        errorView: (error, controls) => errors.view(error, { ...context, onOpenShift }, controls),
         onConfirm: async () => {
           attempt.error = null;
           try {
@@ -141,6 +146,7 @@ export const CorrectAmountDialog = ({ open, target, onCancel, onDone, onOpenShif
     <Dialog
       open={open}
       onClose={onCancel}
+      returnFocus={returnFocus}
       size="md"
       icon={Pencil}
       title={view.title}

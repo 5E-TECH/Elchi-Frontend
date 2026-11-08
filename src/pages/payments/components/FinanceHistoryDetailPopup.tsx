@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected, superadmin-payments-history-detail-dialog-correctable, superadmin-payments-history-detail-dialog-locked
-import { memo, useCallback, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -173,14 +173,37 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   }
   const current = relatedRow ?? row ?? shownRow;
   const open = row != null;
-  // «Smenani ochish» (`SHIFT_REQUIRED`): oyna faqat so'ralganda o'rnatiladi.
+  // «Smenani ochish» (`SHIFT_REQUIRED`): oyna faqat so'ralganda o'rnatiladi. Smena ochilgach tasdiqqa xabar beriladi
+  // (`onOpened` — eski «Smena ochilmagan» qutisi olib tashlanadi).
   const [shiftMounted, setShiftMounted] = useState(false);
   const [shiftOpen, setShiftOpen] = useState(false);
-  const openShift = useCallback(() => {
+  const shiftOpenedRef = useRef<(() => void) | null>(null);
+  const openShift = useCallback(({ onOpened }: { onOpened: () => void }) => {
+    shiftOpenedRef.current = onOpened;
     setShiftMounted(true);
     setShiftOpen(true);
   }, []);
-  const closeShift = useCallback(() => setShiftOpen(false), []);
+  const closeShift = useCallback(() => {
+    shiftOpenedRef.current = null;
+    setShiftOpen(false);
+  }, []);
+  const shiftOpened = useCallback(() => {
+    const notifyConfirm = shiftOpenedRef.current;
+    shiftOpenedRef.current = null;
+    setShiftOpen(false);
+    notifyConfirm?.();
+  }, []);
+
+  // Oynani ochgan element (ro'yxat qatori): tafsilot va forma bir-birining o'rnini egallaydi, shuning uchun har
+  // oynaning «avvalgi fokusi» — DOM'dan ketgan tugma. Oqim qanday tugamasin (muvaffaqiyat, ALREADY_CORRECTED dan
+  // keyin «Orqaga», «Bekor qilish» → «Yopish») fokus shu elementga qaytadi. Layout effekt — oyna fokusni panelga
+  // ko'chirishidan (passiv effekt) oldin.
+  const openerRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (!open) return;
+    const active = document.activeElement;
+    openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  }, [open]);
 
   const rowId = current?.id ?? null;
   const canFetch = isFetchableId(rowId);
@@ -503,6 +526,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
         }
         closeLabel={t("v2HistoryDetail.close")}
         initialFocus="panel"
+        returnFocus={openerRef}
         footer={
           footerState.kind === "none" ? (
             <Button variant="secondary" onClick={onClose}>
@@ -583,6 +607,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
             onCancel={() => setMode(null)}
             onDone={onClose}
             onOpenShift={openShift}
+            returnFocus={openerRef}
           />
           <CorrectAmountDialog
             open={open && mode === "edit"}
@@ -590,10 +615,11 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
             onCancel={() => setMode(null)}
             onDone={onClose}
             onOpenShift={openShift}
+            returnFocus={openerRef}
           />
         </>
       ) : null}
-      {shiftMounted ? <CorrectionShiftFlow open={shiftOpen} onClose={closeShift} /> : null}
+      {shiftMounted ? <CorrectionShiftFlow open={shiftOpen} onClose={closeShift} onOpened={shiftOpened} /> : null}
     </>
   );
 });

@@ -11,7 +11,11 @@ import type { PaymentRow } from "./patmentHistoryTable";
  * va tuzatish oqimi oynada: faqat superadmin (admin — tasodifiy `correctable` bo'lsa ham tugma yo'q), har `correctable`
  * holati (ruxsat · zanjir · qulf turlari · ALREADY_CORRECTED · `null` · yuklanish), telefon tartibi, amal tanlansa
  * tafsilot yashirinadi, «Bekor qilish» — qaytadi, muvaffaqiyat va ALREADY_CORRECTED dan keyin — hamma oyna yopiladi,
- * «Smenani ochish» — smena oynasi tasdiq ustida.
+ * «Smenani ochish» — smena oynasi tasdiq ustida, ochilgach eski xato qutisi yo'q; doimiy hukmdan (COURIER_MOVED) keyin
+ * tafsilot qayta o'qiladi (qulf); oqim tugagach fokus oynani ochgan elementga qaytadi.
+ *
+ * Tafsilot so'rovi haqiqiy `useQuery` (`["finance-history", id]`, boshlang'ich ma'lumot `state.byId` dan — sinxron):
+ * mutatsiya hook'ining keshni eskirtirishi tafsilotni qayta o'qiydi.
  */
 
 const state = vi.hoisted(() => ({
@@ -29,13 +33,23 @@ vi.mock("../../../shared/api/api", () => ({
 
 vi.mock("../../../entities/payments", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../entities/payments")>();
+  const { useQuery } = await import("@tanstack/react-query");
+  const read = (id: string | null) => (id && state.byId[id] ? { data: state.byId[id] } : undefined);
   return {
     ...actual,
     useCashBox: () => ({
-      useGetFinanceHistoryById: (id: string | null) =>
-        state.loading
+      useGetFinanceHistoryById: (id: string | null, enabled = true) => {
+        const query = useQuery({
+          queryKey: [actual.financeHistory, id],
+          queryFn: async () => read(id) ?? null,
+          initialData: () => read(id),
+          enabled: enabled && !!id && !state.loading,
+          staleTime: 30_000,
+        });
+        return state.loading
           ? { data: undefined, isLoading: true, isError: false, refetch: vi.fn() }
-          : { data: id && state.byId[id] ? { data: state.byId[id] } : undefined, isLoading: false, isError: false, refetch: vi.fn() },
+          : { data: query.data ?? undefined, isLoading: false, isError: false, refetch: query.refetch };
+      },
       useGetCurrentShift: () => ({ data: { data: { shift: null, required: true } }, isSuccess: true, isError: false, refetch: vi.fn() }),
       useGetCashBoxMain: () => ({ data: undefined, isSuccess: false }),
       openShift: { mutateAsync: state.openShift, isPending: false },
@@ -301,5 +315,122 @@ describe("FinanceHistoryDetailPopup — tuzatish oqimi", () => {
     await waitFor(() => expect(state.openShift).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Smenani ochish" })).not.toBeInTheDocument());
     expect(screen.getByRole("alertdialog", { name: "To'lovni qaytarishni tasdiqlang" })).toBeInTheDocument();
+    // Smena ochildi — eski «Smena ochilmagan» qutisi va uning «Smenani ochish» havolasi qolmaydi (xabar bilan zid
+    // bo'lmasin); fokus «Orqaga» da, tasdiq tugmasi faol.
+    expect(await screen.findByText("Smena ochildi")).toBeInTheDocument();
+    expect(within(confirm).queryByRole("alert")).not.toBeInTheDocument();
+    expect(confirm).not.toHaveTextContent("Smena ochilmagan");
+    expect(within(confirm).queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
+    await waitFor(() => expect(within(confirm).getByRole("button", { name: "Orqaga" })).toHaveFocus());
+    expect(within(confirm).getByRole("button", { name: "Qaytarish" })).toBeEnabled();
+
+    // Qayta bosish — o'sha kalit bilan; yangi xato yana ko'rinadi (eski `dismiss` unga tegmaydi).
+    state.post.mockRejectedValueOnce(http(409, { code: "CARD_ARCHIVED" }));
+    await user.click(within(confirm).getByRole("button", { name: "Qaytarish" }));
+    expect(await within(confirm).findByRole("alert")).toHaveTextContent("Karta arxivda");
+    const keys = state.post.mock.calls.map(([, , config]) => (config as { headers: Record<string, string> }).headers["Idempotency-Key"]);
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
+  it("COURIER_MOVED (POST): tafsilot qayta o'qiladi — «Orqaga» → «Bekor qilish» dan keyin qulf izohi va faqat «Yopish»", async () => {
+    withDetail(allowed);
+    // Tafsilotdagi `allowed: true` eskirgan (kuryer keyin o'tgan) — backend endi `COURIER_MOVED` beradi.
+    state.post.mockImplementationOnce(async () => {
+      withDetail({ allowed: false, code: "COURIER_MOVED", deadline: DEADLINE, window_days: 30, root_history_id: "4512", transfer });
+      throw http(409, { code: "COURIER_MOVED" });
+    });
+    const { user } = open();
+    await user.click(within(footerOf(detail())).getByRole("button", { name: "Qaytarish" }));
+    const form = await screen.findByRole("dialog", { name: "To'lovni qaytarish" });
+    await user.type(within(form).getByRole("textbox", { name: /^Sabab/ }), "Boshqa kuryer tanlab yuborilgan");
+    await user.click(within(form).getByRole("button", { name: "Davom etish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni qaytarishni tasdiqlang" });
+    await user.click(within(confirm).getByRole("button", { name: "Qaytarish" }));
+    expect(await within(confirm).findByRole("alert")).toHaveTextContent("Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan.");
+    await user.click(within(confirm).getByRole("button", { name: "Orqaga" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    await user.click(within(screen.getByRole("dialog", { name: "To'lovni qaytarish" })).getByRole("button", { name: "Bekor qilish" }));
+
+    const footer = footerOf(await screen.findByRole("dialog", { name: "Kirim operatsiyasi" }));
+    await waitFor(() =>
+      expect(within(footer).getByRole("note")).toHaveTextContent("Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan."),
+    );
+    expect(buttonNames(footer)).toEqual(["Yopish"]);
+    expect(footer).not.toHaveTextContent("Qaytarish yoki tahrirlash mumkin");
+  });
+});
+
+describe("FinanceHistoryDetailPopup — fokus oqim tugagach oynani ochgan elementga qaytadi", () => {
+  const OpenerHarness = ({ onClosed }: { onClosed: () => void }) => {
+    const [current, setCurrent] = useState<PaymentRow | null>(null);
+    return (
+      <>
+        <button type="button" onClick={() => setCurrent(row)}>
+          Yozuvni ochish
+        </button>
+        <FinanceHistoryDetailPopup
+          row={current}
+          onClose={() => {
+            onClosed();
+            setCurrent(null);
+          }}
+        />
+      </>
+    );
+  };
+
+  const openFromRow = async () => {
+    const onClosed = vi.fn();
+    renderWithProviders(<OpenerHarness onClosed={onClosed} />, {
+      preloadedState: { role: { id: "1", role: "superadmin", region: null, name: "superadmin" } } as never,
+    });
+    const user = userEvent.setup();
+    const opener = screen.getByRole("button", { name: "Yozuvni ochish" });
+    await user.click(opener);
+    await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    return { user, opener, onClosed };
+  };
+
+  const startReverse = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(within(footerOf(detail())).getByRole("button", { name: "Qaytarish" }));
+    const form = await screen.findByRole("dialog", { name: "To'lovni qaytarish" });
+    await user.type(within(form).getByRole("textbox", { name: /^Sabab/ }), "Boshqa kuryer tanlab yuborilgan");
+    await user.click(within(form).getByRole("button", { name: "Davom etish" }));
+    return screen.findByRole("alertdialog", { name: "To'lovni qaytarishni tasdiqlang" });
+  };
+
+  it("muvaffaqiyat", async () => {
+    withDetail(allowed);
+    state.post.mockResolvedValueOnce({ data: { data: { correction: { id: "12", action: "reverse" }, idempotent: false } } });
+    const { user, opener, onClosed } = await openFromRow();
+    const confirm = await startReverse(user);
+    await user.click(within(confirm).getByRole("button", { name: "Qaytarish" }));
+    await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
+
+  it("ALREADY_CORRECTED → «Orqaga»", async () => {
+    withDetail(allowed);
+    state.post.mockRejectedValueOnce(http(409, { code: "ALREADY_CORRECTED" }));
+    const { user, opener } = await openFromRow();
+    const confirm = await startReverse(user);
+    await user.click(within(confirm).getByRole("button", { name: "Qaytarish" }));
+    await within(confirm).findByText("To'lov allaqachon tuzatilgan. Ro'yxat yangilandi.");
+    await user.click(within(confirm).getByRole("button", { name: "Orqaga" }));
+    await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
+
+  it("«Qaytarish» → «Bekor qilish» → «Yopish»", async () => {
+    withDetail(allowed);
+    const { user, opener } = await openFromRow();
+    await user.click(within(footerOf(detail())).getByRole("button", { name: "Qaytarish" }));
+    const form = await screen.findByRole("dialog", { name: "To'lovni qaytarish" });
+    await user.click(within(form).getByRole("button", { name: "Bekor qilish" }));
+    await user.click(within(footerOf(await screen.findByRole("dialog", { name: "Kirim operatsiyasi" }))).getByRole("button", { name: "Yopish" }));
+    await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+    await waitFor(() => expect(opener).toHaveFocus());
   });
 });

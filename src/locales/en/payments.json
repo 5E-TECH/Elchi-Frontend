@@ -1770,6 +1770,7 @@
         "courierCashboxDeleted": "The courier cashbox has been deleted.",
         "marketCashboxDeleted": "The market cashbox has been deleted.",
         "cashboxDeleted": "The cashbox has been deleted.",
+        "cashboxOrCardDeleted": "A cashbox or card used in this payment has been deleted.",
         "unsupported": "The payment's cashbox entries are incomplete.",
         "amountTitle": "The amount can't be corrected",
         "amountBody": "The courier can't hand over this amount now — reverse the payment in full."

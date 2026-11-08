@@ -4,10 +4,10 @@ import type { TFunction } from "i18next";
 import { CircleX, Info, WifiOff, type LucideIcon } from "lucide-react";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, resolveMoneyLanguage, type MoneyLanguage } from "../../../shared/lib/formatMoney";
-import { Button, type ConfirmErrorView } from "../../../shared/ui/primitives";
+import { Button, type ConfirmErrorControls, type ConfirmErrorView } from "../../../shared/ui/primitives";
 import { readCorrectionError, type CorrectionError, type PaymentCorrectionErrorCode } from "./errors";
-import type { CorrectionShape } from "./target";
-import { nowrapText } from "./texts";
+import { deletedCashboxSubject, type CorrectionShape } from "./target";
+import { cashboxDeletedText, nowrapText } from "./texts";
 
 /**
  * T6 N2 — xato kodi → tasdiq oynasidagi xato qutisi (maketlar `superadmin-payments-history-reverse-errors`,
@@ -47,6 +47,12 @@ export type CorrectionErrorModel = {
 };
 
 export type CorrectionErrorContext = { action: CorrectionAction; shape: CorrectionShape };
+
+/**
+ * «Smenani ochish» (`SHIFT_REQUIRED`): sahifa smena oynasini ochadi va smena ochilgach `onOpened` ni chaqiradi —
+ * tasdiqdagi «Smena ochilmagan» qutisi olib tashlanadi (holat endi boshqa; «Smena ochildi» xabari bilan zid qolmasin).
+ */
+export type CorrectionOpenShift = (handlers: { onOpened: () => void }) => void;
 
 type Ctx = { t: TFunction; language: MoneyLanguage };
 
@@ -138,11 +144,8 @@ export const describeCorrectionError = (
       info.reason === "reversal_row"
         ? t("paymentCorrection.errors.notCorrectable.reversalRow")
         : info.reason === "cashbox_deleted"
-          ? shape.kind === "market"
-            ? t("paymentCorrection.errors.notCorrectable.marketCashboxDeleted")
-            : shape.kind
-              ? t("paymentCorrection.errors.notCorrectable.courierCashboxDeleted")
-              : t("paymentCorrection.errors.notCorrectable.cashboxDeleted")
+          ? // Backend qaysi kassa (yoki CLICK kartasi) ekanini aytmaydi — aniq bo'lsagina nomlanadi.
+            cashboxDeletedText(t, deletedCashboxSubject(shape, "post"))
           : t("paymentCorrection.errors.notCorrectable.unsupported"),
   });
 
@@ -298,7 +301,8 @@ export const toConfirmErrorView = (
 
 /**
  * Joriy til bilan: `describe` — model (forma holati: `rejection`, `closesFlow`), `view` — tasdiq oynasi uchun
- * (`errorView`). `onOpenShift` — sahifa `OpenShiftFlow` ni ochadi (feature sahifani import qilmaydi).
+ * (`errorView`, ikkinchi argument — uning `controls` i). `onOpenShift` — sahifa `OpenShiftFlow` ni ochadi (feature
+ * sahifani import qilmaydi); smena ochilgach xato qutisi olib tashlanadi (`controls.dismiss`).
  */
 export const usePaymentCorrectionErrors = () => {
   const { t, i18n } = useTranslation("payments");
@@ -306,11 +310,17 @@ export const usePaymentCorrectionErrors = () => {
   return useMemo(
     () => ({
       describe: (error: unknown, context: CorrectionErrorContext) => describeCorrectionError(error, context, t, language),
-      view: (error: unknown, context: CorrectionErrorContext & { onOpenShift?: () => void }): ConfirmErrorView =>
-        toConfirmErrorView(describeCorrectionError(error, context, t, language), {
-          onOpenShift: context.onOpenShift,
+      view: (
+        error: unknown,
+        context: CorrectionErrorContext & { onOpenShift?: CorrectionOpenShift },
+        controls?: ConfirmErrorControls,
+      ): ConfirmErrorView => {
+        const { onOpenShift } = context;
+        return toConfirmErrorView(describeCorrectionError(error, context, t, language), {
+          onOpenShift: onOpenShift ? () => onOpenShift({ onOpened: () => controls?.dismiss() }) : undefined,
           openShiftLabel: t("paymentCorrection.errors.shiftRequired.action"),
-        }),
+        });
+      },
     }),
     [t, language],
   );

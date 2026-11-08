@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Pencil, RotateCcw } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
 import { Button, useConfirm } from "../../../shared/ui/primitives";
 import { renderWithProviders } from "../../../test/test-utils";
-import { describeCorrectionError, usePaymentCorrectionErrors, type CorrectionErrorContext } from "./errorView";
+import {
+  describeCorrectionError,
+  usePaymentCorrectionErrors,
+  type CorrectionErrorContext,
+  type CorrectionOpenShift,
+} from "./errorView";
 import { buildCorrectionTarget, deriveCorrectionShape, type CorrectionShape } from "./target";
 
 /**
@@ -46,6 +51,30 @@ const market = shapeOf({
   amount: 2400000,
   receiver: { cashbox_type: "main", branch_id: null, name: null },
   courier: null,
+  market: { id: "77", name: "Baraka Shop" },
+});
+const marketCash = shapeOf({
+  kind: "market_payment",
+  payment_method: "cash",
+  amount: 2400000,
+  receiver: { cashbox_type: "main", branch_id: null, name: null },
+  courier: null,
+  market: { id: "77", name: "Baraka Shop" },
+});
+const courierClick = shapeOf({
+  kind: "courier_payment",
+  payment_method: "click",
+  amount: 1850000,
+  receiver: { cashbox_type: "main", branch_id: null, name: null },
+  courier: { id: "301", name: "Jasur Tursunov" },
+  market: null,
+});
+const clickToMarket = shapeOf({
+  kind: "courier_payment",
+  payment_method: "click_to_market",
+  amount: 1850000,
+  receiver: { cashbox_type: "main", branch_id: null, name: null },
+  courier: { id: "301", name: "Jasur Tursunov" },
   market: { id: "77", name: "Baraka Shop" },
 });
 const generic = shapeOf(null);
@@ -175,9 +204,17 @@ describe("describeCorrectionError — maket matnlari", () => {
       title: "Tuzatib bo'lmaydi",
       body: "Kuryer kassasi o'chirilgan.",
     });
-    expect(describeUz(http(409, { code: "NOT_CORRECTABLE", reason: "cashbox_deleted" }), reverse(market)).body).toBe(
-      "Market kassasi o'chirilgan.",
-    );
+    // Backend qaysi kassa (yoki CLICK kartasi) ekanini aytmaydi — kassa faqat boshqasi bo'lishi mumkin bo'lmaganda nomlanadi.
+    const deleted = (shape: CorrectionShape) =>
+      describeUz(http(409, { code: "NOT_CORRECTABLE", reason: "cashbox_deleted" }), reverse(shape)).body;
+    expect(deleted(marketCash)).toBe("Market kassasi o'chirilgan.");
+    // CLICK: karta yo'q yoki boshqa kassada ham `cashbox_deleted` (assertFunds).
+    expect(deleted(market)).toBe("To'lovdagi kassa yoki karta o'chirilgan.");
+    expect(deleted(courierClick)).toBe("To'lovdagi kassa yoki karta o'chirilgan.");
+    // Filial kassasi va click_to_market dagi market kassasi ham oyoq — umumiy.
+    expect(deleted(branchCourier)).toBe("Kassa o'chirilgan.");
+    expect(deleted(clickToMarket)).toBe("Kassa o'chirilgan.");
+    expect(deleted(generic)).toBe("Kassa o'chirilgan.");
     expect(describeUz(http(409, { code: "NOT_CORRECTABLE", reason: "reversal_row" }), reverse()).body).toBe(
       "Teskari yozuvni qaytarib ham, tahrirlab ham bo'lmaydi.",
     );
@@ -213,7 +250,15 @@ describe("describeCorrectionError — maket matnlari", () => {
 });
 
 /** Haqiqiy tasdiq oynasi orqali (`useConfirm` + `errorView`): quti, ikonka, tugma holati, «Smenani ochish». */
-const Flow = ({ error, context, onOpenShift }: { error: unknown; context: CorrectionErrorContext; onOpenShift: () => void }) => {
+const Flow = ({
+  error,
+  context,
+  onOpenShift,
+}: {
+  error: unknown;
+  context: CorrectionErrorContext;
+  onOpenShift: CorrectionOpenShift;
+}) => {
   const confirm = useConfirm();
   const errors = usePaymentCorrectionErrors();
   const [result, setResult] = useState<string>("");
@@ -230,7 +275,7 @@ const Flow = ({ error, context, onOpenShift }: { error: unknown; context: Correc
             cancelLabel: "Orqaga",
             confirmLabel: reverseAction ? "Qaytarish" : "Tahrirlash",
             compactOnError: true,
-            errorView: (caught) => errors.view(caught, { ...context, onOpenShift }),
+            errorView: (caught, controls) => errors.view(caught, { ...context, onOpenShift }, controls),
             onConfirm: () => Promise.reject(error),
           });
           setResult(ok ? "ok" : "back");
@@ -246,7 +291,7 @@ const Flow = ({ error, context, onOpenShift }: { error: unknown; context: Correc
 describe("usePaymentCorrectionErrors().view — tasdiq oynasida", () => {
   const open = async (error: unknown, context: CorrectionErrorContext) => {
     const user = userEvent.setup();
-    const onOpenShift = vi.fn();
+    const onOpenShift = vi.fn<CorrectionOpenShift>();
     renderWithProviders(<Flow error={error} context={context} onOpenShift={onOpenShift} />);
     await user.click(screen.getByRole("button", { name: "Ochish" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -266,6 +311,11 @@ describe("usePaymentCorrectionErrors().view — tasdiq oynasida", () => {
     expect(onOpenShift).toHaveBeenCalledTimes(1);
     expect(within(dialog).getByRole("button", { name: "Qaytarish" })).toBeEnabled();
     expect(within(dialog).getByRole("list")).toHaveClass("max-md:hidden");
+    // Sahifa smenani ochdi — «Smena ochilmagan» qutisi olib tashlanadi, oqibatlar yana ko'rinadi.
+    act(() => onOpenShift.mock.calls[0][0].onOpened());
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("list")).not.toHaveClass("max-md:hidden");
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Orqaga" })).toHaveFocus());
   });
 
   it("ALREADY_CORRECTED: neytral quti, tugma o'chiq va xatoga bog'langan; «Orqaga» — `false`", async () => {

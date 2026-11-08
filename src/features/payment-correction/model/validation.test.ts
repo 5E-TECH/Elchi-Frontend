@@ -31,6 +31,21 @@ describe("sabab (5–500, trim)", () => {
     expect(isValidCorrectionReason("abc")).toBe(false);
   });
 
+  it("quyi chegara gateway `@Length` (validator.js `isLength`) kabi: emoji bitta belgi, U+FE0E/U+FE0F sanalmaydi", () => {
+    const thumbs = "\u{1F44D}";
+    // 3 emoji = 6 UTF-16 birlik, lekin 3 belgi — gateway kodsiz 400 qaytarardi.
+    expect(`${thumbs}${thumbs}${thumbs}`.length).toBe(6);
+    expect(correctionReasonState(`${thumbs}${thumbs}${thumbs}`)).toBe("short");
+    expect(correctionReasonState(`ok ${thumbs}`)).toBe("short");
+    expect(correctionReasonState(`  ok ${thumbs}${thumbs}  `)).toBe("valid");
+    // «❤️» = U+2764 + U+FE0F — bitta belgi.
+    expect(correctionReasonState("❤️❤️❤️❤️")).toBe("short");
+    expect(correctionReasonState("❤️❤️❤️❤️❤️")).toBe("valid");
+    // Yuqori chegara — UTF-16 birliklarida (finance trim qilingan `.length` ni tekshiradi): 250 emoji = 500 birlik.
+    expect(correctionReasonState(thumbs.repeat(250))).toBe("valid");
+    expect(correctionReasonState(`${thumbs.repeat(250)}x`)).toBe("long");
+  });
+
   it("yuboriladigan sabab trim qilingan", () => {
     expect(normalizeCorrectionReason("  Kuryer pulni bermagan \n")).toBe("Kuryer pulni bermagan");
     expect(normalizeCorrectionReason(null)).toBe("");

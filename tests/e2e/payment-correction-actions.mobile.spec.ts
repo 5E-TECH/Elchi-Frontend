@@ -8,6 +8,9 @@ import { setupShellSession } from "./support/shellSession";
  * yashirinadi va xato qutisi ko'rinadi (`…-reverse-errors`, `…-correct-amount-errors`, telefon). Forma va tasdiq —
  * pastki varaqa (ekran eni, pastga yopishgan). Gorizontal skroll yo'q, tugmalar ≥ 44 px, maydon shrifti 16 px.
  */
+// Sana/vaqt matnlari Toshkent vaqtida — mashina zonasidan qat'i nazar (desktop spec bilan bir xil).
+test.use({ timezoneId: "Asia/Tashkent" });
+
 const noHorizontalScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
 /** Varaqa: ekran eni bo'ylab va pastki chetga yopishgan (siljish harakati tugagach o'lchanadi). */

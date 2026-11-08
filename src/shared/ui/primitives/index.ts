@@ -146,6 +146,7 @@ export type {
   ConfirmContent,
   ConfirmDialogPanelProps,
   ConfirmDialogProps,
+  ConfirmErrorControls,
   ConfirmErrorView,
   ConfirmParty,
   ConfirmRow,

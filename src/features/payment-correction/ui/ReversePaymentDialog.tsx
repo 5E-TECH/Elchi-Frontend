@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-payments-history-reverse-dialog, superadmin-payments-history-reverse-confirm, superadmin-payments-history-reverse-errors
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { Info, RotateCcw } from "lucide-react";
 import { notify } from "../../../shared/lib/notify";
 import { Badge, Button, Dialog, Field, TextInput, TransferSummary, useConfirm } from "../../../shared/ui/primitives";
 import { useReversePayment } from "../api/usePaymentCorrectionMutations";
-import { usePaymentCorrectionErrors, type CorrectionErrorModel } from "../model/errorView";
+import { usePaymentCorrectionErrors, type CorrectionErrorModel, type CorrectionOpenShift } from "../model/errorView";
 import type { CorrectionTarget } from "../model/target";
 import { usePaymentCorrectionTexts } from "../model/texts";
 
@@ -33,11 +33,19 @@ export type ReversePaymentDialogProps = {
   onCancel: () => void;
   /** Oqim tugadi (muvaffaqiyat yoki `ALREADY_CORRECTED` dan keyin «Orqaga») — hamma oyna yopiladi. */
   onDone: () => void;
-  /** «Smenani ochish» (`SHIFT_REQUIRED`) — sahifa smena oynasini ochadi; berilmasa havola chiqmaydi. */
-  onOpenShift?: () => void;
+  /**
+   * «Smenani ochish» (`SHIFT_REQUIRED`) — sahifa smena oynasini ochadi va smena ochilgach `onOpened` ni chaqiradi
+   * (tasdiqdagi xato qutisi olib tashlanadi); berilmasa havola chiqmaydi.
+   */
+  onOpenShift?: CorrectionOpenShift;
+  /**
+   * Oqim tugagach fokus qayeriga (oynani ochgan ro'yxat qatori): forma tafsilot o'rnida ochiladi, uning «avvalgi
+   * fokusi» — yopilgan tafsilotdagi tugma. Berilmasa — `Dialog` sukuti.
+   */
+  returnFocus?: RefObject<HTMLElement | null>;
 };
 
-export const ReversePaymentDialog = ({ open, target, onCancel, onDone, onOpenShift }: ReversePaymentDialogProps) => {
+export const ReversePaymentDialog = ({ open, target, onCancel, onDone, onOpenShift, returnFocus }: ReversePaymentDialogProps) => {
   const texts = usePaymentCorrectionTexts();
   const errors = usePaymentCorrectionErrors();
   const confirm = useConfirm();
@@ -92,7 +100,7 @@ export const ReversePaymentDialog = ({ open, target, onCancel, onDone, onOpenShi
         confirmIcon: RotateCcw,
         loadingLabel: copy.loadingLabel,
         compactOnError: true,
-        errorView: (error) => errors.view(error, { ...context, onOpenShift }),
+        errorView: (error, controls) => errors.view(error, { ...context, onOpenShift }, controls),
         onConfirm: async () => {
           attempt.error = null;
           try {
@@ -118,6 +126,7 @@ export const ReversePaymentDialog = ({ open, target, onCancel, onDone, onOpenShi
     <Dialog
       open={open}
       onClose={onCancel}
+      returnFocus={returnFocus}
       size="md"
       icon={RotateCcw}
       title={view.title}

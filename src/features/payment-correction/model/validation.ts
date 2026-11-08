@@ -3,7 +3,10 @@
  *
  * Sabab: gateway xom satrni `@Length(5,500)` bilan, finance esa **trim** dan keyin 5…500 ni tekshiradi
  * (`payment-correction.service.ts`). Shuning uchun FE trim qilingan uzunlikni tekshiradi va trim qilinganini yuboradi;
- * hisoblagich xom uzunlikni ko'rsatadi, maydonda `maxLength={500}`.
+ * hisoblagich xom uzunlikni ko'rsatadi, maydonda `maxLength={500}`. Ikki hisob farq qiladi: gateway (validator.js
+ * `isLength`) surrogat juftni (emoji) va ko'rinish selektorini (U+FE0E/U+FE0F) bitta belgi deb sanaydi, finance —
+ * UTF-16 birliklarida. Shuning uchun quyi chegara `isLength` bo'yicha (uchta emoji — 6 birlik, lekin 3 belgi: gateway uni
+ * kodsiz 400 bilan rad etardi), yuqori chegara — UTF-16 birliklarida (finance qat'iyroq).
  *
  * Yangi summa: `> 0`, ko'pi bilan 2 kasr (so'm butun — `TextInput mode="money"`), joriy summadan farqli. Chegara
  * (`max`) oldindan ma'lum emas — faqat `AMOUNT_EXCEEDS` javobida keladi; shundan keyin qiymat o'zgarmaguncha (yoki
@@ -15,11 +18,15 @@ export const CORRECTION_REASON_LIMITS = { min: 5, max: 500 } as const;
 /** `empty` — hali yozilmagan; `short` — trim dan keyin 1–4 belgi; `long` — 500 dan ko'p (maxLength bo'lsa bo'lmaydi). */
 export type CorrectionReasonState = "empty" | "short" | "valid" | "long";
 
+/** validator.js `isLength` hisobi (gateway `@Length`): surrogat juft va U+FE0E/U+FE0F ayirib tashlanadi. */
+const gatewayLength = (value: string) =>
+  value.length - (value.match(/[\uFE0E\uFE0F]/g)?.length ?? 0) - (value.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g)?.length ?? 0);
+
 export const correctionReasonState = (raw: string | null | undefined): CorrectionReasonState => {
-  const length = (raw ?? "").trim().length;
-  if (length === 0) return "empty";
-  if (length < CORRECTION_REASON_LIMITS.min) return "short";
-  if (length > CORRECTION_REASON_LIMITS.max) return "long";
+  const trimmed = (raw ?? "").trim();
+  if (trimmed.length === 0) return "empty";
+  if (gatewayLength(trimmed) < CORRECTION_REASON_LIMITS.min) return "short";
+  if (trimmed.length > CORRECTION_REASON_LIMITS.max) return "long";
   return "valid";
 };
 

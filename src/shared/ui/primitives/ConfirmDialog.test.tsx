@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarClock, Pencil, Trash2, WifiOff } from "lucide-react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
 import { ConfirmDialog, ConfirmDialogPanel, TransferSummary, type ConfirmDialogProps } from "./ConfirmDialog";
+import { Button } from "./Button";
 
 /**
  * ConfirmDialog — taxta `tizim-feedback` 06 «Tasdiqlash oynalari» va `tizim-motion` 03: `alertdialog`,
@@ -332,6 +333,32 @@ describe("ConfirmDialog — xato kodi bo'yicha ko'rinish (T6 N2: `errorView`, `c
 
     await user.click(confirmButton);
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(2));
+  });
+
+  it("`controls.dismiss`: o'sha quti olib tashlanadi, fokus «Bekor qilish» ga; keyingi xatoga eski `dismiss` tegmaydi", async () => {
+    const dismissers: Array<() => void> = [];
+    const onConfirm = vi.fn(() => Promise.reject(offline));
+    const { user, dialog } = await openConfirm({
+      onConfirm,
+      errorView: (_error, controls) => {
+        dismissers.push(controls.dismiss);
+        return { content: <Button onClick={controls.dismiss}>Holatni tuzatish</Button> };
+      },
+    });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    const fix = await within(dialog).findByRole("button", { name: "Holatni tuzatish" });
+    await user.click(fix);
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Bekor qilish" })).toHaveFocus());
+    expect(within(dialog).getByRole("button", { name: "O'chirish" })).toBeEnabled();
+
+    // Qayta urinish — yangi quti; birinchi qutining `dismiss` i endi hech narsa qilmaydi.
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await within(dialog).findByRole("alert");
+    act(() => dismissers[0]());
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Holatni tuzatish");
+    act(() => dismissers[1]());
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("`errorView` `null` qaytarsa — `errorMessage`, u ham bo'lmasa sukut matni", async () => {

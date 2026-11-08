@@ -113,6 +113,21 @@ export const correctionErrorNeedsRefresh = (info: CorrectionError) =>
   info.uncertain || info.code === "ALREADY_CORRECTED" || info.code === "NOT_FOUND";
 
 /**
+ * POST to'lov endi tuzatilmasligini aytdi (doimiy hukm, `correctable` da ham ko'rinadi): ochiq tafsilot
+ * (`["finance-history", id]`) qayta o'qiladi — «Orqaga» → «Bekor qilish» dan keyin eski «Qaytarish» / «Summani
+ * tahrirlash» emas, qulf izohi va faqat «Yopish» (ega qarori 2026-11-03, 2-band: `COURIER_MOVED`). Tafsilotdagi
+ * `allowed: true` eskirgan bo'lishi mumkin: kuryer keyin o'tgan, muddat forma ochiq turganda tugagan yoki tafsilotdagi
+ * kuryer tekshiruvi vaqtida javob bermagan (backend uni ko'rsatish uchun fail-open qiladi, POST esa qayta tekshiradi).
+ * Kassa o'zgarmagan — faqat tafsilot. `CARD_ARCHIVED` va sababsiz `NOT_CORRECTABLE` (summa tekshiruvi) `correctable`
+ * da ko'rinmaydi — so'ralmaydi.
+ */
+export const correctionErrorRefreshesDetail = (info: CorrectionError) =>
+  info.code === "COURIER_MOVED" ||
+  info.code === "WINDOW_EXPIRED" ||
+  info.code === "LEGACY_UNLINKED" ||
+  (info.code === "NOT_CORRECTABLE" && info.reason !== null);
+
+/**
  * Kalitlar tashlanadi: kalit boshqa tana bilan ishlatilgan / yuborilmagan (hech qachon bo'lmasligi kerak) yoki to'lov
  * allaqachon tuzatilgan (oqim yopiladi). Aniq 4xx dan keyin kalitni saqlash xavfsiz (backend hech narsa yozmagan).
  */

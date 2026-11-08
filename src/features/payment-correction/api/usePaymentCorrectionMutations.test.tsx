@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { emitNetworkRestored, getNetworkDownKind, markNetworkDown } from "../../../auth/networkError";
 import {
   normalizePaymentCorrectionResult,
   paymentCorrectionFingerprint,
@@ -49,11 +50,13 @@ const created = (action: "reverse" | "edit", idempotent = false) => ({
 });
 
 const HISTORY_KEY = ["finance-history", "4512"];
+const OTHER_HISTORY_KEY = ["finance-history", "4498"];
 const CASHBOX_KEY = ["cashbox", "main"];
 
 const setup = <T,>(hook: () => T) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 30_000 } } });
   client.setQueryData(HISTORY_KEY, { id: "4512" });
+  client.setQueryData(OTHER_HISTORY_KEY, { id: "4498" });
   client.setQueryData(CASHBOX_KEY, { balance: 1 });
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   const { result } = renderHook(hook, { wrapper });
@@ -63,6 +66,7 @@ const setup = <T,>(hook: () => T) => {
       history: Boolean(client.getQueryState(HISTORY_KEY)?.isInvalidated),
       cashbox: Boolean(client.getQueryState(CASHBOX_KEY)?.isInvalidated),
     }),
+    otherStale: () => Boolean(client.getQueryState(OTHER_HISTORY_KEY)?.isInvalidated),
   };
 };
 
@@ -77,7 +81,11 @@ const attempt = async (promise: Promise<unknown>) => {
   });
 };
 
-afterEach(() => mocks.post.mockReset());
+afterEach(() => {
+  mocks.post.mockReset();
+  // Aloqa holati modul darajasida — keyingi testga o'tmasin.
+  if (getNetworkDownKind()) emitNetworkRestored();
+});
 
 describe("useReversePayment", () => {
   it("tana aynan `{ reason }` (trim), yo'l, `Idempotency-Key`, global tarmoq xabari o'chiq; natija", async () => {
@@ -172,6 +180,54 @@ describe("useReversePayment", () => {
     expect(reused.stale()).toEqual({ history: false, cashbox: false });
     await attempt(reused.result.current.mutateAsync(input));
     expect(call(1).key).not.toBe(call(0).key);
+  });
+});
+
+describe("xatodan keyin yangilash", () => {
+  it.each([
+    ["COURIER_MOVED", http(409, { code: "COURIER_MOVED" })],
+    ["WINDOW_EXPIRED", http(409, { code: "WINDOW_EXPIRED", deadline: "2026-10-02T12:30:00.000Z", window_days: 30 })],
+    ["LEGACY_UNLINKED", http(409, { code: "LEGACY_UNLINKED" })],
+    ["NOT_CORRECTABLE (sababli)", http(409, { code: "NOT_CORRECTABLE", reason: "cashbox_deleted" })],
+  ])("%s (doimiy hukm) — faqat ochiq tafsilot qayta o'qiladi (`correctable` qulfga o'tadi), kassa emas", async (_code, error) => {
+    mocks.post.mockRejectedValueOnce(error);
+    const { result, stale, otherStale } = setup(() => useReversePayment());
+    await attempt(result.current.mutateAsync({ historyId: "4512", reason: "Kuryer pulni bermagan" }));
+    expect(stale()).toEqual({ history: true, cashbox: false });
+    expect(otherStale()).toBe(false);
+  });
+
+  it.each([
+    ["CARD_ARCHIVED", http(409, { code: "CARD_ARCHIVED" })],
+    ["NOT_CORRECTABLE (sababsiz — summa tekshiruvi)", http(409, { code: "NOT_CORRECTABLE" })],
+    ["INSUFFICIENT_BALANCE", http(409, { code: "INSUFFICIENT_BALANCE", required: 100 })],
+  ])("%s — `correctable` da ko'rinmaydi: hech narsa so'ralmaydi", async (_code, error) => {
+    mocks.post.mockRejectedValueOnce(error);
+    const { result, stale } = setup(() => useCorrectPaymentAmount());
+    await attempt(result.current.mutateAsync({ historyId: "4512", newAmount: 1_500_000, reason: "Summa xato kiritilgan" }));
+    expect(stale()).toEqual({ history: false, cashbox: false });
+  });
+
+  it("javobsiz va aloqa uzilgan (Wi-Fi bor, server yo'q) — darhol so'ralmaydi (global xabar takrorlanmasin), aloqa tiklangach yangilanadi", async () => {
+    mocks.post.mockRejectedValue(network());
+    const { result, stale } = setup(() => useReversePayment());
+    // Interceptor `silentNetworkError` da ham uzilishni belgilaydi (`markNetworkDown`).
+    markNetworkDown("offline");
+    await attempt(result.current.mutateAsync({ historyId: "4512", reason: "Kuryer pulni bermagan" }));
+    await attempt(result.current.mutateAsync({ historyId: "4512", reason: "Kuryer pulni bermagan" }));
+    expect(stale()).toEqual({ history: false, cashbox: false });
+
+    await act(async () => {
+      emitNetworkRestored();
+    });
+    expect(stale()).toEqual({ history: true, cashbox: true });
+  });
+
+  it("javobsiz, lekin aloqa belgilanmagan (masalan bekor qilingan) — darhol yangilanadi", async () => {
+    mocks.post.mockRejectedValueOnce(network());
+    const { result, stale } = setup(() => useReversePayment());
+    await attempt(result.current.mutateAsync({ historyId: "4512", reason: "Kuryer pulni bermagan" }));
+    expect(stale()).toEqual({ history: true, cashbox: true });
   });
 });
 

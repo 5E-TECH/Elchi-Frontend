@@ -3,6 +3,7 @@ import {
   toPaymentCorrectable,
   type PaymentCorrectable,
   type PaymentCorrectableParty,
+  type PaymentCorrectableTransfer,
   type PaymentCorrectionMethod,
 } from "../../../entities/payments/paymentCorrection";
 
@@ -80,6 +81,45 @@ export type CorrectionShape = {
 const methodOf = (value: string | null | undefined): PaymentCorrectionMethod | null =>
   value && (PAYMENT_CORRECTION_METHODS as readonly string[]).includes(value) ? (value as PaymentCorrectionMethod) : null;
 
+/** `transfer.kind` + usul → shakl (click_to_market ning MAIN `market_payment` oyog'i ham `courier_payment`). */
+export const correctionKindOf = (
+  kind: PaymentCorrectableTransfer["kind"],
+  method: PaymentCorrectionMethod | null,
+): CorrectionKind => (kind === "market_payment" ? "market" : method === "click_to_market" ? "clickToMarket" : "courier");
+
+/**
+ * `NOT_CORRECTABLE` + `cashbox_deleted`: backend QAYSI kassa (yoki karta) o'chirilganini aytmaydi
+ * (`legs.some(isDeleted)`), shuning uchun kassa faqat boshqasi bo'lishi mumkin bo'lmaganda nomlanadi:
+ *  - tafsilot (`detail`, GET — faqat oyoqlar kassalari): marketga to'lov — market kassasi (ikkinchi oyoq — MAIN, u
+ *    o'chirilmaydi); MAIN qabul qilgan oddiy kuryer to'lovi — kuryer kassasi; filial qabul qilgan, click_to_market (market
+ *    kassasi ham oyoq) va shakl noma'lum — umumiy «Kassa o'chirilgan.»;
+ *  - POST (`post`) — yana CLICK kartasi tekshiriladi (karta yo'q yoki boshqa kassada — o'sha sabab): `click` to'lovda
+ *    «To'lovdagi kassa yoki karta o'chirilgan.», qolgani — tafsilotdagidek.
+ */
+export type DeletedCashboxSubject = "courier" | "market" | "cashboxOrCard" | "generic";
+
+export const deletedCashboxSubject = (
+  shape: Pick<CorrectionShape, "kind" | "receiver" | "method">,
+  source: "detail" | "post",
+): DeletedCashboxSubject => {
+  if (source === "post" && shape.method === "click") return "cashboxOrCard";
+  if (shape.kind === "market") return "market";
+  if (shape.kind === "courier" && shape.receiver === "main") return "courier";
+  return "generic";
+};
+
+/** Tafsilotdagi `correctable.transfer` → `deletedCashboxSubject` uchun shakl (`transfer` yo'q — noma'lum). */
+export const transferShapeOf = (
+  transfer: PaymentCorrectableTransfer | null | undefined,
+): Pick<CorrectionShape, "kind" | "receiver" | "method"> =>
+  transfer
+    ? {
+        kind: correctionKindOf(transfer.kind, transfer.payment_method),
+        receiver: transfer.receiver.cashbox_type,
+        method: transfer.payment_method,
+      }
+    : { kind: null, receiver: null, method: null };
+
 /** `correctable.transfer` → shakl; yo'q bo'lsa — umumiy (`kind: null`, faqat summa va oyoq usuli). */
 export const deriveCorrectionShape = (target: CorrectionTarget): CorrectionShape => {
   const transfer = target.correctable.transfer ?? null;
@@ -95,8 +135,7 @@ export const deriveCorrectionShape = (target: CorrectionTarget): CorrectionShape
     };
   }
   const method = transfer.payment_method ?? methodOf(target.paymentMethod);
-  const kind: CorrectionKind =
-    transfer.kind === "market_payment" ? "market" : method === "click_to_market" ? "clickToMarket" : "courier";
+  const kind = correctionKindOf(transfer.kind, method);
   return {
     kind,
     receiver: transfer.receiver.cashbox_type,

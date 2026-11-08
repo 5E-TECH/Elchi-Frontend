@@ -12,7 +12,15 @@ import {
   type MoneyLanguage,
 } from "../../../shared/lib/formatMoney";
 import type { ConfirmParty, ConfirmTransfer } from "../../../shared/ui/primitives";
-import { deriveCorrectionShape, type CorrectionFooterState, type CorrectionShape, type CorrectionTarget } from "./target";
+import {
+  deletedCashboxSubject,
+  deriveCorrectionShape,
+  transferShapeOf,
+  type CorrectionFooterState,
+  type CorrectionShape,
+  type CorrectionTarget,
+  type DeletedCashboxSubject,
+} from "./target";
 import { CORRECTION_REASON_LIMITS, correctionAmountDiff, correctionReasonState } from "./validation";
 
 /**
@@ -488,13 +496,26 @@ const deadlineHintOf = ({ t, language }: Ctx, state: Extract<CorrectionFooterSta
       : t("paymentCorrection.deadline.window", { count: state.windowDays }),
 });
 
+/** `cashbox_deleted` matni (`deletedCashboxSubject` — qaysi kassa ekani aniq bo'lsagina nomlanadi). */
+export const cashboxDeletedText = (t: TFunction, subject: DeletedCashboxSubject) => {
+  switch (subject) {
+    case "courier":
+      return t("paymentCorrection.errors.notCorrectable.courierCashboxDeleted");
+    case "market":
+      return t("paymentCorrection.errors.notCorrectable.marketCashboxDeleted");
+    case "cashboxOrCard":
+      return t("paymentCorrection.errors.notCorrectable.cashboxOrCardDeleted");
+    default:
+      return t("paymentCorrection.errors.notCorrectable.cashboxDeleted");
+  }
+};
+
 /**
  * Qulf izohi (maket `-locked`, `role="note"`, `Lock` 20): sarlavha (bo'lmasligi mumkin — `COURIER_MOVED` bitta jumla)
  * va matn; `WINDOW_EXPIRED` da «Muddatni o'zgartirish» havolasi (`/payments/shift-settings`).
  */
 const lockOf = (ctx: Ctx, correctable: PaymentCorrectable) => {
   const { t, language } = ctx;
-  const kind = correctable.transfer?.kind ?? null;
   switch (correctable.code) {
     case "WINDOW_EXPIRED":
       return {
@@ -521,11 +542,7 @@ const lockOf = (ctx: Ctx, correctable: PaymentCorrectable) => {
           correctable.reason === "reversal_row"
             ? t("paymentCorrection.errors.notCorrectable.reversalRow")
             : correctable.reason === "cashbox_deleted"
-              ? kind === "market_payment"
-                ? t("paymentCorrection.errors.notCorrectable.marketCashboxDeleted")
-                : kind === "courier_payment"
-                  ? t("paymentCorrection.errors.notCorrectable.courierCashboxDeleted")
-                  : t("paymentCorrection.errors.notCorrectable.cashboxDeleted")
+              ? cashboxDeletedText(t, deletedCashboxSubject(transferShapeOf(correctable.transfer), "detail"))
               : t("paymentCorrection.errors.notCorrectable.unsupported"),
         changeWindow: null,
       };

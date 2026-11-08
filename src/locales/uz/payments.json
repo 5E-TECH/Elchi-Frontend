@@ -1765,6 +1765,7 @@
         "courierCashboxDeleted": "Kuryer kassasi o'chirilgan.",
         "marketCashboxDeleted": "Market kassasi o'chirilgan.",
         "cashboxDeleted": "Kassa o'chirilgan.",
+        "cashboxOrCardDeleted": "To'lovdagi kassa yoki karta o'chirilgan.",
         "unsupported": "To'lovning kassalardagi yozuvlari to'liq emas.",
         "amountTitle": "Summani tuzatib bo'lmaydi",
         "amountBody": "Kuryer bu summani hozir topshira olmaydi — to'lovni to'liq qaytaring."

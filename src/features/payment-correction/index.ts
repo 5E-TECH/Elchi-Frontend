@@ -21,6 +21,7 @@ export type {
 export {
   PAYMENT_CORRECTION_ERROR_CODES,
   correctionErrorNeedsRefresh,
+  correctionErrorRefreshesDetail,
   correctionErrorResetsKeys,
   readCorrectionError,
 } from "./model/errors";
@@ -37,15 +38,22 @@ export type {
   CorrectionErrorContext,
   CorrectionErrorKind,
   CorrectionErrorModel,
+  CorrectionOpenShift,
 } from "./model/errorView";
 
-export { buildCorrectionTarget, correctionFooterState, deriveCorrectionShape } from "./model/target";
+export {
+  buildCorrectionTarget,
+  correctionFooterState,
+  deletedCashboxSubject,
+  deriveCorrectionShape,
+} from "./model/target";
 export type {
   BuildCorrectionTargetInput,
   CorrectionFooterState,
   CorrectionKind,
   CorrectionShape,
   CorrectionTarget,
+  DeletedCashboxSubject,
 } from "./model/target";
 
 export { createCorrectionTexts, nowrapText, usePaymentCorrectionTexts } from "./model/texts";

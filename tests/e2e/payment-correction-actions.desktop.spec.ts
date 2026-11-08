@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import { correctionPageData, mockCorrectionPosts, mockCorrectionShift } from "./support/paymentCorrectionActions";
+import {
+  CORRECTION_DEADLINE,
+  controlFinanceGets,
+  correctionDetails,
+  correctionPageData,
+  mockCorrectionPosts,
+  mockCorrectionShift,
+} from "./support/paymentCorrectionActions";
 import { setupShellSession } from "./support/shellSession";
 
 /**
@@ -8,15 +15,17 @@ import { setupShellSession } from "./support/shellSession";
  *  - forma → tasdiq → `POST finance/history/:id/reverse` tana aynan `{ reason }` + `Idempotency-Key`, xabar, hamma oyna
  *    yopiladi;
  *  - «Bekor qilish» — tafsilotga qaytadi;
- *  - SHIFT_REQUIRED va 504 tasdiq oynasida qoladi, qayta bosish — o'sha kalit va tana (backend 200 `idempotent`);
- *  - «Smenani ochish» — smena oynasi tasdiq ustida, ochilgach tasdiqqa qaytadi;
+ *  - SHIFT_REQUIRED, 504 va javobsiz POST tasdiq oynasida qoladi, qayta bosish — o'sha kalit va tana (backend 200
+ *    `idempotent`); javobsizda global «Internet aloqasi yo'q» xabari chiqmaydi (matn tasdiqning o'zida);
+ *  - «Smenani ochish» — smena oynasi tasdiq ustida, ochilgach tasdiqqa qaytadi (eski xato qutisi yo'q);
  *  - AMOUNT_EXCEEDS — «Tahrirlash» o'chiq, «Orqaga» dan keyin maydonda «Ko'pi bilan …»;
  *  - ALREADY_CORRECTED — neytral quti, ro'yxat yangilanadi, «Orqaga» butun oqimni yopadi (ega qarori 2026-11-03);
- *  - COURIER_MOVED — tafsilotda qulf izohi, POST javobida tasdiq tugmasi o'chiq;
+ *  - COURIER_MOVED — tafsilotda qulf izohi, POST javobida tasdiq tugmasi o'chiq va tafsilot qayta o'qiladi (qulf);
  *  - muddati o'tgan to'lov — qulf izohi va «Muddatni o'zgartirish»;
  *  - admin — `correctable` tasodifan kelsa ham tugmalar yo'q.
  */
-test.use({ viewport: { width: 1440, height: 900 } });
+// Sana/vaqt matnlari Toshkent vaqtida («Muddat tugagan: 02.10.2026, 17:30») — mashina zonasidan qat'i nazar.
+test.use({ viewport: { width: 1440, height: 900 }, timezoneId: "Asia/Tashkent" });
 
 const REASON = "Boshqa kuryer tanlab yuborilgan — pul Rustam Qosimovdan olingan";
 
@@ -75,16 +84,18 @@ test("«Qaytarish»: forma, tasdiq, tana va kalit, «To'lov qaytarildi», hamma 
   expect(leaked).toEqual([]);
 });
 
-test("SHIFT_REQUIRED va 504 tasdiq oynasida qoladi; qayta bosish — o'sha `Idempotency-Key` va tana, 200 `idempotent`", async ({ page }) => {
+test("SHIFT_REQUIRED, 504 va javobsiz POST tasdiq oynasida qoladi; qayta bosish — o'sha `Idempotency-Key` va tana, 200 `idempotent`", async ({ page }) => {
   const { leaked } = await setupShellSession(page, "superadmin", "Shodiyor Ergashev", correctionPageData());
   const { posts } = await mockCorrectionPosts(page, [
     { status: 400, body: { statusCode: 400, message: "Smena ochilmagan", code: "SHIFT_REQUIRED" } },
     { status: 504, body: { statusCode: 504, message: "Gateway Timeout" } },
+    "abort",
     {
       status: 200,
       body: { statusCode: 200, message: "ok", data: { correction: { id: "12", action: "reverse" }, cashboxes: [], idempotent: true } },
     },
   ]);
+  const finance = await controlFinanceGets(page);
   await page.goto("/payments");
   await openDetail(page, "Kuryer to'lovi");
   await page.getByRole("dialog", { name: "Kirim operatsiyasi" }).getByRole("button", { name: "Qaytarish" }).click();
@@ -100,15 +111,28 @@ test("SHIFT_REQUIRED va 504 tasdiq oynasida qoladi; qayta bosish — o'sha `Idem
   await expect(alert.getByRole("button", { name: "Smenani ochish" })).toBeVisible();
   await expect(confirmButton).toBeEnabled();
 
+  // 504 — javob bor (aloqa joyida): natija noma'lum, matn tasdiqning o'zida.
   await confirmButton.click();
   await expect(alert).toContainText("Internet aloqasi yo'q");
   await expect(alert).toContainText("to'lov ikki marta qaytarilmaydi");
-  await expect(page.getByText("Tarmoq xatosi")).toHaveCount(0);
 
+  // Javobsiz (server yetib bo'lmaydi, brauzer «onlayn»): matn faqat tasdiqda — global tarmoq xabari chiqmaydi (POST
+  // `silentNetworkError`, ro'yxat yangilanishi aloqa tiklangungacha kutadi — uning GET'lari ham yiqilardi).
+  const networkToast = page.locator('[data-toaster] [data-toast-id="network-error"]');
+  finance.down = true;
+  await confirmButton.click();
+  await expect.poll(() => posts.length).toBe(3);
+  await expect(alert).toContainText("Internet aloqasi yo'q");
+  await expect(confirmButton).toBeEnabled();
+  await page.waitForTimeout(1500);
+  await expect(networkToast).toHaveCount(0);
+
+  finance.down = false;
   await confirmButton.click();
   await expect(page.getByText("To'lov qaytarildi", { exact: true })).toBeVisible();
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
-  expect(posts).toHaveLength(3);
+  await expect(networkToast).toHaveCount(0);
+  expect(posts).toHaveLength(4);
   expect(new Set(posts.map((post) => post.key)).size).toBe(1);
   expect(posts.every((post) => JSON.stringify(post.body) === JSON.stringify({ reason: REASON }))).toBe(true);
   expect(leaked).toEqual([]);
@@ -139,6 +163,10 @@ test("«Smenani ochish»: smena oynasi tasdiq ustida, smena ochilgach — tasdiq
   await expect(page.getByText("Smena ochildi", { exact: true })).toBeVisible();
   await expect(shiftDialog).toBeHidden();
   await expect(confirm).toBeVisible();
+  // Eski «Smena ochilmagan» qutisi va uning havolasi qolmaydi; fokus «Orqaga» da.
+  await expect(confirm.getByRole("alert")).toHaveCount(0);
+  await expect(confirm).not.toContainText("Smena ochilmagan");
+  await expect(confirm.getByRole("button", { name: "Orqaga" })).toBeFocused();
 
   await confirm.getByRole("button", { name: "Qaytarish" }).click();
   await expect(page.getByText("To'lov qaytarildi", { exact: true })).toBeVisible();
@@ -240,11 +268,12 @@ test("ALREADY_CORRECTED: neytral quti, ro'yxat yangilanadi, «Tahrirlash» o'chi
   expect(leaked).toEqual([]);
 });
 
-test("COURIER_MOVED: tafsilotda qulf izohi va faqat «Yopish»; POST javobida — o'sha matn, tasdiq tugmasi o'chiq", async ({ page }) => {
+test("COURIER_MOVED: tafsilotda qulf izohi va faqat «Yopish»; POST javobida — o'sha matn, tasdiq tugmasi o'chiq, tafsilot qulfga o'tadi", async ({ page }) => {
   const { leaked } = await setupShellSession(page, "superadmin", "Shodiyor Ergashev", correctionPageData());
   const { posts } = await mockCorrectionPosts(page, [
     { status: 409, body: { statusCode: 409, message: "Courier moved", code: "COURIER_MOVED" } },
   ]);
+  const finance = await controlFinanceGets(page);
   await page.goto("/payments");
 
   await openDetail(page, "Kuryer to'lovi", 1);
@@ -261,12 +290,30 @@ test("COURIER_MOVED: tafsilotda qulf izohi va faqat «Yopish»; POST javobida �
   await form.getByRole("textbox", { name: /^Sabab/ }).fill(REASON);
   await form.getByRole("button", { name: "Davom etish" }).click();
   const confirm = page.getByRole("alertdialog", { name: "To'lovni qaytarishni tasdiqlang" });
+  // Tafsilot ochilganidan keyin kuryer boshqa filialga o'tdi: backend endi `correctable` ni qulflaydi.
+  finance.override["finance/history/4512"] = {
+    ...correctionDetails()["finance/history/4512"],
+    correctable: {
+      allowed: false,
+      code: "COURIER_MOVED",
+      deadline: CORRECTION_DEADLINE,
+      window_days: 30,
+      root_history_id: "4512",
+      transfer: null,
+    },
+  };
   await confirm.getByRole("button", { name: "Qaytarish" }).click();
   await expect(confirm.getByRole("alert")).toHaveText("Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan.");
   await expect(confirm.getByRole("button", { name: "Qaytarish" })).toBeDisabled();
   // «Orqaga» — formaga (oqim yopilmaydi), sabab saqlanadi.
   await confirm.getByRole("button", { name: "Orqaga" }).click();
   await expect(form.getByRole("textbox", { name: /^Sabab/ })).toHaveValue(REASON);
+  // «Bekor qilish» — tafsilot qayta o'qilgan: qulf izohi va faqat «Yopish» (ega qarori 2026-11-03, 2-band).
+  await form.getByRole("button", { name: "Bekor qilish" }).click();
+  const refreshed = page.getByRole("dialog", { name: "Kirim operatsiyasi" });
+  await expect(refreshed.getByRole("note")).toHaveText("Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan.");
+  await expect(refreshed.getByRole("button", { name: "Qaytarish" })).toHaveCount(0);
+  await expect(refreshed.getByRole("button", { name: "Summani tahrirlash" })).toHaveCount(0);
   expect(posts).toHaveLength(1);
   expect(leaked).toEqual([]);
 });
