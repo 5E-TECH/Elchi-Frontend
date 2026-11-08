@@ -20,7 +20,7 @@ describe("DialogSection", () => {
     expect(document.querySelectorAll("[data-kit-theme]")).toHaveLength(2);
   });
 
-  it("har panelda: oyna, ikki telefon varaqasi va besh tasdiqlash holati (maket matnlari)", () => {
+  it("har panelda: oyna, ikki telefon varaqasi, yetti tasdiqlash holati va forma oynasi (maket matnlari)", () => {
     renderSection();
     const light = document.querySelector<HTMLElement>('[data-kit-theme="light"]')!;
     const panels = within(light).getAllByRole("group");
@@ -33,13 +33,50 @@ describe("DialogSection", () => {
       "dialog",
       "dialog",
       "dialog",
+      "dialog",
+      "dialog",
+      "dialog",
     ]);
     expect(within(light).getByRole("group", { name: "Smenani yopish" })).toBeInTheDocument();
     expect(within(light).getByRole("group", { name: "Kunni yakunlashni tasdiqlang" })).toBeInTheDocument();
     expect(within(light).getByRole("group", { name: "To'lovni tasdiqlang" })).toBeInTheDocument();
     expect(within(light).getAllByText("Bu amalni qaytarib bo'lmaydi.")).toHaveLength(1);
     expect(within(light).getByText("1 250 000")).toBeInTheDocument();
-    expect(within(light).getByRole("alert")).toHaveTextContent("Mahsulotni o'chirib bo'lmadi");
+    const alerts = within(light).getAllByRole("alert");
+    expect(alerts.map((alert) => alert.textContent)).toEqual([
+      "Mahsulotni o'chirib bo'lmadi: u faol buyurtmada bor.",
+      "Ko'pi bilan 7 220 000 so'mChegara — Baraka Shopga berilishi kerak qoldiq va joriy to'lov yig'indisi. «Orqaga»ni bosib summani o'zgartiring.",
+      "Internet aloqasi yo'qSo'rov yetib bormadi yoki javob kelmadi. Aloqa tiklangach «Qaytarish»ni qayta bosing — to'lov ikki marta qaytarilmaydi.",
+    ]);
+  });
+
+  it("T6 N2: xato kodi bo'yicha — `blockConfirm` tugmani o'chiradi, oflaynda WifiOff va tugma faol", () => {
+    renderSection();
+    const light = within(document.querySelector<HTMLElement>('[data-kit-theme="light"]')!);
+    const blocked = light.getByRole("group", { name: "Summani tahrirlashni tasdiqlang" });
+    const edit = within(blocked).getByRole("button", { name: "Tahrirlash" });
+    expect(edit).toBeDisabled();
+    expect(edit).toHaveAttribute("aria-describedby", within(blocked).getByRole("alert").id);
+    expect(within(blocked).getByRole("button", { name: "Orqaga" })).toBeEnabled();
+
+    const offline = light.getByRole("group", { name: "To'lovni qaytarishni tasdiqlang" });
+    expect(within(offline).getByRole("alert").querySelector("svg")).toHaveClass("lucide-wifi-off");
+    expect(within(offline).getByRole("button", { name: "Qaytarish" })).toBeEnabled();
+    expect(within(offline).getByText("Qaytarishni bekor qilib bo'lmaydi.")).toBeInTheDocument();
+  });
+
+  it("T6 N2: forma oynasi — `TransferSummary` xulosasi va «Sabab» hisoblagichi xato qatorida", () => {
+    renderSection();
+    const light = within(document.querySelector<HTMLElement>('[data-kit-theme="light"]')!);
+    const form = light.getByRole("group", { name: "To'lovni qaytarish" });
+    expect(within(form).getByText("Qaytariladigan to'lov")).toBeInTheDocument();
+    expect(within(form).getByText("1 850 000")).toBeInTheDocument();
+    expect(within(form).getByText("Qayerdan")).toBeInTheDocument();
+    const reason = within(form).getByRole("textbox", { name: "Sabab" });
+    expect(reason).toHaveAttribute("maxlength", "500");
+    expect(reason).toHaveAccessibleDescription("Kamida 5 ta belgi yozing");
+    expect(within(form).getByText("4 / 500")).toHaveAttribute("data-field-aside");
+    expect(within(form).getByRole("button", { name: "Davom etish" })).toBeDisabled();
   });
 
   it("joyida chizilgan namunalar modal emas (sahifada `dialog` roli yo'q)", () => {

@@ -58,4 +58,20 @@ describe("FormsSection", () => {
     await user.type(sms, "!");
     expect(sms).toHaveAccessibleDescription("76 / 160 belgi");
   });
+
+  it("T6 N2: hisoblagich xato qatorida ham (`hintAside`) — «Sabab» 5–500", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<FormsSection />, { route: "/ops/ui-kit?section=forms" });
+    const light = within(panels()[0]);
+    const reason = light.getByRole("textbox", { name: "Sabab" });
+    expect(reason).toHaveValue("Xato");
+    expect(reason).toHaveAttribute("aria-invalid", "true");
+    expect(reason).toHaveAccessibleDescription("Kamida 5 ta belgi yozing");
+    expect(light.getByText("4 / 500")).toHaveAttribute("data-field-aside");
+
+    await user.type(reason, " bosildi");
+    expect(reason).not.toHaveAttribute("aria-invalid");
+    expect(reason).toHaveAccessibleDescription("Kamida 5 ta belgi");
+    expect(light.getByText("12 / 500")).toBeInTheDocument();
+  });
 });

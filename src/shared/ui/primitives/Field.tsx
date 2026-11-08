@@ -55,6 +55,12 @@ export type FieldProps = Omit<ComponentProps<"div">, "children" | "id"> & {
   hintLive?: boolean;
   /** Yorliq qatorining o'ng tomoni (masalan «Barchasini tanlash» havolasi). */
   labelAside?: ReactNode;
+  /**
+   * Ko'rsatma qatorining o'ng tomoni — belgi hisoblagichi («4 / 500», maket `superadmin-payments-history-reverse-dialog`).
+   * Xato chiqqanda ham joyida qoladi (xato matni chapda); `aria-describedby` ga kirmaydi (maydonning `maxLength`
+   * cheklovi o'zi aytiladi), shuning uchun har belgida o'qilmaydi.
+   */
+  hintAside?: ReactNode;
 };
 
 /**
@@ -79,6 +85,7 @@ export const Field = ({
   hideLabel = false,
   hintLive = false,
   labelAside,
+  hintAside,
   className,
   ...rest
 }: FieldProps) => {
@@ -109,6 +116,18 @@ export const Field = ({
       ) : null}
     </>
   );
+  const hasAside = hintAside !== undefined && hintAside !== null && hintAside !== false && hintAside !== "";
+  const message = hasError ? (
+    <div id={errorId} className={cx("flex items-start gap-1.5 text-xs font-semibold text-danger-fg", hasAside && "min-w-0")}>
+      <CircleX aria-hidden="true" size={16} className="mt-px shrink-0" />
+      <span className="min-w-0">{error}</span>
+    </div>
+  ) : showHint ? (
+    <div id={hintId} aria-live={hintLive ? "polite" : undefined} className={cx("text-xs text-text-muted", hasAside && "min-w-0")}>
+      {hint}
+    </div>
+  ) : null;
+
   const labelClass = cx("min-w-0 text-[13px] font-semibold text-text", hideLabel && "sr-only");
   const labelElement =
     labelAs === "label" ? (
@@ -139,16 +158,16 @@ export const Field = ({
 
       <FieldContext.Provider value={context}>{children}</FieldContext.Provider>
 
-      {hasError ? (
-        <div id={errorId} className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
-          <CircleX aria-hidden="true" size={16} className="mt-px shrink-0" />
-          <span className="min-w-0">{error}</span>
+      {hasAside ? (
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          {message ?? <span />}
+          <span data-field-aside="" className="shrink-0 whitespace-nowrap text-xs text-text-muted">
+            {hintAside}
+          </span>
         </div>
-      ) : showHint ? (
-        <div id={hintId} aria-live={hintLive ? "polite" : undefined} className="text-xs text-text-muted">
-          {hint}
-        </div>
-      ) : null}
+      ) : (
+        message
+      )}
     </div>
   );
 };

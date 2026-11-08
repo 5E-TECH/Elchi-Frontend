@@ -144,6 +144,53 @@ describe("Field", () => {
     expect(screen.getByRole("searchbox", { name: "Qidiruv" })).toBeInTheDocument();
   });
 
+  it("T6 N2: `hintAside` — hisoblagich ko'rsatma qatorining o'ngida, xato chiqsa ham joyida; describedby ga kirmaydi", () => {
+    const { container, rerender } = render(
+      <Field label="Sabab" required hint="Kamida 5 ta belgi" hintAside="0 / 500">
+        <TextInput multiline />
+      </Field>,
+    );
+    const textarea = screen.getByRole("textbox", { name: "Sabab" });
+    expect(textarea).toHaveAccessibleDescription("Kamida 5 ta belgi");
+    const aside = screen.getByText("0 / 500");
+    expect(aside).toHaveAttribute("data-field-aside");
+    expect(aside).toHaveClass("shrink-0", "whitespace-nowrap", "text-xs", "text-text-muted");
+    const row = aside.parentElement!;
+    expect(row).toHaveClass("flex", "justify-between");
+    expect(row.firstElementChild).toHaveTextContent("Kamida 5 ta belgi");
+
+    rerender(
+      <Field label="Sabab" required hint="Kamida 5 ta belgi" hintAside="4 / 500" error="Kamida 5 ta belgi yozing">
+        <TextInput multiline />
+      </Field>,
+    );
+    expect(textarea).toHaveAttribute("aria-invalid", "true");
+    expect(textarea).toHaveAccessibleDescription("Kamida 5 ta belgi yozing");
+    const errorAside = screen.getByText("4 / 500");
+    // Xato chapda, hisoblagich o'sha qatorning o'ngida (maket «Sabab qisqa» holati).
+    expect(errorAside.parentElement!.firstElementChild).toHaveTextContent("Kamida 5 ta belgi yozing");
+    expect(errorAside.parentElement!.firstElementChild).toHaveClass("text-danger-fg", "min-w-0");
+    expect(screen.queryByText("Kamida 5 ta belgi")).not.toBeInTheDocument();
+
+    // Ko'rsatma ham, xato ham yo'q — hisoblagich yolg'iz o'ngda.
+    rerender(
+      <Field label="Sabab" hintAside="12 / 500">
+        <TextInput multiline />
+      </Field>,
+    );
+    expect(screen.getByText("12 / 500").parentElement!.children).toHaveLength(2);
+    expect(textarea).not.toHaveAttribute("aria-describedby");
+
+    // `hintAside` berilmasa — avvalgi tuzilma (qator o'rami yo'q).
+    rerender(
+      <Field label="Sabab" hint="Kamida 5 ta belgi">
+        <TextInput multiline />
+      </Field>,
+    );
+    expect(container.querySelector("[data-field-aside]")).toBeNull();
+    expect(screen.getByText("Kamida 5 ta belgi").parentElement).toHaveAttribute("data-field");
+  });
+
   it("ikki Field — id lar takrorlanmaydi", () => {
     render(
       <>

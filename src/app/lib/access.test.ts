@@ -35,6 +35,8 @@ import { canHandoverCancelledToMarket } from "./access";
 import { canManageExpenseCategories } from "./access";
 // 47WFHzlx: «Yetkazish tariflari» — o'z describe bloki (pastda).
 import { canManageDeliveryTariffs } from "./access";
+// T6 N2: to'lovni qaytarish / summasini tuzatish — o'z describe bloki (pastda).
+import { canCorrectPayments } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -385,5 +387,14 @@ describe("canManageDeliveryTariffs — «Yetkazish tariflari» (/delivery-tariff
       expect(canManageDeliveryTariffs(s), caseName).toBe(caseName === "superadmin" || caseName === "admin");
     }
     expect(canManageDeliveryTariffs(state(null))).toBe(false);
+  });
+});
+
+describe("canCorrectPayments — to'lovni qaytarish va summasini tuzatish (T6 N2)", () => {
+  it("faqat superadmin (backend reverse / correct-amount @Roles(SUPERADMIN)); admin, menejer, registrator — yo'q", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canCorrectPayments(s), caseName).toBe(caseName === "superadmin");
+    }
+    expect(canCorrectPayments(state(null))).toBe(false);
   });
 });

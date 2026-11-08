@@ -668,7 +668,8 @@
       "readonly": "Read-only",
       "large": "Phone · 48 px",
       "optional": "Empty · optional",
-      "counter": "With counter"
+      "counter": "With counter",
+      "counterAside": "Counter on the error row too"
     },
     "demo": {
       "nameLabel": "Customer name",
@@ -691,7 +692,13 @@
       "notePlaceholder": "Write a note...",
       "smsLabel": "SMS text",
       "smsValue": "Dear customer, your order 10241 is on the way. The courier will arrive today before 18:00.",
-      "smsCounter": "{{count}} / 160 characters"
+      "smsCounter": "{{count}} / 160 characters",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Why are you reversing it?",
+      "reasonHint": "At least 5 characters",
+      "reasonError": "Write at least 5 characters",
+      "reasonCounter": "{{count}} / 500",
+      "reasonValue": "Typo"
     }
   },
   "select": {
@@ -774,7 +781,13 @@
       "loading": "Request in progress",
       "loadingMeta": "buttons lock; Esc and the backdrop do not close the dialog",
       "error": "Error",
-      "errorMeta": "the dialog stays open, the error text is inside it — you can retry"
+      "errorMeta": "the dialog stays open, the error text is inside it — you can retry",
+      "errorBlocked": "Error — retrying will not help",
+      "errorBlockedMeta": "errorView: title + text · the confirm button is disabled and points to the error · focus on «Back»",
+      "errorOffline": "Error — no internet",
+      "errorOfflineMeta": "WifiOff icon · buttons stay active, resent with the same key · consequences hidden on phone",
+      "formSummary": "Form dialog — summary and counter",
+      "formSummaryMeta": "TransferSummary — the amount and «from → to» block, same as in the confirm · the counter stays on the error row too (hintAside)"
     },
     "rules": {
       "title": "Title",
@@ -837,7 +850,30 @@
       "openFailing": "Confirmation with an error",
       "resultConfirmed": "Answer: confirmed",
       "resultCancelled": "Answer: cancelled",
-      "failingError": "The product could not be deleted: it is in an active order."
+      "failingError": "The product could not be deleted: it is in an active order.",
+      "exceedsTitle": "At most",
+      "exceedsBody": "The limit is the balance owed to Baraka Shop plus the current payment. Press «Back» and change the amount.",
+      "offlineTitle": "No internet connection",
+      "offlineBody": "The request did not arrive or no reply came. When the connection is back, press «Reverse» again — the payment will not be reversed twice.",
+      "correctTitle": "Confirm the amount change",
+      "correctDescription": "#4498 · Market payment · Baraka Shop",
+      "correctCurrent": "Current amount",
+      "correctNew": "Correct amount",
+      "correctAction": "Change",
+      "back": "Back",
+      "reverseTitle": "Reverse payment",
+      "reverseConfirmTitle": "Confirm the payment reversal",
+      "reverseDescription": "#4512 · Courier payment · 07.10.2026, 14:32",
+      "reverseIrreversible": "The reversal cannot be undone.",
+      "reverseAction": "Reverse",
+      "reverseAmountLabel": "Payment to reverse",
+      "reverseReasonLabel": "Reason",
+      "reverseReasonPlaceholder": "Why are you reversing it?",
+      "reverseReasonHint": "Saved to the log; the courier sees it in the app, it is not sent to Telegram",
+      "reverseReasonError": "Write at least 5 characters",
+      "reverseReasonCounter": "{{count}} / 500",
+      "reverseReasonValue": "Typo",
+      "continue": "Continue"
     }
   },
   "toast": {

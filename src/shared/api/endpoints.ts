@@ -311,6 +311,10 @@ export const API_ENDPOINTS = {
     // qzjTMWPb — kunlik kirim/chiqim va kun boshi/oxiri qoldig'i (rollar va doira `finance/history` bilan bir xil).
     HISTORY_DAILY: "finance/history/daily",
     HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
+    // T6 N2 — to'lovni qaytarish `{ reason }` va summasini tuzatish `{ new_amount, reason }` (faqat SUPERADMIN;
+    // `:id` — to'lovning istalgan oyog'i; `Idempotency-Key` MAJBURIY; 201 yangi / 200 `idempotent: true`).
+    HISTORY_REVERSE: (id: string | number) => `finance/history/${id}/reverse`,
+    HISTORY_CORRECT_AMOUNT: (id: string | number) => `finance/history/${id}/correct-amount`,
     // T6 (2wgTzcG0) — «To'lovlarni tuzatish muddati»: GET/PATCH { window_days } (faqat SUPERADMIN; 1–365, JSON son).
     PAYMENT_CORRECTION_SETTINGS: "finance/payment-corrections/settings",
     HEALTH: "finance/health",

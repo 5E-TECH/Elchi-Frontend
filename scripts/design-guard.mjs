@@ -130,6 +130,8 @@ export const V2_SCOPES = Object.freeze([
   "src/features/notification-toggle",
   "src/features/order-return",
   "src/features/order-tracking",
+  // T6 N2: to'lovni qaytarish va summasini tuzatish (faqat superadmin) — rangsiz model + oynalar.
+  "src/features/payment-correction",
   // HJ5sLHiz: chek moduli — rangsiz (HTML chiqishi `printReceiptHtml.ts` — OUTPUT_FORMAT_FILES).
   "src/features/print-receipts",
   "src/features/push-notifications",

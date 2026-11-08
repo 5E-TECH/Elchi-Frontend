@@ -1,6 +1,18 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeftRight, CalendarClock, Check, Download, Timer, Trash2, TriangleAlert, UserX } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  Check,
+  Download,
+  Pencil,
+  RotateCcw,
+  Timer,
+  Trash2,
+  TriangleAlert,
+  UserX,
+  WifiOff,
+} from "lucide-react";
 import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import {
   Badge,
@@ -11,7 +23,9 @@ import {
   Field,
   Skeleton,
   TextInput,
+  TransferSummary,
   useConfirm,
+  type ConfirmErrorView,
 } from "../../../shared/ui/primitives";
 import { KitSection } from "../KitSection";
 import { ThemePair } from "../ThemePair";
@@ -24,6 +38,10 @@ import { ThemePair } from "../ThemePair";
  * `tizim-motion` 03 («Kunni yakunlash») va `superadmin-users-delete-dialog` (telefon).
  * Maketdagidek oynalar joyida chizilgan (portal va fonsiz — `DialogPanel` / `ConfirmDialogPanel`);
  * pastdagi «Jonli namuna» — haqiqiy modal oyna (ilovaning joriy mavzusida).
+ *
+ * T6 N2: xato kodi bo'yicha ko'rinish (`errorView`: sarlavha + matn, `WifiOff`, `blockConfirm`) — maketlar
+ * `superadmin-payments-history-correct-amount-errors`, `-reverse-errors`; forma oynasidagi xulosa (`TransferSummary`)
+ * va hisoblagich xato qatorida (`Field hintAside`) — `superadmin-payments-history-reverse-dialog`.
  */
 
 const DemoBlock = ({ title, note, children }: { title: string; note?: string; children: ReactNode }) => (
@@ -196,6 +214,78 @@ const PersonCard = ({ initials, name, meta }: { initials: string; name: string; 
   </div>
 );
 
+/** Xato qutisi mazmuni: qalin sarlavha + matn (maket `.el-alert-title` / `.el-alert-body`). */
+const AlertText = ({ title, body }: { title: ReactNode; body: ReactNode }) => (
+  <>
+    <p className="m-0 font-bold">{title}</p>
+    <p className="m-0">{body}</p>
+  </>
+);
+
+/** Namuna xatolari → ko'rinish (ilovada — `features/payment-correction` `correctionConfirmErrorView`). */
+const useSampleErrorView = () => {
+  const { t } = useTranslation("ui");
+  return (code: unknown): ConfirmErrorView | null => {
+    if (code === "AMOUNT_EXCEEDS") {
+      return {
+        content: (
+          <AlertText
+            title={
+              <>
+                {t("dialogs.demo.exceedsTitle")}{" "}
+                <span className="whitespace-nowrap">{formatMoneyLocalized(7220000)}</span>
+              </>
+            }
+            body={t("dialogs.demo.exceedsBody")}
+          />
+        ),
+        blockConfirm: true,
+      };
+    }
+    if (code === "OFFLINE") {
+      return {
+        content: <AlertText title={t("dialogs.demo.offlineTitle")} body={t("dialogs.demo.offlineBody")} />,
+        icon: WifiOff,
+      };
+    }
+    return null;
+  };
+};
+
+/** Forma oynasi (maket `superadmin-payments-history-reverse-dialog`, «Sabab qisqa» holati). */
+const ReverseFormBody = () => {
+  const { t } = useTranslation("ui");
+  const [reason, setReason] = useState(() => t("dialogs.demo.reverseReasonValue"));
+  const trimmed = reason.trim().length;
+  return (
+    <>
+      <TransferSummary
+        amount={{ value: 1850000, label: t("dialogs.demo.reverseAmountLabel"), badge: <Badge>{t("dialogs.demo.payCash")}</Badge> }}
+        transfer={{
+          from: { title: t("dialogs.demo.payFromTitle"), meta: t("dialogs.demo.payFromMeta") },
+          to: { title: t("dialogs.demo.payToTitle") },
+        }}
+      />
+      <Field
+        label={t("dialogs.demo.reverseReasonLabel")}
+        required
+        hint={t("dialogs.demo.reverseReasonHint")}
+        error={trimmed > 0 && trimmed < 5 ? t("dialogs.demo.reverseReasonError") : undefined}
+        hintAside={t("dialogs.demo.reverseReasonCounter", { count: reason.length })}
+      >
+        <TextInput
+          multiline
+          rows={3}
+          maxLength={500}
+          value={reason}
+          onValueChange={setReason}
+          placeholder={t("dialogs.demo.reverseReasonPlaceholder")}
+        />
+      </Field>
+    </>
+  );
+};
+
 /** Pastda — haqiqiy modal oynalar (Tab, Esc, fon, fokus qaytishi; `useConfirm` yuklanishi va xatosi). */
 const LiveDemo = () => {
   const { t } = useTranslation("ui");
@@ -260,6 +350,7 @@ const LiveDemo = () => {
 
 export const DialogSection = () => {
   const { t } = useTranslation("ui");
+  const sampleErrorView = useSampleErrorView();
   const rules: Array<[string, string]> = [
     [t("dialogs.rules.title"), t("dialogs.rules.titleText")],
     [t("dialogs.rules.buttons"), t("dialogs.rules.buttonsText")],
@@ -395,7 +486,71 @@ export const DialogSection = () => {
                   />
                 </DesktopStage>
               </DemoBlock>
+              <DemoBlock title={t("dialogs.groups.errorBlocked")} note={t("dialogs.groups.errorBlockedMeta")}>
+                <DesktopStage>
+                  <ConfirmDialogPanel
+                    icon={Pencil}
+                    size="md"
+                    title={t("dialogs.demo.correctTitle")}
+                    description={t("dialogs.demo.correctDescription")}
+                    rows={[
+                      { label: t("dialogs.demo.correctCurrent"), value: formatMoneyLocalized(2400000) },
+                      {
+                        label: t("dialogs.demo.correctNew"),
+                        value: <span className="whitespace-nowrap text-base font-bold">{formatMoneyLocalized(20000000)}</span>,
+                      },
+                    ]}
+                    error="AMOUNT_EXCEEDS"
+                    errorView={sampleErrorView}
+                    cancelLabel={t("dialogs.demo.back")}
+                    confirmLabel={t("dialogs.demo.correctAction")}
+                    confirmIcon={Pencil}
+                  />
+                </DesktopStage>
+              </DemoBlock>
+              <DemoBlock title={t("dialogs.groups.errorOffline")} note={t("dialogs.groups.errorOfflineMeta")}>
+                <DesktopStage>
+                  <ConfirmDialogPanel
+                    tone="danger"
+                    icon={RotateCcw}
+                    size="md"
+                    title={t("dialogs.demo.reverseConfirmTitle")}
+                    description={t("dialogs.demo.reverseDescription")}
+                    amount={{ value: 1850000, badge: <Badge>{t("dialogs.demo.payCash")}</Badge> }}
+                    irreversible={t("dialogs.demo.reverseIrreversible")}
+                    error="OFFLINE"
+                    errorView={sampleErrorView}
+                    cancelLabel={t("dialogs.demo.back")}
+                    confirmLabel={t("dialogs.demo.reverseAction")}
+                    confirmIcon={RotateCcw}
+                  />
+                </DesktopStage>
+              </DemoBlock>
             </div>
+
+            <DemoBlock title={t("dialogs.groups.formSummary")} note={t("dialogs.groups.formSummaryMeta")}>
+              <DesktopStage>
+                <DialogPanel
+                  role="group"
+                  layout="dialog"
+                  size="md"
+                  title={t("dialogs.demo.reverseTitle")}
+                  description={t("dialogs.demo.reverseDescription")}
+                  icon={RotateCcw}
+                  onCloseClick={() => {}}
+                  footer={
+                    <>
+                      <Button variant="secondary">{t("dialog.cancel")}</Button>
+                      <Button disabled aria-haspopup="dialog">
+                        {t("dialogs.demo.continue")}
+                      </Button>
+                    </>
+                  }
+                >
+                  <ReverseFormBody />
+                </DialogPanel>
+              </DesktopStage>
+            </DemoBlock>
 
             <dl className="m-0 grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-x-6 gap-y-4 rounded-[14px] border border-border bg-surface p-5 max-md:p-4">
               {rules.map(([term, text]) => (

@@ -138,17 +138,20 @@ export type {
   DialogProps,
   DialogSize,
 } from "./Dialog";
-export { ConfirmDialog, ConfirmDialogPanel } from "./ConfirmDialog";
+// `TransferSummary` — tasdiqdagi summa + qayerdan → qayerga bloki forma oynalarida ham (T6 N2).
+export { ConfirmDialog, ConfirmDialogPanel, TransferSummary } from "./ConfirmDialog";
 export type {
   ConfirmAmount,
   ConfirmConsequence,
   ConfirmContent,
   ConfirmDialogPanelProps,
   ConfirmDialogProps,
+  ConfirmErrorView,
   ConfirmParty,
   ConfirmRow,
   ConfirmTone,
   ConfirmTransfer,
+  TransferSummaryProps,
 } from "./ConfirmDialog";
 export { confirm, useConfirm } from "./useConfirm";
 export type { ConfirmOptions } from "./useConfirm";

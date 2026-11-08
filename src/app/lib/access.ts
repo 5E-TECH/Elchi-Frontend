@@ -380,3 +380,11 @@ export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerC
  * `PATCH finance/shift/settings` `@Roles(SUPERADMIN)` bilan AYNAN bir xil. O'qish (GET) yopuvchi rollarga ochiq.
  */
 export const canManageShiftSettings: Predicate = hasRole("superadmin");
+
+/**
+ * T6 N2 — kassa tarixidagi to'lovni qaytarish va summasini tuzatish («Qaytarish» / «Summani tahrirlash»). Backend
+ * `POST finance/history/:id/reverse` va `POST finance/history/:id/correct-amount` — `@Roles(SUPERADMIN)` (servis ham
+ * `assertSuperadmin`), `correctable` ham faqat superadmin tafsilotida keladi. Admin va boshqa rollarda tasodifan
+ * `correctable` kelsa ham tugma chizilmaydi (ega qarori 2026-11-03).
+ */
+export const canCorrectPayments: Predicate = hasRole("superadmin");
