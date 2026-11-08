@@ -236,14 +236,16 @@ export const TransferSummary = ({ amount, transfer, rows, className }: TransferS
         </div>
       ) : null}
       {transfer ? (
+        // Ustunlar tepadan tekislanadi: bir tomonda izoh qatori bo'lmasa ham («Asosiy kassa» — filial nomisiz)
+        // «Qayerdan» / «Qayerga» va nomlar bir qatorda; teng ustunlarda maketdagi markazlash bilan bir xil. O'q — markazda.
         <div
           className={cx(
-            "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-3",
+            "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 py-3",
             amount && "border-t border-border",
           )}
         >
           {party(transfer.from, t("dialog.from"))}
-          <ArrowRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />
+          <ArrowRight aria-hidden="true" size={18} className="shrink-0 self-center text-text-subtle" />
           {party(transfer.to, t("dialog.to"))}
         </div>
       ) : null}

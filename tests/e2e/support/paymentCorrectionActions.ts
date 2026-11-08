@@ -61,6 +61,20 @@ const lockedPayment = () =>
     createdAt: "2026-09-02T12:30:00.000Z",
   });
 
+/** Boshqa filialga o'tgan kuryerdan olingan pul (`COURIER_MOVED` — ega qarori 2026-11-03). */
+const movedCourierPayment = () =>
+  leg({
+    id: "4475",
+    amount: 640_000,
+    operation_type: "income",
+    source_type: "courier_payment",
+    payment_method: "cash",
+    comment: "Kechagi topshiriq",
+    source_user: { id: "271", name: "Sardor Aliyev", phone_number: "+998915550011", role: "courier" },
+    payment_date: minutesAgo(240),
+    createdAt: minutesAgo(240),
+  });
+
 export const CORRECTION_DEADLINE = daysFromNow(30);
 
 /** `GET finance/history/:id` — superadmin tafsiloti `correctable` bilan. */
@@ -110,11 +124,22 @@ export const correctionDetails = () => ({
       transfer: null,
     },
   },
+  "finance/history/4475": {
+    ...movedCourierPayment(),
+    correctable: {
+      allowed: false,
+      code: "COURIER_MOVED",
+      deadline: daysFromNow(29),
+      window_days: 30,
+      root_history_id: "4475",
+      transfer: null,
+    },
+  },
 });
 
-/** `/payments` sahifasi: KPI, grafik, tarix (uch to'lov) va tafsilotlar. */
+/** `/payments` sahifasi: KPI, grafik, tarix (to'rt to'lov) va tafsilotlar. */
 export const correctionPageData = () => {
-  const items = [courierPayment(), marketPayment(), lockedPayment()];
+  const items = [courierPayment(), marketPayment(), movedCourierPayment(), lockedPayment()];
   return {
     ...OVERVIEW_PAGE_DATA,
     "finance/history": { items, meta: { page: 1, limit: 10, total: items.length, totalPages: 1 } },
@@ -160,4 +185,38 @@ export const mockCorrectionPosts = async (page: Page, replies: CorrectionReply[]
     });
   });
   return { posts };
+};
+
+/**
+ * `SHIFT_REQUIRED` → «Smenani ochish»: asosiy kassa smenasi yopiq (`GET finance/shift/current` — `shift: null`)
+ * `POST finance/shift/open` gacha; ochish tanasi `opens` ga yoziladi, keyin smena ochiq.
+ */
+export const mockCorrectionShift = async (page: Page) => {
+  const state = { shift: null as Record<string, unknown> | null, opens: [] as unknown[] };
+  await page.context().route(/\/finance\/shift\/(current|open)(\?.*)?$/, async (route) => {
+    const request = route.request();
+    if (request.method() === "OPTIONS") return route.fallback();
+    const origin = (await request.headerValue("origin")) ?? "http://127.0.0.1:4173";
+    const fulfill = (status: number, data: unknown) =>
+      route.fulfill({
+        status,
+        contentType: "application/json",
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-credentials": "true",
+          "access-control-allow-headers": "*",
+        },
+        body: JSON.stringify({ statusCode: status, message: "ok", data }),
+      });
+    if (request.method() === "POST" && request.url().includes("/finance/shift/open")) {
+      state.opens.push(request.postDataJSON());
+      state.shift = { id: "92", status: "open", opened_by: "42", opened_at: new Date().toISOString() };
+      return fulfill(201, state.shift);
+    }
+    if (request.method() === "GET" && request.url().includes("/finance/shift/current")) {
+      return fulfill(200, { shift: state.shift, required: true });
+    }
+    return route.fallback();
+  });
+  return state;
 };
