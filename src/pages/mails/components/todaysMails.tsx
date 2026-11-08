@@ -15,7 +15,7 @@ import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../mo
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useTodayMails, type MailListRow } from "../model/mailsLists";
-import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
+import { buildRegionFilterOptions, regionSearchFilter } from "./lib/regionFilterOptions";
 import MailsListBody from "./MailsListBody";
 
 /**
@@ -115,6 +115,7 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
       inlineLabel={t("filter.region")}
       icon={isCourier ? MapIcon : MapPin}
       searchable
+      filter={regionSearchFilter}
       options={regionOptions}
       value={regionId}
       onChange={(value) => setRegionId(value ?? "")}

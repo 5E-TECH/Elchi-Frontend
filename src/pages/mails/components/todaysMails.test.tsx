@@ -249,6 +249,30 @@ describe("TodaysMails", () => {
     expect(screen.getByRole("link", { name: "№2486" })).toBeInTheDocument();
   });
 
+  it("qidiruvda «Barchasi» chiqmaydi: qisqa «a» + Enter birinchi mos viloyatni tanlaydi, filtrni tozalamaydi", async () => {
+    const user = userEvent.setup();
+    getNewMailsMock.mockReturnValue(loaded(MAILS));
+
+    renderToday();
+
+    const field = screen.getByRole("combobox", { name: "Viloyat" });
+    await user.type(field, "a");
+    // «Barchasi» ham «a» ni o'z ichiga oladi — lekin yozilganda u ro'yxatda yo'q.
+    expect(within(await screen.findByRole("listbox")).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Andijon",
+    ]);
+    await user.keyboard("{Enter}");
+
+    const table = screen.getByRole("table", { name: "Bugungi pochtalar" });
+    expect(within(table).getByRole("link", { name: "№2486" })).toBeInTheDocument();
+    expect(within(table).queryByRole("link", { name: "№2485" })).not.toBeInTheDocument();
+
+    // Bo'sh so'rovda (ro'yxat endigina ochilganda) «Barchasi» joyida.
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    expect(within(await screen.findByRole("listbox")).getByRole("option", { name: "Barchasi" })).toBeInTheDocument();
+  });
+
   it("opens the mail with the fix3 fallback region state", async () => {
     const user = userEvent.setup();
     getNewMailsMock.mockReturnValue(loaded(MAILS));

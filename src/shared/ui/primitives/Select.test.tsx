@@ -512,6 +512,8 @@ describe("Select — qidiruv (searchable)", () => {
     expect(input.tagName).toBe("INPUT");
     expect(input).toHaveAttribute("aria-autocomplete", "list");
     expect(input).toHaveClass("text-inherit");
+    // Uzun tanlangan nom yopiq maydonda «…» bilan (oddiy rejimdagi `truncate` kabi).
+    expect(input).toHaveClass("text-ellipsis");
     expect(input.closest("[data-select]")).toHaveClass("text-base", "md:text-sm");
   });
 
