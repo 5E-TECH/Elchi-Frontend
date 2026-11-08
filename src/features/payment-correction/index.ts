@@ -1,4 +1,11 @@
 // T6 N2 — to'lovni qaytarish va summasini tuzatish (faqat superadmin). Public API.
+export { ReversePaymentDialog } from "./ui/ReversePaymentDialog";
+export type { ReversePaymentDialogProps } from "./ui/ReversePaymentDialog";
+export { CorrectAmountDialog } from "./ui/CorrectAmountDialog";
+export type { CorrectAmountDialogProps } from "./ui/CorrectAmountDialog";
+export { PaymentCorrectionFooter } from "./ui/PaymentCorrectionFooter";
+export type { PaymentCorrectionFooterProps } from "./ui/PaymentCorrectionFooter";
+
 export {
   useCorrectPaymentAmount,
   useReversePayment,
