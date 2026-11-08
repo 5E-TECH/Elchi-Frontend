@@ -462,3 +462,58 @@ describe("MailDetailPage — HQ: «Filialga qaytarish»", () => {
     ).toBeInTheDocument();
   });
 });
+
+/** Ega qarori 2026-11-09: rad etilgan pochtada ham qidiruv (takroriy telefonlar bannerisiz); kuryerda yo'q. */
+describe("MailDetailPage — rad etilgan pochtada qidiruv", () => {
+  const searchbox = () => screen.getByRole("searchbox", { name: "Pochtadagi buyurtmalarni qidirish" });
+  const rowIds = () =>
+    within(screen.getByRole("table"))
+      .queryAllByRole("checkbox", { name: /^№\d+ ni tanlash$/ })
+      .map((box) => box.getAttribute("aria-label")?.replace(/^№(\d+) ni tanlash$/, "$1"));
+
+  beforeEach(() => {
+    mocks.receive.mockReset();
+    mocks.returnOrders.mockReset();
+    mocks.refetchDetail.mockReset();
+    mocks.apiGet.mockReset().mockResolvedValue({ data: { data: { items: [order("900")] } } });
+  });
+
+  it("HQ: № bo'yicha topadi, «Ko'rinayotganlarni tanlash» → faqat topilgan qabul qilinadi; banner yo'q", async () => {
+    const user = userEvent.setup();
+    setup(["101", "102", "103"]);
+    mocks.receive.mockResolvedValue(result({ orderIds: ["103"], remainingOrderIds: ["101", "102"] }));
+    renderPage("registrator", "HQ");
+
+    // Hamma qatorda bir xil raqam — rad etilgan pochtada takroriy telefonlar banneri chiqmaydi.
+    expect(screen.queryByTestId("mail-duplicate-phones")).toBeNull();
+    await user.type(searchbox(), "103");
+    await waitFor(() => expect(rowIds()).toEqual(["103"]));
+    expect(screen.getByTestId("mail-search-status")).toHaveTextContent("«103» bo'yicha 1 ta buyurtma topildi");
+
+    await user.click(
+      within(screen.getByRole("region", { name: "Tanlangan buyurtmalar" })).getByRole("button", {
+        name: "Ko'rinayotganlarni tanlash (1)",
+      }),
+    );
+    expect(returnButton()).toHaveAccessibleName("Filialga qaytarish — 1 ta");
+    await user.click(screen.getByRole("button", { name: "Pochtani qabul qilish — 1 ta" }));
+    await waitFor(() =>
+      expect(mocks.receive).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["103"] } }),
+    );
+  });
+
+  it("filial (REGIONAL) menejeri: kuryer qaytargan pochtada ham qidiruv bor", async () => {
+    const user = userEvent.setup();
+    setup(["101", "102"]);
+    renderPage("manager", "REGIONAL");
+
+    await user.type(searchbox(), "Mijoz 102");
+    await waitFor(() => expect(rowIds()).toEqual(["102"]));
+  });
+
+  it("kuryer (faqat o'qish): qidiruv yo'q", () => {
+    setup(["101", "102"]);
+    renderPage("courier", "REGIONAL");
+    expect(screen.queryByRole("searchbox")).toBeNull();
+  });
+});

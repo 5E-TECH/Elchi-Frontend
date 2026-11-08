@@ -166,9 +166,10 @@ import { resolveReceiveAccess } from "./model/receiveAccess";
  * Eski pochta, kuryerning rad etilgan pochtasi va amalsiz rejimda kamera maqsadi yo'q (markaziy tugma — `/scan`).
  *
  * QIDIRUV VA TAKRORIY TELEFONLAR (MD-1, ega S1–S4; maketlar `*-mails-detail-search`, `-search-empty`,
- * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — faqat xodim jo'natish rejimida (superadmin, admin,
- * registrator) va menejer qabul rejimida: qidiruv matni URL'da (`?q=`, `replace`, `location.state` saqlanadi),
- * tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. Maydon mahalliy qoralamaga bog'langan
+ * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — xodim jo'natish rejimida (superadmin, admin,
+ * registrator) va menejer qabul rejimida. Rad etilgan pochtada (HQ va filial qabuli) — faqat qidiruv, takroriy
+ * telefonlar bannerisiz (ega qarori 2026-11-09; maket yo'q — eng yaqini `admin-mails-detail-search`). Qidiruv
+ * matni URL'da (`?q=`, `replace`, `location.state` saqlanadi), tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. Maydon mahalliy qoralamaga bog'langan
  * (URL kechikib yoziladi). USB skaner qidiruv maydoni fokusda bo'lganda tokenni maydonga ham yozadi — skandan keyin
  * oldingi `q` tiklanadi (`valueBeforeScan`); shu pochtada topiladigan matn esa skan emas, qidiruv
  * (`looksLikeTypedSearch`).
@@ -703,15 +704,20 @@ const MailDetailPage = () => {
   } = useMailDetailState(orders);
 
   // ─── Qidiruv va takroriy telefonlar (MD-1) ────────────────────────────────
-  // Faqat xodim jo'natish va menejer qabul rejimida (maketlar); kuryer, rad etilgan va eski pochtada yo'q.
-  const searchMode: "send" | "receive" | null =
-    isOldDetail || isEffectiveRefusedDetail || isCourier
+  // Qidiruv: xodim jo'natish, menejer qabul rejimi (maketlar) va rad etilgan pochta (ega qarori 2026-11-09 — maket
+  // yo'q, eng yaqini `admin-mails-detail-search`); kuryer va eski pochtada yo'q.
+  const searchMode: "send" | "receive" | "refused" | null =
+    isOldDetail || isCourier
       ? null
-      : role === "manager"
-        ? shouldReceiveCurrentPost
-          ? "receive"
-          : null
-        : "send";
+      : isEffectiveRefusedDetail
+        ? "refused"
+        : role === "manager"
+          ? shouldReceiveCurrentPost
+            ? "receive"
+            : null
+          : "send";
+  /** Takroriy telefonlar banneri — faqat jo'natish va qabul rejimida (rad etilgan pochtada — faqat qidiruv). */
+  const duplicatesMode = searchMode === "refused" ? null : searchMode;
   // `q` — URL'da (`replace`; rejim `location.state` da saqlanadi). Maydon MAHALLIY qoralamaga bog'langan: router
   // har bir joylashuv o'zgarishini `startTransition` ichida qo'llaydi — URL'ga bevosita bog'langan maydonda kursor
   // oxirga sakraydi, tez yozilgan harflar yo'qoladi (IME ham buziladi). URL kechikish bilan yoziladi; tozalash,
@@ -734,7 +740,7 @@ const MailDetailPage = () => {
     () => filterMailOrders(orders, searchMode ? appliedQuery : ""),
     [appliedQuery, orders, searchMode],
   );
-  const duplicateGroups = useMemo(() => (searchMode ? findDuplicatePhones(orders) : []), [orders, searchMode]);
+  const duplicateGroups = useMemo(() => (duplicatesMode ? findDuplicatePhones(orders) : []), [orders, duplicatesMode]);
   const duplicateMap = useMemo(() => duplicateSiblings(duplicateGroups), [duplicateGroups]);
   const duplicateNote = useCallback(
     (order: PostOrder) => {
@@ -2246,16 +2252,16 @@ const MailDetailPage = () => {
         }
         searchInputRef={searchInputRef}
         alert={
-          searchMode && duplicateGroups.length > 0 ? (
+          duplicatesMode && duplicateGroups.length > 0 ? (
             <DuplicatePhonesAlert
               groups={duplicateGroups}
-              mode={searchMode}
+              mode={duplicatesMode}
               activeKey={activeDuplicateKey}
               onToggle={toggleDuplicatePhone}
             />
           ) : undefined
         }
-        duplicateNote={searchMode && duplicateGroups.length > 0 ? duplicateNote : undefined}
+        duplicateNote={duplicatesMode && duplicateGroups.length > 0 ? duplicateNote : undefined}
       />
 
       {/* Tanlanganlarni pochtadan o'chirish (superadmin, NEW pochta). */}

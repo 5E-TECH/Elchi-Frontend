@@ -282,9 +282,10 @@ describe("MailDetailPage — bekor qilingan pochta (o'zgarmagan)", () => {
     expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeDisabled();
   });
 
-  it("MD-1: rad etilgan pochtada qidiruv yo'q; URL tozalanganda `q` qoladi", async () => {
+  it("MD-1: rad etilgan pochtada ham qidiruv (ega qarori 2026-11-09); URL tozalanganda `q` qoladi", async () => {
     const { unmount } = renderPage(stateFor("registrator", "HQ"), `/mails/${POST_ID}?type=refused&q=Laylo`);
-    expect(await screen.findByTestId("search-state")).toHaveTextContent("none");
+    // Qidiruv berilgan, `q` URL'dan; pochtada «Laylo» yo'q — natija 0.
+    expect(await screen.findByTestId("search-state")).toHaveTextContent("Laylo:0");
     unmount();
 
     mocks.useMailDetail.mockReturnValue({
