@@ -221,6 +221,34 @@ describe("TodaysMails", () => {
     expect(screen.getByRole("link", { name: "№2486" })).toBeInTheDocument();
   });
 
+  it("«Viloyat» filtri qidiruvli (ega qarori 2026-11-09): yozilgan matn ro'yxatni toraytiradi, topilgani tanlanadi", async () => {
+    const user = userEvent.setup();
+    getNewMailsMock.mockReturnValue(loaded(MAILS));
+
+    renderToday();
+
+    // Ro'yxat qisqa (Barchasi + 2 viloyat) bo'lsa ham maydonning o'zi qidiruv: `<input role="combobox">`.
+    const field = screen.getByRole("combobox", { name: "Viloyat" });
+    expect(field.tagName).toBe("INPUT");
+    expect(field).toHaveAttribute("aria-autocomplete", "list");
+
+    await user.type(field, "bux");
+    const listbox = await screen.findByRole("listbox");
+    expect(within(listbox).getAllByRole("option").map((option) => option.textContent)).toEqual(["Buxoro"]);
+    await user.keyboard("{Enter}");
+
+    const table = screen.getByRole("table", { name: "Bugungi pochtalar" });
+    expect(within(table).getByRole("link", { name: "№2485" })).toBeInTheDocument();
+    expect(within(table).queryByRole("link", { name: "№2486" })).not.toBeInTheDocument();
+
+    // Mos viloyat yo'q — «Topilmadi», filtr o'zgarmaydi.
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    await user.type(screen.getByRole("combobox", { name: "Viloyat" }), "xorazm");
+    expect(within(await screen.findByRole("listbox")).queryAllByRole("option")).toHaveLength(0);
+    expect(screen.getAllByText("Topilmadi").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "№2486" })).toBeInTheDocument();
+  });
+
   it("opens the mail with the fix3 fallback region state", async () => {
     const user = userEvent.setup();
     getNewMailsMock.mockReturnValue(loaded(MAILS));

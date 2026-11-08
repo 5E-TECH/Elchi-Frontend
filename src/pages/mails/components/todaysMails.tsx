@@ -22,7 +22,8 @@ import MailsListBody from "./MailsListBody";
  * «BUGUNGI POCHTALAR» — `/mails/today` (dizayn v2).
  *
  * Ma'lumot — `useTodayMails()` (kuryer: `post/on-the-road`; menejer: `post?status=sent&branch_id` + zaxira
- * `orders?status=on the road`; qolganlar: `post/new`). Viloyat filtri mijoz tomonida (v1 dagidek).
+ * `orders?status=on the road`; qolganlar: `post/new`). Viloyat filtri mijoz tomonida (v1 dagidek) va qidiruvli
+ * (`Select searchable`, ega qarori 2026-11-09): maydonga yozib viloyat topiladi, ro'yxat qisqa bo'lsa ham.
  *
  *  - xodim (`card`, maket `superadmin-mails-today`): «Viloyat: Barchasi» + xulosa «N ta viloyat · …»,
  *    jadval. Kuryer ustuni — faqat backend bergan bo'lsa: YANGI pochtaga kuryer hali biriktirilmagan
@@ -113,6 +114,7 @@ const TodaysMails = ({ layout }: MailsTabBodyProps) => {
       aria-label={t("filter.region")}
       inlineLabel={t("filter.region")}
       icon={isCourier ? MapIcon : MapPin}
+      searchable
       options={regionOptions}
       value={regionId}
       onChange={(value) => setRegionId(value ?? "")}

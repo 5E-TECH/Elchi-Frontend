@@ -597,6 +597,25 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "9" });
   });
 
+  it("«Viloyat» filtri viloyatlar kam bo'lsa ham qidiruvli (ega qarori 2026-11-09, «Bugungi» bilan bir xil)", async () => {
+    mocks.useGetRegions.mockReturnValue({
+      data: { statusCode: 200, data: [{ id: "2", name: "Buxoro" }, { id: "3", name: "Andijon" }, { id: "9", name: "Xorazm" }] },
+      isLoading: false,
+    });
+    const user = userEvent.setup();
+    renderOld("admin", "/mails/old", "card");
+
+    const field = screen.getByRole("combobox", { name: "Viloyat" });
+    expect(field.tagName).toBe("INPUT");
+    // Nom ichidagi qism ham topiladi: «xor» → Buxoro va Xorazm; «xora» → faqat Xorazm.
+    await user.type(field, "xor");
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Buxoro", "Xorazm"]);
+    await user.type(field, "a");
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Xorazm"]);
+    await user.keyboard("{Enter}");
+    expect(lastListParams()).toEqual({ page: 1, limit: 8, has_orders: true, region_id: "9" });
+  });
+
   it("region filter falls back to the page's regions when `GET /region` gave nothing", async () => {
     mocks.useGetRegions.mockReturnValue({ data: undefined, isLoading: false });
     const user = userEvent.setup();
