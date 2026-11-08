@@ -4,7 +4,10 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Pochta tafsiloti → qidiruv (`?q=`) va takroriy telefonlar (MD-1) — soxta backend.
  * Pochta №2483 (Qashqadaryo, maket `superadmin-mails-detail-duplicates`): 9 buyurtma, 2 ta takroriy raqam.
  * `role: "manager"` — filial menejeri (REGIONAL), pochta `sent`, buyurtmalar yo'lda (`manager-mails-detail-receive-*`).
- * Faqat GET; yozish so'rovi bo'lsa `leaked` ga tushadi.
+ * `refused: true` — kuryer qaytargan (rad etilgan) pochta: buyurtmalar `cancelled (sent)`, pochta `canceled`, Qarshi
+ * filiali jo'natgan, HQ qabul qiladi (ega qarori 2026-11-09 — qidiruv bor, takroriy telefonlar banneri yo'q).
+ * Faqat GET va rad etilgan pochtani qabul qilish (`POST post/cancel/receive/2483` → `received`); boshqa yozish
+ * so'rovi `leaked` ga tushadi.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -57,6 +60,7 @@ export const mockMailSearchApi = async (
     theme = "light" as "light" | "dark",
     /** TOZ-0 (mSix70Ca c2b54a): katta pochta — 9 ta asosiy qatordan keyin shuncha noyob qator (har biri o'z raqami bilan). */
     extraRows = 0,
+    refused = false,
   } = {},
 ) => {
   const isManager = role === "manager";
@@ -71,8 +75,12 @@ export const mockMailSearchApi = async (
     index % 2 ? "center" : "address",
     100000 + index * 1000,
   ]);
-  const orders = [...ROWS, ...extra].map((row) => order(row, isManager ? "on the road" : "received"));
+  const orders = [...ROWS, ...extra].map((row) =>
+    order(row, refused ? "cancelled (sent)" : isManager ? "on the road" : "received"),
+  );
   const leaked: string[] = [];
+  /** `POST post/cancel/receive/2483` so'rovlaridagi `order_ids`. */
+  const received: string[][] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -104,9 +112,11 @@ export const mockMailSearchApi = async (
           centerOrders: { centerOrders: 0, centerOrdersTotalPrice: 0 },
           post: {
             id: "2483",
-            status: isManager ? "sent" : "new",
+            status: refused ? "canceled" : isManager ? "sent" : "new",
             // HQ → filial o'tkazmasi: kuryersiz, manzil — menejer filiali (faqat u qabul qiladi — anKpzwxk).
             ...(isManager ? { courier_id: "0", branch_id: "3" } : {}),
+            // Rad etilgan: Qarshi filiali jo'natgan, qabul joyi — HQ («Filialga qaytarish» ham chiqadi).
+            ...(refused ? { courier_id: "41", branch_id: "1", branch: { id: "3", name: "Qarshi filiali" } } : {}),
             region_id: "14",
             region: { id: "14", name: "Qashqadaryo" },
             qr_code_token: "qr-post-2483",
@@ -114,6 +124,16 @@ export const mockMailSearchApi = async (
             createdAt: "2026-10-16T08:00:00.000Z",
           },
         },
+      });
+    }
+    if (refused && request.method() === "POST" && path === "post/cancel/receive/2483") {
+      const ids = ((request.postDataJSON() as { order_ids?: string[] } | null)?.order_ids ?? []).map(String);
+      received.push(ids);
+      const remaining = orders.map((item) => item.id).filter((id) => !ids.includes(id));
+      return reply(route, {
+        statusCode: 200,
+        message: "ok",
+        data: { order_ids: ids, remaining_order_ids: remaining, post_status: "canceled", post_closed: false },
       });
     }
     if (request.method() !== "GET") {
@@ -132,7 +152,7 @@ export const mockMailSearchApi = async (
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   }, theme);
-  return { orders, leaked };
+  return { orders, leaked, received };
 };
 
 export const openMailSearch = async (page: Page, query = "") => {
