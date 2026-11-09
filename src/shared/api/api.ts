@@ -24,7 +24,8 @@ declare module "axios" {
   interface AxiosRequestConfig {
     /**
      * Fon so'rovi (G6F68ti6, 9-band): tarmoq xatosida «Internet aloqasi yo'q» xabari ochilmaydi — faqat holat
-     * belgilanadi (`auth/networkError.ts`). Har daqiqada yoki fokusda o'zi so'raladigan so'rovlar uchun.
+     * belgilanadi (`auth/networkError.ts`). Har daqiqada yoki fokusda o'zi so'raladigan so'rovlar uchun, yoki xatosi
+     * oynaning o'zida ko'rsatiladigan amal (T6 N2: to'lovni tuzatish tasdig'i — matn ikki marta chiqmasin).
      */
     silentNetworkError?: boolean;
   }

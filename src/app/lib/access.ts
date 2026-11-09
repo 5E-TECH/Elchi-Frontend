@@ -186,6 +186,19 @@ export const canDispatchPostToBranch: Predicate = anyOf(
 );
 
 /**
+ * «Yangi pochtalar» (`GET post/new` — HQ'dagi hali jo'natilmagan pochtalar, `/mails/today` xodim ro'yxati va
+ * skanerning «Pochtani jo'natish» varag'i). Backend `assertNewPostsRequester` bilan bir xil (Elchi-Backend #620,
+ * anKpzwxk): superadmin, admin va HQ filialidagi registrator; filial turi noma'lum — yo'q (fail-closed). Boshqa
+ * registratorda server 403 `new_posts_hq_only` qaytaradi — unga «Bugungi» tabi ko'rsatilmaydi, so'rov ketmaydi.
+ * Menejer bu yerda yo'q (ega Q2 sukuti): uning «Bugungi»si — o'z filialiga kelayotgan pochtalar
+ * (`post?status=sent&branch_id`), HQ menejerida ham.
+ */
+export const canViewNewPosts: Predicate = anyOf(
+  hasRole("superadmin", "admin"),
+  (state) => roleOf(state) === "registrator" && branchTypeOf(state) === "HQ",
+);
+
+/**
  * Rad etilgan (kuryer qaytargan, `canceled`) pochtani qabul qilish — `/mails/:id` (`type: "refused"`) dagi
  * «Rad etilgan pochtani qabul qilish» (`POST post/cancel/receive/:id`, backend
  * `@Roles(MANAGER, REGISTRATOR, ADMIN, SUPERADMIN)`). Pochta sahifasining o'z shartini AYNAN takrorlaydi
@@ -367,3 +380,11 @@ export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerC
  * `PATCH finance/shift/settings` `@Roles(SUPERADMIN)` bilan AYNAN bir xil. O'qish (GET) yopuvchi rollarga ochiq.
  */
 export const canManageShiftSettings: Predicate = hasRole("superadmin");
+
+/**
+ * T6 N2 — kassa tarixidagi to'lovni qaytarish va summasini tuzatish («Qaytarish» / «Summani tahrirlash»). Backend
+ * `POST finance/history/:id/reverse` va `POST finance/history/:id/correct-amount` — `@Roles(SUPERADMIN)` (servis ham
+ * `assertSuperadmin`), `correctable` ham faqat superadmin tafsilotida keladi. Admin va boshqa rollarda tasodifan
+ * `correctable` kelsa ham tugma chizilmaydi (ega qarori 2026-11-03).
+ */
+export const canCorrectPayments: Predicate = hasRole("superadmin");

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useReceivePost } from "../../../entities/mails";
+import { coverageErrorLine, readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource, type ScanTargetListItem } from "../../../shared/lib/scanner";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
@@ -43,7 +44,9 @@ import {
  *   - «kutilmoqda» (qabul qilingan — shu sessiyada ham, avval ham) → natija sahifasi `/scan/:token` (sotish / bekor).
  *     Ya'ni yo'ldagi posilka: 1-skan — qabul, keyingi skan — sotish / bekor (Dilshod, 2026-11-07);
  *   - kuryerda: bo'sh / NEW → «O'zimga olish rejimida oling»; menejerda: boshqa filialniki → sabab; kuryerdagi yoki
- *     boshqa holatdagi buyurtma — xato ovozi va sabab.
+ *     boshqa holatdagi buyurtma — xato ovozi va sabab;
+ *   - begona QR (#620, anKpzwxk: 403 `order_not_in_your_branch` …) va qabul rad javobi (`post_receive_manager_only`)
+ *     — lokal uz/ru/en matn (`common:coverage.*`), backend matni faqat noma'lum sabab uchun.
  * Bitta token parallel ikki marta ketmaydi (yo'ldagi tokenlar to'plami).
  */
 
@@ -197,7 +200,8 @@ export const useCourierReceive = ({
           void playScanFeedback("missing", t("order.notFoundTitle"), source);
           return;
         }
-        fail(token, null, getBackendErrorMessage(error) ?? t("scanner.error.title"), source);
+        // Begona QR (#620): lokal matn («Bu buyurtma sizning filialingizda emas»), ma'lumotsiz.
+        fail(token, null, readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanner.error.title"), source);
         return;
       }
       if (!order) {
@@ -287,7 +291,12 @@ export const useCourierReceive = ({
           voice: "received",
         });
       } catch (error) {
-        fail(token, order, getBackendErrorMessage(error) ?? t("scanner.courierReceive.failed", { ref }), source);
+        // #621: o'tkazmani faqat manzil filial menejeri qabul qiladi (`post_receive_manager_only`) — lokal matn.
+        const reason =
+          coverageErrorLine(t, error, "receive") ??
+          getBackendErrorMessage(error) ??
+          t("scanner.courierReceive.failed", { ref });
+        fail(token, order, reason, source);
       }
     },
     [addEntry, fail, queryClient, receivePost, t],

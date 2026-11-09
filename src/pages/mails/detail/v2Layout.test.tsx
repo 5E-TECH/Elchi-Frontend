@@ -83,6 +83,9 @@ const stateFor = (role: string, branchType?: string) =>
     },
   }) as never;
 
+/** Menejer (filial 1, REGIONAL) filialiga jo'natilgan o'tkazma — manzil filial menejeri qabul qiladi (anKpzwxk). */
+const TO_MANAGER_BRANCH = { courier_id: "0", branch_id: "1" };
+
 const regular = (
   rows: ReturnType<typeof order>[],
   post?: { status: string; qr_code_token?: string; courier_id?: string; branch_id?: string },
@@ -302,7 +305,8 @@ describe("MailDetailPage v2 — rejimlar", () => {
   });
 
   it("menejer qabul: sarlavha «Yo'ldagi» emas, «Buyurtmalar»; skaner izohi menejer matni (`manager-mails-detail-receive`)", () => {
-    regular([order("301", "on the road"), order("302", "waiting")], { status: "new" });
+    // O'z filialiga o'tkazmada skan = darhol qabul (pastdagi test); tanlash izohi — menejer kuryer pochtasini qabul qilganda.
+    regular([order("301", "on the road"), order("302", "waiting")], { status: "sent", courier_id: "77", branch_id: "1" });
     renderPage(stateFor("manager", "REGIONAL"));
     expect(screen.getByRole("heading", { level: 2, name: "Buyurtmalar" })).toBeInTheDocument();
     expect(screen.getByText("QR kodni skanerlang — buyurtma ro'yxatda tanlanadi")).toBeInTheDocument();
@@ -504,7 +508,7 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
         person("10350", "Javohir", "+998 93 207 61 45", "Nur Elektronika", "on the road"),
         person("10351", "Sardor", "+998911112233", "Baraka Shop", "on the road"),
       ],
-      { status: "sent" },
+      { status: "sent", ...TO_MANAGER_BRANCH },
     );
     renderPage(stateFor("manager", "REGIONAL"));
     const banner = screen.getByTestId("mail-duplicate-phones");
@@ -519,7 +523,31 @@ describe("MailDetailPage — qidiruv va takroriy telefonlar (MD-1)", () => {
     expect(rowIds()).toEqual(["10354", "10351"]);
   });
 
-  it("kuryer, rad etilgan va eski pochtada qidiruv va banner yo'q", () => {
+  it("rad etilgan pochta (holatsiz havola, admin): qidiruv bor, takroriy telefonlar banneri va belgisi yo'q", async () => {
+    const user = userEvent.setup();
+    regular(
+      DISPATCH.map((item) => ({ ...item, status: "cancelled (sent)" })),
+      { status: "canceled" },
+    );
+    renderPage(stateFor("admin"), `/mails/${POST_ID}?q=Laylo`);
+
+    expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeInTheDocument();
+    expect(searchbox()).toHaveValue("Laylo");
+    expect(rowIds()).toEqual(["10207", "10192"]);
+    expect(screen.getByTestId("mail-search-status")).toHaveTextContent("«Laylo» bo'yicha 2 ta buyurtma topildi");
+    // Pochtada 2 ta takroriy raqam bor, lekin rad etilgan pochtada banner ham, qator belgisi ham chiqmaydi.
+    expect(screen.queryByTestId("mail-duplicate-phones")).toBeNull();
+    expect(screen.queryByText("Takroriy raqam")).toBeNull();
+
+    await user.click(
+      within(screen.getByRole("region", { name: "Tanlangan buyurtmalar" })).getByRole("button", {
+        name: "Ko'rinayotganlarni tanlash (2)",
+      }),
+    );
+    expect(screen.getByRole("button", { name: "Pochtani qabul qilish — 2 ta" })).toBeEnabled();
+  });
+
+  it("kuryer va eski pochtada qidiruv va banner yo'q", () => {
     regular(
       DISPATCH.map((item) => ({ ...item, status: "on the road" })),
       { status: "sent" },

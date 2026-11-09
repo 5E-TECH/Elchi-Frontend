@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import { canViewNewPosts } from "../../../app/lib/access";
 import { useMails, type MailItem } from "../../../entities/mails";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -222,6 +223,12 @@ export type MailsListQuery = {
 
 export type MailsListResult = {
   isCourier: boolean;
+  /**
+   * Ro'yxat bu rol uchun bormi. «Bugungi»: `false` — HQ bo'lmagan (yoki filial turi noma'lum) registrator
+   * (`GET post/new` faqat HQ xodimlariga, backend 403 `new_posts_hq_only`; anKpzwxk, ega Q1 sukuti) — tab
+   * ko'rsatilmaydi, so'rov ketmaydi. Boshqa ro'yxatlarda doim `true`.
+   */
+  available: boolean;
   /** Yuklangan pochtalar (yuklanmagan — bo'sh massiv). */
   mails: MailItem[];
   /** Yuklanganmi (son ko'rsatish uchun: yuklanmaguncha son chizilmaydi). */
@@ -232,18 +239,31 @@ export type MailsListResult = {
 /**
  * «Bugungi» pochtalar — v1 (`todaysMails.tsx`) mantig'i so'zma-so'z:
  *  - kuryer — `post/on-the-road` (`useGetNewMailsCourier`), qolganlar — `useGetNewMails`
- *    (menejerda `post?status=sent&branch_id`, boshqalarda `post/new`);
+ *    (menejerda `post?status=sent&branch_id`, boshqalarda `post/new` — faqat `canViewNewPosts`: superadmin, admin,
+ *    HQ registratori; HQ bo'lmagan registratorda so'rov ketmaydi, `available: false`);
  *  - menejerda zaxira: API bo'sh bo'lsa `orders?status=on the road&branch_id` dan guruhlangan pochtalar.
  */
+/**
+ * «Bugungi» tabi bu rol uchun bormi: kuryer (`post/on-the-road`), menejer (o'z filiali ro'yxati, `post/new` emas —
+ * HQ menejerida ham, ega Q2 sukuti) va `canViewNewPosts` (superadmin, admin, HQ registratori). HQ bo'lmagan yoki
+ * filial turi noma'lum registrator — yo'q (backend 403 `new_posts_hq_only`, anKpzwxk; ega Q1 sukuti).
+ */
+export const useTodayMailsAvailable = (): boolean => {
+  const role = useSelector((state: RootState) => state.role.role);
+  const mayViewNewPosts = useSelector(canViewNewPosts);
+  return role === "courier" || role === "manager" || mayViewNewPosts;
+};
+
 export const useTodayMails = (): MailsListResult => {
   const role = useSelector((state: RootState) => state.role.role);
   const branchId = useSelector(getCurrentBranchId);
   const isCourier = role === "courier";
   const isManager = role === "manager";
+  const available = useTodayMailsAvailable();
   const { useGetNewMails, useGetNewMailsCourier } = useMails();
 
   const courierQuery = useGetNewMailsCourier({ enabled: isCourier });
-  const defaultQuery = useGetNewMails({ enabled: !isCourier });
+  const defaultQuery = useGetNewMails({ enabled: !isCourier && available, silentError: true });
   const main = isCourier ? courierQuery : defaultQuery;
   const apiMails = useMemo(() => readMailItems(main.data), [main.data]);
 
@@ -277,6 +297,7 @@ export const useTodayMails = (): MailsListResult => {
 
   return {
     isCourier,
+    available,
     mails: isLoaded ? mails : [],
     isLoaded,
     query: {
@@ -303,6 +324,7 @@ export const useRefusedMails = (): MailsListResult => {
 
   return {
     isCourier,
+    available: true,
     mails,
     isLoaded,
     query: {

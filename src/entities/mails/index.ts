@@ -472,7 +472,9 @@ export const useMails = () => {
   // Menejer «Bugungi»si — filialga kelayotgan BARCHA ochiq pochtalar (ro'yxat sahifalanmaydi, kartalar to'ri;
   // sukut `limit: 8` 9-pochtadan boshlab jimgina kesardi). 100 — backend sahifa chegarasi (`OLD_MAILS_PAGE_MAX`).
   // Parametrlar doim bir xil, shuning uchun kalit (`newMailsQueryOptions`) o'zgarmaydi.
-  const useGetNewMails = (options?: { enabled?: boolean }) => {
+  // `enabled` — chaqiruvchi rol shartini beradi (`post/new` faqat HQ xodimlariga: `canViewNewPosts`, anKpzwxk);
+  // `silentError` — xato ro'yxat joyida chiziladi, global xabar takrorlanmaydi.
+  const useGetNewMails = (options?: { enabled?: boolean } & SilentErrorOption) => {
     const query = newMailsQueryOptions({ role, branchId });
     return useQuery({
       queryKey: query.queryKey,
@@ -480,6 +482,7 @@ export const useMails = () => {
         ? () => getManagerScopedPosts("sent", { page: 1, limit: MANAGER_TODAY_LIMIT })
         : query.queryFn,
       enabled: options?.enabled ?? true,
+      ...silentErrorMeta(options),
     });
   };
 

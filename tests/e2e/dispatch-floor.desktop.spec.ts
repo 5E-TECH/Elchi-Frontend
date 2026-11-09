@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   BULK_CANCEL_COMMENT,
   BULK_SOLD_COMMENT,
+  FOREIGN_TOKEN,
   hidScan,
   markResult,
   mockCourierBulkApi,
@@ -54,6 +55,26 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     // Biriktirilganlar ro'yxatdan chiqadi, tanlanmagani qoladi.
     await expect(page.getByRole("checkbox", { name: "№10285 ni tanlash" })).toHaveCount(0);
     await expect(page.getByRole("checkbox", { name: "№10342 ni tanlash" })).not.toBeChecked();
+    expect(api.leaked).toEqual([]);
+  });
+
+  test("/dispatch: begona QR (403 order_not_in_your_branch) — «Bu buyurtma sizning filialingizda emas», ro'yxatga qo'shilmaydi", async ({
+    page,
+  }) => {
+    const api = await mockDispatchApi(page);
+    await openDispatch(page);
+
+    await hidScan(page, FOREIGN_TOKEN);
+    await expect(
+      page.locator("[data-shell-slot=content]").getByText("Bu buyurtma sizning filialingizda emas"),
+    ).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /ni tanlash/ })).toHaveCount(0);
+    expect(api.lookups).toEqual([FOREIGN_TOKEN]);
+
+    // Keyingi to'g'ri skan odatdagidek qo'shiladi (rad etilgan skandan keyin sahifa darvozani 600 ms yopadi).
+    await page.waitForTimeout(300);
+    await hidScan(page, "tok-10285");
+    await expect(page.getByRole("checkbox", { name: "№10285 ni tanlash" })).toBeChecked();
     expect(api.leaked).toEqual([]);
   });
 

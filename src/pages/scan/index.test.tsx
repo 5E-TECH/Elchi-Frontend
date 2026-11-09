@@ -228,6 +228,56 @@ describe("ScanPage — universal skaner (desktop)", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
+  it("begona QR (403 order_not_in_your_branch, #620): lokal sarlavha, xato signali, sahifa ochilmaydi, ma'lumot yo'q", async () => {
+    fetchMock.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), {
+        response: {
+          status: 403,
+          data: { statusCode: 403, message: "Bu buyurtma sizning filialingizda emas", data: { reason: "order_not_in_your_branch" } },
+        },
+      }),
+    );
+    renderScan();
+
+    hidScan("ORD-77031");
+
+    const card = await screen.findByRole("region", { name: "Natija" });
+    expect(within(card).getByText("Bu buyurtma sizning filialingizda emas")).toBeInTheDocument();
+    expect(within(card).queryByText("Kodni tekshirib bo'lmadi")).not.toBeInTheDocument();
+    // Raqam noma'lum (javobda ma'lumot yo'q) — faqat o'qilgan matn.
+    expect(within(card).getByText("O'qilgan matn")).toBeInTheDocument();
+    expect(within(card).getByText("ORD-77031")).toBeInTheDocument();
+    expect(within(card).queryByText(/№/)).not.toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith("error", "Bu buyurtma sizning filialingizda emas", "keyboard");
+    expect(navigateMock).not.toHaveBeenCalled();
+    // Kulrang qulf (tizim-errors §02, `/scan/:token` dagidek) — qizil emas.
+    const alert = within(card).getByTestId("scan-outcome");
+    expect(alert).toHaveClass("bg-sunken");
+    expect(alert).not.toHaveClass("bg-danger-soft");
+  });
+
+  it("503 branch_scope_unavailable: «Filialingizni aniqlab bo'lmadi» va izoh", async () => {
+    fetchMock.mockRejectedValue(
+      Object.assign(new Error("Unavailable"), {
+        response: { status: 503, data: { statusCode: 503, message: "x", data: { reason: "branch_scope_unavailable" } } },
+      }),
+    );
+    renderScan();
+
+    hidScan("ORD-77032");
+
+    const card = await screen.findByRole("region", { name: "Natija" });
+    expect(within(card).getByText("Filialingizni aniqlab bo'lmadi")).toBeInTheDocument();
+    expect(within(card).getByText("Birozdan so'ng qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith(
+      "error",
+      "Filialingizni aniqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
+      "keyboard",
+    );
+    // Vaqtinchalik tizim xatosi — qizil qoladi.
+    expect(within(card).getByTestId("scan-outcome")).toHaveClass("bg-danger-soft");
+  });
+
   it("shows the read text of an invalid QR and never asks the server", async () => {
     renderScan();
 
@@ -1426,5 +1476,56 @@ describe("ScanPage — menejer «Pochtadan qabul» (telefon, 2026-11-07)", () =>
       expect(feedbackMock).toHaveBeenCalledWith("error", "Siz bu branch pochtasini qabul qila olmaysiz", "manual"),
     );
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("begona QR (403 order_not_in_your_branch, #620) — lokal sabab, ma'lumotsiz qator, qabul so'rovi yo'q", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockRejectedValueOnce(
+      Object.assign(new Error("Forbidden"), {
+        response: {
+          status: 403,
+          data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } },
+        },
+      }),
+    );
+    renderScan("manager", { branchType: "REGIONAL", mode: "branchReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "Bu buyurtma sizning filialingizda emas", "manual"),
+    );
+    expect(screen.queryByText("backend matni")).not.toBeInTheDocument();
+    expect(screen.queryByText(/№405/)).not.toBeInTheDocument();
+    expect(patchSpy).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("qabul 403 post_receive_manager_only (#621) — lokal matn, backend matni emas", async () => {
+    const user = userEvent.setup();
+    patchSpy.mockRejectedValueOnce(
+      Object.assign(new Error("Forbidden"), {
+        response: {
+          status: 403,
+          data: {
+            statusCode: 403,
+            message: "backend matni",
+            data: { reason: "post_receive_manager_only", details: { post_id: "74" } },
+          },
+        },
+      }),
+    );
+    renderScan("manager", { branchType: "REGIONAL", mode: "branchReceive" });
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith(
+        "error",
+        "Pochta qabul qilinmadi. Bu pochtani faqat manzil filial menejeri qabul qila oladi.",
+        "manual",
+      ),
+    );
+    expect(screen.queryByText("backend matni")).not.toBeInTheDocument();
   });
 });

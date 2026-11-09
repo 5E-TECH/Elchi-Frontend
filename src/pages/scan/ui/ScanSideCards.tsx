@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-scan-camera, courier-scan-camera, courier-scan-invalid, courier-scan-not-found, courier-scan-manual-entry
 import { useId, useState, type FormEvent } from "react";
-import { Ban, ChevronRight, Hand, History, ScanQrCode, SearchX, Store, Sun, TriangleAlert, Usb } from "lucide-react";
+import { Ban, ChevronRight, Hand, History, Lock, ScanQrCode, SearchX, Store, Sun, TriangleAlert, Usb } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -41,7 +41,7 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
   const canHandover = useSelector(canHandoverCancelledToMarket);
 
   let title: string;
-  let text: string;
+  let text: string | null;
   let icon = Ban;
   let codeLabel = t("scanner.scannedCode");
   if (outcome.kind === "invalid") {
@@ -57,11 +57,23 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
     title = t(`${key}.notFoundTitle`);
     text = t(`${key}.notFoundText`);
     icon = SearchX;
+  } else if (outcome.title) {
+    // Begona QR (#620): lokal sarlavha, izoh bo'lmasligi mumkin («Bu buyurtma sizning filialingizda emas»). Raqam
+    // noma'lum (javobda ma'lumot yo'q) — faqat o'qilgan matn (`courier-scan-invalid` dagidek).
+    title = outcome.title;
+    text = outcome.message;
+    icon = outcome.forbidden ? Lock : TriangleAlert;
+    codeLabel = t("scanner.readText");
   } else {
     title = t("scanner.error.title");
     text = outcome.message ?? t("scanner.error.text");
     icon = TriangleAlert;
   }
+
+  // Begona QR (403, #620) — kulrang qulf (tizim-errors §02: qizil faqat tizim xatosida), `/scan/:token` dagidek;
+  // 503 `branch_scope_unavailable` va boshqa xatolar — qizil.
+  const tone =
+    outcome.kind === "market-qr" ? "warning" : outcome.kind === "error" && outcome.forbidden ? "neutral" : "danger";
 
   return (
     <Card
@@ -71,7 +83,7 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
       bodyClassName="flex flex-col gap-3"
     >
       {/* Jonli hudud emas: natijani kamera xabari (`role="status"`) allaqachon o'qiydi — ikki marta aytilmasin. */}
-      <ScanAlert tone={outcome.kind === "market-qr" ? "warning" : "danger"} icon={icon} title={title}>
+      <ScanAlert tone={tone} icon={icon} title={title} data-testid="scan-outcome">
         {text}
       </ScanAlert>
       <div className="flex flex-col gap-0.5 rounded-xl bg-sunken px-3 py-2.5">

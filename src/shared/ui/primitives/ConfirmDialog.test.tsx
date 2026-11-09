@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CalendarClock, Trash2 } from "lucide-react";
+import { CalendarClock, Pencil, Trash2, WifiOff } from "lucide-react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
-import { ConfirmDialog, ConfirmDialogPanel, type ConfirmDialogProps } from "./ConfirmDialog";
+import { ConfirmDialog, ConfirmDialogPanel, TransferSummary, type ConfirmDialogProps } from "./ConfirmDialog";
+import { Button } from "./Button";
 
 /**
  * ConfirmDialog — taxta `tizim-feedback` 06 «Tasdiqlash oynalari» va `tizim-motion` 03: `alertdialog`,
@@ -268,5 +269,207 @@ describe("ConfirmDialog — xatti-harakat", () => {
       <ConfirmDialog open title="A" confirmLabel="O'chirish" error="Xato" onCancel={() => {}} onConfirm={() => {}} />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Xato");
+  });
+});
+
+describe("ConfirmDialog — xato kodi bo'yicha ko'rinish (T6 N2: `errorView`, `compactOnError`)", () => {
+  const exceeds = Object.assign(new Error("Request failed"), {
+    isAxiosError: true,
+    response: { status: 409, data: { code: "AMOUNT_EXCEEDS", max: 7220000 } },
+  });
+  const offline = Object.assign(new Error("Network Error"), { isAxiosError: true, request: {} });
+
+  const errorView: NonNullable<ConfirmDialogProps["errorView"]> = (error) => {
+    const code = (error as { response?: { data?: { code?: string } } }).response?.data?.code;
+    if (code === "AMOUNT_EXCEEDS") {
+      return { content: <p className="font-bold">Ko'pi bilan 7 220 000 so'm</p>, blockConfirm: true };
+    }
+    if (!(error as { response?: unknown }).response) return { content: "Internet aloqasi yo'q", icon: WifiOff };
+    return null;
+  };
+
+  it("`blockConfirm`: tugma o'chadi, `aria-describedby` xato qutisiga; fokus «Orqaga» da; qayta bosilmaydi", async () => {
+    const onConfirm = vi.fn(() => Promise.reject(exceeds));
+    const { user, dialog } = await openConfirm({
+      onConfirm,
+      errorView,
+      tone: "primary",
+      confirmLabel: "Tahrirlash",
+      confirmIcon: Pencil,
+      cancelLabel: "Orqaga",
+    });
+    await user.click(within(dialog).getByRole("button", { name: "Tahrirlash" }));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Ko'pi bilan 7 220 000 so'm");
+    const confirmButton = within(dialog).getByRole("button", { name: "Tahrirlash" });
+    await waitFor(() => expect(confirmButton).toBeDisabled());
+    expect(confirmButton).toHaveAttribute("aria-describedby", alert.id);
+    expect(confirmButton).toHaveAccessibleDescription("Ko'pi bilan 7 220 000 so'm");
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Orqaga" })).toHaveFocus());
+    // Sukut ikonka (CircleX 18) — maxsus ikonka berilmagan.
+    expect(alert.querySelector("svg")).toHaveAttribute("width", "18");
+
+    await user.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("`icon` — 20 px (oflaynda WifiOff); `blockConfirm` siz tugma yana faol — qayta urinish mumkin", async () => {
+    const onConfirm = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(offline)
+      .mockResolvedValueOnce(undefined);
+    const { user, dialog } = await openConfirm({ onConfirm, errorView });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Internet aloqasi yo'q");
+    const icon = alert.querySelector("svg")!;
+    expect(icon).toHaveAttribute("width", "20");
+    expect(icon).toHaveClass("lucide-wifi-off");
+    const confirmButton = within(dialog).getByRole("button", { name: "O'chirish" });
+    expect(confirmButton).toBeEnabled();
+    expect(confirmButton).not.toHaveAttribute("aria-describedby");
+
+    await user.click(confirmButton);
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(2));
+  });
+
+  it("`controls.dismiss`: o'sha quti olib tashlanadi, fokus «Bekor qilish» ga; keyingi xatoga eski `dismiss` tegmaydi", async () => {
+    const dismissers: Array<() => void> = [];
+    const onConfirm = vi.fn(() => Promise.reject(offline));
+    const { user, dialog } = await openConfirm({
+      onConfirm,
+      errorView: (_error, controls) => {
+        dismissers.push(controls.dismiss);
+        return { content: <Button onClick={controls.dismiss}>Holatni tuzatish</Button> };
+      },
+    });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    const fix = await within(dialog).findByRole("button", { name: "Holatni tuzatish" });
+    await user.click(fix);
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Bekor qilish" })).toHaveFocus());
+    expect(within(dialog).getByRole("button", { name: "O'chirish" })).toBeEnabled();
+
+    // Qayta urinish — yangi quti; birinchi qutining `dismiss` i endi hech narsa qilmaydi.
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await within(dialog).findByRole("alert");
+    act(() => dismissers[0]());
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Holatni tuzatish");
+    act(() => dismissers[1]());
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("`errorView` `null` qaytarsa — `errorMessage`, u ham bo'lmasa sukut matni", async () => {
+    const generic = Object.assign(new Error("boom"), { isAxiosError: true, response: { status: 500, data: {} } });
+    const { user, dialog } = await openConfirm({
+      onConfirm: () => Promise.reject(generic),
+      errorView,
+      errorMessage: () => "Kassa yopiq — avval smenani oching",
+    });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Kassa yopiq — avval smenani oching");
+  });
+
+  it("`compactOnError`: xato chiqqach oqibatlar telefonda yashirinadi, xato qutisi ko'rinadigan joyga suriladi", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, writable: true, value: scrollIntoView });
+    try {
+      const consequences = [{ text: "Asosiy kassadan 1 850 000 so'm naqd chiqim yoziladi — joriy smenaga" }];
+      const { user, dialog } = await openConfirm({
+        onConfirm: () => Promise.reject(offline),
+        errorView,
+        consequences,
+        compactOnError: true,
+      });
+      const list = within(dialog).getByRole("list");
+      expect(list).not.toHaveClass("max-md:hidden");
+      await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+      const alert = await within(dialog).findByRole("alert");
+      expect(list).toHaveClass("max-md:hidden");
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" }));
+      expect(scrollIntoView.mock.contexts.at(-1)).toBe(alert);
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it("`compactOnError` siz — avvalgidek: oqibatlar ko'rinadi, surish yo'q", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, writable: true, value: scrollIntoView });
+    try {
+      const { user, dialog } = await openConfirm({
+        onConfirm: () => Promise.reject(offline),
+        consequences: [{ text: "1 ta bekor qilinadi" }],
+      });
+      await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+      await within(dialog).findByRole("alert");
+      expect(within(dialog).getByRole("list")).not.toHaveClass("max-md:hidden");
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it("`tone: neutral` — kulrang quti (xato emas, holat); sukut — qizil", () => {
+    const { rerender } = render(
+      <ConfirmDialogPanel
+        title="A"
+        confirmLabel="Qaytarish"
+        error="ALREADY"
+        errorView={() => ({ content: "To'lov allaqachon tuzatilgan. Ro'yxat yangilandi.", tone: "neutral", blockConfirm: true })}
+      />,
+    );
+    const neutral = screen.getByRole("alert");
+    expect(neutral).toHaveAttribute("data-tone", "neutral");
+    expect(neutral).toHaveClass("bg-sunken", "ring-1", "ring-border");
+    expect(neutral).not.toHaveClass("bg-danger-soft");
+    rerender(<ConfirmDialogPanel title="A" confirmLabel="Qaytarish" error="Xato" />);
+    expect(screen.getByRole("alert")).toHaveAttribute("data-tone", "danger");
+    expect(screen.getByRole("alert")).toHaveClass("bg-danger-soft", "text-danger-fg");
+  });
+
+  it("namuna paneli: `error` + `errorView` — ko'rinish quriladi, tugma o'chiq", () => {
+    render(
+      <ConfirmDialogPanel
+        title="Summani tahrirlashni tasdiqlang"
+        confirmLabel="Tahrirlash"
+        cancelLabel="Orqaga"
+        error="AMOUNT_EXCEEDS"
+        errorView={() => ({ content: "Ko'pi bilan 7 220 000 so'm", blockConfirm: true })}
+      />,
+    );
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Ko'pi bilan 7 220 000 so'm");
+    expect(screen.getByRole("button", { name: "Tahrirlash" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tahrirlash" })).toHaveAttribute("aria-describedby", alert.id);
+  });
+});
+
+describe("TransferSummary — forma oynasidagi xulosa (T6 N2)", () => {
+  it("summa yorlig'i, belgi, qayerdan → qayerga — tasdiqdagi blok bilan bir xil", () => {
+    render(
+      <TransferSummary
+        amount={{ value: 1850000, label: "Qaytariladigan to'lov", badge: <span>Naqd</span> }}
+        transfer={{
+          from: { title: "Kuryer kassasi", meta: "Jasur Tursunov" },
+          to: { title: "Asosiy kassa" },
+        }}
+      />,
+    );
+    expect(screen.getByText("Qaytariladigan to'lov")).toHaveClass("uppercase", "text-text-muted");
+    expect(screen.getByText("1 850 000")).toBeInTheDocument();
+    expect(screen.getByText("so'm")).toBeInTheDocument();
+    expect(screen.getByText("Qayerdan")).toBeInTheDocument();
+    expect(screen.getByText("Qayerga")).toBeInTheDocument();
+    expect(screen.getByText("Jasur Tursunov")).toHaveClass("text-text-muted");
+    expect(screen.getByText("Naqd").parentElement?.parentElement).toHaveClass("items-end");
+    expect(screen.getByText("Qaytariladigan to'lov").closest(".bg-sunken")).toHaveClass("rounded-xl", "px-4", "py-1");
+  });
+
+  it("hech biri berilmasa — hech narsa chizilmaydi", () => {
+    const { container } = render(<TransferSummary />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

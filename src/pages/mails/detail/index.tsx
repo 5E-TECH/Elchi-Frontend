@@ -22,6 +22,8 @@ import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { canDispatchPostToBranch, canReassignPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
+import { readBackendRejection } from "../../../shared/lib/backendReason";
+import { coverageErrorLine, coverageRejectionText, readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import {
   countReceiptsWithoutQr,
@@ -107,6 +109,7 @@ import {
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
+import { resolveReceiveAccess } from "./model/receiveAccess";
 
 /**
  * POCHTA TAFSILOTI — `/mails/:id` (dizayn v2, sahifa shell ichida).
@@ -163,9 +166,10 @@ import { useMailDetailState } from "./model/useMailDetailState";
  * Eski pochta, kuryerning rad etilgan pochtasi va amalsiz rejimda kamera maqsadi yo'q (markaziy tugma — `/scan`).
  *
  * QIDIRUV VA TAKRORIY TELEFONLAR (MD-1, ega S1–S4; maketlar `*-mails-detail-search`, `-search-empty`,
- * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — faqat xodim jo'natish rejimida (superadmin, admin,
- * registrator) va menejer qabul rejimida: qidiruv matni URL'da (`?q=`, `replace`, `location.state` saqlanadi),
- * tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. Maydon mahalliy qoralamaga bog'langan
+ * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — xodim jo'natish rejimida (superadmin, admin,
+ * registrator) va menejer qabul rejimida. Rad etilgan pochtada (HQ va filial qabuli) — faqat qidiruv, takroriy
+ * telefonlar bannerisiz (ega qarori 2026-11-09; maket yo'q — eng yaqini `admin-mails-detail-search`). Qidiruv
+ * matni URL'da (`?q=`, `replace`, `location.state` saqlanadi), tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. Maydon mahalliy qoralamaga bog'langan
  * (URL kechikib yoziladi). USB skaner qidiruv maydoni fokusda bo'lganda tokenni maydonga ham yozadi — skandan keyin
  * oldingi `q` tiklanadi (`valueBeforeScan`); shu pochtada topiladigan matn esa skan emas, qidiruv
  * (`looksLikeTypedSearch`).
@@ -307,6 +311,9 @@ const MailDetailPage = () => {
     refetch: refetchRegularDetail,
   } = useMailDetail(!isRefusedDetail && !isAllBatchesDetail ? postId ?? "" : "", {
     view: isOldMailView ? undefined : "current",
+    // Xato sahifaning o'zida chiziladi (`ErrorState`) — global xabar takrorlanmaydi (anKpzwxk S8: kuryerga
+    // 403 `post_not_visible_to_courier` ikki marta chiqardi).
+    silentError: true,
   });
   const refusedQuery = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const { data: refusedResponse, isLoading: refusedLoading, isError: refusedError } = refusedQuery;
@@ -432,9 +439,19 @@ const MailDetailPage = () => {
   /** Pochta qayerga ketgan: o'tkazma pochtasida — manzil filial (qabul qiladigan menejer filiali). */
   const postBranchId = toText(postMeta?.branch_id);
   const viewerId = toText(user?.id);
-  const isPostReceiver = isCourier
-    ? Boolean(viewerId) && postCourierId === viewerId
-    : isBranchReceiverManager && (!postCourierId || postCourierId === "0");
+  /**
+   * anKpzwxk (backend #620/#621): HQ → filial o'tkazmasini faqat manzil filial menejeri (REGIONAL/HYBRID,
+   * `post.branch_id` — o'z filiali) qabul qiladi; HQ menejeri va boshqa filial menejeriga jo'natilgan o'tkazma —
+   * faqat o'qish (`model/receiveAccess.ts`).
+   */
+  const receiveAccess = resolveReceiveAccess({
+    role,
+    branchType: userBranchType,
+    myBranchId: viewerBranchId,
+    viewerId,
+    post: postMeta,
+  });
+  const { isPostReceiver, isReadOnlyForeignTransfer } = receiveAccess;
   const isReceivedPost = String(postMeta?.status ?? "").toLowerCase() === "received";
   const hasStuckOnTheRoadOrders =
     isOldMailView &&
@@ -456,14 +473,15 @@ const MailDetailPage = () => {
    */
   const isForeignReceivedPost =
     !isOldByState && !isEffectiveRefusedDetail && isCourierLikeReceiver && isReceivedPost && !isPostReceiver;
-  const isOldDetail = isOldByState || isForeignReceivedPost;
-  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
+  /** Jo'natilgan o'tkazma, ko'ruvchi — manzil filial menejeri emas: faqat o'qish («Faqat o'qish» + izoh). */
+  const isForeignTransferPost = !isOldByState && !isEffectiveRefusedDetail && isReadOnlyForeignTransfer;
+  const isOldDetail = isOldByState || isForeignReceivedPost || isForeignTransferPost;
+  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : receiveAccess.canReceive;
   /**
    * Filial menejeri: o'z filialiga jo'natilgan o'tkazma pochtasi (kuryersiz, `post.branch_id` — menejer filiali).
    * Boshqa filialning o'tkazmasi (havola orqali ochilgan) yoki filiali noma'lum — «kelmagan» yo'q (backend — 403).
    */
-  const isOwnBranchTransferPost =
-    isBranchReceiverManager && isPostReceiver && Boolean(viewerBranchId) && postBranchId === viewerBranchId;
+  const isOwnBranchTransferPost = receiveAccess.isDestinationManager;
   /**
    * Jo'natilgan (`sent`) pochta, qabul rejimi — kuryerning pochtasi yoki menejer filialiga o'tkazma (ega qarori
    * 2026-11-04): qaytarish so'rovi bor buyurtmalar qabul qilinadiganlardan ajratiladi (karta izohida sanaladi).
@@ -686,15 +704,20 @@ const MailDetailPage = () => {
   } = useMailDetailState(orders);
 
   // ─── Qidiruv va takroriy telefonlar (MD-1) ────────────────────────────────
-  // Faqat xodim jo'natish va menejer qabul rejimida (maketlar); kuryer, rad etilgan va eski pochtada yo'q.
-  const searchMode: "send" | "receive" | null =
-    isOldDetail || isEffectiveRefusedDetail || isCourier
+  // Qidiruv: xodim jo'natish, menejer qabul rejimi (maketlar) va rad etilgan pochta (ega qarori 2026-11-09 — maket
+  // yo'q, eng yaqini `admin-mails-detail-search`); kuryer va eski pochtada yo'q.
+  const searchMode: "send" | "receive" | "refused" | null =
+    isOldDetail || isCourier
       ? null
-      : role === "manager"
-        ? shouldReceiveCurrentPost
-          ? "receive"
-          : null
-        : "send";
+      : isEffectiveRefusedDetail
+        ? "refused"
+        : role === "manager"
+          ? shouldReceiveCurrentPost
+            ? "receive"
+            : null
+          : "send";
+  /** Takroriy telefonlar banneri — faqat jo'natish va qabul rejimida (rad etilgan pochtada — faqat qidiruv). */
+  const duplicatesMode = searchMode === "refused" ? null : searchMode;
   // `q` — URL'da (`replace`; rejim `location.state` da saqlanadi). Maydon MAHALLIY qoralamaga bog'langan: router
   // har bir joylashuv o'zgarishini `startTransition` ichida qo'llaydi — URL'ga bevosita bog'langan maydonda kursor
   // oxirga sakraydi, tez yozilgan harflar yo'qoladi (IME ham buziladi). URL kechikish bilan yoziladi; tozalash,
@@ -717,7 +740,7 @@ const MailDetailPage = () => {
     () => filterMailOrders(orders, searchMode ? appliedQuery : ""),
     [appliedQuery, orders, searchMode],
   );
-  const duplicateGroups = useMemo(() => (searchMode ? findDuplicatePhones(orders) : []), [orders, searchMode]);
+  const duplicateGroups = useMemo(() => (duplicatesMode ? findDuplicatePhones(orders) : []), [orders, duplicatesMode]);
   const duplicateMap = useMemo(() => duplicateSiblings(duplicateGroups), [duplicateGroups]);
   const duplicateNote = useCallback(
     (order: PostOrder) => {
@@ -943,6 +966,13 @@ const MailDetailPage = () => {
       scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
       return;
     }
+    // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — lokal sarlavha va izoh, «QR topilmadi» emas.
+    const scope = readQrScopeText(t, error);
+    if (scope) {
+      void playScanFeedback("error", scope.line);
+      scanNotify.error(scope.title, { description: scope.description || undefined, duration: 3000 });
+      return;
+    }
     const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
     void playScanFeedback("error", message);
     // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
@@ -1096,7 +1126,8 @@ const MailDetailPage = () => {
         duration: 2000,
       });
 
-      const fail = (reason: string | null) => {
+      /** `heading` — o'z sarlavhasi («qayta skanerlang» siz); `sticky` — xabar foydalanuvchi yopguncha turadi. */
+      const fail = (reason: string | null, heading?: string, sticky = false) => {
         pending.delete(orderId);
         setScanHiddenIds((prev) => {
           if (!prev.has(orderId)) return prev;
@@ -1105,9 +1136,9 @@ const MailDetailPage = () => {
           return next;
         });
         setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "failed" } }));
-        const title = t("detailPage.scanReceive.failed", { id: orderId });
+        const title = heading ?? t("detailPage.scanReceive.failed", { id: orderId });
         void playScanFeedback("error", title, undefined, reason ? { text: reason } : {});
-        scanNotify.error(title, { description: reason ?? undefined, duration: 6000 });
+        scanNotify.error(title, { description: reason ?? undefined, duration: sticky ? undefined : 6000 });
       };
 
       // `Promise.resolve().then` — so'rov xatosi (hatto sinxron) ham shu yerda ushlanadi, skan oqimi uzilmaydi.
@@ -1125,10 +1156,22 @@ const MailDetailPage = () => {
             setScanLog((prev) => ({ ...prev, [orderId]: { order, status: "received" } }));
             if (outcome.postStatus === "received" && pending.size === 0) finishScanReceive();
           },
-          (error: unknown) => fail(getBackendErrorMessage(error) ?? null),
+          (error: unknown) => {
+            // #621 `post_receive_manager_only`: qabul faqat manzil filial menejerida — qayta skan foydasiz:
+            // «Pochta qabul qilinmadi» + sabab (qolguncha turadi), sahifa yangilanadi (`handleReceive` dagidek).
+            const rejection = readBackendRejection(error);
+            if (rejection.reason === "post_receive_manager_only") {
+              const text = coverageRejectionText(t, rejection, { context: "receive", fallbackTitle: "" });
+              fail(text.description, text.title, true);
+              void refetchRegularDetail();
+              return;
+            }
+            // Boshqa tanilgan sabab — lokal matn; noma'lum — backend matni.
+            fail(coverageErrorLine(t, error, "receive") ?? getBackendErrorMessage(error) ?? null);
+          },
         );
     },
-    [count, finishScanReceive, postId, scanReceivePost, t, touchRecentScan],
+    [count, finishScanReceive, postId, refetchRegularDetail, scanReceivePost, t, touchRecentScan],
   );
 
   /** Skan-qabul: indeksda yo'q kod — faqat skan javobidagi buyurtma id'si pochta qatoriga AYNAN teng bo'lsa qabul. */
@@ -1373,6 +1416,15 @@ const MailDetailPage = () => {
         void refetchRegularDetail();
       })
       .catch((error: unknown) => {
+        // anKpzwxk (#621): o'tkazmani faqat manzil filial menejeri qabul qiladi — lokal matn (backend matniga
+        // tarmoqlanmaymiz), sahifa yangilanadi. `details.branch_id` o'qilmaydi.
+        const rejection = readBackendRejection(error);
+        if (rejection.reason === "post_receive_manager_only") {
+          const text = coverageRejectionText(t, rejection, { context: "receive", fallbackTitle: t("common:error") });
+          notify.error(text.title, { description: text.description });
+          void refetchRegularDetail();
+          return;
+        }
         notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("receiveError") });
       });
   }, [
@@ -1806,7 +1858,14 @@ const MailDetailPage = () => {
     return <MailDetailSkeleton />;
 
   // ─── Xato ─────────────────────────────────────────────────────────────────
-  if (regularError || refusedError)
+  if (regularError || refusedError) {
+    const loadError = regularErrorValue ?? refusedQuery.error;
+    const rejection = readBackendRejection(loadError);
+    // Kuryer filialga hali qabul qilinmagan o'tkazmani ochdi (#620): kulrang holat, lokal matn, «Qayta urinish»siz.
+    const courierHidden =
+      rejection.reason === "post_not_visible_to_courier"
+        ? coverageRejectionText(t, rejection, { context: "post", fallbackTitle: t("loadError") })
+        : null;
     return (
       <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
         <PageHeader
@@ -1816,8 +1875,9 @@ const MailDetailPage = () => {
         />
         <ErrorState
           framed
-          error={regularErrorValue ?? refusedQuery.error}
-          title={t("loadError")}
+          error={loadError}
+          title={courierHidden?.title ?? t("loadError")}
+          description={courierHidden?.description}
           onRetry={() => {
             if (regularError) void refetchRegularDetail();
             if (refusedError) void refusedQuery.refetch?.();
@@ -1825,6 +1885,7 @@ const MailDetailPage = () => {
         />
       </div>
     );
+  }
 
   // ─── Sarlavha (dizayn v2) ─────────────────────────────────────────────────
   // Holat birlamchi manbasi — serverdagi `data.post` (4YZcTTDQ). Maketlar rolga qarab:
@@ -1839,7 +1900,8 @@ const MailDetailPage = () => {
   const ordersCountText = isCourier && isOldDetail
     ? t("headerOrdersCount", { count: orders.length })
     : isOldDetail
-      ? t("oldOrdersCount", { count: orders.length })
+      ? // Jo'natilgan begona o'tkazma faqat o'qish uchun, lekin «eski» emas (anKpzwxk).
+        t(isForeignTransferPost ? "ordersCount" : "oldOrdersCount", { count: orders.length })
       : isManagerHeader || (isCourier && isEffectiveRefusedDetail)
         ? t(isEffectiveRefusedDetail ? "headerRefusedOrdersCount" : "headerOrdersCount", { count: orders.length })
         : isEffectiveRefusedDetail
@@ -1987,7 +2049,8 @@ const MailDetailPage = () => {
   // Karta: sarlavha, skaner izohi va tanlov izohi rejimga qarab (maketlar).
   const ordersTitle =
     isCourier && !isEffectiveRefusedDetail && !isCourierHistory ? t("detailPage.onTheRoadTitle") : undefined;
-  const ordersAria = isOldDetail
+  // Boshqa filialning yo'ldagi o'tkazmasi (faqat o'qish) eski pochta emas — sukut «Pochtadagi buyurtmalar».
+  const ordersAria = isOldDetail && !isForeignTransferPost
     ? t("detailPage.oldOrdersAria")
     : isEffectiveRefusedDetail
       ? t("detailPage.refusedOrdersAria")
@@ -2144,7 +2207,14 @@ const MailDetailPage = () => {
         sortable={isCourier}
         cardVariant={isCourier ? "courier" : "default"}
         notice={
-          isReadOnlyRefusedCourier ? (
+          isForeignTransferPost ? (
+            <>
+              <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
+              <span className="min-w-0" data-testid="mail-receive-destination-only">
+                {t("detailPage.receiveDestinationOnly")}
+              </span>
+            </>
+          ) : isReadOnlyRefusedCourier ? (
             <>
               <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
               <span className="min-w-0">{t("detailPage.courierRefusedNote")}</span>
@@ -2182,16 +2252,16 @@ const MailDetailPage = () => {
         }
         searchInputRef={searchInputRef}
         alert={
-          searchMode && duplicateGroups.length > 0 ? (
+          duplicatesMode && duplicateGroups.length > 0 ? (
             <DuplicatePhonesAlert
               groups={duplicateGroups}
-              mode={searchMode}
+              mode={duplicatesMode}
               activeKey={activeDuplicateKey}
               onToggle={toggleDuplicatePhone}
             />
           ) : undefined
         }
-        duplicateNote={searchMode && duplicateGroups.length > 0 ? duplicateNote : undefined}
+        duplicateNote={duplicatesMode && duplicateGroups.length > 0 ? duplicateNote : undefined}
       />
 
       {/* Tanlanganlarni pochtadan o'chirish (superadmin, NEW pochta). */}

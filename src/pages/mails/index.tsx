@@ -15,7 +15,7 @@ import ReturnMails from "./components/returnMails";
 import TodaysMails from "./components/todaysMails";
 import { getMailTabPath, normalizeMailTab, type MailTab } from "./lib/navigation";
 import type { MailsTabLayout } from "./model/mailsLayout";
-import { useRefusedMails, useReturnRequestsCount, useTodayMails } from "./model/mailsLists";
+import { useRefusedMails, useReturnRequestsCount, useTodayMails, useTodayMailsAvailable } from "./model/mailsLists";
 
 /**
  * «POCHTA» QOBIG'I — `/mails/:tab` (dizayn v2).
@@ -33,6 +33,10 @@ import { useRefusedMails, useReturnRequestsCount, useTodayMails } from "./model/
  * Saqlangan xatti-harakatlar (v1): `/mails` va eski `?tab=x` → `/mails/x`; kuryer `/mails/return` (va
  * `?tab=return`) → `/mails/today`; tab almashganda URL parametrlari tushadi (tab havolasi parametrsiz);
  * `batch_mode` faqat admin va superadmin uchun — boshqa rolda URL'dan olib tashlanadi.
+ *
+ * HQ bo'lmagan (yoki filial turi noma'lum) registrator — «Bugungi» tabi yo'q (`GET post/new` faqat HQ
+ * xodimlariga, backend 403 `new_posts_hq_only`; anKpzwxk, ega Q1 sukuti): tablar «Qaytarish · Rad etilgan · Eski»,
+ * `/mails` va `/mails/today` → birinchi qolgan tab (`/mails/return`), telefondagi bo'lim tanlagichida ham shunday.
  */
 
 const TAB_ICON: Record<MailTab, LucideIcon> = {
@@ -43,6 +47,7 @@ const TAB_ICON: Record<MailTab, LucideIcon> = {
 };
 
 const STAFF_TABS: readonly MailTab[] = ["today", "return", "refused", "old"];
+const STAFF_TABS_WITHOUT_TODAY: readonly MailTab[] = STAFF_TABS.filter((tab) => tab !== "today");
 const COURIER_TABS: readonly MailTab[] = ["today", "refused", "old"];
 
 type MailCounts = Partial<Record<MailTab, number>>;
@@ -108,7 +113,15 @@ const MailSectionSelect = ({ tabs, active, counts }: { tabs: readonly MailTab[];
 };
 
 /** Xodim qobig'i: sarlavha + bitta karta (tablar / telefonda bo'lim tanlagichi + tana). */
-const StaffMailsShell = ({ activeTab, isManager }: { activeTab: MailTab; isManager: boolean }) => {
+const StaffMailsShell = ({
+  activeTab,
+  isManager,
+  tabs,
+}: {
+  activeTab: MailTab;
+  isManager: boolean;
+  tabs: readonly MailTab[];
+}) => {
   const { t } = useTranslation("mailsShell");
   const isPhone = useIsPhone();
   const today = useTodayMails();
@@ -120,7 +133,7 @@ const StaffMailsShell = ({ activeTab, isManager }: { activeTab: MailTab; isManag
     return: returnCount,
     refused: refused.isLoaded ? refused.mails.length : undefined,
   };
-  const items: TabItem<MailTab>[] = STAFF_TABS.map((tab) => ({
+  const items: TabItem<MailTab>[] = tabs.map((tab) => ({
     value: tab,
     label: t(`tabs.${tab}.short`),
     title: t(`tabs.${tab}.title`),
@@ -133,7 +146,7 @@ const StaffMailsShell = ({ activeTab, isManager }: { activeTab: MailTab; isManag
       <PageHeader title={t("title")} description={t(isManager ? "description.manager" : "description.staff")} />
       <Card as="section" padding="none" aria-label={t(`tabs.${activeTab}.title`)}>
         {isPhone ? (
-          <MailSectionSelect tabs={STAFF_TABS} active={activeTab} counts={counts} />
+          <MailSectionSelect tabs={tabs} active={activeTab} counts={counts} />
         ) : (
           <Tabs items={items} value={activeTab} ariaLabel={t("tabsLabel")} listClassName="px-3" />
         )}
@@ -176,7 +189,10 @@ const Mails = () => {
   const navigate = useNavigate();
   const role = useSelector((state: RootState) => state.role.role);
   const isCourier = role === "courier";
-  const canUseReturnTab = !isCourier;
+  const todayAvailable = useTodayMailsAvailable();
+  const tabs = isCourier ? COURIER_TABS : todayAvailable ? STAFF_TABS : STAFF_TABS_WITHOUT_TODAY;
+  /** Rolda yo'q tab (kuryerda «Qaytarish», HQ bo'lmagan registratorda «Bugungi») → birinchi bor tab. */
+  const resolveTab = (tab: MailTab): MailTab => (tabs.includes(tab) ? tab : tabs[0]);
   const canUseOldBatchMode = role === "admin" || role === "superadmin";
   const tabParam = new URLSearchParams(location.search).get("tab");
   const activeTab = normalizeMailTab(location.pathname.split("/").filter(Boolean).at(-1));
@@ -191,17 +207,17 @@ const Mails = () => {
   }, [canUseOldBatchMode, selectedBatchMode, location.pathname, location.search, navigate]);
 
   if (tabParam) {
-    return <Navigate replace to={getMailTabPath(!canUseReturnTab && tabParam === "return" ? "today" : tabParam)} />;
+    return <Navigate replace to={getMailTabPath(resolveTab(normalizeMailTab(tabParam)))} />;
   }
 
-  if (location.pathname === "/mails" || (!canUseReturnTab && activeTab === "return")) {
-    return <Navigate replace to={getMailTabPath("today")} />;
+  if (location.pathname === "/mails" || !tabs.includes(activeTab)) {
+    return <Navigate replace to={getMailTabPath(location.pathname === "/mails" ? tabs[0] : resolveTab(activeTab))} />;
   }
 
   return isCourier ? (
     <CourierMailsShell activeTab={activeTab} />
   ) : (
-    <StaffMailsShell activeTab={activeTab} isManager={role === "manager"} />
+    <StaffMailsShell activeTab={activeTab} isManager={role === "manager"} tabs={tabs} />
   );
 };
 

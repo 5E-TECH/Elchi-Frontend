@@ -1591,6 +1591,204 @@
       "neverChanged": "Sukut qiymati — hali hech kim o'zgartirmagan",
       "loadError": "Muddatni yuklab bo'lmadi",
       "saved": "To'lovlarni tuzatish muddati: {{value}} kun."
+    },
+    "actions": {
+      "reverse": "Qaytarish",
+      "correct": "Summani tahrirlash"
+    },
+    "cancel": "Bekor qilish",
+    "continue": "Davom etish",
+    "back": "Orqaga",
+    "party": {
+      "courier": "{{name}}",
+      "courierGeneric": "kuryer",
+      "market": "{{name}}",
+      "marketGeneric": "market",
+      "branch": "{{name}}",
+      "branchGeneric": "filial"
+    },
+    "reason": {
+      "label": "Sabab",
+      "placeholderReverse": "Nima uchun qaytaryapsiz?",
+      "placeholderEdit": "Nima uchun tahrirlayapsiz?",
+      "emptyHint": "Kamida 5 ta belgi",
+      "short": "Kamida 5 ta belgi yozing",
+      "counter": "{{length}} / {{max}}",
+      "hintCourier": "Jurnalga yoziladi; kuryer ilovada ko'radi, Telegram xabariga kirmaydi",
+      "hintMarket": "Jurnalga yoziladi; market ilovada ko'radi, Telegram xabariga kirmaydi",
+      "hintBoth": "Jurnalga yoziladi; kuryer va market ilovada ko'radi, Telegram xabariga kirmaydi",
+      "hintGeneric": "Jurnalga yoziladi, Telegram xabariga kirmaydi"
+    },
+    "consequence": {
+      "courierBack": "{{courier}} kassasiga {{amount}} qaytadi",
+      "marketOwedUp": "{{market}}ga berilishi kerak summa {{amount}}ga ortadi",
+      "mainUnchanged": "Asosiy kassa o'zgarmaydi",
+      "notifyCourier": "Kuryerga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "notifyCourierBranch": "Kuryerga va filial boshlig'iga xabar boradi",
+      "notifyMarket": "Market egasiga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "notifyBoth": "Kuryer va market egasiga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "notifyGeneric": "To'lov tomonlariga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi"
+    },
+    "reverse": {
+      "title": "To'lovni qaytarish",
+      "confirmTitle": "To'lovni qaytarishni tasdiqlang",
+      "amountLabel": "Qaytariladigan to'lov",
+      "confirmLabel": "Qaytarish",
+      "loading": "Qaytarilmoqda…",
+      "irreversible": "Qaytarishni bekor qilib bo'lmaydi.",
+      "note": {
+        "courierMain": "Pul teskari yo'nalishda qaytadi: asosiy kassadan {{courier}} kassasiga. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi.",
+        "courierBranch": "Pul teskari yo'nalishda qaytadi: {{branch}} kassasidan {{courier}} kassasiga. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi.",
+        "market": "Pul asosiy kassaga qaytadi, {{market}}ga berilishi kerak summa {{amount}}ga ortadi.",
+        "clickToMarket": "{{courier}} kassasiga {{amount}} qaytadi, {{market}}ga berilishi kerak summa ham shuncha ortadi; asosiy kassa o'zgarmaydi.",
+        "generic": "Pul teskari yo'nalishda qaytadi. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi."
+      },
+      "consequence": {
+        "mainOutCash": "Asosiy kassadan {{amount}} naqd chiqim yoziladi — joriy smenaga",
+        "mainOut": "Asosiy kassadan {{amount}} chiqim yoziladi — joriy smenaga",
+        "branchOut": "{{branch}} kassasidan chiqim yoziladi",
+        "courierBack": "{{courier}} kassasiga {{amount}} qaytadi — u pulni yana topshirishi kerak bo'ladi",
+        "mainIn": "Asosiy kassaga {{amount}} qaytadi",
+        "marketOrders": "Oxirgi to'langan buyurtmalar «Qisman to'langan» yoki «Sotilgan» holatiga qaytadi",
+        "generic": "Pul kassalarga teskari yo'nalishda qaytadi — joriy smenaga",
+        "history": "Asl yozuv o'chirilmaydi — ro'yxatda «Qaytarildi» va «Teskari yozuv» bo'lib qoladi"
+      },
+      "toast": {
+        "title": "To'lov qaytarildi",
+        "courier": "{{amount}} {{courier}} kassasiga qaytdi. Kuryerga xabar yuborildi.",
+        "market": "{{market}}ga berilishi kerak summa {{amount}}ga ortdi. Marketga xabar yuborildi.",
+        "clickToMarket": "{{amount}} {{courier}} kassasiga qaytdi. Kuryer va marketga xabar yuborildi.",
+        "generic": "#{{id}}: {{amount}} teskari yo'nalishda qaytdi."
+      }
+    },
+    "correct": {
+      "title": "Summani tahrirlash",
+      "confirmTitle": "Summani tahrirlashni tasdiqlang",
+      "currentLabel": "Joriy summa",
+      "newAmountLabel": "To'g'ri summa",
+      "newAmountHint": "0 dan katta va joriy summadan farqli",
+      "zero": "0 dan katta summa kiriting",
+      "same": "Yangi summa joriy summa bilan bir xil",
+      "exceeds": "Ko'pi bilan {{max}}",
+      "diff": "Farq",
+      "confirmLabel": "Tahrirlash",
+      "loading": "Saqlanmoqda…",
+      "deadlineNote": "Kerak bo'lsa, yangi to'lovni {{deadline}} gacha yana tuzatish mumkin.",
+      "diffLine": {
+        "marketDecrease": "Asosiy kassaga {{diff}} qaytadi, {{market}}ga berilishi kerak summa {{diff}}ga ortadi",
+        "marketIncrease": "Asosiy kassadan yana {{diff}} chiqadi, {{market}}ga berilishi kerak summa {{diff}}ga kamayadi",
+        "courierMainDecrease": "{{courier}} kassasiga {{diff}} qaytadi, asosiy kassadan {{diff}} chiqadi",
+        "courierMainIncrease": "{{courier}} kassasidan yana {{diff}} chiqadi, asosiy kassaga {{diff}} kiradi",
+        "courierBranchDecrease": "{{courier}} kassasiga {{diff}} qaytadi, {{branch}} kassasidan {{diff}} chiqadi",
+        "courierBranchIncrease": "{{courier}} kassasidan yana {{diff}} chiqadi, {{branch}} kassasiga {{diff}} kiradi",
+        "clickToMarketDecrease": "{{courier}} kassasiga {{diff}} qaytadi, {{market}}ga berilishi kerak summa {{diff}}ga ortadi; asosiy kassa o'zgarmaydi",
+        "clickToMarketIncrease": "{{courier}} kassasidan yana {{diff}} chiqadi, {{market}}ga berilishi kerak summa {{diff}}ga kamayadi; asosiy kassa o'zgarmaydi"
+      },
+      "consequence": {
+        "mainBack": "Asosiy kassaga {{diff}} qaytadi — joriy smenaga",
+        "mainMore": "Asosiy kassadan yana {{diff}} chiqadi — joriy smenaga",
+        "marketOwedUp": "{{market}}ga berilishi kerak summa {{diff}}ga ortadi; oxirgi to'langan buyurtmalar qayta hisoblanadi",
+        "marketOwedDown": "{{market}}ga berilishi kerak summa {{diff}}ga kamayadi; oxirgi to'langan buyurtmalar qayta hisoblanadi",
+        "courierMore": "{{courier}} kassasidan yana {{diff}} chiqadi",
+        "mainOutCash": "Asosiy kassadan {{diff}} naqd chiqadi",
+        "mainOut": "Asosiy kassadan {{diff}} chiqadi",
+        "mainIn": "Asosiy kassaga {{diff}} kiradi",
+        "branchOut": "{{branch}} kassasidan {{diff}} chiqadi",
+        "branchIn": "{{branch}} kassasiga {{diff}} kiradi",
+        "notifyCourier": "Kuryerga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham",
+        "history": "Asl yozuv o'chirilmaydi: teskari yozuv ({{reversal}}) va yangi to'lov ({{replacement}}) qo'shiladi"
+      },
+      "toast": {
+        "title": "Summa tuzatildi",
+        "courier": "#{{id}}: {{from}} → {{to}}. Kuryerga xabar yuborildi.",
+        "market": "#{{id}}: {{from}} → {{to}}. Marketga xabar yuborildi.",
+        "clickToMarket": "#{{id}}: {{from}} → {{to}}. Kuryer va marketga xabar yuborildi.",
+        "generic": "#{{id}}: {{from}} → {{to}}."
+      }
+    },
+    "deadline": {
+      "lead": "Qaytarish yoki tahrirlash mumkin:",
+      "until": "{{deadline}} gacha",
+      "window": "muddat {{count}} kun",
+      "fromRoot": "muddat birinchi to'lovdan (#{{id}})"
+    },
+    "lock": {
+      "windowExpiredTitle": "Muddat tugagan: {{deadline}}",
+      "windowExpiredTitleGeneric": "Muddat tugagan",
+      "windowExpiredBody": "To'lovni {{count}} kun ichida qaytarish yoki summasini tahrirlash mumkin edi.",
+      "changeWindow": "Muddatni o'zgartirish",
+      "courierMoved": "Tuzatib bo'lmaydi — kuryer boshqa filialga o'tgan."
+    },
+    "errors": {
+      "generic": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
+      "nothingChanged": "Hech narsa o'zgarmadi.",
+      "shiftRequired": {
+        "title": "Smena ochilmagan",
+        "body": "Tuzatish joriy smenaga yoziladi. Avval asosiy kassada smenani oching — hech narsa o'zgarmadi.",
+        "action": "Smenani ochish"
+      },
+      "branchShiftRequired": {
+        "title": "Filial smenasi ochilmagan",
+        "body": "Pul {{branch}} kassasidan o'tadi — smenani filial menejeri ochishi kerak. Hech narsa o'zgarmadi."
+      },
+      "insufficient": {
+        "title": "Kassada pul yetmaydi",
+        "courierMainCash": "Asosiy kassadagi naqd pul qaytarish uchun yetmaydi",
+        "courierMainCard": "Asosiy kassadagi karta puli qaytarish uchun yetmaydi",
+        "courierBranchCash": "{{branch}} kassasidagi naqd pul qaytarish uchun yetmaydi",
+        "courierBranchCard": "{{branch}} kassasidagi karta puli qaytarish uchun yetmaydi",
+        "market": "Asosiy kassada o'tkazma uchun yetarli pul yo'q",
+        "generic": "Qabul qiluvchi kassada pul yetmaydi",
+        "required": " (kerak: {{amount}})"
+      },
+      "cardArchived": {
+        "title": "Karta arxivda",
+        "body": "To'lov tushgan karta arxivlangan — avval kartani faollashtiring."
+      },
+      "alreadyCorrected": {
+        "body": "To'lov allaqachon tuzatilgan. Ro'yxat yangilandi."
+      },
+      "windowExpired": {
+        "title": "Muddat tugagan: {{deadline}}",
+        "titleGeneric": "Muddat tugagan",
+        "body": "To'lovni {{count}} kun ichida qaytarish yoki summasini tahrirlash mumkin edi. Hech narsa o'zgarmadi.",
+        "bodyGeneric": "Tuzatish muddati o'tgan. Hech narsa o'zgarmadi."
+      },
+      "uncertain": {
+        "title": "Internet aloqasi yo'q",
+        "reverse": "So'rov yetib bormadi yoki javob kelmadi. Aloqa tiklangach «Qaytarish»ni qayta bosing — to'lov ikki marta qaytarilmaydi.",
+        "edit": "So'rov yetib bormadi yoki javob kelmadi. Aloqa tiklangach «Tahrirlash»ni qayta bosing — summa ikki marta tuzatilmaydi."
+      },
+      "notCorrectable": {
+        "title": "Tuzatib bo'lmaydi",
+        "reversalRow": "Teskari yozuvni qaytarib ham, tahrirlab ham bo'lmaydi.",
+        "courierCashboxDeleted": "Kuryer kassasi o'chirilgan.",
+        "marketCashboxDeleted": "Market kassasi o'chirilgan.",
+        "cashboxDeleted": "Kassa o'chirilgan.",
+        "cashboxOrCardDeleted": "To'lovdagi kassa yoki karta o'chirilgan.",
+        "unsupported": "To'lovning kassalardagi yozuvlari to'liq emas.",
+        "amountTitle": "Summani tuzatib bo'lmaydi",
+        "amountBody": "Kuryer bu summani hozir topshira olmaydi — to'lovni to'liq qaytaring."
+      },
+      "legacy": {
+        "title": "Eski yozuv",
+        "body": "Bu to'lov tuzatish imkoniyati qo'shilishidan oldin yozilgan va kassalardagi juft yozuvlari aniqlanmagan — uni qaytarib ham, tahrirlab ham bo'lmaydi."
+      },
+      "amountExceeds": {
+        "title": "Ko'pi bilan {{max}}",
+        "titleGeneric": "Summa chegaradan oshdi",
+        "bodyMarket": "Chegara — {{market}}ga berilishi kerak qoldiq va joriy to'lov yig'indisi. «Orqaga»ni bosib summani o'zgartiring.",
+        "bodyCourier": "Chegara — {{courier}} kassasidagi qoldiq va joriy to'lov yig'indisi. «Orqaga»ni bosib summani o'zgartiring.",
+        "bodyGeneric": "Chegara — kassalardagi qoldiq va joriy to'lov yig'indisi. «Orqaga»ni bosib summani o'zgartiring."
+      },
+      "sameAmount": {
+        "title": "Yangi summa joriy summa bilan bir xil",
+        "body": "«Orqaga»ni bosib summani o'zgartiring."
+      },
+      "notFound": {
+        "title": "Yozuv topilmadi",
+        "body": "To'lov yozuvi o'chirilgan yoki topilmadi. Ro'yxat yangilandi."
+      }
     }
   }
 }

@@ -539,6 +539,32 @@ describe("Kuryer buyurtmalari — bekor qilinganlarni pochtaga yuborish (v2)", (
     get.mockRestore();
   });
 
+  it("begona QR (403 order_not_in_your_branch, #620): lokal sarlavha, «Buyurtma topilmadi» va backend matni yo'q", async () => {
+    state.rows = cancelledRows();
+    const get = vi.spyOn(api, "get").mockImplementation((url: string) =>
+      url.includes("qr-code")
+        ? Promise.reject(
+            Object.assign(new Error("Forbidden"), {
+              response: {
+                status: 403,
+                data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } },
+              },
+            }),
+          )
+        : Promise.reject(new Error(`kutilmagan so'rov: ${url}`)),
+    );
+    renderPage("/orders?status=cancelled");
+
+    act(() => {
+      void getActiveScanTarget()!.onScan("f2f2f2f2f2f2f2f2f2f2f2f2", "camera");
+    });
+
+    expect(await screen.findByText("Bu buyurtma sizning filialingizda emas")).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).toBeNull();
+    expect(screen.queryByText("backend matni")).toBeNull();
+    get.mockRestore();
+  });
+
   it("boshqa tabda kamera maqsadi yo'q (markaziy tugma universal skanerni ochadi)", () => {
     state.rows = [order("1001", "Laylo Hasanova")];
     renderPage("/orders?status=waiting");

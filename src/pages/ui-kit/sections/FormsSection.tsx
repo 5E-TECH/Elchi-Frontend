@@ -11,7 +11,8 @@ import { ThemePair } from "../ThemePair";
  * Namunalar taxtadan: `tizim-states-forms` 01 «Matn maydoni» (holatlar matritsasi) va 02 «Maxsus
  * maydonlar» (qidiruv, telefon raqam, ko'p qatorli matn); summa — `admin-balance-entry-dialog`.
  * «Kursor ustida» va «Fokus» holatlarini majburlab chizib bo'lmaydi — ular haqiqiy hover / Tab'da.
- * Ikkala panel bitta holatni bo'lishadi.
+ * Ikkala panel bitta holatni bo'lishadi. Hisoblagich xato qatorida ham (`hintAside`) —
+ * `superadmin-payments-history-reverse-dialog` («Sabab qisqa» holati).
  */
 
 const DemoBlock = ({ title, note, children }: { title: string; note?: string; children: ReactNode }) => (
@@ -47,6 +48,8 @@ export const FormsSection = () => {
   const [amount, setAmount] = useState("45000");
   const [note, setNote] = useState("");
   const [sms, setSms] = useState(() => t("forms.demo.smsValue"));
+  const [reason, setReason] = useState(() => t("forms.demo.reasonValue"));
+  const reasonLength = reason.trim().length;
 
   return (
     <KitSection id="forms" title={t("kit.sections.forms.title")} description={t("kit.sections.forms.description")}>
@@ -168,6 +171,23 @@ export const FormsSection = () => {
                     hint={t("forms.demo.smsCounter", { count: sms.length })}
                   >
                     <TextInput multiline value={sms} onValueChange={setSms} />
+                  </Field>
+                </State>
+                <State name={t("forms.states.counterAside")}>
+                  <Field
+                    label={t("forms.demo.reasonLabel")}
+                    required
+                    hint={t("forms.demo.reasonHint")}
+                    error={reasonLength > 0 && reasonLength < 5 ? t("forms.demo.reasonError") : undefined}
+                    hintAside={t("forms.demo.reasonCounter", { count: reason.length })}
+                  >
+                    <TextInput
+                      multiline
+                      maxLength={500}
+                      value={reason}
+                      onValueChange={setReason}
+                      placeholder={t("forms.demo.reasonPlaceholder")}
+                    />
                   </Field>
                 </State>
               </div>

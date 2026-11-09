@@ -291,5 +291,59 @@
   "queryErrorTitle": "Could not load the data",
   "queryErrorForbidden": "You do not have access to this data (403).",
   "queryErrorServer": "Server error ({{status}}). Please try again shortly.",
-  "queryErrorGeneric": "The request failed ({{status}})."
+  "queryErrorGeneric": "The request failed ({{status}}).",
+  "coverage": {
+    "district_not_served_by_branch": {
+      "title": "Order from another region",
+      "assign": "This order belongs to another region and cannot go to a courier: {{ids}}",
+      "dispatch": "These orders belong to another region and cannot be sent to this branch: {{ids}}. Remove them from the selection."
+    },
+    "order_in_outgoing_batch": {
+      "title": "Order is in an outgoing batch",
+      "text": "Remove it from the batch first; it cannot go to a courier: {{ids}}"
+    },
+    "hq_courier_region_only": {
+      "title": "Not in the HQ region",
+      "text": "An HQ courier takes only HQ-region orders: {{ids}}"
+    },
+    "branch_region_missing": {
+      "title": "Region not set",
+      "hq": "The HQ branch has no region; an administrator must set it.",
+      "destination": "The destination branch has no region.",
+      "post": "The mail has no region."
+    },
+    "region_mismatch": {
+      "title": "Mail is for another region",
+      "text": "Send the mail to a branch in its region. Nothing was sent."
+    },
+    "post_receive_manager_only": {
+      "title": "Mail not received",
+      "text": "Only the destination branch manager can receive this mail."
+    },
+    "post_not_visible_to_courier": {
+      "title": "The branch has not received this mail yet",
+      "text": "You will see it after the branch manager receives it."
+    },
+    "new_posts_hq_only": {
+      "title": "New mail is for HQ staff only",
+      "text": "Mail that reached the branch is in the «Old» and «Refused» sections."
+    },
+    "order_not_in_your_branch": {
+      "title": "This order is not in your branch"
+    },
+    "branch_not_assigned": {
+      "title": "You are not assigned to any branch",
+      "text": "Contact an administrator."
+    },
+    "branch_scope_unavailable": {
+      "title": "Could not determine your branch",
+      "text": "Try again in a moment."
+    },
+    "idsMore": "{{ids}} and {{count}} more"
+  },
+  "appUpdate": {
+    "title": "A new version of the app is available.",
+    "text": "Save any open form, then update.",
+    "reload": "Update"
+  }
 }

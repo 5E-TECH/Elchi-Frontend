@@ -37,4 +37,16 @@ test.describe("Pochta ichida qidiruv — 390px", () => {
     await clear.click();
     await expect(page.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(9);
   });
+
+  test("⭐ rad etilgan pochta: qidiruv maydoni ≥ 44px, topadi, gorizontal skroll yo'q", async ({ page }) => {
+    await mockMailSearchApi(page, { refused: true });
+    await page.goto("/mails/2483?from=refused&q=Chilonzor");
+    const search = page.getByRole("searchbox", { name: "Pochtadagi buyurtmalarni qidirish" });
+    await expect(search).toHaveValue("Chilonzor", { timeout: 60_000 });
+    const field = await search.evaluate((el) => el.parentElement!.getBoundingClientRect().height);
+    expect(field).toBeGreaterThanOrEqual(44);
+    await expect(page.getByTestId("mail-duplicate-phones")).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  });
 });

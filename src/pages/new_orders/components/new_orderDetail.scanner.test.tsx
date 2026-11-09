@@ -114,7 +114,20 @@ const adminState = {
 
 const Path = () => <span data-testid="path">{useLocation().pathname}</span>;
 
-const renderPage = () =>
+/** HYBRID filial menejeri — qabul `transfer-batches` orqali (`resolveReceiveMode`). */
+const hybridManagerState = {
+  role: { id: "522", role: "manager", region: null, name: "manager" },
+  user: {
+    user: { id: "522", role: "manager", branch: { id: "15", type: "HYBRID" } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+} as never;
+
+const renderPage = (preloadedState: never = adminState) =>
   renderWithProviders(
     <>
       <Routes>
@@ -123,7 +136,7 @@ const renderPage = () =>
       <ScannerHost />
       <Path />
     </>,
-    { route: "/new-orders/121", preloadedState: adminState },
+    { route: "/new-orders/121", preloadedState },
   );
 
 const target = () => {
@@ -276,6 +289,31 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     await waitFor(() => expect(statsOf()).toEqual({ received: 0, left: 2, missing: 1 }));
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", "Topilmadi: ccccccccccccccccccccccc0");
     expect(target().list?.[0]).toMatchObject({ title: "ccccccccccccccccccccccc0", subtitle: "Topilmadi", tone: "danger" });
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("begona QR (403 order_not_in_your_branch, #620): lokal sabab, «qayta skanerlang» yo'q, hisob o'zgarmaydi", async () => {
+    mocks.fetchScanDetail.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), {
+        response: {
+          status: 403,
+          data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } },
+        },
+      }),
+    );
+    renderPage(hybridManagerState);
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("ddddddddddddddddddddddd4", "keyboard");
+    });
+
+    expect(await screen.findByText("Bu buyurtma sizning filialingizda emas")).toBeInTheDocument();
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", "Bu buyurtma sizning filialingizda emas");
+    expect(screen.queryByText("Tekshirib bo'lmadi — qayta skanerlang")).not.toBeInTheDocument();
+    expect(screen.queryByText("backend matni")).not.toBeInTheDocument();
+    expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
+    expect(target().list).toEqual([]);
     expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
   });
 

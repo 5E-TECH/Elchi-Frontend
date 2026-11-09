@@ -108,6 +108,27 @@ describe("useConfirm", () => {
     await waitFor(() => expect(onResult).toHaveBeenCalledWith(false));
   });
 
+  it("T6 N2: `errorView` + `compactOnError` host orqali o'tadi — tugma o'chiq, «Orqaga» — `false`", async () => {
+    const onConfirm = vi.fn(() => Promise.reject(Object.assign(new Error("409"), { response: { status: 409 } })));
+    const { user, onResult, opener } = setup({
+      ...DELETE,
+      cancelLabel: "Orqaga",
+      consequences: [{ text: "Oqibat" }],
+      compactOnError: true,
+      errorView: () => ({ content: "Allaqachon tuzatilgan", blockConfirm: true }),
+      onConfirm,
+    });
+    await user.click(opener);
+    await user.click(screen.getByRole("button", { name: "O'chirish" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Allaqachon tuzatilgan");
+    expect(screen.getByRole("button", { name: "O'chirish" })).toBeDisabled();
+    expect(screen.getByRole("list")).toHaveClass("max-md:hidden");
+
+    await user.click(screen.getByRole("button", { name: "Orqaga" }));
+    await waitFor(() => expect(onResult).toHaveBeenCalledWith(false));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
   it("navbat: ikkinchi so'rov birinchisi yopilgach ochiladi", async () => {
     render(<ConfirmHost />);
     let first!: Promise<boolean>;

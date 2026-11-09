@@ -72,6 +72,7 @@
   "oldStatusFilterLabel": "Holati",
   "oldCourierLabel": "Kuryer: {{name}}",
   "oldRegionFilterEmpty": "Tanlangan viloyat bo'yicha eski pochtalar topilmadi",
+  "refusedRegionFilterEmpty": "Tanlangan viloyat bo'yicha rad etilgan pochtalar topilmadi",
   "oldBatchFilterLabel": "Batch",
   "oldBatchOptionPrefix": "Batch",
   "oldExportTitle": "Eski pochtalar hisoboti",
@@ -280,6 +281,7 @@
     "footerTotal": "Jami:",
     "footerCountTotal": "Jami {{value}} ta buyurtma",
     "readOnly": "Faqat o'qish",
+    "receiveDestinationOnly": "Bu pochtani manzil filial menejeri qabul qiladi — sizda faqat ko'rish.",
     "sendDialog": {
       "title": "Filialni tanlang",
       "description": "{{value}} ta buyurtma tanlangan filialga jo'natiladi",

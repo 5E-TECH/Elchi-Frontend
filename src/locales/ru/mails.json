@@ -72,6 +72,7 @@
   "oldStatusFilterLabel": "Статус",
   "oldCourierLabel": "Курьер: {{name}}",
   "oldRegionFilterEmpty": "Старая почта по выбранной области не найдена",
+  "refusedRegionFilterEmpty": "По выбранной области отклонённые почты не найдены",
   "oldBatchFilterLabel": "Батч",
   "oldBatchOptionPrefix": "Батч",
   "oldExportTitle": "Отчет по старой почте",
@@ -280,6 +281,7 @@
     "footerTotal": "Итого:",
     "footerCountTotal": "Всего заказов: {{value}}",
     "readOnly": "Только просмотр",
+    "receiveDestinationOnly": "Эту почту принимает менеджер филиала назначения — у вас только просмотр.",
     "sendDialog": {
       "title": "Выберите филиал",
       "description": "Заказов будет отправлено в выбранный филиал: {{value}}",

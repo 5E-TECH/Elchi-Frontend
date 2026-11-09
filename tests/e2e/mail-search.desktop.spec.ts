@@ -94,4 +94,33 @@ test.describe("Pochta ichida qidiruv va takroriy telefonlar — desktop", () => 
       page.getByRole("table", { name: "Pochtadagi buyurtmalar" }).getByRole("checkbox", { name: /^№\d+ ni tanlash$/ }),
     ).toHaveCount(2);
   });
+
+  test("⭐ rad etilgan pochta (HQ): qidiruv bor, banner yo'q; topilganlarni tanlab faqat ular qabul qilinadi", async ({ page }) => {
+    const { leaked, received } = await mockMailSearchApi(page, { refused: true });
+    await page.goto("/mails/2483?from=refused");
+    const search = page.getByRole("searchbox", { name: "Pochtadagi buyurtmalarni qidirish" });
+    await expect(search).toBeVisible({ timeout: 60_000 });
+    const table = page.getByRole("table", { name: "Rad etilgan buyurtmalar" });
+    const region = page.getByRole("region", { name: "Tanlangan buyurtmalar" });
+
+    await expect(page.getByRole("button", { name: "Filialga qaytarish — 0 ta" })).toBeVisible();
+    // Pochtada takroriy raqamlar bor, lekin rad etilgan pochtada banner ham, qator belgisi ham yo'q.
+    await expect(page.getByTestId("mail-duplicate-phones")).toHaveCount(0);
+    await expect(table.getByText("Takroriy raqam")).toHaveCount(0);
+
+    await search.fill("Chilonzor");
+    await expect(page).toHaveURL(/\/mails\/2483\?q=Chilonzor$/);
+    await expect(page.getByTestId("mail-search-status")).toContainText("«Chilonzor» bo'yicha 2 ta buyurtma topildi");
+    await expect(table.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(2);
+
+    await region.getByRole("button", { name: "Ko'rinayotganlarni tanlash (2)" }).click();
+    await expect(page.getByRole("button", { name: "Filialga qaytarish — 2 ta" })).toBeEnabled();
+    await page.getByRole("button", { name: "Pochtani qabul qilish — 2 ta" }).click();
+
+    await expect.poll(() => received).toEqual([["10207", "10195"]]);
+    await expect(page.getByText("2 ta buyurtma qabul qilindi. 7 tasi shu pochtada qoldi.", { exact: true })).toBeVisible();
+    // Qabul qilinganlar ro'yxatdan yashiriladi — qidiruvda boshqa topilgan yo'q.
+    await expect(table.getByRole("checkbox", { name: /^№\d+ ni tanlash$/ })).toHaveCount(0);
+    expect(leaked).toEqual([]);
+  });
 });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource } from "../../../shared/lib/scanner";
 import { extractScannerToken, isForeignScanUrl } from "../../../shared/lib/scanToken";
@@ -25,7 +26,16 @@ export type ScanOutcome =
   | { kind: "invalid"; raw: string; at: number }
   | { kind: "market-qr"; raw: string; at: number }
   | { kind: "not-found"; raw: string; at: number; resource: ScanResourceType }
-  | { kind: "error"; raw: string; at: number; message: string | null };
+  | {
+      kind: "error";
+      raw: string;
+      at: number;
+      message: string | null;
+      /** Begona QR (#620): lokal sarlavha («Bu buyurtma sizning filialingizda emas»); yo'q — «Kodni tekshirib bo'lmadi». */
+      title?: string | null;
+      /** Ruxsat yo'q (qulf ikonkasi), vaqtinchalik xato emas. */
+      forbidden?: boolean;
+    };
 
 /** Ochilayotgan kod: `title` — aniqlangandan keyin («№10226 · Buyurtma»), `sub` — ism / joy. */
 export type ScanOpening = { token: string; title: string | null; entry: ScanHistoryEntry | null };
@@ -44,7 +54,10 @@ export const notFoundTextKey = (resource: ScanResourceType) =>
  *     «Oldingi kod ochilmoqda» bilan rad etiladi (jim yo'qolmaydi);
  *   - topildi → «№… topildi» + `SCAN_OPEN_DELAY_MS` dan keyin natija sahifasi;
  *   - topilmadi / yaroqsiz QR / market QR / xato → skaner ochiq qoladi (uzluksiz), natija kamerada va
- *     desktopda «Natija» kartasida; market QR (`MCR-`) hech qachon so'ralmaydi (bir martalik, backend yeydi).
+ *     desktopda «Natija» kartasida; market QR (`MCR-`) hech qachon so'ralmaydi (bir martalik, backend yeydi);
+ *   - begona QR (#620, anKpzwxk): `order_not_in_your_branch`, `branch_not_assigned`, `post_not_visible_to_courier`,
+ *     `branch_scope_unavailable` — «Kodni tekshirib bo'lmadi» o'rniga lokal sarlavha (`common:coverage.*`), xato
+ *     signali; buyurtma ma'lumoti yo'q (javobda ham yo'q).
  */
 export const useUniversalScan = () => {
   const { t, i18n } = useTranslation("scan");
@@ -127,6 +140,19 @@ export const useUniversalScan = () => {
         if (getErrorStatus(error) === 404) {
           setOutcome({ kind: "not-found", raw: token, at, resource });
           void playScanFeedback("missing", t(`${notFoundTextKey(resource)}.notFoundTitle`), source);
+          return;
+        }
+        const scope = readQrScopeText(t, error);
+        if (scope) {
+          setOutcome({
+            kind: "error",
+            raw: token,
+            at,
+            title: scope.title,
+            message: scope.description || null,
+            forbidden: !scope.retryable,
+          });
+          void playScanFeedback("error", scope.line, source);
           return;
         }
         const message = getBackendErrorMessage(error) ?? null;

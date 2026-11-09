@@ -77,7 +77,7 @@ import {
   type OldMailStatusKind,
   type OldMailsFilters,
 } from "../model/oldMailsModel";
-import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
+import { buildRegionFilterOptions, regionSearchFilter } from "./lib/regionFilterOptions";
 import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
 import { MailCardsGrid, MailCardsGridSkeleton } from "./MailCardsGrid";
 import { MailsTable, type MailsTableRow } from "./MailsTable";
@@ -729,7 +729,10 @@ const OldMails = ({ layout }: OldMailsProps) => {
       inlineLabel={t("old.filters.region")}
       aria-label={t("old.filters.region")}
       icon={MapPin}
-      searchable={regionOptions.length > 8}
+      // Ega qarori 2026-11-09: Pochta sahifasidagi «Viloyat» filtri doim qidiruvli («Bugungi» bilan bir xil).
+      // Telefon filtr varaqasida (OldMailsFiltersSheet) — qidiruvsiz, klaviatura varaqani yopmasin.
+      searchable
+      filter={regionSearchFilter}
       loading={regionsLoading}
     />
   );

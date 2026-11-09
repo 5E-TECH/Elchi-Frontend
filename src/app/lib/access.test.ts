@@ -25,6 +25,8 @@ import {
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 // IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
 import { canViewInvestorCabinet } from "./access";
+// anKpzwxk: «Yangi pochtalar» — o'z describe bloki (pastda).
+import { canViewNewPosts } from "./access";
 // LG-3: «Hududlar», MO-2: «Daromadim» — o'z describe bloklari (pastda).
 import { canViewMyEarnings, canViewRegionStats } from "./access";
 // MO-3: market operatori buyurtmalari — o'z describe bloki (pastda).
@@ -33,6 +35,8 @@ import { canHandoverCancelledToMarket } from "./access";
 import { canManageExpenseCategories } from "./access";
 // 47WFHzlx: «Yetkazish tariflari» — o'z describe bloki (pastda).
 import { canManageDeliveryTariffs } from "./access";
+// T6 N2: to'lovni qaytarish / summasini tuzatish — o'z describe bloki (pastda).
+import { canCorrectPayments } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -229,6 +233,34 @@ describe("canDispatchPostToBranch — pochtani filialga jo'natish (backend bilan
   });
 });
 
+describe("canViewNewPosts — «Yangi pochtalar» (GET post/new) faqat HQ xodimlari (anKpzwxk, backend #620)", () => {
+  it("superadmin, admin va HQ registratori — ruxsat", () => {
+    expect(canViewNewPosts(state("superadmin"))).toBe(true);
+    expect(canViewNewPosts(state("admin"))).toBe(true);
+    expect(canViewNewPosts(state("registrator", "HQ"))).toBe(true);
+  });
+
+  it.each(["REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+    "registrator/%s — rad (server 403 new_posts_hq_only)",
+    (branchType) => {
+      expect(canViewNewPosts(state("registrator", branchType))).toBe(false);
+    },
+  );
+
+  it("filial turi noma'lum registrator — rad (fail-closed)", () => {
+    expect(canViewNewPosts(state("registrator"))).toBe(false);
+  });
+
+  it("menejer (HQ ham — ega Q2 sukuti: o'z filiali ro'yxati), kuryer, market, logist — rad", () => {
+    expect(canViewNewPosts(state("manager", "HQ"))).toBe(false);
+    expect(canViewNewPosts(state("manager", "REGIONAL"))).toBe(false);
+    expect(canViewNewPosts(state("courier"))).toBe(false);
+    expect(canViewNewPosts(state("market"))).toBe(false);
+    expect(canViewNewPosts(state("logist"))).toBe(false);
+    expect(canViewNewPosts(state(null))).toBe(false);
+  });
+});
+
 describe("noma'lum filial turi — xavfsiz tomonga yiqiladi", () => {
   it("qo'shimcha huquq bermaydi", () => {
     const unknown = state("manager");
@@ -355,5 +387,14 @@ describe("canManageDeliveryTariffs — «Yetkazish tariflari» (/delivery-tariff
       expect(canManageDeliveryTariffs(s), caseName).toBe(caseName === "superadmin" || caseName === "admin");
     }
     expect(canManageDeliveryTariffs(state(null))).toBe(false);
+  });
+});
+
+describe("canCorrectPayments — to'lovni qaytarish va summasini tuzatish (T6 N2)", () => {
+  it("faqat superadmin (backend reverse / correct-amount @Roles(SUPERADMIN)); admin, menejer, registrator — yo'q", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canCorrectPayments(s), caseName).toBe(caseName === "superadmin");
+    }
+    expect(canCorrectPayments(state(null))).toBe(false);
   });
 });

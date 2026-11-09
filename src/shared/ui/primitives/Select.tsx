@@ -934,6 +934,9 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
           className={cx(
             CONTROL_BASE,
             "p-0",
+            // Uzun tanlangan nom («Qoraqalpog'iston Respublikasi») yopiq maydonda «…» bilan — oddiy rejimdagi
+            // `truncate` kabi (harf o'rtasidan kesilmaydi).
+            "text-ellipsis",
             // Ochiqda tanlangan nom namunada — oddiy rangda (yozish uni almashtiradi); ichki yorliqli yopiq
             // filtrda «Barchasi» — holat, oddiy rangda.
             (isOpen && selectedLabel && !query) || (inlineLabel && !isOpen)

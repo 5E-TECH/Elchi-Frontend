@@ -1593,6 +1593,207 @@
       "loadError": "Couldn't load the window",
       "saved_one": "Payment correction window: {{value}} day.",
       "saved_other": "Payment correction window: {{value}} days."
+    },
+    "actions": {
+      "reverse": "Reverse",
+      "correct": "Correct amount"
+    },
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "back": "Back",
+    "party": {
+      "courier": "courier {{name}}",
+      "courierGeneric": "the courier",
+      "market": "{{name}}",
+      "marketGeneric": "the market",
+      "branch": "the {{name}} branch",
+      "branchGeneric": "the branch"
+    },
+    "reason": {
+      "label": "Reason",
+      "placeholderReverse": "Why are you reversing it?",
+      "placeholderEdit": "Why are you correcting it?",
+      "emptyHint": "At least 5 characters",
+      "short": "Write at least 5 characters",
+      "counter": "{{length}} / {{max}}",
+      "hintCourier": "Saved to the log; the courier sees it in the app, it is not sent to Telegram",
+      "hintMarket": "Saved to the log; the market sees it in the app, it is not sent to Telegram",
+      "hintBoth": "Saved to the log; the courier and the market see it in the app, it is not sent to Telegram",
+      "hintGeneric": "Saved to the log, it is not sent to Telegram"
+    },
+    "consequence": {
+      "courierBack": "{{amount}} goes back to the cashbox of {{courier}}",
+      "marketOwedUp": "The amount owed to {{market}} grows by {{amount}}",
+      "mainUnchanged": "The main cashbox does not change",
+      "notifyCourier": "The courier is notified in the app, and in Telegram if connected. The reason is shown only in the app",
+      "notifyCourierBranch": "The courier and the branch head are notified",
+      "notifyMarket": "The market owner is notified in the app, and in Telegram if connected. The reason is shown only in the app",
+      "notifyBoth": "The courier and the market owner are notified in the app, and in Telegram if connected. The reason is shown only in the app",
+      "notifyGeneric": "The parties of the payment are notified in the app, and in Telegram if connected. The reason is shown only in the app"
+    },
+    "reverse": {
+      "title": "Reverse payment",
+      "confirmTitle": "Confirm the payment reversal",
+      "amountLabel": "Payment to reverse",
+      "confirmLabel": "Reverse",
+      "loading": "Reversing…",
+      "irreversible": "The reversal cannot be undone.",
+      "note": {
+        "courierMain": "The money goes back the other way: from the main cashbox to the cashbox of {{courier}}. The original entry is kept — a reversal entry is added.",
+        "courierBranch": "The money goes back the other way: from the cashbox of {{branch}} to the cashbox of {{courier}}. The original entry is kept — a reversal entry is added.",
+        "market": "The money goes back to the main cashbox, the amount owed to {{market}} grows by {{amount}}.",
+        "clickToMarket": "{{amount}} goes back to the cashbox of {{courier}}, the amount owed to {{market}} grows by the same; the main cashbox does not change.",
+        "generic": "The money goes back the other way. The original entry is kept — a reversal entry is added."
+      },
+      "consequence": {
+        "mainOutCash": "{{amount}} in cash is written off the main cashbox — in the current shift",
+        "mainOut": "{{amount}} is written off the main cashbox — in the current shift",
+        "branchOut": "An expense is written in the cashbox of {{branch}}",
+        "courierBack": "{{amount}} goes back to the cashbox of {{courier}} — the money has to be handed over again",
+        "mainIn": "{{amount}} goes back to the main cashbox",
+        "marketOrders": "The last paid orders go back to «Partly paid» or «Sold»",
+        "generic": "The money goes back between the cashboxes — in the current shift",
+        "history": "The original entry is kept — the list shows «Reversed» and «Reversal entry»"
+      },
+      "toast": {
+        "title": "Payment reversed",
+        "courier": "{{amount}} went back to the cashbox of {{courier}}. The courier has been notified.",
+        "market": "The amount owed to {{market}} grew by {{amount}}. The market has been notified.",
+        "clickToMarket": "{{amount}} went back to the cashbox of {{courier}}. The courier and the market have been notified.",
+        "generic": "#{{id}}: {{amount}} went back."
+      }
+    },
+    "correct": {
+      "title": "Correct amount",
+      "confirmTitle": "Confirm the amount correction",
+      "currentLabel": "Current amount",
+      "newAmountLabel": "Correct amount",
+      "newAmountHint": "Greater than 0 and different from the current amount",
+      "zero": "Enter an amount greater than 0",
+      "same": "The new amount equals the current one",
+      "exceeds": "At most {{max}}",
+      "diff": "Difference",
+      "confirmLabel": "Correct",
+      "loading": "Saving…",
+      "deadlineNote": "If needed, the new payment can be corrected again until {{deadline}}.",
+      "diffLine": {
+        "marketDecrease": "{{diff}} goes back to the main cashbox, the amount owed to {{market}} grows by {{diff}}",
+        "marketIncrease": "Another {{diff}} leaves the main cashbox, the amount owed to {{market}} drops by {{diff}}",
+        "courierMainDecrease": "{{diff}} goes back to the cashbox of {{courier}}, {{diff}} leaves the main cashbox",
+        "courierMainIncrease": "Another {{diff}} leaves the cashbox of {{courier}}, {{diff}} enters the main cashbox",
+        "courierBranchDecrease": "{{diff}} goes back to the cashbox of {{courier}}, {{diff}} leaves the cashbox of {{branch}}",
+        "courierBranchIncrease": "Another {{diff}} leaves the cashbox of {{courier}}, {{diff}} enters the cashbox of {{branch}}",
+        "clickToMarketDecrease": "{{diff}} goes back to the cashbox of {{courier}}, the amount owed to {{market}} grows by {{diff}}; the main cashbox does not change",
+        "clickToMarketIncrease": "Another {{diff}} leaves the cashbox of {{courier}}, the amount owed to {{market}} drops by {{diff}}; the main cashbox does not change"
+      },
+      "consequence": {
+        "mainBack": "{{diff}} goes back to the main cashbox — in the current shift",
+        "mainMore": "Another {{diff}} leaves the main cashbox — in the current shift",
+        "marketOwedUp": "The amount owed to {{market}} grows by {{diff}}; the last paid orders are recalculated",
+        "marketOwedDown": "The amount owed to {{market}} drops by {{diff}}; the last paid orders are recalculated",
+        "courierMore": "Another {{diff}} leaves the cashbox of {{courier}}",
+        "mainOutCash": "{{diff}} in cash leaves the main cashbox",
+        "mainOut": "{{diff}} leaves the main cashbox",
+        "mainIn": "{{diff}} enters the main cashbox",
+        "branchOut": "{{diff}} leaves the cashbox of {{branch}}",
+        "branchIn": "{{diff}} enters the cashbox of {{branch}}",
+        "notifyCourier": "The courier is notified in the app, and in Telegram if connected",
+        "history": "The original entry is kept: a reversal entry ({{reversal}}) and a new payment ({{replacement}}) are added"
+      },
+      "toast": {
+        "title": "Amount corrected",
+        "courier": "#{{id}}: {{from}} → {{to}}. The courier has been notified.",
+        "market": "#{{id}}: {{from}} → {{to}}. The market has been notified.",
+        "clickToMarket": "#{{id}}: {{from}} → {{to}}. The courier and the market have been notified.",
+        "generic": "#{{id}}: {{from}} → {{to}}."
+      }
+    },
+    "deadline": {
+      "lead": "Can be reversed or corrected:",
+      "until": "until {{deadline}}",
+      "window_one": "window {{count}} day",
+      "window_other": "window {{count}} days",
+      "fromRoot": "window from the first payment (#{{id}})"
+    },
+    "lock": {
+      "windowExpiredTitle": "The window ended: {{deadline}}",
+      "windowExpiredTitleGeneric": "The window ended",
+      "windowExpiredBody_one": "The payment could be reversed or its amount corrected within {{count}} day.",
+      "windowExpiredBody_other": "The payment could be reversed or its amount corrected within {{count}} days.",
+      "changeWindow": "Change the window",
+      "courierMoved": "Can't be corrected — the courier moved to another branch."
+    },
+    "errors": {
+      "generic": "The action could not be completed. Try again.",
+      "nothingChanged": "Nothing has changed.",
+      "shiftRequired": {
+        "title": "The shift is not open",
+        "body": "The correction is written to the current shift. Open the shift in the main cashbox first — nothing has changed.",
+        "action": "Open the shift"
+      },
+      "branchShiftRequired": {
+        "title": "The branch shift is not open",
+        "body": "The money goes through the cashbox of {{branch}} — the branch manager has to open the shift. Nothing has changed."
+      },
+      "insufficient": {
+        "title": "Not enough money in the cashbox",
+        "courierMainCash": "There is not enough cash in the main cashbox to return it",
+        "courierMainCard": "There is not enough card money in the main cashbox to return it",
+        "courierBranchCash": "There is not enough cash in the cashbox of {{branch}} to return it",
+        "courierBranchCard": "There is not enough card money in the cashbox of {{branch}} to return it",
+        "market": "There is not enough money in the main cashbox for the transfer",
+        "generic": "There is not enough money in the receiving cashbox",
+        "required": " (needed: {{amount}})"
+      },
+      "cardArchived": {
+        "title": "The card is archived",
+        "body": "The card the payment went to is archived — activate the card first."
+      },
+      "alreadyCorrected": {
+        "body": "The payment has already been corrected. The list has been updated."
+      },
+      "windowExpired": {
+        "title": "The window ended: {{deadline}}",
+        "titleGeneric": "The window ended",
+        "body_one": "The payment could be reversed or its amount corrected within {{count}} day. Nothing has changed.",
+        "body_other": "The payment could be reversed or its amount corrected within {{count}} days. Nothing has changed.",
+        "bodyGeneric": "The correction window has ended. Nothing has changed."
+      },
+      "uncertain": {
+        "title": "No internet connection",
+        "reverse": "The request did not arrive or no reply came. When the connection is back, press «Reverse» again — the payment will not be reversed twice.",
+        "edit": "The request did not arrive or no reply came. When the connection is back, press «Correct» again — the amount will not be corrected twice."
+      },
+      "notCorrectable": {
+        "title": "Can't be corrected",
+        "reversalRow": "A reversal entry can be neither reversed nor corrected.",
+        "courierCashboxDeleted": "The courier cashbox has been deleted.",
+        "marketCashboxDeleted": "The market cashbox has been deleted.",
+        "cashboxDeleted": "The cashbox has been deleted.",
+        "cashboxOrCardDeleted": "A cashbox or card used in this payment has been deleted.",
+        "unsupported": "The payment's cashbox entries are incomplete.",
+        "amountTitle": "The amount can't be corrected",
+        "amountBody": "The courier can't hand over this amount now — reverse the payment in full."
+      },
+      "legacy": {
+        "title": "Old entry",
+        "body": "This payment was recorded before corrections were introduced and its paired cashbox entries are unknown — it can be neither reversed nor corrected."
+      },
+      "amountExceeds": {
+        "title": "At most {{max}}",
+        "titleGeneric": "The amount is over the limit",
+        "bodyMarket": "The limit is the balance owed to {{market}} plus the current payment. Press «Back» and change the amount.",
+        "bodyCourier": "The limit is the balance in the cashbox of {{courier}} plus the current payment. Press «Back» and change the amount.",
+        "bodyGeneric": "The limit is the cashbox balances plus the current payment. Press «Back» and change the amount."
+      },
+      "sameAmount": {
+        "title": "The new amount equals the current one",
+        "body": "Press «Back» and change the amount."
+      },
+      "notFound": {
+        "title": "Entry not found",
+        "body": "The payment entry was deleted or not found. The list has been updated."
+      }
     }
   }
 }

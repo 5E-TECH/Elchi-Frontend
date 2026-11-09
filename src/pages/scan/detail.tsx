@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
+import { readBackendRejection } from "../../shared/lib/backendReason";
+import { coverageRejectionText, readQrScopeText } from "../../shared/lib/coverageReasons";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { QueryBoundary } from "../../shared/ui/primitives";
 import { normalizeOrderDetail, type OrderDetail } from "../new_orders/components/detail/orderDetailModel";
@@ -28,7 +30,7 @@ import ScanMarketQrNotice from "./ui/ScanMarketQrNotice";
 import { ScanOrderResult } from "./ui/ScanOrderResult";
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
-import { ScanLoadingCard, ScanNotFoundCard } from "./ui/ScanStates";
+import { ScanForbiddenCard, ScanLoadingCard, ScanNotFoundCard } from "./ui/ScanStates";
 
 /** Skan javobi → sahifa tanasi; `null` — javob keldi, lekin ichida ma'lumot yo'q («topilmadi»). */
 type ResolvedScan =
@@ -63,6 +65,12 @@ const resolveScan = (response: { type: ScanResourceType; data: unknown } | undef
  * Ko'rinishlar — `ui/ScanOrderResult` (rol bo'yicha mazmun), `ui/ScanPackageDetail`, `ui/ScanPostDetail`,
  * `ui/ScanExternalBagDetail`, `ui/ScanMarketQrNotice`; holatlar — yuklanish va «… topilmadi» kartasi
  * («Qayta urinish» + «Skanerga qaytish»). Ochilgan obyekt «Oxirgi skanerlar» tarixiga yoziladi (`/scan`).
+ *
+ * Begona QR (Elchi-Backend #620, anKpzwxk; ega Q5 sukuti): 403 `order_not_in_your_branch` / `branch_not_assigned`,
+ * kuryerda pochta QR'i 403 `post_not_visible_to_courier` (va har qanday 403) — javobda ma'lumot yo'q: kulrang
+ * «Bu buyurtma sizning filialingizda emas» kartasi (`ScanForbiddenCard`), faqat «Skanerga qaytish», «Qayta
+ * urinish»siz; matn — `common:coverage.*` (backend matniga tarmoqlanmaymiz). 503 `branch_scope_unavailable` —
+ * «Filialingizni aniqlab bo'lmadi» + «Qayta urinish». 404 va boshqa xato — avvalgidek «… topilmadi».
  *
  * USB (HID) skaner sahifa ochiq turganda ham ishlaydi: yangi token — o'sha posilka ochiladi; shu token —
  * «takror» ovozi; yaroqsiz QR — xato ovozi va tepada ogohlantirish (keyingi to'g'ri skangacha); biror amal
@@ -144,11 +152,14 @@ const ScanDetailPage = () => {
 
   useKeyboardScanner({ enabled: !dialogOpen, onScan: handleNextScan });
 
+  const queryError = query.error;
   useEffect(() => {
-    if (query.isError) {
-      void playScanFeedback("error");
-    }
-  }, [query.isError]);
+    if (!query.isError) return;
+    // Begona QR (#620): signal matnida sabab («Bu buyurtma sizning filialingizda emas»), umumiy «Xatolik» emas.
+    const scope = readQrScopeText(t, queryError);
+    if (scope) void playScanFeedback("error", scope.title);
+    else void playScanFeedback("error");
+  }, [query.isError, queryError, t]);
 
   const { refetch: refetchScan } = query;
   const refetch = useCallback(() => {
@@ -161,17 +172,36 @@ const ScanDetailPage = () => {
     </ScanAlert>
   ) : null;
 
-  const notFound = (retry: () => void) => (
+  const notFound = (retry: () => void, texts?: { title: string; text: string }) => (
     <div className="flex flex-col gap-4">
       {invalidAlert}
       <ScanNotFoundCard
-        title={t(`${textKey}.notFoundTitle`)}
-        text={t(`${textKey}.notFoundText`)}
+        title={texts?.title ?? t(`${textKey}.notFoundTitle`)}
+        text={texts?.text ?? t(`${textKey}.notFoundText`)}
         onRetry={retry}
         retrying={query.isFetching}
       />
     </div>
   );
+
+  const failed = (error: unknown, retry: () => void) => {
+    const scope = readQrScopeText(t, error);
+    // 503 `branch_scope_unavailable` — vaqtinchalik: «Qayta urinish» bilan (xuddi «topilmadi» kartasi o'rnida).
+    if (scope?.retryable) return notFound(retry, { title: scope.title, text: scope.description });
+    const rejection = readBackendRejection(error);
+    if (scope || rejection.status === 403) {
+      // Ruxsat yo'q — ma'lumotsiz, qayta urinishsiz. Sababsiz 403 — umumiy «ruxsat yo'q» sarlavhasi.
+      const text =
+        scope ?? coverageRejectionText(t, rejection, { context: "qr", fallbackTitle: t("ui:states.error.forbidden.title") });
+      return (
+        <div className="flex flex-col gap-4">
+          {invalidAlert}
+          <ScanForbiddenCard title={text.title} text={text.description} />
+        </div>
+      );
+    }
+    return notFound(retry);
+  };
 
   return (
     <QueryBoundary<ResolvedScan>
@@ -192,7 +222,7 @@ const ScanDetailPage = () => {
         </div>
       }
       empty={notFound(refetch)}
-      error={(_error, retry) => notFound(retry)}
+      error={failed}
     >
       {(scan) => {
         if (scan.kind === "package") {

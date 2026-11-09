@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import Orders from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 import { getActiveScanTarget } from "../../shared/lib/scanner/scanTargets";
+import { api } from "../../shared/api/api";
 
 /**
  * Bekor qilinganlarni HQ'ga yuborish (menejer, HYBRID/REGIONAL filial, «Bekor qilingan» tabi) — dizayn v2
@@ -166,6 +167,34 @@ describe("Orders — bekor qilinganlarni HQ'ga yuborish", () => {
 
     act(() => getActiveScanTarget()!.list![1].onUndo!());
     expect(screen.getByRole("checkbox", { name: "№10298 ni tanlash" })).not.toBeChecked();
+  });
+
+  it("begona QR (403 order_not_in_your_branch, #620): lokal sarlavha, «Buyurtma topilmadi» va backend matni yo'q", async () => {
+    const get = vi.spyOn(api, "get").mockImplementation((url: string) =>
+      url.includes("qr-code")
+        ? Promise.reject(
+            Object.assign(new Error("Forbidden"), {
+              response: {
+                status: 403,
+                data: { statusCode: 403, message: "backend matni", data: { reason: "order_not_in_your_branch" } },
+              },
+            }),
+          )
+        : Promise.reject(new Error(`kutilmagan so'rov: ${url}`)),
+    );
+    renderWithProviders(<Orders />, {
+      route: "/orders?status=cancelled,cancelled%20(sent)",
+      preloadedState: managerState("HYBRID"),
+    });
+
+    act(() => {
+      void getActiveScanTarget()!.onScan("f2f2f2f2f2f2f2f2f2f2f2f2", "camera");
+    });
+
+    expect(await screen.findByText("Bu buyurtma sizning filialingizda emas")).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText("backend matni")).not.toBeInTheDocument();
+    get.mockRestore();
   });
 
   it("HQ/PICKUP menejerida va boshqa tablarda tanlov yo'q", () => {

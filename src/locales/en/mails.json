@@ -72,6 +72,7 @@
   "oldStatusFilterLabel": "Status",
   "oldCourierLabel": "Courier: {{name}}",
   "oldRegionFilterEmpty": "No old mails found for selected region",
+  "refusedRegionFilterEmpty": "No refused mails found for the selected region",
   "oldBatchFilterLabel": "Batch",
   "oldBatchOptionPrefix": "Batch",
   "oldExportTitle": "Old mails report",
@@ -280,6 +281,7 @@
     "footerTotal": "Total:",
     "footerCountTotal": "{{value}} orders in total",
     "readOnly": "Read only",
+    "receiveDestinationOnly": "Only the destination branch manager can receive this mail — view only.",
     "sendDialog": {
       "title": "Choose a branch",
       "description": "{{value}} orders will be sent to the chosen branch",

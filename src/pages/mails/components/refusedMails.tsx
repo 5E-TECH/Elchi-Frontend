@@ -1,9 +1,9 @@
 // dizayn-v2: superadmin-mails-refused, admin-mails-refused, manager-mails-refused, registrator-mails-refused, courier-mails-refused, courier-mails-tab-switcher-open
-import { memo, useCallback, useMemo } from "react";
-import { Info, TriangleAlert } from "lucide-react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { Info, Map as MapIcon, MapPin, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { TONE_SOFT } from "../../../shared/ui/primitives";
+import { Select, TONE_SOFT, type SelectOption } from "../../../shared/ui/primitives";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -12,16 +12,18 @@ import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../mo
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabBodyProps } from "../model/mailsLayout";
 import { toMailListRow, useRefusedMails, type MailListRow } from "../model/mailsLists";
+import { buildRegionFilterOptions, regionSearchFilter } from "./lib/regionFilterOptions";
 import MailsListBody from "./MailsListBody";
 
 /**
  * «RAD ETILGAN POCHTALAR» — `/mails/refused` (dizayn v2).
  *
  * Ma'lumot — `useRefusedMails()` (kuryer: `post/courier/rejected`; qolganlar: `post/rejected`, backend
- * kuryer nomini ham beradi). Filtr yo'q.
+ * kuryer nomini ham beradi). «Viloyat» filtri — mijoz tomonida, qidiruvli (ega qarori 2026-11-09, «Bugungi» bilan
+ * bir xil: `Select searchable`, yozilganda «Barchasi» chiqmaydi — `regionSearchFilter`).
  *
- *  - xodim (`card`, maketlar `superadmin-mails-refused`, `admin-`/`manager-mails-refused`): izoh «Kuryer
- *    qaytargan pochtalar…» + xulosa, jadval (Kuryer ustuni bilan; superadmin, admin va registratorda uning o'rnida
+ *  - xodim (`card`, maketlar `superadmin-mails-refused`, `admin-`/`manager-mails-refused`): «Viloyat: Barchasi»,
+ *    izoh «Kuryer qaytargan pochtalar…» + xulosa, jadval (Kuryer ustuni bilan; superadmin, admin va registratorda uning o'rnida
  *    «Filial» — `model/mailBranchNames.ts`), holat «Rad etilgan» (danger);
  *  - kuryer (`page`, `courier-mails-refused`): «faqat ko'rish» izohi, 3 ta `StatCard`, «Rad etilgan pochtalar»
  *    kartasi, saralanadigan jadval. Qabulni filial bajaradi — kuryer tafsilotda faqat o'qiydi.
@@ -38,6 +40,16 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
   const cardView = useMailsCardView();
   const branchColumn = useSelector(selectMailsBranchColumn);
   const branchName = useMailBranchName(branchColumn && hasMailBranch(mails));
+  const [regionId, setRegionId] = useState("");
+
+  const regionOptions = useMemo<SelectOption[]>(
+    () => [{ value: "", label: t("filter.all") }, ...buildRegionFilterOptions(mails)],
+    [mails, t],
+  );
+  const filteredMails = useMemo(
+    () => (regionId ? mails.filter((mail) => mail.region?.id === regionId) : mails),
+    [mails, regionId],
+  );
 
   const status = useMemo(() => {
     const badge = getPostStatusBadge("canceled");
@@ -45,14 +57,14 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
   }, [t]);
   const rows = useMemo(
     () =>
-      mails.map((mail) =>
+      filteredMails.map((mail) =>
         toMailListRow(mail, {
           status,
           regionFallback: (id) => t("mails:regionFallback", { id }),
           branchName: branchColumn ? branchName : undefined,
         }),
       ),
-    [branchColumn, branchName, mails, status, t],
+    [branchColumn, branchName, filteredMails, status, t],
   );
 
   const linkOf = useCallback(
@@ -87,6 +99,20 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
     [language, t],
   );
 
+  const regionSelect = (className: string) => (
+    <Select
+      aria-label={t("filter.region")}
+      inlineLabel={t("filter.region")}
+      icon={isCourier ? MapIcon : MapPin}
+      searchable
+      filter={regionSearchFilter}
+      options={regionOptions}
+      value={regionId}
+      onChange={(value) => setRegionId(value ?? "")}
+      className={className}
+    />
+  );
+
   // Kuryer izohi (`.el-alert.el-tone-info`): ikonka ton rangida, matn neytral.
   const note = (
     <div role="note" className={cx("flex items-start gap-3 rounded-xl px-4 py-3", TONE_SOFT.info)}>
@@ -100,13 +126,25 @@ const RefusedMails = ({ layout }: MailsTabBodyProps) => {
       layout={layout}
       query={query}
       rows={rows}
+      onClearFilter={regionId ? () => setRegionId("") : undefined}
       ariaLabel={t("tabs.refused.title")}
       loadingLabel={t("refused.loading")}
       empty={{ icon: TriangleAlert, title: t("mails:emptyRefused") }}
+      filterEmptyTitle={t("mails:refusedRegionFilterEmpty")}
       summaryUnit="regions"
-      toolbarStart={<p className="min-w-0 flex-[1_1_320px] text-[13px] text-text-muted">{t("refused.hint")}</p>}
+      toolbarStart={
+        <>
+          <div className="min-w-0 flex-[0_1_260px] max-md:basis-full">{regionSelect("w-full")}</div>
+          <p className="min-w-0 flex-[1_1_320px] text-[13px] text-text-muted">{t("refused.hint")}</p>
+        </>
+      }
       statsLabel={t("tabs.refused.title")}
-      courierHead={{ title: t("tabs.refused.title"), description: t("refused.courierDescription") }}
+      courierHead={{
+        title: t("tabs.refused.title"),
+        description: t("refused.courierDescription"),
+        action: <div className="min-w-[200px] flex-[0_1_260px]">{regionSelect("w-full")}</div>,
+      }}
+      phoneTop={regionSelect("w-full")}
       note={note}
       table={{
         idHeader: t("table.mail"),

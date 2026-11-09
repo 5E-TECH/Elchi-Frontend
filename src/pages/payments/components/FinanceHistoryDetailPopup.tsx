@@ -1,10 +1,10 @@
-// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected
-import { memo, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected, superadmin-payments-history-detail-dialog-correctable, superadmin-payments-history-detail-dialog-locked
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { canViewOrders } from "../../../app/lib/access";
+import { canCorrectPayments, canViewOrders } from "../../../app/lib/access";
 import type { RootState } from "../../../app/config/store";
 import { OrderStatusBadge } from "../../../entities/order";
 import {
@@ -20,6 +20,14 @@ import {
   toPaymentCorrection,
   type PaymentCorrectionRelated,
 } from "../../../entities/payments/paymentCorrection";
+import {
+  buildCorrectionTarget,
+  correctionFooterState,
+  CorrectAmountDialog,
+  PaymentCorrectionFooter,
+  ReversePaymentDialog,
+  type CorrectionTarget,
+} from "../../../features/payment-correction";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
@@ -45,6 +53,7 @@ import {
   getPaymentSourceTitle,
   getViewerOperationType,
 } from "./paymentSourceType";
+import CorrectionShiftFlow from "./CorrectionShiftFlow";
 import { PaymentAckBadge } from "./PaymentAckBadge";
 import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
 import { PaymentCorrectionSection } from "./PaymentCorrectionSection";
@@ -78,7 +87,14 @@ import ReceiptSection from "./receipt/ReceiptSection";
  * ochadi (`related.id`; ro'yxatda bo'lsa — o'sha qator, `rows`, aks holda sintetik qator). «Tuzatilgan» yozuv
  * sanasi — tuzatish vaqti (`historyRowDate`, C1). Teskari yozuvda «Izoh» sababni takrorlasa — yashiriladi (C6).
  * `correction` kelmagan teskari yozuv (backend fail-open) — belgi manba turidan (ro'yxatdagidek), blok yo'q.
- * Amallar (N2) bu yerda yo'q.
+ *
+ * T6 N2 (faqat superadmin — `canCorrectPayments`; backend `correctable` ni faqat unga beradi, boshqa rolda tasodifan
+ * kelsa ham e'tiborsiz): pastki qism `correctable` bo'yicha (`PaymentCorrectionFooter`, maketlar
+ * `superadmin-payments-history-detail-dialog-correctable`, `…-locked`) — muddat izohi + «Qaytarish» / «Summani
+ * tahrirlash», yoki qulf izohi, yoki faqat «Yopish» (tafsilot yuklanayotganda, `ALREADY_CORRECTED`, `null`). Amal
+ * tanlansa tafsilot oynasi yashirinadi, uning o'rnida forma (`ReversePaymentDialog` / `CorrectAmountDialog`):
+ * «Bekor qilish» — tafsilotga qaytadi, oqim tugasa (muvaffaqiyat, `ALREADY_CORRECTED`) — hamma oyna yopiladi.
+ * «Smenani ochish» (`SHIFT_REQUIRED`) — `CorrectionShiftFlow` tasdiq ustida, faqat so'ralganda o'rnatiladi.
  */
 
 interface Props {
@@ -138,6 +154,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   const language = i18n.resolvedLanguage ?? i18n.language;
   const viewerRole = useSelector((state: RootState) => state.role.role);
   const orderLinkAllowed = useSelector(canViewOrders);
+  const canCorrect = useSelector(canCorrectPayments);
   const { useGetFinanceHistoryById } = useCashBox();
 
   // Yopilish harakati (200 ms) davomida oxirgi qator ko'rinib turadi.
@@ -145,13 +162,48 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   if (row && row !== shownRow) setShownRow(row);
   // T6 «Bog'liq yozuv»: o'sha oynada juft yozuv (qatorning o'rnini bosadi). Ro'yxatdan boshqa qator ochilsa — tashlanadi.
   const [relatedRow, setRelatedRow] = useState<PaymentRow | null>(null);
+  // T6 N2: tuzatish oqimi — tanlangan amal va nishon (bosilgan paytdagi yozuv; oqim davomida o'zgarmaydi).
+  const [mode, setMode] = useState<"reverse" | "edit" | null>(null);
+  const [flowTarget, setFlowTarget] = useState<CorrectionTarget | null>(null);
   const [baseRow, setBaseRow] = useState<PaymentRow | null>(row);
   if (row !== baseRow) {
     setBaseRow(row);
+    setMode(null);
     if (row) setRelatedRow(null);
   }
   const current = relatedRow ?? row ?? shownRow;
   const open = row != null;
+  // «Smenani ochish» (`SHIFT_REQUIRED`): oyna faqat so'ralganda o'rnatiladi. Smena ochilgach tasdiqqa xabar beriladi
+  // (`onOpened` — eski «Smena ochilmagan» qutisi olib tashlanadi).
+  const [shiftMounted, setShiftMounted] = useState(false);
+  const [shiftOpen, setShiftOpen] = useState(false);
+  const shiftOpenedRef = useRef<(() => void) | null>(null);
+  const openShift = useCallback(({ onOpened }: { onOpened: () => void }) => {
+    shiftOpenedRef.current = onOpened;
+    setShiftMounted(true);
+    setShiftOpen(true);
+  }, []);
+  const closeShift = useCallback(() => {
+    shiftOpenedRef.current = null;
+    setShiftOpen(false);
+  }, []);
+  const shiftOpened = useCallback(() => {
+    const notifyConfirm = shiftOpenedRef.current;
+    shiftOpenedRef.current = null;
+    setShiftOpen(false);
+    notifyConfirm?.();
+  }, []);
+
+  // Oynani ochgan element (ro'yxat qatori): tafsilot va forma bir-birining o'rnini egallaydi, shuning uchun har
+  // oynaning «avvalgi fokusi» — DOM'dan ketgan tugma. Oqim qanday tugamasin (muvaffaqiyat, ALREADY_CORRECTED dan
+  // keyin «Orqaga», «Bekor qilish» → «Yopish») fokus shu elementga qaytadi. Layout effekt — oyna fokusni panelga
+  // ko'chirishidan (passiv effekt) oldin.
+  const openerRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (!open) return;
+    const active = document.activeElement;
+    openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  }, [open]);
 
   const rowId = current?.id ?? null;
   const canFetch = isFetchableId(rowId);
@@ -247,6 +299,27 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
     ? correctionBadgeKindOf(correction.role, correction.action)
     : paymentCorrectionBadgeKind({ source_type: display.source_type });
   const correctionCashboxType = display.cashbox_type;
+  const sourceTitle = getPaymentSourceTitle(display.source_type, t, {
+    role: viewerRole,
+    cashboxType: display.cashbox_type,
+  });
+
+  // T6 N2: pastki qism — faqat superadmin va tafsilot kelgach (yuklanishda, xatoda, boshqa rolda — faqat «Yopish»).
+  const correctable = canFetch ? detail?.correctable : undefined;
+  const footerState = correctionFooterState(canCorrect, correctable, current.id);
+  const startCorrection = (next: "reverse" | "edit") => {
+    const target = buildCorrectionTarget({
+      id: current.id,
+      amount: display.amount,
+      title: sourceTitle,
+      createdAt: display.payment_date || null,
+      paymentMethod: display.payment_method ?? null,
+      correctable,
+    });
+    if (!target) return;
+    setFlowTarget(target);
+    setMode(next);
+  };
 
   // «Bog'liq yozuv»: o'sha kassadagi juft oyoq. Ro'yxatdan ochilgan qatorning o'zi — unga qaytiladi; ro'yxatda bor —
   // o'sha qator (kvitansiya javobi, izoh, chek saqlanadi); yo'q — sintetik qator (`GET finance/history/:id` qolganini beradi).
@@ -316,10 +389,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   const details = (
     <>
       <dl className={KV}>
-        {kvRow(
-          t("v2HistoryDetail.sourceType"),
-          getPaymentSourceTitle(display.source_type, t, { role: viewerRole, cashboxType: display.cashbox_type }),
-        )}
+        {kvRow(t("v2HistoryDetail.sourceType"), sourceTitle)}
         {display.expense_category_name
           ? kvRow(
               t("v2HistoryDetail.category"),
@@ -431,93 +501,126 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   );
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      onExited={() => {
-        setShownRow(null);
-        setRelatedRow(null);
-      }}
-      size="lg"
-      icon={direction === "expense" ? ArrowUpRight : direction === "income" ? ArrowDownLeft : Receipt}
-      title={title}
-      // Sana bir qatorda (telefonda «Bugun, 13:05» bo'linmaydi — maket).
-      description={
-        <Trans
-          t={t}
-          i18nKey={canFetch ? "v2HistoryDetail.subtitleWithId" : "v2HistoryDetail.subtitle"}
-          values={canFetch ? { id: current.id, date: dateText } : { date: dateText }}
-          components={{ date: <span className="whitespace-nowrap" /> }}
-        />
-      }
-      closeLabel={t("v2HistoryDetail.close")}
-      initialFocus="panel"
-      footer={
-        <Button variant="secondary" onClick={onClose}>
-          {t("v2HistoryDetail.close")}
-        </Button>
-      }
-    >
-      <div className={cx(SUNKEN, "flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4")}>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-semibold text-text-muted">{t("v2HistoryDetail.amount")}</span>
-            <PaymentCorrectionBadge kind={correctionKind} />
-          </span>
-          <span
-            data-history-amount=""
-            className={cx(
-              "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] proportional-nums max-md:text-[22px] max-md:leading-[30px]",
-              direction === "income" ? "text-success-fg" : direction === "expense" ? "text-danger-fg" : "text-text",
-            )}
-          >
-            {amountText}
-            <span className="ml-1 text-sm font-semibold tracking-normal text-text-muted">{currency}</span>
-          </span>
-        </div>
-        {balanceAfter !== null ? (
+    <>
+      <Dialog
+        // Tuzatish oynasi ochiq bo'lsa tafsilot yashirinadi (maket: forma uning o'rnida), «Bekor qilish» — qaytadi.
+        open={open && mode === null}
+        onClose={onClose}
+        onExited={() => {
+          // Tuzatish oynasiga o'tishda (yozuv hali tanlangan) — «Bog'liq yozuv» va oxirgi qator saqlanadi.
+          if (row) return;
+          setShownRow(null);
+          setRelatedRow(null);
+        }}
+        size="lg"
+        icon={direction === "expense" ? ArrowUpRight : direction === "income" ? ArrowDownLeft : Receipt}
+        title={title}
+        // Sana bir qatorda (telefonda «Bugun, 13:05» bo'linmaydi — maket).
+        description={
+          <Trans
+            t={t}
+            i18nKey={canFetch ? "v2HistoryDetail.subtitleWithId" : "v2HistoryDetail.subtitle"}
+            values={canFetch ? { id: current.id, date: dateText } : { date: dateText }}
+            components={{ date: <span className="whitespace-nowrap" /> }}
+          />
+        }
+        closeLabel={t("v2HistoryDetail.close")}
+        initialFocus="panel"
+        returnFocus={openerRef}
+        footer={
+          footerState.kind === "none" ? (
+            <Button variant="secondary" onClick={onClose}>
+              {t("v2HistoryDetail.close")}
+            </Button>
+          ) : (
+            <PaymentCorrectionFooter
+              state={footerState}
+              closeLabel={t("v2HistoryDetail.close")}
+              onClose={onClose}
+              onReverse={() => startCorrection("reverse")}
+              onCorrect={() => startCorrection("edit")}
+              changeWindowTo="/payments/shift-settings"
+            />
+          )
+        }
+      >
+        <div className={cx(SUNKEN, "flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4")}>
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-xs text-text-muted">{t("v2HistoryDetail.balanceAfter")}</span>
-            <span className="whitespace-nowrap text-sm font-semibold text-text">{money(balanceAfter)}</span>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-[13px] font-semibold text-text-muted">{t("v2HistoryDetail.amount")}</span>
+              <PaymentCorrectionBadge kind={correctionKind} />
+            </span>
+            <span
+              data-history-amount=""
+              className={cx(
+                "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] proportional-nums max-md:text-[22px] max-md:leading-[30px]",
+                direction === "income" ? "text-success-fg" : direction === "expense" ? "text-danger-fg" : "text-text",
+              )}
+            >
+              {amountText}
+              <span className="ml-1 text-sm font-semibold tracking-normal text-text-muted">{currency}</span>
+            </span>
           </div>
-        ) : null}
-      </div>
-
-      {correction ? (
-        <PaymentCorrectionSection
-          correction={correction}
-          viewerRole={viewerRole}
-          cashboxType={correctionCashboxType}
-          onOpenRelated={openRelated}
-        />
-      ) : null}
-
-      {receiptId ? (
-        <ReceiptSection
-          receiptId={receiptId}
-          operation={[
-            getPaymentSourceTitle(display.source_type, t, { role: viewerRole, cashboxType: display.cashbox_type }),
-            dateText,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        />
-      ) : null}
-
-      {canFetch && isLoading ? (
-        <div role="status" aria-label={t("v2HistoryDetail.loading")}>
-          <SkeletonLines lines={5} />
+          {balanceAfter !== null ? (
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-xs text-text-muted">{t("v2HistoryDetail.balanceAfter")}</span>
+              <span className="whitespace-nowrap text-sm font-semibold text-text">{money(balanceAfter)}</span>
+            </div>
+          ) : null}
         </div>
-      ) : canFetch && isError && !detail ? (
-        <ErrorState
-          error={error}
-          title={t("v2HistoryDetail.loadError")}
-          onRetry={() => void refetch()}
-        />
-      ) : (
-        details
-      )}
-    </Dialog>
+
+        {correction ? (
+          <PaymentCorrectionSection
+            correction={correction}
+            viewerRole={viewerRole}
+            cashboxType={correctionCashboxType}
+            onOpenRelated={openRelated}
+          />
+        ) : null}
+
+        {receiptId ? (
+          <ReceiptSection
+            receiptId={receiptId}
+            operation={[sourceTitle, dateText].filter(Boolean).join(" · ")}
+          />
+        ) : null}
+
+        {canFetch && isLoading ? (
+          <div role="status" aria-label={t("v2HistoryDetail.loading")}>
+            <SkeletonLines lines={5} />
+          </div>
+        ) : canFetch && isError && !detail ? (
+          <ErrorState
+            error={error}
+            title={t("v2HistoryDetail.loadError")}
+            onRetry={() => void refetch()}
+          />
+        ) : (
+          details
+        )}
+      </Dialog>
+      {flowTarget ? (
+        <>
+          <ReversePaymentDialog
+            open={open && mode === "reverse"}
+            target={flowTarget}
+            onCancel={() => setMode(null)}
+            onDone={onClose}
+            onOpenShift={openShift}
+            returnFocus={openerRef}
+          />
+          <CorrectAmountDialog
+            open={open && mode === "edit"}
+            target={flowTarget}
+            onCancel={() => setMode(null)}
+            onDone={onClose}
+            onOpenShift={openShift}
+            returnFocus={openerRef}
+          />
+        </>
+      ) : null}
+      {shiftMounted ? <CorrectionShiftFlow open={shiftOpen} onClose={closeShift} onOpened={shiftOpened} /> : null}
+    </>
   );
 });
 

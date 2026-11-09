@@ -668,7 +668,8 @@
       "readonly": "Faqat o'qish",
       "large": "Telefonda · 48 px",
       "optional": "Bo'sh · ixtiyoriy",
-      "counter": "Hisoblagich bilan"
+      "counter": "Hisoblagich bilan",
+      "counterAside": "Hisoblagich xato qatorida ham"
     },
     "demo": {
       "nameLabel": "Mijoz ismi",
@@ -691,7 +692,13 @@
       "notePlaceholder": "Izoh yozing...",
       "smsLabel": "SMS matni",
       "smsValue": "Hurmatli mijoz, buyurtmangiz 10241 yo'lda. Kuryer bugun 18:00 gacha keladi.",
-      "smsCounter": "{{count}} / 160 belgi"
+      "smsCounter": "{{count}} / 160 belgi",
+      "reasonLabel": "Sabab",
+      "reasonPlaceholder": "Nima uchun qaytaryapsiz?",
+      "reasonHint": "Kamida 5 ta belgi",
+      "reasonError": "Kamida 5 ta belgi yozing",
+      "reasonCounter": "{{count}} / 500",
+      "reasonValue": "Xato"
     }
   },
   "select": {
@@ -774,7 +781,13 @@
       "loading": "So'rov ketmoqda",
       "loadingMeta": "tugmalar qulflanadi, Esc va fon oynani yopmaydi",
       "error": "Xato",
-      "errorMeta": "oyna ochiq qoladi, xato matni oyna ichida — qayta urinish mumkin"
+      "errorMeta": "oyna ochiq qoladi, xato matni oyna ichida — qayta urinish mumkin",
+      "errorBlocked": "Xato — qayta urinish befoyda",
+      "errorBlockedMeta": "errorView: sarlavha + matn · tasdiqlash tugmasi o'chiq, xatoga bog'langan · fokus «Orqaga» da",
+      "errorOffline": "Xato — internet yo'q",
+      "errorOfflineMeta": "WifiOff ikonka · tugmalar faol, o'sha kalit bilan qayta yuboriladi · telefonda oqibatlar yashirinadi",
+      "formSummary": "Forma oynasi — xulosa va hisoblagich",
+      "formSummaryMeta": "TransferSummary — tasdiqdagi summa va qayerdan → qayerga bloki · hisoblagich xato qatorida ham (hintAside)"
     },
     "rules": {
       "title": "Sarlavha",
@@ -837,7 +850,30 @@
       "openFailing": "Xato bilan tasdiqlash",
       "resultConfirmed": "Javob: tasdiqlandi",
       "resultCancelled": "Javob: bekor qilindi",
-      "failingError": "Mahsulotni o'chirib bo'lmadi: u faol buyurtmada bor."
+      "failingError": "Mahsulotni o'chirib bo'lmadi: u faol buyurtmada bor.",
+      "exceedsTitle": "Ko'pi bilan",
+      "exceedsBody": "Chegara — Baraka Shopga berilishi kerak qoldiq va joriy to'lov yig'indisi. «Orqaga»ni bosib summani o'zgartiring.",
+      "offlineTitle": "Internet aloqasi yo'q",
+      "offlineBody": "So'rov yetib bormadi yoki javob kelmadi. Aloqa tiklangach «Qaytarish»ni qayta bosing — to'lov ikki marta qaytarilmaydi.",
+      "correctTitle": "Summani tahrirlashni tasdiqlang",
+      "correctDescription": "#4498 · Market to'lovi · Baraka Shop",
+      "correctCurrent": "Joriy summa",
+      "correctNew": "To'g'ri summa",
+      "correctAction": "Tahrirlash",
+      "back": "Orqaga",
+      "reverseTitle": "To'lovni qaytarish",
+      "reverseConfirmTitle": "To'lovni qaytarishni tasdiqlang",
+      "reverseDescription": "#4512 · Kuryer to'lovi · 07.10.2026, 14:32",
+      "reverseIrreversible": "Qaytarishni bekor qilib bo'lmaydi.",
+      "reverseAction": "Qaytarish",
+      "reverseAmountLabel": "Qaytariladigan to'lov",
+      "reverseReasonLabel": "Sabab",
+      "reverseReasonPlaceholder": "Nima uchun qaytaryapsiz?",
+      "reverseReasonHint": "Jurnalga yoziladi; kuryer ilovada ko'radi, Telegram xabariga kirmaydi",
+      "reverseReasonError": "Kamida 5 ta belgi yozing",
+      "reverseReasonCounter": "{{count}} / 500",
+      "reverseReasonValue": "Xato",
+      "continue": "Davom etish"
     }
   },
   "toast": {

@@ -136,8 +136,65 @@ describe("RefusedMails", () => {
     expect(within(table).queryByText("Sherzod Komilov")).not.toBeInTheDocument();
     expect(within(table).getAllByText("Rad etilgan")).toHaveLength(2);
     expect(within(table).getByRole("link", { name: "№2471 rad etilgan pochtani ochish" })).toBeInTheDocument();
-    // Filtr yo'q.
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    // «Viloyat» filtri (ega qarori 2026-11-09) — qidiruvli, bo'sh holatda «Barchasi».
+    const field = screen.getByRole("combobox", { name: "Viloyat" });
+    expect(field.tagName).toBe("INPUT");
+    expect(field).toHaveAttribute("placeholder", "Barchasi");
+  });
+
+  it("«Viloyat» qidiruvli filtri (ega qarori 2026-11-09): yozib topiladi, «Barchasi» chiqmaydi, Enter filtrlaydi, × tozalaydi", async () => {
+    const user = userEvent.setup();
+    getRefusedMailsMock.mockReturnValue(loaded(MAILS));
+
+    renderRefused("card", "superadmin");
+
+    const field = screen.getByRole("combobox", { name: "Viloyat" });
+    // «a» — Andijon ham, «Barchasi» ham mos; yozilganda «Barchasi» ro'yxatda yo'q.
+    await user.type(field, "a");
+    expect(within(await screen.findByRole("listbox")).getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Andijon",
+      "Surxondaryo",
+    ]);
+    await user.keyboard("{Enter}");
+
+    const table = screen.getByRole("table", { name: "Rad etilgan pochtalar" });
+    expect(within(table).getByRole("link", { name: "№2459 rad etilgan pochtani ochish" })).toBeInTheDocument();
+    expect(within(table).queryByRole("link", { name: "№2471 rad etilgan pochtani ochish" })).not.toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "1 ta viloyat · 4 ta buyurtma · jami 813 000 so'm")).toBeInTheDocument();
+    // Izoh joyida qoladi.
+    expect(
+      screen.getByText("Kuryer qaytargan pochtalar. Pochtani oching va buyurtmalarni skanerlab qabul qiling."),
+    ).toBeInTheDocument();
+
+    // Mos yo'q — «Topilmadi», filtr o'zgarmaydi.
+    await user.click(screen.getByRole("combobox", { name: "Viloyat" }));
+    await user.keyboard("xorazm");
+    expect(within(await screen.findByRole("listbox")).queryAllByRole("option")).toHaveLength(0);
+    await user.keyboard("{Escape}");
+    expect(within(table).getByRole("link", { name: "№2459 rad etilgan pochtani ochish" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    expect(within(table).getByRole("link", { name: "№2471 rad etilgan pochtani ochish" })).toBeInTheDocument();
+    expect(within(table).getByRole("link", { name: "№2459 rad etilgan pochtani ochish" })).toBeInTheDocument();
+  });
+
+  it("filial menejeri (kartalar) va kuryer (sahifa) ham «Viloyat» bilan toraytiradi", async () => {
+    const user = userEvent.setup();
+    getRefusedMailsMock.mockReturnValue(loaded(MAILS));
+
+    const { unmount } = renderRefused("card", "manager", managerState("REGIONAL"));
+    await user.type(screen.getByRole("combobox", { name: "Viloyat" }), "surx");
+    await user.keyboard("{Enter}");
+    let links = within(screen.getByRole("list", { name: "Rad etilgan pochtalar" })).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/2471"]);
+    unmount();
+
+    getRefusedMailsCourierMock.mockReturnValue(loaded(MAILS));
+    renderRefused("page", "courier");
+    await user.type(screen.getByRole("combobox", { name: "Viloyat" }), "andi");
+    await user.keyboard("{Enter}");
+    links = within(screen.getByRole("list", { name: "Rad etilgan pochtalar" })).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/mails/2459"]);
   });
 
   it("HQ manager keeps the table and opens the refused mail with type=refused state", async () => {
