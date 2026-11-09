@@ -96,6 +96,20 @@ const drawOp = (pdf: jsPDF, op: ReceiptOp) => {
       pdf.setLineCap("butt");
       return;
     }
+    case "watermark": {
+      // Xira belgi: har nuqta qatori — alohida chiziq, punktir (nuqta / oraliq) har chiziq boshidan; uchlari to'g'ri
+      // (`butt`) — nuqta kvadrat. Faqat qora siyoh (HTML dagi `path.wm` bilan bir xil).
+      const half = op.dot / 2;
+      pdf.setDrawColor(INK, INK, INK);
+      pdf.setLineWidth(op.dot);
+      pdf.setLineDashPattern([op.dot, op.pitch - op.dot], 0);
+      for (const [y, x, count] of op.runs) {
+        const start = op.x + x - half;
+        pdf.line(start, op.y + y, start + (count - 1) * op.pitch + op.dot, op.y + y);
+      }
+      pdf.setLineDashPattern([], 0);
+      return;
+    }
   }
 };
 
@@ -107,7 +121,8 @@ const orientationOf = (page: Pick<ReceiptPage, "width" | "height">): "landscape"
  *
  * `compress: false` — TZ qabul 8 (UI 100 ms dan ortiq qotmaydi): jsPDF siqishni `output()` ichida bitta sinxron blokda
  * qiladi — 200 ta chekda 250–550 ms (`scratchpad/receipts-fix` o'lchovi), uni bo'laklab bo'lmaydi. Siqilmagan fayl
- * ~3 MB (200 ta chek), `output()` ~60 ms; fayl faqat lokal `blob:` oynada ochiladi yoki chop etiladi.
+ * ~3,7 MB (200 ta chek, xira belgi bilan — undan ~1 MB), `output()` ~60 ms; fayl faqat lokal `blob:` oynada ochiladi
+ * yoki chop etiladi.
  * `floatPrecision: 3` — koordinatalar 0,001 pt (0,0004 mm) gacha: fayl va `output()` ikki baravar kichik.
  */
 export const receiptPdfOptions = (page: Pick<ReceiptPage, "width" | "height">) => ({

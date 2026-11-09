@@ -7,6 +7,13 @@ import {
 } from "./printReceiptFonts";
 import { RECEIPT_TEXT, type ReceiptAmount, type ReceiptOrderModel } from "./printReceiptModel";
 import { encodeReceiptQr, receiptQrModule, type ReceiptQrSymbol } from "./printReceiptQr";
+import {
+  RECEIPT_WATERMARK_DOT,
+  RECEIPT_WATERMARK_PITCH,
+  receiptWatermarkRuns,
+  receiptWatermarkWidth,
+  type ReceiptWatermarkRun,
+} from "./receiptWatermark";
 
 /**
  * CHEK JOYLASH ALGORITMI (HJ5sLHiz, maket `tizim-receipts` 01 · 01.B · 04, TZ F3–F6).
@@ -112,8 +119,30 @@ export const SCISSORS_LINES: ReadonlyArray<readonly [number, number, number, num
   [14.8, 14.8, 20, 20],
 ];
 
+/**
+ * Orqa fondagi xira Elchi belgisi (`receiptWatermark.ts`): belgi shakli ichidagi qora nuqtalar to'ri. Yorliqning
+ * birinchi amali — qolgan hamma narsa ustidan chiziladi; matn joylashuviga ta'sir qilmaydi.
+ */
+export interface ReceiptWatermarkOp {
+  kind: "watermark";
+  /** Belgi qutisining chap-yuqori burchagi, mm. */
+  x: number;
+  y: number;
+  /** Nuqta tomoni va qadami, mm. */
+  dot: number;
+  pitch: number;
+  /** Nuqta qatorlari (`x, y` ga nisbatan). */
+  runs: ReadonlyArray<ReceiptWatermarkRun>;
+}
+
 export type ReceiptOp =
-  ReceiptTextOp | ReceiptRectOp | ReceiptFrameOp | ReceiptDashOp | ReceiptQrOp | ReceiptScissorsOp;
+  | ReceiptTextOp
+  | ReceiptRectOp
+  | ReceiptFrameOp
+  | ReceiptDashOp
+  | ReceiptQrOp
+  | ReceiptScissorsOp
+  | ReceiptWatermarkOp;
 
 /** Joylash qarori (testlar, ui-kit namunasi va T8 uchun). */
 export interface ReceiptLabelMeta {
@@ -253,6 +282,11 @@ export interface OrderReceiptSpec {
   /** Davomi yorlig'idagi shrift va paragraflar orasi. */
   continuationPt: number;
   paragraphGap: number;
+  /**
+   * Orqa fondagi xira belgi: markazi (`cx` — yorliq o'rtasi, `cy` — sarlavha va pastki band chiziqlari o'rtasi) va
+   * balandligi, mm. QR ustuniga, summa ramkasiga va pastki bandga tegmaydi.
+   */
+  watermark: { cx: number; cy: number; height: number };
 }
 
 /** Termal 100×60 (maket 01, 1 mm = 5 px; R1 = x 2–69,4 · y 13,2–40,8, R2 = x 2–98 · y 42–52,8). */
@@ -306,6 +340,8 @@ export const THERMAL_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSp
   banner: { h: 3.6, radius: 1.2, pt: 8, gap: 0.8 },
   continuationPt: 7.5,
   paragraphGap: 0.8,
+  // Sarlavha chizig'i (12,4) va pastki band (53,6) o'rtasi; eni 39,6 → x 30,2–69,8 (QR ustuni 72,2 dan).
+  watermark: { cx: 50, cy: 33, height: 36 },
 });
 
 /**
@@ -364,6 +400,8 @@ export const A4_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSpec>({
   banner: { h: 3.2, radius: 1, pt: 7, gap: 0.6 },
   continuationPt: 7,
   paragraphGap: 0.6,
+  // Sarlavha chizig'i (11,8) va pastki band (39,2) o'rtasi; eni 28,6 → x 35,7–64,3 (QR ustuni 75,2 dan).
+  watermark: { cx: 50, cy: 25.5, height: 26 },
 });
 
 /* ───────────────────────────── Yordamchilar ───────────────────────────── */
@@ -1412,6 +1450,19 @@ const fixedOps = (
 const partDate = (date: string, part: number, parts: number) =>
   parts > 1 ? [`${part}/${parts}`, date].filter(Boolean).join(" · ") : date;
 
+/** Orqa fondagi xira belgi (`spec.watermark` markazida) — yorliqning birinchi amali. */
+export const receiptWatermarkOp = (spec: OrderReceiptSpec): ReceiptWatermarkOp => {
+  const { cx, cy, height } = spec.watermark;
+  return {
+    kind: "watermark",
+    x: round3(cx - receiptWatermarkWidth(height) / 2),
+    y: round3(cy - height / 2),
+    dot: RECEIPT_WATERMARK_DOT,
+    pitch: RECEIPT_WATERMARK_PITCH,
+    runs: receiptWatermarkRuns(height),
+  };
+};
+
 /**
  * Buyurtma → yorliq(lar). Sig'sa — bitta (P0 … P3); P3 da ham sig'masa — 1/2 + 2/2 (+ 3/3 …), ikkalasida bir xil QR.
  */
@@ -1424,10 +1475,12 @@ export const layoutOrderReceipt = (
   const qr = (context.qr ?? encodeReceiptQr)(model.qrToken);
   const footer = planFooter(model, spec, measure);
   const r2Bottom = footer.r2Bottom;
+  // Xira belgi birinchi — qolgan amallar (matn, chiziq, QR) uning ustidan chiziladi; ularning joyi o'zgarmaydi.
+  const watermark = receiptWatermarkOp(spec);
   const label = (ops: ReceiptOp[], meta: ReceiptLabelMeta): ReceiptLabel => ({
     width: spec.width,
     height: spec.height,
-    ops: withReceiptKerning(ops, measure),
+    ops: [watermark, ...withReceiptKerning(ops, measure)],
     meta,
   });
   const hasB = model.products.length > 0 || Boolean(model.comment);

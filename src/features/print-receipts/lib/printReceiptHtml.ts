@@ -114,6 +114,21 @@ const vectorSvg = (op: ReceiptOp): string => {
         `shape-rendering="crispEdges" d="${path}"/>`
       );
     }
+    case "watermark": {
+      // Xira belgi: har nuqta qatori — bitta bo'lak (`M…h…`), punktir (nuqta / oraliq) har bo'lak boshidan qayta
+      // boshlanadi, uchlari to'g'ri — nuqta kvadrat (PDF dagi `line` lar bilan bir xil).
+      const half = op.dot / 2;
+      const path = op.runs
+        .map(
+          ([y, x, count]) =>
+            `M${num(op.x + x - half)} ${num(op.y + y)}h${num((count - 1) * op.pitch + op.dot)}`,
+        )
+        .join("");
+      return (
+        `<path class="wm" d="${path}" fill="none" stroke="currentColor" stroke-width="${num(op.dot)}" ` +
+        `stroke-dasharray="${num(op.dot)} ${num(op.pitch - op.dot)}"/>`
+      );
+    }
   }
 };
 
