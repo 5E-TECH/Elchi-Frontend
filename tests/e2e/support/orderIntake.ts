@@ -24,6 +24,17 @@ export type IntakeData = {
   is_open: boolean;
   closes_at: string | null;
   reopens_at: string | null;
+  /** Kun almashish soati (Trello #756) — Toshkent `HH:MM`, sukut `00:00`. */
+  day_change_time?: string;
+  day_started_at?: string | null;
+  next_day_change_at?: string | null;
+};
+
+/** Ish kuni lahzalari test vaqtiga bog'liq bo'lmasin — uzoq o'tmish / kelajak. */
+const DAY_WINDOW = {
+  day_change_time: "00:00",
+  day_started_at: "2026-01-01T19:00:00.000Z",
+  next_day_change_at: "2099-11-08T19:00:00.000Z",
 };
 
 export const OPEN_UNLIMITED: IntakeData = {
@@ -31,6 +42,7 @@ export const OPEN_UNLIMITED: IntakeData = {
   is_open: true,
   closes_at: null,
   reopens_at: null,
+  ...DAY_WINDOW,
 };
 /** 10:00 da yopilgan, kun almashishi uzoq kelajakda (test vaqtiga bog'liq bo'lmasin). */
 export const CLOSED_AT_10: IntakeData = {
@@ -38,6 +50,7 @@ export const CLOSED_AT_10: IntakeData = {
   is_open: false,
   closes_at: "2026-11-08T05:00:00.000Z",
   reopens_at: "2099-11-08T19:00:00.000Z",
+  ...DAY_WINDOW,
 };
 
 export const mockOrderIntakeApi = async (
@@ -68,16 +81,26 @@ export const mockOrderIntakeApi = async (
     }
     if (path === "orders/intake-settings") {
       if (request.method() === "PATCH") {
-        const body = request.postDataJSON() as { cutoff_time: string | null };
+        // Backend kontrakti: `cutoff_time` va `day_change_time` alohida ham, bitta so'rovda ham keladi.
+        const body = request.postDataJSON() as {
+          cutoff_time?: string | null;
+          day_change_time?: string | null;
+        };
         patches.push(body);
-        current = body.cutoff_time
-          ? {
-              cutoff_time: body.cutoff_time,
-              is_open: true,
-              closes_at: "2099-11-08T05:00:00.000Z",
-              reopens_at: "2099-11-08T19:00:00.000Z",
-            }
-          : OPEN_UNLIMITED;
+        if ("cutoff_time" in body) {
+          current = body.cutoff_time
+            ? {
+                ...current,
+                cutoff_time: body.cutoff_time,
+                is_open: true,
+                closes_at: "2099-11-08T05:00:00.000Z",
+                reopens_at: "2099-11-08T19:00:00.000Z",
+              }
+            : { ...current, cutoff_time: null, is_open: true, closes_at: null, reopens_at: null };
+        }
+        if ("day_change_time" in body) {
+          current = { ...current, day_change_time: body.day_change_time ?? "00:00" };
+        }
       }
       return reply(route, { statusCode: 200, data: current });
     }

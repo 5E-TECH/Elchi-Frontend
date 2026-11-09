@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  cutoffClosesAt,
+  isCutoffPassed,
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
   isOrderIntakeClosedError,
@@ -27,6 +29,9 @@ describe("normalizeOrderIntake", () => {
       isOpen: true,
       closesAt: "2026-11-08T05:00:00.000Z",
       reopensAt: "2026-11-08T19:00:00.000Z",
+      dayChangeTime: "00:00",
+      dayStartedAt: null,
+      nextDayChangeAt: null,
     });
     expect(
       normalizeOrderIntake({ cutoff_time: "25:00", is_open: "ha", closes_at: "kecha" }),
@@ -36,7 +41,68 @@ describe("normalizeOrderIntake", () => {
       isOpen: null,
       closesAt: null,
       reopensAt: null,
+      dayChangeTime: "00:00",
+      dayStartedAt: null,
+      nextDayChangeAt: null,
     });
+  });
+
+  it("⭐ kun almashish soati (#756): `day_change_time`, `day_started_at`, `next_day_change_at` o'qiladi", () => {
+    expect(
+      normalizeOrderIntake({
+        data: {
+          cutoff_time: null,
+          day_change_time: "18:00:00",
+          day_started_at: "2026-11-09T13:00:00.000Z",
+          next_day_change_at: "2026-11-10T13:00:00.000Z",
+        },
+      }),
+    ).toMatchObject({
+      dayChangeTime: "18:00",
+      dayStartedAt: "2026-11-09T13:00:00.000Z",
+      nextDayChangeAt: "2026-11-10T13:00:00.000Z",
+    });
+  });
+
+  it("⭐ yo'q yoki buzuq kun almashish soati — «00:00», buzuq lahzalar — null; backend yo'q holatida ham «00:00»", () => {
+    for (const day_change_time of [undefined, null, "", "24:00", "18", "soat 6", 1800]) {
+      expect(
+        normalizeOrderIntake({
+          data: { day_change_time, day_started_at: "kecha", next_day_change_at: 5 },
+        }),
+      ).toMatchObject({ dayChangeTime: "00:00", dayStartedAt: null, nextDayChangeAt: null });
+    }
+    expect(UNSUPPORTED_INTAKE).toMatchObject({
+      dayChangeTime: "00:00",
+      dayStartedAt: null,
+      nextDayChangeAt: null,
+    });
+  });
+});
+
+describe("ish kuni oynasi — «vaqt o'tib ketgan» (#756)", () => {
+  // Kun 18:00 (Toshkent) da almashadi: joriy ish kuni 09.11 18:00 (13:00Z) dan 10.11 18:00 gacha.
+  const day = { dayChangeTime: "18:00", dayStartedAt: "2026-11-09T13:00:00.000Z" };
+
+  it("«10:00» — ish kuni boshidan 16 soat keyin (ertangi tong, 10.11 05:00Z); «20:00» — 2 soat keyin", () => {
+    expect(cutoffClosesAt("10:00", day)).toBe(at("2026-11-10T05:00:00.000Z"));
+    expect(cutoffClosesAt("20:00", day)).toBe(at("2026-11-09T15:00:00.000Z"));
+    expect(cutoffClosesAt("18:00", day)).toBe(at("2026-11-09T13:00:00.000Z"));
+    expect(cutoffClosesAt("10:00", { dayChangeTime: "18:00", dayStartedAt: null })).toBeNull();
+  });
+
+  it("⭐ kun 18:00, hozir 20:00 (Toshkent) — «10:00» o'tib KETMAGAN (ertangi tong); «19:00» — o'tgan", () => {
+    const now = at("2026-11-09T15:00:00.000Z"); // 20:00 Toshkent
+    expect(isCutoffPassed("10:00", day, now)).toBe(false);
+    expect(isCutoffPassed("19:00", day, now)).toBe(true);
+  });
+
+  it("ish kuni boshi kelmasa — eski qoida (Toshkent kalendar kuni): 20:00 da «10:00» o'tgan", () => {
+    const now = at("2026-11-09T15:00:00.000Z");
+    expect(isCutoffPassed("10:00", { dayChangeTime: "00:00", dayStartedAt: null }, now)).toBe(true);
+    expect(isCutoffPassed("21:00", { dayChangeTime: "00:00", dayStartedAt: null }, now)).toBe(
+      false,
+    );
   });
 });
 

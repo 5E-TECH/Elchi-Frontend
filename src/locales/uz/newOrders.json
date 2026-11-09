@@ -674,6 +674,21 @@
       "closedBody": "Qabul {{time}} da yopilgan. Yangi buyurtmani kun almashgach ({{reopens}}) yaratish mumkin.",
       "closedBodyNoTime": "Yangi buyurtmani kun almashgach yaratish mumkin.",
       "untilBody": "Bugungi qabul {{time}} gacha — shundan keyin kun almashguncha yangi buyurtma yaratib bo'lmaydi."
+    },
+    "dayChange": {
+      "row": "Kun almashish soati: {{time}} (Toshkent)",
+      "change": "O'zgartirish",
+      "changeLabel": "Kun almashish soatini o'zgartirish",
+      "title": "Kun almashish soati",
+      "description": "Buyurtma qabuli uchun ish kuni qachon almashishi — Toshkent vaqti.",
+      "field": "Kun almashish soati",
+      "hint": "Ish kuni shu soatdan keyingi kun shu soatgacha. Faqat buyurtma qabuliga ta'sir qiladi, hisobotlar 00:00 bo'yicha.",
+      "cutoffWarning": "Soat o'zgarsa, bugungi qabul vaqti yangi kunga o'tmasligi mumkin.",
+      "back": "Orqaga",
+      "save": "Saqlash",
+      "saved": "Kun almashish soati: {{time}} (Toshkent)",
+      "forbidden": "Faqat superadmin o'zgartira oladi",
+      "error": "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
     }
   }
 }

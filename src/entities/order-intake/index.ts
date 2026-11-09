@@ -1,5 +1,8 @@
-export { ORDER_INTAKE_KEY, useOrderIntake, useUpdateOrderIntake } from "./api";
+export { ORDER_INTAKE_KEY, useOrderIntake, useUpdateDayChangeTime, useUpdateOrderIntake } from "./api";
 export {
+  cutoffClosesAt,
+  DEFAULT_DAY_CHANGE_TIME,
+  isCutoffPassed,
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
   isOrderIntakeClosedError,

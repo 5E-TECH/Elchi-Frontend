@@ -77,3 +77,18 @@ export const useUpdateOrderIntake = () => {
     onSuccess: (state) => queryClient.setQueryData(ORDER_INTAKE_KEY, state),
   });
 };
+
+/**
+ * Kun almashish soati (Trello #756) — `PATCH orders/intake-settings { day_change_time }`: FAQAT superadmin (boshqasiga
+ * 403); `null` → `00:00`; noto'g'ri — 400. Javob — GET bilan bir xil holat, kesh shu bilan yangilanadi.
+ */
+export const useUpdateDayChangeTime = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (dayChangeTime: string | null) =>
+      api
+        .patch(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, { day_change_time: dayChangeTime })
+        .then((response) => normalizeOrderIntake(response.data)),
+    onSuccess: (state) => queryClient.setQueryData(ORDER_INTAKE_KEY, state),
+  });
+};
