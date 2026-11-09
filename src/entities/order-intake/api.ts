@@ -66,7 +66,7 @@ export const useOrderIntake = (options?: { enabled?: boolean }) => {
   return { ...state, closed: isOrderIntakeClosed(state, now), query };
 };
 
-/** `PATCH orders/intake-settings` — `null` cheklovni olib tashlaydi (SUPERADMIN, ADMIN). */
+/** `PATCH orders/intake-settings` — `null` cheklovni olib tashlaydi (FAQAT SUPERADMIN, admin — 403). */
 export const useUpdateOrderIntake = () => {
   const queryClient = useQueryClient();
   return useMutation({

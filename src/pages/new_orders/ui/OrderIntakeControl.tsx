@@ -113,14 +113,15 @@ const OrderIntakeDialog = ({
 /**
  * «Qabul va yaratish» sarlavhasida BUGUNGI QABUL VAQTI (2026-11-08). Maket yo'q — eng yaqini
  * `superadmin-neworders-markets` sarlavhasi (ikkinchi darajali amal asosiy «Buyurtma yaratish» yonida).
- *   - superadmin / admin: «Bugungi qabul: 10:00 gacha» tugmasi → oyna (vaqt, «Cheklovni olib tashlash»);
- *   - qolgan rollar: cheklov bo'lsa — holat belgisi («… gacha» / «yopildi»), cheklovsizda hech narsa.
+ *   - faqat superadmin (ega 2026-11-09; backend `PATCH` ham `@Roles(SUPERADMIN)`, admin — 403):
+ *     «Bugungi qabul: 10:00 gacha» tugmasi → oyna (vaqt, «Cheklovni olib tashlash»);
+ *   - qolgan rollar (admin ham): cheklov bo'lsa — holat belgisi («… gacha» / «yopildi»), cheklovsizda hech narsa.
  * Backend endpointi yo'q bo'lsa (`supported: false`) — umuman ko'rinmaydi (`entities/order-intake/model.ts`).
  */
 const OrderIntakeControl = () => {
   const { t } = useTranslation("newOrders");
   const role = useSelector((state: RootState) => state.role.role);
-  const canManage = role === "superadmin" || role === "admin";
+  const canManage = role === "superadmin";
   const intake = useOrderIntake();
   const [open, setOpen] = useState(false);
 

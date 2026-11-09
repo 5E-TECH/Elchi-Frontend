@@ -5,8 +5,9 @@ import { renderWithProviders } from "../../../test/test-utils";
 import NewOrdersHeader from "./NewOrdersHeader";
 
 /**
- * «Qabul va yaratish» sarlavhasi — BUGUNGI QABUL VAQTI (2026-11-08): admin vaqtni qo'yadi / olib tashlaydi,
- * boshqa rollar holatni ko'radi. Backend endpointi hali yo'q (404) — hech narsa ko'rinmaydi.
+ * «Qabul va yaratish» sarlavhasi — BUGUNGI QABUL VAQTI (2026-11-08): FAQAT superadmin vaqtni qo'yadi / olib
+ * tashlaydi (2026-11-09), boshqa rollar (admin ham) holatni ko'radi. Backend endpointi yo'q (404) — hech narsa
+ * ko'rinmaydi.
  */
 const mocks = vi.hoisted(() => ({ get: vi.fn(), patch: vi.fn() }));
 vi.mock("../../../shared/api/api", () => ({ api: { get: mocks.get, patch: mocks.patch } }));
@@ -78,7 +79,7 @@ describe("Bugungi qabul vaqti — sarlavha", () => {
   it("noto'g'ri vaqt — maydon ostida xato, so'rov ketmaydi", async () => {
     const user = userEvent.setup();
     mocks.get.mockResolvedValue(intake(null));
-    renderHeader("admin");
+    renderHeader("superadmin");
 
     await user.click(await screen.findByRole("button", { name: /Bugungi qabul: cheklovsiz/ }));
     const dialog = await screen.findByRole("dialog", { name: "Bugungi qabul vaqti" });
@@ -130,5 +131,23 @@ describe("Bugungi qabul vaqti — sarlavha", () => {
     renderHeader("manager");
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(3));
     expect(screen.queryByTestId("order-intake-status")).toBeNull();
+  });
+
+  it("⭐ admin (2026-11-09): o'zgartira olmaydi — tugma yo'q, faqat holat belgisi; cheklovsiz — hech narsa", async () => {
+    mocks.get.mockResolvedValue(intake("10:00"));
+    const first = renderHeader("admin");
+    expect(await screen.findByTestId("order-intake-status")).toHaveTextContent(
+      "Bugungi qabul: 10:00 gacha",
+    );
+    expect(screen.queryByTestId("order-intake-control")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Bugungi qabul/ })).toBeNull();
+    first.unmount();
+
+    mocks.get.mockResolvedValue(intake(null));
+    renderHeader("admin");
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
+    expect(screen.queryByTestId("order-intake-control")).toBeNull();
+    expect(screen.queryByTestId("order-intake-status")).toBeNull();
+    expect(mocks.patch).not.toHaveBeenCalled();
   });
 });

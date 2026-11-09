@@ -1,21 +1,24 @@
 import { getErrorStatus } from "../../shared/lib/errorKind";
 
 /**
- * BUGUNGI QABUL VAQTI (2026-11-08) — admin bugun uchun qabul tugash vaqtini qo'yadi (masalan 10:00): shundan keyin
- * kun almashguncha HECH QANDAY yangi buyurtma yaratilmaydi (qo'lda, AI bilan, integratsiya va hamkor API orqali).
+ * BUGUNGI QABUL VAQTI (2026-11-08) — superadmin bugun uchun qabul tugash vaqtini qo'yadi (masalan 10:00): shundan
+ * keyin kun almashguncha HECH QANDAY yangi buyurtma yaratilmaydi (qo'lda, AI bilan, integratsiya va hamkor API orqali).
  *
- * ⚠️ BACKEND HALI YO'Q — kontrakt taklifi (Dilshod / urozov04 bilan kelishiladi):
+ * Backend kontrakti (Elchi-Backend `bahodir`, 2026-11-09, backend `docs/frontend/FRONTEND_CHANGELOG.md`):
  *   GET   `orders/intake-settings` (har rol) →
  *         `{ data: { cutoff_time: "10:00" | null, date: "YYYY-MM-DD", is_open: boolean,
- *                    closes_at: ISO | null, reopens_at: ISO | null } }`
- *   PATCH `orders/intake-settings` `{ cutoff_time: "HH:MM" | null }` — SUPERADMIN, ADMIN; faqat joriy (ish) kun
- *         uchun, kun almashganda o'zi bekor bo'ladi; activity log'ga yoziladi. Javob — GET bilan bir xil.
- *   Qabul yopiq paytda buyurtma yaratadigan barcha endpointlar (POST orders, AI confirm, tashqi / hamkor) →
- *         `409 { code: "ORDER_INTAKE_CLOSED", message, reopens_at }`.
- *   «Kun almashishi» — Toshkent 00:00 (Trello #756 «Kun almashish vaqtini qo'lda sozlash» qilinsa — o'sha soat).
+ *                    closes_at: ISO | null, reopens_at: ISO | null,
+ *                    day_change_time: "HH:MM", day_started_at: ISO, next_day_change_at: ISO } }`
+ *   PATCH `orders/intake-settings` `{ cutoff_time?: "HH:MM" | null, day_change_time?: "HH:MM" | null }` — FAQAT
+ *         SUPERADMIN (admin — 403); cheklov faqat joriy (ish) kun uchun, kun almashganda o'zi bekor bo'ladi;
+ *         activity log'ga yoziladi. Javob — GET bilan bir xil.
+ *   Qabul yopiq paytda buyurtma yaratadigan barcha endpointlar (POST orders, tashqi / hamkor) →
+ *         `409 { code: "ORDER_INTAKE_CLOSED", message, reopens_at, cutoff_time }`; AI confirm — har buyurtma
+ *         natijasida `code: "intake_closed"`.
+ *   «Kun almashishi» — `day_change_time` (Toshkent, sukut 00:00; Trello #756 — sozlash UI'si hali yo'q).
  *
- * Backend javob bermaguncha (404 / 405 / 501) funksiya YO'Q deb olinadi: boshqaruv ko'rinmaydi va hech narsa
- * to'silmaydi — prod buzilmaydi, endpoint chiqishi bilan o'zi yoqiladi.
+ * Backend javob bermaguncha (404 / 405 / 501 — backend deploy bo'lmagan muhit) funksiya YO'Q deb olinadi:
+ * boshqaruv ko'rinmaydi va hech narsa to'silmaydi.
  */
 export type OrderIntakeState = {
   /** Backend shu funksiyani beradimi (endpoint bor). `false` — UI ko'rsatilmaydi, hech narsa to'silmaydi. */

@@ -20,7 +20,8 @@ test.describe("Bugungi qabul vaqti — 390px", () => {
       page,
     }) => {
       const { leaked } = await mockOrderIntakeApi(page, {
-        role: "admin",
+        // 2026-11-09: boshqaruv tugmasi faqat superadmin'da.
+        role: "superadmin",
         theme,
         intake: OPEN_UNLIMITED,
       });
