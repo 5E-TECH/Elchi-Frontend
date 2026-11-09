@@ -111,6 +111,8 @@ type AiPreviewCardProps = {
   /** Operator — so'rovchining o'zi (market operatori): maydon faqat o'qish uchun, «Siz — avtomatik yoziladi». */
   selfOperator?: { name: string | null };
   creating: boolean;
+  /** Bugungi qabul yopiq — «Bu kartani yaratish» o'chiq (sabab sahifa ogohlantirishida). */
+  createBlocked?: boolean;
   onChange: (order: AiDraftOrder) => void;
   onRemove: () => void;
   onCreate: () => void;
@@ -132,6 +134,7 @@ const AiPreviewCard = ({
   areaLists = true,
   selfOperator,
   creating,
+  createBlocked = false,
   onChange,
   onRemove,
   onCreate,
@@ -325,7 +328,7 @@ const AiPreviewCard = ({
             size="sm"
             leftIcon={Send}
             onClick={onCreate}
-            disabled={!ready || creating || Boolean(existingOrderId)}
+            disabled={!ready || creating || createBlocked || Boolean(existingOrderId)}
             className="max-md:flex-[1_0_auto]"
           >
             {t("aiCreateThis")}

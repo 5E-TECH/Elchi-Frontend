@@ -16,6 +16,7 @@ import {
 import { PushPermissionButton } from "../../../features/push-notifications";
 import { AppInstallStatusBlock } from "../../../features/pwa-install";
 import { buttonClasses, Card, Field, TextInput } from "../../../shared/ui/primitives";
+import { CLOCK_TIME, toClockDraft } from "../../../shared/lib/clockTime";
 import { SectionHead, SwitchList, SwitchRow } from "./settingsUi";
 
 /** Marketing alohida blokda ("Reklama va aksiyalar") — opt-out ko'zga tashlansin. */
@@ -23,7 +24,6 @@ const SERVICE_CATEGORIES = NOTIFICATION_CATEGORIES.filter(
   (category): category is Exclude<NotificationCategory, "marketing"> => category !== "marketing",
 );
 
-const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** Karta: sarlavha + izoh (`.el-card-pad`), so'ng kalitlar ro'yxati. */
 const SwitchCard = ({
@@ -46,12 +46,6 @@ const SwitchCard = ({
       <SwitchList labelledBy={headId}>{children}</SwitchList>
     </Card>
   );
-};
-
-/** «2215» / «22:15» → «22:15»; yozilayotgan qism («2», «22:1») o'zgarishsiz qoladi. */
-const toClockDraft = (raw: string) => {
-  const digits = raw.replace(/\D/g, "").slice(0, 4);
-  return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
 };
 
 /**

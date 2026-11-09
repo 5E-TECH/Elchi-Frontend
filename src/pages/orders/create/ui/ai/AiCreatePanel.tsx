@@ -50,6 +50,8 @@ type AiCreatePanelProps = {
   selfOperator?: { name: string | null };
   /** Admin/registrator: marketni qayta tanlash (`no_market`). Market rolida berilmaydi. */
   onChangeMarket?: () => void;
+  /** Bugungi qabul yopiq (2026-11-08) — yaratish tugmalari o'chiq, so'rov ketmaydi (sabab sahifa ogohlantirishida). */
+  blocked?: boolean;
 };
 
 /**
@@ -69,6 +71,7 @@ const AiCreatePanel = ({
   onChangeMarket,
   areaLists = true,
   selfOperator,
+  blocked = false,
 }: AiCreatePanelProps) => {
   const { t } = useTranslation("orders");
   const queryClient = useQueryClient();
@@ -196,7 +199,7 @@ const AiCreatePanel = ({
    */
   const submit = (targets: AiDraft[]) => {
     const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalPreview(draft.order, previewRules).ready);
-    if (submittingRef.current || confirm.isPending || readyTargets.length === 0) return;
+    if (blocked || submittingRef.current || confirm.isPending || readyTargets.length === 0) return;
     submittingRef.current = true;
     setConfirmError("");
     setResultSummary(null);
@@ -308,6 +311,7 @@ const AiCreatePanel = ({
               areaLists={areaLists}
               selfOperator={selfOperator}
               creating={confirm.isPending}
+              createBlocked={blocked}
               onChange={(order) => updateDraft(draft.key, order)}
               onRemove={() => removeDraft(draft.key)}
               onCreate={() => submit([draft])}
@@ -321,6 +325,7 @@ const AiCreatePanel = ({
           readyOrders={readyDrafts.map((draft) => draft.order)}
           notReadyCount={pendingDrafts.length - readyDrafts.length}
           pending={confirm.isPending}
+          blocked={blocked}
           onConfirm={() => submit(readyDrafts)}
           onJumpToUnready={jumpToUnready}
           barRef={barRef}

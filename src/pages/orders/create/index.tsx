@@ -43,6 +43,8 @@ import {
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
+import { ORDER_INTAKE_KEY, isOrderIntakeClosedError, useOrderIntake } from "../../../entities/order-intake";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
@@ -190,8 +192,11 @@ const OPERATOR_BACK_TO = "/orders";
  * Market rolida 1-qadam yo'q (o'z marketi), forma darhol 2-qadamdan ochiladi.
  */
 const OrderCreateFormContent = () => {
-  const { t } = useTranslation(["orders", "common", "newOrders"]);
+  const { t, i18n } = useTranslation(["orders", "common", "newOrders"]);
   const location = useLocation();
+  // Bugungi qabul vaqti (2026-11-08): yopiq bo'lsa — ogohlantirish, qo'lda va AI bilan yaratish to'siladi (asl to'siq —
+  // backend `409 ORDER_INTAKE_CLOSED`). Backend endpointi yo'q bo'lsa — hech narsa o'zgarmaydi.
+  const intake = useOrderIntake();
   const queryClient = useQueryClient();
   const { createOrder } = useOrders();
   // gpCIsGjH: `Idempotency-Key` tarkibga bog'langan — javobi kelmagan urinishni (20 s timeout, tarmoq) qayta bosish
@@ -379,6 +384,11 @@ const OrderCreateFormContent = () => {
   const onSubmit = (values: OrderCreateFormValues) => {
     setServerError("");
 
+    if (intake.closed) {
+      notify.warning(t("intake.create.closedTitle", { ns: "newOrders" }));
+      return;
+    }
+
     if (isInactiveSelectedMarket) {
       setServerError(t("inactiveMarketOrderBlocked"));
       notify.warning(t("inactiveMarketOrderBlocked"));
@@ -419,10 +429,12 @@ const OrderCreateFormContent = () => {
         });
       },
       onError: (error) => {
-        const message = getOrderCreateErrorMessage(
-          error,
-          t("orderCreateErrorFallback"),
-        );
+        // Qabul shu orada yopildi (boshqa admin yoki vaqt) — tushunarli matn, holat yangilanadi (ogohlantirish chiqadi).
+        const intakeClosed = isOrderIntakeClosedError(error);
+        if (intakeClosed) void queryClient.invalidateQueries({ queryKey: ORDER_INTAKE_KEY });
+        const message = intakeClosed
+          ? t("intake.create.closedTitle", { ns: "newOrders" })
+          : getOrderCreateErrorMessage(error, t("orderCreateErrorFallback"));
 
         applyOrderCreateFieldErrors(error, setError, t);
         // Tanlangan operator o'chirilgan / bloklangan — ro'yxat yangilanadi (eskirgan tanlov o'zi tozalanadi).
@@ -508,6 +520,22 @@ const OrderCreateFormContent = () => {
           actions={aiHidden ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
         />
 
+        {intake.closed ? (
+          <CreateAlert tone="warning" title={t("intake.create.closedTitle", { ns: "newOrders" })} data-testid="intake-closed">
+            {intake.cutoffTime && intake.reopensAt
+              ? t("intake.create.closedBody", {
+                  ns: "newOrders",
+                  time: intake.cutoffTime,
+                  reopens: formatDateTimeLocalized(intake.reopensAt, { language: i18n.language }),
+                })
+              : t("intake.create.closedBodyNoTime", { ns: "newOrders" })}
+          </CreateAlert>
+        ) : intake.cutoffTime ? (
+          <CreateAlert tone="info" data-testid="intake-until">
+            {t("intake.create.untilBody", { ns: "newOrders", time: intake.cutoffTime })}
+          </CreateAlert>
+        ) : null}
+
         <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
           <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">
             {/*
@@ -563,6 +591,7 @@ const OrderCreateFormContent = () => {
                 <SectionErrorBoundary key={market ? String(market.id) : "no-market"}>
                   <AiCreatePanel
                     active={mode === "ai"}
+                    blocked={intake.closed}
                     isMarketRole={isMarketRole}
                     market={isMarketRole ? null : market}
                     onSwitchToManual={() => setMode("manual")}
@@ -599,7 +628,7 @@ const OrderCreateFormContent = () => {
                 <SectionErrorBoundary>
                   <Step2Summary
                     isMarketRole={isMarketRole}
-                    ready={canNext}
+                    ready={canNext && !intake.closed}
                     submitting={createOrder.isPending}
                     onPrevious={handlePrevious}
                     backTo={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}

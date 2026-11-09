@@ -153,6 +153,9 @@ export const API_ENDPOINTS = {
     BASE: "orders", // GET list (filters) / POST create
     CANCEL_REASON_STATS: "orders/cancel-reasons/stats", // GET ?startDate&endDate&market_id|branch_id — sabablar kesimi
     EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
+    // Bugungi qabul vaqti (2026-11-08; backend 2026-11-09; kontrakt `entities/order-intake/model.ts`):
+    // GET (har rol) / PATCH { cutoff_time?, day_change_time? } (FAQAT SUPERADMIN). 404 — frontend funksiyani yashiradi.
+    INTAKE_SETTINGS: "orders/intake-settings",
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline

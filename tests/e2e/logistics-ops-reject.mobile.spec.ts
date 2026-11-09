@@ -93,7 +93,9 @@ test.describe("Qaytarish so'rovlari: rad etish — 390px", () => {
       await expect(dialog).toBeVisible();
       // O'lchash ochilish animatsiyasi tugagach (yuklangan mashinada transform paytida 43,9999 px chiqardi).
       await dialog.evaluate((node) =>
-        Promise.all(node.ownerDocument.getAnimations().map((animation) => animation.finished)),
+        Promise.allSettled(
+          node.ownerDocument.getAnimations().map((animation) => animation.finished),
+        ),
       );
       const box = (await dialog.boundingBox())!;
       expect(box.x + box.width).toBeLessThanOrEqual(390);

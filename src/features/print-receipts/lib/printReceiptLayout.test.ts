@@ -8,14 +8,18 @@ import {
   fitReceiptHeader,
   layoutOrderReceipt,
   receiptLineHeight,
+  THERMAL_ORDER_SPEC,
+  type OrderReceiptSpec,
   type ReceiptFrameOp,
   type ReceiptLabel,
   type ReceiptQrOp,
   type ReceiptRectOp,
   type ReceiptTextOp,
+  type ReceiptWatermarkOp,
 } from "./printReceiptLayout";
 import { toReceiptOrderModel, type ReceiptOrderSource } from "./printReceiptModel";
 import { LONG_COMMENT, RECEIPT_SAMPLES } from "./receiptSamples";
+import { receiptWatermarkRuns, receiptWatermarkWidth } from "./receiptWatermark";
 
 /**
  * HJ5sLHiz — joylash algoritmi maket `tizim-receipts` (01, 01.B a–f, 1/2 + 2/2) bilan solishtiriladi: koordinatalar
@@ -926,5 +930,68 @@ describe("A4 sheet — mockup 03 (cell 100×47,5 mm, 12 per page)", () => {
     );
     const firstNumber = texts(labels[0]).find((op) => op.text === "№500")!;
     near(numbers[2].baseline - firstNumber.baseline, A4_SHEET.y + A4_SHEET.cell.height, 0.001);
+  });
+});
+
+describe("faint Elchi mark in the background (ega so'rovi 2026-11-09)", () => {
+  const specs: Array<[string, OrderReceiptSpec]> = [
+    ["thermal 100×60", THERMAL_ORDER_SPEC],
+    ["A4 cell 100×47,5", A4_ORDER_SPEC],
+  ];
+  const watermarks = (label: ReceiptLabel) =>
+    label.ops.filter((op): op is ReceiptWatermarkOp => op.kind === "watermark");
+
+  it.each(specs)(
+    "%s: the first op of every label (continuation too) — drawn under text, lines and QR",
+    (_, spec) => {
+      for (const source of Object.values(RECEIPT_SAMPLES)) {
+        for (const label of layoutOrderReceipt(toReceiptOrderModel(source), { measure }, spec)) {
+          expect(label.ops[0].kind).toBe("watermark");
+          expect(watermarks(label)).toHaveLength(1);
+        }
+      }
+    },
+  );
+
+  it.each(specs)(
+    "%s: centred on the label between the header and footer rules, clear of the QR column",
+    (_, spec) => {
+      const [label] = layoutOrderReceipt(
+        toReceiptOrderModel(RECEIPT_SAMPLES.main),
+        { measure },
+        spec,
+      );
+      const [mark] = watermarks(label);
+      const { cx, cy, height } = spec.watermark;
+      const width = receiptWatermarkWidth(height);
+      near(mark.x + width / 2, spec.width / 2, 0.001);
+      near(mark.y + height / 2, cy, 0.001);
+      expect(cx).toBe(spec.width / 2);
+      expect(mark.runs).toBe(receiptWatermarkRuns(height));
+      // Summa ramkasi va sarlavha chizig'idan pastda, pastki band chizig'idan yuqorida.
+      expect(mark.y).toBeGreaterThanOrEqual(spec.header.rule.y + spec.header.rule.h);
+      expect(mark.y + height).toBeLessThanOrEqual(spec.footer.ruleY);
+      // QR, holat yorlig'i va sana ustunidan kamida 1 mm chapda — QR o'qilishiga ta'sir qilmaydi.
+      expect(mark.x + width).toBeLessThanOrEqual(Math.min(spec.qr.x, spec.badge.x) - 1);
+      expect(mark.x).toBeGreaterThanOrEqual(spec.r1.x);
+    },
+  );
+
+  it("A4: every cell has its own mark, moved with the cell", () => {
+    const labels = [RECEIPT_SAMPLES.main, RECEIPT_SAMPLES.f, RECEIPT_SAMPLES.paid].flatMap(
+      (source) => layoutOrderReceipt(toReceiptOrderModel(source), { measure }, A4_ORDER_SPEC),
+    );
+    const [page] = composeReceiptPages(labels, "a4");
+    const marks = page.ops.filter((op): op is ReceiptWatermarkOp => op.kind === "watermark");
+    const [first] = watermarks(labels[0]);
+    const at = (dx: number, dy: number) => [
+      Math.round((first.x + dx) * 1000) / 1000,
+      Math.round((first.y + dy) * 1000) / 1000,
+    ];
+    expect(marks.map((mark) => [mark.x, mark.y])).toEqual([
+      at(A4_SHEET.x, A4_SHEET.y),
+      at(A4_SHEET.x + A4_SHEET.cell.width, A4_SHEET.y),
+      at(A4_SHEET.x, A4_SHEET.y + A4_SHEET.cell.height),
+    ]);
   });
 });

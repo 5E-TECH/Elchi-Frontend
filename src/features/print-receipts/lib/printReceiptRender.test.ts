@@ -16,10 +16,12 @@ import {
   splitReceiptKerned,
   type ReceiptPage,
   type ReceiptTextOp,
+  type ReceiptWatermarkOp,
 } from "./printReceiptLayout";
 import { toReceiptOrderModel, type ReceiptOrderSource } from "./printReceiptModel";
 import { renderReceiptPdf } from "./printReceiptPdf";
 import { RECEIPT_SAMPLES } from "./receiptSamples";
+import { RECEIPT_WATERMARK_DOT, RECEIPT_WATERMARK_PITCH } from "./receiptWatermark";
 
 /** HJ5sLHiz — PDF va brauzer bitta `ReceiptPage[]` dan (TZ F9, qabul mezonlari 1, 5, 7). */
 
@@ -41,6 +43,9 @@ const cyrillic: ReceiptOrderSource = {
   customer: { ...RECEIPT_SAMPLES.f.customer, name: "Қўчқорова Ғулом Ҳасанович" },
   address: "Тошкент шаҳри, Қатортол кўчаси 5-уй",
 };
+
+const watermarkOf = (page: ReceiptPage) =>
+  page.ops.find((op): op is ReceiptWatermarkOp => op.kind === "watermark")!;
 
 const renderPdf = async (pages: ReceiptPage[]) => {
   const pdf = new jsPDF({
@@ -74,6 +79,21 @@ describe("PDF renderer", () => {
       for (const value of values.trim().split(" "))
         expect([0, 1], `${values}${operator}`).toContain(Number(value));
     }
+  });
+
+  it("faint Elchi mark: one dashed black line per dot row (0,25 mm dots every 0,75 mm), drawn first", async () => {
+    const pages = pagesOf(RECEIPT_SAMPLES.main);
+    const mark = watermarkOf(pages[0]);
+    const output = (await renderPdf(pages)).output();
+    const pt = (mm: number) => (mm * 72) / 25.4;
+    const dash = /^\[([\d.]+) ([\d.]+)\] [\d.]+ d$/m.exec(output)!;
+    expect(Number(dash[1])).toBeCloseTo(pt(RECEIPT_WATERMARK_DOT), 6);
+    expect(Number(dash[2])).toBeCloseTo(pt(RECEIPT_WATERMARK_PITCH - RECEIPT_WATERMARK_DOT), 6);
+    // Termal chekda boshqa `line` yo'q — har chiziq bitta nuqta qatori; keyin punktir o'chiriladi.
+    expect(output.match(/ l\nS\n/g)).toHaveLength(mark.runs.length);
+    const stream = output.slice(output.indexOf("stream\n"));
+    expect(stream.indexOf(dash[0])).toBeLessThan(stream.indexOf(" Tj\n"));
+    expect(output).toMatch(/^\[\] 0\.? d$/m);
   });
 
   it("embeds Manrope and draws қ ғ ҳ with the Noto Sans subset (Cyrillic in PDF)", async () => {
@@ -131,6 +151,28 @@ describe("HTML renderer", () => {
     const frame = svg.querySelector('rect[fill="none"]')!;
     expect(frame.getAttribute("stroke-width")).toBe("0.4");
     expect(frame.getAttribute("rx")).toBe("1"); // tashqi burchak 1,2 − chiziq yarmi
+  });
+
+  it("faint Elchi mark: first in the page SVG, black dots only — one dashed subpath per dot row", () => {
+    const pages = pagesOf(RECEIPT_SAMPLES.main);
+    const mark = watermarkOf(pages[0]);
+    const doc = new DOMParser().parseFromString(html(pages), "text/html");
+    const svg = doc.querySelector(".p > svg.v")!;
+    const path = svg.firstElementChild!;
+    expect(path.getAttribute("class")).toBe("wm");
+    expect(path.getAttribute("fill")).toBe("none");
+    expect(path.getAttribute("stroke")).toBe("currentColor");
+    expect(path.getAttribute("stroke-width")).toBe("0.25");
+    expect(path.getAttribute("stroke-dasharray")).toBe("0.25 0.5");
+    expect(path.getAttribute("d")!.match(/M/g)).toHaveLength(mark.runs.length);
+    // Birinchi qator: birinchi nuqtaning chap cheti, uzunligi — (n − 1) qadam + nuqta.
+    const [y, x, count] = mark.runs[0];
+    const round = (value: number) => Math.round(value * 1000) / 1000;
+    expect(path.getAttribute("d")).toMatch(
+      new RegExp(
+        `^M${round(mark.x + x - 0.125)} ${round(mark.y + y)}h${round((count - 1) * 0.75 + 0.25)}M`,
+      ),
+    );
   });
 
   it("kerning: PDF and HTML split the text at the same pairs (layout measured it)", async () => {
