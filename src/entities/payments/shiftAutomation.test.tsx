@@ -45,6 +45,28 @@ describe("shift automation contract (y8Tqm9Ap, gWI4gYkw)", () => {
     ).toEqual({ enabled: false, times: [], scope: "main", warn_before_min: 15 });
   });
 
+  it("«Kun tartibi» (2026-11-10): auto_open va late_alert o'qiladi; eski backend → null; yaroqsizlari sukutga", () => {
+    const settings = normalizeShiftCheckSettings({
+      data: {
+        cards: [],
+        auto_open: { enabled: true, times: ["09:00", "08:00", "08:00", "26:00"], scope: "main+branches" },
+        late_alert: { enabled: true, grace_min: 20, channels: { telegram: true } },
+      },
+    });
+    expect(settings.auto_open).toEqual({ enabled: true, times: ["08:00", "09:00"], scope: "main+branches" });
+    expect(settings.late_alert).toEqual({ enabled: true, grace_min: 20, channels: { telegram: true, in_app: false } });
+    const old = normalizeShiftCheckSettings({ data: { cards: [], auto_close: { enabled: false, times: [] } } });
+    expect(old.auto_open).toBeNull();
+    expect(old.late_alert).toBeNull();
+    // Yaroqsiz qamrov va kechikish (0–180 dan tashqari) — sukut: faqat asosiy kassa, 15 daqiqa; 0 — ruxsat.
+    const broken = normalizeShiftCheckSettings({
+      data: { cards: [], auto_open: { scope: "all" }, late_alert: { grace_min: 500 } },
+    });
+    expect(broken.auto_open).toEqual({ enabled: false, times: [], scope: "main" });
+    expect(broken.late_alert).toEqual({ enabled: false, grace_min: 15, channels: { telegram: false, in_app: false } });
+    expect(normalizeShiftCheckSettings({ data: { cards: [], late_alert: { grace_min: 0 } } }).late_alert?.grace_min).toBe(0);
+  });
+
   it("report: close_reason=auto → auto_close banner data; deliveries are normalized, broken rows dropped", () => {
     const report = normalizeShiftReport({
       data: {

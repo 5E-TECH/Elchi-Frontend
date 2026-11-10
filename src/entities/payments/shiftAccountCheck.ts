@@ -88,6 +88,28 @@ export type ShiftAutoCloseSettings = {
   warn_before_min: number;
 };
 
+/**
+ * «Kun tartibi» (Ops, 2026-11-10; backend vazifasi — `finance/shift/settings` ga `auto_open`): belgilangan vaqtda
+ * qamrovdagi kassada ochiq smena bo'lmasa — tizim o'zi ochadi. `times` va `scope` — `auto_close` qoidalari bilan bir xil
+ * (kuniga 1–12, Toshkent `HH:MM`). Javobda yo'q (eski backend) — `null`, blok chizilmaydi.
+ */
+export type ShiftAutoOpenSettings = {
+  enabled: boolean;
+  times: string[];
+  scope: ShiftAutoCloseScope;
+};
+/**
+ * Kechikish xabari (`late_alert`, 2026-11-10): ochish / yopish vaqtidan `grace_min` daqiqa o'tib smena ochilmagan /
+ * yopilmagan bo'lsa (yoki tizim ochish / yopishi xato bilan tugasa) — superadminlarga «Smena vaqtida ochilmadi /
+ * yopilmadi». Kanallar — hisobot yuborishdagidek (Telegram / ilova ichida). Javobda yo'q — `null`.
+ */
+export const SHIFT_LATE_ALERT_MAX_GRACE_MIN = 180;
+export const SHIFT_LATE_ALERT_DEFAULT_GRACE_MIN = 15;
+export type ShiftLateAlertSettings = {
+  enabled: boolean;
+  grace_min: number;
+  channels: ShiftReportChannels;
+};
 /** gWI4gYkw: hisobot qabul qiluvchilari guruhlari va kanallari. */
 export const SHIFT_REPORT_RECIPIENT_GROUPS = ["superadmin", "couriers", "markets"] as const;
 export type ShiftReportRecipientGroup = (typeof SHIFT_REPORT_RECIPIENT_GROUPS)[number];
@@ -108,6 +130,10 @@ export type ShiftCheckSettings = {
   cards: ShiftCheckCardSettings[];
   /** y8Tqm9Ap — javobda yo'q bo'lsa (eski backend) `null`: blok chizilmaydi. */
   auto_close: ShiftAutoCloseSettings | null;
+  /** «Kun tartibi» (2026-11-10) — javobda yo'q bo'lsa `null`: blok chizilmaydi. */
+  auto_open: ShiftAutoOpenSettings | null;
+  /** «Kun tartibi» (2026-11-10) — javobda yo'q bo'lsa `null`: blok chizilmaydi. */
+  late_alert: ShiftLateAlertSettings | null;
   /** gWI4gYkw — javobda yo'q bo'lsa `null`. */
   report: ShiftReportSendSettings | null;
 };
@@ -235,6 +261,10 @@ export type UpdateShiftSettingsRequest = {
   cards?: Array<{ card_id: string; require_photo_on_shift_close?: boolean; ai_check_enabled?: boolean }>;
   /** y8Tqm9Ap — qisman (faqat o'zgargan maydonlar). */
   auto_close?: Partial<ShiftAutoCloseSettings>;
+  /** «Kun tartibi» — qisman (faqat o'zgargan maydonlar). */
+  auto_open?: Partial<ShiftAutoOpenSettings>;
+  /** «Kun tartibi» — qisman: `channels` da faqat o'zgargan kanal. */
+  late_alert?: { enabled?: boolean; grace_min?: number; channels?: Partial<ShiftReportChannels> };
   /** gWI4gYkw — qisman: `recipients` da faqat o'zgargan guruh/kanal, backend qolganini saqlaydi. */
   report?: {
     recipients?: Partial<Record<ShiftReportRecipientGroup, Partial<ShiftReportChannels>>>;
@@ -292,6 +322,31 @@ const normalizeAutoClose = (value: unknown): ShiftAutoCloseSettings | null => {
   };
 };
 
+const normalizeAutoOpen = (value: unknown): ShiftAutoOpenSettings | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = record(value);
+  return {
+    enabled: bool(raw.enabled),
+    times: normalizeShiftCloseTimes(raw.times),
+    scope: raw.scope === "main+branches" ? "main+branches" : "main",
+  };
+};
+
+const normalizeLateAlert = (value: unknown): ShiftLateAlertSettings | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = record(value);
+  const grace = num(raw.grace_min);
+  const channels = record(raw.channels);
+  return {
+    enabled: bool(raw.enabled),
+    grace_min:
+      grace !== null && Number.isInteger(grace) && grace >= 0 && grace <= SHIFT_LATE_ALERT_MAX_GRACE_MIN
+        ? grace
+        : SHIFT_LATE_ALERT_DEFAULT_GRACE_MIN,
+    channels: { telegram: bool(channels.telegram), in_app: bool(channels.in_app) },
+  };
+};
+
 const normalizeReportSettings = (value: unknown): ShiftReportSendSettings | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const raw = record(value);
@@ -337,6 +392,8 @@ export const normalizeShiftCheckSettings = (value: unknown): ShiftCheckSettings 
       })
       .filter((card): card is ShiftCheckCardSettings => card !== null),
     auto_close: normalizeAutoClose(data.auto_close),
+    auto_open: normalizeAutoOpen(data.auto_open),
+    late_alert: normalizeLateAlert(data.late_alert),
     report: normalizeReportSettings(data.report),
   };
 };

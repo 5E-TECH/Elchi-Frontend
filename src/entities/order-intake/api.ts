@@ -5,8 +5,10 @@ import { API_ENDPOINTS } from "../../shared/api";
 import {
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
+  isOrderReceiveClosed,
   normalizeOrderIntake,
   UNSUPPORTED_INTAKE,
+  type OrderIntakeSettingsPatch,
   type OrderIntakeState,
 } from "./model";
 
@@ -25,17 +27,20 @@ const fetchOrderIntake = async (): Promise<OrderIntakeState> => {
 };
 
 /**
- * Keyingi chegara (`closes_at` / `reopens_at`) kelganda qayta chiziladi: 10:00 da yaratish sahifasi so'rovsiz
- * yopiladi, kun almashganda holat qayta so'raladi.
+ * Keyingi chegara (yaratish va qabulning `closes_at` / `reopens_at`) kelganda qayta chiziladi: 10:00 da yaratish
+ * sahifasi, 16:00 da «Qabul qilish» so'rovsiz yopiladi; kun almashganda holat qayta so'raladi.
  */
-const useBoundaryNow = (closesAt: string | null, reopensAt: string | null) => {
+const useBoundaryNow = (state: OrderIntakeState) => {
   const queryClient = useQueryClient();
   const [now, setNow] = useState(() => Date.now());
+  const { closesAt, reopensAt, receiveClosesAt, receiveReopensAt } = state;
   useEffect(() => {
-    const reopens = reopensAt ? Date.parse(reopensAt) : null;
-    if (reopens !== null && now >= reopens)
-      void queryClient.invalidateQueries({ queryKey: ORDER_INTAKE_KEY });
-    const upcoming = [closesAt, reopensAt]
+    const reopened = [reopensAt, receiveReopensAt].some((value) => {
+      const reopens = value ? Date.parse(value) : null;
+      return reopens !== null && now >= reopens;
+    });
+    if (reopened) void queryClient.invalidateQueries({ queryKey: ORDER_INTAKE_KEY });
+    const upcoming = [closesAt, reopensAt, receiveClosesAt, receiveReopensAt]
       .map((value) => (value ? Date.parse(value) : Number.NaN))
       .filter((time) => Number.isFinite(time) && time > now);
     if (upcoming.length === 0) return undefined;
@@ -43,7 +48,7 @@ const useBoundaryNow = (closesAt: string | null, reopensAt: string | null) => {
     const delay = Math.min(Math.min(...upcoming) - now + 250, 2_147_000_000);
     const timer = window.setTimeout(() => setNow(Date.now()), delay);
     return () => window.clearTimeout(timer);
-  }, [closesAt, now, queryClient, reopensAt]);
+  }, [closesAt, now, queryClient, receiveClosesAt, receiveReopensAt, reopensAt]);
   return now;
 };
 
@@ -62,32 +67,26 @@ export const useOrderIntake = (options?: { enabled?: boolean }) => {
     meta: { silentError: true },
   });
   const state = query.data ?? UNSUPPORTED_INTAKE;
-  const now = useBoundaryNow(state.closesAt, state.reopensAt);
-  return { ...state, closed: isOrderIntakeClosed(state, now), query };
-};
-
-/** `PATCH orders/intake-settings` — `null` cheklovni olib tashlaydi (FAQAT SUPERADMIN, admin — 403). */
-export const useUpdateOrderIntake = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (cutoffTime: string | null) =>
-      api
-        .patch(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, { cutoff_time: cutoffTime })
-        .then((response) => normalizeOrderIntake(response.data)),
-    onSuccess: (state) => queryClient.setQueryData(ORDER_INTAKE_KEY, state),
-  });
+  const now = useBoundaryNow(state);
+  return {
+    ...state,
+    closed: isOrderIntakeClosed(state, now),
+    receiveClosed: isOrderReceiveClosed(state, now),
+    query,
+  };
 };
 
 /**
- * Kun almashish soati (Trello #756) — `PATCH orders/intake-settings { day_change_time }`: FAQAT superadmin (boshqasiga
- * 403); `null` → `00:00`; noto'g'ri — 400. Javob — GET bilan bir xil holat, kesh shu bilan yangilanadi.
+ * «Kun tartibi» (Ops) — `PATCH orders/intake-settings`: faqat o'zgargan maydonlar (`cutoff_time`,
+ * `receive_cutoff_time`, `day_change_time`; `null` — cheklovni olib tashlash, kun almashishi uchun — 00:00). FAQAT
+ * SUPERADMIN (boshqasiga 403), noto'g'ri soat — 400. Javob — GET bilan bir xil holat, kesh shu bilan yangilanadi.
  */
-export const useUpdateDayChangeTime = () => {
+export const useUpdateOrderIntakeSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dayChangeTime: string | null) =>
+    mutationFn: (body: OrderIntakeSettingsPatch) =>
       api
-        .patch(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, { day_change_time: dayChangeTime })
+        .patch(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, body)
         .then((response) => normalizeOrderIntake(response.data)),
     onSuccess: (state) => queryClient.setQueryData(ORDER_INTAKE_KEY, state),
   });

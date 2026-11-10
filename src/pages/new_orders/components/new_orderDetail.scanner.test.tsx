@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   fetchScanDetail: vi.fn(),
   marketsRefetch: vi.fn(),
   playScanFeedback: vi.fn(),
+  intakeRefetch: vi.fn(),
   ordersByMarket: {} as Record<string, Order[]>,
   responses: new Map<string, unknown>(),
 }));
@@ -60,6 +61,20 @@ const marketResponse = (marketId: string) => {
   }
   return mocks.responses.get(marketId);
 };
+
+// «Kun tartibi» (2026-11-10): qabul chegarasi — ochiq; `GET orders/intake-settings` tarmoqqa chiqmaydi.
+vi.mock("../../../entities/order-intake", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../entities/order-intake")>();
+  return {
+    ...actual,
+    useOrderIntake: () => ({
+      ...actual.UNSUPPORTED_INTAKE,
+      closed: false,
+      receiveClosed: false,
+      query: { refetch: mocks.intakeRefetch },
+    }),
+  };
+});
 
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
@@ -315,6 +330,25 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
     expect(target().list).toEqual([]);
     expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("qabul vaqti shu orada tugagan (409 `ORDER_RECEIVE_CLOSED`, «Kun tartibi»): backend matni, hisob o'zgarmaydi, holat qayta o'qiladi", async () => {
+    const message = "Bugungi qabul vaqti tugadi (16:00). Qabul 00:00 da ochiladi.";
+    mocks.receiveMutateAsync.mockRejectedValueOnce(
+      Object.assign(new Error("Conflict"), {
+        response: { status: 409, data: { statusCode: 409, code: "ORDER_RECEIVE_CLOSED", message } },
+      }),
+    );
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+
+    await waitFor(() => expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", message));
+    expect(mocks.intakeRefetch).toHaveBeenCalledTimes(1);
+    expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
   });
 
   it("ommaviy «Qabul qilish» dan keyin (ro'yxat yangilangan) shu buyurtma skanerlansa — takror, «Topilmadi» emas", async () => {

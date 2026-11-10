@@ -655,7 +655,10 @@
     "duplicateTitle": "Duplicate phone numbers found",
     "duplicateBody_one": "{{value}} phone number repeats in several new orders. Check before receiving.",
     "duplicateBody_other": "{{value}} phone numbers repeat in several new orders. Check before receiving.",
-    "duplicatePhoneBadge": "Duplicate number"
+    "duplicatePhoneBadge": "Duplicate number",
+    "receiveClosedTitle": "Today's intake time is over ({{time}})",
+    "receiveClosedReopens": "Receiving new orders reopens at {{time}}, when the day changes.",
+    "receiveClosedBody": "Receiving new orders reopens when the day changes."
   },
   "orderQr": {
     "title": "QR code",
@@ -675,40 +678,11 @@
     "unlimited": "Today's intake: no limit",
     "closed": "Today's intake is closed",
     "change": "Change today's intake time",
-    "dialog": {
-      "title": "Today's intake time",
-      "description": "After this time and until the day changes, no new orders can be created — for every role: manually, with AI and through integrations.",
-      "field": "Intake closes at",
-      "hint": "For today only, reset when the day changes. 24-hour format, Tashkent time.",
-      "invalid": "Enter the time as 00:00–23:59",
-      "passed": "This time has already passed — saving closes the intake right away.",
-      "save": "Save",
-      "remove": "Remove the limit",
-      "cancel": "Cancel",
-      "saved": "Today's intake until {{time}}",
-      "removed": "Today's intake limit removed",
-      "error": "Could not save. Try again a bit later."
-    },
     "create": {
       "closedTitle": "Today's intake is closed",
       "closedBody": "The intake closed at {{time}}. A new order can be created after the day changes ({{reopens}}).",
       "closedBodyNoTime": "A new order can be created after the day changes.",
       "untilBody": "Today's intake is open until {{time}} — after that and until the day changes, no new orders can be created."
-    },
-    "dayChange": {
-      "row": "Day change: {{time}} (Tashkent)",
-      "change": "Change",
-      "changeLabel": "Change the day change time",
-      "title": "Day change time",
-      "description": "When the working day changes for order intake — Tashkent time.",
-      "field": "Day change time",
-      "hint": "The working day runs from this time until the same time the next day. It affects order intake only; reports stay on 00:00.",
-      "cutoffWarning": "If you change the time, today's intake time may not carry over to the new day.",
-      "back": "Back",
-      "save": "Save",
-      "saved": "Day change: {{time}} (Tashkent)",
-      "forbidden": "Only a superadmin can change this",
-      "error": "Could not save. Try again a bit later."
     }
   }
 }

@@ -1,7 +1,8 @@
 // dizayn-v2: superadmin-payments-shift-settings, superadmin-payments-shift-settings-receipts, superadmin-payments-shift-settings-correction
 import { useMemo, useState } from "react";
-import { CreditCard, Save } from "lucide-react";
+import { CreditCard, Save, Timer } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   getReceiptErrorCode,
   useShiftCheckSettings,
@@ -13,14 +14,23 @@ import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { Button, Card, DataTable, PageHeader, QueryBoundary, type DataTableColumn } from "../../../shared/ui/primitives";
+import {
+  Button,
+  buttonClasses,
+  Card,
+  DataTable,
+  PageHeader,
+  QueryBoundary,
+  type DataTableColumn,
+} from "../../../shared/ui/primitives";
+import { DAILY_SCHEDULE_TAB, opsTabPath } from "../../ops/tabs";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
-import { AutoCloseCard, ReportSendCard } from "./AutomationCards";
+import { CardTitle, ReportSendCard } from "./AutomationCards";
 import { CellSwitch } from "./CellSwitch";
 import { PaymentCorrectionCard } from "./PaymentCorrectionCard";
 import { usePaymentCorrectionDraft, type PaymentCorrectionDraft } from "./paymentCorrectionDraft";
 import { ReceiptSettingsCard, useReceiptSettingsDraft, type ReceiptSettingsDraft } from "./ReceiptSettingsCard";
-import { autoCloseDraftError, diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
+import { diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
 import { SwitchRow } from "../../settings/ui/settingsUi";
 
 /**
@@ -28,14 +38,31 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
  * kiZgTybn). «Kartalar qoldig'ini tasdiqlash» kartasi: global kalitlar (`account_check_enabled`, `photo_required`,
  * `ai_check_enabled`) va «Har karta bo'yicha» jadvali (`require_photo_on_shift_close`, `ai_check_enabled`; AI faqat
  * rasm talab qilingan kartada — backend 400 qoidasi, rasm o'chsa AI ham o'chadi). «Saqlash» →
- * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Pastda «Avtomatik yopish» (y8Tqm9Ap) va «Smena
- * hisobotini yuborish» (gWI4gYkw) kartalari — `AutomationCards.tsx`; backend javobida `auto_close` / `report`
- * bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi. «Chek rasmi va AI tahlili» (QlLf33Ma) —
+ * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Pastda «Smena hisobotini yuborish» (gWI4gYkw) —
+ * `AutomationCards.tsx`; backend javobida `report` bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi. «Avtomatik
+ * yopish» (y8Tqm9Ap) Ops → «Kun tartibi»ga ko'chdi (ega 2026-11-10) — uning o'rnida havola kartasi (avtomatik ochish va
+ * kechikish xabari ham o'sha yerda). «Chek rasmi va AI tahlili» (QlLf33Ma) —
  * `ReceiptSettingsCard`, alohida `PATCH finance/receipt-settings`, lekin «Saqlash» bitta: faqat o'zgargan so'rov ketadi.
  * Eng pastda «To'lovlarni tuzatish muddati» (T6-FE-3, 2wgTzcG0) — `PaymentCorrectionCard`, o'z so'rovi
- * (`GET/PATCH finance/payment-corrections/settings`), shuning uchun `auto_close` / `report` bo'lmasa ham chiziladi;
+ * (`GET/PATCH finance/payment-corrections/settings`), shuning uchun `report` bo'lmasa ham chiziladi;
  * o'sha «Saqlash» bilan ketadi, «Kunlar soni» yaroqsiz bo'lsa «Saqlash» o'chiq.
  */
+
+/** «Avtomatik yopish» o'rnida (ega 2026-11-10): smena jadvali Ops → «Kun tartibi»da — havola. */
+const ScheduleLinkCard = () => {
+  const { t } = useTranslation("payments");
+  return (
+    <Card
+      className="min-w-0 flex-[1_1_400px]"
+      title={<CardTitle icon={Timer} title={t("shiftCheck.settings.schedule.title")} />}
+      description={t("shiftCheck.settings.schedule.description")}
+    >
+      <Link to={opsTabPath(DAILY_SCHEDULE_TAB)} className={buttonClasses({ variant: "secondary" })}>
+        {t("shiftCheck.settings.schedule.open")}
+      </Link>
+    </Card>
+  );
+};
 
 const SettingsForm = ({
   settings,
@@ -55,10 +82,8 @@ const SettingsForm = ({
   const shiftDirty = Object.keys(body).length > 0;
   const dirty = shiftDirty || receipts.dirty || correction.dirty;
   const saving = update.isPending || receipts.isSaving || correction.isSaving;
-  // Avtomatik yopish yoqilgan, lekin vaqt yo'q — backend 1–12 ta kutadi; xato kartada, «Saqlash» o'chiq.
-  const autoCloseInvalid = autoCloseDraftError(draft) !== null;
   // «Kunlar soni» 1–365 butun son emas — xato maydon ostida, «Saqlash» o'chiq.
-  const invalid = autoCloseInvalid || correction.invalid;
+  const invalid = correction.invalid;
 
   const setCard = (cardId: string, patch: Partial<Draft["cards"][string]>) =>
     setDraft((current) => {
@@ -238,20 +263,12 @@ const SettingsForm = ({
         )}
       </Card>
       <ReceiptSettingsCard receipts={receipts} />
-      {draft.auto_close || draft.report ? (
-        <div className="flex flex-wrap items-start gap-4">
-          {draft.auto_close ? (
-            <AutoCloseCard
-              value={draft.auto_close}
-              timesError={autoCloseInvalid}
-              onChange={(auto_close) => setDraft((current) => ({ ...current, auto_close }))}
-            />
-          ) : null}
-          {draft.report ? (
-            <ReportSendCard value={draft.report} onChange={(report) => setDraft((current) => ({ ...current, report }))} />
-          ) : null}
-        </div>
-      ) : null}
+      <div className="flex flex-wrap items-start gap-4">
+        <ScheduleLinkCard />
+        {draft.report ? (
+          <ReportSendCard value={draft.report} onChange={(report) => setDraft((current) => ({ ...current, report }))} />
+        ) : null}
+      </div>
       <PaymentCorrectionCard correction={correction} />
     </>
   );

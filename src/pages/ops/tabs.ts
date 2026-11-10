@@ -25,6 +25,13 @@ export const EXPENSE_CATEGORIES_TAB = "expense-categories";
 /** «Yetkazish narxi» tabi kaliti — `/ops?tab=delivery-pricing` (tariflar, hisob qoidalari, hajm chegarasi). */
 export const DELIVERY_PRICING_TAB = "delivery-pricing";
 
+/**
+ * «Kun tartibi» tabi kaliti — `/ops?tab=daily-schedule`: buyurtma yaratish va qabul qilish chegaralari, kun almashishi,
+ * smenaning avtomatik ochilishi / yopilishi va kechikish xabari («Qabul va yaratish» sarlavhasidagi holat va smena
+ * sozlamalaridagi havola ham shu tabga olib keladi).
+ */
+export const DAILY_SCHEDULE_TAB = "daily-schedule";
+
 export const OPS_TABS: OpsTabMeta[] = [
   {
     key: "finance",
@@ -58,6 +65,16 @@ export const OPS_TABS: OpsTabMeta[] = [
     key: DELIVERY_PRICING_TAB,
     labelKey: "tabs.deliveryPricing",
     pageDir: "delivery-tariffs",
+  },
+  {
+    /**
+     * Kun tartibi (ega 2026-11-10): ilgari «Qabul va yaratish» sarlavhasidagi «Bugungi qabul vaqti» oynasi (yaratish
+     * chegarasi, kun almashishi) va «Smena sozlamalari»dagi «Avtomatik yopish» — endi bitta joyda, qabul qilish
+     * chegarasi, avtomatik ochish va kechikish xabari bilan. Hub ichida tug'ilgan — eski yo'li yo'q.
+     */
+    key: DAILY_SCHEDULE_TAB,
+    labelKey: "tabs.dailySchedule",
+    pageDir: "daily-schedule",
   },
   {
     key: "identity",

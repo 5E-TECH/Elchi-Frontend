@@ -2,14 +2,15 @@ import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
 import { notify } from "../../shared/lib/notify";
-import { FINANCE_EVENTS, handleFinanceEvent, readClosedAt, refreshShiftQueries } from "./realtimeFinance";
+import { FINANCE_EVENTS, handleFinanceEvent, readClosedAt, readOpenedAt, refreshShiftQueries } from "./realtimeFinance";
 
 /** rWdLuoP3 — smena jonli hodisalari: nomlar, yopilish vaqti va yangilanadigan so'rovlar. */
 describe("realtimeFinance", () => {
-  it("tinglanadigan hodisalar — kartadagi uchta smena nomi, kassa kartasi (backend 2026-10-25), chek va to'lov tuzatish", () => {
+  it("tinglanadigan hodisalar — smena nomlari (avtomatik ochilish ham, «Kun tartibi»), kassa kartasi, chek va to'lov tuzatish", () => {
     expect(FINANCE_EVENTS).toEqual([
       "finance.shift.closed",
       "finance.shift.auto_closed",
+      "finance.shift.auto_opened",
       "finance.shift.account_checked",
       "finance.cashbox.card_changed",
       "finance.receipt.checked",
@@ -57,6 +58,32 @@ describe("realtimeFinance", () => {
     expect(readClosedAt({ closed_at: "buzuq" }).toISOString()).toBe("2026-10-23T15:00:00.000Z");
     expect(readClosedAt(null).toISOString()).toBe("2026-10-23T15:00:00.000Z");
     vi.useRealTimers();
+  });
+
+  it("ochilish vaqti: `opened_at` / `openedAt`; yo'q yoki buzuq bo'lsa — hozir", () => {
+    expect(readOpenedAt({ opened_at: "2026-11-11T03:00:00.000Z" }).toISOString()).toBe("2026-11-11T03:00:00.000Z");
+    expect(readOpenedAt({ openedAt: "2026-11-11T03:15:00.000Z" }).toISOString()).toBe("2026-11-11T03:15:00.000Z");
+    vi.useFakeTimers({ now: new Date("2026-11-11T04:00:00.000Z") });
+    expect(readOpenedAt({ opened_at: "buzuq" }).toISOString()).toBe("2026-11-11T04:00:00.000Z");
+    vi.useRealTimers();
+  });
+
+  it("«Kun tartibi»: smena avtomatik ochildi — smena va kassa yangilanadi, kassirga «Smena avtomatik ochildi — 08:00»", async () => {
+    await i18n.changeLanguage("uz");
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const info = vi.spyOn(notify, "info");
+    handleFinanceEvent(client, i18n.getFixedT("uz", "notifications"), "finance.shift.auto_opened", {
+      shift_id: "41",
+      cashbox_type: "main",
+      opened_at: "2026-11-11T03:00:00.000Z",
+    });
+    await vi.waitFor(() => expect(info).toHaveBeenCalledTimes(1));
+    expect(info.mock.calls[0][0]).toBe("Smena avtomatik ochildi — 08:00");
+    const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
+    expect(keys).toContain(JSON.stringify(["shift"]));
+    expect(keys).toContain(JSON.stringify(["cashbox"]));
+    info.mockRestore();
   });
 
   it("smena holati (`shift`) va kassa so'rovlari yangilanadi", async () => {

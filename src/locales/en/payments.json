@@ -1184,6 +1184,11 @@
         "off": "Confirmation off — the shift closes as before"
       },
       "empty": "This cashbox has no active cards",
+      "schedule": {
+        "title": "Shift schedule",
+        "description": "Automatic shift opening and closing times and the late alert to superadmins are now in Ops → «Daily schedule».",
+        "open": "Open the daily schedule"
+      },
       "auto": {
         "title": "Automatic closing",
         "subtitle": "If the cashier does not close in time",
@@ -1206,7 +1211,7 @@
         "warnHint": "The cashier gets a reminder in Telegram and in the app",
         "warnBefore": "Minutes before",
         "warnMinutes": "{{value}} min",
-        "note": "When closed automatically, cash and cards are not counted — the closing balance is taken from the system and no difference is calculated. The cashier opens the next shift."
+        "note": "When closed automatically, cash and cards are not counted — the closing balance is taken from the system and no difference is calculated. The next shift is opened by the cashier, or by the system if «Automatic opening» is on."
       },
       "report": {
         "title": "Sending the shift report",

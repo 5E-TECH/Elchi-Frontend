@@ -1,11 +1,12 @@
 // dizayn-v2: superadmin-neworders-market-orders, superadmin-neworders-receive-confirm-dialog, admin-neworders-market-detail, admin-neworders-market-confirm-dialog, manager-new-orders-market-detail, manager-new-orders-receive-confirm-dialog, manager-new-orders-delete-confirm-dialog, registrator-new-orders-market-detail, registrator-new-orders-market-detail-receive-dialog, registrator-new-orders-market-detail-delete-dialog, market-new-orders-list, market-new-orders-delete-dialog
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Check, Info, ScanLine, SearchX } from "lucide-react";
+import { AlertTriangle, Check, Clock, Info, ScanLine, SearchX } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { branchTypeOf, canViewBatchesPage } from "../../../app/lib/access";
+import { isOrderReceiveClosedError, useOrderIntake } from "../../../entities/order-intake";
 import { useOrders } from "../../../entities/orders";
 import {
   countReceiptsWithoutQr,
@@ -15,6 +16,7 @@ import {
 } from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { readQrScopeText } from "../../../shared/lib/coverageReasons";
+import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
@@ -104,6 +106,13 @@ const NewOrderDetail = () => {
   // fix3 CODE-17: REGIONAL xodimida qabul tugmasi va skaner-qabul yo'q
   // (backend transfer batch'ni doim 403 qiladi) — o'rniga /dispatch maslahati.
   const canReceive = !isMarketRole && receiveMode !== "none";
+  // «Kun tartibi» (Ops, 2026-11-10): qabul chegarasi o'tgan — kun almashguncha «Qabul qilish» va skaner-qabul yopiq
+  // (backend ham `409 ORDER_RECEIVE_CLOSED` beradi — xato matni o'zbekcha). Eski backendda hech qachon yopiq emas.
+  const intake = useOrderIntake({ enabled: canReceive });
+  const receiveClosed = canReceive && intake.receiveClosed;
+  // Qabul shu orada yopildi (409 `ORDER_RECEIVE_CLOSED` — vaqt o'tdi yoki superadmin o'zgartirdi): holat qayta
+  // o'qiladi — ogohlantirish chiqadi, «Qabul qilish» va skaner o'chadi (soat kutilmaydi).
+  const refetchIntake = intake.query.refetch;
   const isPhone = useIsPhone();
   const showReceiveViaDispatchHint = !isMarketRole && receiveMode === "none";
   const canOpenBatches = useSelector(canViewBatchesPage);
@@ -256,6 +265,7 @@ const NewOrderDetail = () => {
               return;
             }
 
+            if (isOrderReceiveClosedError(err)) void refetchIntake();
             void playScanFeedback("error", msg);
             scanNotify.error(t("receiveError"), { description: msg });
           },
@@ -264,7 +274,7 @@ const NewOrderDetail = () => {
           pendingScanOrderIdsRef.current.delete(orderId);
         });
     },
-    [logReceived, receiveMutation, receivedOrderIds, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+    [logReceived, receiveMutation, receivedOrderIds, refetchIntake, rememberReceivedScan, showAlreadyReceivedFeedback, t],
   );
 
   /**
@@ -355,7 +365,7 @@ const NewOrderDetail = () => {
     ],
   );
 
-  const scannerEnabled = canReceive && rawOrders.length > 0;
+  const scannerEnabled = canReceive && !receiveClosed && rawOrders.length > 0;
   const remainingCount = orders.length;
   const receivedCount = receivedLog.length;
   const cameraMarketName = marketName ?? t("marketOrders.titleFallback");
@@ -382,7 +392,7 @@ const NewOrderDetail = () => {
   const isTransfer = receiveMode === "transfer";
   useOrderQrScanner({
     orders: rawOrders,
-    enabled: canReceive,
+    enabled: canReceive && !receiveClosed,
     onMatch: receiveScannedOrder,
     onMissing: (rawValue: string) => {
       void handleMissingScannedOrder(rawValue);
@@ -520,12 +530,24 @@ const NewOrderDetail = () => {
         },
         onError: (err: unknown) => {
           setIsReceiveConfirmOpen(false);
+          if (isOrderReceiveClosedError(err)) void refetchIntake();
           const msg = getBackendErrorMessage(err) ?? t("receiveError");
           notify.error(t("receiveError"), { description: msg });
         },
       },
     );
-  }, [location.key, logReceived, navigate, orders.length, receiveMutation, refetch, rememberReceivedScan, selectedOrders, t]);
+  }, [
+    location.key,
+    logReceived,
+    navigate,
+    orders.length,
+    receiveMutation,
+    refetch,
+    refetchIntake,
+    rememberReceivedScan,
+    selectedOrders,
+    t,
+  ]);
 
   // Chek (HJ5sLHiz, `features/print-receipts`): «Brauzer orqali» va «PDF» — termal 100×60, «A4 varaq» — 12 tadan.
   const receiptPrint = useReceiptPrint();
@@ -721,7 +743,7 @@ const NewOrderDetail = () => {
       compact={isPhone}
       leftIcon={Check}
       aria-haspopup="dialog"
-      disabled={selectedOrders.length === 0}
+      disabled={selectedOrders.length === 0 || receiveClosed}
       loading={receiveMutation.isPending}
       loadingText={t("receiving")}
       onClick={() => setIsReceiveConfirmOpen(true)}
@@ -758,6 +780,21 @@ const NewOrderDetail = () => {
       {showReceiveViaDispatchHint ? (
         <DetailAlert tone="info" icon={Info} role="note">
           {t("receiveViaDispatchHint")}
+        </DetailAlert>
+      ) : null}
+
+      {receiveClosed ? (
+        <DetailAlert
+          tone="warning"
+          icon={Clock}
+          role="status"
+          titleBlock
+          title={t("marketOrders.receiveClosedTitle", { time: intake.receiveCutoffTime ?? "" })}
+          data-testid="market-orders-receive-closed"
+        >
+          {intake.receiveReopensAt
+            ? t("marketOrders.receiveClosedReopens", { time: formatTimeLocalized(intake.receiveReopensAt) })
+            : t("marketOrders.receiveClosedBody")}
         </DetailAlert>
       ) : null}
 

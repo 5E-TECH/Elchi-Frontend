@@ -1184,6 +1184,11 @@
         "off": "Tasdiqlash o'chiq — smena avvalgidek yopiladi"
       },
       "empty": "Bu kassada faol karta yo'q",
+      "schedule": {
+        "title": "Smena jadvali",
+        "description": "Smenani avtomatik ochish va yopish vaqtlari, vaqtida ochilmasa yoki yopilmasa superadminlarga xabar — endi Ops → «Kun tartibi»da.",
+        "open": "Kun tartibini ochish"
+      },
       "auto": {
         "title": "Avtomatik yopish",
         "subtitle": "Kassir o'z vaqtida yopmasa",
@@ -1206,7 +1211,7 @@
         "warnHint": "Kassirga Telegram va tizim orqali eslatma keladi",
         "warnBefore": "Necha daqiqa oldin",
         "warnMinutes": "{{value}} daqiqa",
-        "note": "Avtomatik yopilganda naqd va kartalar sanalmaydi — yopilish qoldig'i tizim bo'yicha olinadi, farq hisoblanmaydi. Keyingi smenani kassir o'zi ochadi."
+        "note": "Avtomatik yopilganda naqd va kartalar sanalmaydi — yopilish qoldig'i tizim bo'yicha olinadi, farq hisoblanmaydi. Keyingi smenani kassir ochadi yoki «Avtomatik ochish» yoqilgan bo'lsa — tizim."
       },
       "report": {
         "title": "Smena hisobotini yuborish",

@@ -7,8 +7,9 @@ import {
 } from "./support/orderIntake";
 
 /**
- * Bugungi qabul vaqti (2026-11-08), 1440px: «Qabul va yaratish» sarlavhasida admin vaqtni qo'yadi (oyna, PATCH);
- * qabul yopiq bo'lsa yaratish sahifasida ogohlantirish. Maket yo'q — eng yaqini `superadmin-neworders-markets`.
+ * Bugungi qabul vaqti (2026-11-08), 1440px: «Qabul va yaratish» sarlavhasida superadmin uchun havola — vaqtni qo'yish Ops →
+ * «Kun tartibi»da (2026-11-10, `daily-schedule.*.spec.ts`); qabul yopiq bo'lsa yaratish sahifasida ogohlantirish. Maket
+ * yo'q — eng yaqini `superadmin-neworders-markets`.
  */
 const shot = async (page: import("@playwright/test").Page, name: string) => {
   if (process.env.E2E_SHOTS_DIR)
@@ -19,7 +20,7 @@ test.describe("Bugungi qabul vaqti — 1440px", () => {
   test.describe.configure({ timeout: 90_000 });
 
   for (const theme of ["light", "dark"] as const) {
-    test(`⭐ ${theme}: superadmin «cheklovsiz» → oyna → 10:00 → Saqlash; tugma «Buyurtma yaratish» chapida`, async ({
+    test(`⭐ ${theme}: superadmin «cheklovsiz» havolasi «Buyurtma yaratish» chapida → Ops «Kun tartibi» (oyna yo'q)`, async ({
       page,
     }) => {
       const { leaked, patches } = await mockOrderIntakeApi(page, {
@@ -31,6 +32,7 @@ test.describe("Bugungi qabul vaqti — 1440px", () => {
 
       const control = page.getByTestId("order-intake-control");
       await expect(control).toHaveText("Bugungi qabul: cheklovsiz");
+      await expect(control).toHaveAttribute("href", "/ops?tab=daily-schedule");
       const create = page.getByRole("link", { name: "Buyurtma yaratish" });
       const [controlBox, createBox] = [
         (await control.boundingBox())!,
@@ -41,20 +43,10 @@ test.describe("Bugungi qabul vaqti — 1440px", () => {
       await shot(page, `order-intake-header-1440-${theme}`);
 
       await control.click();
-      const dialog = page.getByRole("dialog", { name: "Bugungi qabul vaqti" });
-      await dialog.getByRole("textbox", { name: /Qabul tugaydigan vaqt/ }).fill("1000");
-      await expect(dialog.getByRole("textbox", { name: /Qabul tugaydigan vaqt/ })).toHaveValue(
-        "10:00",
-      );
-      await dialog.evaluate((node) =>
-        Promise.allSettled(node.ownerDocument.getAnimations().map((a) => a.finished)),
-      );
-      await shot(page, `order-intake-dialog-1440-${theme}`);
-      await dialog.getByRole("button", { name: "Saqlash" }).click();
-
-      await expect(dialog).toHaveCount(0);
-      await expect(control).toHaveText("Bugungi qabul: 10:00 gacha");
-      expect(patches).toEqual([{ cutoff_time: "10:00" }]);
+      await expect(page).toHaveURL(/\/ops\?tab=daily-schedule$/);
+      await expect(page.getByRole("tab", { name: "Kun tartibi" })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      expect(patches).toEqual([]);
       expect(leaked).toEqual([]);
     });
   }

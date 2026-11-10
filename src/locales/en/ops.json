@@ -14,6 +14,7 @@
     "expenseCategories": "Expense categories",
     "investors": "Investors",
     "deliveryPricing": "Delivery pricing",
+    "dailySchedule": "Daily schedule",
     "identity": "Staff",
     "system": "System status",
     "auth": "Sign-in diagnostics"
@@ -155,6 +156,68 @@
     "intro": {
       "title": "Delivery pricing — tariffs and calculation rules",
       "description": "Tariffs, calculation rules (including the volumetric pricing threshold), price calculator and change history. The same section: Regions → Delivery tariffs (admins see it too)."
+    }
+  },
+  "dailySchedule": {
+    "intro": {
+      "title": "Daily schedule",
+      "description": "Order creation and intake limits, the day change and the cashbox shift schedule — in one place. All times are Tashkent time (UTC+5)."
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Daily schedule saved",
+    "saveError": "Daily schedule was not saved",
+    "invalidTime": "Enter the time as 00:00–23:59",
+    "timesConflict": "{{times}} is both an opening and a closing time. Change one of them",
+    "unavailable": {
+      "title": "Daily schedule is not available yet",
+      "description": "The server does not support these settings yet. Try again later."
+    },
+    "status": {
+      "unlimited": "Now: no limit",
+      "open": "Now: open",
+      "openUntil": "Now: open · closes at {{time}}",
+      "closed": "Now: closed",
+      "closedUntil": "Now: closed · reopens at {{time}}",
+      "nextDayChange": "Next day change: {{time}}"
+    },
+    "intake": {
+      "title": "Order intake",
+      "subtitle": "Limits that apply until the day changes",
+      "note": "An empty field means no limit. After the limit it stops until the day changes, then reopens by itself.",
+      "cutoff": "Order creation limit",
+      "cutoffHint": "Every day after this time no new orders are created — manually, with AI, through integrations or partners",
+      "cutoffHintToday": "For the current working day only — the limit is removed when the day changes",
+      "cutoffPasses": "This time has already passed today — saving closes creation right away",
+      "receive": "Created orders intake limit",
+      "receiveHint": "Every day after this time new orders from markets are not received",
+      "receivePasses": "This time has already passed today — saving closes intake right away",
+      "dayChange": "Day change time",
+      "dayChangeHint": "Affects order intake only: reports, mail and shifts use 00:00",
+      "unlimitedPlaceholder": "No limit"
+    },
+    "open": {
+      "title": "Automatic opening",
+      "subtitle": "If the cashier does not open in time",
+      "enabled": "Open the shift automatically",
+      "enabledHint": "If the cashbox has no open shift at the set time, the system opens one",
+      "times": "Opening times per day",
+      "timesHint": "{{value}} times a day · Tashkent time (UTC+5)",
+      "timesRequired": "Add at least one opening time",
+      "scope": "Which cashboxes",
+      "note": "If the cashbox already has an open shift, the system does nothing. A shift opened automatically is marked «Opened automatically» in the history."
+    },
+    "late": {
+      "title": "Late alert",
+      "subtitle": "If the shift is not opened or closed in time",
+      "enabled": "Notify superadmins",
+      "enabledHint": "If the shift is still not opened or closed after the opening or closing time — «Shift not opened / closed on time»",
+      "grace": "After how many minutes",
+      "graceHint": "How long to wait after the set time",
+      "graceMinutes": "{{value}} min",
+      "channels": "Where to send",
+      "channelsRequired": "Choose at least one channel",
+      "note": "An alert also comes, with the reason, if the system's automatic opening or closing fails."
     }
   },
   "investors": {

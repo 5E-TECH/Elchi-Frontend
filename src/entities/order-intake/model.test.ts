@@ -5,6 +5,8 @@ import {
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
   isOrderIntakeClosedError,
+  isOrderReceiveClosed,
+  isOrderReceiveClosedError,
   normalizeOrderIntake,
   UNSUPPORTED_INTAKE,
 } from "./model";
@@ -32,6 +34,11 @@ describe("normalizeOrderIntake", () => {
       dayChangeTime: "00:00",
       dayStartedAt: null,
       nextDayChangeAt: null,
+      receiveSupported: false,
+      receiveCutoffTime: null,
+      receiveIsOpen: null,
+      receiveClosesAt: null,
+      receiveReopensAt: null,
     });
     expect(
       normalizeOrderIntake({ cutoff_time: "25:00", is_open: "ha", closes_at: "kecha" }),
@@ -44,6 +51,11 @@ describe("normalizeOrderIntake", () => {
       dayChangeTime: "00:00",
       dayStartedAt: null,
       nextDayChangeAt: null,
+      receiveSupported: false,
+      receiveCutoffTime: null,
+      receiveIsOpen: null,
+      receiveClosesAt: null,
+      receiveReopensAt: null,
     });
   });
 
@@ -136,6 +148,54 @@ describe("isOrderIntakeClosed", () => {
     const closed = { ...state, isOpen: false, closesAt: null };
     expect(isOrderIntakeClosed(closed, at("2026-11-08T03:00:00Z"))).toBe(true);
     expect(isOrderIntakeClosed(closed, at("2026-11-08T19:00:01Z"))).toBe(false);
+  });
+});
+
+describe("«Kun tartibi» — qabul qilish chegarasi (2026-11-10)", () => {
+  const fresh = {
+    data: {
+      cutoff_time: "10:00",
+      is_open: true,
+      receive_cutoff_time: "16:00:00",
+      receive_is_open: true,
+      receive_closes_at: "2026-11-11T11:00:00.000Z",
+      receive_reopens_at: "2026-11-11T19:00:00.000Z",
+      day_change_time: "00:00",
+      day_started_at: "2026-11-10T19:00:00.000Z",
+    },
+  };
+
+  it("yangi backend: `receive_*` o'qiladi, `receiveSupported` — kalit bor (qiymati null bo'lsa ham)", () => {
+    const state = normalizeOrderIntake(fresh);
+    expect(state.receiveSupported).toBe(true);
+    expect(state.receiveCutoffTime).toBe("16:00");
+    expect(state.receiveIsOpen).toBe(true);
+    expect(state.receiveClosesAt).toBe("2026-11-11T11:00:00.000Z");
+    expect(state.receiveReopensAt).toBe("2026-11-11T19:00:00.000Z");
+    expect(normalizeOrderIntake({ data: { receive_cutoff_time: null } }).receiveSupported).toBe(true);
+    // Eski backend — kalit yo'q.
+    expect(normalizeOrderIntake({ data: { cutoff_time: "10:00" } }).receiveSupported).toBe(false);
+  });
+
+  it("16:00 (11:00Z) gacha ochiq, keyin kun almashguncha yopiq, so'ng ochiq; eski backend — hech qachon yopiq emas", () => {
+    const state = normalizeOrderIntake(fresh);
+    expect(isOrderReceiveClosed(state, at("2026-11-11T10:59:00.000Z"))).toBe(false);
+    expect(isOrderReceiveClosed(state, at("2026-11-11T11:00:00.000Z"))).toBe(true);
+    expect(isOrderReceiveClosed(state, at("2026-11-11T19:00:00.000Z"))).toBe(false);
+    expect(isOrderReceiveClosed({ ...state, receiveIsOpen: false }, at("2026-11-11T08:00:00.000Z"))).toBe(true);
+    expect(isOrderReceiveClosed({ ...state, receiveSupported: false, receiveIsOpen: false })).toBe(false);
+    expect(isOrderReceiveClosed(UNSUPPORTED_INTAKE)).toBe(false);
+    // Yaratish va qabul — alohida oynalar.
+    expect(isOrderIntakeClosed(state, at("2026-11-11T11:00:00.000Z"))).toBe(false);
+  });
+
+  it("`409 ORDER_RECEIVE_CLOSED` — `code` javob ildizida yoki `data` ichida; yaratish xatosi bilan aralashmaydi", () => {
+    expect(isOrderReceiveClosedError({ response: { status: 409, data: { code: "ORDER_RECEIVE_CLOSED" } } })).toBe(true);
+    expect(
+      isOrderReceiveClosedError({ response: { status: 409, data: { data: { code: "ORDER_RECEIVE_CLOSED" } } } }),
+    ).toBe(true);
+    expect(isOrderReceiveClosedError({ response: { status: 409, data: { code: "ORDER_INTAKE_CLOSED" } } })).toBe(false);
+    expect(isOrderIntakeClosedError({ response: { status: 409, data: { code: "ORDER_RECEIVE_CLOSED" } } })).toBe(false);
   });
 });
 
