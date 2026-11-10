@@ -86,6 +86,13 @@ export type SourceListCardProps<R extends SourceListRow> = {
   empty: ReactNode;
   /** Qidiruv natija bermaganda («Qidiruvni tozalash» tugmasi bilan). */
   noMatch: { title: string; description: string; clear: string };
+  /** Qobiq tablari ostida (qidiruvdan oldin) — masalan «Bekor qilinganlar» ichki tablari. */
+  subheader?: ReactNode;
+  /**
+   * Berilsa — qidiruv qatori va ro'yxat o'rniga shu (kartaning o'zi, qobiq tablari va `subheader` joyida qoladi:
+   * ichki tab almashganda karta qayta yaratilmaydi, fokus va ro'yxat qidiruvi saqlanadi).
+   */
+  body?: ReactNode;
 };
 
 /** Maketdagidek: soni ko'p qator tepada (`aria-sort="descending"`). */
@@ -117,6 +124,8 @@ export const SourceListCard = <R extends SourceListRow>({
   summary,
   empty,
   noMatch,
+  subheader,
+  body,
 }: SourceListCardProps<R>) => {
   const { i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -230,53 +239,58 @@ export const SourceListCard = <R extends SourceListRow>({
   return (
     <Card padding="none" aria-label={ariaLabel}>
       <NewOrdersTabs />
+      {subheader}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
-        <TextInput
-          mode="search"
-          value={search}
-          onValueChange={setSearch}
-          placeholder={searchPlaceholder}
-          aria-label={searchLabel}
-          className="min-w-0 max-w-[480px] flex-[1_1_320px]"
-        />
-        {summaryNode}
-      </div>
+      {body ?? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
+            <TextInput
+              mode="search"
+              value={search}
+              onValueChange={setSearch}
+              placeholder={searchPlaceholder}
+              aria-label={searchLabel}
+              className="min-w-0 max-w-[480px] flex-[1_1_320px]"
+            />
+            {summaryNode}
+          </div>
 
-      <QueryBoundary
-        query={{
-          data: isLoading || (isError && allRows.length === 0) ? undefined : rows,
-          isLoading,
-          isError,
-          error: query.error,
-          refetch: query.refetch,
-        }}
-        keepPreviousData={false}
-        loadingLabel={loadingLabel}
-        loading={
-          <SkeletonTable
-            framed={false}
-            columns={[labels.name, labels.phone, labels.count, labels.amount]}
-            rows={6}
-          />
-        }
-        empty={emptyNode}
-      >
-        {(list, { isRefetching }) => (
-          <DataTable
-            rows={list}
-            columns={columns}
-            getRowKey={(row) => row.id}
-            label={listLabel}
-            sort={sort}
-            onSortChange={setSort}
-            onRowClick={(row) => navigate(hrefOf(row))}
-            renderCard={renderCard}
-            busy={isRefetching}
-            className="max-md:border-t max-md:border-border"
-          />
-        )}
-      </QueryBoundary>
+          <QueryBoundary
+            query={{
+              data: isLoading || (isError && allRows.length === 0) ? undefined : rows,
+              isLoading,
+              isError,
+              error: query.error,
+              refetch: query.refetch,
+            }}
+            keepPreviousData={false}
+            loadingLabel={loadingLabel}
+            loading={
+              <SkeletonTable
+                framed={false}
+                columns={[labels.name, labels.phone, labels.count, labels.amount]}
+                rows={6}
+              />
+            }
+            empty={emptyNode}
+          >
+            {(list, { isRefetching }) => (
+              <DataTable
+                rows={list}
+                columns={columns}
+                getRowKey={(row) => row.id}
+                label={listLabel}
+                sort={sort}
+                onSortChange={setSort}
+                onRowClick={(row) => navigate(hrefOf(row))}
+                renderCard={renderCard}
+                busy={isRefetching}
+                className="max-md:border-t max-md:border-border"
+              />
+            )}
+          </QueryBoundary>
+        </>
+      )}
     </Card>
   );
 };

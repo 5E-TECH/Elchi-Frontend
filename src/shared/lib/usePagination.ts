@@ -11,7 +11,8 @@ export type PaginationScope =
   | "batches"
   | "returns"
   | "replacementReturns"
-  | "extraCosts";
+  | "extraCosts"
+  | "cancelledHandovers";
 
 interface UsePaginationOptions {
   key: PaginationScope;

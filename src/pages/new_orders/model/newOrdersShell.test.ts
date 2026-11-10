@@ -53,6 +53,10 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
     for (const role of STAFF) expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", role)).toBe("bare");
     expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", "market")).toBe("hosted");
     expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", null)).toBe("bare");
+    // «Topshirilgan» kartasi — har rolda o'z sarlavhasi (tablar ostida emas).
+    for (const role of [...STAFF, "market", null]) {
+      expect(resolveNewOrdersShellMode("/new-orders/cancelled/handovers/121_1_5", role)).toBe("bare");
+    }
   });
 
   it("/new-orders/userDetail/5 — bare (v2 tafsilot: o'z sarlavhasi, qobiq h1 va tugmasi takrorlanmaydi)", () => {

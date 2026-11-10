@@ -52,8 +52,10 @@ export const resolveNewOrdersShellMode = (
       return second === undefined ? "hosted" : "bare";
     case "cancelled":
       // `/cancelled` — marketlar (tablar ostida). `/cancelled/:marketId` — market rolida o'z «Bekor qilinganlar»
-      // tabi (tablar ostida), xodimda — marketga topshirish sahifasi (o'z sarlavhasi).
+      // tabi (tablar ostida), xodimda — marketga topshirish sahifasi (o'z sarlavhasi). `/cancelled/handovers/:id` —
+      // «Topshirilgan» kartasi (faqat xodim, o'z sarlavhasi).
       if (second === undefined) return "hosted";
+      if (second === "handovers") return "bare";
       return role === "market" ? "hosted" : "bare";
     case "userDetail":
       // Foydalanuvchi tafsiloti (v2) — o'z `PageHeader`i (h1 + «Tahrirlash»); qobiq sarlavhasi takrorlanmasin.

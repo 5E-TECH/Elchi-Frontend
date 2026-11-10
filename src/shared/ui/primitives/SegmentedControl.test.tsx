@@ -184,6 +184,23 @@ describe("SegmentedControl — o'lcham va en", () => {
     expect(md).toHaveClass("rounded-[10px]", "border-border", "bg-sunken");
   });
 
+  it("lg (bo'lim tablari): variant 52 px, 16 px matn, tanlangani action rangida; hover tanlanganni bo'yamaydi", () => {
+    render(<Controlled size="lg" fullWidth />);
+    const group = screen.getByRole("radiogroup");
+    expect(group).toHaveClass("rounded-[14px]", "p-1", "w-full");
+    expect(radio("Bugun")).toHaveClass(
+      "h-[52px]",
+      "text-base",
+      "rounded-[10px]",
+      "aria-checked:text-action-fg",
+      "aria-checked:font-bold",
+      "enabled:hover:not-aria-checked:text-text",
+      "flex-1",
+    );
+    expect(radio("Bugun")).not.toHaveClass("aria-checked:text-text");
+    expect(radio("Bugun")).not.toHaveClass("enabled:hover:text-text");
+  });
+
   it("tanlangan variant: surface fon, text-text, kichik soya", () => {
     render(<Controlled />);
     expect(radio("Bugun")).toHaveClass("aria-checked:bg-surface", "aria-checked:text-text", "aria-checked:shadow-xs");
