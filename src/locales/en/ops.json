@@ -100,7 +100,7 @@
   "expenseCategories": {
     "intro": {
       "title": "Cashbox expense categories",
-      "description": "The pick list in the «Cashbox expense» dialog — every expense is recorded with one of these categories. Renaming or deleting a category keeps the old name on expenses recorded earlier."
+      "description": "The pick list in the «Cashbox expense» dialog — every expense is recorded with one of these categories. Renaming or deleting a category keeps the old name on expenses recorded earlier. Categories marked «Default» cannot be edited or deleted — only the ones you add."
     },
     "list": {
       "title": "Categories",
@@ -110,6 +110,8 @@
       "editAria": "Edit the «{{name}}» category",
       "deleteAria": "Delete the «{{name}}» category",
       "noDescription": "No description",
+      "defaultBadge": "Default",
+      "defaultHint": "(cannot be edited or deleted)",
       "empty": "No categories",
       "emptyDescription": "Add a category — it appears in the list of the «Cashbox expense» dialog",
       "loadError": "Couldn't load the categories",

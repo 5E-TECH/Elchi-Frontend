@@ -19,7 +19,10 @@ const idOf = (value: unknown): string | null => {
 
 const textOf = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
-/** API qatori (`{ id, name, description, sort_order, is_deleted, … }`) → `ExpenseCategory`; ID siz / nomsiz — `null`. */
+/**
+ * API qatori (`{ id, name, description, sort_order, is_deleted, is_default, … }`) → `ExpenseCategory`; ID siz / nomsiz —
+ * `null`. `is_default` faqat aniq `true` bo'lsa standart (eski backendda maydon yo'q — tahrirlanadigan).
+ */
 export const normalizeExpenseCategory = (value: unknown): ExpenseCategory | null => {
   const item = asRecord(value);
   const id = idOf(item?.id);
@@ -32,6 +35,7 @@ export const normalizeExpenseCategory = (value: unknown): ExpenseCategory | null
     description: textOf(item.description) || null,
     sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     isDeleted: item.is_deleted === true,
+    isDefault: item.is_default === true,
   };
 };
 

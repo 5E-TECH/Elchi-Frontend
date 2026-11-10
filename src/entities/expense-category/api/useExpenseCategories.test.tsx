@@ -30,6 +30,7 @@ const category = (id: string, name: string, sortOrder: number): ExpenseCategory 
   description: null,
   sortOrder,
   isDeleted: false,
+  isDefault: false,
 });
 
 const setup = () => {

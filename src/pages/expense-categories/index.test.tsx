@@ -18,7 +18,14 @@ vi.mock("../../shared/api/api", () => ({ api: http }));
 const URL = "finance/cashbox/expense-categories";
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Bosh admin" } } as never;
 
-type Row = { id: string; name: string; description: string | null; sort_order: number; is_deleted: boolean };
+type Row = {
+  id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  is_deleted: boolean;
+  is_default?: boolean;
+};
 const row = (id: string, name: string, sortOrder: number, description: string | null = null): Row => ({
   id,
   name,
@@ -307,5 +314,66 @@ describe("Ops → Xarajat kategoriyalari — o'chirish", () => {
     expect(await within(confirm).findByText(/Kategoriya topilmadi/)).toBeInTheDocument();
     await waitFor(() => expect(http.get.mock.calls.length).toBeGreaterThan(getsBefore));
     expect(screen.queryByText("Kategoriya o'chirildi")).not.toBeInTheDocument();
+  });
+});
+
+describe("Ops → Xarajat kategoriyalari — standart kategoriyalar (ega 2026-11-11)", () => {
+  beforeEach(() => {
+    rows = [
+      { ...row("1", "Ovqatlanish", 1, "Xodimlarning ovqati, tushlik"), is_default: true },
+      { ...row("2", "Yoqilg'i", 2, "Benzin, gaz, dizel"), is_default: true },
+      { ...row("30", "Kofe", 18), is_default: false },
+    ];
+  });
+
+  it("⭐ standartda «Tahrirlash» / «O'chirish» yo'q — qulfli «Standart» belgisi; qo'shilganida ikkala amal bor", async () => {
+    open();
+    await listCard();
+    await loaded();
+    const [food, fuel, coffee] = items();
+    for (const [item, name] of [
+      [food, "Ovqatlanish"],
+      [fuel, "Yoqilg'i"],
+    ] as const) {
+      expect(within(item).queryAllByRole("button")).toEqual([]);
+      expect(within(item).queryByRole("button", { name: `«${name}» kategoriyasini tahrirlash` })).toBeNull();
+      expect(within(item).queryByRole("button", { name: `«${name}» kategoriyasini o'chirish` })).toBeNull();
+      expect(item).toHaveTextContent("Standart (tahrirlab ham, o'chirib ham bo'lmaydi)");
+      expect(item.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    }
+    expect(within(coffee).getByRole("button", { name: "«Kofe» kategoriyasini tahrirlash" })).toBeInTheDocument();
+    expect(within(coffee).getByRole("button", { name: "«Kofe» kategoriyasini o'chirish" })).toBeInTheDocument();
+    expect(coffee).not.toHaveTextContent("Standart");
+    // Kirish matni qoidani aytadi.
+    expect(screen.getByText(/«Standart» belgili kategoriyalarni tahrirlab ham, o'chirib ham bo'lmaydi/)).toBeInTheDocument();
+  });
+
+  it("qo'shilgan kategoriya avvalgidek tahrirlanadi va o'chiriladi (PATCH / DELETE faqat uning ID si bilan)", async () => {
+    const user = userEvent.setup();
+    patchServer();
+    http.delete.mockImplementation(async (url: string) => {
+      const id = url.split("/").pop();
+      const removed = rows.find((item) => item.id === id);
+      rows = rows.filter((item) => item.id !== id);
+      return { data: { statusCode: 200, data: { category: { ...removed, is_deleted: true } } } };
+    });
+    open();
+    await loaded();
+
+    await user.click(screen.getByRole("button", { name: "«Kofe» kategoriyasini tahrirlash" }));
+    const form = await screen.findByRole("dialog", { name: "Kategoriyani tahrirlash" });
+    const name = within(form).getByRole("textbox", { name: /Nomi/ });
+    await user.clear(name);
+    await user.type(name, "Kofe va choy");
+    await user.click(within(form).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledWith(`${URL}/30`, { name: "Kofe va choy" }));
+
+    await user.click(await screen.findByRole("button", { name: "«Kofe va choy» kategoriyasini o'chirish" }));
+    const confirmDialog = await screen.findByRole("alertdialog");
+    await user.click(within(confirmDialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() => expect(http.delete).toHaveBeenCalledWith(`${URL}/30`));
+    await loaded(2);
+    expect(http.patch).toHaveBeenCalledTimes(1);
+    expect(http.delete).toHaveBeenCalledTimes(1);
   });
 });

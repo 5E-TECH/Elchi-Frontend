@@ -9,6 +9,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *   superadminga;
  * - `POST` / `PATCH :id` / `DELETE :id` — faqat superadmin (aks holda 403); nom 1–100, takror (katta-kichik harfsiz)
  *   — 409 «"<nom>" nomli kategoriya allaqachon bor», topilmadi — 404, bo'sh PATCH — 400; o'chirish yumshoq;
+ *   seed'dagi 17 ta — `is_default: true` (backend migratsiya 214, ega 2026-11-11): `PATCH` / `DELETE` — 403
+ *   «Standart xarajat kategoriyasini tahrirlab / o'chirib bo'lmaydi», qo'shilganlari — `is_default: false`;
  * - `PATCH finance/cashbox/spend` — DTO `forbidNonWhitelisted` (`amount, type, comment, card_id,
  *   expense_category_id`), `Idempotency-Key` majburiy, kategoriya MAJBURIY (yo'q — 400 «Xarajat kategoriyasini
  *   tanlang», ega 2026-10-22), izoh ixtiyoriy, faol bo'lmagan kategoriya — 400; tarix qatoriga
@@ -24,6 +26,7 @@ type Category = {
   description: string | null;
   sort_order: number;
   is_deleted: boolean;
+  is_default: boolean;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
@@ -93,6 +96,7 @@ export const mockCashboxCategoriesApi = async (
       description,
       sort_order: index + 1,
       is_deleted: false,
+      is_default: true,
       created_by: null,
       updated_by: null,
       created_at: stamp,
@@ -249,6 +253,7 @@ export const mockCashboxCategoriesApi = async (
           description: typeof body.description === "string" && body.description.trim() ? body.description.trim() : null,
           sort_order: typeof body.sort_order === "number" ? body.sort_order : maxOrder + 1,
           is_deleted: false,
+          is_default: false,
           created_by: "1",
           updated_by: null,
           created_at: new Date().toISOString(),
@@ -266,12 +271,14 @@ export const mockCashboxCategoriesApi = async (
       if (method === "DELETE") {
         calls.deletes.push(id);
         if (!category) return error(route, 404, "Kategoriya topilmadi");
+        if (category.is_default) return error(route, 403, "Standart xarajat kategoriyasini o'chirib bo'lmaydi");
         category.is_deleted = true;
         return reply(route, wrap({ category }, 200, "Kategoriya o'chirildi"));
       }
       const body = request.postDataJSON() as Record<string, unknown>;
       calls.updates.push({ id, body });
       if (!category) return error(route, 404, "Kategoriya topilmadi");
+      if (category.is_default) return error(route, 403, "Standart xarajat kategoriyasini tahrirlab bo'lmaydi");
       if (!Object.keys(body).length) return error(route, 400, "O'zgartirish uchun name, description yoki sort_order bering");
       if (body.name !== undefined) {
         const name = normalizeName(body.name);
