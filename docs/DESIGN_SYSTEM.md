@@ -1072,3 +1072,12 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   `commission_type`, `commission_value`; «Namuna», «Belgilaydi: Market egasi»), stavka yo'q — ogohlantirish va
   «Belgilanmagan»; «Hisob», «To'lovlar», «Daromadlar» — backend (MO-6). Operator qobig'i va bosh sahifasi (market bosh
   sahifasi operator rejimida). 79 / 79 route v2.
+- **Yangi (v2 da yozilgan):** AI moliyaviy yordamchi — suhbat (Trello jiR7XgYk, 2026-11-10) — `/ai-assistant`, faqat
+  superadmin (`canViewAiAdvisor`; T2 ega qarori 1 — «Kirish huquqi» oynasi yo'q), menyu «Moliya» → «Balans» dan keyin
+  «AI yordamchi» (`Sparkles`). Maketlar `superadmin-ai-assistant`, `-empty`, `-answering`, `-limit-reached`,
+  `-unavailable`, `-offline` — qisman (`partialViews`): F7PWp6cK backend ustida faqat suhbat; T2 tablari, «Sozlamalar»,
+  davr, kesh, «Chuqur tahlil», bloklar, budjet, «Foydali / Foydasiz» chizilmaydi. SSE — `auth/authFetch.ts` (axios
+  interceptor yordamchilari umumiy: `prepareAccessToken`, `refreshAfterUnauthorized`, `handleSecurityResponse`) +
+  `features/ai-chat` (o'quvchi, oqim, holat mashinasi), markdown — `shared/lib/miniMarkdown.ts` +
+  `shared/ui/markdown/MiniMarkdown.tsx` (jadval — `DataTable compact`, telefonda kartalar), «Manba» — `done.sources`
+  (`entities/ai-advisor`). Telefonda suhbatlar — pastki varaqa (maket yo'q, eng yaqini yon ustun ro'yxati).

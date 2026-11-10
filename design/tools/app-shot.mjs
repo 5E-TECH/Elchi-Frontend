@@ -330,12 +330,73 @@ const deliveryPricingMock = (path) => {
   return null;
 };
 
+/**
+ * AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK): holat (38 / 100), 5 ta suhbat va bitta suhbat (markdown jadval +
+ * «Manba»). Suhbatni ko'rish: `npm run app:shot -- "/ai-assistant?conversation=41"`.
+ */
+const AI_TODAY = (h, m) => {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+const AI_CONVERSATIONS = [
+  { id: '41', title: 'Oktabr tushumi va kuryer qarzlari', turns: 1, last_message_at: AI_TODAY(14, 12), created_at: AI_TODAY(14, 12), cost_usd: 0.04 },
+  { id: '40', title: "Marketlarga to'lanmagan summa", turns: 2, last_message_at: AI_TODAY(9, 4), created_at: AI_TODAY(9, 0), cost_usd: 0.05 },
+  { id: '39', title: "Farg'ona filiali smena farqlari", turns: 1, last_message_at: '2026-10-21T06:30:00.000Z', created_at: '2026-10-21T06:30:00.000Z', cost_usd: 0.03 },
+  { id: '38', title: 'Sentyabr xarajatlari tahlili', turns: 3, last_message_at: '2026-09-30T12:45:00.000Z', created_at: '2026-09-30T12:40:00.000Z', cost_usd: 0.09 },
+  { id: '37', title: "Filiallarning HQ oldidagi qarzi", turns: 1, last_message_at: '2026-09-28T05:02:00.000Z', created_at: '2026-09-28T05:02:00.000Z', cost_usd: 0.02 },
+];
+const AI_ANSWER = [
+  "Oktabr boshidan (01.10–23.10) barcha kassalarga **286,4 mln so'm** tushdi — o'tgan oyning shu kunlaridan 7,2% ko'p. Kuryerlarda hali kassaga topshirilmagan 14,8 mln so'm bor.",
+  '',
+  "### Eng ko'p qarzi bor 5 kuryer",
+  '',
+  '| Kuryer | Filial | Topshirilmagan | Qarz |',
+  '|---|---|---:|---:|',
+  "| Jasur Tursunov | Toshkent HQ | 18 ta | 2 840 000 so'm |",
+  "| Sherzod Nazarov | Samarqand filiali | 14 ta | 2 160 000 so'm |",
+  "| Aziz Rahimov | Farg'ona filiali | 11 ta | 1 720 000 so'm |",
+  '',
+  "- Eng katta qarz — Toshkent HQ kuryerlarida.",
+  "- Samarqand filialida qarz 3 kundan beri o'smoqda.",
+].join('\n');
+const aiAssistantMock = (path) => {
+  if (path === 'ai/assistant/access/me') {
+    return { statusCode: 200, data: { allowed: true, reason: null, feature_enabled: true, daily_limit: 100, used_today: 38, remaining_today: 62, reset_at: '2026-11-11T00:00:00+05:00' } };
+  }
+  if (path === 'ai/assistant/conversations') {
+    return { statusCode: 200, data: { items: AI_CONVERSATIONS, total: AI_CONVERSATIONS.length, limit: 50, offset: 0 } };
+  }
+  const match = /^ai\/assistant\/conversations\/(\d+)$/.exec(path);
+  if (match) {
+    const conversation = AI_CONVERSATIONS.find((item) => item.id === match[1]) ?? AI_CONVERSATIONS[0];
+    return {
+      statusCode: 200,
+      data: {
+        ...conversation,
+        messages: [
+          { id: '901', role: 'user', text: "Bu oy kassaga qancha pul tushdi va qaysi kuryerlarda qarz ko'p?", created_at: AI_TODAY(14, 12) },
+          {
+            id: '905', role: 'assistant', text: AI_ANSWER, created_at: AI_TODAY(14, 12), stop: 'end_turn',
+            sources: [
+              { tool: 'get_cashbox_history', period: { from: '2026-10-01', to: '2026-10-23' }, records: 1284, truncated: false, ok: true },
+              { tool: 'get_courier_debts', period: null, records: 37, truncated: true, ok: true },
+            ],
+          },
+        ],
+      },
+    };
+  }
+  return null;
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
   if (path.startsWith('delivery/')) return deliveryPricingMock(path) ?? { statusCode: 200, data: {} };
+  if (path.startsWith('ai/assistant/')) return aiAssistantMock(path) ?? { statusCode: 200, data: {} };
   if (path === 'notifications') return notificationGroupsMock(query);
   if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };

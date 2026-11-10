@@ -16,6 +16,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canReceiveRefusedMail": "superadmin admin registrator/HQ manager/HQ manager/REGIONAL manager/HYBRID",
   "canSendNotifications": "superadmin admin",
   "canViewAdminDashboard": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID operator",
+  "canViewAiAdvisor": "superadmin",
   "canViewAllWarehouses": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID",
   "canViewBatchesPage": "superadmin admin manager/HQ manager/PICKUP manager/HYBRID",
   "canViewBranches": "superadmin admin",

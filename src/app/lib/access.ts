@@ -122,6 +122,13 @@ export const canViewUsers: Predicate = anyOf(
 export const canViewFinancialBalance: Predicate = hasRole("superadmin", "admin");
 
 /**
+ * AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK; T2 6gKt64FN ega qarori 1, 2026-10-29): hozircha FAQAT superadmin.
+ * Backend `ai/assistant/*` ruxsat berilgan adminga ham ochiq, lekin ruxsat berish oynasi («Kirish huquqi») qilinmaydi —
+ * admin menyusida band yo'q, sahifa 403.
+ */
+export const canViewAiAdvisor: Predicate = hasRole("superadmin");
+
+/**
  * Telegram guruhlari (`/notifications`) — backend `GET|POST|PATCH|DELETE /notifications` `@Roles(SUPERADMIN, ADMIN)`
  * bilan bir xil (ega NG-S2, 2026-10-19: adminga ham ochiladi).
  */

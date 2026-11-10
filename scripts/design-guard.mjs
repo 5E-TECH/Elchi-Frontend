@@ -103,6 +103,8 @@ const COLOUR_RULE_SET = new Set(COLOUR_RULES);
 export const V2_SCOPES = Object.freeze([
   "src/auth",
   "src/entities/activity-log",
+  // F7PWp6cK / T2: AI moliyaviy yordamchi (suhbat) — kontrakt, so'rovlar, «Manba».
+  "src/entities/ai-advisor",
   "src/entities/delivery-pricing",
   "src/entities/integrations",
   "src/entities/market-operator",
@@ -114,6 +116,8 @@ export const V2_SCOPES = Object.freeze([
   "src/entities/orders",
   "src/entities/product",
   "src/entities/warehouse",
+  // F7PWp6cK: AI suhbati — SSE oqimi va holat mashinasi (rangsiz).
+  "src/features/ai-chat",
   "src/features/app-update",
   "src/features/auth",
   "src/features/branch",
@@ -140,6 +144,7 @@ export const V2_SCOPES = Object.freeze([
   "src/features/tg-scan",
   "src/features/user",
   "src/pages/activity-logs",
+  "src/pages/ai-assistant",
   "src/pages/batches",
   "src/pages/branch-dashboard",
   "src/pages/branch-ops",
