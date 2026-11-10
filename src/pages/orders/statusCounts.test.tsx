@@ -88,19 +88,14 @@ describe("Buyurtmalar — holat tablari sonlari (GaBIPi3Z)", () => {
     expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 37");
   });
 
-  it("eski backend (`returned_to_market` kaliti yo'q): «Marketga topshirildi» — `by_status`, u ham bo'lmasa 0; boshqa sonlar qoladi", async () => {
+  it("eski backend (`returned_to_market` kaliti yo'q): «Marketga topshirildi» sonsiz (xom `by_status` emas), boshqa sonlar qoladi", async () => {
     const legacy: Record<string, unknown> = { ...COUNTS };
     delete legacy.returned_to_market;
     server.counts = { ...legacy, by_status: { returned_to_market: 5 } };
-    const view = open();
-    await waitFor(() => expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 5"));
-    expect(tab(/^Barchasi/)).toHaveTextContent("Barchasi 1 248");
-    view.unmount();
-
-    server.counts = legacy;
-    open("/orders?orderMarketId=37");
-    await waitFor(() => expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 0"));
+    open();
+    await waitFor(() => expect(tab(/^Barchasi/)).toHaveTextContent("Barchasi 1 248"));
     expect(tab(/^Sotilgan/)).toHaveTextContent("Sotilgan 734");
+    expect(tab(/^Marketga topshirildi/).textContent).toBe("Marketga topshirildi");
   });
 
   it("filtrlar ro'yxat bilan bir xil, lekin holat / sahifa / saralash YUBORILMAYDI", async () => {

@@ -11,8 +11,9 @@ import type { OrderListParams } from "../types/order";
  *   shuning uchun kalitga ham kirmaydi (`toStatusCountsParams`): tab yoki sahifa almashsa qayta so'ralmaydi.
  * - `paid` = `paid` + `partly_paid`, `cancelled` = `cancelled` + `cancelled (sent)` — `ORDER_STATUS_TABS` bilan bir xil.
  * - `returned_to_market` — «Marketga topshirildi» tabi = `GET /orders?cancel_stage=market` soni (FRONTEND_CHANGELOG
- *   2026-11-10). Eski backend javobida yo'q — `by_status.returned_to_market` dan, u ham bo'lmasa 0 (boshqa tablarning
- *   sonlari yo'qolmasin).
+ *   2026-11-10). Eski backend javobida yo'q — `null`, tab sonsiz chiziladi (xom `by_status.returned_to_market` ro'yxat
+ *   bilan mos emas: omborga qaytganlar bor, F4 dan oldingi market qo'lidagi `closed` yo'q); boshqa tablar sonlari
+ *   qoladi.
  * - `new_incoming` — «Qabul va yaratish» badge'i (ro'yxat filtrlariga bog'liq emas, filtrsiz so'raladi); `null` —
  *   bu bo'lim yo'q rollarda (operator, kuryer, logist) → badge chiqmaydi.
  * - Kalit `["orders", "status-counts", params]` — `["orders"]` prefiksi ostida: buyurtma amallari (sotish, bekor,
@@ -44,15 +45,15 @@ export const ORDER_STATUS_COUNT_KEYS: readonly OrderStatusCountKey[] = [
   "returned_to_market",
 ];
 
-/** Keyin qo'shilgan kalitlar: javobda bo'lmasa `by_status` dagi xom holat soni, u ham bo'lmasa 0. */
-const BY_STATUS_FALLBACK: Partial<Record<OrderStatusCountKey, string>> = {
-  returned_to_market: "returned_to_market",
-};
+/** Keyin qo'shilgan kalitlar: eski backend javobida yo'q — `null` (o'sha tab sonsiz), butun javob rad etilmaydi. */
+type OptionalCountKey = "returned_to_market";
+const OPTIONAL_COUNT_KEYS: ReadonlySet<OrderStatusCountKey> = new Set<OptionalCountKey>(["returned_to_market"]);
 
-export type OrderStatusCounts = Record<OrderStatusCountKey, number> & {
-  /** «Qabul va yaratish» badge'i; `null` — bu rolda bo'lim yo'q. */
-  new_incoming: number | null;
-};
+export type OrderStatusCounts = Record<Exclude<OrderStatusCountKey, OptionalCountKey>, number> &
+  Record<OptionalCountKey, number | null> & {
+    /** «Qabul va yaratish» badge'i; `null` — bu rolda bo'lim yo'q. */
+    new_incoming: number | null;
+  };
 
 export const ORDER_STATUS_COUNTS_QUERY_KEY = ["orders", "status-counts"] as const;
 
@@ -73,19 +74,13 @@ export const parseOrderStatusCounts = (body: unknown): OrderStatusCounts | null 
       ? (root.data as Record<string, unknown>)
       : null;
   if (!data) return null;
-  const byStatus =
-    data.by_status && typeof data.by_status === "object" && !Array.isArray(data.by_status)
-      ? (data.by_status as Record<string, unknown>)
-      : {};
-  const counts = {} as Record<OrderStatusCountKey, number>;
+  const counts = {} as Record<OrderStatusCountKey, number | null>;
   for (const key of ORDER_STATUS_COUNT_KEYS) {
-    let value = toCount(data[key]);
-    const fallback = BY_STATUS_FALLBACK[key];
-    if (value === null && fallback !== undefined) value = toCount(byStatus[fallback]) ?? 0;
-    if (value === null) return null;
+    const value = toCount(data[key]);
+    if (value === null && !OPTIONAL_COUNT_KEYS.has(key)) return null;
     counts[key] = value;
   }
-  return { ...counts, new_incoming: toCount(data.new_incoming) };
+  return { ...(counts as OrderStatusCounts), new_incoming: toCount(data.new_incoming) };
 };
 
 /** `GET /orders` parametrlari → sonlar so'rovi parametrlari: holat, sahifa va saralash olib tashlanadi. */

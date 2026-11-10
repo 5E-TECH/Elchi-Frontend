@@ -1084,13 +1084,17 @@ const Orders = () => {
 
   const statusTabs = useMemo<TabItem[]>(
     () =>
-      ORDER_STATUS_TABS.map((tab) => ({
-        value: tab.id,
-        label: t(`ordersList.tabs.${tab.id}`),
-        title: TAB_HINT_KEYS[tab.id] ? t(TAB_HINT_KEYS[tab.id] as string) : undefined,
+      ORDER_STATUS_TABS.map((tab) => {
         // Son kelmagan (yuklanmoqda, xato) — tab sonsiz; 0 ham ko'rsatiladi (taxta `tizim-states-navigation`).
-        ...(statusCounts ? { count: statusCounts[tab.id] } : {}),
-      })),
+        // «Marketga topshirildi» soni eski backendda yo'q (`null`) — faqat o'sha tab sonsiz.
+        const count = statusCounts?.[tab.id];
+        return {
+          value: tab.id,
+          label: t(`ordersList.tabs.${tab.id}`),
+          title: TAB_HINT_KEYS[tab.id] ? t(TAB_HINT_KEYS[tab.id] as string) : undefined,
+          ...(typeof count === "number" ? { count } : {}),
+        };
+      }),
     [statusCounts, t],
   );
 

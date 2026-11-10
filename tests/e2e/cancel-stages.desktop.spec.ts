@@ -49,7 +49,9 @@ test.describe("Bekor bosqichi — 1440px", () => {
     await page.goto("/orders?status=returned_to_market");
     await expect(page.getByRole("link", { name: "№10241" })).toBeVisible({ timeout: 60_000 });
     expect(listQueries.some((query) => query.get("cancel_stage") === "market" && !query.has("status"))).toBe(true);
-    await expect(page.getByText("Holat: Marketga topshirildi")).toBeVisible();
+    // Holat endi tab bilan ko'rinadi — «Holat: …» filtr chipi chiqmaydi.
+    await expect(page.getByRole("tab", { name: /^Marketga topshirildi/ })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByText("Holat: Marketga topshirildi")).toHaveCount(0);
   });
 
   test("⭐ menejer tafsiloti: «Bekor · HQ'da», «Qaytarish yo'li» 3 qadam + «Marketga topshirish» kutilmoqda", async ({ page }) => {

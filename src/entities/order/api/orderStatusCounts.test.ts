@@ -33,17 +33,19 @@ describe("parseOrderStatusCounts", () => {
     });
   });
 
-  it("`returned_to_market` yo'q (eski backend) — `by_status.returned_to_market`, u ham bo'lmasa 0; javob `null` bo'lmaydi", () => {
+  it("`returned_to_market` yo'q (eski backend) — `null` (xom `by_status` olinmaydi: ro'yxat bilan mos emas); javob `null` bo'lmaydi", () => {
     const legacy: Record<string, unknown> = { ...data };
     delete legacy.returned_to_market;
     expect(
       parseOrderStatusCounts({ data: { ...legacy, by_status: { returned_to_market: "9" } } })?.returned_to_market,
-    ).toBe(9);
-    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: {} } })?.returned_to_market).toBe(0);
+    ).toBeNull();
     expect(parseOrderStatusCounts({ data: { ...legacy, by_status: undefined } })).toMatchObject({
-      returned_to_market: 0,
+      returned_to_market: null,
       sold: 21,
     });
+    expect(parseOrderStatusCounts({ data: { ...data, returned_to_market: "4" } })?.returned_to_market).toBe(4);
+    // Majburiy kalit buzilsa — avvalgidek butun javob `null`.
+    expect(parseOrderStatusCounts({ data: { ...data, sold: "x" } })).toBeNull();
     // `closed` endi tab emas — javobda bo'lsa ham o'qilmaydi.
     expect(parseOrderStatusCounts({ data: { ...data, closed: 5 } })).not.toHaveProperty("closed");
   });

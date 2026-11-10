@@ -99,10 +99,11 @@ test("⭐ «Holat» filtrida ikkala variant bor; ?status=returned_to_market → 
   await expect(page.getByText("Mijoz 1002")).toHaveCount(0);
   await expect(page.getByText("Mijoz 1004")).toHaveCount(0);
 
-  // Faol holat filtri bor — panel ochiq turadi («Filtrlar 1»); yopiq bo'lsa ochiladi.
+  // 2026-11-10: holat «Marketga topshirildi» tabi bilan ko'rinadi — «Holat: …» filtr chipi yo'q; panel yopiq bo'lsa ochiladi.
+  await expect(page.getByRole("tab", { name: /^Marketga topshirildi/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText("Holat: Marketga topshirildi")).toHaveCount(0);
   const toggle = page.getByRole("button", { name: /^Filtrlar( \d+)?$/ });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  await expect(page.getByText("Holat: Marketga topshirildi")).toBeVisible();
   // Tanlangan qiymat chipi (×) maydon o'rtasini egallaydi — ro'yxat klaviatura bilan ochiladi.
   const select = page.getByRole("combobox", { name: "Holat" });
   await select.focus();
