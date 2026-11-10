@@ -124,7 +124,7 @@ export const normalizeOrderSearch = (value: string | null | undefined): string =
   (value ?? "").trim().replace(/^[№#]+\s*/u, "").trim();
 
 // ── Holat tablari (maket: «Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan ·
-//    Bekor qilingan»; «Yopildi» — maketda yo'q, ega so'rovi 2026-11-10) ─────────────
+//    Bekor qilingan»; «Marketga topshirildi» — maketda yo'q, ega so'rovi 2026-11-10) ─
 export type OrderStatusTabId =
   | "all"
   | "new"
@@ -133,14 +133,15 @@ export type OrderStatusTabId =
   | "waiting"
   | "sold"
   | "paid"
-  | "closed"
-  | "cancelled";
+  | "cancelled"
+  | "returned_to_market";
 
 /**
  * Tab → URL `status` qiymati. «To'langan» — to'langan + qisman to'langan, «Bekor qilingan» — bekor qilingan +
- * bekor — jo'natilgan (maketdagi tab `title` lari). «Yopildi» — faqat `closed` (to'lovi yakunlangan yoki yopilgan
- * buyurtmalar; ilgari hech bir tabda ko'rinmasdi, faqat «Barchasi» sonida edi). Sahifadagi `Tabs` va filtr hisobi
- * shu jadvaldan.
+ * bekor — jo'natilgan (maketdagi tab `title` lari). «Marketga topshirildi» — URL'da `returned_to_market`, lekin
+ * ro'yxat so'rovi `cancel_stage=market` (`buildOrderListParams`): otkaz marketga topshirilgan buyurtmalar — qatordagi
+ * «Marketga topshirildi» bosqichi bilan bir (omborga qaytgan ombor buyurtmasi kirmaydi, F4 dan oldingi market
+ * qo'lidagi `closed` kiradi). Sahifadagi `Tabs` va filtr hisobi shu jadvaldan.
  */
 export const ORDER_STATUS_TABS: ReadonlyArray<{ id: OrderStatusTabId; statuses: readonly OrderStatus[] }> = [
   { id: "all", statuses: [] },
@@ -150,8 +151,8 @@ export const ORDER_STATUS_TABS: ReadonlyArray<{ id: OrderStatusTabId; statuses: 
   { id: "waiting", statuses: ["waiting"] },
   { id: "sold", statuses: ["sold"] },
   { id: "paid", statuses: ["paid", "partly_paid"] },
-  { id: "closed", statuses: ["closed"] },
   { id: "cancelled", statuses: ["cancelled", "cancelled (sent)"] },
+  { id: "returned_to_market", statuses: ["returned_to_market"] },
 ];
 
 /** Holatlar to'plami qaysi tabga aynan mos (tartibsiz); hech biriga mos kelmasa — `null` («Holat» filtridan tanlangan). */
@@ -263,6 +264,10 @@ export const buildOrderListParams = (
   // bo'lsa bo'sh chiqardi) — `cancel_stage` berilsa `status` yuborilmaydi. Faqat «Bekor qilingan» tabida.
   if (cancelStage && statuses.length > 0 && statuses.every((status) => status === "cancelled" || status === "cancelled (sent)")) {
     params.cancel_stage = cancelStage;
+  } else if (statuses.length === 1 && statuses[0] === "returned_to_market") {
+    // «Marketga topshirildi» tabi (ega 2026-11-10): tizimdagi «Marketga topshirildi» bosqichi — xom holat emas
+    // (omborga qaytgan ombor buyurtmasisiz, F4 dan oldingi market qo'lidagi `closed` bilan). Tab soni ham shu doira.
+    params.cancel_stage = "market";
   } else if (statuses.length > 0) {
     params.status = statuses;
   }

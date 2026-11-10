@@ -11,14 +11,14 @@ describe("parseOrderStatusCounts", () => {
     waiting: 5,
     sold: 21,
     paid: 4,
-    closed: 3,
     cancelled: 7,
+    returned_to_market: 3,
     new_incoming: 12,
-    by_status: { waiting_customer: 1, closed: 3 },
+    by_status: { waiting_customer: 1, returned_to_market: 2 },
     search_truncated: false,
   };
 
-  it("`successRes` konverti → 9 tab soni + `new_incoming`", () => {
+  it("`successRes` konverti → 9 tab soni (jumladan «Marketga topshirildi») + `new_incoming`", () => {
     expect(parseOrderStatusCounts({ statusCode: 200, data })).toEqual({
       all: 71,
       new: 12,
@@ -27,18 +27,25 @@ describe("parseOrderStatusCounts", () => {
       waiting: 5,
       sold: 21,
       paid: 4,
-      closed: 3,
       cancelled: 7,
+      returned_to_market: 3,
       new_incoming: 12,
     });
   });
 
-  it("`closed` yo'q (eski backend) — `by_status.closed`, u ham bo'lmasa 0; javob `null` bo'lmaydi", () => {
+  it("`returned_to_market` yo'q (eski backend) — `by_status.returned_to_market`, u ham bo'lmasa 0; javob `null` bo'lmaydi", () => {
     const legacy: Record<string, unknown> = { ...data };
-    delete legacy.closed;
-    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: { closed: "9" } } })?.closed).toBe(9);
-    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: {} } })?.closed).toBe(0);
-    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: undefined } })).toMatchObject({ closed: 0, sold: 21 });
+    delete legacy.returned_to_market;
+    expect(
+      parseOrderStatusCounts({ data: { ...legacy, by_status: { returned_to_market: "9" } } })?.returned_to_market,
+    ).toBe(9);
+    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: {} } })?.returned_to_market).toBe(0);
+    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: undefined } })).toMatchObject({
+      returned_to_market: 0,
+      sold: 21,
+    });
+    // `closed` endi tab emas — javobda bo'lsa ham o'qilmaydi.
+    expect(parseOrderStatusCounts({ data: { ...data, closed: 5 } })).not.toHaveProperty("closed");
   });
 
   it("`new_incoming: null` (operator, kuryer, logist) — `null`, tab sonlari qoladi", () => {

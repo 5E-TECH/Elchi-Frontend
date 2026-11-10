@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 /**
  * SllBYhnt — backend'ning ikki holati `/orders` ro'yxatida o'z nomi bilan (ega qarori: alohida yorliq):
  * `returned_to_market` — «Marketga topshirildi» (neytral), `waiting_customer` — «Mijoz kutilmoqda» (ogohlantirish).
- * «Yangi» ham, boshqa holat ham emas; «Holat» filtrida bor; `?status=returned_to_market` backend'ga uzatiladi;
+ * «Yangi» ham, boshqa holat ham emas; «Holat» filtrida bor; `?status=returned_to_market` → `cancel_stage=market` (2026-11-10);
  * noma'lum holat — neytral, xom nomi bilan. 1440px, soxta backend.
  */
 const ORIGIN = "http://127.0.0.1:4173";
@@ -43,7 +43,11 @@ const mockOrders = async (page: Page) => {
     }
     if (path === "orders") {
       listRequests.push(url.searchParams);
-      const statuses = url.searchParams.get("status")?.split(",") ?? [];
+      // 2026-11-10: «Marketga topshirildi» — `cancel_stage=market` (holatsiz); soxta backend uni holat bilan beradi.
+      const statuses =
+        url.searchParams.get("cancel_stage") === "market"
+          ? ["returned_to_market"]
+          : (url.searchParams.get("status")?.split(",") ?? []);
       const items = statuses.length ? ORDERS.filter((item) => statuses.includes(item.status)) : ORDERS;
       return json(route, { statusCode: 200, data: items, total: items.length, page: 1, limit: 10 });
     }
@@ -86,11 +90,12 @@ test("⭐ ro'yxat: «Marketga topshirildi», «Mijoz kutilmoqda» — «Yangi» 
   await expect(badgeOf(page, "Mijoz 1004")).toHaveClass(/\bbg-info-soft\b/);
 });
 
-test("⭐ «Holat» filtrida ikkala variant bor; ?status=returned_to_market backend'ga uzatiladi va faqat o'shalar chiqadi", async ({ page }) => {
+test("⭐ «Holat» filtrida ikkala variant bor; ?status=returned_to_market → `cancel_stage=market` va faqat o'shalar chiqadi", async ({ page }) => {
   const listRequests = await mockOrders(page);
   await page.goto("/orders?status=returned_to_market");
   await expect(page.getByText("Mijoz 1001").first()).toBeVisible({ timeout: 90_000 });
-  await expect.poll(() => listRequests.at(-1)?.get("status")).toBe("returned_to_market");
+  await expect.poll(() => listRequests.at(-1)?.get("cancel_stage")).toBe("market");
+  expect(listRequests.at(-1)?.has("status")).toBe(false);
   await expect(page.getByText("Mijoz 1002")).toHaveCount(0);
   await expect(page.getByText("Mijoz 1004")).toHaveCount(0);
 

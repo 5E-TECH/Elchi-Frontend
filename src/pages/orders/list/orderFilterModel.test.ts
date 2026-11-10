@@ -39,10 +39,14 @@ describe("orderFilterModel", () => {
     expect(FILTER_STATUSES.indexOf("returned_to_market")).toBe(FILTER_STATUSES.indexOf("cancelled") + 1);
     expect(parseStatusValues("returned_to_market,bogus")).toEqual(["returned_to_market"]);
     expect(normalizeFilterStatuses(["returned_to_market", "cancelled (sent)"])).toEqual(["returned_to_market"]);
-    expect(
-      buildOrderListParams({ ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market"] }, "superadmin", { page: 1, limit: 25 })
-        .status,
-    ).toEqual(["returned_to_market"]);
+    // 2026-11-10: «Marketga topshirildi» tabi bilan bir ta'rif — so'rov server bosqichi `cancel_stage=market`
+    // (xom holat emas: omborga qaytgan ombor buyurtmasisiz, F4 dan oldingi market qo'lidagi `closed` bilan).
+    const params = buildOrderListParams({ ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market"] }, "superadmin", {
+      page: 1,
+      limit: 25,
+    });
+    expect(params.cancel_stage).toBe("market");
+    expect(params).not.toHaveProperty("status");
   });
 
   it("keeps only the «Holat» filter options when the status filter changes", () => {
@@ -199,6 +203,22 @@ describe("BG4 `cancel_stage` — «Bekor qilingan» tabidagi bosqich chipi (vOcz
     );
     expect(params.status).toEqual(["sold"]);
     expect(params).not.toHaveProperty("cancel_stage");
+  });
+
+  it("«Marketga topshirildi» tabi (`returned_to_market` yolg'iz) → `cancel_stage=market`, `status` yo'q (har rolda)", () => {
+    for (const role of ["superadmin", "manager", "market"] as const) {
+      const params = buildOrderListParams({ ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market"] }, role, paging);
+      expect(params.cancel_stage).toBe("market");
+      expect(params).not.toHaveProperty("status");
+    }
+    // Boshqa holat bilan birga tanlansa — oddiy holat filtri.
+    const mixed = buildOrderListParams(
+      { ...EMPTY_ORDER_FILTERS, statuses: ["returned_to_market", "sold"] },
+      "superadmin",
+      paging,
+    );
+    expect(mixed.status).toEqual(["returned_to_market", "sold"]);
+    expect(mixed).not.toHaveProperty("cancel_stage");
   });
 
   it("URL qiymati: ma'lum bosqich (harf farqsiz), boshqasi — bo'sh (backend 400 bermasin)", () => {

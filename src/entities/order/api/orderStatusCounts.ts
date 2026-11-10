@@ -10,8 +10,9 @@ import type { OrderListParams } from "../types/order";
  * - Filtrlar va rol doirasi `GET /orders` bilan aynan bir xil; `status` / `page` / `limit` / `sort_*` e'tiborsiz —
  *   shuning uchun kalitga ham kirmaydi (`toStatusCountsParams`): tab yoki sahifa almashsa qayta so'ralmaydi.
  * - `paid` = `paid` + `partly_paid`, `cancelled` = `cancelled` + `cancelled (sent)` — `ORDER_STATUS_TABS` bilan bir xil.
- * - `closed` — «Yopildi» tabi (FRONTEND_CHANGELOG 2026-11-10). Eski backend javobida yo'q — `by_status.closed` dan,
- *   u ham bo'lmasa 0 (boshqa tablarning sonlari yo'qolmasin).
+ * - `returned_to_market` — «Marketga topshirildi» tabi = `GET /orders?cancel_stage=market` soni (FRONTEND_CHANGELOG
+ *   2026-11-10). Eski backend javobida yo'q — `by_status.returned_to_market` dan, u ham bo'lmasa 0 (boshqa tablarning
+ *   sonlari yo'qolmasin).
  * - `new_incoming` — «Qabul va yaratish» badge'i (ro'yxat filtrlariga bog'liq emas, filtrsiz so'raladi); `null` —
  *   bu bo'lim yo'q rollarda (operator, kuryer, logist) → badge chiqmaydi.
  * - Kalit `["orders", "status-counts", params]` — `["orders"]` prefiksi ostida: buyurtma amallari (sotish, bekor,
@@ -28,8 +29,8 @@ export type OrderStatusCountKey =
   | "waiting"
   | "sold"
   | "paid"
-  | "closed"
-  | "cancelled";
+  | "cancelled"
+  | "returned_to_market";
 
 export const ORDER_STATUS_COUNT_KEYS: readonly OrderStatusCountKey[] = [
   "all",
@@ -39,12 +40,14 @@ export const ORDER_STATUS_COUNT_KEYS: readonly OrderStatusCountKey[] = [
   "waiting",
   "sold",
   "paid",
-  "closed",
   "cancelled",
+  "returned_to_market",
 ];
 
 /** Keyin qo'shilgan kalitlar: javobda bo'lmasa `by_status` dagi xom holat soni, u ham bo'lmasa 0. */
-const BY_STATUS_FALLBACK: Partial<Record<OrderStatusCountKey, string>> = { closed: "closed" };
+const BY_STATUS_FALLBACK: Partial<Record<OrderStatusCountKey, string>> = {
+  returned_to_market: "returned_to_market",
+};
 
 export type OrderStatusCounts = Record<OrderStatusCountKey, number> & {
   /** «Qabul va yaratish» badge'i; `null` — bu rolda bo'lim yo'q. */

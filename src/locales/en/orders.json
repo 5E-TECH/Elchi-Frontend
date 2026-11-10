@@ -19,8 +19,8 @@
       "waiting": "Waiting",
       "sold": "Sold",
       "paid": "Paid",
-      "closed": "Closed",
       "cancelled": "Cancelled",
+      "returned_to_market": "Handed to market",
       "paidHint": "Paid and partly paid orders",
       "cancelledHint": "Cancelled and cancelled — sent orders"
     },

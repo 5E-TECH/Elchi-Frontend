@@ -239,7 +239,7 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ market_id: expect.anything() }));
   });
 
-  it("holat tablari: «Barchasi» tanlangan, to'qqizta tab (jumladan «Yopildi»), izohlar", () => {
+  it("holat tablari: «Barchasi» tanlangan, to'qqizta tab (oxirida «Marketga topshirildi»), izohlar", () => {
     open("/orders");
 
     const tabs = screen.getAllByRole("tab");
@@ -251,8 +251,8 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
       "Kutilmoqda",
       "Sotilgan",
       "To'langan",
-      "Yopildi",
       "Bekor qilingan",
+      "Marketga topshirildi",
     ]);
     expect(screen.getByRole("tablist", { name: "Holat bo'yicha" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Barchasi" })).toHaveAttribute("aria-selected", "true");
@@ -276,11 +276,12 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
     await user.click(screen.getByRole("tab", { name: "To'langan" }));
     await waitFor(() => expect(currentSearch().get("status")).toBe("paid,partly_paid"));
 
-    // «Yopildi» (ega 2026-11-10) — faqat `closed`.
-    await user.click(screen.getByRole("tab", { name: "Yopildi" }));
-    await waitFor(() => expect(currentSearch().get("status")).toBe("closed"));
-    expect(screen.getByRole("tab", { name: "Yopildi" })).toHaveAttribute("aria-selected", "true");
-    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: ["closed"], page: 1 }));
+    // «Marketga topshirildi» (ega 2026-11-10): URL `returned_to_market`, so'rov — `cancel_stage=market`, holatsiz.
+    await user.click(screen.getByRole("tab", { name: "Marketga topshirildi" }));
+    await waitFor(() => expect(currentSearch().get("status")).toBe("returned_to_market"));
+    expect(screen.getByRole("tab", { name: "Marketga topshirildi" })).toHaveAttribute("aria-selected", "true");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ cancel_stage: "market", page: 1 }));
+    expect(getOrdersMock.mock.lastCall?.[0]).not.toHaveProperty("status");
 
     await user.click(screen.getByRole("tab", { name: "Barchasi" }));
     await waitFor(() => expect(currentSearch().get("status")).toBeNull());

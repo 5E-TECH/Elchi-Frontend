@@ -44,11 +44,11 @@ test.describe("Bekor bosqichi — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("⭐ «Holat» filtrida «Marketga topshirildi» → `status=returned_to_market`", async ({ page }) => {
+  test("⭐ «Holat» filtrida «Marketga topshirildi» → server bosqichi `cancel_stage=market` (2026-11-10, tab bilan bir)", async ({ page }) => {
     const { listQueries } = await mockCancelStagesApi(page, { list: [ORDER_HANDED] });
     await page.goto("/orders?status=returned_to_market");
     await expect(page.getByRole("link", { name: "№10241" })).toBeVisible({ timeout: 60_000 });
-    expect(listQueries.some((query) => query.getAll("status").includes("returned_to_market"))).toBe(true);
+    expect(listQueries.some((query) => query.get("cancel_stage") === "market" && !query.has("status"))).toBe(true);
     await expect(page.getByText("Holat: Marketga topshirildi")).toBeVisible();
   });
 

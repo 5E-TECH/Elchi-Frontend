@@ -19,8 +19,8 @@
       "waiting": "Kutilmoqda",
       "sold": "Sotilgan",
       "paid": "To'langan",
-      "closed": "Yopildi",
       "cancelled": "Bekor qilingan",
+      "returned_to_market": "Marketga topshirildi",
       "paidHint": "To'langan va qisman to'langan buyurtmalar",
       "cancelledHint": "Bekor qilingan va bekor — jo'natilgan buyurtmalar"
     },

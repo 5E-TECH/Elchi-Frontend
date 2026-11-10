@@ -21,7 +21,7 @@ describe("status counts — one refetch timer for the shared query", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  const COUNTS = { all: 1, new: 1, received: 0, on_the_road: 0, waiting: 0, sold: 0, paid: 0, closed: 0, cancelled: 0, new_incoming: 3 };
+  const COUNTS = { all: 1, new: 1, received: 0, on_the_road: 0, waiting: 0, sold: 0, paid: 0, cancelled: 0, returned_to_market: 0, new_incoming: 3 };
 
   /** So'rov kuzatuvchilaridan nechtasida davriy taymer bor (`refetchInterval` > 0). */
   const pollers = () =>

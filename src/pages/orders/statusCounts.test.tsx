@@ -37,8 +37,8 @@ const COUNTS = {
   waiting: 14,
   sold: 734,
   paid: 168,
-  closed: 37,
   cancelled: 0,
+  returned_to_market: 37,
   new_incoming: 7,
   by_status: {},
   search_truncated: false,
@@ -84,22 +84,22 @@ describe("Buyurtmalar — holat tablari sonlari (GaBIPi3Z)", () => {
     expect(tab(/^Kutilmoqda/)).toHaveTextContent("Kutilmoqda 14");
     expect(tab(/^Sotilgan/)).toHaveTextContent("Sotilgan 734");
     expect(tab(/^To'langan/)).toHaveTextContent("To'langan 168");
-    expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 37");
     expect(tab(/^Bekor qilingan/)).toHaveTextContent("Bekor qilingan 0");
+    expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 37");
   });
 
-  it("eski backend (`closed` kaliti yo'q): «Yopildi» — `by_status.closed`, u ham bo'lmasa 0; boshqa sonlar qoladi", async () => {
+  it("eski backend (`returned_to_market` kaliti yo'q): «Marketga topshirildi» — `by_status`, u ham bo'lmasa 0; boshqa sonlar qoladi", async () => {
     const legacy: Record<string, unknown> = { ...COUNTS };
-    delete legacy.closed;
-    server.counts = { ...legacy, by_status: { closed: 5 } };
+    delete legacy.returned_to_market;
+    server.counts = { ...legacy, by_status: { returned_to_market: 5 } };
     const view = open();
-    await waitFor(() => expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 5"));
+    await waitFor(() => expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 5"));
     expect(tab(/^Barchasi/)).toHaveTextContent("Barchasi 1 248");
     view.unmount();
 
     server.counts = legacy;
     open("/orders?orderMarketId=37");
-    await waitFor(() => expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 0"));
+    await waitFor(() => expect(tab(/^Marketga topshirildi/)).toHaveTextContent("Marketga topshirildi 0"));
     expect(tab(/^Sotilgan/)).toHaveTextContent("Sotilgan 734");
   });
 

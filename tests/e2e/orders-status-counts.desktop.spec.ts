@@ -19,8 +19,8 @@ const TAB_TEXTS = [
   "Kutilmoqda 14",
   "Sotilgan 734",
   "To'langan 168",
-  "Yopildi 37",
   "Bekor qilingan 0",
+  "Marketga topshirildi 37",
 ];
 
 /** Matndagi oddiy / ingichka bo'shliqlar bitta oddiy bo'shliqqa (ming ajratuvchi — `formatNumberLocalized`). */
