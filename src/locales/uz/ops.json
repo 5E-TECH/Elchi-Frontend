@@ -167,6 +167,10 @@
     "saving": "Saqlanmoqda…",
     "saved": "Kun tartibi saqlandi",
     "saveError": "Kun tartibi saqlanmadi",
+    "savedIntake": "Buyurtma qabuli saqlandi",
+    "savedShift": "Smena jadvali saqlandi",
+    "saveErrorIntake": "Buyurtma qabuli saqlanmadi",
+    "saveErrorShift": "Smena jadvali saqlanmadi",
     "invalidTime": "Vaqtni 00:00–23:59 ko'rinishida kiriting",
     "timesConflict": "{{times}} — ham ochish, ham yopish vaqti. Bittasini o'zgartiring",
     "unavailable": {
@@ -183,7 +187,7 @@
     },
     "intake": {
       "title": "Buyurtma qabuli",
-      "subtitle": "Kun almashguncha amal qiladigan chegaralar",
+      "subtitle": "Chegaralar va kun almashishi",
       "note": "Bo'sh maydon — cheklovsiz. Chegara o'tgach, kun almashguncha to'xtaydi, keyin o'zi ochiladi.",
       "cutoff": "Buyurtma yaratish chegarasi",
       "cutoffHint": "Har kuni shu vaqtdan keyin yangi buyurtma yaratilmaydi — qo'lda, AI bilan, integratsiya va hamkorlar orqali ham",
@@ -202,7 +206,6 @@
       "enabled": "Smenani avtomatik ochish",
       "enabledHint": "Belgilangan vaqtda kassada ochiq smena bo'lmasa, tizim uni o'zi ochadi",
       "times": "Kuniga ochish vaqtlari",
-      "timesHint": "Kuniga {{value}} marta · Toshkent vaqti (UTC+5)",
       "timesRequired": "Kamida bitta ochish vaqtini qo'shing",
       "scope": "Qaysi kassalarda",
       "note": "Kassada ochiq smena bo'lsa, tizim hech narsa qilmaydi. Avtomatik ochilgan smena tarixda «Avtomatik ochildi» deb belgilanadi."

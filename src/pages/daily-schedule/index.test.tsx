@@ -261,11 +261,24 @@ describe("Kun tartibi — smena jadvali", () => {
     expect(await screen.findByRole("region", { name: "Avtomatik yopish" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Avtomatik ochish" })).toBeNull();
     expect(screen.queryByRole("region", { name: "Kechikish haqida xabar" })).toBeNull();
+    // Izoh yo'q funksiyaga («Avtomatik ochish») ishora qilmaydi — avvalgidek «kassir o'zi ochadi».
+    const close = screen.getByRole("region", { name: "Avtomatik yopish" });
+    expect(within(close).getByText(/Keyingi smenani kassir o'zi ochadi\./)).toBeInTheDocument();
+    expect(within(close).queryByText(/Avtomatik ochish/)).toBeNull();
+  });
+
+  it("yangi backend: yopish izohi «kassir yoki tizim»; vaqtlar soni — «Kuniga N marta»", async () => {
+    render();
+    const close = await screen.findByRole("region", { name: "Avtomatik yopish" });
+    expect(within(close).getByText(/Keyingi smenani kassir ochadi yoki «Avtomatik ochish» yoqilgan bo'lsa — tizim\./)).toBeInTheDocument();
+    expect(within(close).getByText("Kuniga 2 marta · Toshkent vaqti (UTC+5)")).toBeInTheDocument();
+    const open = screen.getByRole("region", { name: "Avtomatik ochish" });
+    expect(within(open).getByText("Kuniga 1 marta · Toshkent vaqti (UTC+5)")).toBeInTheDocument();
   });
 });
 
 describe("Kun tartibi — saqlash", () => {
-  it("ikki PATCH mustaqil: biri yiqilsa (403) — backend matni, ikkinchisi saqlanadi, yiqilganining qoralamasi qoladi", async () => {
+  it("ikki PATCH mustaqil: biri yiqilsa (403) — qaysi qism saqlanmadi (backend matni) va qaysi biri saqlandi, qoralama qoladi", async () => {
     const user = userEvent.setup();
     const fallback = http.patch.getMockImplementation()!;
     http.patch.mockImplementation(async (url: string, body: Json) => {
@@ -283,11 +296,30 @@ describe("Kun tartibi — saqlash", () => {
     await user.click(within(screen.getByRole("region", { name: "Avtomatik ochish" })).getByRole("switch", { name: "Smenani avtomatik ochish" }));
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
-    expect(await screen.findByText("Kun tartibi saqlanmadi")).toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma qabuli saqlanmadi")).toBeInTheDocument();
     expect(screen.getByText("Qabul vaqtini faqat superadmin o'zgartiradi")).toBeInTheDocument();
+    expect(screen.getByText("Smena jadvali saqlandi")).toBeInTheDocument();
+    expect(screen.queryByText("Kun tartibi saqlanmadi")).toBeNull();
     expect(shiftPatches()).toEqual([{ auto_open: { enabled: true } }]);
     expect(field("Buyurtma yaratish chegarasi")).toHaveValue("12:00");
     await waitFor(() => expect(screen.getByRole("button", { name: "Saqlash" })).toBeEnabled());
+  });
+
+  it("ikkala PATCH ham yiqilsa — umumiy «Kun tartibi saqlanmadi» + backend matni", async () => {
+    const user = userEvent.setup();
+    http.patch.mockImplementation(async () => {
+      throw Object.assign(new Error("500"), { response: { status: 500, data: { message: "Server javob bermadi" } } });
+    });
+    render();
+    await screen.findByRole("region", { name: "Buyurtma qabuli" });
+    await user.clear(field("Buyurtma yaratish chegarasi"));
+    await user.type(field("Buyurtma yaratish chegarasi"), "1200");
+    await user.click(within(screen.getByRole("region", { name: "Avtomatik ochish" })).getByRole("switch", { name: "Smenani avtomatik ochish" }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    expect(await screen.findByText("Kun tartibi saqlanmadi")).toBeInTheDocument();
+    expect(screen.getByText("Server javob bermadi")).toBeInTheDocument();
+    expect(screen.queryByText("Smena jadvali saqlandi")).toBeNull();
   });
 
   it("buyurtma qabuli endpointi yo'q (404) va smena bloklari yo'q — «Kun tartibi hali mavjud emas»", async () => {

@@ -607,9 +607,10 @@ const NewOrderDetail = () => {
   ) : (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
       {searchField}
-      {canReceive || scannerEnabled ? (
+      {/* Qabul vaqti tugagan bo'lsa — «QR skanerlansa … qabul qilinadi» yolg'on bo'lardi (skaner ham o'chiq). */}
+      {(canReceive && !receiveClosed) || scannerEnabled ? (
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-          {canReceive ? (
+          {canReceive && !receiveClosed ? (
             <p className="flex items-center gap-1.5 text-xs text-text-muted">
               <ScanLine size={16} aria-hidden="true" className="shrink-0" />
               <span>{t("marketOrders.scanHint")}</span>

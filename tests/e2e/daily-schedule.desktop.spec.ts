@@ -45,6 +45,11 @@ test.describe("Kun tartibi — 1440px", () => {
         .getByRole("switch", { name: "Superadminlarga xabar yuborish" })
         .click();
       expect(await noHorizontalScroll(page)).toBe(true);
+      // 1440: smena kartalari 2 ustunli setkada — uchinchisi («Kechikish») yolg'iz cho'zilmaydi.
+      const openBox = (await page.getByRole("region", { name: "Avtomatik ochish" }).boundingBox())!;
+      const lateBox = (await page.getByRole("region", { name: "Kechikish haqida xabar" }).boundingBox())!;
+      expect(Math.abs(openBox.width - lateBox.width)).toBeLessThan(2);
+      expect(Math.abs(openBox.x - lateBox.x)).toBeLessThan(2);
       await shot(page, `daily-schedule-1440-${theme}`);
 
       await page.getByRole("button", { name: "Saqlash" }).click();

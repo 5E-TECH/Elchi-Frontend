@@ -93,6 +93,8 @@ describe("Shift settings (kiZgTybn)", () => {
     await screen.findByRole("button", { name: /Saqlash/ });
     expect(screen.queryByText("Smena hisobotini yuborish")).not.toBeInTheDocument();
     expect(screen.getByText("Smena jadvali")).toBeInTheDocument();
+    // Backend `auto_open` bermaydi — tavsif yo'q funksiyani (avtomatik ochish, kechikish xabari) va'da qilmaydi.
+    expect(screen.getByText("Smenani avtomatik yopish vaqtlari endi Ops → «Kun tartibi»da.")).toBeInTheDocument();
   });
 
   it("a rejected save (403) shows the backend message", async () => {
@@ -114,6 +116,18 @@ describe("Shift settings (kiZgTybn)", () => {
  * tartibi» (`pages/daily-schedule`, testlari o'sha yerda), bu yerda — havola kartasi.
  */
 describe("Shift settings — report sending and the shift schedule link (gWI4gYkw)", () => {
+  it("yangi backend (`auto_open` bor): «Smena jadvali» tavsifi — ochish, yopish va kechikish xabari", async () => {
+    http.get.mockImplementation(async () => ({
+      data: { statusCode: 200, data: { ...SETTINGS, auto_open: { enabled: false, times: ["08:00"], scope: "main" } } },
+    }));
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    expect(
+      await screen.findByText(
+        "Smenani avtomatik ochish va yopish vaqtlari, vaqtida ochilmasa yoki yopilmasa superadminlarga xabar — endi Ops → «Kun tartibi»da.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   const AUTOMATION = {
     ...SETTINGS,
     auto_close: { enabled: false, times: ["23:00", "14:00"], scope: "main", warn_before_min: 15 },
@@ -138,6 +152,7 @@ describe("Shift settings — report sending and the shift schedule link (gWI4gYk
     expect(screen.queryByRole("switch", { name: "Smenani avtomatik yopish" })).not.toBeInTheDocument();
     expect(screen.queryByText("Avtomatik yopish")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Kun tartibini ochish" })).toHaveAttribute("href", "/ops?tab=daily-schedule");
+    expect(screen.getByText("Smenani avtomatik yopish vaqtlari endi Ops → «Kun tartibi»da.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: "Excel" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));

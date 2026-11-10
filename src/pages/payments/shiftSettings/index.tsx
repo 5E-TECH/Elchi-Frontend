@@ -48,14 +48,19 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
  * o'sha «Saqlash» bilan ketadi, «Kunlar soni» yaroqsiz bo'lsa «Saqlash» o'chiq.
  */
 
-/** «Avtomatik yopish» o'rnida (ega 2026-11-10): smena jadvali Ops → «Kun tartibi»da — havola. */
-const ScheduleLinkCard = () => {
+/**
+ * «Avtomatik yopish» o'rnida (ega 2026-11-10): smena jadvali Ops → «Kun tartibi»da — havola. Backend avtomatik ochish va
+ * kechikish xabarini hali bermasa (`auto_open` yo'q) — tavsif faqat avtomatik yopish haqida (yo'q narsa va'da qilinmaydi).
+ */
+const ScheduleLinkCard = ({ autoOpen }: { autoOpen: boolean }) => {
   const { t } = useTranslation("payments");
   return (
     <Card
       className="min-w-0 flex-[1_1_400px]"
       title={<CardTitle icon={Timer} title={t("shiftCheck.settings.schedule.title")} />}
-      description={t("shiftCheck.settings.schedule.description")}
+      description={
+        autoOpen ? t("shiftCheck.settings.schedule.description") : t("shiftCheck.settings.schedule.descriptionClose")
+      }
     >
       <Link to={opsTabPath(DAILY_SCHEDULE_TAB)} className={buttonClasses({ variant: "secondary" })}>
         {t("shiftCheck.settings.schedule.open")}
@@ -264,7 +269,7 @@ const SettingsForm = ({
       </Card>
       <ReceiptSettingsCard receipts={receipts} />
       <div className="flex flex-wrap items-start gap-4">
-        <ScheduleLinkCard />
+        <ScheduleLinkCard autoOpen={Boolean(settings.auto_open)} />
         {draft.report ? (
           <ReportSendCard value={draft.report} onChange={(report) => setDraft((current) => ({ ...current, report }))} />
         ) : null}

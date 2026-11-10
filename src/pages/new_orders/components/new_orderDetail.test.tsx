@@ -206,10 +206,14 @@ describe("NewOrderDetail — qabul vaqti tugagan («Kun tartibi», 2026-11-10)",
     await user.click(screen.getByRole("button", { name: "Barchasini tanlash" }));
     expect(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" })).toBeDisabled();
     expect(mocks.receiveMutate).not.toHaveBeenCalled();
+    // Skaner ham o'chiq — «QR skanerlansa … qabul qilinadi» maslahati va «USB skaner tayyor» ko'rinmaydi.
+    expect(screen.queryByText("QR skanerlansa, buyurtma darhol qabul qilinadi")).not.toBeInTheDocument();
+    expect(screen.queryByText("USB skaner tayyor")).not.toBeInTheDocument();
   });
 
   it("qabul ochiq — ogohlantirish yo'q, «Qabul qilish» ishlaydi", async () => {
     renderPage("registrator", { branchType: "HQ" });
+    expect(await screen.findByText("QR skanerlansa, buyurtma darhol qabul qilinadi")).toBeInTheDocument();
     await receiveAllOrders();
     await waitFor(() => expect(mocks.receiveMutate).toHaveBeenCalledTimes(1));
     expect(screen.queryByTestId("market-orders-receive-closed")).toBeNull();

@@ -179,12 +179,12 @@ export const AutoOpenCard = ({
   /** Yopishda ham bor vaqtlar (`conflict` matni uchun). */
   conflicts: string[];
 }) => {
-  const { t, i18n } = useTranslation("ops");
+  const { t, i18n } = useTranslation(["ops", "payments"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   return (
     <Card
       padding="none"
-      className="min-w-0 flex-[1_1_400px]"
+      className="min-w-0"
       title={<CardTitle icon={Timer} title={t("dailySchedule.open.title")} />}
       description={t("dailySchedule.open.subtitle")}
       divided
@@ -199,7 +199,8 @@ export const AutoOpenCard = ({
       <div className="flex flex-col gap-5 border-t border-border px-5 py-4 max-md:px-4">
         <TimesField
           label={t("dailySchedule.open.times")}
-          hint={t("dailySchedule.open.timesHint", {
+          // «Kuniga N marta» — yopish kartasidagi bilan bir xil matn (ko'plik shakllari payments'da: en / ru).
+          hint={t("payments:shiftCheck.settings.auto.timesHint", {
             count: value.times.length,
             value: formatNumberLocalized(value.times.length, { language }),
           })}
@@ -223,17 +224,23 @@ export const AutoOpenCard = ({
   );
 };
 
-/** «Avtomatik yopish» — «Smena sozlamalari»dan ko'chgan karta (y8Tqm9Ap): matn va xatti-harakat o'zgarmagan. */
+/**
+ * «Avtomatik yopish» — «Smena sozlamalari»dan ko'chgan karta (y8Tqm9Ap): matn va xatti-harakat o'zgarmagan. Izoh
+ * «keyingi smenani kim ochadi» — backend `auto_open` bersa «kassir yoki tizim», bermasa avvalgidek «kassir o'zi».
+ */
 export const AutoCloseCard = ({
   value,
   onChange,
   timesError,
   conflicts,
+  autoOpenSupported,
 }: {
   value: ShiftAutoCloseSettings;
   onChange: (next: ShiftAutoCloseSettings) => void;
   timesError?: TimesError;
   conflicts: string[];
+  /** Backend «Avtomatik ochish»ni qo'llaydi (`auto_open` javobda bor). */
+  autoOpenSupported: boolean;
 }) => {
   const { t, i18n } = useTranslation(["payments", "ops"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -263,11 +270,17 @@ export const AutoCloseCard = ({
   return (
     <Card
       padding="none"
-      className="min-w-0 flex-[1_1_400px]"
+      className="min-w-0"
       title={<CardTitle icon={Power} title={t("payments:shiftCheck.settings.auto.title")} />}
       description={t("payments:shiftCheck.settings.auto.subtitle")}
       divided
-      footer={<CardNote>{t("payments:shiftCheck.settings.auto.note")}</CardNote>}
+      footer={
+        <CardNote>
+          {autoOpenSupported
+            ? t("payments:shiftCheck.settings.auto.noteAutoOpen")
+            : t("payments:shiftCheck.settings.auto.note")}
+        </CardNote>
+      }
     >
       <SwitchRow
         title={t("payments:shiftCheck.settings.auto.enabled")}
@@ -366,7 +379,7 @@ export const LateAlertCard = ({
   return (
     <Card
       padding="none"
-      className="min-w-0 flex-[1_1_400px]"
+      className="min-w-0"
       title={<CardTitle icon={Bell} title={t("dailySchedule.late.title")} />}
       description={t("dailySchedule.late.subtitle")}
       divided

@@ -79,17 +79,29 @@ const ScheduleForm = ({
 
   const save = async () => {
     if (!dirty || invalid || saving) return;
-    const results = await Promise.allSettled([
-      ...(intakeDirty ? [updateIntake.mutateAsync(intakeBody)] : []),
-      ...(shiftDirty ? [updateShift.mutateAsync(shiftBody)] : []),
-    ]);
-    const failed = results.find((result) => result.status === "rejected");
-    if (!failed) {
+    const parts = [
+      ...(intakeDirty ? [{ part: "intake" as const, request: updateIntake.mutateAsync(intakeBody) }] : []),
+      ...(shiftDirty ? [{ part: "shift" as const, request: updateShift.mutateAsync(shiftBody) }] : []),
+    ];
+    const results = await Promise.allSettled(parts.map(({ request }) => request));
+    const failed = results.flatMap((result, index) =>
+      result.status === "rejected" ? [{ part: parts[index].part, reason: result.reason as unknown }] : [],
+    );
+    if (!failed.length) {
       notify.success(t("dailySchedule.saved"));
       return;
     }
-    notify.error(t("dailySchedule.saveError"), {
-      description: getApiErrorMessage(failed.reason) || undefined,
+    if (failed.length === parts.length) {
+      notify.error(t("dailySchedule.saveError"), {
+        description: getApiErrorMessage(failed[0].reason) || undefined,
+      });
+      return;
+    }
+    // Bir qism saqlandi, ikkinchisi yiqildi — ikkalasi aytiladi (aks holda «saqlanmadi» saqlangan qismni ham inkor qiladi).
+    const lost = failed[0];
+    notify.success(t(lost.part === "intake" ? "dailySchedule.savedShift" : "dailySchedule.savedIntake"));
+    notify.error(t(lost.part === "intake" ? "dailySchedule.saveErrorIntake" : "dailySchedule.saveErrorShift"), {
+      description: getApiErrorMessage(lost.reason) || undefined,
     });
   };
 
@@ -132,7 +144,8 @@ const ScheduleForm = ({
         />
       ) : null}
       {hasShift ? (
-        <div className="flex flex-wrap items-start gap-4">
+        // Teng kenglikdagi kartalar: ≥ 1280 — 2 ustun (uchinchi karta yolg'iz cho'zilmaydi), kichikda — bitta ustun.
+        <div className="grid items-start gap-4 xl:grid-cols-2">
           {autoOpen ? (
             <AutoOpenCard
               value={autoOpen}
@@ -146,6 +159,7 @@ const ScheduleForm = ({
               value={autoClose}
               timesError={errors.closeTimes}
               conflicts={conflicts}
+              autoOpenSupported={Boolean(autoOpen)}
               onChange={(auto_close) => setShift({ auto_close })}
             />
           ) : null}
