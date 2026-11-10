@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**84 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **135** · qisman: **171** · v2 ga ko'chirilgan route: **83 / 84**
+**85 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **135** · qisman: **171** · v2 ga ko'chirilgan route: **84 / 85**
 
 ## Qanday ishlatiladi
 
@@ -67,6 +67,7 @@
 | `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
 | `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | v2 |
+| `/new-orders/cancelled/handovers/:batchId` | Qabul va yaratish | `src/pages/new_orders/cancelled/handover.tsx` | superadmin, admin, registrator (faqat HQ) | 0 | v2 |
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 18 | v2 |
 | `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 20 | v2 |
 | `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
@@ -610,7 +611,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
 
-- **Fayllar:** `src/pages/new_orders/cancelled/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/cancelled/utils.ts`
+- **Fayllar:** `src/pages/new_orders/cancelled/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/pages/new_orders/cancelled/handedModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverBatches.tsx` · `src/entities/orders/cancelledHandovers.ts`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canHandoverCancelledToMarket` (access.ts → canHandoverCancelledToMarket)
+- **Rollar:** superadmin, admin, registrator (faqat HQ)
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** Ichki tablar «Kutilmoqda | Topshirilgan» (2026-11-10, ega tasdiqlagan skrinshot; BeePost «Market kutilmoqda» kabi): butun enni ikkiga bo'luvchi 52 px segment (`SegmentedControl size="lg"`). «Topshirilgan» (`?tab=handed`) — har «Marketga jo'natish» bitta karta, kun bo'yicha guruhlangan; qidiruv + sana (sukut joriy oy). Bu qism uchun v2 maketi yo'q.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/new-orders/cancelled` | superadmin | `superadmin-neworders-cancelled-markets` — Bekor qilinganlar — marketlar | [design/fragments/superadmin--neworders-cancelled-markets.html](fragments/superadmin--neworders-cancelled-markets.html) | sahifa | v2 |
+| `/new-orders/cancelled` | admin | `admin-neworders-cancelled` — Bekor qilinganlar tabi | [design/fragments/admin--neworders-cancelled.html](fragments/admin--neworders-cancelled.html) | sahifa | v2 |
+| `/new-orders/cancelled` | registrator | `registrator-new-orders-cancelled` — Bekor qilinganlar — marketlar (HQ) | [design/fragments/registrator--new-orders-cancelled.html](fragments/registrator--new-orders-cancelled.html) | sahifa | v2 |
+
+#### `/new-orders/cancelled/handovers/:batchId` — Bekor qilinganlar → Topshirilgan — bitta «Marketga jo'natish» buyurtmalari
+
+- **Fayllar:** `src/pages/new_orders/cancelled/handover.tsx` · `src/pages/new_orders/cancelled/ui/HandoverMethodBadges.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/entities/orders/cancelledHandovers.ts`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canHandoverCancelledToMarket` (access.ts → canHandoverCancelledToMarket)
 - **Rollar:** superadmin, admin, registrator (faqat HQ)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -618,9 +634,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/cancelled` | superadmin | `superadmin-neworders-cancelled-markets` — Bekor qilinganlar — marketlar | [design/fragments/superadmin--neworders-cancelled-markets.html](fragments/superadmin--neworders-cancelled-markets.html) | sahifa | v2 |
-| `/new-orders/cancelled` | admin | `admin-neworders-cancelled` — Bekor qilinganlar tabi | [design/fragments/admin--neworders-cancelled.html](fragments/admin--neworders-cancelled.html) | sahifa | v2 |
-| `/new-orders/cancelled` | registrator | `registrator-new-orders-cancelled` — Bekor qilinganlar — marketlar (HQ) | [design/fragments/registrator--new-orders-cancelled.html](fragments/registrator--new-orders-cancelled.html) | sahifa | v2 |
+| `/new-orders/cancelled/handovers/:batchId` | superadmin | — Maket yo'q (2026-11-10 ega tasdiqlagan skrinshot) — eng yaqini: superadmin-neworders-cancelled-handover | — | — | v2 |
+| `/new-orders/cancelled/handovers/:batchId` | admin | — Maket yo'q — eng yaqini: admin-neworders-cancelled-detail | — | — | v2 |
+| `/new-orders/cancelled/handovers/:batchId` | registrator | — Faqat HQ registratori; maket yo'q — eng yaqini: registrator-new-orders-cancelled-detail | — | — | v2 |
 
 #### `/new-orders/cancelled/:marketId` — Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)
 
@@ -3148,6 +3164,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/order/ui/FulfillmentSourceTag.tsx` | `/orders` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
+| `src/entities/orders/cancelledHandovers.ts` | `/new-orders/cancelled`, `/new-orders/cancelled/handovers/:batchId` |
 | `src/entities/orders/extraCosts.ts` | `/extra-costs` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
@@ -3391,8 +3408,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/branches/index.tsx` | `/new-orders/branches` |
 | `src/pages/new_orders/cancelled/cancelledModel.ts` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/detail.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/handedModel.ts` | `/new-orders/cancelled` |
+| `src/pages/new_orders/cancelled/handover.tsx` | `/new-orders/cancelled/handovers/:batchId` |
 | `src/pages/new_orders/cancelled/index.tsx` | `/new-orders/cancelled` |
-| `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` | `/new-orders/cancelled/handovers/:batchId`, `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/HandoverBatches.tsx` | `/new-orders/cancelled` |
+| `src/pages/new_orders/cancelled/ui/HandoverMethodBadges.tsx` | `/new-orders/cancelled/handovers/:batchId` |
 | `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | `/new-orders/cancelled/:marketId` |

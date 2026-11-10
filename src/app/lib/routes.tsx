@@ -105,6 +105,7 @@ const NewOrders = lazy(() => import("../../pages/new_orders"));
 const NewOrdersMarkets = lazy(() => import("../../pages/new_orders/markets"));
 const NewOrdersCancelled = lazy(() => import("../../pages/new_orders/cancelled"));
 const NewOrdersCancelledDetail = lazy(() => import("../../pages/new_orders/cancelled/detail"));
+const NewOrdersCancelledHandover = lazy(() => import("../../pages/new_orders/cancelled/handover"));
 const NewOrdersBranches = lazy(() => import("../../pages/new_orders/branches"));
 const NewOrdersBranchBatches = lazy(() => import("../../pages/new_orders/branches/batches"));
 const NewOrdersBranchBatchDetail = lazy(() => import("../../pages/new_orders/branches/batchDetail"));
@@ -943,6 +944,15 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute canActivate={canHandoverCancelledToMarket}>
                       <NewOrdersCancelled />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  // «Bekor qilinganlar → Topshirilgan» kartasi: bitta «Marketga jo'natish» buyurtmalari.
+                  path: "cancelled/handovers/:batchId",
+                  element: (
+                    <ProtectedRoute canActivate={canHandoverCancelledToMarket}>
+                      <NewOrdersCancelledHandover />
                     </ProtectedRoute>
                   ),
                 },

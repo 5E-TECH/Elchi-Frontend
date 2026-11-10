@@ -554,11 +554,36 @@
       "path": "/new-orders/cancelled",
       "section": "newOrders",
       "title": "Bekor qilinganlar — marketlar",
-      "components": ["src/pages/new_orders/cancelled/index.tsx", "src/pages/new_orders/ui/SourceListCard.tsx", "src/pages/new_orders/cancelled/utils.ts"],
+      "components": [
+        "src/pages/new_orders/cancelled/index.tsx",
+        "src/pages/new_orders/ui/SourceListCard.tsx",
+        "src/pages/new_orders/cancelled/utils.ts",
+        "src/pages/new_orders/cancelled/handedModel.ts",
+        "src/pages/new_orders/cancelled/ui/HandoverBatches.tsx",
+        "src/entities/orders/cancelledHandovers.ts"
+      ],
       "views": {
         "superadmin": ["neworders-cancelled-markets"],
         "admin": ["neworders-cancelled"],
         "registrator": ["new-orders-cancelled"]
+      },
+      "note": "Ichki tablar «Kutilmoqda | Topshirilgan» (2026-11-10, ega tasdiqlagan skrinshot; BeePost «Market kutilmoqda» kabi): butun enni ikkiga bo'luvchi 52 px segment (`SegmentedControl size=\"lg\"`). «Topshirilgan» (`?tab=handed`) — har «Marketga jo'natish» bitta karta, kun bo'yicha guruhlangan; qidiruv + sana (sukut joriy oy). Bu qism uchun v2 maketi yo'q."
+    },
+    {
+      "path": "/new-orders/cancelled/handovers/:batchId",
+      "section": "newOrders",
+      "title": "Bekor qilinganlar → Topshirilgan — bitta «Marketga jo'natish» buyurtmalari",
+      "components": [
+        "src/pages/new_orders/cancelled/handover.tsx",
+        "src/pages/new_orders/cancelled/ui/HandoverMethodBadges.tsx",
+        "src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx",
+        "src/entities/orders/cancelledHandovers.ts"
+      ],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q (2026-11-10 ega tasdiqlagan skrinshot) — eng yaqini: superadmin-neworders-cancelled-handover",
+        "admin": "Maket yo'q — eng yaqini: admin-neworders-cancelled-detail",
+        "registrator": "Faqat HQ registratori; maket yo'q — eng yaqini: registrator-new-orders-cancelled-detail"
       }
     },
     {

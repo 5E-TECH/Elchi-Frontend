@@ -33,7 +33,7 @@ export type SegmentedOption<T extends string = string> = {
   disabled?: boolean;
 };
 
-export type SegmentedControlSize = "sm" | "md";
+export type SegmentedControlSize = "sm" | "md" | "lg";
 
 /** Qolgan atributlar (`className`, `ref`, `data-*`, `onKeyDown` …) guruh `<div>` iga o'tadi. */
 export type SegmentedControlProps<T extends string = string> = Omit<
@@ -49,6 +49,8 @@ export type SegmentedControlProps<T extends string = string> = Omit<
    * `md` (sukut) — maketdagi `.el-seg`: variant 32 px, jami 40 px (sukutdagi
    * boshqaruv balandligi, yonidagi maydon bilan bir qatorda).
    * `sm` — ixcham: variant 24 px, jami 32 px.
+   * `lg` — bo'lim tablari (sahifani ikkiga bo'luvchi «Kutilmoqda | Topshirilgan»): variant 52 px, 16 px matn,
+   * tanlangani `action` rangida. Odatda `fullWidth` bilan.
    */
   size?: SegmentedControlSize;
   /**
@@ -62,6 +64,7 @@ export type SegmentedControlProps<T extends string = string> = Omit<
 const TRACK: Record<SegmentedControlSize, string> = {
   md: "gap-0.5 rounded-[10px] border border-border bg-sunken p-[3px]",
   sm: "gap-0.5 rounded-lg border border-border bg-sunken p-[3px]",
+  lg: "gap-1 rounded-[14px] border border-border bg-sunken p-1",
 };
 
 /**
@@ -72,19 +75,31 @@ const TRACK: Record<SegmentedControlSize, string> = {
  */
 const OPTION_BASE =
   "inline-flex items-center justify-center whitespace-nowrap font-semibold text-text-muted " +
-  "transition-[background-color,border-color,color,box-shadow,opacity] duration-150 motion-reduce:transition-none enabled:hover:text-text " +
-  "aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-xs " +
+  "transition-[background-color,border-color,color,box-shadow,opacity] duration-150 motion-reduce:transition-none " +
+  "aria-checked:bg-surface aria-checked:shadow-xs " +
   "disabled:cursor-not-allowed disabled:opacity-45 max-md:min-h-11";
+
+/**
+ * Matn rangi (hover va tanlangan) — o'lchamga qarab bittasi: bir xususiyatga ikki klass tushmasin. `lg` da
+ * tanlangan variant `action` rangida va hover uni o'zgartirmaydi.
+ */
+const OPTION_TONE: Record<SegmentedControlSize, string> = {
+  md: "enabled:hover:text-text aria-checked:text-text",
+  sm: "enabled:hover:text-text aria-checked:text-text",
+  lg: "enabled:hover:not-aria-checked:text-text aria-checked:text-action-fg aria-checked:font-bold aria-checked:ring-1 aria-checked:ring-border",
+};
 
 const OPTION_SIZE: Record<SegmentedControlSize, string> = {
   md: "h-8 gap-1.5 rounded-lg text-[13px]",
   sm: "h-6 gap-1 rounded-md text-xs",
+  lg: "h-[52px] gap-2.5 rounded-[10px] text-base max-md:gap-1.5 max-md:text-[15px]",
 };
 
 /** Yon oraliq: matnli / ikonkali variant (`.el-viewtoggle` 10 px). */
 const OPTION_PADDING: Record<SegmentedControlSize, { text: string; icon: string }> = {
   md: { text: "px-3", icon: "px-2.5" },
   sm: { text: "px-2.5", icon: "px-2" },
+  lg: { text: "px-4", icon: "px-3.5" },
 };
 
 /**
@@ -187,6 +202,7 @@ export const SegmentedControl = <T extends string = string>({
             onClick={() => select(option.value)}
             className={cx(
               OPTION_BASE,
+              OPTION_TONE[size],
               OPTION_SIZE[size],
               mode === "always" ? "px-2" : OPTION_PADDING[size][Icon ? "icon" : "text"],
               width.option,

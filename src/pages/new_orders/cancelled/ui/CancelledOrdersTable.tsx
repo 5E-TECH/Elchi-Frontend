@@ -58,6 +58,8 @@ type MarketProps = {
   label: string;
   sort: DataTableSort | null;
   onSortChange: (sort: DataTableSort | null) => void;
+  /** № buyurtma sahifasiga havola (xodim «Topshirilgan» partiyasini ko'rganda; market rolida — yo'q). */
+  linkOrders?: boolean;
   busy?: boolean;
   className?: string;
 };
@@ -71,6 +73,7 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isHandover = props.variant === "handover";
   const handover = isHandover ? props : null;
+  const linkOrders = isHandover || (props.variant === "market" && props.linkOrders === true);
 
   const money = useCallback((value: unknown) => formatMoneyLocalized(value, { language }), [language]);
   const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
@@ -146,7 +149,7 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
   const columns = useMemo<DataTableColumn<MarketOrder>[]>(() => {
     const orderCell = (order: MarketOrder) => (
       <>
-        {isHandover ? (
+        {linkOrders ? (
           <Link
             to={`/orders/edit/${order.id}`}
             className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
@@ -245,7 +248,7 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
       });
     }
     return list;
-  }, [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, manualBadge, money, productLines, t]);
+  }, [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, linkOrders, manualBadge, money, productLines, t]);
 
   const renderCard = useCallback(
     (order: MarketOrder) => {
@@ -280,7 +283,15 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
         </div>
       );
 
-      if (!isHandover) return <div className="px-4 py-3">{content}</div>;
+      if (!isHandover) {
+        return linkOrders ? (
+          <Link to={`/orders/edit/${order.id}`} className="block px-4 py-3 hover:bg-sunken">
+            {content}
+          </Link>
+        ) : (
+          <div className="px-4 py-3">{content}</div>
+        );
+      }
 
       const damaged = damagedButton(order, "md");
       return (
@@ -296,7 +307,7 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
         </div>
       );
     },
-    [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, manualBadge, money, productLines],
+    [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, linkOrders, manualBadge, money, productLines],
   );
 
   return (

@@ -6,6 +6,7 @@ import { marketOperatorKeys } from "../entities/market-operator/api/useMarketOpe
 import { logistKeys } from "../entities/logist/api/useLogists";
 import { integrationKeys } from "../entities/integrations";
 import { SMS_KEYS } from "../entities/sms";
+import { cancelledHandoverKeys } from "../entities/orders/cancelledHandovers";
 
 /**
  * SO'ROV KALITLARI INVALIDATSIYASI QO'RIQCHISI (Trello SZTZ4HEU «837be6»).
@@ -38,6 +39,8 @@ const FACTORIES: Record<string, Record<string, unknown>> = {
   logistKeys,
   integrationKeys,
   SMS_KEYS,
+  // «Bekor qilinganlar → Topshirilgan» (2026-11-10): «Marketga jo'natish» `["orders"]` ni eskirtiradi — yangi karta chiqadi.
+  cancelledHandoverKeys,
 };
 
 /**
