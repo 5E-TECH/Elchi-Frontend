@@ -24,9 +24,10 @@ export const STATUS_COUNTS = {
   waiting: 14,
   sold: 734,
   paid: 168,
+  closed: 37,
   cancelled: 0,
   new_incoming: 7,
-  by_status: {},
+  by_status: { closed: 37 },
   search_truncated: false,
 };
 

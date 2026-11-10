@@ -19,6 +19,7 @@ const TAB_TEXTS = [
   "Kutilmoqda 14",
   "Sotilgan 734",
   "To'langan 168",
+  "Yopildi 37",
   "Bekor qilingan 0",
 ];
 
