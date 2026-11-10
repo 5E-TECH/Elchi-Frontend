@@ -6,14 +6,21 @@ import { DataTable, type DataTableColumn } from "../primitives";
 
 /**
  * AI JAVOBI MATNI — `shared/lib/miniMarkdown.ts` daraxtidan faqat React tugunlari (HTML kiritilmaydi, havola va
- * rasm — matn). Maket `superadmin-ai-assistant` javob kartasi: paragraf 15/1.6, sarlavha `.el-h3`, ro'yxat,
- * jadval — `DataTable density="compact"` ramkada (telefonda kartalar), qalin — `.el-strong`.
+ * rasm — matn). Maket `superadmin-ai-assistant` javob kartasi: paragraf 14/1.6, sarlavha `.el-h3`, ro'yxat,
+ * jadval — `DataTable density="compact"` ramkada (telefonda kartalar), qalin — `.el-strong`. `caret` — oqim davomida
+ * oxirgi paragraf / ro'yxat bandi oxirida matn kursori (maket `-answering`: 2 px × 1em, `bg-text`).
  */
 
 export type MiniMarkdownProps = {
   source: string;
   className?: string;
+  /** Javob yozilmoqda — oxirgi matn bloki oxirida kursor. */
+  caret?: boolean;
 };
+
+const Caret = () => (
+  <span aria-hidden="true" data-md-caret="" className="ml-0.5 inline-block h-[1em] w-0.5 bg-text align-text-bottom" />
+);
 
 const renderInline = (nodes: readonly MdInline[], keyPrefix = "i"): ReactNode[] =>
   nodes.map((node, index) => {
@@ -94,18 +101,19 @@ const MarkdownTable = ({ block }: { block: Extract<MdBlock, { type: "table" }> }
   );
 };
 
-const renderBlock = (block: MdBlock, index: number): ReactNode => {
+const renderBlock = (block: MdBlock, index: number, trailing: ReactNode = null): ReactNode => {
   const key = `b-${index}`;
   switch (block.type) {
     case "paragraph":
       return (
         <p key={key} className="leading-[1.6] wrap-break-word">
           {renderInline(block.children, key)}
+          {trailing}
         </p>
       );
     case "heading":
       return (
-        <h3 key={key} className="text-base font-bold text-text">
+        <h3 key={key} className="text-sm font-semibold text-text">
           {renderInline(block.children, key)}
         </h3>
       );
@@ -113,6 +121,7 @@ const renderBlock = (block: MdBlock, index: number): ReactNode => {
       const items = block.items.map((item, itemIndex) => (
         <li key={`${key}-${itemIndex}`} className="pl-1 leading-[1.6] wrap-break-word">
           {renderInline(item, `${key}-${itemIndex}`)}
+          {itemIndex === block.items.length - 1 ? trailing : null}
         </li>
       ));
       return block.ordered ? (
@@ -138,9 +147,14 @@ const renderBlock = (block: MdBlock, index: number): ReactNode => {
   }
 };
 
-export const MiniMarkdown = ({ source, className }: MiniMarkdownProps) => {
+export const MiniMarkdown = ({ source, className, caret = false }: MiniMarkdownProps) => {
   const blocks = useMemo(() => parseMarkdown(source), [source]);
-  return <div className={cx("flex min-w-0 flex-col gap-3 text-[15px] text-text", className)}>{blocks.map(renderBlock)}</div>;
+  const last = blocks.length - 1;
+  return (
+    <div className={cx("flex min-w-0 flex-col gap-3 text-sm text-text", className)}>
+      {blocks.map((block, index) => renderBlock(block, index, caret && index === last ? <Caret /> : null))}
+    </div>
+  );
 };
 
 export default MiniMarkdown;

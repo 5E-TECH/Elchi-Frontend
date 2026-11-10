@@ -1081,3 +1081,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   `features/ai-chat` (o'quvchi, oqim, holat mashinasi), markdown — `shared/lib/miniMarkdown.ts` +
   `shared/ui/markdown/MiniMarkdown.tsx` (jadval — `DataTable compact`, telefonda kartalar), «Manba» — `done.sources`
   (`entities/ai-advisor`). Telefonda suhbatlar — pastki varaqa (maket yo'q, eng yaqini yon ustun ro'yxati).
+  Maket bilan vizual solishtiruv (1440 / 768 / 390, kunduzgi va tungi): javob, savol pufakchasi va limit qiymati
+  14 px (maket asosiy matni), markdown sarlavhasi `.el-h3`; kiritish maydoni 52 px, matn ko'paysa 160 px gacha o'sadi
+  (`field-sizing: content`); oqim davomida matn oxirida kursor (2 px × 1em); limit tugadi qutisi — `Clock`, «Suhbat
+  topilmadi» — `Compass` (maketdagidek); varaqadagi suhbat bandlari — `.el-option` kabi; xato / yuklanishda «Suhbatlar»
+  tugmasida son yo'q.

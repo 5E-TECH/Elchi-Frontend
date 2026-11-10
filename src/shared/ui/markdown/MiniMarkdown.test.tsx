@@ -23,4 +23,20 @@ describe("MiniMarkdown — AI javobi (faqat React tugunlari)", () => {
     expect(container.querySelector("a")).toBeNull();
     expect(container.textContent).toContain("<img src=x onerror=alert(1)> bosing");
   });
+
+  it("matn 14 px, sarlavha `.el-h3`; `caret` — kursor faqat oxirgi paragraf / ro'yxat bandi oxirida", () => {
+    const { container, rerender } = render(<MiniMarkdown source={"Birinchi.\n\n### Sarlavha\n\nOxirgi paragraf"} caret />);
+    expect(container.firstElementChild).toHaveClass("text-sm");
+    expect(screen.getByRole("heading", { level: 3 })).toHaveClass("text-sm", "font-semibold");
+    const carets = container.querySelectorAll("[data-md-caret]");
+    expect(carets).toHaveLength(1);
+    expect(carets[0]).toHaveAttribute("aria-hidden", "true");
+    expect(carets[0].parentElement?.textContent).toBe("Oxirgi paragraf");
+
+    rerender(<MiniMarkdown source={"- bir\n- ikki"} caret />);
+    expect(container.querySelector("[data-md-caret]")?.parentElement?.textContent).toBe("ikki");
+
+    rerender(<MiniMarkdown source={"- bir\n- ikki"} />);
+    expect(container.querySelector("[data-md-caret]")).toBeNull();
+  });
 });

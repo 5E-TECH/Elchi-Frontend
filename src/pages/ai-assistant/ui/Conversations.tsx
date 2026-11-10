@@ -11,7 +11,8 @@ import type { AiConversationSummary } from "../../../entities/ai-advisor";
 
 /**
  * «Suhbatlar» (maket: yon ustundagi `.el-card` + `nav.el-list`; < 1024 — «Suhbatlar N» tugmasi va pastki varaqa,
- * varaqa maketi yo'q — eng yaqini yon ustundagi ro'yxat). Bandi — havola `?conversation=<id>` (yangi tabda ham
+ * varaqa maketi yo'q — eng yaqini yon ustundagi ro'yxat; varaqada bandlar `Select` varag'idagi `.el-option` kabi —
+ * chegarasiz, radius 8, matn sarlavha bilan bir chiziqda). Bandi — havola `?conversation=<id>` (yangi tabda ham
  * ochiladi), tanlangani `aria-current` + `action-soft`. «90 kun saqlanadi» yozilmaydi (backend'da saqlash muddati
  * hali yo'q). Ko'p bo'lsa — «Ko'proq» (maket yo'q).
  */
@@ -32,18 +33,25 @@ type ListProps = {
   state: ConversationsState;
   selectedId: string | null;
   onSelect?: () => void;
+  /** `card` — yon ustun kartasi (qatorlar chetma-chet, chiziq bilan); `sheet` — oyna / pastki varaqa. */
+  variant?: "card" | "sheet";
 };
 
-const ITEM =
-  "flex min-h-14 items-center gap-3 border-b border-border px-5 py-2.5 text-text last:border-b-0 hover:bg-row-hover " +
-  "max-md:min-h-14 max-md:px-4";
+const ITEM: Record<NonNullable<ListProps["variant"]>, string> = {
+  card:
+    "flex min-h-14 items-center gap-3 border-b border-border px-5 py-2.5 text-text last:border-b-0 hover:bg-row-hover " +
+    "max-md:px-4",
+  sheet: "flex min-h-14 items-center gap-3 rounded-lg px-2.5 py-2 text-text hover:bg-sunken",
+};
+const ITEM_SELECTED = "bg-action-soft hover:bg-action-soft";
+const PAD = { card: "px-5 py-4", sheet: "px-2.5 py-2" } as const;
 
-export const ConversationList = ({ state, selectedId, onSelect }: ListProps) => {
+export const ConversationList = ({ state, selectedId, onSelect, variant = "card" }: ListProps) => {
   const { t } = useTranslation("aiAdvisor");
 
   if (state.isPending) {
     return (
-      <div className="px-5 py-4">
+      <div className={PAD[variant]}>
         <SkeletonList rows={4} />
       </div>
     );
@@ -51,7 +59,7 @@ export const ConversationList = ({ state, selectedId, onSelect }: ListProps) => 
 
   if (state.isError) {
     return (
-      <div className="p-4">
+      <div className={variant === "card" ? "p-4" : undefined}>
         <NoticeAlert
           tone="danger"
           title={t("conversations.errorTitle")}
@@ -68,7 +76,7 @@ export const ConversationList = ({ state, selectedId, onSelect }: ListProps) => 
   }
 
   if (state.items.length === 0) {
-    return <p className="px-5 py-4 text-[13px] text-text-muted">{t("conversations.empty")}</p>;
+    return <p className={cx(PAD[variant], "text-[13px] text-text-muted")}>{t("conversations.empty")}</p>;
   }
 
   return (
@@ -82,7 +90,7 @@ export const ConversationList = ({ state, selectedId, onSelect }: ListProps) => 
               to={{ search: `?conversation=${item.id}` }}
               aria-current={selected ? "true" : undefined}
               onClick={onSelect}
-              className={cx(ITEM, selected && "bg-action-soft hover:bg-action-soft")}
+              className={cx(ITEM[variant], selected && ITEM_SELECTED)}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className={cx("truncate text-sm font-semibold", selected ? "text-action-fg" : "text-text")}>
@@ -95,7 +103,7 @@ export const ConversationList = ({ state, selectedId, onSelect }: ListProps) => 
         })}
       </nav>
       {state.hasMore ? (
-        <div className="border-t border-border px-5 py-3">
+        <div className={variant === "card" ? "border-t border-border px-5 py-3" : "px-2.5 pt-2"}>
           <Button variant="link" size="sm" loading={state.loadingMore} onClick={state.loadMore}>
             {t("conversations.more")}
           </Button>
@@ -134,8 +142,8 @@ export const ConversationsDialog = ({
 }) => {
   const { t } = useTranslation("aiAdvisor");
   return (
-    <Dialog open={open} onClose={onClose} title={t("conversations.title")} size="sm" bodyClassName="p-0">
-      <ConversationList state={state} selectedId={selectedId} onSelect={onClose} />
+    <Dialog open={open} onClose={onClose} title={t("conversations.title")} size="sm">
+      <ConversationList state={state} selectedId={selectedId} onSelect={onClose} variant="sheet" />
     </Dialog>
   );
 };

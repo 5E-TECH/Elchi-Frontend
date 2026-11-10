@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-limit-reached
 import { useTranslation } from "react-i18next";
-import { Lock, TriangleAlert } from "lucide-react";
+import { Clock, Lock, TriangleAlert } from "lucide-react";
 import { Card } from "../../../shared/ui/primitives";
 import { Meter } from "../../../shared/ui/charts";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -45,7 +45,7 @@ export const LimitCard = ({ access }: { access: AiAccessState }) => {
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-text">{t("limit.title")}</h2>
-          <span className="whitespace-nowrap font-semibold text-text">{texts.value}</span>
+          <span className="whitespace-nowrap text-sm font-semibold text-text">{texts.value}</span>
         </div>
         <Meter
           value={view.used}
@@ -95,11 +95,11 @@ export const LimitRow = ({ access }: { access: AiAccessState }) => {
   );
 };
 
-/** Limit tugadi — kiritish ustida (`-limit-reached`; «Hisobotlarga o'tish» — T2, chizilmaydi). */
+/** Limit tugadi — kiritish ustida (`-limit-reached`: `Clock` ikonkasi; «Hisobotlarga o'tish» — T2, chizilmaydi). */
 export const LimitAlert = ({ access }: { access: AiAccessState }) => {
   const { t } = useTranslation("aiAdvisor");
   return (
-    <NoticeAlert tone="warning" title={t("limit.alertTitle", { limit: formatNumberLocalized(access.dailyLimit) })}>
+    <NoticeAlert tone="warning" icon={Clock} title={t("limit.alertTitle", { limit: formatNumberLocalized(access.dailyLimit) })}>
       {t("limit.alertText")}
     </NoticeAlert>
   );

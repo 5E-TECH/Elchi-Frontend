@@ -6,9 +6,9 @@ import { Button, Card, Field, IconButton, TextInput } from "../../../shared/ui/p
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 
 /**
- * SAVOL YOZISH (maket: `section.el-card[aria-label="Savol yozish"]`): yashirin yorliq «Savolingiz», 2 qatorli matn
- * maydoni + kvadrat «Yuborish» (44 px); ostida «AI xato qilishi mumkin …» va hisoblagich «0 / 1000» (telefonda
- * yashirin). Javob yozilayotganda — maydon o'chiq «Javob yozilmoqda…», tugma o'rnida ikkinchi darajali «To'xtatish»
+ * SAVOL YOZISH (maket: `section.el-card[aria-label="Savol yozish"]`): yashirin yorliq «Savolingiz», 52 px matn
+ * maydoni (matn ko'paysa 160 px gacha o'sadi — `field-sizing: content`) + kvadrat «Yuborish» (44 px); ostida
+ * «AI xato qilishi mumkin …» va hisoblagich «0 / 1000» (telefonda yashirin). Javob yozilayotganda — maydon o'chiq «Javob yozilmoqda…», tugma o'rnida ikkinchi darajali «To'xtatish»
  * (ikonkasiz — maketdagidek), izoh «To'xtatish — javob shu joyda to'xtaydi». O'chiq holatlar (AI o'chiq, oflayn,
  * limit) — maketdagi placeholder bilan. Enter — yangi qator, Ctrl/Cmd + Enter — yuborish (maket yo'q).
  */
@@ -56,7 +56,7 @@ export const Composer = ({ value, onChange, onSend, onStop, live, block, pending
           <Field label={t("composer.label")} hideLabel error={error} className="min-w-0 flex-1">
             <TextInput
               multiline
-              rows={2}
+              rows={1}
               value={value}
               onValueChange={onChange}
               onKeyDown={onKeyDown}
@@ -65,7 +65,7 @@ export const Composer = ({ value, onChange, onSend, onStop, live, block, pending
               placeholder={placeholder}
               aria-describedby={hintId}
               aria-keyshortcuts="Control+Enter Meta+Enter"
-              className="min-h-[52px]! resize-none! leading-normal"
+              className="max-h-40 min-h-[52px]! resize-none! leading-normal field-sizing-content"
             />
           </Field>
           {live ? (

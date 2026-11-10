@@ -33,7 +33,7 @@ export const UserBubble = ({ text, at, bubbleRef }: { text: string; at: string |
   return (
     <div ref={bubbleRef} className="flex flex-col items-end gap-1.5">
       <span className="text-xs text-text-muted">{t("chat.you", { time: time(at) })}</span>
-      <p className="max-w-[min(560px,92%)] rounded-[14px_14px_6px_14px] bg-sunken px-4 py-3 leading-[1.6] whitespace-pre-wrap wrap-break-word text-text">
+      <p className="max-w-[min(560px,92%)] rounded-[14px_14px_6px_14px] bg-sunken px-4 py-3 text-sm leading-[1.6] whitespace-pre-wrap wrap-break-word text-text">
         {text}
       </p>
     </div>

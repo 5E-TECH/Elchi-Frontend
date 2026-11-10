@@ -240,8 +240,11 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     renderPage();
     expect(await screen.findByText("Suhbatlarni yuklab bo'lmadi")).toBeInTheDocument();
     expect(screen.getByText("Internet aloqasini tekshirib, qayta urining.")).toBeInTheDocument();
+    // < 1024 dagi «Suhbatlar» tugmasida xatoda son yo'q («0» yolg'on bo'lardi).
+    expect(screen.getByRole("button", { name: "Suhbatlar" }).textContent).toBe("Suhbatlar");
     await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByRole("link", { name: /Oktabr tushumi/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Suhbatlar/ }).textContent).toMatch(/^Suhbatlar\d+$/);
   });
 
   it("holat (access/me) yuklanmadi — sahifa xatosi va «Qayta urinish»", async () => {

@@ -63,7 +63,7 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
                 {t("chat.collecting")}
               </p>
             ) : null}
-            {turn.text.trim() ? <MiniMarkdown source={turn.text} /> : null}
+            {turn.text.trim() ? <MiniMarkdown source={turn.text} caret /> : null}
             <WritingSkeleton />
           </div>
         </Card>
@@ -76,7 +76,7 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
       <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
         <Card padding="none" aria-label={t("chat.answerLabel")}>
           <div className="flex flex-col gap-3 p-5 max-md:p-4">
-            {turn.text.trim() ? <MiniMarkdown source={turn.text} className="text-sm" /> : null}
+            {turn.text.trim() ? <MiniMarkdown source={turn.text} /> : null}
             {turn.text.trim() ? <AnswerNotes short /> : null}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
               <span className="text-xs text-text-muted">{t("chat.stopped")}</span>

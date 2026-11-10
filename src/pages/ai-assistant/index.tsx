@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { History, Plus, Power, RefreshCw, SearchX } from "lucide-react";
+import { Compass, History, Plus, Power, RefreshCw } from "lucide-react";
 import {
   Button,
   EmptyState,
@@ -149,7 +149,7 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
   const notFoundState = (
     <EmptyState
       framed
-      icon={SearchX}
+      icon={Compass}
       title={t("chat.notFoundTitle")}
       description={t("chat.notFoundText")}
       action={
@@ -208,9 +208,12 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
           <div className="hidden flex-wrap items-center gap-x-4 gap-y-3 max-lg:flex">
             <Button variant="secondary" leftIcon={History} aria-haspopup="dialog" onClick={() => setSheetOpen(true)} className="flex-none">
               {t("conversations.open")}
-              <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-sunken px-1.5 text-xs font-semibold text-text-muted">
-                {formatNumberLocalized(conversations.total)}
-              </span>
+              {/* Son — ro'yxat kelgandan keyin (yuklanish / xatoda «0» yolg'on bo'lardi; yon kartadagi badge kabi). */}
+              {conversations.isPending || conversations.isError ? null : (
+                <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-sunken px-1.5 text-xs font-semibold text-text-muted">
+                  {formatNumberLocalized(conversations.total)}
+                </span>
+              )}
             </Button>
             {access.allowed ? <LimitRow access={access} /> : null}
           </div>
