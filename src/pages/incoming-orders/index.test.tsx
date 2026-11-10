@@ -1450,3 +1450,99 @@ describe("IncomingOrdersPage — chala qop", () => {
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 });
+
+describe("IncomingOrdersPage — qabul vaqti tugagan («Kun tartibi», 2026-11-10)", () => {
+  beforeEach(() => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const items = [
+    { id: "o-1", order_number: 10263, qr_code_token: "tok-1", total_price: 175000, customer: { name: "Rustam Jo'rayev" } },
+  ];
+  /** `GET orders/intake-settings` — yangi backend (`receive_*`): 16:00 dan keyin qabul yopiq, kun almashganda ochiladi. */
+  const intakeSettings = (receiveOpen: boolean) => ({
+    cutoff_time: null,
+    is_open: true,
+    closes_at: null,
+    reopens_at: null,
+    receive_cutoff_time: "16:00",
+    receive_is_open: receiveOpen,
+    receive_closes_at: receiveOpen ? "2099-11-10T11:00:00.000Z" : null,
+    receive_reopens_at: receiveOpen ? null : "2099-11-10T19:00:00.000Z",
+    day_change_time: "00:00",
+  });
+  let receiveOpen = true;
+  const intakeCalls = () => apiGetMock.mock.calls.filter(([url]) => url === "orders/intake-settings").length;
+  const mockApi = () =>
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "orders/external") return Promise.resolve({ data: { data: items, total: items.length } });
+      if (url === "orders/intake-settings") return Promise.resolve({ data: { data: intakeSettings(receiveOpen) } });
+      return Promise.resolve({ data: [] });
+    });
+  const scan = (value: string) => {
+    const input = screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.submit(input.closest("form")!);
+  };
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    receiveOpen = true;
+  });
+
+  it("⭐ ogohlantirish chegara va ochilish vaqti bilan; skan belgilaydi, lekin «Qabul qilish» o'chiq", async () => {
+    receiveOpen = false;
+    mockApi();
+    renderPage();
+
+    const alert = await screen.findByTestId("incoming-receive-closed");
+    expect(alert).toHaveAttribute("role", "status");
+    expect(alert).toHaveTextContent("Bugungi qabul vaqti tugadi (16:00)");
+    expect(alert).toHaveTextContent(/Yangi buyurtmalarni qabul qilish \d\d:\d\d da, kun almashganda ochiladi\./);
+    await screen.findByText("Rustam Jo'rayev");
+
+    scan("tok-1");
+    expect(await screen.findByText("№10263 — ro'yxatga qo'shildi")).toBeInTheDocument();
+    expect(scannedProgress()).toBe("1 / 1");
+    expect(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" })).toBeDisabled();
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("qabul ochiq — ogohlantirish yo'q, «Qabul qilish» ishlaydi", async () => {
+    mockApi();
+    apiPostMock.mockResolvedValue({ data: { data: { received: 1, unmatched: [] } } });
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+
+    scan("tok-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("orders/external/receive-by-scan", { tokens: ["tok-1"] }));
+    expect(screen.queryByTestId("incoming-receive-closed")).toBeNull();
+  });
+
+  it("server shu orada yopgan (409 `ORDER_RECEIVE_CLOSED`) — backend matni, holat qayta o'qiladi, «Qabul qilish» o'chadi", async () => {
+    const message = "Bugungi qabul vaqti tugadi (16:00). Qabul 00:00 da ochiladi.";
+    mockApi();
+    apiPostMock.mockImplementation(() => {
+      receiveOpen = false;
+      return Promise.reject({ response: { status: 409, data: { statusCode: 409, code: "ORDER_RECEIVE_CLOSED", message } } });
+    });
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+    expect(screen.queryByTestId("incoming-receive-closed")).toBeNull();
+    const before = intakeCalls();
+
+    scan("tok-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(await screen.findByTestId("incoming-receive-closed")).toBeInTheDocument();
+    expect(intakeCalls()).toBeGreaterThan(before);
+    // Belgi saqlanadi (kun almashgach qabul qilinadi), tugma o'chiq.
+    expect(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" })).toBeDisabled();
+  });
+});

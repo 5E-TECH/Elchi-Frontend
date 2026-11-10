@@ -8,8 +8,10 @@ import {
 import { RECEIPT_TEXT, type ReceiptAmount, type ReceiptOrderModel } from "./printReceiptModel";
 import { encodeReceiptQr, receiptQrModule, type ReceiptQrSymbol } from "./printReceiptQr";
 import {
+  RECEIPT_WATERMARK_CAPTION_PITCH,
   RECEIPT_WATERMARK_DOT,
   RECEIPT_WATERMARK_PITCH,
+  receiptWatermarkCaptionRuns,
   receiptWatermarkRuns,
   receiptWatermarkWidth,
   type ReceiptWatermarkRun,
@@ -340,8 +342,10 @@ export const THERMAL_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSp
   banner: { h: 3.6, radius: 1.2, pt: 8, gap: 0.8 },
   continuationPt: 7.5,
   paragraphGap: 0.8,
-  // Sarlavha chizig'i (12,4) va pastki band (53,6) o'rtasi; eni 39,6 → x 30,2–69,8 (QR ustuni 72,2 dan).
-  watermark: { cx: 50, cy: 33, height: 36 },
+  // Sarlavha chizig'i (12,4) va pastki band (53,6) o'rtasi: belgi + «ELCHI POCHTA», 38 mm → y 14–52 (ikki qatorli
+  // pastki bandda «POCHTA» jo'natuvchi qatori ostiga 1,2 mm kiradi — orqa fon); eni 38,2 → x 30,9–69,1
+  // (QR ustuni 72,2 dan). Belgi 21 mm, «ELCHI» 10,3 mm, «POCHTA» 3,7 mm.
+  watermark: { cx: 50, cy: 33, height: 38 },
 });
 
 /**
@@ -400,7 +404,7 @@ export const A4_ORDER_SPEC: OrderReceiptSpec = Object.freeze<OrderReceiptSpec>({
   banner: { h: 3.2, radius: 1, pt: 7, gap: 0.6 },
   continuationPt: 7,
   paragraphGap: 0.6,
-  // Sarlavha chizig'i (11,8) va pastki band (39,2) o'rtasi; eni 28,6 → x 35,7–64,3 (QR ustuni 75,2 dan).
+  // Sarlavha chizig'i (11,8) va pastki band (39,2) o'rtasi; eni 26,1 → x 36,9–63,1 (QR ustuni 75,2 dan).
   watermark: { cx: 50, cy: 25.5, height: 26 },
 });
 
@@ -1450,17 +1454,31 @@ const fixedOps = (
 const partDate = (date: string, part: number, parts: number) =>
   parts > 1 ? [`${part}/${parts}`, date].filter(Boolean).join(" · ") : date;
 
-/** Orqa fondagi xira belgi (`spec.watermark` markazida) — yorliqning birinchi amali. */
-export const receiptWatermarkOp = (spec: OrderReceiptSpec): ReceiptWatermarkOp => {
+/**
+ * Orqa fondagi xira belgi va yozuv (`spec.watermark` markazida) — yorliqning birinchi ikki amali, bitta qutida: belgi
+ * bilan «ELCHI» (asosiy to'r) va mayda «POCHTA» (zichroq to'r — har amalning o'z punktiri).
+ */
+export const receiptWatermarkOps = (
+  spec: OrderReceiptSpec,
+): readonly [ReceiptWatermarkOp, ReceiptWatermarkOp] => {
   const { cx, cy, height } = spec.watermark;
-  return {
-    kind: "watermark",
-    x: round3(cx - receiptWatermarkWidth(height) / 2),
-    y: round3(cy - height / 2),
-    dot: RECEIPT_WATERMARK_DOT,
-    pitch: RECEIPT_WATERMARK_PITCH,
-    runs: receiptWatermarkRuns(height),
-  };
+  const box = { x: round3(cx - receiptWatermarkWidth(height) / 2), y: round3(cy - height / 2) };
+  return [
+    {
+      kind: "watermark",
+      ...box,
+      dot: RECEIPT_WATERMARK_DOT,
+      pitch: RECEIPT_WATERMARK_PITCH,
+      runs: receiptWatermarkRuns(height),
+    },
+    {
+      kind: "watermark",
+      ...box,
+      dot: RECEIPT_WATERMARK_DOT,
+      pitch: RECEIPT_WATERMARK_CAPTION_PITCH,
+      runs: receiptWatermarkCaptionRuns(height),
+    },
+  ];
 };
 
 /**
@@ -1476,11 +1494,11 @@ export const layoutOrderReceipt = (
   const footer = planFooter(model, spec, measure);
   const r2Bottom = footer.r2Bottom;
   // Xira belgi birinchi — qolgan amallar (matn, chiziq, QR) uning ustidan chiziladi; ularning joyi o'zgarmaydi.
-  const watermark = receiptWatermarkOp(spec);
+  const watermark = receiptWatermarkOps(spec);
   const label = (ops: ReceiptOp[], meta: ReceiptLabelMeta): ReceiptLabel => ({
     width: spec.width,
     height: spec.height,
-    ops: [watermark, ...withReceiptKerning(ops, measure)],
+    ops: [...watermark, ...withReceiptKerning(ops, measure)],
     meta,
   });
   const hasB = model.products.length > 0 || Boolean(model.comment);

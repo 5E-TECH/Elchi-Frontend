@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Check, Circle, Inbox, Info, RefreshCw, TriangleAlert } from "lucide-react";
+import { Check, Circle, Clock, Inbox, Info, RefreshCw, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { canReceiveExternalOrders } from "../../app/lib/access";
 import { extractScannerToken, latinizeKeyboardLayout, normalizeScanKey, scanKeyCandidates } from "../../shared/lib/scanToken";
@@ -16,6 +16,7 @@ import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerListening } from "../../shared/lib/useScannerListening";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
+import { formatTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
 import {
@@ -26,6 +27,7 @@ import {
   useReceiveByScan,
   type IncomingOrder,
 } from "../../entities/incoming-orders";
+import { isOrderReceiveClosedError, useOrderIntake } from "../../entities/order-intake";
 import {
   Badge,
   Button,
@@ -179,6 +181,12 @@ const IncomingOrdersPage = () => {
   const sources = useIncomingSources();
   const source = (sources.data ?? []).find((s) => s.market_id === marketId);
   const receiveByScan = useReceiveByScan();
+  // «Kun tartibi» (Ops, 2026-11-10): qabul chegarasi o'tgan — kun almashguncha «Qabul qilish» o'chiq (backend ham
+  // `409 ORDER_RECEIVE_CLOSED`). Skanerlash faqat belgilaydi — ishlayveradi, belgilar qoralamada qoladi.
+  const { t: tNewOrders } = useTranslation("newOrders");
+  const intake = useOrderIntake({ enabled: allowed });
+  const receiveClosed = allowed && intake.receiveClosed;
+  const refetchIntake = intake.query.refetch;
 
   const orders = useMemo(() => query.data?.items ?? [], [query.data]);
   const total = query.data?.total ?? orders.length;
@@ -444,7 +452,7 @@ const IncomingOrdersPage = () => {
   };
 
   const handleReceive = async () => {
-    if (!scannedTokens.length) return;
+    if (!scannedTokens.length || receiveClosed) return;
     if (!(await confirmPartialBags())) {
       inputRef.current?.focus();
       return;
@@ -491,6 +499,8 @@ const IncomingOrdersPage = () => {
         inputRef.current?.focus();
       },
       onError: (error) => {
+        // Qabul shu orada yopildi (409 `ORDER_RECEIVE_CLOSED`) — holat qayta o'qiladi, ogohlantirish chiqadi.
+        if (isOrderReceiveClosedError(error)) void refetchIntake();
         // Backend sababini ATAYLAB ko'rsatamiz — umumiy xabar operatorni
         // ko'r qoldirardi.
         setMessage({
@@ -689,7 +699,7 @@ const IncomingOrdersPage = () => {
             </Button>
             <Button
               leftIcon={Check}
-              disabled={scannedCount === 0}
+              disabled={scannedCount === 0 || receiveClosed}
               loading={receiveByScan.isPending}
               loadingText={t("incomingReceiving")}
               onClick={() => void handleReceive()}
@@ -700,6 +710,25 @@ const IncomingOrdersPage = () => {
           </>
         }
       />
+
+      {receiveClosed ? (
+        // `.el-alert` (CODE-MAP 2.7) — market yangi buyurtmalaridagi ogohlantirish bilan bir xil tuzilma va matn.
+        <div
+          role="status"
+          data-testid="incoming-receive-closed"
+          className={cx("flex items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.warning)}
+        >
+          <Clock size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1 text-text [overflow-wrap:anywhere]">
+            <div className="font-bold">
+              {tNewOrders("marketOrders.receiveClosedTitle", { time: intake.receiveCutoffTime ?? "" })}
+            </div>
+            {intake.receiveReopensAt
+              ? tNewOrders("marketOrders.receiveClosedReopens", { time: formatTimeLocalized(intake.receiveReopensAt) })
+              : tNewOrders("marketOrders.receiveClosedBody")}
+          </div>
+        </div>
+      ) : null}
 
       {/* ===== Skaner + raqamlar + oxirgi natija ===== */}
       <Card aria-label={t("incoming.scanCardLabel")} bodyClassName="flex flex-col gap-4">

@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
 import { useMemo } from "react";
-import { FileText, Receipt } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { preloadReceiptPrinting, type ReceiptPackageSheet } from "../../../features/print-receipts";
 import PrintModeSelect, {
@@ -17,7 +17,8 @@ type Props = {
  * Paket «Chop etish» menyusi (HJ5sLHiz, TZ F10 «Termal 100×60 · A5»): paket cheki termal printerda (qopga
  * yopishtiriladi) yoki ofis printerida A5 varaq. Maketda menyu yo'q — eng yaqini `courier-mails-detail-print-menu`
  * (`PrintModeSelect`): kompyuterda ochiladigan menyu, telefonda (< 768) — sarlavha va izohli pastki varaqa, pochta
- * tafsilotidagi kabi.
+ * tafsilotidagi kabi. Ikonkalar katalog bo'yicha (`design/icon-registry.json`): termal yorliq — `Printer` («Yorliq,
+ * paket varag'i va chekni chop etish»), A5 varaq — `FileText`; `Receipt` emas — u moliya operatsiyasi cheki.
  */
 const BatchPrintMenu = ({ onSelect, loading = false, className }: Props) => {
   const { t } = useTranslation("batches");
@@ -27,7 +28,7 @@ const BatchPrintMenu = ({ onSelect, loading = false, className }: Props) => {
         id: "thermal",
         label: t("print.thermal.label"),
         hint: t("print.thermal.hint"),
-        icon: <Receipt size={18} aria-hidden="true" />,
+        icon: <Printer size={18} aria-hidden="true" />,
       },
       {
         id: "a5",

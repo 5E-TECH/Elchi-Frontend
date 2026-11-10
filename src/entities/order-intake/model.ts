@@ -23,6 +23,17 @@ import { getErrorStatus } from "../../shared/lib/errorKind";
  *
  * Backend javob bermaguncha (404 / 405 / 501 — backend deploy bo'lmagan muhit) funksiya YO'Q deb olinadi:
  * boshqaruv ko'rinmaydi va hech narsa to'silmaydi.
+ *
+ * «KUN TARTIBI» (Ops, 2026-11-10; backend vazifasi — Dilshodga prompt, `entities/order-intake` shartnomasi kengayadi):
+ *   - `cutoff_time` — DOIMIY (har ish kuni), kun almashganda o'chmaydi;
+ *   - yangi `receive_cutoff_time` — yaratilgan buyurtmalarni QABUL QILISH chegarasi (doimiy): o'tgach, kun almashguncha
+ *     `POST orders/receive`, `orders/external/receive`, `orders/external/receive-by-scan` →
+ *     `409 { code: "ORDER_RECEIVE_CLOSED", message, receive_cutoff_time, reopens_at }`; GET da `receive_is_open`,
+ *     `receive_closes_at`, `receive_reopens_at` (`is_open` / `closes_at` / `reopens_at` bilan bir xil ma'noda);
+ *   - `PATCH` bir nechta maydonni birga oladi (`cutoff_time`, `receive_cutoff_time`, `day_change_time`).
+ * Javobda `receive_cutoff_time` kaliti (qiymati `null` ham) bo'lsa — yangi backend (`receiveSupported`): yaratish
+ * chegarasi har kungi deb ko'rsatiladi. Kalit yo'q (eski backend) — qabul chegarasi chizilmaydi, yaratish chegarasi
+ * «faqat bugun».
  */
 export type OrderIntakeState = {
   /** Backend shu funksiyani beradimi (endpoint bor). `false` — UI ko'rsatilmaydi, hech narsa to'silmaydi. */
@@ -39,6 +50,23 @@ export type OrderIntakeState = {
   dayStartedAt: string | null;
   /** Keyingi kun almashish lahzasi (ISO). */
   nextDayChangeAt: string | null;
+  /**
+   * Yangi backend («Kun tartibi»): javobda `receive_cutoff_time` kaliti bor — qabul chegarasi ishlaydi va yaratish
+   * chegarasi doimiy (har kuni). `false` — eski backend.
+   */
+  receiveSupported: boolean;
+  /** Yaratilgan buyurtmalarni qabul qilish chegarasi («16:00») yoki `null` — cheklovsiz. */
+  receiveCutoffTime: string | null;
+  receiveIsOpen: boolean | null;
+  receiveClosesAt: string | null;
+  receiveReopensAt: string | null;
+};
+
+/** `PATCH orders/intake-settings` tanasi — faqat o'zgargan maydonlar (`null` — cheklovni olib tashlash). */
+export type OrderIntakeSettingsPatch = {
+  cutoff_time?: string | null;
+  receive_cutoff_time?: string | null;
+  day_change_time?: string | null;
 };
 
 export const DEFAULT_DAY_CHANGE_TIME = "00:00";
@@ -52,6 +80,11 @@ export const UNSUPPORTED_INTAKE: OrderIntakeState = {
   dayChangeTime: DEFAULT_DAY_CHANGE_TIME,
   dayStartedAt: null,
   nextDayChangeAt: null,
+  receiveSupported: false,
+  receiveCutoffTime: null,
+  receiveIsOpen: null,
+  receiveClosesAt: null,
+  receiveReopensAt: null,
 };
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -79,6 +112,11 @@ export const normalizeOrderIntake = (payload: unknown): OrderIntakeState => {
     dayChangeTime: clockOrNull(data.day_change_time) ?? DEFAULT_DAY_CHANGE_TIME,
     dayStartedAt: isoOrNull(data.day_started_at),
     nextDayChangeAt: isoOrNull(data.next_day_change_at),
+    receiveSupported: Object.hasOwn(data, "receive_cutoff_time"),
+    receiveCutoffTime: clockOrNull(data.receive_cutoff_time),
+    receiveIsOpen: typeof data.receive_is_open === "boolean" ? data.receive_is_open : null,
+    receiveClosesAt: isoOrNull(data.receive_closes_at),
+    receiveReopensAt: isoOrNull(data.receive_reopens_at),
   };
 };
 
@@ -120,21 +158,46 @@ export const isIntakeUnsupportedError = (error: unknown) => {
  * Hozir qabul yopiqmi. Kun almashgan (`reopens_at` o'tgan) bo'lsa — eski javobga qaramay ochiq (yangisi so'raladi);
  * aks holda server `is_open` i, u bo'lmasa — `closes_at` o'tganmi.
  */
+const windowClosed = (
+  isOpen: boolean | null,
+  closesAt: string | null,
+  reopensAt: string | null,
+  now: number,
+) => {
+  const reopens = reopensAt ? Date.parse(reopensAt) : null;
+  if (reopens !== null && now >= reopens) return false;
+  if (isOpen === false) return true;
+  const closes = closesAt ? Date.parse(closesAt) : null;
+  return closes !== null && now >= closes;
+};
+
 export const isOrderIntakeClosed = (
   state: OrderIntakeState | null | undefined,
   now: number = Date.now(),
 ) => {
   if (!state?.supported) return false;
-  const reopens = state.reopensAt ? Date.parse(state.reopensAt) : null;
-  if (reopens !== null && now >= reopens) return false;
-  if (state.isOpen === false) return true;
-  const closes = state.closesAt ? Date.parse(state.closesAt) : null;
-  return closes !== null && now >= closes;
+  return windowClosed(state.isOpen, state.closesAt, state.reopensAt, now);
+};
+
+/**
+ * Hozir yaratilgan buyurtmalarni QABUL QILISH yopiqmi («Kun tartibi») — `isOrderIntakeClosed` qoidasi `receive_*`
+ * maydonlari bilan. Eski backend (`receiveSupported: false`) — hech qachon yopiq emas.
+ */
+export const isOrderReceiveClosed = (
+  state: OrderIntakeState | null | undefined,
+  now: number = Date.now(),
+) => {
+  if (!state?.supported || !state.receiveSupported) return false;
+  return windowClosed(state.receiveIsOpen, state.receiveClosesAt, state.receiveReopensAt, now);
+};
+
+const errorCode = (error: unknown) => {
+  const data = asRecord(asRecord(asRecord(error).response).data);
+  return data.code ?? asRecord(data.data).code;
 };
 
 /** Buyurtma yaratish javobi: qabul yopiq (`409 ORDER_INTAKE_CLOSED`). */
-export const isOrderIntakeClosedError = (error: unknown) => {
-  const data = asRecord(asRecord(asRecord(error).response).data);
-  const code = data.code ?? asRecord(data.data).code;
-  return code === "ORDER_INTAKE_CLOSED";
-};
+export const isOrderIntakeClosedError = (error: unknown) => errorCode(error) === "ORDER_INTAKE_CLOSED";
+
+/** Buyurtmani qabul qilish javobi: qabul vaqti tugagan (`409 ORDER_RECEIVE_CLOSED`, «Kun tartibi»). */
+export const isOrderReceiveClosedError = (error: unknown) => errorCode(error) === "ORDER_RECEIVE_CLOSED";

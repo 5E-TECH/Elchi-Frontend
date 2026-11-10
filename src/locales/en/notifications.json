@@ -338,7 +338,8 @@
   },
   "realtime": {
     "manyNew": "{{count}} new notifications",
-    "shiftAutoClosed": "Shift closed automatically — {{time}}"
+    "shiftAutoClosed": "Shift closed automatically — {{time}}",
+    "shiftAutoOpened": "Shift opened automatically — {{time}}"
   },
   "sent": {
     "pageTitle": "Sent",

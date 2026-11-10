@@ -46,6 +46,12 @@ describe("BatchPrintMenu — telefon (< 768)", () => {
     await user.click(trigger);
     const sheet = screen.getByRole("dialog", { name: "Chop etish" });
     expect(sheet).toHaveTextContent("Paket cheki chop etiladi: termal yorliq yoki A5 varaq");
+    // Ikonka katalogi: termal yorliq — `Printer`, A5 — `FileText`; `Receipt` ($ belgili) — moliya operatsiyasi uchun.
+    const thermal = within(sheet).getByRole("menuitem", { name: /Termal yorliq/ });
+    expect(thermal.querySelector("svg.lucide-printer")).not.toBeNull();
+    expect(thermal.querySelector("svg.lucide-receipt")).toBeNull();
+    const a5 = within(sheet).getByRole("menuitem", { name: /A5 varaq/ });
+    expect(a5.querySelector("svg.lucide-file-text")).not.toBeNull();
     await user.click(within(sheet).getByRole("menuitem", { name: /A5 varaq/ }));
     expect(onSelect).toHaveBeenCalledWith("a5");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
