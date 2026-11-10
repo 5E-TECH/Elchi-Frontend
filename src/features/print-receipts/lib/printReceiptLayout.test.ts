@@ -19,7 +19,13 @@ import {
 } from "./printReceiptLayout";
 import { toReceiptOrderModel, type ReceiptOrderSource } from "./printReceiptModel";
 import { LONG_COMMENT, RECEIPT_SAMPLES } from "./receiptSamples";
-import { receiptWatermarkRuns, receiptWatermarkWidth } from "./receiptWatermark";
+import {
+  RECEIPT_WATERMARK_CAPTION_PITCH,
+  RECEIPT_WATERMARK_PITCH,
+  receiptWatermarkCaptionRuns,
+  receiptWatermarkRuns,
+  receiptWatermarkWidth,
+} from "./receiptWatermark";
 
 /**
  * HJ5sLHiz — joylash algoritmi maket `tizim-receipts` (01, 01.B a–f, 1/2 + 2/2) bilan solishtiriladi: koordinatalar
@@ -942,12 +948,19 @@ describe("faint Elchi mark in the background (ega so'rovi 2026-11-09)", () => {
     label.ops.filter((op): op is ReceiptWatermarkOp => op.kind === "watermark");
 
   it.each(specs)(
-    "%s: the first op of every label (continuation too) — drawn under text, lines and QR",
+    "%s: the first two ops of every label (continuation too) — mark + «ELCHI», then «POCHTA»; under everything",
     (_, spec) => {
       for (const source of Object.values(RECEIPT_SAMPLES)) {
         for (const label of layoutOrderReceipt(toReceiptOrderModel(source), { measure }, spec)) {
           expect(label.ops[0].kind).toBe("watermark");
-          expect(watermarks(label)).toHaveLength(1);
+          expect(label.ops[1].kind).toBe("watermark");
+          const [logo, caption] = watermarks(label);
+          expect(watermarks(label)).toHaveLength(2);
+          // Bitta quti, har qatlam o'z to'rida (ega so'rovi 2026-11-10: belgi ostida «ELCHI POCHTA»).
+          expect([caption.x, caption.y]).toEqual([logo.x, logo.y]);
+          expect(logo.pitch).toBe(RECEIPT_WATERMARK_PITCH);
+          expect(caption.pitch).toBe(RECEIPT_WATERMARK_CAPTION_PITCH);
+          expect(caption.runs).toBe(receiptWatermarkCaptionRuns(spec.watermark.height));
         }
       }
     },
@@ -982,7 +995,12 @@ describe("faint Elchi mark in the background (ega so'rovi 2026-11-09)", () => {
       (source) => layoutOrderReceipt(toReceiptOrderModel(source), { measure }, A4_ORDER_SPEC),
     );
     const [page] = composeReceiptPages(labels, "a4");
-    const marks = page.ops.filter((op): op is ReceiptWatermarkOp => op.kind === "watermark");
+    // Har katakda ikki qatlam (belgi + «ELCHI», «POCHTA») — bitta joyda; katak bo'yicha birinchisi.
+    const marks = page.ops.filter(
+      (op): op is ReceiptWatermarkOp =>
+        op.kind === "watermark" && op.pitch === RECEIPT_WATERMARK_PITCH,
+    );
+    expect(page.ops.filter((op) => op.kind === "watermark")).toHaveLength(marks.length * 2);
     const [first] = watermarks(labels[0]);
     const at = (dx: number, dy: number) => [
       Math.round((first.x + dx) * 1000) / 1000,
