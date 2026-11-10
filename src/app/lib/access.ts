@@ -382,6 +382,13 @@ export const canViewWarehouses: Predicate = anyOf(canViewAllWarehouses, managerC
 export const canManageShiftSettings: Predicate = hasRole("superadmin");
 
 /**
+ * cards1111 — kassa kartalarini boshqarish (qo'shish, tahrirlash, asosiy qilish, faollashtirish, o'chirish,
+ * kartalararo o'tkazma, karta ↔ naqd). Backend `POST|PATCH finance/cashbox/cards…` — `@Roles(SUPERADMIN, ADMIN)`
+ * bilan AYNAN bir xil. Menejer o'z filiali kartalarini faqat ko'radi (ro'yxat va ko'chirma).
+ */
+export const canManageCashboxCards: Predicate = hasRole("superadmin", "admin");
+
+/**
  * T6 N2 — kassa tarixidagi to'lovni qaytarish va summasini tuzatish («Qaytarish» / «Summani tahrirlash»). Backend
  * `POST finance/history/:id/reverse` va `POST finance/history/:id/correct-amount` — `@Roles(SUPERADMIN)` (servis ham
  * `assertSuperadmin`), `correctable` ham faqat superadmin tafsilotida keladi. Admin va boshqa rollarda tasodifan
