@@ -11,13 +11,14 @@ describe("parseOrderStatusCounts", () => {
     waiting: 5,
     sold: 21,
     paid: 4,
+    closed: 3,
     cancelled: 7,
     new_incoming: 12,
-    by_status: { waiting_customer: 1 },
+    by_status: { waiting_customer: 1, closed: 3 },
     search_truncated: false,
   };
 
-  it("`successRes` konverti → 8 tab soni + `new_incoming`", () => {
+  it("`successRes` konverti → 9 tab soni + `new_incoming`", () => {
     expect(parseOrderStatusCounts({ statusCode: 200, data })).toEqual({
       all: 71,
       new: 12,
@@ -26,9 +27,18 @@ describe("parseOrderStatusCounts", () => {
       waiting: 5,
       sold: 21,
       paid: 4,
+      closed: 3,
       cancelled: 7,
       new_incoming: 12,
     });
+  });
+
+  it("`closed` yo'q (eski backend) — `by_status.closed`, u ham bo'lmasa 0; javob `null` bo'lmaydi", () => {
+    const legacy: Record<string, unknown> = { ...data };
+    delete legacy.closed;
+    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: { closed: "9" } } })?.closed).toBe(9);
+    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: {} } })?.closed).toBe(0);
+    expect(parseOrderStatusCounts({ data: { ...legacy, by_status: undefined } })).toMatchObject({ closed: 0, sold: 21 });
   });
 
   it("`new_incoming: null` (operator, kuryer, logist) — `null`, tab sonlari qoladi", () => {

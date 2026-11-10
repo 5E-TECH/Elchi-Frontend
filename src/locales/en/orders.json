@@ -19,6 +19,7 @@
       "waiting": "Waiting",
       "sold": "Sold",
       "paid": "Paid",
+      "closed": "Closed",
       "cancelled": "Cancelled",
       "paidHint": "Paid and partly paid orders",
       "cancelledHint": "Cancelled and cancelled — sent orders"

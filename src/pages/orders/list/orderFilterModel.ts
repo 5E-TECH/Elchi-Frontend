@@ -124,7 +124,7 @@ export const normalizeOrderSearch = (value: string | null | undefined): string =
   (value ?? "").trim().replace(/^[№#]+\s*/u, "").trim();
 
 // ── Holat tablari (maket: «Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan ·
-//    Bekor qilingan») ────────────────────────────────────────────────────────
+//    Bekor qilingan»; «Yopildi» — maketda yo'q, ega so'rovi 2026-11-10) ─────────────
 export type OrderStatusTabId =
   | "all"
   | "new"
@@ -133,11 +133,14 @@ export type OrderStatusTabId =
   | "waiting"
   | "sold"
   | "paid"
+  | "closed"
   | "cancelled";
 
 /**
  * Tab → URL `status` qiymati. «To'langan» — to'langan + qisman to'langan, «Bekor qilingan» — bekor qilingan +
- * bekor — jo'natilgan (maketdagi tab `title` lari). Sahifadagi `Tabs` va filtr hisobi shu jadvaldan.
+ * bekor — jo'natilgan (maketdagi tab `title` lari). «Yopildi» — faqat `closed` (to'lovi yakunlangan yoki yopilgan
+ * buyurtmalar; ilgari hech bir tabda ko'rinmasdi, faqat «Barchasi» sonida edi). Sahifadagi `Tabs` va filtr hisobi
+ * shu jadvaldan.
  */
 export const ORDER_STATUS_TABS: ReadonlyArray<{ id: OrderStatusTabId; statuses: readonly OrderStatus[] }> = [
   { id: "all", statuses: [] },
@@ -147,6 +150,7 @@ export const ORDER_STATUS_TABS: ReadonlyArray<{ id: OrderStatusTabId; statuses: 
   { id: "waiting", statuses: ["waiting"] },
   { id: "sold", statuses: ["sold"] },
   { id: "paid", statuses: ["paid", "partly_paid"] },
+  { id: "closed", statuses: ["closed"] },
   { id: "cancelled", statuses: ["cancelled", "cancelled (sent)"] },
 ];
 

@@ -37,6 +37,7 @@ const COUNTS = {
   waiting: 14,
   sold: 734,
   paid: 168,
+  closed: 37,
   cancelled: 0,
   new_incoming: 7,
   by_status: {},
@@ -83,7 +84,23 @@ describe("Buyurtmalar — holat tablari sonlari (GaBIPi3Z)", () => {
     expect(tab(/^Kutilmoqda/)).toHaveTextContent("Kutilmoqda 14");
     expect(tab(/^Sotilgan/)).toHaveTextContent("Sotilgan 734");
     expect(tab(/^To'langan/)).toHaveTextContent("To'langan 168");
+    expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 37");
     expect(tab(/^Bekor qilingan/)).toHaveTextContent("Bekor qilingan 0");
+  });
+
+  it("eski backend (`closed` kaliti yo'q): «Yopildi» — `by_status.closed`, u ham bo'lmasa 0; boshqa sonlar qoladi", async () => {
+    const legacy: Record<string, unknown> = { ...COUNTS };
+    delete legacy.closed;
+    server.counts = { ...legacy, by_status: { closed: 5 } };
+    const view = open();
+    await waitFor(() => expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 5"));
+    expect(tab(/^Barchasi/)).toHaveTextContent("Barchasi 1 248");
+    view.unmount();
+
+    server.counts = legacy;
+    open("/orders?orderMarketId=37");
+    await waitFor(() => expect(tab(/^Yopildi/)).toHaveTextContent("Yopildi 0"));
+    expect(tab(/^Sotilgan/)).toHaveTextContent("Sotilgan 734");
   });
 
   it("filtrlar ro'yxat bilan bir xil, lekin holat / sahifa / saralash YUBORILMAYDI", async () => {

@@ -239,7 +239,7 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ market_id: expect.anything() }));
   });
 
-  it("holat tablari: «Barchasi» tanlangan, sakkizta tab, izohlar", () => {
+  it("holat tablari: «Barchasi» tanlangan, to'qqizta tab (jumladan «Yopildi»), izohlar", () => {
     open("/orders");
 
     const tabs = screen.getAllByRole("tab");
@@ -251,6 +251,7 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
       "Kutilmoqda",
       "Sotilgan",
       "To'langan",
+      "Yopildi",
       "Bekor qilingan",
     ]);
     expect(screen.getByRole("tablist", { name: "Holat bo'yicha" })).toBeInTheDocument();
@@ -274,6 +275,12 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
 
     await user.click(screen.getByRole("tab", { name: "To'langan" }));
     await waitFor(() => expect(currentSearch().get("status")).toBe("paid,partly_paid"));
+
+    // «Yopildi» (ega 2026-11-10) — faqat `closed`.
+    await user.click(screen.getByRole("tab", { name: "Yopildi" }));
+    await waitFor(() => expect(currentSearch().get("status")).toBe("closed"));
+    expect(screen.getByRole("tab", { name: "Yopildi" })).toHaveAttribute("aria-selected", "true");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: ["closed"], page: 1 }));
 
     await user.click(screen.getByRole("tab", { name: "Barchasi" }));
     await waitFor(() => expect(currentSearch().get("status")).toBeNull());

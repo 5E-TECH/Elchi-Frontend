@@ -10,6 +10,8 @@ import type { OrderListParams } from "../types/order";
  * - Filtrlar va rol doirasi `GET /orders` bilan aynan bir xil; `status` / `page` / `limit` / `sort_*` e'tiborsiz —
  *   shuning uchun kalitga ham kirmaydi (`toStatusCountsParams`): tab yoki sahifa almashsa qayta so'ralmaydi.
  * - `paid` = `paid` + `partly_paid`, `cancelled` = `cancelled` + `cancelled (sent)` — `ORDER_STATUS_TABS` bilan bir xil.
+ * - `closed` — «Yopildi» tabi (FRONTEND_CHANGELOG 2026-11-10). Eski backend javobida yo'q — `by_status.closed` dan,
+ *   u ham bo'lmasa 0 (boshqa tablarning sonlari yo'qolmasin).
  * - `new_incoming` — «Qabul va yaratish» badge'i (ro'yxat filtrlariga bog'liq emas, filtrsiz so'raladi); `null` —
  *   bu bo'lim yo'q rollarda (operator, kuryer, logist) → badge chiqmaydi.
  * - Kalit `["orders", "status-counts", params]` — `["orders"]` prefiksi ostida: buyurtma amallari (sotish, bekor,
@@ -26,6 +28,7 @@ export type OrderStatusCountKey =
   | "waiting"
   | "sold"
   | "paid"
+  | "closed"
   | "cancelled";
 
 export const ORDER_STATUS_COUNT_KEYS: readonly OrderStatusCountKey[] = [
@@ -36,8 +39,12 @@ export const ORDER_STATUS_COUNT_KEYS: readonly OrderStatusCountKey[] = [
   "waiting",
   "sold",
   "paid",
+  "closed",
   "cancelled",
 ];
+
+/** Keyin qo'shilgan kalitlar: javobda bo'lmasa `by_status` dagi xom holat soni, u ham bo'lmasa 0. */
+const BY_STATUS_FALLBACK: Partial<Record<OrderStatusCountKey, string>> = { closed: "closed" };
 
 export type OrderStatusCounts = Record<OrderStatusCountKey, number> & {
   /** «Qabul va yaratish» badge'i; `null` — bu rolda bo'lim yo'q. */
@@ -63,9 +70,15 @@ export const parseOrderStatusCounts = (body: unknown): OrderStatusCounts | null 
       ? (root.data as Record<string, unknown>)
       : null;
   if (!data) return null;
+  const byStatus =
+    data.by_status && typeof data.by_status === "object" && !Array.isArray(data.by_status)
+      ? (data.by_status as Record<string, unknown>)
+      : {};
   const counts = {} as Record<OrderStatusCountKey, number>;
   for (const key of ORDER_STATUS_COUNT_KEYS) {
-    const value = toCount(data[key]);
+    let value = toCount(data[key]);
+    const fallback = BY_STATUS_FALLBACK[key];
+    if (value === null && fallback !== undefined) value = toCount(byStatus[fallback]) ?? 0;
     if (value === null) return null;
     counts[key] = value;
   }
