@@ -1,6 +1,6 @@
 // dizayn-v2: (maket yo'q) superadmin-ops-investors
 import { memo, useState } from "react";
-import { Inbox, Pencil, Plus, Trash2 } from "lucide-react";
+import { Inbox, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useDeleteExpenseCategory,
@@ -31,6 +31,8 @@ import ExpenseCategoryFormDialog, { type ExpenseCategoryFormTarget } from "./Exp
  *
  * Bitta karta: sarlavha «Kategoriyalar» + son, o'ngda bitta asosiy amal «Kategoriya qo'shish»; tana — faol
  * kategoriyalar `sort_order` bo'yicha (tartib raqami, nom, «Nimalar kiradi», «Tahrirlash», «O'chirish»).
+ * Ega 2026-11-11: standart kategoriyada (`isDefault`) «Tahrirlash» / «O'chirish» yo'q — o'rnida qulf ikonkali
+ * «Standart» belgisi (backend ham `PATCH` / `DELETE` ni 403 bilan rad etadi); superadmin qo'shganlari avvalgidek.
  * Holatlar `QueryBoundary`: skelet, bo'sh (`EmptyState`), xato (`ErrorState` + «Qayta urinish»); ro'yxat
  * yuklanmaguncha «Kategoriya qo'shish» o'chiq (takror nomni ro'yxatsiz ko'rib bo'lmaydi — eski oynadagidek).
  * Qo'shish / tahrirlash — `ExpenseCategoryFormDialog`; o'chirish — `useConfirm` (danger, tarix nomni saqlashi
@@ -130,21 +132,28 @@ const ExpenseCategoriesPanel = () => {
                       <span className="text-[13px] text-text-subtle">{k("list.noDescription")}</span>
                     )}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 max-md:gap-0">
-                    <IconButton
-                      size="sm"
-                      icon={Pencil}
-                      label={k("list.editAria", { name: category.name })}
-                      onClick={() => openForm({ mode: "edit", category })}
-                    />
-                    <IconButton
-                      size="sm"
-                      variant="danger"
-                      icon={Trash2}
-                      label={k("list.deleteAria", { name: category.name })}
-                      onClick={() => void handleDelete(category)}
-                    />
-                  </span>
+                  {category.isDefault ? (
+                    <Badge icon={Lock} className="shrink-0">
+                      {k("list.defaultBadge")}
+                      <span className="sr-only">{" "}{k("list.defaultHint")}</span>
+                    </Badge>
+                  ) : (
+                    <span className="flex shrink-0 items-center gap-1 max-md:gap-0">
+                      <IconButton
+                        size="sm"
+                        icon={Pencil}
+                        label={k("list.editAria", { name: category.name })}
+                        onClick={() => openForm({ mode: "edit", category })}
+                      />
+                      <IconButton
+                        size="sm"
+                        variant="danger"
+                        icon={Trash2}
+                        label={k("list.deleteAria", { name: category.name })}
+                        onClick={() => void handleDelete(category)}
+                      />
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

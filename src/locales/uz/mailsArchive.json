@@ -39,10 +39,6 @@
       "dateRange": "Sana oralig'i",
       "clear": "Tozalash"
     },
-    "summaryMails": "<strong>{{value}}</strong> ta pochta",
-    "summaryBatches": "<strong>{{value}}</strong> ta paket",
-    "summaryOrders": "<strong>{{value}}</strong> ta buyurtma",
-    "summaryTotal": "jami <strong>{{amount}}</strong>",
     "courierTotal": "Jami <strong>{{value}} ta</strong> pochta",
     "paginationMails": "{{from}}–{{to}} / {{total}} ta pochta",
     "paginationBatches": "{{from}}–{{to}} / {{total}} ta paket",

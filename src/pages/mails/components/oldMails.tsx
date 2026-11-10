@@ -24,7 +24,7 @@ import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { usePagination } from "../../../shared/lib/usePagination";
 import {
@@ -69,7 +69,6 @@ import {
   readOldMailsPage,
   readPostDetail,
   readPostOrders,
-  summarizeOldMails,
   toOldMailSourceFromBatch,
   writeOldMailsFilters,
   writeOldMailsMode,
@@ -89,7 +88,7 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * `admin-mails-old-all-batches` / `superadmin-mails-old-batches`.
  *
  *  - Xodim (`layout="card"`, qobiq kartasi ichida): asboblar qatori — «Pochtalar | Filial paketlari» segmenti
- *    (faqat admin va superadmin, `?batch_mode=all`, D11), xulosa (D6), «Excelga yuklash» (D5); filtrlar qatori —
+ *    (faqat admin va superadmin, `?batch_mode=all`, D11), «Excelga yuklash» (D5); filtrlar qatori —
  *    yorliqli `Select` lar (D4) va sana oralig'i; jadval; sahifalash.
  *    Telefonda: «Filtrlar N» → pastki varaqa (`OldMailsFiltersSheet`), faol filtr chiplari, Excel — ikonka.
  *  - Kuryer (`layout="page"`): o'z kartasi; filtrlar — sana, viloyat, holat (kuryer filtri yo'q, holatda
@@ -98,15 +97,17 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  *
  * Pochtalar (F4, backend YfrqN70i): filtr va sahifalash SERVERDA — `GET /post` / `post/courier/old-posts` URL
  * filtrlari, `page`, `limit` (≤ 100) va `has_orders=true` bilan (`buildOldMailsQuery`); sahifalash javobdagi
- * `total` bo'yicha; xulosa — «N ta pochta · M ta buyurtma · jami S» (server `total`, `orders_total`, `amount_total` —
- * filtr bo'yicha barcha sahifalar, tveJKICY; eski javobda yig'indilar yo'q — faqat «N ta pochta»); Excel — barcha
- * filtrlangan qatorlar, 100 talab sahifalab (`fetchAllOldMailPages`).
+ * `total` bo'yicha; Excel — barcha filtrlangan qatorlar, 100 talab sahifalab (`fetchAllOldMailPages`).
  * «Filial paketlari»: `GET transfer-batches` da viloyat va sana oralig'i yo'q — BARCHA sahifalar yuklanadi
- * (`fetchAllTransferBatches`), filtr, xulosa, sahifalash va Excel mijoz tomonida.
+ * (`fetchAllTransferBatches`), filtr, sahifalash va Excel mijoz tomonida.
+ *
+ * Ega qarori 2026-11-10: xodim asboblar qatoridagi «N ta pochta · M ta buyurtma · jami S» xulosasi olib tashlandi
+ * (avval D6 / tveJKICY — server `orders_total`, `amount_total`); kuryer telefonidagi «Jami N ta pochta» va
+ * sahifalash («1–8 / 46 ta pochta») qoladi.
  *
  * Ega qarori 2026-11-03: kuryer va HQ bo'lmagan filial menejerida jadval o'rnida pochtalar kartalari
  * (`MailCardsGrid`, `useMailsCardView`) — joriy sahifa yangilari tepada, «Chekni qayta chiqarish» karta pastida
- * (havoladan tashqarida); filtrlar, chiplar, xulosa, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
+ * (havoladan tashqarida); filtrlar, chiplar, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
  *
  * Jadvalda superadmin, admin va registrator «Kuryer» o'rnida «Filial» ustunini ko'radi (Bahodir, 2026-11-04;
  * `model/mailBranchNames.ts`); menejer — «Kuryer» (o'z filiali). Filtr, Excel va chek — avvalgidek (kuryer).
@@ -169,7 +170,6 @@ const OldMails = ({ layout }: OldMailsProps) => {
   const { t, i18n } = useTranslation(["mailsArchive", "mails", "mailsShell", "newOrders", "ui", "payments"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const count = (value: number) => formatNumberLocalized(value, { language });
-  const money = (value: number) => formatMoneyLocalized(value, { language });
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const isManager = role === "manager";
@@ -228,12 +228,11 @@ const OldMails = ({ layout }: OldMailsProps) => {
     [batchesQuery.data],
   );
   const sources = isAllBatchMode ? batchItems : mailsPage.rows;
-  // Mijoz tomonidagi filtr va xulosa — faqat paketlar rejimida (pochtalarni server filtrlaydi).
+  // Mijoz tomonidagi filtr — faqat paketlar rejimida (pochtalarni server filtrlaydi).
   const filteredBatches = useMemo(
     () => (isAllBatchMode ? filterOldBatches(batchItems, filters) : []),
     [batchItems, filters, isAllBatchMode],
   );
-  const batchTotals = useMemo(() => summarizeOldMails(filteredBatches), [filteredBatches]);
   /** Filtrlangan jami: pochtalarda server `total`, paketlarda mijoz hisobi. */
   const listTotal = isAllBatchMode ? filteredBatches.length : mailsPage.total;
 
@@ -630,40 +629,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Bo'laklar ─────────────────────────────────────────────────────────── */
 
-  const summaryPart = (key: string, value: number, values?: Record<string, unknown>) => (
-    <span className="whitespace-nowrap">
-      <Trans
-        t={t}
-        i18nKey={key}
-        count={values ? undefined : value}
-        values={values ?? { value: count(value) }}
-        components={{ strong: STRONG }}
-      />
-    </span>
-  );
-
-  // Xulosa (D6, manager maketi «46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm»; telefonda 2 qator).
-  // Pochtalarda — server: `total`, `orders_total`, `amount_total` (tveJKICY — joriy filtr bo'yicha BARCHA sahifalar;
-  // bitta sahifadan hisoblanmaydi). Javobda yig'indilar bo'lmasa (eski backend) — faqat «N ta pochta».
-  // Paketlarda — mijoz hisobi, barcha yuklangan paketlar bo'yicha.
-  const mailSums =
-    mailsPage.ordersTotal !== null && mailsPage.amountTotal !== null
-      ? { orders: mailsPage.ordersTotal, amount: mailsPage.amountTotal }
-      : null;
-  const totals = isAllBatchMode ? { orders: batchTotals.orders, amount: batchTotals.amount } : mailSums;
-  const summary = (
-    <p className="text-[13px] leading-[18px] text-text-muted">
-      {summaryPart(isAllBatchMode ? "old.summaryBatches" : "old.summaryMails", listTotal)}
-      {totals ? (
-        <>
-          {" · "}
-          {summaryPart("old.summaryOrders", totals.orders)}
-          {isPhone ? <br /> : " · "}
-          {summaryPart("old.summaryTotal", totals.amount, { amount: money(totals.amount) })}
-        </>
-      ) : null}
-    </p>
-  );
+  // Ega qarori 2026-11-10: asboblar qatorida «N ta pochta · M ta buyurtma · jami S» xulosasi YO'Q (pochtalar va
+  // «Filial paketlari» rejimida, barcha xodimlarda). Har pochtaning o'z soni va summasi qatorda / kartada qoladi.
 
   const modeSwitch = canUseBatchMode ? (
     <SegmentedControl
@@ -681,8 +648,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
   // Umuman bo'sh («Eski pochtalar topilmadi»): pochtalarda — filtrsiz server `total` 0, paketlarda — birorta
   // paket yo'q. Filtr bilan 0 — «Tanlangan filtrlar bo'yicha…» (tozalash tugmasi bilan).
   const emptyAll = isAllBatchMode ? batchItems.length === 0 : mailsPage.total === 0 && activeCount === 0;
-  // Ma'lumot keldi va ro'yxat bo'sh emas. Xulosa, sahifalash va Excel faqat shunda: yuklanish, xato va bo'sh
-  // holatda «0 ta pochta» chalg'itadi, Excel esa bo'sh fayl berardi (v1 da bu holatlarda asboblar qatori yo'q edi).
+  // Ma'lumot keldi va ro'yxat bo'sh emas. Kuryer «Jami N ta pochta», sahifalash va Excel faqat shunda: yuklanish,
+  // xato va bo'sh holatda «0 ta pochta» chalg'itadi, Excel esa bo'sh fayl berardi (v1 da asboblar qatori yo'q edi).
   const hasData = query.data != null && listTotal > 0;
   const showSummary = hasData;
   const runExport = () => void handleExportExcel();
@@ -997,25 +964,26 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Xodim: qobiq kartasi ichida ───────────────────────────────────────── */
 
+  const hasToolbar = modeSwitch !== null || !isPhone;
+
   return (
     <>
-      {/* Asboblar qatori: segment (admin) · xulosa · Excel. Segment bo'lsa planshetda xulosa keyingi qatorga
-          o'tadi (maket: segment va Excel bir qatorda); telefonda segment to'liq enli, xulosa ostida. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 pt-4 max-md:px-4">
-        {modeSwitch ? <div className="max-md:w-full">{modeSwitch}</div> : null}
-        <div className={cx("min-w-0 flex-1", modeSwitch && "max-lg:order-last max-lg:basis-full")}>
-          {showSummary ? summary : null}
+      {/* Asboblar qatori: segment (admin) · Excel (xulosa yo'q — ega qarori 2026-11-10). Telefonda segment to'liq
+          enli, Excel filtrlar qatorida — segment bo'lmasa (registrator, menejer) asboblar qatori umuman yo'q. */}
+      {hasToolbar ? (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 pt-4 max-md:px-4">
+          {modeSwitch ? <div className="max-md:w-full">{modeSwitch}</div> : null}
+          {!isPhone ? (
+            <div className="ml-auto flex items-center gap-3">
+              {clearLink("hidden max-lg:inline-flex")}
+              {exportButton}
+            </div>
+          ) : null}
         </div>
-        {!isPhone ? (
-          <div className="ml-auto flex items-center gap-3">
-            {clearLink("hidden max-lg:inline-flex")}
-            {exportButton}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
 
       {isPhone ? (
-        <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
+        <div className={cx("flex flex-col gap-3 px-4 pb-4", hasToolbar ? "pt-3" : "pt-4")}>
           <div className="flex flex-wrap items-center gap-2">
             {filtersButton(sheetCount)}
             {exportIconButton}

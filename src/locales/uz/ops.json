@@ -101,7 +101,7 @@
   "expenseCategories": {
     "intro": {
       "title": "Kassa xarajatlari kategoriyalari",
-      "description": "«Kassadan xarajat» oynasidagi tanlov ro'yxati — har xarajat shu kategoriyalardan biri bilan yoziladi. Nom o'zgarsa yoki kategoriya o'chirilsa, avval yozilgan xarajatlarda eski nom saqlanib qoladi."
+      "description": "«Kassadan xarajat» oynasidagi tanlov ro'yxati — har xarajat shu kategoriyalardan biri bilan yoziladi. Nom o'zgarsa yoki kategoriya o'chirilsa, avval yozilgan xarajatlarda eski nom saqlanib qoladi. «Standart» belgili kategoriyalarni tahrirlab ham, o'chirib ham bo'lmaydi — faqat qo'shilganlarini."
     },
     "list": {
       "title": "Kategoriyalar",
@@ -111,6 +111,8 @@
       "editAria": "«{{name}}» kategoriyasini tahrirlash",
       "deleteAria": "«{{name}}» kategoriyasini o'chirish",
       "noDescription": "Tavsif yozilmagan",
+      "defaultBadge": "Standart",
+      "defaultHint": "(tahrirlab ham, o'chirib ham bo'lmaydi)",
       "empty": "Kategoriyalar yo'q",
       "emptyDescription": "Kategoriya qo'shing — u «Kassadan xarajat» oynasidagi ro'yxatda chiqadi",
       "loadError": "Kategoriyalarni yuklab bo'lmadi",

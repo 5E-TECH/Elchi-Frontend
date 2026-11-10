@@ -41,13 +41,6 @@
       "dateRange": "Date range",
       "clear": "Clear"
     },
-    "summaryMails_one": "<strong>{{value}}</strong> mail",
-    "summaryMails_other": "<strong>{{value}}</strong> mails",
-    "summaryBatches_one": "<strong>{{value}}</strong> batch",
-    "summaryBatches_other": "<strong>{{value}}</strong> batches",
-    "summaryOrders_one": "<strong>{{value}}</strong> order",
-    "summaryOrders_other": "<strong>{{value}}</strong> orders",
-    "summaryTotal": "total <strong>{{amount}}</strong>",
     "courierTotal_one": "Total: <strong>{{value}}</strong> mail",
     "courierTotal_other": "Total: <strong>{{value}}</strong> mails",
     "paginationMails": "{{from}}–{{to}} of {{total}} mails",

@@ -114,25 +114,28 @@ const profile = (themeName) => ({
 });
 /**
  * Elchi Pochta №1: `GET finance/cashbox/expense-categories` — Ops → «Xarajat kategoriyalari» ro'yxati va «Kassadan
- * xarajat» tanlovi to'ldirilgan ko'rinishda (bo'sh holat emas). Faol kategoriyalar `sort_order` bo'yicha.
+ * xarajat» tanlovi to'ldirilgan ko'rinishda (bo'sh holat emas). Faol kategoriyalar `sort_order` bo'yicha. Seed
+ * qatorlari — `is_default: true` (backend migratsiya 214, ega 2026-11-11: «Standart» belgisi, amal tugmalarisiz),
+ * oxirgisi — superadmin qo'shgan (`is_default: false`, «Tahrirlash» / «O'chirish» bilan).
  */
 const EXPENSE_CATEGORIES = [
-  ['Ovqatlanish', 'Xodimlarning ovqati, tushlik'],
-  ["Yoqilg'i", 'Benzin, gaz, dizel'],
-  ['Avtomobil xarajatlari', "Ta'mirlash, moy almashtirish, ehtiyot qismlar"],
-  ['Ijara (arenda)', 'Filial, ombor, ofis ijarasi'],
-  ["Kommunal to'lovlar", 'Elektr, suv, gaz, chiqindi'],
-  ['Internet va aloqa', 'Internet, telefon, SIM-karta'],
-  ['Xodimlar oyligi', 'Oylik, avans, bonus'],
-  ['Qadoqlash materiallari', null],
+  ['Ovqatlanish', 'Xodimlarning ovqati, tushlik', true],
+  ["Yoqilg'i", 'Benzin, gaz, dizel', true],
+  ['Avtomobil xarajatlari', "Ta'mirlash, moy almashtirish, ehtiyot qismlar", true],
+  ['Ijara (arenda)', 'Filial, ombor, ofis ijarasi', true],
+  ["Kommunal to'lovlar", 'Elektr, suv, gaz, chiqindi', true],
+  ['Internet va aloqa', 'Internet, telefon, SIM-karta', true],
+  ['Xodimlar oyligi', 'Oylik, avans, bonus', true],
+  ['Qadoqlash materiallari', null, true],
+  ['Bank xizmati', 'Komissiya, karta xizmati', false],
 ];
 const expenseCategoriesMock = () => ({
   statusCode: 200,
   message: 'Xarajat kategoriyalari',
   data: {
-    items: EXPENSE_CATEGORIES.map(([name, description], index) => ({
-      id: String(index + 1), name, description, sort_order: index + 1, is_deleted: false,
-      created_by: null, updated_by: null, created_at: '2026-10-21T08:00:00.000Z', updated_at: '2026-10-21T08:00:00.000Z',
+    items: EXPENSE_CATEGORIES.map(([name, description, isDefault], index) => ({
+      id: String(index + 1), name, description, sort_order: index + 1, is_deleted: false, is_default: isDefault,
+      created_by: isDefault ? null : '1', updated_by: null, created_at: '2026-10-21T08:00:00.000Z', updated_at: '2026-10-21T08:00:00.000Z',
     })),
   },
 });

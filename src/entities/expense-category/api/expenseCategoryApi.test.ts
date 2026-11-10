@@ -37,6 +37,7 @@ describe("normalizeExpenseCategory", () => {
       description: "Benzin, gaz, dizel",
       sortOrder: 2,
       isDeleted: false,
+      isDefault: false,
     });
     expect(normalizeExpenseCategory({ id: 5, name: "Ofis", description: "  ", sort_order: "7" })).toEqual({
       id: "5",
@@ -44,7 +45,15 @@ describe("normalizeExpenseCategory", () => {
       description: null,
       sortOrder: 7,
       isDeleted: false,
+      isDefault: false,
     });
+  });
+
+  it("2026-11-11: `is_default: true` — standart; maydon yo'q / `true` emas — tahrirlanadigan (eski backend)", () => {
+    expect(normalizeExpenseCategory(row("1", "Ovqatlanish", 1, { is_default: true }))?.isDefault).toBe(true);
+    expect(normalizeExpenseCategory(row("30", "Kofe", 18, { is_default: false }))?.isDefault).toBe(false);
+    expect(normalizeExpenseCategory(row("31", "Choy", 19))?.isDefault).toBe(false);
+    expect(normalizeExpenseCategory(row("32", "Suv", 20, { is_default: "true" }))?.isDefault).toBe(false);
   });
 
   it("ID yoki nomsiz qator — null", () => {
@@ -84,7 +93,7 @@ describe("expense category API", () => {
     http.get.mockResolvedValue({ data: { data: { items: [row("1", "Ovqatlanish", 1)] } } });
 
     await expect(getExpenseCategories()).resolves.toEqual([
-      { id: "1", name: "Ovqatlanish", description: null, sortOrder: 1, isDeleted: false },
+      { id: "1", name: "Ovqatlanish", description: null, sortOrder: 1, isDeleted: false, isDefault: false },
     ]);
     expect(http.get).toHaveBeenLastCalledWith("finance/cashbox/expense-categories", { params: undefined });
 

@@ -12,7 +12,7 @@ import { getPostStatusBadge } from "../detail/lib/postStatus";
  * sahifalaydi (`limit` ≤ 100) — filtr va sahifalash serverda, `buildOldMailsQuery`. Excel — barcha filtrlangan
  * qatorlar, 100 talab (`fetchAllOldMailPages`). Javobda buyurtma/summa yig'indisi yo'q.
  * Paketlar rejimi («Filial paketlari»): `GET transfer-batches` da viloyat va sana oralig'i yo'q — barcha
- * paketlar yuklanadi va filtr mijoz tomonida (`filterOldBatches`, `summarizeOldMails`).
+ * paketlar yuklanadi va filtr mijoz tomonida (`filterOldBatches`).
  */
 
 /* ─── URL ─────────────────────────────────────────────────────────────────── */
@@ -249,8 +249,9 @@ export const buildOldMailsQuery = ({
 };
 
 /**
- * Pochta ro'yxati javobi (`{ statusCode, data: { data, total, page, totalPages, limit, orders_total, amount_total,
- * … } }`). `orders_total` / `amount_total` (tveJKICY, backend 16c0ea6) — JORIY FILTR bo'yicha barcha sahifalar.
+ * Pochta ro'yxati javobi (`{ statusCode, data: { data, total, page, totalPages, limit, … } }`). Backend yana
+ * `orders_total` / `amount_total` ham beradi (tveJKICY), lekin ega qarori 2026-11-10 dan beri ular ko'rsatilmaydi
+ * va o'qilmaydi.
  */
 type OldMailsPageResponse<T> = {
   statusCode?: number;
@@ -261,31 +262,17 @@ type OldMailsPageResponse<T> = {
     page?: number;
     totalPages?: number;
     limit?: number;
-    orders_total?: number | string | null;
-    amount_total?: number | string | null;
   } | null;
 } | null | undefined;
 
-/** Server yig'indisi: son bo'lsa (≥ 0) — o'zi, maydon yo'q / noto'g'ri bo'lsa — `null` (eski backend). */
-const readServerSum = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-};
-
-/**
- * Bitta server sahifasi: qatorlar, filtrlangan jami (`total`), sahifalar soni, haqiqiy `limit` va filtr bo'yicha
- * yig'indilar — `ordersTotal` (pochtalardagi buyurtmalar), `amountTotal` (so'm); javobda bo'lmasa `null`.
- */
+/** Bitta server sahifasi: qatorlar, filtrlangan jami (`total`), sahifalar soni va haqiqiy `limit`. */
 export const readOldMailsPage = <T = OldMailSource>(response: OldMailsPageResponse<T>) => {
   const body = response?.data;
   const rows = Array.isArray(body?.data) ? body.data : [];
   const total = Math.max(0, Number(body?.total ?? rows.length) || 0);
   const limit = Math.max(0, Number(body?.limit ?? rows.length) || 0);
   const totalPages = Math.max(1, Number(body?.totalPages) || (limit > 0 ? Math.ceil(total / limit) : 1));
-  const ordersTotal = readServerSum(body?.orders_total);
-  const amountTotal = readServerSum(body?.amount_total);
-  return { rows, total, totalPages, limit, ordersTotal, amountTotal };
+  return { rows, total, totalPages, limit };
 };
 
 /**
@@ -404,17 +391,6 @@ export const countOldMailsFilters = (
     effectiveOldMailsStatus(filters.status, options.batches),
     options.withDate === false ? "" : filters.dateFrom || filters.dateTo,
   ].filter(Boolean).length;
-
-/** Xulosa: «N ta paket · N ta buyurtma · jami X» — paketlar rejimida, filtrlangan ro'yxat bo'yicha (D6). */
-export const summarizeOldMails = (items: readonly OldMailSource[]) =>
-  items.reduce(
-    (acc, mail) => ({
-      count: acc.count + 1,
-      orders: acc.orders + (Number(mail.order_quantity) || 0),
-      amount: acc.amount + (Number(mail.post_total_price) || 0),
-    }),
-    { count: 0, orders: 0, amount: 0 },
-  );
 
 /**
  * Pochta javobi (`GET post/orders/:id`) → pochtaning o'z ma'lumoti va jamlari (`post`, `homeOrders`, `centerOrders`) —

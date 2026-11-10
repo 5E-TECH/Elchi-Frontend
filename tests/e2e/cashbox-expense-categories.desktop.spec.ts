@@ -163,7 +163,7 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("⭐ superadmin boshqaruvi Ops'da: kassada tugma yo'q; qo'shish, takror nom 409, tahrirlash, o'chirish tasdiq bilan → tanlovda", async ({ page }) => {
+  test("⭐ superadmin boshqaruvi Ops'da: kassada tugma yo'q; standartda amal yo'q (2026-11-11); qo'shish, takror nom 409, qo'shilganini tahrirlash, o'chirish tasdiq bilan → tanlovda", async ({ page }) => {
     const { calls, state, leaked } = await mockCashboxCategoriesApi(page);
     await openMainCashbox(page);
     // Sozlama kassa sarlavhasida emas.
@@ -182,6 +182,12 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     const list = opsCategoriesList(page);
     await expect(list.getByRole("listitem")).toHaveCount(17);
     await expect(card.getByText("17 ta")).toBeVisible();
+    // Ega 2026-11-11: standart 17 tasida «Tahrirlash» / «O'chirish» yo'q — qulfli «Standart» belgisi.
+    const rowActions = list.getByRole("button", { name: /kategoriyasini (tahrirlash|o'chirish)$/ });
+    await expect(rowActions).toHaveCount(0);
+    await expect(list.getByRole("listitem").nth(1)).toContainText("Yoqilg'i");
+    await expect(list.getByRole("listitem").nth(1)).toContainText("Standart");
+    await expect(list.getByRole("listitem").filter({ hasText: "Standart (tahrirlab ham, o'chirib ham bo'lmaydi)" })).toHaveCount(17);
     await expectNoHorizontalOverflow(page);
 
     // Qo'shish (tartib raqami bo'sh — oxiriga).
@@ -194,6 +200,8 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     await expect(form).toBeHidden();
     await expect(list.getByRole("listitem")).toHaveCount(18);
     await expect(list.getByRole("listitem").last()).toContainText("Bank xizmati");
+    await expect(list.getByRole("listitem").last()).not.toContainText("Standart");
+    await expect(rowActions).toHaveCount(2);
     expect(calls.creates).toEqual([{ name: "Bank xizmati", description: "Komissiya, karta xizmati" }]);
 
     // Takror nom — 409, matn «Nomi» ostida, oyna ochiq.
@@ -207,38 +215,46 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     await form.getByRole("button", { name: "Bekor qilish" }).click();
     await expect(form).toBeHidden();
 
-    // Tahrirlash — faqat o'zgargan maydon.
-    await list.getByRole("button", { name: "«Yoqilg'i» kategoriyasini tahrirlash" }).click();
+    // Tahrirlash (qo'shilgani) — faqat o'zgargan maydon.
+    await list.getByRole("button", { name: "«Bank xizmati» kategoriyasini tahrirlash" }).click();
     const edit = page.getByRole("dialog", { name: "Kategoriyani tahrirlash" });
-    await expect(edit.getByLabel(/^Nomi/)).toHaveValue("Yoqilg'i");
-    await edit.getByLabel(/^Nomi/).fill("Yoqilg'i va moy");
+    await expect(edit.getByLabel(/^Nomi/)).toHaveValue("Bank xizmati");
+    await edit.getByLabel(/^Nomi/).fill("Bank xizmati (karta)");
     await edit.getByRole("button", { name: "Saqlash" }).click();
     await expectToast(page, "Kategoriya saqlandi", { tone: "success" });
     await expect(edit).toBeHidden();
-    expect(calls.updates).toEqual([{ id: "2", body: { name: "Yoqilg'i va moy" } }]);
-    await expect(list.getByRole("listitem").nth(1)).toContainText("Yoqilg'i va moy");
+    expect(calls.updates).toEqual([{ id: "18", body: { name: "Bank xizmati (karta)" } }]);
+    await expect(list.getByRole("listitem").last()).toContainText("Bank xizmati (karta)");
 
-    // O'chirish — tasdiq oynasi, tarix nomni saqlaydi.
-    await list.getByRole("button", { name: "«Qaytarilgan pullar» kategoriyasini o'chirish" }).click();
+    // O'chirish (qo'shilgani) — tasdiq oynasi, tarix nomni saqlaydi.
+    await card.getByRole("button", { name: "Kategoriya qo'shish" }).click();
+    form = page.getByRole("dialog", { name: "Kategoriya qo'shish" });
+    await form.getByLabel(/^Nomi/).fill("Kofe");
+    await form.getByRole("button", { name: "Qo'shish" }).click();
+    await expect(form).toBeHidden();
+    await expect(list.getByRole("listitem")).toHaveCount(19);
+    await list.getByRole("button", { name: "«Kofe» kategoriyasini o'chirish" }).click();
     const confirm = page.getByRole("alertdialog", { name: "O'chirishni tasdiqlang" });
     await expect(confirm.getByText("Avval yozilgan xarajatlarda kategoriya nomi saqlanib qoladi.")).toBeVisible();
     await confirm.getByRole("button", { name: "O'chirish" }).click();
     await expectToast(page, "Kategoriya o'chirildi", { tone: "success" });
-    await expect(list.getByRole("listitem")).toHaveCount(17);
-    await expect(list.getByText("Qaytarilgan pullar")).toHaveCount(0);
-    expect(calls.deletes).toEqual(["17"]);
-    expect(state.categories.find((category) => category.id === "17")?.is_deleted).toBe(true);
+    await expect(list.getByRole("listitem")).toHaveCount(18);
+    await expect(list.getByText("Kofe")).toHaveCount(0);
+    expect(calls.deletes).toEqual(["19"]);
+    expect(state.categories.find((category) => category.id === "19")?.is_deleted).toBe(true);
+    // Standart kategoriyalar o'zgarmagan (PATCH / DELETE faqat qo'shilganlarga ketdi — 18, 19).
+    expect(state.categories.filter((category) => category.is_default && category.is_deleted)).toEqual([]);
     await expectNoHorizontalOverflow(page);
 
-    // «Kassadan xarajat» tanlovi: yangisi bor, o'chirilgani yo'q, nomi yangilangan.
+    // «Kassadan xarajat» tanlovi: standartlar + qo'shilgani (yangi nomi bilan), o'chirilgani yo'q.
     await openMainCashbox(page);
     await openSpendDialog(page);
     await categoryCombobox(page).click();
     const options = page.getByRole("listbox", { name: "Xarajat kategoriyalari" }).getByRole("option");
-    await expect(options).toHaveCount(17);
-    await expect(options.filter({ hasText: "Bank xizmati" })).toHaveCount(1);
-    await expect(options.filter({ hasText: "Qaytarilgan pullar" })).toHaveCount(0);
-    await expect(options.filter({ hasText: "Yoqilg'i va moy" })).toHaveCount(1);
+    await expect(options).toHaveCount(18);
+    await expect(options.filter({ hasText: "Bank xizmati (karta)" })).toHaveCount(1);
+    await expect(options.filter({ hasText: "Kofe" })).toHaveCount(0);
+    await expect(options.filter({ hasText: "Yoqilg'i" })).toHaveCount(1);
     expect(leaked).toEqual([]);
   });
 

@@ -11,6 +11,12 @@ export type ExpenseCategory = {
   /** Ro'yxatdagi o'rni (kichigi tepada). */
   sortOrder: number;
   isDeleted: boolean;
+  /**
+   * Standart kategoriya (`is_default`, backend migratsiya 214 — boshlang'ich 17 ta). Ega 2026-11-11: tahrirlab ham,
+   * o'chirib ham bo'lmaydi (backend `PATCH` / `DELETE` — 403). Superadmin qo'shganlari — `false`. Eski backend
+   * (maydon yo'q) — `false`.
+   */
+  isDefault: boolean;
 };
 
 /** `POST finance/cashbox/expense-categories` — `name` 1–100, `description` ≤ 500, `sort_order` 0…1 000 000. */

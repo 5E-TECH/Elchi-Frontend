@@ -80,15 +80,10 @@ test("⭐ 390: Ops → «Xarajat kategoriyalari» — bo'lim tanlovidan, amallar
   const addBox = (await add.boundingBox())!;
   expect(addBox.height).toBeGreaterThanOrEqual(44);
 
+  // Ega 2026-11-11: standart 17 tasida amal tugmalari yo'q — «Standart» belgisi.
   const actions = list.getByRole("button", { name: /kategoriyasini (tahrirlash|o'chirish)$/ });
-  await expect(actions).toHaveCount(34);
-  const sizes = await actions.evaluateAll((nodes) =>
-    nodes.flatMap((node) => {
-      const rect = node.getBoundingClientRect();
-      return [rect.width, rect.height];
-    }),
-  );
-  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(44);
+  await expect(actions).toHaveCount(0);
+  await expect(list.getByRole("listitem").filter({ hasText: "Standart (tahrirlab ham, o'chirib ham bo'lmaydi)" })).toHaveCount(17);
   await expectNoHorizontalOverflow(page);
 
   await add.click();
@@ -110,5 +105,14 @@ test("⭐ 390: Ops → «Xarajat kategoriyalari» — bo'lim tanlovidan, amallar
   await expect(form).toBeHidden();
   expect(calls.creates).toEqual([{ name: "Bank xizmati", sort_order: 3 }]);
   await expect(list.getByRole("listitem").nth(3)).toContainText("Bank xizmati");
+  // Qo'shilganida ikkala amal bor va har biri ≥ 44 px.
+  await expect(actions).toHaveCount(2);
+  const sizes = await actions.evaluateAll((nodes) =>
+    nodes.flatMap((node) => {
+      const rect = node.getBoundingClientRect();
+      return [rect.width, rect.height];
+    }),
+  );
+  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(44);
   await expectNoHorizontalOverflow(page);
 });
