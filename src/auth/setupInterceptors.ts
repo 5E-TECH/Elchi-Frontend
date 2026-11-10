@@ -47,10 +47,6 @@ const logoutSessionExpired = (revoked = false) => {
 /** Gateway sessiyasi boshqa qurilmadan yopilganda 401 javobida `message: "Session revoked"` beradi. */
 const SESSION_REVOKED_MESSAGE = "session revoked";
 
-const isSessionRevoked = (error: AxiosError) => {
-  const message = (error.response?.data as { message?: unknown } | undefined)?.message;
-  return typeof message === "string" && message.trim().toLowerCase() === SESSION_REVOKED_MESSAGE;
-};
 
 /**
  * NDmZMzCP: gateway sessiyani tekshira olmadi (identity javob bermadi) — 503 `SESSION_CHECK_UNAVAILABLE`. Bu 401
@@ -64,18 +60,21 @@ export const SESSION_CHECK_TOAST_ID = "elchi-session-check-unavailable";
  * So'rov hozirgi token bilan ketganmi. aidsxJ2H: parol almashgach bayroqsiz token olinadi — eski token bilan ketgan
  * so'rovning kech kelgan 403 javobi «Yangi parol o'rnating» oynasini qayta ochmasin.
  */
-const sentWithCurrentToken = (error: AxiosError) => {
-  const sent = String(error.config?.headers?.Authorization ?? "").replace(/^Bearer\s+/i, "");
+const sentWithCurrentToken = (sentAuthorization: unknown) => {
+  const sent = String(sentAuthorization ?? "").replace(/^Bearer\s+/i, "");
   return !sent || sent === tokenStorage.getAccessToken();
 };
 
-const handleSecurityCodes = (error: AxiosError) => {
-  const status = error.response?.status;
+/**
+ * Xavfsizlik javoblari (403 `PASSWORD_CHANGE_REQUIRED`, 503 `SESSION_CHECK_UNAVAILABLE`) — axios interceptor va
+ * `authFetch` (SSE, `fetch` bilan) uchun bitta: `sentAuthorization` — so'rov yuborilgan `Authorization` sarlavhasi.
+ */
+export const handleSecurityResponse = (status: number | undefined, body: unknown, sentAuthorization: unknown) => {
   if (status !== 403 && status !== 503) return;
-  const code = responseErrorCode(error.response?.data);
+  const code = responseErrorCode(body);
   if (status === 403 && code === PASSWORD_CHANGE_REQUIRED_CODE) {
     // Darvoza (`pwd_forced` yoki `PASSWORD_CHANGE_GATE`): chiqarilmaydi — «Yangi parol o'rnating» oynasi ochiladi.
-    if (sentWithCurrentToken(error)) requirePasswordChange();
+    if (sentWithCurrentToken(sentAuthorization)) requirePasswordChange();
   } else if (status === 503 && code === SESSION_CHECK_UNAVAILABLE_CODE) {
     notify.warning(i18n.t("auth:sessionCheckUnavailable.title"), {
       id: SESSION_CHECK_TOAST_ID,
@@ -111,6 +110,52 @@ const handleRefreshFailure = async (refreshError: unknown, revoked = false) => {
   return Promise.reject(refreshError);
 };
 
+/**
+ * So'rov oldidan amaldagi access token (`authFetch` bilan umumiy): refresh token muddati o'tgan bo'lsa — sessiya
+ * tugadi (chiqish, xato); access token muddati o'tgan bo'lsa — bitta umumiy yangilash (`getRefreshedAccessToken`),
+ * yiqilsa — `handleRefreshFailure` (vaqtinchalik xatoda chiqarilmaydi).
+ */
+export const prepareAccessToken = async (): Promise<string | null> => {
+  if (hasRefreshTokenExpired()) {
+    await logoutSessionExpired();
+    throw new Error("Refresh token expired");
+  }
+
+  const accessToken = tokenStorage.getAccessToken();
+  const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
+
+  if (accessToken && accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
+    try {
+      return await getRefreshedAccessToken();
+    } catch (refreshError) {
+      return handleRefreshFailure(refreshError);
+    }
+  }
+
+  return accessToken;
+};
+
+/**
+ * 401 dan keyin bitta umumiy yangilash (`authFetch` bilan umumiy) — yangi access token. Yiqilsa —
+ * `handleRefreshFailure` (`revoked` — sessiya boshqa qurilmadan yopilgan, «Sessiya tugadi» ekrani sababi bilan).
+ */
+export const refreshAfterUnauthorized = async ({ revoked = false }: { revoked?: boolean } = {}): Promise<string> => {
+  try {
+    if (hasRefreshTokenExpired()) {
+      throw new Error("Refresh token expired");
+    }
+    return await getRefreshedAccessToken();
+  } catch (refreshError) {
+    return handleRefreshFailure(refreshError, revoked);
+  }
+};
+
+/** 401 javobi tanasidagi «Session revoked» (gateway sessiyani boshqa qurilmadan yopilganda). */
+export const isSessionRevokedBody = (body: unknown) => {
+  const message = (body as { message?: unknown } | null | undefined)?.message;
+  return typeof message === "string" && message.trim().toLowerCase() === SESSION_REVOKED_MESSAGE;
+};
+
 const shouldAttemptRefresh = (error: AxiosError) => {
   const status = error.response?.status;
   const requestConfig = error.config as RetryableRequestConfig | undefined;
@@ -140,21 +185,7 @@ const shouldAttemptRefresh = (error: AxiosError) => {
 export const setupAuthInterceptors = (api: AxiosInstance) => {
   api.interceptors.request.use(async (config) => {
     (config as RetryableRequestConfig)._loginEpoch = getLoginEpoch();
-    if (hasRefreshTokenExpired()) {
-      await logoutSessionExpired();
-      return Promise.reject(new Error("Refresh token expired"));
-    }
-
-    let accessToken = tokenStorage.getAccessToken();
-    const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
-
-    if (accessToken && accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
-      try {
-        accessToken = await getRefreshedAccessToken();
-      } catch (refreshError) {
-        return handleRefreshFailure(refreshError);
-      }
-    }
+    const accessToken = await prepareAccessToken();
 
     if (accessToken) {
       config.headers = config.headers ?? {};
@@ -177,7 +208,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       // Fon so'rovi (`silentNetworkError`, masalan har daqiqadagi o'qilmaganlar soni) — holat belgilanadi, lekin
       // foydalanuvchi yopgan tarmoq xabari qayta ochilmaydi (9-band).
       emitNetworkError(error, { silent: error.config?.silentNetworkError === true });
-      handleSecurityCodes(error);
+      handleSecurityResponse(error.response?.status, error.response?.data, error.config?.headers?.Authorization);
 
       if (!shouldAttemptRefresh(error)) {
         return Promise.reject(error);
@@ -186,19 +217,11 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       const originalRequest = error.config as RetryableRequestConfig;
       originalRequest._retry = true;
 
-      try {
-        if (hasRefreshTokenExpired()) {
-          throw new Error("Refresh token expired");
-        }
+      const nextAccessToken = await refreshAfterUnauthorized({ revoked: isSessionRevokedBody(error.response?.data) });
+      originalRequest.headers = originalRequest.headers ?? {};
+      (originalRequest.headers as Record<string, string>).Authorization = `Bearer ${nextAccessToken}`;
 
-        const nextAccessToken = await getRefreshedAccessToken();
-        originalRequest.headers = originalRequest.headers ?? {};
-        (originalRequest.headers as Record<string, string>).Authorization = `Bearer ${nextAccessToken}`;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        return handleRefreshFailure(refreshError, isSessionRevoked(error));
-      }
+      return api(originalRequest);
     },
   );
 };
