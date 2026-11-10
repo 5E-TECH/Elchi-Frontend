@@ -40,12 +40,15 @@ vi.mock("../detail/lib/printMode", async (importOriginal) => ({
 }));
 vi.mock("./lib/exportOldMailsToExcel", () => ({ exportOldMailsToExcel: mocks.exportOldMailsToExcel }));
 
-/** Xulosa qatori (`<p>`) — bo'shliqlar (NBSP ham) normallashtirilgan matn bo'yicha. */
-const summaryLine = (text: string | RegExp) =>
-  screen.getByText((_, node) => {
-    if (node?.tagName !== "P") return false;
+/**
+ * Ega qarori 2026-11-10: «N ta pochta · M ta buyurtma · jami S» xulosasi yo'q. Bo'shliqlar (NBSP ham) normallashtirilgan
+ * matnda «· N ta buyurtma» yoki «jami …» bor element topilmasligi kerak (qator / karta ichidagi o'z soni bundan tashqari).
+ */
+const summaryLines = () =>
+  screen.queryAllByText((_, node) => {
+    if (!node || node.children.length > 8) return false;
     const content = (node.textContent ?? "").replace(/\s+/g, " ").trim();
-    return typeof text === "string" ? content === text : text.test(content);
+    return /ta (pochta|paket) · .*ta buyurtma|ta buyurtma · jami|^jami \d|(заказ\S*|orders?) · (всего|total)/.test(content);
   });
 
 const post = (
@@ -295,8 +298,8 @@ describe("OldMails — xodim (pochtalar)", () => {
     renderOld("manager", "/mails/old?region_id=2", "card", "REGIONAL");
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    // Xulosa, filtrlar, Excel va sahifalash o'z joyida.
-    expect(summaryLine("46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm")).toBeInTheDocument();
+    // Filtrlar, Excel va sahifalash o'z joyida; xulosa yo'q (2026-11-10).
+    expect(summaryLines()).toEqual([]);
     expect(screen.getByRole("combobox", { name: "Kuryer" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
     expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
@@ -362,42 +365,42 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(screen.queryByRole("button", { name: "№92: chekni qayta chiqarish" })).not.toBeInTheDocument();
   });
 
-  it("⭐ tveJKICY: xulosa — «N ta pochta · M ta buyurtma · jami S» server yig'indilaridan (sahifadan emas)", () => {
+  it("⭐ 2026-11-10: umumiy xulosa yo'q — server yig'indilari kelsa ham (admin, superadmin, registrator, menejer)", () => {
     mocks.useGetOldMails.mockReturnValue(
       mailsResult(MAILS, { total: 46, orders_total: 684, amount_total: 128_360_000 }),
     );
-    renderOld("manager", "/mails/old", "card");
-
-    // Sahifadagi 3 ta pochtaning yig'indisi emas — filtr bo'yicha barcha sahifalar (backend `orders_total`, `amount_total`).
-    expect(summaryLine("46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm")).toBeInTheDocument();
-    expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
+    for (const role of ["admin", "superadmin", "registrator", "manager"]) {
+      const { unmount } = renderOld(role, "/mails/old", "card");
+      expect(summaryLines()).toEqual([]);
+      expect(screen.queryByText(/684/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/128[\s\u00a0]360[\s\u00a0]000/)).not.toBeInTheDocument();
+      expect(screen.queryByText((_, node) => node?.tagName === "P" && node.textContent === "46 ta pochta")).toBeNull();
+      // Sahifalash va Excel o'z joyida.
+      expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+      unmount();
+    }
   });
 
-  it("tveJKICY: imkonsiz filtr — yig'indilar 0; ru/en ham server sonlari bilan", async () => {
+  it("2026-11-10: ru/en da ham xulosa yo'q", async () => {
     mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 3, orders_total: 0, amount_total: 0 }));
     renderOld("admin", "/mails/old", "card");
-    expect(summaryLine("3 ta pochta · 0 ta buyurtma · jami 0 so'm")).toBeInTheDocument();
-
-    await act(async () => {
-      await i18n.changeLanguage("ru");
-    });
-    expect(summaryLine("3 почты · 0 заказов · всего 0 сум")).toBeInTheDocument();
-    await act(async () => {
-      await i18n.changeLanguage("en");
-    });
-    expect(summaryLine("3 mails · 0 orders · total 0 UZS")).toBeInTheDocument();
-    await act(async () => {
-      await i18n.changeLanguage("uz");
-    });
-  });
-
-  it("eski javob (yig'indilarsiz) — xulosa faqat «N ta pochta», sahifadan hisoblanmaydi", () => {
-    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 46 }));
-    renderOld("manager", "/mails/old", "card");
-
-    expect(screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "46 ta pochta")).toBeInTheDocument();
-    expect(screen.queryByText(/ta buyurtma · jami/)).not.toBeInTheDocument();
-    expect(screen.getByText("1–8 / 46 ta pochta")).toBeInTheDocument();
+    try {
+      for (const [language, pagination] of [
+        ["ru", "1–3 из 3 почт"],
+        ["en", "1–3 of 3 mails"],
+      ]) {
+        await act(async () => {
+          await i18n.changeLanguage(language);
+        });
+        expect(summaryLines()).toEqual([]);
+        expect(screen.getByText(pagination)).toBeInTheDocument();
+      }
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage("uz");
+      });
+    }
   });
 
   it("reprints through GET post/orders/:id: the mail receipt first, then the order receipts (ega qarori 5)", async () => {
@@ -752,15 +755,14 @@ describe("OldMails — «Pochtalar | Filial paketlari» (D11)", () => {
     ]);
   });
 
-  it("uses every batch page, not only the newest 100 (client filters and summary over all of them)", async () => {
+  it("uses every batch page, not only the newest 100 (client filters over all of them); no summary (2026-11-10)", async () => {
     const many = Array.from({ length: 130 }, (_, index) => batch(String(1000 + index), index % 2 ? "received" : "cancelled"));
     mocks.fetchAllTransferBatches.mockResolvedValue({ data: many, capped: false });
     renderOld("superadmin", "/mails/old?batch_mode=all", "card");
 
     expect(await screen.findByText("1–8 / 130 ta paket")).toBeInTheDocument();
-    expect(
-      screen.getByText((_, node) => node?.tagName === "P" && node.textContent === "130 ta paket · 1 820 ta buyurtma · jami 414 180 000 so'm"),
-    ).toBeInTheDocument();
+    expect(summaryLines()).toEqual([]);
+    expect(screen.queryByText(/1[\s\u00a0]820 ta buyurtma|414[\s\u00a0]180[\s\u00a0]000/)).not.toBeInTheDocument();
     expect(mocks.useGetOldMails).toHaveBeenLastCalledWith(false, expect.anything(), { enabled: false, keepPreviousData: true });
   });
 
@@ -968,13 +970,25 @@ describe("OldMails — telefon (< 768)", () => {
     expect(within(cards).getByText(/Kuryer: Buxaro Courier · Buxoro/)).toBeInTheDocument();
   });
 
-  it("tveJKICY 390px: xulosa ikki qatorda — «N ta pochta · M ta buyurtma» va ostida summa", () => {
+  it("390px, 2026-11-10: xulosa yo'q; segmentsiz rolda (menejer) bo'sh asboblar qatori ham yo'q", () => {
     mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 46, orders_total: 684, amount_total: 128_360_000 }));
     renderOld("manager", "/mails/old", "card");
 
-    const line = summaryLine(/^46 ta pochta · 684 ta buyurtma/);
-    expect(line.querySelector("br")).not.toBeNull();
-    expect(line).toHaveTextContent("jami 128 360 000 so'm");
+    expect(summaryLines()).toEqual([]);
+    expect(screen.queryByText(/684/)).not.toBeInTheDocument();
+    // Filtrlar qatori kartaning birinchi bo'lagi — tepada 16 px (asboblar qatori o'rnida).
+    const filters = screen.getByRole("button", { name: /^Filtrlar/ }).closest("div.flex-col");
+    expect(filters).toHaveClass("pt-4");
+    expect(filters?.previousElementSibling).toBeNull();
+  });
+
+  it("390px admin: «Pochtalar | Filial paketlari» segmenti qoladi, xulosa yo'q", () => {
+    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 46, orders_total: 684, amount_total: 128_360_000 }));
+    renderOld("admin", "/mails/old", "card");
+
+    expect(screen.getByRole("radiogroup")).toBeInTheDocument();
+    expect(summaryLines()).toEqual([]);
+    expect(screen.getByRole("button", { name: /^Filtrlar/ }).closest("div.flex-col")).toHaveClass("pt-3");
   });
 
   it("branch manager phone: one list of date cards, the reprint button outside the link", () => {

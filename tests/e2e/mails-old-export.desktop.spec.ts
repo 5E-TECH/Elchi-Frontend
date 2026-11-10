@@ -120,8 +120,8 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
     await expect(branchCell("91")).toHaveText("HQ Toshkent");
     // F4: sahifalash server `total` i bo'yicha — birinchi so'rov 8 ta qator, `has_orders=true`.
     await expect(page.getByText("1–8 / 150 ta pochta")).toBeVisible();
-    // tveJKICY: xulosa — server yig'indilari (joriy 8 qatorniki emas).
-    await expect(page.getByText(/^150 ta pochta · 450 ta buyurtma · jami 97\s500\s000\sso'm$/)).toBeVisible();
+    // Ega qarori 2026-11-10: «N ta pochta · M ta buyurtma · jami S» xulosasi yo'q (server yig'indilari kelsa ham).
+    await expect(page.getByText(/ta buyurtma · jami|450 ta buyurtma|97\s500\s000/)).toHaveCount(0);
     await expect(table.getByRole("link", { name: /^№\d+$/ })).toHaveCount(8);
     expect(postQueries[0]).toMatchObject({ page: "1", limit: "8", has_orders: "true" });
 
