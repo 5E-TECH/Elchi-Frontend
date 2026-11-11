@@ -4,8 +4,10 @@ import {
   effectiveShiftCardFlags,
   evaluateShiftAccountRow,
   isAccountCommentRequired,
+  normalizeShiftAccountCheck,
   normalizeShiftCheckSettings,
   normalizeShiftReport,
+  readShiftLatePhotoError,
   validateShiftPhoto,
 } from "./shiftAccountCheck";
 
@@ -144,6 +146,81 @@ describe("shift account check rules (kiZgTybn)", () => {
     expect(effectiveShiftCardFlags({ photo_required: "true", ai_enabled: "false" }, { photo_required: false, ai_check_enabled: false })).toEqual({
       photo_required: true,
       ai_enabled: false,
+    });
+  });
+});
+
+/** BE-B — avto-yopilgan smenaga rasmni keyin yuklash: hisobot qatori maydonlari va xato o'quvchisi. */
+describe("shift late photo (BE-B)", () => {
+  const base = { card_id: "2", expected_balance: "1850000.00" };
+
+  it("reads photo_status, late_upload_deadline, late_uploaded and can_upload_late", () => {
+    expect(
+      normalizeShiftAccountCheck({
+        ...base,
+        photo_status: "pending",
+        late_upload_deadline: "2026-11-12T13:00:00.000Z",
+        late_uploaded: false,
+        can_upload_late: true,
+      }),
+    ).toMatchObject({
+      photo_status: "pending",
+      late_upload_deadline: "2026-11-12T13:00:00.000Z",
+      late_uploaded: false,
+      can_upload_late: true,
+    });
+    expect(normalizeShiftAccountCheck({ ...base, photo_status: "UPLOADED", late_uploaded: true })).toMatchObject({
+      photo_status: "uploaded",
+      late_uploaded: true,
+      can_upload_late: false,
+    });
+  });
+
+  it("older backend (fields missing) or an unknown status: photo_status null, no button", () => {
+    expect(normalizeShiftAccountCheck(base)).toMatchObject({
+      photo_status: null,
+      late_upload_deadline: null,
+      late_uploaded: false,
+      can_upload_late: false,
+    });
+    expect(normalizeShiftAccountCheck({ ...base, photo_status: "lost" })?.photo_status).toBeNull();
+  });
+
+  const httpError = (status: number, data: Record<string, unknown>) => ({ response: { status, data } });
+
+  it("error reader: code, verbatim message, deadline and whether a retry can help", () => {
+    expect(
+      readShiftLatePhotoError(
+        httpError(409, {
+          statusCode: 409,
+          code: "SHIFT_LATE_PHOTO_EXPIRED",
+          message: "Rasmni keyin yuklash muddati tugagan (smena yopilganidan 24 soat o'tdi)",
+          deadline: "2026-11-11T13:00:00.000Z",
+        }),
+      ),
+    ).toEqual({
+      status: 409,
+      code: "SHIFT_LATE_PHOTO_EXPIRED",
+      message: "Rasmni keyin yuklash muddati tugagan (smena yopilganidan 24 soat o'tdi)",
+      deadline: "2026-11-11T13:00:00.000Z",
+      terminal: true,
+      commentRequired: false,
+    });
+    expect(
+      readShiftLatePhotoError(httpError(404, { code: "SHIFT_LATE_PHOTO_CARD_NOT_IN_SHIFT", message: "Bu karta shu smena hisobotida yo'q" })),
+    ).toMatchObject({ code: "SHIFT_LATE_PHOTO_CARD_NOT_IN_SHIFT", terminal: true });
+    expect(
+      readShiftLatePhotoError(
+        httpError(400, { message: "«Humo»: farq bor yoki AI natijasi mos emas — izoh majburiy" }),
+      ),
+    ).toMatchObject({ code: null, terminal: false, commentRequired: true });
+    expect(readShiftLatePhotoError(httpError(403, { message: "Forbidden resource" }))).toMatchObject({ terminal: true });
+    // Tarmoq xatosi — matn yo'q (UI o'z matnini ko'rsatadi), qayta urinish mumkin.
+    expect(readShiftLatePhotoError(new Error("Network Error"))).toMatchObject({
+      status: null,
+      code: null,
+      message: null,
+      terminal: false,
     });
   });
 });

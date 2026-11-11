@@ -11,7 +11,9 @@ import { notify } from "../../shared/lib/notify";
  *  - `finance.shift.auto_closed` — smena jadval bo'yicha avtomatik yopildi (kassirga xabar ham);
  *  - `finance.shift.auto_opened` — smena jadval bo'yicha avtomatik ochildi («Kun tartibi», 2026-11-10; payload
  *    `{ shift_id, cashbox_type, branch_id?, opened_at }`): smena va kassa qayta o'qiladi, kassirga xabar;
- *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi);
+ *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi); BE-B: avtomatik
+ *    yopilgan smenaga rasm keyin yuklanganda va uning AI natijasida ham keladi (`late: true`) — `[shift]` ichidagi smena
+ *    hisoboti (`[shift, "report", id]`) qayta o'qiladi;
  *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
  *    2026-10-25): smena holatiga tegmaydi — kassa qoldiqlari (naqd / karta) va smena yopish sozlamasining kartalar
  *    ro'yxati (`[shift, "check-settings"]`, BE-A: ochiq yopish oynasi yangi / o'chirilgan kartani ko'rsin) qayta o'qiladi;

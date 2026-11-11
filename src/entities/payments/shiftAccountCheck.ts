@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
+import { getApiErrorMessage } from "../../shared/lib/apiError";
 import { prepareImage } from "../../shared/lib/downscaleImage";
+import { getErrorStatus } from "../../shared/lib/errorKind";
 
 /**
  * SMENA YOPILISHI: HAR KARTA / HISOB QOLDIG'INI TASDIQLASH (kiZgTybn, backend `docs/frontend/FRONTEND_CHANGELOG.md`
@@ -29,10 +31,38 @@ import { prepareImage } from "../../shared/lib/downscaleImage";
  * pdf | xlsx); hisobotda `close_reason` (manual | auto), `closed_by_system`, `auto_close` (`{closed_at, label}` —
  * sariq banner), `report` (yuborish holati, fayl — faqat superadmin) va `deliveries[]` («Hisobot kimlarga
  * yuborildi», faqat superadmin); `POST finance/shift/:id/report/resend` — qayta yuborish (faqat superadmin).
+ *
+ * BE-B (2026-11-11, backend PR #629; ega qarori 2026-11-10): ASOSIY kassa smenasi jadval bo'yicha AVTOMATIK yopilsa,
+ * superadmin / admin karta qoldig'i rasmini `closed_at` dan keyin 24 soat ichida yuklaydi —
+ * `POST finance/shift/:shift_id/accounts/:card_id/late-photo` (multipart `photo`, `entered_balance`, `comment?`) → `data`
+ * — hisobot qatori shaklida. Hisobot qatorida hisoblangan `photo_status` (uploaded | not_required | pending | missing),
+ * `late_upload_deadline`, `late_uploaded`, `can_upload_late` (rolni gateway qo'shadi — menejer / registratorga `false`).
+ * Eski backend bu maydonlarni bermaydi — `photo_status: null` (UI avvalgidek). Xatolar `code` bilan
+ * (`SHIFT_LATE_PHOTO_ERROR_CODES`), matn — backenddan aynan.
  */
 
 const shiftKey = "shift";
 const cashboxKey = "cashbox";
+
+/** BE-B: kartaning rasm holati (hisoblangan, DB'da yo'q). */
+export const SHIFT_PHOTO_STATUSES = ["uploaded", "not_required", "pending", "missing"] as const;
+export type ShiftPhotoStatus = (typeof SHIFT_PHOTO_STATUSES)[number];
+
+/** BE-B: keyin yuklash izohi chegarasi (gateway `@MaxLength(1000)`). */
+export const SHIFT_LATE_PHOTO_COMMENT_MAX = 1000;
+
+/** BE-B: keyin yuklash xatolari (`code` — javob konvertining yuqori qatlamida; `EXPIRED` da `deadline` ham). */
+export const SHIFT_LATE_PHOTO_ERROR_CODES = {
+  /** 400 — filial kassasi smenasi. */
+  mainOnly: "SHIFT_LATE_PHOTO_MAIN_ONLY",
+  /** 409 — smena ochiq yoki qo'lda yopilgan. */
+  notAutoClosed: "SHIFT_LATE_PHOTO_NOT_AUTO_CLOSED",
+  /** 409 — 24 soatlik oyna tugagan (`deadline` — ISO). */
+  expired: "SHIFT_LATE_PHOTO_EXPIRED",
+  /** 404 — smena hisobotida bu karta qatori yo'q. */
+  cardNotInShift: "SHIFT_LATE_PHOTO_CARD_NOT_IN_SHIFT",
+} as const;
+export type ShiftLatePhotoErrorCode = (typeof SHIFT_LATE_PHOTO_ERROR_CODES)[keyof typeof SHIFT_LATE_PHOTO_ERROR_CODES];
 
 export const SHIFT_AI_STATUSES = [
   "not_required",
@@ -183,6 +213,14 @@ export type ShiftAccountCheck = {
   comment_required: boolean;
   photo_required_snap: boolean | null;
   ai_enabled_snap: boolean | null;
+  /** BE-B: rasm holati; eski backend bermaydi — `null` (hisobot avvalgidek chiziladi). */
+  photo_status: ShiftPhotoStatus | null;
+  /** BE-B: avto-yopilgan ASOSIY smenada `closed_at + 24 soat` (ISO; muddat o'tgach ham qoladi), aks holda `null`. */
+  late_upload_deadline: string | null;
+  /** BE-B: rasm smena yopilgandan KEYIN yuklangan. */
+  late_uploaded: boolean;
+  /** BE-B: «Rasm yuklash» tugmasi — avto-yopilgan ASOSIY smena, muddat ichida va so'rovchi superadmin / admin. */
+  can_upload_late: boolean;
 };
 
 export type ShiftReportMoney = {
@@ -327,6 +365,11 @@ export const effectiveShiftCardFlags = (
   ai_enabled: flagOrNull(card.ai_enabled) ?? (masters.ai_check_enabled && bool(card.ai_check_enabled)),
 });
 
+const oneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | null => {
+  const raw = String(value ?? "").toLowerCase();
+  return (allowed as readonly string[]).includes(raw) ? (raw as T) : null;
+};
+
 export const toShiftAiStatus = (value: unknown): ShiftAiStatus => {
   const raw = String(value ?? "").toLowerCase();
   return (SHIFT_AI_STATUSES as readonly string[]).includes(raw) ? (raw as ShiftAiStatus) : "not_required";
@@ -469,6 +512,10 @@ export const normalizeShiftAccountCheck = (value: unknown): ShiftAccountCheck | 
     comment_required: bool(row.comment_required),
     photo_required_snap: boolOrNull(row.photo_required_snap),
     ai_enabled_snap: boolOrNull(row.ai_enabled_snap),
+    photo_status: oneOf(row.photo_status, SHIFT_PHOTO_STATUSES),
+    late_upload_deadline: text(row.late_upload_deadline),
+    late_uploaded: bool(row.late_uploaded),
+    can_upload_late: bool(row.can_upload_late),
   };
 };
 
@@ -482,11 +529,6 @@ const normalizeMoneyBlock = (value: unknown): ShiftReportMoney => {
     closing_balance: num(block.closing_balance),
     discrepancy: num(block.discrepancy),
   };
-};
-
-const oneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | null => {
-  const raw = String(value ?? "").toLowerCase();
-  return (allowed as readonly string[]).includes(raw) ? (raw as T) : null;
 };
 
 export const normalizeShiftReportDelivery = (value: unknown): ShiftReportDelivery | null => {
@@ -637,10 +679,13 @@ export const validateShiftPhoto = (file: Pick<File, "type" | "size">): "type" | 
  * Skrinshotni yuborishga tayyorlaydi (bphdLYJM): brauzerda kichraytirib ≤ 5 MB JPEG qiladi — telefon surati ko'pincha
  * 5 MB dan katta (chek rasmidagi `prepareReceiptPhoto` bilan bir xil yo'l). Xato — `PrepareImageError` (sabab bilan).
  */
-export const prepareShiftPhoto = async (file: File): Promise<File> => {
+export const prepareShiftPhoto = async (file: File): Promise<File> => (await prepareShiftPhotoWithPreview(file)).file;
+
+/** `prepareShiftPhoto` + ko'rinish uchun `data:` URL (BE-B: keyin yuklash oynasida tanlangan rasm ko'rinadi). */
+export const prepareShiftPhotoWithPreview = async (file: File): Promise<{ file: File; preview: string }> => {
   const prepared = await prepareImage(file, { maxBytes: SHIFT_PHOTO_MAX_BYTES });
   const bytes = Uint8Array.from(atob(prepared.data_base64), (char) => char.charCodeAt(0));
-  return new File([bytes], prepared.name, { type: prepared.media_type });
+  return { file: new File([bytes], prepared.name, { type: prepared.media_type }), preview: prepared.preview };
 };
 
 // ───────────────────────── so'rovlar ─────────────────────────
@@ -829,4 +874,82 @@ export const useUploadShiftAccountPhoto = () => {
     },
     onSuccess: (_check, { shiftId }) => client.invalidateQueries({ queryKey: shiftReportKey(shiftId) }),
   });
+};
+
+export type UploadShiftLatePhotoInput = {
+  shiftId: string;
+  cardId: string;
+  /** Tayyorlangan (≤ 5 MB JPEG) rasm — `prepareShiftPhoto`. */
+  photo: File;
+  /** MAJBURIY, ≥ 0 (`0` ham qiymat). */
+  enteredBalance: number;
+  comment?: string;
+};
+
+/**
+ * BE-B: `POST finance/shift/:shift_id/accounts/:card_id/late-photo` (multipart: `photo`, `entered_balance`, `comment?`).
+ * 201 → `data` — yangilangan hisobot qatori: keshdagi hisobotda shu qator almashtiriladi va hisobot qayta o'qiladi.
+ * 409 (`NOT_AUTO_CLOSED` / `EXPIRED`) va 404 (`CARD_NOT_IN_SHIFT`, smena yo'q) — hisobot qayta o'qiladi
+ * (`can_upload_late` yangilanadi, tugma yashirinadi).
+ */
+export const useUploadShiftLatePhoto = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ shiftId, cardId, photo, enteredBalance, comment }: UploadShiftLatePhotoInput) => {
+      const form = new FormData();
+      form.append("photo", photo);
+      form.append("entered_balance", String(enteredBalance));
+      const note = comment?.trim();
+      if (note) form.append("comment", note);
+      return api
+        .post(API_ENDPOINTS.CASHBOX.SHIFT_ACCOUNT_LATE_PHOTO(shiftId, cardId), form, { timeout: LONG_REQUEST_TIMEOUT_MS })
+        .then((res) => normalizeShiftAccountCheck(payload(res.data)));
+    },
+    onSuccess: (row, { shiftId }) => {
+      if (row) {
+        client.setQueryData<ShiftReport | null>(shiftReportKey(shiftId), (report) =>
+          report
+            ? { ...report, accounts: report.accounts.map((item) => (item.card_id === row.card_id ? row : item)) }
+            : report,
+        );
+      }
+      void client.invalidateQueries({ queryKey: shiftReportKey(shiftId) });
+    },
+    onError: (error, { shiftId }) => {
+      const status = getErrorStatus(error);
+      if (status === 409 || status === 404) void client.invalidateQueries({ queryKey: shiftReportKey(shiftId) });
+    },
+  });
+};
+
+export type ShiftLatePhotoError = {
+  status: number | null;
+  code: ShiftLatePhotoErrorCode | null;
+  /** Backend matni (aynan); bo'lmasa — `null`. */
+  message: string | null;
+  /** `SHIFT_LATE_PHOTO_EXPIRED` da — muddat (ISO). */
+  deadline: string | null;
+  /** Qayta urinish foyda bermaydi (muddat o'tgan, avto-yopilmagan, karta yo'q, ruxsat yo'q). */
+  terminal: boolean;
+  /** 400 «… izoh majburiy» — kiritilgan qoldiq snapshot'dan farq qiladi. */
+  commentRequired: boolean;
+};
+
+const LATE_PHOTO_CODES: readonly string[] = Object.values(SHIFT_LATE_PHOTO_ERROR_CODES);
+
+/** Keyin yuklash xatosi: HTTP holati, `code`, backend matni (aynan) va `deadline`. */
+export const readShiftLatePhotoError = (error: unknown): ShiftLatePhotoError => {
+  const body = record(record(record(error).response).data);
+  const rawCode = typeof body.code === "string" ? body.code.trim() : "";
+  const code = LATE_PHOTO_CODES.includes(rawCode) ? (rawCode as ShiftLatePhotoErrorCode) : null;
+  const status = getErrorStatus(error) ?? null;
+  const message = getApiErrorMessage(error) || null;
+  return {
+    status,
+    code,
+    message,
+    deadline: text(body.deadline),
+    terminal: code !== null || status === 403 || status === 404,
+    commentRequired: status === 400 && /izoh majburiy/iu.test(message ?? ""),
+  };
 };
