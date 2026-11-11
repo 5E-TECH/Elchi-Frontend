@@ -313,8 +313,8 @@ export const parseMarkdown = (source: string): MdBlock[] => {
   return blocks;
 };
 
-/** Belgilarsiz matn (nusxa olish, ekran o'quvchi nomi). */
-export const inlineText = (nodes: readonly MdInline[]): string =>
+/** Belgilarsiz matn (ekran o'quvchi nomi; qator ko'chishi — `lineBreak`, sukut — bo'sh joy). */
+export const inlineText = (nodes: readonly MdInline[], lineBreak = " "): string =>
   nodes
     .map((node) => {
       switch (node.type) {
@@ -322,9 +322,36 @@ export const inlineText = (nodes: readonly MdInline[]): string =>
         case "code":
           return node.text;
         case "break":
-          return " ";
+          return lineBreak;
         default:
-          return inlineText(node.children);
+          return inlineText(node.children, lineBreak);
       }
     })
     .join("");
+
+/**
+ * Ekranda ko'ringan matn — belgilarsiz (javobni nusxalash: messenjer, hujjat, Excel): `**`, `_`, `#` olinadi,
+ * ro'yxat — «- » / «1. » qatorlar, jadval — tab bilan ajratilgan qatorlar (Excel'ga ustunlar bo'lib tushadi),
+ * bloklar orasida bo'sh qator.
+ */
+export const markdownToPlainText = (source: string): string =>
+  parseMarkdown(source)
+    .map((block) => {
+      switch (block.type) {
+        case "paragraph":
+        case "heading":
+          return inlineText(block.children, "\n");
+        case "list":
+          return block.items
+            .map((item, index) => `${block.ordered ? `${block.start + index}.` : "-"} ${inlineText(item, "\n  ")}`)
+            .join("\n");
+        case "table":
+          return [block.header, ...block.rows].map((row) => row.map((cell) => inlineText(cell)).join("\t")).join("\n");
+        case "rule":
+          return "";
+        case "code":
+          return block.text;
+      }
+    })
+    .filter((text) => text !== "")
+    .join("\n\n");

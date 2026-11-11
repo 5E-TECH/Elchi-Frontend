@@ -5,6 +5,7 @@ import { Copy, FileText, Info, Sparkles } from "lucide-react";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { MiniMarkdown } from "../../../shared/ui/markdown/MiniMarkdown";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { markdownToPlainText } from "../../../shared/lib/miniMarkdown";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
 import { NoticeAlert } from "../../../entities/notification/ui/NoticeAlert";
@@ -84,10 +85,11 @@ export const AnswerNotes = ({ sources, short = false }: { sources?: readonly AiS
   );
 };
 
+/** «Javobni nusxalash» — ekranda ko'ringan matn (markdown belgilarisiz, jadval — tab bilan). */
 export const CopyAnswerButton = ({ text }: { text: string }) => {
   const { t } = useTranslation("aiAdvisor");
   const onCopy = async () => {
-    if (await copyToClipboard(text)) notify.success(t("chat.copied"));
+    if (await copyToClipboard(markdownToPlainText(text))) notify.success(t("chat.copied"));
     else notify.error(t("chat.copyFailed"), { description: t("chat.copyFailedHint") });
   };
   return <IconButton size="sm" variant="ghost" icon={Copy} label={t("chat.copy")} onClick={() => void onCopy()} />;

@@ -255,12 +255,12 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     expect(await screen.findByRole("textbox", { name: "Savolingiz" })).toBeInTheDocument();
   });
 
-  it("javobni nusxalash — buferga yoziladi va xabar", async () => {
+  it("javobni nusxalash — ekrandagi matn (markdown belgilarisiz, jadval tab bilan) buferga yoziladi va xabar", async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     renderPage("/ai-assistant?conversation=41");
     await userEvent.click(await screen.findByRole("button", { name: "Javobni nusxalash" }));
-    expect(writeText).toHaveBeenCalledWith(CONVERSATION.messages[1].text);
+    expect(writeText).toHaveBeenCalledWith("Kassaga 286,4 mln so'm tushdi.\n\nKuryer\tQarz\nJasur Tursunov\t2 840 000 so'm");
     expect(await screen.findByText("Javob nusxalandi")).toBeInTheDocument();
   });
 });

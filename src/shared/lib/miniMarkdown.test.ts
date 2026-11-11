@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inlineText, parseInline, parseMarkdown } from "./miniMarkdown";
+import { inlineText, markdownToPlainText, parseInline, parseMarkdown } from "./miniMarkdown";
 
 describe("parseInline", () => {
   it("**qalin**, *kursiv*, _kursiv_, `kod`", () => {
@@ -77,5 +77,44 @@ describe("parseMarkdown", () => {
       type: "paragraph",
       children: [{ type: "em", children: [{ type: "text", text: "(6 qadam chegarasiga yetildi — savolni aniqroq bering.)" }] }],
     });
+  });
+});
+
+describe("markdownToPlainText (javobni nusxalash)", () => {
+  it("belgilarsiz: qalin/kursiv olinadi, sarlavha — oddiy qator, ro'yxat — «- » / «1. », jadval — tab bilan", () => {
+    const source = [
+      "Oktabr boshidan **286,4 mln so'm** tushdi — *taxminan*.",
+      "Ikkinchi qator.",
+      "",
+      "### Eng ko'p qarzi bor kuryerlar",
+      "",
+      "| Kuryer | Filial | Qarz |",
+      "|---|---|---:|",
+      "| Jasur Tursunov | Toshkent HQ | 2 840 000 so'm |",
+      "",
+      "- Eng katta qarz — **Toshkent HQ**.",
+      "- `get_courier_debts` bo'yicha.",
+      "",
+      "1. Birinchi",
+      "2. Ikkinchi",
+      "",
+      "---",
+      "",
+      "_(Javob qisqartirildi.)_",
+    ].join("\n");
+    expect(markdownToPlainText(source)).toBe(
+      [
+        "Oktabr boshidan 286,4 mln so'm tushdi — taxminan.\nIkkinchi qator.",
+        "Eng ko'p qarzi bor kuryerlar",
+        "Kuryer\tFilial\tQarz\nJasur Tursunov\tToshkent HQ\t2 840 000 so'm",
+        "- Eng katta qarz — Toshkent HQ.\n- get_courier_debts bo'yicha.",
+        "1. Birinchi\n2. Ikkinchi",
+        "(Javob qisqartirildi.)",
+      ].join("\n\n"),
+    );
+  });
+
+  it("belgisiz matn o'zgarmaydi", () => {
+    expect(markdownToPlainText("Oddiy javob.")).toBe("Oddiy javob.");
   });
 });
