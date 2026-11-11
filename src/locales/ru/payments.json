@@ -78,6 +78,7 @@
   "pageDescription": "Управление кассой и платежами",
   "toBeGiven": "К выдаче",
   "amountInCashbox": "Сумма в кассе",
+  "amountInCashboxAdvance": "Сумма в кассе · аванс",
   "counterparty": "Контрагент",
   "toBeReceived": "К получению",
   "filters": "Фильтры",
@@ -503,9 +504,9 @@
       "title": "Расчёты с курьерами",
       "subtitle": "Часть денег в пути, которая у курьеров",
       "share": "{{name}}: доля денег в пути",
-      "negative": "отрицательный баланс",
+      "advance": "аванс",
       "footNote": "Доля — от суммы положительных остатков: {{positive}}",
-      "footDebtor": "должники {{negative}}",
+      "footAdvance": "аванс {{amount}}",
       "empty": "У курьеров нет денег"
     },
     "rank": {
@@ -873,6 +874,7 @@
       "hqTransferFallback": "Деньги кассы филиала, которые забирает HQ"
     },
     "settlement": {
+      "courierAdvance": "Аванс · сдан заранее",
       "title": "Состояние расчётов",
       "counterparty": "Контрагент: {{name}}",
       "receiver": "Получатель: {{name}}",
@@ -900,6 +902,7 @@
       "branchSubtitle": "Деньги поступают из кассы филиала в основную кассу",
       "amount": "Сумма",
       "limitHint": "Не более {{amount}} — сумма к получению",
+      "advanceHint": "Можно принять аванс — сумма сверх остатка курьера записывается как предоплата",
       "receivableHint": "К получению: {{amount}}",
       "payableHint": "К выдаче: {{amount}}",
       "paymentType": "Тип оплаты",
@@ -920,6 +923,8 @@
       "description": "Проверьте данные — после подтверждения сумма сразу отразится в обеих кассах.",
       "confirm": "Подтвердить",
       "comment": "Комментарий",
+      "advanceLabel": "Из них",
+      "advanceValue": "{{amount}} — аванс",
       "market": "Маркет"
     },
     "history": {

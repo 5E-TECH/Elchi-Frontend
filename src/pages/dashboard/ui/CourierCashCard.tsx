@@ -4,7 +4,6 @@ import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useCashBox } from "../../../entities/payments";
-import { cx } from "../../../shared/lib/cx";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
@@ -17,6 +16,7 @@ import {
 import { LegendKey, Waterfall, type WaterfallStep } from "../../../shared/ui/charts";
 import { buttonClasses, Card, EmptyState, QueryBoundary } from "../../../shared/ui/primitives";
 import { toCourierCash } from "../lib/courierCash";
+import { formatCourierBalance } from "../../../shared/lib/courierBalance";
 
 /**
  * «KASSA» (kuryer, ega savoli 5 sukuti): qo'lingizdagi pul (`my-cashbox` balansi) va bugungi sharshara
@@ -75,13 +75,20 @@ const CourierCashCard = () => {
         empty={<EmptyState size="chart" icon={Wallet} title={t("v2Dashboard.courierCash.empty")} />}
         className="flex flex-1 flex-col"
       >
-        {() =>
-          cash ? (
+        {() => {
+          // Manfiy qoldiq — avans («Kassa qarzga ishlaydi», 2026-11-11): kompaniya kuryerga qarzdor, keyingi sotuvlar yopadi.
+          const shown = cash
+            ? formatCourierBalance(cash.balance, {
+                balance: t("v2Dashboard.courierCash.inHand"),
+                advance: t("v2Dashboard.courierCash.advance"),
+              })
+            : null;
+          return cash && shown ? (
             <div className="flex flex-1 flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-text-muted">{t("v2Dashboard.courierCash.inHand")}</span>
-                <span className={cx("whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] proportional-nums max-md:text-[22px] max-md:leading-[30px]", cash.balance < 0 ? "text-danger-fg" : "text-text")}>
-                  {formatMoneyLocalized(cash.balance, { language, withCurrency: false })}
+                <span className="text-xs text-text-muted">{shown.label}</span>
+                <span className="whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text proportional-nums max-md:text-[22px] max-md:leading-[30px]">
+                  {formatMoneyLocalized(shown.amount, { language, withCurrency: false })}
                   <span className="ml-1 text-sm font-semibold tracking-normal text-text-muted">{CURRENCY_LABEL[lang]}</span>
                 </span>
               </div>
@@ -118,8 +125,8 @@ const CourierCashCard = () => {
                 </>
               ) : null}
             </div>
-          ) : null
-        }
+          ) : null;
+        }}
       </QueryBoundary>
     </Card>
   );

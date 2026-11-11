@@ -224,6 +224,8 @@ describe("UserDetailView — «Parolni tiklash va SMS yuborish» (xtXKLUwT)", ()
   });
 });
 
+const COURIER_DEBT = "Kassa qarzga ishlaydi (oldindan pul qabul qilish)";
+
 describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
   beforeEach(() => {
     Object.values(mocks).forEach((fn) => fn.mockReset().mockResolvedValue({ statusCode: 200 }));
@@ -341,6 +343,40 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
       expect(mocks.updateUser).toHaveBeenCalledWith({ id: "201", data: { can_add_extra_cost: true } }),
     );
     expect(await screen.findByText("Qo'shimcha harajat ruxsati yoqildi")).toBeInTheDocument();
+  });
+
+  it("⭐ kuryer: «Kassa qarzga ishlaydi (oldindan pul qabul qilish)» — superadmin yoqadi, admin o'chiradi (`PATCH /users/:id`)", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderView(makeUser("courier"), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: COURIER_DEBT });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/ortig'i avans bo'lib keyingi sotuvlardan yopiladi/)).toBeInTheDocument();
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(mocks.updateUser).toHaveBeenCalledWith({ id: "201", data: { cashbox_debt_enabled: true } }),
+    );
+    expect(await screen.findByText("Kuryer kassasi qarzga ishlashi yoqildi")).toBeInTheDocument();
+    expect(mocks.updateMarketCashboxDebt).not.toHaveBeenCalled();
+    unmount();
+
+    renderView(makeUser("courier", { cashbox_debt_enabled: true }), "admin");
+    const onToggle = screen.getByRole("switch", { name: COURIER_DEBT });
+    expect(onToggle).toHaveAttribute("aria-checked", "true");
+    await user.click(onToggle);
+    await waitFor(() =>
+      expect(mocks.updateUser).toHaveBeenLastCalledWith({ id: "201", data: { cashbox_debt_enabled: false } }),
+    );
+  });
+
+  it("kuryer kaliti menejerda yo'q (backend 403); market sahifasida — faqat marketniki", () => {
+    const { unmount } = renderView(makeUser("courier", { cashbox_debt_enabled: true }), "manager");
+    expect(screen.queryByRole("switch", { name: COURIER_DEBT })).not.toBeInTheDocument();
+    unmount();
+
+    renderView(makeUser("market"), "superadmin");
+    expect(screen.queryByRole("switch", { name: COURIER_DEBT })).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Kassa qarzga ishlaydi" })).toBeInTheDocument();
   });
 
   it("menejer foydalanuvchi: qo'shimcha xarajat va «Sotish / bekor qilish» (`can_sell_cancel`)", async () => {
