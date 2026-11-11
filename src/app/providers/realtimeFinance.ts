@@ -9,6 +9,8 @@ import { notify } from "../../shared/lib/notify";
  * «Smena yopilishi: karta qoldig'i» (kiZgTybn) kartalari bilan kelishiladi; nom o'zgarsa faqat shu ro'yxat.
  *  - `finance.shift.closed` — smena qo'lda yopildi (boshqa tab, boshqa kassir);
  *  - `finance.shift.auto_closed` — smena jadval bo'yicha avtomatik yopildi (kassirga xabar ham);
+ *  - `finance.shift.auto_opened` — smena jadval bo'yicha avtomatik ochildi («Kun tartibi», 2026-11-10; payload
+ *    `{ shift_id, cashbox_type, branch_id?, opened_at }`): smena va kassa qayta o'qiladi, kassirga xabar;
  *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi);
  *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
  *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi;
@@ -26,6 +28,7 @@ import { notify } from "../../shared/lib/notify";
 export const FINANCE_EVENTS = [
   "finance.shift.closed",
   "finance.shift.auto_closed",
+  "finance.shift.auto_opened",
   "finance.shift.account_checked",
   "finance.cashbox.card_changed",
   "finance.receipt.checked",
@@ -34,13 +37,18 @@ export const FINANCE_EVENTS = [
 
 export type FinanceEvent = (typeof FINANCE_EVENTS)[number];
 
-/** Avtomatik yopilish vaqti: backend `closed_at` (yoki `closedAt`), bo'lmasa — hodisa kelgan payt. */
-export const readClosedAt = (payload: unknown): Date => {
+const readMoment = (payload: unknown, snake: string, camel: string): Date => {
   const record = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const raw = record.closed_at ?? record.closedAt;
+  const raw = record[snake] ?? record[camel];
   const date = typeof raw === "string" || typeof raw === "number" ? new Date(raw) : null;
   return date && !Number.isNaN(date.getTime()) ? date : new Date();
 };
+
+/** Avtomatik yopilish vaqti: backend `closed_at` (yoki `closedAt`), bo'lmasa — hodisa kelgan payt. */
+export const readClosedAt = (payload: unknown): Date => readMoment(payload, "closed_at", "closedAt");
+
+/** Avtomatik ochilish vaqti: backend `opened_at` (yoki `openedAt`), bo'lmasa — hodisa kelgan payt. */
+export const readOpenedAt = (payload: unknown): Date => readMoment(payload, "opened_at", "openedAt");
 
 /** Ochiq kassa sahifalari (asosiy kassa, filial kassasi, To'lovlar) — smena holati va qoldiqlar qayta o'qiladi. */
 export const refreshShiftQueries = (client: QueryClient) =>
@@ -63,6 +71,13 @@ export const handleFinanceEvent = (client: QueryClient, t: TFunction, event: Fin
     return;
   }
   void refreshShiftQueries(client);
+  if (event === "finance.shift.auto_opened") {
+    const openedAt = readOpenedAt(payload);
+    notify.info(t("realtime.shiftAutoOpened", { time: formatTimeLocalized(openedAt) }), {
+      id: `elchi-shift-auto-opened-${openedAt.getTime()}`,
+    });
+    return;
+  }
   if (event !== "finance.shift.auto_closed") return;
   const closedAt = readClosedAt(payload);
   notify.info(t("realtime.shiftAutoClosed", { time: formatTimeLocalized(closedAt) }), {

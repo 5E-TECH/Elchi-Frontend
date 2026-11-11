@@ -680,7 +680,10 @@
     },
     "duplicateTitle": "Takroriy telefon raqamlar aniqlandi",
     "duplicateBody": "{{value}} ta telefon raqam bir nechta yangi buyurtmada takrorlanmoqda. Qabul qilishdan oldin tekshiring.",
-    "duplicatePhoneBadge": "Takroriy raqam"
+    "duplicatePhoneBadge": "Takroriy raqam",
+    "receiveClosedTitle": "Bugungi qabul vaqti tugadi ({{time}})",
+    "receiveClosedReopens": "Yangi buyurtmalarni qabul qilish {{time}} da, kun almashganda ochiladi.",
+    "receiveClosedBody": "Yangi buyurtmalarni qabul qilish kun almashganda ochiladi."
   },
   "orderQr": {
     "title": "QR kod",
@@ -700,40 +703,11 @@
     "unlimited": "Bugungi qabul: cheklovsiz",
     "closed": "Bugungi qabul yopildi",
     "change": "Bugungi qabul vaqtini o'zgartirish",
-    "dialog": {
-      "title": "Bugungi qabul vaqti",
-      "description": "Belgilangan vaqtdan keyin kun almashguncha yangi buyurtma yaratib bo'lmaydi — barcha rollar uchun: qo'lda, AI bilan va integratsiyalar orqali.",
-      "field": "Qabul tugaydigan vaqt",
-      "hint": "Faqat bugun uchun, kun almashganda bekor bo'ladi. 24 soatlik format, Toshkent vaqti.",
-      "invalid": "Vaqtni 00:00–23:59 ko'rinishida kiriting",
-      "passed": "Bu vaqt o'tib ketgan — saqlansa, qabul darhol yopiladi.",
-      "save": "Saqlash",
-      "remove": "Cheklovni olib tashlash",
-      "cancel": "Bekor qilish",
-      "saved": "Bugungi qabul {{time}} gacha",
-      "removed": "Bugungi qabul cheklovi olib tashlandi",
-      "error": "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
-    },
     "create": {
       "closedTitle": "Bugungi qabul yopildi",
       "closedBody": "Qabul {{time}} da yopilgan. Yangi buyurtmani kun almashgach ({{reopens}}) yaratish mumkin.",
       "closedBodyNoTime": "Yangi buyurtmani kun almashgach yaratish mumkin.",
       "untilBody": "Bugungi qabul {{time}} gacha — shundan keyin kun almashguncha yangi buyurtma yaratib bo'lmaydi."
-    },
-    "dayChange": {
-      "row": "Kun almashish soati: {{time}} (Toshkent)",
-      "change": "O'zgartirish",
-      "changeLabel": "Kun almashish soatini o'zgartirish",
-      "title": "Kun almashish soati",
-      "description": "Buyurtma qabuli uchun ish kuni qachon almashishi — Toshkent vaqti.",
-      "field": "Kun almashish soati",
-      "hint": "Ish kuni shu soatdan keyingi kun shu soatgacha. Faqat buyurtma qabuliga ta'sir qiladi, hisobotlar 00:00 bo'yicha.",
-      "cutoffWarning": "Soat o'zgarsa, bugungi qabul vaqti yangi kunga o'tmasligi mumkin.",
-      "back": "Orqaga",
-      "save": "Saqlash",
-      "saved": "Kun almashish soati: {{time}} (Toshkent)",
-      "forbidden": "Faqat superadmin o'zgartira oladi",
-      "error": "Saqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
     }
   }
 }

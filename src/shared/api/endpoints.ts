@@ -293,6 +293,16 @@ export const API_ENDPOINTS = {
     SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
     // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
     CARDS: "finance/cashbox/cards",
+    // cards1111 — kartalarni boshqarish (yozish — faqat superadmin/admin; menejer — o'qish va ko'chirma). Pul
+    // ko'chiradiganlari (`transfer`, `convert`, qoldiqli `delete`) `Idempotency-Key` oladi va smenaga bog'langan.
+    CARD: (id: string | number) => `finance/cashbox/cards/${id}`,
+    CARD_MAKE_DEFAULT: (id: string | number) => `finance/cashbox/cards/${id}/make-default`,
+    CARD_STATUS: (id: string | number) => `finance/cashbox/cards/${id}/status`,
+    CARD_DELETE: (id: string | number) => `finance/cashbox/cards/${id}/delete`,
+    CARD_LEDGER: (id: string | number) => `finance/cashbox/cards/${id}/ledger`,
+    CARD_LEDGER_EXPORT: (id: string | number) => `finance/cashbox/cards/${id}/ledger/export`,
+    CARD_TRANSFER: "finance/cashbox/cards/transfer",
+    CARD_CONVERT: "finance/cashbox/cards/convert",
     // QlLf33Ma — kassa cheki: sozlamalar (GET — superadmin/admin/menejer, PATCH — faqat superadmin), rasm yuklash
     // (multipart `kind`, `photo` → qoralama `receipt_id`), tafsilot va qayta tahlil.
     RECEIPT_SETTINGS: "finance/receipt-settings",

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Card, getPanelId, getTabId, PageHeader, Select, SkeletonLines, Tabs } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, MOVED_OPS_TABS, OPS_TABS } from "./tabs";
+import { DAILY_SCHEDULE_TAB, DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, MOVED_OPS_TABS, OPS_TABS } from "./tabs";
 import { OpsTabBoundary } from "./ui/OpsToolPage";
 
 /**
@@ -36,6 +36,7 @@ const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
 const AuthDiagnosticsPage = lazy(() => import("../logs"));
 const DeliveryPricingPage = lazy(() => import("../delivery-tariffs"));
+const DailySchedulePage = lazy(() => import("../daily-schedule"));
 
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, OpsPanel> = {
@@ -43,6 +44,7 @@ const CONTENT: Record<string, OpsPanel> = {
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
   investors: InvestorsOpsPage,
   [DELIVERY_PRICING_TAB]: DeliveryPricingPage,
+  [DAILY_SCHEDULE_TAB]: DailySchedulePage,
   identity: IdentityOpsPage,
   system: SystemOpsPage,
   auth: AuthDiagnosticsPage,

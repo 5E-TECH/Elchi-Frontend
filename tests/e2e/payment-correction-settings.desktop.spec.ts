@@ -74,13 +74,17 @@ test("superadmin: server qiymati 45 — «Boshqa» + 45; smena va muddat birga o
   await expect(card.getByRole("textbox", { name: "Kunlar soni" })).toHaveValue("45");
   await expect(card.getByText("Oxirgi o'zgarish: Shodiyor Ergashev · 01.10.2026, 10:15")).toBeVisible();
 
-  await page.getByRole("switch", { name: "Smenani avtomatik yopish" }).click();
+  // Avtomatik yopish 2026-11-10 dan Ops → «Kun tartibi»da — smena PATCH'i hisobot kaliti bilan.
+  await page
+    .getByRole("table", { name: "Hisobot qabul qiluvchilari" })
+    .getByRole("switch", { name: "Kuryerlar: Telegram" })
+    .click();
   await card.getByRole("radio", { name: "10 kun" }).click();
   await expect(card.getByRole("textbox", { name: "Kunlar soni" })).toHaveCount(0);
   await page.getByRole("button", { name: "Saqlash" }).click();
 
   await expect(page.getByText("To'lovlarni tuzatish muddati: 10 kun.", { exact: true }).first()).toBeVisible();
-  expect(mock.patches).toEqual([{ auto_close: { enabled: true } }]);
+  expect(mock.patches).toEqual([{ report: { recipients: { couriers: { telegram: true } } } }]);
   expect(mock.correctionPatches).toEqual([{ window_days: 10 }]);
   expect(mock.leaked).toEqual([]);
 });

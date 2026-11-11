@@ -334,7 +334,8 @@
   },
   "realtime": {
     "manyNew": "Новых уведомлений: {{count}}",
-    "shiftAutoClosed": "Смена закрыта автоматически — {{time}}"
+    "shiftAutoClosed": "Смена закрыта автоматически — {{time}}",
+    "shiftAutoOpened": "Смена открыта автоматически — {{time}}"
   },
   "sent": {
     "pageTitle": "Отправленные",

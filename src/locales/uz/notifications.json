@@ -334,7 +334,8 @@
   },
   "realtime": {
     "manyNew": "{{count}} ta yangi bildirishnoma",
-    "shiftAutoClosed": "Smena avtomatik yopildi — {{time}}"
+    "shiftAutoClosed": "Smena avtomatik yopildi — {{time}}",
+    "shiftAutoOpened": "Smena avtomatik ochildi — {{time}}"
   },
   "sent": {
     "pageTitle": "Yuborilganlar",

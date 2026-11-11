@@ -15,8 +15,8 @@ import OrderIntakeControl from "./OrderIntakeControl";
  * havola bo'lgani uchun yangi oynada ham ochiladi. Telefonda `PageHeader` uni to'liq enga cho'zadi.
  * Izoh market rolida boshqacha (maket `market-new-orders-list`).
  *
- * Yonida — «Bugungi qabul vaqti» (`OrderIntakeControl`, 2026-11-08): faqat superadmin uchun ikkinchi darajali tugma
- * va oyna (2026-11-09), boshqa rollarda (admin ham) holat belgisi; backend endpointi yo'q bo'lsa ko'rinmaydi.
+ * Yonida — «Bugungi qabul vaqti» (`OrderIntakeControl`, 2026-11-08): superadmin uchun ikkinchi darajali havola Ops →
+ * «Kun tartibi»ga (2026-11-10), boshqa rollarda (admin ham) holat belgisi; backend endpointi yo'q bo'lsa ko'rinmaydi.
  */
 const NewOrdersHeader = () => {
   const { t } = useTranslation("newOrders");

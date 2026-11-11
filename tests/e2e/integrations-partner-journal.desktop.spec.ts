@@ -120,7 +120,9 @@ test.describe("Umumiy webhook jurnali — 1440px", () => {
     await mockPartnerJournal(page);
     await page.goto("/ops?tab=system");
     const tabs = page.getByRole("tablist", { name: "Ops bo'limlari" }).getByRole("tab");
-    await expect(tabs).toHaveCount(7, { timeout: 60_000 });
+    // 8 tab — 2026-11-10 dan «Kun tartibi» ham (ops/tabs.ts); integratsiya tabi yo'q.
+    await expect(tabs).toHaveCount(8, { timeout: 60_000 });
+    await expect(tabs.filter({ hasText: "Kun tartibi" })).toHaveCount(1);
     await expect(tabs.filter({ hasText: "Integratsiya" })).toHaveCount(0);
 
     await context.unrouteAll({ behavior: "ignoreErrors" });

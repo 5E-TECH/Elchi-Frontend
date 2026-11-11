@@ -14,7 +14,28 @@ const mocks = vi.hoisted(() => ({
   marketsList: undefined as unknown,
   orders: [] as Record<string, unknown>[],
   printOrderReceipts: vi.fn(),
+  /** «Kun tartibi»: yaratilgan buyurtmalarni qabul qilish vaqti tugaganmi (`useOrderIntake().receiveClosed`). */
+  receiveClosed: false,
+  intakeRefetch: vi.fn(),
 }));
+
+// «Kun tartibi» (2026-11-10): qabul chegarasi — sukut ochiq; `GET orders/intake-settings` tarmoqqa chiqmaydi.
+vi.mock("../../../entities/order-intake", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../entities/order-intake")>();
+  return {
+    ...actual,
+    useOrderIntake: () => ({
+      ...actual.UNSUPPORTED_INTAKE,
+      supported: true,
+      receiveSupported: true,
+      receiveCutoffTime: "16:00",
+      receiveReopensAt: mocks.receiveClosed ? "2026-11-11T19:00:00.000Z" : null,
+      closed: false,
+      receiveClosed: mocks.receiveClosed,
+      query: { refetch: mocks.intakeRefetch },
+    }),
+  };
+});
 
 vi.mock("../../../features/print-receipts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../features/print-receipts")>()),
@@ -127,6 +148,8 @@ beforeEach(() => {
   mocks.printOrderReceipts.mockReset();
   mocks.orders = baseOrders();
   mocks.marketsList = undefined;
+  mocks.receiveClosed = false;
+  mocks.intakeRefetch.mockReset();
 });
 
 describe("NewOrderDetail — 'Qabul qilish' endpointi", () => {
@@ -168,6 +191,63 @@ describe("NewOrderDetail — 'Qabul qilish' endpointi", () => {
 
     await waitFor(() => expect(mocks.receiveMutate).toHaveBeenCalledTimes(1));
     expect(mocks.transferMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe("NewOrderDetail — qabul vaqti tugagan («Kun tartibi», 2026-11-10)", () => {
+  it("«Qabul qilish» o'chiq, tanlov bo'lsa ham; ogohlantirish chegara va ochilish vaqti bilan", async () => {
+    mocks.receiveClosed = true;
+    renderPage("registrator", { branchType: "HQ" });
+    const user = userEvent.setup();
+
+    const alert = await screen.findByTestId("market-orders-receive-closed");
+    expect(alert).toHaveTextContent("Bugungi qabul vaqti tugadi (16:00)");
+    expect(alert).toHaveTextContent("Yangi buyurtmalarni qabul qilish 00:00 da, kun almashganda ochiladi.");
+    await user.click(screen.getByRole("button", { name: "Barchasini tanlash" }));
+    expect(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" })).toBeDisabled();
+    expect(mocks.receiveMutate).not.toHaveBeenCalled();
+    // Skaner ham o'chiq — «QR skanerlansa … qabul qilinadi» maslahati va «USB skaner tayyor» ko'rinmaydi.
+    expect(screen.queryByText("QR skanerlansa, buyurtma darhol qabul qilinadi")).not.toBeInTheDocument();
+    expect(screen.queryByText("USB skaner tayyor")).not.toBeInTheDocument();
+  });
+
+  it("qabul ochiq — ogohlantirish yo'q, «Qabul qilish» ishlaydi", async () => {
+    renderPage("registrator", { branchType: "HQ" });
+    expect(await screen.findByText("QR skanerlansa, buyurtma darhol qabul qilinadi")).toBeInTheDocument();
+    await receiveAllOrders();
+    await waitFor(() => expect(mocks.receiveMutate).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId("market-orders-receive-closed")).toBeNull();
+  });
+
+  it("server shu orada yopgan (409 `ORDER_RECEIVE_CLOSED`) — backend matni xabarda, qabul holati qayta o'qiladi", async () => {
+    const message = "Bugungi qabul vaqti tugadi (16:00). Qabul 00:00 da ochiladi.";
+    mocks.receiveMutate.mockImplementation((_vars: unknown, options: { onError?: (error: unknown) => void }) =>
+      options.onError?.(
+        new AxiosError("Conflict", "ERR_BAD_REQUEST", undefined, undefined, {
+          status: 409,
+          data: { code: "ORDER_RECEIVE_CLOSED", message },
+        } as AxiosResponse),
+      ),
+    );
+    renderPage("registrator", { branchType: "HQ" });
+    await receiveAllOrders();
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(mocks.intakeRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("boshqa qabul xatosi — qabul holati qayta o'qilmaydi", async () => {
+    mocks.receiveMutate.mockImplementation((_vars: unknown, options: { onError?: (error: unknown) => void }) =>
+      options.onError?.(
+        new AxiosError("Bad Request", "ERR_BAD_REQUEST", undefined, undefined, {
+          status: 400,
+          data: { message: "Buyurtma topilmadi" },
+        } as AxiosResponse),
+      ),
+    );
+    renderPage("registrator", { branchType: "HQ" });
+    await receiveAllOrders();
+    expect(await screen.findByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(mocks.intakeRefetch).not.toHaveBeenCalled();
   });
 });
 

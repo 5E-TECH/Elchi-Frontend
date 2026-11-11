@@ -77,6 +77,7 @@ import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories } from "../../../app/lib/access";
 import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
 import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } from "./CashboxFormPopup";
+import { CashboxCardsDialog } from "./cashboxCards/CashboxCardsDialog";
 import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
@@ -387,6 +388,8 @@ const MainCashbox = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState<number>(HISTORY_PAGE_SIZES[0]);
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
+  // cards1111: «Karta (Click)» qatori → «Kartalar va hisob raqamlar» oynasi (ro'yxat faqat ochilganda o'qiladi).
+  const [cardsOpen, setCardsOpen] = useState(false);
   // Tarix sahifasi almashganda karta boshi ko'rinsin (D-03; tarix balans, amallar va davrlar ostida).
   const historyCardRef = useRef<HTMLElement>(null);
   // Qo'lda operatsiya (to'ldirish/xarajat) yuborilmoqda — ikkinchi yuborish e'tiborsiz.
@@ -1239,18 +1242,36 @@ const MainCashbox = () => {
               <ul className="m-0 flex list-none flex-col p-0">
                 {splitRows.map((row) => {
                   const Icon = row.icon;
-                  return (
-                    <li
-                      key={row.key}
-                      className="grid min-h-10 grid-cols-[12px_minmax(0,1fr)_auto_52px] items-center gap-2.5 border-t border-border py-1.5 text-sm first:border-t-0"
-                    >
+                  const cells = (
+                    <>
                       <span aria-hidden="true" className={cx("size-3 rounded-[3px]", row.color)} />
                       <span className="inline-flex min-w-0 items-center gap-2 text-text">
                         <Icon aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
                         <span className="truncate">{row.label}</span>
+                        {row.key === "card" ? (
+                          <ChevronRight aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
+                        ) : null}
                       </span>
                       <span className="whitespace-nowrap font-semibold text-text">{money(row.value)}</span>
                       <span className="text-right text-[13px] text-text-muted">{percent(row.share)}</span>
+                    </>
+                  );
+                  const grid = "grid min-h-10 grid-cols-[12px_minmax(0,1fr)_auto_52px] items-center gap-2.5 py-1.5 text-sm";
+                  // cards1111: «Karta (Click)» — kartalar oynasini ochadi; «Naqd» — oddiy qator.
+                  return row.key === "card" ? (
+                    <li key={row.key} className="border-t border-border first:border-t-0">
+                      <Pressable
+                        aria-haspopup="dialog"
+                        onClick={() => setCardsOpen(true)}
+                        className={cx(grid, "-mx-1.5 w-[calc(100%+12px)] rounded-lg px-1.5 text-left hover:bg-row-hover max-md:min-h-11")}
+                      >
+                        {cells}
+                        <span className="sr-only">{t("cashboxCards.open")}</span>
+                      </Pressable>
+                    </li>
+                  ) : (
+                    <li key={row.key} className={cx(grid, "border-t border-border first:border-t-0")}>
+                      {cells}
                     </li>
                   );
                 })}
@@ -1782,6 +1803,8 @@ const MainCashbox = () => {
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} rows={historyRows} onClose={() => setSelectedRow(null)} />
+
+      <CashboxCardsDialog open={cardsOpen} onClose={() => setCardsOpen(false)} cashBalance={cashBalance} />
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect

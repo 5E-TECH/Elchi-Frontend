@@ -1,4 +1,4 @@
-export { ORDER_INTAKE_KEY, useOrderIntake, useUpdateDayChangeTime, useUpdateOrderIntake } from "./api";
+export { ORDER_INTAKE_KEY, useOrderIntake, useUpdateOrderIntakeSettings } from "./api";
 export {
   cutoffClosesAt,
   DEFAULT_DAY_CHANGE_TIME,
@@ -6,7 +6,10 @@ export {
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
   isOrderIntakeClosedError,
+  isOrderReceiveClosed,
+  isOrderReceiveClosedError,
   normalizeOrderIntake,
   UNSUPPORTED_INTAKE,
+  type OrderIntakeSettingsPatch,
   type OrderIntakeState,
 } from "./model";

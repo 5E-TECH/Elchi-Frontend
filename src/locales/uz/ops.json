@@ -14,6 +14,7 @@
     "expenseCategories": "Xarajat kategoriyalari",
     "investors": "Investorlar",
     "deliveryPricing": "Yetkazish narxi",
+    "dailySchedule": "Kun tartibi",
     "identity": "Xodimlar",
     "system": "Tizim holati",
     "auth": "Kirish diagnostikasi"
@@ -157,6 +158,71 @@
     "intro": {
       "title": "Yetkazish narxi — tariflar va hisob qoidalari",
       "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
+    }
+  },
+  "dailySchedule": {
+    "intro": {
+      "title": "Kun tartibi",
+      "description": "Buyurtma yaratish va qabul qilish chegaralari, kun almashishi va kassa smenasi jadvali — bitta joyda. Barcha vaqtlar — Toshkent vaqti (UTC+5)."
+    },
+    "save": "Saqlash",
+    "saving": "Saqlanmoqda…",
+    "saved": "Kun tartibi saqlandi",
+    "saveError": "Kun tartibi saqlanmadi",
+    "savedIntake": "Buyurtma qabuli saqlandi",
+    "savedShift": "Smena jadvali saqlandi",
+    "saveErrorIntake": "Buyurtma qabuli saqlanmadi",
+    "saveErrorShift": "Smena jadvali saqlanmadi",
+    "invalidTime": "Vaqtni 00:00–23:59 ko'rinishida kiriting",
+    "timesConflict": "{{times}} — ham ochish, ham yopish vaqti. Bittasini o'zgartiring",
+    "unavailable": {
+      "title": "Kun tartibi hali mavjud emas",
+      "description": "Server bu sozlamalarni hali qo'llamaydi. Keyinroq qayta urinib ko'ring."
+    },
+    "status": {
+      "unlimited": "Hozir: cheklovsiz",
+      "open": "Hozir: ochiq",
+      "openUntil": "Hozir: ochiq · {{time}} da yopiladi",
+      "closed": "Hozir: yopiq",
+      "closedUntil": "Hozir: yopiq · {{time}} da ochiladi",
+      "nextDayChange": "Keyingi kun almashishi: {{time}}"
+    },
+    "intake": {
+      "title": "Buyurtma qabuli",
+      "subtitle": "Chegaralar va kun almashishi",
+      "note": "Bo'sh maydon — cheklovsiz. Chegara o'tgach, kun almashguncha to'xtaydi, keyin o'zi ochiladi.",
+      "cutoff": "Buyurtma yaratish chegarasi",
+      "cutoffHint": "Har kuni shu vaqtdan keyin yangi buyurtma yaratilmaydi — qo'lda, AI bilan, integratsiya va hamkorlar orqali ham",
+      "cutoffHintToday": "Faqat joriy ish kuni uchun — kun almashganda cheklov o'chadi",
+      "cutoffPasses": "Bu vaqt bugun o'tgan — saqlansa, yaratish darhol yopiladi",
+      "receive": "Yaratilgan buyurtmalarni qabul qilish chegarasi",
+      "receiveHint": "Har kuni shu vaqtdan keyin marketlardan kelgan yangi buyurtmalar qabul qilinmaydi",
+      "receivePasses": "Bu vaqt bugun o'tgan — saqlansa, qabul darhol yopiladi",
+      "dayChange": "Kun almashish vaqti",
+      "dayChangeHint": "Faqat buyurtma qabuliga ta'sir qiladi: hisobotlar, pochtalar va smenalar 00:00 bo'yicha",
+      "unlimitedPlaceholder": "Cheklovsiz"
+    },
+    "open": {
+      "title": "Avtomatik ochish",
+      "subtitle": "Kassir o'z vaqtida ochmasa",
+      "enabled": "Smenani avtomatik ochish",
+      "enabledHint": "Belgilangan vaqtda kassada ochiq smena bo'lmasa, tizim uni o'zi ochadi",
+      "times": "Kuniga ochish vaqtlari",
+      "timesRequired": "Kamida bitta ochish vaqtini qo'shing",
+      "scope": "Qaysi kassalarda",
+      "note": "Kassada ochiq smena bo'lsa, tizim hech narsa qilmaydi. Avtomatik ochilgan smena tarixda «Avtomatik ochildi» deb belgilanadi."
+    },
+    "late": {
+      "title": "Kechikish haqida xabar",
+      "subtitle": "Smena vaqtida ochilmasa yoki yopilmasa",
+      "enabled": "Superadminlarga xabar yuborish",
+      "enabledHint": "Ochish yoki yopish vaqtidan keyin smena hali ochilmagan yoki yopilmagan bo'lsa — «Smena vaqtida ochilmadi / yopilmadi»",
+      "grace": "Necha daqiqadan keyin",
+      "graceHint": "Belgilangan vaqtdan keyin kutiladigan muddat",
+      "graceMinutes": "{{value}} daqiqa",
+      "channels": "Qayerga yuboriladi",
+      "channelsRequired": "Kamida bitta kanalni tanlang",
+      "note": "Tizimning avtomatik ochishi yoki yopishi xato bilan tugasa ham xabar keladi, sababi bilan."
     }
   },
   "investors": {
