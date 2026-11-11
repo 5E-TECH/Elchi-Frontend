@@ -57,6 +57,79 @@ export const toDraft = (settings: ShiftCheckSettings): Draft => ({
   report: cloneReport(settings.report),
 });
 
+/** Foydalanuvchi o'zgartirmagan qiymat (`edited === before`) — serverdagi yangisi, aks holda foydalanuvchiniki. */
+const keepEdit = <T>(edited: T, before: T, next: T): T => (Object.is(edited, before) ? next : edited);
+
+const rebaseReport = (
+  before: ShiftReportSendSettings | null,
+  fresh: ShiftReportSendSettings | null,
+  draft: ShiftReportSendSettings | null,
+): ShiftReportSendSettings | null => {
+  if (!fresh || !before || !draft) return fresh;
+  return {
+    format: keepEdit(draft.format, before.format, fresh.format),
+    recipients: Object.fromEntries(
+      SHIFT_REPORT_RECIPIENT_GROUPS.map((group) => {
+        const edited = draft.recipients[group];
+        const old = before.recipients[group];
+        const value = fresh.recipients[group];
+        return [
+          group,
+          {
+            telegram: keepEdit(edited.telegram, old.telegram, value.telegram),
+            in_app: keepEdit(edited.in_app, old.in_app, value.in_app),
+          },
+        ];
+      }),
+    ) as ShiftReportSendSettings["recipients"],
+  };
+};
+
+/**
+ * Sozlama serverdan qayta o'qilganda (realtime `finance.cashbox.card_changed`, boshqa superadmin, o'zimizning
+ * «Saqlash»dan keyin) qoralamani yangi qiymatlar ustiga ko'chiradi: foydalanuvchi o'zgartirgan kalitlar saqlanadi
+ * (saqlanmagan o'zgarish yo'qolmaydi), qolgani — serverdan; yangi karta qatori server qiymati bilan qo'shiladi,
+ * o'chirilgani tushib qoladi. AI faqat rasm talab qilingan kartada (backend 400 qoidasi).
+ */
+export const rebaseDraft = (previous: ShiftCheckSettings, next: ShiftCheckSettings, draft: Draft): Draft => {
+  const before = toDraft(previous);
+  const fresh = toDraft(next);
+  const cards = Object.fromEntries(
+    Object.entries(fresh.cards).map(([cardId, card]) => {
+      const old = before.cards[cardId];
+      const edited = draft.cards[cardId];
+      if (!old || !edited) return [cardId, card];
+      const photo = keepEdit(
+        edited.require_photo_on_shift_close,
+        old.require_photo_on_shift_close,
+        card.require_photo_on_shift_close,
+      );
+      const ai = keepEdit(edited.ai_check_enabled, old.ai_check_enabled, card.ai_check_enabled);
+      return [cardId, { require_photo_on_shift_close: photo, ai_check_enabled: photo && ai }];
+    }),
+  );
+  const report = rebaseReport(before.report, fresh.report, draft.report);
+  return {
+    account_check_enabled: keepEdit(
+      draft.account_check_enabled,
+      before.account_check_enabled,
+      fresh.account_check_enabled,
+    ),
+    branch_account_check_enabled:
+      fresh.branch_account_check_enabled === null
+        ? null
+        : keepEdit(
+            draft.branch_account_check_enabled,
+            before.branch_account_check_enabled,
+            fresh.branch_account_check_enabled,
+          ),
+    photo_required: keepEdit(draft.photo_required, before.photo_required, fresh.photo_required),
+    ai_check_enabled: keepEdit(draft.ai_check_enabled, before.ai_check_enabled, fresh.ai_check_enabled),
+    cards,
+    report,
+  };
+};
+
 /** Faqat o'zgargan kalitlar (bo'sh — o'zgarish yo'q). */
 export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): UpdateShiftSettingsRequest => {
   const body: UpdateShiftSettingsRequest = {};

@@ -30,7 +30,7 @@ import { CellSwitch } from "./CellSwitch";
 import { PaymentCorrectionCard } from "./PaymentCorrectionCard";
 import { usePaymentCorrectionDraft, type PaymentCorrectionDraft } from "./paymentCorrectionDraft";
 import { ReceiptSettingsCard, useReceiptSettingsDraft, type ReceiptSettingsDraft } from "./ReceiptSettingsCard";
-import { diffShiftSettings, toDraft, type Draft } from "./settingsDiff";
+import { diffShiftSettings, rebaseDraft, toDraft, type Draft } from "./settingsDiff";
 import { SwitchRow } from "../../settings/ui/settingsUi";
 
 /**
@@ -87,6 +87,13 @@ const SettingsForm = ({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const update = useUpdateShiftCheckSettings();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
+  // Sozlama qayta o'qilsa (realtime `card_changed` — karta qo'shildi / o'zgardi, «Saqlash»dan keyin) forma qayta
+  // boshlanmaydi: saqlanmagan o'zgarishlar yangi server qiymatlari ustiga ko'chiriladi (`rebaseDraft`).
+  const [base, setBase] = useState(settings);
+  if (base !== settings) {
+    setBase(settings);
+    setDraft((current) => rebaseDraft(base, settings, current));
+  }
   // BE-A: filiallar kaliti — backend bersagina (eski backendda bitta kalit barcha kassalarga amal qiladi).
   const branchSupported = settings.branch_account_check_enabled !== null;
 
@@ -304,10 +311,8 @@ const ShiftSettingsPage = () => {
     <div className="flex flex-col gap-6 max-md:gap-4">
       {/* QueryBoundary o'zi bitta `div` — kartalar orasidagi 24 / 16 px oraliq shu o'ramda (maketdagidek). */}
       <QueryBoundary query={query} skeleton="lines" isEmpty={() => false} className="flex flex-col gap-6 max-md:gap-4">
-        {/* Saqlangandan keyin server qiymatlari bilan forma qaytadan boshlanadi (kalit — sozlamalar holati). */}
-        {(settings) => (
-          <SettingsForm key={JSON.stringify(settings)} settings={settings} receipts={receipts} correction={correction} />
-        )}
+        {/* Forma qayta boshlanmaydi: yangi sozlama qoralamaga ko'chiriladi (`rebaseDraft`). */}
+        {(settings) => <SettingsForm settings={settings} receipts={receipts} correction={correction} />}
       </QueryBoundary>
     </div>
   );

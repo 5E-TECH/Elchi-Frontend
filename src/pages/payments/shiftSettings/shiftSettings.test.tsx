@@ -1,7 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import i18n from "i18next";
 import { vi } from "vitest";
 import ShiftSettingsPage from ".";
+import { handleFinanceEvent } from "../../../app/providers/realtimeFinance";
 import { canManageShiftSettings } from "../../../app/lib/access";
 import { renderWithProviders } from "../../../test/test-utils";
 
@@ -177,6 +179,73 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
     expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", { account_check_enabled: false });
+  });
+
+  it("a realtime card change re-reads the settings without dropping unsaved switches; the new card row appears", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = renderWithProviders(<ShiftSettingsPage />, {
+      route: "/payments/shift-settings",
+      preloadedState: superadmin,
+    });
+    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
+    await user.click(within(table).getByRole("switch", { name: "Asosiy karta: AI tekshiruvi" }));
+
+    // Boshqa admin shu orada karta qo'shdi (`card_changed`) va superadmin global AI kalitini o'chirdi.
+    const VISA = {
+      card_id: "4",
+      name: "Visa virtual",
+      bank_name: "Kapitalbank",
+      last4: "0932",
+      is_default: false,
+      require_photo_on_shift_close: true,
+      ai_check_enabled: true,
+      photo_required: true,
+      ai_enabled: true,
+    };
+    http.get.mockImplementation(async () => ({
+      data: { statusCode: 200, data: { ...BE_A, ai_check_enabled: false, cards: [...BE_A.cards, VISA] } },
+    }));
+    const reads = http.get.mock.calls.length;
+    handleFinanceEvent(queryClient, i18n.t.bind(i18n), "finance.cashbox.card_changed", { action: "created" });
+    await waitFor(() => expect(http.get.mock.calls.length).toBeGreaterThan(reads));
+
+    const fresh = await screen.findByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
+    expect(await within(fresh).findByRole("switch", { name: "Visa virtual: rasm talab qilish" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    // Saqlanmagan o'zgarishlar joyida; foydalanuvchi tegmagan kalit — serverdagi yangi qiymat.
+    expect(screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).toHaveAttribute("aria-checked", "true");
+    expect(within(fresh).getByRole("switch", { name: "Asosiy karta: AI tekshiruvi" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    expect(screen.getByRole("switch", { name: "AI tekshiruvi" })).toHaveAttribute("aria-checked", "false");
+
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
+    expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", {
+      branch_account_check_enabled: true,
+      cards: [{ card_id: "1", ai_check_enabled: false }],
+    });
+  });
+
+  it("after its own save the form follows the server values and is clean again", async () => {
+    let saved = BE_A;
+    http.get.mockImplementation(async () => ({ data: { statusCode: 200, data: saved } }));
+    http.patch.mockImplementation(async () => {
+      saved = { ...BE_A, branch_account_check_enabled: true };
+      return { data: { statusCode: 200, data: {} } };
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    const save = screen.getByRole("button", { name: /Saqlash/ });
+    await user.click(save);
+    expect(await screen.findByText("Sozlamalar saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled());
+    expect(screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).toHaveAttribute("aria-checked", "true");
   });
 
   it("a backend 400 is shown verbatim (AI without a photo)", async () => {
