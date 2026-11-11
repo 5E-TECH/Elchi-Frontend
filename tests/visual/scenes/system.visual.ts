@@ -4,8 +4,8 @@ import { defineScene, expect, fixture } from "../support/test";
 /**
  * «Tizim» sahnalari (bosqich B): integratsiyalar konsoli — «Hamkorlar» (superadmin) va sozlamalar — «Ko'rinish»
  * (HQ registratori). Ma'lumot sintetik (`tests/visual/fixtures/integrations/`), raqamlar maketdan: 24 soatda
- * 2 615 ta hodisa, 6 ta yetmadi, 48 ta navbatda; hamkorlar 5 · tashqi tizimlar 6 · marketplace 2. Vaqtlar
- * muzlatilgan soatdan oldin (maketdagi «Bugun, 14:31» → «Bugun, 09:31»).
+ * 2 615 ta hodisa, 6 ta yetmadi, 48 ta navbatda; hamkorlar 5 · tashqi tizimlar 6 · marketplace 2 · tashqi
+ * yetkazuvchilar 3. Vaqtlar muzlatilgan soatdan oldin (maketdagi «Bugun, 14:31» → «Bugun, 09:31»).
  */
 
 const metrics24 = fixture("integrations/metrics-24h.json");
@@ -19,6 +19,8 @@ defineScene({
   api: {
     "GET admin/partners": fixture("integrations/partners.json"),
     "GET integrations": fixture("integrations/integrations.json"),
+    // 4-tab «Tashqi yetkazuvchilar» (Carrier API, superadmin / admin) — soni maketdagidek 3.
+    "GET admin/carriers": fixture("integrations/carriers.json"),
     // «kechaga nisbatan» (D1) — 48 soatlik oyna: kecha = 48 soat − 24 soat.
     "GET integrations/metrics": ({ query }: ApiRequest) => (query.get("hours") === "48" ? metrics48 : metrics24),
   },

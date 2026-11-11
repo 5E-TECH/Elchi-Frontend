@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { useDispatch, useStore } from "react-redux";
@@ -151,6 +151,18 @@ const toCountsByRole = (value: unknown): Record<string, number> | undefined => {
  * `GET /users` ro'yxati — bitta so'rov, server sahifalashi (FY-1). Backend `Roles` da `marketing` roli yo'q:
  * avvalgi «market + marketing» ikki so'rovi va klientdagi sahifalash olib tashlandi (`role=market` — oddiy so'rov).
  */
+/**
+ * `GET users/:id` — bitta foydalanuvchi (xom javob, `unwrapUserResponse` bilan o'qiladi). Kesh kaliti va so'rov
+ * bitta joyda: `useGetUserById` va boshqa o'quvchilar (masalan Carrier API konsolining bog'langan kuryerlari) shu
+ * fabrikani ishlatadi — bir kalitda ikki xil `queryFn` (va ikki xil shakl) bo'lib qolmasin.
+ * `[user, "detail", id]` prefiksi — shu foydalanuvchining barcha tafsilot keshlari (invalidatsiya uchun).
+ */
+export const userDetailQuery = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
+  queryOptions({
+    queryKey: [user, "detail", id, params] as const,
+    queryFn: () => api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
+  });
+
 export const fetchUserList = async (params?: IUserFilter) => {
   const response = await api.get(API_ENDPOINTS.USERS.BASE, { params });
   return normalizeUserListResponse(response.data, params);
@@ -274,9 +286,7 @@ export const useUser = () => {
     options?: { silentError?: boolean },
   ) =>
     useQuery({
-      queryKey: [user, "detail", id, params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
+      ...userDetailQuery(id, params),
       enabled: !!id,
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });

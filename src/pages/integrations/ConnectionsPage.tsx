@@ -1,10 +1,13 @@
-// dizayn-v2: superadmin-integrations-partners-console, superadmin-integrations-external-console, superadmin-integrations-marketplace-console, admin-integrations-partners, admin-integrations-external, admin-integrations-marketplace
-import { useCallback, useEffect, useMemo, useState } from "react";
+// dizayn-v2: superadmin-integrations-partners-console, superadmin-integrations-external-console, superadmin-integrations-marketplace-console, superadmin-integrations-carrier-console, admin-integrations-partners, admin-integrations-external, admin-integrations-marketplace, admin-integrations-carrier-console
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Activity, ChevronRight, CircleCheck, CircleX, Clock, Plug, Plus, RefreshCw } from "lucide-react";
+import { canManageCarrierAccounts } from "../../app/lib/access";
 import { CATEGORY_LABEL, integrationKeys } from "../../entities/integrations";
+import { useCarrierAccounts } from "../../entities/integrations/carriers";
 import {
   connectionHealth,
   metricsByUid,
@@ -48,10 +51,16 @@ import ConnectionSettlement from "./panels/ConnectionSettlement";
 import ConnectionShipments from "./panels/ConnectionShipments";
 import ConnectionControl from "./panels/ConnectionControl";
 import NewPartnerModal from "./NewPartnerModal";
+import { CarrierConsole } from "./carrier/CarrierConsole";
 import { InlineAlert, InlineLegend, SegBar } from "./ui";
 
 /**
- * KONSOL — «Integratsiyalar» (maket `*-partners-console`, `*-external-console`, `*-marketplace-console`).
+ * KONSOL — «Integratsiyalar» (maket `*-partners-console`, `*-external-console`, `*-marketplace-console`,
+ * `*-carrier-console`).
+ *
+ * 4-tab «Tashqi yetkazuvchilar» (`?scope=carrier`, Carrier API) — faqat superadmin va admin
+ * (`canManageCarrierAccounts`; backend `admin/carriers`). Uning o'z konsoli (`carrier/CarrierConsole`): KPI yo'q,
+ * ro'yxat kartasi shu tab qatori bilan + tanlangan akkaunt. Menejer / registratorda tab chizilmaydi.
  *
  *   PageHeader («Yangi hamkor» / «Yangi ulanish»)
  *   «Barcha ulanishlar · oxirgi 24 soat» — 4 KPI (D1: «kechaga nisbatan» = 48 soat − 24 soat)
@@ -64,11 +73,15 @@ import { InlineAlert, InlineLegend, SegBar } from "./ui";
  * Sparklinelar va «Chiziqlar — oxirgi 7 kun» — «Taklif» (kunlik seriya API'da yo'q), chizilmaydi.
  */
 
-type Scope = "partner" | "external" | "marketplace";
+type Scope = "partner" | "external" | "marketplace" | "carrier";
 
-const SCOPES: Scope[] = ["partner", "external", "marketplace"];
+const BASE_SCOPES: Scope[] = ["partner", "external", "marketplace"];
+/** Scope tablari `id` prefiksi — ikki joyda chizilgan tab qatorida bir xil (fokusni qaytarish uchun). */
+const SCOPE_TABS_ID = "integrations-scope";
+const ALL_SCOPES: Scope[] = [...BASE_SCOPES, "carrier"];
 
 const matchScope = (c: Connection, scope: Scope): boolean => {
+  if (scope === "carrier") return false;
   if (scope === "partner") return c.kind === "partner";
   if (scope === "marketplace") return c.kind === "integration" && c.category === "marketplace";
   return c.kind === "integration" && c.category !== "marketplace";
@@ -99,6 +112,14 @@ const SCOPE_KEY: Record<Scope, { tab: string; subtitle: string; empty: string; e
     emptyHint: "scMarketplaceEmptyHint",
     neu: "scMarketplaceNew",
     list: "console.listMarketplace",
+  },
+  carrier: {
+    tab: "carrier.tab",
+    subtitle: "carrier.subtitle",
+    empty: "carrier.empty.title",
+    emptyHint: "carrier.empty.text",
+    neu: "carrier.newButton",
+    list: "carrier.listAria",
   },
 };
 
@@ -144,6 +165,10 @@ const ConnectionsPage = () => {
   const [query, setQuery] = useState("");
   const [newPartnerOpen, setNewPartnerOpen] = useState(false);
   const navigate = useNavigate();
+  const canManageCarriers = useSelector(canManageCarrierAccounts);
+  const SCOPES = canManageCarriers ? ALL_SCOPES : BASE_SCOPES;
+  /** 4-tab soni; ro'yxat `CarrierConsole` bilan bitta kesh (`queryKeys.carrierAccounts`). */
+  const carriersQuery = useCarrierAccounts({ enabled: canManageCarriers, silentError: true });
 
   const scopeParam = searchParams.get("scope");
   const scope: Scope = SCOPES.includes(scopeParam as Scope) ? (scopeParam as Scope) : "partner";
@@ -151,9 +176,14 @@ const ConnectionsPage = () => {
 
   /** Shu scope'ga tegishli ulanishlar — jadval va tanlov SHU ro'yxatdan. */
   const scoped = useMemo(() => connections.filter((c) => matchScope(c, scope)), [connections, scope]);
+  const carrierCount = carriersQuery.data?.length;
   const scopeCounts = useMemo(
-    () => Object.fromEntries(SCOPES.map((s) => [s, connections.filter((c) => matchScope(c, s)).length])) as Record<Scope, number>,
-    [connections],
+    () =>
+      ({
+        ...Object.fromEntries(BASE_SCOPES.map((s) => [s, connections.filter((c) => matchScope(c, s)).length])),
+        carrier: carrierCount ?? 0,
+      }) as Record<Scope, number>,
+    [connections, carrierCount],
   );
 
   const tab = searchParams.get("t") ?? "overview";
@@ -205,14 +235,38 @@ const ConnectionsPage = () => {
     );
   };
 
+  /**
+   * Scope tab qatori ikki joyda chiziladi (carrier — `CarrierConsole` kartasida, qolganlari — shu sahifa kartasida):
+   * carrier tabiga kirish / chiqishda u qayta o'rnatiladi va fokus `<body>` ga tushardi (← → keyin ishlamasdi).
+   * Tab orqali almashilsa — yangi qatordagi tanlangan tabga fokus qaytariladi (faqat fokus yo'qolgan bo'lsa).
+   */
+  const refocusScopeTab = useRef(false);
   const onScope = (next: Scope) => {
     setQuery("");
+    refocusScopeTab.current = true;
     navigate(`/integrations/connections?scope=${next}`);
   };
+  useLayoutEffect(() => {
+    if (!refocusScopeTab.current) return;
+    refocusScopeTab.current = false;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    document.getElementById(getTabId(SCOPE_TABS_ID, scope))?.focus();
+  }, [scope]);
 
   const onNew = () => {
     if (scope === "partner") setNewPartnerOpen(true);
-    else navigate(`/integrations/new?scope=${scope}`);
+    else if (scope === "carrier") {
+      // Yaratish oynasi `CarrierConsole` ichida: `?new=1` — ochish so'rovi; konsol ro'yxat yuklangach uni bir marta
+      // o'qib oynani mahalliy holatda ochadi va parametrni URL'dan oladi (oyna URL'ga bog'liq emas).
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.set("new", "1");
+          return params;
+        },
+        { replace: true },
+      );
+    } else navigate(`/integrations/new?scope=${scope}`);
   };
 
   const filtered = useMemo(() => {
@@ -511,8 +565,19 @@ const ConnectionsPage = () => {
   const tabItems: TabItem<Scope>[] = SCOPES.map((s) => ({
     value: s,
     label: t(SCOPE_KEY[s].tab),
-    count: isLoading ? undefined : scopeCounts[s],
+    count: (s === "carrier" ? carrierCount === undefined : isLoading) ? undefined : scopeCounts[s],
   }));
+
+  const scopeTabs = (
+    <Tabs
+      items={tabItems}
+      value={scope}
+      onValueChange={onScope}
+      ariaLabel={t("console.scopeTabsAria")}
+      idPrefix={SCOPE_TABS_ID}
+      listClassName="px-3"
+    />
+  );
 
   const panelIdPrefix = `conn-${active?.uid.replace(":", "-") ?? "none"}`;
 
@@ -522,13 +587,23 @@ const ConnectionsPage = () => {
         title={t("pageTitle")}
         description={t("pageSubtitle")}
         actions={
-          <Button variant={activeTab === "settings" && active ? "secondary" : "primary"} leftIcon={Plus} onClick={onNew}>
+          <Button
+            variant={scope !== "carrier" && activeTab === "settings" && active ? "secondary" : "primary"}
+            leftIcon={Plus}
+            onClick={onNew}
+            aria-haspopup={scope === "carrier" ? "dialog" : undefined}
+            // Carrier: ro'yxat yuklanmaguncha (yoki umuman olinmasa) yaratib bo'lmaydi — band kuryerlar aniqlanmaydi.
+            // Fondagi qayta so'rash yiqilsa (`isError`, ma'lumot keshda) — konsol bilan bir xil, tugma ishlayveradi.
+            disabled={scope === "carrier" && carriersQuery.data === undefined}
+          >
             {t(meta.neu)}
           </Button>
         }
       />
 
-      {isError ? (
+      {scope === "carrier" ? (
+        <CarrierConsole tabs={scopeTabs} />
+      ) : isError ? (
         <InlineAlert
           tone="danger"
           action={
@@ -652,13 +727,7 @@ const ConnectionsPage = () => {
               ) : undefined
             }
           >
-            <Tabs
-              items={tabItems}
-              value={scope}
-              onValueChange={onScope}
-              ariaLabel={t("console.scopeTabsAria")}
-              listClassName="px-3"
-            />
+            {scopeTabs}
             <div className="flex flex-col gap-3 px-5 py-4 max-md:px-4">
               <p className="text-[13px] leading-[18px] text-text-muted">{t(meta.subtitle)}</p>
               {!isLoading && scoped.length > 0 ? (

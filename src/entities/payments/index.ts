@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { SHIFT_CLOSE_TIMEOUT_MS, type CloseShiftAccount } from "./shiftAccountCheck";
@@ -364,6 +364,20 @@ const normalizeFinanceHistoryParams = (params?: any) => {
   };
 };
 
+/**
+ * `GET finance/cashbox/user/:id` — foydalanuvchi (kuryer, market, filial) kassasi, xom javob. `useGetCashBoxById` va
+ * boshqa o'quvchilar (Carrier API konsolidagi «Qabul qilinishi kerak») bitta kalit va bitta `queryFn` bilan.
+ * `cashbox_type=couriers` + superadmin/admin — javobda `olinishi_kerak`, `is_hq_courier`, `can_receive` (C3).
+ */
+export const cashboxByUserQuery = (id: string | undefined, params?: unknown) =>
+  queryOptions({
+    queryKey: [cashbox, "by-user", id, params] as const,
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
+        .then((res) => res.data),
+  });
+
 export const useCashBox = () => {
   const client = useQueryClient();
 
@@ -408,11 +422,7 @@ export const useCashBox = () => {
     params?: unknown,
   ) =>
     useQuery({
-      queryKey: [cashbox, "by-user", id, params],
-      queryFn: () =>
-        api
-          .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
-          .then((res) => res.data),
+      ...cashboxByUserQuery(id, params),
       enabled: bool && Boolean(id),
     });
 

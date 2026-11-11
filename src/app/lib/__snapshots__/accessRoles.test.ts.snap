@@ -7,6 +7,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canCreateProducts": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID",
   "canDispatchPostToBranch": "superadmin admin registrator/HQ",
   "canHandoverCancelledToMarket": "superadmin admin registrator/HQ",
+  "canManageCarrierAccounts": "superadmin admin",
   "canManageCashboxCards": "superadmin admin",
   "canManageDeliveryTariffs": "superadmin admin",
   "canManageExpenseCategories": "superadmin",
