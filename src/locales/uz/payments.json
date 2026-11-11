@@ -185,6 +185,7 @@
   ,"receivePaymentError": "Kuryerdan to'lovni qabul qilishda xatolik yuz berdi"
   ,"marketPaymentSuccess": "Marketga to'lov muvaffaqiyatli amalga oshirildi"
   ,"marketPaymentError": "Marketga to'lovni yuborishda xatolik yuz berdi"
+  ,"paymentForbidden": "Bu to'lovga ruxsatingiz yo'q."
   ,"branchToMainPaymentSuccess": "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi"
   ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
   ,"branchToMainSource": "Filialdan HQga o'tkazma"
@@ -882,7 +883,10 @@
       "notEnough": "Kassa yetarli emas",
       "meterLabel": "Berilishi kerak summa kassadagi summaga nisbatan",
       "payableShare": "Berilishi kerak · {{share}}",
-      "remains": "Kassada qoladi · {{amount}}"
+      "remains": "Kassada qoladi · {{amount}}",
+      "hqDebt": "HQ qarzi (filialga)",
+      "hqDebtManager": "HQ'dan olinishi kerak",
+      "hqDebtHint": "HQ qarzidan ortiq qabul qilgan — keyingi sotuvlar uni yopadi"
     },
     "form": {
       "courierTitle": "Kuryerdan qabul qilish",
@@ -890,6 +894,7 @@
       "courierToBranch": "Pul kuryer kassasidan filial kassasiga tushadi",
       "marketTitle": "Marketga to'lov",
       "marketSubtitle": "Pul asosiy kassadan marketga o'tkaziladi",
+      "marketSubtitleBranch": "Pul filial kassasidan marketga o'tkaziladi",
       "marketInfo": "To'lov avval eng eski buyurtmalarni yopadi, keyin yangilarini.",
       "branchTitle": "Filialdan qabul qilish",
       "branchSubtitle": "Pul filial kassasidan asosiy kassaga tushadi",
@@ -1803,6 +1808,7 @@
     "title": "Kartalar va hisob raqamlar",
     "subtitle": "{{count}} ta faol · kartaga tushgan to'lov qaysi kartaga tushgani bilan yoziladi",
     "readOnly": "Kartalarni superadmin yoki admin boshqaradi — bu yerda qoldiq va ko'chirmani ko'rasiz.",
+    "moveOnly": "Kartalarni qo'shish va tahrirlash — superadmin yoki admin. Siz kartalar orasida va naqd bilan pul ko'chira olasiz, qoldiq va ko'chirmani ko'rasiz.",
     "actions": {
       "add": "Karta qo'shish",
       "transfer": "Kartalararo o'tkazma",
@@ -1884,6 +1890,19 @@
       "updated": "Karta saqlandi",
       "error": "Kartani saqlab bo'lmadi"
     },
+    "picker": {
+      "labelIn": "Qaysi kartaga",
+      "labelOut": "Qaysi kartadan",
+      "hqLabel": "HQ kartasi (pul qaysi kartaga tushadi)",
+      "branchLabel": "Filial kartasi (pul qaysi kartadan chiqadi)",
+      "defaultName": "{{name}} (asosiy)",
+      "loading": "Kartalar yuklanmoqda…",
+      "loadError": "Kartalar yuklanmadi — pul asosiy kartaga yoziladi",
+      "retry": "Qayta urinish",
+      "notEnough": "«{{name}}» kartasida faqat {{amount}} bor",
+      "confirmRow": "Karta",
+      "confirmBranchRow": "Filial kartasi"
+    },
     "money": {
       "amount": "Summa",
       "reason": "Sabab",
@@ -1900,6 +1919,7 @@
       "sending": "O'tkazilmoqda…",
       "shiftLocked": "Smena yopiq — pul ko'chirish uchun avval smenani oching.",
       "uncertain": "Javob kelmadi — amal bajarilgan bo'lishi mumkin. Ro'yxat yangilandi; qayta bosish xavfsiz (pul ikki marta o'tmaydi).",
+      "forbidden": "Bu amalga ruxsatingiz yo'q.",
       "replayed": "Bu amal avval bajarilgan edi — qayta o'tkazilmadi"
     },
     "transfer": {

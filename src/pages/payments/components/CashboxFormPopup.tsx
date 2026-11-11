@@ -22,6 +22,8 @@ import {
     type SelectOption,
 } from "../../../shared/ui/primitives";
 import { parseAmountInput } from "./lib/amountInput";
+import { CashboxCardSelectField } from "./cashboxCards/CashboxCardPicker";
+import { useCashboxCardPicker } from "./cashboxCards/useCashboxCardPicker";
 import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
 import { useReceiptField } from "./receipt/useReceiptField";
 
@@ -54,10 +56,16 @@ import { useReceiptField } from "./receipt/useReceiptField";
  * «Xarajatni saqlash» bloklanadi; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat tozalanadi va
  * qaytadan tanlash so'raladi.
  *
- * «Chek rasmi» (QlLf33Ma) — FAQAT `variant="spend"`, kategoriya va izoh orasida (`receipt/ReceiptField`, sozlama
+ * «Chek rasmi» (QlLf33Ma) — FAQAT `variant="spend"` va FAQAT «Karta (Click)» tanlanganda (BE-C, 2026-11-10: naqd
+ * chiqimda chek yo'q), kategoriya va izoh orasida (`receipt/ReceiptField`, sozlama
  * `manual_expense`): rasm yoqiq — maydon majburiy, rasmsiz forma yuborilmaydi; o'chiq — maydon va tasdiqdagi «Chek»
- * qatori yo'q. Yuklanayotganda «Xarajatni saqlash» o'chiq. Payload'ga `receipt_id`; tasdiqda «Chek: Biriktirildi».
+ * qatori yo'q. Naqdda maydon yo'q va `receipt_id` yuborilmaydi (rasm yoqiq bo'lsa ham).
+ * Yuklanayotganda «Xarajatni saqlash» o'chiq. Payload'ga `receipt_id`; tasdiqda «Chek: Biriktirildi».
  * Operatsiya `RECEIPT_*` bilan rad etilsa `onSubmit` `{ receiptError }` qaytaradi — xato maydon ostida, oyna ochiq.
+ *
+ * «Qaysi kartaga / kartadan» (cards1111b, `withCards`) — «Karta (Click)» tanlanganda, kassada nomli faol karta bo'lsa
+ * (`cashboxCards/CashboxCardPicker`): sukut — Asosiy karta; nomli karta tanlansa payload'ga `card_id` (Asosiy —
+ * yuborilmaydi), tasdiqda «Karta» qatori. Naqdga qaytilsa tanlov yuborilmaydi.
  */
 
 interface CashboxFormValues {
@@ -66,6 +74,8 @@ interface CashboxFormValues {
     comment: string;
     /** Faqat `spend`: tanlangan kategoriya ID si yoki `""`. */
     expenseCategoryId: string;
+    /** cards1111b — «Karta (Click)» da tanlangan karta ID si; `""` — Asosiy karta. */
+    cardId: string;
 }
 
 export type CashboxFormPayload = {
@@ -77,6 +87,8 @@ export type CashboxFormPayload = {
     expense_category_id?: string;
     /** Faqat `spend`, chek biriktirilgan bo'lsa (QlLf33Ma). */
     receipt_id?: string;
+    /** cards1111b — faqat `click` va NOMLI karta tanlanganda (Asosiy karta — yuborilmaydi). */
+    card_id?: string;
 };
 
 /** `onSubmit` natijasi: chek xatosi bo'lsa oyna ochiq qoladi, xato maydon ostida chiqadi. */
@@ -120,6 +132,10 @@ interface CashboxFormPopupProps {
     manageCategoriesTo?: string;
     /** Berilsa — yuborishdan oldin tasdiq oynasi (pul harakati — majburiy). */
     confirm?: { title: string; cashboxLabel: string };
+    /** cards1111b — «Karta (Click)» da kassa kartasini tanlash (BeePost kabi). */
+    withCards?: boolean;
+    /** Kartalar qoldig'i ko'rinadimi (kassa sahifasidagi «yashirish»). */
+    balanceVisible?: boolean;
 }
 
 const TYPE_ICON: Record<string, LucideIcon> = { cash: Banknote, click: CreditCard };
@@ -144,6 +160,8 @@ const CashboxFormPopup = ({
     categoryRequiredMessage,
     manageCategoriesTo,
     confirm: confirmCopy,
+    withCards = false,
+    balanceVisible = true,
 }: CashboxFormPopupProps) => {
     const { t, i18n: i18nInstance } = useTranslation("payments");
     const language = resolveMoneyLanguage(i18nInstance.resolvedLanguage ?? i18nInstance.language);
@@ -153,9 +171,6 @@ const CashboxFormPopup = ({
     const submittingRef = useRef(false);
     // Xarajat kategoriyasi — faqat chiqimda (va u yerda majburiy).
     const withCategory = variant === "spend";
-    // Chek rasmi — faqat chiqimda (kirimda maydon ham, sozlama so'rovi ham yo'q).
-    const receipt = useReceiptField({ kind: withCategory ? "manual_expense" : null, active: isOpen });
-    const { reset: resetReceipt } = receipt;
 
     // Xato matnlari chaqiruvchidan (maketdagi izoh matni) yoki eski kalitlar.
     const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
@@ -176,6 +191,7 @@ const CashboxFormPopup = ({
                   .string()
                   .required(categoryRequiredMessage ?? i18n.t("payments:v2MainCashbox.form.categoryRequired"))
             : yup.string().defined(),
+        cardId: yup.string().defined(),
     });
 
     const {
@@ -183,6 +199,7 @@ const CashboxFormPopup = ({
         handleSubmit,
         reset,
         setValue,
+        setFocus,
         watch,
         formState: { errors },
     } = useForm<CashboxFormValues>({
@@ -191,11 +208,26 @@ const CashboxFormPopup = ({
             type: "",
             comment: "",
             expenseCategoryId: "",
+            cardId: "",
         },
         resolver: yupResolver(cashboxFormSchema) as Resolver<CashboxFormValues>,
     });
 
     const hasTypeOptions = sourceTypes.length > 0;
+    // ── Karta (cards1111b) — ro'yxat oyna ochilganda o'qiladi (Click tanlanguncha tayyor bo'lsin) ──────────────
+    const cardPicker = useCashboxCardPicker({ enabled: isOpen && withCards });
+    const selectedType = watch("type");
+    const showCards = withCards && selectedType === "click" && cardPicker.available;
+    // Chek rasmi — faqat chiqimda va faqat «Karta (Click)» da (BE-C, ega 2026-11-10: naqd chiqimda chek yo'q, backend
+    // naqd + `receipt_id` ni 400 `RECEIPT_NOT_APPLICABLE` bilan rad etadi). Kirimda maydon ham, sozlama so'rovi ham
+    // yo'q. Sozlama oyna ochilganda o'qiladi (Karta tanlanganda maydon skeletsiz chiqadi); Naqdga qaytilsa qoralama
+    // saqlanadi, lekin `receipt_id` yuborilmaydi va rasm talab qilinmaydi.
+    const receipt = useReceiptField({
+        kind: withCategory ? "manual_expense" : null,
+        active: isOpen && selectedType === "click",
+        prefetch: isOpen,
+    });
+    const { reset: resetReceipt } = receipt;
     const busy = isLoading;
     /** Rasm yuklanmoqda yoki sozlama o'qilmoqda — saqlash kutadi. */
     const receiptBusy = receipt.busy;
@@ -249,18 +281,31 @@ const CashboxFormPopup = ({
     const submitForm = async (values: CashboxFormValues) => {
         if (submittingRef.current || busy || receiptBusy) return;
         if (!receipt.validate()) return;
+        // Chiqim nomli kartadan, kartada yetmaydi — xato maydon ostida turibdi: tasdiq ochilmaydi (cards1111b).
+        if (
+            withCards &&
+            variant === "spend" &&
+            values.type === "click" &&
+            cardPicker.shortOf(values.cardId, parseAmountInput(values.amount))
+        ) {
+            setFocus("cardId");
+            return;
+        }
         submittingRef.current = true;
         try {
             const category = withCategory
                 ? (categories.find((item) => item.id === values.expenseCategoryId) ?? null)
                 : null;
             const comment = values.comment.trim();
+            const card = withCards && values.type === "click" ? cardPicker.resolve(values.cardId) : null;
+            const cardId = withCards && values.type === "click" ? cardPicker.requestId(values.cardId) : undefined;
             const payload: CashboxFormPayload = {
                 amount: parseAmountInput(values.amount),
                 ...(values.type ? { type: values.type } : {}),
                 ...(comment ? { comment } : {}),
                 ...(category ? { expense_category_id: category.id } : {}),
                 ...(receipt.receiptId ? { receipt_id: receipt.receiptId } : {}),
+                ...(cardId ? { card_id: cardId } : {}),
             };
 
             if (confirmCopy) {
@@ -274,6 +319,9 @@ const CashboxFormPopup = ({
                     },
                     rows: [
                         { label: t("v2MainCashbox.confirm.cashbox"), value: confirmCopy.cashboxLabel },
+                        ...(card && cardPicker.cards.length > 1
+                            ? [{ label: t("cashboxCards.picker.confirmRow"), value: card.name }]
+                            : []),
                         ...(category ? [{ label: t("v2MainCashbox.confirm.category"), value: category.name }] : []),
                         ...(payload.receipt_id
                             ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }]
@@ -409,6 +457,26 @@ const CashboxFormPopup = ({
                         )}
                     />
                 </Field>
+            ) : null}
+
+            {showCards ? (
+                <Controller
+                    control={control}
+                    name="cardId"
+                    render={({ field }) => (
+                        <CashboxCardSelectField
+                            ref={field.ref}
+                            picker={cardPicker}
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            direction={variant === "spend" ? "out" : "in"}
+                            amount={parseAmountInput(watch("amount"))}
+                            balanceVisible={balanceVisible}
+                        />
+                    )}
+                />
             ) : null}
 
             {withCategory ? (

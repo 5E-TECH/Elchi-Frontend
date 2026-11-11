@@ -41,6 +41,12 @@ export const queryKeys = {
     employees: (id: string) => ["branches", id, "employees"] as const,
     /** Filial id → nomi (`GET /branches/dispatch-destinations`, «Qaytarish»dagi filial o'tkazmasi guruhlari). */
     dispatchNames: ["branches", "dispatch-destinations", "names"] as const,
+    /** HQ filiali (`GET branches/hq`; SUPERADMIN, ADMIN) — Carrier API kuryerining «HQ'dami» tavsiyasi. */
+    hq: ["branches", "hq"] as const,
+  },
+  /** Carrier API akkauntlari (`GET admin/carriers`) — tashqi yetkazuvchilar konsoli. Kalit HECH QACHON keshlanmaydi. */
+  carrierAccounts: {
+    all: ["carrier-accounts"] as const,
   },
   users: {
     all: ["users"] as const,

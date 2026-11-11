@@ -330,6 +330,7 @@
     "operatorRate": "Operator sotuv foizi",
     "marketAverage": "{{name}} o'rtachasi · {{rate}}",
     "yourMarket": "Market",
+    "operatorScope": "{{period}} · siz operator bo'lgan buyurtmalar",
     "operatorUnassigned": {
       "subtitle": "Market biriktirilmagan",
       "title": "Siz hali marketga biriktirilmagansiz",

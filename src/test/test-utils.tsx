@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import type { RootState } from "../app/config/store";
 import sidebar from "../widgets/Sidebar/model/sidebarSlice";
@@ -47,10 +47,16 @@ export const renderWithProviders = (
   {
     route = "/",
     preloadedState,
+    history = "memory",
   }: {
-    /** Satr yoki router state'li yozuv (masalan `{ pathname, search, state }`). */
+    /** Satr yoki router state'li yozuv (masalan `{ pathname, search, state }`). `history: "browser"` da e'tiborsiz. */
     route?: string | { pathname: string; search?: string; state?: unknown };
     preloadedState?: Partial<RootState>;
+    /**
+     * `browser` — ilovadagidek `BrowserRouter` (jsdom `window.history`): brauzer «Orqaga» (`history.back()` →
+     * `popstate`) tekshiriladi. Manzil va tarix yozuvlarini test o'zi qo'yadi (`history.replaceState/pushState`).
+     */
+    history?: "memory" | "browser";
   } = {},
 ) => {
   const store = createTestStore(preloadedState);
@@ -62,20 +68,26 @@ export const renderWithProviders = (
     },
   });
 
+  const providers = (
+    <QueryClientProvider client={queryClient}>
+      <NotificationProvider>{ui}</NotificationProvider>
+      {/* Ilovadagidek (`UiHost`): `useConfirm()` oynalari va `notify()` xabarlari shu yerda chiziladi. */}
+      <ConfirmHost />
+      <TestToaster />
+    </QueryClientProvider>
+  );
+
   return {
     store,
     queryClient,
     ...render(
       <I18nextProvider i18n={i18n}>
         <Provider store={store}>
-          <MemoryRouter initialEntries={[route]}>
-            <QueryClientProvider client={queryClient}>
-              <NotificationProvider>{ui}</NotificationProvider>
-              {/* Ilovadagidek (`UiHost`): `useConfirm()` oynalari va `notify()` xabarlari shu yerda chiziladi. */}
-              <ConfirmHost />
-              <TestToaster />
-            </QueryClientProvider>
-          </MemoryRouter>
+          {history === "browser" ? (
+            <BrowserRouter>{providers}</BrowserRouter>
+          ) : (
+            <MemoryRouter initialEntries={[route]}>{providers}</MemoryRouter>
+          )}
         </Provider>
       </I18nextProvider>,
     ),

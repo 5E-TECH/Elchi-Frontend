@@ -21,11 +21,7 @@ import {
 import { toReceiptOrderModel, type ReceiptOrderSource } from "./printReceiptModel";
 import { renderReceiptPdf } from "./printReceiptPdf";
 import { RECEIPT_SAMPLES } from "./receiptSamples";
-import {
-  RECEIPT_WATERMARK_CAPTION_PITCH,
-  RECEIPT_WATERMARK_DOT,
-  RECEIPT_WATERMARK_PITCH,
-} from "./receiptWatermark";
+import { RECEIPT_WATERMARK_DOT, RECEIPT_WATERMARK_PITCH } from "./receiptWatermark";
 
 /** HJ5sLHiz — PDF va brauzer bitta `ReceiptPage[]` dan (TZ F9, qabul mezonlari 1, 5, 7). */
 
@@ -50,9 +46,6 @@ const cyrillic: ReceiptOrderSource = {
 
 const watermarkOf = (page: ReceiptPage) =>
   page.ops.find((op): op is ReceiptWatermarkOp => op.kind === "watermark")!;
-/** Ikkala qatlam: belgi + «ELCHI» (asosiy to'r) va «POCHTA» (zichroq to'r). */
-const watermarksOf = (page: ReceiptPage) =>
-  page.ops.filter((op): op is ReceiptWatermarkOp => op.kind === "watermark");
 
 const renderPdf = async (pages: ReceiptPage[]) => {
   const pdf = new jsPDF({
@@ -88,25 +81,18 @@ describe("PDF renderer", () => {
     }
   });
 
-  it("faint Elchi mark + «ELCHI POCHTA»: one dashed black line per dot row, each layer its own dash, drawn first", async () => {
+  it("faint Elchi mark: one dashed black line per dot row (0,25 mm dots every 0,75 mm), drawn first", async () => {
     const pages = pagesOf(RECEIPT_SAMPLES.main);
-    const [logo, caption] = watermarksOf(pages[0]);
+    const mark = watermarkOf(pages[0]);
     const output = (await renderPdf(pages)).output();
     const pt = (mm: number) => (mm * 72) / 25.4;
-    const dashes = [...output.matchAll(/^\[([\d.]+) ([\d.]+)\] [\d.]+ d$/gm)];
-    expect(dashes).toHaveLength(2);
-    // Belgi va «ELCHI» — 0,25 mm nuqta har 0,75 mm da; «POCHTA» — har 0,5 mm da.
-    for (const [dash, pitch] of [
-      [dashes[0], RECEIPT_WATERMARK_PITCH],
-      [dashes[1], RECEIPT_WATERMARK_CAPTION_PITCH],
-    ] as const) {
-      expect(Number(dash[1])).toBeCloseTo(pt(RECEIPT_WATERMARK_DOT), 6);
-      expect(Number(dash[2])).toBeCloseTo(pt(pitch - RECEIPT_WATERMARK_DOT), 6);
-    }
+    const dash = /^\[([\d.]+) ([\d.]+)\] [\d.]+ d$/m.exec(output)!;
+    expect(Number(dash[1])).toBeCloseTo(pt(RECEIPT_WATERMARK_DOT), 6);
+    expect(Number(dash[2])).toBeCloseTo(pt(RECEIPT_WATERMARK_PITCH - RECEIPT_WATERMARK_DOT), 6);
     // Termal chekda boshqa `line` yo'q — har chiziq bitta nuqta qatori; keyin punktir o'chiriladi.
-    expect(output.match(/ l\nS\n/g)).toHaveLength(logo.runs.length + caption.runs.length);
+    expect(output.match(/ l\nS\n/g)).toHaveLength(mark.runs.length);
     const stream = output.slice(output.indexOf("stream\n"));
-    expect(stream.indexOf(dashes[1][0])).toBeLessThan(stream.indexOf(" Tj\n"));
+    expect(stream.indexOf(dash[0])).toBeLessThan(stream.indexOf(" Tj\n"));
     expect(output).toMatch(/^\[\] 0\.? d$/m);
   });
 
@@ -179,13 +165,6 @@ describe("HTML renderer", () => {
     expect(path.getAttribute("stroke-width")).toBe("0.25");
     expect(path.getAttribute("stroke-dasharray")).toBe("0.25 0.5");
     expect(path.getAttribute("d")!.match(/M/g)).toHaveLength(mark.runs.length);
-    // Ikkinchi qatlam — «POCHTA», zichroq to'r (0,5 mm), hali ham hamma narsadan oldin.
-    const caption = path.nextElementSibling!;
-    expect(caption.getAttribute("class")).toBe("wm");
-    expect(caption.getAttribute("stroke-dasharray")).toBe("0.25 0.25");
-    expect(caption.getAttribute("d")!.match(/M/g)).toHaveLength(
-      watermarksOf(pages[0])[1].runs.length,
-    );
     // Birinchi qator: birinchi nuqtaning chap cheti, uzunligi — (n − 1) qadam + nuqta.
     const [y, x, count] = mark.runs[0];
     const round = (value: number) => Math.round(value * 1000) / 1000;

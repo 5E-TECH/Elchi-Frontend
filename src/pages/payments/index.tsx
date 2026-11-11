@@ -836,9 +836,15 @@ const Payments = () => {
       {t("v2MainCashbox.openShift")}
     </Button>
   ) : isManagerRole ? (
-    <Button ref={courierActionRef} leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
-      {t("v2Overview.receiveFromCourier")}
-    </Button>
+    // Menejer marketga o'z filiali kassasidan to'laydi (ega 2026-11-11, BeePost kabi; backend menejerga ochgach ishlaydi).
+    <>
+      <Button variant="secondary" leftIcon={ArrowUpRight} onClick={() => openPicker("give")}>
+        {t("v2Overview.payMarket")}
+      </Button>
+      <Button ref={courierActionRef} leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
+        {t("v2Overview.receiveFromCourier")}
+      </Button>
+    </>
   ) : (
     <>
       <Button variant="secondary" leftIcon={ArrowUpRight} onClick={() => openPicker("give")}>

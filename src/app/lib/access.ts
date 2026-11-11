@@ -340,6 +340,13 @@ export const canReceiveExternalOrders: Predicate = anyOf(
 );
 
 /**
+ * Carrier API akkauntlari — «Tashqi yetkazuvchilar» tabi (`/integrations/connections?scope=carrier`) va katalog
+ * kartasi. Backend `admin/carriers` — faqat SUPERADMIN, ADMIN: konsolga kiradigan menejer va registratorda tab
+ * chizilmaydi va so'rov yuborilmaydi (aks holda 403).
+ */
+export const canManageCarrierAccounts: Predicate = hasRole("superadmin", "admin");
+
+/**
  * Investor kabineti (IN-1, vpKijXce): `/` da `InvestorDashboardPage` — faqat investor roli. Ma'lumot doirasi
  * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
  */
@@ -394,6 +401,12 @@ export const canManageShiftSettings: Predicate = hasRole("superadmin");
  * bilan AYNAN bir xil. Menejer o'z filiali kartalarini faqat ko'radi (ro'yxat va ko'chirma).
  */
 export const canManageCashboxCards: Predicate = hasRole("superadmin", "admin");
+/**
+ * Kassa kartalari orasida pul ko'chirish — «Kartalararo o'tkazma» va «Karta ↔ Naqd» (`POST finance/cashbox/cards/transfer
+ * | convert`). Menejer — o'z filiali kassasi kartalarida (ega 2026-11-11; backend menejerga ochgach ishlaydi). Karta
+ * qo'shish, tahrirlash, o'chirish — faqat `canManageCashboxCards`.
+ */
+export const canMoveCashboxCardMoney: Predicate = hasRole("superadmin", "admin", "manager");
 
 /**
  * T6 N2 — kassa tarixidagi to'lovni qaytarish va summasini tuzatish («Qaytarish» / «Summani tahrirlash»). Backend

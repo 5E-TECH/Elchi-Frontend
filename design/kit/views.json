@@ -7582,6 +7582,114 @@
    "fragment": "tizim--ai-advisor-messages",
    "order": 14.6,
    "kind": "standalone"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-console",
+   "menuKey": "integrations",
+   "title": "Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar)",
+   "fragment": "superadmin--integrations-carrier-console",
+   "order": 97.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-create-dialog",
+   "menuKey": "integrations",
+   "title": "Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup)",
+   "fragment": "superadmin--integrations-carrier-create-dialog",
+   "order": 97.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-key-dialog",
+   "menuKey": "integrations",
+   "title": "API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup)",
+   "fragment": "superadmin--integrations-carrier-key-dialog",
+   "order": 97.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-rotate-dialog",
+   "menuKey": "integrations",
+   "title": "Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup)",
+   "fragment": "superadmin--integrations-carrier-rotate-dialog",
+   "order": 97.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-status-dialog",
+   "menuKey": "integrations",
+   "title": "Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup)",
+   "fragment": "superadmin--integrations-carrier-status-dialog",
+   "order": 97.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-carrier-edit-dialog",
+   "menuKey": "integrations",
+   "title": "Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup)",
+   "fragment": "superadmin--integrations-carrier-edit-dialog",
+   "order": 97.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-console",
+   "menuKey": "integrations",
+   "title": "Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar)",
+   "fragment": "admin--integrations-carrier-console",
+   "order": 209.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-create-dialog",
+   "menuKey": "integrations",
+   "title": "Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup)",
+   "fragment": "admin--integrations-carrier-create-dialog",
+   "order": 209.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-key-dialog",
+   "menuKey": "integrations",
+   "title": "API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup)",
+   "fragment": "admin--integrations-carrier-key-dialog",
+   "order": 209.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-rotate-dialog",
+   "menuKey": "integrations",
+   "title": "Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup)",
+   "fragment": "admin--integrations-carrier-rotate-dialog",
+   "order": 209.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-status-dialog",
+   "menuKey": "integrations",
+   "title": "Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup)",
+   "fragment": "admin--integrations-carrier-status-dialog",
+   "order": 209.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-carrier-edit-dialog",
+   "menuKey": "integrations",
+   "title": "Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup)",
+   "fragment": "admin--integrations-carrier-edit-dialog",
+   "order": 209.6,
+   "kind": "dialog"
   }
  ],
  "groupTitles": {

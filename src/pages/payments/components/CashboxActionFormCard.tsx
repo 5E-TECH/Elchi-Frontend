@@ -47,6 +47,10 @@ export interface CashboxActionFormValues {
   marketId: string;
   transferSourceId: string;
   comment: string;
+  /** cards1111b — «O'tkazma» (click): qabul qiluvchi / to'lovchi kassa kartasi; `""` — Asosiy karta. */
+  cardId: string;
+  /** cards1111b — filialdan qabulda filial kassasining kartasi; `""` — Asosiy karta. */
+  branchCardId: string;
 }
 
 interface CashboxActionFormCardProps {
@@ -72,6 +76,8 @@ interface CashboxActionFormCardProps {
   alert?: ReactNode;
   /** «To'lov turi» ostidagi «Chek rasmi» maydoni (QlLf33Ma: HQ'ga «O'tkazma» qabuli). */
   receiptField?: ReactNode;
+  /** cards1111b — «To'lov turi» ostidagi «Qaysi kartaga / kartadan» maydon(lar)i («O'tkazma» tanlanganda). */
+  cardField?: ReactNode;
   paymentTypeLabel: string;
   /** v1 radiogroup izohi — e'tiborsiz (radio kartalar `legend` bilan nomlanadi). */
   paymentTypePlaceholder?: string;
@@ -130,6 +136,7 @@ const CashboxActionFormCard = ({
   infoAlert,
   alert,
   receiptField,
+  cardField,
   paymentTypeLabel,
   commentLabel,
   commentPlaceholder,
@@ -246,6 +253,8 @@ const CashboxActionFormCard = ({
             </fieldset>
           )}
         />
+
+        {cardField}
 
         {receiptField}
 

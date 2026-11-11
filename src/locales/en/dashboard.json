@@ -332,6 +332,7 @@
     "operatorRate": "Operator sell-through",
     "marketAverage": "{{name}} average · {{rate}}",
     "yourMarket": "Market",
+    "operatorScope": "{{period}} · orders where you are the operator",
     "operatorUnassigned": {
       "subtitle": "No market assigned",
       "title": "You are not assigned to a market yet",

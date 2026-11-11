@@ -20,7 +20,7 @@ const marketsState = vi.hoisted(() => ({ data: undefined as unknown }));
 const historyState = vi.hoisted(() => ({ data: undefined as unknown }));
 const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
-const idle = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 /**
  * CB-2: `GET finance/shift/current` (joriy foydalanuvchi kassasi). Sukut — ochiq smena (qulf yo'q);
  * `null` — smena yo'q (qulf), `"error"` — holat noma'lum (403 / tarmoq).
@@ -46,6 +46,49 @@ const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: f
 const idleQuery = { data: undefined, isLoading: false, refetch: vi.fn() };
 
 // qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+// cards1111b — kassa kartalari (karta tanlovi): sukut — faqat Asosiy karta (maydon chizilmaydi). `cardPickerState.cards`
+// to'ldirilsa — haqiqiy maydon (`CashboxCardSelectField`) chiziladi; `branch` — filial kassasi kartalari (`branchId`).
+const cardPickerState = vi.hoisted(() => ({
+  cards: [] as Array<{ id: string; name: string; balance: number; is_default: boolean; is_active: boolean; kind: null; last4: string | null; bank_name: null; holder_name: null }>,
+  branchCards: [] as Array<{ id: string; name: string; balance: number; is_default: boolean; is_active: boolean; kind: null; last4: string | null; bank_name: null; holder_name: null }>,
+  calls: [] as Array<{ enabled: boolean; branchId?: string | null }>,
+}));
+vi.mock("./cashboxCards/useCashboxCardPicker", () => ({
+  useCashboxCardPicker: ({ enabled, branchId }: { enabled: boolean; branchId?: string | null }) => {
+    cardPickerState.calls.push({ enabled, branchId });
+    const cards = enabled ? (branchId ? cardPickerState.branchCards : cardPickerState.cards) : [];
+    const defaultCard = cards.find((card) => card.is_default) ?? null;
+    return {
+      cards,
+      defaultCard,
+      available: cards.length > 1,
+      loading: false,
+      failed: false,
+      retry: () => undefined,
+      resolve: (id: string | null | undefined) => (id ? cards.find((card) => card.id === id) : undefined) ?? defaultCard,
+      requestId: (id: string | null | undefined) => {
+        const card = id ? cards.find((item) => item.id === id) : undefined;
+        return card && !card.is_default ? card.id : undefined;
+      },
+      shortOf: (id: string | null | undefined, amount: number) => {
+        const card = id ? cards.find((item) => item.id === id) : undefined;
+        return card && !card.is_default && amount > 0 && amount > card.balance ? card : null;
+      },
+    };
+  },
+}));
+const pickerCard = (id: string, name: string, balance: number, isDefault = false) => ({
+  id,
+  name,
+  balance,
+  is_default: isDefault,
+  is_active: true,
+  kind: null,
+  last4: null,
+  bank_name: null,
+  holder_name: null,
+});
+
 vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
   const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
   return {
@@ -111,7 +154,7 @@ vi.mock("../../../entities/payments", async (importOriginal) => {
       useGetFinanceHistory: () => ({ ...idleQuery, data: historyState.data }),
       useGetFinanceHistoryById: () => idleQuery,
       createPaymentCourier: courierPayment,
-      createPaymentBranchToMain: idle,
+      createPaymentBranchToMain: branchPayment,
       createPaymentMarket: marketPayment,
     }),
   };
@@ -1456,6 +1499,185 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
  * XsoWhKP5 — kassa amali formasi xatolari ekran o'quvchiga: «Qabul qilish» bosilganda fokus birinchi xato
  * maydonga o'tadi (`aria-invalid` + xato matni), «To'lov turi» xatosi `role="alert"`.
  */
+
+/**
+ * cards1111b — BeePost kabi: «O'tkazma» (click) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi. Nomli karta —
+ * `card_id` (filialdan qabulda filial kartasi — `branch_card_id`), Asosiy karta va naqd / «Marketga o'tkazma» —
+ * yuborilmaydi. Karta idempotentlik barmoq iziga kirmaydi.
+ */
+describe("CashDetail — to'lovda karta tanlash (cards1111b)", () => {
+  beforeEach(() => {
+    cardPickerState.cards = [pickerCard("1", "Asosiy karta", 900_000, true), pickerCard("2", "Humo virtual", 1_850_000)];
+    cardPickerState.branchCards = [pickerCard("11", "Filial asosiy", 300_000, true), pickerCard("12", "Filial Uzcard", 700_000)];
+    cardPickerState.calls = [];
+    courierPayment.mutateAsync.mockReset();
+    marketPayment.mutateAsync.mockReset();
+    branchPayment.mutateAsync.mockReset();
+  });
+  afterEach(() => {
+    cardPickerState.cards = [];
+    cardPickerState.branchCards = [];
+    cashboxState.response = undefined;
+  });
+
+  const chooseCard = async (field: RegExp, option: RegExp) => {
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: field }));
+    await user.click(await screen.findByRole("option", { name: option }));
+  };
+
+  it("courier → HQ: no card field for «Naqd»; «O'tkazma» + named card → card_id, shown in the confirm", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("150000");
+    await chooseMethod("Naqd");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartaga/ })).not.toBeInTheDocument();
+
+    await chooseMethod("O'tkazma");
+    expect(screen.getByRole("combobox", { name: /Qaysi kartaga/ })).toHaveTextContent("Asosiy karta (asosiy)");
+    await chooseCard(/Qaysi kartaga/, /Humo virtual/);
+
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Karta\s*Humo virtual/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(
+      expect.objectContaining({ courier_id: "263", amount: 150_000, payment_method: "click", card_id: "2" }),
+    );
+    expect(courierPaymentCalls()[0].data).not.toHaveProperty("branch_card_id");
+  });
+
+  it("courier → HQ: Asosiy karta — no card_id (backend default)", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    await fillCourierPayment("150000", "O'tkazma");
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(expect.objectContaining({ payment_method: "click" }));
+    expect(courierPaymentCalls()[0].data).not.toHaveProperty("card_id");
+  });
+
+  it("courier: «Marketga o'tkazma» has no card field and sends no card_id even after a card was chosen", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    marketsState.data = { data: { items: [{ id: "3", name: "Kimdur" }] } };
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    setAmount("150000");
+    await chooseMethod("O'tkazma");
+    await chooseCard(/Qaysi kartaga/, /Humo virtual/);
+    await chooseMethod("Marketga o'tkazma");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartaga/ })).not.toBeInTheDocument();
+    await chooseMarket("Kimdur");
+    await submitCourierPayment();
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(expect.objectContaining({ payment_method: "click_to_market", market_id: "3" }));
+    expect(courierPaymentCalls()[0].data).not.toHaveProperty("card_id");
+    marketsState.data = undefined;
+  });
+
+  it("courier: the card is NOT part of the idempotency fingerprint — a retry with another card reuses the key", async () => {
+    courierPayment.mutateAsync.mockRejectedValueOnce(requestTimeout()).mockResolvedValueOnce(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    setAmount("150000");
+    await chooseMethod("O'tkazma");
+    await chooseCard(/Qaysi kartaga/, /Humo virtual/);
+    await submitCourierPayment();
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+
+    await chooseCard(/Qaysi kartaga/, /Asosiy karta/);
+    await submitCourierPayment();
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(2));
+    const [first, second] = courierPaymentCalls();
+    expect(second.idempotencyKey).toBe(first.idempotencyKey);
+  });
+
+  it("market payment: «Qaysi kartadan» (HQ card, out) → card_id; more than the card holds — warned", async () => {
+    marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = {
+      data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: 0 }, user: { name: "Market" } },
+    };
+    openWithoutState("/payments/cash-detail/3?type=market");
+    const user = userEvent.setup();
+
+    setAmount("2000000");
+    await chooseMethod("O'tkazma");
+    await chooseCard(/Qaysi kartadan/, /Humo virtual/);
+    expect(screen.getByText(/«Humo virtual» kartasida faqat 1\s850\s000/)).toBeInTheDocument();
+    // Xato turibdi — «To'lash» tasdiq oynasini ochmaydi, so'rov ketmaydi.
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: /Qaysi kartadan/ })).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(marketPayment.mutateAsync).not.toHaveBeenCalled();
+
+    setAmount("500000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Karta\s*Humo virtual/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 500_000, payment_method: "click", card_id: "2" }));
+  });
+
+  it("branch → HQ: HQ card (card_id) and the branch's own card (branch_card_id, read with branch_id)", async () => {
+    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "13", balance: 900_000 } } };
+    openWithoutState("/payments/cash-detail/13?type=branch");
+    const user = userEvent.setup();
+
+    expect(cardPickerState.calls).toContainEqual({ enabled: true, branchId: "13" });
+    setAmount("800000");
+    await chooseMethod("O'tkazma");
+    await chooseCard(/HQ kartasi/, /Humo virtual/);
+    await chooseCard(/Filial kartasi/, /Filial Uzcard/);
+    // Filial kartasida 700 000 — 800 000 chiqmaydi: xato, tasdiq ochilmaydi (HQ kartasi — kirim, tekshirilmaydi).
+    expect(screen.getByText(/«Filial Uzcard» kartasida faqat 700\s000/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: /Filial kartasi/ })).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    setAmount("400000");
+
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Karta\s*Humo virtual/);
+    expect(dialog).toHaveTextContent(/Filial kartasi\s*Filial Uzcard/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = branchPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(
+      expect.objectContaining({ branch_id: "13", amount: 400_000, payment_method: "click", card_id: "2", branch_card_id: "12" }),
+    );
+  });
+
+  it("manager receiving from a courier: own branch cards (JWT scope, no branch_id)", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier", manager);
+
+    setAmount("100000");
+    await chooseMethod("O'tkazma");
+    await chooseCard(/Qaysi kartaga/, /Humo virtual/);
+    await submitCourierPayment();
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(expect.objectContaining({ card_id: "2" }));
+    expect(cardPickerState.calls.every((call) => !call.branchId)).toBe(true);
+  });
+});
+
 describe("CashboxActionFormCard — forma xatolari ekran o'quvchiga (XsoWhKP5)", () => {
   afterEach(() => {
     cashboxState.response = undefined;
@@ -1504,5 +1726,126 @@ describe("CashboxActionFormCard — forma xatolari ekran o'quvchiga (XsoWhKP5)",
     await waitFor(() => expect(amount).toHaveFocus());
     expect(amount).toHaveAttribute("aria-invalid", "true");
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * Menejer — marketga (ega 2026-11-11, BeePost kabi): kuryerdan qabulda «Marketga o'tkazma» (filial kassasiga kirim + o'sha
+ * marketga chiqim) va «Marketga to'lov» o'z filiali kassasidan (Naqd · O'tkazma — filial kartasi). Ilgari menejerga
+ * yashirin edi (backend 403) — backend menejerga ochgach ishlaydi.
+ */
+describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-11)", () => {
+  beforeEach(() => {
+    cardPickerState.cards = [pickerCard("5", "Filial Uzcard", 1_150_000, true), pickerCard("6", "Filial Humo", 300_000)];
+    cardPickerState.calls = [];
+    courierPayment.mutateAsync.mockReset();
+    marketPayment.mutateAsync.mockReset();
+    marketsState.data = { data: { items: [{ id: "3", name: "Yandex" }, { id: "4", name: "Kimdur" }] } };
+  });
+  afterEach(() => {
+    cardPickerState.cards = [];
+    cashboxState.response = undefined;
+    marketsState.data = undefined;
+  });
+
+  const chooseCard = async (field: RegExp, option: RegExp) => {
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: field }));
+    await user.click(await screen.findByRole("option", { name: option }));
+  };
+  const marketCashbox = () => ({
+    data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: -820_000 }, user: { name: "Yandex" } },
+  });
+
+  it("⭐ kuryerdan qabul: «Marketga o'tkazma» → market; tasdiqda «Filial kassasi» va market; karta maydoni va card_id yo'q", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse({
+      cashbox: { id: "60", cashbox_type: "couriers", user_id: "209", balance: 1_280_000 },
+      is_hq_courier: false,
+    });
+    openWithoutState("/payments/cash-detail/209?type=courier", manager);
+    const user = userEvent.setup();
+
+    setAmount("150000");
+    await chooseMethod("Marketga o'tkazma");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartaga/ })).not.toBeInTheDocument();
+    await chooseMarket("Yandex");
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent("Filial kassasi");
+    expect(dialog).toHaveTextContent(/Market\s*Yandex/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(
+      expect.objectContaining({ courier_id: "209", amount: 150_000, payment_method: "click_to_market", market_id: "3" }),
+    );
+    expect(courierPaymentCalls()[0].data).not.toHaveProperty("card_id");
+  });
+
+  it("⭐ marketga to'lov: «Pul filial kassasidan …»; O'tkazma — filial kartasi (card_id); tasdiq «Filial kassasi → Market kassasi»", async () => {
+    marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("heading", { name: "Marketga to'lov" })).toBeInTheDocument();
+    expect(screen.getByText("Pul filial kassasidan marketga o'tkaziladi")).toBeInTheDocument();
+    setAmount("200000");
+    await chooseMethod("O'tkazma");
+    // Karta ro'yxati — JWT doirasi (menejer — o'z filiali), `branch_id` siz.
+    expect(cardPickerState.calls.some((call) => call.enabled && !call.branchId)).toBe(true);
+    await chooseCard(/Qaysi kartadan/, /Filial Humo/);
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent("Filial kassasi");
+    expect(dialog).toHaveTextContent("Market kassasi");
+    expect(dialog).not.toHaveTextContent("Asosiy kassa");
+    expect(dialog).toHaveTextContent(/Karta\s*Filial Humo/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(
+      expect.objectContaining({ market_id: "3", amount: 200_000, payment_method: "click", card_id: "6" }),
+    );
+  });
+
+  it.each([
+    ["umumiy inglizcha «Forbidden resource»", "Forbidden resource", "Bu to'lovga ruxsatingiz yo'q."],
+    ["backendning o'zbekcha sababi", "Bu market sizning filialingizga tegishli emas", "Bu market sizning filialingizga tegishli emas"],
+  ])("403 (%s) — xabarda tushunarli matn", async (_label, backendMessage, shown) => {
+    marketPayment.mutateAsync.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { response: { status: 403, data: { statusCode: 403, message: backendMessage } } }),
+    );
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("50000");
+    await chooseMethod("Naqd");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await screen.findByText(shown)).toBeInTheDocument();
+    expect(screen.queryByText("Forbidden resource")).not.toBeInTheDocument();
+  });
+
+  it("marketga to'lov naqd: karta maydoni yo'q, card_id yuborilmaydi", async () => {
+    marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("50000");
+    await chooseMethod("Naqd");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartadan/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 50_000, payment_method: "cash" }));
+    expect(call.data).not.toHaveProperty("card_id");
   });
 });

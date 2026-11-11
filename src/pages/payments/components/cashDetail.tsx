@@ -2,7 +2,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import {
@@ -74,10 +74,13 @@ import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
 import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
 import { useReceiptField } from "./receipt/useReceiptField";
+import { CashboxCardSelectField } from "./cashboxCards/CashboxCardPicker";
+import { useCashboxCardPicker } from "./cashboxCards/useCashboxCardPicker";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { isGenericForbiddenError } from "../../../shared/lib/forbiddenError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
@@ -177,6 +180,16 @@ const findBranchPayable = (branches: unknown, branchId: string | undefined): num
   if (!row) return undefined;
   const value = asRecord(row).berilishi_kerak;
   return value === undefined || value === null ? undefined : toNumber(value);
+};
+
+/**
+ * GET /branches qatoridan HQ'ning shu filialga qarzi (`hq_qarzi`, ≥ 0): «Kassa qarzga ishlaydi» filialidan HQ qarzidan
+ * ortiq qabul qilgan. Topilmasa — 0.
+ */
+const findBranchHqDebt = (branches: unknown, branchId: string | undefined): number => {
+  if (!branchId || !Array.isArray(branches)) return 0;
+  const row = branches.find((branch) => String(asRecord(branch).id ?? "") === String(branchId));
+  return row ? Math.max(toNumber(asRecord(row).hq_qarzi), 0) : 0;
 };
 
 /** GET /branches qatoridan filial nomi (state'siz ochilganda sarlavha uchun). */
@@ -386,6 +399,8 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
   // DTO'larida `source_user_id` yo'q — qiymat hech qachon yuborilmaydi.
   transferSourceId: yup.string().defined(),
   comment: yup.string().defined(),
+  cardId: yup.string().defined(),
+  branchCardId: yup.string().defined(),
 });
 
 const CashDetail = () => {
@@ -710,11 +725,10 @@ const CashDetail = () => {
   const paymentTypeOptions = [
     { value: "cash", label: t("v2Common.paymentMethod.cash") },
     { value: "click", label: t("v2Common.paymentMethod.transfer") },
-    // "Marketga o'tkazma" faqat HQ kassasi orqali (superadmin/admin) —
-    // menejerga backend 403 qaytaradi (audit M4), shuning uchun ko'rsatilmaydi.
-    ...(type === "courier" && !isCurrentManagerRole
-      ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }]
-      : []),
+    // «Marketga o'tkazma» — kuryer pulni to'g'ridan-to'g'ri marketga o'tkazgan: kassaga kirim + o'sha marketga chiqim.
+    // Menejerda ham (ega 2026-11-11, BeePost kabi): pul filial kassasi orqali o'tadi. Ilgari menejerga yashirin edi
+    // (backend 403, audit M4) — backend menejerga ochgach ishlaydi (backend vazifasi alohida).
+    ...(type === "courier" ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }] : []),
   ];
   const { register, control, handleSubmit, watch, setValue, setError, setFocus, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
@@ -724,6 +738,8 @@ const CashDetail = () => {
         marketId: "",
         transferSourceId: "",
         comment: "",
+        cardId: "",
+        branchCardId: "",
       },
       resolver: yupResolver(cashDetailSchema) as Resolver<CashboxActionFormValues>,
     });
@@ -754,6 +770,21 @@ const CashDetail = () => {
         : null;
   const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
   const { reset: resetReceipt } = receipt;
+  /**
+   * KARTA (cards1111b — BeePost kabi): «O'tkazma» (`click`) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi.
+   * Kuryerdan qabul — qabul qiluvchi kassa kartasi (admin — asosiy kassa, menejer — o'z filiali; JWT doirasi);
+   * marketga to'lov — asosiy kassa kartasi (chiqim); filialdan qabul — HQ kartasi (`card_id`) + filial kartasi
+   * (`branch_card_id`, `?branch_id`). «Marketga o'tkazma» va naqdda karta yo'q. Ro'yxat sahifa ochilganda o'qiladi.
+   */
+  const isClickPayment = selectedPaymentType === "click";
+  // Menejer: kuryerdan qabul va marketga to'lov — o'z filiali kartalari (JWT doirasi); HQ ga o'tkazish ko'rinishi —
+  // faqat ko'rish (formasiz).
+  const canPickHqCard = !isTypeUnknown && !(isCurrentManagerRole && type === "branch");
+  const hqCardPicker = useCashboxCardPicker({ enabled: canPickHqCard });
+  const branchCardPicker = useCashboxCardPicker({
+    enabled: !isTypeUnknown && type === "branch" && !isCurrentManagerRole && Boolean(id),
+    branchId: type === "branch" ? (id ?? null) : null,
+  });
   // C14 / FE-PAY-08: "O'tkazma"da "karta egasi" tanlovi YO'Q — kuryer, market
   // va filial → HQ uchun ham. Kassa yagona (per-person karta yo'q), DTO'larda
   // `source_user_id` yo'q va qiymat hech qachon yuborilmasdi.
@@ -793,6 +824,8 @@ const CashDetail = () => {
       marketId: "",
       transferSourceId: "",
       comment: "",
+      cardId: "",
+      branchCardId: "",
     });
     resetReceipt();
   };
@@ -1075,6 +1108,13 @@ const CashDetail = () => {
     readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message;
 
   /**
+   * To'lov xatosi matni: backend sababi (o'zbekcha); 403 da backend faqat umumiy inglizcha «Forbidden resource»
+   * qaytarsa — tushunarli matn (masalan menejerga «Marketga to'lov» backend ochilguncha).
+   */
+  const paymentErrorText = (error: unknown, fallback: string) =>
+    isGenericForbiddenError(error) ? t("paymentForbidden") : (getBackendErrorMessage(error) ?? fallback);
+
+  /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi
    * `Idempotency-Key` bilan. Kalit to'lovning barmoq iziga bog'langan va javob
    * kelgunicha saqlanadi: 504 (gateway timeout — pul o'tgan bo'lishi mumkin)
@@ -1102,7 +1142,7 @@ const CashDetail = () => {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
       // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
       if (!receipt.applyServerError(error)) {
-        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+        notify.error(t("common:error"), { description: paymentErrorText(error, errorMessage) });
       }
       refetchShiftAfterPaymentError();
       if (isUncertainPaymentError(error)) {
@@ -1141,6 +1181,14 @@ const CashDetail = () => {
       values.paymentType === "transfer" ? "click" : values.paymentType;
     // Chek barmoq iziga kirmaydi: `payment` dan tashqarida, faqat so'rov tanasida.
     const receiptBody = receipt.receiptId ? { receipt_id: receipt.receiptId } : {};
+    // Karta ham (cards1111b): faqat `click` va NOMLI karta — Asosiy karta yuborilmaydi (backend sukuti).
+    const hqCardId = normalizedPaymentMethod === "click" ? hqCardPicker.requestId(values.cardId) : undefined;
+    const branchCardId =
+      normalizedPaymentMethod === "click" && type === "branch" ? branchCardPicker.requestId(values.branchCardId) : undefined;
+    const cardBody = {
+      ...(hqCardId ? { card_id: hqCardId } : {}),
+      ...(branchCardId ? { branch_card_id: branchCardId } : {}),
+    };
 
     if (type === "branch") {
       // Filial ID si — URL'dagi `id` (fix3 dan oldingidek; FE-PAY-01
@@ -1154,7 +1202,7 @@ const CashDetail = () => {
         fingerprint: branchToMainPaymentFingerprint(payment),
         send: (idempotencyKey) =>
           createPaymentBranchToMain.mutateAsync({
-            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
+            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
             idempotencyKey,
           }),
         amount,
@@ -1192,16 +1240,14 @@ const CashDetail = () => {
       let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
       try {
         response = await createPaymentCourier.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
+          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
           idempotencyKey,
         });
       } catch (error) {
         // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
         // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
         if (!receipt.applyServerError(error)) {
-          notify.error(t("common:error"), {
-            description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
-          });
+          notify.error(t("common:error"), { description: paymentErrorText(error, t("receivePaymentError")) });
         }
         refetchShiftAfterPaymentError();
         if (isUncertainPaymentError(error)) {
@@ -1250,7 +1296,7 @@ const CashDetail = () => {
       fingerprint: marketPaymentFingerprint(payment),
       send: (idempotencyKey) =>
         createPaymentMarket.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment },
+          data: { ...payment, payment_date: paymentDate, comment, ...cardBody },
           idempotencyKey,
         }),
       amount,
@@ -1324,7 +1370,9 @@ const CashDetail = () => {
       ? t("v2CashDetail.settlement.counterparty", { name: hqName })
       : isCourierReceiveDetail
         ? t("v2CashDetail.settlement.receiver", { name: joinParts(cashboxLabel("main"), ownBranchName) })
-        : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
+        : type === "market" && isCurrentManagerRole
+          ? t("v2CashDetail.settlement.counterparty", { name: joinParts(cashboxLabel("branch"), ownBranchName) })
+          : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
   const hasCashboxAmount =
     !isManagerBranchView && (detailEntry?.kassadagi_summa !== undefined || cashbox?.balance !== undefined);
   const cashboxSplit = {
@@ -1346,6 +1394,13 @@ const CashDetail = () => {
   const managerKassa = asRecord(managerSettlement.kassa);
   const managerKassaTotal = isManagerBranchView ? toOptionalNumber(managerKassa.total) : undefined;
   const managerReceivable = toOptionalNumber(managerSettlement.olinishi_kerak);
+  // HQ'ning filialga qarzi (HQ qarzidan ortiq qabul qilgan, «Kassa qarzga ishlaydi»): HQ ko'rinishida GET /branches
+  // qatoridan, menejerda settlement'dan. Ikkalasida ham asosiy son («Qabul qilinishi kerak» / «Berilishi kerak») 0.
+  const hqDebt = isHqBranchView
+    ? findBranchHqDebt(hqBranchesQuery.data?.data, id)
+    : isManagerBranchView
+      ? Math.max(toOptionalNumber(managerSettlement.hq_qarzi) ?? 0, 0)
+      : 0;
 
   // Amal formasi matnlari (maket).
   const typedAmount = parseAmountInput(watch("amount"));
@@ -1361,7 +1416,9 @@ const CashDetail = () => {
         ? t("v2CashDetail.form.courierToBranch")
         : t("v2CashDetail.form.courierToMain")
       : type === "market"
-        ? t("v2CashDetail.form.marketSubtitle")
+        ? isCurrentManagerRole
+          ? t("v2CashDetail.form.marketSubtitleBranch")
+          : t("v2CashDetail.form.marketSubtitle")
         : t("v2CashDetail.form.branchSubtitle");
   const amountHint =
     type === "courier" && courierReceiveLimit !== null
@@ -1387,7 +1444,11 @@ const CashDetail = () => {
       };
     }
     if (type === "market") {
-      return { from: { title: cashboxLabel("main") }, to: { title: cashboxLabel("market"), meta: entityName } };
+      // Menejer marketga o'z filiali kassasidan to'laydi (ega 2026-11-11).
+      return {
+        from: isCurrentManagerRole ? { title: cashboxLabel("branch"), meta: ownBranchName } : { title: cashboxLabel("main") },
+        to: { title: cashboxLabel("market"), meta: entityName },
+      };
     }
     return { from: { title: cashboxLabel("branch"), meta: branchTitle }, to: { title: cashboxLabel("main") } };
   };
@@ -1420,6 +1481,19 @@ const CashDetail = () => {
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
     // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
     if (receipt.busy || !receipt.validate()) return;
+    // cards1111b: pul chiqadigan NOMLI kartada yetmaydi (market — HQ kartasi, filialdan qabul — filial kartasi) — xato
+    // maydon ostida turibdi, tasdiq ochilmaydi.
+    if (values.paymentType === "click") {
+      const sum = parseAmountInput(values.amount);
+      if (type === "market" && hqCardPicker.shortOf(values.cardId, sum)) {
+        setFocus("cardId");
+        return;
+      }
+      if (type === "branch" && branchCardPicker.shortOf(values.branchCardId, sum)) {
+        setFocus("branchCardId");
+        return;
+      }
+    }
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
     paymentLockRef.current = true;
@@ -1429,6 +1503,12 @@ const CashDetail = () => {
         values.paymentType === "click_to_market"
           ? marketOptions.find((option) => option.value === values.marketId)?.label ?? values.marketId
           : "";
+      const isClick = values.paymentType === "click";
+      const hqCard = isClick && hqCardPicker.cards.length > 1 ? hqCardPicker.resolve(values.cardId) : null;
+      const branchCard =
+        isClick && type === "branch" && branchCardPicker.cards.length > 1
+          ? branchCardPicker.resolve(values.branchCardId)
+          : null;
       const ok = await confirm({
         tone: "success",
         title: t("v2CashDetail.confirm.title"),
@@ -1440,6 +1520,8 @@ const CashDetail = () => {
         transfer: getPaymentTransfer(),
         rows: [
           ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
+          ...(hqCard ? [{ label: t("cashboxCards.picker.confirmRow"), value: hqCard.name }] : []),
+          ...(branchCard ? [{ label: t("cashboxCards.picker.confirmBranchRow"), value: branchCard.name }] : []),
           ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
           ...(comment ? [{ label: t("v2CashDetail.confirm.comment"), value: comment, stacked: true }] : []),
         ],
@@ -1517,6 +1599,17 @@ const CashDetail = () => {
       <div className="flex flex-col gap-1">
         <span className="text-[13px] font-semibold text-text-muted">{balanceLabel}</span>
         <MoneyFigure value={displayBalance} hidden={!balanceVisible} />
+        {hqDebt > 0 ? (
+          <div className="mt-2 flex flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2" data-testid="hq-debt">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-semibold text-text">
+                {isManagerBranchView ? t("v2CashDetail.settlement.hqDebtManager") : t("v2CashDetail.settlement.hqDebt")}
+              </span>
+              <span className="whitespace-nowrap font-semibold text-text">{money(hqDebt)}</span>
+            </div>
+            <span className="text-xs text-text-muted">{t("v2CashDetail.settlement.hqDebtHint")}</span>
+          </div>
+        ) : null}
         {balanceVisible && courierDayChange ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
             <DeltaChip
@@ -1540,6 +1633,9 @@ const CashDetail = () => {
 
       {isManagerBranchView && managerKassaTotal !== undefined ? (
         <HqCoverage
+          // HQ qarzi bor (HQ ortiqcha qabul qilgan) — berilishi kerak 0, «kassa yetarlimi» o'lchagichi ma'nosiz;
+          // kassa va kuryerlardan olinishi kerak qatorlari qoladi.
+          showMeter={hqDebt <= 0}
           payable={displayBalance}
           cashbox={managerKassaTotal}
           receivable={managerReceivable}
@@ -1620,6 +1716,50 @@ const CashDetail = () => {
       submitLoading={isSubmitting}
       submitDisabled={(isStoreTransfer && !selectedMarketId) || receipt.busy}
       receiptField={<ReceiptField receipt={receipt} viewerDescription={formTitle} />}
+      cardField={
+        isClickPayment && canPickHqCard ? (
+          <>
+            <Controller
+              control={control}
+              name="cardId"
+              render={({ field }) => (
+                <CashboxCardSelectField
+                  ref={field.ref}
+                  picker={hqCardPicker}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  direction={type === "market" ? "out" : "in"}
+                  label={type === "branch" ? t("cashboxCards.picker.hqLabel") : undefined}
+                  amount={parseAmountInput(watch("amount"))}
+                  balanceVisible={balanceVisible}
+                />
+              )}
+            />
+            {type === "branch" && !isCurrentManagerRole ? (
+              <Controller
+                control={control}
+                name="branchCardId"
+                render={({ field }) => (
+                  <CashboxCardSelectField
+                    ref={field.ref}
+                    picker={branchCardPicker}
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    direction="out"
+                    label={t("cashboxCards.picker.branchLabel")}
+                    amount={parseAmountInput(watch("amount"))}
+                    balanceVisible={balanceVisible}
+                  />
+                )}
+              />
+            ) : null}
+          </>
+        ) : null
+      }
       onSubmitAttempt={() => receipt.validate({ moveFocus: false })}
       commentLabel={t("v2CashDetail.form.comment")}
       commentPlaceholder={t("v2CashDetail.form.commentPlaceholder")}
@@ -1838,11 +1978,14 @@ const HqCoverage = ({
   cashbox,
   receivable,
   hidden,
+  showMeter = true,
 }: {
   payable: number;
   cashbox: number;
   receivable?: number;
   hidden: boolean;
+  /** `false` — faqat kassa/olinishi kerak qatorlari (HQ filialga qarzdor: berilishi kerak 0). */
+  showMeter?: boolean;
 }) => {
   const { t } = useTranslation("payments");
   const enough = payable <= cashbox;
@@ -1850,37 +1993,39 @@ const HqCoverage = ({
   const shown = (value: number) => (hidden ? MASK : formatMoneyLocalized(value));
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm text-text-muted">{t("v2CashDetail.settlement.versusCashbox")}</span>
-          <Badge tone={enough ? "success" : "warning"} icon={enough ? CircleCheck : TriangleAlert}>
-            {enough ? t("v2CashDetail.settlement.enough") : t("v2CashDetail.settlement.notEnough")}
-          </Badge>
+      {showMeter ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-text-muted">{t("v2CashDetail.settlement.versusCashbox")}</span>
+            <Badge tone={enough ? "success" : "warning"} icon={enough ? CircleCheck : TriangleAlert}>
+              {enough ? t("v2CashDetail.settlement.enough") : t("v2CashDetail.settlement.notEnough")}
+            </Badge>
+          </div>
+          <div
+            role="meter"
+            aria-label={t("v2CashDetail.settlement.meterLabel")}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(Math.min(100, share) * 10) / 10}
+            className={cx("h-3 overflow-hidden rounded-full", enough ? "bg-action-soft" : "bg-warning-soft")}
+          >
+            <span
+              className={cx("block h-full rounded-full", enough ? "bg-chart-1" : "bg-warning")}
+              style={{ width: `${Math.min(100, share)}%` }}
+            />
+          </div>
+          <ul className="m-0 flex list-none flex-wrap justify-between gap-x-4 gap-y-1 p-0 text-[13px] text-text-muted">
+            <li className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className={cx("size-2.5 rounded-[3px]", enough ? "bg-chart-1" : "bg-warning")} />
+              {t("v2CashDetail.settlement.payableShare", { share: formatPercentLocalized(share) })}
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className="size-2.5 rounded-[3px] bg-action-soft ring-1 ring-inset ring-border" />
+              {t("v2CashDetail.settlement.remains", { amount: shown(Math.max(0, cashbox - payable)) })}
+            </li>
+          </ul>
         </div>
-        <div
-          role="meter"
-          aria-label={t("v2CashDetail.settlement.meterLabel")}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(Math.min(100, share) * 10) / 10}
-          className={cx("h-3 overflow-hidden rounded-full", enough ? "bg-action-soft" : "bg-warning-soft")}
-        >
-          <span
-            className={cx("block h-full rounded-full", enough ? "bg-chart-1" : "bg-warning")}
-            style={{ width: `${Math.min(100, share)}%` }}
-          />
-        </div>
-        <ul className="m-0 flex list-none flex-wrap justify-between gap-x-4 gap-y-1 p-0 text-[13px] text-text-muted">
-          <li className="inline-flex items-center gap-2">
-            <span aria-hidden="true" className={cx("size-2.5 rounded-[3px]", enough ? "bg-chart-1" : "bg-warning")} />
-            {t("v2CashDetail.settlement.payableShare", { share: formatPercentLocalized(share) })}
-          </li>
-          <li className="inline-flex items-center gap-2">
-            <span aria-hidden="true" className="size-2.5 rounded-[3px] bg-action-soft ring-1 ring-inset ring-border" />
-            {t("v2CashDetail.settlement.remains", { amount: shown(Math.max(0, cashbox - payable)) })}
-          </li>
-        </ul>
-      </div>
+      ) : null}
       <dl className="m-0 flex flex-col border-t border-border">
         <div className="flex items-center justify-between gap-3 border-b border-border py-2.5">
           <dt className="inline-flex min-w-0 items-center gap-2 text-sm text-text-muted">

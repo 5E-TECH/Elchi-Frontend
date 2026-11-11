@@ -211,7 +211,13 @@
       "createdHint": "filial tizimga qo'shilgan",
       "loading": "Filial yuklanmoqda",
       "loadFailed": "Filial ma'lumotini yuklab bo'lmadi",
-      "notFoundHint": "Filial o'chirilgan yoki havola noto'g'ri. Filiallar ro'yxatiga qayting."
+      "notFoundHint": "Filial o'chirilgan yoki havola noto'g'ri. Filiallar ro'yxatiga qayting.",
+      "cashboxTitle": "Kassa sozlamalari",
+      "cashboxDebt": "Kassa qarzga ishlaydi",
+      "cashboxDebtHint": "Yoqiq bo'lsa, HQ filialdan qarzidan ortiq pul qabul qila oladi — filial kassasi minusga tushadi, ortig'i «HQ qarzi» bo'lib qoladi va keyingi sotuvlar uni yopadi. O'chiq bo'lsa, kassadagidan ortiq qabul qilib bo'lmaydi",
+      "cashboxDebtOn": "Filial kassasi qarzga ishlashi yoqildi",
+      "cashboxDebtOff": "Filial kassasi qarzga ishlashi o'chirildi",
+      "cashboxDebtError": "Sozlamani saqlab bo'lmadi"
     },
     "employees": {
       "description": "Biriktirilgan xodimlar ro'yxati va ularning lavozimlari",

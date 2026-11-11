@@ -1,5 +1,15 @@
 // dizayn-v2: market-dashboard-home, market-dashboard-extra-cost-approvals
-import { CircleCheck, CircleX, Plus, RefreshCw, ShoppingBag, Truck, Unlink, UsersRound, Wallet } from "lucide-react";
+import {
+  CircleCheck,
+  CircleX,
+  Plus,
+  RefreshCw,
+  ShoppingBag,
+  Truck,
+  Unlink,
+  UsersRound,
+  Wallet,
+} from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,7 +32,10 @@ import {
   type DashboardQuickKey,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileName } from "../../entities/dashboard/lib/profile";
-import { buildDashboardDateParams, getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
+import {
+  buildDashboardDateParams,
+  getEffectiveAllTimeRange,
+} from "../../entities/dashboard/lib/allTime";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import {
@@ -34,10 +47,21 @@ import {
 } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { ChartLegend } from "../../shared/ui/charts";
-import { Button, Card, EmptyState, ErrorState, PageHeader, StatCard } from "../../shared/ui/primitives";
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  StatCard,
+} from "../../shared/ui/primitives";
 import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
-import { CardRow, KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
+import {
+  CardRow,
+  KpiRow,
+  LoadingChartCard,
+} from "../../widgets/dashboard-statistics/ui/DashboardGrid";
 import OrderStatusCard from "../../widgets/dashboard-statistics/ui/OrderStatusCard";
 import SuccessRateCard from "../../widgets/dashboard-statistics/ui/SuccessRateCard";
 import {
@@ -97,7 +121,9 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   const ordersOpen = useSelector(canViewOrders);
   const createOpen = useSelector(canCreateOrders);
 
-  const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
+  const [fromDate, setFromDate] = useState(
+    typeof storedFromDate === "string" ? storedFromDate : "",
+  );
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
   // Bosilgan tez tanlov: dushanba «Bu hafta», oyning 1-kuni «Bu oy» oralig'i «Bugun» bilan bir xil.
   const [preset, setPreset] = useState<DashboardQuickKey | null>(
@@ -111,9 +137,15 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     return fromDate === all.from && toDate === all.to;
   })();
   const period = resolveDashboardPeriod(fromDate, toDate, preset);
-  const analyticsScope = useMemo(() => `${role ?? "unknown"}:${user?.id ?? "unknown"}`, [role, user?.id]);
+  const analyticsScope = useMemo(
+    () => `${role ?? "unknown"}:${user?.id ?? "unknown"}`,
+    [role, user?.id],
+  );
   // «Barchasi» — `all=true` (tya24blo), `start_day=1970-01-01` emas.
-  const analyticsParams = useMemo(() => buildDashboardDateParams(fromDate, toDate), [fromDate, toDate]);
+  const analyticsParams = useMemo(
+    () => buildDashboardDateParams(fromDate, toDate),
+    [fromDate, toDate],
+  );
 
   const { getDashboard } = useDashboard();
 
@@ -154,7 +186,8 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   const sold = myStat?.soldOrders ?? orders?.soldAndPaid ?? 0;
   const cancelled = myStat?.canceledOrders ?? orders?.cancelled ?? 0;
   const profit = myStat?.profit ?? orders?.profit ?? 0;
-  const inProgress = myStat?.inProgress ?? orders?.inProgress ?? inProgressCount(accepted, sold, cancelled);
+  const inProgress =
+    myStat?.inProgress ?? orders?.inProgress ?? inProgressCount(accepted, sold, cancelled);
   const successRate = myStat?.successRate ?? share(sold, accepted);
 
   // Oldingi davr bo'lagi olinmagan bo'lsa — 0 bilan solishtirilmaydi.
@@ -167,17 +200,28 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   const prevProfit = prevStat?.profit ?? prevOrders?.profit;
   const hasPrevious = previousData != null && prevRange != null && !prevFailed;
   const prevRate =
-    hasPrevious && (prevAccepted ?? 0) > 0 ? (prevStat?.successRate ?? share(prevSold ?? 0, prevAccepted ?? 0)) : null;
+    hasPrevious && (prevAccepted ?? 0) > 0
+      ? (prevStat?.successRate ?? share(prevSold ?? 0, prevAccepted ?? 0))
+      : null;
 
-  const canAddOrder = isOperator ? createOpen : Boolean((user as Record<string, unknown> | null)?.add_order);
+  const canAddOrder = isOperator
+    ? createOpen
+    : Boolean((user as Record<string, unknown> | null)?.add_order);
   // Operator: o'z marketi qatori — profildagi `market_id` (bo'lmasa belgilanmaydi).
-  const selfId = isOperator ? (user?.market_id != null ? String(user.market_id) : undefined) : (user?.id ?? roleId);
+  const selfId = isOperator
+    ? user?.market_id != null
+      ? String(user.market_id)
+      : undefined
+    : (user?.id ?? roleId);
   // Operator profilida `name` — operatorning o'z ismi, market nomi emas.
   const marketName = isOperator ? null : readProfileName(user);
   const periodText = periodLabel(t, period);
   const hint = comparisonHint(t, period);
   /** KPI delta va izohi («kechaga nisbatan»): delta bo'lmasa (oldingi davr yo'q, asos 0) — izoh ham yo'q. */
-  const deltaProps = (value: number | null) => ({ delta: value, hint: value != null ? hint : undefined });
+  const deltaProps = (value: number | null) => ({
+    delta: value,
+    hint: value != null ? hint : undefined,
+  });
   const count = (value: number) => formatNumberLocalized(value, { language });
 
   const applyRange = useCallback(
@@ -186,7 +230,11 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
       setToDate(range.to);
       setPreset(nextPreset);
       dispatch(
-        setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to, dashboardPreset: nextPreset }),
+        setMultipleFilters({
+          dashboardFromDate: range.from,
+          dashboardToDate: range.to,
+          dashboardPreset: nextPreset,
+        }),
       );
     },
     [dispatch],
@@ -200,7 +248,8 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     setPreset(null);
   }, [dispatch]);
 
-  const delta = (current: number, previous: number | undefined) => (hasPrevious ? percentChange(current, previous) : null);
+  const delta = (current: number, previous: number | undefined) =>
+    hasPrevious ? percentChange(current, previous) : null;
 
   // «Marketlar bo'yicha sotuv foizi»: reyting (`topMarkets`) + o'z qatori (`markets` — RBAC-02, faqat o'zi).
   // O'z qatori har doim ko'rinadi (≥ 30 buyurtma chegarasidan o'tmagan bo'lsa ham) — hozirgi `chartMarkets` xulqi.
@@ -213,6 +262,12 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   })();
 
   const operators = operatorRows(data?.data?.topOperators);
+  // «Top operatorlar» o'rtacha belgisi — MARKET foizi. Operator sahifasida KPI va grafiklar (`myStat`) endi faqat
+  // o'z buyurtmalari (ega 2026-11-11, BE `analytics/dashboard`), shuning uchun market foizi — o'z marketi qatoridan
+  // (`markets`); qator bo'lmasa belgi va izoh chiqmaydi (operator foizini «market o'rtachasi» deb ko'rsatmaymiz).
+  const marketRate = isOperator
+    ? (salesRows.find((row) => row.id === selfId)?.rate ?? null)
+    : successRate;
   const ordersListHref =
     isOperator && !ordersOpen
       ? undefined
@@ -237,7 +292,10 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   if (unassigned) {
     return (
       <div className="flex flex-col gap-6 max-md:gap-4">
-        <PageHeader title={t("v2Dashboard.header.title")} description={t("v2Market.operatorUnassigned.subtitle")} />
+        <PageHeader
+          title={t("v2Dashboard.header.title")}
+          description={t("v2Market.operatorUnassigned.subtitle")}
+        />
         <Card as="section" padding="none" data-testid="operator-unassigned">
           <EmptyState
             icon={Unlink}
@@ -266,7 +324,9 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         description={
           marketName
             ? t("v2Market.headerSub", { name: marketName })
-            : periodHeadline(t, period)
+            : isOperator
+              ? t("v2Market.operatorScope", { period: periodHeadline(t, period) })
+              : periodHeadline(t, period)
         }
         fromDate={fromDate}
         toDate={toDate}
@@ -282,7 +342,11 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
 
       {dashboardError || statsFailed ? (
         <Card>
-          <ErrorState description={t("load_error")} onRetry={retryDashboard} retrying={dashboardFetching} />
+          <ErrorState
+            description={t("load_error")}
+            onRetry={retryDashboard}
+            retrying={dashboardFetching}
+          />
         </Card>
       ) : (
         <KpiRow count={4} label={t("v2Dashboard.kpi.label")}>
@@ -326,7 +390,6 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         </KpiRow>
       )}
 
-
       {!dashboardError ? (
         <CardRow>
           {statsFailed ? null : isLoading ? (
@@ -342,18 +405,41 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
                 cancelled={cancelled}
                 description={t("v2Dashboard.success.subTotal", { period: periodText })}
                 gaugeLabel={t("v2Dashboard.success.gaugeTotal")}
-                previous={prevRate != null ? { rate: prevRate, label: previousLabel(t, period) } : null}
+                previous={
+                  prevRate != null ? { rate: prevRate, label: previousLabel(t, period) } : null
+                }
               />
               <OrderStatusCard
                 total={accepted}
-                description={t("v2Market.statusSub", { period: periodText, count: count(accepted) })}
+                description={t("v2Market.statusSub", {
+                  period: periodText,
+                  count: count(accepted),
+                })}
                 centerLabel={t("v2Market.statusCenter")}
                 listHref={ordersListHref}
                 note={t("v2Dashboard.status.inProgressNote")}
                 segments={[
-                  { key: "sold", label: t("v2Dashboard.status.sold"), value: sold, tone: "success", icon: CircleCheck },
-                  { key: "progress", label: t("v2Dashboard.status.inProgress"), value: inProgress, tone: "warning", icon: Truck },
-                  { key: "cancelled", label: t("v2Dashboard.status.cancelled"), value: cancelled, tone: "danger", icon: CircleX },
+                  {
+                    key: "sold",
+                    label: t("v2Dashboard.status.sold"),
+                    value: sold,
+                    tone: "success",
+                    icon: CircleCheck,
+                  },
+                  {
+                    key: "progress",
+                    label: t("v2Dashboard.status.inProgress"),
+                    value: inProgress,
+                    tone: "warning",
+                    icon: Truck,
+                  },
+                  {
+                    key: "cancelled",
+                    label: t("v2Dashboard.status.cancelled"),
+                    value: cancelled,
+                    tone: "danger",
+                    icon: CircleX,
+                  },
                 ]}
               />
             </>
@@ -372,27 +458,57 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
               data-testid="operators-ranking"
               title={t("v2Dashboard.top.operators")}
               description={t("v2Dashboard.top.sub")}
-              items={toRankItems(operators, { t, language })}
+              items={toRankItems(
+                operators,
+                isOperator
+                  ? // Operator: o'z qatori ajralib turadi («Siz»), boshqalar — hamkasblari.
+                    {
+                      t,
+                      language,
+                      selfId: user?.id,
+                      selfBadge: { label: t("v2Dashboard.top.you"), tone: "info" },
+                    }
+                  : { t, language },
+              )}
               expandable
-              meterTarget={successRate}
-              empty={<EmptyState size="chart" icon={UsersRound} title={t("v2Dashboard.top.emptyTitle")} />}
+              meterTarget={marketRate ?? undefined}
+              empty={
+                <EmptyState
+                  size="chart"
+                  icon={UsersRound}
+                  title={t("v2Dashboard.top.emptyTitle")}
+                />
+              }
               footer={
                 <ChartLegend
                   items={[
-                    { key: "rate", tone: "action", keyClassName: "bg-chart-1", label: t("v2Market.operatorRate") },
                     {
-                      key: "avg",
-                      tone: "neutral",
-                      shape: "target",
-                      label: t("v2Market.marketAverage", {
-                        name: marketName ?? t("v2Market.yourMarket"),
-                        rate: formatPercentLocalized(successRate, { language }),
-                      }),
+                      key: "rate",
+                      tone: "action",
+                      keyClassName: "bg-chart-1",
+                      label: t("v2Market.operatorRate"),
                     },
+                    ...(marketRate != null
+                      ? [
+                          {
+                            key: "avg",
+                            tone: "neutral" as const,
+                            shape: "target" as const,
+                            label: t("v2Market.marketAverage", {
+                              name: marketName ?? t("v2Market.yourMarket"),
+                              rate: formatPercentLocalized(marketRate, { language }),
+                            }),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
               }
-              note={operators.length < 5 || isLowDataRanking(operators, null) ? t("v2Dashboard.top.limited") : undefined}
+              note={
+                operators.length < 5 || isLowDataRanking(operators, null)
+                  ? t("v2Dashboard.top.limited")
+                  : undefined
+              }
             />
           ) : null}
         </CardRow>

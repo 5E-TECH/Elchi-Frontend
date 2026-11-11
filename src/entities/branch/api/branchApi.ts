@@ -115,6 +115,8 @@ const normalizeBranch = (value: unknown): Branch => {
     olinishi_kerak: Number(item.olinishi_kerak ?? 0),
     berilishi_kerak: Number(item.berilishi_kerak ?? 0),
     kassadagi_summa: Number(item.kassadagi_summa ?? 0),
+    hq_qarzi: Number(item.hq_qarzi ?? 0),
+    cashbox_debt_enabled: item.cashbox_debt_enabled === true,
   };
 };
 

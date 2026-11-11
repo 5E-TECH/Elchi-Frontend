@@ -390,6 +390,38 @@ const aiAssistantMock = (path) => {
   return null;
 };
 
+/**
+ * Tashqi yetkazuvchilar (`/integrations/connections?scope=carrier`, maket `*-carrier-console`): maketdagi uch akkaunt —
+ * faol (HQ kuryeri, 2 IP qoida), bog'langan kuryer bloklangan, to'xtatilgan (Farg'ona filiali kuryeri).
+ * `GET admin/carriers`, `GET users/:id` va kuryer kassasi (faqat shu uch kuryer id), `GET branches/hq` — faqat
+ * `/integrations*` route'larida (boshqa ekranlarda HQ avvalgidek umumiy bo'sh javob: masalan ombor yaratish oynasi).
+ */
+const CARRIER_ACCOUNTS = [
+  { id: '3', name: 'FastPost Logistics', courier_user_id: '1055', ip_allowlist: ['203.0.113.10', '198.51.100.0/24'], is_active: true, createdAt: '2026-11-09T05:15:00.000Z', updatedAt: '2026-11-10T04:40:00.000Z' },
+  { id: '2', name: 'Samarqand Ekspress', courier_user_id: '1066', ip_allowlist: null, is_active: true, createdAt: '2026-11-06T10:40:00.000Z', updatedAt: '2026-11-06T10:40:00.000Z' },
+  { id: '1', name: 'Vodiy Kargo', courier_user_id: '1077', ip_allowlist: ['203.0.113.0/24'], is_active: false, createdAt: '2026-11-03T06:20:00.000Z', updatedAt: '2026-11-03T06:20:00.000Z' },
+];
+const CARRIER_COURIERS = {
+  1055: { name: 'FastPost kuryeri', phone_number: '+998909774040', status: 'active', branch: { id: '1', name: 'Toshkent HQ' }, tariff_home: 30000, tariff_center: 25000 },
+  1066: { name: 'Samarqand Ekspress kuryeri', phone_number: '+998972140866', status: 'blocked', branch: { id: '1', name: 'Toshkent HQ' }, tariff_home: 30000, tariff_center: 25000 },
+  1077: { name: 'Vodiy Kargo kuryeri', phone_number: '+998913306214', status: 'active', branch: { id: '5', name: "Farg'ona filiali" }, tariff_home: 25000, tariff_center: 20000 },
+};
+const CARRIER_SHOT = routes.some((route) => route.startsWith('/integrations'));
+const carrierMock = (path) => {
+  if (path === 'admin/carriers') return { statusCode: 200, message: 'carrier accounts', data: CARRIER_ACCOUNTS };
+  if (path === 'branches/hq' && CARRIER_SHOT) return { statusCode: 200, data: { id: '1', name: 'Toshkent HQ', type: 'HQ', status: 'active' } };
+  const user = /^users\/(\d+)$/.exec(path);
+  if (user && CARRIER_COURIERS[user[1]]) return { statusCode: 200, data: { id: user[1], role: 'courier', ...CARRIER_COURIERS[user[1]] } };
+  const cash = /^finance\/cashbox\/user\/(\d+)$/.exec(path);
+  if (cash && CARRIER_COURIERS[cash[1]]) {
+    // `GET finance/cashbox/user/:id?cashbox_type=couriers` (superadmin): kassa + C3 maydonlari (`olinishi_kerak`).
+    const balance = cash[1] === '1055' ? 2340000 : 0;
+    const hq = CARRIER_COURIERS[cash[1]].branch.id === '1';
+    return { statusCode: 200, data: { cashbox: { id: `c${cash[1]}`, cashbox_type: 'couriers', balance }, history: [], is_hq_courier: hq, can_receive: hq, olinishi_kerak: hq ? balance : 0, receive_check_failed: false } };
+  }
+  return null;
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
@@ -399,6 +431,8 @@ const mockBody = (path, themeName, query) => {
   if (path.startsWith('ai/assistant/')) return aiAssistantMock(path) ?? { statusCode: 200, data: {} };
   if (path === 'notifications') return notificationGroupsMock(query);
   if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
+  const carrier = carrierMock(path);
+  if (carrier) return carrier;
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };

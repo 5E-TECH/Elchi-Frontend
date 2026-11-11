@@ -604,15 +604,9 @@ const MainCashbox = () => {
     [isManagerRole, openPicker],
   );
 
-  const visibleActions = useMemo(() => {
-    const availableActions = ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action));
-    // "Marketga to'lov" (POST /finance/cashbox/payment/market) faqat
-    // SUPERADMIN/ADMIN uchun — menejerga (HQ menejeri ham) backend 403
-    // qaytaradi, shuning uchun filial turidan qat'i nazar ko'rsatilmaydi.
-    if (!isManagerRole) return availableActions;
-
-    return availableActions.filter((action) => action !== "payToMarket");
-  }, [isManagerRole]);
+  // «Marketga to'lov» (POST finance/cashbox/payment/market) menejerda ham — o'z filiali kassasidan (ega 2026-11-11,
+  // BeePost kabi). Ilgari menejerga yashirin edi (backend 403) — backend menejerga ochgach ishlaydi.
+  const visibleActions = useMemo(() => ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action)), []);
 
   const handlePickerSelect = useCallback(
     (target: SettlementPickerTarget) => {
@@ -673,7 +667,7 @@ const MainCashbox = () => {
   const submitManualOperation = useCallback(
     async (
       operation: ManualOperation,
-      { amount, type, comment, expense_category_id, receipt_id }: CashboxFormPayload,
+      { amount, type, comment, expense_category_id, receipt_id, card_id }: CashboxFormPayload,
     ): Promise<CashboxFormResult> => {
       if (manualPendingRef.current) return;
       manualPendingRef.current = true;
@@ -693,6 +687,8 @@ const MainCashbox = () => {
               ...(comment ? { comment } : {}),
               ...(categoryId ? { expense_category_id: categoryId } : {}),
               ...(receiptId ? { receipt_id: receiptId } : {}),
+              // cards1111b — «Karta (Click)»: nomli karta (Asosiy — yuborilmaydi). Barmoq iziga KIRMAYDI (chek kabi).
+              ...(type === "click" && card_id ? { card_id } : {}),
             },
             idempotencyKey,
           });
@@ -739,7 +735,8 @@ const MainCashbox = () => {
   );
   const handleRefill = useCallback(
     // To'ldirishda kategoriya yo'q (oyna maydonni chizmaydi, backend `fill` uni 400 bilan rad etadi).
-    ({ amount, type, comment }: CashboxFormPayload) => submitManualOperation("fill", { amount, type, comment }),
+    ({ amount, type, comment, card_id }: CashboxFormPayload) =>
+      submitManualOperation("fill", { amount, type, comment, card_id }),
     [submitManualOperation],
   );
 
@@ -1675,6 +1672,9 @@ const MainCashbox = () => {
     typeRequiredMessage: t("v2MainCashbox.form.typeRequired"),
     requireType: true,
     requireComment: true,
+    // cards1111b — «Karta (Click)» da qaysi karta (admin — asosiy kassa, menejer — o'z filiali kartalari).
+    withCards: true,
+    balanceVisible,
   };
   const confirmCashboxLabel = isManagerRole && ownBranchName ? ownBranchName : t("v2MainCashbox.confirm.mainCashbox");
   // Smena oynalari: «Asosiy kassa» / «Urgut filiali kassasi»; karta yorlig'i — asosiy kassada «Karta (Click)».

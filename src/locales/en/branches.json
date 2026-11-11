@@ -215,7 +215,13 @@
       "createdHint": "added to the system",
       "loading": "Loading branch",
       "loadFailed": "Couldn't load the branch",
-      "notFoundHint": "The branch was deleted or the link is wrong. Go back to the branch list."
+      "notFoundHint": "The branch was deleted or the link is wrong. Go back to the branch list.",
+      "cashboxTitle": "Cashbox settings",
+      "cashboxDebt": "Cashbox works on debt",
+      "cashboxDebtHint": "When on, HQ can receive more than the branch owes — the branch cashbox goes negative, the surplus stays as «HQ debt» and upcoming sales close it. When off, HQ cannot receive more than the cashbox holds",
+      "cashboxDebtOn": "Branch cashbox debt mode enabled",
+      "cashboxDebtOff": "Branch cashbox debt mode disabled",
+      "cashboxDebtError": "Could not save the setting"
     },
     "employees": {
       "description": "Assigned employees and their positions",
