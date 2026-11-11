@@ -63,6 +63,9 @@ describe("Chek rasmi va AI tahlili kartasi (QlLf33Ma)", () => {
     expect(screen.getAllByText("Avval chek rasmini yoqing").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Chek majburiy, AI tekshiradi").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Chek so'ralmaydi").length).toBeGreaterThan(0);
+    // BE-C (ega 2026-11-10): qo'lda chiqimda chek faqat karta chiqimida — izoh shuni aytadi.
+    expect(screen.getAllByText("Asosiy va filial kassalaridan — faqat «Karta (Click)» chiqimida").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Faqat «O'tkazma» to'lovida").length).toBeGreaterThan(0);
     await screen.findByText(/Oxirgi o'zgarish: Shodiyor Ergashev · /);
     expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled();
   });

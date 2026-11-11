@@ -1451,7 +1451,7 @@
       "groups": {
         "manual_expense": {
           "title": "Qo'lda chiqim",
-          "hint": "Asosiy va filial kassalaridan xarajat",
+          "hint": "Asosiy va filial kassalaridan — faqat «Karta (Click)» chiqimida",
           "offDescription": "Qo'lda chiqimda chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
           "offField": "Formada «Chek rasmi» maydoni ko'rinmaydi, xarajat cheksiz saqlanadi"
         },

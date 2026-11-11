@@ -1453,7 +1453,7 @@
       "groups": {
         "manual_expense": {
           "title": "Manual expense",
-          "hint": "Expenses from the main and branch cashboxes",
+          "hint": "Expenses from the main and branch cashboxes — only «Card (Click)» payments",
           "offDescription": "No receipt photo will be requested for manual expenses. The change takes effect when you press «Save».",
           "offField": "The «Receipt photo» field disappears from the form, the expense is saved without a receipt"
         },
