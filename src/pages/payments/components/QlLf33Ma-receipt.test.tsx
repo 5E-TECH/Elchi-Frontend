@@ -69,12 +69,20 @@ const settingsReads = () => http.get.mock.calls.filter(([url]) => url === SETTIN
 const photoFile = (name = "IMG_4471.jpg", size = 1024) =>
   new File([new Uint8Array(size)], name, { type: "image/jpeg" });
 
-const openDialog = async (user: ReturnType<typeof userEvent.setup>, preloadedState: never = superadmin) => {
+/**
+ * BE-C (2026-11-10): chek FAQAT karta chiqimida — chek testlari «Karta (Click)» bilan ochiladi; naqd — alohida
+ * testlarda (`method: "Naqd"`).
+ */
+const openDialog = async (
+  user: ReturnType<typeof userEvent.setup>,
+  preloadedState: never = superadmin,
+  method: "Karta (Click)" | "Naqd" = "Karta (Click)",
+) => {
   renderWithProviders(<MainCashbox />, { preloadedState });
   await user.click(await screen.findByRole("button", { name: /Kassadan xarajat/ }));
   const dialog = await screen.findByRole("dialog", { name: "Kassadan xarajat" });
   await user.type(within(dialog).getByLabelText(/^Summa/), "145000");
-  await user.click(within(dialog).getByRole("radio", { name: "Naqd" }));
+  await user.click(within(dialog).getByRole("radio", { name: method }));
   await user.click(within(dialog).getByRole("combobox", { name: /Xarajat kategoriyasi/ }));
   await user.click(await screen.findByRole("option", { name: /Kanselyariya/ }));
   return dialog;
@@ -185,7 +193,7 @@ describe("Kassadan xarajat — chek rasmi (QlLf33Ma)", () => {
     await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(spendCalls()).toHaveLength(1));
-    expect(spendCalls()[0][1]).toMatchObject({ amount: 145000, type: "cash", expense_category_id: "3", receipt_id: "501" });
+    expect(spendCalls()[0][1]).toMatchObject({ amount: 145000, type: "click", expense_category_id: "3", receipt_id: "501" });
     expect(
       await screen.findByText("Xarajat muvaffaqiyatli saqlandi. Chek AI tahlilida — natija tarixda ko'rinadi."),
     ).toBeInTheDocument();
@@ -360,6 +368,52 @@ describe("Kassadan xarajat — chek rasmi (QlLf33Ma)", () => {
     expect(trigger).toBeDisabled();
     expect(within(dialog).getByText("Internet yo'q — aloqa tiklangach rasmni yuklang")).toBeInTheDocument();
     onLine.mockRestore();
+  });
+
+  it("BE-C: naqd chiqim — rasm yoqiq bo'lsa ham chek maydoni yo'q, rasmsiz saqlanadi, `receipt_id` yuborilmaydi", async () => {
+    const user = userEvent.setup();
+    const dialog = await openDialog(user, superadmin, "Naqd");
+
+    await waitFor(() => expect(settingsReads()).toBeGreaterThan(0));
+    expect(within(dialog).queryByText("Chek rasmi")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Chek rasmini yuklash/ })).not.toBeInTheDocument();
+
+    await user.click(saveButton(dialog));
+    const confirm = await screen.findByRole("alertdialog", { name: "Xarajatni tasdiqlang" });
+    expect(within(confirm).queryByText("Chek")).not.toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(spendCalls()).toHaveLength(1));
+    expect(spendCalls()[0][1]).toMatchObject({ amount: 145000, type: "cash", expense_category_id: "3" });
+    expect(spendCalls()[0][1]).not.toHaveProperty("receipt_id");
+    expect(uploads()).toHaveLength(0);
+  });
+
+  it("BE-C: kartada chek yuklab Naqdga o'tilsa — maydon yo'qoladi va `receipt_id` yuborilmaydi; Kartaga qaytsa yana bor", async () => {
+    const user = userEvent.setup();
+    const dialog = await openDialog(user);
+    await pick(dialog, photoFile());
+    await within(dialog).findByText("Yuklandi", { exact: false });
+
+    await user.click(within(dialog).getByRole("radio", { name: "Naqd" }));
+    await waitFor(() => expect(within(dialog).queryByText("Yuklandi", { exact: false })).not.toBeInTheDocument());
+    await user.click(saveButton(dialog));
+    const confirm = await screen.findByRole("alertdialog", { name: "Xarajatni tasdiqlang" });
+    expect(within(confirm).queryByText("Biriktirildi")).not.toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    // Kartaga qaytilsa qoralama saqlangan — rasm qayta yuklanmaydi.
+    await user.click(within(dialog).getByRole("radio", { name: "Karta (Click)" }));
+    expect(await within(dialog).findByText("Yuklandi", { exact: false })).toBeInTheDocument();
+    expect(uploads()).toHaveLength(1);
+
+    await user.click(within(dialog).getByRole("radio", { name: "Naqd" }));
+    await user.click(saveButton(dialog));
+    await user.click(within(await screen.findByRole("alertdialog", { name: "Xarajatni tasdiqlang" })).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(spendCalls()).toHaveLength(1));
+    expect(spendCalls()[0][1]).toMatchObject({ type: "cash" });
+    expect(spendCalls()[0][1]).not.toHaveProperty("receipt_id");
   });
 
   it("«Kassani to'ldirish» da chek maydoni va sozlama so'rovi yo'q", async () => {

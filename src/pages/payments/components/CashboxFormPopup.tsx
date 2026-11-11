@@ -56,9 +56,11 @@ import { useReceiptField } from "./receipt/useReceiptField";
  * «Xarajatni saqlash» bloklanadi; tanlangan kategoriya ro'yxatdan yo'qolsa (o'chirilgan) qiymat tozalanadi va
  * qaytadan tanlash so'raladi.
  *
- * «Chek rasmi» (QlLf33Ma) — FAQAT `variant="spend"`, kategoriya va izoh orasida (`receipt/ReceiptField`, sozlama
+ * «Chek rasmi» (QlLf33Ma) — FAQAT `variant="spend"` va FAQAT «Karta (Click)» tanlanganda (BE-C, 2026-11-10: naqd
+ * chiqimda chek yo'q), kategoriya va izoh orasida (`receipt/ReceiptField`, sozlama
  * `manual_expense`): rasm yoqiq — maydon majburiy, rasmsiz forma yuborilmaydi; o'chiq — maydon va tasdiqdagi «Chek»
- * qatori yo'q. Yuklanayotganda «Xarajatni saqlash» o'chiq. Payload'ga `receipt_id`; tasdiqda «Chek: Biriktirildi».
+ * qatori yo'q. Naqdda maydon yo'q va `receipt_id` yuborilmaydi (rasm yoqiq bo'lsa ham).
+ * Yuklanayotganda «Xarajatni saqlash» o'chiq. Payload'ga `receipt_id`; tasdiqda «Chek: Biriktirildi».
  * Operatsiya `RECEIPT_*` bilan rad etilsa `onSubmit` `{ receiptError }` qaytaradi — xato maydon ostida, oyna ochiq.
  *
  * «Qaysi kartaga / kartadan» (cards1111b, `withCards`) — «Karta (Click)» tanlanganda, kassada nomli faol karta bo'lsa
@@ -169,9 +171,6 @@ const CashboxFormPopup = ({
     const submittingRef = useRef(false);
     // Xarajat kategoriyasi — faqat chiqimda (va u yerda majburiy).
     const withCategory = variant === "spend";
-    // Chek rasmi — faqat chiqimda (kirimda maydon ham, sozlama so'rovi ham yo'q).
-    const receipt = useReceiptField({ kind: withCategory ? "manual_expense" : null, active: isOpen });
-    const { reset: resetReceipt } = receipt;
 
     // Xato matnlari chaqiruvchidan (maketdagi izoh matni) yoki eski kalitlar.
     const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
@@ -219,6 +218,16 @@ const CashboxFormPopup = ({
     const cardPicker = useCashboxCardPicker({ enabled: isOpen && withCards });
     const selectedType = watch("type");
     const showCards = withCards && selectedType === "click" && cardPicker.available;
+    // Chek rasmi — faqat chiqimda va faqat «Karta (Click)» da (BE-C, ega 2026-11-10: naqd chiqimda chek yo'q, backend
+    // naqd + `receipt_id` ni 400 `RECEIPT_NOT_APPLICABLE` bilan rad etadi). Kirimda maydon ham, sozlama so'rovi ham
+    // yo'q. Sozlama oyna ochilganda o'qiladi (Karta tanlanganda maydon skeletsiz chiqadi); Naqdga qaytilsa qoralama
+    // saqlanadi, lekin `receipt_id` yuborilmaydi va rasm talab qilinmaydi.
+    const receipt = useReceiptField({
+        kind: withCategory ? "manual_expense" : null,
+        active: isOpen && selectedType === "click",
+        prefetch: isOpen,
+    });
+    const { reset: resetReceipt } = receipt;
     const busy = isLoading;
     /** Rasm yuklanmoqda yoki sozlama o'qilmoqda — saqlash kutadi. */
     const receiptBusy = receipt.busy;
