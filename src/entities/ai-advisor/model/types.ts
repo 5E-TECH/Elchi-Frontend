@@ -68,9 +68,9 @@ export interface AiConversationList {
 }
 
 /**
- * Suhbat xabari. Assistant qatorida `stop`: `end_turn | max_steps | truncated` — javob; boshqasi (`refused`,
- * `network`, `limit`, `cap_exceeded`, `disabled`, `other` …) — backend xato matnini javob o'rnida saqlagan
- * (`messageKind.ts`).
+ * Suhbat xabari. Assistant qatorida `stop`: `end_turn | max_steps | truncated` — javob (`truncated` matnsiz kesilgan
+ * bo'lsa — javobsiz); boshqasi (`refused`, `network`, `limit`, `cap_exceeded`, `disabled`, `other` …) — backend xato
+ * matnini javob o'rnida saqlagan (`messageKind.ts`).
  */
 export interface AiMessage {
   id: string;

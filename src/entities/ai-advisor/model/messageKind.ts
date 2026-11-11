@@ -14,8 +14,23 @@ export type AiMessageKind = "user" | "answer" | "failed";
 export const isAnswerStop = (stop: string | null | undefined) =>
   stop == null || stop === "" || (ANSWER_STOPS as readonly string[]).includes(stop);
 
-export const messageKind = (message: Pick<AiMessage, "role" | "stop">): AiMessageKind => {
+/**
+ * `truncated` ikki xil qator: javob (matn bor — oxirida «_(Javob qisqartirildi.)_») va javobsiz yakun (model matnsiz
+ * kesildi — backend matn o'rniga `ERROR_MESSAGES.truncated` ni, `stop_reason: truncated` bilan yozadi;
+ * ai-service `assistant.service.ts`). Backend ularni alohida `stop` bilan ajratmaguncha matn bo'yicha: bo'sh yoki
+ * aynan shu xato matni — javobsiz. Boshqa har matn javob (haqiqiy javobni yashirib qo'yish xato matnini javob deb
+ * ko'rsatishdan yomonroq).
+ */
+export const TRUNCATED_FAILURE_TEXT = "Javob juda uzun chiqdi — savolni toraytiring";
+
+const isTruncatedFailure = (text: string | null | undefined) => {
+  const value = (text ?? "").replace(/\s+/g, " ").trim();
+  return value === "" || value === TRUNCATED_FAILURE_TEXT;
+};
+
+export const messageKind = (message: Pick<AiMessage, "role" | "stop" | "text">): AiMessageKind => {
   if (message.role === "user") return "user";
+  if (message.stop === "truncated" && isTruncatedFailure(message.text)) return "failed";
   return isAnswerStop(message.stop) ? "answer" : "failed";
 };
 

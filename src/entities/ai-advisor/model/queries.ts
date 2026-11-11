@@ -73,5 +73,14 @@ export const invalidateAiAfterQuestion = (
   return Promise.all(jobs);
 };
 
+/**
+ * `access/me` ni hozir qayta so'rash (429 / 503 dan keyin). `meta` hook bilan bir xil: `fetchQuery` so'rov sozlamasini
+ * shu chaqiruvnikiga almashtiradi — `silentError` siz xato global «Ma'lumotni yuklab bo'lmadi» xabarini chiqarardi.
+ */
 export const refetchAiAccessMe = (queryClient: QueryClient) =>
-  queryClient.fetchQuery({ queryKey: queryKeys.aiAssistant.accessMe, queryFn: getAiAccessMe, staleTime: 0 });
+  queryClient.fetchQuery({
+    queryKey: queryKeys.aiAssistant.accessMe,
+    queryFn: getAiAccessMe,
+    staleTime: 0,
+    meta: { silentError: true },
+  });
