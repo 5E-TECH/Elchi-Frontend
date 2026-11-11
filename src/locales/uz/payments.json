@@ -883,7 +883,10 @@
       "notEnough": "Kassa yetarli emas",
       "meterLabel": "Berilishi kerak summa kassadagi summaga nisbatan",
       "payableShare": "Berilishi kerak · {{share}}",
-      "remains": "Kassada qoladi · {{amount}}"
+      "remains": "Kassada qoladi · {{amount}}",
+      "hqDebt": "HQ qarzi (filialga)",
+      "hqDebtManager": "HQ'dan olinishi kerak",
+      "hqDebtHint": "HQ qarzidan ortiq qabul qilgan — keyingi sotuvlar uni yopadi"
     },
     "form": {
       "courierTitle": "Kuryerdan qabul qilish",

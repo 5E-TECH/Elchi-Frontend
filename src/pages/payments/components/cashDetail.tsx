@@ -182,6 +182,16 @@ const findBranchPayable = (branches: unknown, branchId: string | undefined): num
   return value === undefined || value === null ? undefined : toNumber(value);
 };
 
+/**
+ * GET /branches qatoridan HQ'ning shu filialga qarzi (`hq_qarzi`, ≥ 0): «Kassa qarzga ishlaydi» filialidan HQ qarzidan
+ * ortiq qabul qilgan. Topilmasa — 0.
+ */
+const findBranchHqDebt = (branches: unknown, branchId: string | undefined): number => {
+  if (!branchId || !Array.isArray(branches)) return 0;
+  const row = branches.find((branch) => String(asRecord(branch).id ?? "") === String(branchId));
+  return row ? Math.max(toNumber(asRecord(row).hq_qarzi), 0) : 0;
+};
+
 /** GET /branches qatoridan filial nomi (state'siz ochilganda sarlavha uchun). */
 const findBranchName = (branches: unknown, branchId: string | undefined): string | undefined => {
   if (!branchId || !Array.isArray(branches)) return undefined;
@@ -1384,6 +1394,13 @@ const CashDetail = () => {
   const managerKassa = asRecord(managerSettlement.kassa);
   const managerKassaTotal = isManagerBranchView ? toOptionalNumber(managerKassa.total) : undefined;
   const managerReceivable = toOptionalNumber(managerSettlement.olinishi_kerak);
+  // HQ'ning filialga qarzi (HQ qarzidan ortiq qabul qilgan, «Kassa qarzga ishlaydi»): HQ ko'rinishida GET /branches
+  // qatoridan, menejerda settlement'dan. Ikkalasida ham asosiy son («Qabul qilinishi kerak» / «Berilishi kerak») 0.
+  const hqDebt = isHqBranchView
+    ? findBranchHqDebt(hqBranchesQuery.data?.data, id)
+    : isManagerBranchView
+      ? Math.max(toOptionalNumber(managerSettlement.hq_qarzi) ?? 0, 0)
+      : 0;
 
   // Amal formasi matnlari (maket).
   const typedAmount = parseAmountInput(watch("amount"));
@@ -1582,6 +1599,17 @@ const CashDetail = () => {
       <div className="flex flex-col gap-1">
         <span className="text-[13px] font-semibold text-text-muted">{balanceLabel}</span>
         <MoneyFigure value={displayBalance} hidden={!balanceVisible} />
+        {hqDebt > 0 ? (
+          <div className="mt-2 flex flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2" data-testid="hq-debt">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-semibold text-text">
+                {isManagerBranchView ? t("v2CashDetail.settlement.hqDebtManager") : t("v2CashDetail.settlement.hqDebt")}
+              </span>
+              <span className="whitespace-nowrap font-semibold text-text">{money(hqDebt)}</span>
+            </div>
+            <span className="text-xs text-text-muted">{t("v2CashDetail.settlement.hqDebtHint")}</span>
+          </div>
+        ) : null}
         {balanceVisible && courierDayChange ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
             <DeltaChip

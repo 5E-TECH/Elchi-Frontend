@@ -21,6 +21,10 @@ export interface Branch {
   olinishi_kerak?: number;
   berilishi_kerak?: number;
   kassadagi_summa?: number;
+  /** HQ'ning shu filialga qarzi (≥ 0): HQ qarzidan ortiq qabul qilgan («Kassa qarzga ishlaydi»). */
+  hq_qarzi?: number;
+  /** Filial kassasi qarzga ishlaydimi (`PATCH /branches/:id`, faqat admin/superadmin; sukut `false`). */
+  cashbox_debt_enabled?: boolean;
 }
 
 export interface Employee {
