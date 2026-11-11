@@ -762,8 +762,9 @@ const CashDetail = () => {
   const isStoreTransfer = selectedPaymentType === "click_to_market";
   /**
    * CHEK RASMI (QlLf33Ma, 7-bosqich): faqat superadmin/admin'ning HQ'ga qabulida — kuryer (HQ) va filial sahifasi —
-   * va faqat «O'tkazma» (`click`) da. Naqd, «Marketga o'tkazma» va menejerning kuryer qabulida maydon YO'Q (backend
-   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat `click` da yuboriladi;
+   * «O'tkazma» (`click`) va «Marketga o'tkazma» (`click_to_market`, Dilshod 2026-11-12) da: `hq_transfer` «chek talab
+   * qilish» sozlamasi ikkalasiga bir xil ta'sir qiladi. Naqd va menejerning kuryer qabulida maydon YO'Q (backend
+   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat shu ikki usulda yuboriladi;
    * `receipt_id` idempotentlik barmoq iziga KIRMAYDI.
    */
   const receiptKind: ReceiptKind | null = isCurrentManagerRole
@@ -773,7 +774,11 @@ const CashDetail = () => {
       : type === "branch"
         ? "branch_to_hq"
         : null;
-  const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
+  const receipt = useReceiptField({
+    kind: receiptKind,
+    active: selectedPaymentType === "click" || selectedPaymentType === "click_to_market",
+    prefetch: true,
+  });
   const { reset: resetReceipt } = receipt;
   /**
    * KARTA (cards1111b — BeePost kabi): «O'tkazma» (`click`) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi.
@@ -1202,7 +1207,7 @@ const CashDetail = () => {
       const branchId = id;
       if (!branchId) return;
       // «Marketga o'tkazma» (ega 2026-11-11): filial pulni marketga o'tkazgan — `market_id` majburiy (barmoq izida
-      // ham); chek va karta yo'q (`receiptBody` / `cardBody` faqat `click` da to'ladi).
+      // ham); karta yo'q (`cardBody` faqat `click` da to'ladi), chek — «O'tkazma» dagidek (`receiptBody`, 2026-11-12).
       const isMarketTransfer = values.paymentType === "click_to_market";
       const payment = {
         branch_id: branchId,

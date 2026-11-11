@@ -1452,8 +1452,8 @@
         },
         "hq_transfer": {
           "title": "Kuryer va filialdan HQ'ga o'tkazma",
-          "hint": "Faqat «O'tkazma» to'lovida",
-          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "hint": "«O'tkazma» va «Marketga o'tkazma» to'lovlarida",
+          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada («O'tkazma» va «Marketga o'tkazma») chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
           "offField": "Qabul formasida «Chek rasmi» maydoni ko'rinmaydi, o'tkazma cheksiz qabul qilinadi"
         }
       },

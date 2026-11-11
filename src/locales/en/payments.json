@@ -1453,8 +1453,8 @@
         },
         "hq_transfer": {
           "title": "Transfer from courier and branch to HQ",
-          "hint": "Only for «Transfer» payments",
-          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ. The change takes effect when you press «Save».",
+          "hint": "For «Transfer» and «Transfer to market» payments",
+          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ («Transfer» and «Transfer to market»). The change takes effect when you press «Save».",
           "offField": "The «Receipt photo» field disappears from the acceptance form, the transfer is accepted without a receipt"
         }
       },
