@@ -1121,6 +1121,7 @@
         "needBoth": "Choose a screenshot and enter the app balance",
         "needPhoto": "Choose a screenshot",
         "needBalance": "Enter the app balance",
+        "needComment": "Explain the difference in the comment",
         "commentHint": "The balance differs from the system — a comment is required",
         "commentError": "There is a difference — explain it in the comment",
         "submit": "Upload",

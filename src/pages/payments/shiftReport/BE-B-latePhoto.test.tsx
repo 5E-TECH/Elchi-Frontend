@@ -246,7 +246,7 @@ describe("ShiftReportPage — BE-B photo status", () => {
 });
 
 describe("ShiftReportPage — BE-B late upload dialog", () => {
-  it("blocks «Yuklash» until photo and balance; a difference makes the comment required", async () => {
+  it("blocks «Yuklash» until photo, balance and (on a difference) the comment — each with its reason", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render();
     const dialog = await openDialog(user);
@@ -270,11 +270,18 @@ describe("ShiftReportPage — BE-B late upload dialog", () => {
     expect(within(dialog).getByTestId("late-photo-block-reason")).toHaveTextContent("Ilovadagi qoldiqni kiriting");
 
     await user.type(within(dialog).getByLabelText(/Ilovadagi qoldiq/), "1760000");
-    expect(submit).toBeEnabled();
     expect(within(dialog).getByText("−90 000 so'm")).toBeInTheDocument();
-    // Farq bor — izoh majburiy, bo'sh izoh bilan so'rov ketmaydi.
-    await user.click(submit);
-    expect(await within(dialog).findByText("Farq bor — sababini izohga yozing")).toBeInTheDocument();
+    // Farq bor — izoh majburiy: rasm va qoldiq kabi «Yuklash» o'chiq, sababi tugmalar yonida (oyna tanasi pastida
+    // yashiringan maydon xatosiga tayanmaydi).
+    expect(submit).toBeDisabled();
+    expect(within(dialog).getByTestId("late-photo-block-reason")).toHaveTextContent("Farq sababini izohga yozing");
+    expect(submit).toHaveAccessibleDescription("Farq sababini izohga yozing");
+    expect(within(dialog).getByText("Qoldiq tizimdagidan farq qiladi — izoh majburiy")).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/Izoh/), "Bank komissiyasi");
+    expect(submit).toBeEnabled();
+    expect(within(dialog).queryByTestId("late-photo-block-reason")).not.toBeInTheDocument();
+    await user.clear(within(dialog).getByLabelText(/Izoh/));
+    expect(submit).toBeDisabled();
     expect(http.post).not.toHaveBeenCalled();
   });
 
@@ -377,8 +384,13 @@ describe("ShiftReportPage — BE-B late upload dialog", () => {
       expect(within(alert).getByText(message)).toBeInTheDocument();
       if ("deadline" in extra) expect(alert).toHaveTextContent("Muddat: Bugun, 18:00");
       expect(screen.getByRole("dialog", { name: "Rasmni keyin yuklash" })).toBeInTheDocument();
-      // Qayta urinish foyda bermaydi — «Yuklash» o'chadi.
+      // Qayta urinish foyda bermaydi — «Yuklash» va maydonlar o'chadi, faqat «Bekor qilish».
       expect(within(dialog).getByRole("button", { name: "Yuklash" })).toBeDisabled();
+      expect(within(dialog).getByLabelText(/Ilovadagi qoldiq/)).toBeDisabled();
+      expect(within(dialog).getByLabelText(/Izoh/)).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "Rasmni almashtirish" })).toBeDisabled();
+      expect(within(dialog).queryByTestId("late-photo-block-reason")).not.toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Bekor qilish" })).toBeEnabled();
       await waitFor(() => expect(reportReads()).toBeGreaterThan(reads));
       await waitFor(() =>
         expect(screen.queryByRole("button", { name: "Rasm yuklash: Humo virtual" })).not.toBeInTheDocument(),
@@ -398,8 +410,11 @@ describe("ShiftReportPage — BE-B late upload dialog", () => {
     await user.click(within(dialog).getByRole("button", { name: "Yuklash" }));
     expect(await within(dialog).findByText(message)).toBeInTheDocument();
     expect(within(dialog).getByText("Farq bor — sababini izohga yozing")).toBeInTheDocument();
-    // 400 — qayta urinish mumkin (izoh yozilgach), hisobot qayta o'qilmaydi.
-    expect(within(dialog).getByRole("button", { name: "Yuklash" })).toBeEnabled();
+    // 400 — qayta urinish mumkin (izoh yozilgach): hozircha «Yuklash» o'chiq va sababi yonida; maydonlar ochiq,
+    // hisobot qayta o'qilmaydi.
+    expect(within(dialog).getByRole("button", { name: "Yuklash" })).toBeDisabled();
+    expect(within(dialog).getByTestId("late-photo-block-reason")).toHaveTextContent("Farq sababini izohga yozing");
+    expect(within(dialog).getByLabelText(/Izoh/)).toBeEnabled();
     expect(reportReads()).toBe(reads);
 
     await user.type(within(dialog).getByLabelText(/Izoh/), "Kassir yuklamagan");

@@ -1120,6 +1120,7 @@
         "needBoth": "Skrinshot tanlang va ilovadagi qoldiqni kiriting",
         "needPhoto": "Skrinshot tanlang",
         "needBalance": "Ilovadagi qoldiqni kiriting",
+        "needComment": "Farq sababini izohga yozing",
         "commentHint": "Qoldiq tizimdagidan farq qiladi — izoh majburiy",
         "commentError": "Farq bor — sababini izohga yozing",
         "submit": "Yuklash",

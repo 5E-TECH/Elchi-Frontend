@@ -466,6 +466,9 @@ const ReportBody = ({
             rows={accounts}
             columns={columns}
             getRowKey={(row) => row.card_id}
+            // BE-B: «Rasm» ustunida belgi + muddat + «Rasm yuklash» — ustun kengayadi; amallar ustunli jadval kabi zich
+            // (ichki katak 8 px), aks holda planshet va sidebar'li 1024 da «Farq» skroll ortiga o'tib ketardi.
+            density={accounts.some((row) => row.photo_status) ? "tight" : "default"}
             label={t("shiftCheck.report.accounts.label")}
             renderCard={renderAccountCard}
             cardsLabel={t("shiftCheck.report.accounts.label")}

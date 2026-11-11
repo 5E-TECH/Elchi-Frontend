@@ -29,8 +29,10 @@ test("superadmin: avto-yopilgan smenaga kartaning rasmi keyin yuklanadi", async 
   await expect(dialog.getByRole("img", { name: "Humo virtual skrinshoti" })).toBeVisible();
   await dialog.getByLabel(/^Ilovadagi qoldiq/).fill("1760000");
   await expect(dialog).toContainText("−90 000 so'm");
-  await dialog.getByRole("button", { name: "Yuklash" }).click();
-  await expect(dialog.getByText("Farq bor — sababini izohga yozing")).toBeVisible();
+  // Farq bor — izoh yozilmaguncha «Yuklash» o'chiq, sababi tugmalar yonida (ko'rinib turadi).
+  await expect(dialog.getByRole("button", { name: "Yuklash" })).toBeDisabled();
+  await expect(dialog.getByTestId("late-photo-block-reason")).toHaveText("Farq sababini izohga yozing");
+  await expect(dialog.getByTestId("late-photo-block-reason")).toBeInViewport();
   expect(mock.uploads).toEqual([]);
 
   await dialog.getByLabel(/^Izoh/).fill("Bank komissiyasi");
@@ -76,6 +78,9 @@ test("superadmin: muddat o'tgan (409) — backend matni oynada, hisobot qayta o'
   await expect(alert).toContainText(/Muddat: /);
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Yuklash" })).toBeDisabled();
+  // Qayta urinish foydasiz — maydonlar ham o'chiq, faqat «Bekor qilish».
+  await expect(dialog.getByLabel(/^Ilovadagi qoldiq/)).toBeDisabled();
+  await expect(dialog.getByLabel(/^Izoh/)).toBeDisabled();
   await expect.poll(() => mock.reportReads).toBeGreaterThan(reads);
   await expect(page.getByRole("button", { name: /^(Rasm yuklash|Qayta yuklash):/ })).toHaveCount(0);
   expect(mock.uploads).toHaveLength(1);
@@ -92,5 +97,25 @@ test("menejer: holat va muddat ko'rinadi, «Rasm yuklash» yo'q", async ({ page 
   await expect(humo).toContainText("Rasm kutilmoqda", { timeout: 30_000 });
   await expect(humo).toContainText(/\d{2}:\d{2} gacha/);
   await expect(page.getByRole("button", { name: /^(Rasm yuklash|Qayta yuklash):/ })).toHaveCount(0);
+  expect(mock.leaked).toEqual([]);
+});
+
+test("planshet (768) va sidebar'li 1024: rasm ustuni kengaysa ham «Farq» ko'rinadi", async ({ page }) => {
+  const mock = await mockShiftLatePhoto(page);
+  mock.accounts[0] = { ...mock.accounts[0], late_uploaded: true };
+  for (const width of [768, 1024]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/payments/shifts/31");
+    const table = page.getByRole("table", { name: "Kartalar bo'yicha natijalar" });
+    await expect(table).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Qayta yuklash: Asosiy karta" })).toBeVisible();
+    const fit = await table.evaluate((element) => {
+      const wrap = element.parentElement as HTMLElement;
+      const box = wrap.getBoundingClientRect();
+      const farq = Array.from(element.querySelectorAll("th")).find((th) => th.textContent?.trim() === "Farq");
+      return { farqRight: (farq?.getBoundingClientRect().right ?? Infinity) - box.left, width: wrap.clientWidth };
+    });
+    expect(fit.farqRight, `${width}px`).toBeLessThanOrEqual(fit.width);
+  }
   expect(mock.leaked).toEqual([]);
 });

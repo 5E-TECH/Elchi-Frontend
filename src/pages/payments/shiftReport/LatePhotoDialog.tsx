@@ -1,6 +1,6 @@
 // dizayn-v2: (maket yo'q) superadmin-payments-main-cashbox-shift-dialog-accounts
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { CircleAlert, ImagePlus, RefreshCw, Upload } from "lucide-react";
+import { CircleX, ImagePlus, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   isAccountCommentRequired,
@@ -36,10 +36,12 @@ import { useLateDeadlineText } from "./photoStatusMeta";
  *    (`prepareShiftPhotoWithPreview`, smena yopishdagi yo'l) va ko'rinishi chiqadi.
  *  - «Ilovadagi qoldiq *» (`TextInput mode="money"`, `0` ham qiymat) — ostida farq; kiritilgan ≠ tizim bo'yicha bo'lsa
  *    «Izoh *» majburiy (backend qoidasi; kassirning yopishdan oldingi izohi hisobga olinmaydi), ≤ 1000 belgi.
- *  - Rasm va qoldiq bo'lmaguncha «Yuklash» o'chiq, sababi tugmalar yonida.
+ *  - Rasm, qoldiq va (farq bo'lsa) izoh bo'lmaguncha «Yuklash» o'chiq, sababi tugmalar yonida — uchala majburiy
+ *    maydon bir xil qoida bilan.
  *  - Xato (409 `SHIFT_LATE_PHOTO_NOT_AUTO_CLOSED` / `SHIFT_LATE_PHOTO_EXPIRED` + muddat, 404 `…_CARD_NOT_IN_SHIFT`,
  *    400 izoh, 403) — backend matni AYNAN oyna ichida, oyna ochiq qoladi; 409 / 404 da hisobot qayta o'qiladi
- *    (`useUploadShiftLatePhoto`), qayta urinish foyda bermaydigan xatoda «Yuklash» o'chadi.
+ *    (`useUploadShiftLatePhoto`). Qayta urinish foyda bermaydigan xatoda «Yuklash» va maydonlar o'chadi — faqat
+ *    xato matni va «Bekor qilish» qoladi.
  *  - 201 — «Rasm yuklandi», oyna yopiladi, hisobot qatori javobdagi qator bilan almashadi va qayta o'qiladi.
  */
 
@@ -115,7 +117,11 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
         ? t("shiftCheck.report.late.needPhoto")
         : entered === null
           ? t("shiftCheck.report.late.needBalance")
-          : null;
+          : commentMissing
+            ? t("shiftCheck.report.late.needComment")
+            : null;
+  /** Maydonlar: yuborilayotganda yoki qayta urinish foydasiz xatodan keyin o'chiq. */
+  const locked = busy || blocked;
 
   const pickPhoto = async (file: File) => {
     setPhotoIssue(null);
@@ -207,8 +213,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
             </Button>
             <Button
               type="submit"
-              leftIcon={Upload}
-              disabled={!ready || blocked}
+              disabled={!ready || blocked || commentMissing}
               loading={busy}
               loadingText={t("shiftCheck.accounts.uploading")}
               aria-describedby={blockReason ? reasonId : undefined}
@@ -226,7 +231,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
           data-testid="late-photo-error"
           className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.danger)}
         >
-          <CircleAlert aria-hidden="true" size={18} className="mt-px shrink-0" />
+          <CircleX aria-hidden="true" size={18} className="mt-px shrink-0" />
           <span className="flex min-w-0 flex-col gap-0.5 text-text">
             <span className="font-semibold">{serverError.message}</span>
             {serverError.deadline ? (
@@ -292,7 +297,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
                   variant="ghost"
                   label={t("shiftCheck.accounts.replace")}
                   onClick={() => inputRef.current?.click()}
-                  disabled={busy}
+                  disabled={locked}
                 />
               </div>
             </>
@@ -304,7 +309,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
               onClick={() => inputRef.current?.click()}
               loading={preparing}
               loadingText={t("shiftCheck.report.late.preparing")}
-              disabled={busy}
+              disabled={locked}
             >
               {t("shiftCheck.report.late.choose")}
             </Button>
@@ -331,7 +336,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
             onValueChange={setEnteredInput}
             placeholder="0"
             autoComplete="off"
-            disabled={busy}
+            disabled={locked}
           />
         </Field>
         {difference !== null ? (
@@ -367,7 +372,7 @@ const LatePhotoDialog = ({ open, shiftId, row, onClose, onExited }: LatePhotoDia
           maxLength={SHIFT_LATE_PHOTO_COMMENT_MAX}
           value={comment}
           onValueChange={setComment}
-          disabled={busy}
+          disabled={locked}
           placeholder={
             commentRequired
               ? t("shiftCheck.accounts.commentPlaceholder")
