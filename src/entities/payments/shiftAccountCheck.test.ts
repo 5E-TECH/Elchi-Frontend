@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   deriveEnteredOk,
+  effectiveShiftCardFlags,
   evaluateShiftAccountRow,
   isAccountCommentRequired,
   normalizeShiftCheckSettings,
@@ -85,5 +86,64 @@ describe("shift account check rules (kiZgTybn)", () => {
     expect(report?.accounts[0]).toMatchObject({ expected_balance: 2_140_000, ai_status: "not_required" });
     expect(report?.operations[0]).toEqual({ operation_type: "income", payment_method: "cash", count: 3, total: 1500 });
     expect(normalizeShiftReport({ data: {} })).toBeNull();
+  });
+
+  it("BE-A: both account-check switches, cashbox type and server-computed card requirement are read", () => {
+    const settings = normalizeShiftCheckSettings({
+      data: {
+        account_check_enabled: true,
+        main_account_check_enabled: true,
+        branch_account_check_enabled: false,
+        photo_required: true,
+        ai_check_enabled: true,
+        cashbox_user_id: "0",
+        cashbox_type: "main",
+        cards: [
+          // Server hisoblagani ustun: karta bayrog'i yoqiq, lekin hisoblangan `false` — `false`.
+          { card_id: "1", name: "Asosiy karta", require_photo_on_shift_close: true, ai_check_enabled: true, photo_required: false, ai_enabled: false },
+          { card_id: "2", name: "Humo", require_photo_on_shift_close: true, ai_check_enabled: true, photo_required: true, ai_enabled: true },
+        ],
+      },
+    });
+    expect(settings).toMatchObject({
+      account_check_enabled: true,
+      main_account_check_enabled: true,
+      branch_account_check_enabled: false,
+      cashbox_type: "main",
+    });
+    expect(settings.cards.map((card) => [card.photo_required, card.ai_enabled])).toEqual([
+      [false, false],
+      [true, true],
+    ]);
+  });
+
+  it("BE-A, old backend: new switches are null and the card requirement falls back to master && card flag", () => {
+    const settings = normalizeShiftCheckSettings({
+      data: {
+        account_check_enabled: true,
+        photo_required: true,
+        ai_check_enabled: false,
+        cards: [
+          { card_id: "1", name: "Asosiy karta", require_photo_on_shift_close: true, ai_check_enabled: true },
+          { card_id: "2", name: "Hisob raqam", require_photo_on_shift_close: false, ai_check_enabled: false },
+        ],
+      },
+    });
+    expect(settings.main_account_check_enabled).toBeNull();
+    expect(settings.branch_account_check_enabled).toBeNull();
+    expect(settings.cashbox_type).toBeNull();
+    // Rasm: master yoqiq && karta; AI: master o'chiq — hech qaysi kartada yo'q.
+    expect(settings.cards.map((card) => [card.photo_required, card.ai_enabled])).toEqual([
+      [true, false],
+      [false, false],
+    ]);
+    expect(effectiveShiftCardFlags({ require_photo_on_shift_close: true }, { photo_required: false, ai_check_enabled: true })).toEqual({
+      photo_required: false,
+      ai_enabled: false,
+    });
+    expect(effectiveShiftCardFlags({ photo_required: "true", ai_enabled: "false" }, { photo_required: false, ai_check_enabled: false })).toEqual({
+      photo_required: true,
+      ai_enabled: false,
+    });
   });
 });

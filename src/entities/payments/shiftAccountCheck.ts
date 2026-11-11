@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
+import { prepareImage } from "../../shared/lib/downscaleImage";
 
 /**
  * SMENA YOPILISHI: HAR KARTA / HISOB QOLDIG'INI TASDIQLASH (kiZgTybn, backend `docs/frontend/FRONTEND_CHANGELOG.md`
@@ -15,6 +16,13 @@ import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
  *    shu yerdan o'qiladi), `accounts_summary`, `operations[]`;
  *  - realtime `finance.shift.account_checked` → `[shift]` so'rovlari qayta o'qiladi (`app/providers/realtimeFinance`),
  *    ya'ni oynadagi AI holati jonli yangilanadi; socket bo'lmasa — `pending` paytida 5 s lik so'rov.
+ *
+ * BE-A (2026-11-10, backend PR #625): tasdiqlash endi kassa turiga qarab — ASOSIY kassa kaliti
+ * (`shift.account_check.enabled`, sukut yoqiq) va FILIALLAR kaliti (`shift.account_check.branch_enabled`, sukut o'chiq).
+ * GET javobidagi `account_check_enabled` — so'ralgan kassa uchun AMALDAGI qiymat (yopish oynasi shuni ishlatadi),
+ * `main_account_check_enabled` / `branch_account_check_enabled` — ikkala global kalit (sozlamalar sahifasi). Eski backend
+ * bu maydonlarni bermaydi — `null` (sahifa filial kalitini chizmaydi). Karta talabi — serverning hisoblagani
+ * (`cards[].photo_required` / `ai_enabled`), bo'lmasa `master && karta bayrog'i` (`effectiveShiftCardFlags`).
  *
  * 2026-10-26 (y8Tqm9Ap, gWI4gYkw): sozlamalarda `auto_close` (`enabled`, `times[]` — Toshkent `HH:MM`, `scope`,
  * `warn_before_min`) va `report` (`recipients` superadmin / couriers / markets × `telegram` / `in_app`, `format`
@@ -50,7 +58,10 @@ export const SHIFT_PENDING_POLL_MS = 5000;
  * kelsa — holat baribir yangilanadi; rasm qayta yuklansa (`photo_uploaded_at` yangi) hisob qaytadan boshlanadi.
  */
 export const SHIFT_PENDING_MAX_MS = 3 * 60_000;
-/** Yopish AI natijasini 30 s gacha kutadi (gateway 45 s) — mijoz kutishi undan uzunroq. */
+/**
+ * Smenani yopish so'rovining kutish muddati — HAR yopishda (kartalar bo'lmasa ham: MAIN da backend «Asosiy karta»ni o'zi
+ * yaratib tekshiradi). AI `pending` bo'lsa backend ~15 s kutadi (ega chegarasi 30 s, gateway 45 s) — mijoz undan uzunroq.
+ */
 export const SHIFT_CLOSE_TIMEOUT_MS = 60_000;
 
 export type ShiftCheckCardSettings = {
@@ -122,7 +133,12 @@ export type ShiftReportSendSettings = {
 };
 
 export type ShiftCheckSettings = {
+  /** SHU kassa (so'ralgan `cashbox_user_id`) uchun amaldagi qiymat — yopish oynasi shuni ishlatadi. */
   account_check_enabled: boolean;
+  /** BE-A: ASOSIY kassa kaliti (`shift.account_check.enabled`); eski backend — `null`. */
+  main_account_check_enabled: boolean | null;
+  /** BE-A: FILIALLAR kaliti (`shift.account_check.branch_enabled`); eski backend — `null` (sahifada kalit chizilmaydi). */
+  branch_account_check_enabled: boolean | null;
   photo_required: boolean;
   ai_check_enabled: boolean;
   cashbox_user_id: string | null;
@@ -255,7 +271,10 @@ export type CloseShiftAccount = {
 };
 
 export type UpdateShiftSettingsRequest = {
+  /** BE-A: faqat ASOSIY kassa (eski backend — barcha kassalar). */
   account_check_enabled?: boolean;
+  /** BE-A: filial kassalari kaliti. */
+  branch_account_check_enabled?: boolean;
   photo_required?: boolean;
   ai_check_enabled?: boolean;
   cards?: Array<{ card_id: string; require_photo_on_shift_close?: boolean; ai_check_enabled?: boolean }>;
@@ -291,6 +310,22 @@ const text = (value: unknown): string | null => {
 
 const bool = (value: unknown): boolean => value === true || value === "true";
 const boolOrNull = (value: unknown): boolean | null => (typeof value === "boolean" ? value : null);
+/** Javobda bor-yo'qligi muhim maydon: `true` / `false` (satr ham) — qiymat, boshqasi (yo'q) — `null`. */
+const flagOrNull = (value: unknown): boolean | null =>
+  value === true || value === "true" ? true : value === false || value === "false" ? false : null;
+
+/**
+ * Kartaning amaldagi smena talabi: server hisoblagan `photo_required` / `ai_enabled` (`master && karta`) ustun; javobda
+ * yo'q bo'lsa (eski backend) — o'sha qoida mijozda: global `photo_required` && `require_photo_on_shift_close`, global
+ * `ai_check_enabled` && karta `ai_check_enabled`.
+ */
+export const effectiveShiftCardFlags = (
+  card: Record<string, unknown>,
+  masters: { photo_required: boolean; ai_check_enabled: boolean },
+): { photo_required: boolean; ai_enabled: boolean } => ({
+  photo_required: flagOrNull(card.photo_required) ?? (masters.photo_required && bool(card.require_photo_on_shift_close)),
+  ai_enabled: flagOrNull(card.ai_enabled) ?? (masters.ai_check_enabled && bool(card.ai_check_enabled)),
+});
 
 export const toShiftAiStatus = (value: unknown): ShiftAiStatus => {
   const raw = String(value ?? "").toLowerCase();
@@ -366,10 +401,12 @@ export const normalizeShiftCheckSettings = (value: unknown): ShiftCheckSettings 
   const data = payload(value);
   const cards = Array.isArray(data.cards) ? data.cards : [];
   const cashboxType = data.cashbox_type === "main" || data.cashbox_type === "branch" ? data.cashbox_type : null;
+  const masters = { photo_required: bool(data.photo_required), ai_check_enabled: bool(data.ai_check_enabled) };
   return {
     account_check_enabled: bool(data.account_check_enabled),
-    photo_required: bool(data.photo_required),
-    ai_check_enabled: bool(data.ai_check_enabled),
+    main_account_check_enabled: flagOrNull(data.main_account_check_enabled),
+    branch_account_check_enabled: flagOrNull(data.branch_account_check_enabled),
+    ...masters,
     cashbox_user_id: text(data.cashbox_user_id),
     cashbox_type: cashboxType,
     cards: cards
@@ -386,8 +423,7 @@ export const normalizeShiftCheckSettings = (value: unknown): ShiftCheckSettings 
           is_default: bool(card.is_default),
           require_photo_on_shift_close: bool(card.require_photo_on_shift_close),
           ai_check_enabled: bool(card.ai_check_enabled),
-          photo_required: bool(card.photo_required),
-          ai_enabled: bool(card.ai_enabled),
+          ...effectiveShiftCardFlags(card, masters),
         } satisfies ShiftCheckCardSettings;
       })
       .filter((card): card is ShiftCheckCardSettings => card !== null),
@@ -597,18 +633,33 @@ export const validateShiftPhoto = (file: Pick<File, "type" | "size">): "type" | 
   return null;
 };
 
+/**
+ * Skrinshotni yuborishga tayyorlaydi (bphdLYJM): brauzerda kichraytirib ≤ 5 MB JPEG qiladi — telefon surati ko'pincha
+ * 5 MB dan katta (chek rasmidagi `prepareReceiptPhoto` bilan bir xil yo'l). Xato — `PrepareImageError` (sabab bilan).
+ */
+export const prepareShiftPhoto = async (file: File): Promise<File> => {
+  const prepared = await prepareImage(file, { maxBytes: SHIFT_PHOTO_MAX_BYTES });
+  const bytes = Uint8Array.from(atob(prepared.data_base64), (char) => char.charCodeAt(0));
+  return new File([bytes], prepared.name, { type: prepared.media_type });
+};
+
 // ───────────────────────── so'rovlar ─────────────────────────
 
 export const shiftCheckSettingsKey = [shiftKey, "check-settings"] as const;
 export const shiftReportKey = (id: string) => [shiftKey, "report", id] as const;
 export const cashboxCardsKey = [cashboxKey, "cards"] as const;
 
-/** `GET finance/shift/settings` — yopuvchi rollar o'qiydi; xato (403) — tasdiqlash o'chiq deb hisoblanadi. */
-export const useShiftCheckSettings = (enabled = true) =>
+/**
+ * `GET finance/shift/settings` — yopuvchi rollar o'qiydi; xato (403) — tasdiqlash o'chiq deb hisoblanadi. `fresh` —
+ * har yoqilganda serverdan qayta o'qiladi (smena yopish oynasi: kartalar va sozlama oyna ochilgan paytdagi holat bo'lsin,
+ * aks holda yangi karta yoki yoqilgan kalit oynada ko'rinmay, backend 400 qaytaradi).
+ */
+export const useShiftCheckSettings = (enabled = true, { fresh = false }: { fresh?: boolean } = {}) =>
   useQuery({
     queryKey: shiftCheckSettingsKey,
     queryFn: () => api.get(API_ENDPOINTS.CASHBOX.SHIFT_SETTINGS).then((res) => normalizeShiftCheckSettings(res.data)),
     enabled,
+    ...(fresh ? { staleTime: 0, refetchOnMount: "always" as const } : {}),
     meta: { silentError: true },
   });
 
