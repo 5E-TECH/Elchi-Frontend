@@ -2,8 +2,8 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * Menejer — marketga (ega 2026-11-11, BeePost kabi) e2e uchun soxta backend: Urgut filiali menejeri, ochiq smena,
- * filial kassasi va 2 ta karta, marketlar ro'yxati («Berilishi kerak»), market va kuryer kassalari. To'lov POST lari
- * (`payment/market`, `payment/courier`) yoziladi; `backend: "today"` — hozirgi backend (menejerga 403 «Forbidden
+ * filial kassasi va 2 ta karta, marketlar ro'yxati («Berilishi kerak»), market va kuryer kassalari. Pul POST lari
+ * (`payment/market`, `payment/courier`, `cards/transfer`, `cards/convert`) yoziladi; `backend: "today"` — hozirgi backend (menejerga 403 «Forbidden
  * resource»), `"future"` — backend menejerga ochgandagi holat. Ruxsatsiz boshqa yozish — `leaked`.
  */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -55,7 +55,13 @@ export const mockManagerMarketPayments = async (
       );
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
-    if (method === "POST" && (path === "finance/cashbox/payment/market" || path === "finance/cashbox/payment/courier")) {
+    if (
+      method === "POST" &&
+      (path === "finance/cashbox/payment/market" ||
+        path === "finance/cashbox/payment/courier" ||
+        path === "finance/cashbox/cards/transfer" ||
+        path === "finance/cashbox/cards/convert")
+    ) {
       payments.push({ path, body: request.postDataJSON() as Record<string, unknown> });
       if (backend === "today") return reply(route, { statusCode: 403, message: "Forbidden resource", error: "Forbidden" }, 403);
       return reply(route, { statusCode: 201, message: "ok", data: { id: `p${payments.length}` } }, 201);
@@ -80,6 +86,9 @@ export const mockManagerMarketPayments = async (
             { id: "6", name: "Humo Agrobank", balance: 300_000, is_default: false, is_active: true, sort_order: 2 },
           ],
           balance_card: 1_450_000,
+          total_card: 1_450_000,
+          default_balance: 1_150_000,
+          in_sync: true,
         }),
       );
     }

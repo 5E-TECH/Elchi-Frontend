@@ -1805,6 +1805,7 @@
     "title": "Kartalar va hisob raqamlar",
     "subtitle": "{{count}} ta faol · kartaga tushgan to'lov qaysi kartaga tushgani bilan yoziladi",
     "readOnly": "Kartalarni superadmin yoki admin boshqaradi — bu yerda qoldiq va ko'chirmani ko'rasiz.",
+    "moveOnly": "Kartalarni qo'shish va tahrirlash — superadmin yoki admin. Siz kartalar orasida va naqd bilan pul ko'chira olasiz, qoldiq va ko'chirmani ko'rasiz.",
     "actions": {
       "add": "Karta qo'shish",
       "transfer": "Kartalararo o'tkazma",
@@ -1915,6 +1916,7 @@
       "sending": "O'tkazilmoqda…",
       "shiftLocked": "Smena yopiq — pul ko'chirish uchun avval smenani oching.",
       "uncertain": "Javob kelmadi — amal bajarilgan bo'lishi mumkin. Ro'yxat yangilandi; qayta bosish xavfsiz (pul ikki marta o'tmaydi).",
+      "forbidden": "Bu amalga ruxsatingiz yo'q.",
       "replayed": "Bu amal avval bajarilgan edi — qayta o'tkazilmadi"
     },
     "transfer": {

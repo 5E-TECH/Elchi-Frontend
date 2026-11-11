@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
-import { CARD_LIST, OPEN_SHIFT, admin, httpError, money, superadmin } from "../../../../test/cashboxCardFixtures";
+import { CARD_LIST, OPEN_SHIFT, admin, httpError, manager, money, superadmin } from "../../../../test/cashboxCardFixtures";
 import { shiftCheckSettingsKey } from "../../../../entities/payments/shiftAccountCheck";
 import { CashboxCardsDialog } from "./CashboxCardsDialog";
 
@@ -217,6 +217,64 @@ describe("cards1111 — kartalar: yozuvlar", () => {
     const [, body, config] = postCalls("finance/cashbox/cards/convert")[0];
     expect(body).toEqual({ type: "card_to_cash", card_id: "1", amount: 100_000, comment: "Bankomat" });
     expect(config.headers["Idempotency-Key"]).toEqual(expect.any(String));
+  });
+
+  it("⭐ manager (ega 2026-11-11): o'z filiali kartalari orasida o'tkazma — o'sha POST + Idempotency-Key", async () => {
+    const user = userEvent.setup();
+    const dialog = await renderDialog(manager);
+    await user.click(within(dialog).getByRole("button", { name: "Kartalararo o'tkazma" }));
+    const form = await screen.findByRole("dialog", { name: "Kartalararo o'tkazma" });
+
+    await choose(user, form, /Qaysi kartadan/, /Humo virtual/);
+    await choose(user, form, /Qaysi kartaga/, /Asosiy karta/);
+    await user.type(within(form).getByRole("textbox", { name: /Summa/ }), "300000");
+    await user.type(within(form).getByRole("textbox", { name: /Sabab/ }), "Filial kun oxiri");
+    await user.click(within(form).getByRole("button", { name: "O'tkazish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "O'tkazmani tasdiqlang" });
+    await user.click(within(confirm).getByRole("button", { name: "O'tkazish" }));
+
+    await waitFor(() => expect(postCalls("finance/cashbox/cards/transfer")).toHaveLength(1));
+    const [, body, config] = postCalls("finance/cashbox/cards/transfer")[0];
+    expect(body).toEqual({ from_card_id: "2", to_card_id: "1", amount: 300_000, comment: "Filial kun oxiri" });
+    expect(config.headers["Idempotency-Key"]).toEqual(expect.any(String));
+    expect(await screen.findByText("O'tkazma bajarildi")).toBeInTheDocument();
+  });
+
+  it("manager: hozirgi backend 403 «Forbidden resource» — oynada «Bu amalga ruxsatingiz yo'q.»", async () => {
+    http.post.mockRejectedValueOnce(httpError(403, "Forbidden resource"));
+    const user = userEvent.setup();
+    const dialog = await renderDialog(manager);
+    await user.click(within(dialog).getByRole("button", { name: "Kartalararo o'tkazma" }));
+    const form = await screen.findByRole("dialog", { name: "Kartalararo o'tkazma" });
+    await choose(user, form, /Qaysi kartadan/, /Humo virtual/);
+    await choose(user, form, /Qaysi kartaga/, /Asosiy karta/);
+    await user.type(within(form).getByRole("textbox", { name: /Summa/ }), "300000");
+    await user.type(within(form).getByRole("textbox", { name: /Sabab/ }), "Filial kun oxiri");
+    await user.click(within(form).getByRole("button", { name: "O'tkazish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "O'tkazmani tasdiqlang" });
+    await user.click(within(confirm).getByRole("button", { name: "O'tkazish" }));
+
+    expect(await within(confirm).findByText("Bu amalga ruxsatingiz yo'q.")).toBeInTheDocument();
+    expect(screen.queryByText("Forbidden resource")).not.toBeInTheDocument();
+  });
+
+  it("manager: karta → naqd konvertatsiya — o'sha POST", async () => {
+    const user = userEvent.setup();
+    const dialog = await renderDialog(manager);
+    await user.click(within(dialog).getByRole("button", { name: "Karta ↔ Naqd" }));
+    const form = await screen.findByRole("dialog", { name: "Karta ↔ Naqd" });
+    await user.type(within(form).getByRole("textbox", { name: /Summa/ }), "100000");
+    await user.type(within(form).getByRole("textbox", { name: /Sabab/ }), "Bankomat");
+    await user.click(within(form).getByRole("button", { name: "O'tkazish" }));
+    await user.click(within(await screen.findByRole("alertdialog", { name: "Konvertatsiyani tasdiqlang" })).getByRole("button", { name: "O'tkazish" }));
+
+    await waitFor(() => expect(postCalls("finance/cashbox/cards/convert")).toHaveLength(1));
+    expect(postCalls("finance/cashbox/cards/convert")[0][1]).toEqual({
+      type: "card_to_cash",
+      card_id: "1",
+      amount: 100_000,
+      comment: "Bankomat",
+    });
   });
 
   it("delete a zero-balance card: danger confirm → POST {} → «Karta o'chirildi»", async () => {

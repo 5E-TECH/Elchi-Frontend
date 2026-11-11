@@ -80,7 +80,7 @@ import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { isGenericForbiddenError } from "../../../shared/lib/forbiddenError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
@@ -1101,13 +1101,8 @@ const CashDetail = () => {
    * To'lov xatosi matni: backend sababi (o'zbekcha); 403 da backend faqat umumiy inglizcha «Forbidden resource»
    * qaytarsa — tushunarli matn (masalan menejerga «Marketga to'lov» backend ochilguncha).
    */
-  const paymentErrorText = (error: unknown, fallback: string) => {
-    const message = getBackendErrorMessage(error);
-    if (getErrorStatus(error) === 403 && (!message || /^forbidden( resource)?\.?$/i.test(message.trim()))) {
-      return t("paymentForbidden");
-    }
-    return message ?? fallback;
-  };
+  const paymentErrorText = (error: unknown, fallback: string) =>
+    isGenericForbiddenError(error) ? t("paymentForbidden") : (getBackendErrorMessage(error) ?? fallback);
 
   /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi

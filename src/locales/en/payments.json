@@ -1811,6 +1811,7 @@
     "title": "Cards and bank accounts",
     "subtitle": "{{count}} active · a card payment is recorded on the card it arrived to",
     "readOnly": "Cards are managed by a superadmin or admin — here you can see balances and statements.",
+    "moveOnly": "Cards are added and edited by a superadmin or admin. You can move money between cards and cash and see balances and statements.",
     "actions": {
       "add": "Add card",
       "transfer": "Transfer between cards",
@@ -1921,6 +1922,7 @@
       "sending": "Transferring…",
       "shiftLocked": "The shift is closed — open the shift before moving money.",
       "uncertain": "No response — the operation may have gone through. The list was refreshed; pressing again is safe (money will not move twice).",
+      "forbidden": "You are not allowed to do this.",
       "replayed": "This operation was already done — nothing was moved again"
     },
     "transfer": {
