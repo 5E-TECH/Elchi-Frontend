@@ -658,7 +658,6 @@
   "copyOrderNumber": "Скопировать номер",
   "orderNumberCopied": "Номер заказа скопирован",
   "orderNumberCopyFailed": "Не удалось скопировать — номер заказа: {{id}}",
-  "extraCostApprovalNotice": "Дополнительный расход требует подтверждения магазина — до подтверждения статус заказа не изменится.",
   "extraCostApprovalPendingTitle": "Ожидается подтверждение магазина",
   "extraCostApprovalPendingDescription": "Дополнительный расход {{amount}} отправлен магазину на подтверждение. Если магазин подтвердит, действие выполнится автоматически; если отклонит — заказ останется в текущем статусе.",
   "extraCostApprovalBadge": "На подтверждении",
@@ -667,6 +666,24 @@
   "extraCostApprovalActionSell": "Продажа",
   "extraCostApprovalActionPartlySell": "Частичная продажа",
   "extraCostApprovalActionCancel": "Отмена",
+  "extraCostDeferredNoticeSell": "Заказ будет продан сразу. Дополнительный расход оформляется отдельно и ждёт подтверждения маркета. Сдайте наличные полностью: если расход подтвердят, он будет учтён при следующей сдаче.",
+  "extraCostDeferredNoticeCancel": "Заказ будет отменён сразу. Дополнительный расход оформляется отдельно и ждёт подтверждения маркета. Сдайте наличные полностью: если расход подтвердят, он будет учтён при следующей сдаче.",
+  "extraCostReplayNotice": "Дополнительный расход требует подтверждения магазина — до подтверждения статус заказа не изменится.",
+  "extraCostDeferredToast": "Доп. расход {{amount}} ждёт подтверждения маркета",
+  "extraCostDeferredToastItems": "Товары: {{items}}. Сдайте наличные полностью — если расход подтвердят, он будет учтён при следующей сдаче.",
+  "extraCostDeferredToastDescription": "Сдайте наличные полностью — если расход подтвердят, он будет учтён при следующей сдаче.",
+  "extraCostItems": {
+    "entry": "{{name}} ×{{quantity}}",
+    "more": "{{list}} +{{rest}}",
+    "fallback": "Товар #{{id}}",
+    "unknown": "Товар"
+  },
+  "extraCostRequestTag": {
+    "pending": "Расход на подтверждении · {{amount}}",
+    "approved": "Расход подтверждён · {{amount}}",
+    "rejected": "Расход отклонён",
+    "items": "За какой товар: {{items}}"
+  },
   "sortLabel": "Сортировка:",
   "excel": {
     "fileName": "vse_zakazy"
@@ -855,6 +872,11 @@
     "approvalBody": "{{sent}}. Если маркет подтвердит, действие выполнится автоматически.",
     "approvalCompactTitle": "Ожидается подтверждение маркета:",
     "approvalCompact": "доп. расход {{amount}}, {{time}}",
+    "extraCost": {
+      "label": "Дополнительный расход",
+      "items": "Товары: {{items}}",
+      "reason": "Причина: {{reason}}"
+    },
     "productsLockedTitle": "Товары и сумма заблокированы.",
     "productsLockedBody": "После приёма в HQ их нельзя изменить.",
     "productsLockedWarehouseBody": "Товары зарезервированы на складе — их нельзя изменить.",

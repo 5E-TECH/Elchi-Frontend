@@ -286,4 +286,76 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     expect(await screen.findByRole("dialog", { name: "Market tasdig'i kutilmoqda" })).toBeInTheDocument();
     expect(screen.queryByText("Buyurtma sotildi")).not.toBeInTheDocument();
   });
+
+  it("hamkor buyurtmasi (`external_id`) — oynada eski (replay) ogohlantirish, «darhol sotiladi» yo'q", async () => {
+    const user = userEvent.setup();
+    const partner = rows[1] as (typeof rows)[number] & { external_id?: string | null };
+    partner.external_id = "BP-120";
+    try {
+      renderPage();
+      await user.click(rowAction("№10293 ni sotish"));
+      const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+      await user.type(within(dialog).getByLabelText("Qo'shimcha xarajat"), "20000");
+
+      expect(
+        within(dialog).getByText(
+          "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
+        ),
+      ).toBeInTheDocument();
+      expect(within(dialog).queryByText(/darhol sotiladi/)).not.toBeInTheDocument();
+    } finally {
+      delete partner.external_id;
+    }
+  });
+
+  it("⭐ SPEC v2: xarajat alohida (`extra_cost_request`, deferred) — sotildi, oyna yopiladi, «xarajat kutmoqda» xabari", async () => {
+    const user = userEvent.setup();
+    sellMutate.mockImplementation((_vars: unknown, options?: MutateOptions) =>
+      options?.onSuccess?.({
+        statusCode: 201,
+        data: {
+          id: "10293",
+          status: "sold",
+          extra_cost_request: {
+            id: "xc-5",
+            status: "pending",
+            mode: "deferred",
+            action: "sell",
+            amount: 20000,
+            items: [],
+            auto_approve_at: null,
+            created_at: new Date().toISOString(),
+          },
+        },
+      }),
+    );
+    renderPage();
+
+    await user.click(rowAction("№10293 ni sotish"));
+    const dialog = await screen.findByRole("dialog", { name: "Buyurtmani sotish" });
+    await user.type(within(dialog).getByLabelText("Qo'shimcha xarajat"), "20000");
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
+
+    expect(sellMutate).toHaveBeenCalledWith(
+      { orderId: "10293", data: expect.objectContaining({ extraCost: 20000 }) },
+      expect.any(Object),
+    );
+    expect(await screen.findByText("Buyurtma sotildi")).toBeInTheDocument();
+    expect(screen.getByText(/^20\D000 so'm qo'shimcha xarajat market tasdig'ini kutmoqda$/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Market tasdig'i kutilmoqda" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Buyurtmani sotish" })).not.toBeInTheDocument();
+  });
+
+  it("SPEC v2: ro'yxatda sotilgan buyurtma yonida «Xarajat kutilmoqda · 20 000 so'm» (eski «Tasdiqqa yuborilgan» emas)", () => {
+    const sold = rows[0] as (typeof rows)[number] & { extra_cost_request?: unknown };
+    sold.extra_cost_request = { id: "xc-6", status: "pending", mode: "deferred", action: "sell", amount: 20000 };
+    try {
+      renderPage();
+      const tags = screen.getAllByTestId("extra-cost-request-tag");
+      expect(tags[0]).toHaveTextContent(/^Xarajat kutilmoqda · 20\D000 so'm$/);
+      expect(screen.queryByText("Tasdiqqa yuborilgan")).not.toBeInTheDocument();
+    } finally {
+      delete sold.extra_cost_request;
+    }
+  });
 });

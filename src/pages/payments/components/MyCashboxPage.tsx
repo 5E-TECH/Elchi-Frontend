@@ -612,7 +612,12 @@ const MyCashboxPage = () => {
     [language],
   );
   const sourceTitle = useCallback(
-    (row: PaymentRow) => getPaymentSourceTitle(row.source_type, t, { role, cashboxType: row.cashbox_type }),
+    (row: PaymentRow) =>
+      getPaymentSourceTitle(row.source_type, t, {
+        role,
+        cashboxType: row.cashbox_type,
+        paymentMethod: row.payment_method,
+      }),
     [role, t],
   );
   const orderId = (row: PaymentRow) =>

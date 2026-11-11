@@ -4,6 +4,7 @@ import { FileImage } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatOrderRef, ProofGallery } from "../../../entities/order";
 import type { ExtraCostRow } from "../../../entities/orders/extraCosts";
+import { useFormatExtraCostItems } from "../../../entities/orders/extraCostRequest";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Button, Dialog } from "../../../shared/ui/primitives";
 import { extraCostProofSources } from "../model/extraCostsView";
@@ -23,13 +24,19 @@ type Props = {
  * operatoriga ham ochiladi (`files/:key/content` qoidasi bunga yetmaydi).
  *
  * Maket yo'q — eng yaqini buyurtma tafsilotidagi «Dalillar» kartasi (`superadmin-orders-detail`); oyna telefonda pastki
- * varaqa (`Dialog`).
+ * varaqa (`Dialog`). Izohda — amal, summa va (SPEC v2) qaysi tovar uchun.
  */
 export const ExtraCostProofDialog = memo(({ row, open, onClose, onExited }: Props) => {
   const { t, i18n } = useTranslation("extraCosts");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const sources = useMemo(() => extraCostProofSources(row), [row]);
   const ref = formatOrderRef({ id: row.order_id, order_number: row.order_number });
+  const formatItems = useFormatExtraCostItems();
+  const items = formatItems(row.items, row.action);
+  const description = t("proofDescription", {
+    action: t(`action.${row.action}`),
+    amount: formatMoneyLocalized(row.amount, { language }),
+  });
 
   return (
     <Dialog
@@ -38,10 +45,7 @@ export const ExtraCostProofDialog = memo(({ row, open, onClose, onExited }: Prop
       onExited={onExited}
       size="md"
       title={t("proofTitle", { ref })}
-      description={t("proofDescription", {
-        action: t(`action.${row.action}`),
-        amount: formatMoneyLocalized(row.amount, { language }),
-      })}
+      description={items ? `${description} · ${items}` : description}
       icon={FileImage}
       footer={
         <Button variant="secondary" className="max-md:flex-1" onClick={onClose}>

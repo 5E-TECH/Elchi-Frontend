@@ -51,6 +51,7 @@
   },
   "requesterFallback": "#{{id}}",
   "unknownCustomer": "Mijoz ko'rsatilmagan",
+  "items": "Mahsulotlar",
   "openOrder": "Buyurtma {{ref}} ni ochish",
   "proofButton": "Isbot ({{count}})",
   "proofButtonLabel": "Isbot ({{count}}) — {{ref}}",

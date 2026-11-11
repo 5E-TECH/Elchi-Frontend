@@ -1,4 +1,8 @@
 import { useSyncExternalStore } from "react";
+import i18n from "../../i18n";
+import { formatMoneyLocalized } from "../../shared/lib/formatMoney";
+import { notify } from "../../shared/lib/notify";
+import { formatExtraCostItems, readDeferredExtraCostReply, type ExtraCostRequest } from "./extraCostRequest";
 
 export type ExtraCostAction = "sell" | "partly_sell" | "cancel";
 
@@ -41,9 +45,10 @@ export type OrderWithPendingApproval = {
 };
 
 /**
- * extraCost > 0 bo'lsa backend amalni BAJARMAYDI — market tasdig'ini so'raydi va
+ * Eski (`replay`) rejim: extraCost > 0 bo'lsa backend amalni BAJARMAYDI — market tasdig'ini so'raydi va
  * tanada `{ statusCode: 202, data: { approval_required: true } }` qaytaradi,
  * HTTP kodi esa 201. Shuning uchun muvaffaqiyatni HTTP kodga qarab bilib bo'lmaydi.
+ * SPEC v2 (kechiktirilgan xarajat) javobi hech qachon 202 emas — `readDeferredExtraCostReply`.
  */
 export const isExtraCostApprovalResponse = (response: unknown): boolean => {
   if (typeof response !== "object" || response === null) return false;
@@ -190,8 +195,31 @@ export const pollWhileApprovalPending = (
     : false;
 
 /**
- * Sotish/bekor qilish javobini ajratadi: tasdiq so'ralgan bo'lsa buyurtma
- * eslab qolinadi va modal ochiq qoladi, aks holda amal bajarilgan.
+ * SPEC v2: amal bajarildi, qo'shimcha xarajat esa alohida so'rov bo'lib market tasdig'ini kutmoqda — muvaffaqiyat
+ * xabaridan keyin qo'shimcha ma'lumot: «20 000 so'm qo'shimcha xarajat market tasdig'ini kutmoqda» + tovarlar va
+ * naqdni to'liq topshirish eslatmasi.
+ */
+const notifyDeferredExtraCost = (request: ExtraCostRequest, action: ExtraCostAction, extraCost: number) => {
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const t = (key: string, options?: Record<string, unknown>) => i18n.t(key, options ?? {});
+  const items = formatExtraCostItems(request.items, { t, language, action: request.action ?? action });
+  notify.info(
+    t("orders:extraCostDeferredToast", {
+      amount: formatMoneyLocalized(request.amount > 0 ? request.amount : extraCost, { language }),
+    }),
+    {
+      description: items
+        ? t("orders:extraCostDeferredToastItems", { items })
+        : t("orders:extraCostDeferredToastDescription"),
+    },
+  );
+};
+
+/**
+ * Sotish/bekor qilish javobini ajratadi: tasdiq so'ralgan bo'lsa (eski `replay` rejimi — 202 / `approval_required`)
+ * buyurtma eslab qolinadi va modal ochiq qoladi, aks holda amal bajarilgan. Javobda kechiktirilgan xarajat
+ * (`data.extra_cost_request`, `mode: "deferred"`) bo'lsa — amal BAJARILGAN: oyna yopiladi, ustiga «xarajat market
+ * tasdig'ini kutmoqda» xabari (SPEC v2).
  */
 export const resolveOrderActionResponse = (
   response: unknown,
@@ -207,6 +235,8 @@ export const resolveOrderActionResponse = (
   if (!isExtraCostApprovalResponse(response)) {
     clearPendingExtraCostApproval(order.id);
     onCompleted();
+    const deferred = readDeferredExtraCostReply(response);
+    if (deferred) notifyDeferredExtraCost(deferred, action, extraCost);
     return;
   }
 

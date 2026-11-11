@@ -31,7 +31,8 @@ const renderSell = (props: Partial<Parameters<typeof SellModal>[0]> = {}) =>
 const renderCancel = (props: Partial<Parameters<typeof CancelModal>[0]> = {}) =>
   renderWithProviders(<CancelModal order={order} open onClose={vi.fn()} onCancel={vi.fn()} {...props} />);
 
-const NOTICE = /market tasdig'idan o'tadi/;
+// SPEC v2: amal darhol bajariladi, xarajat alohida market tasdig'ini kutadi (avvalgi «market tasdig'idan o'tadi» o'rniga).
+const NOTICE = /Qo'shimcha xarajat alohida — market tasdig'ini kutadi/;
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -83,6 +84,10 @@ describe("SellModal extra cost approval", () => {
     await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument();
+    // SPEC v2: buyurtma darhol sotiladi, naqd to'liq topshiriladi; eski «holat o'zgarmaydi» matni yo'q.
+    expect(screen.getByText(NOTICE)).toHaveTextContent(/^Buyurtma darhol sotiladi\./);
+    expect(screen.getByText(NOTICE)).toHaveTextContent(/Naqdni to'liq topshiring/);
+    expect(screen.queryByText(/market tasdiqlamaguncha/)).not.toBeInTheDocument();
   });
 
   it("replaces the form with 'Market tasdig'i kutilmoqda' while approval is pending", () => {
@@ -97,6 +102,28 @@ describe("SellModal extra cost approval", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/Yuborilgan vaqt\s*Bugun, \d{2}:\d{2}/);
     expect(screen.queryByRole("button", { name: /^Sotish$/ })).not.toBeInTheDocument();
     expect(footerCloseButton()).toHaveTextContent("Yopish");
+  });
+
+  it("⭐ hamkor buyurtmasi (`external_id`) — eski (replay) ogohlantirish: «market tasdiqlamaguncha holati o'zgarmaydi»", async () => {
+    // Backend hamkor buyurtmasida kechiktirilgan rejimni ishlatmaydi (`isPartnerSyncedOrder`): 202, buyurtma
+    // `waiting` da qoladi — «darhol sotiladi» deyish noto'g'ri bo'lardi.
+    const user = userEvent.setup();
+    renderSell({ order: { ...order, external_id: "BP-120" } });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
+
+    expect(
+      screen.getByText(
+        "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/darhol sotiladi/)).not.toBeInTheDocument();
+  });
+
+  it("bo'sh `external_id` — hamkor emas, kechiktirilgan ogohlantirish", async () => {
+    const user = userEvent.setup();
+    renderSell({ order: { ...order, external_id: "  " } });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
+    expect(screen.getByText(NOTICE)).toHaveTextContent(/^Buyurtma darhol sotiladi\./);
   });
 
   it("reminds about an earlier request but still lets the courier resubmit", () => {
@@ -515,6 +542,21 @@ describe("CancelModal extra cost approval", () => {
     await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument();
+    expect(screen.getByText(NOTICE)).toHaveTextContent(/^Buyurtma darhol bekor qilinadi\./);
+    expect(screen.queryByText(/market tasdiqlamaguncha/)).not.toBeInTheDocument();
+  });
+
+  it("⭐ hamkor buyurtmasi (`external_id`) — eski (replay) ogohlantirish, «darhol bekor qilinadi» yo'q", async () => {
+    const user = userEvent.setup();
+    renderCancel({ order: { ...order, external_id: "BP-120" } });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
+
+    expect(
+      screen.getByText(
+        "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/darhol bekor qilinadi/)).not.toBeInTheDocument();
   });
 
   it("replaces the form with 'Market tasdig'i kutilmoqda' while approval is pending", () => {

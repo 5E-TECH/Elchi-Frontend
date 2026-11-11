@@ -11,6 +11,7 @@ import {
   recordPendingExtraCostApproval,
   resolveOrderActionResponse,
 } from "./extraCostApproval";
+import { toastStore } from "../../shared/lib/notify";
 
 const approvalResponse = {
   statusCode: 202,
@@ -96,6 +97,74 @@ describe("extra cost approval", () => {
     expect(onCompleted).toHaveBeenCalledTimes(1);
     expect(onApprovalRequested).not.toHaveBeenCalled();
     expect(getPendingExtraCostApprovalHints()["o-1"]).toBeUndefined();
+  });
+
+  it("⭐ SPEC v2: deferred extra cost (`data.extra_cost_request`, mode deferred) — the action is DONE: modal closes, info toast", () => {
+    recordPendingExtraCostApproval({ orderId: "o-2", action: "sell", amount: 5000, requestedAt: new Date().toISOString(), orderStatus: "waiting" });
+    const onCompleted = vi.fn();
+    const onApprovalRequested = vi.fn();
+
+    resolveOrderActionResponse(
+      {
+        statusCode: 201,
+        data: {
+          id: "o-2",
+          status: "sold",
+          extra_cost_request: {
+            id: "xc-1",
+            status: "pending",
+            mode: "deferred",
+            action: "sell",
+            amount: 20000,
+            items: [
+              { order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 },
+              { order_item_id: "i-2", product_id: "p-2", product_name: "Zaryadka", quantity: 2 },
+            ],
+            auto_approve_at: "2026-11-13T09:00:00.000Z",
+            created_at: "2026-11-12T09:00:00.000Z",
+          },
+        },
+      },
+      { order: { id: "o-2", status: "waiting" }, action: "sell", extraCost: 20000, onCompleted, onApprovalRequested },
+    );
+
+    expect(onCompleted).toHaveBeenCalledTimes(1);
+    expect(onApprovalRequested).not.toHaveBeenCalled();
+    // Kutish ishorasi yo'q — 30 s lik tasdiq pollingi ham yo'q.
+    expect(getPendingExtraCostApprovalHints()["o-2"]).toBeUndefined();
+    expect(pollWhileApprovalPending([{ id: "o-2", status: "sold", pending_extra_cost_approval: null }])).toBe(false);
+    const toasts = toastStore.getSnapshot();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]).toEqual(
+      expect.objectContaining({ tone: "info", message: expect.stringMatching(/^20\D000 so'm qo'shimcha xarajat market tasdig'ini kutmoqda$/) }),
+    );
+    expect(String(toasts[0].description)).toMatch(/^Mahsulotlar: Telefon g'ilofi ×1, Zaryadka ×2\. Naqdni to'liq topshiring/);
+  });
+
+  it("an ordinary completion (no extra cost request) shows no extra-cost toast", () => {
+    resolveOrderActionResponse({ statusCode: 201, data: { id: "o-2", extra_cost_request: null } }, {
+      order: { id: "o-2", status: "waiting" },
+      action: "cancel",
+      extraCost: 0,
+      onCompleted: vi.fn(),
+      onApprovalRequested: vi.fn(),
+    });
+
+    expect(toastStore.getSnapshot()).toHaveLength(0);
+  });
+
+  it("the legacy 202 envelope still wins over a deferred field (replay rows keep the waiting view)", () => {
+    const onCompleted = vi.fn();
+    const onApprovalRequested = vi.fn();
+
+    resolveOrderActionResponse(
+      { statusCode: 202, data: { approval_required: true, extra_cost_request: { id: "x", status: "pending", mode: "deferred", amount: 1 } } },
+      { order: { id: "o-2", status: "waiting" }, action: "sell", extraCost: 1, onCompleted, onApprovalRequested },
+    );
+
+    expect(onCompleted).not.toHaveBeenCalled();
+    expect(onApprovalRequested).toHaveBeenCalledTimes(1);
+    expect(toastStore.getSnapshot()).toHaveLength(0);
   });
 
   it("without the server field (old response) a hint is active only while the order keeps the status it had when sent", () => {

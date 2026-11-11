@@ -188,6 +188,8 @@
   ,"paymentForbidden": "You are not allowed to make this payment."
   ,"branchToMainPaymentSuccess": "Payment was transferred to HQ successfully"
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
+  ,"branchToMarketPaymentSuccess": "Branch to market transfer recorded"
+  ,"branchToMarketPaymentError": "Failed to record the branch to market transfer"
   ,"branchToMainSource": "Branch to HQ transfer"
   ,"mainBranchFallback": "HQ branch"
   ,"unknown": "Unknown"
@@ -694,6 +696,7 @@
       "marketPayment": "Market payment",
       "hqToMarket": "HQ to market transfer",
       "branchToMain": "Branch to HQ transfer",
+      "branchToMarket": "Branch to market transfer",
       "manualIncome": "Manual income",
       "manualExpense": "Manual expense",
       "correction": "Correction",
@@ -907,6 +910,7 @@
       "market": "Market",
       "marketPlaceholder": "Select a market",
       "marketHint": "The receive button stays disabled until a market is selected",
+      "branchToMarketInfo": "The branch sent the money to the market itself instead of HQ: the amount comes off the branch card and HQ's debt to the market drops by the same amount",
       "comment": "Comment",
       "commentPlaceholder": "Comment...",
       "receive": "Receive",
@@ -1449,8 +1453,8 @@
         },
         "hq_transfer": {
           "title": "Transfer from courier and branch to HQ",
-          "hint": "Only for «Transfer» payments",
-          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ. The change takes effect when you press «Save».",
+          "hint": "For «Transfer» and «Transfer to market» payments",
+          "offDescription": "No receipt photo will be requested for transfers from couriers and branches to HQ («Transfer» and «Transfer to market»). The change takes effect when you press «Save».",
           "offField": "The «Receipt photo» field disappears from the acceptance form, the transfer is accepted without a receipt"
         }
       },

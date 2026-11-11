@@ -8,8 +8,10 @@ import {
   EXTRA_COST_REJECT_REASONS,
   type ExtraCostRejectReason,
 } from "../../../entities/orders/extraCostDecision";
+import { useFormatExtraCostItems } from "../../../entities/orders/extraCostRequest";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
+import { extraCostRejectNoteKey } from "../model/extraCostDecisionText";
 
 /** Backend `ExtraCostApprovalDecisionDto.comment` — `@MaxLength(500)`. */
 const COMMENT_MAX = 500;
@@ -35,12 +37,17 @@ type Props = {
  * Maket yo'q: `market-dashboard-extra-cost-approvals` da «Rad etish» to'g'ridan-to'g'ri tugma. Sabab
  * ro'yxati karta talabi (backend yopiq ro'yxat) — oyna eng yaqin namunadan: `courier-orders-cancel-dialog`
  * (sabab `Select` + «Izoh», telefonda pastki varaqa).
+ *
+ * SPEC v2: qaysi mahsulot uchun («Mahsulotlar: …») va eslatma rejimga qarab — kechiktirilgan so'rovda «Rad etilsa — xarajat
+ * yozilmaydi, buyurtma holati o'zgarmaydi» (buyurtma allaqachon sotilgan / bekor qilingan).
  */
 export const ExtraCostRejectDialog = ({ approval, actionLabel, open, pending, onClose, onExited, onSubmit }: Props) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [reason, setReason] = useState<ExtraCostRejectReason | null>(null);
   const [comment, setComment] = useState("");
+  const formatItems = useFormatExtraCostItems();
+  const items = formatItems(approval.items, approval.action, 5);
 
   const reasonLabel = t("market.extra_cost_reject_reason");
   const options: SelectOption<ExtraCostRejectReason>[] = EXTRA_COST_REJECT_REASONS.map((value) => ({
@@ -92,6 +99,12 @@ export const ExtraCostRejectDialog = ({ approval, actionLabel, open, pending, on
         </div>
       }
     >
+      {items ? (
+        <p className="m-0 text-[13px] text-text" data-testid="reject-items">
+          <span className="text-text-muted">{t("market.extra_cost_items")}: </span>
+          {items}
+        </p>
+      ) : null}
       <Field label={reasonLabel} labelAs="span" required>
         <Select<ExtraCostRejectReason>
           options={options}
@@ -111,7 +124,7 @@ export const ExtraCostRejectDialog = ({ approval, actionLabel, open, pending, on
           placeholder={t("market.extra_cost_reject_comment_placeholder")}
         />
       </Field>
-      <p className="m-0 text-[13px] text-text-muted">{t("market.extra_cost_reject_note")}</p>
+      <p className="m-0 text-[13px] text-text-muted">{t(extraCostRejectNoteKey(approval))}</p>
     </Dialog>
   );
 };

@@ -74,6 +74,12 @@ describe("buildActionOrder — sotish/bekor qilish oynalari uchun", () => {
     });
     expect(action?.items[0]).toMatchObject({ id: "124", product_id: null, product: { id: null, name: "tv" } });
     expect(action?.product_quantity).toBe(2);
+    expect(action?.external_id).toBeNull();
+  });
+
+  it("hamkor buyurtmasi: `external_id` oynaga o'tadi (xarajat eski replay yo'ldan — ogohlantirish shunga qarab)", () => {
+    const action = buildActionOrder(normalizeOrderDetail({ id: "2", status: "waiting", external_id: "BP-120", items: [] }));
+    expect(action?.external_id).toBe("BP-120");
   });
 });
 

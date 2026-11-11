@@ -658,7 +658,6 @@
   "copyOrderNumber": "Copy number",
   "orderNumberCopied": "Order number copied",
   "orderNumberCopyFailed": "Could not copy — order number: {{id}}",
-  "extraCostApprovalNotice": "Extra cost needs the market's approval — the order status won't change until the market approves.",
   "extraCostApprovalPendingTitle": "Waiting for market approval",
   "extraCostApprovalPendingDescription": "An extra cost of {{amount}} was sent to the market for approval. If the market approves, the action completes automatically; if it rejects, the order stays as it is.",
   "extraCostApprovalBadge": "Sent for approval",
@@ -667,6 +666,24 @@
   "extraCostApprovalActionSell": "Sale",
   "extraCostApprovalActionPartlySell": "Partial sale",
   "extraCostApprovalActionCancel": "Cancellation",
+  "extraCostDeferredNoticeSell": "The order is sold right away. The extra cost is separate and waits for the market's approval. Hand over all the cash: if it's approved, the cost is counted at your next handover.",
+  "extraCostDeferredNoticeCancel": "The order is cancelled right away. The extra cost is separate and waits for the market's approval. Hand over all the cash: if it's approved, the cost is counted at your next handover.",
+  "extraCostReplayNotice": "Extra cost needs the market's approval — the order status won't change until the market approves.",
+  "extraCostDeferredToast": "Extra cost of {{amount}} is waiting for the market's approval",
+  "extraCostDeferredToastItems": "Products: {{items}}. Hand over all the cash — if it's approved, the cost is counted at your next handover.",
+  "extraCostDeferredToastDescription": "Hand over all the cash — if it's approved, the cost is counted at your next handover.",
+  "extraCostItems": {
+    "entry": "{{name}} ×{{quantity}}",
+    "more": "{{list}} +{{rest}}",
+    "fallback": "Product #{{id}}",
+    "unknown": "Product"
+  },
+  "extraCostRequestTag": {
+    "pending": "Cost awaiting approval · {{amount}}",
+    "approved": "Cost approved · {{amount}}",
+    "rejected": "Cost rejected",
+    "items": "For: {{items}}"
+  },
   "sortLabel": "Sort:",
   "excel": {
     "fileName": "all_orders"
@@ -855,6 +872,11 @@
     "approvalBody": "{{sent}}. If the market approves, the action runs automatically.",
     "approvalCompactTitle": "Awaiting market approval:",
     "approvalCompact": "{{amount}} extra cost, {{time}}",
+    "extraCost": {
+      "label": "Extra cost",
+      "items": "Products: {{items}}",
+      "reason": "Reason: {{reason}}"
+    },
     "productsLockedTitle": "Products and amount are locked.",
     "productsLockedBody": "They cannot be changed after HQ receives the order.",
     "productsLockedWarehouseBody": "The products are reserved in the warehouse — they cannot be changed.",

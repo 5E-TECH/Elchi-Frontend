@@ -15,6 +15,7 @@ import {
 } from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { ExtraCostApprovalTag } from "../../../entities/orders/ui/ExtraCostApprovalTag";
+import { ExtraCostRequestTag } from "../../../entities/orders/ui/ExtraCostRequestTag";
 import type { RootState } from "../../../app/config/store";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -217,6 +218,8 @@ const OrdersTable = ({
                 {/* lQjt6sKP: «Almashtirish» (eski buyurtma o'rniga) / «Almashtirish qaytarmasi» (eski buyurtma). */}
                 <ReplacementTag order={order} />
                 <ExtraCostApprovalTag order={order} />
+                {/* SPEC v2: «Xarajat kutilmoqda · 20 000 so'm» — buyurtma sotilgan / bekor qilingan, xarajat alohida. */}
+                <ExtraCostRequestTag order={order} />
                 {/* 6kHnNH9j: «Ombordan · <ombor>» — viloyat omboridan ketadigan buyurtma. */}
                 <FulfillmentSourceTag order={order} />
             </>

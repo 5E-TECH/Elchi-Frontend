@@ -25,6 +25,7 @@ import {
   ExtraCostPendingAlert,
   ExtraCostSentAlert,
 } from "../../../../../entities/orders/ui/ExtraCostApprovalAlerts";
+import { isExtraCostReplayOrder } from "../../../../../entities/orders/extraCostRequest";
 import {
   isProofRequiredByConditions,
   toKnownAmount,
@@ -434,7 +435,9 @@ const SellDialog = ({
       />
     </Field>
   );
-  const extraNotice = showExtraNotice ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null;
+  const extraNotice = showExtraNotice ? (
+    <ExtraCostNoticeAlert id={id("extra-note")} replay={isExtraCostReplayOrder(order)} />
+  ) : null;
 
   const totalField = (
     <Field

@@ -71,6 +71,27 @@ describe("AutoApprovedExtraCosts", () => {
     expect(within(row).getByRole("link", { name: "№EL-100076" })).toHaveAttribute("href", "/orders/edit/76");
   });
 
+  it("SPEC v2: qaysi mahsulot uchun — «Mahsulotlar: …»; eski yozuvda (`items` yo'q) qator yo'q", async () => {
+    http.get.mockResolvedValue(
+      response([
+        autoApproved("ap-9", "76", {
+          mode: "deferred",
+          items: [
+            { order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 },
+            { order_item_id: "i-2", product_id: "p-2", product_name: null, quantity: 2 },
+          ],
+        }),
+        autoApproved("ap-8", "77"),
+      ]),
+    );
+    renderBlock();
+
+    expect(await screen.findByTestId("auto-approved-items-ap-9")).toHaveTextContent(
+      "Mahsulotlar: Telefon g'ilofi ×1, Mahsulot #p-2 ×2",
+    );
+    expect(screen.queryByTestId("auto-approved-items-ap-8")).not.toBeInTheDocument();
+  });
+
   it("yozuv yo'q (avtomatik tasdiq o'chiq) — blok chizilmaydi", async () => {
     http.get.mockResolvedValue(response([]));
     const { container } = renderBlock();

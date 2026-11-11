@@ -99,12 +99,21 @@ export const marketPaymentFingerprint = (payment: {
   payment_method: string;
 }) => JSON.stringify(["market", payment.market_id, payment.amount, payment.payment_method]);
 
-/** Filial → HQ topshirish: filial + summa + usul. */
+/**
+ * Filial → HQ topshirish: filial + summa + usul (o'zgarmagan format). «Marketga o'tkazma» (2026-11-11) — market ham
+ * ichida: bir xil summani ikki marketga ketma-ket o'tkazish bitta kalitni olib, ikkinchisi jimgina yutilmasin.
+ */
 export const branchToMainPaymentFingerprint = (payment: {
   branch_id: string;
   amount: number;
   payment_method: string;
-}) => JSON.stringify(["branch", payment.branch_id, payment.amount, payment.payment_method]);
+  market_id?: string | null;
+}) =>
+  JSON.stringify(
+    payment.market_id
+      ? ["branch", payment.branch_id, payment.amount, payment.payment_method, payment.market_id]
+      : ["branch", payment.branch_id, payment.amount, payment.payment_method],
+  );
 
 /**
  * Takroriy `Idempotency-Key`: pul avvalgi (javobi yo'qolgan) urinishda

@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import type { CancelOrderPayload } from "./cancelReason";
 import type { SellOrderPayload } from "./sellPayment";
 import type { ExtraCostRejectReason } from "./extraCostDecision";
+import type { ExtraCostItem, ExtraCostMode } from "./extraCostRequest";
 import type { RollbackTarget } from "./rollbackTarget";
 
 export {
@@ -117,6 +118,14 @@ export type ExtraCostApproval = {
   proof_count?: number;
   /** Rad etish sababining o'qiladigan nomi (backend). */
   reject_reason_label?: string | null;
+  // ─── SPEC v2: qo'shimcha xarajat — alohida tranzaksiya ───
+  /**
+   * `deferred` — buyurtma allaqachon sotilgan / bekor qilingan, tasdiq faqat xarajatni yozadi; `replay` — eski so'rov:
+   * tasdiqlansa amal bajariladi. Eski javobda maydon yo'q — `replay` deb hisoblanadi.
+   */
+  mode?: ExtraCostMode | null;
+  /** Qaysi tovar uchun (xom; `readExtraCostItems` bilan o'qiladi). */
+  items?: ExtraCostItem[] | null;
 };
 
 /** So'rov holati (hwTkXsGi: `void`, `reversed` ham). */

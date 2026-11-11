@@ -188,6 +188,8 @@
   ,"paymentForbidden": "Bu to'lovga ruxsatingiz yo'q."
   ,"branchToMainPaymentSuccess": "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi"
   ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
+  ,"branchToMarketPaymentSuccess": "Filialdan marketga o'tkazma qabul qilindi"
+  ,"branchToMarketPaymentError": "Filialdan marketga o'tkazmani yozishda xatolik yuz berdi"
   ,"branchToMainSource": "Filialdan HQga o'tkazma"
   ,"mainBranchFallback": "Asosiy filial"
   ,"unknown": "Noma'lum"
@@ -694,6 +696,7 @@
       "marketPayment": "Market to'lovi",
       "hqToMarket": "HQ'dan marketga o'tkazma",
       "branchToMain": "Filialdan HQ'ga o'tkazma",
+      "branchToMarket": "Filialdan marketga o'tkazma",
       "manualIncome": "Qo'lda kirim",
       "manualExpense": "Qo'lda chiqim",
       "correction": "Tuzatish",
@@ -907,6 +910,7 @@
       "market": "Market",
       "marketPlaceholder": "Market tanlang",
       "marketHint": "Market tanlanmaguncha qabul qilish tugmasi faol emas",
+      "branchToMarketInfo": "Filial pulni HQ'ga bermay, marketga o'zi o'tkazgan: summa filial kartasidan yechiladi, HQ'ning marketga qarzi shuncha kamayadi",
       "comment": "Izoh",
       "commentPlaceholder": "Izoh...",
       "receive": "Qabul qilish",
@@ -1448,8 +1452,8 @@
         },
         "hq_transfer": {
           "title": "Kuryer va filialdan HQ'ga o'tkazma",
-          "hint": "Faqat «O'tkazma» to'lovida",
-          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
+          "hint": "«O'tkazma» va «Marketga o'tkazma» to'lovlarida",
+          "offDescription": "Kuryer va filialdan HQ'ga o'tkazmada («O'tkazma» va «Marketga o'tkazma») chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
           "offField": "Qabul formasida «Chek rasmi» maydoni ko'rinmaydi, o'tkazma cheksiz qabul qilinadi"
         }
       },

@@ -67,6 +67,11 @@ export type ActionOrder = {
    * (skaner javobi) — shu qurilmadagi ishora.
    */
   pending_extra_cost_approval?: unknown;
+  /**
+   * Hamkor (tashqi) buyurtma id'si. Bor bo'lsa backend qo'shimcha xarajatni kechiktirilgan rejimda yozmaydi (eski
+   * replay yo'li: 202, buyurtma `waiting` da qoladi) — oynadagi ogohlantirish shunga qarab (`isExtraCostReplayOrder`).
+   */
+  external_id?: string | null;
 };
 
 export const MAX_PROOF_SIZE_MB = 10;

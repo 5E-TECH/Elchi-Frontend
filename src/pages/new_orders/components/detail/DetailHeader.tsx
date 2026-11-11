@@ -12,6 +12,7 @@ import {
   resolveCancelReturnStage,
   useCancelReturnPlaceText,
 } from "../../../../entities/order";
+import { ExtraCostRequestTag } from "../../../../entities/orders/ui/ExtraCostRequestTag";
 import { formatTrackingDateTime } from "../../../../features/order-tracking";
 import { copyToClipboard } from "../../../../shared/lib/clipboard";
 import { notify } from "../../../../shared/lib/notify";
@@ -99,6 +100,8 @@ export const DetailHeader = ({
       <ReturnRequestedTag order={order} />
       {/* lQjt6sKP: «Almashtirish» (eski №EL-… o'rniga) / «Almashtirish qaytarmasi» — kuryer tafsilotida ham. */}
       <ReplacementTag order={order} />
+      {/* SPEC v2: qo'shimcha xarajat so'rovi — kutilmoqda / tasdiqlangan / rad etildi (tafsilot «To'lov» kartasida). */}
+      <ExtraCostRequestTag order={order} showDecided />
       {/* 6kHnNH9j: «Ombordan · <ombor>» (kuryer tafsilotida ham — u qaysi filial omboridan olganini biladi). */}
       <FulfillmentSourceTag order={order} />
     </>

@@ -85,6 +85,28 @@ describe("toExtraCostsPage (GykuOz8f)", () => {
     expect(page.total).toBe(1);
   });
 
+  it("SPEC v2: `mode` va `items` (qaysi mahsulot uchun) qatorga o'tadi; kelmasa — `null` / bo'sh", () => {
+    const page = toExtraCostsPage({
+      data: {
+        items: [
+          {
+            id: "5",
+            order_id: "9",
+            action: "partly_sell",
+            mode: "deferred",
+            items: [{ order_item_id: 3, product_id: 4, product_name: "Zaryadka", quantity: 2, sold_quantity: 1 }],
+          },
+          { id: "6", order_id: "10" },
+        ],
+      },
+    });
+    expect(page.items[0]).toMatchObject({
+      mode: "deferred",
+      items: [{ order_item_id: "3", product_id: "4", product_name: "Zaryadka", quantity: 2, sold_quantity: 1 }],
+    });
+    expect(page.items[1]).toMatchObject({ mode: null, items: [] });
+  });
+
   it("tab, kalit va isbot yo'li", () => {
     expect(isExtraCostTab("cancelled")).toBe(true);
     expect(isExtraCostTab("rejected")).toBe(false);
