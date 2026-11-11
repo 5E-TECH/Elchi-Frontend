@@ -35,8 +35,13 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
 
 /**
  * KASSA SMENASI SOZLAMALARI — `/payments/shift-settings`, faqat superadmin (maket `superadmin-payments-shift-settings`,
- * kiZgTybn). «Kartalar qoldig'ini tasdiqlash» kartasi: global kalitlar (`account_check_enabled`, `photo_required`,
- * `ai_check_enabled`) va «Har karta bo'yicha» jadvali (`require_photo_on_shift_close`, `ai_check_enabled`; AI faqat
+ * kiZgTybn). «Kartalar qoldig'ini tasdiqlash» kartasi: kalitlar va «Har karta bo'yicha» jadvali (asosiy kassa kartalari).
+ * BE-A (2026-11-10): tasdiqlash ikki kalit — «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`, sukut yoqiq) va
+ * «Filiallar — qoldiq tasdiqlash» (`branch_account_check_enabled`, sukut o'chiq; eski backend bermasa chizilmaydi, asosiy
+ * kalit esa avvalgi nomi bilan — u yerda u barcha kassalarga amal qiladi); rasm / AI — global master kalitlar
+ * (`photo_required`, `ai_check_enabled`). Filial kalitining maketi yo'q — eng yaqini shu sahifaning kalit qatori
+ * (`superadmin-payments-shift-settings`). Backend 400 matni (masalan «AI tekshiruvi faqat … yoqiladi») — xabarda aynan.
+ * Jadval (`require_photo_on_shift_close`, `ai_check_enabled`; AI faqat
  * rasm talab qilingan kartada — backend 400 qoidasi, rasm o'chsa AI ham o'chadi). «Saqlash» →
  * `PATCH finance/shift/settings` (faqat o'zgargan maydonlar). Pastda «Smena hisobotini yuborish» (gWI4gYkw) —
  * `AutomationCards.tsx`; backend javobida `report` bo'lmasa (eski backend) chizilmaydi va so'rovga kirmaydi. «Avtomatik
@@ -82,6 +87,8 @@ const SettingsForm = ({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const update = useUpdateShiftCheckSettings();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
+  // BE-A: filiallar kaliti — backend bersagina (eski backendda bitta kalit barcha kassalarga amal qiladi).
+  const branchSupported = settings.branch_account_check_enabled !== null;
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
   const shiftDirty = Object.keys(body).length > 0;
@@ -217,11 +224,21 @@ const SettingsForm = ({
       >
         <div className="flex flex-col divide-y divide-border">
           <SwitchRow
-            title={t("shiftCheck.settings.accountCheck")}
-            hint={t("shiftCheck.settings.accountCheckHint")}
+            title={branchSupported ? t("shiftCheck.settings.mainAccountCheck") : t("shiftCheck.settings.accountCheck")}
+            hint={
+              branchSupported ? t("shiftCheck.settings.mainAccountCheckHint") : t("shiftCheck.settings.accountCheckHint")
+            }
             checked={draft.account_check_enabled}
             onToggle={(next) => setDraft((current) => ({ ...current, account_check_enabled: next }))}
           />
+          {branchSupported ? (
+            <SwitchRow
+              title={t("shiftCheck.settings.branchAccountCheck")}
+              hint={t("shiftCheck.settings.branchAccountCheckHint")}
+              checked={Boolean(draft.branch_account_check_enabled)}
+              onToggle={(next) => setDraft((current) => ({ ...current, branch_account_check_enabled: next }))}
+            />
+          ) : null}
           <SwitchRow
             title={t("shiftCheck.settings.photo")}
             hint={t("shiftCheck.settings.photoHint")}

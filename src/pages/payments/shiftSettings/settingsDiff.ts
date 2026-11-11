@@ -11,12 +11,22 @@ import {
 } from "../../../entities/payments";
 
 /**
- * Smena sozlamalari formasi (kiZgTybn; gWI4gYkw): qoralama va `PATCH finance/shift/settings` uchun faqat o'zgargan
+ * Asosiy kassa kaliti: `main_account_check_enabled` (BE-A), bo'lmasa (eski backend) `account_check_enabled` — sahifa
+ * superadmin uchun sukut kassani (`'0'`, asosiy) o'qiydi, ikkalasi bir xil.
+ */
+export const mainAccountCheck = (settings: ShiftCheckSettings): boolean =>
+  settings.main_account_check_enabled ?? settings.account_check_enabled;
+
+/**
+ * Smena sozlamalari formasi (kiZgTybn; gWI4gYkw; BE-A): qoralama va `PATCH finance/shift/settings` uchun faqat o'zgargan
  * kalitlar. `report` — backend javobida bo'lsa (aks holda `null`, blok chizilmaydi va so'rovga kirmaydi). Smena jadvali
  * (`auto_open`, `auto_close`, `late_alert`) — Ops → «Kun tartibi» (`pages/daily-schedule`), bu formaga kirmaydi.
  */
 export type Draft = {
+  /** ASOSIY kassa kaliti (BE-A; eski backendda — barcha kassalar). */
   account_check_enabled: boolean;
+  /** BE-A: filiallar kaliti; eski backend bermasa `null` — kalit chizilmaydi va so'rovga kirmaydi. */
+  branch_account_check_enabled: boolean | null;
   photo_required: boolean;
   ai_check_enabled: boolean;
   cards: Record<string, { require_photo_on_shift_close: boolean; ai_check_enabled: boolean }>;
@@ -34,7 +44,8 @@ const cloneReport = (report: ShiftReportSendSettings | null): ShiftReportSendSet
     : null;
 
 export const toDraft = (settings: ShiftCheckSettings): Draft => ({
-  account_check_enabled: settings.account_check_enabled,
+  account_check_enabled: mainAccountCheck(settings),
+  branch_account_check_enabled: settings.branch_account_check_enabled,
   photo_required: settings.photo_required,
   ai_check_enabled: settings.ai_check_enabled,
   cards: Object.fromEntries(
@@ -49,7 +60,14 @@ export const toDraft = (settings: ShiftCheckSettings): Draft => ({
 /** Faqat o'zgargan kalitlar (bo'sh — o'zgarish yo'q). */
 export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): UpdateShiftSettingsRequest => {
   const body: UpdateShiftSettingsRequest = {};
-  if (draft.account_check_enabled !== base.account_check_enabled) body.account_check_enabled = draft.account_check_enabled;
+  if (draft.account_check_enabled !== mainAccountCheck(base)) body.account_check_enabled = draft.account_check_enabled;
+  if (
+    base.branch_account_check_enabled !== null &&
+    draft.branch_account_check_enabled !== null &&
+    draft.branch_account_check_enabled !== base.branch_account_check_enabled
+  ) {
+    body.branch_account_check_enabled = draft.branch_account_check_enabled;
+  }
   if (draft.photo_required !== base.photo_required) body.photo_required = draft.photo_required;
   if (draft.ai_check_enabled !== base.ai_check_enabled) body.ai_check_enabled = draft.ai_check_enabled;
   const cards = base.cards
@@ -65,7 +83,6 @@ export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): Updat
     })
     .filter((patch): patch is NonNullable<typeof patch> => patch !== null);
   if (cards.length) body.cards = cards;
-
 
   if (base.report && draft.report) {
     const before = base.report;

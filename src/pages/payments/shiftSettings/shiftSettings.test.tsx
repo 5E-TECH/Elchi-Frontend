@@ -67,6 +67,9 @@ describe("Shift settings (kiZgTybn)", () => {
     expect(save).toBeDisabled();
     expect(screen.getAllByText("Tasdiqlash o'chiq — smena avvalgidek yopiladi").length).toBeGreaterThan(0);
 
+    // Eski backend (`branch_account_check_enabled` yo'q): bitta kalit — avvalgi nomi bilan, filial kaliti yo'q.
+    expect(screen.queryByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("switch", { name: "Smena yopishda har karta qoldig'i majburiy" }));
     await user.click(screen.getByRole("switch", { name: "AI tekshiruvi" }));
     const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
@@ -108,6 +111,91 @@ describe("Shift settings (kiZgTybn)", () => {
     await user.click(await screen.findByRole("switch", { name: "Rasm talab qilish" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     expect(await screen.findByText("Smena sozlamalarini faqat superadmin o'zgartiradi")).toBeInTheDocument();
+  });
+});
+
+/**
+ * BE-A (2026-11-10) — ikki kalit: «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`) va «Filiallar — qoldiq
+ * tasdiqlash» (`branch_account_check_enabled`); MAIN kartalarida rasm + AI sukut yoqiq; PATCH faqat o'zgargan kalit;
+ * backend 400 matni aynan.
+ */
+describe("Shift settings — main and branch balance confirmation (BE-A)", () => {
+  const BE_A = {
+    ...SETTINGS,
+    account_check_enabled: true,
+    main_account_check_enabled: true,
+    branch_account_check_enabled: false,
+    photo_required: true,
+    ai_check_enabled: true,
+    cards: SETTINGS.cards.map((card) => ({
+      ...card,
+      require_photo_on_shift_close: true,
+      ai_check_enabled: true,
+      photo_required: true,
+      ai_enabled: true,
+    })),
+  };
+
+  beforeEach(() => {
+    http.get.mockImplementation(async () => ({ data: { statusCode: 200, data: BE_A } }));
+  });
+
+  it("draws both switches with their server values; the subtitle no longer claims «all cashboxes»", async () => {
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    const main = await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" });
+    const branch = screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" });
+    expect(main).toHaveAttribute("aria-checked", "true");
+    expect(branch).toHaveAttribute("aria-checked", "false");
+    expect(branch).toHaveAccessibleDescription(
+      "Filial kassalarida ham har karta qoldig'i majburiy. O'chiq bo'lsa, filial smenasi avvalgidek yopiladi",
+    );
+    expect(screen.queryByRole("switch", { name: "Smena yopishda har karta qoldig'i majburiy" })).not.toBeInTheDocument();
+    expect(screen.getByText("Asosiy kassa va filiallar · faqat superadmin o'zgartiradi")).toBeInTheDocument();
+    expect(screen.queryByText(/Barcha kassalar uchun/)).not.toBeInTheDocument();
+    // MAIN kartalari sukut bo'yicha rasm + AI bilan.
+    const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
+    expect(within(table).getAllByText("Rasm majburiy, AI tekshiradi")).toHaveLength(2);
+    expect(within(table).getByRole("switch", { name: "Hisob raqam: rasm talab qilish" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled();
+  });
+
+  it("PATCH carries only the changed switch: branch on → `branch_account_check_enabled`, main off → `account_check_enabled`", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
+    expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", { branch_account_check_enabled: true });
+  });
+
+  it("main off — only `account_check_enabled: false`; card rows say confirmation is off", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await user.click(await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" }));
+    const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
+    expect(within(table).getAllByText("Tasdiqlash o'chiq — smena avvalgidek yopiladi")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
+    expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", { account_check_enabled: false });
+  });
+
+  it("a backend 400 is shown verbatim (AI without a photo)", async () => {
+    http.patch.mockRejectedValueOnce(
+      Object.assign(new Error("400"), {
+        response: {
+          status: 400,
+          data: { statusCode: 400, message: "AI tekshiruvi faqat smena yopishda qoldiq rasmi talab qilinganda yoqiladi" },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    expect(
+      await screen.findByText("AI tekshiruvi faqat smena yopishda qoldiq rasmi talab qilinganda yoqiladi"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Sozlamalar saqlanmadi")).toBeInTheDocument();
   });
 });
 
