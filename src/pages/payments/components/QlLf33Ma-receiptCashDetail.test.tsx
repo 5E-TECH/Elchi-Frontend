@@ -13,7 +13,11 @@ import CashDetail from "./cashDetail";
 
 type PaymentArg = { data: Record<string, unknown>; idempotencyKey: string };
 
-const state = vi.hoisted(() => ({ cashbox: undefined as unknown, hqBranches: undefined as unknown }));
+const state = vi.hoisted(() => ({
+  cashbox: undefined as unknown,
+  hqBranches: undefined as unknown,
+  markets: undefined as unknown,
+}));
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: state.cashbox })));
 const http = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 const prepareImageMock = vi.hoisted(() => vi.fn());
@@ -55,7 +59,7 @@ vi.mock("../../../entities/payments/financeCoverage", () => ({
   }),
 }));
 vi.mock("../../../entities/markets", () => ({
-  useMarkets: () => ({ useGetMarkets: () => ({ data: undefined, isLoading: false }) }),
+  useMarkets: () => ({ useGetMarkets: () => ({ data: state.markets, isLoading: false }) }),
 }));
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
@@ -294,5 +298,29 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
     const [first, second] = courierPayment.mutateAsync.mock.calls.map(([arg]) => arg as PaymentArg);
     expect(second.data.receipt_id).toBe("602");
     expect(second.idempotencyKey).toBe(first.idempotencyKey);
+  });
+
+  it("filialdan «Marketga o'tkazma» (2026-11-11): chek maydoni yo'q; «O'tkazma» da yuklangan rasm ham yuborilmaydi", async () => {
+    state.markets = { data: { items: [{ id: "3", name: "Yandex" }] } };
+    const user = userEvent.setup();
+    renderAt("branch");
+    setAmount("250000");
+
+    await chooseMethod(user, "O'tkazma");
+    await uploadPhoto();
+    await chooseMethod(user, "Marketga o'tkazma");
+    expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Market" }));
+    await user.click(screen.getByRole("option", { name: "Yandex" }));
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    expect(within(confirm).queryByText("Biriktirildi")).not.toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: /Tasdiqlash/ }));
+
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const { data } = branchPayment.mutateAsync.mock.calls[0][0] as PaymentArg;
+    expect(data).toMatchObject({ branch_id: "15", payment_method: "click_to_market", market_id: "3" });
+    expect(data).not.toHaveProperty("receipt_id");
+    state.markets = undefined;
   });
 });

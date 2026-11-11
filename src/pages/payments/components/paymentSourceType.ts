@@ -54,6 +54,11 @@ export type PaymentViewer = {
   role?: string | null;
   /** Qator kassasi (`main` | `couriers` | `markets` | `branch`). */
   cashboxType?: string | null;
+  /**
+   * Qator to'lov turi (ixtiyoriy): `branch_to_main` + `click_to_market` — «Filialdan marketga o'tkazma» (filial pulni
+   * HQ'ga bermay, marketga o'tkazgan; 2026-11-11). Berilmasa — avvalgi yorliq.
+   */
+  paymentMethod?: string | null;
 };
 
 const isStaffViewer = (role?: string | null) => {
@@ -84,7 +89,8 @@ const V2_SOURCE_KEYS: Record<string, string> = {
 /**
  * Dizayn v2 manba yorlig'i (jadval sarlavhasi, tafsilot «Manba turi»). Matnlar maketdagidek:
  * `courier_payment` — superadmin/admin filial bo'lmagan kassada «Kuryer to'lovi», aks holda «Kuryerdan filialga
- * o'tkazma»; `market_payment` — market o'z kassasida «HQ'dan marketga o'tkazma», boshqalarda «Market to'lovi».
+ * o'tkazma»; `market_payment` — market o'z kassasida «HQ'dan marketga o'tkazma», boshqalarda «Market to'lovi»;
+ * `branch_to_main` «Marketga o'tkazma» usulida (`viewer.paymentMethod`) — «Filialdan marketga o'tkazma».
  * Noma'lum tur — o'qiladigan ko'rinish («New Source»), bo'sh — «—».
  */
 export const getPaymentSourceTitle = (
@@ -106,6 +112,10 @@ export const getPaymentSourceTitle = (
     return translate(
       normalize(viewer.role) === "market" ? "v2Common.sourceType.hqToMarket" : "v2Common.sourceType.marketPayment",
     );
+  }
+
+  if (normalized === "branch_to_main" && normalize(viewer.paymentMethod) === "click_to_market") {
+    return translate("v2Common.sourceType.branchToMarket");
   }
 
   const key = V2_SOURCE_KEYS[normalized];

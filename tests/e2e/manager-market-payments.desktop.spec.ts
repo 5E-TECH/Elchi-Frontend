@@ -3,8 +3,9 @@ import { fillMarketTransfer, mockManagerMarketPayments, noHorizontalScroll } fro
 
 /**
  * Menejer — marketga (ega Bahodir 2026-11-11, BeePost kabi), 1440px: «To'lovlar» → «Marketga to'lov» → «Berilishi
- * kerak» → market kassasi — o'z filiali kassasidan (O'tkazma — filial kartasi); kuryerdan qabulda «Marketga o'tkazma»
- * (filial kassasiga kirim + marketga chiqim). Hozirgi backend menejerga 403 — tushunarli o'zbekcha xabar.
+ * kerak» → market kassasi — o'z filiali kassasidan (O'tkazma — filial kartasi). Kuryerdan qabulda «Marketga o'tkazma»
+ * YO'Q (Dilshod 2026-11-11: faqat «Naqd» va «O'tkazma»; u faqat superadmin/admin'da). Hozirgi backend menejerga
+ * 403 — tushunarli o'zbekcha xabar.
  * Maket yo'q — eng yaqini `superadmin-payments-cash-detail-market`, `superadmin-payments-to-give-dialog`.
  */
 const shot = async (page: Page, name: string) => {
@@ -46,27 +47,16 @@ test.describe("Menejer — marketga to'lov, 1440px", () => {
     });
   }
 
-  test("kuryerdan qabul: «Marketga o'tkazma» → market; tasdiqda «Filial kassasi» va market; card_id yo'q", async ({ page }) => {
+  test("kuryerdan qabul: faqat «Naqd» va «O'tkazma» — «Marketga o'tkazma» yo'q (Dilshod 2026-11-11)", async ({ page }) => {
     const { payments, leaked } = await mockManagerMarketPayments(page);
     await page.goto("/payments/cash-detail/209?type=courier");
     await expect(page.getByRole("heading", { name: "Kuryerdan qabul qilish" })).toBeVisible({ timeout: 60_000 });
-    await page.getByRole("textbox", { name: /^Summa/ }).fill("150000");
-    await page.getByRole("radio", { name: "Marketga o'tkazma" }).click();
-    await expect(page.getByRole("combobox", { name: /Qaysi kartaga/ })).toHaveCount(0);
-    await page.getByRole("combobox", { name: "Market" }).click();
-    await page.getByRole("option", { name: "Baraka Shop" }).click();
-    await page.getByRole("button", { name: /qabul qilish$/i }).click();
-    const confirm = page.getByRole("alertdialog", { name: "To'lovni tasdiqlang" });
-    await expect(confirm).toContainText("Filial kassasi");
-    await expect(confirm).toContainText(/Market\s*Baraka Shop/);
-    await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
-
-    await expect.poll(() => payments.length).toBe(1);
-    expect(payments[0].path).toBe("finance/cashbox/payment/courier");
-    expect(payments[0].body).toEqual(
-      expect.objectContaining({ courier_id: "209", amount: 150_000, payment_method: "click_to_market", market_id: "2" }),
-    );
-    expect(payments[0].body).not.toHaveProperty("card_id");
+    const methods = page.getByRole("group", { name: /To'lov turi/ });
+    await expect(methods.getByRole("radio", { name: "Naqd" })).toBeVisible();
+    await expect(methods.getByRole("radio", { name: "O'tkazma" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Marketga o'tkazma" })).toHaveCount(0);
+    await expect(methods.getByRole("radio")).toHaveCount(2);
+    expect(payments).toEqual([]);
     expect(leaked).toEqual([]);
   });
 

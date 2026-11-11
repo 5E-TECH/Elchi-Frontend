@@ -302,6 +302,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   const sourceTitle = getPaymentSourceTitle(display.source_type, t, {
     role: viewerRole,
     cashboxType: display.cashbox_type,
+    paymentMethod: display.payment_method,
   });
 
   // T6 N2: pastki qism — faqat superadmin va tafsilot kelgach (yuklanishda, xatoda, boshqa rolda — faqat «Yopish»).

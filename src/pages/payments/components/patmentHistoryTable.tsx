@@ -182,7 +182,12 @@ const PaymentHistoryTable = ({
     [language],
   );
   const sourceTitle = useCallback(
-    (row: PaymentRow) => getPaymentSourceTitle(row.source_type, t, { role: viewerRole, cashboxType: rowCashboxType(row) }),
+    (row: PaymentRow) =>
+      getPaymentSourceTitle(row.source_type, t, {
+        role: viewerRole,
+        cashboxType: rowCashboxType(row),
+        paymentMethod: row.payment_method,
+      }),
     [t, viewerRole],
   );
   const cashboxLabel = useCallback(

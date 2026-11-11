@@ -89,6 +89,7 @@ const getHistoryRowTitle = (row: PaymentRow, t: Translate, viewerRole?: string |
   const title = getPaymentSourceTitle(row.source_type, t, {
     role: viewerRole,
     cashboxType: row.cashbox_type ?? row.cashbox?.cashbox_type,
+    paymentMethod: row.payment_method,
   });
   const sourceId = String(row.source_id ?? "").trim();
   return isOrderLinkedSource(row.source_type) && sourceId

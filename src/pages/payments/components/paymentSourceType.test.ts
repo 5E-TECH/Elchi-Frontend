@@ -53,6 +53,19 @@ describe("v2 kassa tarixi yorliqlari (maket matnlari)", () => {
     expect(getPaymentSourceTitle("market_payment", t, { role: "market" })).toBe("HQ'dan marketga o'tkazma");
     expect(getPaymentSourceTitle("market_payment", t, { role: "superadmin" })).toBe("Market to'lovi");
     expect(getPaymentSourceTitle("branch_to_main", t)).toBe("Filialdan HQ'ga o'tkazma");
+    // 2026-11-11: filial pulni HQ'ga bermay marketga o'tkazgan — `branch_to_main` + `click_to_market`.
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "superadmin", paymentMethod: "click_to_market" })).toBe(
+      "Filialdan marketga o'tkazma",
+    );
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "manager", paymentMethod: "click_to_market" })).toBe(
+      "Filialdan marketga o'tkazma",
+    );
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "superadmin", paymentMethod: "cash" })).toBe(
+      "Filialdan HQ'ga o'tkazma",
+    );
+    expect(getPaymentSourceTitle("market_payment", t, { role: "superadmin", paymentMethod: "click_to_market" })).toBe(
+      "Market to'lovi",
+    );
     expect(getPaymentSourceTitle("correction", t)).toBe("Tuzatish");
     expect(getPaymentSourceTitle("sell", t)).toBe("Sotuv");
     expect(getPaymentSourceTitle("new_backend_source", t)).toBe("New Backend Source");
