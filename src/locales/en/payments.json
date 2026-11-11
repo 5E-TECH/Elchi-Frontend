@@ -1099,6 +1099,34 @@
         "emptyTitle": "Cards were not checked",
         "emptyText": "Card balances were not confirmed in this shift (the setting was off)."
       },
+      "photoStatus": {
+        "uploaded": "Uploaded",
+        "pending": "Awaiting image",
+        "missing": "Image not uploaded",
+        "not_required": "Not required",
+        "lateUploaded": "Uploaded later",
+        "until": "until {{time}}"
+      },
+      "late": {
+        "upload": "Upload image",
+        "reupload": "Upload again",
+        "uploadFor": "{{action}}: {{card}}",
+        "title": "Late image upload",
+        "summary": "Card balance",
+        "expected": "System (at closing)",
+        "deadline": "Deadline",
+        "choose": "Choose screenshot",
+        "preparing": "Preparing…",
+        "previewAlt": "{{card}} screenshot",
+        "needBoth": "Choose a screenshot and enter the app balance",
+        "needPhoto": "Choose a screenshot",
+        "needBalance": "Enter the app balance",
+        "commentHint": "The balance differs from the system — a comment is required",
+        "commentError": "There is a difference — explain it in the comment",
+        "submit": "Upload",
+        "deadlineWas": "Deadline: {{time}}",
+        "note": "The image is added to this report; the Telegram and PDF report is not re-sent."
+      },
       "ops": {
         "title": "Operations summary",
         "subtitle": "{{count}} operations",

@@ -73,7 +73,8 @@ type RowInput = { entered?: string; comment?: string };
 /** Rasm xatosi: tur, hajm, HEIC o'qilmadi, rasm buzuq (kichraytirishda) yoki yuklash rad etildi. */
 export type ShiftPhotoIssue = "type" | "size" | "heic" | "decode" | "upload";
 
-const toPhotoIssue = (error: unknown): ShiftPhotoIssue | null => {
+/** Kichraytirish xatosi (`PrepareImageError`) → rasm muammosi; boshqa xato — `null`. BE-B oynasi ham ishlatadi. */
+export const toShiftPhotoIssue = (error: unknown): ShiftPhotoIssue | null => {
   if (!(error instanceof PrepareImageError)) return null;
   switch (error.code) {
     case "unsupported":
@@ -223,7 +224,7 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
         try {
           photo = await prepareShiftPhoto(file);
         } catch (error) {
-          fail(toPhotoIssue(error) ?? "decode");
+          fail(toShiftPhotoIssue(error) ?? "decode");
           return;
         }
         const invalid = validateShiftPhoto(photo);

@@ -1098,6 +1098,34 @@
         "emptyTitle": "Kartalar tekshirilmagan",
         "emptyText": "Bu smenada karta qoldig'i tasdiqlanmagan (sozlama o'chiq bo'lgan)."
       },
+      "photoStatus": {
+        "uploaded": "Yuklangan",
+        "pending": "Rasm kutilmoqda",
+        "missing": "Rasm yuklanmagan",
+        "not_required": "Talab qilinmagan",
+        "lateUploaded": "Keyin yuklandi",
+        "until": "{{time}} gacha"
+      },
+      "late": {
+        "upload": "Rasm yuklash",
+        "reupload": "Qayta yuklash",
+        "uploadFor": "{{action}}: {{card}}",
+        "title": "Rasmni keyin yuklash",
+        "summary": "Karta qoldig'i",
+        "expected": "Tizim bo'yicha (smena yopilganda)",
+        "deadline": "Muddat",
+        "choose": "Skrinshot tanlash",
+        "preparing": "Tayyorlanmoqda…",
+        "previewAlt": "{{card}} skrinshoti",
+        "needBoth": "Skrinshot tanlang va ilovadagi qoldiqni kiriting",
+        "needPhoto": "Skrinshot tanlang",
+        "needBalance": "Ilovadagi qoldiqni kiriting",
+        "commentHint": "Qoldiq tizimdagidan farq qiladi — izoh majburiy",
+        "commentError": "Farq bor — sababini izohga yozing",
+        "submit": "Yuklash",
+        "deadlineWas": "Muddat: {{time}}",
+        "note": "Rasm shu hisobotga qo'shiladi; Telegram va PDF hisobot o'zi qayta yuborilmaydi."
+      },
       "ops": {
         "title": "Operatsiyalar xulosasi",
         "subtitle": "{{count}} ta operatsiya",
