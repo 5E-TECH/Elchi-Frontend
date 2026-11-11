@@ -185,6 +185,16 @@ const findBranchPayable = (branches: unknown, branchId: string | undefined): num
   return value === undefined || value === null ? undefined : toNumber(value);
 };
 
+/**
+ * GET /branches qatoridan HQ'ning shu filialga qarzi (`hq_qarzi`, ≥ 0): «Kassa qarzga ishlaydi» filialidan HQ qarzidan
+ * ortiq qabul qilgan. Topilmasa — 0.
+ */
+const findBranchHqDebt = (branches: unknown, branchId: string | undefined): number => {
+  if (!branchId || !Array.isArray(branches)) return 0;
+  const row = branches.find((branch) => String(asRecord(branch).id ?? "") === String(branchId));
+  return row ? Math.max(toNumber(asRecord(row).hq_qarzi), 0) : 0;
+};
+
 /** GET /branches qatoridan filial nomi (state'siz ochilganda sarlavha uchun). */
 const findBranchName = (branches: unknown, branchId: string | undefined): string | undefined => {
   if (!branchId || !Array.isArray(branches)) return undefined;
@@ -1415,6 +1425,13 @@ const CashDetail = () => {
   const managerKassa = asRecord(managerSettlement.kassa);
   const managerKassaTotal = isManagerBranchView ? toOptionalNumber(managerKassa.total) : undefined;
   const managerReceivable = toOptionalNumber(managerSettlement.olinishi_kerak);
+  // HQ'ning filialga qarzi (HQ qarzidan ortiq qabul qilgan, «Kassa qarzga ishlaydi»): HQ ko'rinishida GET /branches
+  // qatoridan, menejerda settlement'dan. Ikkalasida ham asosiy son («Qabul qilinishi kerak» / «Berilishi kerak») 0.
+  const hqDebt = isHqBranchView
+    ? findBranchHqDebt(hqBranchesQuery.data?.data, id)
+    : isManagerBranchView
+      ? Math.max(toOptionalNumber(managerSettlement.hq_qarzi) ?? 0, 0)
+      : 0;
 
   // Amal formasi matnlari (maket).
   const typedAmount = parseAmountInput(watch("amount"));
@@ -1620,6 +1637,17 @@ const CashDetail = () => {
       <div className="flex flex-col gap-1">
         <span className="text-[13px] font-semibold text-text-muted">{shownBalance.label}</span>
         <MoneyFigure value={shownBalance.amount} hidden={!balanceVisible} />
+        {hqDebt > 0 ? (
+          <div className="mt-2 flex flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2" data-testid="hq-debt">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="font-semibold text-text">
+                {isManagerBranchView ? t("v2CashDetail.settlement.hqDebtManager") : t("v2CashDetail.settlement.hqDebt")}
+              </span>
+              <span className="whitespace-nowrap font-semibold text-text">{money(hqDebt)}</span>
+            </div>
+            <span className="text-xs text-text-muted">{t("v2CashDetail.settlement.hqDebtHint")}</span>
+          </div>
+        ) : null}
         {balanceVisible && courierDayChange ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
             <DeltaChip
@@ -1643,6 +1671,9 @@ const CashDetail = () => {
 
       {isManagerBranchView && managerKassaTotal !== undefined ? (
         <HqCoverage
+          // HQ qarzi bor (HQ ortiqcha qabul qilgan) — berilishi kerak 0, «kassa yetarlimi» o'lchagichi ma'nosiz;
+          // kassa va kuryerlardan olinishi kerak qatorlari qoladi.
+          showMeter={hqDebt <= 0}
           payable={displayBalance}
           cashbox={managerKassaTotal}
           receivable={managerReceivable}
@@ -1985,11 +2016,14 @@ const HqCoverage = ({
   cashbox,
   receivable,
   hidden,
+  showMeter = true,
 }: {
   payable: number;
   cashbox: number;
   receivable?: number;
   hidden: boolean;
+  /** `false` — faqat kassa/olinishi kerak qatorlari (HQ filialga qarzdor: berilishi kerak 0). */
+  showMeter?: boolean;
 }) => {
   const { t } = useTranslation("payments");
   const enough = payable <= cashbox;
@@ -1997,37 +2031,39 @@ const HqCoverage = ({
   const shown = (value: number) => (hidden ? MASK : formatMoneyLocalized(value));
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm text-text-muted">{t("v2CashDetail.settlement.versusCashbox")}</span>
-          <Badge tone={enough ? "success" : "warning"} icon={enough ? CircleCheck : TriangleAlert}>
-            {enough ? t("v2CashDetail.settlement.enough") : t("v2CashDetail.settlement.notEnough")}
-          </Badge>
+      {showMeter ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-text-muted">{t("v2CashDetail.settlement.versusCashbox")}</span>
+            <Badge tone={enough ? "success" : "warning"} icon={enough ? CircleCheck : TriangleAlert}>
+              {enough ? t("v2CashDetail.settlement.enough") : t("v2CashDetail.settlement.notEnough")}
+            </Badge>
+          </div>
+          <div
+            role="meter"
+            aria-label={t("v2CashDetail.settlement.meterLabel")}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(Math.min(100, share) * 10) / 10}
+            className={cx("h-3 overflow-hidden rounded-full", enough ? "bg-action-soft" : "bg-warning-soft")}
+          >
+            <span
+              className={cx("block h-full rounded-full", enough ? "bg-chart-1" : "bg-warning")}
+              style={{ width: `${Math.min(100, share)}%` }}
+            />
+          </div>
+          <ul className="m-0 flex list-none flex-wrap justify-between gap-x-4 gap-y-1 p-0 text-[13px] text-text-muted">
+            <li className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className={cx("size-2.5 rounded-[3px]", enough ? "bg-chart-1" : "bg-warning")} />
+              {t("v2CashDetail.settlement.payableShare", { share: formatPercentLocalized(share) })}
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className="size-2.5 rounded-[3px] bg-action-soft ring-1 ring-inset ring-border" />
+              {t("v2CashDetail.settlement.remains", { amount: shown(Math.max(0, cashbox - payable)) })}
+            </li>
+          </ul>
         </div>
-        <div
-          role="meter"
-          aria-label={t("v2CashDetail.settlement.meterLabel")}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(Math.min(100, share) * 10) / 10}
-          className={cx("h-3 overflow-hidden rounded-full", enough ? "bg-action-soft" : "bg-warning-soft")}
-        >
-          <span
-            className={cx("block h-full rounded-full", enough ? "bg-chart-1" : "bg-warning")}
-            style={{ width: `${Math.min(100, share)}%` }}
-          />
-        </div>
-        <ul className="m-0 flex list-none flex-wrap justify-between gap-x-4 gap-y-1 p-0 text-[13px] text-text-muted">
-          <li className="inline-flex items-center gap-2">
-            <span aria-hidden="true" className={cx("size-2.5 rounded-[3px]", enough ? "bg-chart-1" : "bg-warning")} />
-            {t("v2CashDetail.settlement.payableShare", { share: formatPercentLocalized(share) })}
-          </li>
-          <li className="inline-flex items-center gap-2">
-            <span aria-hidden="true" className="size-2.5 rounded-[3px] bg-action-soft ring-1 ring-inset ring-border" />
-            {t("v2CashDetail.settlement.remains", { amount: shown(Math.max(0, cashbox - payable)) })}
-          </li>
-        </ul>
-      </div>
+      ) : null}
       <dl className="m-0 flex flex-col border-t border-border">
         <div className="flex items-center justify-between gap-3 border-b border-border py-2.5">
           <dt className="inline-flex min-w-0 items-center gap-2 text-sm text-text-muted">

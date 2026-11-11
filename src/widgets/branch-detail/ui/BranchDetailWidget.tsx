@@ -17,6 +17,7 @@ import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Button, Card, PageHeader, type QueryLike } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import BranchCashboxDebtCard from "./BranchCashboxDebtCard";
 import BranchEmployeesSection from "./BranchEmployeesSection";
 
 interface BranchDetailWidgetProps {
@@ -186,6 +187,8 @@ const BranchDetailWidget = ({ branchId, branch, employeesQuery, metrics }: Branc
       {infoCard}
 
       {metrics}
+
+      <BranchCashboxDebtCard branch={branch} />
 
       <BranchEmployeesSection branchId={branchId} query={employeesQuery} />
 

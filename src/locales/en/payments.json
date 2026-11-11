@@ -885,7 +885,10 @@
       "notEnough": "Cashbox is not enough",
       "meterLabel": "Amount to be given compared with the cashbox amount",
       "payableShare": "To be given · {{share}}",
-      "remains": "Stays in cashbox · {{amount}}"
+      "remains": "Stays in cashbox · {{amount}}",
+      "hqDebt": "HQ owes the branch",
+      "hqDebtManager": "To receive from HQ",
+      "hqDebtHint": "HQ received more than owed — upcoming sales will close it"
     },
     "form": {
       "courierTitle": "Receive from courier",
