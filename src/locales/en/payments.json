@@ -185,6 +185,7 @@
   ,"receivePaymentError": "Failed to accept payment from courier"
   ,"marketPaymentSuccess": "Payment to market was sent successfully"
   ,"marketPaymentError": "Failed to send payment to market"
+  ,"paymentForbidden": "You are not allowed to make this payment."
   ,"branchToMainPaymentSuccess": "Payment was transferred to HQ successfully"
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
   ,"branchToMainSource": "Branch to HQ transfer"
@@ -890,6 +891,7 @@
       "courierToBranch": "Money moves from the courier cashbox to the branch cashbox",
       "marketTitle": "Pay the market",
       "marketSubtitle": "Money is transferred from the main cashbox to the market",
+      "marketSubtitleBranch": "Money is transferred from the branch cashbox to the market",
       "marketInfo": "The payment closes the oldest orders first, then the newer ones.",
       "branchTitle": "Receive from branch",
       "branchSubtitle": "Money moves from the branch cashbox to the main cashbox",

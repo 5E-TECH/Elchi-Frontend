@@ -482,14 +482,14 @@ describe("Close shift dialog — edge cases (CB-1 review)", () => {
   });
 });
 
-describe("Market payout action — SUPERADMIN/ADMIN only (backend 403 for managers)", () => {
-  it("HQ manager: no 'Marketga to'lov' action (the other actions stay)", async () => {
+describe("Market payout action — superadmin, admin va menejer (ega 2026-11-11; ilgari menejerga backend 403)", () => {
+  it("HQ manager: 'Marketga to'lov' is shown next to the other actions (o'z filiali kassasidan)", async () => {
     open(hqManager);
 
     expect(await screen.findByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Kuryerdan qabul qilish/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Marketga to'lov/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Marketga to'lov/ })).toBeInTheDocument();
   });
 
   it.each([
