@@ -11,8 +11,8 @@ import CashDetail from "./cashDetail";
  *    o'tkazish" sahifasi fix3 dan oldingidek — filial ID si URL'dan, profildagi
  *    filial emas. Filial puli HQ ga faqat superadmin/admin qabul qilganda
  *    o'tadi. `Idempotency-Key` o'rami qoladi;
- *  - menejerga "Do'konga o'tkazma" (click_to_market) ko'rsatilmaydi — backend
- *    403; superadmin/admin'da qoladi;
+ *  - "Do'konga o'tkazma" (click_to_market): ilgari menejerga yashirin edi (backend 403); ega 2026-11-11 —
+ *    menejerda ham (BeePost kabi, filial kassasi orqali), superadmin/admin'da qoladi;
  *  - kuryer "O'tkazma"sida ham karta egasi tanlovi yo'q (qiymati hech qachon
  *    yuborilmasdi).
  */
@@ -260,14 +260,14 @@ describe("Ega qarori #7 (IjqTYQks, 2026-10-25) — menejer HQ'ga pul o'tkazmaydi
   });
 });
 
-describe("'Do'konga o'tkazma' (click_to_market) — HQ cashbox only", () => {
-  it("manager: the courier receive page does not offer it (backend 403)", () => {
+describe("'Do'konga o'tkazma' (click_to_market) — superadmin/admin va menejer (ega 2026-11-11)", () => {
+  it("manager: the courier receive page offers it too (BeePost kabi, filial kassasi orqali)", () => {
     state.cashbox = branchCourierCashbox;
     renderAt("/payments/cash-detail/209?type=courier", manager);
 
     expect(screen.getByRole("radio", { name: "Naqd" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "O'tkazma" })).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: TO_MARKET })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: TO_MARKET })).toBeInTheDocument();
   });
 
   it("superadmin: the HQ courier page keeps it", () => {

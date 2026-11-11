@@ -12,6 +12,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canManageExpenseCategories": "superadmin",
   "canManageShiftSettings": "superadmin",
   "canManageWarehouses": "superadmin admin",
+  "canMoveCashboxCardMoney": "superadmin admin manager manager/HQ manager/PICKUP manager/REGIONAL manager/HYBRID",
   "canReassignPostToBranch": "superadmin admin",
   "canReceiveExternalOrders": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/PICKUP manager/HYBRID",
   "canReceiveRefusedMail": "superadmin admin registrator/HQ manager/HQ manager/REGIONAL manager/HYBRID",

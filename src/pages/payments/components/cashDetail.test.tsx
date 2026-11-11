@@ -1728,3 +1728,124 @@ describe("CashboxActionFormCard — forma xatolari ekran o'quvchiga (XsoWhKP5)",
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * Menejer — marketga (ega 2026-11-11, BeePost kabi): kuryerdan qabulda «Marketga o'tkazma» (filial kassasiga kirim + o'sha
+ * marketga chiqim) va «Marketga to'lov» o'z filiali kassasidan (Naqd · O'tkazma — filial kartasi). Ilgari menejerga
+ * yashirin edi (backend 403) — backend menejerga ochgach ishlaydi.
+ */
+describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-11)", () => {
+  beforeEach(() => {
+    cardPickerState.cards = [pickerCard("5", "Filial Uzcard", 1_150_000, true), pickerCard("6", "Filial Humo", 300_000)];
+    cardPickerState.calls = [];
+    courierPayment.mutateAsync.mockReset();
+    marketPayment.mutateAsync.mockReset();
+    marketsState.data = { data: { items: [{ id: "3", name: "Yandex" }, { id: "4", name: "Kimdur" }] } };
+  });
+  afterEach(() => {
+    cardPickerState.cards = [];
+    cashboxState.response = undefined;
+    marketsState.data = undefined;
+  });
+
+  const chooseCard = async (field: RegExp, option: RegExp) => {
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: field }));
+    await user.click(await screen.findByRole("option", { name: option }));
+  };
+  const marketCashbox = () => ({
+    data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: -820_000 }, user: { name: "Yandex" } },
+  });
+
+  it("⭐ kuryerdan qabul: «Marketga o'tkazma» → market; tasdiqda «Filial kassasi» va market; karta maydoni va card_id yo'q", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse({
+      cashbox: { id: "60", cashbox_type: "couriers", user_id: "209", balance: 1_280_000 },
+      is_hq_courier: false,
+    });
+    openWithoutState("/payments/cash-detail/209?type=courier", manager);
+    const user = userEvent.setup();
+
+    setAmount("150000");
+    await chooseMethod("Marketga o'tkazma");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartaga/ })).not.toBeInTheDocument();
+    await chooseMarket("Yandex");
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent("Filial kassasi");
+    expect(dialog).toHaveTextContent(/Market\s*Yandex/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual(
+      expect.objectContaining({ courier_id: "209", amount: 150_000, payment_method: "click_to_market", market_id: "3" }),
+    );
+    expect(courierPaymentCalls()[0].data).not.toHaveProperty("card_id");
+  });
+
+  it("⭐ marketga to'lov: «Pul filial kassasidan …»; O'tkazma — filial kartasi (card_id); tasdiq «Filial kassasi → Market kassasi»", async () => {
+    marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("heading", { name: "Marketga to'lov" })).toBeInTheDocument();
+    expect(screen.getByText("Pul filial kassasidan marketga o'tkaziladi")).toBeInTheDocument();
+    setAmount("200000");
+    await chooseMethod("O'tkazma");
+    // Karta ro'yxati — JWT doirasi (menejer — o'z filiali), `branch_id` siz.
+    expect(cardPickerState.calls.some((call) => call.enabled && !call.branchId)).toBe(true);
+    await chooseCard(/Qaysi kartadan/, /Filial Humo/);
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent("Filial kassasi");
+    expect(dialog).toHaveTextContent("Market kassasi");
+    expect(dialog).not.toHaveTextContent("Asosiy kassa");
+    expect(dialog).toHaveTextContent(/Karta\s*Filial Humo/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(
+      expect.objectContaining({ market_id: "3", amount: 200_000, payment_method: "click", card_id: "6" }),
+    );
+  });
+
+  it.each([
+    ["umumiy inglizcha «Forbidden resource»", "Forbidden resource", "Bu to'lovga ruxsatingiz yo'q."],
+    ["backendning o'zbekcha sababi", "Bu market sizning filialingizga tegishli emas", "Bu market sizning filialingizga tegishli emas"],
+  ])("403 (%s) — xabarda tushunarli matn", async (_label, backendMessage, shown) => {
+    marketPayment.mutateAsync.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { response: { status: 403, data: { statusCode: 403, message: backendMessage } } }),
+    );
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("50000");
+    await chooseMethod("Naqd");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await screen.findByText(shown)).toBeInTheDocument();
+    expect(screen.queryByText("Forbidden resource")).not.toBeInTheDocument();
+  });
+
+  it("marketga to'lov naqd: karta maydoni yo'q, card_id yuborilmaydi", async () => {
+    marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("50000");
+    await chooseMethod("Naqd");
+    expect(screen.queryByRole("combobox", { name: /Qaysi kartadan/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 50_000, payment_method: "cash" }));
+    expect(call.data).not.toHaveProperty("card_id");
+  });
+});

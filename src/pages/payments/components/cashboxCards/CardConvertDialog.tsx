@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowLeftRight, Banknote, CreditCard, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { isGenericForbiddenError } from "../../../../shared/lib/forbiddenError";
 import {
   useConvertCashboxCard,
   useRefreshCashboxCards,
@@ -118,7 +119,13 @@ export const CardConvertDialog = ({ open, onClose, cards, cashBalance, initialCa
         confirmLabel: t("cashboxCards.convert.submit"),
         confirmIcon: ArrowLeftRight,
         loadingLabel: t("cashboxCards.money.sending"),
-        errorView: (error) => (isUncertainCardMoveError(error) ? { content: t("cashboxCards.money.uncertain") } : null),
+        errorView: (error) =>
+          isUncertainCardMoveError(error)
+            ? { content: t("cashboxCards.money.uncertain") }
+            : // Umumiy inglizcha 403 («Forbidden resource») — o'zbekcha matn (menejerga backend ochilguncha).
+              isGenericForbiddenError(error)
+              ? { content: t("cashboxCards.money.forbidden") }
+              : null,
         onConfirm: async () => {
           const result = await sendIdempotent({
             fingerprint: cardConvertFingerprint(direction, card.id, amount),

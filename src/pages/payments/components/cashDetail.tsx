@@ -80,6 +80,7 @@ import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { isGenericForbiddenError } from "../../../shared/lib/forbiddenError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
@@ -714,11 +715,10 @@ const CashDetail = () => {
   const paymentTypeOptions = [
     { value: "cash", label: t("v2Common.paymentMethod.cash") },
     { value: "click", label: t("v2Common.paymentMethod.transfer") },
-    // "Marketga o'tkazma" faqat HQ kassasi orqali (superadmin/admin) —
-    // menejerga backend 403 qaytaradi (audit M4), shuning uchun ko'rsatilmaydi.
-    ...(type === "courier" && !isCurrentManagerRole
-      ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }]
-      : []),
+    // «Marketga o'tkazma» — kuryer pulni to'g'ridan-to'g'ri marketga o'tkazgan: kassaga kirim + o'sha marketga chiqim.
+    // Menejerda ham (ega 2026-11-11, BeePost kabi): pul filial kassasi orqali o'tadi. Ilgari menejerga yashirin edi
+    // (backend 403, audit M4) — backend menejerga ochgach ishlaydi (backend vazifasi alohida).
+    ...(type === "courier" ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }] : []),
   ];
   const { register, control, handleSubmit, watch, setValue, setError, setFocus, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
@@ -767,7 +767,9 @@ const CashDetail = () => {
    * (`branch_card_id`, `?branch_id`). «Marketga o'tkazma» va naqdda karta yo'q. Ro'yxat sahifa ochilganda o'qiladi.
    */
   const isClickPayment = selectedPaymentType === "click";
-  const canPickHqCard = !isTypeUnknown && (type === "courier" || !isCurrentManagerRole);
+  // Menejer: kuryerdan qabul va marketga to'lov — o'z filiali kartalari (JWT doirasi); HQ ga o'tkazish ko'rinishi —
+  // faqat ko'rish (formasiz).
+  const canPickHqCard = !isTypeUnknown && !(isCurrentManagerRole && type === "branch");
   const hqCardPicker = useCashboxCardPicker({ enabled: canPickHqCard });
   const branchCardPicker = useCashboxCardPicker({
     enabled: !isTypeUnknown && type === "branch" && !isCurrentManagerRole && Boolean(id),
@@ -1096,6 +1098,13 @@ const CashDetail = () => {
     readLinkedReceiptStatus(response) === "pending" ? t("receipt.notify.withAi", { message }) : message;
 
   /**
+   * To'lov xatosi matni: backend sababi (o'zbekcha); 403 da backend faqat umumiy inglizcha «Forbidden resource»
+   * qaytarsa — tushunarli matn (masalan menejerga «Marketga to'lov» backend ochilguncha).
+   */
+  const paymentErrorText = (error: unknown, fallback: string) =>
+    isGenericForbiddenError(error) ? t("paymentForbidden") : (getBackendErrorMessage(error) ?? fallback);
+
+  /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi
    * `Idempotency-Key` bilan. Kalit to'lovning barmoq iziga bog'langan va javob
    * kelgunicha saqlanadi: 504 (gateway timeout — pul o'tgan bo'lishi mumkin)
@@ -1123,7 +1132,7 @@ const CashDetail = () => {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
       // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
       if (!receipt.applyServerError(error)) {
-        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
+        notify.error(t("common:error"), { description: paymentErrorText(error, errorMessage) });
       }
       refetchShiftAfterPaymentError();
       if (isUncertainPaymentError(error)) {
@@ -1228,9 +1237,7 @@ const CashDetail = () => {
         // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
         // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
         if (!receipt.applyServerError(error)) {
-          notify.error(t("common:error"), {
-            description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
-          });
+          notify.error(t("common:error"), { description: paymentErrorText(error, t("receivePaymentError")) });
         }
         refetchShiftAfterPaymentError();
         if (isUncertainPaymentError(error)) {
@@ -1353,7 +1360,9 @@ const CashDetail = () => {
       ? t("v2CashDetail.settlement.counterparty", { name: hqName })
       : isCourierReceiveDetail
         ? t("v2CashDetail.settlement.receiver", { name: joinParts(cashboxLabel("main"), ownBranchName) })
-        : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
+        : type === "market" && isCurrentManagerRole
+          ? t("v2CashDetail.settlement.counterparty", { name: joinParts(cashboxLabel("branch"), ownBranchName) })
+          : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
   const hasCashboxAmount =
     !isManagerBranchView && (detailEntry?.kassadagi_summa !== undefined || cashbox?.balance !== undefined);
   const cashboxSplit = {
@@ -1390,7 +1399,9 @@ const CashDetail = () => {
         ? t("v2CashDetail.form.courierToBranch")
         : t("v2CashDetail.form.courierToMain")
       : type === "market"
-        ? t("v2CashDetail.form.marketSubtitle")
+        ? isCurrentManagerRole
+          ? t("v2CashDetail.form.marketSubtitleBranch")
+          : t("v2CashDetail.form.marketSubtitle")
         : t("v2CashDetail.form.branchSubtitle");
   const amountHint =
     type === "courier" && courierReceiveLimit !== null
@@ -1416,7 +1427,11 @@ const CashDetail = () => {
       };
     }
     if (type === "market") {
-      return { from: { title: cashboxLabel("main") }, to: { title: cashboxLabel("market"), meta: entityName } };
+      // Menejer marketga o'z filiali kassasidan to'laydi (ega 2026-11-11).
+      return {
+        from: isCurrentManagerRole ? { title: cashboxLabel("branch"), meta: ownBranchName } : { title: cashboxLabel("main") },
+        to: { title: cashboxLabel("market"), meta: entityName },
+      };
     }
     return { from: { title: cashboxLabel("branch"), meta: branchTitle }, to: { title: cashboxLabel("main") } };
   };

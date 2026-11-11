@@ -19,7 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { canManageCashboxCards, canManageShiftSettings } from "../../../../app/lib/access";
+import { canManageCashboxCards, canManageShiftSettings, canMoveCashboxCardMoney } from "../../../../app/lib/access";
 import {
   useCashboxCards,
   useMakeDefaultCashboxCard,
@@ -54,7 +54,8 @@ import { CardKindTile, CardNotice } from "./cardUi";
  * CardsManager). «Kassa balansi» dagi «Karta (Click)» qatori ochadi.
  *
  * Kim: superadmin/admin — asosiy kassa kartalari, to'liq boshqaruv (`canManageCashboxCards`); menejer — o'z filiali
- * kassasi (GET filialni JWT'dan oladi), faqat ko'rish: qoldiqlar va «Ko'chirma», yozish tugmalari yo'q.
+ * kassasi (GET filialni JWT'dan oladi): qoldiqlar, «Ko'chirma» va pul ko'chirish — «Kartalararo o'tkazma», «Karta ↔ Naqd»
+ * (`canMoveCashboxCardMoney`, ega 2026-11-11; backend menejerga ochgach ishlaydi); qo'shish / tahrirlash / o'chirish yo'q.
  *
  * Tuzilish — USTMA-UST OYNALAR (`Dialog` qatlamlari): ro'yxat oynasi ochiq qoladi, forma / o'tkazma / konvertatsiya /
  * o'chirish / ko'chirma uning ustida ochiladi (orqadagi oyna `inert`, Esc faqat ustkisini yopadi, fokus ochgan
@@ -95,10 +96,11 @@ export const CashboxCardsDialog = ({ open, onClose, cashBalance }: CashboxCardsD
   const language = resolveMoneyLanguage(i18n.resolvedLanguage ?? i18n.language);
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const canManage = useSelector(canManageCashboxCards);
+  const canMoveMoney = useSelector(canMoveCashboxCardMoney);
   const canManageShift = useSelector(canManageShiftSettings);
   const confirm = useConfirm();
   const query = useCashboxCards({ includeInactive: true, enabled: open });
-  const shift = useCashboxShift({ enabled: open && canManage, resolveOpener: false });
+  const shift = useCashboxShift({ enabled: open && canMoveMoney, resolveOpener: false });
   // Sahifadagi boshqa pul amallari kabi: smena yopiq bo'lsa pul ko'chirish qulf (backend ham rad etadi).
   const shiftLocked = shift.status === "closed";
   const makeDefault = useMakeDefaultCashboxCard();
@@ -280,7 +282,7 @@ export const CashboxCardsDialog = ({ open, onClose, cashBalance }: CashboxCardsD
             // tuzatmaydi: nomli kartadan naqdga chiqim `balance_card` ni ham, karta qoldig'ini ham bir xil kamaytiradi.
             <span className="basis-full">{t("cashboxCards.list.outOfSyncHint", { amount: money(list.default_balance) })}</span>
           )}
-          {!list.in_sync && canManage && defaultCard ? (
+          {!list.in_sync && canMoveMoney && defaultCard ? (
             <Button
               variant="secondary"
               size="sm"
@@ -332,7 +334,7 @@ export const CashboxCardsDialog = ({ open, onClose, cashBalance }: CashboxCardsD
         title={t("cashboxCards.title")}
         description={list ? t("cashboxCards.subtitle", { count: active.length }) : undefined}
       >
-        {canManage ? (
+        {canMoveMoney ? (
           <div className="flex flex-wrap items-center gap-2 max-md:grid max-md:grid-cols-1">
             <Button
               variant="ghost"
@@ -350,19 +352,22 @@ export const CashboxCardsDialog = ({ open, onClose, cashBalance }: CashboxCardsD
             >
               {t("cashboxCards.actions.convert")}
             </Button>
-            <Button
-              variant="secondary"
-              leftIcon={Plus}
-              disabled={!list}
-              onClick={() => form.show({ card: null })}
-              className="md:ml-auto"
-            >
-              {t("cashboxCards.actions.add")}
-            </Button>
+            {canManage ? (
+              <Button
+                variant="secondary"
+                leftIcon={Plus}
+                disabled={!list}
+                onClick={() => form.show({ card: null })}
+                className="md:ml-auto"
+              >
+                {t("cashboxCards.actions.add")}
+              </Button>
+            ) : null}
           </div>
-        ) : (
+        ) : null}
+        {canManage ? null : (
           <CardNotice tone="neutral" icon={Info}>
-            {t("cashboxCards.readOnly")}
+            {canMoveMoney ? t("cashboxCards.moveOnly") : t("cashboxCards.readOnly")}
           </CardNotice>
         )}
         {content}

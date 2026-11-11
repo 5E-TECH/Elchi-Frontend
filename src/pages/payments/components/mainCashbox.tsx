@@ -604,15 +604,9 @@ const MainCashbox = () => {
     [isManagerRole, openPicker],
   );
 
-  const visibleActions = useMemo(() => {
-    const availableActions = ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action));
-    // "Marketga to'lov" (POST /finance/cashbox/payment/market) faqat
-    // SUPERADMIN/ADMIN uchun — menejerga (HQ menejeri ham) backend 403
-    // qaytaradi, shuning uchun filial turidan qat'i nazar ko'rsatilmaydi.
-    if (!isManagerRole) return availableActions;
-
-    return availableActions.filter((action) => action !== "payToMarket");
-  }, [isManagerRole]);
+  // «Marketga to'lov» (POST finance/cashbox/payment/market) menejerda ham — o'z filiali kassasidan (ega 2026-11-11,
+  // BeePost kabi). Ilgari menejerga yashirin edi (backend 403) — backend menejerga ochgach ishlaydi.
+  const visibleActions = useMemo(() => ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action)), []);
 
   const handlePickerSelect = useCallback(
     (target: SettlementPickerTarget) => {

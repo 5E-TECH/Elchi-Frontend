@@ -691,6 +691,18 @@ describe("Payments — header and KPI cards", () => {
     expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
   });
+
+  it("⭐ manager: «Marketga to'lov» (ega 2026-11-11, BeePost kabi) — «Berilishi kerak» oynasi, market → market kassasi", async () => {
+    pageState.markets = {
+      data: [{ id: "2", name: "Baraka Shop", status: "active", cashbox: { balance: 4_820_000 } }],
+    };
+    const user = userEvent.setup();
+    open(manager);
+
+    await user.click(screen.getByRole("button", { name: "Marketga to'lov" }));
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toBeInTheDocument();
+  });
 });
 
 describe("Payments — 'Qabul qilinishi kerak'", () => {
