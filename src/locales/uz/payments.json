@@ -1884,6 +1884,19 @@
       "updated": "Karta saqlandi",
       "error": "Kartani saqlab bo'lmadi"
     },
+    "picker": {
+      "labelIn": "Qaysi kartaga",
+      "labelOut": "Qaysi kartadan",
+      "hqLabel": "HQ kartasi (pul qaysi kartaga tushadi)",
+      "branchLabel": "Filial kartasi (pul qaysi kartadan chiqadi)",
+      "defaultName": "{{name}} (asosiy)",
+      "loading": "Kartalar yuklanmoqda…",
+      "loadError": "Kartalar yuklanmadi — pul asosiy kartaga yoziladi",
+      "retry": "Qayta urinish",
+      "notEnough": "«{{name}}» kartasida faqat {{amount}} bor",
+      "confirmRow": "Karta",
+      "confirmBranchRow": "Filial kartasi"
+    },
     "money": {
       "amount": "Summa",
       "reason": "Sabab",

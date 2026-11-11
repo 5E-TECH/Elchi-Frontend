@@ -221,19 +221,34 @@ export const cashboxCardLedgerQuery = ({ from, to }: Pick<CashboxCardLedgerParam
 
 // ───────────────────────── so'rovlar ─────────────────────────
 
-export const cashboxCardListKey = (includeInactive: boolean) =>
-  [cashboxKey, "cards", "list", { includeInactive }] as const;
+export const cashboxCardListKey = (includeInactive: boolean, branchId?: string | null) =>
+  branchId
+    ? ([cashboxKey, "cards", "list", { includeInactive, branchId }] as const)
+    : ([cashboxKey, "cards", "list", { includeInactive }] as const);
 export const cashboxCardLedgerKey = (id: string, params: CashboxCardLedgerParams) =>
   [cashboxKey, "cards", "ledger", id, params] as const;
 
-/** `GET finance/cashbox/cards` — to'liq ro'yxat (oyna ochilgandagina: `enabled`). */
-export const useCashboxCards = ({ includeInactive = true, enabled = true }: { includeInactive?: boolean; enabled?: boolean } = {}) =>
+/**
+ * `GET finance/cashbox/cards` — to'liq ro'yxat (oyna ochilgandagina: `enabled`). `branchId` — superadmin/admin
+ * filial kassasining kartalarini o'qiydi (cards1111b: «Filialdan qabul qilish»dagi «Filial kartasi»); berilmasa —
+ * JWT doirasi (superadmin/admin — asosiy kassa, menejer — o'z filiali).
+ */
+export const useCashboxCards = ({
+  includeInactive = true,
+  enabled = true,
+  branchId = null,
+}: { includeInactive?: boolean; enabled?: boolean; branchId?: string | null } = {}) =>
   useQuery({
-    queryKey: cashboxCardListKey(includeInactive),
-    queryFn: () =>
-      api
-        .get(API_ENDPOINTS.CASHBOX.CARDS, { params: includeInactive ? { include_inactive: true } : undefined })
-        .then((res) => normalizeCashboxCardList(res.data)),
+    queryKey: cashboxCardListKey(includeInactive, branchId),
+    queryFn: () => {
+      const params = {
+        ...(includeInactive ? { include_inactive: true } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+      };
+      return api
+        .get(API_ENDPOINTS.CASHBOX.CARDS, { params: Object.keys(params).length ? params : undefined })
+        .then((res) => normalizeCashboxCardList(res.data));
+    },
     enabled,
     // Oyna o'z `ErrorState` ini chizadi.
     meta: { silentError: true },

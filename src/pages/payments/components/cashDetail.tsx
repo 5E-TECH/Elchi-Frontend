@@ -2,7 +2,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import {
@@ -74,6 +74,8 @@ import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
 import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
 import { useReceiptField } from "./receipt/useReceiptField";
+import { CashboxCardSelectField } from "./cashboxCards/CashboxCardPicker";
+import { useCashboxCardPicker } from "./cashboxCards/useCashboxCardPicker";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -386,6 +388,8 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
   // DTO'larida `source_user_id` yo'q — qiymat hech qachon yuborilmaydi.
   transferSourceId: yup.string().defined(),
   comment: yup.string().defined(),
+  cardId: yup.string().defined(),
+  branchCardId: yup.string().defined(),
 });
 
 const CashDetail = () => {
@@ -724,6 +728,8 @@ const CashDetail = () => {
         marketId: "",
         transferSourceId: "",
         comment: "",
+        cardId: "",
+        branchCardId: "",
       },
       resolver: yupResolver(cashDetailSchema) as Resolver<CashboxActionFormValues>,
     });
@@ -754,6 +760,19 @@ const CashDetail = () => {
         : null;
   const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
   const { reset: resetReceipt } = receipt;
+  /**
+   * KARTA (cards1111b — BeePost kabi): «O'tkazma» (`click`) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi.
+   * Kuryerdan qabul — qabul qiluvchi kassa kartasi (admin — asosiy kassa, menejer — o'z filiali; JWT doirasi);
+   * marketga to'lov — asosiy kassa kartasi (chiqim); filialdan qabul — HQ kartasi (`card_id`) + filial kartasi
+   * (`branch_card_id`, `?branch_id`). «Marketga o'tkazma» va naqdda karta yo'q. Ro'yxat sahifa ochilganda o'qiladi.
+   */
+  const isClickPayment = selectedPaymentType === "click";
+  const canPickHqCard = !isTypeUnknown && (type === "courier" || !isCurrentManagerRole);
+  const hqCardPicker = useCashboxCardPicker({ enabled: canPickHqCard });
+  const branchCardPicker = useCashboxCardPicker({
+    enabled: !isTypeUnknown && type === "branch" && !isCurrentManagerRole && Boolean(id),
+    branchId: type === "branch" ? (id ?? null) : null,
+  });
   // C14 / FE-PAY-08: "O'tkazma"da "karta egasi" tanlovi YO'Q — kuryer, market
   // va filial → HQ uchun ham. Kassa yagona (per-person karta yo'q), DTO'larda
   // `source_user_id` yo'q va qiymat hech qachon yuborilmasdi.
@@ -793,6 +812,8 @@ const CashDetail = () => {
       marketId: "",
       transferSourceId: "",
       comment: "",
+      cardId: "",
+      branchCardId: "",
     });
     resetReceipt();
   };
@@ -1141,6 +1162,14 @@ const CashDetail = () => {
       values.paymentType === "transfer" ? "click" : values.paymentType;
     // Chek barmoq iziga kirmaydi: `payment` dan tashqarida, faqat so'rov tanasida.
     const receiptBody = receipt.receiptId ? { receipt_id: receipt.receiptId } : {};
+    // Karta ham (cards1111b): faqat `click` va NOMLI karta — Asosiy karta yuborilmaydi (backend sukuti).
+    const hqCardId = normalizedPaymentMethod === "click" ? hqCardPicker.requestId(values.cardId) : undefined;
+    const branchCardId =
+      normalizedPaymentMethod === "click" && type === "branch" ? branchCardPicker.requestId(values.branchCardId) : undefined;
+    const cardBody = {
+      ...(hqCardId ? { card_id: hqCardId } : {}),
+      ...(branchCardId ? { branch_card_id: branchCardId } : {}),
+    };
 
     if (type === "branch") {
       // Filial ID si — URL'dagi `id` (fix3 dan oldingidek; FE-PAY-01
@@ -1154,7 +1183,7 @@ const CashDetail = () => {
         fingerprint: branchToMainPaymentFingerprint(payment),
         send: (idempotencyKey) =>
           createPaymentBranchToMain.mutateAsync({
-            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
+            data: { ...payment, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
             idempotencyKey,
           }),
         amount,
@@ -1192,7 +1221,7 @@ const CashDetail = () => {
       let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
       try {
         response = await createPaymentCourier.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody },
+          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
           idempotencyKey,
         });
       } catch (error) {
@@ -1250,7 +1279,7 @@ const CashDetail = () => {
       fingerprint: marketPaymentFingerprint(payment),
       send: (idempotencyKey) =>
         createPaymentMarket.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment },
+          data: { ...payment, payment_date: paymentDate, comment, ...cardBody },
           idempotencyKey,
         }),
       amount,
@@ -1429,6 +1458,12 @@ const CashDetail = () => {
         values.paymentType === "click_to_market"
           ? marketOptions.find((option) => option.value === values.marketId)?.label ?? values.marketId
           : "";
+      const isClick = values.paymentType === "click";
+      const hqCard = isClick && hqCardPicker.cards.length > 1 ? hqCardPicker.resolve(values.cardId) : null;
+      const branchCard =
+        isClick && type === "branch" && branchCardPicker.cards.length > 1
+          ? branchCardPicker.resolve(values.branchCardId)
+          : null;
       const ok = await confirm({
         tone: "success",
         title: t("v2CashDetail.confirm.title"),
@@ -1440,6 +1475,8 @@ const CashDetail = () => {
         transfer: getPaymentTransfer(),
         rows: [
           ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
+          ...(hqCard ? [{ label: t("cashboxCards.picker.confirmRow"), value: hqCard.name }] : []),
+          ...(branchCard ? [{ label: t("cashboxCards.picker.confirmBranchRow"), value: branchCard.name }] : []),
           ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
           ...(comment ? [{ label: t("v2CashDetail.confirm.comment"), value: comment, stacked: true }] : []),
         ],
@@ -1620,6 +1657,50 @@ const CashDetail = () => {
       submitLoading={isSubmitting}
       submitDisabled={(isStoreTransfer && !selectedMarketId) || receipt.busy}
       receiptField={<ReceiptField receipt={receipt} viewerDescription={formTitle} />}
+      cardField={
+        isClickPayment && canPickHqCard ? (
+          <>
+            <Controller
+              control={control}
+              name="cardId"
+              render={({ field }) => (
+                <CashboxCardSelectField
+                  ref={field.ref}
+                  picker={hqCardPicker}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  direction={type === "market" ? "out" : "in"}
+                  label={type === "branch" ? t("cashboxCards.picker.hqLabel") : undefined}
+                  amount={parseAmountInput(watch("amount"))}
+                  balanceVisible={balanceVisible}
+                />
+              )}
+            />
+            {type === "branch" && !isCurrentManagerRole ? (
+              <Controller
+                control={control}
+                name="branchCardId"
+                render={({ field }) => (
+                  <CashboxCardSelectField
+                    ref={field.ref}
+                    picker={branchCardPicker}
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    direction="out"
+                    label={t("cashboxCards.picker.branchLabel")}
+                    amount={parseAmountInput(watch("amount"))}
+                    balanceVisible={balanceVisible}
+                  />
+                )}
+              />
+            ) : null}
+          </>
+        ) : null
+      }
       onSubmitAttempt={() => receipt.validate({ moveFocus: false })}
       commentLabel={t("v2CashDetail.form.comment")}
       commentPlaceholder={t("v2CashDetail.form.commentPlaceholder")}

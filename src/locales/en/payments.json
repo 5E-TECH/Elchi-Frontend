@@ -1890,6 +1890,19 @@
       "updated": "Card saved",
       "error": "Could not save the card"
     },
+    "picker": {
+      "labelIn": "To which card",
+      "labelOut": "From which card",
+      "hqLabel": "HQ card (where the money goes)",
+      "branchLabel": "Branch card (where the money comes from)",
+      "defaultName": "{{name}} (main)",
+      "loading": "Loading cards…",
+      "loadError": "Cards did not load — the money is recorded on the main card",
+      "retry": "Retry",
+      "notEnough": "Card “{{name}}” has only {{amount}}",
+      "confirmRow": "Card",
+      "confirmBranchRow": "Branch card"
+    },
     "money": {
       "amount": "Amount",
       "reason": "Reason",

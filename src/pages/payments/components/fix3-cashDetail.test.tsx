@@ -38,6 +38,20 @@ const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const apiGet = vi.hoisted(() => vi.fn());
 
+// cards1111b — kassa kartalari ro'yxati (karta tanlovi) bu testlarda yo'q: faqat Asosiy karta (maydon chizilmaydi).
+vi.mock("./cashboxCards/useCashboxCardPicker", () => ({
+  useCashboxCardPicker: () => ({
+    cards: [],
+    defaultCard: null,
+    available: false,
+    loading: false,
+    failed: false,
+    retry: () => undefined,
+    resolve: () => null,
+    requestId: () => undefined,
+  }),
+}));
+
 vi.mock("../../../entities/payments", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../entities/payments")>()),
   // Chek rasmi o'chiq — bu testlar formaning o'zi haqida (chek: QlLf33Ma-receipt.test.tsx).

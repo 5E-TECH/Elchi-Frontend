@@ -35,6 +35,20 @@ const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 
 // qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
+// cards1111b — kassa kartalari ro'yxati (karta tanlovi) bu testlarda yo'q: faqat Asosiy karta (maydon chizilmaydi).
+vi.mock("./cashboxCards/useCashboxCardPicker", () => ({
+  useCashboxCardPicker: () => ({
+    cards: [],
+    defaultCard: null,
+    available: false,
+    loading: false,
+    failed: false,
+    retry: () => undefined,
+    resolve: () => null,
+    requestId: () => undefined,
+  }),
+}));
+
 vi.mock("../../../entities/payments/financeDaily", async (importOriginal) => {
   const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
   return {
