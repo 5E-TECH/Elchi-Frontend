@@ -89,7 +89,8 @@ export const getDisplayStatus = (order: Order): string => {
 const ACTIVE_STATUSES = new Set<string>(["waiting", "on the road", "new", "received"]);
 /**
  * Skan-qabul qilinadigan holatlar (2026-11-07, backend `PATCH post/receive/:id` `scan: true` bilan bir) — yo'lda yoki
- * mijoz kutilmoqda. Bunday qatorda «Sotish / Bekor» o'rniga «Qabul qilish» (avval qabul, keyin sotish).
+ * mijoz kutilmoqda. Bunday qatorda «Qabul qilish» VA «Sotish / Bekor» (2026-11-12: sotish/bekor bosilsa backend avval
+ * avtomatik qabul qiladi — tracking'da «Kutilmoqda», keyin «Sotildi / Bekor qilindi»).
  */
 const RECEIVABLE_STATUSES = new Set<string>(["on the road", "waiting customer"]);
 /** «Qayta tiklash» ko'rinadigan holatlar — faqat sotilgan va bekor qilingan. */

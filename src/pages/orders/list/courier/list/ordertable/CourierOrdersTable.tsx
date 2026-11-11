@@ -169,46 +169,54 @@ const CourierOrdersTable = ({
   const status = (order: Order) => <OrderStatusBadge status={getDisplayStatus(order)} order={order} />;
 
   /** Jadval qatoridagi amallar (maket: `el-btn-sm`, planshetda «Bekor»). */
+  /** Jadval qatoridagi «Sotish» + «Bekor» (faol va yo'ldagi qatorlar). */
+  const rowSellCancel = (order: Order): ReactNode => (
+    <>
+      <Button
+        variant="success-soft"
+        size="sm"
+        aria-haspopup="dialog"
+        aria-label={t("courierList.sellRow", { id: order.id })}
+        onClick={() => onDeliver?.(order)}
+      >
+        {t("courierList.sell")}
+      </Button>
+      <Button
+        variant="danger-soft"
+        size="sm"
+        aria-haspopup="dialog"
+        aria-label={t("courierList.cancelRow", { id: order.id })}
+        onClick={() => onCancel?.(order)}
+      >
+        <span className="lg:hidden">{t("courierList.cancelShort")}</span>
+        <span className="max-lg:hidden">{t("courierList.cancel")}</span>
+      </Button>
+    </>
+  );
+
   const rowActions = (order: Order): ReactNode => {
+    // Yo'ldagi qator (2026-11-12): «Qabul qilish» + «Sotish / Bekor» — sotish/bekor bosilsa backend avval avtomatik
+    // qabul qiladi (tracking: «Yo'lda → Kutilmoqda», keyin «Sotildi / Bekor qilindi»).
     if (showReceive(order)) {
       return (
-        <Button
-          variant="secondary"
-          size="sm"
-          compact
-          leftIcon={Check}
-          loading={receiving(order)}
-          aria-label={t("courierList.receiveRow", { id: order.id })}
-          onClick={() => onReceive?.(order)}
-        >
-          {t("courierList.receive")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            compact
+            leftIcon={Check}
+            loading={receiving(order)}
+            aria-label={t("courierList.receiveRow", { id: order.id })}
+            onClick={() => onReceive?.(order)}
+          >
+            {t("courierList.receive")}
+          </Button>
+          {rowSellCancel(order)}
+        </div>
       );
     }
     if (isActiveOrder(order)) {
-      return (
-        <div className="flex gap-2">
-          <Button
-            variant="success-soft"
-            size="sm"
-            aria-haspopup="dialog"
-            aria-label={t("courierList.sellRow", { id: order.id })}
-            onClick={() => onDeliver?.(order)}
-          >
-            {t("courierList.sell")}
-          </Button>
-          <Button
-            variant="danger-soft"
-            size="sm"
-            aria-haspopup="dialog"
-            aria-label={t("courierList.cancelRow", { id: order.id })}
-            onClick={() => onCancel?.(order)}
-          >
-            <span className="lg:hidden">{t("courierList.cancelShort")}</span>
-            <span className="max-lg:hidden">{t("courierList.cancel")}</span>
-          </Button>
-        </div>
-      );
+      return <div className="flex gap-2">{rowSellCancel(order)}</div>;
     }
     if (showRestore(order)) {
       return (
@@ -237,12 +245,35 @@ const CourierOrdersTable = ({
   /** Telefon kartasidagi amallar (44 px, maket `courier-orders-*` telefon). */
   const cardActions = (order: Order): ReactNode => {
     const name = nameOf(order);
+    const sellCancel = (
+      <div className="flex gap-2">
+        <Button
+          variant="success-soft"
+          className="flex-1"
+          aria-haspopup="dialog"
+          aria-label={t("courierList.sellCard", { name })}
+          onClick={() => onDeliver?.(order)}
+        >
+          {t("courierList.sell")}
+        </Button>
+        <Button
+          variant="danger-soft"
+          className="flex-1"
+          aria-haspopup="dialog"
+          aria-label={t("courierList.cancelCard", { name })}
+          onClick={() => onCancel?.(order)}
+        >
+          {t("courierList.cancel")}
+        </Button>
+      </div>
+    );
+    // Yo'ldagi karta (2026-11-12): «Qabul qilish» ustida, «Sotish / Bekor» ostida (avtomatik qabul — backend).
     if (showReceive(order)) {
       return (
-        <div className="flex gap-2 px-4 pb-3">
+        <div className="flex flex-col gap-2 px-4 pb-3">
           <Button
             variant="secondary"
-            className="flex-1"
+            className="w-full"
             leftIcon={Check}
             loading={receiving(order)}
             aria-label={t("courierList.receiveCard", { name })}
@@ -250,32 +281,12 @@ const CourierOrdersTable = ({
           >
             {t("courierList.receive")}
           </Button>
+          {sellCancel}
         </div>
       );
     }
     if (isActiveOrder(order)) {
-      return (
-        <div className="flex gap-2 px-4 pb-3">
-          <Button
-            variant="success-soft"
-            className="flex-1"
-            aria-haspopup="dialog"
-            aria-label={t("courierList.sellCard", { name })}
-            onClick={() => onDeliver?.(order)}
-          >
-            {t("courierList.sell")}
-          </Button>
-          <Button
-            variant="danger-soft"
-            className="flex-1"
-            aria-haspopup="dialog"
-            aria-label={t("courierList.cancelCard", { name })}
-            onClick={() => onCancel?.(order)}
-          >
-            {t("courierList.cancel")}
-          </Button>
-        </div>
-      );
+      return <div className="px-4 pb-3">{sellCancel}</div>;
     }
     if (showRestore(order)) {
       return (

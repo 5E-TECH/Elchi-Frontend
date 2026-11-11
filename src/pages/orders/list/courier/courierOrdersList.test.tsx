@@ -647,12 +647,13 @@ describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)"
 
   afterEach(() => patchSpy.mockRestore());
 
-  it("yo'ldagi qatorda «Sotish / Bekor» o'rniga «Qabul qilish»; pochtasiz yoki kutilayotgan — avvalgidek", () => {
+  it("yo'ldagi qatorda «Qabul qilish» VA «Sotish / Bekor» (2026-11-12); pochtasiz yoki kutilayotgan — avvalgidek", () => {
     renderPage();
 
     const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
     expect(within(road).getByRole("button", { name: "№1001 ni qabul qilish" })).toHaveTextContent("Qabul qilish");
-    expect(within(road).queryByRole("button", { name: /sotish|bekor qilish/ })).toBeNull();
+    expect(within(road).getByRole("button", { name: "№1001 ni sotish" })).toHaveTextContent("Sotish");
+    expect(within(road).getByRole("button", { name: "№1001 ni bekor qilish" })).toBeInTheDocument();
 
     const noPost = screen.getByText("Pochtasiz yo'ldagi").closest("tr")!;
     expect(within(noPost).getByRole("button", { name: "№1002 ni sotish" })).toBeInTheDocument();
@@ -662,6 +663,22 @@ describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)"
     expect(within(waiting).getByRole("button", { name: "№1003 ni sotish" })).toBeInTheDocument();
     expect(within(waiting).getByRole("button", { name: "№1003 ni bekor qilish" })).toBeInTheDocument();
     expect(within(waiting).queryByRole("button", { name: /qabul qilish/ })).toBeNull();
+  });
+
+  it("⭐ yo'ldagi qatorda «Sotish» / «Bekor» — oyna ochiladi, FE qabul so'rovini yubormaydi (backend o'zi qabul qiladi)", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
+    await user.click(within(road).getByRole("button", { name: "№1001 ni sotish" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(patchSpy).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await user.click(within(road).getByRole("button", { name: "№1001 ni bekor qilish" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(patchSpy).not.toHaveBeenCalled();
   });
 
   it("«Qabul qilish» → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, xabar va ro'yxat yangilanadi", async () => {
@@ -734,14 +751,14 @@ describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)"
     expect(screen.getByText("Pochta hali jo'natilmagan")).toBeInTheDocument();
   });
 
-  it("telefon kartasi: yo'ldagida «Qabul qilish», sotish / bekor tugmalari yo'q", async () => {
+  it("telefon kartasi: yo'ldagida «Qabul qilish» va «Sotish / Bekor» (2026-11-12)", async () => {
     const user = userEvent.setup();
     const restore = mockPhone(true);
     try {
       renderPage();
       const list = screen.getByRole("list", { name: "Kutilayotgan buyurtmalar" });
-      expect(within(list).queryByRole("button", { name: "Yo'ldagi mijoz: sotish" })).toBeNull();
-      expect(within(list).queryByRole("button", { name: "Yo'ldagi mijoz: bekor qilish" })).toBeNull();
+      expect(within(list).getByRole("button", { name: "Yo'ldagi mijoz: sotish" })).toBeInTheDocument();
+      expect(within(list).getByRole("button", { name: "Yo'ldagi mijoz: bekor qilish" })).toBeInTheDocument();
       expect(within(list).getByRole("button", { name: "Pochtasiz yo'ldagi: sotish" })).toBeInTheDocument();
 
       await user.click(within(list).getByRole("button", { name: "Yo'ldagi mijoz: qabul qilish" }));
