@@ -222,9 +222,7 @@ export const cashboxCardLedgerQuery = ({ from, to }: Pick<CashboxCardLedgerParam
 // ───────────────────────── so'rovlar ─────────────────────────
 
 export const cashboxCardListKey = (includeInactive: boolean, branchId?: string | null) =>
-  branchId
-    ? ([cashboxKey, "cards", "list", { includeInactive, branchId }] as const)
-    : ([cashboxKey, "cards", "list", { includeInactive }] as const);
+  [cashboxKey, "cards", "list", branchId ? { includeInactive, branchId } : { includeInactive }] as const;
 export const cashboxCardLedgerKey = (id: string, params: CashboxCardLedgerParams) =>
   [cashboxKey, "cards", "ledger", id, params] as const;
 
