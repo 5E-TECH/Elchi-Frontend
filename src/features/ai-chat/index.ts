@@ -18,7 +18,8 @@ export {
   CUT_POLL_INTERVAL_MS,
   CUT_POLL_MAX_MS,
   findAnswerAfter,
+  turnItemKey,
   useAiChat,
   visibleHistory,
 } from "./model/useAiChat";
-export type { PendingTurn, TurnAnswer, TurnPhase, UseAiChatOptions } from "./model/useAiChat";
+export type { PendingTurn, SendOptions, TurnAnswer, TurnPhase, UseAiChatOptions } from "./model/useAiChat";

@@ -38,9 +38,13 @@ import {
  *   - `done` — `limits` → `access/me` keshi; ro'yxat va suhbat yangilanadi; tarixda javob paydo bo'lgach joriy savol
  *     tarixga «qo'shiladi» (takror chizilmaydi);
  *   - `meta` dan keyingi har yakun (xato, uzilish, to'xtatish) — savol limitdan ketgan: `access/me`, ro'yxat va suhbat
- *     yangilanadi;
+ *     yangilanadi; jonli savoldan chiqish («To'xtatish», suhbat almashishi, «Yangi suhbat») — `meta` gacha ham
+ *     (server savolni qabul qilib bo'lgan bo'lishi mumkin) ro'yxat va `access/me` yangilanadi;
  *   - uzilish (`cut`) — ai-service javobni baribir oxiriga yetkazib saqlaydi: suhbat har 5 s da (≈150 s gacha) qayta
- *     so'raladi, javob kelsa qisman matn o'rnini egallaydi;
+ *     so'raladi, javob kelsa qisman matn o'rnini egallaydi. Kutish joriy savoldan alohida: shu orada yuborilgan yangi
+ *     savol (yoki «Qayta yuborish») uni to'xtatmaydi;
+ *   - savol qabul qilinmadi (`busy`, 400, limit, sessiya) — ekran yuborishdan oldingi holatiga qaytadi (oldingi
+ *     savol — masalan uzilgan javob — joyida qoladi), matn maydonga faqat maydondan yuborilgan bo'lsa qaytadi;
  *   - suhbat almashsa yoki «Yangi suhbat» — oqim to'xtatiladi (server javobni baribir saqlaydi).
  */
 
@@ -69,8 +73,14 @@ export interface PendingTurn {
   collecting: boolean;
   answer: TurnAnswer | null;
   error: TurnErrorView | null;
-  /** Uzilishdan keyingi kutish tugadi (tarixda javob paydo bo'lmadi). */
-  pollExhausted: boolean;
+}
+
+export interface SendOptions {
+  /**
+   * Matn maydondan yuborildi: savol qabul qilinmasa (`busy`, 400, limit, sessiya) matn maydonga qaytadi. Tavsiya va
+   * «Qayta yuborish» — qaytmaydi (maydondagi foydalanuvchi matni ustiga yozilmaydi).
+   */
+  restoreDraft?: boolean;
 }
 
 export interface UseAiChatOptions {
@@ -86,6 +96,20 @@ export interface UseAiChatOptions {
 /** Uzilishdan keyin suhbatni qayta so'rash oralig'i va jami kutish. */
 export const CUT_POLL_INTERVAL_MS = 5_000;
 export const CUT_POLL_MAX_MS = 150_000;
+
+/**
+ * Joriy savol qatorlarining React kaliti (`q` — savol, `a` — javob). Tarixga o'tgach o'sha xabarlar shu kalit bilan
+ * chiziladi (`messageKey`) — DOM tuguni saqlanadi, `role="log"` savol va javobni ikkinchi marta o'qimaydi.
+ */
+export const turnItemKey = (turnKey: number, part: "q" | "a") => `turn-${turnKey}-${part}`;
+
+/** Uzilgan javobni kutish (tarixda savoldan keyin javob paydo bo'lguncha). */
+type AnswerWatch = { conversationId: string; questionId: string; since: number };
+
+/** Xarajat shifti: `reset_at` gacha kiritish o'chiq. */
+type CapState = { until: string; titleKey: string };
+
+type SendContext = { key: number; question: string; previous: PendingTurn | null; restoreDraft: boolean };
 
 const LIVE_PHASES: ReadonlySet<TurnPhase> = new Set(["sending", "streaming"]);
 
@@ -116,7 +140,11 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
   const { t } = useTranslation("aiAdvisor");
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<PendingTurn | null>(null);
-  const [capUntil, setCapUntil] = useState<string | null>(null);
+  const [cap, setCap] = useState<CapState | null>(null);
+  const [watch, setWatch] = useState<AnswerWatch | null>(null);
+  /** Tarixga o'tgan joriy savol xabarlari → ularning `turnItemKey` i. */
+  const [turnKeys, setTurnKeys] = useState<Readonly<Record<string, string>>>({});
+  const pendingRef = useRef<PendingTurn | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const keyRef = useRef(0);
   /** Oqim qaysi suhbatga yozyapti (`meta` da sinxron yangilanadi — URL o'zgarishi «suhbat almashdi» deb olinmasin). */
@@ -124,6 +152,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
   const callbacks = useRef({ onConversationStarted, onRestoreDraft, onFieldError });
   useEffect(() => {
     callbacks.current = { onConversationStarted, onRestoreDraft, onFieldError };
+    pendingRef.current = pending;
   });
 
   const detail = useAiConversation(conversationId);
@@ -137,35 +166,47 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
     controllerRef.current = null;
   }, []);
 
-  /** Pending'ni olib, matnni maydonga qaytaradi (savol yuborilmagan holatlar). */
-  const dropPending = useCallback((key: number, question: string) => {
-    setPending((prev) => (prev && prev.key === key ? null : prev));
-    callbacks.current.onRestoreDraft(question);
+  /**
+   * Savol qabul qilinmadi: ekran yuborishdan oldingi holatga qaytadi (oldingi savol — masalan uzilgan javob va uning
+   * kutilishi — joyida), matn maydonga faqat maydondan yuborilgan bo'lsa qaytadi.
+   */
+  const dropPending = useCallback(({ key, question, previous, restoreDraft }: SendContext) => {
+    setPending((prev) => (prev && prev.key === key ? previous : prev));
+    if (restoreDraft) callbacks.current.onRestoreDraft(question);
   }, []);
 
   const applyFailure = useCallback(
-    (key: number, question: string, failure: ChatFailure) => {
+    (context: SendContext, failure: ChatFailure) => {
       switch (failure.action) {
         case "turn":
-          if (failure.view.variant === "cap") setCapUntil(failure.view.resetAt ?? nextMidnightTashkent());
-          patch(key, (turn) => ({ ...turn, phase: failure.view.variant === "cut" ? "cut" : "error", error: failure.view, collecting: false }));
+          if (failure.view.variant === "cap") {
+            setCap({ until: failure.view.resetAt ?? nextMidnightTashkent(), titleKey: failure.view.titleKey });
+          }
+          patch(context.key, (turn) => ({
+            ...turn,
+            phase: failure.view.variant === "cut" ? "cut" : "error",
+            error: failure.view,
+            collecting: false,
+          }));
           return;
         case "notify":
-          dropPending(key, question);
+          dropPending(context);
           notify.warning(t(failure.titleKey), {
             description: failure.descriptionKey ? t(failure.descriptionKey, failure.values) : undefined,
           });
           return;
         case "field":
-          dropPending(key, question);
-          callbacks.current.onFieldError(t(failure.messageKey));
+          dropPending(context);
+          // Maydondagi matn foydalanuvchiniki (tavsiya / «Qayta yuborish» uni o'zgartirmagan) — uni xato deb belgilamaymiz.
+          if (context.restoreDraft) callbacks.current.onFieldError(t(failure.messageKey));
+          else notify.warning(t(failure.messageKey));
           return;
         case "access":
-          dropPending(key, question);
+          dropPending(context);
           void queryClient.invalidateQueries({ queryKey: queryKeys.aiAssistant.accessMe });
           return;
         case "silent":
-          dropPending(key, question);
+          dropPending(context);
           return;
       }
     },
@@ -173,7 +214,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
   );
 
   const send = useCallback(
-    async (raw: string) => {
+    async (raw: string, { restoreDraft = false }: SendOptions = {}) => {
       const question = raw.trim();
       if (!question) return;
       if (pending && LIVE_PHASES.has(pending.phase)) return;
@@ -186,6 +227,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
       const startConversation = isConversationId(conversationId) ? conversationId : null;
       streamConversationRef.current = startConversation;
       callbacks.current.onFieldError(null);
+      const context: SendContext = { key, question, previous: pending, restoreDraft };
 
       setPending({
         key,
@@ -198,12 +240,20 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
         collecting: false,
         answer: null,
         error: null,
-        pollExhausted: false,
       });
 
       let afterMeta = false;
       let savedConversation: string | null = startConversation;
+      let questionId: string | null = null;
       const pendingTools = new Set<string>();
+
+      const fail = (failure: ChatFailure) => {
+        applyFailure(context, failure);
+        // Uzildi — ai-service javobni baribir saqlaydi: suhbat qayta so'raladi (joriy savoldan alohida).
+        if (failure.action === "turn" && failure.view.variant === "cut" && savedConversation && questionId) {
+          setWatch({ conversationId: savedConversation, questionId, since: Date.now() });
+        }
+      };
 
       const onEvent = (event: AiAssistantEvent) => {
         if (keyRef.current !== key) return;
@@ -211,6 +261,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
           case "meta":
             afterMeta = true;
             savedConversation = event.conversationId;
+            questionId = event.messageId;
             streamConversationRef.current = event.conversationId;
             patch(key, (turn) => ({
               ...turn,
@@ -255,7 +306,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
             return;
           }
           case "error":
-            applyFailure(key, question, classifyStreamError(event, afterMeta));
+            fail(classifyStreamError(event, afterMeta));
             if (afterMeta) void invalidateAiAfterQuestion(queryClient, savedConversation);
             return;
         }
@@ -271,11 +322,11 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
       switch (outcome.kind) {
         case "ended":
           if (outcome.terminal) return;
-          applyFailure(key, question, classifyNetworkFailure(afterMeta));
+          fail(classifyNetworkFailure(afterMeta));
           if (afterMeta) void invalidateAiAfterQuestion(queryClient, savedConversation);
           return;
         case "network":
-          applyFailure(key, question, classifyNetworkFailure(afterMeta));
+          fail(classifyNetworkFailure(afterMeta));
           if (afterMeta) void invalidateAiAfterQuestion(queryClient, savedConversation);
           return;
         case "aborted":
@@ -283,7 +334,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
         case "http": {
           const failure = classifyHttpFailure(outcome.status, outcome.body);
           if (failure.action !== "check-access") {
-            applyFailure(key, question, failure);
+            fail(failure);
             return;
           }
           let access: AiAccessState | null = null;
@@ -293,7 +344,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
             access = null;
           }
           if (keyRef.current !== key) return;
-          applyFailure(key, question, classifyAfterAccess(outcome.status, access, outcome.retryAfter));
+          fail(classifyAfterAccess(outcome.status, access, outcome.retryAfter));
           return;
         }
       }
@@ -301,13 +352,17 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
     [abortStream, applyFailure, conversationId, patch, pending, queryClient],
   );
 
-  /** «To'xtatish» — oqim uziladi, qisman matn qoladi. Savol `meta` dan keyin limitdan baribir ketgan. */
+  /**
+   * «To'xtatish» — oqim uziladi, qisman matn qoladi. `meta` dan keyin savol saqlangan (limitdan ketgan) — ro'yxat,
+   * suhbat va `access/me`; `meta` gacha ham server savolni qabul qilgan bo'lishi mumkin (gateway uzilishni obunadan
+   * keyin ko'radi) — ro'yxat va `access/me` (suhbat tarixi so'ralmaydi: savol ikki marta chizilmasin).
+   */
   const stop = useCallback(() => {
     if (!pending || !LIVE_PHASES.has(pending.phase)) return;
     abortStream();
     const wasSaved = pending.phase === "streaming";
     setPending((prev) => (prev && prev.key === pending.key ? { ...prev, phase: "stopped", collecting: false } : prev));
-    if (wasSaved) void invalidateAiAfterQuestion(queryClient, pending.conversationId);
+    void invalidateAiAfterQuestion(queryClient, wasSaved ? pending.conversationId : null);
   }, [abortStream, pending, queryClient]);
 
   /** «Qayta yuborish» — o'sha savol yangi savol sifatida (limitdan yana bittasi). */
@@ -316,23 +371,33 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
     void send(pending.question);
   }, [pending, send]);
 
-  /** «Yangi suhbat» / boshqa suhbatga o'tish — oqim to'xtatiladi, joriy savol tozalanadi. */
-  const reset = useCallback(() => {
+  /**
+   * Joriy savoldan chiqish (suhbat almashdi, «Yangi suhbat»): oqim to'xtatiladi, joriy savol va uzilish kutilishi
+   * tozalanadi. Savol jonli bo'lsa — server uni qabul qilgan bo'lishi mumkin: ro'yxat, suhbat va `access/me` yangilanadi.
+   */
+  const abandon = useCallback(() => {
+    const current = pendingRef.current;
     abortStream();
     keyRef.current += 1;
-    streamConversationRef.current = null;
     setPending(null);
+    setWatch(null);
+    setTurnKeys({});
+    if (current && LIVE_PHASES.has(current.phase)) void invalidateAiAfterQuestion(queryClient, current.conversationId);
+  }, [abortStream, queryClient]);
+
+  /** «Yangi suhbat» / boshqa suhbatga o'tish — oqim to'xtatiladi, joriy savol tozalanadi. */
+  const reset = useCallback(() => {
+    abandon();
+    streamConversationRef.current = null;
     callbacks.current.onFieldError(null);
-  }, [abortStream]);
+  }, [abandon]);
 
   // Suhbat tashqaridan almashdi (ro'yxatdan tanlandi, «Orqaga») — oqim shu suhbatniki bo'lmasa to'xtatiladi.
   useEffect(() => {
     if (conversationId === streamConversationRef.current) return;
-    abortStream();
-    keyRef.current += 1;
+    abandon();
     streamConversationRef.current = conversationId;
-    setPending(null);
-  }, [abortStream, conversationId]);
+  }, [abandon, conversationId]);
 
   // Sahifadan chiqildi — oqim yopiladi.
   useEffect(() => () => controllerRef.current?.abort(), []);
@@ -340,47 +405,52 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
   // Tarixda javob paydo bo'ldi — joriy savol tarixga o'tadi (javob yoki uzilishdan keyin to'liq javob).
   const history = detail.data?.messages;
   useEffect(() => {
-    if (!pending || !history) return;
+    if (!history) return;
+    if (watch && findAnswerAfter(history, watch.questionId)) setWatch(null);
+    if (!pending?.questionId) return;
     if (pending.phase !== "done" && pending.phase !== "cut") return;
     const answer = findAnswerAfter(history, pending.questionId);
     if (!answer) return;
     // Uzilishdan keyin tarixda faqat xato qatori bo'lsa ham — u yakuniy holat (backend yozgan).
+    const questionKey = pending.questionId;
+    setTurnKeys((prev) => ({ ...prev, [questionKey]: turnItemKey(pending.key, "q"), [answer.id]: turnItemKey(pending.key, "a") }));
     setPending((prev) => (prev && prev.key === pending.key ? null : prev));
-  }, [history, pending]);
+  }, [history, pending, watch]);
 
-  // Uzilish: ai-service javobni baribir saqlaydi — suhbat qayta so'raladi.
-  const cutKey = pending?.phase === "cut" && pending.questionId ? pending.key : null;
-  const cutConversation = pending?.conversationId ?? null;
+  // Uzilish: ai-service javobni baribir saqlaydi — suhbat qayta so'raladi (≈150 s gacha).
   useEffect(() => {
-    if (cutKey === null || !cutConversation) return;
-    const startedAt = Date.now();
+    if (!watch) return;
     const timer = window.setInterval(() => {
-      if (Date.now() - startedAt >= CUT_POLL_MAX_MS) {
+      if (Date.now() - watch.since >= CUT_POLL_MAX_MS) {
         window.clearInterval(timer);
-        patch(cutKey, (turn) => ({ ...turn, pollExhausted: true }));
+        setWatch((prev) => (prev === watch ? null : prev));
         return;
       }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAssistant.conversation(cutConversation) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAssistant.conversation(watch.conversationId) });
     }, CUT_POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [cutConversation, cutKey, patch, queryClient]);
+  }, [queryClient, watch]);
 
   // Xarajat shifti — `reset_at` gacha kiritish o'chiq (`access/me` uni bilmaydi), keyin o'zi ochiladi.
   useEffect(() => {
-    if (capUntil === null) return;
-    const left = Date.parse(capUntil) - Date.now();
-    const timer = window.setTimeout(() => setCapUntil(null), Number.isFinite(left) ? Math.max(0, left) : 0);
+    if (cap === null) return;
+    const left = Date.parse(cap.until) - Date.now();
+    const timer = window.setTimeout(() => setCap(null), Number.isFinite(left) ? Math.max(0, left) : 0);
     return () => window.clearTimeout(timer);
-  }, [capUntil]);
+  }, [cap]);
 
-  const capped = capUntil !== null;
+  /** Tarix xabarining React kaliti (joriy savoldan o'tgan bo'lsa — o'sha `turnItemKey`). */
+  const messageKey = useCallback((id: string) => turnKeys[id] ?? id, [turnKeys]);
 
   return {
     pending,
     detail,
     live: pending !== null && LIVE_PHASES.has(pending.phase),
-    capped,
-    capUntil: capped ? capUntil : null,
+    capped: cap !== null,
+    capUntil: cap?.until ?? null,
+    /** Shift sarlavhasi (`errors.codes.assistant_usd_cap` | `errors.codes.cap_exceeded`). */
+    capTitleKey: cap?.titleKey ?? null,
+    messageKey,
     send,
     stop,
     retry,

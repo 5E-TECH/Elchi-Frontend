@@ -118,17 +118,18 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
   const block: ComposerBlock =
     unavailable || denied ? "off" : !online ? "offline" : limitReached || chat.capped ? "limit" : null;
 
-  /** Tavsiya savoli — darhol yuboriladi (yozilgan matn maydonda qoladi). */
+  /** Tavsiya savoli — darhol yuboriladi (yozilgan matn maydonda qoladi, savol qabul qilinmasa ham ustiga yozilmaydi). */
   const send = (text: string) => {
     if (block || chat.live) return;
     void chat.send(text);
   };
 
+  /** Maydondagi savol — qabul qilinmasa (`busy`, 400, limit) matn maydonga qaytadi. */
   const sendDraft = () => {
     if (block || chat.live || !draft.trim()) return;
     const text = draft;
     setDraft("");
-    void chat.send(text);
+    void chat.send(text, { restoreDraft: true });
   };
 
   const newChat = () => {

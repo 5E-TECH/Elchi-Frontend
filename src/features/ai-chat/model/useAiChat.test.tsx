@@ -41,7 +41,7 @@ vi.mock("../../../entities/ai-advisor/api/aiAssistantApi", () => ({
   getAiConversations: vi.fn(async () => ({ items: [], total: 0, limit: 50, offset: 0 })),
 }));
 
-import { CUT_POLL_INTERVAL_MS, findAnswerAfter, useAiChat, visibleHistory, type PendingTurn } from "./useAiChat";
+import { CUT_POLL_INTERVAL_MS, findAnswerAfter, turnItemKey, useAiChat, visibleHistory, type PendingTurn } from "./useAiChat";
 
 const ACCESS: AiAccessState = {
   allowed: true,
@@ -157,9 +157,13 @@ describe("useAiChat — holat mashinasi", () => {
     });
     expect(queryClient.getQueryData<AiAccessState>(queryKeys.aiAssistant.accessMe)).toMatchObject({ usedToday: 39, remainingToday: 61 });
     expect(invalidatedKeys()).toEqual(expect.arrayContaining([JSON.stringify(queryKeys.aiAssistant.conversations), JSON.stringify(queryKeys.aiAssistant.conversation("42"))]));
-    // Tarixda javob paydo bo'lgach — joriy savol olinadi (takror chizilmaydi).
+    // Tarixda javob paydo bo'lgach — joriy savol olinadi (takror chizilmaydi); xabarlar joriy savol kalitlarini oladi.
+    const turnKey = pendingOf(hook)?.key as number;
     await waitFor(() => expect(pendingOf(hook)).toBeNull());
     expect(hook.result.current.live).toBe(false);
+    expect(hook.result.current.messageKey("900")).toBe(turnItemKey(turnKey, "q"));
+    expect(hook.result.current.messageKey("905")).toBe(turnItemKey(turnKey, "a"));
+    expect(hook.result.current.messageKey("1")).toBe("1");
   });
 
   it("`meta` dan keyingi xato ham limitdan ketgan: access/me, ro'yxat va suhbat yangilanadi (B11)", async () => {
@@ -223,19 +227,56 @@ describe("useAiChat — holat mashinasi", () => {
     expect(lastStream().input).toEqual({ message: "Savol", conversationId: "42" });
   });
 
-  it("suhbat almashsa (ro'yxatdan / «Orqaga») oqim to'xtatiladi va joriy savol tozalanadi", async () => {
-    const { hook, setConversation } = setup("42");
+  it("suhbat almashsa (ro'yxatdan / «Orqaga») oqim to'xtatiladi, joriy savol tozalanadi; `meta` kelgan savol limitdan ketgan — ro'yxat, suhbat va access/me yangilanadi", async () => {
+    const { hook, setConversation, invalidatedKeys } = setup("42");
     act(() => void hook.result.current.send("Savol"));
     act(() => lastStream().emit({ type: "meta", conversationId: "42", messageId: "900", maxSteps: 6 }));
     const stream = lastStream();
+    expect(invalidatedKeys()).toEqual([]);
     setConversation("17");
     expect(stream.signal.aborted).toBe(true);
     expect(pendingOf(hook)).toBeNull();
+    expect(invalidatedKeys()).toEqual(
+      expect.arrayContaining([
+        JSON.stringify(queryKeys.aiAssistant.accessMe),
+        JSON.stringify(queryKeys.aiAssistant.conversations),
+        JSON.stringify(queryKeys.aiAssistant.conversation("42")),
+      ]),
+    );
   });
 
-  it("busy — xabar (savol olinadi, matn maydonga qaytadi); invalid_message — maydon xatosi", async () => {
+  it("«Yangi suhbat» jonli savol paytida (yangi suhbat, `meta` dan keyin): ro'yxat va access/me yangilanadi", async () => {
+    const { hook, syncUrl, invalidatedKeys } = setup();
+    act(() => void hook.result.current.send("Savol"));
+    act(() => lastStream().emit({ type: "meta", conversationId: "77", messageId: "900", maxSteps: 6 }));
+    syncUrl();
+    const stream = lastStream();
+    act(() => hook.result.current.reset());
+    expect(stream.signal.aborted).toBe(true);
+    expect(pendingOf(hook)).toBeNull();
+    expect(invalidatedKeys()).toEqual(
+      expect.arrayContaining([
+        JSON.stringify(queryKeys.aiAssistant.accessMe),
+        JSON.stringify(queryKeys.aiAssistant.conversations),
+        JSON.stringify(queryKeys.aiAssistant.conversation("77")),
+      ]),
+    );
+  });
+
+  it("«To'xtatish» `meta` gacha (`sending`): server savolni qabul qilgan bo'lishi mumkin — ro'yxat va access/me (suhbat tarixi emas)", async () => {
+    const { hook, invalidatedKeys } = setup("42");
+    act(() => void hook.result.current.send("Savol"));
+    act(() => hook.result.current.stop());
+    expect(pendingOf(hook)).toMatchObject({ phase: "stopped" });
+    expect(invalidatedKeys()).toEqual(
+      expect.arrayContaining([JSON.stringify(queryKeys.aiAssistant.accessMe), JSON.stringify(queryKeys.aiAssistant.conversations)]),
+    );
+    expect(invalidatedKeys()).not.toContain(JSON.stringify(queryKeys.aiAssistant.conversation("42")));
+  });
+
+  it("busy — xabar (savol olinadi, maydondan yuborilgan matn maydonga qaytadi); invalid_message — maydon xatosi", async () => {
     const { hook, calls } = setup();
-    act(() => void hook.result.current.send("Birinchi"));
+    act(() => void hook.result.current.send("Birinchi", { restoreDraft: true }));
     await act(async () => {
       lastStream().emit({ type: "error", code: "busy", message: "…", conversationId: null, resetAt: null });
       lastStream().finish({ kind: "ended", terminal: "error" });
@@ -244,16 +285,72 @@ describe("useAiChat — holat mashinasi", () => {
     expect(calls.drafts).toEqual(["Birinchi"]);
     expect(toastStore.getSnapshot().some((toast) => toast.message === "Oldingi savolga javob tayyorlanmoqda — biroz kuting")).toBe(true);
 
-    act(() => void hook.result.current.send("Ikkinchi"));
+    act(() => void hook.result.current.send("Ikkinchi", { restoreDraft: true }));
     await act(async () => lastStream().finish({ kind: "http", status: 400, body: { message: ["bad"] }, retryAfter: null }));
     expect(calls.drafts).toEqual(["Birinchi", "Ikkinchi"]);
     expect(calls.fieldErrors.at(-1)).toBe("Savol bo'sh yoki juda uzun");
   });
 
+  it("tavsiya / «Qayta yuborish» qabul qilinmasa (busy, 400, limit) — maydondagi foydalanuvchi matni o'zgarmaydi", async () => {
+    const { hook, calls } = setup();
+    act(() => void hook.result.current.send("Qaysi kuryerlarda qarz ko'p?"));
+    await act(async () => {
+      lastStream().emit({ type: "error", code: "busy", message: "…", conversationId: null, resetAt: null });
+      lastStream().finish({ kind: "ended", terminal: "error" });
+    });
+    act(() => void hook.result.current.send("Bu oy kassaga qancha pul tushdi?"));
+    await act(async () => lastStream().finish({ kind: "http", status: 400, body: { message: ["bad"] }, retryAfter: null }));
+    act(() => void hook.result.current.send("Bu hafta cheklarda farq bormi?"));
+    await act(async () => {
+      lastStream().emit({ type: "error", code: "daily_limit", message: "…", conversationId: null, resetAt: null });
+      lastStream().finish({ kind: "ended", terminal: "error" });
+    });
+    expect(pendingOf(hook)).toBeNull();
+    expect(calls.drafts).toEqual([]);
+    // 400 — maydon xatosi emas (maydondagi matn foydalanuvchiniki), xabar.
+    expect(calls.fieldErrors.filter(Boolean)).toEqual([]);
+    expect(toastStore.getSnapshot().some((toast) => toast.message === "Savol bo'sh yoki juda uzun")).toBe(true);
+  });
+
+  it("uzilishdan keyin «Qayta yuborish» → busy (ai-service hali yozyapti): uzilgan javob joyida, kutish davom etadi, javob tarixdan keladi", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { hook, calls, syncUrl, invalidatedKeys } = setup();
+    act(() => void hook.result.current.send("Savol", { restoreDraft: true }));
+    act(() => {
+      lastStream().emit({ type: "meta", conversationId: "42", messageId: "900", maxSteps: 6 });
+      lastStream().emit({ type: "delta", step: 1, text: "Hozir marketlarga" });
+    });
+    syncUrl();
+    mocks.conversation = { ...mocks.conversation, messages: [question("900")] };
+    await act(async () => lastStream().finish({ kind: "network", error: new TypeError("network") }));
+    const cut = pendingOf(hook);
+    expect(cut).toMatchObject({ phase: "cut", text: "Hozir marketlarga" });
+
+    act(() => hook.result.current.retry());
+    expect(lastStream().input).toEqual({ message: "Savol", conversationId: "42" });
+    await act(async () => {
+      lastStream().emit({ type: "error", code: "busy", message: "…", conversationId: null, resetAt: null });
+      lastStream().finish({ kind: "ended", terminal: "error" });
+    });
+    // Ekran yuborishdan oldingi holatiga qaytdi: uzilgan javob, savol maydonga qaytmaydi.
+    expect(pendingOf(hook)).toBe(cut);
+    expect(calls.drafts).toEqual([]);
+
+    const polls = () => invalidatedKeys().filter((key) => key === JSON.stringify(queryKeys.aiAssistant.conversation("42"))).length;
+    const before = polls();
+    mocks.conversation = { ...mocks.conversation, messages: [question("900"), answer("905", "To'liq javob")] };
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(CUT_POLL_INTERVAL_MS);
+    });
+    expect(polls()).toBeGreaterThan(before);
+    await waitFor(() => expect(pendingOf(hook)).toBeNull());
+    expect(findAnswerAfter(hook.result.current.detail.data?.messages ?? [], "900")?.text).toBe("To'liq javob");
+  });
+
   it("429: access/me qayta so'raladi — limit tugagan bo'lsa sahifa holati, aks holda «Juda ko'p so'rov» (B8)", async () => {
     const { hook, calls, queryClient } = setup();
     mocks.access = { ...ACCESS, usedToday: 100, remainingToday: 0 };
-    act(() => void hook.result.current.send("Savol"));
+    act(() => void hook.result.current.send("Savol", { restoreDraft: true }));
     await act(async () => lastStream().finish({ kind: "http", status: 429, body: null, retryAfter: 60 }));
     await waitFor(() => expect(pendingOf(hook)).toBeNull());
     expect(calls.drafts).toEqual(["Savol"]);
