@@ -70,6 +70,10 @@ vi.mock("./cashboxCards/useCashboxCardPicker", () => ({
         const card = id ? cards.find((item) => item.id === id) : undefined;
         return card && !card.is_default ? card.id : undefined;
       },
+      shortOf: (id: string | null | undefined, amount: number) => {
+        const card = id ? cards.find((item) => item.id === id) : undefined;
+        return card && !card.is_default && amount > 0 && amount > card.balance ? card : null;
+      },
     };
   },
 }));
@@ -1610,6 +1614,11 @@ describe("CashDetail — to'lovda karta tanlash (cards1111b)", () => {
     await chooseMethod("O'tkazma");
     await chooseCard(/Qaysi kartadan/, /Humo virtual/);
     expect(screen.getByText(/«Humo virtual» kartasida faqat 1\s850\s000/)).toBeInTheDocument();
+    // Xato turibdi — «To'lash» tasdiq oynasini ochmaydi, so'rov ketmaydi.
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: /Qaysi kartadan/ })).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(marketPayment.mutateAsync).not.toHaveBeenCalled();
 
     setAmount("500000");
     await user.click(screen.getByRole("button", { name: "To'lash" }));
@@ -1629,10 +1638,16 @@ describe("CashDetail — to'lovda karta tanlash (cards1111b)", () => {
     const user = userEvent.setup();
 
     expect(cardPickerState.calls).toContainEqual({ enabled: true, branchId: "13" });
-    setAmount("400000");
+    setAmount("800000");
     await chooseMethod("O'tkazma");
     await chooseCard(/HQ kartasi/, /Humo virtual/);
     await chooseCard(/Filial kartasi/, /Filial Uzcard/);
+    // Filial kartasida 700 000 — 800 000 chiqmaydi: xato, tasdiq ochilmaydi (HQ kartasi — kirim, tekshirilmaydi).
+    expect(screen.getByText(/«Filial Uzcard» kartasida faqat 700\s000/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: /Filial kartasi/ })).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    setAmount("400000");
 
     await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
     const dialog = await findConfirm();

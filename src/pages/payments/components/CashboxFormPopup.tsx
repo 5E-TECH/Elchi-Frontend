@@ -200,6 +200,7 @@ const CashboxFormPopup = ({
         handleSubmit,
         reset,
         setValue,
+        setFocus,
         watch,
         formState: { errors },
     } = useForm<CashboxFormValues>({
@@ -271,6 +272,16 @@ const CashboxFormPopup = ({
     const submitForm = async (values: CashboxFormValues) => {
         if (submittingRef.current || busy || receiptBusy) return;
         if (!receipt.validate()) return;
+        // Chiqim nomli kartadan, kartada yetmaydi — xato maydon ostida turibdi: tasdiq ochilmaydi (cards1111b).
+        if (
+            withCards &&
+            variant === "spend" &&
+            values.type === "click" &&
+            cardPicker.shortOf(values.cardId, parseAmountInput(values.amount))
+        ) {
+            setFocus("cardId");
+            return;
+        }
         submittingRef.current = true;
         try {
             const category = withCategory

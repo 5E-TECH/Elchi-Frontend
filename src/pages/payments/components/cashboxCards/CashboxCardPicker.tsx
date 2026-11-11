@@ -61,7 +61,7 @@ export const CashboxCardSelectField = forwardRef<HTMLElement, CashboxCardSelectF
     if (!picker.available) return null;
 
     // Faqat NOMLI karta: Asosiy karta tanlansa `card_id` ketmaydi va backend kartani tekshirmaydi (avvalgidek).
-    const shortOf = direction === "out" && selected && !selected.is_default && amount > 0 && amount > selected.balance;
+    const shortOf = direction === "out" ? picker.shortOf(value, amount) : null;
     const hint = failed ? (
       <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
         <span>{t("cashboxCards.picker.loadError")}</span>

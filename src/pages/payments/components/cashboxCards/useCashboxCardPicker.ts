@@ -33,6 +33,11 @@ export type CashboxCardPicker = {
   resolve: (id: string | null | undefined) => CashboxCard | null;
   /** So'rovdagi `card_id`: faqat nomli karta (Asosiy — `undefined`). */
   requestId: (id: string | null | undefined) => string | undefined;
+  /**
+   * Chiqimda NOMLI kartada summa yetmaydi — o'sha karta (maydon ostida xato, yuborish to'xtaydi; backend ham 400).
+   * Asosiy karta — `null` (`card_id` ketmaydi, backend uni tekshirmaydi — avvalgidek).
+   */
+  shortOf: (id: string | null | undefined, amount: number) => CashboxCard | null;
 };
 
 export const useCashboxCardPicker = ({
@@ -60,6 +65,13 @@ export const useCashboxCardPicker = ({
     },
     [cards],
   );
+  const shortOf = useCallback(
+    (id: string | null | undefined, amount: number) => {
+      const card = id ? cards.find((item) => item.id === id) : undefined;
+      return card && !card.is_default && amount > 0 && amount > card.balance ? card : null;
+    },
+    [cards],
+  );
   return {
     cards,
     defaultCard,
@@ -69,5 +81,6 @@ export const useCashboxCardPicker = ({
     retry,
     resolve,
     requestId,
+    shortOf,
   };
 };

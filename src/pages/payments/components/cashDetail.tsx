@@ -1449,6 +1449,19 @@ const CashDetail = () => {
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
     // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
     if (receipt.busy || !receipt.validate()) return;
+    // cards1111b: pul chiqadigan NOMLI kartada yetmaydi (market — HQ kartasi, filialdan qabul — filial kartasi) — xato
+    // maydon ostida turibdi, tasdiq ochilmaydi.
+    if (values.paymentType === "click") {
+      const sum = parseAmountInput(values.amount);
+      if (type === "market" && hqCardPicker.shortOf(values.cardId, sum)) {
+        setFocus("cardId");
+        return;
+      }
+      if (type === "branch" && branchCardPicker.shortOf(values.branchCardId, sum)) {
+        setFocus("branchCardId");
+        return;
+      }
+    }
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
     paymentLockRef.current = true;

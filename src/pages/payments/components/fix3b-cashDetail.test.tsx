@@ -46,6 +46,7 @@ vi.mock("./cashboxCards/useCashboxCardPicker", () => ({
     retry: () => undefined,
     resolve: () => null,
     requestId: () => undefined,
+    shortOf: () => null,
   }),
 }));
 

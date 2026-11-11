@@ -203,6 +203,13 @@ describe("cards1111b — kirim / chiqimda karta tanlash", () => {
     await chooseCard(user, dialog, /Qaysi kartadan/, /Humo virtual/);
 
     expect(within(dialog).getByText(/«Humo virtual» kartasida faqat 1\s850\s000/)).toBeInTheDocument();
+    // Xato turibdi — saqlash tasdiq oynasini ochmaydi, so'rov ketmaydi, fokus karta maydonida.
+    await user.click(within(dialog).getByRole("combobox", { name: /Xarajat kategoriyasi/ }));
+    await user.click(await screen.findByRole("option", { name: /Yoqilg'i/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
+    await waitFor(() => expect(within(dialog).getByRole("combobox", { name: /Qaysi kartadan/ })).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
 
     // Asosiy karta — backend tekshirmaydi (card_id ketmaydi), ogohlantirish ham yo'q.
     await chooseCard(user, dialog, /Qaysi kartadan/, /Asosiy karta/);
@@ -214,8 +221,6 @@ describe("cards1111b — kirim / chiqimda karta tanlash", () => {
     await user.type(amount, "300000");
     expect(within(dialog).queryByText(/kartasida faqat/)).not.toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("combobox", { name: /Xarajat kategoriyasi/ }));
-    await user.click(await screen.findByRole("option", { name: /Yoqilg'i/ }));
     await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
     const confirm = await screen.findByRole("alertdialog", { name: "Tasdiqlang" });
     await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
