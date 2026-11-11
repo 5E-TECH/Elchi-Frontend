@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**85 ta route** (+ qobiq) · **842 ta maket** (501 sahifa, 319 oyna, 22 tizim taxtasi; 713 ta fragment fayli) · kodda yo'q: **135** · qisman: **171** · v2 ga ko'chirilgan route: **84 / 85**
+**85 ta route** (+ qobiq) · **854 ta maket** (503 sahifa, 329 oyna, 22 tizim taxtasi; 725 ta fragment fayli) · kodda yo'q: **147** · qisman: **173** · v2 ga ko'chirilgan route: **84 / 85**
 
 ## Qanday ishlatiladi
 
@@ -118,7 +118,7 @@
 | `/delivery-tariffs` | Hududlar | `src/pages/delivery-tariffs/index.tsx` | superadmin, admin | 4 | v2 |
 | `/branches` | Filiallar | `src/pages/branches/ui/BranchesPage.tsx` | superadmin | 3 | v2 |
 | `/branches/:id` | Filiallar | `src/pages/branches/ui/BranchDetailPage.tsx` | superadmin | 2 | v2 |
-| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 32 | v2 |
+| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 44 | v2 |
 | `/integrations/new` | Integratsiyalar | `src/pages/integrations/CatalogPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/new/:typeKey` | Integratsiyalar | `src/pages/integrations/wizard/ConnectWizard.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
@@ -1820,6 +1820,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | superadmin | `superadmin-integrations-new-partner-dialog` — Yangi hamkor (modal)<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/superadmin--integrations-new-partner-dialog.html](fragments/superadmin--integrations-new-partner-dialog.html) | oyna | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-legacy-partners` — Partner API hamkorlari (eski sahifa) | [design/fragments/superadmin--integrations-legacy-partners.html](fragments/superadmin--integrations-legacy-partners.html) | sahifa | qisman |
 | `/integrations/connections` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | qisman |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-console` — Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar) | [design/fragments/superadmin--integrations-carrier-console.html](fragments/superadmin--integrations-carrier-console.html) | sahifa | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-create-dialog` — Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup) | [design/fragments/superadmin--integrations-carrier-create-dialog.html](fragments/superadmin--integrations-carrier-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-key-dialog` — API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup) | [design/fragments/superadmin--integrations-carrier-key-dialog.html](fragments/superadmin--integrations-carrier-key-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-rotate-dialog` — Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup) | [design/fragments/superadmin--integrations-carrier-rotate-dialog.html](fragments/superadmin--integrations-carrier-rotate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-status-dialog` — Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup) | [design/fragments/superadmin--integrations-carrier-status-dialog.html](fragments/superadmin--integrations-carrier-status-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-carrier-edit-dialog` — Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup) | [design/fragments/superadmin--integrations-carrier-edit-dialog.html](fragments/superadmin--integrations-carrier-edit-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | admin | `admin-integrations-partners` — Integratsiyalar — Hamkorlar | [design/fragments/admin--integrations-partners.html](fragments/admin--integrations-partners.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-external` — Integratsiyalar — Tashqi tizimlar | [design/fragments/admin--integrations-external.html](fragments/admin--integrations-external.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-marketplace` — Integratsiyalar — Marketplace | [design/fragments/admin--integrations-marketplace.html](fragments/admin--integrations-marketplace.html) | sahifa | v2 |
@@ -1835,6 +1841,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-new-partner-dialog` — Yangi hamkor oynasi<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/admin--integrations-new-partner-dialog.html](fragments/admin--integrations-new-partner-dialog.html) | oyna | v2 |
 | `/integrations/connections` | admin | `admin-integrations-legacy-partners` — Partner API hamkorlari (eski) | [design/fragments/admin--integrations-legacy-partners.html](fragments/admin--integrations-legacy-partners.html) | sahifa | qisman |
+| `/integrations/connections` | admin | `admin-integrations-carrier-console` — Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar) | [design/fragments/admin--integrations-carrier-console.html](fragments/admin--integrations-carrier-console.html) | sahifa | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-carrier-create-dialog` — Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup) | [design/fragments/admin--integrations-carrier-create-dialog.html](fragments/admin--integrations-carrier-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-carrier-key-dialog` — API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup) | [design/fragments/admin--integrations-carrier-key-dialog.html](fragments/admin--integrations-carrier-key-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-carrier-rotate-dialog` — Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup) | [design/fragments/admin--integrations-carrier-rotate-dialog.html](fragments/admin--integrations-carrier-rotate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-carrier-status-dialog` — Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup) | [design/fragments/admin--integrations-carrier-status-dialog.html](fragments/admin--integrations-carrier-status-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-carrier-edit-dialog` — Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup) | [design/fragments/admin--integrations-carrier-edit-dialog.html](fragments/admin--integrations-carrier-edit-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | manager | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
 | `/integrations/connections` | registrator | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
 
@@ -1849,8 +1861,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/new` | superadmin | `superadmin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/superadmin--integrations-catalog.html](fragments/superadmin--integrations-catalog.html) | sahifa | v2 |
-| `/integrations/new` | admin | `admin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/admin--integrations-catalog.html](fragments/admin--integrations-catalog.html) | sahifa | v2 |
+| `/integrations/new` | superadmin | `superadmin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/superadmin--integrations-catalog.html](fragments/superadmin--integrations-catalog.html) | sahifa | qisman |
+| `/integrations/new` | admin | `admin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/admin--integrations-catalog.html](fragments/admin--integrations-catalog.html) | sahifa | qisman |
 | `/integrations/new` | manager | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | v2 |
 | `/integrations/new` | registrator | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | v2 |
 
@@ -2223,7 +2235,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-330 ta maket · kodda bor: 257 · kodda yo'q: 73
+336 ta maket · kodda bor: 257 · kodda yo'q: 79
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2366,7 +2378,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-panel-security` | Ulanish — Xavfsizlik paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
 | `superadmin-integrations-rotate-key-dialog` | Kalitni yangilash (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
 | `superadmin-integrations-new-partner-dialog` | Yangi hamkor (modal) | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
-| `superadmin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
+| `superadmin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | qisman — Carrier API kartasi («Tashqi yetkazuvchi (Carrier API)», «Yetkazuvchi» dan keyin) kodda hali yo'q — qolgan katalog kartalari kodda bor. |
 | `superadmin-integrations-wizard` | Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
 | `superadmin-integrations-legacy-partners` | Partner API hamkorlari (eski sahifa) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Sahifa olindi (Dj70iDbD, karta TC matni bo'yicha): hamkor amallari konsolda (yaratish, Sozlamalar, Xavfsizlik, Ish rejimi), «Webhook yetkazish jurnali» — «Hodisalar» panelida. /partners va /integrations/partners — 404. Maket taqdiri ega bilan kelishilishi kerak. |
 | `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
@@ -2557,10 +2569,16 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-ai-assistant-settings-dialog` | Sozlamalar — hisobotlar va kanallar (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: GET/PATCH ai/advisor/settings → schedule{daily, weekly, monthly}, telegram; bilim bazasi — GET knowledge, PUT knowledge/owner-notes. |
 | `superadmin-ai-assistant-settings-budget-dialog` | Sozlamalar — budjet (oyna) | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: settings.budget {monthly_usd 10–500, warn_ratio, daily_usd, deep_per_month}. |
 | `superadmin-ai-assistant-settings-confirm` | Sozlamalarni saqlash — tasdiq | oyna | `(taklif) /ai-assistant` | — | yangi (kodda yo'q) — T2 (6gKt64FN) moliyaviy AI maslahatchi — kodda yo'q: useConfirm — o'zgarishlar ro'yxati (eski → yangi) PATCH settings oldidan; audit. |
+| `superadmin-integrations-carrier-console` | Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `superadmin-integrations-carrier-create-dialog` | Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `superadmin-integrations-carrier-key-dialog` | API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `superadmin-integrations-carrier-rotate-dialog` | Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `superadmin-integrations-carrier-status-dialog` | Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `superadmin-integrations-carrier-edit-dialog` | Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
 
 ### admin — Admin
 
-185 ta maket · kodda bor: 160 · kodda yo'q: 25
+191 ta maket · kodda bor: 160 · kodda yo'q: 31
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2680,7 +2698,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-conn-control` | Ulanish — Ish rejimi | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
 | `admin-integrations-conn-security` | Ulanish — Xavfsizlik | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
 | `admin-integrations-new-partner-dialog` | Yangi hamkor oynasi | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
-| `admin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
+| `admin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | qisman — Carrier API kartasi («Tashqi yetkazuvchi (Carrier API)», «Yetkazuvchi» dan keyin) kodda hali yo'q — qolgan katalog kartalari kodda bor. |
 | `admin-integrations-wizard` | Ulash ustasi | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
 | `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Sahifa olindi (Dj70iDbD): superadmin bilan bir xil. Maket taqdiri ega bilan kelishilishi kerak. |
 | `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
@@ -2749,6 +2767,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-payments-main-cashbox-salaries-entry` | Asosiy kassa — «Maosh to'lash» tezkor amali | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — T5 (fFM6clJp) maosh nazorati — kodda yo'q: admin ham. |
 | `admin-users-detail-salary` | Xodim tafsiloti — «Maosh tarixi» havolasi | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — T5 (fFM6clJp) maosh nazorati — kodda yo'q: admin ham (superadmin fragmenti). |
 | `admin-balance-entry-dialog-salary` | Qo'lda yozuv — «Maosh» tanlangan (Maosh jadvaliga yo'naltirish) | oyna | `/financial-balance` | `src/pages/financial-balance/index.tsx` | yangi (kodda yo'q) — T5 (fFM6clJp) maosh nazorati — kodda yo'q: admin ham (superadmin fragmenti — admin-balance-entry-dialog bazasi bir xil). |
+| `admin-integrations-carrier-console` | Tashqi yetkazuvchilar — konsol (ro'yxat, akkaunt, holatlar) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `admin-integrations-carrier-create-dialog` | Yangi tashqi yetkazuvchi — kuryer, IP tekshiruvi, server javoblari (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `admin-integrations-carrier-key-dialog` | API kalit — bir marta ko'rsatiladi: yaratilganda va yangilanganda (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `admin-integrations-carrier-rotate-dialog` | Kalitni yangilash — tasdiq, rad javobi, javob kelmadi (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `admin-integrations-carrier-status-dialog` | Ulanishni to'xtatish / yoqish — oqibatlar va rad javobi (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
+| `admin-integrations-carrier-edit-dialog` | Tahrirlash — nom va IP ro'yxati, qatorma-qator tekshiruv (popup) | oyna | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | yangi (kodda yo'q) — Carrier API (ega 2026-11-10, «Tasdiqlayman») — kodda hali yo'q: /integrations/connections?scope=carrier, 4-tab «Tashqi yetkazuvchilar», faqat superadmin va admin (backend admin/carriers). |
 
 ### manager — Menejer
 
@@ -3802,7 +3826,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
 | Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+16) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+22) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
 | Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+11) |
 
@@ -3826,7 +3850,7 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): AI yordamchi (`aiAssistant`).
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+5) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | — |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+14) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+20) |
 | Bildirishnoma sozlamalari | `notifications` | `/notifications` | `/notifications` | — | `admin-notifications-telegram-groups` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
 

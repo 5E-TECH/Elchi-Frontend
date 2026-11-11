@@ -1,0 +1,325 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Integratsiyalar</h1>
+    <p class="el-sub">Tashqi tizimlar bilan ulanishlarni boshqarish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@integrations-carrier-create-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yangi tashqi yetkazuvchi</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Tashqi yetkazuvchilar ro'yxati">
+  <div class="el-tabs" role="tablist" aria-label="Ulanish turlari" style="padding: 0 12px">
+    <a class="el-tab" href="@integrations-partners" role="tab" aria-selected="false" tabindex="-1" style="margin-left: clamp(-210px, (100cqw - 767.5px) * 999, 0px); text-decoration: none; color: var(--text-muted)">Hamkorlar <span class="el-tab-count el-hide-mobile">5</span></a>
+    <a class="el-tab" href="@integrations-external" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Tashqi tizimlar <span class="el-tab-count el-hide-mobile">6</span></a>
+    <a class="el-tab" href="@integrations-marketplace" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Marketplace <span class="el-tab-count el-hide-mobile">2</span></a>
+    <a class="el-tab" href="@integrations-carrier-console" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Tashqi yetkazuvchilar <span class="el-tab-count el-hide-mobile">3</span></a>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center">
+    <p class="el-small el-muted" style="flex: 1 1 100%; min-width: 0">Posilkalarimizni o'z tizimi orqali yetkazadigan kompaniyalar (Carrier API). Har biri bizda bitta kuryer bo'lib ishlaydi va API kalit bilan kiradi.</p>
+    <label class="el-search" style="flex: 1 1 280px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="el-input" type="search" placeholder="Kompaniya, kuryer yoki telefon" aria-label="Tashqi yetkazuvchilarni qidirish">
+    </label>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Kompaniya</th>
+          <th>Bog'langan kuryer</th>
+          <th>Holat</th>
+          <th class="el-hide-tablet">IP cheklovi</th>
+          <th class="el-hide-tablet">Yaratilgan</th>
+          <th style="width: 64px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: var(--action-soft)" aria-current="true">
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">FastPost Logistics</a><div class="el-cell-sub">ID 3</div><span class="el-cell-sub el-show-tablet">2 ta IP qoida</span></td>
+          <td><div style="font-weight: 500">FastPost kuryeri</div><div class="el-cell-sub">+998 90 977 40 40 · Toshkent HQ</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet"><span class="el-strong">2 ta qoida</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span>09.11.2026, 10:15</span></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="FastPost Logistics akkauntini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Samarqand Ekspress</a><div class="el-cell-sub">ID 2</div><span class="el-cell-sub el-show-tablet">IP cheklovi yo'q</span></td>
+          <td><div style="font-weight: 500">Samarqand Ekspress kuryeri</div><div class="el-cell-sub">+998 97 214 08 66 · Toshkent HQ</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Kuryer nofaol</span><div class="el-cell-sub" style="margin-top: 4px">Kalit ishlamayapti</div></td>
+          <td class="el-hide-tablet"><span class="el-muted">Cheklov yo'q</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span>06.11.2026, 15:40</span></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Samarqand Ekspress akkauntini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Vodiy Kargo</a><div class="el-cell-sub">ID 1</div><span class="el-cell-sub el-show-tablet">1 ta IP qoida</span></td>
+          <td><div style="font-weight: 500">Vodiy Kargo kuryeri</div><div class="el-cell-sub">+998 91 330 62 14 · Farg'ona filiali</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">To'xtatilgan</span></td>
+          <td class="el-hide-tablet"><span class="el-strong">1 ta qoida</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">03.11.2026, 11:20</span></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Vodiy Kargo akkauntini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <a class="el-list-item" href="#" aria-current="true" style="text-decoration: none; color: var(--text); align-items: flex-start; background: var(--action-soft)">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">FastPost Logistics</span>
+        <span class="el-cell-sub" style="white-space: normal">FastPost kuryeri · +998 90 977 40 40</span>
+        <span class="el-cell-sub" style="white-space: normal">Toshkent HQ · 2 ta IP qoida</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Samarqand Ekspress</span>
+        <span class="el-cell-sub" style="white-space: normal">Samarqand Ekspress kuryeri · +998 97 214 08 66</span>
+        <span class="el-cell-sub" style="white-space: normal">Toshkent HQ · IP cheklovi yo'q</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-warning">Kuryer nofaol</span><span class="el-badge el-tone-warning">Kalit ishlamayapti</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Vodiy Kargo</span>
+        <span class="el-cell-sub" style="white-space: normal">Vodiy Kargo kuryeri · +998 91 330 62 14</span>
+        <span class="el-cell-sub" style="white-space: normal">Farg'ona filiali · 1 ta IP qoida</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-neutral">To'xtatilgan</span></span>
+      </span>
+    </a>
+  </div>
+</section>
+
+<section class="el-card" aria-labelledby="cr-sel-name" style="overflow: hidden">
+  <div class="el-card-head" style="flex-wrap: wrap; align-items: center; gap: 12px 16px">
+    <div style="display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 360px">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px">
+          <h2 class="el-h2" id="cr-sel-name" style="margin-right: 4px">FastPost Logistics</h2>
+          <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+          <span class="el-badge el-tone-neutral">Tashqi yetkazuvchi</span>
+          <span class="el-badge el-tone-neutral">Carrier API</span>
+        </div>
+        <p class="el-small el-muted">Bizga kuryer sifatida ulanadi: posilka QR'ini skanerlab oladi va natijani API orqali yuboradi. Sotuv summasi shu kuryer kassasiga yoziladi.</p>
+      </div>
+    </div>
+    <a class="el-btn el-btn-secondary" href="@integrations-carrier-edit-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Tahrirlash</a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 1px; background: var(--border)">
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 24px">
+        <h3 class="el-h3" style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Bog'langan kuryer</h3>
+        <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Almashtirilmaydi</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+        <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">FK</span>
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <a class="el-strong" href="@users-detail" style="text-decoration: none; color: var(--text)">FastPost kuryeri</a>
+          <span class="el-small el-muted">+998 90 977 40 40</span>
+        </div>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <dl class="el-kv" style="margin: 0; grid-template-columns: minmax(120px, 44%) 1fr">
+        <dt>Filial</dt><dd>Toshkent HQ</dd>
+        <dt>Yetkazish haqi (tarif)</dt><dd>uyga 30 000 · markazga 25 000 so'm</dd>
+        <dt>Qabul qilinishi kerak</dt><dd>2 340 000 so'm</dd>
+      </dl>
+      <p class="el-small" style="display: flex; align-items: flex-start; gap: 8px; color: var(--success-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span>HQ kuryeri — kompaniya topshirgan naqdni superadmin yoki admin «Kuryerdan qabul qilish» orqali asosiy kassaga oladi.</span></p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <a class="el-btn el-btn-secondary el-btn-sm" href="@payments-cash-detail-courier"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>Kuryer kassasi</a>
+        <a class="el-btn el-btn-ghost el-btn-sm" href="@users-detail">Kuryer profili<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+    </div>
+
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 24px">
+        <h3 class="el-h3" style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>IP cheklovi</h3>
+        <span class="el-badge el-tone-neutral">2 / 50</span>
+      </div>
+      <div role="list" aria-label="Ruxsat etilgan IP manzillar" style="display: flex; flex-wrap: wrap; gap: 6px">
+        <span role="listitem" class="el-badge el-tone-neutral" style="height: 28px; padding: 0 10px; font-size: 13px">203.0.113.10</span>
+        <span role="listitem" class="el-badge el-tone-neutral" style="height: 28px; padding: 0 10px; font-size: 13px">198.51.100.0/24</span>
+      </div>
+      <p class="el-small el-muted">Faqat shu manzillardan kelgan so'rov qabul qilinadi. Boshqa manzildan kelganiga 403 «IP ruxsat etilmagan» va aniqlangan IP qaytadi.</p>
+      <p class="el-xs el-muted">Qabul qilinadi: IPv4, IPv4 diapazon (CIDR) va aniq IPv6 manzil. IPv6 diapazon yo'q. Ro'yxat bo'sh bo'lsa — cheklov yo'q.</p>
+      <div><a class="el-btn el-btn-secondary el-btn-sm" href="@integrations-carrier-edit-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>IP ro'yxatini o'zgartirish</a></div>
+    </div>
+
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 24px">
+        <h3 class="el-h3" style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>API kalit</h3>
+        <span class="el-badge el-tone-neutral">elc_…</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--sunken); border-radius: 10px">
+        <span class="el-stat-icon" style="background: var(--surface)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+          <span class="el-strong">Faqat bir marta ko'rsatiladi — yangilash mumkin</span>
+          <span class="el-small el-muted">Bizda faqat xeshi saqlanadi, kalitni qayta ko'rsatib bo'lmaydi.</span>
+        </span>
+      </div>
+      <p class="el-small el-muted">Kompaniya kalitni yo'qotsa yoki u sizib chiqsa — yangilang. Eski kalit shu zahoti ishlamay qoladi.</p>
+      <div><a class="el-btn el-btn-danger-soft el-btn-sm" href="@integrations-carrier-rotate-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Kalitni yangilash</a></div>
+    </div>
+
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 24px">
+        <h3 class="el-h3" style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg></span>Ulanish holati</h3>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div class="el-alert el-tone-info" role="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><div class="el-alert-body"><div class="el-alert-title">So'rovlar qabul qilinmoqda</div>To'xtatsangiz, kompaniyaning barcha so'rovlari darhol rad etiladi. Kalit, buyurtmalar va kassa joyida qoladi.</div></div>
+      <div><a class="el-btn el-btn-danger-soft el-btn-sm" href="@integrations-carrier-status-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>To'xtatish</a></div>
+    </div>
+  </div>
+</section>
+
+<div class="el-overlay el-hide-tablet" style="position: absolute; align-items: flex-start; padding: 64px 16px 24px">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 24px; width: 100%">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1 1 300px; max-width: 520px; min-width: 0">
+      <span class="el-badge el-tone-neutral">Yaratilgandan keyin</span>
+      <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="ck1-title" aria-describedby="ck1-desc" style="width: 100%; margin: 0">
+<div class="el-dialog-head">
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: var(--warning-soft); color: var(--warning-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+    <h2 class="el-h2" id="ck1-title">API kalit — bir marta ko'rsatiladi</h2>
+    <p class="el-small el-muted" id="ck1-desc">«Shahar Kargo» yaratildi · kuryer: Shahar Kargo kuryeri</p>
+  </div>
+  
+</div>
+<div class="el-alert el-tone-warning" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="el-alert-body"><div class="el-alert-title">Kalitni hozir nusxalab oling</div><p class="el-small" style="margin-top: 2px">Oyna yopilgach kalit qayta ko'rsatilmaydi — bizda faqat xeshi saqlanadi. Yo'qolsa, «Kalitni yangilash» bilan yangisini berasiz.</p></div></div>
+<div class="el-field">
+  <label class="el-label" for="ck1-key">API kalit (X-Api-Key)</label>
+  <textarea class="el-input el-textarea" id="ck1-key" readonly rows="2" spellcheck="false" autocomplete="off" aria-describedby="ck1-key-hint" style="height: 64px; min-height: 0; resize: none; background: var(--sunken); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 21px; word-break: break-all">elc_45389801f001c6a13569ff87f70f9b05002d037b6fe5efbb5735c3a906568210</textarea>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span class="el-hint" id="ck1-key-hint">68 belgi · elc_ bilan boshlanadi</span>
+    <button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-label="Kalitni nusxalash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Nusxalash</button>
+  </div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px">
+  <span class="el-h3">Kompaniya dasturchisiga bering</span>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">1</span><span style="min-width: 0">Asosiy manzil (Base URL): <span class="el-strong" style="overflow-wrap: anywhere">https://api.elchipochta.uz</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">2</span><span style="min-width: 0">Har so'rovda sarlavha: <span class="el-strong">X-Api-Key: &lt;kalit&gt;</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">3</span><span style="min-width: 0">Tekshirish: <span class="el-strong">GET /carrier/ping</span> — kalit ishlayotganini ko'rsatadi</span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">4</span><span style="min-width: 0">Hujjat: <a href="https://api.elchipochta.uz/carrier-docs" style="font-weight: 600; overflow-wrap: anywhere">api.elchipochta.uz/carrier-docs</a> — login va parolini alohida yuboring</span></li>
+</ol>
+  <p class="el-xs el-muted">Kalitni xavfsiz kanal orqali yuboring. Kuryer parolini bermang — barcha amallar kalit bilan bajariladi.</p>
+</div>
+<label class="el-choice" style="padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px"><input class="el-check" type="checkbox"><span>Kalitni nusxaladim va xavfsiz saqladim</span></label>
+        <div class="el-dialog-foot" style="align-items: center; justify-content: space-between">
+          <span class="el-xs el-muted">Belgilamaguncha oyna yopilmaydi</span>
+          <button class="el-btn el-btn-primary" type="button" disabled style="margin-left: auto">Yakunlash</button>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1 1 300px; max-width: 520px; min-width: 0">
+      <span class="el-badge el-tone-neutral">Kalit yangilangandan keyin · nusxalangan holat</span>
+      <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="ck2-title" aria-describedby="ck2-desc" style="width: 100%; margin: 0">
+<div class="el-dialog-head">
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: var(--warning-soft); color: var(--warning-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+    <h2 class="el-h2" id="ck2-title">Yangi API kalit — bir marta ko'rsatiladi</h2>
+    <p class="el-small el-muted" id="ck2-desc">«FastPost Logistics» · kalit yangilandi</p>
+  </div>
+  
+</div>
+<div class="el-alert el-tone-danger" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><div class="el-alert-body"><div class="el-alert-title">Eski kalit endi ishlamaydi</div><p class="el-small" style="margin-top: 2px">Kompaniya yangi kalitni o'rnatmaguncha so'rovlari 401 «API kalit yaroqsiz» oladi. Kalitni darhol yetkazing.</p></div></div>
+<div class="el-field">
+  <label class="el-label" for="ck2-key">API kalit (X-Api-Key)</label>
+  <textarea class="el-input el-textarea" id="ck2-key" readonly rows="2" spellcheck="false" autocomplete="off" aria-describedby="ck2-key-hint" style="height: 64px; min-height: 0; resize: none; background: var(--sunken); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 21px; word-break: break-all">elc_7730ebb785f1d663f12f30c75735ac06804f572f3f748d23b017ee8f7f2d145e</textarea>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span class="el-hint" id="ck2-key-hint">68 belgi · elc_ bilan boshlanadi</span>
+    <button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-label="Kalit nusxalandi, qayta nusxalash" style="color: var(--success-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Nusxalandi</button><span class="el-sr" role="status">Kalit nusxalandi</span>
+  </div>
+</div>
+<p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Kompaniya dasturchisi faqat kalitni almashtiradi va GET /carrier/ping bilan tekshiradi. Kuryer, IP ro'yxati va holat o'zgarmadi.</span></p>
+<label class="el-choice" style="padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px"><input class="el-check" type="checkbox" checked><span>Kalitni nusxaladim va xavfsiz saqladim</span></label>
+        <div class="el-dialog-foot" style="align-items: center; justify-content: space-between">
+          <span class="el-xs el-muted">Yopilgach kalit qayta ko'rsatilmaydi</span>
+          <a class="el-btn el-btn-primary" href="@integrations-carrier-console" style="margin-left: auto">Yakunlash</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="el-overlay el-show-tablet el-hide-mobile" style="position: absolute">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="ckt-title" aria-describedby="ckt-desc" style="width: min(520px, 100%)">
+<div class="el-dialog-head">
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: var(--warning-soft); color: var(--warning-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+    <h2 class="el-h2" id="ckt-title">API kalit — bir marta ko'rsatiladi</h2>
+    <p class="el-small el-muted" id="ckt-desc">«Shahar Kargo» yaratildi · kuryer: Shahar Kargo kuryeri</p>
+  </div>
+  
+</div>
+<div class="el-alert el-tone-warning" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="el-alert-body"><div class="el-alert-title">Kalitni hozir nusxalab oling</div><p class="el-small" style="margin-top: 2px">Oyna yopilgach kalit qayta ko'rsatilmaydi — bizda faqat xeshi saqlanadi. Yo'qolsa, «Kalitni yangilash» bilan yangisini berasiz.</p></div></div>
+<div class="el-field">
+  <label class="el-label" for="ckt-key">API kalit (X-Api-Key)</label>
+  <textarea class="el-input el-textarea" id="ckt-key" readonly rows="2" spellcheck="false" autocomplete="off" aria-describedby="ckt-key-hint" style="height: 64px; min-height: 0; resize: none; background: var(--sunken); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 21px; word-break: break-all">elc_45389801f001c6a13569ff87f70f9b05002d037b6fe5efbb5735c3a906568210</textarea>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span class="el-hint" id="ckt-key-hint">68 belgi · elc_ bilan boshlanadi</span>
+    <button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-label="Kalitni nusxalash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Nusxalash</button>
+  </div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px">
+  <span class="el-h3">Kompaniya dasturchisiga bering</span>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">1</span><span style="min-width: 0">Asosiy manzil (Base URL): <span class="el-strong" style="overflow-wrap: anywhere">https://api.elchipochta.uz</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">2</span><span style="min-width: 0">Har so'rovda sarlavha: <span class="el-strong">X-Api-Key: &lt;kalit&gt;</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">3</span><span style="min-width: 0">Tekshirish: <span class="el-strong">GET /carrier/ping</span> — kalit ishlayotganini ko'rsatadi</span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">4</span><span style="min-width: 0">Hujjat: <a href="https://api.elchipochta.uz/carrier-docs" style="font-weight: 600; overflow-wrap: anywhere">api.elchipochta.uz/carrier-docs</a> — login va parolini alohida yuboring</span></li>
+</ol>
+  <p class="el-xs el-muted">Kalitni xavfsiz kanal orqali yuboring. Kuryer parolini bermang — barcha amallar kalit bilan bajariladi.</p>
+</div>
+<label class="el-choice" style="padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px"><input class="el-check" type="checkbox"><span>Kalitni nusxaladim va xavfsiz saqladim</span></label>
+    <div class="el-dialog-foot" style="align-items: center; justify-content: space-between">
+      <span class="el-xs el-muted">Belgilamaguncha oyna yopilmaydi</span>
+      <button class="el-btn el-btn-primary" type="button" disabled style="margin-left: auto">Yakunlash</button>
+    </div>
+  </div>
+</div>
+
+<div class="el-overlay el-show-mobile" style="position: absolute">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="ckm-title" aria-describedby="ckm-desc">
+<div class="el-dialog-head" style="flex: none; align-items: center">
+  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: var(--warning-soft); color: var(--warning-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+    <h2 class="el-h2" id="ckm-title">API kalit — bir marta ko'rsatiladi</h2>
+    <p class="el-small el-muted" id="ckm-desc">«Shahar Kargo» yaratildi</p>
+  </div>
+  
+</div>
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin: 0 -16px; padding: 0 16px 4px">
+<div class="el-alert el-tone-warning" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="el-alert-body"><div class="el-alert-title">Kalitni hozir nusxalab oling</div><p class="el-small" style="margin-top: 2px">Oyna yopilgach kalit qayta ko'rsatilmaydi — bizda faqat xeshi saqlanadi. Yo'qolsa, «Kalitni yangilash» bilan yangisini berasiz.</p></div></div>
+<div class="el-field">
+  <label class="el-label" for="ckm-key">API kalit (X-Api-Key)</label>
+  <textarea class="el-input el-textarea" id="ckm-key" readonly rows="2" spellcheck="false" autocomplete="off" aria-describedby="ckm-key-hint" style="height: 64px; min-height: 0; resize: none; background: var(--sunken); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 21px; word-break: break-all">elc_45389801f001c6a13569ff87f70f9b05002d037b6fe5efbb5735c3a906568210</textarea>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span class="el-hint" id="ckm-key-hint">68 belgi · elc_ bilan boshlanadi</span>
+    <button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-label="Kalitni nusxalash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Nusxalash</button>
+  </div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px">
+  <span class="el-h3">Kompaniya dasturchisiga bering</span>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">1</span><span style="min-width: 0">Asosiy manzil (Base URL): <span class="el-strong" style="overflow-wrap: anywhere">https://api.elchipochta.uz</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">2</span><span style="min-width: 0">Har so'rovda sarlavha: <span class="el-strong">X-Api-Key: &lt;kalit&gt;</span></span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">3</span><span style="min-width: 0">Tekshirish: <span class="el-strong">GET /carrier/ping</span> — kalit ishlayotganini ko'rsatadi</span></li>
+  <li class="el-small" style="display: flex; gap: 10px; align-items: flex-start"><span style="width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--action-soft); color: var(--action-fg); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">4</span><span style="min-width: 0">Hujjat: <a href="https://api.elchipochta.uz/carrier-docs" style="font-weight: 600; overflow-wrap: anywhere">api.elchipochta.uz/carrier-docs</a> — login va parolini alohida yuboring</span></li>
+</ol>
+  <p class="el-xs el-muted">Kalitni xavfsiz kanal orqali yuboring. Kuryer parolini bermang — barcha amallar kalit bilan bajariladi.</p>
+</div>
+<label class="el-choice" style="padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px"><input class="el-check" type="checkbox"><span>Kalitni nusxaladim va xavfsiz saqladim</span></label>
+    </div>
+    <div class="el-dialog-foot" style="flex: none; margin: 0 -16px; padding: 16px 16px 0; border-top: 1px solid var(--border)">
+      <span class="el-xs el-muted" style="flex: 1 1 100%">Belgilamaguncha oyna yopilmaydi</span>
+      <button class="el-btn el-btn-primary" type="button" disabled>Yakunlash</button>
+    </div>
+  </div>
+</div>
+  
