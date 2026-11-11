@@ -136,6 +136,38 @@ export interface OrderListItem {
         created_at: string;
         auto_approve_at: string | null;
     } | null;
+    /**
+     * SPEC v2: buyurtmaning oxirgi qo'shimcha xarajat so'rovi (har holat va rejimda) yoki `null` — holat yonidagi
+     * «Xarajat kutilmoqda / tasdiqlangan / rad etildi» belgisi va tafsilotdagi «Qo'shimcha xarajat» qatori.
+     * O'qish — `readExtraCostRequest` (`entities/orders/extraCostRequest`).
+     */
+    extra_cost_request?: {
+        id: string;
+        status: "pending" | "approved" | "rejected" | "void" | "reversed";
+        mode: "replay" | "deferred";
+        action: "sell" | "partly_sell" | "cancel";
+        amount: number;
+        items?: Array<{
+            order_item_id?: string | null;
+            product_id?: string | null;
+            product_name?: string | null;
+            quantity?: number | null;
+            sold_quantity?: number | null;
+            returned_quantity?: number | null;
+        }> | null;
+        auto_approve_at?: string | null;
+        created_at?: string | null;
+        decided_at?: string | null;
+        reject_reason?: string | null;
+        reject_reason_label?: string | null;
+        immediate?: boolean;
+        auto_approved?: boolean;
+    } | null;
+    /**
+     * Hamkor (tashqi) buyurtma id'si (`orders.external_id`). Bor bo'lsa backend qo'shimcha xarajatni kechiktirilgan
+     * rejimda yozmaydi — eski replay yo'li (`isExtraCostReplayOrder`).
+     */
+    external_id?: string | null;
     /** HQ marketga qaytarishni boshlagan (`POST orders/:id/initiate-return`). */
     return_requested?: boolean;
     /** Qaytarish sababi (initiate-return `reason`). */

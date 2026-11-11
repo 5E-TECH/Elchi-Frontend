@@ -188,6 +188,81 @@ describe("ExtraCostApprovals — market dashboardidagi tasdiqlar bloki", () => {
     expect(await screen.findByText("Qo'shimcha xarajat tasdiqlandi")).toBeInTheDocument();
   });
 
+  it("⭐ SPEC v2 (mode deferred): buyurtma allaqachon sotilgan / bekor qilingan — oqibat va mahsulotlar qatorda", async () => {
+    http.get.mockResolvedValue(
+      listResponse([
+        approval("ap-1", "sell", "53", {
+          mode: "deferred",
+          amount: 20000,
+          items: [
+            { order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 },
+            { order_item_id: "i-2", product_id: "p-2", product_name: "Zaryadka", quantity: 2 },
+          ],
+        }),
+        approval("ap-2", "partly_sell", "54", {
+          mode: "deferred",
+          items: [
+            { order_item_id: "i-3", product_id: "p-3", product_name: "Quloqchin", quantity: 3, sold_quantity: 1 },
+            { order_item_id: "i-4", product_id: "p-4", product_name: "Kabel", quantity: 1, sold_quantity: 0 },
+          ],
+        }),
+        approval("ap-3", "cancel", "55", { mode: "deferred" }),
+        // Eski so'rov (rejim kelmagan) — avvalgi matn, mahsulotlar qatori yo'q.
+        approval("ap-4", "sell", "56"),
+      ]),
+    );
+    renderBlock();
+
+    await screen.findByRole("list", { name: "Kutilayotgan so'rovlar" });
+    expect(screen.getByTestId("approval-consequence-ap-1")).toHaveTextContent(
+      /^Buyurtma allaqachon sotilgan\. Tasdiqlansa — 20\D000 so'm xarajat yoziladi$/,
+    );
+    expect(screen.getByTestId("approval-consequence-ap-2")).toHaveTextContent(/^Buyurtma allaqachon qisman sotilgan\./);
+    expect(screen.getByTestId("approval-consequence-ap-3")).toHaveTextContent(/^Buyurtma allaqachon bekor qilingan\./);
+    expect(screen.getByTestId("approval-consequence-ap-4")).toHaveTextContent("Tasdiqlansa — buyurtma sotiladi");
+
+    expect(screen.getByTestId("approval-items-ap-1")).toHaveTextContent("Telefon g'ilofi ×1, Zaryadka ×2");
+    // Qisman sotish — sotilgan soni; sotilmagan mahsulot chiqmaydi.
+    expect(screen.getByTestId("approval-items-ap-2")).toHaveTextContent(/^Quloqchin ×1$/);
+    expect(screen.queryByTestId("approval-items-ap-4")).not.toBeInTheDocument();
+  });
+
+  it("SPEC v2: tasdiq va rad etish oynalari — kechiktirilgan matn va mahsulotlar", async () => {
+    const user = userEvent.setup();
+    http.get.mockResolvedValue(
+      listResponse([
+        approval("ap-1", "sell", "53", {
+          mode: "deferred",
+          amount: 20000,
+          items: [{ order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 }],
+        }),
+      ]),
+    );
+    renderBlock();
+
+    await user.click(await screen.findByRole("button", { name: "Tasdiqlash" }));
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Qo'shimcha xarajatni tasdiqlang" });
+    expect(confirmDialog).toHaveTextContent(
+      /№53 buyurtma allaqachon sotilgan \/ bekor qilingan — faqat qo'shimcha xarajat alohida yoziladi \(amal qayta bajarilmaydi\)\./,
+    );
+    // Tasdiq buyurtmani PAID ga o'tkazishi mumkin (backend `computeDeferredExtraCostOrderState`) — «holati o'zgarmaydi»
+    // faqat rad etish eslatmasida.
+    expect(confirmDialog).not.toHaveTextContent("holati o'zgarmaydi");
+    expect(within(confirmDialog).getByText("Telefon g'ilofi ×1")).toBeInTheDocument();
+    expect(
+      within(confirmDialog).getByText(/^Buyurtma allaqachon sotilgan\. Tasdiqlansa — 20\D000 so'm xarajat yoziladi$/),
+    ).toBeInTheDocument();
+    expect(within(confirmDialog).queryByText(/so'ralgan amal bajariladi/)).not.toBeInTheDocument();
+    await user.click(within(confirmDialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: "Rad etish" }));
+    const rejectDialog = await screen.findByRole("dialog", { name: "So'rovni rad etish" });
+    expect(within(rejectDialog).getByTestId("reject-items")).toHaveTextContent("Mahsulotlar: Telefon g'ilofi ×1");
+    expect(rejectDialog).toHaveTextContent("Rad etilsa — xarajat yozilmaydi, buyurtma holati o'zgarmaydi.");
+    expect(rejectDialog).not.toHaveTextContent("amal bajarilmaydi");
+  });
+
   it("tasdiq oynasida «Bekor qilish» — so'rov yuborilmaydi", async () => {
     const user = userEvent.setup();
     http.get.mockResolvedValue(listResponse([approval("ap-1", "sell", "53")]));

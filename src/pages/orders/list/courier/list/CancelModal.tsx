@@ -13,6 +13,7 @@ import {
   ExtraCostPendingAlert,
   ExtraCostSentAlert,
 } from "../../../../../entities/orders/ui/ExtraCostApprovalAlerts";
+import { isExtraCostReplayOrder } from "../../../../../entities/orders/extraCostRequest";
 import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
 import {
   isProofRequiredByConditions,
@@ -283,7 +284,9 @@ const CancelDialog = ({
             />
           </Field>
         </div>
-        {showExtraNotice ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null}
+        {showExtraNotice ? (
+          <ExtraCostNoticeAlert id={id("extra-note")} action="cancel" replay={isExtraCostReplayOrder(order)} />
+        ) : null}
       </div>
 
       <Field

@@ -441,6 +441,8 @@ const CashDetail = () => {
   const currentRole = useSelector((store: RootState) => store.role.role);
   const currentProfile = useSelector((store: RootState) => store.user.user);
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
+  /** «Marketga o'tkazma» faqat superadmin/admin'da (ega 2026-11-11): HQ kuryeridan va filial menejeridan qabulda. */
+  const isHqStaffViewer = ["superadmin", "admin"].includes(String(currentRole).toLowerCase());
   const ownBranchName = readProfileBranchName(currentProfile);
   /**
    * SMENA QULFI (CB-2, ega javobi CB-S4 — hamma kassada majburiy). `useCashboxShift` — joriy foydalanuvchi
@@ -725,10 +727,13 @@ const CashDetail = () => {
   const paymentTypeOptions = [
     { value: "cash", label: t("v2Common.paymentMethod.cash") },
     { value: "click", label: t("v2Common.paymentMethod.transfer") },
-    // «Marketga o'tkazma» — kuryer pulni to'g'ridan-to'g'ri marketga o'tkazgan: kassaga kirim + o'sha marketga chiqim.
-    // Menejerda ham (ega 2026-11-11, BeePost kabi): pul filial kassasi orqali o'tadi. Ilgari menejerga yashirin edi
-    // (backend 403, audit M4) — backend menejerga ochgach ishlaydi (backend vazifasi alohida).
-    ...(type === "courier" ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }] : []),
+    // «Marketga o'tkazma» — pul to'g'ridan-to'g'ri marketga o'tkazilgan. FAQAT superadmin/admin (ega 2026-11-11):
+    //  • kuryer sahifasi — HQ kuryeri pulni marketga o'tkazgan (asosiy kassaga kirim + o'sha marketga chiqim);
+    //  • filial sahifasi — filial pulni HQ'ga bermay marketga o'tkazgan (filial kartasi −X, market qarzi −X).
+    // Menejerga chiqmaydi (kuryerdan qabulda faqat «Naqd» va «O'tkazma»); backend yo'li o'zgarmagan.
+    ...(isHqStaffViewer && (type === "courier" || type === "branch")
+      ? [{ value: "click_to_market", label: t("v2Common.paymentMethod.toMarket") }]
+      : []),
   ];
   const { register, control, handleSubmit, watch, setValue, setError, setFocus, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
@@ -757,8 +762,9 @@ const CashDetail = () => {
   const isStoreTransfer = selectedPaymentType === "click_to_market";
   /**
    * CHEK RASMI (QlLf33Ma, 7-bosqich): faqat superadmin/admin'ning HQ'ga qabulida — kuryer (HQ) va filial sahifasi —
-   * va faqat «O'tkazma» (`click`) da. Naqd, «Marketga o'tkazma» va menejerning kuryer qabulida maydon YO'Q (backend
-   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat `click` da yuboriladi;
+   * «O'tkazma» (`click`) va «Marketga o'tkazma» (`click_to_market`, Dilshod 2026-11-12) da: `hq_transfer` «chek talab
+   * qilish» sozlamasi ikkalasiga bir xil ta'sir qiladi. Naqd va menejerning kuryer qabulida maydon YO'Q (backend
+   * `RECEIPT_NOT_APPLICABLE`). Turni almashtirib qaytsa qoralama saqlanadi, lekin faqat shu ikki usulda yuboriladi;
    * `receipt_id` idempotentlik barmoq iziga KIRMAYDI.
    */
   const receiptKind: ReceiptKind | null = isCurrentManagerRole
@@ -768,7 +774,11 @@ const CashDetail = () => {
       : type === "branch"
         ? "branch_to_hq"
         : null;
-  const receipt = useReceiptField({ kind: receiptKind, active: selectedPaymentType === "click", prefetch: true });
+  const receipt = useReceiptField({
+    kind: receiptKind,
+    active: selectedPaymentType === "click" || selectedPaymentType === "click_to_market",
+    prefetch: true,
+  });
   const { reset: resetReceipt } = receipt;
   /**
    * KARTA (cards1111b — BeePost kabi): «O'tkazma» (`click`) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi.
@@ -1196,7 +1206,15 @@ const CashDetail = () => {
       // superadmin/admin'ning filialdan qabul qilishini himoya qiladi.
       const branchId = id;
       if (!branchId) return;
-      const payment = { branch_id: branchId, amount, payment_method: normalizedPaymentMethod };
+      // «Marketga o'tkazma» (ega 2026-11-11): filial pulni marketga o'tkazgan — `market_id` majburiy (barmoq izida
+      // ham); karta yo'q (`cardBody` faqat `click` da to'ladi), chek — «O'tkazma» dagidek (`receiptBody`, 2026-11-12).
+      const isMarketTransfer = values.paymentType === "click_to_market";
+      const payment = {
+        branch_id: branchId,
+        amount,
+        payment_method: normalizedPaymentMethod,
+        ...(isMarketTransfer ? { market_id: values.marketId } : {}),
+      };
       // C14: `source_user_id` yuborilmaydi (DTO'da yo'q → 400).
       await submitIdempotentPayment({
         fingerprint: branchToMainPaymentFingerprint(payment),
@@ -1206,8 +1224,8 @@ const CashDetail = () => {
             idempotencyKey,
           }),
         amount,
-        successMessage: t("branchToMainPaymentSuccess"),
-        errorMessage: t("branchToMainPaymentError"),
+        successMessage: t(isMarketTransfer ? "branchToMarketPaymentSuccess" : "branchToMainPaymentSuccess"),
+        errorMessage: t(isMarketTransfer ? "branchToMarketPaymentError" : "branchToMainPaymentError"),
       });
       return;
     }
@@ -1433,8 +1451,12 @@ const CashDetail = () => {
         ? t("v2CashDetail.form.receiveAmount", { amount: formatMoneyLocalized(typedAmount) })
         : t("v2CashDetail.form.receive");
 
-  /** Tasdiq oynasidagi «Qayerdan → Qayerga» (maket matnlari). */
-  const getPaymentTransfer = (): ConfirmTransfer => {
+  /**
+   * Tasdiq oynasidagi «Qayerdan → Qayerga» (maket matnlari). `branchMarketName` — filial sahifasidagi «Marketga
+   * o'tkazma» (ega 2026-11-11): pul filialdan to'g'ridan-to'g'ri marketga ketgan — «Filial kassasi → Market kassasi
+   * (nomi)»; asosiy kassa faqat iz (sof 0), shuning uchun ko'rsatilmaydi.
+   */
+  const getPaymentTransfer = (branchMarketName?: string): ConfirmTransfer => {
     if (type === "courier") {
       return {
         from: { title: cashboxLabel("courier"), meta: entityName },
@@ -1448,6 +1470,12 @@ const CashDetail = () => {
       return {
         from: isCurrentManagerRole ? { title: cashboxLabel("branch"), meta: ownBranchName } : { title: cashboxLabel("main") },
         to: { title: cashboxLabel("market"), meta: entityName },
+      };
+    }
+    if (branchMarketName) {
+      return {
+        from: { title: cashboxLabel("branch"), meta: branchTitle },
+        to: { title: cashboxLabel("market"), meta: branchMarketName },
       };
     }
     return { from: { title: cashboxLabel("branch"), meta: branchTitle }, to: { title: cashboxLabel("main") } };
@@ -1517,9 +1545,10 @@ const CashDetail = () => {
           value: parseAmountInput(values.amount),
           badge: <Badge>{paymentMethodLabel(values.paymentType)}</Badge>,
         },
-        transfer: getPaymentTransfer(),
+        // Filialdan marketga: market nomi «Qayerga» da — alohida «Market» qatori takrorlanmaydi.
+        transfer: getPaymentTransfer(type === "branch" && marketName ? marketName : undefined),
         rows: [
-          ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
+          ...(marketName && type !== "branch" ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
           ...(hqCard ? [{ label: t("cashboxCards.picker.confirmRow"), value: hqCard.name }] : []),
           ...(branchCard ? [{ label: t("cashboxCards.picker.confirmBranchRow"), value: branchCard.name }] : []),
           ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
@@ -1705,7 +1734,13 @@ const CashDetail = () => {
       submitLabel={submitLabel}
       amountLabel={t("v2CashDetail.form.amount")}
       amountHint={amountHint}
-      infoAlert={type === "market" ? t("v2CashDetail.form.marketInfo") : null}
+      infoAlert={
+        type === "market"
+          ? t("v2CashDetail.form.marketInfo")
+          : type === "branch" && isStoreTransfer
+            ? t("v2CashDetail.form.branchToMarketInfo")
+            : null
+      }
       paymentTypeLabel={t("v2CashDetail.form.paymentType")}
       showMarketSelect={isStoreTransfer}
       marketLabel={t("v2CashDetail.form.market")}

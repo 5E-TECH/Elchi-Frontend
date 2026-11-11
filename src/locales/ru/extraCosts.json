@@ -51,6 +51,7 @@
   },
   "requesterFallback": "#{{id}}",
   "unknownCustomer": "Клиент не указан",
+  "items": "Товары",
   "openOrder": "Открыть заказ {{ref}}",
   "proofButton": "Файлы ({{count}})",
   "proofButtonLabel": "Файлы ({{count}}) — {{ref}}",

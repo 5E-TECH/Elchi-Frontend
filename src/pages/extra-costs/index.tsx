@@ -9,6 +9,7 @@ import { formatOrderRef } from "../../entities/order";
 import { useOrders } from "../../entities/orders";
 import { extraCostOrderNumber } from "../../entities/orders/extraCostApprovalView";
 import { isExtraCostAlreadyDecidedError } from "../../entities/orders/extraCostDecision";
+import { useFormatExtraCostItems } from "../../entities/orders/extraCostRequest";
 import {
   EXTRA_COST_TABS,
   useExtraCosts,
@@ -38,6 +39,7 @@ import {
   type DataTableColumn,
   type TabItem,
 } from "../../shared/ui/primitives";
+import { extraCostConfirmDescriptionKey, extraCostConsequenceKey } from "../dashboard/model/extraCostDecisionText";
 import { ExtraCostRejectDialog, type ExtraCostRejectPayload } from "../dashboard/ui/ExtraCostRejectDialog";
 import {
   EXTRA_COST_DEFAULT_LIMIT,
@@ -58,13 +60,6 @@ import {
 import { ExtraCostProofDialog } from "./ui/ExtraCostProofDialog";
 
 const LINK = "whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline";
-
-/** Tasdiqlansa nima bo'ladi — market dashboardidagi tasdiq oynasi bilan bir xil matn (`dashboard` nomlar fazosi). */
-const CONSEQUENCE_KEYS: Record<ExtraCostRow["action"], string> = {
-  sell: "dashboard:market.extra_cost_on_approve_sell",
-  partly_sell: "dashboard:market.extra_cost_on_approve_partly_sell",
-  cancel: "dashboard:market.extra_cost_on_approve_cancel",
-};
 
 const REJECT_DIALOG_ACTION_KEYS: Record<ExtraCostRow["action"], string> = {
   sell: "dashboard:market.extra_cost_sell",
@@ -90,6 +85,10 @@ const REJECT_DIALOG_ACTION_KEYS: Record<ExtraCostRow["action"], string> = {
  *
  * Maket yo'q — eng yaqini `superadmin-returns-list` (sarlavha + jami, kartada tablar, jadval, sahifalash) va
  * `market-dashboard-extra-cost-approvals` (tasdiqlash / rad etish).
+ *
+ * SPEC v2: «Buyurtma» katagida (va telefon kartasida) qaysi tovar uchun — «Telefon g'ilofi ×1, Zaryadka ×2» (ko'pi
+ * bilan 3 ta, qolgani «+N»); tasdiq oynasidagi oqibat matni so'rov rejimiga qarab (market dashboardi bilan bir xil —
+ * `dashboard/model/extraCostDecisionText`).
  */
 const ExtraCostsPage = () => {
   const { t, i18n } = useTranslation(["extraCosts", "dashboard", "common"]);
@@ -144,6 +143,8 @@ const ExtraCostsPage = () => {
   const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
   const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
   const refOf = (row: ExtraCostRow) => formatOrderRef({ id: row.order_id, order_number: row.order_number });
+  const formatItems = useFormatExtraCostItems();
+  const itemsOf = (row: ExtraCostRow, max?: number) => formatItems(row.items, row.action, max);
 
   const counts = data?.counts ?? null;
   const tabs: TabItem<ExtraCostTab>[] = EXTRA_COST_TABS.map((value) => ({
@@ -211,12 +212,16 @@ const ExtraCostsPage = () => {
   };
 
   const handleApprove = async (row: ExtraCostRow) => {
+    const items = itemsOf(row, 5);
     const ok = await confirm({
       tone: "success",
       title: t("dashboard:market.extra_cost_confirm_title"),
-      description: t("dashboard:market.extra_cost_confirm_description", { id: extraCostOrderNumber(row) }),
+      description: t(`dashboard:${extraCostConfirmDescriptionKey(row)}`, { id: extraCostOrderNumber(row) }),
       amount: { value: row.amount, label: t("dashboard:market.extra_cost_requested_amount") },
-      consequences: [{ text: t(CONSEQUENCE_KEYS[row.action]), tone: "warning" }],
+      ...(items ? { rows: [{ label: t("dashboard:market.extra_cost_items"), value: items, stacked: true }] } : {}),
+      consequences: [
+        { text: t(`dashboard:${extraCostConsequenceKey(row)}`, { amount: money(row.amount) }), tone: "warning" },
+      ],
       confirmLabel: t("approve"),
       confirmIcon: CircleCheck,
     });
@@ -302,6 +307,17 @@ const ExtraCostsPage = () => {
     );
   };
 
+  /** Qaysi tovar uchun (SPEC v2) — «Telefon g'ilofi ×1, Zaryadka ×2»; eski javobda tovar yo'q — qator yo'q. */
+  const itemsLine = (row: ExtraCostRow) => {
+    const items = itemsOf(row);
+    return items ? (
+      <span className="text-[13px] text-text" data-testid={`extra-cost-items-${row.id}`}>
+        <span className="sr-only">{t("items")}: </span>
+        {items}
+      </span>
+    ) : null;
+  };
+
   /** Kim yozgan — bir qatorda (planshet jadvali: «Kim yozgan» ustuni yashirin bo'lganda buyurtma katagida). */
   const requesterInline = (row: ExtraCostRow, className: string) => {
     const requester = requesterOf(row);
@@ -338,6 +354,7 @@ const ExtraCostsPage = () => {
               {ref}
             </Link>
             <span className="text-[13px] text-text-muted">{t(`action.${row.action}`)}</span>
+            {itemsLine(row)}
             {withRequester ? requesterInline(row, "lg:hidden") : null}
           </span>
         );
@@ -457,6 +474,7 @@ const ExtraCostsPage = () => {
           </Link>
           <span className="text-text-muted">· {t(`action.${row.action}`)}</span>
         </span>
+        {itemsLine(row)}
         <span className="text-[13px] text-text-muted">
           {customer.name}
           {customer.phone ? (

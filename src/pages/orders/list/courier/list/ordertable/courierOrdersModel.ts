@@ -49,6 +49,10 @@ export type Order = {
   post_id?: string | number | null;
   /** GykuOz8f: serverdagi kutilayotgan qo'shimcha xarajat so'rovi (`waiting` da) yoki `null`. */
   pending_extra_cost_approval?: ServerPendingExtraCostApproval | null;
+  /** SPEC v2: oxirgi qo'shimcha xarajat so'rovi (xom; `readExtraCostRequest`) — «Xarajat kutilmoqda» belgisi. */
+  extra_cost_request?: unknown;
+  /** Hamkor (tashqi) buyurtma id'si — bor bo'lsa xarajat eski (replay) yo'ldan (`isExtraCostReplayOrder`). */
+  external_id?: string | null;
 };
 
 /** Ro'yxat tablari (URL `status` paramiga bog'langan). */

@@ -55,6 +55,20 @@ describe("payment idempotency keys (C1 / FE-PAY-03)", () => {
     expect(fingerprints.size).toBe(3);
   });
 
+  it("branch «Marketga o'tkazma»: the market is part of the fingerprint; plain branch → HQ format unchanged", () => {
+    const toMarket = (market_id: string) =>
+      branchToMainPaymentFingerprint({ branch_id: "13", amount: 250_000, payment_method: "click_to_market", market_id });
+
+    expect(toMarket("3")).not.toBe(toMarket("4"));
+    expect(toMarket("3")).toBe('["branch","13",250000,"click_to_market","3"]');
+    expect(branchToMainPaymentFingerprint({ branch_id: "13", amount: 250_000, payment_method: "cash" })).toBe(
+      '["branch","13",250000,"cash"]',
+    );
+    expect(
+      branchToMainPaymentFingerprint({ branch_id: "13", amount: 250_000, payment_method: "cash", market_id: null }),
+    ).toBe('["branch","13",250000,"cash"]');
+  });
+
   it("keeps the courier fingerprint format unchanged (pending courier keys stay valid after deploy)", () => {
     expect(
       courierPaymentFingerprint({ courier_id: "263", amount: 100000, payment_method: "cash", market_id: null }),

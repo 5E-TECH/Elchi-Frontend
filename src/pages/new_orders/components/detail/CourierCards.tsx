@@ -10,6 +10,7 @@ import { getOrderItemName } from "../../../../shared/lib/orderItemName";
 import { Badge, Card, EmptyState } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey, getInitials } from "../../../orders/list/courier/list/orderActionModel";
 import { DetailStatusBadge } from "./DetailStatusBadge";
+import { ExtraCostRequestRow } from "./ExtraCostRequestRow";
 import { OrderComment } from "./OrderComment";
 import type { ProductsLockReason } from "./orderDetailAccess";
 import {
@@ -92,6 +93,10 @@ export const CourierPaymentCard = ({ order, className }: { order: OrderDetail; c
             <dt className="text-text-muted">{t("paid", { ns: "newOrders" })}</dt>
             <dd className="m-0 font-semibold text-text-muted tabular-nums">{money(order.paid_amount)}</dd>
           </div>
+        </dl>
+        {/* SPEC v2: qo'shimcha xarajat so'rovi — telefonda ham ko'rinadi (yuqoridagi `dl` telefonda yashirin). */}
+        <dl className="m-0 flex flex-col text-sm empty:hidden">
+          <ExtraCostRequestRow order={order} className="border-t border-border pb-0" />
         </dl>
       </div>
     </Card>

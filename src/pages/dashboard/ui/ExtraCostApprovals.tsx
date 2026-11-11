@@ -8,6 +8,7 @@ import type { RootState } from "../../../app/config/store";
 import { useOrders, type ExtraCostApproval, type ExtraCostApprovalsResponse } from "../../../entities/orders";
 import { extraCostOrderNumber, extraCostRequesterName } from "../../../entities/orders/extraCostApprovalView";
 import { canDecideExtraCost, isExtraCostAlreadyDecidedError } from "../../../entities/orders/extraCostDecision";
+import { useFormatExtraCostItems } from "../../../entities/orders/extraCostRequest";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
@@ -22,6 +23,7 @@ import {
   useConfirm,
   useDelayedFlag,
 } from "../../../shared/ui/primitives";
+import { extraCostConfirmDescriptionKey, extraCostConsequenceKey } from "../model/extraCostDecisionText";
 import { ExtraCostRejectDialog, type ExtraCostRejectPayload } from "./ExtraCostRejectDialog";
 
 /**
@@ -41,18 +43,16 @@ import { ExtraCostRejectDialog, type ExtraCostRejectPayload } from "./ExtraCostR
  * Raqam — `order_number` («№EL-100076», yorliqdagi; havola ichki `order_id` bo'yicha), so'rovchi — ismi va roli
  * («Jasur Tursunov · Kuryer», 0Ngp09FG). Eski javobda yoki ism olinmasa zaxira: `№order_id`, `#user_id · rol`.
  * Maketdan farq: «Rad etish» sabab oynasini ochadi (`ExtraCostRejectDialog`).
+ *
+ * SPEC v2: yangi so'rovlar (`mode: "deferred"`) — buyurtma allaqachon sotilgan / bekor qilingan, tasdiq faqat
+ * xarajatni yozadi; oqibat matni shunga qarab (`extraCostDecisionText`). Qatorda «Mahsulotlar» — qaysi mahsulot uchun
+ * («Telefon g'ilofi ×1, Zaryadka ×2», ko'pi bilan 3 ta, qolgani «+N»).
  */
 
 const ACTION_LABEL_KEYS: Record<ExtraCostApproval["action"], string> = {
   sell: "market.extra_cost_sell",
   partly_sell: "market.extra_cost_partly_sell",
   cancel: "market.extra_cost_cancel",
-};
-
-const CONSEQUENCE_KEYS: Record<ExtraCostApproval["action"], string> = {
-  sell: "market.extra_cost_on_approve_sell",
-  partly_sell: "market.extra_cost_on_approve_partly_sell",
-  cancel: "market.extra_cost_on_approve_cancel",
 };
 
 const toList = (response: ExtraCostApprovalsResponse | null | undefined): ExtraCostApproval[] =>
@@ -129,6 +129,9 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
   const orderNumber = extraCostOrderNumber(approval);
   const requesterName = extraCostRequesterName(approval);
   const busy = approving || rejecting;
+  const formatItems = useFormatExtraCostItems();
+  const items = formatItems(approval.items, approval.action);
+  const amountText = formatMoneyLocalized(approval.amount, { language });
 
   return (
     <li
@@ -165,9 +168,7 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
           ) : null}
         </div>
         <div className="col-start-2 row-span-2 row-start-1 flex flex-none flex-col items-end gap-0.5 max-md:row-span-1 max-md:row-start-2">
-          <span className="whitespace-nowrap text-base font-bold text-text">
-            {formatMoneyLocalized(approval.amount, { language })}
-          </span>
+          <span className="whitespace-nowrap text-base font-bold text-text">{amountText}</span>
           <span className="text-xs text-text-muted">{t("market.extra_cost_requested_amount")}</span>
         </div>
       </div>
@@ -178,12 +179,20 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
       >
         <ArrowRight size={16} className="flex-none text-text-muted" aria-hidden="true" />
         <span className="text-[13px] font-semibold text-text">
-          {t(CONSEQUENCE_KEYS[approval.action] ?? CONSEQUENCE_KEYS.sell)}
+          {t(extraCostConsequenceKey(approval), { amount: amountText })}
         </span>
       </div>
 
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-3 max-md:flex-col max-md:items-stretch">
         <dl className="m-0 grid min-w-0 grid-cols-[auto_auto] gap-x-2.5 gap-y-0.5 text-[13px] max-md:grid-cols-[auto_minmax(0,1fr)] max-md:gap-x-3 max-md:gap-y-1">
+          {items ? (
+            <>
+              <dt className="text-text-muted">{t("market.extra_cost_items")}</dt>
+              <dd className="m-0 min-w-0 font-semibold text-text" data-testid={`approval-items-${approval.id}`}>
+                {items}
+              </dd>
+            </>
+          ) : null}
           <dt className="text-text-muted">{t("market.extra_cost_requester")}</dt>
           <dd className="m-0">
             <span className="font-semibold text-text">{requesterName ?? `#${approval.requested_by_user_id}`}</span>
@@ -232,7 +241,9 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
 };
 
 export const ExtraCostApprovals = memo(() => {
-  const { t } = useTranslation("dashboard");
+  const { t, i18n } = useTranslation("dashboard");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const formatItems = useFormatExtraCostItems();
   const role = useSelector((state: RootState) => state.role.role);
   const canDecide = canDecideExtraCost(role);
   const confirm = useConfirm();
@@ -259,12 +270,21 @@ export const ExtraCostApprovals = memo(() => {
   };
 
   const handleApprove = async (approval: ExtraCostApproval) => {
+    const items = formatItems(approval.items, approval.action, 5);
     const ok = await confirm({
       tone: "success",
       title: t("market.extra_cost_confirm_title"),
-      description: t("market.extra_cost_confirm_description", { id: extraCostOrderNumber(approval) }),
+      description: t(extraCostConfirmDescriptionKey(approval), { id: extraCostOrderNumber(approval) }),
       amount: { value: approval.amount, label: t("market.extra_cost_requested_amount") },
-      consequences: [{ text: t(CONSEQUENCE_KEYS[approval.action] ?? CONSEQUENCE_KEYS.sell), tone: "warning" }],
+      ...(items ? { rows: [{ label: t("market.extra_cost_items"), value: items, stacked: true }] } : {}),
+      consequences: [
+        {
+          text: t(extraCostConsequenceKey(approval), {
+            amount: formatMoneyLocalized(approval.amount, { language }),
+          }),
+          tone: "warning",
+        },
+      ],
       confirmLabel: t("market.extra_cost_approve"),
       confirmIcon: CircleCheck,
     });

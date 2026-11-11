@@ -343,6 +343,83 @@ describe("ScanDetailPage — kuryer: qabul qilish, sotish va bekor qilish", () =
     expect(screen.queryByRole("button", { name: "Bekor qilish" })).not.toBeInTheDocument();
     expect(screen.getByTestId("courier-approval-pending")).toBeInTheDocument();
   });
+
+  it("⭐ SPEC v2: xarajat alohida (deferred) — sotildi: skanerga qaytadi, «xarajat kutmoqda» xabari, tasdiq holati yo'q", async () => {
+    const user = userEvent.setup();
+    const post = vi.spyOn(api, "post").mockResolvedValue({
+      data: {
+        statusCode: 201,
+        data: {
+          id: "1251175",
+          status: "sold",
+          extra_cost_request: {
+            id: "xc-9",
+            status: "pending",
+            mode: "deferred",
+            action: "sell",
+            amount: 15000,
+            items: [{ order_item_id: "i-1", product_id: "p-1", product_name: "Zaryadka", quantity: 2 }],
+            auto_approve_at: null,
+            created_at: new Date().toISOString(),
+          },
+        },
+      },
+    } as AxiosResponse);
+    fetchMock.mockResolvedValue({ type: "order", data: { ...COURIER_WAITING, where_deliver: "center" } });
+    renderDetail("courier");
+
+    await user.click(await screen.findByRole("button", { name: "Sotish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Sotish" });
+    await user.type(within(dialog).getByLabelText("Qo'shimcha xarajat"), "15000");
+    expect(within(dialog).getByText(/^Buyurtma darhol sotiladi\./)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
+
+    await waitFor(() =>
+      expect(navigateMock).toHaveBeenCalledWith("/scan", { state: { scanMode: "courierReceive" } }),
+    );
+    expect(post).toHaveBeenCalledWith(
+      expect.stringContaining("orders/sell/1251175"),
+      expect.objectContaining({ extraCost: 15000 }),
+    );
+    expect(await screen.findByText(/^15\D000 so'm qo'shimcha xarajat market tasdig'ini kutmoqda$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Mahsulotlar: Zaryadka ×2\./)).toBeInTheDocument();
+    expect(screen.queryByTestId("courier-approval-pending")).not.toBeInTheDocument();
+  });
+});
+
+describe("ScanDetailPage — qo'shimcha xarajat belgisi (SPEC v2)", () => {
+  const SOLD = {
+    ...ORDER,
+    status: "sold",
+    pending_extra_cost_approval: null,
+    extra_cost_request: {
+      id: "xc-3",
+      status: "pending",
+      mode: "deferred",
+      action: "sell",
+      amount: 20000,
+      items: [{ order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 }],
+    },
+  };
+
+  it("sotilgan buyurtma — holat yonida «Xarajat kutilmoqda · 20 000 so'm», maslahatda tovar", async () => {
+    fetchMock.mockResolvedValue({ type: "order", data: SOLD });
+    renderDetail("admin");
+
+    const tag = await screen.findByTestId("extra-cost-request-tag");
+    expect(tag).toHaveTextContent(/^Xarajat kutilmoqda · 20\D000 so'm$/);
+    expect(tag).toHaveAttribute("title", "Qaysi mahsulot uchun: Telefon g'ilofi ×1");
+  });
+
+  it("rad etilgan so'rov — «Xarajat rad etildi»", async () => {
+    fetchMock.mockResolvedValue({
+      type: "order",
+      data: { ...SOLD, extra_cost_request: { ...SOLD.extra_cost_request, status: "rejected" } },
+    });
+    renderDetail("admin");
+
+    expect(await screen.findByTestId("extra-cost-request-tag")).toHaveTextContent("Xarajat rad etildi");
+  });
 });
 
 describe("ScanDetailPage — rol bo'yicha mazmun (spec G3 §2.3)", () => {

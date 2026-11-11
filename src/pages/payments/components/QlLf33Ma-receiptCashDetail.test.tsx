@@ -7,13 +7,18 @@ import CashDetail from "./cashDetail";
 
 /**
  * QlLf33Ma, 7-bosqich — HQ'ga «O'tkazma» qabulida chek rasmi (TZ 7, 8): superadmin HQ kuryeri va filial sahifasida
- * «O'tkazma» tanlansa maydon bor; «Naqd», «Marketga o'tkazma» va menejerning kuryer qabulida YO'Q. `receipt_id` so'rov
- * tanasida, lekin idempotentlik barmoq izida emas. Rasmsiz yuborilmaydi; `RECEIPT_REQUIRED` maydon ostida.
+ * «O'tkazma» va «Marketga o'tkazma» (Dilshod 2026-11-12 — `hq_transfer` sozlamasi ikkalasiga bir xil) tanlansa maydon
+ * bor; «Naqd» va menejerning kuryer qabulida YO'Q. `receipt_id` so'rov tanasida, lekin idempotentlik barmoq izida emas.
+ * Rasmsiz yuborilmaydi; `RECEIPT_REQUIRED` maydon ostida. Sozlama o'chiq — ikkala usulda ham maydon yo'q.
  */
 
 type PaymentArg = { data: Record<string, unknown>; idempotencyKey: string };
 
-const state = vi.hoisted(() => ({ cashbox: undefined as unknown, hqBranches: undefined as unknown }));
+const state = vi.hoisted(() => ({
+  cashbox: undefined as unknown,
+  hqBranches: undefined as unknown,
+  markets: undefined as unknown,
+}));
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: state.cashbox })));
 const http = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 const prepareImageMock = vi.hoisted(() => vi.fn());
@@ -55,7 +60,7 @@ vi.mock("../../../entities/payments/financeCoverage", () => ({
   }),
 }));
 vi.mock("../../../entities/markets", () => ({
-  useMarkets: () => ({ useGetMarkets: () => ({ data: undefined, isLoading: false }) }),
+  useMarkets: () => ({ useGetMarkets: () => ({ data: state.markets, isLoading: false }) }),
 }));
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
@@ -176,7 +181,7 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
     expect(await screen.findByTitle("Chek: Farq bor")).toBeInTheDocument();
   });
 
-  it("TC7: superadmin HQ kuryeri — «O'tkazma» da maydon bor, «Naqd» va «Marketga o'tkazma» da yo'q", async () => {
+  it("TC7: superadmin HQ kuryeri — «O'tkazma» va «Marketga o'tkazma» da maydon bor, «Naqd» da yo'q", async () => {
     const user = userEvent.setup();
     renderAt("courier");
 
@@ -188,7 +193,44 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
     expect(screen.getByRole("link", { name: "Sozlamalar" })).toBeInTheDocument();
 
     await chooseMethod(user, "Marketga o'tkazma");
+    expect(await screen.findByRole("button", { name: /Chek rasmini yuklash/ })).toBeInTheDocument();
+
+    await chooseMethod(user, "Naqd");
     expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();
+  });
+
+  it("(2026-11-12) kuryer «Marketga o'tkazma» — rasmsiz yuborilmaydi; rasm bilan `courier_to_hq`, `receipt_id` + `market_id` tanada", async () => {
+    state.markets = { data: { items: [{ id: "3", name: "Yandex" }] } };
+    const user = userEvent.setup();
+    renderAt("courier");
+    setAmount("100000");
+    await chooseMethod(user, "Marketga o'tkazma");
+    await user.click(screen.getByRole("combobox", { name: "Market" }));
+    await user.click(screen.getByRole("option", { name: "Yandex" }));
+
+    await screen.findByRole("button", { name: /Chek rasmini yuklash/ });
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    expect(await screen.findByText("Chek rasmini yuklang")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+
+    await uploadPhoto();
+    expect((http.post.mock.calls[0] as [string, FormData])[1].get("kind")).toBe("courier_to_hq");
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    expect(within(confirm).getByText("Biriktirildi")).toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: /Tasdiqlash/ }));
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const { data } = courierPayment.mutateAsync.mock.calls[0][0] as PaymentArg;
+    expect(data).toMatchObject({
+      courier_id: "77",
+      amount: 100000,
+      payment_method: "click_to_market",
+      market_id: "3",
+      receipt_id: "601",
+    });
+    state.markets = undefined;
   });
 
   it("TC7: menejerning kuryer qabulida maydon ham, sozlama so'rovi ham yo'q", async () => {
@@ -294,5 +336,75 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
     const [first, second] = courierPayment.mutateAsync.mock.calls.map(([arg]) => arg as PaymentArg);
     expect(second.data.receipt_id).toBe("602");
     expect(second.idempotencyKey).toBe(first.idempotencyKey);
+  });
+
+  it("filialdan «Marketga o'tkazma» (2026-11-12): chek maydoni bor, rasmsiz yuborilmaydi; `branch_to_hq` cheki `receipt_id` bilan", async () => {
+    state.markets = { data: { items: [{ id: "3", name: "Yandex" }] } };
+    const user = userEvent.setup();
+    renderAt("branch");
+    setAmount("250000");
+
+    await chooseMethod(user, "Marketga o'tkazma");
+    await user.click(screen.getByRole("combobox", { name: "Market" }));
+    await user.click(screen.getByRole("option", { name: "Yandex" }));
+    await screen.findByRole("button", { name: /Chek rasmini yuklash/ });
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    expect(await screen.findByText("Chek rasmini yuklang")).toBeInTheDocument();
+    expect(branchPayment.mutateAsync).not.toHaveBeenCalled();
+
+    await uploadPhoto();
+    expect((http.post.mock.calls[0] as [string, FormData])[1].get("kind")).toBe("branch_to_hq");
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    expect(within(confirm).getByText("Biriktirildi")).toBeInTheDocument();
+    await user.click(within(confirm).getByRole("button", { name: /Tasdiqlash/ }));
+
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const { data } = branchPayment.mutateAsync.mock.calls[0][0] as PaymentArg;
+    expect(data).toMatchObject({
+      branch_id: "15",
+      payment_method: "click_to_market",
+      market_id: "3",
+      receipt_id: "601",
+    });
+    state.markets = undefined;
+  });
+
+  it("(2026-11-12) `hq_transfer` chek rasmi O'CHIQ — «O'tkazma» ham, «Marketga o'tkazma» ham cheksiz, `receipt_id` yo'q", async () => {
+    http.get.mockImplementation(async (url: string) =>
+      url === "finance/receipt-settings"
+        ? {
+            data: {
+              statusCode: 200,
+              data: {
+                manual_expense: { photo_required: true, ai_enabled: true },
+                hq_transfer: { photo_required: false, ai_enabled: true },
+              },
+            },
+          }
+        : { data: { statusCode: 200, data: {} } },
+    );
+    state.markets = { data: { items: [{ id: "3", name: "Yandex" }] } };
+    const user = userEvent.setup();
+    renderAt("branch");
+    setAmount("250000");
+
+    await chooseMethod(user, "O'tkazma");
+    await waitFor(() =>
+      expect(http.get.mock.calls.filter(([url]) => url === "finance/receipt-settings").length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();
+    await chooseMethod(user, "Marketga o'tkazma");
+    expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Market" }));
+    await user.click(screen.getByRole("option", { name: "Yandex" }));
+    await user.click(screen.getByRole("button", { name: SUBMIT }));
+    await user.click(within(await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" })).getByRole("button", { name: /Tasdiqlash/ }));
+
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    const { data } = branchPayment.mutateAsync.mock.calls[0][0] as PaymentArg;
+    expect(data).toMatchObject({ payment_method: "click_to_market", market_id: "3" });
+    expect(data).not.toHaveProperty("receipt_id");
+    state.markets = undefined;
   });
 });

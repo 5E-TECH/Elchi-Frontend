@@ -658,7 +658,6 @@
   "copyOrderNumber": "Raqamni nusxalash",
   "orderNumberCopied": "Buyurtma raqami nusxalandi",
   "orderNumberCopyFailed": "Nusxa olib bo'lmadi — buyurtma raqami: {{id}}",
-  "extraCostApprovalNotice": "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
   "extraCostApprovalPendingTitle": "Market tasdig'i kutilmoqda",
   "extraCostApprovalPendingDescription": "{{amount}} qo'shimcha xarajat marketga tasdiqqa yuborildi. Market tasdiqlasa, amal avtomatik bajariladi; rad etsa, buyurtma hozirgi holatida qoladi.",
   "extraCostApprovalBadge": "Tasdiqqa yuborilgan",
@@ -667,6 +666,24 @@
   "extraCostApprovalActionSell": "Sotish",
   "extraCostApprovalActionPartlySell": "Qisman sotish",
   "extraCostApprovalActionCancel": "Bekor qilish",
+  "extraCostDeferredNoticeSell": "Buyurtma darhol sotiladi. Qo'shimcha xarajat alohida — market tasdig'ini kutadi. Naqdni to'liq topshiring: tasdiqlansa, xarajat keyingi topshirishda hisobga olinadi.",
+  "extraCostDeferredNoticeCancel": "Buyurtma darhol bekor qilinadi. Qo'shimcha xarajat alohida — market tasdig'ini kutadi. Naqdni to'liq topshiring: tasdiqlansa, xarajat keyingi topshirishda hisobga olinadi.",
+  "extraCostReplayNotice": "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
+  "extraCostDeferredToast": "{{amount}} qo'shimcha xarajat market tasdig'ini kutmoqda",
+  "extraCostDeferredToastItems": "Mahsulotlar: {{items}}. Naqdni to'liq topshiring — tasdiqlansa, xarajat keyingi topshirishda hisobga olinadi.",
+  "extraCostDeferredToastDescription": "Naqdni to'liq topshiring — tasdiqlansa, xarajat keyingi topshirishda hisobga olinadi.",
+  "extraCostItems": {
+    "entry": "{{name}} ×{{quantity}}",
+    "more": "{{list}} +{{rest}}",
+    "fallback": "Mahsulot #{{id}}",
+    "unknown": "Mahsulot"
+  },
+  "extraCostRequestTag": {
+    "pending": "Xarajat kutilmoqda · {{amount}}",
+    "approved": "Xarajat tasdiqlangan · {{amount}}",
+    "rejected": "Xarajat rad etildi",
+    "items": "Qaysi mahsulot uchun: {{items}}"
+  },
   "sortLabel": "Saralash:",
   "excel": {
     "fileName": "barcha_buyurtmalar"
@@ -855,6 +872,11 @@
     "approvalBody": "{{sent}}. Market tasdiqlasa, amal avtomatik bajariladi.",
     "approvalCompactTitle": "Market tasdig'i kutilmoqda:",
     "approvalCompact": "{{amount}} qo'shimcha xarajat, {{time}}",
+    "extraCost": {
+      "label": "Qo'shimcha xarajat",
+      "items": "Mahsulotlar: {{items}}",
+      "reason": "Sabab: {{reason}}"
+    },
     "productsLockedTitle": "Mahsulotlar va summa qulflangan.",
     "productsLockedBody": "HQ qabul qilgandan keyin ularni o'zgartirib bo'lmaydi.",
     "productsLockedWarehouseBody": "Mahsulotlar omborda band qilingan — ularni o'zgartirib bo'lmaydi.",

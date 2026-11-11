@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useOrders, type ExtraCostApproval, type ExtraCostApprovalsResponse } from "../../../entities/orders";
 import { extraCostOrderNumber } from "../../../entities/orders/extraCostApprovalView";
+import { useFormatExtraCostItems } from "../../../entities/orders/extraCostRequest";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Card } from "../../../shared/ui/primitives";
@@ -28,11 +29,13 @@ const toList = (response: ExtraCostApprovalsResponse | null | undefined): ExtraC
  * Maket yo'q (kartadagi dizayn ziddiyati) — eng yaqini «Qo'shimcha xarajat tasdiqlari» bloki: o'sha
  * qator ko'rinishi, amal tugmalarisiz, «Avtomatik tasdiqlangan» belgisi bilan. Yozuv bo'lmasa,
  * yuklanayotganda yoki xatoda blok chizilmaydi (avtomatik tasdiq o'chiq bo'lsa ro'yxat doim bo'sh).
+ * SPEC v2: qatorda qaysi mahsulot uchun («Mahsulotlar: Telefon g'ilofi ×1, Zaryadka ×2»).
  */
 export const AutoApprovedExtraCosts = memo(() => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { useAutoApprovedExtraCostApprovals } = useOrders();
+  const formatItems = useFormatExtraCostItems();
   const query = useAutoApprovedExtraCostApprovals(true);
   const approvals = toList(query.data);
 
@@ -66,6 +69,7 @@ export const AutoApprovedExtraCosts = memo(() => {
         {approvals.map((approval) => {
           const actionLabel = t(ACTION_LABEL_KEYS[approval.action] ?? ACTION_LABEL_KEYS.sell);
           const decidedAt = approval.decided_at ?? approval.updatedAt;
+          const items = formatItems(approval.items, approval.action);
           return (
             <li
               key={approval.id}
@@ -96,6 +100,12 @@ export const AutoApprovedExtraCosts = memo(() => {
                   {formatMoneyLocalized(approval.amount, { language })}
                 </span>
               </div>
+              {items ? (
+                <p className="m-0 text-[13px] text-text" data-testid={`auto-approved-items-${approval.id}`}>
+                  <span className="text-text-muted">{t("market.extra_cost_items")}: </span>
+                  {items}
+                </p>
+              ) : null}
               <div>
                 <Badge tone="info" icon={TimerReset} data-auto-approved="true">
                   {t("market.extra_cost_auto_badge")}
