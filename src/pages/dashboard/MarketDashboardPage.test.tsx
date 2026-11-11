@@ -7,9 +7,21 @@ import MarketDashboardPage from "./MarketDashboardPage";
 
 const getDashboardMock = vi.fn();
 const getKpiMock = vi.fn();
-const approvalsState: { data: unknown; isLoading: boolean; isError: boolean } = { data: undefined, isLoading: false, isError: false };
-const approveState = { mutate: vi.fn(), isPending: false, variables: undefined as { id: string } | undefined };
-const rejectState = { mutate: vi.fn(), isPending: false, variables: undefined as { id: string } | undefined };
+const approvalsState: { data: unknown; isLoading: boolean; isError: boolean } = {
+  data: undefined,
+  isLoading: false,
+  isError: false,
+};
+const approveState = {
+  mutate: vi.fn(),
+  isPending: false,
+  variables: undefined as { id: string } | undefined,
+};
+const rejectState = {
+  mutate: vi.fn(),
+  isPending: false,
+  variables: undefined as { id: string } | undefined,
+};
 // Hook chaqiruvlari kuzatiladi: operator rejimida xarajat tasdiqlari so'rovi umuman yuborilmasligi kerak (backend 403).
 const extraCostHook = vi.fn(() => approvalsState);
 const autoApprovedHook = vi.fn(() => ({ data: undefined }));
@@ -44,13 +56,38 @@ const buildDashboardResponse = () => ({
   data: {
     data: {
       orders: { acceptedCount: 4, soldAndPaid: 1, cancelled: 1, inProgress: 1, profit: 120000 },
-      myStat: { totalOrders: 38, soldOrders: 7, canceledOrders: 2, profit: 19060000, successRate: 18.42, inProgress: 12 },
+      myStat: {
+        totalOrders: 38,
+        soldOrders: 7,
+        canceledOrders: 2,
+        profit: 19060000,
+        successRate: 18.42,
+        inProgress: 12,
+      },
       topMarkets: [
-        { market_id: "market-1", market_name: "Market", total_orders: 4, successful_orders: 1, success_rate: 25 },
-        { market_id: "market-2", market_name: "Nur Elektronika", total_orders: 38, successful_orders: 31, success_rate: 81.6 },
+        {
+          market_id: "market-1",
+          market_name: "Market",
+          total_orders: 4,
+          successful_orders: 1,
+          success_rate: 25,
+        },
+        {
+          market_id: "market-2",
+          market_name: "Nur Elektronika",
+          total_orders: 38,
+          successful_orders: 31,
+          success_rate: 81.6,
+        },
       ] as Array<Record<string, unknown>>,
       topOperators: [
-        { operator_id: "operator-1", operator_name: "Operator Ali", total_orders: 20, successful_orders: 16, success_rate: 80 },
+        {
+          operator_id: "operator-1",
+          operator_name: "Operator Ali",
+          total_orders: 20,
+          successful_orders: 16,
+          success_rate: 80,
+        },
       ] as Array<Record<string, unknown>>,
     } as Record<string, unknown>,
   },
@@ -72,7 +109,8 @@ const marketState = (id = "market-1") =>
     },
   }) as never;
 
-const section = (title: string) => screen.getByRole("heading", { name: title }).closest("section") as HTMLElement;
+const section = (title: string) =>
+  screen.getByRole("heading", { name: title }).closest("section") as HTMLElement;
 
 describe("MarketDashboardPage (v2)", () => {
   beforeEach(() => {
@@ -91,7 +129,11 @@ describe("MarketDashboardPage (v2)", () => {
   it("faqat marketga ruxsat etilgan dashboard so'rovi; KPI `myStat` dan; kpi so'ralmaydi", () => {
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
 
-    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "market:market-1");
+    expect(getDashboardMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      true,
+      "market:market-1",
+    );
     expect(getKpiMock).not.toHaveBeenCalled();
     expect(screen.getByText("Buyurtmalar va ko'rsatkichlar · Baraka Shop")).toBeInTheDocument();
     const grid = screen.getByTestId("market-stats-grid");
@@ -101,7 +143,11 @@ describe("MarketDashboardPage (v2)", () => {
     expect(grid).toHaveTextContent("19 060 000");
     expect(section("Muvaffaqiyat darajasi")).toHaveTextContent("18,4%");
     // «Jarayonda» — market `myStat.inProgress` dan
-    expect(within(section("Buyurtmalar holati")).getByRole("list", { name: "Holatlar bo'yicha taqsimot" })).toHaveTextContent("Jarayonda12 ta");
+    expect(
+      within(section("Buyurtmalar holati")).getByRole("list", {
+        name: "Holatlar bo'yicha taqsimot",
+      }),
+    ).toHaveTextContent("Jarayonda12 ta");
     // «Taklif» bloklar chizilmaydi
     expect(screen.queryByText("Reytingdagi o'rningiz")).not.toBeInTheDocument();
     expect(screen.queryByText("Buyurtmalar dinamikasi")).not.toBeInTheDocument();
@@ -111,12 +157,22 @@ describe("MarketDashboardPage (v2)", () => {
     getDashboardMock.mockImplementation((params: { start_day?: string }) => {
       const response = buildDashboardResponse();
       if (params.start_day === yesterday.from) {
-        response.data.data.myStat = { totalOrders: 19, soldOrders: 7, canceledOrders: 2, profit: 19060000, successRate: 36.8 };
+        response.data.data.myStat = {
+          totalOrders: 19,
+          soldOrders: 7,
+          canceledOrders: 2,
+          profit: 19060000,
+          successRate: 36.8,
+        };
       }
       return response;
     });
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
-    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: yesterday.from, end_day: yesterday.to }, true, "market:market-1");
+    expect(getDashboardMock).toHaveBeenCalledWith(
+      { start_day: yesterday.from, end_day: yesterday.to },
+      true,
+      "market:market-1",
+    );
     // 38 / 19 → +100%
     expect(within(screen.getByTestId("market-stats-grid")).getByText("+100%")).toBeInTheDocument();
     expect(section("Muvaffaqiyat darajasi")).toHaveTextContent("Kecha · 36,8%");
@@ -150,7 +206,17 @@ describe("MarketDashboardPage (v2)", () => {
     const user = userEvent.setup();
     getDashboardMock.mockImplementation((params: { all?: boolean }) => {
       const base = buildDashboardResponse();
-      return params?.all ? { ...base, data: { data: { ...base.data.data, appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-20" } } } } : base;
+      return params?.all
+        ? {
+            ...base,
+            data: {
+              data: {
+                ...base.data.data,
+                appliedRange: { clamped: true, from: "2025-10-21", to: "2026-10-20" },
+              },
+            },
+          }
+        : base;
     });
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
@@ -162,7 +228,13 @@ describe("MarketDashboardPage (v2)", () => {
     const { DEFAULT_SETTINGS } = await import("../../entities/settings");
     settingsState.data = {
       ...DEFAULT_SETTINGS,
-      dashboard: { widgets: { ...DEFAULT_SETTINGS.dashboard.widgets, performanceChart: false, topPerformers: false } },
+      dashboard: {
+        widgets: {
+          ...DEFAULT_SETTINGS.dashboard.widgets,
+          performanceChart: false,
+          topPerformers: false,
+        },
+      },
     };
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
 
@@ -172,7 +244,9 @@ describe("MarketDashboardPage (v2)", () => {
   });
 
   it("«Top operatorlar» — market o'rtachasi chizig'i; bo'sh bo'lsa karta yo'q", () => {
-    const { unmount } = renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+    const { unmount } = renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: marketState(),
+    });
     const ops = section("Top operatorlar");
     expect(within(ops).getByText("Operator Ali")).toBeInTheDocument();
     expect(ops).toHaveTextContent("Baraka Shop o'rtachasi · 18,4%");
@@ -191,7 +265,9 @@ describe("MarketDashboardPage (v2)", () => {
   it("sotuv foizi: reyting + o'z qatori «Siz», kuryerlar bo'limi yo'q, foiz zonasi rangi", () => {
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
     const card = section("Marketlar bo'yicha sotuv foizi");
-    const rows = within(within(card).getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).getAllByRole("listitem");
+    const rows = within(
+      within(card).getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" }),
+    ).getAllByRole("listitem");
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveTextContent("Nur Elektronika");
     expect(rows[1]).toHaveTextContent("MarketSiz");
@@ -205,24 +281,46 @@ describe("MarketDashboardPage (v2)", () => {
     getDashboardMock.mockImplementation(() => {
       const response = buildDashboardResponse();
       response.data.data.topMarkets = [];
-      response.data.data.markets = [{ market_id: "37", market_name: "TEST Claude Market", total_orders: 11, successful_orders: 4, success_rate: 36.36 }];
+      response.data.data.markets = [
+        {
+          market_id: "37",
+          market_name: "TEST Claude Market",
+          total_orders: 11,
+          successful_orders: 4,
+          success_rate: 36.36,
+        },
+      ];
       return response;
     });
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState("37") });
     const card = section("Marketlar bo'yicha sotuv foizi");
-    expect(within(within(card).getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).getAllByRole("listitem")).toHaveLength(1);
+    expect(
+      within(
+        within(card).getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" }),
+      ).getAllByRole("listitem"),
+    ).toHaveLength(1);
     expect(card).toHaveTextContent("TEST Claude MarketSiz36,4% · 4 / 11 ta");
   });
 
   it("«Buyurtma yaratish» faqat `add_order` ruxsati bilan (sarlavha va tezkor harakatlarda)", () => {
-    const { unmount } = renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+    const { unmount } = renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: marketState(),
+    });
     expect(screen.getByRole("button", { name: "Buyurtma yaratish" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Buyurtma yaratish/ })).toHaveAttribute("href", "/new-orders/create");
-    expect(screen.getByRole("link", { name: /Buyurtmalarni ko'rish/ })).toHaveAttribute("href", "/new-orders");
+    expect(screen.getByRole("link", { name: /Buyurtma yaratish/ })).toHaveAttribute(
+      "href",
+      "/new-orders/create",
+    );
+    expect(screen.getByRole("link", { name: /Buyurtmalarni ko'rish/ })).toHaveAttribute(
+      "href",
+      "/new-orders",
+    );
     unmount();
 
     renderWithProviders(<MarketDashboardPage />, {
-      preloadedState: { role: { id: "market-1", role: "market", region: null, name: "Market" } } as never,
+      preloadedState: {
+        role: { id: "market-1", role: "market", region: null, name: "Market" },
+      } as never,
     });
     expect(screen.queryByRole("button", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Buyurtma yaratish/ })).not.toBeInTheDocument();
@@ -232,18 +330,43 @@ describe("MarketDashboardPage (v2)", () => {
     // Blok — `ExtraCostApprovals` (DuST9k8j): №, summa, so'rovchi (#id · rol), isbotlar, tasdiq oqibati.
     approvalsState.data = {
       data: [
-        { id: "ap-1", order_id: "1251165", market_id: "market-1", requested_by_user_id: "56", requested_by_role: "courier", action: "sell", amount: 25000, status: "pending", proof_file_keys: ["a", "b"] },
-        { id: "ap-2", order_id: "1251166", market_id: "market-1", requested_by_user_id: "57", action: "cancel", amount: 15000, status: "pending" },
+        {
+          id: "ap-1",
+          order_id: "1251165",
+          market_id: "market-1",
+          requested_by_user_id: "56",
+          requested_by_role: "courier",
+          action: "sell",
+          amount: 25000,
+          status: "pending",
+          proof_file_keys: ["a", "b"],
+        },
+        {
+          id: "ap-2",
+          order_id: "1251166",
+          market_id: "market-1",
+          requested_by_user_id: "57",
+          action: "cancel",
+          amount: 15000,
+          status: "pending",
+        },
       ],
     };
     approveState.isPending = true;
     approveState.variables = { id: "ap-1" };
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
 
-    const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
+    const card = screen
+      .getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" })
+      .closest("section") as HTMLElement;
     expect(card).toHaveTextContent("2 ta so'rov kutilmoqda");
-    const first = within(card).getByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №1251165" });
-    expect(within(first).getByRole("link", { name: "№1251165" })).toHaveAttribute("href", "/orders/edit/1251165");
+    const first = within(card).getByRole("listitem", {
+      name: "Sotishdagi qo'shimcha xarajat, buyurtma №1251165",
+    });
+    expect(within(first).getByRole("link", { name: "№1251165" })).toHaveAttribute(
+      "href",
+      "/orders/edit/1251165",
+    );
     expect(first).toHaveTextContent("25 000 so'm");
     expect(first).toHaveTextContent("So'rovchi#56 · Kuryer");
     expect(first).toHaveTextContent("Isbotlar2 ta");
@@ -252,21 +375,27 @@ describe("MarketDashboardPage (v2)", () => {
     expect(approving).toHaveAttribute("aria-busy", "true");
     expect(approving).toHaveAttribute("aria-disabled", "true");
     expect(within(first).getByRole("button", { name: "Rad etish" })).toBeDisabled();
-    const second = within(card).getByRole("listitem", { name: "Bekor qilishdagi qo'shimcha xarajat, buyurtma №1251166" });
+    const second = within(card).getByRole("listitem", {
+      name: "Bekor qilishdagi qo'shimcha xarajat, buyurtma №1251166",
+    });
     expect(second).toHaveTextContent("IsbotlarYo'q");
     expect(within(second).getByRole("button", { name: "Tasdiqlash" })).toBeEnabled();
   });
 
   it("qo'shimcha xarajat: bo'sh — panel ko'rinmaydi; so'rov xatosi — karta ichida xato (2f7cca6, QueryBoundary)", () => {
     approvalsState.data = { data: [] };
-    const { unmount } = renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+    const { unmount } = renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: marketState(),
+    });
     expect(screen.queryByText("Qo'shimcha xarajat tasdiqlari")).not.toBeInTheDocument();
     unmount();
 
     approvalsState.data = undefined;
     approvalsState.isError = true;
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
-    const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
+    const card = screen
+      .getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" })
+      .closest("section") as HTMLElement;
     expect(within(card).getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
   });
 
@@ -283,7 +412,10 @@ describe("MarketDashboardPage (v2)", () => {
     const marketState = { role: { id: "market-1", role: "market", region: null, name: "Market" } };
     const withFailed = (failedParts: string[]) => {
       const base = buildDashboardResponse();
-      getDashboardMock.mockReturnValue({ ...base, data: { data: { ...base.data.data, degraded: true, failedParts } } });
+      getDashboardMock.mockReturnValue({
+        ...base,
+        data: { data: { ...base.data.data, degraded: true, failedParts } },
+      });
     };
 
     it("`topMarkets` olinmasa — reyting joyida «Ma'lumotni yuklab bo'lmadi» + «Qayta urinish» (0 emas)", () => {
@@ -319,20 +451,32 @@ describe("MarketDashboardPage (v2)", () => {
       });
       renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
 
-      expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
-      expect(screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).not.toBeInTheDocument();
+      expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent(
+        "Marketlar bo'yicha sotuv foizi",
+      );
+      expect(
+        screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" }),
+      ).not.toBeInTheDocument();
       expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
-      expect(screen.queryByRole("heading", { name: "Muvaffaqiyat darajasi" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: "Muvaffaqiyat darajasi" }),
+      ).not.toBeInTheDocument();
       await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
       expect(refetch).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("market operatori rejimi (MO-2, `variant=\"operator\"`)", () => {
+  describe('market operatori rejimi (MO-2, `variant="operator"`)', () => {
     const operatorState = {
       role: { id: "op-9", role: "market_operator", region: null, name: "Dilnoza Karimova" },
       user: {
-        user: { id: "op-9", name: "Dilnoza Karimova", role: "market_operator", market_id: 1, add_order: true } as never,
+        user: {
+          id: "op-9",
+          name: "Dilnoza Karimova",
+          role: "market_operator",
+          market_id: 1,
+          add_order: true,
+        } as never,
         isAuthenticated: true,
         accessToken: "token",
         loading: false,
@@ -358,18 +502,31 @@ describe("MarketDashboardPage (v2)", () => {
           },
         ],
       };
-      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
 
-      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "market_operator:op-9");
+      expect(getDashboardMock).toHaveBeenCalledWith(
+        { start_day: "", end_day: "" },
+        true,
+        "market_operator:op-9",
+      );
       expect(screen.getByTestId("market-stats-grid")).toHaveTextContent("38");
       expect(extraCostHook).toHaveBeenCalled();
       // «Avtomatik tasdiqlangan» bloki — market egasining e'tirozi uchun; operatorda so'ralmaydi.
       expect(autoApprovedHook).not.toHaveBeenCalled();
-      const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
+      const card = screen
+        .getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" })
+        .closest("section") as HTMLElement;
       expect(card).toHaveTextContent("1 ta so'rov kutilmoqda");
       expect(card).toHaveTextContent("Faqat market egasi qaror qiladi");
-      const item = within(card).getByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №EL-1251165" });
-      expect(within(item).getByRole("link", { name: "№EL-1251165" })).toHaveAttribute("href", "/orders/edit/1251165");
+      const item = within(card).getByRole("listitem", {
+        name: "Sotishdagi qo'shimcha xarajat, buyurtma №EL-1251165",
+      });
+      expect(within(item).getByRole("link", { name: "№EL-1251165" })).toHaveAttribute(
+        "href",
+        "/orders/edit/1251165",
+      );
       expect(item).toHaveTextContent("Jasur Tursunov · Kuryer");
       expect(within(card).queryByRole("button")).not.toBeInTheDocument();
       // Profildagi `name` — operatorning o'z ismi, market nomi emas: sarlavha izohida yo'q.
@@ -378,14 +535,20 @@ describe("MarketDashboardPage (v2)", () => {
 
     it("6QLF7nst: kutilayotgan so'rov yo'q — blok yo'q; xato — karta ichida «Qayta urinish»", () => {
       approvalsState.data = { data: [] };
-      const { unmount } = renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+      const { unmount } = renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
       expect(screen.queryByText("Qo'shimcha xarajat tasdiqlari")).not.toBeInTheDocument();
       unmount();
 
       approvalsState.data = undefined;
       approvalsState.isError = true;
-      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
-      const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
+      const card = screen
+        .getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" })
+        .closest("section") as HTMLElement;
       expect(within(card).getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
     });
 
@@ -393,13 +556,29 @@ describe("MarketDashboardPage (v2)", () => {
       getDashboardMock.mockImplementation(() => {
         const response = buildDashboardResponse();
         response.data.data.topMarkets = [
-          { market_id: "1", market_name: "Baraka Shop", total_orders: 10, successful_orders: 4, success_rate: 40 },
-          { market_id: "op-9", market_name: "Boshqa market", total_orders: 10, successful_orders: 9, success_rate: 90 },
+          {
+            market_id: "1",
+            market_name: "Baraka Shop",
+            total_orders: 10,
+            successful_orders: 4,
+            success_rate: 40,
+          },
+          {
+            market_id: "op-9",
+            market_name: "Boshqa market",
+            total_orders: 10,
+            successful_orders: 9,
+            success_rate: 90,
+          },
         ];
         return response;
       });
-      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
-      const rows = within(screen.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).getAllByRole("listitem");
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
+      const rows = within(
+        screen.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" }),
+      ).getAllByRole("listitem");
       expect(rows[0]).toHaveTextContent("Boshqa market");
       expect(rows[0]).not.toHaveTextContent("Siz");
       expect(rows[1]).toHaveTextContent("Baraka ShopSiz");
@@ -410,7 +589,12 @@ describe("MarketDashboardPage (v2)", () => {
       const unassignedState = {
         role: { id: "op-9", role: "market_operator", region: null, name: "Dilnoza Karimova" },
         user: {
-          user: { id: "op-9", name: "Dilnoza Karimova", role: "market_operator", market_id: null } as never,
+          user: {
+            id: "op-9",
+            name: "Dilnoza Karimova",
+            role: "market_operator",
+            market_id: null,
+          } as never,
           isAuthenticated: true,
           accessToken: "token",
           loading: false,
@@ -418,15 +602,27 @@ describe("MarketDashboardPage (v2)", () => {
           error: null,
         },
       } as never;
-      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: unassignedState });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: unassignedState,
+      });
 
       expect(screen.getByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeInTheDocument();
       expect(screen.getByText("Market biriktirilmagan")).toBeInTheDocument();
-      expect(within(screen.getByTestId("operator-unassigned")).getByText("Siz hali marketga biriktirilmagansiz")).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("operator-unassigned")).getByText(
+          "Siz hali marketga biriktirilmagansiz",
+        ),
+      ).toBeInTheDocument();
       expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
-      expect(screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" }),
+      ).not.toBeInTheDocument();
       // `analytics/dashboard` yoqilmagan (enabled = false) — operatorning o'z id'si bo'yicha bo'sh statistika so'ralmaydi.
-      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, false, "market_operator:op-9");
+      expect(getDashboardMock).toHaveBeenCalledWith(
+        { start_day: "", end_day: "" },
+        false,
+        "market_operator:op-9",
+      );
       expect(getDashboardMock.mock.calls.every(([, enabled]) => enabled === false)).toBe(true);
       // Biriktirilmagan operatorga `GET orders/extra-cost-approvals` — 403: so'ralmaydi.
       expect(extraCostHook).not.toHaveBeenCalled();
@@ -441,21 +637,100 @@ describe("MarketDashboardPage (v2)", () => {
       expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
     });
 
+    it("⭐ ega 2026-11-11: KPI — operatorning o'zi (myStat), sarlavhada «siz operator bo'lgan buyurtmalar»; «Top operatorlar» o'rtachasi — market qatoridan, o'z qatori «Siz»", () => {
+      getDashboardMock.mockImplementation(() => {
+        const response = buildDashboardResponse();
+        // BE: operatorda `myStat` — faqat o'z buyurtmalari; `markets` — o'z marketi qatori (market bo'yicha).
+        response.data.data.myStat = {
+          totalOrders: 5,
+          soldOrders: 3,
+          canceledOrders: 1,
+          profit: 450000,
+          successRate: 60,
+          inProgress: 1,
+        };
+        response.data.data.markets = [
+          {
+            market_id: "1",
+            market_name: "Baraka Shop",
+            total_orders: 40,
+            successful_orders: 16,
+            success_rate: 40,
+          },
+        ];
+        response.data.data.topOperators = [
+          {
+            operator_id: "op-1",
+            operator_name: "Operator Ali",
+            total_orders: 20,
+            successful_orders: 16,
+            success_rate: 80,
+          },
+          {
+            operator_id: "op-9",
+            operator_name: "Dilnoza Karimova",
+            total_orders: 5,
+            successful_orders: 3,
+            success_rate: 60,
+          },
+        ];
+        return response;
+      });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
+
+      expect(screen.getByText(/siz operator bo'lgan buyurtmalar/)).toBeInTheDocument();
+      const kpis = screen.getByTestId("market-stats-grid");
+      expect(kpis).toHaveTextContent("5");
+      expect(kpis).toHaveTextContent("450 000");
+
+      const ops = section("Top operatorlar");
+      // O'rtacha — operator foizi (60%) emas, market qatori (40%).
+      expect(ops).toHaveTextContent("Market o'rtachasi · 40%");
+      expect(ops).not.toHaveTextContent("o'rtachasi · 60%");
+      const rows = within(ops).getAllByRole("listitem");
+      expect(rows.find((row) => row.textContent?.includes("Dilnoza Karimova"))).toHaveTextContent(
+        "Siz",
+      );
+      expect(rows.find((row) => row.textContent?.includes("Operator Ali"))).not.toHaveTextContent(
+        "Siz",
+      );
+    });
+
+    it("market qatori kelmasa — «Top operatorlar» da o'rtacha izohi yo'q (operator foizi market o'rtachasi deb ko'rsatilmaydi)", () => {
+      getDashboardMock.mockImplementation(() => {
+        const response = buildDashboardResponse();
+        response.data.data.topMarkets = [];
+        response.data.data.markets = [];
+        return response;
+      });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
+      const ops = section("Top operatorlar");
+      expect(within(ops).getByText("Operator Ali")).toBeInTheDocument();
+      expect(ops).not.toHaveTextContent("o'rtachasi");
+    });
+
     it("MO-3: buyurtmalar ochilgach — «Buyurtma yaratish», «Tezkor harakatlar» (ro'yxat va yaratish) va ro'yxat havolasi bor", () => {
-      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
+      renderWithProviders(<MarketDashboardPage variant="operator" />, {
+        preloadedState: operatorState,
+      });
 
       expect(screen.getByRole("button", { name: "Buyurtma yaratish" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Tezkor harakatlar" })).toBeInTheDocument();
-      expect(within(section("Buyurtmalar holati")).getByRole("link", { name: /Ro'yxat/ })).toHaveAttribute(
-        "href",
-        expect.stringMatching(/^\/orders/),
-      );
+      expect(
+        within(section("Buyurtmalar holati")).getByRole("link", { name: /Ro'yxat/ }),
+      ).toHaveAttribute("href", expect.stringMatching(/^\/orders/));
       const hrefs = screen.queryAllByRole("link").map((link) => link.getAttribute("href") ?? "");
       // Operatorda «Qabul va yaratish» (`/new-orders`) yo'q — faqat ro'yxat va yaratish.
       expect(hrefs).toEqual(expect.arrayContaining(["/orders", "/new-orders/create"]));
       expect(hrefs).not.toContain("/new-orders");
       // Operatorda qo'lda yaratish yo'q (MO-7 gacha) — izoh «Qo'lda yoki AI» ni va'da qilmaydi.
-      const create = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/new-orders/create");
+      const create = screen
+        .getAllByRole("link")
+        .find((link) => link.getAttribute("href") === "/new-orders/create");
       expect(create).toHaveTextContent("AI yordamida yaratish");
       expect(create).not.toHaveTextContent(/Qo'lda/);
     });
