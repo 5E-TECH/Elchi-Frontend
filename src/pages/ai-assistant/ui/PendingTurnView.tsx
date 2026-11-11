@@ -1,29 +1,33 @@
-// dizayn-v2: superadmin-ai-assistant-answering, superadmin-ai-assistant-offline, superadmin-ai-assistant-unavailable
-import { useCallback, type ReactNode } from "react";
+// dizayn-v2: superadmin-ai-assistant-answering, superadmin-ai-assistant-offline, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-budget-exceeded
 import { useTranslation } from "react-i18next";
-import { LoaderCircle, Plus, RefreshCw, WifiOff } from "lucide-react";
+import { CircleX, LoaderCircle, Plus, RefreshCw, WifiOff } from "lucide-react";
 import { Button, Card, Skeleton, Spinner } from "../../../shared/ui/primitives";
 import { MiniMarkdown } from "../../../shared/ui/markdown/MiniMarkdown";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { NoticeAlert } from "../../../entities/notification/ui/NoticeAlert";
 import type { PendingTurn } from "../../../features/ai-chat";
-import { AnswerCard, AnswerNotes, AssistantArticle, UserBubble } from "./ChatMessages";
+import { AnswerNotes, AssistantArticle } from "./ChatMessages";
 
 /**
- * Joriy savol (maketlar `-answering`, `-offline`, `-unavailable` «Boshqa holatlar»):
+ * Joriy savolga javob o'rni (maketlar `-answering`, `-offline`, `-unavailable` «Boshqa holatlar», `-budget-exceeded`).
+ * Savol pufakchasi va tayyor javob (`AnswerCard`) — sahifada, tarix bilan bir ro'yxatda va tarixdagi kalit bilan
+ * (`turnItemKey`): tarixga o'tganda DOM tuguni almashmaydi.
  *
  *   - yozilmoqda — «AI yordamchi · yozmoqda» + aylanuvchi belgi, `aria-busy`; tool kutilsa «Ma'lumot yig'ilmoqda…»,
  *     jonli matn (joriy qadam) va skelet qatorlar;
  *   - to'xtatildi — qisman matn, «AI xato qilishi mumkin.», «Javob to'xtatildi» + «Qayta yuborish»;
  *   - uzildi — qisman matn + «Aloqa uzildi» (oflaynda «Qayta yuborish» o'chiq);
- *   - xato — «Javob olib bo'lmadi» (yoki limit / suhbat qutisi) + amal.
+ *   - xarajat shifti — xira izoh «Javob berilmadi: …» (sabab — sahifa ustidagi ogohlantirishda, `-budget-exceeded`);
+ *   - xato — «Javob olib bo'lmadi» (yoki suhbat qutisi) + amal; suhbat to'lgan / topilmadi — «Yangi suhbat» savolni
+ *     yangi suhbatga olib o'tadi (savol saqlanmagan).
  */
 
-export type PendingTurnViewProps = {
+export type PendingReplyProps = {
   turn: PendingTurn;
   online: boolean;
   onRetry: () => void;
-  onNewChat: () => void;
+  /** «Yangi suhbat» (suhbat to'lgan / topilmadi) — savol yangi suhbatning maydoniga o'tadi. */
+  onNewChat: (question: string) => void;
 };
 
 const WritingSkeleton = () => (
@@ -33,19 +37,13 @@ const WritingSkeleton = () => (
   </div>
 );
 
-export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTurnViewProps) => {
+export const PendingReply = ({ turn, online, onRetry, onNewChat }: PendingReplyProps) => {
   const { t } = useTranslation("aiAdvisor");
-  // Yangi savol ko'rinadigan joyga suriladi (foydalanuvchi o'qiyotgan joy — oqim davomida majburan surilmaydi).
-  const bubbleRef = useCallback((node: HTMLDivElement | null) => {
-    node?.scrollIntoView?.({ block: "nearest" });
-  }, []);
   const at = (value: string) => formatDateTimeLocalized(value);
   const live = turn.phase === "sending" || turn.phase === "streaming";
 
-  let reply: ReactNode = null;
-
   if (live) {
-    reply = (
+    return (
       <AssistantArticle
         busy
         header={
@@ -69,10 +67,9 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
         </Card>
       </AssistantArticle>
     );
-  } else if (turn.phase === "done" && turn.answer) {
-    reply = <AnswerCard text={turn.answer.text} sources={turn.answer.sources} at={turn.answer.at} />;
-  } else if (turn.phase === "stopped") {
-    reply = (
+  }
+  if (turn.phase === "stopped") {
+    return (
       <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
         <Card padding="none" aria-label={t("chat.answerLabel")}>
           <div className="flex flex-col gap-3 p-5 max-md:p-4">
@@ -88,8 +85,9 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
         </Card>
       </AssistantArticle>
     );
-  } else if (turn.phase === "cut") {
-    reply = (
+  }
+  if (turn.phase === "cut") {
+    return (
       <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
         <Card padding="none" aria-label={t("chat.answerLabel")}>
           <div className="flex flex-col gap-4 p-5 max-md:p-4">
@@ -112,9 +110,21 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
         </Card>
       </AssistantArticle>
     );
-  } else if (turn.error) {
+  }
+  if (turn.error?.variant === "cap") {
+    // Maket `-budget-exceeded`: javob o'rnida xira izoh, sabab va muddat — sahifa ustidagi ogohlantirishda.
+    return (
+      <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
+        <p className="flex items-start gap-1.5 text-[13px] text-text-muted">
+          <CircleX size={14} aria-hidden="true" className="mt-[3px] flex-none text-danger-fg" />
+          <span>{t("errors.capTurn")}</span>
+        </p>
+      </AssistantArticle>
+    );
+  }
+  if (turn.error) {
     const view = turn.error;
-    reply = (
+    return (
       <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
         <NoticeAlert
           tone={view.tone}
@@ -122,7 +132,7 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
           title={t(view.titleKey)}
           action={
             view.newChat ? (
-              <Button variant="secondary" size="sm" leftIcon={Plus} onClick={onNewChat}>
+              <Button variant="secondary" size="sm" leftIcon={Plus} onClick={() => onNewChat(turn.question)}>
                 {t("newChat")}
               </Button>
             ) : view.canRetry ? (
@@ -137,11 +147,5 @@ export const PendingTurnView = ({ turn, online, onRetry, onNewChat }: PendingTur
       </AssistantArticle>
     );
   }
-
-  return (
-    <>
-      <UserBubble text={turn.question} at={turn.askedAt} bubbleRef={bubbleRef} />
-      {reply}
-    </>
-  );
+  return null;
 };

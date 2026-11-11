@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-answering
-import { useId, type KeyboardEvent } from "react";
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-answering, superadmin-ai-assistant-budget-exceeded
+import { useId, type KeyboardEvent, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Info, Send } from "lucide-react";
 import { Button, Card, Field, IconButton, TextInput } from "../../../shared/ui/primitives";
@@ -10,10 +10,11 @@ import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
  * maydoni (matn ko'paysa 160 px gacha o'sadi — `field-sizing: content`) + kvadrat «Yuborish» (44 px); ostida
  * «AI xato qilishi mumkin …» va hisoblagich «0 / 1000» (telefonda yashirin). Javob yozilayotganda — maydon o'chiq «Javob yozilmoqda…», tugma o'rnida ikkinchi darajali «To'xtatish»
  * (ikonkasiz — maketdagidek), izoh «To'xtatish — javob shu joyda to'xtaydi». O'chiq holatlar (AI o'chiq, oflayn,
- * limit) — maketdagi placeholder bilan. Enter — yangi qator, Ctrl/Cmd + Enter — yuborish (maket yo'q).
+ * limit, xarajat shifti — `-budget-exceeded` kabi o'z placeholder'i) — maketdagi placeholder bilan. Enter — yangi qator,
+ * Ctrl/Cmd + Enter — yuborish (maket yo'q). Fokus sahifada boshqariladi (`fieldRef` / `stopRef`).
  */
 
-export type ComposerBlock = "off" | "offline" | "limit" | null;
+export type ComposerBlock = "off" | "offline" | "limit" | "cap" | null;
 
 export type ComposerProps = {
   value: string;
@@ -27,15 +28,30 @@ export type ComposerProps = {
   pending?: boolean;
   error?: string | null;
   maxLength: number;
+  fieldRef?: Ref<HTMLTextAreaElement>;
+  stopRef?: Ref<HTMLButtonElement>;
 };
 
 const PLACEHOLDER: Record<Exclude<ComposerBlock, null>, string> = {
   off: "composer.placeholderOff",
   offline: "composer.placeholderOffline",
   limit: "composer.placeholderLimit",
+  cap: "composer.placeholderCap",
 };
 
-export const Composer = ({ value, onChange, onSend, onStop, live, block, pending = false, error, maxLength }: ComposerProps) => {
+export const Composer = ({
+  value,
+  onChange,
+  onSend,
+  onStop,
+  live,
+  block,
+  pending = false,
+  error,
+  maxLength,
+  fieldRef,
+  stopRef,
+}: ComposerProps) => {
   const { t } = useTranslation("aiAdvisor");
   const hintId = useId();
   const disabled = live || block !== null || pending;
@@ -55,6 +71,7 @@ export const Composer = ({ value, onChange, onSend, onStop, live, block, pending
         <div className="flex items-end gap-2">
           <Field label={t("composer.label")} hideLabel error={error} className="min-w-0 flex-1">
             <TextInput
+              ref={fieldRef}
               multiline
               rows={1}
               value={value}
@@ -69,7 +86,7 @@ export const Composer = ({ value, onChange, onSend, onStop, live, block, pending
             />
           </Field>
           {live ? (
-            <Button variant="secondary" className="flex-none max-md:min-h-11" onClick={onStop}>
+            <Button ref={stopRef} variant="secondary" className="flex-none max-md:min-h-11" onClick={onStop}>
               {t("composer.stop")}
             </Button>
           ) : (

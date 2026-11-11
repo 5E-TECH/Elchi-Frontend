@@ -41,29 +41,35 @@ test("⭐ menyu → bo'sh suhbat → karta → SSE javob: markdown jadval, «Man
   await expect(page.getByRole("complementary").getByText("39 / 100 savol")).toBeVisible();
   expect(state.posts).toEqual([{ message: "Qaysi kuryerlarda qarz ko'p?" }]);
 
-  // Davomi — o'sha suhbatda (`conversation_id`).
+  // Davomi — o'sha suhbatda (`conversation_id`). Klaviatura bilan: fokus <body> ga tushmaydi — javob tugagach maydonda.
   await composer(page).fill("Kecha-chi?");
+  await composer(page).focus();
   await page.keyboard.press("Control+Enter");
   await expect(log.getByText("Kecha-chi?")).toBeVisible();
   await expect(log.getByRole("button", { name: "Javobni nusxalash" })).toHaveCount(2);
+  await expect(composer(page)).toBeFocused();
   expect(state.posts[1]).toEqual({ message: "Kecha-chi?", conversation_id: "77" });
   expect(leaked).toEqual([]);
 });
 
-test("«To'xtatish»: javob kelmaguncha maydon o'chiq, tugma ikonkasiz; to'xtatilgach «Javob to'xtatildi» + «Qayta yuborish»", async ({ page }) => {
+test("«To'xtatish»: javob kelmaguncha maydon o'chiq, tugma ikonkasiz; to'xtatilgach «Javob to'xtatildi» + «Qayta yuborish»; fokus <body> ga tushmaydi", async ({ page }) => {
   const { state } = await mockAiAssistantApi(page, { mode: "pending" });
   await openAiAssistant(page);
   await composer(page).fill("Sentyabrda nega zarar bo'ldi?");
-  await page.getByRole("button", { name: "Yuborish", exact: true }).click();
+  // Klaviatura: «Yuborish» → Enter — tugma o'rnini «To'xtatish» oladi, fokus unga o'tadi.
+  await page.getByRole("button", { name: "Yuborish", exact: true }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByText("AI yordamchi · yozmoqda")).toBeVisible();
   await expect(composer(page)).toBeDisabled();
   await expect(composer(page)).toHaveAttribute("placeholder", "Javob yozilmoqda…");
   const stop = page.getByRole("button", { name: "To'xtatish" });
   await expect(stop.locator("svg")).toHaveCount(0);
-  await stop.click();
+  await expect(stop).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(page.getByText("Javob to'xtatildi")).toBeVisible();
   await expect(page.getByRole("button", { name: "Qayta yuborish" })).toBeVisible();
   await expect(composer(page)).toBeEnabled();
+  await expect(composer(page)).toBeFocused();
   expect(state.hanging).toBe(1);
 });
 
@@ -101,6 +107,26 @@ test("429 (limit tugadi) → ogohlantirish, maydon o'chiq, yon ustunda «Limit t
   await expect(page.getByText("Yangi savol ertaga, 00:00 dan.")).toBeVisible();
   await expect(composer(page)).toHaveAttribute("placeholder", "Limit ertaga, 00:00 da yangilanadi");
   await expect(page.getByText("Limit tugadi — ertaga, 00:00 da yangilanadi (Toshkent vaqti).")).toBeVisible();
+});
+
+test("xarajat shifti → sahifa ustida ogohlantirish, maydon o'z placeholder'i bilan o'chiq; «Yangi suhbat» dan keyin ham sabab ko'rinadi", async ({ page }) => {
+  await mockAiAssistantApi(page, { mode: "cap", conversations: "none" });
+  await openAiAssistant(page);
+  await composer(page).fill("Bu oy kassaga qancha tushdi?");
+  await page.getByRole("button", { name: "Yuborish", exact: true }).click();
+  const alert = page.getByRole("alert").filter({ hasText: "AI yordamchining bugungi xarajat chegarasi tugadi" });
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText("Yangi savol ertaga, 00:00 dan.");
+  await expect(page.getByText("Javob berilmadi: bugungi xarajat chegarasi tugagan.")).toBeVisible();
+  await expect(composer(page)).toBeDisabled();
+  await expect(composer(page)).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
+  // Savol limiti tugamagan — yon ustunda «Qolgan: 62 ta savol».
+  await expect(page.getByRole("complementary").getByText("Limit har kuni 00:00 da (Toshkent vaqti) yangilanadi. Qolgan: 62 ta savol.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Yangi suhbat" }).first().click();
+  await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
+  await expect(alert).toBeVisible();
+  await expect(composer(page)).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
 });
 
 test("suhbat topilmadi (404) → «Yangi suhbat»", async ({ page }) => {

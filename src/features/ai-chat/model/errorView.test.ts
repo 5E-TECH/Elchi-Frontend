@@ -43,8 +43,12 @@ describe("xato → ko'rinish (maketlar -unavailable, -offline, -limit-reached)",
   });
 
   it("suhbat to'lgan / topilmadi — «Yangi suhbat» amali", () => {
-    expect(classifyStreamError({ code: "conversation_full" }, false)).toMatchObject({ view: { newChat: true, canRetry: false } });
-    expect(classifyStreamError({ code: "conversation_not_found" }, false)).toMatchObject({ view: { newChat: true } });
+    expect(classifyStreamError({ code: "conversation_full" }, false)).toMatchObject({
+      view: { newChat: true, canRetry: false, descriptionKey: "errors.notSavedNewChat" },
+    });
+    expect(classifyStreamError({ code: "conversation_not_found" }, false)).toMatchObject({
+      view: { newChat: true, descriptionKey: "errors.notSavedNewChat" },
+    });
   });
 
   it("401 va 403 PASSWORD_CHANGE_REQUIRED — global hal qilinadi (jim); oddiy 403 — ruxsat yo'q", () => {

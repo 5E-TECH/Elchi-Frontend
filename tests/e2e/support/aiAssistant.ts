@@ -10,7 +10,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *   (`event: <type>\ndata: <json>\n\n`, `: ping`): `meta` → `step` → `delta` → `tool_call` → `tool_result` → … →
  *   `done` (yoki `error`). Rejimlar: `answer` (to'liq), `pending` (javob kelmaydi — «To'xtatish»), `cut` (meta + delta,
  *   keyin uziladi; to'liq javob 1 s dan keyin suhbatga yoziladi — ai-service kabi), `limit` (429, limit tugadi),
- *   `disabled` (503, funksiya o'chiq).
+ *   `disabled` (503, funksiya o'chiq), `cap` (SSE `error` `assistant_usd_cap` `meta` gacha — xarajat shifti, savol
+ *   saqlanmaydi, limitdan ketmaydi).
  *
  * Boshqa yozish so'rovlari taqiqlangan (`leaked`).
  */
@@ -18,7 +19,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 type Source = { tool: string; period: { from: string; to: string } | null; records: number; truncated: boolean; ok: boolean };
 type Message = { id: string; role: "user" | "assistant"; text: string; created_at: string; sources?: Source[]; stop?: string };
 type Conversation = { id: string; title: string; turns: number; created_at: string; last_message_at: string; cost_usd: number; messages: Message[] };
-export type MessageMode = "answer" | "pending" | "cut" | "limit" | "disabled";
+export type MessageMode = "answer" | "pending" | "cut" | "limit" | "disabled" | "cap";
 
 const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
@@ -194,6 +195,17 @@ export const mockAiAssistantApi = async (
       if (state.mode === "pending") {
         state.hanging += 1;
         return; // Javob kelmaydi — «To'xtatish» bilan uziladi.
+      }
+      if (state.mode === "cap") {
+        return route.fulfill({
+          status: 200,
+          headers: { ...corsFor(route), "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform" },
+          body: frame("error", {
+            code: "assistant_usd_cap",
+            message: "AI yordamchining bugungi xarajat shifti tugadi",
+            reset_at: new Date(Date.now() + 3_600_000).toISOString(),
+          }),
+        });
       }
       const { conversation, questionId } = ask(body);
       const head =

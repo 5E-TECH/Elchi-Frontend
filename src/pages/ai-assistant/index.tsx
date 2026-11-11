@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-budget-exceeded
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Compass, History, Plus, Power, RefreshCw } from "lucide-react";
@@ -21,13 +21,13 @@ import {
   useAiConversations,
   type AiAccessState,
 } from "../../entities/ai-advisor";
-import { useAiChat, visibleHistory } from "../../features/ai-chat";
+import { turnItemKey, useAiChat, visibleHistory } from "../../features/ai-chat";
 import { useOnline } from "./model/useOnline";
 import { AnswerCard, FailedNote, UserBubble } from "./ui/ChatMessages";
 import { Composer, type ComposerBlock } from "./ui/Composer";
 import { ConversationsCard, ConversationsDialog, type ConversationsState } from "./ui/Conversations";
-import { LimitAlert, LimitCard, LimitRow } from "./ui/Limit";
-import { PendingTurnView } from "./ui/PendingTurnView";
+import { CapAlert, LimitAlert, LimitCard, LimitRow } from "./ui/Limit";
+import { PendingReply } from "./ui/PendingTurnView";
 import { EmptyChat, SuggestionChips } from "./ui/Suggestions";
 
 /**
@@ -44,7 +44,24 @@ import { EmptyChat, SuggestionChips } from "./ui/Suggestions";
  *  (suhbatlar, limit; < 1024 yashirin — o'rnida «Suhbatlar N» tugmasi + ingichka limit qatori, ro'yxat — pastki
  *  varaqada). Suhbat — `?conversation=<id>` (birinchi savolda `meta` dan keyin `replace` bilan yoziladi).
  *  Funksiya o'chiq (`feature_disabled` / `ai_disabled`, 503) — «AI yordamchi hozir ishlamayapti», tarix ochiq.
+ *  Xarajat shifti — sahifa ustida ogohlantirish (`-budget-exceeded`), «Yangi suhbat» dan keyin ham.
+ *
+ *  Fokus: savol yuborilganda / to'xtatilganda bosilgan boshqaruv (tugma, tavsiya, «Qayta yuborish») yo'qolsa yoki
+ *  o'chsa, fokus `<body>` ga tushmaydi — jonli javobda «To'xtatish» ga, aks holda matn maydoniga o'tadi (sensorli
+ *  ekranda maydonga emas — klaviatura ochilib javobni yopmasin).
  */
+
+/** Yangi savol ko'rinadigan joyga suriladi (oqim davomida majburan surilmaydi). */
+const scrollIntoViewOnMount = (node: HTMLDivElement | null) => {
+  node?.scrollIntoView?.({ block: "nearest" });
+};
+
+const isDisabledControl = (element: Element) =>
+  (element instanceof HTMLButtonElement || element instanceof HTMLTextAreaElement) && element.disabled;
+
+/** Faqat sensorli ekran (telefon, planshet): matn maydoniga dasturiy fokus klaviaturani ochib, javobni yopadi. */
+const isTouchOnly = () =>
+  typeof window.matchMedia === "function" && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
 /** Maketdagi hisoblagich «0 / 1000» (backend 2000 gacha qabul qiladi — ega savoli 5). */
 export const AI_QUESTION_MAX_CHARS = 1000;
@@ -88,6 +105,10 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const columnRef = useRef<HTMLDivElement>(null);
+  const lastFocusRef = useRef<Element | null>(null);
+  const fieldRef = useRef<HTMLTextAreaElement>(null);
+  const stopRef = useRef<HTMLButtonElement>(null);
 
   const setConversation = useCallback(
     (id: string | null, replace = false) => {
@@ -115,8 +136,11 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
   // Rol yoki ruxsat yo'q (superadmin uchun kutilmaydi — backend sozlamasi o'zgarsa): yozish yopiq, tarix — backend 403.
   const denied = !access.allowed && !unavailable;
   const limitReached = access.allowed && access.remainingToday <= 0;
+  // Limit ma'lumoti faqat ma'noli bo'lsa (ruxsat bor yoki AI vaqtincha o'chiq — maket `-unavailable`); ruxsat yo'q
+  // (`role_forbidden` → backend `daily_limit: 0`) — «0 / 0 savol, Limit tugadi» yolg'on, hech bir o'lchamda chizilmaydi.
+  const showLimit = access.allowed || (unavailable && access.dailyLimit > 0);
   const block: ComposerBlock =
-    unavailable || denied ? "off" : !online ? "offline" : limitReached || chat.capped ? "limit" : null;
+    unavailable || denied ? "off" : !online ? "offline" : limitReached ? "limit" : chat.capped ? "cap" : null;
 
   /** Tavsiya savoli — darhol yuboriladi (yozilgan matn maydonda qoladi, savol qabul qilinmasa ham ustiga yozilmaydi). */
   const send = (text: string) => {
@@ -132,11 +156,31 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
     void chat.send(text, { restoreDraft: true });
   };
 
-  const newChat = () => {
+  /** «Yangi suhbat»; `carry` — saqlanmagan savol (suhbat to'lgan / topilmadi) yangi suhbatning maydoniga o'tadi. */
+  const newChat = (carry = "") => {
     chat.reset();
-    setDraft("");
+    setDraft(carry);
+    setFieldError(null);
     setConversation(null);
   };
+
+  const onColumnFocus = (event: FocusEvent<HTMLDivElement>) => {
+    // Portal (pastki varaqa) ichidagi fokus — o'zi qaytaradi.
+    lastFocusRef.current = columnRef.current?.contains(event.target) ? event.target : null;
+  };
+
+  // Fokus qutqaruvi: oxirgi fokusli boshqaruv o'chirildi / o'chdi va fokus `<body>` ga tushdi. Bir marta: qutqarib
+  // bo'lmasa (maydon o'chiq, sensorli ekran) eski yozuv unutiladi — keyinroq foydalanuvchi fokusi tortib olinmaydi.
+  useLayoutEffect(() => {
+    const last = lastFocusRef.current;
+    if (!last || (last.isConnected && !isDisabledControl(last))) return;
+    lastFocusRef.current = null;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== last) return;
+    const target = chat.live ? stopRef.current : fieldRef.current;
+    if (!target || target.disabled || (target === fieldRef.current && isTouchOnly())) return;
+    target.focus({ preventScroll: true });
+  });
 
   const selected = rawConversation !== null;
   const invalidSelection = selected && !conversationId;
@@ -154,13 +198,14 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
       title={t("chat.notFoundTitle")}
       description={t("chat.notFoundText")}
       action={
-        <Button variant="ghost" leftIcon={Plus} onClick={newChat}>
+        <Button variant="ghost" leftIcon={Plus} onClick={() => newChat()}>
           {t("newChat")}
         </Button>
       }
     />
   );
 
+  const pending = chat.pending;
   let logBody: ReactNode = null;
   if (showLog) {
     if (!chat.pending && detail.isPending) logBody = <ConversationSkeleton label={t("chat.loading")} />;
@@ -174,22 +219,35 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
           retrying={detail.isRefetching}
         />
       );
-    else
-      logBody = (
-        <>
-          {history.map((message) => {
-            if (message.role === "user") return <UserBubble key={message.id} text={message.text} at={message.createdAt} />;
-            return messageKind(message) === "answer" ? (
-              <AnswerCard key={message.id} text={message.text} sources={message.sources} at={message.createdAt} />
-            ) : (
-              <FailedNote key={message.id} stop={message.stop} at={message.createdAt} />
-            );
-          })}
-          {chat.pending ? (
-            <PendingTurnView key={chat.pending.key} turn={chat.pending} online={online} onRetry={chat.retry} onNewChat={newChat} />
-          ) : null}
-        </>
-      );
+    else {
+      // Bitta kalitli ro'yxat: joriy savol tarixga o'tganda (`messageKey`) o'sha tugunlar qoladi — `role="log"`
+      // savol va javobni ikkinchi marta o'qimaydi.
+      const items = history.map((message) => {
+        const key = chat.messageKey(message.id);
+        if (message.role === "user") return <UserBubble key={key} text={message.text} at={message.createdAt} />;
+        return messageKind(message) === "answer" ? (
+          <AnswerCard key={key} text={message.text} sources={message.sources} at={message.createdAt} />
+        ) : (
+          <FailedNote key={key} stop={message.stop} at={message.createdAt} />
+        );
+      });
+      if (pending) {
+        items.push(
+          <UserBubble key={turnItemKey(pending.key, "q")} text={pending.question} at={pending.askedAt} bubbleRef={scrollIntoViewOnMount} />,
+          pending.phase === "done" && pending.answer ? (
+            <AnswerCard
+              key={turnItemKey(pending.key, "a")}
+              text={pending.answer.text}
+              sources={pending.answer.sources}
+              at={pending.answer.at}
+            />
+          ) : (
+            <PendingReply key={turnItemKey(pending.key, "a")} turn={pending} online={online} onRetry={chat.retry} onNewChat={newChat} />
+          ),
+        );
+      }
+      logBody = items;
+    }
   }
 
   return (
@@ -198,14 +256,16 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
         title={t("title")}
         description={t("subtitle")}
         actions={
-          <Button variant="ghost" leftIcon={Plus} onClick={newChat}>
+          <Button variant="ghost" leftIcon={Plus} onClick={() => newChat()}>
             {t("newChat")}
           </Button>
         }
       />
 
+      {chat.capTitleKey && !unavailable && !denied ? <CapAlert titleKey={chat.capTitleKey} /> : null}
+
       <div className="flex flex-wrap items-start gap-6">
-        <div className="flex min-w-0 flex-[1_1_560px] flex-col gap-5">
+        <div ref={columnRef} onFocusCapture={onColumnFocus} className="flex min-w-0 flex-[1_1_560px] flex-col gap-5">
           <div className="hidden flex-wrap items-center gap-x-4 gap-y-3 max-lg:flex">
             <Button variant="secondary" leftIcon={History} aria-haspopup="dialog" onClick={() => setSheetOpen(true)} className="flex-none">
               {t("conversations.open")}
@@ -216,7 +276,7 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
                 </span>
               )}
             </Button>
-            {access.allowed ? <LimitRow access={access} /> : null}
+            {showLimit ? <LimitRow access={access} /> : null}
           </div>
 
           {unavailable ? (
@@ -263,12 +323,14 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
             block={block}
             error={fieldError}
             maxLength={AI_QUESTION_MAX_CHARS}
+            fieldRef={fieldRef}
+            stopRef={stopRef}
           />
         </div>
 
         <aside aria-label={t("conversations.title")} className="flex min-w-0 flex-[0_1_320px] flex-col gap-6 max-lg:hidden">
           <ConversationsCard state={conversations} selectedId={conversationId} />
-          <LimitCard access={access} />
+          {showLimit ? <LimitCard access={access} /> : null}
         </aside>
       </div>
 

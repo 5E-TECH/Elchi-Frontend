@@ -115,7 +115,8 @@ export const classifyStreamError = (
           variant: "conversation",
           tone: "warning",
           titleKey: `errors.codes.${code}`,
-          descriptionKey: "errors.notSaved",
+          // Savol `meta` gacha rad etildi (saqlanmagan) — «Yangi suhbat» uni yangi suhbatning maydoniga olib o'tadi.
+          descriptionKey: "errors.notSavedNewChat",
           canRetry: false,
           newChat: true,
           resetAt: null,

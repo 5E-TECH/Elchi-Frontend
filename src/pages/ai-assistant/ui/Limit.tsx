@@ -1,6 +1,6 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-limit-reached
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-budget-exceeded
 import { useTranslation } from "react-i18next";
-import { Clock, Lock, TriangleAlert } from "lucide-react";
+import { Clock, Lock, TriangleAlert, Wallet } from "lucide-react";
 import { Card } from "../../../shared/ui/primitives";
 import { Meter } from "../../../shared/ui/charts";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -101,6 +101,20 @@ export const LimitAlert = ({ access }: { access: AiAccessState }) => {
   return (
     <NoticeAlert tone="warning" icon={Clock} title={t("limit.alertTitle", { limit: formatNumberLocalized(access.dailyLimit) })}>
       {t("limit.alertText")}
+    </NoticeAlert>
+  );
+};
+
+/**
+ * Xarajat shifti (`assistant_usd_cap` | `cap_exceeded`) — maket yo'q, eng yaqini `-budget-exceeded`: sahifa ustida
+ * `danger` ogohlantirish (`Wallet`), «Yangi suhbat» va suhbat almashganda ham turadi (kunlik savol limiti emas —
+ * `LimitCard` savollar qolganini ko'rsatadi). «Budjetni oshirish» / «Sarfni ko'rish» — T2, chizilmaydi.
+ */
+export const CapAlert = ({ titleKey }: { titleKey: string }) => {
+  const { t } = useTranslation("aiAdvisor");
+  return (
+    <NoticeAlert tone="danger" role="alert" icon={Wallet} title={t(titleKey)}>
+      {t("errors.capText")}
     </NoticeAlert>
   );
 };
