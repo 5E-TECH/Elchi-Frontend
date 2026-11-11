@@ -1631,7 +1631,8 @@ const CashDetail = () => {
         ) : null}
       </div>
 
-      {isManagerBranchView && managerKassaTotal !== undefined ? (
+      {/* HQ qarzi bor (HQ ortiqcha qabul qilgan) — berilishi kerak 0, «kassa yetarlimi» o'lchagichi ma'nosiz. */}
+      {isManagerBranchView && managerKassaTotal !== undefined && hqDebt <= 0 ? (
         <HqCoverage
           payable={displayBalance}
           cashbox={managerKassaTotal}
