@@ -38,7 +38,8 @@ import type { CloseShiftAccount } from "../../../entities/payments";
  * ko'rinadi). Qoldiq / izoh xatolari avvalgidek bosilganda. AI `pending` to'smaydi. Yopish 400 bo'lsa (matn — backenddan,
  * aynan) oyna ochiq qoladi va `applyCloseError` kartalarni qayta o'qiydi («Har karta qoldig'ini tasdiqlang: …» — yangi
  * karta qator bo'lib chiqadi). Maket `…-shift-dialog-accounts` o'chiq holatni chizmagan — eng yaqini o'sha oyna va
- * `SellModal` dagi tugmalar ustidagi sabab qatori.
+ * `SellModal` dagi tugmalar ustidagi sabab qatori. Kartalar rejimida oyna maketdagidek 760 px va izohi «Naqdni sanang,
+ * har bir karta qoldig'ini kiriting va skrinshot yuklang».
  */
 
 export type CloseShiftPayload = {
@@ -107,6 +108,12 @@ const CloseShiftPopup = ({
   // qiladi, tugma to'silmaydi).
   const missingPhotos = accountMode && accountsForm.canUpload ? accountsForm.missingPhotos : [];
   const photoBlocked = missingPhotos.length > 0;
+  // Kartalar rejimida sarlavha izohi maketdagidek (skrinshot so'raladigan karta bo'lmasa — «skrinshot yuklang»siz).
+  const dialogDescription = accountMode
+    ? accountsForm.rows.some((row) => row.photoRequired)
+      ? t("shiftCheck.accounts.dialogSubtitle")
+      : t("shiftCheck.accounts.dialogSubtitleNoPhoto")
+    : t("v2MainCashbox.shift.close.subtitle");
   const blockReason = photoBlocked
     ? t("shiftCheck.accounts.missingPhotos", {
         count: missingPhotos.length,
@@ -197,35 +204,42 @@ const CloseShiftPopup = ({
       onExited={reset}
       busy={isLoading}
       size="lg"
+      // Kartalar rejimi (BE-A dan beri asosiy kassada sukut) — maketdagi 760 px: karta · qoldiq · skrinshot ustunlari
+      // qisqarmaydi (560 da bank / ··1234 va «Skrinshot yuklash» kesilardi). Telefonda pastki varaqa — o'zgarmaydi.
+      className={accountMode ? "md:max-w-[760px]" : undefined}
       icon={Timer}
       title={t("v2MainCashbox.shift.close.title")}
-      description={t("v2MainCashbox.shift.close.subtitle")}
+      description={dialogDescription}
       footer={
-        // Bitta o'ram: sabab tugmalar yonida (telefonda — o'z qatorida, tugmalar ustida), tugmalar telefonda teng enli.
-        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 max-md:[&>button]:flex-1">
+        // Bitta o'ram: sabab tugmalar yonida (uzun bo'lsa o'z ustunida bir necha qatorga o'raladi; telefonda — o'z
+        // qatorida, tugmalar ustida). Tugmalar alohida guruh — sabab uzun bo'lsa ham bir-biridan ajralib ketmaydi;
+        // telefonda teng enli.
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-x-4 gap-y-2">
           {blockReason ? (
             <p
               id={blockReasonId}
               role="status"
               data-testid="close-shift-block-reason"
-              className="m-0 mr-auto min-w-0 text-[13px] text-text-muted max-md:basis-full max-md:text-center"
+              className="m-0 min-w-0 flex-1 basis-60 text-[13px] text-text-muted max-md:basis-full max-md:text-center"
             >
               {blockReason}
             </p>
           ) : null}
-          <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
-            {t("v2MainCashbox.shift.cancel")}
-          </Button>
-          <Button
-            leftIcon={Timer}
-            onClick={handleConfirm}
-            loading={isLoading}
-            disabled={accountsForm.settingsLoading || accountsForm.isUploading || photoBlocked}
-            aria-describedby={blockReason ? blockReasonId : undefined}
-            loadingText={t("v2MainCashbox.shift.close.closing")}
-          >
-            {t("v2MainCashbox.shift.close.submit")}
-          </Button>
+          <div className="flex shrink-0 gap-2 max-md:w-full max-md:[&>button]:flex-1">
+            <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
+              {t("v2MainCashbox.shift.cancel")}
+            </Button>
+            <Button
+              leftIcon={Timer}
+              onClick={handleConfirm}
+              loading={isLoading}
+              disabled={accountsForm.settingsLoading || accountsForm.isUploading || photoBlocked}
+              aria-describedby={blockReason ? blockReasonId : undefined}
+              loadingText={t("v2MainCashbox.shift.close.closing")}
+            >
+              {t("v2MainCashbox.shift.close.submit")}
+            </Button>
+          </div>
         </div>
       }
     >

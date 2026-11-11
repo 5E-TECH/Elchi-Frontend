@@ -1007,6 +1007,8 @@
       "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 15 soniyagacha kutadi.",
       "alert": "{{count}} ta kartada farq bor — izoh majburiy",
       "pending": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "dialogSubtitle": "Naqdni sanang, har bir karta qoldig'ini kiriting va skrinshot yuklang",
+      "dialogSubtitleNoPhoto": "Naqdni sanang va har bir karta qoldig'ini kiriting",
       "missingPhotos": "{{count}} ta kartada skrinshot yo'q: {{cards}} — yuklamaguncha smenani yopib bo'lmaydi",
       "errors": {
         "entered": "Ilovadagi qoldiqni kiriting",

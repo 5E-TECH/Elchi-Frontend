@@ -1007,6 +1007,8 @@
       "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 15 seconds.",
       "alert": "Cards with a difference: {{count}} — comment required",
       "pending": "Images still being checked: {{count}}.",
+      "dialogSubtitle": "Count the cash, enter each card's balance and upload a screenshot",
+      "dialogSubtitleNoPhoto": "Count the cash and enter each card's balance",
       "missingPhotos_one": "Screenshot missing for {{count}} card: {{cards}} — upload it to close the shift",
       "missingPhotos_other": "Screenshots missing for {{count}} cards: {{cards}} — upload them to close the shift",
       "errors": {
