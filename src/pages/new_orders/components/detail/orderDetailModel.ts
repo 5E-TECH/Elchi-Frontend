@@ -272,6 +272,11 @@ export const buildActionOrder = (order: OrderDetail | null) => {
     ...("pending_extra_cost_approval" in order
       ? { pending_extra_cost_approval: (order as { pending_extra_cost_approval?: unknown }).pending_extra_cost_approval }
       : {}),
+    // Hamkor buyurtmasi (`external_id`) — xarajat eski (replay) yo'ldan, oynadagi ogohlantirish shunga qarab.
+    external_id:
+      typeof order.external_id === "string" || typeof order.external_id === "number"
+        ? String(order.external_id)
+        : null,
     sell_requires_media: Boolean(
       order.sell_requires_media ?? order.sellRequiresMedia ?? order.require_sell_proof ?? order.sell_proof_required,
     ),

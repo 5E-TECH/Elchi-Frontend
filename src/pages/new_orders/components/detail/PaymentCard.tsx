@@ -3,9 +3,13 @@ import { useTranslation } from "react-i18next";
 import { cx } from "../../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { Card } from "../../../../shared/ui/primitives";
+import { ExtraCostRequestRow } from "./ExtraCostRequestRow";
 import type { OrderDetail } from "./orderDetailModel";
 
-/** «To'lov»: Jami (16 · 700), To'lanishi kerak (600), To'langan (muted 600) — qatorlar orasida chiziq. */
+/**
+ * «To'lov»: Jami (16 · 700), To'lanishi kerak (600), To'langan (muted 600) — qatorlar orasida chiziq. Qo'shimcha
+ * xarajat so'rovi bo'lsa (SPEC v2) — oxirida «Qo'shimcha xarajat» qatori (summa, holat, tovarlar).
+ */
 export const PaymentCard = ({ order, className }: { order: OrderDetail; className?: string }) => {
   const { t, i18n } = useTranslation("newOrders");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -30,6 +34,7 @@ export const PaymentCard = ({ order, className }: { order: OrderDetail; classNam
             </dd>
           </div>
         ))}
+        <ExtraCostRequestRow order={order} className="border-t border-border" />
       </dl>
     </Card>
   );

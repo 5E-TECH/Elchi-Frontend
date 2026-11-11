@@ -646,6 +646,8 @@ const Orders = () => {
       ...("pending_extra_cost_approval" in orderFlags
         ? { pending_extra_cost_approval: orderFlags.pending_extra_cost_approval }
         : {}),
+      // Hamkor buyurtmasi — xarajat eski (replay) yo'ldan, oynadagi ogohlantirish shunga qarab.
+      external_id: selectedActionOrder.external_id ?? null,
       where_deliver: selectedActionOrder.where_deliver,
       market: {
         name: selectedActionOrder.market?.name ?? "—",

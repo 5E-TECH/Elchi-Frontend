@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { ORDER_KEY } from "../order/api/orderApi";
 import { EXTRA_COST_REJECT_REASONS, type ExtraCostRejectReason } from "./extraCostDecision";
+import { readExtraCostItems, readExtraCostMode, type ExtraCostItem, type ExtraCostMode } from "./extraCostRequest";
 import type { ExtraCostApproval, ExtraCostApprovalStatus } from "./index";
 
 /**
@@ -43,6 +44,10 @@ export type ExtraCostRow = ExtraCostApproval & {
   proof_file_keys: string[];
   proof_count: number;
   reject_reason_label: string | null;
+  /** SPEC v2: `deferred` — buyurtma allaqachon sotilgan / bekor qilingan; `null` — eski javob (replay). */
+  mode: ExtraCostMode | null;
+  /** Qaysi tovar uchun (eski javobda — bo'sh). */
+  items: ExtraCostItem[];
 };
 
 export interface ExtraCostsPage {
@@ -144,6 +149,8 @@ const toRow = (row: UnknownRecord): ExtraCostRow => {
     // Son kelmasa — kalitlar soni (eski javob).
     proof_count: Math.max(count(row.proof_count) ?? 0, proofKeys.length),
     reject_reason_label: text(row.reject_reason_label),
+    mode: readExtraCostMode(row.mode),
+    items: readExtraCostItems(row.items),
   };
 };
 

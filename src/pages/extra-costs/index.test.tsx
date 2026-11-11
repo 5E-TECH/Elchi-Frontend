@@ -316,6 +316,35 @@ describe("«Qo'shimcha xarajatli buyurtmalar» sahifasi (GykuOz8f)", () => {
     expect(await screen.findByText("Qo'shimcha xarajat tasdiqlandi")).toBeInTheDocument();
   });
 
+  it("⭐ SPEC v2: kechiktirilgan so'rov — «Buyurtma» katagida mahsulotlar, tasdiq oynasida «allaqachon sotilgan» va mahsulotlar", async () => {
+    const user = userEvent.setup();
+    const deferred = {
+      ...PENDING,
+      mode: "deferred",
+      order_status: "sold",
+      items: [
+        { order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 },
+        { order_item_id: "i-2", product_id: "p-2", product_name: "Zaryadka", quantity: 2 },
+      ],
+    };
+    mockList(() => listPage([deferred]));
+    renderPage("market", { route: "/extra-costs?tab=pending" });
+
+    await findTable();
+    expect(screen.getByTestId("extra-cost-items-ap-1")).toHaveTextContent(
+      "Mahsulotlar: Telefon g'ilofi ×1, Zaryadka ×2",
+    );
+    await user.click(screen.getByRole("button", { name: /^Tasdiqlash — №EL-100081/ }));
+
+    const dialog = await screen.findByRole("alertdialog", { name: "Qo'shimcha xarajatni tasdiqlang" });
+    expect(dialog).toHaveTextContent(/Buyurtma allaqachon sotilgan\. Tasdiqlansa — 15\D000 so'm xarajat yoziladi/);
+    expect(dialog).toHaveTextContent("Telefon g'ilofi ×1, Zaryadka ×2");
+    expect(dialog).not.toHaveTextContent("Tasdiqlansa — buyurtma sotiladi");
+    // Tasdiq buyurtmani PAID ga o'tkazishi mumkin — «holati o'zgarmaydi» faqat rad etish eslatmasida.
+    expect(dialog).toHaveTextContent(/allaqachon sotilgan \/ bekor qilingan — faqat qo'shimcha xarajat alohida yoziladi/);
+    expect(dialog).not.toHaveTextContent("holati o'zgarmaydi");
+  });
+
   it("⭐ market: «Barchasi» tabida qaror tugmalari yo'q (faqat kutilayotganlar tabida)", async () => {
     mockList();
     renderPage("market");
@@ -409,5 +438,18 @@ describe("«Qo'shimcha xarajatli buyurtmalar» sahifasi (GykuOz8f)", () => {
     expect(within(card).getByRole("button", { name: "Isbot (2) — №EL-100081" })).toBeInTheDocument();
     expect(within(card).getByRole("button", { name: /^Tasdiqlash — №EL-100081/ })).toBeInTheDocument();
     expect(within(card).getByRole("button", { name: /^Rad etish — №EL-100081/ })).toBeInTheDocument();
+    expect(within(card).queryByTestId("extra-cost-items-ap-1")).not.toBeInTheDocument();
+  });
+
+  it("⭐ telefon (SPEC v2): kartada qaysi mahsulot uchun", async () => {
+    mockPhone(true);
+    mockList(() =>
+      listPage([{ ...PENDING, mode: "deferred", items: [{ order_item_id: "i-1", product_name: "Zaryadka", quantity: 2 }] }]),
+    );
+    renderPage("courier");
+
+    const cards = await screen.findByRole("list", { name: "Qo'shimcha xarajatli buyurtmalar" });
+    const [card] = within(cards).getAllByRole("listitem");
+    expect(within(card).getByTestId("extra-cost-items-ap-1")).toHaveTextContent("Zaryadka ×2");
   });
 });

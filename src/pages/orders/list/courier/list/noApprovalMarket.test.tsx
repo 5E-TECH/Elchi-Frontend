@@ -14,7 +14,8 @@ import { renderWithProviders } from "../../../../../test/test-utils";
  */
 
 const HINT = "Kiritilsa, market tasdig'idan o'tadi";
-const NOTICE = /market tasdig'idan o'tadi/;
+// SPEC v2: xarajat yozilgach ogohlantirish — amal darhol, xarajat alohida market tasdig'ini kutadi.
+const NOTICE = /market tasdig'ini kutadi/;
 const HOME_NOTE = "Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori.";
 const DISABLED_NOTE = "Bu market uchun qo'shimcha xarajat yozilmaydi.";
 

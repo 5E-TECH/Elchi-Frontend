@@ -22,16 +22,31 @@ const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
 
 const ALERT = "flex items-start gap-2 rounded-xl bg-warning-soft px-3 py-2.5 text-[13px] text-warning-fg";
 
-/** Xarajat yozilganda: market tasdig'idan o'tishi haqida oldindan ogohlantirish. */
-export const ExtraCostNoticeAlert = memo(({ id }: { id?: string }) => {
-  const { t } = useTranslation("orders");
-  return (
-    <div id={id} role="status" className={ALERT}>
-      <Clock className="mt-0.5 size-4 flex-none" aria-hidden="true" />
-      <p className="min-w-0 text-text">{t("extraCostApprovalNotice")}</p>
-    </div>
-  );
-});
+/**
+ * Xarajat yozilganda oldindan ogohlantirish (SPEC v2): buyurtma DARHOL sotiladi / bekor qilinadi, qo'shimcha xarajat
+ * esa alohida — market tasdig'ini kutadi; naqd to'liq topshiriladi (tasdiqlansa, xarajat keyingi topshirishda
+ * hisobga olinadi). Avvalgi «market tasdiqlamaguncha buyurtma holati o'zgarmaydi» matni o'rniga.
+ *
+ * `replay` — hamkor (`external_id`) buyurtmasi: backend unda kechiktirilgan rejimni ishlatmaydi (202, buyurtma
+ * `waiting` da qoladi), shuning uchun eski matn — «market tasdiqlamaguncha buyurtma holati o'zgarmaydi»
+ * (`isExtraCostReplayOrder`).
+ */
+export const ExtraCostNoticeAlert = memo(
+  ({ id, action = "sell", replay = false }: { id?: string; action?: "sell" | "cancel"; replay?: boolean }) => {
+    const { t } = useTranslation("orders");
+    const key = replay
+      ? "extraCostReplayNotice"
+      : action === "cancel"
+        ? "extraCostDeferredNoticeCancel"
+        : "extraCostDeferredNoticeSell";
+    return (
+      <div id={id} role="status" className={ALERT}>
+        <Clock className="mt-0.5 size-4 flex-none" aria-hidden="true" />
+        <p className="min-w-0 text-text">{t(key)}</p>
+      </div>
+    );
+  },
+);
 ExtraCostNoticeAlert.displayName = "ExtraCostNoticeAlert";
 
 /**

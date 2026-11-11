@@ -32,6 +32,7 @@ import { canViewDispatchPage } from "../../../app/lib/access";
 import { addToDispatchBasket, normalizeDispatchOrder, useDispatchBasketScope } from "../../../features/dispatch-basket";
 import { useReceivePost } from "../../../entities/mails";
 import { OrderStatusBadge, ReplacementTag } from "../../../entities/order";
+import { ExtraCostRequestTag } from "../../../entities/orders/ui/ExtraCostRequestTag";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -238,6 +239,8 @@ const SummaryCard = ({ view, order, staff }: { view: ScanOrderView; order: Order
         <OrderStatusBadge status={view.status} />
         {/* lQjt6sKP: almashtirish — kuryer yangisini topshirib, eskisini mijozdan oladi. */}
         <ReplacementTag order={order} />
+        {/* SPEC v2: qo'shimcha xarajat so'rovi (kutilmoqda / tasdiqlangan / rad etildi). */}
+        <ExtraCostRequestTag order={order} showDecided />
         {!showMeta && deliveryLabel ? (
           <>
             <span className="sr-only">{t("order.deliveryLabel")}</span>

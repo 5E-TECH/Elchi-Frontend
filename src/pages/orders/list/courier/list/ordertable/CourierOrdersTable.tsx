@@ -10,6 +10,7 @@ import {
   usePendingExtraCostApprovals,
   type ExtraCostAction,
 } from "../../../../../../entities/orders/extraCostApproval";
+import { ExtraCostRequestTag } from "../../../../../../entities/orders/ui/ExtraCostRequestTag";
 import { copyToClipboard } from "../../../../../../shared/lib/clipboard";
 import { cx } from "../../../../../../shared/lib/cx";
 import { formatDateTimeLocalized, formatTimeLocalized } from "../../../../../../shared/lib/formatDateTime";
@@ -374,6 +375,8 @@ const CourierOrdersTable = ({
         <div className="flex flex-col items-start gap-1">
           {status(order)}
           <ApprovalBadge order={order} />
+          {/* SPEC v2: sotilgan / bekor qilingan buyurtmaning xarajati market tasdig'ini kutmoqda. */}
+          <ExtraCostRequestTag order={order} />
           {/* lQjt6sKP: almashtirish — sotishda «Eski mahsulotni oldim» so'raladi. */}
           <ReplacementTag order={order} />
         </div>
@@ -438,6 +441,7 @@ const CourierOrdersTable = ({
           <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
             {status(order)}
             <ApprovalBadge order={order} />
+            <ExtraCostRequestTag order={order} />
             <ReplacementTag order={order} />
             {delivery(order)}
             <span className="ml-auto whitespace-nowrap text-xs text-text-muted">

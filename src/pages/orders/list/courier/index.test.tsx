@@ -123,6 +123,72 @@ describe("Courier orders — extra cost approval flow", () => {
     expect(courierRefetchInterval?.({ data: [{ ...waitingOrder, status: "cancelled" }] })).toBe(ORDERS_REFRESH_INTERVAL_MS);
   });
 
+  it("⭐ SPEC v2: deferred extra cost — the sale is done at once: modal closes, «sotildi» + «xarajat kutmoqda», no 30 s poll", async () => {
+    const user = userEvent.setup();
+    sellMutate.mockImplementation((_vars, options: MutateOptions) =>
+      options.onSuccess?.({
+        statusCode: 201,
+        data: {
+          id: "1251165",
+          status: "sold",
+          extra_cost_request: {
+            id: "xc-1",
+            status: "pending",
+            mode: "deferred",
+            action: "sell",
+            amount: 20000,
+            items: [{ order_item_id: "i-1", product_id: "p-1", product_name: "Telefon g'ilofi", quantity: 1 }],
+            auto_approve_at: null,
+            created_at: "2026-11-12T09:00:00.000Z",
+          },
+        },
+      }),
+    );
+    renderPage();
+
+    await openModal(user, /ni sotish$/);
+    const extraCostInput = screen.getByLabelText("Qo'shimcha xarajat");
+    await user.clear(extraCostInput);
+    await user.type(extraCostInput, "20000");
+    // Oldindan: buyurtma darhol sotiladi, xarajat alohida kutadi (avvalgi «holat o'zgarmaydi» emas).
+    expect(within(screen.getByRole("dialog")).getByText(/^Buyurtma darhol sotiladi\./)).toBeInTheDocument();
+    await user.click(dialogButton(/^Sotish$/));
+
+    expect(sellMutate).toHaveBeenCalledWith(
+      { orderId: "1251165", data: expect.objectContaining({ extraCost: 20000 }) },
+      expect.any(Object),
+    );
+    expect(screen.queryByText("Market tasdig'i kutilmoqda")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma sotildi")).toBeInTheDocument();
+    expect(await screen.findByText(/^20\D000 so'm qo'shimcha xarajat market tasdig'ini kutmoqda$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Mahsulotlar: Telefon g'ilofi ×1\. Naqdni to'liq topshiring/)).toBeInTheDocument();
+    // Kutish ishorasi yozilmadi — tasdiq pollingi (30 s) yo'q, oddiy avtomatik yangilanish (OR-1, 60 s).
+    expect(courierRefetchInterval?.(listResponse)).toBe(ORDERS_REFRESH_INTERVAL_MS);
+  });
+
+  it("SPEC v2: a sold order with a deferred request shows «Xarajat kutilmoqda · 20 000 so'm» next to its status", () => {
+    const original = listResponse.data;
+    listResponse.data = [
+      {
+        ...waitingOrder,
+        status: "sold",
+        pending_extra_cost_approval: null,
+        extra_cost_request: { id: "xc-1", status: "pending", mode: "deferred", action: "sell", amount: 20000, items: [] },
+      } as typeof waitingOrder,
+    ];
+    try {
+      renderPage();
+      const row = screen.getByText("TEST-E2E-AND-4").closest("tr") as HTMLElement;
+      expect(within(row).getByTestId("extra-cost-request-tag")).toHaveTextContent(/^Xarajat kutilmoqda · 20\D000 so'm$/);
+      // Eski «Tasdiq kutilmoqda» (amal bajarilmagan) belgisi yo'q.
+      expect(within(row).queryByText("Tasdiq kutilmoqda")).not.toBeInTheDocument();
+      expect(courierRefetchInterval?.(listResponse)).toBe(ORDERS_REFRESH_INTERVAL_MS);
+    } finally {
+      listResponse.data = original;
+    }
+  });
+
   it("closes the sell modal as before when there is no extra cost (regression)", async () => {
     const user = userEvent.setup();
     sellMutate.mockImplementation((_vars, options: MutateOptions) =>

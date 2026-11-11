@@ -51,6 +51,7 @@
   },
   "requesterFallback": "#{{id}}",
   "unknownCustomer": "Customer not specified",
+  "items": "Products",
   "openOrder": "Open order {{ref}}",
   "proofButton": "Proof ({{count}})",
   "proofButtonLabel": "Proof ({{count}}) — {{ref}}",

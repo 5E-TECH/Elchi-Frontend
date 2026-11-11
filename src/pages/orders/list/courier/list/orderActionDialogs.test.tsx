@@ -82,7 +82,8 @@ describe("SellModal — menejer varianti (manager-orders-sell-dialog)", () => {
     renderManagerSell();
     await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "20000");
     expect(screen.queryByText("Kiritilsa, market tasdig'idan o'tadi")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/market tasdig'idan o'tadi/);
+    // SPEC v2: buyurtma darhol sotiladi, xarajat alohida market tasdig'ini kutadi.
+    expect(screen.getByRole("status")).toHaveTextContent(/Buyurtma darhol sotiladi\. Qo'shimcha xarajat alohida/);
   });
 
   it("tanlangan dalil fayli: nom, hajm, tur; «Faylni olib tashlash» uni bo'shatadi", async () => {
