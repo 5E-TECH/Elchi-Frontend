@@ -5,7 +5,8 @@ import { test, type Page, type Route } from "@playwright/test";
  *  - `GET finance/shift/current` — ochiq smena #31 (yopilgach `null`);
  *  - `GET finance/shift/settings` — tasdiqlash yoqiq: «Asosiy karta» (rasm + AI), «Hisob raqam» (rasm ixtiyoriy, AI o'chiq);
  *  - `GET finance/cashbox/cards` — jonli qoldiq; `GET finance/shift/31/report` — qoralamalar / yakuniy hisobot;
- *  - `POST finance/shift/account-photo` — rasm qabul qilinadi, AI natijasi keyingi o'qishda `match`;
+ *  - `POST finance/shift/account-photo` — rasm qabul qilinadi (turi `photoTypes` ga yoziladi), AI natijasi keyingi
+ *    o'qishda `match`;
  *  - `POST finance/shift/close` — tanasi yoziladi (`closes`), javobda `accounts_check`;
  *  - boshqa yozish so'rovlari taqiqlangan (`leaked`).
  */
@@ -32,6 +33,8 @@ export const mockShiftAccounts = async (page: Page) => {
     open: true,
     drafts: {} as Record<string, Record<string, unknown>>,
     uploads: 0,
+    /** Yuklangan skrinshot turi (brauzerda kichraytirilgach — JPEG). */
+    photoTypes: [] as string[],
     closes: [] as unknown[],
     leaked: [] as string[],
   };
@@ -54,6 +57,8 @@ export const mockShiftAccounts = async (page: Page) => {
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
     if (path === "finance/shift/account-photo" && request.method() === "POST") {
       state.uploads += 1;
+      const type = /name="photo"[^\r\n]*\r\nContent-Type: ([^\r\n]+)/i.exec(request.postDataBuffer()?.toString("latin1") ?? "");
+      state.photoTypes.push(type?.[1]?.trim() ?? "");
       // Rasm yuklandi — AI tekshiruvi tugagan holat keyingi o'qishda (realtime / 5 s so'rov o'rnida).
       state.drafts["1"] = {
         card_id: "1",
@@ -139,6 +144,9 @@ export const mockShiftAccounts = async (page: Page) => {
         route,
         wrap({
           account_check_enabled: true,
+          // BE-A: ikkala kalit alohida (asosiy kassa yoqiq, filiallar o'chiq).
+          main_account_check_enabled: true,
+          branch_account_check_enabled: false,
           photo_required: true,
           ai_check_enabled: true,
           cashbox_user_id: "0",

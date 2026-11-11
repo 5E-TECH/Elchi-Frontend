@@ -5,17 +5,23 @@ import { vi } from "vitest";
 import MainCashbox from "./mainCashbox";
 import { renderWithProviders } from "../../../test/test-utils";
 import { handleFinanceEvent } from "../../../app/providers/realtimeFinance";
+import { PrepareImageError } from "../../../shared/lib/downscaleImage";
 
 /**
  * kiZgTybn — smena yopishda har karta / hisob qoldig'ini tasdiqlash (haqiqiy `MainCashbox` + `CloseShiftPopup`,
  * faqat HTTP qatlami almashtirilgan). Backend 400 qoidalarining nusxasi: har karta qoldig'i majburiy, rasm majburiy
  * kartada skrinshot, farq ≠ 0 / AI «mismatch» / kiritilgan ≠ rasm → izoh majburiy. Tasdiqlash o'chiq — oyna avvalgidek.
+ *
+ * BE-A: rasm majburiy kartada skrinshot yuklanmaguncha «Smenani yopish» o'chiq va sababi tugmalar ustida; sozlama oyna
+ * har ochilganda qayta o'qiladi; 400 «Har karta qoldig'ini tasdiqlang: …» — kartalar qayta o'qiladi, oyna ochiq; yopish
+ * har doim uzoq kutish muddati bilan; skrinshot avval kichraytiriladi (`prepareImage`, jsdom'da canvas yo'q — mock).
  */
 
 type Draft = Record<string, unknown>;
 
 const http = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn() }));
 const exportReport = vi.hoisted(() => vi.fn());
+const prepareImageMock = vi.hoisted(() => vi.fn());
 const server = vi.hoisted(() => ({
   settings: null as null | Record<string, unknown>,
   drafts: {} as Record<string, Record<string, unknown>>,
@@ -29,6 +35,10 @@ vi.mock("../../../shared/api/api", () => ({
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
 vi.mock("./lib/exportMainCashboxReport", () => ({ exportMainCashboxReport: exportReport }));
+vi.mock("../../../shared/lib/downscaleImage", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/downscaleImage")>()),
+  prepareImage: prepareImageMock,
+}));
 vi.mock("../../../entities/markets", () => ({
   useMarkets: () => ({ useGetMarkets: () => ({ data: undefined, isLoading: false }) }),
 }));
@@ -120,7 +130,22 @@ const admin = {
 
 const postsTo = (url: string) => http.post.mock.calls.filter(([postUrl]) => postUrl === url).map(([, body]) => body);
 
+const closeCalls = () => http.post.mock.calls.filter(([postUrl]) => postUrl === "finance/shift/close");
+const settingsReads = () => http.get.mock.calls.filter(([url]) => url === "finance/shift/settings").length;
+
 beforeEach(() => {
+  prepareImageMock.mockReset();
+  // Brauzerdagi kichraytirish: jpeg/png/webp → JPEG (`.jpg`), boshqasi — «unsupported» (haqiqiy `prepareImage` kabi).
+  prepareImageMock.mockImplementation(async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new PrepareImageError("unsupported");
+    return {
+      media_type: "image/jpeg",
+      data_base64: btoa("jpeg-bytes"),
+      preview: "data:image/jpeg;base64,AAAA",
+      name: file.name.replace(/\.[^.]+$/, ".jpg"),
+      bytes: 10,
+    };
+  });
   server.settings = null;
   server.drafts = {};
   server.closeError = null;
@@ -249,6 +274,8 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
     await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
     expect(postsTo("finance/shift/close")[0]).toEqual({ shift_id: SHIFT_ID, closing_balance_cash: 18_240_000 });
+    // BE-A: kartalarsiz yopish ham uzoq kutish muddati bilan (MAIN da backend «Asosiy karta»ni o'zi tekshiradi).
+    expect(closeCalls()[0][2]).toEqual({ timeout: 60_000 });
     // Kartalar tekshirilmagan — natija oynasida hisobot havolasi yo'q.
     const result = await screen.findByRole("dialog", { name: "Smena yopildi" });
     expect(within(result).queryByRole("link", { name: /Smena hisoboti/ })).not.toBeInTheDocument();
@@ -271,11 +298,37 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     // Superadmin — «Sozlamalar» havolasi.
     expect(within(section).getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/payments/shift-settings");
 
+    // BE-A: ikki kartada skrinshot majburiy va yuklanmagan — «Smenani yopish» o'chiq, sababi tugmalar ustida.
+    const submit = within(dialog).getByRole("button", { name: CLOSE_SHIFT });
+    const reason = await within(dialog).findByTestId("close-shift-block-reason");
+    expect(reason).toHaveTextContent(
+      "2 ta kartada skrinshot yo'q: Asosiy karta, Humo virtual — yuklamaguncha smenani yopib bo'lmaydi",
+    );
+    expect(reason).toHaveAttribute("role", "status");
+    expect(submit).toBeDisabled();
+    expect(submit).toHaveAttribute("aria-describedby", reason.id);
+
     await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
-    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await user.click(submit);
+    expect(postsTo("finance/shift/close")).toHaveLength(0);
+    // Bosish o'tmaydi — qoldiq xatolari hali ko'rinmaydi (ular bosilganda chiqadi).
+    expect(within(dialog).queryByText("Ilovadagi qoldiqni kiriting")).not.toBeInTheDocument();
+
+    // Bitta karta yuklandi — sabab faqat qolganini aytadi.
+    await user.upload(within(dialog).getByTestId("shift-photo-input-1"), png());
+    await waitFor(() => expect(reason).toHaveTextContent("1 ta kartada skrinshot yo'q: Humo virtual"));
+    expect(submit).toBeDisabled();
+    await user.upload(within(dialog).getByTestId("shift-photo-input-2"), png("humo.png"));
+    await waitFor(() => expect(within(dialog).queryByTestId("close-shift-block-reason")).not.toBeInTheDocument());
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(submit).not.toHaveAttribute("aria-describedby");
+    // AI hali `pending` — to'smaydi (backend ~15 s kutadi, keyin baribir yopadi).
+    expect(within(dialog).getByText("2 ta karta rasmi hali tekshirilmoqda.")).toBeInTheDocument();
+
+    // Endi qoldiq xatolari bosilganda chiqadi (avvalgidek).
+    await user.click(submit);
     expect(within(dialog).getAllByText("Ilovadagi qoldiqni kiriting")).toHaveLength(3);
-    expect(within(dialog).getAllByText("Skrinshot majburiy — avval rasm yuklang")).toHaveLength(2);
-    expect(within(row(dialog, "3")).queryByText("Skrinshot majburiy — avval rasm yuklang")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Skrinshot majburiy — avval rasm yuklang")).not.toBeInTheDocument();
     expect(postsTo("finance/shift/close")).toHaveLength(0);
   });
 
@@ -290,6 +343,11 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     await user.upload(within(dialog).getByTestId("shift-photo-input-1"), png());
     await waitFor(() => expect(server.uploads).toHaveLength(1));
     expect(server.uploads[0]).toMatchObject({ card_id: "1", shift_id: SHIFT_ID, entered_balance: "2140000" });
+    // Avval kichraytiriladi (≤ 5 MB JPEG) — serverga JPEG ketadi, oynada kassir tanlagan fayl nomi.
+    expect(prepareImageMock).toHaveBeenCalledWith(expect.any(File), { maxBytes: 5 * 1024 * 1024 });
+    const sent = server.uploads[0].photo as File;
+    expect(sent.type).toBe("image/jpeg");
+    expect(sent.name).toBe("IMG_2210.jpg");
     expect(await within(row(dialog, "1")).findByText("AI rasmni tekshirmoqda…")).toBeInTheDocument();
     expect(within(row(dialog, "1")).getByText("Tekshirilmoqda")).toBeInTheDocument();
     expect(within(row(dialog, "1")).getByText("IMG_2210.png")).toBeInTheDocument();
@@ -345,6 +403,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
         { card_id: "3", entered_balance: 1_450_000 },
       ],
     });
+    expect(closeCalls()[0][2]).toEqual({ timeout: 60_000 });
     // Kartalar tekshirildi — natija oynasida «Smena hisoboti».
     const result = await screen.findByRole("dialog", { name: "Smena yopildi" });
     expect(within(result).getByRole("link", { name: /Smena hisoboti/ })).toHaveAttribute("href", `/payments/shifts/${SHIFT_ID}`);
@@ -444,5 +503,107 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
       entered_balance: 1_850_000,
       comment: "Yopish paytida karta to'ldirildi",
     });
+  });
+
+  /** Rasm talab qilinmaydigan sozlama — tugma to'silmaydi (400 yo'llari tekshiriladi). */
+  const noPhotoSettings = (cards = CARDS) => {
+    const settings = enabledSettings({ photo_required: false, ai_check_enabled: false });
+    settings.cards = cards.map((card) => ({
+      ...card,
+      kind: "virtual_card",
+      require_photo_on_shift_close: false,
+      ai_check_enabled: false,
+      photo_required: false,
+      ai_enabled: false,
+    }));
+    return settings;
+  };
+  const VISA = { card_id: "4", name: "Visa virtual", bank_name: "Kapitalbank", last4: "0932", is_default: false };
+
+  it("BE-A: 400 «Har karta qoldig'ini tasdiqlang» re-reads the cards — the new card appears, the dialog stays open", async () => {
+    server.settings = noPhotoSettings();
+    const user = userEvent.setup();
+    open();
+    const dialog = await openCloseDialog(user);
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
+    await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+    for (const [cardId, value] of [["1", "2140000"], ["2", "1850000"], ["3", "1450000"]] as const) {
+      await user.type(within(row(dialog, cardId)).getByLabelText(/^Ilovadagi qoldiq/), value);
+    }
+    // Shu orada yangi karta qo'shildi — backend uni ham talab qiladi.
+    server.settings = noPhotoSettings([...CARDS, VISA]);
+    server.closeError = { status: 400, message: "Har karta qoldig'ini tasdiqlang: Visa virtual" };
+    const readsBefore = settingsReads();
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
+
+    // Matn — backenddan, aynan; oyna ochiq, yangi karta qatori chiqdi.
+    expect(await screen.findByText("Har karta qoldig'ini tasdiqlang: Visa virtual")).toBeInTheDocument();
+    expect(await within(dialog).findByTestId("shift-account-4")).toHaveTextContent("Kapitalbank · ··0932");
+    expect(settingsReads()).toBeGreaterThan(readsBefore);
+    expect(screen.getByRole("dialog", { name: CLOSE_SHIFT })).toBeInTheDocument();
+    // Kiritilgan qiymatlar saqlanadi.
+    expect(within(row(dialog, "2")).getByLabelText(/^Ilovadagi qoldiq/)).toHaveValue("1 850 000");
+
+    server.closeError = null;
+    await user.type(within(row(dialog, "4")).getByLabelText(/^Ilovadagi qoldiq/), "300000");
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(2));
+    expect((postsTo("finance/shift/close")[1] as { accounts: unknown[] }).accounts).toContainEqual({
+      card_id: "4",
+      entered_balance: 300_000,
+    });
+  });
+
+  it("BE-A: the plain dialog (stale settings) shows the 400 text verbatim and switches to per-card rows", async () => {
+    server.settings = { account_check_enabled: false, photo_required: true, ai_check_enabled: true, cards: [] };
+    const user = userEvent.setup();
+    open();
+    const dialog = await openCloseDialog(user);
+    await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+    // Tasdiqlash shu orada yoqildi (migratsiya / superadmin) — oyna buni hali bilmaydi.
+    server.settings = noPhotoSettings();
+    server.closeError = { status: 400, message: "Har karta qoldig'ini tasdiqlang: Asosiy karta, Humo virtual, Hisob raqam" };
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: CLOSE_SHIFT })).toBeEnabled());
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
+    expect(postsTo("finance/shift/close")[0]).not.toHaveProperty("accounts");
+
+    expect(
+      await screen.findByText("Har karta qoldig'ini tasdiqlang: Asosiy karta, Humo virtual, Hisob raqam"),
+    ).toBeInTheDocument();
+    expect(await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText(/^Sanalgan karta/)).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: CLOSE_SHIFT })).toBeInTheDocument();
+  });
+
+  it("BE-A: settings are re-read every time the dialog opens (a switch turned on meanwhile is seen)", async () => {
+    server.settings = { account_check_enabled: false, photo_required: true, ai_check_enabled: true, cards: [] };
+    const user = userEvent.setup();
+    open();
+    let dialog = await openCloseDialog(user);
+    await waitFor(() => expect(settingsReads()).toBe(1));
+    expect(within(dialog).queryByTestId("shift-accounts-section")).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: CLOSE_SHIFT })).not.toBeInTheDocument());
+
+    server.settings = enabledSettings();
+    dialog = await openCloseDialog(user);
+    await waitFor(() => expect(settingsReads()).toBe(2));
+    expect(await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: CLOSE_SHIFT })).toBeDisabled();
+  });
+
+  it("downscale failure shows the reason under the card and nothing is uploaded", async () => {
+    server.settings = enabledSettings();
+    prepareImageMock.mockRejectedValueOnce(new PrepareImageError("heic_unsupported"));
+    const user = userEvent.setup();
+    open();
+    const dialog = await openCloseDialog(user);
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
+    await user.upload(within(dialog).getByTestId("shift-photo-input-1"), png("IMG_5520.png"));
+    expect(await within(row(dialog, "1")).findByText("HEIC rasmni o'qib bo'lmadi — JPG yoki PNG yuklang")).toBeInTheDocument();
+    expect(server.uploads).toHaveLength(0);
+    expect(within(dialog).getByRole("button", { name: CLOSE_SHIFT })).toBeDisabled();
   });
 });

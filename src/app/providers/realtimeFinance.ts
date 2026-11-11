@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { refreshCashboxQueries, refreshReceiptQueries, shift } from "../../entities/payments";
+import { refreshCashboxQueries, refreshReceiptQueries, shift, shiftCheckSettingsKey } from "../../entities/payments";
 import { formatTimeLocalized } from "../../shared/lib/formatDateTime";
 import { notify } from "../../shared/lib/notify";
 
@@ -13,7 +13,8 @@ import { notify } from "../../shared/lib/notify";
  *    `{ shift_id, cashbox_type, branch_id?, opened_at }`): smena va kassa qayta o'qiladi, kassirga xabar;
  *  - `finance.shift.account_checked` — karta qoldig'ining AI tekshiruvi tugadi (smena yopish oynasi o'qiydi);
  *  - `finance.cashbox.card_changed` — kassa kartasida operatsiya (yaratish, o'tkazma, konvertatsiya; backend
- *    2026-10-25): smenaga tegmaydi — faqat kassa qoldiqlari (naqd / karta) qayta o'qiladi;
+ *    2026-10-25): smena holatiga tegmaydi — kassa qoldiqlari (naqd / karta) va smena yopish sozlamasining kartalar
+ *    ro'yxati (`[shift, "check-settings"]`, BE-A: ochiq yopish oynasi yangi / o'chirilgan kartani ko'rsin) qayta o'qiladi;
  *  - `finance.receipt.checked` — chekning AI tahlili tugadi (QlLf33Ma): chek tafsiloti va kassa tarixi qayta o'qiladi,
  *    natija sahifa yangilanmay ko'rinadi;
  *  - `finance.payment.corrected` — to'lov qaytarildi yoki summasi tahrirlandi (T6-FE-3, 2wgTzcG0; payload summasiz:
@@ -64,6 +65,9 @@ export const refreshShiftQueries = (client: QueryClient) =>
 export const handleFinanceEvent = (client: QueryClient, t: TFunction, event: FinanceEvent, payload: unknown) => {
   if (event === "finance.cashbox.card_changed" || event === "finance.payment.corrected") {
     void refreshCashboxQueries(client);
+    if (event === "finance.cashbox.card_changed") {
+      void client.invalidateQueries({ queryKey: shiftCheckSettingsKey, refetchType: "active" });
+    }
     return;
   }
   if (event === "finance.receipt.checked") {

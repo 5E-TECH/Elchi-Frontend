@@ -1004,15 +1004,18 @@
       "commentOptionalPlaceholder": "Ixtiyoriy — masalan, qoldiq haqida eslatma",
       "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
       "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
-      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
+      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 15 soniyagacha kutadi.",
       "alert": "{{count}} ta kartada farq bor — izoh majburiy",
       "pending": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "missingPhotos": "{{count}} ta kartada skrinshot yo'q: {{cards}} — yuklamaguncha smenani yopib bo'lmaydi",
       "errors": {
         "entered": "Ilovadagi qoldiqni kiriting",
         "photo": "Skrinshot majburiy — avval rasm yuklang",
         "comment": "Farq bor yoki AI natijasi mos emas — izoh yozing",
         "photoType": "Faqat jpeg, png yoki webp rasm yuklang",
         "photoSize": "Rasm hajmi 5 MB dan oshmasin",
+        "photoHeic": "HEIC rasmni o'qib bo'lmadi — JPG yoki PNG yuklang",
+        "photoDecode": "Rasmni o'qib bo'lmadi — boshqa rasm tanlang",
         "upload": "Rasm yuklanmadi"
       }
     },

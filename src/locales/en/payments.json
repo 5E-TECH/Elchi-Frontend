@@ -1004,15 +1004,19 @@
       "commentOptionalPlaceholder": "Optional — e.g. a note about the balance",
       "empty": "This cashbox has no active cards — only cash is counted.",
       "loadError": "Card list did not load — the server checks it on close.",
-      "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 30 seconds.",
+      "note": "Images and AI results are kept in the shift report. If AI is still checking, closing waits up to 15 seconds.",
       "alert": "Cards with a difference: {{count}} — comment required",
       "pending": "Images still being checked: {{count}}.",
+      "missingPhotos_one": "Screenshot missing for {{count}} card: {{cards}} — upload it to close the shift",
+      "missingPhotos_other": "Screenshots missing for {{count}} cards: {{cards}} — upload them to close the shift",
       "errors": {
         "entered": "Enter the balance from the app",
         "photo": "Screenshot required — upload an image first",
         "comment": "There is a difference or AI did not match — write a comment",
         "photoType": "Upload a jpeg, png or webp image",
         "photoSize": "Image must not exceed 5 MB",
+        "photoHeic": "Could not read the HEIC image — upload JPG or PNG",
+        "photoDecode": "Could not read the image — choose another one",
         "upload": "Image was not uploaded"
       }
     },

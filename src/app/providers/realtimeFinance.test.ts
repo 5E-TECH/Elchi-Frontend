@@ -18,13 +18,15 @@ describe("realtimeFinance", () => {
     ]);
   });
 
-  it("kassa kartasi o'zgardi — kassa qoldiqlari yangilanadi, smena holati qayta so'ralmaydi", async () => {
+  it("kassa kartasi o'zgardi — kassa qoldiqlari va yopish oynasining kartalari yangilanadi, smena holati so'ralmaydi", async () => {
     const client = new QueryClient();
     const invalidate = vi.spyOn(client, "invalidateQueries");
     handleFinanceEvent(client, i18n.t, "finance.cashbox.card_changed", { cashbox_id: "c-1" });
     await vi.waitFor(() => expect(invalidate).toHaveBeenCalled());
     const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
     expect(keys).toContain(JSON.stringify(["cashbox"]));
+    // BE-A: ochiq «Smenani yopish» oynasi yangi / o'chirilgan kartani ko'rsin (aks holda backend 400).
+    expect(keys).toContain(JSON.stringify(["shift", "check-settings"]));
     expect(keys).not.toContain(JSON.stringify(["shift"]));
   });
 
