@@ -188,6 +188,8 @@
   ,"paymentForbidden": "Нет прав на этот платёж."
   ,"branchToMainPaymentSuccess": "Платеж успешно переведен в HQ"
   ,"branchToMainPaymentError": "Ошибка при переводе платежа в HQ"
+  ,"branchToMarketPaymentSuccess": "Перевод из филиала маркету проведён"
+  ,"branchToMarketPaymentError": "Ошибка при проведении перевода из филиала маркету"
   ,"branchToMainSource": "Перевод из филиала в HQ"
   ,"mainBranchFallback": "Главный филиал"
   ,"unknown": "Неизвестно"
@@ -694,6 +696,7 @@
       "marketPayment": "Оплата маркету",
       "hqToMarket": "Перевод из HQ маркету",
       "branchToMain": "Перевод из филиала в HQ",
+      "branchToMarket": "Перевод из филиала маркету",
       "manualIncome": "Ручной приход",
       "manualExpense": "Ручной расход",
       "correction": "Корректировка",
@@ -907,6 +910,7 @@
       "market": "Маркет",
       "marketPlaceholder": "Выберите маркет",
       "marketHint": "Пока маркет не выбран, кнопка приёма неактивна",
+      "branchToMarketInfo": "Филиал перевёл деньги маркету сам, минуя HQ: сумма списывается с карты филиала, долг HQ перед маркетом уменьшается на столько же",
       "comment": "Комментарий",
       "commentPlaceholder": "Комментарий...",
       "receive": "Принять",

@@ -821,6 +821,7 @@ const MainCashbox = () => {
     getPaymentSourceTitle(row.source_type, t, {
       role: normalizedRole,
       cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType,
+      paymentMethod: row.payment_method,
     });
   // Asosiy kassa sahifasida `click` — «Karta (Click)» (maket), qolganlari umumiy yorliq.
   const paymentMethodLabel = (value?: string | null) =>
