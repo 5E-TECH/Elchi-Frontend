@@ -271,6 +271,7 @@
       "title": "Cash desk",
       "open": "Open cash desk",
       "inHand": "Money in hand · handed over to the branch",
+      "advance": "Advance · closed by your next sales",
       "start": "Start of day",
       "sales": "Sales",
       "handed": "Handed over",

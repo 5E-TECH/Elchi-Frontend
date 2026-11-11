@@ -78,6 +78,7 @@
   "pageDescription": "Kassa va to'lovlarni boshqarish",
   "toBeGiven": "Berilishi kerak",
   "amountInCashbox": "Kassadagi summa",
+  "amountInCashboxAdvance": "Kassadagi summa · avans",
   "counterparty": "Qarshi tomon",
   "toBeReceived": "Qabul qilinishi kerak",
   "filters": "Filtrlar",
@@ -503,9 +504,9 @@
       "title": "Kuryerlar bilan hisob-kitob",
       "subtitle": "Yo'ldagi pulning kuryerlar qo'lidagi qismi",
       "share": "{{name}}: yo'ldagi pul ulushi",
-      "negative": "manfiy balans",
+      "advance": "avans",
       "footNote": "Ulush musbat qoldiqlar jamidan: {{positive}}",
-      "footDebtor": "qarzdor {{negative}}",
+      "footAdvance": "avans {{amount}}",
       "empty": "Kuryerlarda pul yo'q"
     },
     "rank": {
@@ -873,6 +874,7 @@
       "hqTransferFallback": "Filial kassasidan HQ oladigan pul"
     },
     "settlement": {
+      "courierAdvance": "Avans · oldindan topshirilgan",
       "title": "Hisob-kitob holati",
       "counterparty": "Qarshi tomon: {{name}}",
       "receiver": "Qabul qiluvchi: {{name}}",
@@ -897,6 +899,7 @@
       "branchSubtitle": "Pul filial kassasidan asosiy kassaga tushadi",
       "amount": "Summa",
       "limitHint": "Ko'pi bilan {{amount}} — qabul qilinishi kerak bo'lgan summa",
+      "advanceHint": "Avans qabul qilish mumkin — kuryer qoldig'idan ortig'i oldindan to'lov bo'lib yoziladi",
       "receivableHint": "Qabul qilinishi kerak: {{amount}}",
       "payableHint": "Berilishi kerak: {{amount}}",
       "paymentType": "To'lov turi",
@@ -917,6 +920,8 @@
       "description": "Tekshirib chiqing — tasdiqlangach, summa ikkala kassada darhol aks etadi.",
       "confirm": "Tasdiqlash",
       "comment": "Izoh",
+      "advanceLabel": "Shundan",
+      "advanceValue": "{{amount}} — avans",
       "market": "Market"
     },
     "history": {

@@ -7,6 +7,7 @@ import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } f
 import { Badge, Button, Card, EmptyState, TONE_FG } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { sharePercent, toInitials } from "../lib/balanceFormat";
+import { formatCourierBalance } from "../../../shared/lib/courierBalance";
 import type { FinancialBalanceData, FinancialBalanceParty } from "../lib/financialBalance";
 
 /** Summa qatorga bo'linmasin (maketdagi `white-space: nowrap`): oddiy bo'sh joy → bo'linmas. */
@@ -175,14 +176,19 @@ const SettlementRanks = ({ data }: { data: FinancialBalanceData }) => {
     const negative = items.reduce((sum, item) => sum + Math.min(0, item.balance), 0);
     const rows: RankRow[] = items.map((item) => {
       const share = sharePercent(item.balance, positive);
+      // Manfiy kuryer qoldig'i — avans («Kassa qarzga ishlaydi», 2026-11-11): «−200 000» emas, «200 000 · avans».
+      const shown = formatCourierBalance(item.balance, {
+        balance: formatPercentLocalized(share, { language }),
+        advance: t("v2Balance.couriers.advance"),
+      });
       return {
         id: item.id,
         name: item.name,
         location: item.location,
-        value: item.balance,
+        value: shown.amount,
         share,
-        sub: item.balance < 0 ? t("v2Balance.couriers.negative") : formatPercentLocalized(share, { language }),
-        tone: item.balance < 0 ? "danger" : item.balance === 0 ? "muted" : undefined,
+        sub: shown.label,
+        tone: item.balance === 0 ? "muted" : undefined,
       };
     });
     return { rows, positive, negative };
@@ -228,7 +234,7 @@ const SettlementRanks = ({ data }: { data: FinancialBalanceData }) => {
                 <span className="text-xs text-text-muted">
                   {t("v2Balance.couriers.footNote", { positive: unbroken(money(courierStats.positive)) })}
                   {courierStats.negative < 0
-                    ? ` · ${t("v2Balance.couriers.footDebtor", { negative: unbroken(money(courierStats.negative)) })}`
+                    ? ` · ${t("v2Balance.couriers.footAdvance", { amount: unbroken(money(-courierStats.negative)) })}`
                     : null}
                 </span>
               ) : null}

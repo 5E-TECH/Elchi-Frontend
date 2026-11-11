@@ -76,6 +76,9 @@ import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
 import { useReceiptField } from "./receipt/useReceiptField";
 import { CashboxCardSelectField } from "./cashboxCards/CashboxCardPicker";
 import { useCashboxCardPicker } from "./cashboxCards/useCashboxCardPicker";
+import { useUser } from "../../../entities/user/api/userApi";
+import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
+import { courierAdvancePart, formatCourierBalance } from "../../../shared/lib/courierBalance";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -622,6 +625,15 @@ const CashDetail = () => {
   const type: CashDetailType = resolvedType ?? "market";
   // Menejer kuryer kassasida summa so'rovdan (T2VHX1Y7) — router state to'lovdan keyin eskirardi, F5 da eski qolardi.
   const serverCourierReceivable = useManagerCourierReceivable(id, type === "courier" && isCurrentManagerRole);
+  // Kuryer «Kassa qarzga ishlaydi» (2026-11-11): `GET /users/:id` dagi `cashbox_debt_enabled` — yoqilsa kuryerdan
+  // qoldig'idan ortiq (oldindan) pul qabul qilinadi, ortig'i avans. Yuklanmaguncha yoki xato bo'lsa — o'chiq deb
+  // olinadi (limit avvalgidek, xavfsiz tomoni). Kesh foydalanuvchi sahifasi bilan umumiy (`[user, "detail", id]`).
+  const { useGetUserById } = useUser();
+  const courierUserQuery = useGetUserById(type === "courier" && !isTypeUnknown ? (id ?? "") : "", undefined, {
+    silentError: true,
+  });
+  const courierDebtEnabled =
+    type === "courier" && !isTypeUnknown && unwrapUserResponse(courierUserQuery.data)?.cashbox_debt_enabled === true;
   const entityName =
     nameSources.map((source) => toOptionalString(source?.name)?.trim()).find(Boolean) ||
     nameSources.map((source) => toOptionalString(source?.phone_number)?.trim()).find(Boolean) ||
@@ -678,10 +690,16 @@ const CashDetail = () => {
   // (C3 `olinishi_kerak`, superadmin/admin). Menejerda ko'rsatilgan summa
   // router state'idan kelishi va kuryer kassasidagi puldan kam bo'lishi
   // mumkin — to'g'ri to'lov bloklanmasin, chegara backendda (kuryer kassasi).
+  // «Kassa qarzga ishlaydi» yoqilgan kuryerda chegara yo'q — ortig'i avans (backend ham qabul qiladi).
   const courierReceiveLimit =
-    courierReceiveInfo?.olinishi_kerak !== undefined && courierReceiveInfo?.olinishi_kerak !== null
+    !courierDebtEnabled &&
+    courierReceiveInfo?.olinishi_kerak !== undefined &&
+    courierReceiveInfo?.olinishi_kerak !== null
       ? displayBalance
       : null;
+  // To'lovdan keyingi mahalliy qoldiq: avansli kuryerda nolda to'xtamaydi — manfiyga (avansga) o'tadi.
+  const balanceAfterPayment = (amount: number) =>
+    courierDebtEnabled ? settlementBalance - amount : reduceBalanceTowardsZero(settlementBalance, amount);
   const displayAmountToGive =
     (type === "market" || type === "branch") &&
     detailEntry?.berilishi_kerak !== undefined
@@ -707,6 +725,19 @@ const CashDetail = () => {
         ? "toBeReceived"
         : "totalBalanceLabel";
   const balanceLabel = t(balanceLabelKey);
+  // Kuryer kassasi manfiy — avans (kompaniya kuryerga qarzdor): «−200 000» emas, «Avans · … 200 000». Market — tegilmaydi.
+  const shownBalance =
+    type === "courier" && !isTypeUnknown
+      ? formatCourierBalance(displayBalance, { balance: balanceLabel, advance: t("v2CashDetail.settlement.courierAdvance") })
+      : { label: balanceLabel, amount: displayBalance, isAdvance: false };
+  // «Kassadagi summa» qatori — kuryerda manfiy bo'lsa ham avans (minussiz).
+  const shownCashboxAmount =
+    type === "courier" && !isTypeUnknown
+      ? formatCourierBalance(settlementDetails.cashboxAmount, {
+          balance: t("amountInCashbox"),
+          advance: t("amountInCashboxAdvance"),
+        })
+      : { label: t("amountInCashbox"), amount: settlementDetails.cashboxAmount, isAdvance: false };
 
   useEffect(() => {
     setBalanceOverride(null);
@@ -838,7 +869,7 @@ const CashDetail = () => {
       await refetchPaymentState();
       return;
     }
-    setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
+    setBalanceOverride(balanceAfterPayment(amount));
     resetActionForm();
 
     const [refreshed, , , refreshedBranches] = await refetchPaymentState();
@@ -1151,7 +1182,7 @@ const CashDetail = () => {
       // to'lov ketib qolmasin); summa serverdan qayta o'qiladi.
       notify.warning(t("common:warning"), { description: t("paymentAlreadyRecorded"), duration: 8000 });
       if (isAmountFromRouterState) {
-        setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
+        setBalanceOverride(balanceAfterPayment(amount));
       }
       resetActionForm();
       await refetchPaymentState();
@@ -1263,7 +1294,7 @@ const CashDetail = () => {
         // shu summani allaqachon o'tkazgan, shuning uchun ekrandagi summa ham
         // shunga kamaytiriladi (barmoq izida summa bor — aynan o'sha to'lov).
         if (isAmountFromRouterState) {
-          setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
+          setBalanceOverride(balanceAfterPayment(amount));
         }
         resetActionForm();
         await refetchCashbox();
@@ -1404,7 +1435,9 @@ const CashDetail = () => {
           : t("v2CashDetail.form.marketSubtitle")
         : t("v2CashDetail.form.branchSubtitle");
   const amountHint =
-    type === "courier" && courierReceiveLimit !== null
+    courierDebtEnabled
+      ? t("v2CashDetail.form.advanceHint")
+      : type === "courier" && courierReceiveLimit !== null
       ? t("v2CashDetail.form.limitHint", { amount: money(courierReceiveLimit) })
       : type === "market"
         ? t("v2CashDetail.form.payableHint", { amount: money(displayBalance) })
@@ -1487,6 +1520,8 @@ const CashDetail = () => {
           ? marketOptions.find((option) => option.value === values.marketId)?.label ?? values.marketId
           : "";
       const isClick = values.paymentType === "click";
+      // Avans (kuryer, «Kassa qarzga ishlaydi»): summaning kuryer qoldig'idan ortig'i.
+      const advance = courierDebtEnabled ? courierAdvancePart(parseAmountInput(values.amount), displayBalance) : 0;
       const hqCard = isClick && hqCardPicker.cards.length > 1 ? hqCardPicker.resolve(values.cardId) : null;
       const branchCard =
         isClick && type === "branch" && branchCardPicker.cards.length > 1
@@ -1502,6 +1537,9 @@ const CashDetail = () => {
         },
         transfer: getPaymentTransfer(),
         rows: [
+          ...(advance > 0
+            ? [{ label: t("v2CashDetail.confirm.advanceLabel"), value: t("v2CashDetail.confirm.advanceValue", { amount: money(advance) }) }]
+            : []),
           ...(marketName ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
           ...(hqCard ? [{ label: t("cashboxCards.picker.confirmRow"), value: hqCard.name }] : []),
           ...(branchCard ? [{ label: t("cashboxCards.picker.confirmBranchRow"), value: branchCard.name }] : []),
@@ -1580,8 +1618,8 @@ const CashDetail = () => {
       bodyClassName="flex flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
-        <span className="text-[13px] font-semibold text-text-muted">{balanceLabel}</span>
-        <MoneyFigure value={displayBalance} hidden={!balanceVisible} />
+        <span className="text-[13px] font-semibold text-text-muted">{shownBalance.label}</span>
+        <MoneyFigure value={shownBalance.amount} hidden={!balanceVisible} />
         {balanceVisible && courierDayChange ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
             <DeltaChip
@@ -1615,8 +1653,8 @@ const CashDetail = () => {
       {hasCashboxAmount ? (
         <div className="flex flex-col gap-1">
           <div className="mb-1.5 flex items-baseline justify-between gap-2 text-sm font-semibold text-text">
-            <span>{t("amountInCashbox")}</span>
-            <span className="whitespace-nowrap">{money(settlementDetails.cashboxAmount)}</span>
+            <span>{shownCashboxAmount.label}</span>
+            <span className="whitespace-nowrap">{money(shownCashboxAmount.amount)}</span>
           </div>
           <CashSplit
             cash={cashboxSplit.cash}

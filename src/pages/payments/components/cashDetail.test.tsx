@@ -42,6 +42,8 @@ const setShift = (value: typeof shiftState.shift) => {
 const OPEN_SHIFT = { id: "5", status: "open", opened_by: "1" };
 /** `useGetUserById` (ochgan xodim ismi) ga berilgan ID lar — CB-2 ekranlari so'ramasligi kerak. */
 const userByIdCalls = vi.hoisted(() => [] as unknown[]);
+/** `GET /users/:id` javobi (kuryer «Kassa qarzga ishlaydi», 2026-11-11) — faqat shu ID uchun. */
+const userById = vi.hoisted(() => ({ id: "", data: undefined as unknown }));
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const idleQuery = { data: undefined, isLoading: false, refetch: vi.fn() };
 
@@ -178,7 +180,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     useGetUser: () => ({ data: undefined, isLoading: false }),
     useGetUserById: (id: unknown) => {
       userByIdCalls.push(id);
-      return { data: undefined };
+      return { data: id && id === userById.id ? userById.data : undefined };
     },
     // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
     useGetCouriers: () => ({ data: undefined, isLoading: false }),
@@ -500,6 +502,80 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
       await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
       expect(courierPaymentCalls()[0].data).toEqual(expect.objectContaining({ amount: 300000 }));
       expect(screen.queryByText(/oshmasligi kerak/)).not.toBeInTheDocument();
+    });
+
+    describe("«Kassa qarzga ishlaydi» kuryer (2026-11-11) — avans", () => {
+      afterEach(() => {
+        userById.id = "";
+        userById.data = undefined;
+      });
+      const debtCourier = (enabled: boolean) => {
+        userById.id = "263";
+        userById.data = { statusCode: 200, data: { id: "263", role: "courier", cashbox_debt_enabled: enabled } };
+      };
+
+      it("⭐ yoqilgan: limit yo'q — qoldiqdan katta summa yuboriladi, tasdiqda «Shundan … — avans»", async () => {
+        const user = userEvent.setup();
+        debtCourier(true);
+        courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+        cashboxState.response = courierDetailResponse();
+        openWithoutState("/payments/cash-detail/263?type=courier");
+
+        expect(screen.getByText(/Avans qabul qilish mumkin/)).toBeInTheDocument();
+        expect(screen.queryByText(/Ko'pi bilan/)).not.toBeInTheDocument();
+        setAmount("300000");
+        await chooseMethod("Naqd");
+        await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+        const dialog = await findConfirm();
+        expect(within(dialog).getByText("Shundan")).toBeInTheDocument();
+        expect(normalizeText(within(dialog).getByText(/— avans$/).textContent)).toBe(`${money(50000)} — avans`);
+        await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+        await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+        expect(courierPaymentCalls()[0].data).toEqual(expect.objectContaining({ courier_id: "263", amount: 300000 }));
+        expect(screen.queryByText(/oshmasligi kerak/)).not.toBeInTheDocument();
+        expect(userByIdCalls).toContain("263");
+      });
+
+      it("qoldiq yetsa — tasdiqda avans qatori yo'q", async () => {
+        const user = userEvent.setup();
+        debtCourier(true);
+        cashboxState.response = courierDetailResponse();
+        openWithoutState("/payments/cash-detail/263?type=courier");
+
+        setAmount("100000");
+        await chooseMethod("Naqd");
+        await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+        const dialog = await findConfirm();
+        expect(within(dialog).queryByText("Shundan")).not.toBeInTheDocument();
+      });
+
+      it("o'chiq (sozlama false) — avvalgidek `amountExceedsBalance`, so'rov ketmaydi", async () => {
+        debtCourier(false);
+        cashboxState.response = courierDetailResponse();
+        openWithoutState("/payments/cash-detail/263?type=courier");
+
+        expect(screen.getByText(/Ko'pi bilan/)).toBeInTheDocument();
+        await fillCourierPayment("300000");
+        expect(await screen.findByText(/oshmasligi kerak/)).toBeInTheDocument();
+        expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+      });
+
+      it("manfiy kuryer qoldig'i — «Avans · oldindan topshirilgan» va musbat summa", () => {
+        debtCourier(true);
+        cashboxState.response = courierDetailResponse({
+          cashbox: { id: "70", cashbox_type: "couriers", user_id: "263", balance: -200000 },
+          olinishi_kerak: -200000,
+        });
+        openWithoutState("/payments/cash-detail/263?type=courier");
+
+        // Asosiy summa va «Kassadagi summa» qatori — ikkalasi ham avans, minussiz (− U+2212 ham, - ham yo'q).
+        expect(screen.getByText("Avans · oldindan topshirilgan")).toBeInTheDocument();
+        expect(screen.getByText("Kassadagi summa · avans")).toBeInTheDocument();
+        expect(screen.getAllByText(moneyText(200000)).length).toBeGreaterThan(0);
+        expect(normalizeText(document.body.textContent)).not.toMatch(/[−-]\s?200\s?000/);
+        expect(screen.queryByText("Kassadagi summa")).not.toBeInTheDocument();
+      });
     });
 
     it("manager: no client-side cap above the displayed amount (previous behaviour, backend caps)", async () => {
@@ -1275,6 +1351,8 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
     shiftState.refetch.mockReset();
     shiftState.balanceRequests = [];
     userByIdCalls.length = 0;
+    userById.id = "";
+    userById.data = undefined;
     openShiftMutation.mutateAsync.mockReset();
     courierPayment.mutateAsync.mockReset();
     marketPayment.mutateAsync.mockReset();

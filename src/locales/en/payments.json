@@ -78,6 +78,7 @@
   "pageDescription": "Manage cashboxes and payments",
   "toBeGiven": "To be given",
   "amountInCashbox": "Amount in cashbox",
+  "amountInCashboxAdvance": "Amount in cashbox · advance",
   "counterparty": "Counterparty",
   "toBeReceived": "To be received",
   "filters": "Filters",
@@ -503,9 +504,9 @@
       "title": "Settlements with couriers",
       "subtitle": "The part of money in transit held by couriers",
       "share": "{{name}}: share of money in transit",
-      "negative": "negative balance",
+      "advance": "advance",
       "footNote": "Share of the positive balances total: {{positive}}",
-      "footDebtor": "in debt {{negative}}",
+      "footAdvance": "advance {{amount}}",
       "empty": "Couriers hold no money"
     },
     "rank": {
@@ -873,6 +874,7 @@
       "hqTransferFallback": "Money HQ collects from the branch cashbox"
     },
     "settlement": {
+      "courierAdvance": "Advance · handed over early",
       "title": "Settlement status",
       "counterparty": "Counterparty: {{name}}",
       "receiver": "Receiver: {{name}}",
@@ -897,6 +899,7 @@
       "branchSubtitle": "Money moves from the branch cashbox to the main cashbox",
       "amount": "Amount",
       "limitHint": "At most {{amount}} — the amount to be received",
+      "advanceHint": "An advance can be accepted — anything above the courier's balance is recorded as prepayment",
       "receivableHint": "To be received: {{amount}}",
       "payableHint": "To be given: {{amount}}",
       "paymentType": "Payment type",
@@ -917,6 +920,8 @@
       "description": "Check the details — once confirmed, the amount shows up in both cashboxes immediately.",
       "confirm": "Confirm",
       "comment": "Comment",
+      "advanceLabel": "Of which",
+      "advanceValue": "{{amount}} — advance",
       "market": "Market"
     },
     "history": {
