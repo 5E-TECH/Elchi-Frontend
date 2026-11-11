@@ -555,6 +555,45 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     });
   });
 
+  it("BE-A: 400 «… rasm majburiy» (photo switched on meanwhile) makes the row require a screenshot and re-reads settings", async () => {
+    // Oyna ochilganda Humo'da rasm ixtiyoriy; superadmin shu orada yoqdi — sozlama qayta o'qilsa ham hali eski bo'lishi
+    // mumkin, qator baribir backend aytganiga amal qiladi.
+    server.settings = noPhotoSettings();
+    const user = userEvent.setup();
+    open();
+    const dialog = await openCloseDialog(user);
+    await within(dialog).findByTestId("shift-accounts-section", {}, { timeout: 5000 });
+    await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+    for (const [cardId, value] of [["1", "2140000"], ["2", "1850000"], ["3", "1450000"]] as const) {
+      await user.type(within(row(dialog, cardId)).getByLabelText(/^Ilovadagi qoldiq/), value);
+    }
+    // «(ixtiyoriy)» — skrinshot va izoh yorlig'ida.
+    expect(within(row(dialog, "2")).getAllByText("(ixtiyoriy)")).toHaveLength(2);
+    server.closeError = { status: 400, message: "«Humo virtual»: qoldiq rasmi (skrinshot) majburiy — avval rasm yuklang" };
+    const readsBefore = settingsReads();
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(1));
+
+    const humo = row(dialog, "2");
+    await waitFor(() => expect(humo).toHaveAttribute("data-highlighted", "true"));
+    expect(await within(humo).findByText("Skrinshot majburiy — avval rasm yuklang")).toBeInTheDocument();
+    // Skrinshot endi majburiy — «(ixtiyoriy)» faqat izohda qoldi.
+    expect(within(humo).getAllByText("(ixtiyoriy)")).toHaveLength(1);
+    await waitFor(() => expect(settingsReads()).toBeGreaterThan(readsBefore));
+    // Skrinshotsiz qayta yopib bo'lmaydi — tugma o'chiq, sababi oynada.
+    expect(within(dialog).getByRole("button", { name: CLOSE_SHIFT })).toBeDisabled();
+    expect(
+      within(dialog).getByText("1 ta kartada skrinshot yo'q: Humo virtual — yuklamaguncha smenani yopib bo'lmaydi"),
+    ).toBeInTheDocument();
+
+    server.closeError = null;
+    await user.upload(within(dialog).getByTestId("shift-photo-input-2"), png());
+    await waitFor(() => expect(server.uploads).toHaveLength(1));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: CLOSE_SHIFT })).toBeEnabled());
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    await waitFor(() => expect(postsTo("finance/shift/close")).toHaveLength(2));
+  });
+
   it("BE-A: the plain dialog (stale settings) shows the 400 text verbatim and switches to per-card rows", async () => {
     server.settings = { account_check_enabled: false, photo_required: true, ai_check_enabled: true, cards: [] };
     const user = userEvent.setup();

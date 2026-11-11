@@ -34,7 +34,8 @@ import { parseOptionalAmountInput } from "../lib/amountInput";
  *    AI `pending` hech qachon to'smaydi (backend ~15 s kutadi, keyin baribir yopadi).
  *  - Yopish 400 ««Karta»: … izoh majburiy» (yoki «… rasm majburiy») qaytarsa — `applyCloseError`: kartalar
  *    qoldig'i va qoralamalar qayta o'qiladi (mijozdagi kutilgan qoldiq eskirgan bo'lishi mumkin), o'sha karta
- *    ajratiladi va izoh majburiy bo'ladi (backend shunday dedi — mijoz hisobi farqni ko'rmasa ham).
+ *    ajratiladi va izoh majburiy bo'ladi (backend shunday dedi — mijoz hisobi farqni ko'rmasa ham). «… rasm majburiy»
+ *    da qator rasmni talab qiladi (xato, «Smenani yopish» o'chiq) va sozlama ham qayta o'qiladi.
  *    «Har karta qoldig'ini tasdiqlang: …» yoki «accounts[i]: …» — oynadagi kartalar ro'yxati eskirgan (karta qo'shilgan,
  *    faollashgan yoki o'chirilgan): sozlama, qoldiqlar va qoralamalar qayta o'qiladi, oyna ochiq qoladi.
  */
@@ -155,16 +156,19 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
         const hasPhoto = Boolean(draft?.has_photo) || Boolean(photos[card.card_id]);
         const aiStatus: ShiftAiStatus = draft?.ai_status ?? (card.ai_enabled ? "not_required" : "disabled");
         const aiReadBalance = draft?.ai_read_balance ?? null;
+        const serverIssue = serverIssues[card.card_id] ?? null;
+        // Backend rasmni majburiy dedi (sozlama oyna ochiq turganda yoqilgan) — sozlama qayta o'qilguncha ham qator
+        // rasmni talab qiladi: xato qator ostida, «Smenani yopish» o'chiq (`missingPhotos`).
+        const photoRequired = card.photo_required || serverIssue === "photo";
         const evaluated = evaluateShiftAccountRow({
           entered,
           expected,
-          photoRequired: card.photo_required,
+          photoRequired,
           hasPhoto,
           aiStatus,
           aiReadBalance,
           comment,
         });
-        const serverIssue = serverIssues[card.card_id] ?? null;
         // Backend izohni majburiy dedi — mijoz hisobi farqni ko'rmasa ham (kutilgan qoldiq yopish paytida o'zgargan).
         const serverComment = serverIssue === "comment";
         const commentRequired = evaluated.commentRequired || serverComment;
@@ -180,7 +184,7 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
           entered,
           expected,
           comment,
-          photoRequired: card.photo_required,
+          photoRequired,
           aiEnabled: card.ai_enabled,
           hasPhoto,
           photoUrl: draft?.photo_url ?? null,
@@ -285,6 +289,8 @@ export const useShiftAccountsForm = ({ open, shiftId }: { open: boolean; shiftId
         return false;
       }
       setServerIssues({ [target.card_id]: issue.kind });
+      // «… rasm majburiy» — rasm talabi oyna ochiq turganda yoqilgan: kartalar sozlamasi ham qayta o'qiladi.
+      if (issue.kind === "photo") void refetchSettings();
       void refetchBalances();
       void refetchReport();
       return true;
