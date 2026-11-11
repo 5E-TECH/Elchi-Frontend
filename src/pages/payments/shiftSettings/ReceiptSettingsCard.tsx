@@ -23,7 +23,7 @@ import { diffReceiptSettings, type ReceiptDraft } from "./settingsDiff";
  * («Avval chek rasmini yoqing»); rasm o'chirilsa AI ham o'chadi; rasm qayta yoqilsa AI o'chiq qoladi. Rasmni o'chirish —
  * tasdiq bilan; AI kaliti — tasdiqsiz. O'zgarish sahifadagi yagona «Saqlash» bilan ketadi: faqat o'zgarganlar.
  * BE-C (ega 2026-11-10): qo'lda chiqimda chek faqat karta («Karta (Click)») chiqimida so'raladi — qator izohida shunday
- * yoziladi (HQ'ga o'tkazmadagi «Faqat «O'tkazma» to'lovida» bilan bir xil uslubda; maket matni BE-C dan oldingi).
+ * yoziladi (HQ'ga o'tkazmadagi «… to'lovlarida» izohi bilan bir xil uslubda; maket matni BE-C dan oldingi).
  *
  * Qoralama sahifa darajasida (`useReceiptSettingsDraft`): smena sozlamalari saqlanganda forma qayta quriladi, chek
  * so'rovi yiqilsa ham kiritilgan qiymat yo'qolmasin.
