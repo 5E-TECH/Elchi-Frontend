@@ -310,7 +310,7 @@
         "loginRequired": "Login kiritilmadi"
       },
       "saving": "Saqlanmoqda…",
-      "managerMarketCreated": "Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.",
+      "managerMarketCreated": "Market yaratildi. U «Foydalanuvchilar» → «Marketlar» tabida ko'rinadi.",
       "passwordMode": {
         "section": "Parol",
         "legend": "Parolni qanday berish",

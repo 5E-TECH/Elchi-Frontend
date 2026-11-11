@@ -270,10 +270,11 @@ const FormSection = ({ title, note, children }: { title: string; note?: ReactNod
  * qoidalari, kuryer tariflari (fix3b FE-USR-11), har rol payload'i, backend maydon xatolari, muvaffaqiyatda
  * `navigate(-1)`. Filiallar so'rovi faqat superadmin/admin uchun (menejerga `GET branches` 403).
  *
- * Menejer yaratgan market (ega, 2026-11-04): menejer ro'yxatida faqat o'z filiali xodimlari — market filialga
- * bog'lanmagan, tafsiloti menejerga 403. Shuning uchun SMS natija oynasida «Foydalanuvchiga o'tish» o'rniga
- * «Ro'yxatga qaytish» (`/all-users` + muvaffaqiyat xabari); xabarda (qo'lda rejimda ham, `navigate(-1)` saqlangan)
- * market ro'yxatda ko'rinmasligi aytiladi. Yaratish qoidalari (`managerAllowedRoles`) o'zgarmagan.
+ * Menejer yaratgan market (ega, 2026-11-12: «Qabul va aralash managerlar market yarata olsin va o'zi yaratgan
+ * marketlarni foydalanuvchilar ro'yxatida ko'rib tursin»): market yaratish — «Qabul punkti» (PICKUP) va «Aralash»
+ * (HYBRID) menejerida (backend `POST /markets` boshqa turni 403 qiladi). O'zi yaratgan market `GET /users` da
+ * («Marketlar» tabi) va `GET /users/:id` da ochiladi — SMS natija oynasida boshqa rollardagidek «Foydalanuvchiga
+ * o'tish». Avvalgi (2026-11-04) «Ro'yxatga qaytish» + «ro'yxatda ko'rinmaydi» xabari olib tashlandi.
  */
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation(["users", "common", "auth"]);
@@ -286,24 +287,25 @@ export const CreateUserForm = memo(() => {
   const currentBranchType = viewerBranch.type;
   const currentBranchId = viewerBranch.id;
   const isManagerHybridCreator = authRole === "manager" && currentBranchType === "HYBRID";
-  // REGIONAL menejer — faqat kuryer (avvalgidek). fix3 CODE-21: boshqa
-  // turdagi (PICKUP/HQ/noma'lum) menejer uchun avval `null` = HAMMA rollar
-  // ochilardi. Hozir bu sahifaga ular kira olmaydi (`staff` qobiliyati yo'q),
-  // lekin yo'l ochilsa — eng tor to'plam (backend baribir tekshiradi).
+  // 2026-11-12: «Qabul punkti» menejeri ham market yaratadi (backend `POST /markets` — PICKUP · HYBRID).
+  const isManagerPickupCreator = authRole === "manager" && currentBranchType === "PICKUP";
+  // HYBRID — Kuryer, Ro'yxatchi, Market; PICKUP — Kuryer, Market; REGIONAL va boshqalar — faqat kuryer
+  // (fix3 CODE-21: noma'lum tur uchun eng tor to'plam, backend baribir tekshiradi).
   const managerAllowedRoles = useMemo<UserRole[] | null>(
     () =>
       authRole !== "manager"
         ? null
         : isManagerHybridCreator
           ? ["courier", "registrator", "marketing"]
-          : ["courier"],
-    [authRole, isManagerHybridCreator],
+          : isManagerPickupCreator
+            ? ["courier", "marketing"]
+            : ["courier"],
+    [authRole, isManagerHybridCreator, isManagerPickupCreator],
   );
 
   const [showPassword, setShowPassword] = useState(false);
   const [created, setCreated] = useState<CreatedResult | null>(null);
-  // Menejer yaratgan market — ro'yxatida ham, tafsilotida ham (403) ko'rinmaydi: tafsilotga o'tilmaydi.
-  const isManagerMarket = (createdRole: string) => authRole === "manager" && createdRole === "marketing";
+  // Menejer yaratgan market — «Foydalanuvchilar» → «Marketlar» tabida ko'rinadi (2026-11-12).
   const marketCreatedMessage = authRole === "manager" ? t("v2.create.managerMarketCreated") : t("createMarket");
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
@@ -1418,19 +1420,8 @@ export const CreateUserForm = memo(() => {
           user={created.user}
           initialSms={created.sms}
           viewerRole={authRole}
-          primaryLabel={t(
-            created.isLogist
-              ? "v2.passwordSms.openLogistAssignment"
-              : isManagerMarket(created.user.role)
-                ? "v2.passwordSms.backToList"
-                : "v2.passwordSms.openUser",
-          )}
+          primaryLabel={t(created.isLogist ? "v2.passwordSms.openLogistAssignment" : "v2.passwordSms.openUser")}
           onPrimary={() => {
-            if (!created.isLogist && isManagerMarket(created.user.role)) {
-              notify.success(t("success", { ns: "common" }), { description: marketCreatedMessage });
-              navigate("/all-users");
-              return;
-            }
             navigate(
               created.isLogist
                 ? logistAssignmentPath(created.user.id)

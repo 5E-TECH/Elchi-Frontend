@@ -310,7 +310,7 @@
         "loginRequired": "Login is required"
       },
       "saving": "Saving…",
-      "managerMarketCreated": "The market was created. Markets don't appear in the branch employee list.",
+      "managerMarketCreated": "The market was created. It appears under Users → Markets.",
       "passwordMode": {
         "section": "Password",
         "legend": "How to issue the password",

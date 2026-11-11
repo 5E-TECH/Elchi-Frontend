@@ -88,7 +88,7 @@ const superadminState = {
 } as never;
 
 /** Menejer profili: filial (ichma-ich `branch.branch`) va hudud — `readViewerBranch` o'qiydi. */
-const managerState = (type: "REGIONAL" | "HYBRID") =>
+const managerState = (type: "REGIONAL" | "HYBRID" | "PICKUP" | "HQ") =>
   ({
     role: { id: "70", role: "manager", region: null, name: "Menejer" },
     user: {
@@ -442,6 +442,24 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
 
     await waitFor(() => expect(mocks.createRegistrator).toHaveBeenCalledTimes(1));
     expect(mocks.createRegistrator).toHaveBeenCalledWith(expect.objectContaining({ branch_id: "44", payment_day: 25 }));
+  });
+
+  it("2026-11-12: PICKUP («Qabul punkti») — 2 rol (Kuryer, Market), HYBRID izohisiz; ro'yxatchi yo'q", () => {
+    renderWithProviders(<CreateUserForm />, { preloadedState: managerState("PICKUP") });
+
+    const group = screen.getByRole("group", { name: "Foydalanuvchi roli" });
+    expect(within(group).getAllByRole("radio").map((radio) => radio.getAttribute("value"))).toEqual([
+      "courier",
+      "marketing",
+    ]);
+    expect(screen.queryByText(/avtomatik biriktiriladi/)).not.toBeInTheDocument();
+    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 500 }, false);
+  });
+
+  it("2026-11-12: HQ menejeri — avvalgidek faqat kuryer (rol tanlanmaydi, market yo'q)", () => {
+    renderWithProviders(<CreateUserForm />, { preloadedState: managerState("HQ") });
+    expect(screen.queryByRole("group", { name: "Foydalanuvchi roli" })).not.toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Kuryer qo'shish" })).toBeInTheDocument();
   });
 });
 

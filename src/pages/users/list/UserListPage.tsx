@@ -29,7 +29,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { UserListKpi } from "../../../widgets/user-list/ui/UserListKpi";
 import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
-import { EXTERNAL_ROLES, MANAGER_TABS, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
+import { EXTERNAL_ROLES, getManagerTabs, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
 
 /** Qidiruv URL'ga yozilishidan oldin kutish (avvalgi `FilterSearch` kabi). */
 const SEARCH_DEBOUNCE_MS = 500;
@@ -66,8 +66,9 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  * Maketlar: `superadmin-users-list` (= admin): sarlavha + «Foydalanuvchi qo'shish», KPI (jami, marketlar,
  * xodimlar), karta: rol tablari, qidiruv «Ism yoki telefon raqami» + «Holat: Barchasi», jadval, sahifalash;
  * `manager-users-list`: sarlavha «{filial} xodimlari», KPI yo'q, 4 ta tab (Hammasi · Kuryerlar · Ro'yxatchilar ·
- * Menejerlar), amallar o'rnida «Ochish». Ega (2026-11-04): menejer faqat o'z filiali xodimlarini ko'radi — backend
- * `GET /users` ni `branch_users` bo'yicha cheklaydi; marketlar (filialga bog'i yo'q) menejer ro'yxatida yo'q.
+ * Menejerlar), amallar o'rnida «Ochish». Ega (2026-11-04): menejer o'z filiali xodimlarini ko'radi — backend
+ * `GET /users` ni `branch_users` bo'yicha cheklaydi. 2026-11-12: «Qabul punkti» / «Aralash» menejeri o'zi yaratgan
+ * marketlarni ham ko'radi — 5-tab «Marketlar» (`getManagerTabs`), «Hammasi» da ham; boshqalar yaratgan market yo'q.
  *
  * FY-1 (`superadmin-users-list-roles`, `-role-select`): superadmin/admin — 9 ta rol tabi (FY-S1); telefonda tablar
  * o'rnida «Rol: Hammasi» `Select` (guruhlar «Xodimlar» / «Tashqi hisoblar»), URL kaliti o'sha `role`. Ko'rinuvchi
@@ -91,6 +92,7 @@ const UserListPage = memo(() => {
   const [searchParams, setSearchParams] = useSearchParams();
   const viewerRole = useSelector((state: RootState) => state.role.role);
   const branchName = useSelector((state: RootState) => readViewerBranch(state.user.user).name);
+  const branchType = useSelector((state: RootState) => readViewerBranch(state.user.user).type);
   // fix3 RBAC-16: holat almashtirish, tahrirlash va o'chirish faqat superadmin/admin
   // (backend boshqalarga doim 403) — menejer jadvalda ko'rmaydi.
   const canManageUsers = viewerRole === "superadmin" || viewerRole === "admin";
@@ -100,7 +102,8 @@ const UserListPage = memo(() => {
   const telegramLabelId = useId();
 
   const read = (key: keyof typeof LEGACY_KEYS) => searchParams.get(key) ?? searchParams.get(LEGACY_KEYS[key]) ?? "";
-  const tabValues: readonly string[] = isManager ? MANAGER_TABS : STAFF_TABS;
+  // 2026-11-12: PICKUP/HYBRID menejerida «Marketlar» tabi ham (o'zi yaratgan marketlar, `roleTabs.ts`).
+  const tabValues: readonly string[] = isManager ? getManagerTabs(branchType) : STAFF_TABS;
   const urlRole = normalizeRole(read("role"));
   // Ko'rinuvchida tabi yo'q rol — «Hammasi» (URL o'zgartirilmaydi, so'rovga ham ketmaydi).
   const role = tabValues.includes(urlRole) ? urlRole : "";
@@ -300,7 +303,7 @@ const UserListPage = memo(() => {
           ) : undefined
         }
       >
-        {/* Superadmin/admin: 9 ta tab telefonga sig'maydi — u yerda «Rol» `Select` (pastda). Menejerda 4 ta — hamma joyda. */}
+        {/* Superadmin/admin: 9 ta tab telefonga sig'maydi — u yerda «Rol» `Select` (pastda). Menejerda 4–5 ta — hamma joyda (tab qatori o'zi suriladi). */}
         <Tabs
           items={tabs}
           value={role}

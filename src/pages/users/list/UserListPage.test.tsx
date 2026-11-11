@@ -8,7 +8,8 @@ import UserListPage from "./UserListPage";
 /**
  * `/all-users` (dizayn v2): holat URL'da — `role` (tab), `status`, `search`, `page`, `limit`; filtr o'zgarsa
  * sahifa 1 ga qaytadi; so'rov parametrlari URL'dan. KPI faqat superadmin/admin; menejerda — 4 ta tab (Hammasi ·
- * Kuryerlar · Ro'yxatchilar · Menejerlar — faqat o'z filiali xodimlari, marketlar yo'q), KPI va amallar yo'q.
+ * Kuryerlar · Ro'yxatchilar · Menejerlar — o'z filiali xodimlari), PICKUP/HYBRID da 5-tab «Marketlar» (o'zi yaratgan
+ * marketlar, 2026-11-12), KPI va amallar yo'q.
  */
 
 const mocks = vi.hoisted(() => ({ useGetUser: vi.fn() }));
@@ -360,13 +361,14 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
 });
 
 const MANAGER_USER = { id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type: "HYBRID" } } };
+const managerOf = (type: string) => ({ id: "70", role: "manager", branch: { branch: { id: "44", name: "Urgut filiali", type } } });
 
 describe("UserListPage — menejer (maket `manager-users-list`)", () => {
   beforeEach(() => {
     mocks.useGetUser.mockImplementation(() => listResponse({}, BRANCH_ITEMS));
   });
 
-  it("sarlavha «{filial} xodimlari» (marketsiz), KPI yo'q, 4 ta tab — «Marketlar» o'rnida «Menejerlar», amallar o'rnida «Ochish»", () => {
+  it("sarlavha «{filial} xodimlari», KPI yo'q, HYBRID — 5 ta tab (2026-11-12: «Marketlar» — o'zi yaratganlar), amallar o'rnida «Ochish»", () => {
     render("/all-users", "manager", MANAGER_USER);
 
     expect(screen.getByText("Urgut filiali xodimlari")).toBeInTheDocument();
@@ -379,16 +381,43 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
       "Kuryerlar",
       "Ro'yxatchilar",
       "Menejerlar",
+      "Marketlar",
     ]);
-    expect(within(tabs).queryByRole("tab", { name: /Marketlar/ })).not.toBeInTheDocument();
     // «Telegram boti» ustuni ham, uning izohi ham yo'q.
     expect(screen.queryByText(/Shaxsiy Elchi boti ulanishi/)).not.toBeInTheDocument();
-    // Menejerda 4 ta tab telefonda ham sig'adi — «Rol» tanlovi yo'q, tablar yashirilmaydi.
+    // Menejerda 4–5 ta tab — telefonda ham tablar (suriladi), «Rol» tanlovi yo'q.
     expect(screen.queryByRole("combobox", { name: "Rol" })).not.toBeInTheDocument();
     expect(tabs.closest(".max-md\\:hidden")).toBeNull();
     expect(screen.queryByRole("button", { name: /amallari$/ })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Jasur Tursunov tafsilotlari" })[0]).toHaveAttribute("href", "/all-users/2");
     expect(screen.getAllByRole("link", { name: "Shodiyor Ergashev tafsilotlari" })[0]).toHaveAttribute("href", "/all-users/70");
+  });
+
+  it.each([["PICKUP", true], ["HYBRID", true], ["REGIONAL", false], ["HQ", false]])(
+    "2026-11-12: %s menejeri — «Marketlar» tabi: %s (market yarata oladigan turlar)",
+    (type, hasMarketTab) => {
+      render("/all-users", "manager", managerOf(type as string));
+      const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
+      const labels = within(tabs).getAllByRole("tab").map((tab) => tab.textContent);
+      expect(labels.slice(0, 4)).toEqual(["Hammasi", "Kuryerlar", "Ro'yxatchilar", "Menejerlar"]);
+      expect(labels.includes("Marketlar")).toBe(hasMarketTab);
+    },
+  );
+
+  it("2026-11-12: PICKUP menejeri «Marketlar» tabi — `role=market` so'rovga ketadi, o'zi yaratgan market qatori «Ochish» bilan", async () => {
+    mocks.useGetUser.mockImplementation(() =>
+      listResponse({ total: 1, totalUsers: 4, countsByRole: { courier: 2, manager: 1, market: 1 } }, [
+        { id: "700", name: "Chilonzor Market", phone_number: "+998901234500", role: "market", status: "active", createdAt: "2026-11-12T09:30:00.000Z" },
+      ]),
+    );
+    const user = userEvent.setup();
+    render("/all-users", "manager", managerOf("PICKUP"));
+
+    await user.click(screen.getByRole("tab", { name: /Marketlar/ }));
+    expect(currentSearch().get("role")).toBe("market");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "market" });
+    expect(screen.getByRole("tab", { name: /Marketlar/ }).textContent?.replace(/\s/g, " ")).toBe("Marketlar 1");
+    expect(screen.getAllByRole("link", { name: "Chilonzor Market tafsilotlari" })[0]).toHaveAttribute("href", "/all-users/700");
   });
 
   it("filial nomi bo'lmasa — «Filialingiz xodimlari»", () => {
@@ -412,24 +441,29 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
 
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
     const texts = () => within(tabs).getAllByRole("tab").map((tab) => (tab.textContent ?? "").replace(/\s/g, " "));
-    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2"]);
+    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2", "Marketlar 0"]);
 
     await user.click(within(tabs).getByRole("tab", { name: /Kuryerlar/ }));
     expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "courier" });
-    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2"]);
+    expect(texts()).toEqual(["Hammasi 13", "Kuryerlar 8", "Ro'yxatchilar 3", "Menejerlar 2", "Marketlar 0"]);
 
     await user.click(within(tabs).getByRole("tab", { name: /Menejerlar/ }));
     expect(currentSearch().get("role")).toBe("manager");
     expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "manager" });
   });
 
-  it("eski havola `role=market` (va `marketing`) — menejerda «Hammasi», `role` so'rovga ketmaydi", () => {
+  it("havola `role=market` (va eski `marketing`): HYBRID — «Marketlar»; REGIONAL — «Hammasi», `role` so'rovga ketmaydi", () => {
     const { unmount } = render("/all-users?role=market", "manager", MANAGER_USER);
-    expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
-    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+    expect(screen.getByRole("tab", { name: "Marketlar" })).toHaveAttribute("aria-selected", "true");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10, role: "market" });
     unmount();
 
-    render("/all-users?role=marketing", "manager", MANAGER_USER);
+    const second = render("/all-users?role=marketing", "manager", managerOf("REGIONAL"));
+    expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
+    expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+    second.unmount();
+
+    render("/all-users?role=market", "manager", managerOf("REGIONAL"));
     expect(screen.getByRole("tab", { name: "Hammasi" })).toHaveAttribute("aria-selected", "true");
     expect(lastListParams()).toEqual({ page: 1, limit: 10 });
   });

@@ -374,6 +374,20 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     expect(screen.queryByRole("switch", { name: "Kassa qarzga ishlaydi" })).not.toBeInTheDocument();
   });
 
+  it("2026-11-12: menejer o'zi yaratgan marketni ochadi — «Tahrirlash» yo'q (PATCH 403), sarlavhada menejer filiali emas, telefon", () => {
+    renderView(makeUser("market"), "manager", "Urgut filiali");
+
+    expect(screen.queryByRole("button", { name: "Tahrirlash" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Urgut filiali/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/90 315 22 41|903152241/).length).toBeGreaterThan(0);
+  });
+
+  it("menejer o'z filiali kuryerida «Tahrirlash» avvalgidek bor, sarlavhada filial", () => {
+    renderView(makeUser("courier", { name: "Sherzod Alimov" }), "manager", "Urgut filiali");
+    expect(screen.getByRole("button", { name: "Tahrirlash" })).toBeInTheDocument();
+    expect(screen.getAllByText(/Urgut filiali/).length).toBeGreaterThan(0);
+  });
+
   it("«Ruxsatlar» da «Guruhda mijoz ismi va telefoni» kaliti yo'q — u «Telegram guruhi» kartasiga ko'chdi (TG-B S3)", () => {
     renderView(makeUser("market"), "superadmin");
     const permissions = screen.getByRole("region", { name: "Ruxsatlar" });

@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { UserRole } from "../../../entities/user/types/user";
-import { EXTERNAL_ROLES, MANAGER_TABS, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
+import { EXTERNAL_ROLES, getManagerTabs, MANAGER_MARKET_TABS, MANAGER_TABS, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
 
 /**
  * K3scaE0W — rol tablari backend `Roles` bilan mos. `RoleSelector` va `UserFilters` FY-1 da olib tashlangan, rol
@@ -29,15 +29,23 @@ describe("rol tablari", () => {
   });
 
   it("tablardagi har rol backend ro'yxatida bor", () => {
-    const tabs = [...STAFF_TABS, ...MANAGER_TABS].filter((tab) => tab !== "");
+    const tabs = [...STAFF_TABS, ...MANAGER_MARKET_TABS].filter((tab) => tab !== "");
     expect(tabs.filter((tab) => !(BACKEND_ROLES as readonly string[]).includes(tab))).toEqual([]);
   });
 
   it("superadmin/admin va menejer tablari o'zgarmagan (snapshot)", () => {
     expect(STAFF_TABS).toEqual(["", "admin", "manager", "registrator", "courier", "logist", "market", "market_operator", "investor"]);
-    // 2026-11-04: menejerda «Marketlar» yo'q (market filialga bog'lanmagan), o'rniga «Menejerlar».
+    // 2026-11-04: menejerda «Menejerlar»; 2026-11-12: PICKUP/HYBRID da oxirida «Marketlar» (o'zi yaratganlar).
     expect(MANAGER_TABS).toEqual(["", "courier", "registrator", "manager"]);
-    expect(MANAGER_TABS).not.toContain("market");
+    expect(MANAGER_MARKET_TABS).toEqual(["", "courier", "registrator", "manager", "market"]);
+  });
+
+  it("2026-11-12: «Marketlar» faqat market yarata oladigan menejerda (PICKUP, HYBRID)", () => {
+    expect(getManagerTabs("PICKUP")).toEqual(MANAGER_MARKET_TABS);
+    expect(getManagerTabs("HYBRID")).toEqual(MANAGER_MARKET_TABS);
+    for (const type of ["REGIONAL", "HQ", "CITY", "", null, undefined]) {
+      expect(getManagerTabs(type)).toEqual(MANAGER_TABS);
+    }
   });
 
   it("xodim va tashqi rollar kesishmaydi", () => {

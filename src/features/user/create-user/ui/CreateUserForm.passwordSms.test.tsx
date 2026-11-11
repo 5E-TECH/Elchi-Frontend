@@ -266,7 +266,7 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     expect(mocks.navigate).toHaveBeenCalledWith("/all-users/81");
   });
 
-  it("HYBRID menejer market yaratsa — qayta yuborish yo'q; «Foydalanuvchiga o'tish» o'rniga «Ro'yxatga qaytish» (tafsilot 403), xabar bilan", async () => {
+  it("HYBRID menejer market yaratsa — qayta yuborish yo'q; «Foydalanuvchiga o'tish» → market tafsiloti (2026-11-12: o'zi yaratgan market ochiladi)", async () => {
     mocks.createMarket.mockResolvedValue(createdResponse({ id: 77, name: "Urgut Market", role: "market", password_mode: "generate_sms", password_sms: sentSms }));
     const user = userEvent.setup();
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: hybridManagerState });
@@ -283,15 +283,49 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
     expect(within(dialog).queryByRole("button", { name: /SMSni qayta yuborish/ })).not.toBeInTheDocument();
     expect(mocks.get.mock.calls.filter(([url]) => String(url).includes("password/sms-status"))).toEqual([]);
 
-    // Ega (2026-11-04): menejer ro'yxatida market yo'q, `GET /users/77` — 403. Tafsilotga o'tilmaydi.
-    expect(within(dialog).queryByRole("button", { name: "Foydalanuvchiga o'tish" })).not.toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: "Ro'yxatga qaytish" }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/all-users");
-    expect(mocks.navigate).not.toHaveBeenCalledWith("/all-users/77");
-    expect(await screen.findByText("Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.")).toBeInTheDocument();
+    // Ega (2026-11-12): menejer o'zi yaratgan marketni ro'yxatda («Marketlar») va tafsilotda ko'radi.
+    expect(within(dialog).queryByRole("button", { name: "Ro'yxatga qaytish" })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Foydalanuvchiga o'tish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/all-users/77");
   });
 
-  it("HYBRID menejer market yaratsa, «Qo'lda kiritish» — avvalgidek `navigate(-1)`, xabarda market ro'yxatda ko'rinmasligi", async () => {
+  it("2026-11-12: PICKUP («Qabul punkti») menejeri market yaratadi — `POST /markets`, «Foydalanuvchiga o'tish» → tafsilot", async () => {
+    mocks.createMarket.mockResolvedValue(createdResponse({ id: 78, name: "Chilonzor Market", role: "market", password_mode: "generate_sms", password_sms: sentSms }));
+    const pickupManagerState = {
+      role: { id: "70", role: "manager", region: null, name: "Menejer" },
+      user: {
+        user: {
+          id: "70",
+          role: "manager",
+          region: { id: "1", name: "Toshkent shahri" },
+          branch: { branch: { id: "45", name: "Chilonzor punkti", type: "PICKUP", region_id: "1" } },
+        },
+        isAuthenticated: true,
+        accessToken: null,
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      },
+    };
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: pickupManagerState as never });
+    await user.click(screen.getByRole("radio", { name: /^Market/ }));
+    await fill(user, container, "fullName", "Chilonzor Market");
+    await fill(user, container, "phone", "901234569");
+    await fill(user, container, "username", "chilonzor_m");
+    await fill(user, container, "homeRate", "30000");
+    await fill(user, container, "centerRate", "20000");
+    await user.click(screen.getByRole("radio", { name: "Uygacha" }));
+    await user.click(screen.getByRole("button", { name: "Yaratish va SMS yuborish" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchi yaratildi" });
+    expect(mocks.createMarket).toHaveBeenCalledTimes(1);
+    expect(mocks.createMarket.mock.calls[0][0]).toEqual(expect.objectContaining({ name: "Chilonzor Market", phone_number: "+998901234569" }));
+    await user.click(within(dialog).getByRole("button", { name: "Foydalanuvchiga o'tish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/all-users/78");
+  });
+
+  it("HYBRID menejer market yaratsa, «Qo'lda kiritish» — avvalgidek `navigate(-1)`, xabarda «Marketlar» tabi aytiladi", async () => {
     const user = userEvent.setup();
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: hybridManagerState });
     await user.click(screen.getByRole("radio", { name: /^Market/ }));
@@ -308,7 +342,7 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
 
     await waitFor(() => expect(mocks.createMarket).toHaveBeenCalledTimes(1));
     expect(mocks.navigate).toHaveBeenCalledWith(-1);
-    expect(await screen.findByText("Market yaratildi. Marketlar filial xodimlari ro'yxatida ko'rinmaydi.")).toBeInTheDocument();
+    expect(await screen.findByText("Market yaratildi. U «Foydalanuvchilar» → «Marketlar» tabida ko'rinadi.")).toBeInTheDocument();
   });
 
   it("HYBRID menejer kuryer yaratsa — avvalgidek «Foydalanuvchiga o'tish» (o'z filiali xodimi)", async () => {

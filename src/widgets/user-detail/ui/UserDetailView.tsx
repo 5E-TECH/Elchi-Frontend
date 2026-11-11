@@ -173,6 +173,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). Menejerga begona kuryer
   // backend tomonida 403 — matni tasdiq oynasida.
   const canResetPassword = String(viewerId ?? "") !== String(user.id) && canManagePasswordSms(currentRole, user.role);
+  // 2026-11-12: menejer o'zi yaratgan marketni ochadi (faqat ko'rish) — `PATCH /users/:id` unga 403
+  // (market filial a'zosi emas), shuning uchun «Tahrirlash» chizilmaydi.
+  const canEdit = !(isManagerViewer && isMarket);
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
@@ -301,7 +304,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   // Foydalanuvchining O'Z filiali (kGIjOciz, `GET /users/:id` → `branch`); ilgari ko'ruvchining (menejer) filiali
   // olinardi. Eski javobda `branch` yo'q bo'lsa — menejer ko'ruvchida o'z filiali (u faqat o'z filiali
   // xodimlarini ko'radi).
-  const branchName = user.branch?.name?.trim() || (isManagerViewer ? viewerBranchName : null) || null;
+  // Market filialga bog'lanmagan — menejer ko'ruvchida ham uning filiali qo'yilmaydi (faqat telefon).
+  const branchName = user.branch?.name?.trim() || (isManagerViewer && !isMarket ? viewerBranchName : null) || null;
   const description = isManagerViewer
     ? branchName
       ? t("v2.detail.descriptionBranch", { branch: branchName, phone })
@@ -340,9 +344,11 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
           viewerRole={currentRole}
         />
       ) : null}
-      <Button leftIcon={Pencil} onClick={() => setShowEdit(true)}>
-        {t("edit")}
-      </Button>
+      {canEdit ? (
+        <Button leftIcon={Pencil} onClick={() => setShowEdit(true)}>
+          {t("edit")}
+        </Button>
+      ) : null}
     </>
   );
 
